@@ -292,13 +292,13 @@ module Bosh::Cli::Command
             vpc.delete_vpc
           end
           dhcp_options.uniq(&:id).map(&:delete)
+
+          ec2.remove_all_key_pairs
+          ec2.release_all_elastic_ips
         end
       else
         say("No VPCs found")
       end
-
-      ec2.remove_all_key_pairs
-      ec2.release_all_elastic_ips
     end
 
     usage "aws create key_pairs"
@@ -513,11 +513,13 @@ module Bosh::Cli::Command
       config = load_yaml_file(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
-      Bosh::Common.retryable(sleep: aws_retry_wait_time,
-                             tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
-        say("unable to delete security groups: #{e}") if tries > 0
-        ec2.delete_all_security_groups
-        true # retryable block must yield true if we only want to retry on Exceptions
+      if confirmed?('Are you sure you want to delete all security groups?')
+        Bosh::Common.retryable(sleep: aws_retry_wait_time,
+                               tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
+          say("unable to delete security groups: #{e}") if tries > 0
+          ec2.delete_all_security_groups
+          true # retryable block must yield true if we only want to retry on Exceptions
+        end
       end
     end
 

@@ -115,15 +115,37 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws delete_all security_groups" do
       let(:config_file) { asset "config.yml" }
+      let(:fake_ec2) { mock('EC2') }
+      let(:fake_vpc) { mock('VPC', id: 'vpc-1234') }
 
-      it "should retry if it can not delete security groups due to eventual consistency" do
-        fake_ec2 = mock("ec2")
+      before do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        aws.stub(aws_retry_wait_time: 0)
-        fake_ec2.should_receive(:delete_all_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
-        fake_ec2.should_receive(:delete_all_security_groups).ordered.once.and_return(true)
-        aws.delete_all_security_groups(config_file)
       end
+
+      context "when non-interactive" do
+        before do
+          aws.should_receive(:confirmed?).and_return(true)
+        end
+
+        it "should retry if it can not delete security groups due to eventual consistency" do
+          aws.stub(aws_retry_wait_time: 0)
+          fake_ec2.should_receive(:delete_all_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+          fake_ec2.should_receive(:delete_all_security_groups).ordered.once.and_return(true)
+          aws.delete_all_security_groups(config_file)
+        end
+      end
+
+      context "when interactive and bailing out" do
+        before do
+          aws.should_receive(:confirmed?).and_return(false)
+        end
+
+        it 'should not delete security groups' do
+          fake_ec2.should_not_receive(:delete_all_security_groups)
+          aws.delete_all_security_groups(config_file)
+        end
+      end
+
     end
 
     describe "aws create vpc" do
@@ -214,83 +236,105 @@ describe Bosh::Cli::Command::AWS do
       let(:output_file) { asset "test-output.yml" }
 
       it "should delete the vpc and all its dependencies, and release the elastic ips" do
-        fake_ec2 = mock("ec2")
-        fake_vpc = mock("vpc")
-        fake_dhcp_options = mock("dhcp options")
-        fake_route53 = mock("route53")
+      fake_ec2 = mock("ec2")
+      fake_vpc = mock("vpc")
+      fake_dhcp_options = mock("dhcp options")
+      fake_route53 = mock("route53")
 
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-13724979").and_return(fake_vpc)
-        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
+      Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+      Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-13724979").and_return(fake_vpc)
+      Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
 
-        fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
-        fake_vpc.stub(:instances_count).and_return(0)
+      fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
+      fake_vpc.stub(:instances_count).and_return(0)
 
-        fake_vpc.should_receive :delete_security_groups
-        fake_vpc.should_receive :delete_subnets
-        fake_vpc.should_receive :delete_vpc
-        fake_dhcp_options.should_receive :delete
-        fake_ec2.should_receive(:internet_gateway_ids).and_return(["gw1id", "gw2id"])
-        fake_ec2.should_receive(:delete_internet_gateways).with(["gw1id", "gw2id"])
-        fake_ec2.should_receive(:remove_key_pair).with "somenamez"
-        fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
-        fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.7"]
-        fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.8"]
-        fake_ec2.should_receive(:release_elastic_ips).with ["123.4.5.9"]
-        fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
-        fake_route53.should_receive(:delete_record).with("micro", "cfdev.com")
-        fake_route53.should_receive(:delete_record).with("bosh", "cfdev.com")
-        fake_route53.should_receive(:delete_record).with("bat", "cfdev.com")
+      fake_vpc.should_receive :delete_security_groups
+      fake_vpc.should_receive :delete_subnets
+      fake_vpc.should_receive :delete_vpc
+      fake_dhcp_options.should_receive :delete
+      fake_ec2.should_receive(:internet_gateway_ids).and_return(["gw1id", "gw2id"])
+      fake_ec2.should_receive(:delete_internet_gateways).with(["gw1id", "gw2id"])
+      fake_ec2.should_receive(:remove_key_pair).with "somenamez"
+      fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
+      fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.7"]
+      fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.8"]
+      fake_ec2.should_receive(:release_elastic_ips).with ["123.4.5.9"]
+      fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
+      fake_route53.should_receive(:delete_record).with("micro", "cfdev.com")
+      fake_route53.should_receive(:delete_record).with("bosh", "cfdev.com")
+      fake_route53.should_receive(:delete_record).with("bat", "cfdev.com")
 
-        aws.delete_vpc output_file
-      end
+      aws.delete_vpc output_file
+    end
 
       it "should retry on AWS errors" do
-        fake_ec2 = mock("ec2")
-        fake_vpc = mock("vpc")
-        fake_route_53 = mock("route53")
-        fake_dhcp_options = mock("dhcp_options")
+      fake_ec2 = mock("ec2")
+      fake_vpc = mock("vpc")
+      fake_route_53 = mock("route53")
+      fake_dhcp_options = mock("dhcp_options")
 
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
-        Bosh::Aws::Route53.stub(:new).and_return(fake_vpc)
+      Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+      Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
+      Bosh::Aws::Route53.stub(:new).and_return(fake_vpc)
 
-        fake_vpc.stub(:instances_count).and_return(0)
-        fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
-        fake_vpc.stub(:delete_security_groups)
-        fake_vpc.stub(:delete_subnets)
-        fake_vpc.stub(:delete_vpc)
-        fake_vpc.stub(:remove_key_pair)
-        fake_vpc.stub(:delete_record)
+      fake_vpc.stub(:instances_count).and_return(0)
+      fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
+      fake_vpc.stub(:delete_security_groups)
+      fake_vpc.stub(:delete_subnets)
+      fake_vpc.stub(:delete_vpc)
+      fake_vpc.stub(:remove_key_pair)
+      fake_vpc.stub(:delete_record)
 
-        fake_ec2.stub(:internet_gateway_ids)
-        fake_ec2.stub(:delete_internet_gateways)
-        fake_ec2.stub(:remove_key_pair)
-        fake_ec2.stub(:release_elastic_ips)
+      fake_ec2.stub(:internet_gateway_ids)
+      fake_ec2.stub(:delete_internet_gateways)
+      fake_ec2.stub(:remove_key_pair)
+      fake_ec2.stub(:release_elastic_ips)
 
-        fake_dhcp_options.stub(:delete)
+      fake_dhcp_options.stub(:delete)
 
-        aws.stub(aws_retry_wait_time: 0)
+      aws.stub(aws_retry_wait_time: 0)
 
-        fake_vpc.should_receive(:delete_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
-        fake_vpc.should_receive(:delete_security_groups).ordered.once.and_return(true)
-        aws.delete_vpc output_file
-      end
+      fake_vpc.should_receive(:delete_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+      fake_vpc.should_receive(:delete_security_groups).ordered.once.and_return(true)
+      aws.delete_vpc output_file
+    end
 
       context "when there are instances running" do
-        it "throws a nice error message and doesn't delete any resources" do
-          fake_vpc = mock("vpc")
+      it "throws a nice error message and doesn't delete any resources" do
+        fake_vpc = mock("vpc")
 
-          Bosh::Aws::EC2.stub(:new)
-          Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
+        Bosh::Aws::EC2.stub(:new)
+        Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
 
-          fake_vpc.stub(:instances_count).and_return(1)
-          fake_vpc.stub(:vpc_id).and_return("vpc-13724979")
+        fake_vpc.stub(:instances_count).and_return(1)
+        fake_vpc.stub(:vpc_id).and_return("vpc-13724979")
 
-          expect {
-            fake_vpc.should_not_receive(:delete_security_groups)
-            aws.delete_vpc output_file
-          }.to raise_error(Bosh::Cli::CliError, "1 instance(s) running in vpc-13724979 - delete them first")
+        expect {
+          fake_vpc.should_not_receive(:delete_security_groups)
+          aws.delete_vpc output_file
+        }.to raise_error(Bosh::Cli::CliError, "1 instance(s) running in vpc-13724979 - delete them first")
+      end
+    end
+    end
+
+    describe "aws delete all vpcs" do
+      let(:fake_ec2) { mock('EC2') }
+      let(:fake_vpc) { mock('VPC', id: 'vpc-1234') }
+
+      before do
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:vpcs).and_return([fake_vpc])
+      end
+
+      context "when interactive and bailing out" do
+        it "should not delete anything" do
+          aws.should_receive(:confirmed?).and_return(false)
+
+          Bosh::Aws::VPC.should_not_receive(:find)
+          fake_ec2.should_not_receive(:remove_all_key_pairs)
+          fake_ec2.should_not_receive(:release_all_elastic_ips)
+
+          aws.delete_all_vpcs(asset('config.yml'))
         end
       end
     end
