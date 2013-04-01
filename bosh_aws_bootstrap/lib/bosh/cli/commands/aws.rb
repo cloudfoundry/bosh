@@ -203,7 +203,7 @@ module Bosh::Cli::Command
       route53 = Bosh::Aws::Route53.new(config["aws"])
 
       elbs = config["vpc"]["elbs"]
-      say "creating load balancers: #{elbs.keys.join(", ")}"
+      say "creating load balancers: #{elbs.keys.join(", ")}" if elbs
       elbs.each do |name, settings|
         e = elb.create(name, vpc, settings)
         if settings["dns_record"]
