@@ -5,8 +5,12 @@ require "rbconfig"
 require "atmos"
 require "json"
 
-namespace :stemcell do
+# microBOSH version should reflect the version of all the BOSH components, not just the agent.
+def micro_version
+  @micro_version ||= File.read("#{File.expand_path('../../', __FILE__)}/BOSH_VERSION").strip
+end
 
+namespace :stemcell do
   desc "Build stemcell"
   task :basic, [:infrastructure] => "all:finalize_release_directory"  do |t, args|
     options = default_options(args)
@@ -24,7 +28,7 @@ namespace :stemcell do
 
     options = default_options(args)
     options[:stemcell_name] ||= "micro-bosh-stemcell"
-    options[:stemcell_version] ||= "0.8.1"
+    options[:stemcell_version] ||= micro_version
     options[:image_create_disk_size] = 2048
 
     options = options.merge(bosh_micro_options(manifest, release_tarball))
