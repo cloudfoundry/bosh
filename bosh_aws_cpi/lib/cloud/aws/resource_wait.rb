@@ -104,6 +104,17 @@ module Bosh::AwsCloud
       end
     end
 
+    def self.for_sgroup(args)
+      sgroup = args.fetch(:sgroup) { raise ArgumentError, 'sgroup object required' }
+      target_state = args.fetch(:state) { raise ArgumentError, 'state symbol required' }
+      valid_states = [true, false]
+      validate_states(valid_states, target_state)
+
+      new.for_resource(resource: sgroup, target_state: true, state_method: :exists?) do |current_state|
+        current_state == target_state
+      end
+    end
+
     def self.validate_states(valid_states, target_state)
       unless valid_states.include?(target_state)
         raise ArgumentError, "target state must be one of #{valid_states.join(', ')}, `#{target_state}' given"
