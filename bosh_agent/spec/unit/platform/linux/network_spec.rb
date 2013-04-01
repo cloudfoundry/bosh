@@ -16,6 +16,20 @@ describe Bosh::Agent::Platform::Linux::Network do
     end
   end
 
+  let(:microbosh_network) do
+    {
+        "netmask" => "255.255.248.0",
+        "mac" => "00:50:56:89:17:70",
+        "ip" => "172.30.40.115",
+        "default" => ["gateway", "dns"],
+        "gateway" => nil,
+        "dns" => nil,
+        "cloud_properties" => {
+            "name" => "VLAN440"
+        }
+    }
+  end
+
   let(:complete_network) do
     {
         "netmask" => "255.255.248.0",
@@ -97,6 +111,12 @@ describe Bosh::Agent::Platform::Linux::Network do
     it "does not parse DNS when there's no 'default' network config" do
       config = complete_settings["networks"]["network_a"]
       config.delete('default')
+
+      network_wrapper.dns.should == []
+    end
+
+    it "does not parse DNS when DNS config is explicitly null" do
+      complete_settings["networks"]["network_a"] = microbosh_network
 
       network_wrapper.dns.should == []
     end

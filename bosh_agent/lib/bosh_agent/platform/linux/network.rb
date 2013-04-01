@@ -53,7 +53,7 @@ module Bosh::Agent
 
     def dns
       default_dns_network = networks.values.detect do |settings|
-        settings.fetch('default', []).include?('dns') && settings.has_key?("dns")
+        settings.fetch('default', []).include?('dns') && settings["dns"]
       end
       default_dns_network ? default_dns_network["dns"] : []
     end
