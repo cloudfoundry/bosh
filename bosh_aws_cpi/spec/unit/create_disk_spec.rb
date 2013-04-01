@@ -22,6 +22,47 @@ describe Bosh::AwsCloud::Cloud do
     cloud.create_disk(2048).should == "v-foobar"
   end
 
+  it "creates an EC2 volume with provisioned iops" do
+    iops_setting = {
+        "provisioned_iops" => 200
+    }
+    volume = double("volume", :id => "v-foobar")
+
+    cloud = mock_cloud do |ec2, region|
+      ec2.volumes.should_receive(:create) do |params|
+        params[:iops].should == 200
+        params[:volume_type].should == "io1"
+        volume
+      end
+      region.stub(:availability_zones => zones)
+    end
+
+    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    cloud.create_disk( 30 * 1024 , nil, iops_setting)
+  end
+
+  it "check min/max provisioned iops and its ratio to disk size" do
+    volume = double("volume", :id => "v-foobar")
+    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    cloud = mock_cloud do |ec2, region|
+      region.stub(:availability_zones => zones)
+    end
+    expect {
+      iops_setting = {"provisioned_iops" => 99}
+      cloud.create_disk(2000, nil, iops_setting)
+    }.to raise_error(Bosh::Clouds::CloudError, /EBS minimal provisioned IOPS is 100/)
+
+    expect {
+      iops_setting = {"provisioned_iops" => 10001}
+      cloud.create_disk(2000, nil, iops_setting)
+    }.to raise_error(Bosh::Clouds::CloudError, /EBS maximal provisioned IOPS is 10000/)
+
+    expect {
+      iops_setting = {"provisioned_iops" => 200}
+      cloud.create_disk(18000, nil, iops_setting)
+    }.to raise_error(Bosh::Clouds::CloudError, /EBS IOPS\/Size ratio is over 10/)
+  end
+
   it "rounds up disk size" do
     volume = double("volume", :id => "v-foobar")
 

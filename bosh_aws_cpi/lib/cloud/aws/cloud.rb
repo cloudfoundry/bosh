@@ -10,6 +10,7 @@ module Bosh::AwsCloud
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
     METADATA_TIMEOUT = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
+    EBS_IOPS_TYPE = "io1"
 
     attr_reader :ec2
     attr_reader :registry
@@ -159,8 +160,10 @@ module Bosh::AwsCloud
     # @param [Integer] size disk size in MiB
     # @param [optional, String] instance_id EC2 instance id
     #        of the VM that this disk will be attached to
+    # @param [optional, Hash] disk_properties Properties for
+    #        provisioned iops EBS disk
     # @return [String] created EBS volume id
-    def create_disk(size, instance_id = nil)
+    def create_disk(size, instance_id = nil, disk_properties = nil)
       with_thread_name("create_disk(#{size}, #{instance_id})") do
         unless size.kind_of?(Integer)
           raise ArgumentError, "disk size needs to be an integer"
@@ -186,6 +189,20 @@ module Bosh::AwsCloud
             :size => (size / 1024.0).ceil,
             :availability_zone => az
         }
+
+        unless disk_properties.nil?
+          iops =  disk_properties["provisioned_iops"]
+          unless iops.nil?
+            cloud_error("EBS minimal provisioned IOPS is 100") if iops < 100
+            cloud_error("EBS maximal provisioned IOPS is 10000") if iops > 10000
+            cloud_error("EBS IOPS/Size ratio is over 10") if iops * 1024 /size > 10
+            iops_params = {
+              :volume_type => EBS_IOPS_TYPE,
+              :iops => iops
+            }
+            volume_params.merge!(iops_params)
+          end
+        end
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")

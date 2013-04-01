@@ -46,6 +46,24 @@ describe Bosh::Director::InstanceUpdater do
     },
     "properties" => {"key" => "value"}
   }
+  DISK_PLAN = {
+    "resource_pool" => {
+        "stemcell" => {
+            "name" => "ubuntu",
+            "network" => "network-a",
+            "version" => 3
+        },
+        "name" => "test_resource_pool",
+        "cloud_properties" => {
+            "ram" => "2GB",
+            "disk" => "10GB",
+            "cores" => 2,
+            "disk_properties" => {
+              "provisioned_iops" => 100
+            }
+        }
+     }
+  }
   IDLE_PLAN = {
     "deployment" => "test_deployment",
     "job" => {
@@ -497,10 +515,11 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @resource_pool_spec.stub!(:cloud_properties).and_return(DISK_PLAN["resource_pool"]["cloud_properties"])
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
-    @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
+    @cloud.should_receive(:create_disk).with(1024, "vm-id", {"provisioned_iops" => 100}).and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
@@ -539,7 +558,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
-    @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
+    @cloud.should_receive(:create_disk).with(1024, "vm-id", nil).and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
     @agent_1.should_receive(:migrate_disk).with("old-disk-id", "disk-id").and_return({
@@ -656,7 +675,7 @@ describe Bosh::Director::InstanceUpdater do
     @cloud.should_not_receive(:delete_disk).with("new-disk-id")
 
     # create, attach, mount and migrate to new disk
-    @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
+    @cloud.should_receive(:create_disk).with(1024, "vm-id", nil).and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
     @agent_1.should_receive(:migrate_disk).with("old-disk-id", "disk-id").and_return({
