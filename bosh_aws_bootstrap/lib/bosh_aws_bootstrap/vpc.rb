@@ -69,6 +69,7 @@ module Bosh
         groups_specs.each do |group_spec|
           if group_name_available group_spec["name"]
             security_group = @aws_vpc.security_groups.create(group_spec["name"])
+            Bosh::AwsCloud::ResourceWait.for_sgroup(sgroup: security_group, state: true)
             group_spec["ingress"].each do |ingress|
               range_match = ingress["ports"].to_s.match(/(\d+)\s*-\s*(\d+)/)
               ports = range_match ? (range_match[1].to_i)..(range_match[2].to_i) : ingress["ports"].to_i

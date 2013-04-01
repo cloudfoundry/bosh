@@ -172,6 +172,8 @@ describe Bosh::Aws::VPC do
         security_groups.stub(:create).with("sg").and_return(security_group)
         security_groups.stub(:each)
 
+        security_group.stub(:id)
+        security_group.should_receive(:exists?).and_return(true)
         security_group.should_receive(:authorize_ingress).with(:tcp, 22, "1.2.3.0/24")
         security_group.should_receive(:authorize_ingress).with(:tcp, 23, "1.2.4.0/24")
 
@@ -187,6 +189,8 @@ describe Bosh::Aws::VPC do
         security_groups.stub(:create).with("sg").and_return(security_group)
         security_groups.stub(:each)
 
+        security_group.stub(:id)
+        security_group.should_receive(:exists?).and_return(true)
         security_group.should_receive(:authorize_ingress).with(:tcp, 5..60, "1.2.3.0/24")
 
         ingress_rules = [
@@ -202,6 +206,8 @@ describe Bosh::Aws::VPC do
         security_group.stub(:authorize_ingress).with(:tcp, 22, "1.2.3.0/24")
         security_groups.stub(:create).with("sg").and_return(security_group)
         security_groups.stub(:each).and_yield(existing_security_group)
+        security_group.stub(:id)
+        security_group.should_receive(:exists?).and_return(true)
 
         existing_security_group.should_receive :delete
 
