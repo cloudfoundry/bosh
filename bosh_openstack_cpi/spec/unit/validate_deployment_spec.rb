@@ -6,7 +6,8 @@ require "spec_helper"
 describe Bosh::OpenStackCloud::Cloud do
 
   it "doesn't implement `validate_deployment'" do
-    Bosh::OpenStackCloud::Connection.stub(:new)
+    Fog::Compute.stub(:new)
+    Fog::Image.stub(:new)
     cloud = make_cloud
     expect {
       cloud.validate_deployment({}, {})

@@ -7,11 +7,14 @@ release:
   version: <%= properties.release || "latest" %>
 
 compilation:
-  workers: 1
+  workers: 2
   network: default
   reuse_compilation_vms: true
   cloud_properties:
     instance_type: m1.small
+    <% if properties.key_name %>
+    key_name: <%= properties.key_name %>
+    <% end %>
 
 update:
   canaries: <%= properties.canaries || 1 %>
@@ -21,22 +24,49 @@ update:
   max_errors: 1
 
 networks:
+
+- name: static
+  type: vip
+  cloud_properties: {}
+
 - name: default
+<% if p('network.net_id', false) %>
+  type: manual
+  subnets:
+  - range: <%= properties.network.cidr %>
+    reserved:
+      <% properties.network.reserved.each do |range| %>
+      - <%= range %>
+      <% end %>
+    static:
+      <% properties.network.static.each do |range| %>
+      - <%= range %>
+      <% end %>
+    gateway: <%= properties.network.gateway %>
+    dns:
+      <% if_p('dns_nameserver') do |dns_nameserver| %>
+      - <%= dns_nameserver %>
+      <% end %>
+      <% if_p('network.dns') do |dns| %>
+      - <%= dns %>
+      <% end %>
+    cloud_properties:
+      security_groups: <%= p('network.security_groups') %>
+      net_id: <%= p('network.net_id') %>
+<% else %>
   type: dynamic
   <% if_p('dns_nameserver') do |dns_nameserver| %>
   dns:
     - <%= dns_nameserver %>
   <% end %>
-  <% if properties.security_group %>
+  <% if properties.security_groups %>
   cloud_properties:
     security_groups:
-      - <%= properties.security_group %>
+      - <%= properties.security_groups %>
   <% else %>
   cloud_properties: {}
   <% end %>
-- name: static
-  type: vip
-  cloud_properties: {}
+<% end %>
 
 resource_pools:
   - name: common
@@ -47,6 +77,9 @@ resource_pools:
       version: <%= properties.stemcell.version %>
     cloud_properties:
       instance_type: m1.small
+      <% if properties.key_name %>
+      key_name: <%= properties.key_name %>
+      <% end %>
     <% if properties.password %>
     env:
       bosh:

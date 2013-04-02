@@ -11,13 +11,12 @@ describe Bosh::OpenStackCloud::Cloud do
 
   it "forces recreation when security groups differ" do
     server = double("server", :id => "i-test", :name => "i-test")
-    sec_grp = double("security_group",
-                     :body => {"security_groups" => [{"name"=> "newgroup" }]})
+    security_group = double("security_groups", :name => "newgroups")
+
+    server.should_receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.should_receive(:list_security_groups).
-          with("i-test").and_return(sec_grp)
     end
 
     expect {
@@ -29,14 +28,13 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => nil)
-    sec_grp = double("security_group",
-                     :body => {"security_groups" => [{"name"=> "default" }]})
+    security_group = double("security_groups", :name => "default")
+
+    server.should_receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:get).with("i-test").and_return(server)
       openstack.addresses.should_receive(:find).and_return(address)
-      openstack.should_receive(:list_security_groups).
-          with("i-test").and_return(sec_grp)
     end
 
     address.should_receive(:server=).with(server)
@@ -55,14 +53,13 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => "i-test")
-    sec_grp = double("security_group",
-                     :body => {"security_groups" => [{"name"=> "default" }]})
+    security_group = double("security_groups", :name => "default")
+
+    server.should_receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:get).with("i-test").and_return(server)
       openstack.addresses.should_receive(:each).and_yield(address)
-      openstack.should_receive(:list_security_groups).
-          with("i-test").and_return(sec_grp)
     end
 
     address.should_receive(:server=).with(nil)

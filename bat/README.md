@@ -72,6 +72,49 @@ properties:
     security_groups:
     - bat
 ```
+
+On OpenStack with DHCP:
+```yaml
+---
+cpi: openstack
+properties:
+  static_ip: 54.235.115.62 # floating IP to use for the bat-release jobs
+  uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: latest
+  instances: 1
+  key_name: bosh # OpenStack key name
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
+```
+
+On OpenStack with manual networking (requires Quantum):
+```yaml
+---
+cpi: openstack
+properties:
+  static_ip: 54.235.115.62 # floating IP to use for the bat-release jobs
+  uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: latest
+  instances: 1
+  key_name: bosh # OpenStack key name
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
+  network:
+    cidr: 10.0.1.0/24
+    reserved:
+    - 10.0.1.2 - 10.0.1.9
+    static:
+    - 10.0.1.10 - 10.0.1.30
+    gateway: 10.0.1.1
+    net_id: 4ef0b0ec-58c9-4478-8382-2099da773fdd #
+    security_groups:
+    - default
+```
+
 ## EC2 Networking Config
 
 ### On EC2 with AWS-provided DHCP networking
@@ -80,6 +123,10 @@ Add TCP port `4567` to the **default** security group.
 ### On EC2 with VPC networking
 Create a **bat** security group in the same VPC the BAT_DIRECTOR is running in. Allow inbound access to TCP ports
  `22` and `4567` to the bat security group.
+
+## OpenStack Networking Config
+
+Add TCP ports `22` and `4567` to the **default** security group.
 
 ## Running BAT
 
