@@ -72,6 +72,20 @@ describe Bosh::Agent::Infrastructure::Aws::Registry do
       endpoint.should == "http://4.3.2.1:25777"
     end
 
+    it 'should allow registry endpoint with URI containing username and password' do
+      dns_mock = double('DNS Resolver')
+      dns_mock.should_receive(:each_address).with('example.org').and_yield('1.2.3.4')
+
+      Resolv::DNS.should_receive(:new).and_return(dns_mock)
+      hostname = "admin:admin@example.org"
+      nameservers = ["5.4.3.2"]
+
+      data = user_data("http://#{hostname}:25777", nameservers)
+      endpoint = described_class.lookup_registry(data)
+
+      endpoint.should == "http://admin:admin@1.2.3.4:25777"
+    end
+
     it "should raise an error when it can't lookup the name" do
       Bosh::Agent::Infrastructure::Aws::Registry.should_receive(:bosh_lookup)
         .and_raise(Resolv::ResolvError)
