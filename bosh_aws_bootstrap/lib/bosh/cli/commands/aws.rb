@@ -162,6 +162,8 @@ module Bosh::Cli::Command
       delete_all_rds_dbs(config_file)
       delete_all_s3(config_file)
       delete_all_vpcs(config_file)
+      delete_all_key_pairs(config_file)
+      delete_all_elastic_ips(config_file)
       delete_all_security_groups(config_file)
       delete_all_route53_records(config_file)
     end
@@ -292,12 +294,33 @@ module Bosh::Cli::Command
             vpc.delete_vpc
           end
           dhcp_options.uniq(&:id).map(&:delete)
-
-          ec2.remove_all_key_pairs
-          ec2.release_all_elastic_ips
         end
       else
         say("No VPCs found")
+      end
+    end
+
+    usage "aws delete key_pairs"
+    desc "delete key pairs"
+    def delete_all_key_pairs(config_file)
+      config = load_yaml_file(config_file)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+
+      if confirmed?("Are you sure you want to delete all SSH Keypairs?")
+        say "Deleting all key pairs..."
+        ec2.remove_all_key_pairs
+      end
+    end
+
+    usage "aws delete elastic_ips"
+    desc "delete elastic ips"
+    def delete_all_elastic_ips(config_file)
+      config = load_yaml_file(config_file)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+
+      if confirmed?("Are you sure you want to delete all Elastic IPs?")
+        say "Releasing all elastic IPs..."
+        ec2.release_all_elastic_ips
       end
     end
 

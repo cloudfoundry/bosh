@@ -94,6 +94,8 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_rds_dbs).with(config_file)
         aws.should_receive(:delete_all_s3).with(config_file)
         aws.should_receive(:delete_all_vpcs).with(config_file)
+        aws.should_receive(:delete_all_key_pairs).with(config_file)
+        aws.should_receive(:delete_all_elastic_ips).with(config_file)
         aws.should_receive(:delete_all_security_groups).with(config_file)
         aws.should_receive(:delete_all_route53_records).with(config_file)
         aws.should_receive(:delete_all_elbs).with(config_file)
@@ -106,6 +108,8 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_rds_dbs).with(default_config_filename)
         aws.should_receive(:delete_all_s3).with(default_config_filename)
         aws.should_receive(:delete_all_vpcs).with(default_config_filename)
+        aws.should_receive(:delete_all_key_pairs).with(default_config_filename)
+        aws.should_receive(:delete_all_elastic_ips).with(default_config_filename)
         aws.should_receive(:delete_all_security_groups).with(default_config_filename)
         aws.should_receive(:delete_all_route53_records).with(default_config_filename)
         aws.should_receive(:delete_all_elbs).with(default_config_filename)
@@ -116,7 +120,6 @@ describe Bosh::Cli::Command::AWS do
     describe "aws delete_all security_groups" do
       let(:config_file) { asset "config.yml" }
       let(:fake_ec2) { mock('EC2') }
-      let(:fake_vpc) { mock('VPC', id: 'vpc-1234') }
 
       before do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
@@ -145,7 +148,6 @@ describe Bosh::Cli::Command::AWS do
           aws.delete_all_security_groups(config_file)
         end
       end
-
     end
 
     describe "aws create vpc" do
@@ -317,6 +319,67 @@ describe Bosh::Cli::Command::AWS do
     end
     end
 
+    describe "aws destroy key pairs" do
+      let(:config_file) { asset "config.yml" }
+      let(:fake_ec2) { mock('EC2') }
+
+      before do
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+      end
+
+      context "when non-interactive" do
+        before do
+          aws.should_receive(:confirmed?).and_return(true)
+        end
+
+        it "should remove the key pairs" do
+          fake_ec2.should_receive(:remove_all_key_pairs).and_return(true)
+          aws.delete_all_key_pairs(config_file)
+        end
+      end
+
+      context "when interactive and bailing out" do
+        before do
+          aws.should_receive(:confirmed?).and_return(false)
+        end
+
+        it 'should not delete the key pairs' do
+          fake_ec2.should_not_receive(:remove_all_key_pairs)
+          aws.delete_all_key_pairs(config_file)
+        end
+      end
+    end
+    describe "aws destroy elastic ips" do
+      let(:config_file) { asset "config.yml" }
+      let(:fake_ec2) { mock('EC2') }
+
+      before do
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+      end
+
+      context "when non-interactive" do
+        before do
+          aws.should_receive(:confirmed?).and_return(true)
+        end
+
+        it "should remove the key pairs" do
+          fake_ec2.should_receive(:release_all_elastic_ips).and_return(true)
+          aws.delete_all_elastic_ips(config_file)
+        end
+      end
+
+      context "when interactive and bailing out" do
+        before do
+          aws.should_receive(:confirmed?).and_return(false)
+        end
+
+        it 'should not delete the key pairs' do
+          fake_ec2.should_not_receive(:release_all_elastic_ips)
+          aws.delete_all_elastic_ips(config_file)
+        end
+      end
+    end
+
     describe "aws delete all vpcs" do
       let(:fake_ec2) { mock('EC2') }
       let(:fake_vpc) { mock('VPC', id: 'vpc-1234') }
@@ -331,8 +394,6 @@ describe Bosh::Cli::Command::AWS do
           aws.should_receive(:confirmed?).and_return(false)
 
           Bosh::Aws::VPC.should_not_receive(:find)
-          fake_ec2.should_not_receive(:remove_all_key_pairs)
-          fake_ec2.should_not_receive(:release_all_elastic_ips)
 
           aws.delete_all_vpcs(asset('config.yml'))
         end
