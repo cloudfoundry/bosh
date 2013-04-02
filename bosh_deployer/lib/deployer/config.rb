@@ -73,7 +73,8 @@ module Bosh::Deployer
 
       def agent
         uri = URI.parse(@cloud_options["properties"]["agent"]["mbus"])
-        uri.host = bosh_ip
+        # We connect through a local SSH tunnel
+        uri.host = "127.0.0.1"
         user, password = uri.userinfo.split(":", 2)
         uri.userinfo = nil
         Bosh::Agent::HTTPClient.new(uri.to_s,

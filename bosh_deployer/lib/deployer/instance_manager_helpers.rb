@@ -35,8 +35,19 @@ module Bosh::Deployer
       socket.close if socket
     end
 
-    def tunnel(port)
-      return if @session
+    def incoming_tunnel(port)
+      tunnel(port, :incoming)
+    end
+
+    def outgoing_tunnel(port)
+      tunnel(port, :outgoing)
+    end
+
+    private
+
+    def tunnel(port, direction)
+      @established_sessions ||= {}
+      return if @session && @established_sessions[port]
 
       ip = discover_bosh_ip
 
@@ -59,9 +70,16 @@ module Bosh::Deployer
           logger.debug("ssh start #{@ssh_user}@#{ip} failed: #{e.inspect}")
           sleep 1
         end
+      end unless @session
+
+      if direction == :incoming
+        @session.forward.remote(port, lo, port)
+      elsif direction == :outgoing
+        @session.forward.local(port, lo, port)
       end
 
-      @session.forward.remote(port, lo, port)
+      @established_sessions[port] = true
+
       logger.info("`#{cmd}` started: OK")
 
       Thread.new do

@@ -120,11 +120,6 @@ module Bosh::Deployer
         @registry_db.unlink if @registry_db
       end
 
-      def wait_until_agent_ready
-        tunnel(@registry_port)
-        super
-      end
-
       def discover_bosh_ip
         if exists?
           server = cloud.openstack.servers.get(state.vm_cid)

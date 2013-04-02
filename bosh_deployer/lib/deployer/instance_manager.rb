@@ -407,13 +407,25 @@ module Bosh::Deployer
       end
     end
 
+    def agent_port
+      uri = URI.parse(Config.cloud_options["properties"]["agent"]["mbus"])
+
+      uri.port
+    end
+
     def wait_until_agent_ready #XXX >> agent_client
+      incoming_tunnel(@registry_port)
+      outgoing_tunnel(agent_port)
+
       wait_until_ready("agent") { agent.ping }
     end
 
     def wait_until_director_ready
       port = @apply_spec.director_port
-      url = "http://#{bosh_ip}:#{port}/info"
+
+      outgoing_tunnel(port)
+
+      url = "http://127.0.0.1:#{port}/info"
       wait_until_ready("director") do
         info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
         logger.info("Director is ready: #{info.inspect}")
