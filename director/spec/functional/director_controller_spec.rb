@@ -169,6 +169,30 @@ describe Bosh::Director::ApiController do
             payload("text/yaml", spec_asset("test_conf.yaml"))
         last_response.status.should == 400
       end
+
+      it 'can get job information' do
+        deployment = BD::Models::Deployment.create(name: "foo", manifest: Psych.dump({"foo" => "bar"}))
+        instance = BD::Models::Instance.create(deployment: deployment, job: "nats", index: "0", state: "started")
+        disk = BD::Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
+
+        get '/deployments/foo/jobs/nats/0', {}
+
+        last_response.status.should == 200
+        expected = {
+            'deployment' => 'foo',
+            'job' => 'nats',
+            'index' => 0,
+            'state' => 'started',
+            'disks' => %w[disk_cid]
+        }
+
+        Yajl::Parser.parse(last_response.body).should == expected
+      end
+
+      it 'should return 404 if the instance cannot be found' do
+        get '/deployments/foo/jobs/nats/0', {}
+        last_response.status.should == 404
+      end
     end
 
     describe "log management" do

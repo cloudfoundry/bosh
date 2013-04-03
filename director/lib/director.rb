@@ -285,7 +285,21 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}
+    get "/deployments/:deployment/jobs/:job/:index" do
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+
+      response = {
+          deployment: params[:deployment],
+          job: instance.job,
+          index: instance.index,
+          state: instance.state,
+          disks: instance.persistent_disks.map {|d| d.disk_cid}
+      }
+
+      json_encode(response)
+    end
+
+      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}
     #                             or
     # PUT /deployments/foo/jobs/dea?new_name=dea_new
     put "/deployments/:deployment/jobs/:job", :consumes => :yaml do
@@ -310,7 +324,9 @@ module Bosh::Director
         options["job_rename"]["force"] = true if params["force"] == "true"
       end
 
-      deployment = @deployment_manager.find_by_name(params[:deployment])
+      # we get the deployment here even though it isn't used here, to make sure
+      # the call returns a 404 if the deployment doesn't exist
+      @deployment_manager.find_by_name(params[:deployment])
       task = @deployment_manager.create_deployment(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
@@ -333,7 +349,9 @@ module Bosh::Director
         }
       }
 
-      deployment = @deployment_manager.find_by_name(params[:deployment])
+      # we get the deployment here even though it isn't used here, to make sure
+      # the call returns a 404 if the deployment doesn't exist
+      @deployment_manager.find_by_name(params[:deployment])
       task = @deployment_manager.create_deployment(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
