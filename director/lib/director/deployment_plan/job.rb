@@ -227,8 +227,7 @@ module Bosh::Director
             @release = @deployment.releases.first
           else
             raise JobMissingRelease,
-                  "Cannot tell what release job `#{@name}' " +
-                  "supposed to use, please reference an existing release"
+                  "Cannot tell what release job `#{@name}' supposed to use, please reference an existing release"
           end
         else
           @release = @deployment.release(release_name)
@@ -236,8 +235,7 @@ module Bosh::Director
 
         if @release.nil?
           raise JobUnknownRelease,
-                "Job `#{@name}' references " +
-                "an unknown release `#{release_name}'"
+                "Job `#{@name}' references an unknown release `#{release_name}'"
         end
       end
 
@@ -264,14 +262,12 @@ module Bosh::Director
       end
 
       def parse_disk
-        @persistent_disk = safe_property(@job_spec, "persistent_disk",
-                                         :class => Integer, :default => 0)
+        @persistent_disk = safe_property(@job_spec, "persistent_disk", :class => Integer, :default => 0)
       end
 
       def parse_properties
         # Manifest can contain global and per-job properties section
-        job_properties = safe_property(
-          @job_spec, "properties", :class => Hash, :optional => true)
+        job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true)
 
         @all_properties = deployment.properties._deep_copy
 
@@ -279,16 +275,14 @@ module Bosh::Director
           @all_properties.recursive_merge!(job_properties)
         end
 
-        mappings = safe_property(
-          @job_spec, "property_mappings", :class => Hash, :default => {})
+        mappings = safe_property(@job_spec, "property_mappings", :class => Hash, :default => {})
 
         mappings.each_pair do |to, from|
           resolved = lookup_property(@all_properties, from)
 
           if resolved.nil?
             raise JobInvalidPropertyMapping,
-                  "Cannot satisfy property mapping `#{to}: #{from}', " +
-                  "as `#{from}' is not in deployment properties"
+                  "Cannot satisfy property mapping `#{to}: #{from}', as `#{from}' is not in deployment properties"
           end
 
           @all_properties[to] = resolved
@@ -301,8 +295,7 @@ module Bosh::Director
         @resource_pool = deployment.resource_pool(resource_pool_name)
         if @resource_pool.nil?
           raise JobUnknownResourcePool,
-                "Job `#{@name}' references " +
-                "an unknown resource pool `#{resource_pool_name}'"
+                "Job `#{@name}' references an unknown resource pool `#{resource_pool_name}'"
         end
       end
 
@@ -337,16 +330,14 @@ module Bosh::Director
           end
           unless VALID_JOB_STATES.include?(state)
             raise JobInvalidInstanceState,
-                  "Invalid state `#{state}' for `#{@name}/#{index}', " +
-                  "valid states are: #{VALID_JOB_STATES.join(", ")}"
+                  "Invalid state `#{state}' for `#{@name}/#{index}', valid states are: #{VALID_JOB_STATES.join(", ")}"
           end
           @instance_states[index] = state
         end
 
         if @state && !VALID_JOB_STATES.include?(@state)
           raise JobInvalidJobState,
-                "Invalid state `#{@state}' for `#{@name}', " +
-                "valid states are: #{VALID_JOB_STATES.join(", ")}"
+                "Invalid state `#{@state}' for `#{@name}', valid states are: #{VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times do |index|
@@ -370,8 +361,7 @@ module Bosh::Director
           network = @deployment.network(network_name)
           if network.nil?
             raise JobUnknownNetwork,
-                  "Job `#{@name}' references " +
-                  "an unknown network `#{network_name}'"
+                  "Job `#{@name}' references an unknown network `#{network_name}'"
           end
 
           static_ips = nil
@@ -382,8 +372,7 @@ module Bosh::Director
             end
             if static_ips.size != @instances.size
               raise JobNetworkInstanceIpMismatch,
-                    "Job `#{@name}' has #{@instances.size} " +
-                    "instances but was allocated #{static_ips.size} static IPs"
+                    "Job `#{@name}' has #{@instances.size} instances but was allocated #{static_ips.size} static IPs"
             end
           end
 
@@ -393,16 +382,13 @@ module Bosh::Director
             default_network.each do |property|
               unless Network::VALID_DEFAULTS.include?(property)
                 raise JobNetworkInvalidDefault,
-                      "Job `#{@name}' specified " +
-                      "an invalid default network property `#{property}', " +
-                      "valid properties are: " +
-                      Network::VALID_DEFAULTS.join(", ")
+                      "Job `#{@name}' specified an invalid default network property `#{property}', " +
+                      "valid properties are: " + Network::VALID_DEFAULTS.join(", ")
               end
 
               if @default_network[property]
                 raise JobNetworkMultipleDefaults,
-                      "Job `#{@name}' specified more than one " +
-                      "network to contain default #{property}"
+                      "Job `#{@name}' specified more than one network to contain default #{property}"
               else
                 @default_network[property] = network_name
               end
@@ -429,8 +415,7 @@ module Bosh::Director
           unless missing_default_properties.empty?
             raise JobNetworkMissingDefault,
                   "Job `#{@name}' must specify which network is default for " +
-                  missing_default_properties.sort.join(", ") +
-                  ", since it has more than one network configured"
+                  missing_default_properties.sort.join(", ") + ", since it has more than one network configured"
           end
         else
           # Set the default network to the one and only available network
@@ -456,17 +441,17 @@ module Bosh::Director
       # @return [Hash] Properties required by templates included in this job
       def filter_properties(collection)
         if @templates.empty?
-          raise DirectorError,
-                "Can't extract job properties before " +
-                "parsing job templates"
+          raise DirectorError, "Can't extract job properties before parsing job templates"
         end
 
-        @templates.each do |template|
-          # If at least one template doesn't have properties defined, we
-          # need all properties to be available to job (backward-compatibility)
-          return collection if template.properties.nil?
-        end
+        return collection if @templates.all? { |template| template.properties.nil? }
+        return extract_template_properties(collection) if @templates.none? { |template| template.properties.nil? }
+        raise JobIncompatibleSpecs, "Job `#{name}' has specs with conflicting property definition styles between" +
+            " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
+            " `properties' and one which doesn't."
+      end
 
+      def extract_template_properties(collection)
         result = {}
 
         @templates.each do |template|
@@ -477,7 +462,6 @@ module Bosh::Director
 
         result
       end
-
     end
   end
 end
