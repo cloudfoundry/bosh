@@ -271,12 +271,33 @@ describe Bosh::Cli::Director do
   end
 
   describe "tracking request" do
-    it "starts polling task if request responded with a redirect to task URL" do
+    it "starts polling task if request responded with a redirect (302) to task URL" do
       options = { :arg1 => 1, :arg2 => 2 }
 
       @director.should_receive(:request).
         with(:get, "/stuff", "text/plain", "abc").
         and_return([302, "body", { :location => "/tasks/502" }])
+
+      tracker = mock("tracker", :track => "polling result", :output => "foo")
+
+      Bosh::Cli::TaskTracker.should_receive(:new).
+        with(@director, "502", options).
+        and_return(tracker)
+
+      @director.request_and_track(:get, "/stuff",
+                                  {:content_type => "text/plain",
+                                   :payload => "abc",
+                                   :arg1 => 1, :arg2 => 2
+                                  }).
+        should == ["polling result", "502"]
+    end
+
+    it "starts polling task if request responded with a redirect (303) to task URL" do
+      options = { :arg1 => 1, :arg2 => 2 }
+
+      @director.should_receive(:request).
+        with(:get, "/stuff", "text/plain", "abc").
+        and_return([303, "body", { :location => "/tasks/502" }])
 
       tracker = mock("tracker", :track => "polling result", :output => "foo")
 
@@ -319,7 +340,7 @@ describe Bosh::Cli::Director do
       end
     end
 
-    it "considers all responses but 302 a failure" do
+    it "considers all responses but 302 and 303 a failure" do
       [200, 404, 403].each do |code|
         @director.should_receive(:request).
           with(:get, "/stuff", "text/plain", "abc").

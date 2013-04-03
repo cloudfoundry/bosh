@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency          'ruby-atmos-pure',  '~>1.0.5'
   s.add_dependency          'thin',             '~>1.5.0'
   s.add_dependency          'yajl-ruby',        '~>1.1.0'
-  s.add_dependency          'sinatra',          '~>1.2.8'
+  s.add_dependency          'sinatra',          '~>1.4.2'
   s.add_dependency          'nats',             '~>0.4.28'
   s.add_dependency          'sigar',            '~>0.7.2'
   s.add_dependency          'httpclient',       '=2.2.4'

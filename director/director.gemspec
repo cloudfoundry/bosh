@@ -38,7 +38,7 @@ Gem::Specification.new do |s|
   s.add_dependency  "redis", "~>3.0.2"
   s.add_dependency  "resque", "~>1.23.0"
   s.add_dependency  "sequel", "~>3.43.0"
-  s.add_dependency  "sinatra", "~>1.2.8"
+  s.add_dependency  "sinatra", "~>1.4.2"
   s.add_dependency  "thin", "~>1.5.0"
   s.add_dependency  "yajl-ruby", "~>1.1.0"
 
