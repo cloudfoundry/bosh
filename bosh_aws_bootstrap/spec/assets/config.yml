@@ -46,11 +46,19 @@ vpc:
           sources: 0.0.0.0/0
   elbs:
     external-elb-1:
+      domain: dev102.cf.com
       dns_record: "*"
       ttl: 60
       subnets:
       - bosh
       security_group: open
+      https: true
+      ssl_cert: my_cert_1
+ssl_certs:
+  my_cert_1:
+    private_key: /path/to/private_key
+    certificate: /path/to/certificate
+    certificate_chain: /path/to/certificate_chain
 elastic_ips:
   micro:
     instances: 1

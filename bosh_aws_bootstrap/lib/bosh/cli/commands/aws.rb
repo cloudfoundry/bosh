@@ -205,9 +205,12 @@ module Bosh::Cli::Command
       route53 = Bosh::Aws::Route53.new(config["aws"])
 
       elbs = config["vpc"]["elbs"]
+      ssl_certs = config["ssl_certs"]
+
       say "creating load balancers: #{elbs.keys.join(", ")}" if elbs
       elbs.each do |name, settings|
-        e = elb.create(name, vpc, settings)
+        settings["domain"] = config["vpc"]["domain"]
+        e = elb.create(name, vpc, settings, ssl_certs)
         if settings["dns_record"]
           say "adding CNAME record for #{settings["dns_record"]}.#{config["vpc"]["domain"]}"
           route53.add_record(settings["dns_record"], config["vpc"]["domain"], [e.dns_name], {ttl: settings["ttl"], type: 'CNAME'})

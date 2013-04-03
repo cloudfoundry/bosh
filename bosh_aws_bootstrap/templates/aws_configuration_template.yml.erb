@@ -84,6 +84,16 @@ vpc:
       subnets:
       - bosh
       security_group: web
+      https: true
+      ssl_cert: cfrouter_cert
+
+ssl_certs:
+  cfrouter_cert:
+    private_key: <%= ENV["BOSH_SSL_KEY"] || "elb-cfrouter.key" %>
+    certificate: <%= ENV["BOSH_SSL_CERT"] || "elb-cfrouter.pem" %>
+    <% if ENV["BOSH_SSL_CHAIN"] %>
+    certificate_chain: <%= ENV["BOSH_SSL_CHAIN"] %>
+    <% end %>
 
 elastic_ips:
   # each NAT box automatically reserves 1 elastic IP, which is not listed below

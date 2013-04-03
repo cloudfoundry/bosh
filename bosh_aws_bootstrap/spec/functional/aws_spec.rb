@@ -177,7 +177,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:force_add_key_pair)
         fake_ec2.stub(:create_internet_gateway).and_return(fake_igw)
         fake_ec2.stub(:elastic_ips).and_return(["1.2.3.4", "5.6.7.8"])
-        fake_elb.stub(:create).and_return(mock("new elb", dns_name: 'elb-123.example.com'))
+        fake_elb.stub(:create).with("external-elb-1", fake_vpc, anything, hash_including('my_cert_1' => anything)).and_return(mock("new elb", dns_name: 'elb-123.example.com'))
         fake_route53.stub(:create_zone)
         fake_route53.stub(:add_record)
         fake_vpc
@@ -1065,6 +1065,10 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:confirmed?).and_return(true)
         aws.delete_all_elbs(config_file)
       end
+    end
+
+    describe "aws create elb" do
+
     end
   end
 end
