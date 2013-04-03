@@ -43,7 +43,7 @@ module BoshHelper
   end
 
   def bosh_bin
-    BH.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
+    BH.read_environment('BAT_BOSH_BIN', 'bosh')
   end
 
   def bosh_director

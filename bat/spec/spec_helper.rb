@@ -36,7 +36,7 @@ RSpec.configure do |config|
   config.before(:suite) do
     director = BH::read_environment('BAT_DIRECTOR')
     director.should_not be_nil
-    cmd = "bundle exec bosh --config #{BH::bosh_cli_config_path} --user admin " +
+    cmd = "bosh --config #{BH::bosh_cli_config_path} --user admin " +
       "--password admin target #{director} 2>&1"
     output = %x{#{cmd}}
     $?.exitstatus.should == 0
