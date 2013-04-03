@@ -153,13 +153,29 @@ describe Bosh::Director::DnsHelper do
       record = BDM::Dns::Record.find(:name => "4.3.2.1.in-addr.arpa")
       record.content.should == "0.foo.default.bosh"
       record.type.should == "PTR"
+      BDM::Dns::Domain.all.size.should == 1
+      BDM::Dns::Record.all.size.should == 3
     end
 
-    it "should update existing record" do
+    it "should update existing record on a different subnet" do
       update_dns_ptr_record("0.foo.default.bosh", "1.2.3.4")
       update_dns_ptr_record("0.foo.default.bosh", "5.6.7.8")
-      record = BDM::Dns::Record.find(:name => "8.7.6.5.in-addr.arpa")
-      record.content.should == "0.foo.default.bosh"
+      old_record = BDM::Dns::Record.find(:name => "4.3.2.1.in-addr.arpa")
+      old_record.should be_nil
+      new_record = BDM::Dns::Record.find(:name => "8.7.6.5.in-addr.arpa")
+      new_record.content.should == "0.foo.default.bosh"
+      BDM::Dns::Domain.all.size.should == 1
+      BDM::Dns::Record.all.size.should == 3
+    end
+
+    it "should update existing record on the same subnet" do
+      update_dns_ptr_record("0.foo.default.bosh", "1.2.3.4")
+      update_dns_ptr_record("0.foo.default.bosh", "1.2.3.5")
+      old_record = BDM::Dns::Record.find(:name => "4.3.2.1.in-addr.arpa")
+      old_record.should be_nil
+      new_record = BDM::Dns::Record.find(:name => "5.3.2.1.in-addr.arpa")
+      new_record.content.should == "0.foo.default.bosh"
+      BDM::Dns::Domain.all.size.should == 1
       BDM::Dns::Record.all.size.should == 3
     end
   end
