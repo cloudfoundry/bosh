@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "thin", "~>1.5.0"
-  s.add_dependency "sinatra", "~> 1.2.8"
+  s.add_dependency "sinatra", "~> 1.4.2"
 
   s.bindir      = 'bin'
   s.executables << 'simple_blobstore_server'

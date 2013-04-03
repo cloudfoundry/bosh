@@ -456,7 +456,7 @@ module Bosh
 
         http_status, _, headers = request(method, uri, content_type, payload)
         location = headers[:location]
-        redirected = http_status == 302
+        redirected = [302, 303].include? http_status
         task_id = nil
 
         if redirected
