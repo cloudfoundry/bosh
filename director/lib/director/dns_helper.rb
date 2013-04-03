@@ -102,34 +102,38 @@ module Bosh::Director
 
     # create/update DNS PTR records (for reverse lookups)
     def update_dns_ptr_record(name, ip_address)
-      reverse = reverse_domain(ip_address)
-      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse,
-                                                   :type => "NATIVE")
+      reverse_domain = reverse_domain(ip_address)
+      reverse_host = reverse_host(ip_address)
+
+      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse_domain,
+                                                        :type => "NATIVE")
       Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
-                                         :name => reverse,
+                                         :name => reverse_domain,
                                          :type =>'SOA', :content => SOA,
                                          :ttl => TTL_4H)
 
       Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
-                                         :name => reverse,
+                                         :name => reverse_domain,
                                          :type =>'NS', :ttl => TTL_4H,
                                          :content => dns_ns_record)
 
       record = Models::Dns::Record.find(:content => name, :type =>'PTR')
 
       # delete the record if the IP address changed
-      if record && record.name != reverse
+      if record && record.name != reverse_host
         id = record.domain_id
         record.destroy
         record = nil
 
-        delete_empty_domain(Models::Dns::Domain[id])
+        # delete the domain if the domain id changed and it's empty
+        if id != rdomain.id
+          delete_empty_domain(Models::Dns::Domain[id])
+        end
       end
 
-      reverse = reverse_host(ip_address)
       unless record
         record = Models::Dns::Record.new(:domain_id => rdomain.id,
-                                         :name => reverse,
+                                         :name => reverse_host,
                                          :type =>'PTR', :ttl => TTL_5M)
       end
       record.content = name
