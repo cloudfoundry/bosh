@@ -193,4 +193,5 @@ module Bosh::Director
   RpcTimeout = err(450002)
 
   SystemError = err(500000, INTERNAL_SERVER_ERROR)
+  NotEnoughDiskSpace = err(500001, INTERNAL_SERVER_ERROR)
 end

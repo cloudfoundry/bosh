@@ -1,4 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'sys/filesystem'
+include Sys
 
 module Bosh::Director
   module Api
@@ -54,6 +56,16 @@ module Bosh::Director
           raise "Block didn't return Task object"
         end
         redirect "/tasks/#{task.id}"
+      end
+
+      def check_available_disk_space(dir, size)
+        begin
+          stat = Sys::Filesystem.stat(dir)
+          available_space = stat.block_size * stat.blocks_available
+          available_space > size ? true : false
+        rescue
+          false
+        end
       end
 
       def write_file(path, stream, chunk_size = READ_CHUNK_SIZE)
