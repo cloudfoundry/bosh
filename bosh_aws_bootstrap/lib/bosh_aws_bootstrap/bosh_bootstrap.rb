@@ -20,8 +20,8 @@ module Bosh
           end
         end
 
-        if !director.list_releases.empty?
-          raise BootstrapError, "This target already has a release."
+        if director.list_releases.detect { |r| r['name'] == 'bosh' }
+          raise BootstrapError, "This target already has a `bosh' release."
         end
 
         existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }

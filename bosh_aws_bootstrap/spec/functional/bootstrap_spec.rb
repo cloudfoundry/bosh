@@ -116,7 +116,7 @@ describe "AWS Bootstrap commands" do
       it "raises an error" do
         expect do
           aws.bootstrap_bosh(bosh_repository_path)
-        end.to raise_error(/This target already has a release./)
+        end.to raise_error(/This target already has a `bosh' release./)
       end
     end
 
