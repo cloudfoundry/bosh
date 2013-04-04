@@ -414,18 +414,16 @@ module Bosh::Deployer
     end
 
     def wait_until_agent_ready #XXX >> agent_client
-      incoming_tunnel(@registry_port)
-      outgoing_tunnel(agent_port)
+      remote_tunnel(@registry_port)
+      local_tunnel(agent_port)
 
       wait_until_ready("agent") { agent.ping }
     end
 
     def wait_until_director_ready
       port = @apply_spec.director_port
+      url = "http://#{bosh_ip}:#{port}/info"
 
-      outgoing_tunnel(port)
-
-      url = "http://127.0.0.1:#{port}/info"
       wait_until_ready("director") do
         info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
         logger.info("Director is ready: #{info.inspect}")

@@ -35,19 +35,19 @@ module Bosh::Deployer
       socket.close if socket
     end
 
-    def incoming_tunnel(port)
-      tunnel(port, :incoming)
+    def remote_tunnel(port)
+      tunnel(port, :remote)
     end
 
-    def outgoing_tunnel(port)
-      tunnel(port, :outgoing)
+    def local_tunnel(port)
+      tunnel(port, :local)
     end
 
     private
 
     def tunnel(port, direction)
-      @established_sessions ||= {}
-      return if @session && @established_sessions[port]
+      @sessions ||= {}
+      return if @sessions[port]
 
       ip = discover_bosh_ip
 
@@ -56,41 +56,43 @@ module Bosh::Deployer
         sleep @ssh_wait
       end
 
-      lo = "127.0.0.1"
-      cmd = "ssh -R #{port}:#{lo}:#{port} #{@ssh_user}@#{ip}"
-
-      logger.info("Preparing for ssh tunnel: #{cmd}")
-      loop do
-        begin
-          @session = Net::SSH.start(ip, @ssh_user, :keys => [@ssh_key],
-                                    :paranoid => false)
-          logger.debug("ssh #{@ssh_user}@#{ip}: ESTABLISHED")
-          break
-        rescue => e
-          logger.debug("ssh start #{@ssh_user}@#{ip} failed: #{e.inspect}")
-          sleep 1
+      if @sessions[port].nil?
+        logger.info("Starting SSH session for port forwarding to #{@ssh_user}@#{ip}...")
+        loop do
+          begin
+            @sessions[port] = Net::SSH.start(ip, @ssh_user, :keys => [@ssh_key],
+                                      :paranoid => false)
+            logger.debug("ssh #{@ssh_user}@#{ip}: ESTABLISHED")
+            break
+          rescue => e
+            logger.debug("ssh start #{@ssh_user}@#{ip} failed: #{e.inspect}")
+            sleep 1
+          end
         end
-      end unless @session
-
-      if direction == :incoming
-        @session.forward.remote(port, lo, port)
-      elsif direction == :outgoing
-        @session.forward.local(port, lo, port)
       end
 
-      @established_sessions[port] = true
+      lo = "127.0.0.1"
+      case direction
+      when :remote
+        @sessions[port].forward.remote(port, lo, port)
+      when :local
+        @sessions[port].forward.local(port, lo, port)
+      else
+        raise ArgumentError, "Invalid direction for ssh tunnel: #{direction}"
+      end
 
-      logger.info("`#{cmd}` started: OK")
+      logger.info("SSH #{direction} forwarding for port #{port} started: OK")
 
       Thread.new do
-        begin
-          @session.loop { true }
-        rescue IOError => e
-          logger.debug("`#{cmd}` terminated: #{e.inspect}")
-          @session = nil
+        while @sessions[port]
+          begin
+            @sessions[port].loop { true }
+          rescue IOError => e
+            logger.debug("SSH session #{@sessions[port].inspect} forwarding for port #{port} terminated: #{e.inspect}")
+            @sessions.delete(port)
+          end
         end
       end
     end
-
   end
 end
