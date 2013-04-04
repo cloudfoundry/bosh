@@ -10,9 +10,12 @@ module Bosh::Cli::Command
       auth_required
 
       if interactive?
-        username = ask("Enter username: ") if username.blank?
+        username = ask("Enter new username: ") if username.blank?
         if password.blank?
-          password = ask("Enter password: ") { |q| q.echo = "*" }
+          password = ask("Enter new password: ") { |q| q.echo = "*" }
+          password_confirmation = ask("Verify new password: ") { |q| q.echo = "*" }
+
+          err("Passwords do not match") if password != password_confirmation
         end
       end
 
