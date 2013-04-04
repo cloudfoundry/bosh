@@ -20,7 +20,7 @@ parted --script $work/$disk_image_name mklabel msdos
 parted --script $work/$disk_image_name mkpart primary ext2 $part_offset $part_size
 
 # unmap the loop device in case it's already mapped
-kpartx -dv $work/$disk_image_name
+kpartx -dvs $work/$disk_image_name
 
 # Map partition in image to loopback
 dev=$(kpartx -avs $work/$disk_image_name | grep "^add" | cut -d" " -f3)
@@ -53,4 +53,4 @@ fi
 
 # Unmap partition
 echo "Removing device mappings for $disk_image_name"
-kpartx -dv $work/$disk_image_name
+kpartx -dvs $work/$disk_image_name

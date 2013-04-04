@@ -10,7 +10,7 @@ source $base_dir/lib/prelude_apply.bash
 disk_image_name=root.img
 
 # unmap the loop device in case it's already mapped
-kpartx -dv $work/$disk_image_name
+kpartx -dvs $work/$disk_image_name
 
 # Map partition in image to loopback
 dev=$(kpartx -avs $work/$disk_image_name | grep "^add" | cut -d" " -f3)
@@ -65,4 +65,4 @@ rm -rf $mnt/tmp/grub
 umount $mnt
 
 # Unmap partition
-kpartx -dv $work/$disk_image_name
+kpartx -dvs $work/$disk_image_name
