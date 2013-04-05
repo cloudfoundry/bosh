@@ -8,6 +8,7 @@ module Bosh::AwsCloud
     # default maximum number of times to retry an AWS API call
     DEFAULT_MAX_RETRIES = 2
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
+    DEFAULT_ELB_ENDPOINT = ""
     METADATA_TIMEOUT = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
 
@@ -43,6 +44,7 @@ module Bosh::AwsCloud
           :access_key_id => @aws_properties["access_key_id"],
           :secret_access_key => @aws_properties["secret_access_key"],
           :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
+          :elb_endpoint => @aws_properties["elb_endpoint"] || default_elb_endpoint,
           :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
           :logger => @aws_logger
       }
@@ -531,6 +533,14 @@ module Bosh::AwsCloud
         "ec2.#{@aws_region}.amazonaws.com"
       else
         DEFAULT_EC2_ENDPOINT
+      end
+    end
+
+    def default_elb_endpoint
+      if @aws_region
+        "elasticloadbalancing.#{@aws_region}.amazonaws.com"
+      else
+        DEFAULT_ELB_ENDPOINT
       end
     end
 
