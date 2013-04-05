@@ -101,7 +101,7 @@ module Bosh::Cli::Command
     desc "snapshot all EBS volumes in all deployments"
     def snapshot_deployments(config_file)
       auth_required
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
 
       say("Creating snapshots for director `#{target_name}'")
       ec2 = Bosh::Aws::EC2.new(config["aws"])
@@ -140,7 +140,6 @@ module Bosh::Cli::Command
     desc "create everything in config file"
     option "--trace", "print all HTTP traffic"
     def create(config_file = nil)
-      config_file ||= default_config_file
       if !!options[:trace]
          require 'logger'
          ::AWS.config(:logger => Logger.new($stdout), :http_wire_trace => true)
@@ -155,7 +154,6 @@ module Bosh::Cli::Command
     usage "aws destroy"
     desc "destroy everything in an AWS account"
     def destroy(config_file = nil)
-      config_file ||= default_config_file
       delete_all_elbs(config_file)
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
@@ -171,7 +169,7 @@ module Bosh::Cli::Command
     usage "aws create vpc"
     desc "create vpc"
     def create_vpc(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
 
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       @output_state["aws"] = config["aws"]
@@ -272,7 +270,7 @@ module Bosh::Cli::Command
     usage "aws delete_all vpcs"
     desc "delete all VPCs in an AWS account"
     def delete_all_vpcs(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
 
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       vpc_ids = ec2.vpcs.map { |vpc| vpc.id }
@@ -306,7 +304,7 @@ module Bosh::Cli::Command
     usage "aws delete key_pairs"
     desc "delete key pairs"
     def delete_all_key_pairs(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
       if confirmed?("Are you sure you want to delete all SSH Keypairs?")
@@ -318,7 +316,7 @@ module Bosh::Cli::Command
     usage "aws delete elastic_ips"
     desc "delete elastic ips"
     def delete_all_elastic_ips(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
       if confirmed?("Are you sure you want to delete all Elastic IPs?")
@@ -330,7 +328,7 @@ module Bosh::Cli::Command
     usage "aws create key_pairs"
     desc "create key pairs"
     def create_key_pairs(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
       say "allocating #{config["key_pairs"].length} KeyPair(s)"
@@ -342,7 +340,7 @@ module Bosh::Cli::Command
     usage "aws create s3"
     desc "create s3 buckets"
     def create_s3(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
 
       if !config["s3"]
         say "s3 not set in config.  Skipping"
@@ -360,9 +358,8 @@ module Bosh::Cli::Command
 
     usage "aws delete_all s3"
     desc "delete all s3 buckets"
-
     def delete_all_s3(config_file)
-      config = load_yaml_file config_file
+      config = load_config(config_file)
 
       check_instance_count(config)
 
@@ -381,9 +378,8 @@ module Bosh::Cli::Command
 
     usage "aws delete_all ec2"
     desc "terminates all EC2 instances and attached EBS volumes"
-
     def delete_all_ec2(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       credentials = config["aws"]
       check_instance_count(config)
       ec2 = Bosh::Aws::EC2.new(credentials)
@@ -407,7 +403,7 @@ module Bosh::Cli::Command
     usage "aws delete_all elbs"
     desc "terminates all Elastic Load Balancers in the account"
     def delete_all_elbs(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       credentials = config["aws"]
       elb = Bosh::Aws::ELB.new(credentials)
       elb_names = elb.names
@@ -419,7 +415,7 @@ module Bosh::Cli::Command
     usage "aws create rds"
     desc "create all RDS database instances"
     def create_rds_dbs(config_file, receipt_file = nil)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
 
       if !config["rds"]
         say "rds not set in config.  Skipping"
@@ -478,7 +474,7 @@ module Bosh::Cli::Command
     usage "aws delete_all rds"
     desc "delete all RDS database instances"
     def delete_all_rds_dbs(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       credentials = config["aws"]
       check_instance_count(config)
       rds = Bosh::Aws::RDS.new(credentials)
@@ -500,7 +496,7 @@ module Bosh::Cli::Command
     usage "aws delete_all rds subnet_groups"
     desc "delete all RDS subnet groups"
     def delete_all_rds_subnet_groups(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       credentials = config["aws"]
       rds = Bosh::Aws::RDS.new(credentials)
       rds.delete_subnet_groups
@@ -509,7 +505,7 @@ module Bosh::Cli::Command
     usage "aws delete_all rds security_groups"
     desc "delete all RDS security groups"
     def delete_all_rds_security_groups(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       credentials = config["aws"]
       rds = Bosh::Aws::RDS.new(credentials)
       rds.delete_security_groups
@@ -518,7 +514,7 @@ module Bosh::Cli::Command
     usage "aws delete_all volumes"
     desc "delete all EBS volumes"
     def delete_all_ebs(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       credentials = config["aws"]
       ec2 = Bosh::Aws::EC2.new(credentials)
       check_volume_count(config)
@@ -536,7 +532,7 @@ module Bosh::Cli::Command
     usage "aws delete_all security_groups"
     desc "delete all Security Groups"
     def delete_all_security_groups(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
       if confirmed?('Are you sure you want to delete all security groups?')
@@ -552,7 +548,7 @@ module Bosh::Cli::Command
     usage "aws create route53 records"
     desc "creates requested instances, allocates IPs, and creates A records"
     def create_route53_records(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       elastic_ip_specs = config["elastic_ips"]
 
       if elastic_ip_specs
@@ -597,7 +593,7 @@ module Bosh::Cli::Command
     desc "delete all Route 53 records except NS and SOA"
     option "--omit_types CNAME,A,TXT...", Array, "override default omissions (NS and SOA)"
     def delete_all_route53_records(config_file)
-      config = load_yaml_file(config_file)
+      config = load_config(config_file)
       route53 = Bosh::Aws::Route53.new(config["aws"])
 
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
@@ -704,6 +700,12 @@ module Bosh::Cli::Command
       File.expand_path(File.join(
                            File.dirname(__FILE__), "..", "..", "..", "..", "templates", "aws_configuration_template.yml.erb"
                        ))
+    end
+
+    def load_config(config_file=nil)
+      config_file ||= default_config_file
+
+      Bosh::Aws::AwsConfig.new(config_file).configuration
     end
 
     def aws_retry_wait_time; 10; end

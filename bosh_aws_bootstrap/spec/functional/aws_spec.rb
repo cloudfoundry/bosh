@@ -76,11 +76,11 @@ describe Bosh::Cli::Command::AWS do
       it "should default the configuration file when not passed in" do
         stub_required_environment_variables
         File.exist?(default_config_filename).should == true
-        aws.should_receive(:create_key_pairs).with(default_config_filename)
-        aws.should_receive(:create_vpc).with(default_config_filename)
-        aws.should_receive(:create_route53_records).with(default_config_filename)
-        aws.should_receive(:create_rds_dbs).with(default_config_filename)
-        aws.should_receive(:create_s3).with(default_config_filename)
+        aws.should_receive(:create_key_pairs)
+        aws.should_receive(:create_vpc)
+        aws.should_receive(:create_route53_records)
+        aws.should_receive(:create_rds_dbs)
+        aws.should_receive(:create_s3)
         aws.create
       end
     end
@@ -89,30 +89,30 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should destroy the specified VPCs, RDS DBs, and S3 Volumes" do
-        aws.should_receive(:delete_all_ec2).with(config_file)
-        aws.should_receive(:delete_all_ebs).with(config_file)
-        aws.should_receive(:delete_all_rds_dbs).with(config_file)
-        aws.should_receive(:delete_all_s3).with(config_file)
-        aws.should_receive(:delete_all_vpcs).with(config_file)
-        aws.should_receive(:delete_all_key_pairs).with(config_file)
-        aws.should_receive(:delete_all_elastic_ips).with(config_file)
-        aws.should_receive(:delete_all_security_groups).with(config_file)
-        aws.should_receive(:delete_all_route53_records).with(config_file)
-        aws.should_receive(:delete_all_elbs).with(config_file)
+        aws.should_receive(:delete_all_ec2)
+        aws.should_receive(:delete_all_ebs)
+        aws.should_receive(:delete_all_rds_dbs)
+        aws.should_receive(:delete_all_s3)
+        aws.should_receive(:delete_all_vpcs)
+        aws.should_receive(:delete_all_key_pairs)
+        aws.should_receive(:delete_all_elastic_ips)
+        aws.should_receive(:delete_all_security_groups)
+        aws.should_receive(:delete_all_route53_records)
+        aws.should_receive(:delete_all_elbs)
         aws.destroy config_file
       end
 
       it "should use a default config file when none is provided" do
-        aws.should_receive(:delete_all_ec2).with(default_config_filename)
-        aws.should_receive(:delete_all_ebs).with(default_config_filename)
-        aws.should_receive(:delete_all_rds_dbs).with(default_config_filename)
-        aws.should_receive(:delete_all_s3).with(default_config_filename)
-        aws.should_receive(:delete_all_vpcs).with(default_config_filename)
-        aws.should_receive(:delete_all_key_pairs).with(default_config_filename)
-        aws.should_receive(:delete_all_elastic_ips).with(default_config_filename)
-        aws.should_receive(:delete_all_security_groups).with(default_config_filename)
-        aws.should_receive(:delete_all_route53_records).with(default_config_filename)
-        aws.should_receive(:delete_all_elbs).with(default_config_filename)
+        aws.should_receive(:delete_all_ec2)
+        aws.should_receive(:delete_all_ebs)
+        aws.should_receive(:delete_all_rds_dbs)
+        aws.should_receive(:delete_all_s3)
+        aws.should_receive(:delete_all_vpcs)
+        aws.should_receive(:delete_all_key_pairs)
+        aws.should_receive(:delete_all_elastic_ips)
+        aws.should_receive(:delete_all_security_groups)
+        aws.should_receive(:delete_all_route53_records)
+        aws.should_receive(:delete_all_elbs)
         aws.destroy
       end
     end
@@ -415,7 +415,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should do nothing if s3 config is empty" do
-        aws.stub(:load_yaml_file).and_return({})
+        aws.stub(:load_config).and_return({})
 
         aws.should_receive(:say).with("s3 not set in config.  Skipping")
         fake_s3.should_not_receive(:create_bucket)
@@ -796,7 +796,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should do nothing if rds config is empty" do
-        aws.stub(:load_yaml_file).and_return({})
+        aws.stub(:load_config).and_return({})
 
         aws.should_receive(:say).with("rds not set in config.  Skipping")
 
@@ -1065,10 +1065,6 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:confirmed?).and_return(true)
         aws.delete_all_elbs(config_file)
       end
-    end
-
-    describe "aws create elb" do
-
     end
   end
 end

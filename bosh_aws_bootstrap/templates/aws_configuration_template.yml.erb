@@ -1,9 +1,9 @@
 ---
 aws:
-  secret_access_key: <%= ENV["BOSH_AWS_SECRET_ACCESS_KEY"] || raise("Missing ENV variable BOSH_AWS_SECRET_ACCESS_KEY") %>
-  access_key_id: <%= ENV["BOSH_AWS_ACCESS_KEY_ID"] || raise("Missing ENV variable BOSH_AWS_ACCESS_KEY_ID") %>
+  secret_access_key: <%= aws_secret_access_key %>
+  access_key_id: <%= aws_access_key_id %>
   region: us-east-1
-name: <%= ENV["BOSH_VPC_SUBDOMAIN"]  || raise("Missing ENV variable BOSH_VPC_SUBDOMAIN") %>
+name: <%= vpc_subdomain %>
 vpc:
   domain: <%= ENV["BOSH_VPC_SUBDOMAIN"] %>.cf-app.com
   instance_tenancy: default
@@ -11,27 +11,27 @@ vpc:
   subnets:
     bosh:
       cidr: 10.10.0.0/24
-      availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
+      availability_zone: <%= vpc_primary_az %>
       default_route: igw
       nat_instance:
         name: cf_nat_box
         ip: 10.10.0.10  # spin up NAT instance at fixed IP of 10.10.0.10
         security_group: open
-        key_name: <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>
+        key_name: <%= key_pair_name %>
     cf:
       cidr: 10.10.2.0/23
-      availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
+      availability_zone: <%= vpc_primary_az %>
       default_route: cf_nat_box
     services:
       cidr: 10.10.4.0/23
-      availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
+      availability_zone: <%= vpc_primary_az %>
       default_route: cf_nat_box
     rds_1:
       cidr: 10.10.1.0/28
-      availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
+      availability_zone: <%= vpc_primary_az %>
     rds_2:
       cidr: 10.10.1.16/28
-      availability_zone: <%= ENV["BOSH_VPC_SECONDARY_AZ"] || raise("Missing ENV variable BOSH_VPC_SECONDARY_AZ") %>
+      availability_zone: <%= vpc_secondary_az %>
   dhcp_options:
     domain_name_servers:
       - 10.10.0.6  # IP of the BOSH DNS server?
@@ -89,11 +89,9 @@ vpc:
 
 ssl_certs:
   cfrouter_cert:
-    private_key: <%= ENV["BOSH_SSL_KEY"] || "elb-cfrouter.key" %>
-    certificate: <%= ENV["BOSH_SSL_CERT"] || "elb-cfrouter.pem" %>
-    <% if ENV["BOSH_SSL_CHAIN"] %>
-    certificate_chain: <%= ENV["BOSH_SSL_CHAIN"] %>
-    <% end %>
+    private_key: <%= ssl_key_file %>
+    certificate: <%= ssl_cert_file %>
+    certificate_chain: <%= ssl_cert_chain_file %>
 
 elastic_ips:
   # each NAT box automatically reserves 1 elastic IP, which is not listed below
@@ -111,15 +109,16 @@ elastic_ips:
     ttl: 60
 
 key_pairs:
-  <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_rsa_bosh" %>
-<% if ENV['BOSH_CACHE_ACCESS_KEY_ID'] %>
+  <%= key_pair_name %>: <%= key_pair_path %>
+
+<% if has_package_cache_configuration? %>
 compiled_package_cache:
-  access_key_id: <%= ENV['BOSH_CACHE_ACCESS_KEY_ID'] %>
-  secret_access_key: <%= ENV['BOSH_CACHE_SECRET_ACCESS_KEY'] || raise('Missing ENV variable BOSH_CACHE_SECRET_ACCESS_KEY') %>
-  bucket_name: <%= ENV['BOSH_CACHE_BUCKET_NAME'] || 'bosh-global-package-cache' %>
+  access_key_id: <%= cache_access_key_id %>
+  secret_access_key: <%= cache_secret_access_key %>
+  bucket_name: <%= cache_bucket_name %>
 <% end %>
 s3:
-  - bucket_name: <%= (ENV["BOSH_VPC_SUBDOMAIN"] || raise("Missing ENV variable BOSH_VPC_SUBDOMAIN")) + "-bosh-blobstore" %>
+  - bucket_name: <%= vpc_subdomain %>-bosh-blobstore
 rds:
   - name: ccdb
     tag: cc
