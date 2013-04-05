@@ -13,6 +13,9 @@ pushd $work/vsphere
 $image_vsphere_ovf_ovftool_path *.vmx image.ovf
 
 # ovftool 3 introduces a bug, which we need to correct, or it won't load in vSphere
+OLD_OVF_SHA=$(sha1sum image.ovf | cut -d ' ' -f 1)
 sed 's/useGlobal/manual/' -i image.ovf
+NEW_OVF_SHA=$(sha1sum image.ovf | cut -d ' ' -f 1)
+sed "s/$OLD_OVF_SHA/$NEW_OVF_SHA/" -i image.mf
 
 popd
