@@ -381,6 +381,7 @@ GEM
       ruby-hmac (>= 0.4.0)
     ruby-hmac (0.4.0)
     ruby_gntp (0.3.4)
+    rugged (0.16.0)
     sequel (3.43.0)
     sigar (0.7.2)
     simplecov (0.7.1)
@@ -457,6 +458,7 @@ DEPENDENCIES
   ruby_gntp
   ruby_vcloud_sdk!
   ruby_vim_sdk!
+  rugged
   simple_blobstore_server!
   simplecov
   simplecov-rcov

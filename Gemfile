@@ -64,6 +64,7 @@ group :development, :test do
   gem "rest-client"
   gem "redis"
   gem "nats"
+  gem "rugged"
 
   # from ruby_vcloud_sdk
   gem "nokogiri-diff"

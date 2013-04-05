@@ -8,4 +8,3 @@ task :shipit do
   %x[git push origin master]
   abort "Failed to push, aborting." if $?.exitstatus > 0
 end
-

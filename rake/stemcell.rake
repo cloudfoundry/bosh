@@ -4,6 +4,7 @@ require "bosh_agent"
 require "rbconfig"
 require "atmos"
 require "json"
+require "rugged"
 
 # microBOSH version should reflect the version of all the BOSH components, not just the agent.
 def micro_version
@@ -11,8 +12,53 @@ def micro_version
 end
 
 namespace :stemcell do
+
+  def changes_in_bosh_agent?
+    gem_components_changed?('bosh_agent') || component_changed?('stemcell_builder')
+  end
+
+  def changes_in_microbosh?
+    microbosh_components = COMPONENTS - %w(bosh_aws_bootstrap bosh_cli bosh_deployer)
+    components_changed = microbosh_components.inject(false) do |changes, component|
+      changes || gem_components_changed?(component)
+    end
+    components_changed || component_changed?('stemcell_builder')
+  end
+
+  def diff
+    @diff ||= changed_components
+  end
+
+  def changed_components(new_commit_sha=ENV['GIT_COMMIT'], old_commit_sha=ENV['GIT_PREVIOUS_COMMIT'])
+    repo = Rugged::Repository.new('.')
+    old_trees = old_commit_sha ? repo.lookup(old_commit_sha).tree.to_a : []
+    new_trees = repo.lookup(new_commit_sha || repo.head.target).tree.to_a
+    (new_trees - old_trees).map { |entry| entry[:name] }
+  end
+
+  def component_changed?(path)
+    diff.include?(path)
+  end
+
+  def gem_components_changed?(gem_name)
+    gem = Gem::Specification.load(File.join(gem_name, "#{gem_name}.gemspec"))
+
+    components = %w(Gemfile Gemfile.lock) +
+        [gem_name] +
+        gem.runtime_dependencies.map {|d| d.name }.select {|d| Dir.exists?(d)}
+
+    components.inject(false) do |changes, component|
+      changes || component_changed?(component)
+    end
+  end
+
+
   desc "Build stemcell"
-  task :basic, [:infrastructure] => "all:finalize_release_directory"  do |t, args|
+  task :basic, [:infrastructure] => 'all:finalize_release_directory' do |t, args|
+    unless changes_in_bosh_agent?
+      puts 'No changes detected in bosh_agent or stemcell_builder...skipping stemcell creation.'
+      next
+    end
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -22,7 +68,11 @@ namespace :stemcell do
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, [:infrastructure] => "all:finalize_release_directory" do |t, args|
+  task :micro, [:infrastructure] => 'all:finalize_release_directory' do |t, args|
+    unless changes_in_microbosh?
+      puts 'No changes detected in microbosh components or stemcell_builder...skipping stemcell creation.'
+      next
+    end
     release_tarball = build_micro_bosh_release
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", "micro","#{args[:infrastructure]}.yml")
 
