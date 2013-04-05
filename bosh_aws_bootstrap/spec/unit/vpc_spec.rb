@@ -31,6 +31,7 @@ describe Bosh::Aws::VPC do
       it "can delete the VPC" do
         fake_aws_vpc = mock("aws_vpc")
         fake_aws_vpc.should_receive :delete
+        fake_aws_vpc.should_receive(:state).and_raise(AWS::EC2::Errors::InvalidVpcID::NotFound)
 
         Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).delete_vpc
       end

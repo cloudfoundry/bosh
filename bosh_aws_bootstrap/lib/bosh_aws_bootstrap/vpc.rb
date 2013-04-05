@@ -61,7 +61,15 @@ module Bosh
 
       def delete_vpc
         @aws_vpc.delete
-      rescue ::AWS::EC2::Errors::DependencyViolation => e
+        Bosh::Common.retryable(tries: 10, sleep: 2, on: []) do
+          begin
+            false if @aws_vpc.state
+          rescue AWS::EC2::Errors::InvalidVpcID::NotFound
+            true
+          end
+        end
+
+      rescue ::AWS::EC2::Errors::DependencyViolation
         err "#{@aws_vpc.id} has dependencies that this tool does not delete"
       end
 
