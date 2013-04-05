@@ -1,8 +1,8 @@
 {
     "agent_id": "micro",
     "blobstore": {
-        "plugin": "local",
-        "properties": {
+        "provider": "local",
+        "options": {
             "blobstore_path": "/var/vcap/micro_bosh/data/cache"
         }
     },
