@@ -171,7 +171,8 @@ module Bosh::Director
         @packages.each do |name, package|
           result[name] = package.spec
         end
-        result
+
+        result.select { |name, _| run_time_dependencies.include? name }
       end
 
       # Returns all instances of this job
@@ -478,6 +479,9 @@ module Bosh::Director
         result
       end
 
+      def run_time_dependencies
+        templates.flat_map { |template| template.package_models }.uniq.map(&:name)
+      end
     end
   end
 end

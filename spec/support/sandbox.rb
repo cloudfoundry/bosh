@@ -106,6 +106,8 @@ module Bosh
             director_output = worker_output = hm_output = "/dev/null"
           end
 
+          FileUtils.rm_rf(BLOBSTORE_STORAGE_DIR)
+
           FileUtils.rm_rf(DIRECTOR_TMP_PATH)
           FileUtils.mkdir_p(DIRECTOR_TMP_PATH)
 
