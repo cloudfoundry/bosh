@@ -62,6 +62,9 @@ module Bosh::Director
 
       idle_vm.vm = vm
       idle_vm.current_state = agent.get_state
+    rescue Bosh::Clouds::VMCreationFailed => e
+      @logger.info('failed to create VM, retrying')
+      retry if e.ok_to_retry
     rescue Exception => e
       @logger.info("Cleaning up the created VM due to an error: #{e}")
       begin
