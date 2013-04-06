@@ -88,7 +88,11 @@ module Bosh::Aws
 
       options[:certificate_chain] = cert.chain if cert.chain
 
-      certificates.upload(options)
+      begin
+        certificates.upload(options)
+      rescue AWS::IAM::Errors::MalformedCertificate => e
+        err "Unable to upload ELB SSL Certificate: #{e.message}\n  #{options.inspect}"
+      end
     end
 
   end
