@@ -14,6 +14,7 @@ require "tmpdir"
 require "securerandom"
 require "yajl"
 
+require "common/exec"
 require "common/thread_pool"
 require "common/thread_formatter"
 

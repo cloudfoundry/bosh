@@ -276,5 +276,21 @@ describe Bosh::OpenStackCloud::Cloud do
         Dir.delete('tmp')
       end
     end
+
+    it "should fail if cannot extract root image" do
+      result = Bosh::Exec::Result.new("cmd", "output", 1)
+      Bosh::Exec.should_receive(:sh).and_return(result)
+
+      cloud = mock_glance
+
+      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
+
+      expect {
+        cloud.create_stemcell("/tmp/foo", {
+          "container_format" => "ami",
+          "disk_format" => "ami"
+        })
+      }.to raise_exception(Bosh::Clouds::CloudError)
+    end
   end
 end

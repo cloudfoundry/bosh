@@ -716,10 +716,11 @@ module Bosh::OpenStackCloud
     # @param [String] image_path Local filesystem path to a stemcell image
     # @return [void]
     def unpack_image(tmp_dir, image_path)
-      output = `tar -C #{tmp_dir} -xzf #{image_path} 2>&1`
-      if $?.exitstatus != 0
-        cloud_error("Failed to unpack stemcell root image" \
-                    "tar exit status #{$?.exitstatus}: #{output}")
+      result = Bosh::Exec.sh("tar -C #{tmp_dir} -xzf #{image_path} 2>&1", :on_error => :return)
+      if result.failed?
+        @logger.error("Extracting stemcell root image failed in dir #{tmp_dir}, " +
+                      "tar returned #{result.exit_status}, output: #{result.output}")
+        cloud_error("Extracting stemcell root image failed. Check task debug log for details.")
       end
       root_image = File.join(tmp_dir, "root.img")
       unless File.exists?(root_image)
