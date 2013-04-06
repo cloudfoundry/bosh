@@ -40,5 +40,8 @@ cloud:
     <% if_p("openstack.region") do |region| %>
     region: <%= region %>
     <% end %>
+    <% if_p("openstack.endpoint_type") do |endpoint_type| %>
+    endpoint_type: <%= endpoint_type %>
+    <% end %>
 <% end %>
 <% raise "Could not find cloud plugin" if plugin.nil? %>
