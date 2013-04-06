@@ -77,7 +77,7 @@ describe 'bosh_aws_bootstrap_external' do
     it "associates route tables with subnets" do
       bosh_routes = bosh_subnet.route_table.routes
       bosh_default_route = bosh_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
-      bosh_default_route.target.id.should match /igw/
+      bosh_default_route.target.id.should match(/igw/)
       bosh_local_route = bosh_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
       bosh_local_route.target.id.should == "local"
 
@@ -167,8 +167,9 @@ describe 'bosh_aws_bootstrap_external' do
       load_balancer.subnets.should == [bosh_subnet]
       load_balancer.security_groups.map(&:name).should == ["web"]
 
-      hosted_zone = route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com." }
-      record_set = hosted_zone.resource_record_sets["\\052.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com.", 'CNAME'] # E.g. "*.midway.cf-app.com."
+      config = Bosh::Aws::AwsConfig.new(aws_configuration_template)
+      hosted_zone = route53.hosted_zones.detect { |zone| zone.name == "#{config.vpc_domain}." }
+      record_set = hosted_zone.resource_record_sets["\\052.#{config.vpc_domain}.", 'CNAME'] # E.g. "*.midway.cf-app.com."
       record_set.should_not be_nil
       record_set.resource_records.first[:value] == load_balancer.dns_name
       record_set.ttl.should == 60

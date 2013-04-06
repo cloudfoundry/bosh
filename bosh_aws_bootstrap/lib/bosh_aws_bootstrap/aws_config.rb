@@ -28,6 +28,13 @@ module Bosh
         fetch_from_env("BOSH_AWS_ACCESS_KEY_ID")
       end
 
+      def vpc_domain
+        domain = @env.fetch("BOSH_VPC_DOMAIN", "cf-app.com")
+        subdomain = vpc_subdomain
+
+        "#{subdomain}.#{domain}"
+      end
+
       def vpc_subdomain
         fetch_from_env("BOSH_VPC_SUBDOMAIN")
       end

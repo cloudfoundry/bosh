@@ -143,6 +143,20 @@ describe Bosh::Aws::AwsConfig do
       end
     end
 
+    context "when the domain name is set" do
+      it "loads the domain name" do
+        environment["BOSH_VPC_DOMAIN"] = "domain"
+
+        configuration['vpc']['domain'].should == "burritos.domain"
+      end
+    end
+
+    context "when the domain name is not set" do
+      it "loads the default domain name" do
+        configuration['vpc']['domain'].should == "burritos.cf-app.com"
+      end
+    end
+
     context "when the ssl cert file name is set" do
       it "loads the ssh cert file name" do
         environment["BOSH_SSL_CERT"] = "ssl_cert"
