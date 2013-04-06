@@ -122,17 +122,8 @@ module Bosh::Deployer
 
       def discover_bosh_ip
         if exists?
-          server = cloud.openstack.servers.get(state.vm_cid)
-          # LP OpenStack Nova 185110:
-          # Since OS API 1.1, server addresses exposes the network names
-          # instead of the network types. so we need to fetch the
-          # os-floating-ips and find if any of them is associated to the
-          # server in order to get its public address.
-          floating_ip = cloud.openstack.addresses.find {
-                          |addr| addr.instance_id == server.id
-                        }
-          ip = floating_ip.nil? ? service_ip : floating_ip.ip
-          err "Unable to discover bosh ip" if ip.nil?
+          floating_ip = cloud.openstack.servers.get(state.vm_cid).floating_ip_address
+          ip = floating_ip || service_ip
 
           if ip != Config.bosh_ip
             Config.bosh_ip = ip
@@ -144,21 +135,7 @@ module Bosh::Deployer
       end
 
       def service_ip
-        server = cloud.openstack.servers.get(state.vm_cid)
-        # LP OpenStack Nova 185110:
-        # Since OS API 1.1, server addresses exposes the network names
-        # instead of the network types, so we need to known which network
-        # label is used in OS (label parm or "private" by default) to fetch
-        # the service IP address.
-        net_conf  = Config.net_conf
-        net_label = net_conf["label"].nil? ? "private" : net_conf["label"]
-        ip_addresses = server.addresses[net_label]
-        unless ip_addresses.nil? || ip_addresses.empty?
-          address = ip_addresses.select { |ip| ip["version"] == 4 }.first
-          ip = address ? address["addr"] : nil
-        end
-        err "Unable to discover service ip" if ip.nil?
-        ip
+        cloud.openstack.servers.get(state.vm_cid).private_ip_address
       end
 
       # @return [Integer] size in MiB

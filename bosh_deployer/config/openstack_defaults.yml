@@ -8,7 +8,6 @@ dir:
 
 network:
   type: dynamic
-  label: private
   cloud_properties: {}
 
 env:
