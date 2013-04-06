@@ -617,7 +617,7 @@ module VSphereCloud
       end
     end
 
-    def create_disk(size, _ = nil)
+    def create_disk(size, _ = nil, _ = nil)
       with_thread_name("create_disk(#{size}, _)") do
         @logger.info("Creating disk with size: #{size}")
         disk = Models::Disk.new

@@ -354,7 +354,8 @@ module Bosh::Director
 
       if @job.persistent_disk > 0
         @instance.model.db.transaction do
-          disk_cid = @cloud.create_disk(@job.persistent_disk, @vm.cid)
+          disk_properties = @resource_pool_spec.cloud_properties.nil? ? nil:@resource_pool_spec.cloud_properties["disk_properties"]
+          disk_cid = @cloud.create_disk(@job.persistent_disk, @vm.cid, disk_properties)
           disk =
             Models::PersistentDisk.create(:disk_cid => disk_cid,
                                           :active => false,

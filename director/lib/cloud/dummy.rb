@@ -91,7 +91,7 @@ module Bosh
         raise NotImplemented, "detach_disk"
       end
 
-      def create_disk(size, vm_locality = nil)
+      def create_disk(size, vm_locality = nil, disk_properties = nil)
         raise NotImplemented, "create_disk"
       end
 

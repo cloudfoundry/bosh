@@ -323,7 +323,7 @@ module VCloudCloud
       raise e
     end
 
-    def create_disk(size_mb, vm_locality = nil)
+    def create_disk(size_mb, vm_locality = nil, _ = nil)
       @client = client
 
       with_thread_name("create_disk(#{size_mb}, vm_locality)") do

@@ -147,8 +147,9 @@ module Bosh
     # @param [Integer] size disk size in MB
     # @param [optional, String] vm_locality vm id if known of the VM that this disk will
     #                           be attached to
+    # @param [optional, Hash] disk_properties Disk properties for provisioned disk
     # @return [String] opaque id later used by {#attach_disk}, {#detach_disk}, and {#delete_disk}
-    def create_disk(size, vm_locality = nil)
+    def create_disk(size, vm_locality = nil, disk_properties = nil)
       not_implemented(:create_disk)
     end
 
