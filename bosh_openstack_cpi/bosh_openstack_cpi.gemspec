@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.bindir       = "bin"
   s.executables  = %w(bosh_openstack_console)
 
-  s.add_dependency "fog", "~>1.10.0"
+  s.add_dependency "fog", "~>1.10.1"
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
   s.add_dependency "httpclient", "=2.2.4"
