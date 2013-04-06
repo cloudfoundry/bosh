@@ -29,27 +29,26 @@ describe Bosh::Registry::InstanceManager do
     Bosh::Registry::Models::RegistryInstance.create(params)
   end
 
-  def actual_ip_is(private_ip, floating_ip = nil)
+  def actual_ip_is(private_ip, floating_ip)
     servers = mock("servers")
-    server = mock("server", :addresses => {
-        "private" => [{"version" => 4, "addr" => private_ip}],
-        "public" => [floating_ip]
-    })
+    instance = mock("instance")
 
     @compute.should_receive(:servers).and_return(servers)
-    servers.should_receive(:find).and_return(server)
+    servers.should_receive(:find).and_return(instance)
+    instance.should_receive(:private_ip_addresses).and_return([private_ip])
+    instance.should_receive(:floating_ip_addresses).and_return([floating_ip])
   end
 
   describe "reading settings" do
     it "returns settings after verifying IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
-      actual_ip_is("10.0.0.1")
+      actual_ip_is("10.0.0.1", nil)
       manager.read_settings("foo", "10.0.0.1").should == "bar"
     end
 
     it "returns settings after verifying floating IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
-      actual_ip_is("10.0.0.1", "10.0.1.1")
+      actual_ip_is(nil, "10.0.1.1")
       manager.read_settings("foo", "10.0.1.1").should == "bar"
     end
 

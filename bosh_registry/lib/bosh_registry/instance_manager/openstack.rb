@@ -39,13 +39,7 @@ module Bosh::Registry
       def instance_ips(instance_id)
         instance  = @openstack.servers.find { |s| s.name == instance_id }
         raise InstanceNotFound, "Instance `#{instance_id}' not found" unless instance
-        ips = []
-        instance.addresses.each do |network, addresses|
-          addresses.each do |addr|
-            ips.push(addr.kind_of?(Hash) ? addr["addr"] : addr)
-          end
-        end
-        ips
+        return (instance.private_ip_addresses + instance.floating_ip_addresses).compact
       end
 
     end
