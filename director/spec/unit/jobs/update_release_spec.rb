@@ -15,18 +15,18 @@ describe Bosh::Director::Jobs::UpdateRelease do
   end
 
   describe "updating a release" do
-    context "commit_hash and uncommitted changes flag" do
-      let(:manifest) do
-        {
-            "name" => "appcloud",
-            "version" => "42.6-dev",
-            "commit_hash" => "12345678",
-            "uncommitted_changes" => "true",
-            "jobs" => [],
-            "packages" => []
-        }
-      end
+    let(:manifest) do
+      {
+          "name" => "appcloud",
+          "version" => "42.6-dev",
+          "commit_hash" => "12345678",
+          "uncommitted_changes" => "true",
+          "jobs" => [],
+          "packages" => []
+      }
+    end
 
+    context "commit_hash and uncommitted changes flag" do
       it "sets commit_hash and uncommitted changes flag on release_version" do
         release_dir = ReleaseHelper.create_release_tarball(manifest)
         job = BD::Jobs::UpdateRelease.new(release_dir)
@@ -55,6 +55,20 @@ describe Bosh::Director::Jobs::UpdateRelease do
         rv.should_not be_nil
         rv.commit_hash.should == "unknown"
         rv.uncommitted_changes.should be_false
+      end
+    end
+
+    context "extracting a release" do
+      it "should fail if cannot extract release archive" do
+        result = Bosh::Exec::Result.new("cmd", "output", 1)
+        Bosh::Exec.should_receive(:sh).and_return(result)
+
+        release_dir = ReleaseHelper.create_release_tarball(manifest)
+        job = BD::Jobs::UpdateRelease.new(release_dir)
+
+        expect {
+          job.extract_release
+        }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
       end
     end
   end
@@ -344,6 +358,20 @@ describe Bosh::Director::Jobs::UpdateRelease do
       package.blobstore_id.should == "blob_id"
     end
 
+    it "should fail if cannot extract package archive" do
+      result = Bosh::Exec::Result.new("cmd", "output", 1)
+      Bosh::Exec.should_receive(:sh).and_return(result)
+
+      expect {
+        @job.create_package(
+          {
+            "name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
+            "dependencies" => %w(foo_package bar_package)
+          }
+        )
+      }.to raise_exception(Bosh::Director::PackageInvalidArchive)
+    end
+
   end
 
   describe "resolve_package_dependencies" do
@@ -432,12 +460,13 @@ describe Bosh::Director::Jobs::UpdateRelease do
       template.sha1.should == "deadbeef"
     end
 
-    it "whines on invalid archive" do
-      File.open(@tarball, "w") { |f| f.write("deadcafe") }
+    it "should fail if cannot extract job archive" do
+      result = Bosh::Exec::Result.new("cmd", "output", 1)
+      Bosh::Exec.should_receive(:sh).and_return(result)
 
-      lambda {
+      expect {
         @job.create_job(@job_attrs)
-      }.should raise_error(BD::JobInvalidArchive)
+      }.to raise_error(BD::JobInvalidArchive)
     end
 
     it "whines on missing manifest" do

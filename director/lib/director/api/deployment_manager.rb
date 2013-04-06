@@ -20,7 +20,12 @@ module Bosh::Director
 
       def create_deployment(user, deployment_manifest, options = {})
         random_name = "deployment-#{SecureRandom.uuid}"
-        deployment_manifest_file = File.join(Dir::tmpdir, random_name)
+        deployment_manifest_dir = Dir::tmpdir
+        deployment_manifest_file = File.join(deployment_manifest_dir, random_name)
+        unless check_available_disk_space(deployment_manifest_dir, deployment_manifest.size)
+          raise NotEnoughDiskSpace, "Uploading deployment manifest failed. " +
+            "Insufficient space on BOSH director in #{deployment_manifest_dir}"
+        end
 
         write_file(deployment_manifest_file, deployment_manifest)
         task = create_task(user, :update_deployment, "create deployment")
