@@ -25,9 +25,10 @@ module Bosh::Director
         track_and_log("Extracting stemcell archive") do
           result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1", :on_error => :return)
           if result.failed?
-            raise StemcellInvalidArchive,
-                  "Invalid stemcell archive, tar returned #{result.exit_status}, " +
-                  "output: #{result.output}"
+            logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " +
+                         "tar returned #{result.exit_status}, " +
+                         "output: #{result.output}")
+            raise StemcellInvalidArchive, "Extracting stemcell archive failed. Check task debug log for details."
           end
         end
 

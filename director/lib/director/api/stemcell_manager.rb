@@ -24,7 +24,13 @@ module Bosh::Director
 
       def create_stemcell(user, stemcell)
         random_name = "stemcell-#{SecureRandom.uuid}"
-        stemcell_file = File.join(Dir::tmpdir, random_name)
+        stemcell_dir = Dir::tmpdir
+        stemcell_file = File.join(stemcell_dir, random_name)
+        unless check_available_disk_space(stemcell_dir, stemcell.size)
+          raise NotEnoughDiskSpace, "Uploading stemcell archive failed. " +
+            "Insufficient space on BOSH director in #{stemcell_dir}"
+        end
+
         write_file(stemcell_file, stemcell)
         task = create_task(user, :update_stemcell, "create stemcell")
         Resque.enqueue(Jobs::UpdateStemcell, task.id, stemcell_file)

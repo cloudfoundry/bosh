@@ -69,12 +69,12 @@ module Bosh::Director
         release_tgz = File.join(@tmp_release_dir,
                                 Api::ReleaseManager::RELEASE_TGZ)
 
-        tar_output = `tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1`
-
-        if $?.exitstatus != 0
-          raise ReleaseInvalidArchive,
-                "Invalid release archive, tar returned #{$?.exitstatus}, " +
-                "tar output: #{tar_output}"
+        result = Bosh::Exec.sh("tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1", :on_error => :return)
+        if result.failed?
+          logger.error("Extracting release archive failed in dir #{@tmp_release_dir}, " +
+                       "tar returned #{result.exit_status}, " +
+                       "output: #{result.output}")
+          raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
       ensure
         if release_tgz && File.exists?(release_tgz)
@@ -366,11 +366,12 @@ module Bosh::Director
           logger.info("Creating #{desc} from provided bits")
 
           package_tgz = File.join(@tmp_release_dir, "packages", "#{name}.tgz")
-          output = `tar -tzf #{package_tgz} 2>&1`
-          if $?.exitstatus != 0
-            raise PackageInvalidArchive,
-                  "Invalid package archive, tar returned #{$?.exitstatus} " +
-                  "tar output: #{output}"
+          result = Bosh::Exec.sh("tar -tzf #{package_tgz} 2>&1", :on_error => :return)
+          if result.failed?
+            logger.error("Extracting #{desc} archive failed, " +
+                         "tar returned #{result.exit_status}, " +
+                         "output: #{result.output}")
+            raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
           end
 
           # TODO: verify sha1
@@ -493,13 +494,13 @@ module Bosh::Director
 
         FileUtils.mkdir_p(job_dir)
 
-        output = `tar -C #{job_dir} -xzf #{job_tgz} 2>&1`
-
-        if $?.exitstatus != 0
-          raise JobInvalidArchive,
-                "Invalid job archive for `#{template.name}', " +
-                "tar returned #{$?.exitstatus}, " +
-                "tar output: #{output}"
+        desc = "job `#{name}/#{version}'"
+        result = Bosh::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
+        if result.failed?
+          logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
+                       "tar returned #{result.exit_status}, " +
+                       "output: #{result.output}")
+          raise JobInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
         end
 
         manifest_file = File.join(job_dir, "job.MF")
