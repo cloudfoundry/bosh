@@ -75,6 +75,8 @@ These are the credentials to connect to OpenStack services:
   OpenStack tenant name
 * `region` (optional)
   OpenStack region
+* `endpoint_type` (optional)
+  OpenStack endpoint type (publicURL (default), adminURL, internalURL)
 
 ## Example
 
