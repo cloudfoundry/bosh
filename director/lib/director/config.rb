@@ -55,14 +55,17 @@ module Bosh::Director
         # checkpoint task progress every 30 secs
         @task_checkpoint_interval = 30
 
-        log_device = Logger::LogDevice.new(config["logging"]["file"] || STDOUT)
+        logging = config.fetch('logging', {})
+        log_device = Logger::LogDevice.new(logging.fetch('file', STDOUT))
         @logger = Logger.new(log_device)
-        @logger.level = Logger.const_get(config["logging"]["level"].upcase)
+        @logger.level = Logger.const_get(logging.fetch('level', 'debug').upcase)
         @logger.formatter = ThreadFormatter.new
 
         # use a separate logger for redis to make it stfu
         redis_logger = Logger.new(log_device)
-        redis_logger.level = Logger::Severity::INFO
+        logging = config.fetch('redis', {}).fetch('logging', {})
+        redis_logger_level = logging.fetch('level', 'info').upcase
+        redis_logger.level = Logger.const_get(redis_logger_level)
 
         # Event logger supposed to be overridden per task,
         # the default one does nothing
