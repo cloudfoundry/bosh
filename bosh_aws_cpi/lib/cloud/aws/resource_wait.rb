@@ -1,7 +1,7 @@
 module Bosh::AwsCloud
   class ResourceWait
 
-    DEFAULT_TRIES = 8 # this is saner amount of retries (~30 minutes), as AWS doesn't give us a choice
+    DEFAULT_TRIES = 8 # a sane amount of retries on AWS (~35 minutes), as things can take anywhere between a minute and forevah
     MAX_SLEEP_EXPONENT = 8
 
     def self.for_instance(args)
