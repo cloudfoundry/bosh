@@ -31,16 +31,27 @@ module Bosh::AwsCloud
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
 
+      # Retry the create instance operation a couple of times if we are told that the IP
+      # address is in use - it can happen when the director recreates a VM and AWS
+      # is too slow to update its state when we have released the IP address and want to
+      # realocate it again.
       errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
-
       Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
         @logger.warn("IP address was in use: #{error}") if tries > 0
         @instance = @region.instances.create(instance_params)
       end
 
-      # need to wait here for the instance to be running, as if we are going to
-      # attach to a load balancer, the instance must be running
-      ResourceWait.for_instance(instance: instance, state: :running)
+      # We need to wait here for the instance to be running, as if we are going to
+      # attach to a load balancer, the instance must be running.
+      # If we time out, it is because the instance never gets from state running to started,
+      # so we signal the director that it is ok to retry the operation. At the moment this
+      # forever (until the operation is cancelled by the user).
+      begin
+        ResourceWait.for_instance(instance: instance, state: :running)
+      rescue Bosh::Common::RetryCountExceeded => e
+        @logger.warn("timed out waiting for #{instance.id} to be running")
+        raise Bosh::Clouds::VMCreationFailed.new(true)
+      end
 
       @elbs = resource_pool['elbs']
       attach_to_load_balancers if elbs

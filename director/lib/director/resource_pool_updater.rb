@@ -3,6 +3,9 @@
 module Bosh::Director
   class ResourcePoolUpdater
 
+    # this is used to retry VM creation on clouds that are unreliable (e.g. AWS)
+    MAX_CREATE_VM_TRIES = 5
+
     def initialize(resource_pool)
       @resource_pool = resource_pool
       @cloud = Config.cloud
@@ -51,8 +54,16 @@ module Bosh::Director
       deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.model
 
-      vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
-                                idle_vm.network_settings, nil, @resource_pool.env)
+      count = 0
+      begin
+        vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
+                                  idle_vm.network_settings, nil, @resource_pool.env)
+      rescue Bosh::Clouds::VMCreationFailed => e
+        count += 1
+        @logger.info("failed to create VM, retrying (#{count})")
+        retry if e.ok_to_retry && count < MAX_CREATE_VM_TRIES
+        raise e
+      end
 
       # TODO: delete the VM if it wasn't saved
       agent = AgentClient.new(vm.agent_id)
