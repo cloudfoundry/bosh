@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::ResourcePoolUpdater do
   before(:each) do
@@ -112,6 +112,23 @@ describe Bosh::Director::ResourcePoolUpdater do
       }.should raise_error("timeout")
 
       BD::Models::Vm.count.should == 0
+    end
+
+    it 'should retry creating a VM if it is told it is a retryable error' do
+      vm = double(BD::Models::Vm, cid: 'foo', agent_id: 'bar')
+      agent = double('agent', wait_until_ready: nil, get_state: 'running')
+      Bosh::Director::AgentClient.stub(:new).and_return(agent)
+
+      vm_creator = double(Bosh::Director::VmCreator)
+      vm_creator.should_receive(:create).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+      vm_creator.should_receive(:create).once.and_return(vm)
+
+      Bosh::Director::VmCreator.stub(new: vm_creator)
+      @idle_vm.should_receive(:vm=)
+      @idle_vm.should_receive(:current_state=)
+
+      @resource_pool_updater.stub(:update_state)
+      @resource_pool_updater.create_missing_vm(@idle_vm)
     end
   end
 

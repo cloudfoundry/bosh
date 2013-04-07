@@ -37,7 +37,7 @@ module Bosh::AwsCloud
     def fake
       id = stemcell_properties['ami'][region.name]
 
-      raise Bosh::Clouds::CloudError, 'Stemcell does not contain an AMI for this region' unless id
+      raise Bosh::Clouds::CloudError, "Stemcell does not contain an AMI for this region (#{region.name})" unless id
 
       Stemcell.find(region, id)
     end
