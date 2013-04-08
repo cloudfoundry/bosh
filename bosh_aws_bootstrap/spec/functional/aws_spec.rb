@@ -808,7 +808,7 @@ describe Bosh::Cli::Command::AWS do
 
         # TODO: Where are the assertions for this test?  Buried in `make_fake_rds!`?  Fix this!
         it "should create all rds databases with option overrides" do
-          ccdb_opts = Psych.load_file(config_file)["rds"].find { |db_opts| db_opts["name"] == "ccdb" }
+          ccdb_opts = Psych.load_file(config_file)["rds"].find { |db_opts| db_opts["instance"] == "ccdb" }
           make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
           aws.create_rds_dbs(config_file, receipt_file)
         end

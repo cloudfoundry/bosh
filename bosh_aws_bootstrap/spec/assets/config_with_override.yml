@@ -47,7 +47,7 @@ elastic_ips:
 key_pairs:
   dev102: /tmp/somekey
 rds:
-  - name: ccdb
+  - instance: ccdb
     tag: cc
     subnets:
       - cf
@@ -55,7 +55,7 @@ rds:
     aws_creation_options:
       db_instance_class: db.m2.x4.large
       allocated_storage: 7
-  - name: uaadb
+  - instance: uaadb
     tag: uaa
     subnets:
       - cf

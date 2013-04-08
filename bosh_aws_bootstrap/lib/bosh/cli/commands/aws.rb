@@ -430,30 +430,30 @@ module Bosh::Cli::Command
         rds = Bosh::Aws::RDS.new(credentials)
 
         config["rds"].each do |rds_db_config|
-          name = rds_db_config["name"]
+          instance_id = rds_db_config["instance"]
           tag = rds_db_config["tag"]
           subnets = rds_db_config["subnets"]
 
           subnet_ids = subnets.map { |s| vpc_subnets[s] }
-          unless rds.database_exists?(name)
+          unless rds.database_exists?(instance_id)
             # This is a bit odd, and the naturual way would be to just pass creation_opts
             # in directly, but it makes this easier to mock.  Once could argue that the
             # params to create_database should change to just a hash instead of a name +
             # a hash.
-            creation_opts = [name, subnet_ids, receipt["vpc"]["id"]]
+            creation_opts = [instance_id, subnet_ids, receipt["vpc"]["id"]]
             creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
             response = rds.create_database(*creation_opts)
-            output_rds_properties(name, tag, response)
+            output_rds_properties(instance_id, tag, response)
           end
         end
 
         if was_rds_eventually_available?(rds)
           config["rds"].each do |rds_db_config|
-            name = rds_db_config["name"]
+            instance_id = rds_db_config["instance"]
 
-            if deployment_properties[name]
-              db_instance = rds.database(name)
-              deployment_properties[name].merge!(
+            if deployment_properties[instance_id]
+              db_instance = rds.database(instance_id)
+              deployment_properties[instance_id].merge!(
                 "address" => db_instance.endpoint_address,
                 "port" => db_instance.endpoint_port
               )

@@ -73,12 +73,12 @@ elastic_ips:
 key_pairs:
   dev102: /tmp/somekey
 rds:
-  - name: ccdb
+  - instance: ccdb
     tag: cc
     subnets:
       - cf
       - cf_az2
-  - name: uaadb
+  - instance: uaadb
     tag: uaa
     subnets:
       - cf
