@@ -40,7 +40,7 @@ This command should be used for bootstrapping bosh from scratch.
 
         validate_requirements(release_path)
 
-        create_deployment_manifest
+        generate_manifest
         create_and_upload_release(bosh_repository, release_path)
         fetch_and_upload_stemcell
 
@@ -62,16 +62,6 @@ This command should be used for bootstrapping bosh from scratch.
         end
 
         @manifest
-      end
-
-      def create_deployment_manifest
-        generate_manifest
-
-        manifest_path = File.join(File.dirname(__FILE__), "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
-
-        biff_command = Bosh::Cli::Command::Biff.new
-        biff_command.options = self.options
-        biff_command.biff(File.expand_path(manifest_path))
       end
 
       def generate_manifest

@@ -1,6 +1,8 @@
 module Bosh::Cli::Command
   class Biff < Base
 
+    attr_reader :errors
+
     # Takes your current deployment configuration and uses some of its
     # configuration to populate the template file.  The Network information is
     # used and then IPs for each job are automatically set.  Once the template
@@ -122,20 +124,9 @@ module Bosh::Cli::Command
       path_split = path.split(".")
       found_so_far = []
       path_split.each do |path_part|
-        found = false
-        if obj.is_a?(Array)
-          obj.each do |data_val|
-            if data_val["name"] == path_part
-              obj = data_val
-              found = true
-            end
-          end
-        elsif !obj[path_part].nil?
-          obj = obj[path_part]
-          found = true
-        end
+        obj = lookup(path_part, obj)
 
-        unless found
+        unless obj
           @errors += 1
           say("Could not find #{path.red}.")
           say("'#{@template_file}' has it but '#{@deployment_file}' does not.")
@@ -154,6 +145,15 @@ module Bosh::Cli::Command
         found_so_far << path_part
       end
       obj
+    end
+
+    def lookup(path, obj)
+      case obj
+        when Array
+          obj.find { |value| path == value['name'] }
+        when Hash
+          obj[path] if obj.has_key?(path)
+      end
     end
 
     # Used by print_the_template_path so that it can prettily print just the
@@ -372,13 +372,13 @@ module Bosh::Cli::Command
     # @param [String] template The string path to the template that should be
     #     used.
     def setup(template)
+      @errors = 0
       @template_file = template
       @deployment_file = deployment
       err("Deployment not set.") if @deployment_file.nil?
-      @deployment_obj = load_yaml_file(@deployment_file)
+      @deployment_obj = load_yaml_file(deployment)
       @template_obj = load_template_as_yaml
       @ip_helper = create_ip_helper
-      @errors = 0
       @dir_name = Dir.mktmpdir
       @temp_file_path_1 = "#{@dir_name}/bosh_biff_1"
       @temp_file_path_2 = "#{@dir_name}/bosh_biff_2"
