@@ -44,7 +44,7 @@ Gem::Specification.new do |s|
   s.add_dependency  "yajl-ruby", "~>1.1.0"
 
   s.bindir      = 'bin'
-  s.executables << 'console'
+  s.executables << 'director_console'
   s.executables << 'director'
   s.executables << 'drain_workers'
   s.executables << 'worker'

@@ -29,7 +29,7 @@ module Bosh
         options = {}
 
         OptionParser.new do |opt|
-          opt.banner = "Usage: console [options]"
+          opt.banner = "Usage: director_console [options]"
           opt.on('-c', '--config [ARG]', 'configuration file') { |v| options[:config] = v }
           opt.parse!(ARGV)
         end
