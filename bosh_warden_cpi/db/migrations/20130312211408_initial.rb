@@ -1,11 +1,11 @@
 Sequel.migration do
   up do
-    create_table? :warden_vm do
+    create_table(:warden_vm) do
       primary_key :id
       String :container_id
     end
 
-    create_table? :warden_disk do
+    create_table(:warden_disk) do
       primary_key :id
       foreign_key :vm_id, :warden_vm
       Integer :device_num
