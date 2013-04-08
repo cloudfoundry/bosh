@@ -297,11 +297,11 @@ describe Bosh::Aws::RDS do
 
   describe "database_exists?" do
     it "should return true for an existing database" do
-      rds.database_exists?("bosh_db").should == true
+      rds.database_exists?("db2").should == true
     end
 
     it "should return false for an non-existent database" do
-      rds.database_exists?("oh_hai").should == false
+      rds.database_exists?("dbstupid").should == false
     end
   end
 

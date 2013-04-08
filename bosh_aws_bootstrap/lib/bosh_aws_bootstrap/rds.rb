@@ -26,7 +26,7 @@ module Bosh
 
         creation_options = DEFAULT_RDS_OPTIONS.merge(options)
         creation_options[:db_instance_identifier] = name
-        creation_options[:db_name] = name
+        creation_options[:db_name] ||= name
         creation_options[:vpc_security_group_ids] = [vpc.security_group_by_name(name).id]
         creation_options[:db_subnet_group_name] = name
         creation_options[:master_username] ||= generate_user
@@ -40,7 +40,7 @@ module Bosh
       end
 
       def database(name)
-        databases.find { |v| v.name == name }
+        databases.find { |v| v.id == name }
       end
 
       def database_exists?(name)

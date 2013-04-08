@@ -126,7 +126,7 @@ rds:
       - rds_1
       - rds_2
     aws_creation_options:
-      db_instance_class: db.m1.small
+      # db_instance_class: db.m1.small
       # These are passed on directly to the AWS API call.
       # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
       allocated_storage: 7
@@ -137,4 +137,18 @@ rds:
       - rds_1
       - rds_2
     aws_creation_options:
-      db_instance_class: db.m1.small
+      # db_instance_class: db.m1.small
+  - name: mysql-service-public
+    tag: mysql
+    subnets:
+      - rds_1
+      - rds_2
+    aws_creation_options:
+      db_name: mgmt
+  - name: mysql-service-cf-internal
+    tag: mysql
+    subnets:
+      - rds_1
+      - rds_2
+    aws_creation_options:
+      db_name: mgmt
