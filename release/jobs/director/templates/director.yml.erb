@@ -15,6 +15,10 @@ redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
   password: <%= p('redis.password') %>
+  <% if_p("redis.loglevel") do |redis_loglevel| %>
+  logging:
+    level: <%= redis_loglevel %>
+  <% end %>
 mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
 dir: /var/vcap/store/director
 db:

@@ -37,6 +37,9 @@ properties:
     default: 25255
   redis.password:
     description: Password of the redis server
+  redis.loglevel:
+    description: Level of log messages for Redis connections (fatal, error, warn, info, debug)
+    default: info
   nats.user:
     description: Username to connect to nats with
     default: nats
