@@ -17,7 +17,7 @@ describe Bosh::Deployer::InstanceManager do
     @cloud.stub(:ec2).and_return(@ec2)
     Bosh::Deployer::Config.stub!(:cloud).and_return(@cloud)
     @agent = mock("agent")
-    Bosh::Deployer::Config.stub!(:agent).and_return(@agent)
+    @deployer.stub!(:agent).and_return(@agent)
   end
 
   after(:each) do

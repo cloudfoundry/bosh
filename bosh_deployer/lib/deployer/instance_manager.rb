@@ -60,6 +60,8 @@ module Bosh::Deployer
     end
 
     def agent
+      discover_bosh_ip  # Set the bosh ip in Config
+      local_tunnel(agent_port)
       Config.agent
     end
 
@@ -415,7 +417,6 @@ module Bosh::Deployer
 
     def wait_until_agent_ready #XXX >> agent_client
       remote_tunnel(@registry_port)
-      local_tunnel(agent_port)
 
       wait_until_ready("agent") { agent.ping }
     end

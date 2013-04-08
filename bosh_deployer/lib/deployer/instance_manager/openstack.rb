@@ -5,8 +5,6 @@ module Bosh::Deployer
 
     class Openstack < InstanceManager
 
-      include InstanceManagerHelpers
-
       # TODO extract
       def update_spec(spec)
         properties = spec.properties
@@ -99,6 +97,7 @@ module Bosh::Deployer
             err "Cannot access bosh_registry: #{e.message}"
           end
         end
+
         logger.info("bosh_registry is ready on port #{@registry_port}")
       ensure
         @registry_config.unlink if @registry_config
