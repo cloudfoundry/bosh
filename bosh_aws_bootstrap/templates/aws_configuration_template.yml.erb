@@ -3,9 +3,9 @@ aws:
   secret_access_key: <%= aws_secret_access_key %>
   access_key_id: <%= aws_access_key_id %>
   region: us-east-1
-name: <%= vpc_subdomain %>
+name: <%= vpc_deployment_name %>
 vpc:
-  domain: <%= vpc_domain %>
+  domain: <%= vpc_generated_domain %>
   instance_tenancy: default
   cidr: 10.10.0.0/16
   subnets:
@@ -118,7 +118,7 @@ compiled_package_cache:
   bucket_name: <%= cache_bucket_name %>
 <% end %>
 s3:
-  - bucket_name: <%= vpc_subdomain %>-bosh-blobstore
+  - bucket_name: <%= vpc_deployment_name %>-bosh-blobstore
 rds:
   - instance: ccdb
     tag: cc

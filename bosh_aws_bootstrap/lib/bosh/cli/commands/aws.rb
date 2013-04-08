@@ -572,7 +572,7 @@ module Bosh::Cli::Command
 
       elastic_ip_specs.each do |name, job|
         if job["dns_record"]
-          say "adding A record for #{job["dns_record"]}.#{config["name"]}"
+          say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
           route53.add_record(
               job["dns_record"],
               config["vpc"]["domain"],

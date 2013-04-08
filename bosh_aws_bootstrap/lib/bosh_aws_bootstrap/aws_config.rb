@@ -14,9 +14,10 @@ module Bosh
         load_configuration(File.read(@filename))
       end
 
-      def fetch_from_env(key)
+      def fetch_from_env(key, msg=nil)
         @env.fetch(key) {
-          raise(ConfigurationInvalid, "Missing ENV variable #{key}")
+          msg ||= "Missing ENV variable #{key}"
+          raise(ConfigurationInvalid, msg)
         }
       end
 
@@ -29,14 +30,41 @@ module Bosh
       end
 
       def vpc_domain
-        domain = @env.fetch("BOSH_VPC_DOMAIN", "cf-app.com")
-        subdomain = vpc_subdomain
-
-        "#{subdomain}.#{domain}"
+        @env["BOSH_VPC_DOMAIN"]
       end
 
       def vpc_subdomain
-        fetch_from_env("BOSH_VPC_SUBDOMAIN")
+        @env["BOSH_VPC_SUBDOMAIN"]
+      end
+
+      def vpc_deployment_name
+        if has_vpc_subdomain?
+          vpc_subdomain
+        elsif has_vpc_domain?
+          vpc_domain.gsub('.', '-')
+        else
+          "deployment"
+        end
+      end
+
+      def vpc_generated_domain
+        if has_vpc_domain? && has_vpc_subdomain?
+          "#{vpc_subdomain}.#{vpc_domain}"
+        elsif has_vpc_subdomain?
+          "#{vpc_subdomain}.cf-app.com"
+        elsif has_vpc_domain?
+          vpc_domain
+        else
+          raise(ConfigurationInvalid, "No domain and subdomain are defined.")
+        end
+      end
+
+      def has_vpc_domain?
+        vpc_domain && vpc_domain != ""
+      end
+
+      def has_vpc_subdomain?
+        vpc_subdomain && vpc_subdomain != ""
       end
 
       def vpc_primary_az
