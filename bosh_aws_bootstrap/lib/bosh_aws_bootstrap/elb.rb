@@ -49,7 +49,7 @@ module Bosh::Aws
         }
       end
 
-      Bosh::Common.retryable(tries: 10, on: AWS::ELB::Errors::CertificateNotFound) do
+      Bosh::Common.retryable(tries: 10, sleep: lambda{|n,e| [2**(n-1), 10].min }, on: AWS::ELB::Errors::CertificateNotFound) do
         aws_elb.load_balancers.create(name, options).tap do |new_elb|
           new_elb.configure_health_check({
                                              :healthy_threshold => 5,
