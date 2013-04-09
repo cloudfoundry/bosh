@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
   s.add_dependency  "bosh_aws_cpi", "~>#{version}"
   s.add_dependency  "bosh_vcloud_cpi", "~>#{version}"
   s.add_dependency  "bosh_vsphere_cpi", "~>#{version}"
+  s.add_dependency  "bosh_warden_cpi", "~>#{version}"
   s.add_dependency  "eventmachine", "~>0.12.9"
   s.add_dependency  "fog", "~> 1.10.0"
   s.add_dependency  "httpclient", "=2.2.4"

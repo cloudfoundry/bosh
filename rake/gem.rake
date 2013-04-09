@@ -1,7 +1,7 @@
 COMPONENTS = %w( agent_client bosh_aws_bootstrap bosh_aws_cpi blobstore_client
                  bosh_agent bosh_cli bosh_common bosh_cpi bosh_deployer director bosh_encryption health_monitor
                  monit_api bosh_openstack_cpi bosh_registry package_compiler ruby_vcloud_sdk ruby_vim_sdk
-                 simple_blobstore_server bosh_vcloud_cpi bosh_vsphere_cpi)
+                 simple_blobstore_server bosh_vcloud_cpi bosh_vsphere_cpi bosh_warden_cpi)
 
 COMPONENTS_WITH_PG = %w( director bosh_registry)
 
