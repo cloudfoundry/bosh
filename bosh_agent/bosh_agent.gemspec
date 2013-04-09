@@ -25,7 +25,6 @@ Gem::Specification.new do |s|
   s.add_dependency          'nats',             '~>0.4.28'
   s.add_dependency          'sigar',            '~>0.7.2'
   s.add_dependency          'httpclient',       '=2.2.4'
-  s.add_dependency          'retryable',        '~> 1.3.2'
   s.add_dependency          'uuidtools',        '~> 2.1.2'
   s.add_dependency          'sys-filesystem',   '~> 1.1.0'
 
