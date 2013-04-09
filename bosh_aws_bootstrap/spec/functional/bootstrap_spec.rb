@@ -122,7 +122,7 @@ describe "AWS Bootstrap commands" do
         Bosh::Aws::BoshBootstrap.any_instance.stub(:deploy)
         Bosh::Aws::BoshBootstrap.any_instance.stub(:target_bosh_and_log_in)
         Bosh::Aws::BoshBootstrap.any_instance.stub(:create_user)
-        Bosh::Cli::Command::AWS.any_instance.stub(:ask).and_return ("foo")
+        Bosh::Cli::Command::AWS.any_instance.stub(:ask).and_return("foo")
 
       end
 

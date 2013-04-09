@@ -22,13 +22,8 @@ module Bosh
           end
         end
 
-        if director.list_releases.detect { |r| r['name'] == 'bosh' }
-          release_exist = true
-        end
-
-        if director.list_stemcells.detect { |r| r['name'] == 'bosh-stemcell' }
-          stemcell_exist = true
-        end
+        release_exist = director.list_releases.detect { |r| r['name'] == 'bosh' }
+        stemcell_exist = director.list_stemcells.detect { |r| r['name'] == 'bosh-stemcell' }
 
         existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }
 
