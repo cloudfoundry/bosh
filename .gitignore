@@ -59,3 +59,5 @@ stemcell-ami.txt
 aws_rds_receipt.yml
 aws_route53_receipt.yml
 aws_vpc_receipt.yml
+bosh_warden_cpi/chef/cookbooks/
+bosh_warden_cpi/chef/tmp/
