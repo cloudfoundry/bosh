@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + "/lib/cloud/warden/version"
 
 Gem::Specification.new do |s|
   s.name         = "bosh_warden_cpi"
-  s.version      = Bosh::Clouds::Warden::VERSION
+  s.version      = "1.5.0.pre.3"
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH Warden CPI"
   s.description  = s.summary
@@ -20,4 +20,7 @@ Gem::Specification.new do |s|
   s.add_dependency "warden-client"
   s.add_dependency "sequel"
   s.add_dependency "yajl-ruby"
+
+  s.add_development_dependency "vagrant", "~> 1.0.7"
+  s.add_development_dependency "librarian"
 end

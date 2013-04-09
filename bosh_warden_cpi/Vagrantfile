@@ -1,0 +1,36 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant::Config.run do |config|
+  config.vm.box = "base"
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+
+  config.vm.forward_port 25555, 25555 # Director
+
+  config.vm.share_folder "bosh_repo", "/bosh", "../."
+
+  config.vm.provision :chef_solo do |chef|
+    chef.cookbooks_path = ["./chef/cookbooks", "./chef"]
+    chef.provisioning_path = "/var/vagrant-chef"
+    chef.log_level = :debug
+
+    chef.add_recipe "apt"
+    chef.add_recipe "git"
+
+    # Install warden
+    # chef.add_recipe "warden::install_rootfs"
+    chef.add_recipe "warden::install"
+
+    # Install BOSH director
+    chef.add_recipe "director::install"
+
+    # Start nats
+
+    # Start Warden Server
+
+    # Start BOSH director
+
+    # Start blobstore
+
+  end
+end

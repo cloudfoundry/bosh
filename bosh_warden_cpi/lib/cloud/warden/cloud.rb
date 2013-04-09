@@ -134,7 +134,7 @@ module Bosh::WardenCloud
         # Warden has a default white list for devices. By default, all the loop
         # devices cannot be read/written/mknod. We don't want to change the
         # warden behavior, so we just manipulate the container cgroup directly.
-        sudo "bash -c 'echo \"b 7:* rwm\" > /sys/fs/cgroup/devices/instance-#{handle}/devices.allow'"
+        sudo "bash -c 'echo \"b 7:* rwm\" > /tmp/warden/cgroup/devices/instance-#{handle}/devices.allow'"
 
         # Start bosh agent
         with_warden do |client|

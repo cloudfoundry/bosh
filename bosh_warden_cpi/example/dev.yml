@@ -1,10 +1,10 @@
 ---
-name: name_of_deploy
-director_uuid: uuid_of_director
+name: dev-test
+director_uuid: b5c6207a-fd6b-44f8-b60e-61546183f156
 
 release:
-  name: name_of_release
-  version: 111-dev
+  name: appcloud
+  version: latest
 
 compilation:
   workers: 1
@@ -24,16 +24,16 @@ networks:
 
 - name: compile
   subnets:
-  - range: 10.254.0.240/30
+  - range: 10.244.0.240/30
     static:
-    - 10.254.0.241 - 10.254.0.241
+    - 10.244.0.241 - 10.244.0.241
     cloud_properties:
       name: random
 - name: default
   subnets:
-  - range: 10.254.0.0/23
+  - range: 10.244.0.0/23
     static:
-    - 10.254.0.1 - 10.254.0.99
+    - 10.244.0.1 - 10.244.0.99
     cloud_properties:
       name: random
 
@@ -44,12 +44,11 @@ resource_pools:
   size: 9
   stemcell:
     name: bosh-stemcell
-    version: 0.6.7
+    version: 1.5.0.pre.3
   cloud_properties:
     cpu: 4
 
 jobs:
-
 - name: syslog_aggregator
   template: syslog_aggregator
   instances: 1
@@ -58,82 +57,82 @@ jobs:
   networks:
   - name: default
     static_ips:
-    - 10.254.0.2
-
-- name: nats
-  template: nats
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.6
-
-- name: ccdb_postgres
-  template: postgres
-  instances: 1
-  resource_pool: infrastructure
-  persistent_disk: 100
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.10
-  properties:
-    db: ccdb
-
-- name: vcap_redis
-  template: vcap_redis
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.14
-
-- name: cloud_controller
-  template: cloud_controller
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.18
-
-- name: router
-  template: router
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.22
-
-- name: health_manager
-  template: health_manager
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.26
-
-- name: dea
-  template: dea
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.30
-
-- name: stager
-  template: stager
-  instances: 1
-  resource_pool: infrastructure
-  networks:
-  - name: default
-    static_ips:
-    - 10.254.0.34
+    - 10.244.0.2
+#
+# - name: nats
+#   template: nats
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.6
+#
+# - name: ccdb_postgres
+#   template: postgres
+#   instances: 1
+#   resource_pool: infrastructure
+#   persistent_disk: 100
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.10
+#   properties:
+#     db: ccdb
+#
+# - name: vcap_redis
+#   template: vcap_redis
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.14
+#
+# - name: cloud_controller
+#   template: cloud_controller
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.18
+#
+# - name: router
+#   template: router
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.22
+#
+# - name: health_manager
+#   template: health_manager
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.26
+#
+# - name: dea
+#   template: dea
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.30
+#
+# - name: stager
+#   template: stager
+#   instances: 1
+#   resource_pool: infrastructure
+#   networks:
+#   - name: default
+#     static_ips:
+#     - 10.244.0.34
 
 properties:
   domain: vcap.me
@@ -147,11 +146,11 @@ properties:
   nats:
     user: nats
     password: z2b3ij3122
-    address: 10.254.0.6
+    address: 10.244.0.6
     port: 4222
 
   ccdb:
-    address: 10.254.0.10
+    address: 10.244.0.10
     port: 5524
     pool_size: 10
     roles:
@@ -192,7 +191,7 @@ properties:
       password: FSCTiplI5Q83n
 
   vcap_redis:
-    address: 10.254.0.14
+    address: 10.244.0.14
     port: 5454
     password: PoIxbL98RWpwBuUJvKNojnpIcRb1ot2
     maxmemory: 2000000000 # 2GB
@@ -210,7 +209,7 @@ properties:
     max_memory: 32768
 
   syslog_aggregator:
-    address: 10.254.0.2
+    address: 10.244.0.2
     port: 54321
 
   stager:
