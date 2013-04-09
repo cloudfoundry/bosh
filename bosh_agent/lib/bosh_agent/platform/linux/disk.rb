@@ -8,6 +8,7 @@ module Bosh::Agent
     include Bosh::Exec
 
     VSPHERE_DATA_DISK = "/dev/sdb"
+    WARDEN_DATA_DISK = "/dev/invalid" # Warden doesn't use any data disk
     DEV_PATH_TIMEOUT=180
     DISK_RETRY_MAX_DEFAULT = 30
 
@@ -47,6 +48,8 @@ module Bosh::Agent
             raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
           end
           get_available_path(dev_path)
+        when "warden"
+          WARDEN_DATA_DISK
         else
           raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
@@ -69,6 +72,9 @@ module Bosh::Agent
         when "openstack"
           # OpenStack passes in the device name
           get_available_path(disk_id)
+        when "warden"
+          # Warden directly stores the device path
+          disk_id
         else
           raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end

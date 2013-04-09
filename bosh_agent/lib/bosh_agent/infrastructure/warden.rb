@@ -2,7 +2,7 @@
 
 module Bosh::Agent
   class Infrastructure::Warden
-    require 'agent/infrastructure/warden/settings'
+    require 'bosh_agent/infrastructure/warden/settings'
 
     def load_settings
       Settings.new.load_settings

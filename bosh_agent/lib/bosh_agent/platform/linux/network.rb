@@ -21,6 +21,8 @@ module Bosh::Agent
           setup_dhcp_from_settings
         when "openstack"
           setup_dhcp_from_settings
+        when "warden"
+          # No-op
         else
           raise Bosh::Agent::FatalError, "Setup networking failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
