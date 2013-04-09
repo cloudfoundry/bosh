@@ -66,8 +66,16 @@ module Bosh::Aws
       aws_elb.load_balancers.map(&:name)
     end
 
+    def server_certificate_names
+      aws_iam.server_certificates.map(&:name)
+    end
+
     def delete_elbs
       aws_elb.load_balancers.each(&:delete)
+      delete_server_certificates
+    end
+
+    def delete_server_certificates
       Bosh::Common.retryable(tries: 5, sleep: 2) do
         aws_iam.server_certificates.each(&:delete)
         aws_iam.server_certificates.to_a.empty?

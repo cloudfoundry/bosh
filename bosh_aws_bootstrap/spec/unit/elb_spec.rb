@@ -66,8 +66,8 @@ describe Bosh::Aws::ELB do
 
         before do
           certificates.should_receive(:upload).with(anything) do |args|
-            args[:certificate_body].should match /BEGIN CERTIFICATE/
-            args[:private_key].should match /BEGIN RSA PRIVATE KEY/
+            args[:certificate_body].should match(/BEGIN CERTIFICATE/)
+            args[:private_key].should match(/BEGIN RSA PRIVATE KEY/)
             args[:name].should == cert_name
             args.should_not have_key :certificate_chain
           end.and_return(certificate)
@@ -86,9 +86,9 @@ describe Bosh::Aws::ELB do
       context 'if the certificate comes from a signing authority (has a certificate chain)' do
         before do
           certificates.should_receive(:upload).with(anything) do |args|
-            args[:certificate_chain].should match /BEGIN CERTIFICATE/
-            args[:certificate_body].should match /BEGIN CERTIFICATE/
-            args[:private_key].should match /BEGIN RSA PRIVATE KEY/
+            args[:certificate_chain].should match(/BEGIN CERTIFICATE/)
+            args[:certificate_body].should match(/BEGIN CERTIFICATE/)
+            args[:private_key].should match(/BEGIN RSA PRIVATE KEY/)
             args[:name].should == cert_name
           end.and_return(certificate)
         end
@@ -114,17 +114,27 @@ describe Bosh::Aws::ELB do
       elb.stub(:aws_iam).and_return(fake_aws_iam)
 
       fake_aws_iam.should_receive(:server_certificates).and_return(server_certificates)
-      fake_aws_elb.should_receive(:load_balancers).and_return(load_balancers)
     end
 
     describe 'deleting each load balancer' do
+      before do
+        fake_aws_elb.should_receive(:load_balancers).and_return(load_balancers)
+      end
+
       let(:elb1) { mock('elb1') }
       let(:elb2) { mock('elb2') }
       let(:load_balancers) { [elb1, elb2] }
 
-      it 'should call delete on each ELB' do
+      let(:cert1) { mock('cert1') }
+      let(:cert2) { mock('cert2') }
+      let(:server_certificates) { [cert1, cert2] }
+
+      it 'should call delete on each ELB and each certificate' do
         elb1.should_receive(:delete)
         elb2.should_receive(:delete)
+
+        cert1.should_receive(:delete)
+        cert2.should_receive(:delete)
 
         elb.delete_elbs
       end
@@ -139,7 +149,7 @@ describe Bosh::Aws::ELB do
         cert1.should_receive(:delete)
         cert2.should_receive(:delete)
 
-        elb.delete_elbs
+        elb.delete_server_certificates
       end
     end
   end
@@ -154,6 +164,19 @@ describe Bosh::Aws::ELB do
       elb2 = mock('elb2', name: 'two')
       fake_aws_elb.should_receive(:load_balancers).and_return([elb1, elb2])
       elb.names.should == %w[one two]
+    end
+  end
+
+  describe "server certificate names" do
+    before do
+      elb.stub(:aws_iam).and_return(fake_aws_iam)
+    end
+
+    it 'returns the names of the uploaded server certificates' do
+      cert1 = mock('cert1', name: 'one')
+      cert2 = mock('cert2', name: 'two')
+      fake_aws_iam.should_receive(:server_certificates).and_return([cert1, cert2])
+      elb.server_certificate_names.should == %w[one two]
     end
   end
 end

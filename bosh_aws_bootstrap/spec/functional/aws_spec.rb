@@ -349,6 +349,38 @@ describe Bosh::Cli::Command::AWS do
         end
       end
     end
+
+    describe "aws destroy server certificates" do
+      let(:config_file) { asset "config.yml" }
+      let(:fake_elb) { mock('ELB', server_certificate_names: ['cf_router']) }
+
+      before do
+        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
+      end
+
+      context "when non-interactive" do
+        before do
+          aws.should_receive(:confirmed?).and_return(true)
+        end
+
+        it "should remove the key pairs" do
+          fake_elb.should_receive(:delete_server_certificates).and_return(true)
+          aws.delete_server_certificates(config_file)
+        end
+      end
+
+      context "when interactive and bailing out" do
+        before do
+          aws.should_receive(:confirmed?).and_return(false)
+        end
+
+        it 'should not delete the key pairs' do
+          fake_elb.should_not_receive(:delete_server_certificates)
+          aws.delete_server_certificates(config_file)
+        end
+      end
+    end
+
     describe "aws destroy elastic ips" do
       let(:config_file) { asset "config.yml" }
       let(:fake_ec2) { mock('EC2') }
@@ -1060,7 +1092,7 @@ describe Bosh::Cli::Command::AWS do
       it "should remove all ELBs" do
         fake_elb = mock("elb")
         Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
-        fake_elb.should_receive :delete_elbs
+        fake_elb.should_receive(:delete_elbs)
         fake_elb.should_receive(:names).and_return(%w(one two))
         aws.should_receive(:confirmed?).and_return(true)
         aws.delete_all_elbs(config_file)
