@@ -14,6 +14,8 @@ module Bosh
       end
 
       def validate_requirements(release_path)
+        release_exist = stemcell_exist = false
+
         Dir.chdir(release_path) do
           unless File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
             raise BootstrapError, "Please point to a valid release folder"
@@ -21,7 +23,11 @@ module Bosh
         end
 
         if director.list_releases.detect { |r| r['name'] == 'bosh' }
-          raise BootstrapError, "This target already has a `bosh' release."
+          release_exist = true
+        end
+
+        if director.list_stemcells.detect { |r| r['name'] == 'bosh-stemcell' }
+          stemcell_exist = true
         end
 
         existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }
@@ -32,17 +38,19 @@ Deployment `#{manifest.bosh_deployment_name}' already exists.
 This command should be used for bootstrapping bosh from scratch.
           MSG
         end
+
+        return release_exist, stemcell_exist
       end
 
       def start(bosh_repository=nil)
         bosh_repository ||= ENV.fetch('BOSH_REPOSITORY') { raise BootstrapError, "A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable" }
         release_path = File.join(bosh_repository, "release")
 
-        validate_requirements(release_path)
+        release_exist, stemcell_exist = validate_requirements(release_path)
 
         generate_manifest
-        create_and_upload_release(bosh_repository, release_path)
-        fetch_and_upload_stemcell
+        create_and_upload_release(bosh_repository, release_path) unless release_exist
+        fetch_and_upload_stemcell unless stemcell_exist
 
         deploy
 

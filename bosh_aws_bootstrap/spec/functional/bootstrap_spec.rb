@@ -90,7 +90,7 @@ describe "AWS Bootstrap commands" do
       end
     end
 
-    context "when the target has a release" do
+    context "when the target already has a release and a stemcell" do
       before do
         aws.config.target = aws.options[:target] = 'http://localhost:25555'
 
@@ -108,16 +108,40 @@ describe "AWS Bootstrap commands" do
             }
         ]
 
+        stub_request(:get, "http://127.0.0.1:25555/stemcells").
+            to_return(:status => 200, :body => '[{"name":"bosh-stemcell","version":"2013-03-21_01-53-17","cid":"ami-1c990175"}]')
         stub_request(:get, "http://127.0.0.1:25555/releases").
             with(:headers => {'Content-Type' => 'application/json'}).
             to_return(:status => 200, :body => releases.to_json)
+        stub_request(:get, "http://127.0.0.1:25555/deployments").
+            to_return(:status => 200, :body => "[]")
+        stub_request(:get, "http://127.0.0.1:25555/deployments/vpc-bosh-dev102/properties").
+            to_return(:status => 200, :body => "")
+
+        # Skip the actual deploy, since we already test it later on
+        Bosh::Aws::BoshBootstrap.any_instance.stub(:deploy)
+        Bosh::Aws::BoshBootstrap.any_instance.stub(:target_bosh_and_log_in)
+        Bosh::Aws::BoshBootstrap.any_instance.stub(:create_user)
+        Bosh::Cli::Command::AWS.any_instance.stub(:ask).and_return ("foo")
+
       end
 
-      it "raises an error" do
+      it "use the existent release" do
+        Bosh::Exec.should_not_receive(:sh).with("bundle exec rake release:create_dev_release")
+        Bosh::Cli::Command::Release.any_instance.should_not_receive(:upload)
+
         expect do
           aws.bootstrap_bosh(bosh_repository_path)
-        end.to raise_error(/This target already has a `bosh' release./)
+        end.to_not raise_error
       end
+
+      it "use the existent stemcell" do
+        Bosh::Cli::Command::Stemcell.any_instance.should_not_receive(:upload)
+        expect do
+          aws.bootstrap_bosh(bosh_repository_path)
+        end.to_not raise_error
+      end
+
     end
 
     context "when bosh_repository is not specified" do
@@ -181,6 +205,10 @@ describe "AWS Bootstrap commands" do
         stub_request(:get, "http://127.0.0.1:25555/deployments").
             with(:headers => {'Content-Type' => 'application/json'}).
             to_return(:status => 200, :body => deployments.to_json)
+
+        stub_request(:get, "http://127.0.0.1:25555/stemcells").
+            with(:headers => {'Content-Type' => 'application/json'}).
+            to_return(:status => 200, :body => "[]")
       end
 
       it "bails telling the user this command is only useful for the initial deployment" do
@@ -226,6 +254,7 @@ describe "AWS Bootstrap commands" do
         Bosh::Cli::Command::Release.any_instance.should_receive(:upload)
 
         stub_request(:get, "http://127.0.0.1:25555/stemcells").
+            to_return(:status => 200, :body => "[]").then.
             to_return(:status => 200, :body => "[]").then.
             to_return(:status => 200, :body => '[{"name":"bosh-stemcell","version":"2013-03-21_01-53-17","cid":"ami-1c990175"}]')
 
