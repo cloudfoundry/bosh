@@ -168,8 +168,8 @@ describe 'bosh_aws_bootstrap_external' do
       load_balancer.security_groups.map(&:name).should == ["web"]
 
       config = Bosh::Aws::AwsConfig.new(aws_configuration_template)
-      hosted_zone = route53.hosted_zones.detect { |zone| zone.name == "#{config.vpc_domain}." }
-      record_set = hosted_zone.resource_record_sets["\\052.#{config.vpc_domain}.", 'CNAME'] # E.g. "*.midway.cf-app.com."
+      hosted_zone = route53.hosted_zones.detect { |zone| zone.name == "#{config.vpc_generated_domain}." }
+      record_set = hosted_zone.resource_record_sets["\\052.#{config.vpc_generated_domain}.", 'CNAME'] # E.g. "*.midway.cf-app.com."
       record_set.should_not be_nil
       record_set.resource_records.first[:value] == load_balancer.dns_name
       record_set.ttl.should == 60

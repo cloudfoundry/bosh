@@ -48,10 +48,12 @@ describe Bosh::Aws::ELB do
 
     describe 'creating a new ELB that allows HTTPS' do
       let(:certs) { {cert_name => cert} }
-      let(:certificate) { double(AWS::IAM::ServerCertificate, arn: 'certificate_arn') }
-      let(:certificates) { double(AWS::IAM::ServerCertificateCollection) }
+      let(:certificate) { double(AWS::IAM::ServerCertificate, name: 'elb-cfrouter', arn: 'certificate_arn') }
+      let(:certificates) { double(AWS::IAM::ServerCertificateCollection, map: [cert_name]) }
 
       before do
+        Bosh::Common.stub(:wait)
+
         elb.stub(:aws_iam).and_return(fake_aws_iam)
 
         fake_aws_elb.load_balancers.should_receive(:create).with('my elb name', {
@@ -80,6 +82,38 @@ describe Bosh::Aws::ELB do
                                           'ssl_cert' => cert_name,
                                           'dns_record' => 'myapp',
                                           'domain' => 'dev102.cf.com'}, certs).should == new_elb
+        end
+      end
+
+      context "when amazon fails to see that the certificate was uploaded already" do
+        it "tries to upload the certificate again" do
+          fake_aws_iam.should_receive(:server_certificates).and_return(certificates)
+
+          certificates.stub(:map).and_return([], [cert_name])
+          certificates.should_receive(:upload).twice.and_return(certificate)
+
+          elb.create('my elb name', vpc, {'subnets' => %w(sub_name1 sub_name2),
+                                          'security_group' => 'security_group_name',
+                                          'https' => true,
+                                          'ssl_cert' => cert_name,
+                                          'dns_record' => 'myapp',
+                                          'domain' => 'dev102.cf.com'}, certs)
+        end
+      end
+
+      context "when amazon fails to see the certificate and then complains the certificate was already uploaded" do
+        it "uses the certificate that has been uploaded before" do
+          fake_aws_iam.should_receive(:server_certificates).and_return(certificates)
+
+          certificates.should_receive(:[]).with(cert_name).and_return(certificate)
+          certificates.should_receive(:upload).and_raise(AWS::IAM::Errors::EntityAlreadyExists)
+
+          elb.create('my elb name', vpc, {'subnets' => %w(sub_name1 sub_name2),
+                                          'security_group' => 'security_group_name',
+                                          'https' => true,
+                                          'ssl_cert' => cert_name,
+                                          'dns_record' => 'myapp',
+                                          'domain' => 'dev102.cf.com'}, certs)
         end
       end
 

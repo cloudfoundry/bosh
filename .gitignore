@@ -18,6 +18,7 @@ spec.log
 spec/assets/*.pid
 spec/assets/*.db
 spec/assets/**/*.pid
+spec/assets/**/elb-cfrouter.*
 spec/assets/bosh_config.yml
 spec/assets/test_release
 bosh_agent/spec/tmp
