@@ -158,8 +158,8 @@ describe "with release and stemcell and two deployments" do
 
     it "should deploy using a static network", ssh: true do
       pending "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
-      ssh(static_ip, "vcap", "ifconfig eth0", ssh_options).should
-      match /#{static_ip}/
+      pending "doesn't work on OpenStack as the VIP IP isn't visible to the VM" if openstack?
+      ssh(static_ip, "vcap", "ifconfig eth0", ssh_options).should match /#{static_ip}/
     end
 
     it "should create a disk" do
