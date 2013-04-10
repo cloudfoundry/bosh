@@ -243,11 +243,11 @@ namespace :spec do
     end
 
     def latest_openstack_micro_bosh_stemcell_path
-      Dir.glob("#{ENV['HOME']}/workspace/openstack_micro_bosh_stemcell/micro-bosh-stemcell-openstack*.tgz").first
+      Dir.glob("#{ENV['JENKINS_HOME']}/workspace/openstack_micro_bosh_stemcell/micro-bosh-stemcell-openstack*.tgz").first
     end
 
     def latest_openstack_stemcell_path
-      Dir.glob("#{ENV['HOME']}/workspace/openstack_bosh_stemcell/bosh-stemcell-openstack-*.tgz").first
+      Dir.glob("#{ENV['JENKINS_HOME']}/workspace/openstack_bosh_stemcell/bosh-stemcell-openstack-*.tgz").first
     end
 
     def vpc_outfile_path
