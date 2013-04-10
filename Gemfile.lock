@@ -62,6 +62,7 @@ PATH
       archive-tar-minitar (~> 0.5)
       blobstore_client (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
+      haddock
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
       json_pure (~> 1.7.6)
@@ -281,6 +282,7 @@ GEM
     guard-rspec (2.5.1)
       guard (>= 1.1)
       rspec (~> 2.11)
+    haddock (0.2.2)
     highline (1.6.16)
     httpclient (2.2.4)
     json (1.7.7)

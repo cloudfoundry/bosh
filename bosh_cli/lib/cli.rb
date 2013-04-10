@@ -32,6 +32,8 @@ require "yaml"
 require "netaddr"
 require "zlib"
 require "archive/tar/minitar"
+require "haddock"
+Haddock::Password.delimiters='!@#%^&()-,./'
 include Archive::Tar
 
 unless defined?(Bosh::Cli::VERSION)
