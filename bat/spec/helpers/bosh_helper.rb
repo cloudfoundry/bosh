@@ -106,6 +106,10 @@ module BoshHelper
     info["cpi"] == "aws"
   end
 
+  def openstack?
+    info["cpi"] == "openstack"
+  end
+
   def vsphere?
     info["cpi"] == "vsphere"
   end
