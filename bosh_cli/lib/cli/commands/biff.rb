@@ -384,5 +384,18 @@ module Bosh::Cli::Command
       @temp_file_path_2 = "#{@dir_name}/bosh_biff_2"
     end
 
+    # Generate a random string for passwords and tokens.
+    # Length is the length of the string.
+    # name is an optional name of a previously generated string. This is used
+    # to allow setting the same passwd for different components.
+    def random_string(length, name=nil)
+      @random_cache ||= {}
+      if name
+        @random_cache[name] ||= Haddock::Password.generate(length)
+      else
+        Haddock::Password.generate(length)
+      end
+    end
+
   end
 end
