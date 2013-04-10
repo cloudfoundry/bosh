@@ -9,6 +9,8 @@ module Bosh::Agent
       @config         = Bosh::Agent::Config
       @infrastructure = @config.infrastructure
       @logger         = @config.logger
+      @networks       = []
+      @dns            = []
     end
 
     def setup_networking
@@ -16,9 +18,9 @@ module Bosh::Agent
         when "vsphere"
           setup_networking_from_settings
         when "aws"
-          write_resolv_conf
+          setup_dhcp_from_settings
         when "openstack"
-          write_resolv_conf
+          setup_dhcp_from_settings
         else
           raise Bosh::Agent::FatalError, "Setup networking failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
@@ -49,6 +51,12 @@ module Bosh::Agent
       write_network_interfaces
       write_resolv_conf
       gratuitous_arp
+    end
+
+    def setup_dhcp_from_settings
+      unless dns.empty?
+        write_dhcp_conf
+      end
     end
 
     def dns
@@ -86,7 +94,7 @@ module Bosh::Agent
       # after networking has been reconfigured.
       Thread.new do
         6.times do
-          networks.values.each do |network|
+          @networks.each do |name, network|
             until File.exist?("/sys/class/net/#{network['interface']}")
               sleep 0.1
             end
@@ -110,9 +118,9 @@ module Bosh::Agent
 
     def load_erb(file)
       path = File.expand_path(file, @template_dir)
-      template_content = File.read(path)
-
-      ERB.new(template_content, 0, '%<>-')
+      File.open(path) do |f|
+        f.read
+      end
     end
   end
 end

@@ -6,7 +6,7 @@ module Bosh::Agent
   class Platform::Rhel::Logrotate < Platform::Linux::Logrotate
 
     def initialize
-      super(File.join(File.dirname(__FILE__), 'templates'))
+      super(File.join File.dirname(__FILE__), 'templates')
     end
 
   end
