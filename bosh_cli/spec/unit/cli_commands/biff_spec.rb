@@ -117,6 +117,35 @@ describe Bosh::Cli::Command::Biff do
         }.should raise_error Bosh::Cli::CliError, "There were 1 errors."
       end
     end
+
+    context "randomized strings" do
+      let(:template_file) { spec_asset("biff/random_string_template.erb") }
+      let(:config_file) { spec_asset("biff/random_string.yml") }
+
+      before {
+        biff.stub!(:deployment).and_return(config_file)
+        biff.should_receive(:agree).with(
+          "Would you like to keep the new version? [yn]").once.and_return(false)
+      }
+
+      subject {
+        biff.biff(template_file)
+        Psych.load(biff.template_output)['properties']
+      }
+
+      it "Generate a password and put it in" do
+        expect(subject["defined_but_no_passwd"]["password"]).to_not be_nil
+      end
+
+      it "Retain an existing" do
+        expect(subject["defined_with_passwd"]["password"]).to eq "passwd_set_in_yml"
+      end
+
+      it "Duplicate passwords with same name" do
+        expect(subject["same_passwd"]["password"]).to eq subject["defined_but_no_passwd"]["password"]
+      end
+    end
+
   end
 
   context "with good_simple_config" do
