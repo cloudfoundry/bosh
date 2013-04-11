@@ -10,6 +10,9 @@ Vagrant::Config.run do |config|
   config.vm.share_folder "bosh_repo", "/bosh", "../."
   config.vm.share_folder "blobstore_storage", "/var/vmc/bosh/blob", "./blobstore"
 
+  # Give the VM 4G of memory
+  config.vm.customize ["modifyvm", :id, "--memory", 4096]
+
   config.vm.provision :chef_solo do |chef|
     chef.cookbooks_path = ["./chef/cookbooks", "./chef"]
     chef.provisioning_path = "/var/vagrant-chef"
