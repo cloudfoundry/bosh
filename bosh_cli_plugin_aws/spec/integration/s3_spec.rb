@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe "S3 buckets integration test", aws: true do
+describe "S3 buckets integration test", s3_credentials: true do
   let(:credentials) do
     {
         access_key_id: ENV['BOSH_AWS_ACCESS_KEY_ID'],
