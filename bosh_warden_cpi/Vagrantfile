@@ -2,8 +2,8 @@
 # vi: set ft=ruby :
 
 Vagrant::Config.run do |config|
-  config.vm.box = "base"
-  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+  config.vm.box = "lucid_base"
+  config.vm.box_url = "http://files.vagrantup.com/lucid64.box"
 
   config.vm.forward_port 25555, 25555 # Director
 
