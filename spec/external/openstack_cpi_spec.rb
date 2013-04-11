@@ -45,11 +45,11 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   after(:each) do
-    cpi.delete_disk(@volume_id) if @volume_id
     if @server_id
       cpi.delete_vm(@server_id)
       cpi.has_vm?(@server_id).should be_false
     end
+    cpi.delete_disk(@volume_id) if @volume_id
   end
 
   def vm_lifecycle(stemcell_id, network_spec, disk_locality)
