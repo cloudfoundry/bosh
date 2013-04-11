@@ -33,7 +33,7 @@ describe "AWS Bootstrap commands" do
   end
 
   it "should bootstrap microbosh" do
-    stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell_ami").
+    stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami").
         to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
 
     credentials = encoded_credentials("admin", "admin")
@@ -69,7 +69,7 @@ describe "AWS Bootstrap commands" do
           with(:headers => {'Content-Type' => 'application/json'}).
           to_return(:status => 200, :body => '{"uuid": "1234abc"}')
 
-      stub_request(:get, /last_successful_bosh-stemcell_light\.tgz$/).
+      stub_request(:get, /last_successful_bosh-stemcell-aws_light\.tgz$/).
           to_return(:status => 200, :body => File.read(stemcell_stub))
 
       Bosh::Cli::Config.output = File.open("/dev/null", "w")

@@ -50,7 +50,7 @@ module Bosh
 
       def micro_ami
         ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] ||
-            Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
+            Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell-aws_ami").strip
       end
     end
   end
