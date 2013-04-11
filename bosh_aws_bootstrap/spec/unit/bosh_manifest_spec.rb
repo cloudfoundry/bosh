@@ -34,6 +34,10 @@ networks:
   subnets:
   - range: 10.10.0.0/24
     gateway: 10.10.0.1
+    static:
+    - 10.10.0.7 - 10.10.0.9
+    reserved:
+    - 10.10.0.2 - 10.10.0.6
     dns:
     - 10.10.0.6
     cloud_properties:
