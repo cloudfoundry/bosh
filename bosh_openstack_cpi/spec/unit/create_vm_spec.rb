@@ -278,6 +278,27 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                             combined_network_spec)
   end
 
+  it "raises a Retryable Error when cannot create an OpenStack server" do
+    server = double("server", :id => "i-test", :name => "i-test")
+    image = double("image", :id => "sc-id", :name => "sc-id")
+    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
+
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:create).and_return(server)
+      openstack.images.should_receive(:find).and_return(image)
+      openstack.flavors.should_receive(:find).and_return(flavor)
+    end
+
+    cloud.should_receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
+
+    expect {
+      vm_id = cloud.create_vm("agent-id", "sc-id",
+                              resource_pool_spec,
+                              { "network_a" => dynamic_network_spec },
+                              nil, { "test_env" => "value" })
+    }.to raise_error(Bosh::Clouds::VMCreationFailed)
+  end
+
   def volume(zone)
     vol = double("volume")
     vol.stub(:availability_zone).and_return(zone)
