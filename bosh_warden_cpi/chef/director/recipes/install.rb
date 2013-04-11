@@ -15,6 +15,8 @@ packages = %w[
   sqlite3
   libsqlite3-dev
   libpq-dev
+  dbus
+  vim
 ]
 
 script "install_ruby" do
