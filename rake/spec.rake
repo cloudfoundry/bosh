@@ -205,6 +205,14 @@ namespace :spec do
 
         if stemcell_properties['cloud_properties']['ami']
           ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
+
+          obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami_us-east-1"]
+
+          obj.write(ami_id)
+          obj.acl = :public_read
+          puts "AMI name written to: #{obj.public_url :secure => false}"
+
+          # NOTE: this URL is deprecated
           obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami"]
 
           obj.write(ami_id)
