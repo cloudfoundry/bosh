@@ -33,7 +33,7 @@ describe "messages" do
   end
 
   # wait for the first heartbeat to appear or timeout after 5 seconds
-  def wait_for_nats(timeout=5)
+  def wait_for_nats(timeout=15)
     count = 0
     begin
       catch :done do
