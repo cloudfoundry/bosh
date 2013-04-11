@@ -14,7 +14,6 @@ packages = %w[
   runit
   sqlite3
   libsqlite3-dev
-  postgresql-9.1
   libpq-dev
 ]
 
