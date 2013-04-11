@@ -52,19 +52,22 @@ module Bosh::Agent
       # Nothing to do for "vip" networks
       return nil if properties["type"] == VIP_NETWORK_TYPE
 
-      sigar = Sigar.new
-      net_info = sigar.net_info
-      ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
+      system = Ohai::System.new
+      system.all_plugins
 
-      properties = {}
-      properties["ip"] = ifconfig.address
-      properties["netmask"] = ifconfig.netmask
-      properties["dns"] = []
-      properties["dns"] << net_info.primary_dns if net_info.primary_dns &&
-                                                   !net_info.primary_dns.empty?
-      properties["dns"] << net_info.secondary_dns if net_info.secondary_dns &&
-                                                     !net_info.secondary_dns.empty?
-      properties["gateway"] = net_info.default_gateway
+      default_interface = system.network[:default_interface]
+      default_gateway = system.network[:default_gateway]
+      addresses = system.network[:interfaces][default_interface][:addresses]
+      ip, ip_settings = addresses.detect { |_,addr| addr[:family] == 'inet'}
+      netmask = ip_settings[:netmask]
+
+      dns = Resolv::DNS::Config.default_config_hash[:nameserver]
+
+      properties["ip"] = ip
+      properties["netmask"] = netmask
+      properties["dns"] = dns
+      properties["gateway"] = default_gateway
+
       properties
     end
 

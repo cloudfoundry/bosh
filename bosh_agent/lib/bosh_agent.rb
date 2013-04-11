@@ -17,7 +17,7 @@ require "fileutils"
 require "resolv"
 require "ipaddr"
 require "httpclient"
-require "sigar"
+require "ohai"
 
 require "common/exec"
 require "common/properties"

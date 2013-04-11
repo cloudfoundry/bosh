@@ -35,7 +35,6 @@ describe Bosh::Agent::Message::UnmountDisk do
 end
 
 describe Bosh::Agent::Message::ListDisk do
-
   it "should return empty list" do
     settings = { "disks" => { } }
     Bosh::Agent::Config.settings = settings
@@ -58,27 +57,49 @@ end
 
 describe Bosh::Agent::Message::DiskUtil do
   describe '#get_usage' do
+    it 'returns nil if the disk cannot be found' do
+      base = Bosh::Agent::Config.base_dir
+
+      ohai_system = double(Ohai::System, all_plugins: true)
+      described_class.stub(ohai_system: ohai_system)
+      ohai_filesystem = {
+          "disk1" => {
+              mount: '/',
+              percent_used: "69%"
+          },
+          "disk2" => {
+              mount: File.join(base, 'data'),
+              percent_used: "73%"
+          }
+      }
+      ohai_system.stub(filesystem: ohai_filesystem)
+
+      described_class.get_usage.should == {
+          :system => {:percent => '69'},
+          :ephemeral => {:percent => '73'}
+      }
+    end
+
     it 'should return the disk usage' do
       base = Bosh::Agent::Config.base_dir
 
-      fs_list = [
-          double('system', :dir_name => '/'),
-          double('ephermal', :dir_name => File.join(base, 'data')),
-          double('persistent', :dir_name => File.join(base, 'store'))
-      ]
-
-      sigar = double('sigar', :file_system_list => fs_list)
-
-      u1 = double('usage', :use_percent => 0.69)
-      sigar.should_receive(:file_system_usage).with('/').and_return(u1)
-
-      u2 = double('usage', :use_percent => 0.73)
-      sigar.should_receive(:file_system_usage).with(File.join(base, 'data')).and_return(u2)
-
-      u3 = double('usage', :use_percent => 0.11)
-      sigar.should_receive(:file_system_usage).with(File.join(base, 'store')).and_return(u3)
-
-      Sigar.stub(:new => sigar)
+      ohai_system = double(Ohai::System, all_plugins: true)
+      described_class.stub(ohai_system: ohai_system)
+      ohai_filesystem = {
+          "disk1" => {
+              mount: '/',
+              percent_used: "69%"
+          },
+          "disk2" => {
+              mount: File.join(base, 'data'),
+              percent_used: "73%"
+          },
+          "disk3" => {
+              mount: File.join(base, 'store'),
+              percent_used: "11%"
+          }
+      }
+      ohai_system.stub(filesystem: ohai_filesystem)
 
       described_class.get_usage.should == {
           :system => {:percent => '69'},

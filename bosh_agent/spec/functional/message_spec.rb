@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + "/../spec_helper"
+require "spec_helper"
 
 require "nats/client"
 require "yajl"
@@ -76,8 +76,6 @@ describe "messages" do
     @agent_pid = Process.spawn(command)
     wait_for_nats
   end
-
-
 
   after(:all) do
     Process.kill(:TERM, @agent_pid)
