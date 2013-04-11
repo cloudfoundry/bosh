@@ -1,7 +1,7 @@
 WARDEN_PATH = "/warden"
-ROOT_FS = "/var/warden/rootfs"
+ROOT_FS = "/tmp/warden/rootfs"
 OLD_CONFIG_FILE_PATH = "#{WARDEN_PATH}/warden/config/warden-cpi-linux.yml"
-NEW_CONFIG_FILE_PATH = "#{WARDEN_PATH}/warden/config/warden-cpi-vm.yml"
+NEW_CONFIG_FILE_PATH = OLD_CONFIG_FILE_PATH#"#{WARDEN_PATH}/warden/config/warden-cpi-vm.yml"
 
 package "build-essential" do
   action :install
