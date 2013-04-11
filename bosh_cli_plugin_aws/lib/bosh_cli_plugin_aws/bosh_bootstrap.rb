@@ -123,7 +123,7 @@ This command should be used for bootstrapping bosh from scratch.
 
       def bosh_stemcell
         ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"] ||
-            Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz")
+            Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell-aws_light.tgz")
       end
     end
   end
