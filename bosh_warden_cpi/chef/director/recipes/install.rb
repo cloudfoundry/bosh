@@ -13,7 +13,6 @@ packages = %w[
   wget
   runit
   sqlite3
-  redis-server
   libsqlite3-dev
   postgresql-9.1
   libpq-dev
@@ -41,6 +40,21 @@ script "install_ruby" do
   ./configure --prefix=/usr/local --enable-shared --disable-install-doc --with-opt-dir=/usr/local/lib
   make
   make install
+  EOH
+end
+
+script "install_redis" do
+  interpreter "bash"
+  user "root"
+  creates "/usr/local/bin/redis-server"
+  cwd "/usr/local/src/"
+
+  code <<-EOH
+  wget http://redis.googlecode.com/files/redis-2.6.12.tar.gz
+  tar zxvf redis-2.6.12.tar.gz
+  cd redis-2.6.12
+  PREFIX=/usr/local make all install
+  cp redis.conf /usr/local/etc
   EOH
 end
 
