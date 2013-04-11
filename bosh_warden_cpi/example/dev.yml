@@ -1,6 +1,6 @@
 ---
 name: dev-test
-director_uuid: edd04618-31e0-4cb8-a9e1-196f67e99a9f
+director_uuid: 145257f1-36f9-49cf-bbac-168d49a521ad
 
 release:
   name: appcloud
