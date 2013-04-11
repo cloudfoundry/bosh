@@ -20,7 +20,7 @@ describe Bosh::Aws::MicroBoshBootstrap do
 
     context "when the environment does not provide an override AMI" do
       before do
-        Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").and_return("ami-david")
+        Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell-aws_ami").and_return("ami-david")
       end
 
       it "returns the content from S3" do
