@@ -76,20 +76,17 @@ execute "install bosh gems" do
   action :run
 end
 
-service "redis" do
-  action :start
+execute "create directory for bosh logs" do
+  cwd "/var/log"
+  command "mkdir -p bosh"
+  action :run
 end
 
-#execute "migrate database" do
-#  cwd "/bosh/director"
-#  command "bundle exec bin/migrate -c /vagrant/config/warden.yml"
-#end
-#
-#execute "start director" do
-#  cwd "/bosh/director"
-#  command "bundle exec bin/director -c /vagrant/config/warden.yml"
-#end
+execute "copy init scripts" do
+  cwd "/"
+  command "sudo cp bosh/bosh_warden_cpi/init/* /etc/init/"
+end
 
-#execute "help" do
-#  echo "the ipaddress is asldfj"
-#end
+execute "start bosh!" do
+  command "sudo start bosh"
+end
