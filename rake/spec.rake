@@ -54,12 +54,6 @@ namespace :spec do
         end
       end
 
-      desc "Run AWS CF deployment suite"
-      RSpec::Core::RakeTask.new(:cf) do |t|
-        t.pattern = "spec/system/aws/**/*_spec.rb"
-        t.rspec_opts = %w(--format documentation --color --tag cf)
-      end
-
       task :deploy_micro do
         rm_rf("/tmp/deployments")
         mkdir_p("/tmp/deployments/micro")
