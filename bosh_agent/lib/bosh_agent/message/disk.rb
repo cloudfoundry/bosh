@@ -261,35 +261,27 @@ module Bosh::Agent
         end
 
         def get_usage
-          start = Time.now
           usage = {
               :system =>      {:percent => fs_usage_safe('/')},
               :ephemeral =>   {:percent => fs_usage_safe(File.join(base_dir, 'data'))}
           }
           persistent_percent = fs_usage_safe(File.join(base_dir, 'store'))
           usage[:persistent] = {:percent => persistent_percent} if persistent_percent
-          logger.info("disk_get_usage took #{Time.now - start}")
 
           usage
         end
 
         private
-
-        def ohai_system
-          return @ohai_system if @ohai_system
-          @ohai_system = Ohai::System.new
-          @ohai_system.require_plugin("linux::filesystem")
-          @ohai_system.require_plugin("darwin::filesystem")
-          @ohai_system
-        end
-
         # Calculate file_system_usage
         def fs_usage_safe(path)
-          filesystems = ohai_system.filesystem.values
-          filesystem = filesystems.find { |fs| fs[:mount] == path }
-          return unless filesystem
+          sigar = Sigar.new
+          fs_list = sigar.file_system_list
 
-          filesystem[:percent_used].to_i.to_s
+          fs = fs_list.find {|fs| fs.dir_name == path}
+          return unless fs
+
+          usage = sigar.file_system_usage(path)
+          (usage.use_percent * 100).to_i.to_s
         end
 
       end

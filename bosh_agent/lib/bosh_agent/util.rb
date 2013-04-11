@@ -112,9 +112,9 @@ module Bosh::Agent
 
         stdout_rd, stdout_wr = IO.pipe
         stderr_rd, stderr_wr = IO.pipe
-        pid = Process.spawn(env, hook_file, :out => stdout_wr, :err => stderr_wr, :unsetenv_others => true)
-        _, status = Process.wait2(pid)
-        exit_status = status.exitstatus
+        Process.spawn(env, hook_file, :out => stdout_wr, :err => stderr_wr, :unsetenv_others => true)
+        Process.wait
+        exit_status = $?.exitstatus
         stdout_wr.close
         stderr_wr.close
         result = stdout_rd.read

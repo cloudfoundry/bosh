@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency          'yajl-ruby',        '~>1.1.0'
   s.add_dependency          'sinatra',          '~>1.4.2'
   s.add_dependency          'nats',             '~>0.4.28'
-  s.add_dependency          'ohai',             '~>6.16.0'
+  s.add_dependency          'sigar',            '~>0.7.2'
   s.add_dependency          'httpclient',       '=2.2.4'
   s.add_dependency          'uuidtools',        '~> 2.1.2'
   s.add_dependency          'sys-filesystem',   '~> 1.1.0'
