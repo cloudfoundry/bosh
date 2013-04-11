@@ -215,6 +215,25 @@ describe Bosh::Cli::Command::AWS do
       end
 
       context "when a step in the creation fails" do
+        context "when certificate uploading to AWS fails" do
+          it "shows a CLI error with the message from the underlying error" do
+            fake_vpc = stub("vpc", :state => "available").as_null_object
+            fake_ec2 = stub("ec2").as_null_object
+            fake_r53 = stub("r53").as_null_object
+            fake_elb = stub("elb")
+
+            fake_elb.should_receive(:create).and_raise(Bosh::Aws::ELB::BadCertificateError, "cert was bad")
+
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
+            Bosh::Aws::Route53.stub(:new).and_return(fake_r53)
+            Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
+
+            expect { aws.create_vpc config_file }.to raise_error(Bosh::Cli::CliError,
+                                                                 /cert was bad/)
+          end
+        end
+
         it "should still flush the output to a YAML so the user knows what resources were provisioned" do
           fake_vpc = mock("vpc")
 

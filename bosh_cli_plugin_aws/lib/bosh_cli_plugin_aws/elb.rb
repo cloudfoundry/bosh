@@ -1,6 +1,8 @@
 module Bosh::Aws
   class ELB
 
+    class BadCertificateError < RuntimeError; end
+
     def initialize(credentials)
       @credentials = credentials
       @aws_elb = AWS::ELB.new(@credentials)
@@ -99,7 +101,7 @@ module Bosh::Aws
       begin
         certificate = nil
 
-        Bosh::Common.retryable(tries: 10, sleep: 2) do
+        Bosh::Common.retryable(on: AWS::IAM::Errors::MalformedCertificate, tries: 10, sleep: 2) do
           begin
             certificate = certificates.upload(options)
             server_certificate_names.include? name
@@ -111,7 +113,10 @@ module Bosh::Aws
 
         certificate
       rescue AWS::IAM::Errors::MalformedCertificate => e
-        err "Unable to upload ELB SSL Certificate: #{e.message}\n  #{options.inspect}"
+        certificate = cert.certificate
+        private_key = cert.key
+        message = "Certificate:\n#{certificate}\n\nPrivate Key:\n#{private_key}"
+        raise BadCertificateError.new("Unable to upload ELB SSL Certificate: #{e.message}\n#{message}")
       end
     end
 

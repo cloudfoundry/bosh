@@ -218,6 +218,8 @@ module Bosh::Cli::Command
       dhcp_options = config["vpc"]["dhcp_options"]
       say "creating DHCP options"
       vpc.create_dhcp_options(dhcp_options)
+    rescue Bosh::Aws::ELB::BadCertificateError => e
+      err e.message
     ensure
       file_path = File.join(Dir.pwd, OUTPUT_VPC_FILE)
       flush_output_state file_path
