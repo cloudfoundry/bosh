@@ -8,6 +8,7 @@ Vagrant::Config.run do |config|
   config.vm.forward_port 25555, 25555 # Director
 
   config.vm.share_folder "bosh_repo", "/bosh", "../."
+  config.vm.share_folder "blobstore_storage", "/var/vmc/bosh/blob", "./blobstore"
 
   config.vm.provision :chef_solo do |chef|
     chef.cookbooks_path = ["./chef/cookbooks", "./chef"]
