@@ -324,6 +324,12 @@ module Bosh::Director
         configure_vm(vm, agent, network_settings)
         vm_data.agent = agent
         yield vm_data
+      rescue RpcTimeout => e
+        # if we time out waiting for the agent, we should clean up the the VM
+        # as it will leave us in an unrecoverable state otherwise
+        @vm_reuser.remove_vm(vm_data)
+        tear_down_vm(vm_data)
+        raise e
       ensure
         vm_data.release
         unless @deployment_plan.compilation.reuse_compilation_vms

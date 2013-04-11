@@ -23,8 +23,7 @@ module Bosh::Director
     attr_accessor :agent
 
     # Initializes a VmData.
-    # @param [NetworkReservation] reservation The network reservation for this
-    #     VM.
+    # @param [NetworkReservation] reservation The network reservation for this VM.
     # @param [Models::Vm] vm The VM to be reused.
     # @param [Models::Stemcell] stemcell The Stemcell to make the VM on.
     # @param [Hash] network_settings A hash containing the network reservation.
@@ -39,8 +38,7 @@ module Bosh::Director
     end
 
     # Marks that this VM is being used.
-    # @return [Boolean] Returns whether it could successfully mark this VM as in
-    #     use.
+    # @return [Boolean] Returns whether it could successfully mark this VM as in use.
     def mark_in_use
       @being_used_mutex.synchronize do
         if @being_used
@@ -57,6 +55,10 @@ module Bosh::Director
       @being_used_mutex.synchronize do
         @being_used = false
       end
+    end
+
+    def in_use?
+      @being_used
     end
   end
 end

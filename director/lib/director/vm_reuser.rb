@@ -6,8 +6,7 @@ module Bosh::Director
     end
 
     # Adds a VM's information to the pool of VMs that can be reused.
-    # @param [NetworkReservation] reservation The network reservation for this
-    #     VM.
+    # @param [NetworkReservation] reservation The network reservation for this VM.
     # @param [Models::Vm] vm The VM to be reused.
     # @param [Models::Stemcell] stemcell The Stemcell to make the VM on.
     # @param [Hash] network_settings A hash containing the network reservation.
@@ -21,10 +20,8 @@ module Bosh::Director
     end
 
     # Returns the VmData instance of a VM that is not in use and can be reused.
-    # @param [Models::Stemcell] stemcell The stemcell that the VM must be
-    #     running.
-    # @return [VmData?] The VmData instance for an existing unused VM, if one
-    #     exists.  Otherwise, nil.
+    # @param [Models::Stemcell] stemcell The stemcell that the VM must be running.
+    # @return [VmData?] The VmData instance for an existing unused VM, if one exists. Otherwise, nil.
     def get_vm(stemcell)
       unless @stemcells_to_vms[stemcell].nil?
         @stemcells_to_vms[stemcell].each do |vm_data|
@@ -36,12 +33,19 @@ module Bosh::Director
       nil
     end
 
+    def remove_vm(vm)
+      @stemcells_to_vms.each_value do |vms|
+        vms.each do |vm_data|
+          vms.delete(vm_data) if vm_data.vm == vm
+        end
+      end
+    end
+
     # Gets the total number of compilation VMs created with a given stemcell.
     # @param [Models::Stemcell] stemcell The stemcell the VMs are running.
     # @return [Integer] The number of VMs running a given stemcell.
     def get_num_vms(stemcell)
-      @stemcells_to_vms[stemcell].nil? ?
-        0 : @stemcells_to_vms[stemcell].size
+      @stemcells_to_vms[stemcell].nil? ? 0 : @stemcells_to_vms[stemcell].size
     end
 
     # An iterator for all compilation VMs on all stemcells.

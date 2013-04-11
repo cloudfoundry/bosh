@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::PackageCompiler do
 
@@ -449,6 +449,55 @@ describe Bosh::Director::PackageCompiler do
 
       compiler.compile_package(task)
       callback.call
+    end
+  end
+
+  describe '#prepare_vm' do
+    let(:network) { double('network', name: 'name', network_settings: nil) }
+    let(:compilation) do
+      config = double('compilation_config')
+      config.stub(network: network)
+      config.stub(cloud_properties: double('cloud_properties'))
+      config.stub(env: double('env'))
+      config.stub(workers: 2)
+      config
+    end
+    let(:deployment_plan) { double(BD::DeploymentPlan, compilation: compilation, model: 'model')}
+    let(:stemcell) { BDM::Stemcell.make }
+    let(:vm) { BDM::Vm.make }
+    let(:vm_data) { double(BD::VmData, vm: vm) }
+    let(:reuser) { double(BD::VmReuser) }
+
+    context 'with reuse_compilation_vms' do
+      before do
+        compilation.stub(reuse_compilation_vms: true)
+        BD::VmCreator.stub(create: vm)
+        BD::VmReuser.stub(new: reuser)
+      end
+
+      it 'should clean up the compilation vm if it failed' do
+        compiler = described_class.new(deployment_plan)
+
+        compiler.stub(reserve_network: double('network_reservation'))
+        client = double(BD::AgentClient)
+        client.stub(:wait_until_ready).and_raise(BD::RpcTimeout)
+        BD::AgentClient.stub(new: client)
+
+        reuser.stub(get_vm: nil)
+        reuser.stub(get_num_vms: 0)
+        reuser.stub(add_vm: vm_data)
+
+        reuser.should_receive(:remove_vm).with(vm_data)
+        vm_data.should_receive(:release)
+
+        compiler.should_receive(:tear_down_vm).with(vm_data)
+
+        expect {
+          compiler.prepare_vm(stemcell) do
+            # nothing
+          end
+        }.to raise_error BD::RpcTimeout
+      end
     end
   end
 end
