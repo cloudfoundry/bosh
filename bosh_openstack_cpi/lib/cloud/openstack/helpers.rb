@@ -5,7 +5,7 @@ module Bosh::OpenStackCloud
 
   module Helpers
 
-    DEFAULT_TIMEOUT = 600 # Default timeout for target state (in seconds)
+    DEFAULT_TIMEOUT = 300 # Default timeout for target state (in seconds)
     MAX_RETRIES = 10 # Max number of retries
     DEFAULT_RETRY_TIMEOUT = 1 # Default timeout before retrying a call (in seconds)
 
