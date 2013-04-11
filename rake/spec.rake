@@ -172,14 +172,16 @@ namespace :spec do
       end
 
       task :bat do
-        ENV['BAT_DIRECTOR'] = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
-        ENV['BAT_STEMCELL'] = latest_openstack_stemcell_path
-        ENV['BAT_DEPLOYMENT_SPEC'] = "/tmp/openstack-ci/deployments/bat.yml"
-        ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-        ENV['BAT_VCAP_PRIVATE_KEY'] = ENV["BOSH_OPENSTACK_PRIVATE_KEY"]
-        ENV['BAT_DNS_HOST'] = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
-        ENV['BAT_FAST'] = 'true'
-        Rake::Task['bat'].execute
+        cd(ENV['WORKSPACE']) do
+          ENV['BAT_DIRECTOR'] = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
+          ENV['BAT_STEMCELL'] = latest_openstack_stemcell_path
+          ENV['BAT_DEPLOYMENT_SPEC'] = "/tmp/openstack-ci/deployments/bat.yml"
+          ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
+          ENV['BAT_VCAP_PRIVATE_KEY'] = ENV["BOSH_OPENSTACK_PRIVATE_KEY"]
+          ENV['BAT_DNS_HOST'] = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
+          ENV['BAT_FAST'] = 'true'
+          Rake::Task['bat'].execute
+        end
       end
     end
 
