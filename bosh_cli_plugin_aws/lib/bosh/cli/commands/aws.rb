@@ -1,5 +1,5 @@
 require "aws-sdk"
-require_relative "../../../bosh_aws_bootstrap"
+require_relative "../../../bosh_cli_plugin_aws"
 
 module Bosh::Cli::Command
   class AWS < Base

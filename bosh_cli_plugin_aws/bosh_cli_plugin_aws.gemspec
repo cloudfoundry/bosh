@@ -3,7 +3,7 @@
 version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|
-  s.name          = "bosh_aws_bootstrap"
+  s.name          = "bosh_cli_plugin_aws"
   s.version       = version
   s.platform      = Gem::Platform::RUBY
   s.description   = %q{BOSH plugin to easily create and delete an AWS VPC}
@@ -19,6 +19,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency "bosh_cli", "~>#{version}"
   s.add_dependency "bosh_aws_cpi", "~>#{version}"
-  s.add_dependency "bosh_deployer", "~>#{version}"
+  s.add_dependency "bosh_cli_plugin_micro", "~>#{version}"
 
 end

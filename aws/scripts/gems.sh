@@ -7,5 +7,5 @@ set -e
 gem update --system
 # temporary workaround
 gem install excon -v 0.14.0
-gem install bosh_deployer
+gem install bosh_cli_plugin_micro
 rbenv rehash
