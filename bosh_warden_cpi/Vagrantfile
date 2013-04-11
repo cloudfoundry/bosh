@@ -22,7 +22,7 @@ Vagrant::Config.run do |config|
     chef.add_recipe "git"
 
     # Install warden
-    # chef.add_recipe "warden::install_rootfs"
+    chef.add_recipe "warden::install_rootfs"
     chef.add_recipe "warden::install"
 
     # Install BOSH director
