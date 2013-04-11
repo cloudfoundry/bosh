@@ -1,13 +1,13 @@
 ---
 name: dev-test
-director_uuid: b5c6207a-fd6b-44f8-b60e-61546183f156
+director_uuid: edd04618-31e0-4cb8-a9e1-196f67e99a9f
 
 release:
   name: appcloud
   version: latest
 
 compilation:
-  workers: 1
+  workers: 4
   reuse_compilation_vms: true
   network: compile
   cloud_properties:
@@ -26,7 +26,22 @@ networks:
   subnets:
   - range: 10.244.0.240/30
     static:
-    - 10.244.0.241 - 10.244.0.241
+      - 10.244.0.242 - 10.244.0.242
+    cloud_properties:
+      name: random
+  - range: 10.244.0.244/30
+    static:
+      - 10.244.0.246 - 10.244.0.246
+    cloud_properties:
+      name: random
+  - range: 10.244.0.248/30
+    static:
+      - 10.244.0.250 - 10.244.0.250
+    cloud_properties:
+      name: random
+  - range: 10.244.0.252/30
+    static:
+      - 10.244.0.254 - 10.244.0.254
     cloud_properties:
       name: random
 - name: default
@@ -41,7 +56,7 @@ resource_pools:
 
 - name: infrastructure
   network: default
-  size: 9
+  size: 3
   stemcell:
     name: bosh-stemcell
     version: 1.5.0.pre.3
@@ -58,16 +73,16 @@ jobs:
   - name: default
     static_ips:
     - 10.244.0.2
-#
-# - name: nats
-#   template: nats
-#   instances: 1
-#   resource_pool: infrastructure
-#   networks:
-#   - name: default
-#     static_ips:
-#     - 10.244.0.6
-#
+
+- name: nats
+  template: nats
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.244.0.6
+
 # - name: ccdb_postgres
 #   template: postgres
 #   instances: 1
@@ -116,14 +131,14 @@ jobs:
 #     static_ips:
 #     - 10.244.0.26
 #
-# - name: dea
-#   template: dea
-#   instances: 1
-#   resource_pool: infrastructure
-#   networks:
-#   - name: default
-#     static_ips:
-#     - 10.244.0.30
+- name: dea_next
+  template: dea_next
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.244.0.30
 #
 # - name: stager
 #   template: stager
