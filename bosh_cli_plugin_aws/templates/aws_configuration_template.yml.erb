@@ -119,6 +119,7 @@ compiled_package_cache:
 <% end %>
 s3:
   - bucket_name: <%= vpc_deployment_name %>-bosh-blobstore
+  - bucket_name: <%= vpc_deployment_name %>-bosh-artifacts
 rds:
   - instance: ccdb
     tag: cc
