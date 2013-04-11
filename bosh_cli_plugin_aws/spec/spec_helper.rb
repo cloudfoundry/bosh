@@ -1,6 +1,6 @@
 require "cli"
 require "bosh/cli/commands/aws"
-require "bosh_aws_bootstrap"
+require "bosh_cli_plugin_aws"
 require 'webmock/rspec'
 
 def asset(filename)

@@ -4,8 +4,8 @@ require "spec_helper"
 require "tempfile"
 require 'cloud'
 require "bosh_aws_cpi"
-require "bosh_aws_bootstrap/ec2"
-require "bosh_aws_bootstrap/vpc"
+require "bosh_cli_plugin_aws/ec2"
+require "bosh_cli_plugin_aws/vpc"
 
 describe Bosh::AwsCloud::Cloud do
   let(:cpi_options) do
