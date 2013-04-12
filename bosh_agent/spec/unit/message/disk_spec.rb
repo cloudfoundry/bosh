@@ -67,7 +67,7 @@ describe Bosh::Agent::Message::DiskUtil do
           double('persistent', :dir_name => File.join(base, 'store'))
       ]
 
-      sigar = double('sigar', :file_system_list => fs_list)
+      sigar = double('sigar', :file_system_list => fs_list, :logger= => nil)
 
       u1 = double('usage', :use_percent => 0.69)
       sigar.should_receive(:file_system_usage).with('/').and_return(u1)

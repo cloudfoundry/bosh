@@ -30,6 +30,7 @@ require "bosh_agent/template"
 require "bosh_agent/errors"
 require "bosh_agent/remote_exception"
 
+require "bosh_agent/sigar_box"
 require "bosh_agent/config"
 require "bosh_agent/util"
 require "bosh_agent/monit"

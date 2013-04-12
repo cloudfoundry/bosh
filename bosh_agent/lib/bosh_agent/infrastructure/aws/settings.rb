@@ -52,7 +52,7 @@ module Bosh::Agent
       # Nothing to do for "vip" networks
       return nil if properties["type"] == VIP_NETWORK_TYPE
 
-      sigar = Sigar.new
+      sigar = SigarBox.create_sigar
       net_info = sigar.net_info
       ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
 

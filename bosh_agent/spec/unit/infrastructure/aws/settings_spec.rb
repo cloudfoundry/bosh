@@ -29,7 +29,7 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     net_info = double('net_info', default_gateway_interface: 'eth0', default_gateway: '1.2.3.1',
                       primary_dns: '1.1.1.1', secondary_dns: '2.2.2.2')
     net_interface_config = double('net_interface_config', address:'1.2.3.4', netmask: '255.255.255.0')
-    sigar = double(Sigar, net_info: net_info, net_interface_config: net_interface_config)
+    sigar = double(Sigar, net_info: net_info, net_interface_config: net_interface_config, :logger= => nil)
     Sigar.stub(new: sigar)
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     network_properties = {"type" => "dynamic"}

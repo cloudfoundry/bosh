@@ -274,7 +274,7 @@ module Bosh::Agent
         private
         # Calculate file_system_usage
         def fs_usage_safe(path)
-          sigar = Sigar.new
+          sigar = SigarBox.create_sigar
           fs_list = sigar.file_system_list
 
           fs = fs_list.find {|fs| fs.dir_name == path}
