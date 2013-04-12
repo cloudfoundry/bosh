@@ -48,18 +48,19 @@ describe Bosh::Aws::Migrator do
     before do
       @expected_migrations = []
       10.times do |i|
-        timestamp = Bosh::Aws::MigrationHelper.timestamp
         name = "test_#{i}"
 
-        filename = "#{@tempdir}/#{timestamp}_#{name}.rb"
+        template = Bosh::Aws::MigrationHelper::Template.new(name)
+
+        filename = "#{@tempdir}/#{template.file_prefix}.rb"
         File.open(filename, 'w+') do |f|
-          migration_text = Bosh::Aws::MigrationHelper.merge_migration_template(name)
+          migration_text = template.render
           migration_text.gsub!("Bosh::Aws::Migration","DummyMigration")
           migration_text.gsub!("execute","execute_not_used")
           f.write(migration_text)
         end
 
-        @expected_migrations << Bosh::Aws::MigrationProxy.new(name, timestamp.to_i)
+        @expected_migrations << Bosh::Aws::MigrationProxy.new(name, template.timestamp_string)
         @time += 1 #Time marches on
       end
     end

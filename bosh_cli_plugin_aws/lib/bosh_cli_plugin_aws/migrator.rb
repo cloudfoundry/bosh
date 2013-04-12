@@ -76,8 +76,15 @@ module Bosh
       end
     end
 
-    class MigrationProxy < Struct.new(:name, :version)
+    class MigrationProxy
       include Comparable
+
+      attr_reader :name, :version
+
+      def initialize(name, version)
+        @name = name
+        @version = version.to_i
+      end
 
       def load_class
         require File.join(MigrationHelper.aws_migration_directory, "#{version}_#{name}")

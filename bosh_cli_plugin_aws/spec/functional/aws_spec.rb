@@ -56,31 +56,32 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create" do
       let(:config_file) { asset "create_all.yml" }
+      let(:migrator) {double("Migrator")}
 
-      def stub_required_environment_variables
-        ENV.stub(:[]).with(anything()).and_call_original
-        ENV.stub(:[]).with("BOSH_AWS_SECRET_ACCESS_KEY").and_return('fake secret access key')
-        ENV.stub(:[]).with("BOSH_AWS_ACCESS_KEY_ID").and_return('fake access key id')
-        ENV.stub(:[]).with("BOSH_VPC_SUBDOMAIN").and_return('fake vpc subdomain')
+      around do |example|
+        previous_env = ENV.to_hash
+
+        ENV["BOSH_AWS_SECRET_ACCESS_KEY"] = 'fake secret access key'
+        ENV["BOSH_AWS_ACCESS_KEY_ID"] = 'fake access key id'
+        ENV["BOSH_VPC_SUBDOMAIN"] = 'fake vpc subdomain'
+        ENV["BOSH_VPC_PRIMARY_AZ"] = 'fake az'
+        ENV["BOSH_VPC_SECONDARY_AZ"] = 'fake secondary az'
+
+        example.run
+
+        previous_env.each { |k,v| ENV[k] = v }
       end
 
-      it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
-        aws.should_receive(:create_key_pairs).with(config_file)
-        aws.should_receive(:create_vpc).with(config_file)
-        aws.should_receive(:create_route53_records).with(config_file)
-        aws.should_receive(:create_rds_dbs).with(config_file)
-        aws.should_receive(:create_s3).with(config_file)
+      it "should run the migrations" do
+        Bosh::Aws::Migrator.should_receive(:new).with(YAML.load_yaml_file(config_file)).and_return(migrator)
+        migrator.should_receive(:migrate)
         aws.create config_file
       end
 
       it "should default the configuration file when not passed in" do
-        stub_required_environment_variables
         File.exist?(default_config_filename).should == true
-        aws.should_receive(:create_key_pairs)
-        aws.should_receive(:create_vpc)
-        aws.should_receive(:create_route53_records)
-        aws.should_receive(:create_rds_dbs)
-        aws.should_receive(:create_s3)
+        Bosh::Aws::Migrator.should_receive(:new).and_return(migrator)
+        migrator.should_receive(:migrate)
         aws.create
       end
     end
@@ -134,7 +135,7 @@ describe Bosh::Cli::Command::AWS do
           aws.stub(aws_retry_wait_time: 0)
           fake_ec2.should_receive(:delete_all_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
           fake_ec2.should_receive(:delete_all_security_groups).ordered.once.and_return(true)
-          aws.delete_all_security_groups(config_file)
+          aws.send(:delete_all_security_groups, config_file)
         end
       end
 
@@ -145,110 +146,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'should not delete security groups' do
           fake_ec2.should_not_receive(:delete_all_security_groups)
-          aws.delete_all_security_groups(config_file)
-        end
-      end
-    end
-
-    describe "aws create vpc" do
-      let(:config_file) { asset "config.yml" }
-
-      def make_fake_vpc!(overrides = {})
-        fake_ec2 = mock("ec2")
-        fake_vpc = mock("vpc")
-        fake_elb = mock("elb")
-        fake_route53 = mock("route53")
-        fake_igw = mock(AWS::EC2::InternetGateway, id: "id2")
-
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
-        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
-        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
-
-        fake_vpc.stub(:vpc_id).and_return("vpc id")
-        fake_vpc.stub(:create_dhcp_options)
-        fake_vpc.stub(:create_security_groups)
-        fake_vpc.stub(:create_subnets)
-        fake_vpc.stub(:create_nat_instances)
-        fake_vpc.stub(:setup_subnet_routes)
-        fake_vpc.stub(:subnets).and_return({'bosh' => "amz-subnet1", 'name2' => "amz-subnet2"})
-        fake_vpc.stub(:attach_internet_gateway)
-        fake_ec2.stub(:allocate_elastic_ips)
-        fake_ec2.stub(:force_add_key_pair)
-        fake_ec2.stub(:create_internet_gateway).and_return(fake_igw)
-        fake_ec2.stub(:elastic_ips).and_return(["1.2.3.4", "5.6.7.8"])
-        fake_elb.stub(:create).with("external-elb-1", fake_vpc, anything, hash_including('my_cert_1' => anything)).and_return(mock("new elb", dns_name: 'elb-123.example.com'))
-        fake_route53.stub(:create_zone)
-        fake_route53.stub(:add_record)
-        fake_vpc
-      end
-
-      pending "should create all the components of a VPC"
-
-      it "should flush the output to a YAML file" do
-        fake_vpc = make_fake_vpc!
-        fake_vpc.stub(:state).and_return(:available)
-
-        aws.should_receive(:flush_output_state) do |args|
-          args.should match(/aws_vpc_receipt.yml/)
-        end
-
-        aws.create_vpc config_file
-
-        aws.output_state["vpc"]["id"].should == "vpc id"
-        aws.output_state["vpc"]["subnets"].should == {"bosh" => "amz-subnet1", "name2" => "amz-subnet2"}
-        aws.output_state["original_configuration"].should == Psych.load_file(config_file)
-      end
-
-      context "when the VPC is not immediately available" do
-        it "should try several times and continue when available" do
-          fake_vpc = make_fake_vpc!
-          fake_vpc.should_receive(:state).exactly(3).times.and_return(:pending, :pending, :available)
-          aws.create_vpc config_file
-        end
-
-        it "should fail after 60 attempts when not available" do
-          fake_vpc = make_fake_vpc!
-          fake_vpc.stub(:state).and_return(:pending)
-          expect { aws.create_vpc config_file }.to raise_error
-        end
-      end
-
-      context "when a step in the creation fails" do
-        context "when certificate uploading to AWS fails" do
-          it "shows a CLI error with the message from the underlying error" do
-            fake_vpc = stub("vpc", :state => "available").as_null_object
-            fake_ec2 = stub("ec2").as_null_object
-            fake_r53 = stub("r53").as_null_object
-            fake_elb = stub("elb")
-
-            fake_elb.should_receive(:create).and_raise(Bosh::Aws::ELB::BadCertificateError, "cert was bad")
-
-            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-            Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
-            Bosh::Aws::Route53.stub(:new).and_return(fake_r53)
-            Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
-
-            expect { aws.create_vpc config_file }.to raise_error(Bosh::Cli::CliError,
-                                                                 /cert was bad/)
-          end
-        end
-
-        it "should still flush the output to a YAML so the user knows what resources were provisioned" do
-          fake_vpc = mock("vpc")
-
-          Bosh::Aws::EC2.stub(:new)
-          Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
-          fake_vpc.stub(:vpc_id).and_return("vpc id")
-          fake_vpc.stub(:create_subnets).and_raise
-
-          aws.should_receive(:flush_output_state) do |args|
-            args.should match(/create-vpc-output-\d{14}.yml/)
-          end
-
-          expect { aws.create_vpc config_file }.to raise_error
-
-          aws.output_state["vpc"]["id"].should == "vpc id"
+          aws.send(:delete_all_security_groups, config_file)
         end
       end
     end
@@ -285,7 +183,7 @@ describe Bosh::Cli::Command::AWS do
       fake_route53.should_receive(:delete_record).with("bosh", "cfdev.com")
       fake_route53.should_receive(:delete_record).with("bat", "cfdev.com")
 
-      aws.delete_vpc output_file
+      aws.send(:delete_vpc, output_file)
     end
 
       it "should retry on AWS errors" do
@@ -317,7 +215,7 @@ describe Bosh::Cli::Command::AWS do
 
       fake_vpc.should_receive(:delete_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
       fake_vpc.should_receive(:delete_security_groups).ordered.once.and_return(true)
-      aws.delete_vpc output_file
+      aws.send(:delete_vpc, output_file)
     end
 
       context "when there are instances running" do
@@ -332,7 +230,7 @@ describe Bosh::Cli::Command::AWS do
 
         expect {
           fake_vpc.should_not_receive(:delete_security_groups)
-          aws.delete_vpc output_file
+          aws.send(:delete_vpc, output_file)
         }.to raise_error(Bosh::Cli::CliError, "1 instance(s) running in vpc-13724979 - delete them first")
       end
     end
@@ -353,7 +251,7 @@ describe Bosh::Cli::Command::AWS do
 
         it "should remove the key pairs" do
           fake_ec2.should_receive(:remove_all_key_pairs).and_return(true)
-          aws.delete_all_key_pairs(config_file)
+          aws.send(:delete_all_key_pairs, config_file)
         end
       end
 
@@ -364,7 +262,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'should not delete the key pairs' do
           fake_ec2.should_not_receive(:remove_all_key_pairs)
-          aws.delete_all_key_pairs(config_file)
+          aws.send(:delete_all_key_pairs,config_file)
         end
       end
     end
@@ -384,7 +282,7 @@ describe Bosh::Cli::Command::AWS do
 
         it "should remove the key pairs" do
           fake_elb.should_receive(:delete_server_certificates).and_return(true)
-          aws.delete_server_certificates(config_file)
+          aws.send(:delete_server_certificates, config_file)
         end
       end
 
@@ -395,7 +293,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'should not delete the key pairs' do
           fake_elb.should_not_receive(:delete_server_certificates)
-          aws.delete_server_certificates(config_file)
+          aws.send(:delete_server_certificates, config_file)
         end
       end
     end
@@ -415,7 +313,7 @@ describe Bosh::Cli::Command::AWS do
 
         it "should remove the key pairs" do
           fake_ec2.should_receive(:release_all_elastic_ips).and_return(true)
-          aws.delete_all_elastic_ips(config_file)
+          aws.send(:delete_all_elastic_ips, config_file)
         end
       end
 
@@ -426,7 +324,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'should not delete the key pairs' do
           fake_ec2.should_not_receive(:release_all_elastic_ips)
-          aws.delete_all_elastic_ips(config_file)
+          aws.send(:delete_all_elastic_ips, config_file)
         end
       end
     end
@@ -446,32 +344,8 @@ describe Bosh::Cli::Command::AWS do
 
           Bosh::Aws::VPC.should_not_receive(:find)
 
-          aws.delete_all_vpcs(asset('config.yml'))
+          aws.send(:delete_all_vpcs, asset('config.yml'))
         end
-      end
-    end
-
-    describe "aws create s3" do
-      let(:config_file) { asset "config.yml" }
-      let(:fake_s3) { mock("s3") }
-
-      it "should create all configured buckets" do
-
-        Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-
-        fake_s3.should_receive(:create_bucket).with("b1").ordered
-        fake_s3.should_receive(:create_bucket).with("b2").ordered
-
-        aws.create_s3(config_file)
-      end
-
-      it "should do nothing if s3 config is empty" do
-        aws.stub(:load_config).and_return({})
-
-        aws.should_receive(:say).with("s3 not set in config.  Skipping")
-        fake_s3.should_not_receive(:create_bucket)
-
-        aws.create_s3(config_file)
       end
     end
 
@@ -491,7 +365,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("Buckets:\n\tbuckets of fun\n\tbarrel of monkeys")
         aws.should_receive(:confirmed?).with("Are you sure you want to empty and delete all buckets?").and_return(false)
 
-        aws.delete_all_s3 config_file
+        aws.send(:delete_all_s3, config_file)
       end
 
       it "should not empty S3 if more than 20 insances are running" do
@@ -500,7 +374,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(21)
 
         expect {
-          aws.delete_all_s3 config_file
+          aws.send(:delete_all_s3, config_file)
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
@@ -521,7 +395,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_s3.should_receive :empty
 
-            aws.delete_all_s3 config_file
+            aws.send(:delete_all_s3, config_file)
           end
         end
 
@@ -539,7 +413,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_s3.should_not_receive :empty
 
-            aws.delete_all_s3 config_file
+            aws.send(:delete_all_s3, config_file)
           end
         end
       end
@@ -558,21 +432,9 @@ describe Bosh::Cli::Command::AWS do
           fake_s3.should_receive :empty
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.delete_all_s3 config_file
+          aws.send(:delete_all_s3, config_file)
         end
       end
-    end
-
-    describe "aws create route53 records" do
-      pending "should create the required instances and associate Elastic IPs"
-
-      pending "should create DNS records for the appropriate instances"
-    end
-
-    describe "aws delete_all route53 records" do
-      pending "should delete all route53 records except NS and SOA"
-
-      pending "can optionally omit deletion of other record types"
     end
 
     describe "aws terminate_all ec2" do
@@ -591,7 +453,7 @@ describe Bosh::Cli::Command::AWS do
             with("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?").
             and_return(false)
 
-        aws.delete_all_ec2 config_file
+        aws.send(:delete_all_ec2, config_file)
       end
 
       it "should error if more than 20 instances are running" do
@@ -600,7 +462,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(21)
 
         expect {
-          aws.delete_all_ec2 config_file
+          aws.send(:delete_all_ec2, config_file)
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
@@ -617,7 +479,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_ec2.should_receive :terminate_instances
 
-            aws.delete_all_ec2(config_file)
+            aws.send(:delete_all_ec2, config_file)
           end
         end
 
@@ -633,7 +495,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_ec2.should_not_receive :terminate_instances
 
-            aws.delete_all_ec2 config_file
+            aws.send(:delete_all_ec2, config_file)
           end
         end
       end
@@ -650,7 +512,7 @@ describe Bosh::Cli::Command::AWS do
           fake_ec2.should_receive :terminate_instances
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.delete_all_ec2(config_file)
+          aws.send(:delete_all_ec2, config_file)
         end
       end
     end
@@ -670,7 +532,7 @@ describe Bosh::Cli::Command::AWS do
             with("Are you sure you want to delete all unattached EBS volumes?").
             and_return(false)
 
-        aws.delete_all_ebs config_file
+        aws.send(:delete_all_ebs, config_file)
       end
 
       it "should error if more than 20 volumes are present" do
@@ -679,7 +541,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:volume_count).and_return(21)
 
         expect {
-          aws.delete_all_ebs config_file
+          aws.send(:delete_all_ebs, config_file)
         }.to raise_error(Bosh::Cli::CliError, "21 volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
@@ -695,7 +557,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_ec2.should_receive :delete_volumes
 
-            aws.delete_all_ebs(config_file)
+            aws.send(:delete_all_ebs, config_file)
           end
         end
 
@@ -710,7 +572,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_ec2.should_not_receive :delete_volumes
 
-            aws.delete_all_ebs config_file
+            aws.send(:delete_all_ebs, config_file)
           end
         end
       end
@@ -726,7 +588,7 @@ describe Bosh::Cli::Command::AWS do
           fake_ec2.should_receive :delete_volumes
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.delete_all_ebs(config_file)
+          aws.send(:delete_all_ebs, config_file)
         end
       end
     end
@@ -798,138 +660,6 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
-    describe "aws create rds databases" do
-      let(:config_file) { asset "config.yml" }
-      let(:receipt_file) { asset "test-output.yml" }
-
-      def make_fake_rds!(opts = {})
-        retries_needed = opts[:retries_needed] || 0
-        creation_options = opts[:aws_creation_options]
-        fake_rds = double(Bosh::Aws::RDS)
-        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-
-        fake_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
-
-        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979"]
-        create_database_params << creation_options if creation_options
-        fake_rds.should_receive(:create_database).with(*create_database_params).and_return(
-            :engine => "mysql",
-            :master_username => "ccdb_user",
-            :master_user_password => "ccdb_password"
-        )
-
-        fake_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
-        fake_rds.should_receive(:create_database).
-            with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979").and_return(
-            :engine => "mysql",
-            :master_username => "uaa_user",
-            :master_user_password => "uaa_password")
-
-        fake_ccdb_rds = mock("ccdb", db_name: "ccdb", endpoint_port: 1234, db_instance_status: :irrelevant)
-        fake_uaadb_rds = mock("uaadb", db_name: "uaadb", endpoint_port: 5678, db_instance_status: :irrelevant)
-        fake_rds.should_receive(:databases).at_least(:once).and_return([fake_ccdb_rds, fake_uaadb_rds])
-
-        ccdb_endpoint_address_response = ([nil] * retries_needed) << "1.2.3.4"
-        fake_ccdb_rds.stub(:endpoint_address).and_return(*ccdb_endpoint_address_response)
-
-        uaadb_endpoint_address_response = ([nil] * retries_needed) << "5.6.7.8"
-        fake_uaadb_rds.stub(:endpoint_address).and_return(*uaadb_endpoint_address_response)
-
-        fake_rds.stub(:database).with("ccdb").and_return(fake_ccdb_rds)
-        fake_rds.stub(:database).with("uaadb").and_return(fake_uaadb_rds)
-
-        fake_rds
-      end
-
-      it "should create all rds databases" do
-        fake_aws_rds = make_fake_rds!
-        aws.create_rds_dbs(config_file, receipt_file)
-      end
-
-      it "should do nothing if rds config is empty" do
-        aws.stub(:load_config).and_return({})
-
-        aws.should_receive(:say).with("rds not set in config.  Skipping")
-
-        aws.create_rds_dbs(config_file, receipt_file)
-      end
-
-      context "when the config file has option overrides" do
-        let(:config_file) { asset "config_with_override.yml" }
-
-        # TODO: Where are the assertions for this test?  Buried in `make_fake_rds!`?  Fix this!
-        it "should create all rds databases with option overrides" do
-          ccdb_opts = Psych.load_file(config_file)["rds"].find { |db_opts| db_opts["instance"] == "ccdb" }
-          make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
-          aws.create_rds_dbs(config_file, receipt_file)
-        end
-      end
-
-      it "should flush the output to a YAML file" do
-        make_fake_rds!
-
-        aws.should_receive(:flush_output_state) do |args|
-          args.should match(/aws_rds_receipt.yml/)
-        end
-
-        aws.create_rds_dbs(config_file, receipt_file)
-
-        deployment_manifest_properties = aws.output_state["deployment_manifest"]["properties"]
-
-        deployment_manifest_properties["ccdb"].should == {
-            "db_scheme" => "mysql",
-            "address" => "1.2.3.4",
-            "port" => 1234,
-            "roles" => [
-                {
-                    "tag" => "admin",
-                    "name" => "ccdb_user",
-                    "password" => "ccdb_password"
-                }
-            ],
-            "databases" => [
-                {
-                    "tag" => "cc",
-                    "name" => "ccdb"
-                }
-            ]
-        }
-
-        deployment_manifest_properties["uaadb"].should == {
-            "db_scheme" => "mysql",
-            "address" => "5.6.7.8",
-            "port" => 5678,
-            "roles" => [
-                {
-                    "tag" => "admin",
-                    "name" => "uaa_user",
-                    "password" => "uaa_password"
-                }
-            ],
-            "databases" => [
-                {
-                    "tag" => "uaa",
-                    "name" => "uaadb"
-                }
-            ]
-        }
-      end
-
-      context "when the RDS is not immediately available" do
-
-        # TODO: Where are the assertions for this test?  Buried in `make_fake_rds!`?  Fix this!
-        it "should try several times and continue when available" do
-          make_fake_rds!(retries_needed: 3)
-          aws.create_rds_dbs(config_file, receipt_file)
-        end
-
-        it "should fail after 180 attempts when not available" do
-          make_fake_rds!(retries_needed: 181)
-          expect { aws.create_rds_dbs(config_file, receipt_file) }.to raise_error
-        end
-      end
-    end
-
     describe "aws delete_all rds databases" do
       let(:config_file) { asset "config.yml" }
 
@@ -949,7 +679,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").
             and_return(false)
 
-        aws.delete_all_rds_dbs(config_file)
+        aws.send(:delete_all_rds_dbs, config_file)
       end
 
       it "should not delete_all rds databases if more than 20 insances are running" do
@@ -958,7 +688,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(21)
 
         expect {
-          aws.delete_all_rds_dbs config_file
+          aws.send(:delete_all_rds_dbs, config_file)
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
@@ -978,8 +708,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").
             and_return(true)
 
-        aws.delete_all_rds_dbs config_file
-
+        aws.send(:delete_all_rds_dbs, config_file)
       end
 
       context "interactive mode (default)" do
@@ -1003,7 +732,7 @@ describe Bosh::Cli::Command::AWS do
             fake_rds.should_receive :delete_subnet_groups
             fake_rds.should_receive :delete_security_groups
 
-            aws.delete_all_rds_dbs(config_file)
+            aws.send(:delete_all_rds_dbs, config_file)
           end
         end
 
@@ -1018,7 +747,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_rds.should_not_receive :delete_databases
 
-            aws.delete_all_rds_dbs(config_file)
+            aws.send(:delete_all_rds_dbs, config_file)
           end
         end
 
@@ -1035,7 +764,7 @@ describe Bosh::Cli::Command::AWS do
             fake_rds.should_receive :delete_databases
 
             expect {
-              aws.delete_all_rds_dbs(config_file)
+              aws.send(:delete_all_rds_dbs, config_file)
             }.to raise_error(Bosh::Cli::CliError, "not all rds instances could be deleted")
           end
 
@@ -1055,7 +784,7 @@ describe Bosh::Cli::Command::AWS do
               fake_rds.should_receive :delete_subnet_groups
               fake_rds.should_receive :delete_security_groups
 
-              aws.delete_all_rds_dbs(config_file)
+              aws.send(:delete_all_rds_dbs, config_file)
             end
           end
         end
@@ -1078,7 +807,7 @@ describe Bosh::Cli::Command::AWS do
           fake_rds.should_receive :delete_security_groups
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.delete_all_rds_dbs(config_file)
+          aws.send(:delete_all_rds_dbs, config_file)
         end
       end
     end
@@ -1090,7 +819,7 @@ describe Bosh::Cli::Command::AWS do
         fake_rds = mock("rds")
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
         fake_rds.should_receive :delete_subnet_groups
-        aws.delete_all_rds_subnet_groups(config_file)
+        aws.send(:delete_all_rds_subnet_groups, config_file)
       end
     end
 
@@ -1101,7 +830,7 @@ describe Bosh::Cli::Command::AWS do
         fake_rds = mock("rds")
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
         fake_rds.should_receive :delete_security_groups
-        aws.delete_all_rds_security_groups(config_file)
+        aws.send(:delete_all_rds_security_groups, config_file)
       end
     end
 
@@ -1114,7 +843,7 @@ describe Bosh::Cli::Command::AWS do
         fake_elb.should_receive(:delete_elbs)
         fake_elb.should_receive(:names).and_return(%w(one two))
         aws.should_receive(:confirmed?).and_return(true)
-        aws.delete_all_elbs(config_file)
+        aws.send(:delete_all_elbs, config_file)
       end
     end
   end

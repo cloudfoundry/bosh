@@ -1,6 +1,26 @@
 module Bosh
   module Aws
     module MigrationHelper
+      class Template
+        attr_reader :timestamp_string, :name, :class_name
+
+        def initialize(name)
+          @timestamp_string = Time.new.getutc.strftime("%Y%m%d%H%M%S")
+          @name = name
+          @class_name = MigrationHelper.to_class_name(name)
+        end
+
+        def file_prefix
+          "#{timestamp_string}_#{name}"
+        end
+
+        def render(template_name = "aws_migration")
+          template_file_path = File.expand_path("../../templates/#{template_name}.erb", File.dirname(__FILE__))
+          template = ERB.new(File.new(template_file_path).read())
+          template.result(binding)
+        end
+      end
+
       def self.migration_directory(args)
         "#{args[:component]}/db/migrations/#{args[:type]}"
       end
@@ -9,23 +29,20 @@ module Bosh
         File.expand_path("../../migrations", File.dirname(__FILE__))
       end
 
-      def self.timestamp
-        Time.new.getutc.strftime("%Y%m%d%H%M%S")
+      def self.aws_spec_migration_directory
+        File.expand_path("../../spec/migrations", File.dirname(__FILE__))
       end
 
       def self.generate_migration_file(name)
-        filename = "#{aws_migration_directory}/#{timestamp}_#{name}.rb"
-        puts "Creating #{filename}"
-        File.open(filename, 'w+') { |f| f.write(merge_migration_template(name)) }
-      end
+        template = Template.new(name)
 
-      def self.merge_migration_template(name)
-        #Used by template
-        klass_name = to_class_name(name)
+        filename = "#{aws_migration_directory}/#{template.file_prefix}.rb"
+        spec_filename = "#{aws_spec_migration_directory}/#{template.file_prefix}_spec.rb"
 
-        template_file_path = File.expand_path("../../templates/aws_migration.erb", File.dirname(__FILE__))
-        template = ERB.new(File.new(template_file_path).read())
-        template.result(binding)
+        puts "Creating #{filename} and #{spec_filename}"
+
+        File.open(filename, 'w+') { |f| f.write(template.render) }
+        File.open(spec_filename, 'w+') { |f| f.write(template.render("aws_migration_spec")) }
       end
 
       def self.to_class_name(name)

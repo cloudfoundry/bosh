@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'bosh_cli_plugin_aws/migration_helper'
+require "bosh_cli_plugin_aws/migration_helper"
 
 namespace "migrations" do
 
@@ -28,7 +28,7 @@ namespace "migrations" do
       exit(1)
     end
 
-    timestamp = Bosh::Aws::MigrationHelper.timestamp
+    timestamp = Time.new.getutc.strftime("%Y%m%d%H%M%S")
     filename = "#{migration_directory(args)}/#{timestamp}_#{name}.rb"
 
     puts "Creating #{filename}"

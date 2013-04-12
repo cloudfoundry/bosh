@@ -4,9 +4,6 @@ require_relative "../../../bosh_cli_plugin_aws"
 module Bosh::Cli::Command
   class AWS < Base
     DEFAULT_CIDR = "10.0.0.0/16" # KILL
-    OUTPUT_VPC_FILE = "aws_vpc_receipt.yml"
-    OUTPUT_RDS_FILE = "aws_rds_receipt.yml"
-    OUTPUT_ROUTE53_FILE = "aws_route53_receipt.yml"
 
     attr_reader :output_state, :config_dir, :ec2
     attr_accessor :vpc
@@ -137,18 +134,15 @@ module Bosh::Cli::Command
     end
 
     usage "aws create"
-    desc "create everything in config file"
+    desc "create everything in migrations"
     option "--trace", "print all HTTP traffic"
     def create(config_file = nil)
       if !!options[:trace]
          require 'logger'
          ::AWS.config(:logger => Logger.new($stdout), :http_wire_trace => true)
       end
-      create_key_pairs(config_file)
-      create_vpc(config_file)
-      create_route53_records(config_file)
-      create_rds_dbs(config_file)
-      create_s3(config_file)
+
+      Bosh::Aws::Migrator.new(load_config(config_file)).migrate
     end
 
     usage "aws destroy"
@@ -166,69 +160,8 @@ module Bosh::Cli::Command
       delete_all_route53_records(config_file)
     end
 
-    usage "aws create vpc"
-    desc "create vpc"
-    def create_vpc(config_file)
-      config = load_config(config_file)
+    private
 
-      ec2 = Bosh::Aws::EC2.new(config["aws"])
-      @output_state["aws"] = config["aws"]
-
-      vpc = Bosh::Aws::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
-      @output_state["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
-
-      elb = Bosh::Aws::ELB.new(config["aws"])
-
-      @output_state["original_configuration"] = config
-
-      unless was_vpc_eventually_available?(vpc)
-        err "VPC #{vpc.vpc_id} was not available within 60 seconds, giving up"
-      end
-
-      say "creating internet gateway"
-      igw = ec2.create_internet_gateway
-      vpc.attach_internet_gateway(igw.id)
-
-      security_groups = config["vpc"]["security_groups"]
-      say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
-      vpc.create_security_groups(security_groups)
-
-      subnets = config["vpc"]["subnets"]
-      say "creating subnets: #{subnets.keys.join(", ")}"
-      vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
-      vpc.create_nat_instances(subnets)
-      vpc.setup_subnet_routes(subnets) { |msg| say "  #{msg}" }
-      @output_state["vpc"]["subnets"] = vpc.subnets
-
-      route53 = Bosh::Aws::Route53.new(config["aws"])
-
-      elbs = config["vpc"]["elbs"]
-      ssl_certs = config["ssl_certs"]
-
-      say "creating load balancers: #{elbs.keys.join(", ")}" if elbs
-      elbs.each do |name, settings|
-        settings["domain"] = config["vpc"]["domain"]
-        e = elb.create(name, vpc, settings, ssl_certs)
-        if settings["dns_record"]
-          say "adding CNAME record for #{settings["dns_record"]}.#{config["vpc"]["domain"]}"
-          route53.add_record(settings["dns_record"], config["vpc"]["domain"], [e.dns_name], {ttl: settings["ttl"], type: 'CNAME'})
-        end
-      end
-
-      dhcp_options = config["vpc"]["dhcp_options"]
-      say "creating DHCP options"
-      vpc.create_dhcp_options(dhcp_options)
-    rescue Bosh::Aws::ELB::BadCertificateError => e
-      err e.message
-    ensure
-      file_path = File.join(Dir.pwd, OUTPUT_VPC_FILE)
-      flush_output_state file_path
-
-      say "details in #{file_path}"
-    end
-
-    usage "aws delete vpc"
-    desc "delete a vpc"
     def delete_vpc(details_file)
       details = load_yaml_file details_file
 
@@ -269,8 +202,6 @@ module Bosh::Cli::Command
       say "deleted VPC and all dependencies".green
     end
 
-    usage "aws delete_all vpcs"
-    desc "delete all VPCs in an AWS account"
     def delete_all_vpcs(config_file)
       config = load_config(config_file)
 
@@ -303,8 +234,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete key_pairs"
-    desc "delete key pairs"
     def delete_all_key_pairs(config_file)
       config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
@@ -315,8 +244,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete elastic_ips"
-    desc "delete elastic ips"
     def delete_all_elastic_ips(config_file)
       config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
@@ -327,39 +254,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws create key_pairs"
-    desc "create key pairs"
-    def create_key_pairs(config_file)
-      config = load_config(config_file)
-      ec2 = Bosh::Aws::EC2.new(config["aws"])
-
-      say "allocating #{config["key_pairs"].length} KeyPair(s)"
-      config["key_pairs"].each do |name, path|
-        ec2.force_add_key_pair(name, path)
-      end
-    end
-
-    usage "aws create s3"
-    desc "create s3 buckets"
-    def create_s3(config_file)
-      config = load_config(config_file)
-
-      if !config["s3"]
-        say "s3 not set in config.  Skipping"
-        return
-      end
-
-      s3 = Bosh::Aws::S3.new(config["aws"])
-
-      config["s3"].each do |e|
-        bucket_name = e["bucket_name"]
-        say "creating bucket #{bucket_name}"
-        s3.create_bucket(bucket_name)
-      end
-    end
-
-    usage "aws delete_all s3"
-    desc "delete all s3 buckets"
     def delete_all_s3(config_file)
       config = load_config(config_file)
 
@@ -378,8 +272,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete_all ec2"
-    desc "terminates all EC2 instances and attached EBS volumes"
     def delete_all_ec2(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -402,8 +294,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete_all elbs"
-    desc "terminates all Elastic Load Balancers in the account"
     def delete_all_elbs(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -414,8 +304,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete_all server_certificates"
-    desc "deletes all the server certificates from the ELBs"
     def delete_server_certificates(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -428,67 +316,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws create rds"
-    desc "create all RDS database instances"
-    def create_rds_dbs(config_file, receipt_file = nil)
-      config = load_config(config_file)
-
-      if !config["rds"]
-        say "rds not set in config.  Skipping"
-        return
-      end
-
-      receipt = receipt_file ? load_yaml_file(receipt_file) : @output_state
-      vpc_subnets = receipt["vpc"]["subnets"]
-
-      begin
-        credentials = config["aws"]
-        rds = Bosh::Aws::RDS.new(credentials)
-
-        config["rds"].each do |rds_db_config|
-          instance_id = rds_db_config["instance"]
-          tag = rds_db_config["tag"]
-          subnets = rds_db_config["subnets"]
-
-          subnet_ids = subnets.map { |s| vpc_subnets[s] }
-          unless rds.database_exists?(instance_id)
-            # This is a bit odd, and the naturual way would be to just pass creation_opts
-            # in directly, but it makes this easier to mock.  Once could argue that the
-            # params to create_database should change to just a hash instead of a name +
-            # a hash.
-            creation_opts = [instance_id, subnet_ids, receipt["vpc"]["id"]]
-            creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
-            response = rds.create_database(*creation_opts)
-            output_rds_properties(instance_id, tag, response)
-          end
-        end
-
-        if was_rds_eventually_available?(rds)
-          config["rds"].each do |rds_db_config|
-            instance_id = rds_db_config["instance"]
-
-            if deployment_properties[instance_id]
-              db_instance = rds.database(instance_id)
-              deployment_properties[instance_id].merge!(
-                "address" => db_instance.endpoint_address,
-                "port" => db_instance.endpoint_port
-              )
-            end
-          end
-        else
-          err "RDS was not available within 30 minutes, giving up"
-        end
-
-      ensure
-        file_path = File.join(Dir.pwd, OUTPUT_RDS_FILE)
-        flush_output_state file_path
-
-        say "details in #{file_path}"
-      end
-    end
-
-    usage "aws delete_all rds"
-    desc "delete all RDS database instances"
     def delete_all_rds_dbs(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -509,8 +336,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete_all rds subnet_groups"
-    desc "delete all RDS subnet groups"
     def delete_all_rds_subnet_groups(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -518,8 +343,6 @@ module Bosh::Cli::Command
       rds.delete_subnet_groups
     end
 
-    usage "aws delete_all rds security_groups"
-    desc "delete all RDS security groups"
     def delete_all_rds_security_groups(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -527,8 +350,6 @@ module Bosh::Cli::Command
       rds.delete_security_groups
     end
 
-    usage "aws delete_all volumes"
-    desc "delete all EBS volumes"
     def delete_all_ebs(config_file)
       config = load_config(config_file)
       credentials = config["aws"]
@@ -545,8 +366,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete_all security_groups"
-    desc "delete all Security Groups"
     def delete_all_security_groups(config_file)
       config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
@@ -561,53 +380,6 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws create route53 records"
-    desc "creates requested instances, allocates IPs, and creates A records"
-    def create_route53_records(config_file)
-      config = load_config(config_file)
-      elastic_ip_specs = config["elastic_ips"]
-
-      if elastic_ip_specs
-        @output_state["elastic_ips"] = {}
-      else
-        return
-      end
-
-      ec2 = Bosh::Aws::EC2.new(config["aws"])
-      route53 = Bosh::Aws::Route53.new(config["aws"])
-
-      count = elastic_ip_specs.map{|_, spec| spec["instances"]}.inject(:+)
-      say "allocating #{count} elastic IP(s)"
-      ec2.allocate_elastic_ips(count)
-
-      elastic_ips = ec2.elastic_ips
-
-      elastic_ip_specs.each do |name, job|
-        @output_state["elastic_ips"][name] = {"ips" => elastic_ips.shift(job["instances"])}
-      end
-
-      elastic_ip_specs.each do |name, job|
-        if job["dns_record"]
-          say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
-          route53.add_record(
-              job["dns_record"],
-              config["vpc"]["domain"],
-              @output_state["elastic_ips"][name]["ips"],
-              {ttl: job["ttl"]}
-          ) # shouldn't have to get domain from config["vpc"]["domain"]; should use config["name"]
-          @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
-        end
-      end
-    ensure
-      file_path = File.join(Dir.pwd, OUTPUT_ROUTE53_FILE)
-      flush_output_state file_path
-
-      say "details in #{file_path}"
-    end
-
-    usage "aws delete_all route53 records"
-    desc "delete all Route 53 records except NS and SOA"
-    option "--omit_types CNAME,A,TXT...", Array, "override default omissions (NS and SOA)"
     def delete_all_route53_records(config_file)
       config = load_config(config_file)
       route53 = Bosh::Aws::Route53.new(config["aws"])
@@ -622,36 +394,6 @@ module Bosh::Cli::Command
       end
 
       route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
-    end
-
-    private
-
-    def was_vpc_eventually_available?(vpc)
-      (1..60).any? do |attempt|
-        begin
-          sleep 1 unless attempt == 1
-          vpc.state.to_s == "available"
-        rescue Exception => e
-          say("Waiting for vpc, continuing after #{e.class}: #{e.message}")
-        end
-      end
-    end
-
-    def was_rds_eventually_available?(rds)
-      return true if all_rds_instances_available?(rds, :silent => true)
-      (1..180).any? do |attempt|
-        sleep 10
-        all_rds_instances_available?(rds)
-      end
-    end
-
-    def all_rds_instances_available?(rds, opts = {})
-      silent = opts[:silent]
-      say("checking rds status...") unless silent
-      rds.databases.all? do |db_instance|
-        say("  #{db_instance.db_name} #{db_instance.db_instance_status} #{db_instance.endpoint_address}") unless silent
-        !db_instance.endpoint_address.nil?
-      end
     end
 
     def all_rds_instances_deleted?(rds)
@@ -669,25 +411,6 @@ module Bosh::Cli::Command
         end
         rds.databases.count == 0
       end
-    end
-
-    def output_rds_properties(name, tag, response)
-      deployment_properties[name] = {
-        "db_scheme" => response[:engine],
-        "roles" => [
-          {
-            "tag" => "admin",
-            "name" => response[:master_username],
-            "password" => response[:master_user_password]
-          }
-        ],
-          "databases" => [
-            {
-              "tag" => tag,
-              "name" => name
-            }
-        ]
-      }
     end
 
     def deployment_manifest_state
