@@ -90,8 +90,10 @@ describe Bosh::AwsCloud::Cloud do
     @volume_id.should_not be_nil
 
     cpi.attach_disk(@instance_id, @volume_id)
-    # can attempt to detach before API consistently finishes attaching
-    cpi.detach_disk(@instance_id, @volume_id)
+    Bosh::Common.retryable(:tries=> 10, :on => Bosh::Clouds::DiskNotAttached, :sleep => lambda{|n,e| [2**(n-1), 10].min }) do
+      cpi.detach_disk(@instance_id, @volume_id)
+      true
+    end
   end
 
   describe "ec2" do
