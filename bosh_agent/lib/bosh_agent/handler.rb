@@ -157,7 +157,9 @@ module Bosh::Agent
 
       processor = lookup(method)
       if processor
-        Thread.new { process_in_thread(processor, reply_to, method, args) }
+        EM.defer do
+          process_in_thread(processor, reply_to, method, args)
+        end
       elsif method == "get_task"
         handle_get_task(reply_to, args.first)
       elsif method == "shutdown"
