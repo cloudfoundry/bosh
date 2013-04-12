@@ -172,6 +172,19 @@ module Bosh
       not_implemented(:attach_disk)
     end
 
+    # Take snapshot of disk
+    # @param [String] disk_id disk id of the disk to take the snapshot of
+    # @return [String] snapshot id
+    def snapshot_disk(disk_id)
+      not_implemented(:snapshot_disk)
+    end
+
+    # Delete a disk snapshot
+    # @param [String] snapshot_id snapshot id to delete
+    def delete_snapshot(snapshot_id)
+      not_implemented(:delete_snapshot)
+    end
+
     ##
     # Detaches a disk
     #
