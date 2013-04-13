@@ -1,0 +1,45 @@
+---
+name: cloud
+
+network:
+  ip: 192.168.0.2   #The ip address that is assigned to the Bosh Director VM.
+  netmask: 255.255.255.0 #Network Netmask
+  gateway: 192.168.0.1 #Network gateway
+  dns: #DNS servers of the network
+  - 192.168.0.3
+  - 192.168.0.4
+  cloud_properties: #Name of the network in the IaaS that the Bosh director is deployed into
+    name: cf-direct
+
+resources:
+  persistent_disk: 16384 #Size of the Bosh director disk
+  cloud_properties:
+    disk: 16384
+
+cloud:
+  plugin: vcloud #The plugin of the target infrastructure (vcloud, vsphere, aws)
+  properties:
+    agent:
+      ntp:
+       - 130.159.196.118 #Net server to synch bosh deployed vms with.
+      blobstore:
+        plugin: local
+        properties:
+          blobstore_path: /var/vcap/micro_bosh/data/cache
+    vcds:
+      - url: https://vcloud.com #The url of the target vCloud director
+        user: username
+        password: password
+        entities:
+          organization: VCD-ORG #Orgasnition name of the vcd target
+          virtual_datacenter: VCD-ORG-01
+          vapp_catalog: cloudfoundry
+          media_catalog: cloudfoundry
+          vm_metadata_key: cf-agent-env
+          description: vcd-cf
+
+apply_spec:
+  agent:
+    blobstore:
+      address: 192.168.0.2 #The blob store address. This is typically the same address as the Bosh director
+  properties: {}

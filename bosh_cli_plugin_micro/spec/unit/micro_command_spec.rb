@@ -100,6 +100,23 @@ describe Bosh::Cli::Command::Base do
 
       @cmd.set_current("foo")
     end
+
+    it "should create the deployments directory when initializing a new deployment" do
+      expected_directory = "./deployments/cloud"
+      File.stub!(:exists?).with("deployments").and_return(false)
+      FileUtils.stub!(:mkdir).with(expected_directory)
+      FileUtils.stub!(:cp).with(include("/config/templates/micro_bosh.yml"), "#{expected_directory}/micro_bosh.yml")
+      @cmd.init_deployments
+    end
+
+    it "should raise an error if the deployments directory exists" do
+      expected_directory = "/deployments/cloud"
+      File.stub!(:exists?).with("deployments").and_return(true)
+      expect {
+        @cmd.init_deployments
+      }.to raise_error Bosh::Cli::CliError
+    end
+
   end
 
 end
