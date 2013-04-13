@@ -106,14 +106,14 @@ describe Bosh::Cli::Command::Base do
       File.stub!(:exists?).with("deployments").and_return(false)
       FileUtils.stub!(:mkdir).with(expected_directory)
       FileUtils.stub!(:cp).with(include("/config/templates/micro_bosh.yml"), "#{expected_directory}/micro_bosh.yml")
-      @cmd.init_deployments
+      @cmd.init
     end
 
     it "should raise an error if the deployments directory exists" do
       expected_directory = "/deployments/cloud"
       File.stub!(:exists?).with("deployments").and_return(true)
       expect {
-        @cmd.init_deployments
+        @cmd.init
       }.to raise_error Bosh::Cli::CliError
     end
 
