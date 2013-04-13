@@ -220,8 +220,13 @@ module Bosh::AwsCloud
         end
 
         if @fast_path_delete
-          TagManager.tag(volume, "Name", "to be deleted")
-          @logger.info("Volume `#{disk_id}' has been marked for deletion")
+          begin
+            TagManager.tag(volume, "Name", "to be deleted")
+            @logger.info("Volume `#{disk_id}' has been marked for deletion")
+          rescue AWS::EC2::Errors::InvalidVolume::NotFound
+            # Once in a blue moon AWS if actually fast enough that the volume is already gone
+            # when we get here, and if it is, our work here is done!
+          end
           return
         end
 
