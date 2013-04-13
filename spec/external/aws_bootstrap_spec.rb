@@ -204,7 +204,10 @@ describe 'bosh_cli_plugin_aws_external' do
     end
 
     it "creates s3 buckets and deletes them" do
-      s3.buckets.map(&:name).should == ["#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"]
+      blobstore_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"
+      artifacts_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-artifacts"
+
+      s3.buckets.map(&:name).should include(blobstore_bucket, artifacts_bucket)
     end
 
     after do

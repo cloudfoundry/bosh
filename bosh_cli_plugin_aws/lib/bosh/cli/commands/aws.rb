@@ -145,6 +145,30 @@ module Bosh::Cli::Command
       Bosh::Aws::Migrator.new(load_config(config_file)).migrate
     end
 
+    usage "aws create s3"
+    desc "create only the s3 buckets"
+    def create_s3(config_file = nil)
+      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version("20130412192351")
+    end
+
+    usage "aws create key_pairs"
+    desc "creates only the key pairs"
+    def create_key_pairs(config_file = nil)
+      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version("20130412000811")
+    end
+
+    usage "aws create route53 records"
+    desc "creates only the Route 53 records"
+    def create_route53_records(config_file = nil)
+      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version("20130412181302")
+    end
+
+    usage "aws create vpc"
+    desc "creates only the VPC"
+    def create_vpc(config_file = nil)
+      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version("20130412004642")
+    end
+
     usage "aws destroy"
     desc "destroy everything in an AWS account"
     def destroy(config_file = nil)

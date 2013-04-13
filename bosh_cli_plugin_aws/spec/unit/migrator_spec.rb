@@ -69,6 +69,42 @@ describe Bosh::Aws::Migrator do
       subject.migrations.should == @expected_migrations
     end
 
+    context "migrate_version" do
+      let(:migration_to_run) { @expected_migrations[4] }
+
+      it "should run only the specified version if it has never been run before" do
+        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+
+        mock_s3.should_receive(:create_bucket).with("Test4")
+
+        subject.migrate_version(migration_to_run.version)
+      end
+
+      it "should only write the specific version to the versions file" do
+        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+
+        mock_s3.stub(:create_bucket)
+
+        mock_s3.should_receive(:upload_to_bucket)
+        .with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml",
+              YAML.dump([migration_to_run.to_hash]))
+
+        subject.migrate_version(migration_to_run.version)
+      end
+
+      it "should not run if the specified version has been run before" do
+        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        mock_s3.
+            should_receive(:fetch_object_contents).
+            with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
+            and_return(YAML.dump(@expected_migrations.collect{|m|m.to_hash}))
+
+        mock_s3.should_not_receive(:create_bucket)
+
+        subject.migrate_version(@expected_migrations[4].version)
+      end
+    end
+
     context "#migrate" do
       it "should run all the migrations if it has never been run before" do
         mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
