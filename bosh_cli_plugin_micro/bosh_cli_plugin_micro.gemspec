@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
   s.files         = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
-  s.require_paths = ["lib", "config", "config/templates"]
+  s.require_paths = ["lib", "config", "config/*"]
 
   s.add_dependency "bosh_cli", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
