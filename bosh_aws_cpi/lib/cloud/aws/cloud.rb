@@ -270,6 +270,37 @@ module Bosh::AwsCloud
       end
     end
 
+    # Take snapshot of disk
+    # @param [String] disk_id disk id of the disk to take the snapshot of
+    # @return [String] snapshot id
+    def snapshot_disk(disk_id)
+      with_thread_name("snapshot_disk(#{disk_id})") do
+        volume = @ec2.volumes[disk_id]
+        snapshot = volume.create_snapshot
+        @logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
+        snapshot.id
+      end
+    end
+
+    # Delete a disk snapshot
+    # @param [String] snapshot_id snapshot id to delete
+    def delete_snapshot(snapshot_id)
+      with_thread_name("delete_snapshot(#{snapshot_id})") do
+        snapshot = @ec2.snapshots[snapshot_id]
+
+        if snapshot.status == :in_use
+          raise Bosh::Clouds::CloudError, "snapshot '#{snapshot.id}' can not be deleted as it is in use"
+        end
+
+        # loop and wait until available before deleting, in case the snapshot isn't
+        # completed yet, as we don't wait when we take the snapshot
+        ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
+
+        snapshot.delete
+        @logger.info("snapshot '#{snapshot_id}' deleted")
+      end
+    end
+
     # Configure network for an EC2 instance
     # @param [String] instance_id EC2 instance id
     # @param [Hash] network_spec network properties
