@@ -435,7 +435,7 @@ module Bosh::AwsCloud
         client.connect_timeout = METADATA_TIMEOUT
         # Using 169.254.169.254 is an EC2 convention for getting
         # instance metadata
-        uri = "http://169.254.169.254/1.0/meta-data/instance-id/"
+        uri = "http://169.254.169.254/latest/meta-data/instance-id/"
 
         response = client.get(uri)
         unless response.status == 200
