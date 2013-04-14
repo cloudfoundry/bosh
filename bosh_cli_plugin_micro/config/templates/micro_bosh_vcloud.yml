@@ -1,5 +1,5 @@
 ---
-name: cloud
+name: vcloud #Name of the Bosh director
 
 network:
   ip: 192.168.0.2   #The ip address that is assigned to the Bosh Director VM.
@@ -8,8 +8,8 @@ network:
   dns: #DNS servers of the network
   - 192.168.0.3
   - 192.168.0.4
-  cloud_properties: #Name of the network in the IaaS that the Bosh director is deployed into
-    name: cf-direct
+  cloud_properties:
+    name: cf-direct #Name of the network in the IaaS that the Bosh director is deployed into
 
 resources:
   persistent_disk: 16384 #Size of the Bosh director disk
@@ -33,10 +33,10 @@ cloud:
         entities:
           organization: VCD-ORG #Orgasnition name of the vcd target
           virtual_datacenter: VCD-ORG-01
-          vapp_catalog: cloudfoundry
-          media_catalog: cloudfoundry
-          vm_metadata_key: cf-agent-env
-          description: vcd-cf
+          vapp_catalog: cloudfoundry #Name of the media Catalog in the target VCD instance.
+          media_catalog: cloudfoundry #Same as the above.
+          vm_metadata_key: cf-agent-env #Use in vm key as a reference only (This can be set to whatever you want)
+          description: vcd-cf #Description can be whatever you want
 
 apply_spec:
   agent:
