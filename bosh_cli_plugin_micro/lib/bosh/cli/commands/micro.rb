@@ -262,10 +262,11 @@ module Bosh::Cli::Command
     usage "micro init"
     desc "Initializes the deployments directory with a micro_bosh.yml template"
 
-    def init
-      deployments_target = "./deployments/cloud"
+    def init(user_defined_dir)
       say("Creating deployments directory #{deployments_target}")
-      err("deployments directory already exists") if File.exists?("deployments")
+      deployments_target = "./deployments/#{user_defined_dir}"
+      say("Creating deployments directory #{deployments_target}")
+      err("deployments directory already exists") if File.exists?(deployments_target)
       FileUtils.mkdir_p deployments_target
       micro_bosh_manifest = File.join(File.dirname(File.expand_path(__FILE__)), "../../../../config/templates/micro_bosh.yml")
       FileUtils.cp(micro_bosh_manifest, "#{deployments_target}/#{MICRO_BOSH_YAML}")
