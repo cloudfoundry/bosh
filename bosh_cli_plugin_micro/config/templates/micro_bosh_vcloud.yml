@@ -1,5 +1,5 @@
 ---
-name: vcloud #Name of the Bosh director
+name: vcloud-bosh #Name of the Bosh director
 
 network:
   ip: 192.168.0.2   #The ip address that is assigned to the Bosh Director VM.
@@ -10,6 +10,12 @@ network:
   - 192.168.0.4
   cloud_properties:
     name: cf-direct #Name of the network in the IaaS that the Bosh director is deployed into
+
+loglevel: debug #bosh director log level
+env:
+  bosh:
+    password: $6$6K6T5uqxkoTZZ.dZ$Kb89XKRjsM8LAbtQT9oHvIdbKk26t6xbDFEHq6OoSAiszWiFGo0VzRu0jDRRHR4Zeclt/bJmiu25LId66/lV60
+                    #Pasword of the created vm. c1oudc0w - password generated using mkpasswd -m sha-512
 
 resources:
   persistent_disk: 16384 #Size of the Bosh director disk

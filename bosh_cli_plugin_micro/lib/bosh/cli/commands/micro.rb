@@ -17,18 +17,20 @@ module Bosh::Cli::Command
     end
 
     usage "micro"
-    desc  "show micro bosh sub-commands"
+    desc "show micro bosh sub-commands"
+
     def micro_help
       say("bosh micro sub-commands:")
       nl
-      cmds = Bosh::Cli::Config.commands.values.find_all {|c|
+      cmds = Bosh::Cli::Config.commands.values.find_all { |c|
         c.usage =~ /^micro/
       }
       Bosh::Cli::Command::Help.list_commands(cmds)
     end
 
     usage "micro deployment"
-    desc  "Choose micro deployment to work with, or display current deployment"
+    desc "Choose micro deployment to work with, or display current deployment"
+
     def micro_deployment(name=nil)
       if name
         set_current(name)
@@ -76,7 +78,8 @@ module Bosh::Cli::Command
     end
 
     usage "micro status"
-    desc  "Display micro BOSH deployment status"
+    desc "Display micro BOSH deployment status"
+
     def status
       stemcell_cid = deployer_state(:stemcell_cid)
       stemcell_name = deployer_state(:stemcell_name)
@@ -97,9 +100,10 @@ module Bosh::Cli::Command
       say("Target".ljust(15) + target_name)
     end
 
-    usage  "micro deploy"
-    desc   "Deploy a micro BOSH instance to the currently selected deployment"
+    usage "micro deploy"
+    desc "Deploy a micro BOSH instance to the currently selected deployment"
     option "--update", "update existing instance"
+
     def perform(stemcell=nil)
       update = !!options[:update]
 
@@ -179,8 +183,9 @@ module Bosh::Cli::Command
       say("Deployed #{desc}, took #{format_time(duration).green} to complete")
     end
 
-    usage  "micro delete"
-    desc   "Delete micro BOSH instance (including persistent disk)"
+    usage "micro delete"
+    desc "Delete micro BOSH instance (including persistent disk)"
+
     def delete
       unless deployer.exists?
         err "No existing instance to delete"
@@ -212,7 +217,8 @@ module Bosh::Cli::Command
     end
 
     usage "micro deployments"
-    desc  "Show the list of deployments"
+    desc "Show the list of deployments"
+
     def list
       file = File.join(work_dir, DEPLOYMENTS_FILE)
       if File.exists?(file)
@@ -226,9 +232,9 @@ module Bosh::Cli::Command
       na = "n/a"
 
       deployments_table = table do |t|
-        t.headings = [ "Name", "VM name", "Stemcell name" ]
+        t.headings = ["Name", "VM name", "Stemcell name"]
         deployments.each do |r|
-          t << [ r[:name], r[:vm_cid] || na, r[:stemcell_cid] || na  ]
+          t << [r[:name], r[:vm_cid] || na, r[:stemcell_cid] || na]
         end
       end
 
@@ -239,7 +245,8 @@ module Bosh::Cli::Command
     end
 
     usage "micro agent <args>"
-    desc  "Send agent messages"
+    desc "Send agent messages"
+
     def agent(*args)
       message = args.shift
       args = args.map do |arg|
@@ -254,22 +261,38 @@ module Bosh::Cli::Command
     end
 
     usage "micro apply"
-    desc  "Apply spec"
+    desc "Apply spec"
+
     def apply(spec)
       deployer.apply(Bosh::Deployer::Specification.new(load_yaml_file(spec)))
     end
 
     usage "micro init"
-    desc "Initializes the deployments directory with a micro_bosh.yml template"
+    desc "Initializes the deployments directory with a user defined directory containing a sample micro_bosh.yml for the target cloud provider"
 
-    def init(user_defined_dir)
-      say("Creating deployments directory #{deployments_target}")
+    def init(user_defined_dir, cloud_provider_type)
+
+      cloud_provider_templates = {
+          "vcloud" => "micro_bosh_vcloud.yml",
+          "vsphere" => "micro_bosh_vsphere.yml"
+      }
+
+      unless cloud_provider_templates.has_key?(cloud_provider_type)
+        err("#{cloud_provider_type} not a recognized cloud provider type. cloud_provider_type arg Must be one of: #{cloud_provider_templates.keys.join(" ")}")
+      end
+
       deployments_target = "./deployments/#{user_defined_dir}"
-      say("Creating deployments directory #{deployments_target}")
-      err("deployments directory already exists") if File.exists?(deployments_target)
+
+      say("Creating deployments directory #{deployments_target} for cloud provider #{cloud_provider_type}")
+
+      err("#{deployments_target} already exists") if File.exists?(deployments_target)
       FileUtils.mkdir_p deployments_target
-      micro_bosh_manifest = File.join(File.dirname(File.expand_path(__FILE__)), "../../../../config/templates/micro_bosh.yml")
+
+      cloud_provider_template = cloud_provider_templates[cloud_provider_type]
+      templates_dir = "../../../../config/templates"
+      micro_bosh_manifest = File.join(File.dirname(File.expand_path(__FILE__)), "#{templates_dir}/#{cloud_provider_template}")
       FileUtils.cp(micro_bosh_manifest, "#{deployments_target}/#{MICRO_BOSH_YAML}")
+
       say("#{deployments_target} directory created successfully")
     end
 
@@ -345,7 +368,7 @@ module Bosh::Cli::Command
             err("Cannot talk to director at '#{target}', please set correct target")
           end
         else
-          status = { "name" => "Unknown Director", "version" => "n/a" }
+          status = {"name" => "Unknown Director", "version" => "n/a"}
         end
       else
         status = {}
@@ -407,14 +430,14 @@ module Bosh::Cli::Command
 
       def update(state, task)
         event = {
-          "time"     => Time.now,
-          "stage"    => @stage,
-          "task"     => task,
-          "tags"     => [],
-          "index"    => @index+1,
-          "total"    => @total,
-          "state"    => state.to_s,
-          "progress" => state == :finished ? 100 : 0
+            "time" => Time.now,
+            "stage" => @stage,
+            "task" => task,
+            "tags" => [],
+            "index" => @index+1,
+            "total" => @total,
+            "state" => state.to_s,
+            "progress" => state == :finished ? 100 : 0
         }
 
         add_event(event)
