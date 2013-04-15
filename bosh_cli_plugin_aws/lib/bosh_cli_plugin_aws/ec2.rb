@@ -203,7 +203,13 @@ module Bosh
       end
 
       def terminatable_instances
-        aws_ec2.instances.reject { |i| i.api_termination_disabled? || i.status.to_s == "terminated" }
+        aws_ec2.instances.reject do |i|
+          begin
+            i.api_termination_disabled? || i.status.to_s == "terminated"
+          rescue AWS::Core::Resource::NotFound
+            # ignoring instances which disappear while we are going through them
+          end
+        end
       end
 
       def releasable_elastic_ips
