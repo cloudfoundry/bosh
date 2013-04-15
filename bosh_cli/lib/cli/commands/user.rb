@@ -30,5 +30,26 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "delete user"
+    desc "Deletes the user from the director"
+    def delete(username = nil)
+      auth_required
+
+      if interactive?
+        username ||= ask("Username to delete: ")
+      end
+
+      if username.blank?
+        err("Please provide a username to delete")
+      end
+
+      if confirmed?("Are you sure you would like to delete the user `#{username}'?")
+        if director.delete_user(username)
+          say("User `#{username}' has been deleted".green)
+        else
+          err("Unable to delete user")
+        end
+      end
+    end
   end
 end

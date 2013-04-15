@@ -64,6 +64,11 @@ module Bosh
         response_code == 204
       end
 
+      def delete_user(username)
+        response_code, _ = delete("/users/#{username}")
+        response_code == 204
+      end
+
       def upload_stemcell(filename, options = {})
         options = options.dup
         options[:content_type] = "application/x-compressed"
@@ -120,12 +125,12 @@ module Bosh
       end
 
       def get_deployment(name)
-        status, body = get_json_with_status("/deployments/#{name}")
+        _, body = get_json_with_status("/deployments/#{name}")
         body
       end
 
       def list_vms(name)
-        status, body = get_json_with_status("/deployments/#{name}/vms")
+        _, body = get_json_with_status("/deployments/#{name}/vms")
         body
       end
 

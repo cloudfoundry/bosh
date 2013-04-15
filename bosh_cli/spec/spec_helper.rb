@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require "rspec/core"
+require "webmock"
 
 require "cli"
 
@@ -14,6 +15,8 @@ RSpec.configure do |c|
     Bosh::Cli::Config.colorize = false
     Bosh::Cli::Config.output = StringIO.new
   end
+
+  c.include WebMock::API
 
   c.color_enabled = true
 end

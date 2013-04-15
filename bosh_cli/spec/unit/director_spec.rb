@@ -62,6 +62,20 @@ describe Bosh::Cli::Director do
       @director.create_user("joe", "pass")
     end
 
+    it "deletes users" do
+      @director.should_receive(:delete).
+        with("/users/joe").
+        and_return([204, "", {}])
+      @director.delete_user("joe").should == true
+    end
+
+    it "fails to delete users" do
+      @director.should_receive(:delete).
+        with("/users/joe").
+        and_return([500, "", {}])
+      @director.delete_user("joe").should == false
+    end
+
     it "uploads stemcell" do
       @director.should_receive(:upload_and_track).
         with(:post, "/stemcells", "/path",
@@ -394,7 +408,7 @@ describe Bosh::Cli::Director do
         with(Bosh::Cli::Director::API_TIMEOUT)
       client.should_receive(:connect_timeout=).
         with(Bosh::Cli::Director::CONNECT_TIMEOUT)
-      URI.should_receive(:parse).with("http://nil-uri-given/").and_call_original
+
       HTTPClient.stub!(:new).and_return(client)
 
       client.should_receive(:request).
