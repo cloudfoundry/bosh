@@ -18,7 +18,13 @@ module Bosh
       end
 
       def empty
-        aws_s3.buckets.each &:delete!
+        aws_s3.buckets.each do |bucket|
+          begin
+            bucket.delete!
+          rescue AWS::S3::Errors::NoSuchBucket
+            # when the bucket goes away while going through the list
+          end
+        end
       end
 
       def bucket_names
