@@ -46,7 +46,7 @@ apply_spec:
       default_security_groups: ["bosh"]
       ec2_endpoint: ec2.<%= region %>.amazonaws.com
       region: <%= region %>
-     <% if compiled_package_cache? %>
+    <% if compiled_package_cache? %>
     compiled_package_cache:
       provider: s3
       options:
