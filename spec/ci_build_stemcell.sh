@@ -18,18 +18,18 @@ else
   infrastructure='aws'
 fi
 
-directory="$infrastructure-$task"
-sudo umount /mnt/$directory/work/work/mnt/tmp/grub/root.img 2>/dev/null || true
-sudo umount /mnt/$directory/work/work/mnt 2>/dev/null || true
+directory="/mnt/stemcells/$infrastructure-$task"
+sudo umount $directory/work/work/mnt/tmp/grub/root.img 2>/dev/null || true
+sudo umount $directory/work/work/mnt 2>/dev/null || true
 
-sudo rm -rf /mnt/$directory
+sudo rm -rf $directory
 
-WORK_PATH=/mnt/$directory/work \
-    BUILD_PATH=/mnt/$directory/build \
+WORK_PATH=$directory/work \
+    BUILD_PATH=$directory/build \
     STEMCELL_VERSION=$BUILD_ID \
     $WORKSPACE/spec/ci_build.sh stemcell:$task[$infrastructure]
 
-stemcell=`ls /mnt/$directory/work/work/*.tgz`
+stemcell=`ls $directory/work/work/*.tgz`
 stemcell_base=`basename $stemcell .tgz`
 
 cp $stemcell $WORKSPACE/$stemcell_base.tgz
