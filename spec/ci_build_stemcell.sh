@@ -22,8 +22,6 @@ directory="/mnt/stemcells/$infrastructure-$task"
 sudo umount $directory/work/work/mnt/tmp/grub/root.img 2>/dev/null || true
 sudo umount $directory/work/work/mnt 2>/dev/null || true
 
-sudo rm -rf $directory
-
 WORK_PATH=$directory/work \
     BUILD_PATH=$directory/build \
     STEMCELL_VERSION=$BUILD_ID \
