@@ -49,7 +49,16 @@ describe Bosh::Aws::ServerCertificate do
         start_time = certificate.not_before
         end_time = certificate.not_after
 
-        (end_time - start_time).should == 3 * 365 * 24 * 60 * 60 # 3 Years
+        (end_time - start_time).should == ((3 * 365) + 1) * 24 * 60 * 60 # 3 Years and 1 Day
+      end
+
+      it 'should start being valid some time in the past' do
+        server_certificate.load_or_create
+
+        certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
+        start_time = certificate.not_before
+
+        start_time.should < (Time.now - 60 * 60 * 12)
       end
     end
 

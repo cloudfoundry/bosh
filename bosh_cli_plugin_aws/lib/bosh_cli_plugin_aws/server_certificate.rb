@@ -74,7 +74,7 @@ module Bosh::Aws
       csr_cert = OpenSSL::X509::Certificate.new
       csr_cert.serial = 0
       csr_cert.version = 2
-      csr_cert.not_before = Time.now
+      csr_cert.not_before = Time.now - 60 * 60 * 24
       csr_cert.not_after = Time.now + 94608000
 
       csr_cert.subject = csr.subject
