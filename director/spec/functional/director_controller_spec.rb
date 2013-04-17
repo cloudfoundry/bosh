@@ -1,8 +1,8 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
-require "rack/test"
+require 'rack/test'
 
 describe Bosh::Director::ApiController do
   include Rack::Test::Methods
@@ -726,6 +726,28 @@ describe Bosh::Director::ApiController do
       it 'scans and fixes problems' do
         put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'job' => [0])
         expect_redirect_to_queued_task(last_response)
+      end
+    end
+
+    describe 'snapshots' do
+      describe 'creating' do
+
+      end
+
+      describe 'deleting' do
+
+      end
+
+      describe 'listing' do
+        it 'should list all snapshots for a job' do
+          get '/deployments/mycloud/josb/job/0/snapshots'
+          last_response.status.should == 200
+        end
+
+        it 'should list all snapshots for a deployment' do
+          get '/deployments/mycloud/snapshots'
+          last_response.status.should == 200
+        end
       end
     end
 

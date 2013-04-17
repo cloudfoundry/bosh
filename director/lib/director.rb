@@ -132,6 +132,7 @@ module Bosh::Director
       @property_manager = Api::PropertyManager.new
       @resource_manager = Api::ResourceManager.new
       @release_manager = Api::ReleaseManager.new
+      @snapshot_manager = Api::SnapshotManager.new
       @stemcell_manager = Api::StemcellManager.new
       @task_manager = Api::TaskManager.new
       @user_manager = Api::UserManager.new
@@ -369,6 +370,24 @@ module Bosh::Director
 
       task = @instance_manager.fetch_logs(@user, deployment, job, index, options)
       redirect "/tasks/#{task.id}"
+    end
+
+    get '/deployments/:deployment/snapshots' do
+      json_encode(@snapshot_manager.snapshots(params[:deployment]))
+    end
+
+    get '/deployments/:deployment/jobs/:job/:index/snapshot' do
+      json_encode(@snapshot_manager.snapshots(params[:deployment], params[:job], params[:index]))
+    end
+
+    post '/deployments/:deployment/jobs/:job/:index/snapshot' do
+      @snapshot_manager.snapshot_instance(params[:deployment], params[:job], params[:index])
+      status(204)
+    end
+
+    delete '/deployments/:deployment/jobs/:job/:index/snapshot/:id' do
+      @snapshot_manager.delete_snapshot(params[:id])
+      status(204)
     end
 
     get "/deployments" do

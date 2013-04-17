@@ -52,6 +52,7 @@ module Bosh::Director
       end
 
       step { stop }
+      step { take_snapshot }
 
       if @target_state == "detached"
         detach_disk
@@ -160,6 +161,11 @@ module Bosh::Director
       agent.stop
     end
 
+    def take_snapshot
+      snapshot_manager = Api::SnapshotManager.new
+      snapshot_manager.snapshot(@instance)
+    end
+
     def detach_disk
       return unless @instance.disk_currently_attached?
 
@@ -254,6 +260,9 @@ module Bosh::Director
                 "as active in DB"
         end
       end
+
+      # should we also delete snapshots?
+
       disk.destroy
     end
 

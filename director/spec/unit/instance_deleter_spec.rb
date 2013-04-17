@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe BD::InstanceDeleter do
   before(:each) do
@@ -51,10 +51,13 @@ describe BD::InstanceDeleter do
     it "should delete a single instance" do
       vm = BDM::Vm.make
       instance = BDM::Instance.make(:vm => vm, :job => "test", :index => 5)
-      persistent_disks = [BDM::PersistentDisk.make, BDM::PersistentDisk.make]
+      disk = BDM::PersistentDisk.make
+      snapshot = BDM::Snapshot.make(persistent_disk: disk)
+      persistent_disks = [BDM::PersistentDisk.make, disk]
       persistent_disks.each { |disk| instance.persistent_disks << disk }
 
       @deleter.should_receive(:drain).with(vm.agent_id)
+      @deleter.should_receive(:delete_snapshots).with(persistent_disks)
       @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
       BD::Config.stub!(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with("5.test.%.foo.bosh", 0)
@@ -152,4 +155,18 @@ describe BD::InstanceDeleter do
     end
   end
 
+  describe :delete_snapshots do
+    it 'should delete all snapshots for an instance' do
+      vm = BDM::Vm.make
+      instance = BDM::Instance.make(:vm => vm, :job => "test", :index => 5)
+      disk = BDM::PersistentDisk.make(instance: instance)
+      snapshot1 = BDM::Snapshot.make(persistent_disk: disk)
+      snapshot2 = BDM::Snapshot.make(persistent_disk: disk)
+
+      @cloud.should_receive(:delete_snapshot).with(snapshot1.snapshot_cid)
+      @cloud.should_receive(:delete_snapshot).with(snapshot2.snapshot_cid)
+
+      @deleter.delete_snapshots(instance.persistent_disks)
+    end
+  end
 end

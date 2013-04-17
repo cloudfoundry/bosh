@@ -1,5 +1,6 @@
-require "digest/sha1"
-require "fileutils"
+require 'digest/sha1'
+require 'fileutils'
+require 'securerandom'
 
 module Bosh
 
@@ -112,6 +113,19 @@ module Bosh
 
       def delete_disk(disk)
         raise NotImplemented, "delete_disk"
+      end
+
+      def snapshot_disk(disk_id)
+        snapshot_id = SecureRandom.hex
+        File.open(File.join(@base_dir, "snapshot_#{snapshot_id}"), 'w') do |f|
+          f.write(disk_id)
+        end
+
+        snapshot_id
+      end
+
+      def delete_snapshot(snapshot_id)
+        FileUtils.rm(File.join(@base_dir, "snapshot_#{snapshot_id}"))
       end
 
       def validate_deployment(old_manifest, new_manifest)

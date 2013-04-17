@@ -9,6 +9,7 @@ Sham.define do
   job           { |index| "job-#{index}"}
   vm_cid        { |index| "vm-cid-#{index}" }
   disk_cid      { |index| "disk-cid-#{index}" }
+  snapshot_cid  { |index| "snapshot-cid-#{index}" }
   stemcell_cid  { |index| "stemcell-cid-#{index}" }
   blobstore_id  { |index| "blobstore-id-#{index}" }
   agent_id      { |index| "agent-id-#{index}" }
@@ -108,6 +109,11 @@ module Bosh::Director::Models
     active      { true }
     disk_cid    { Sham.disk_cid }
     instance    { Instance.make }
+  end
+
+  Snapshot.blueprint do
+    persistent_disk { PersistentDisk.make }
+    snapshot_cid    { Sham.snapshot_cid }
   end
 
   DeploymentProblem.blueprint do
