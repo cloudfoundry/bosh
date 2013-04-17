@@ -172,15 +172,10 @@ module Bosh
 
           FileUtils.cp(@sqlite_db, testcase_sqlite_db)
 
-          if ENV['DEBUG']
-            name = pick_unique_name(name)
-            base_log_path = File.join(logs_path, name)
-            director_output = "#{base_log_path}.director.out"
-            worker_output = "#{base_log_path}.worker.out"
-            hm_output = "#{base_log_path}.health_monitor.out"
-          else
-            director_output = worker_output = hm_output = "/dev/null"
-          end
+          name = pick_unique_name(name)
+          base_log_path = File.join(logs_path, name)
+          director_output = "#{base_log_path}.director.out"
+          worker_output = "#{base_log_path}.worker.out"
 
           FileUtils.rm_rf(blobstore_storage_dir)
           FileUtils.mkdir_p(blobstore_storage_dir)
@@ -200,17 +195,20 @@ module Bosh
 
           run_with_pid("bundle exec director -c #{director_config}", director_pid, :output => director_output)
           run_with_pid("bundle exec worker -c #{director_config}", worker_pid, :output => worker_output, :env => {"QUEUE" => "*"})
-          sleep(0.5) # Need to give the director time to come up before health_monitor tries to query it
-          run_with_pid("bundle exec health_monitor -c #{hm_config}", hm_pid, :output => hm_output)
 
           tries = 0
           loop do
             `lsof -w -i :#{director_port} | grep LISTEN`
             break if $?.exitstatus == 0
             tries += 1
-            raise "could not connect to director on port #{director_port}" if tries > 20
-            sleep(0.5)
+            raise "could not connect to director on port #{director_port}" if tries > 40
+            sleep(0.1)
           end
+        end
+
+        def start_healthmonitor
+          hm_output = "#{logs_path}/health_monitor.out"
+          run_with_pid("bundle exec health_monitor -c #{hm_config}", hm_pid, :output => hm_output)
         end
 
         def blobstore_storage_dir
@@ -308,8 +306,8 @@ module Bosh
 
             while !process_running?(pidfile)
               tries += 1
-              raise RuntimeError, "Cannot run '#{cmd}' with #{env.inspect}" if tries > 5
-              sleep(1)
+              raise RuntimeError, "Cannot run '#{cmd}' with #{env.inspect}" if tries > 20
+              sleep(0.1)
             end
           end
         end
@@ -328,8 +326,6 @@ module Bosh
           pid = File.read(pidfile).to_i
 
           Process.kill(signal, pid)
-          sleep(1) while process_running?(pidfile)
-
         rescue Errno::ESRCH
           puts "Not found process with PID=#{pid} (pidfile #{pidfile})"
         ensure

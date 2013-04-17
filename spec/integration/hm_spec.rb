@@ -4,6 +4,8 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
   include IntegrationExampleGroup
 
   def deploy
+    Bosh::Spec::Sandbox.start_healthmonitor
+
     assets_dir          = File.dirname(spec_asset("foo"))
     release_filename    = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.tgz")
     stemcell_filename   = spec_asset("valid_stemcell.tgz")
