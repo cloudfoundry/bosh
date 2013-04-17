@@ -40,11 +40,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "sets correct target" do
-    expect_output("target http://localhost:#{Bosh::Spec::Sandbox.director_port}", <<-OUT)
+    expect_output("target http://localhost:#{current_sandbox.director_port}", <<-OUT)
       Target set to `Test Director'
     OUT
 
-    message = "http://localhost:#{Bosh::Spec::Sandbox.director_port}"
+    message = "http://localhost:#{current_sandbox.director_port}"
     expect_output("target", message)
     Dir.chdir("/tmp") do
       expect_output("target", message)
@@ -52,7 +52,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "allows omitting http", no_reset: true do
-    expect_output("target localhost:#{Bosh::Spec::Sandbox.director_port}", <<-OUT)
+    expect_output("target localhost:#{current_sandbox.director_port}", <<-OUT)
       Target set to `Test Director'
     OUT
   end
@@ -63,28 +63,28 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "remembers deployment when switching targets", no_reset: true do
-    run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target localhost:#{current_sandbox.director_port}")
     run_bosh("deployment test2")
 
-    expect_output("target http://localhost:#{Bosh::Spec::Sandbox.director_port}", <<-OUT)
+    expect_output("target http://localhost:#{current_sandbox.director_port}", <<-OUT)
       Target already set to `Test Director'
     OUT
 
-    expect_output("target http://127.0.0.1:#{Bosh::Spec::Sandbox.director_port}", <<-OUT)
+    expect_output("target http://127.0.0.1:#{current_sandbox.director_port}", <<-OUT)
       Target set to `Test Director'
     OUT
 
     expect_output("deployment", "Deployment not set")
-    run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target localhost:#{current_sandbox.director_port}")
     out = run_bosh("deployment")
     out.should =~ regexp("test2")
   end
 
   it "keeps track of user associated with target" do
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port} foo")
+    run_bosh("target http://localhost:#{current_sandbox.director_port} foo")
     run_bosh("login admin admin")
 
-    run_bosh("target http://127.0.0.1:#{Bosh::Spec::Sandbox.director_port} bar")
+    run_bosh("target http://127.0.0.1:#{current_sandbox.director_port} bar")
 
     run_bosh("login admin admin")
     run_bosh("status").should =~ /user\s+admin/i
@@ -134,18 +134,18 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   it "requires login when talking to director", no_reset: true do
     run_bosh("properties").should =~ /please choose target first/i
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("properties").should =~ /please log in first/i
   end
 
   it "creates a user when correct target accessed" do
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     run_bosh("create user john pass").should =~ /user `john' has been created/i
   end
 
   it "can log in as a freshly created user and issue commands" do
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     run_bosh("create user jane pass")
     run_bosh("login jane pass")
@@ -155,7 +155,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "cannot log in if password is invalid" do
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     run_bosh("create user jane pass")
     run_bosh("logout")
@@ -169,7 +169,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     # That's the contents of image file:
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     out = run_bosh("upload stemcell #{stemcell_filename}")
 
@@ -180,7 +180,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /ubuntu-stemcell.+1/
     out.should =~ regexp(expected_id.to_s)
 
-    File.exists?(File.join(Bosh::Spec::Sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_true
+    File.exists?(File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_true
   end
 
   it "can delete a stemcell" do
@@ -188,15 +188,15 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     # That's the contents of image file:
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     out = run_bosh("upload stemcell #{stemcell_filename}")
     out.should =~ /Stemcell uploaded and created/
 
-    File.exists?(File.join(Bosh::Spec::Sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_true
+    File.exists?(File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_true
     out = run_bosh("delete stemcell ubuntu-stemcell 1")
     out.should =~ /Deleted stemcell `ubuntu-stemcell\/1'/
-    File.exists?(File.join(Bosh::Spec::Sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_false
+    File.exists?(File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_false
   end
 
   it "can't create a final release without the blobstore secret", no_reset: true do
@@ -213,7 +213,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it "can upload a release" do
     release_filename = spec_asset("valid_release.tgz")
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     out = run_bosh("upload release #{release_filename}")
 
@@ -240,7 +240,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       release_manifest['commit_hash'].should == commit_hash
       release_manifest['uncommitted_changes'].should be_true
 
-      run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
       run_bosh("upload release", Dir.pwd)
 
@@ -263,7 +263,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       FileUtils.rm_rf("dev_releases")
 
       run_bosh("create release", Dir.pwd)
-      run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
       run_bosh("upload release", Dir.pwd)
     end
@@ -283,7 +283,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       File.exists?(release_1).should be_true
     end
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     run_bosh("upload release #{release_1}")
 
@@ -325,7 +325,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("create release", Dir.pwd)
       File.exists?(release_1).should be_true
 
-      run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_1}", Dir.pwd)
 
@@ -372,7 +372,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it "can't upload malformed release", no_reset: true do
     release_filename = spec_asset("release_invalid_checksum.tgz")
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     out = run_bosh("upload release #{release_filename}")
 
@@ -382,7 +382,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it "allows deleting a whole release" do
     release_filename = spec_asset("valid_release.tgz")
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     run_bosh("upload release #{release_filename}")
 
@@ -397,7 +397,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it "allows deleting a particular release version" do
     release_filename = spec_asset("valid_release.tgz")
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("login admin admin")
     run_bosh("upload release #{release_filename}")
 
@@ -408,12 +408,12 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   describe "deployment prerequisites" do
     it "requires target and login" do
       run_bosh("deploy").should =~ /Please choose target first/
-      run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh("deploy").should =~ /Please log in first/
     end
 
     it "requires deployment to be chosen" do
-      run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
       run_bosh("deploy").should =~ /Please choose deployment first/
     end
@@ -425,7 +425,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       deployment_manifest = yaml_file(
         "minimal", Bosh::Spec::Deployments.minimal_manifest)
 
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
@@ -454,7 +454,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       File.exists?(release_filename).should be_true
       File.exists?(deployment_manifest.path).should be_true
 
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload stemcell #{stemcell_filename}")
@@ -474,7 +474,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       deployment_manifest = yaml_file(
         "minimal", Bosh::Spec::Deployments.minimal_manifest)
 
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
@@ -495,7 +495,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       deployment_manifest = yaml_file(
         "minimal", Bosh::Spec::Deployments.minimal_manifest)
 
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
@@ -525,7 +525,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     it 'uses compile package cache for previously compiled packages' do
       stemcell_filename = spec_asset("valid_stemcell.tgz")
 
-      simple_blob_store_path = Bosh::Spec::Sandbox.blobstore_storage_dir
+      simple_blob_store_path = current_sandbox.blobstore_storage_dir
 
       release_file = "test_release/dev_releases/bosh-release-0.1-dev.tgz"
       release_filename = spec_asset(release_file)
@@ -537,7 +537,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       deployment_manifest = yaml_file(
           "simple_manifest", Bosh::Spec::Deployments.simple_manifest)
 
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
 
       run_bosh("deployment #{deployment_manifest.path}")
@@ -572,7 +572,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
       deployment_manifest = yaml_file("whatevs_manifest", deployment_manifest_hash)
 
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
 
       run_bosh("upload release #{spec_asset("release_compilation_test.tgz")}")
@@ -622,11 +622,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   describe 'cloudcheck' do
     require 'cloud/dummy'
     let!(:dummy_cloud) do
-      Bosh::Clouds::Dummy.new("dir" => Bosh::Spec::Sandbox.cloud_storage_dir)
+      Bosh::Clouds::Dummy.new("dir" => current_sandbox.cloud_storage_dir)
     end
 
     before do
-      run_bosh("target localhost:#{Bosh::Spec::Sandbox.director_port}")
+      run_bosh("target localhost:#{current_sandbox.director_port}")
       run_bosh("login admin admin")
 
       release_dir = spec_asset("test_release")
@@ -644,12 +644,21 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("cloudcheck --report").should =~ regexp("No problems found")
     end
 
-    after do
-      Bosh::Spec::Sandbox.start_nats
-    end
+    it "supports resolutions for different kinds of problems" do
+      #provides resolution options for unresponsive agents
+      current_sandbox.stop_nats
+      cloudcheck_response = run_bosh_cck_ignore_errors(3)
+      cloudcheck_response.should_not =~ regexp("No problems found")
+      cloudcheck_response.should =~ regexp("3 unresponsive")
+      cloudcheck_response.should =~ regexp("1. Ignore problem
+  2. Reboot VM
+  3. Recreate VM using last known apply spec
+  4. Delete VM reference (DANGEROUS!)")
 
-    it "provides resolution options for missing VMs" do
-      cid = File.basename(Dir[File.join(Bosh::Spec::Sandbox.agent_tmp_path, "running_vms", "*")].first)
+      current_sandbox.start_nats
+
+      # provides resolution options for missing VMs
+      cid = File.basename(Dir[File.join(current_sandbox.agent_tmp_path, "running_vms", "*")].first)
       dummy_cloud.delete_vm(cid)
 
       cloudcheck_response = run_bosh_cck_ignore_errors(1)
@@ -658,18 +667,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       cloudcheck_response.should =~ regexp("1. Ignore problem
   2. Recreate VM using last known apply spec
   3. Delete VM reference (DANGEROUS!)")
-    end
 
-    it "provides resolution options for unresponsive agents" do
-      Process.kill("TERM", File.read(Bosh::Spec::Sandbox.nats_pid).to_i)
-
-      cloudcheck_response = run_bosh_cck_ignore_errors(3)
-      cloudcheck_response.should_not =~ regexp("No problems found")
-      cloudcheck_response.should =~ regexp("3 unresponsive")
-      cloudcheck_response.should =~ regexp("1. Ignore problem
-  2. Reboot VM
-  3. Recreate VM using last known apply spec
-  4. Delete VM reference (DANGEROUS!)")
     end
   end
 end

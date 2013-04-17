@@ -44,20 +44,11 @@ RSpec.configure do |c|
     setup_test_release_dir
   end
 
-  c.after(:each) do |example|
-    save_task_logs(example)
-  end
-
   c.filter_run :focus => true if ENV["FOCUS"]
 end
 
 def spec_asset(name)
   File.expand_path("../assets/#{name}", __FILE__)
-end
-
-def save_task_logs(example)
-  desc = example ? example.example.metadata[:description] : ""
-  Bosh::Spec::Sandbox.save_task_logs(desc)
 end
 
 def yaml_file(name, object)
@@ -102,7 +93,6 @@ end
 def cleanup_bosh
   [
    BOSH_CONFIG,
-   Bosh::Spec::Sandbox.cloud_storage_dir,
    BOSH_CACHE_DIR,
    TEST_RELEASE_DIR
   ].each do |item|

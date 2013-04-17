@@ -4,7 +4,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
   include IntegrationExampleGroup
 
   def deploy
-    Bosh::Spec::Sandbox.start_healthmonitor
+    current_sandbox.start_healthmonitor
 
     assets_dir          = File.dirname(spec_asset("foo"))
     release_filename    = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.tgz")
@@ -15,7 +15,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
       run_bosh("create release --with-tarball", Dir.pwd)
     end
 
-    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh("deployment #{deployment_manifest.path}")
     run_bosh("login admin admin")
     run_bosh("upload stemcell #{stemcell_filename}")
@@ -27,7 +27,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
   it "HM can be queried for stats" do
     deploy
 
-    varz_json = RestClient.get("http://admin:admin@localhost:#{Bosh::Spec::Sandbox.hm_port}/varz")
+    varz_json = RestClient.get("http://admin:admin@localhost:#{current_sandbox.hm_port}/varz")
     varz = Yajl::Parser.parse(varz_json)
 
     varz["deployments_count"].should == 1
