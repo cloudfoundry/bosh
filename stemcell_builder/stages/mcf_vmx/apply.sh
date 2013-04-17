@@ -40,7 +40,7 @@ ddb.geometry.cylinders = "$disk_cylinders"
 ddb.virtualHWVersion = "4"
 EOS
 
-vm_mem=2048
+vm_mem=3072
 vm_cpus=2
 vm_hostname=ubuntu
 vm_arch=amd64
