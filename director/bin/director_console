@@ -80,9 +80,5 @@ end
   end
 end
 
-Thread.new do
-  EM.run
-end.join(1)
-
 BD::Console.start(self)
 

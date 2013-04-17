@@ -18,8 +18,6 @@ config = Psych.load_file(config_file)
 
 Bosh::Director::Config.configure(config)
 
-event_thread = Thread.new { EM.run }
-
 thin_server = Thin::Server.new("0.0.0.0", config["port"], :signals => false) do
   use Rack::CommonLogger
   map "/" do
@@ -30,9 +28,7 @@ end
 ["TERM", "INT", "QUIT"].each do |signal|
   trap(signal) do
     thin_server.stop!
-    EM.stop
   end
 end
 
 thin_server.start!
-event_thread.join

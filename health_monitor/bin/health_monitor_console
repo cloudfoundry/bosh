@@ -47,9 +47,5 @@ module Bosh
   end
 end
 
-Thread.new do
-  EM.run
-end.join(1)
-
 Bhm::Console.start(self)
 

@@ -65,8 +65,6 @@ describe Bosh::Registry::Runner do
       runner = make_runner(@config_file)
       mock_thin = mock("thin")
 
-      EM.should_receive(:run).and_yield
-
       Thin::Server.should_receive(:new).
         with("0.0.0.0", 25777, :signals => false).
         and_return(mock_thin)
@@ -76,7 +74,6 @@ describe Bosh::Registry::Runner do
       runner.run
 
       mock_thin.should_receive(:stop!)
-      EM.should_receive(:stop)
 
       runner.stop
     end

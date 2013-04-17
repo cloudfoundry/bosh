@@ -15,25 +15,23 @@ module Bosh::Agent
     def start
       handler = self
 
-      EM.run do
-        uri = URI.parse(Config.mbus)
+      uri = URI.parse(Config.mbus)
 
-        @server = Thin::Server.new(uri.host, uri.port) do
-          use Rack::CommonLogger
+      @server = Thin::Server.new(uri.host, uri.port) do
+        use Rack::CommonLogger
 
-          if uri.userinfo
-            use Rack::Auth::Basic do |user, password|
-              "#{user}:#{password}" == uri.userinfo
-            end
-          end
-
-          map "/" do
-            run AgentController.new(handler)
+        if uri.userinfo
+          use Rack::Auth::Basic do |user, password|
+            "#{user}:#{password}" == uri.userinfo
           end
         end
 
-        @server.start!
+        map "/" do
+          run AgentController.new(handler)
+        end
       end
+
+      @server.start!
     end
 
     def shutdown

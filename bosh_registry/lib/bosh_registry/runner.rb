@@ -15,20 +15,12 @@ module Bosh::Registry
 
     def run
       @logger.info("BOSH Registry starting...")
-      EM.kqueue if EM.kqueue?
-      EM.epoll if EM.epoll?
-
-      EM.error_handler { |e| handle_em_error(e) }
-
-      EM.run do
-        start_http_server
-      end
+      start_http_server
     end
 
     def stop
       @logger.info("BOSH Registry shutting down...")
       @http_server.stop! if @http_server
-      EM.stop
     end
 
     def start_http_server
