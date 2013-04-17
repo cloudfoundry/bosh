@@ -476,6 +476,57 @@ module Bosh::OpenStackCloud
     end
 
     ##
+    # Takes a snapshot of an OpenStack volume
+    #
+    # @param [String] disk_id OpenStack volume UUID
+    # @return [String] OpenStack snapshot UUID
+    # @raise [Bosh::Clouds::CloudError] if volume is not found
+    def snapshot_disk(disk_id)
+      with_thread_name("snapshot_disk(#{disk_id})") do
+        volume = with_openstack { @openstack.volumes.get(disk_id) }
+        cloud_error("Volume `#{disk_id}' not found") unless volume
+
+        snapshot_params = {
+          :name => "snapshot-#{generate_unique_name}",
+          :description => "",
+          :volume_id => volume.id
+        }
+
+        @logger.info("Creating new snapshot for volume `#{disk_id}'...")
+        snapshot = with_openstack { @openstack.snapshots.create(snapshot_params) }
+
+        @logger.info("Creating new snapshot `#{snapshot.id}' for volume `#{disk_id}'...")
+        wait_resource(snapshot, :available)
+
+        snapshot.id.to_s
+      end
+    end
+
+    ##
+    # Deletes an OpenStack volume snapshot
+    #
+    # @param [String] snapshot_id OpenStack snapshot UUID
+    # @return [void]
+    # @raise [Bosh::Clouds::CloudError] if snapshot is not in available state
+    def delete_snapshot(snapshot_id)
+      with_thread_name("delete_snapshot(#{snapshot_id})") do
+        @logger.info("Deleting snapshot `#{snapshot_id}'...")
+        snapshot = with_openstack { @openstack.snapshots.get(snapshot_id) }
+        if snapshot
+          state = snapshot.status
+          if state.to_sym != :available
+            cloud_error("Cannot delete snapshot `#{snapshot_id}', state is #{state}")
+          end
+
+          with_openstack { snapshot.destroy }
+          wait_resource(snapshot, :deleted, :status, true)
+        else
+          @logger.info("Snapshot `#{snapshot_id}' not found. Skipping.")
+        end
+      end
+    end
+
+    ##
     # Set metadata for an OpenStack server
     #
     # @param [String] server_id OpenStack server UUID
