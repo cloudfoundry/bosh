@@ -84,7 +84,8 @@ opts = OptionParser.new do |opts|
       uri.password = nil
     end
 
-    if uri.scheme == 'file'
+    # handle both 'file://foo/bar' and '/foo/bar'
+    if uri.scheme == 'file' || uri.scheme.nil?
       bs_opts['blobstore_path'] = uri.path
     else
       bs_opts['endpoint'] = uri.to_s
