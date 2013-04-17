@@ -220,8 +220,13 @@ module Bosh::AwsCloud
         end
 
         if @fast_path_delete
-          TagManager.tag(volume, "Name", "to be deleted")
-          @logger.info("Volume `#{disk_id}' has been marked for deletion")
+          begin
+            TagManager.tag(volume, "Name", "to be deleted")
+            @logger.info("Volume `#{disk_id}' has been marked for deletion")
+          rescue AWS::EC2::Errors::InvalidVolume::NotFound
+            # Once in a blue moon AWS if actually fast enough that the volume is already gone
+            # when we get here, and if it is, our work here is done!
+          end
           return
         end
 
@@ -267,6 +272,37 @@ module Bosh::AwsCloud
         detach_ebs_volume(instance, volume)
 
         @logger.info("Detached `#{disk_id}' from `#{instance_id}'")
+      end
+    end
+
+    # Take snapshot of disk
+    # @param [String] disk_id disk id of the disk to take the snapshot of
+    # @return [String] snapshot id
+    def snapshot_disk(disk_id)
+      with_thread_name("snapshot_disk(#{disk_id})") do
+        volume = @ec2.volumes[disk_id]
+        snapshot = volume.create_snapshot
+        @logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
+        snapshot.id
+      end
+    end
+
+    # Delete a disk snapshot
+    # @param [String] snapshot_id snapshot id to delete
+    def delete_snapshot(snapshot_id)
+      with_thread_name("delete_snapshot(#{snapshot_id})") do
+        snapshot = @ec2.snapshots[snapshot_id]
+
+        if snapshot.status == :in_use
+          raise Bosh::Clouds::CloudError, "snapshot '#{snapshot.id}' can not be deleted as it is in use"
+        end
+
+        # loop and wait until available before deleting, in case the snapshot isn't
+        # completed yet, as we don't wait when we take the snapshot
+        ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
+
+        snapshot.delete
+        @logger.info("snapshot '#{snapshot_id}' deleted")
       end
     end
 
