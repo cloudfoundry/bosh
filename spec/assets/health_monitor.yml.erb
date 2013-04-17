@@ -1,16 +1,16 @@
 ---
 http:
-  port: 25932
+  port: <%= hm_port %>
   user: admin
   password: admin
 
 mbus:
-  endpoint: nats://localhost:42112
+  endpoint: nats://localhost:<%= nats_port %>
   user:
   password:
 
 director:
-  endpoint: http://127.0.0.1:57523
+  endpoint: http://127.0.0.1:<%= director_port %>
   user: admin
   password: admin
 
@@ -31,6 +31,6 @@ plugins:
       - alert
       - heartbeat
     options:
-      endpoint: nats://localhost:42112
+      endpoint: nats://localhost:<%= nats_port %>
       user:
       password:

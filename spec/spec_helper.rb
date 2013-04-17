@@ -22,7 +22,6 @@ end
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
 TEST_RELEASE_DIR = File.join(ASSETS_DIR, "test_release")
 
-CLOUD_DIR      = "/tmp/bosh_test_cloud"
 CLI_DIR        = File.expand_path("../../../cli", __FILE__)
 BOSH_CACHE_DIR = Dir.mktmpdir
 BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
@@ -92,18 +91,18 @@ def setup_test_release_dir
     File.open('.gitignore', 'w+') do |f|
       f.write(ignore.join("\n") + "\n")
     end
-    `git init`
-    `git config user.name "John Doe"`
-    `git config user.email "john.doe@example.org"`
-    `git add .`
-    `git commit -m "Initial Test Commit"`
+    `git init;
+     git config user.name "John Doe";
+     git config user.email "john.doe@example.org";
+     git add .;
+     git commit -m "Initial Test Commit"`
   end
 end
 
 def cleanup_bosh
   [
    BOSH_CONFIG,
-   CLOUD_DIR,
+   Bosh::Spec::Sandbox.cloud_storage_dir,
    BOSH_CACHE_DIR,
    TEST_RELEASE_DIR
   ].each do |item|

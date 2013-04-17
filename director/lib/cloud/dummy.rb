@@ -13,6 +13,7 @@ module Bosh
           raise ArgumentError, "please provide base directory for dummy cloud"
         end
 
+        @options = options
         @base_dir = options["dir"]
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
@@ -32,8 +33,20 @@ module Bosh
         FileUtils.rm(File.join(@base_dir, "stemcell_#{stemcell_cid}"))
       end
 
+      def blobstore_uri
+        properties = @options['agent']['blobstore']['options']
+        uri = URI(properties['endpoint'])
+        uri.user = properties['user']
+        uri.password = properties['password']
+        uri.to_s
+      end
+
+      def nats_uri
+        @options['nats']
+      end
+
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
-        agent_base_dir = "/tmp/bosh_test_cloud/agent-base-dir-#{agent_id}"
+        agent_base_dir = "#{@options['dir']}/agent-base-dir-#{agent_id}"
 
         root_dir = File.join(agent_base_dir, 'root_dir')
         FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
@@ -41,14 +54,14 @@ module Bosh
         # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
         # then port should be overriden for each agent, otherwise all but first won't start
         # (won't be able to bind to port)
-        agent_cmd = "bosh_agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir} --no-alerts"
+        agent_cmd = "bosh_agent -a #{agent_id} -s #{blobstore_uri} -p simple -b #{agent_base_dir} -n #{nats_uri} -r #{root_dir} --no-alerts"
 
         agent_pid = fork do
           # exec will actually fork off another process (due to shell expansion),
           # so in order to kill all these new processes when cleaning up we need them
           # in a single process group.
           Process.setpgid(0, 0)
-          exec "bundle exec #{agent_cmd} > /tmp/bosh_test_cloud/bosh_agent.#{agent_id}.log 2>&1"
+          exec "bundle exec #{agent_cmd} > #{@options['dir']}/agent.#{agent_id}.log 2>&1"
         end
 
         Process.detach(agent_pid)
@@ -62,6 +75,8 @@ module Bosh
       def delete_vm(vm_name)
         agent_pid = vm_name.to_i
         Process.kill("INT", -1 * agent_pid) # Kill the whole process group
+      rescue Errno::ESRCH
+        # don't care :)
       ensure
         FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_name))
       end

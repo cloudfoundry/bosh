@@ -52,7 +52,8 @@ module IntegrationExampleGroup
           end
         end
       end
-      reset_sandbox(example)
+
+      reset_sandbox(example) unless example.example.metadata[:no_reset]
     end
   end
 end

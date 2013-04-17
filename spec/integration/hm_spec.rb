@@ -13,7 +13,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
       run_bosh("create release --with-tarball", Dir.pwd)
     end
 
-    run_bosh("target http://localhost:57523")
+    run_bosh("target http://localhost:#{Bosh::Spec::Sandbox.director_port}")
     run_bosh("deployment #{deployment_manifest.path}")
     run_bosh("login admin admin")
     run_bosh("upload stemcell #{stemcell_filename}")
@@ -25,7 +25,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
   it "HM can be queried for stats" do
     deploy
 
-    varz_json = RestClient.get("http://admin:admin@localhost:25932/varz")
+    varz_json = RestClient.get("http://admin:admin@localhost:#{Bosh::Spec::Sandbox.hm_port}/varz")
     varz = Yajl::Parser.parse(varz_json)
 
     varz["deployments_count"].should == 1
