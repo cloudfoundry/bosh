@@ -234,12 +234,12 @@ module Bosh
         kill_process(redis_pid)
         kill_process(nats_pid)
         kill_process(hm_pid)
-        #FileUtils.rm_f(@sqlite_db)
-        #FileUtils.rm_f(db_path)
-        #FileUtils.rm_f(dns_db_path)
-        #FileUtils.rm_rf(director_tmp_path)
-        #FileUtils.rm_rf(agent_tmp_path)
-        #FileUtils.rm_rf(blobstore_storage_dir)
+        FileUtils.rm_f(@sqlite_db)
+        FileUtils.rm_f(db_path)
+        FileUtils.rm_f(dns_db_path)
+        FileUtils.rm_rf(director_tmp_path)
+        FileUtils.rm_rf(agent_tmp_path)
+        FileUtils.rm_rf(blobstore_storage_dir)
       end
 
       def start_nats
