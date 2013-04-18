@@ -98,7 +98,7 @@ describe Bosh::OpenStackCloud::Cloud do
       sc_id.should == "i-bar"
     end
 
-    it "sets image properies from cloud_properties" do
+    it "sets image properties from cloud_properties" do
       image = double("image", :id => "i-bar", :name => "i-bar")
       kernel = double("image", :id => "k-img-id", :name => "k-img-id")
       ramdisk = double("image", :id => "r-img-id", :name => "r-img-id")
@@ -130,8 +130,12 @@ describe Bosh::OpenStackCloud::Cloud do
         :properties => {
           :kernel_id => "k-img-id",
           :ramdisk_id => "r-img-id",
-          :stemcell_name => "bosh-stemcell",
-          :stemcell_version => "x.y.z"
+          :name => "bosh-stemcell",
+          :version => "x.y.z",
+          :os_type => "linux",
+          :os_distro => "ubuntu",
+          :architecture => "x86_64",
+          :auto_disk_config => "true"
         }
       }
 
@@ -152,6 +156,11 @@ describe Bosh::OpenStackCloud::Cloud do
       sc_id = cloud.create_stemcell("/tmp/foo", {
         "name" => "bosh-stemcell",
         "version" => "x.y.z",
+        "os_type" => "linux",
+        "os_distro" => "ubuntu",
+        "architecture" => "x86_64",
+        "auto_disk_config" => "true",
+        "foo" => "bar",
         "container_format" => "ami",
         "disk_format" => "ami",
         "kernel_file" => "kernel.img",

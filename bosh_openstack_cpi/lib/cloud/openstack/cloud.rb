@@ -147,11 +147,9 @@ module Bosh::OpenStackCloud
             image_properties = {}
             image_properties[:kernel_id] = kernel_id if kernel_id
             image_properties[:ramdisk_id] = ramdisk_id if ramdisk_id
-            if cloud_properties["name"]
-              image_properties[:stemcell_name] = cloud_properties["name"]
-            end
-            if cloud_properties["version"]
-              image_properties[:stemcell_version] = cloud_properties["version"]
+            vanilla_options = ["name", "version", "os_type", "os_distro", "architecture", "auto_disk_config"]
+            vanilla_options.reject{ |o| cloud_properties[o].nil? }.each do |key|
+              image_properties[key.to_sym] = cloud_properties[key]
             end
             unless image_properties.empty?
               image_params[:properties] = image_properties

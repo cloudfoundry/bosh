@@ -43,6 +43,7 @@ manifest = {
         "disk_format" => disk_format,
         "container_format" => container_format,
         "os_type" => "linux",
+        "os_distro" => "ubuntu",
         "architecture" => "x86_64",
         "auto_disk_config" => "true"
     }
