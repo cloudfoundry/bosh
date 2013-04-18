@@ -4,7 +4,7 @@ rvm:
   - ruby-1.9.3
   - ruby-2.0.0
 env:
-  - SUITE=unit
+  - SUITE=parallel_unit
   - SUITE=integration
 notifications:
   email:

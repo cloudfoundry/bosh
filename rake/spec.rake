@@ -2,6 +2,8 @@ require "rspec"
 require "rspec/core/rake_task"
 require 'tempfile'
 
+require "common/thread_pool"
+
 namespace :spec do
 
   desc "Run BOSH integration tests against a local sandbox"
@@ -11,14 +13,59 @@ namespace :spec do
   end
 
   desc "Run unit and functional tests for each BOSH component gem"
+  task :parallel_unit do
+    trap("INT") do
+      exit
+    end
+    
+    builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
+    builds -= ['bat']
+
+    spec_logs = Dir.mktmpdir
+
+    puts "Logging spec results in #{spec_logs}"
+
+    Bosh::ThreadPool.new(max_threads: 10, logger: Logger.new('/dev/null')).wrap do |pool|
+      builds.each do |build|
+        puts "-----Building #{build}-----"
+
+        pool.process do
+          log_file = "#{spec_logs}/#{build}.log"
+          success = system("cd #{build} && rspec --tty -c spec --out #{log_file}")
+
+          if success
+            print File.read(log_file)
+          else
+            raise("#{build} failed to build unit tests: #{File.read(log_file)}")
+          end
+        end
+      end
+
+      pool.wait
+    end
+  end
+
+  desc "Run unit and functional tests linearly"
   task :unit do
-    builds = Dir['*'].select {|f| File.directory?(f) && File.exists?("#{f}/spec")}
+    builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
 
     builds.each do |build|
       puts "-----#{build}-----"
       system("cd #{build} && rspec spec") || raise("#{build} failed to build unit tests")
     end
+  end
+
+  desc "Run integration and unit tests in parallel"
+  task :parallel_all do
+    unit = Thread.new do
+      Rake::Task["spec:parallel_unit"].invoke
+    end
+    integration = Thread.new do
+      Rake::Task["spec:integration"].invoke
+    end
+
+    [unit, integration].each(&:join)
   end
 
   namespace :external do
@@ -183,7 +230,7 @@ namespace :spec do
 
       AWS.config({
                      access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
-                     secret_access_key:  ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
+                     secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
                  })
 
       Dir.mktmpdir do |dir|
@@ -193,7 +240,7 @@ namespace :spec do
         stemcell_S3_name = "#{stemcell_properties["name"]}-#{stemcell_properties["cloud_properties"]["infrastructure"]}"
 
         s3 = AWS::S3.new
-        s3.buckets.create(bucket_name)    # doesn't fail if already exists in your account
+        s3.buckets.create(bucket_name) # doesn't fail if already exists in your account
         bucket = s3.buckets[bucket_name]
 
         if stemcell_properties['cloud_properties']['ami']
@@ -348,4 +395,4 @@ namespace :spec do
 end
 
 desc "Run unit and integration specs"
-task :spec => ["spec:unit", "spec:integration"]
+task :spec => ["spec:parallel_unit", "spec:integration"]
