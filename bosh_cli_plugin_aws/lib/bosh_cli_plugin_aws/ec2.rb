@@ -81,7 +81,7 @@ module Bosh
           Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
           instance.add_tag("Name", {value: name})
           elastic_ip = allocate_elastic_ip
-          Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min }, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
+          Bosh::Common.retryable(tries: 30, sleep: lambda{|n,e| [2**(n-1), 10].min }, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
             instance.associate_elastic_ip(elastic_ip)
             true
           end
