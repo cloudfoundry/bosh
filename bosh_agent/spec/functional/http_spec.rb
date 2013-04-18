@@ -3,6 +3,7 @@
 require 'spec_helper'
 
 require 'yajl'
+require 'tempfile'
 
 describe "http messages" do
 
@@ -46,19 +47,23 @@ describe "http messages" do
     smtp_port = get_free_port
     @http_uri = "http://#{@user}:#{@pass}@localhost:#{@port}/agent"
     @agent_id = "rspec_agent"
+    agent_out = Tempfile.new('agent_out')
 
     puts "starting http agent"
     agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
-    command = "ruby #{agent} -n #{@http_uri} -t #{smtp_port}-a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
-    @agent_pid = Process.spawn(command)
+    command = "ruby #{agent} -n #{@http_uri} -t #{smtp_port} -a #{@agent_id} -h 1 -b #{@basedir}"
+    @agent_pid = Process.spawn(command, out: agent_out.path, err: agent_out.path)
 
     counter = 0
     while !http_up?
       counter += 1
       # wait max 10 seconds for the agent to start
-      raise "unable to connect to agent" if counter > 100
+      if counter > 100
+        puts File.read(agent_out)
+        raise "unable to connect to agent"
+      end
       sleep 0.1
     end
   end
