@@ -31,7 +31,8 @@ namespace :spec do
 
         pool.process do
           log_file = "#{spec_logs}/#{build}.log"
-          success = system("cd #{build} && rspec --tty -c spec --out #{log_file}")
+          cmd = "cd #{build} && rspec --tty -c -f p spec > #{log_file} 2>&1"
+          success = system(cmd)
 
           if success
             print File.read(log_file)
