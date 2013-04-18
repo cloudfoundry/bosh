@@ -43,6 +43,7 @@ describe "http messages" do
     @user = "http"
     @pass = @user.reverse
     @port = get_free_port
+    smtp_port = get_free_port
     @http_uri = "http://#{@user}:#{@pass}@localhost:#{@port}/agent"
     @agent_id = "rspec_agent"
 
@@ -50,7 +51,7 @@ describe "http messages" do
     agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
-    command = "ruby #{agent} -n #{@http_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
+    command = "ruby #{agent} -n #{@http_uri} -t #{smtp_port}-a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
     @agent_pid = Process.spawn(command)
 
     counter = 0
