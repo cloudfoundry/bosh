@@ -133,16 +133,24 @@ describe Bosh::Cli::Command::Biff do
         Psych.load(biff.template_output)['properties']
       }
 
-      it "Generate a password and put it in" do
+      it "generates a password and put it in" do
         expect(subject["defined_but_no_passwd"]["password"]).to_not be_nil
       end
 
-      it "Retain an existing" do
+      it "retains an existing password" do
         expect(subject["defined_with_passwd"]["password"]).to eq "passwd_set_in_yml"
       end
 
-      it "Duplicate passwords with same name" do
+      it "duplicates passwords with same name" do
         expect(subject["same_passwd"]["password"]).to eq subject["defined_but_no_passwd"]["password"]
+      end
+
+      it "returns a password of the correct length" do
+        expect(subject["defined_but_no_passwd"]["password"].length).to eq(12)
+      end
+
+      it "works for non-even password lengths" do
+        expect(subject["odd_length_password"]["password"].length).to eq(13)
       end
     end
 

@@ -387,13 +387,15 @@ module Bosh::Cli::Command
     # Generate a random string for passwords and tokens.
     # Length is the length of the string.
     # name is an optional name of a previously generated string. This is used
-    # to allow setting the same passwd for different components.
+    # to allow setting the same password for different components.
     def random_string(length, name=nil)
+      random_string = SecureRandom.hex(length)[0...length]
+
       @random_cache ||= {}
       if name
-        @random_cache[name] ||= Haddock::Password.generate(length)
+        @random_cache[name] ||= random_string
       else
-        Haddock::Password.generate(length)
+        random_string
       end
     end
 

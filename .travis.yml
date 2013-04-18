@@ -15,5 +15,3 @@ notifications:
 matrix:
   allow_failures:
     - rvm: ruby-2.0.0
-before_install:
-  - sudo apt-get --assume-yes install wamerican
