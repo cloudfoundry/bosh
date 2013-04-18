@@ -74,12 +74,12 @@ describe Bosh::OpenStackCloud::Cloud do
 
     cpi.attach_disk(@server_id, @volume_id)
 
+    cpi.detach_disk(@server_id, @volume_id)
+
     snapshot_id = cpi.snapshot_disk(@volume_id)
     snapshot_id.should_not be_nil
 
     cpi.delete_snapshot(snapshot_id)
-
-    cpi.detach_disk(@server_id, @volume_id)
   end
 
   describe "dynamic network" do
