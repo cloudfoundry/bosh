@@ -16,6 +16,7 @@ then
   persist_value system_parameters_infrastructure
 fi
 
-cp -rvH $bosh_release_src_dir/package_compiler $assets_dir/gems
+mkdir -p $assets_dir/gems
+cp -rvH $bosh_release_src_dir/package_compiler/* $assets_dir/gems
 
 persist_value mcf_enabled

@@ -3,6 +3,7 @@
 require "thin"
 require "sinatra"
 require "monitor"
+require "common/ssl"
 
 module Bosh::Agent
 
@@ -30,6 +31,14 @@ module Bosh::Agent
           run AgentController.new(handler)
         end
       end
+
+      certificate = Bosh::Ssl::Certificate.new('agent.key',
+                                               'agent.cert',
+                                               uri.host
+      ).load_or_create
+
+      @server.ssl = true
+      @server.ssl_options = {:ssl_verify => false, :ssl_key_file => certificate.key_path, :ssl_cert_file => certificate.certificate_path }
 
       @server.start!
     end

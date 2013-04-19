@@ -56,7 +56,7 @@ module Bosh::Deployer
         require "deployer/models/instance"
 
         @cloud_options["properties"]["agent"]["mbus"] ||=
-          "http://vcap:b00tstrap@0.0.0.0:6868"
+          "https://vcap:b00tstrap@0.0.0.0:6868"
 
         @disk_model = nil
         @cloud = nil
@@ -72,15 +72,18 @@ module Bosh::Deployer
       end
 
       def agent
-        uri = URI.parse(@cloud_options["properties"]["agent"]["mbus"])
-        # We connect through a local SSH tunnel
-        uri.host = "127.0.0.1"
+        uri = URI.parse(agent_url)
         user, password = uri.userinfo.split(":", 2)
         uri.userinfo = nil
+        uri.host = bosh_ip
         Bosh::Agent::HTTPClient.new(uri.to_s,
                                     { "user" => user,
                                       "password" => password,
                                       "reply_to" => uuid })
+      end
+
+      def agent_url
+        @cloud_options["properties"]["agent"]["mbus"]
       end
 
       def networks

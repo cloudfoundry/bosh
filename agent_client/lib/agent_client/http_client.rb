@@ -32,6 +32,8 @@ module Bosh::Agent
       http_client.send_timeout    = IO_TIMEOUT
       http_client.receive_timeout = IO_TIMEOUT
       http_client.connect_timeout = CONNECT_TIMEOUT
+      http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      http_client.ssl_config.verify_callback = Proc.new {}
 
       if @options['user'] && @options['password']
         http_client.set_auth(@base_uri, @options['user'], @options['password'])

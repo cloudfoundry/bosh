@@ -104,7 +104,8 @@ module Bosh::Agent
         @logger.info("Skipping configuration step (use '-c' argument to configure on start) ")
       end
 
-      if Config.mbus.start_with?("http")
+      if Config.mbus.start_with?("https")
+        @logger.info("Starting up https agent")
         require "bosh_agent/http_handler"
         Bosh::Agent::HTTPHandler.start
       else

@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-
+require 'net/https'
 require 'yajl'
 require 'tempfile'
 
@@ -16,7 +16,11 @@ describe "http messages" do
     hash['arguments'] = args if args
     req.body = Yajl::Encoder.encode(hash)
 
-    Net::HTTP.start(uri.host, uri.port) do |http|
+    http_connection = Net::HTTP.new(uri.host, uri.port)
+    http_connection.use_ssl = true
+    http_connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    http_connection.start do |http|
       response = http.request(req)
       msg = Yajl::Parser.parse(response.body)
       if msg.has_key?('value')
@@ -32,7 +36,11 @@ describe "http messages" do
     req = Net::HTTP::Post.new(uri.request_uri)
     req.basic_auth(@user, @pass)
 
-    Net::HTTP.start(uri.host, uri.port) do |http|
+    http_connection = Net::HTTP.new(uri.host, uri.port)
+    http_connection.use_ssl = true
+    http_connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    http_connection.start do |http|
       response = http.request(req)
       return response.is_a?(Net::HTTPSuccess)
     end
@@ -45,7 +53,7 @@ describe "http messages" do
     @pass = @user.reverse
     @port = get_free_port
     smtp_port = get_free_port
-    @http_uri = "http://#{@user}:#{@pass}@localhost:#{@port}/agent"
+    @http_uri = "https://#{@user}:#{@pass}@localhost:#{@port}/agent"
     @agent_id = "rspec_agent"
     agent_out = Tempfile.new('agent_out')
 

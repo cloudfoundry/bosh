@@ -150,7 +150,10 @@ namespace :stemcell do
 
     build_path = File.join(root, "build")
 
-    cp_r File.expand_path("../../stemcell_builder", __FILE__), build_path, :preserve => true
+    rm_rf "#{build_path}"
+    mkdir_p build_path
+    stemcell_build_dir = File.expand_path("../../stemcell_builder", __FILE__)
+    cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, :preserve => true
 
     work_path = ENV["WORK_PATH"] || File.join(root, "work")
     mkdir_p work_path

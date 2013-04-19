@@ -8,6 +8,7 @@ Config = Struct.new(:task_checkpoint, :logger)
 Bosh::Clouds::Config.configure(Config.new(true, Logger.new('/dev/null')))
 
 require "cloud/aws/resource_wait"
+require "common/ssl"
 
 require "bosh_cli_plugin_aws/ec2"
 require "bosh_cli_plugin_aws/route53"
@@ -23,7 +24,6 @@ require "bosh/cli/commands/micro"
 require "bosh_cli_plugin_aws/microbosh_manifest"
 require "bosh_cli_plugin_aws/bat_manifest"
 require "bosh_cli_plugin_aws/bosh_manifest"
-require "bosh_cli_plugin_aws/server_certificate"
 require "bosh_cli_plugin_aws/migration_helper"
 require "bosh_cli_plugin_aws/migration"
 require "bosh_cli_plugin_aws/migrator"

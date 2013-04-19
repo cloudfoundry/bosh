@@ -55,16 +55,6 @@ module Bosh::Deployer
     end
 
     def remote_tunnel(port)
-      tunnel(port, :remote)
-    end
-
-    def local_tunnel(port)
-      tunnel(port, :local)
-    end
-
-    private
-
-    def tunnel(port, direction)
       @sessions ||= {}
       return if @sessions[port]
 
@@ -91,16 +81,9 @@ module Bosh::Deployer
       end
 
       lo = "127.0.0.1"
-      case direction
-        when :remote
-          @sessions[port].forward.remote(port, lo, port)
-        when :local
-          @sessions[port].forward.local(port, lo, port)
-        else
-          raise ArgumentError, "Invalid direction for ssh tunnel: #{direction}"
-      end
+      @sessions[port].forward.remote(port, lo, port)
 
-      logger.info("SSH #{direction} forwarding for port #{port} started: OK")
+      logger.info("SSH forwarding for port #{port} started: OK")
 
       Thread.new do
         while @sessions[port]

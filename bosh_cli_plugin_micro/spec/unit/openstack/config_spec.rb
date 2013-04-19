@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 require 'fog'
 
 describe Bosh::Deployer::Config do
@@ -25,7 +25,7 @@ describe Bosh::Deployer::Config do
 
     properties = Bosh::Deployer::Config.cloud_options["properties"]
     properties["agent"].should be_kind_of(Hash)
-    properties["agent"]["mbus"].start_with?("http://").should be_true
+    properties["agent"]["mbus"].start_with?("https://").should be_true
     properties["agent"]["blobstore"].should be_kind_of(Hash)
   end
 

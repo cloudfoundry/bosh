@@ -7,8 +7,8 @@ module Bosh
 
       def initialize(options)
         super(options)
-        @blobstore_path = @options[:blobstore_path]
-        raise "No blobstore path given" if @blobstore_path.nil?
+        @blobstore_path =URI(@options[:blobstore_path]).path
+        raise "No blobstore path given in options #{@options}" if @blobstore_path.nil?
         FileUtils.mkdir_p(@blobstore_path) unless File.directory?(@blobstore_path)
       end
 

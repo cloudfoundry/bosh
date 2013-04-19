@@ -60,8 +60,6 @@ module Bosh::Deployer
     end
 
     def agent
-      discover_bosh_ip  # Set the bosh ip in Config
-      local_tunnel(agent_port)
       Config.agent
     end
 

@@ -1,13 +1,11 @@
 require 'spec_helper'
-
+require 'common/ssl'
 require 'tmpdir'
-require 'openssl'
 
-describe Bosh::Aws::ServerCertificate do
+describe Bosh::Ssl::Certificate do
   let(:subject_name) { '/C=US/O=Pivotal/CN=myapp.foo.com' }
-  let(:dns_record) { 'myapp' }
-  let(:domain) { 'foo.com' }
-  let(:server_certificate) { described_class.new(key_path, certificate_path, domain, dns_record) }
+  let(:common_name) { 'myapp.foo.com' }
+  let(:server_certificate) { described_class.new(key_path, certificate_path, common_name) }
 
   describe '#load_or_create' do
     context 'when the paths given do not exist' do
@@ -65,7 +63,7 @@ describe Bosh::Aws::ServerCertificate do
     context 'when the paths given do exist' do
       let(:key_path) { asset('ca/ca.key') }
       let(:certificate_path) { asset('ca/ca.pem') }
-      let(:domain) { 'dev102.cf.com' }
+      let(:common_name) { 'myapp.dev102.cf.com' }
 
       it 'loads the key and certificate from the files' do
         key_contents_before = File.read(key_path)
@@ -82,13 +80,9 @@ describe Bosh::Aws::ServerCertificate do
         server_certificate.load_or_create
       end
 
-      it 'returns self so that it can be appended on to the constructor easily' do
-        server_certificate.load_or_create.should == server_certificate
-      end
-
       context 'when the user has a certificate chain' do
         let(:chain_path) { asset('ca/chain.pem') }
-        let(:server_certificate) { described_class.new(key_path, certificate_path, domain, dns_record, chain_path) }
+        let(:server_certificate) { described_class.new(key_path, certificate_path, common_name, chain_path) }
 
         it 'allows the user to read the contents of the chain file' do
           server_certificate.load_or_create
@@ -98,7 +92,7 @@ describe Bosh::Aws::ServerCertificate do
       end
 
       context 'when the user does not have a certificate chain' do
-        let(:server_certificate) { described_class.new(key_path, certificate_path, domain, dns_record) }
+        let(:server_certificate) { described_class.new(key_path, certificate_path, common_name) }
 
         it 'the certificate chain should be nil' do
           server_certificate.load_or_create
@@ -109,22 +103,22 @@ describe Bosh::Aws::ServerCertificate do
 
       describe 'verifying that the subject of the certificate we load matches the one was ask for' do
         context 'when it does match' do
-          let(:domain) { 'dev102.cf.com' }
+          let(:common_name) { 'myapp.dev102.cf.com' }
 
           it 'does not raise an exception' do
             expect {
               server_certificate.load_or_create
-            }.to_not raise_error(Bosh::Aws::ServerCertificate::SubjectsDoNotMatchException)
+            }.to_not raise_error(Bosh::Ssl::Certificate::SubjectsDoNotMatchException)
           end
         end
 
         context 'when it does not match' do
-          let(:domain) { 'bar.com' }
+          let(:common_name) { 'myapp.bar.com' }
 
           it 'raises an exception' do
             expect {
               server_certificate.load_or_create
-            }.to raise_error(Bosh::Aws::ServerCertificate::SubjectsDoNotMatchException,
+            }.to raise_error(Bosh::Ssl::Certificate::SubjectsDoNotMatchException,
               "The subject you provided is '/C=US/O=Pivotal/CN=myapp.bar.com' but the certificate you loaded has a subject of '/C=US/O=Pivotal/CN=myapp.dev102.cf.com'."
             )
           end

@@ -8,7 +8,7 @@ module Bosh
         "blobstore_provider" => "local",
         "base_dir"  => "/var/vcap",
         "platform_name" => "ubuntu",
-        "agent_uri" => "http://vcap:vcap@localhost:6969"
+        "agent_uri" => "https://vcap:vcap@localhost:6969"
       }
 
       AGENT_START_RETRIES=16
@@ -20,6 +20,7 @@ module Bosh
         FileUtils.mkdir_p(File.join(@options["base_dir"], "packages"))
         bsc_provider = @options["blobstore_provider"]
         bsc_options = @options["blobstore_options"]
+        @logger.info("Creating Blobstore client with #{bsc_provider} provider and options #{bsc_options}")
         @blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
       end
 

@@ -53,7 +53,8 @@ bosh_agent_src_version=$($ruby -r"bosh_agent/version" -e"puts Bosh::Agent::VERSI
 
 persist_dir bosh_agent_src_dir
 
-cp -aL $bosh_release_src_dir/bosh_agent $assets_dir/gems
+mkdir -p $assets_dir/gems
+cp -aL $bosh_release_src_dir/bosh_agent/* $assets_dir/gems
 
 persist_value bosh_agent_src_version
 persist_value mcf_enabled

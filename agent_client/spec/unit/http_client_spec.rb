@@ -4,6 +4,7 @@ describe Bosh::Agent::HTTPClient do
 
   before(:each) do
     @httpclient = mock("httpclient")
+    @httpclient.stub(:ssl_config).and_return(mock("sslconfig").as_null_object)
     HTTPClient.stub!(:new).and_return(@httpclient)
   end
 
@@ -18,10 +19,10 @@ describe Bosh::Agent::HTTPClient do
         @httpclient.should_receive(method)
       end
 
-      @httpclient.should_receive(:set_auth).with("http://localhost", "john", "smith")
+      @httpclient.should_receive(:set_auth).with("https://localhost", "john", "smith")
       @httpclient.should_receive(:request).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost",
+      @client = Bosh::Agent::HTTPClient.new("https://localhost",
                                             {"user" => "john",
                                              "password" => "smith"})
       @client.ping
@@ -39,10 +40,10 @@ describe Bosh::Agent::HTTPClient do
       headers = {"Content-Type" => "application/json"}
       payload = '{"method":"shh","arguments":["hunting","wabbits"],"reply_to":"elmer"}'
 
-      @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
+      @httpclient.should_receive(:request).with(:post, "https://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "elmer"})
+      @client = Bosh::Agent::HTTPClient.new("https://localhost", {"reply_to" => "elmer"})
 
       @client.shh("hunting", "wabbits").should == "iam"
     end
@@ -59,10 +60,10 @@ describe Bosh::Agent::HTTPClient do
       headers = {"Content-Type" => "application/json"}
       payload = '{"method":"ping","arguments":[],"reply_to":"fudd"}'
 
-      @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
+      @httpclient.should_receive(:request).with(:post, "https://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "fudd"})
+      @client = Bosh::Agent::HTTPClient.new("https://localhost", {"reply_to" => "fudd"})
 
       @client.ping.should == "pong"
     end
@@ -79,7 +80,7 @@ describe Bosh::Agent::HTTPClient do
       headers = {"Content-Type" => "application/json"}
       payload = '{"method":"compile_package","arguments":["id","sha1"],"reply_to":"bugs"}'
 
-      @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
+      @httpclient.should_receive(:request).with(:post, "https://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response)
 
       response2 = mock("response2")
@@ -92,10 +93,10 @@ describe Bosh::Agent::HTTPClient do
         @httpclient.should_receive(method)
       end
 
-      @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
+      @httpclient.should_receive(:request).with(:post, "https://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response2)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "bugs"})
+      @client = Bosh::Agent::HTTPClient.new("https://localhost", {"reply_to" => "bugs"})
 
       @client.run_task(:compile_package, "id", "sha1").should == {"state" => "done"}
     end
@@ -111,7 +112,7 @@ describe Bosh::Agent::HTTPClient do
 
       @httpclient.should_receive(:request).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost")
+      @client = Bosh::Agent::HTTPClient.new("https://localhost")
 
       lambda { @client.no_such_method }.should raise_error(Bosh::Agent::HandlerError)
 
@@ -127,7 +128,7 @@ describe Bosh::Agent::HTTPClient do
 
       @httpclient.should_receive(:request).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost")
+      @client = Bosh::Agent::HTTPClient.new("https://localhost")
 
       lambda { @client.ping }.should raise_error(Bosh::Agent::AuthError)
     end

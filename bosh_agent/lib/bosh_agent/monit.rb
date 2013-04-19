@@ -63,7 +63,7 @@ module Bosh::Agent
         end
 
         user, cred = monit_credentials
-        MonitApi::Client.new("http://#{user}:#{cred}@127.0.0.1:2822", :logger => logger)
+        MonitApi::Client.new("https://#{user}:#{cred}@127.0.0.1:2822", :logger => logger)
       end
 
       def random_credential

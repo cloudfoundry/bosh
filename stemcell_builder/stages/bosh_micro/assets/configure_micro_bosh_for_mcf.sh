@@ -17,7 +17,7 @@ bosh_app_dir=/var/vcap
 blobstore_path=${bosh_app_dir}/micro_bosh/data/cache
 agent_host=localhost
 agent_port=6969
-agent_uri=http://vcap:vcap@${agent_host}:${agent_port}
+agent_uri=https://vcap:vcap@${agent_host}:${agent_port}
 
 export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
