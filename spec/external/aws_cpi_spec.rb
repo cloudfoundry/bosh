@@ -51,7 +51,7 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   after do
-    # TODO detach volume if still attched (in case of test failure)
+    # TODO detach volume if still attached (in case of test failure)
     cpi.delete_disk(@volume_id) if @volume_id
     if @instance_id
       cpi.delete_vm(@instance_id)
@@ -60,14 +60,6 @@ describe Bosh::AwsCloud::Cloud do
       ::Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :terminated)
 
       cpi.has_vm?(@instance_id).should be_false
-    end
-
-    if @vpc
-      # this returns before the resource is freed. add sleep to ensure subnet has no more dependencies
-      # and can be deleted safely
-      sleep 8
-      @vpc.delete_subnets
-      @vpc.delete_vpc
     end
   end
 
@@ -138,7 +130,7 @@ describe Bosh::AwsCloud::Cloud do
     let(:network_spec) do
       {
           'default' => {
-              'type' => "manual",
+              'type' => 'manual',
               'ip' => ip,
               'cloud_properties' => {'subnet' => @subnet_id}
           }
@@ -146,9 +138,14 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     before do
-      @vpc = Bosh::Aws::VPC.create(ec2)
-      subnet_configuration = {'vpc_subnet' => {'cidr' => '10.0.0.0/24', 'availability_zone' => availability_zone}}
-      @vpc.create_subnets(subnet_configuration)
+      if ec2.vpcs.first.nil?
+        @vpc = Bosh::Aws::VPC.create(ec2)
+        subnet_configuration = {'vpc_subnet' => {'cidr' => '10.0.0.0/24', 'availability_zone' => availability_zone}}
+        @vpc.create_subnets(subnet_configuration)
+      else
+        @vpc = Bosh::Aws::VPC.find(ec2, ec2.vpcs.first.id)
+      end
+
       @subnet_id = @vpc.subnets.first[1]
     end
 
