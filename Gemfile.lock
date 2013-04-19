@@ -280,7 +280,6 @@ GEM
     guard-rspec (2.5.3)
       guard (>= 1.1)
       rspec (~> 2.11)
-    haddock (0.2.2)
     highline (1.6.18)
     httpclient (2.2.4)
     json (1.7.7)
