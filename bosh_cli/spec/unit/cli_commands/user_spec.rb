@@ -73,10 +73,22 @@ describe Bosh::Cli::Command::User do
     context "when user is not logged in" do
       before do
         command.stub(:logged_in? => false)
+        command.options[:target] = "http://bosh-target.example.com"
       end
 
       it "fails" do
         expect { command.delete }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
+      end
+    end
+
+    context "when nothing is targetted" do
+      before do
+        command.stub(:target => nil)
+        command.stub(:logged_in? => true)
+      end
+
+      it "fails" do
+        expect { command.delete }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
       end
     end
 
