@@ -18,7 +18,7 @@ _Cloud Foundry Open Source Platform as a Service_
 
 ## Learn
 
-Our documentation, currently a work in progress, is available here: [http://cloudfoundry.github.io/](http://cloudfoundry.github.io/)
+Our documentation, currently a work in progress, is available here: [http://docs.cloudfoundry.com/](http://docs.cloudfoundry.com/)
 
 ## Ask Questions
 
