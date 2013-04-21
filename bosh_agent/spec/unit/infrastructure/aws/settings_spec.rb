@@ -41,6 +41,13 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     properties.should have_key("gateway")
   end
 
+  it 'should get nothing for manual network' do
+    settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
+    network_properties = {}
+    properties = settings_wrapper.get_network_settings("test", network_properties)
+    properties.should be_nil
+  end
+
   it 'should get nothing for vip network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     network_properties = {"type" => "vip"}
