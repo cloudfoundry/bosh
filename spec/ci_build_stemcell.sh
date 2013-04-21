@@ -22,6 +22,12 @@ directory="/mnt/stemcells/$infrastructure-$task"
 sudo umount $directory/work/work/mnt/tmp/grub/root.img 2>/dev/null || true
 sudo umount $directory/work/work/mnt 2>/dev/null || true
 
+mnt_type=$(df -T "$directory" | awk '/dev/{ print $2 }')
+mnt_type=${mnt_type:-unknown}
+if [ "$mnt_type" != "btrfs" ]; then
+    sudo rm -rf $directory
+fi
+
 WORK_PATH=$directory/work \
     BUILD_PATH=$directory/build \
     STEMCELL_VERSION=$BUILD_ID \
