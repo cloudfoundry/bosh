@@ -26,7 +26,7 @@ describe Bosh::AwsCloud::Cloud do
   let(:cpi) { described_class.new(cpi_options) }
   let(:ami) { 'ami-809a48e9' } # ubuntu-lucid-10.04-i386-server-20120221 on instance store
   let(:availability_zone) { 'us-east-1a' }
-  let(:subnet_id) { 'subnet-8285fbee' }
+  let(:subnet_id) { ENV['BOSH_AWS_SUBNET_ID'] }
 
   before do
     delegate = double('delegate', logger: Logger.new(STDOUT))
