@@ -174,6 +174,21 @@ module Bosh::Agent
         end
       end
 
+      def get_network_info
+        sigar = SigarBox.create_sigar
+        net_info = sigar.net_info
+        ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
+
+        properties = {}
+        properties["ip"] = ifconfig.address
+        properties["netmask"] = ifconfig.netmask
+        properties["dns"] = []
+        properties["dns"] << net_info.primary_dns if net_info.primary_dns && !net_info.primary_dns.empty?
+        properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
+        properties["gateway"] = net_info.default_gateway
+        properties
+      end
+
     end
   end
 end
