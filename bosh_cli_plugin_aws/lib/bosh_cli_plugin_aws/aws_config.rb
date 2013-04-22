@@ -115,8 +115,12 @@ module Bosh
         @env.fetch("BOSH_CACHE_BUCKET_NAME", "bosh-global-package-cache")
       end
 
+      def production_resources?
+        @env['BOSH_PRODUCTION_RESOURCES']
+      end
+
       def load_configuration(yaml)
-        renderer = ERB.new(yaml)
+        renderer = ERB.new(yaml, 0, '<>%-')
 
         YAML.load(renderer.result(binding))
       end

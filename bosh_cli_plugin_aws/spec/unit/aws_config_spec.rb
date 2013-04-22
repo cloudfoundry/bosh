@@ -86,28 +86,28 @@ describe Bosh::Aws::AwsConfig do
       end
 
       it "loads the primary availability zone" do
-        configuration['vpc']['subnets']['bosh']['availability_zone'].should == "primary_az"
-        configuration['vpc']['subnets']['cf']['availability_zone'].should == "primary_az"
-        configuration['vpc']['subnets']['services']['availability_zone'].should == "primary_az"
-        configuration['vpc']['subnets']['rds_1']['availability_zone'].should == "primary_az"
+        configuration['vpc']['subnets']['bosh1']['availability_zone'].should == "primary_az"
+        configuration['vpc']['subnets']['cf1']['availability_zone'].should == "primary_az"
+        configuration['vpc']['subnets']['services1']['availability_zone'].should == "primary_az"
+        configuration['vpc']['subnets']['cf_rds1']['availability_zone'].should == "primary_az"
       end
 
       it "loads the secondary availability zone" do
-        configuration['vpc']['subnets']['rds_2']['availability_zone'].should == "secondary_az"
+        configuration['vpc']['subnets']['cf_rds2']['availability_zone'].should == "secondary_az"
       end
 
       context "when the key pair name is set" do
         it "loads the key pair name" do
           environment["BOSH_KEY_PAIR_NAME"] = "key name"
 
-          configuration['vpc']['subnets']['bosh']['nat_instance']['key_name'].should == "key name"
+          configuration['vpc']['subnets']['bosh1']['nat_instance']['key_name'].should == "key name"
           configuration['key_pairs'].should have_key "key name"
         end
       end
 
       context "when the key pair name is not set" do
         it "loads the default key pair name" do
-          configuration['vpc']['subnets']['bosh']['nat_instance']['key_name'].should == "bosh"
+          configuration['vpc']['subnets']['bosh1']['nat_instance']['key_name'].should == "bosh"
           configuration['key_pairs'].should have_key "bosh"
         end
       end
@@ -175,6 +175,10 @@ describe Bosh::Aws::AwsConfig do
         configuration['ssl_certs']['cfrouter_cert']['certificate_chain'].should == "ssl_chain"
       end
 
+      it "should not use a larger database size by default" do
+        configuration["rds"][0]["aws_creation_options"]["db_instance_class"].should == "db.t1.micro"
+      end
+
       context "when the cache credentials are not set" do
         before do
           environment.delete("BOSH_CACHE_ACCESS_KEY_ID")
@@ -213,6 +217,16 @@ describe Bosh::Aws::AwsConfig do
           configuration["compiled_package_cache"]["access_key_id"].should == "cache_access_key_id"
           configuration["compiled_package_cache"]["secret_access_key"].should == "cache_secret_access_key"
           configuration["compiled_package_cache"]["bucket_name"].should == "gimme_mah_bukkit"
+        end
+      end
+
+      context "with production resources" do
+        before do
+          environment["BOSH_PRODUCTION_RESOURCES"] = "true"
+        end
+
+        it "should use a larger database size" do
+          configuration["rds"][0]["aws_creation_options"]["db_instance_class"].should == "db.m1.large"
         end
       end
     end

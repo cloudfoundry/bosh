@@ -149,7 +149,14 @@ describe Bosh::Aws::EC2 do
 
     describe "#create_nat_instance" do
       subject(:create_nat_instance) do
-        ec2.create_nat_instance("name", "subnet_id", "10.1.0.1", "sg", "bosh")
+        ec2.create_nat_instance(
+            "name" => "name",
+            "subnet_id" => "subnet_id",
+            "ip" => "10.1.0.1",
+            "security_group" => "sg",
+            "key_name" => "bosh",
+            "instance_type" => "m1.large"
+        )
       end
 
       let(:fake_aws_client) { double(AWS::EC2::Client) }
@@ -177,7 +184,7 @@ describe Bosh::Aws::EC2 do
              security_groups: ["sg"],
              key_name: "bosh",
              image_id: "ami-f619c29f",
-             instance_type: "m1.small"
+             instance_type: "m1.large"
            }
         )
 
@@ -227,7 +234,12 @@ describe Bosh::Aws::EC2 do
       context "when no key pair name is given" do
 
         subject(:create_nat_instance_without_key_pair) do
-          ec2.create_nat_instance("name", "subnet_id", "10.1.0.1", "sg")
+          ec2.create_nat_instance(
+              "name" => "name",
+              "subnet_id" => "subnet_id",
+              "ip" => "10.1.0.1",
+              "security_group" => "sg"
+          )
         end
 
         it "uses the key pair name on AWS if only one exists" do

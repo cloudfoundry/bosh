@@ -134,8 +134,20 @@ describe Bosh::Aws::VPC do
         fake_aws_vpc = mock("aws_vpc", subnets: [bosh_subnet, cf_subnet, cf2_subnet])
         vpc = Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc)
 
-        fake_ec2.should_receive(:create_nat_instance).with("naim", 'sub-123', "1.2.3.4", "so secure", "keee")
-        fake_ec2.should_receive(:create_nat_instance).with("dunno", 'sub-789', "4.5.6.7", "group", nil)
+        fake_ec2.should_receive(:create_nat_instance).with(
+            "name" => "naim",
+            "subnet_id" => 'sub-123',
+            "ip" => "1.2.3.4",
+            "security_group" => "so secure",
+            "key_name" => "keee",
+            "instance_type" => "m1.large"
+        )
+        fake_ec2.should_receive(:create_nat_instance).with(
+            "name" => "dunno",
+            "subnet_id" => 'sub-789',
+            "ip" => "4.5.6.7",
+            "security_group" => "group",
+        )
 
         subnet_specs = {
             "bosh" => {
@@ -143,7 +155,8 @@ describe Bosh::Aws::VPC do
                     "name" => "naim",
                     "ip" => "1.2.3.4",
                     "security_group" => "so secure",
-                    "key_name" => "keee"
+                    "key_name" => "keee",
+                    "instance_type" => "m1.large"
                 }
             },
             "cf" => {

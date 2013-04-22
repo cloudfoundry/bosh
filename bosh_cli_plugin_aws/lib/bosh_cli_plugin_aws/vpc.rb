@@ -122,12 +122,7 @@ module Bosh
 
       def create_nat_instances(subnets)
         extract_nat_instance_specs(subnets).each do |subnet_spec|
-          name = subnet_spec["name"]
-          subnet_id = subnet_spec["subnet_id"]
-          private_ip = subnet_spec["ip"]
-          security_group = subnet_spec["security_group"]
-          key_pair = subnet_spec["key_name"]
-          @ec2.create_nat_instance(name, subnet_id, private_ip, security_group, key_pair)
+          @ec2.create_nat_instance(subnet_spec)
         end
       end
 

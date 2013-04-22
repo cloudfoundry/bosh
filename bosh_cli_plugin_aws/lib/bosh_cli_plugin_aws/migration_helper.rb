@@ -16,7 +16,7 @@ module Bosh
 
         def render(template_name = "aws_migration")
           template_file_path = File.expand_path("../../templates/#{template_name}.erb", File.dirname(__FILE__))
-          template = ERB.new(File.new(template_file_path).read())
+          template = ERB.new(File.new(template_file_path).read(), 0, '<>%-')
           template.result(binding)
         end
       end

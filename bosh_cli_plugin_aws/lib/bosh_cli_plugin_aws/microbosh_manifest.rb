@@ -29,11 +29,11 @@ module Bosh
       end
 
       def subnet
-        vpc_receipt['vpc']['subnets']['bosh'] || warning('Missing bosh subnet field')
+        vpc_receipt['vpc']['subnets']['bosh1'] || warning('Missing bosh subnet field')
       end
 
       def availability_zone
-        vpc_config['vpc']['subnets']['bosh']['availability_zone'] || warning('Missing availability zone in vpc.subnets.bosh')
+        vpc_config['vpc']['subnets']['bosh1']['availability_zone'] || warning('Missing availability zone in vpc.subnets.bosh')
       end
 
       def access_key_id

@@ -4,10 +4,7 @@ module Bosh
 
       MAX_TAG_KEY_LENGTH = 127
       MAX_TAG_VALUE_LENGTH = 255
-      NAT_INSTANCE_DEFAULTS = {
-          :image_id => "ami-f619c29f",
-          :instance_type => "m1.small"
-      }
+      NAT_AMI_ID = "ami-f619c29f"
 
       attr_reader :elastic_ips
 
@@ -67,15 +64,19 @@ module Bosh
         aws_ec2.instances.create(options)
       end
 
-      def create_nat_instance(name, subnet_id, private_ip, security_group, key_pair = nil)
-        key_pair = select_key_pair_for_instance(name, key_pair)
+      def create_nat_instance(options)
+        name = options["name"]
+        key_pair = select_key_pair_for_instance(name, options["key_name"])
 
-        instance_options = NAT_INSTANCE_DEFAULTS.merge(
-            subnet: subnet_id,
-            private_ip_address: private_ip,
-            security_groups: [security_group],
+
+        instance_options = {
+            image_id: NAT_AMI_ID,
+            instance_type: options.fetch("instance_type", "m1.small"),
+            subnet: options["subnet_id"],
+            private_ip_address: options["ip"],
+            security_groups: [options["security_group"]],
             key_name: key_pair
-        )
+        }
 
         create_instance(instance_options).tap do |instance|
           Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
