@@ -32,7 +32,9 @@ describe 'bosh_cli_plugin_aws_external' do
 
     before(:all) do
       run_bosh "aws destroy"
-      ec2.vpcs.count.should == 0
+      Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min }) do
+        ec2.vpcs.count == 0
+      end
 
       # creating key pairs here because VPC creation involves creating a NAT instance
       # and instance creation requires an existing key pair.
@@ -42,8 +44,9 @@ describe 'bosh_cli_plugin_aws_external' do
 
     after(:all) do
       run_bosh "aws destroy"
-
-      ec2.vpcs.count.should == 0
+      Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min }) do
+        ec2.vpcs.count == 0
+      end
     end
 
     it "builds the VPC" do
