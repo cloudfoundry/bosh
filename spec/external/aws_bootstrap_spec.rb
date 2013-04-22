@@ -31,6 +31,7 @@ describe 'bosh_cli_plugin_aws_external' do
     let(:rds_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.16/28" } }
 
     before(:all) do
+      run_bosh "aws destroy"
       ec2.vpcs.count.should == 0
 
       # creating key pairs here because VPC creation involves creating a NAT instance

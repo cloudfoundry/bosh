@@ -175,6 +175,9 @@ module Bosh
       def remove_key_pair(name)
         key_pair = key_pair_by_name(name)
         key_pair.delete unless key_pair.nil?
+        Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min}) do
+          key_pair_by_name(name).nil?
+        end
       end
 
       def remove_all_key_pairs
