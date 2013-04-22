@@ -4,8 +4,6 @@ require 'spec_helper'
 require 'tempfile'
 require 'cloud'
 require 'bosh_aws_cpi'
-require 'bosh_cli_plugin_aws/ec2'
-require 'bosh_cli_plugin_aws/vpc'
 
 describe Bosh::AwsCloud::Cloud do
   let(:cpi_options) do
@@ -27,14 +25,8 @@ describe Bosh::AwsCloud::Cloud do
 
   let(:cpi) { described_class.new(cpi_options) }
   let(:ami) { 'ami-809a48e9' } # ubuntu-lucid-10.04-i386-server-20120221 on instance store
-  let(:ip) { '10.0.0.9' }
-  let(:availability_zone) { 'us-east-1d' }
-  let(:ec2) do
-    Bosh::Aws::EC2.new(
-        access_key_id: ENV['BOSH_AWS_ACCESS_KEY_ID'],
-        secret_access_key: ENV['BOSH_AWS_SECRET_ACCESS_KEY']
-    )
-  end
+  let(:availability_zone) { 'us-east-1a' }
+  let(:subnet_id) { 'subnet-8285fbee' }
 
   before do
     delegate = double('delegate', logger: Logger.new(STDOUT))
@@ -44,23 +36,12 @@ describe Bosh::AwsCloud::Cloud do
 
     @instance_id = nil
     @volume_id = nil
-    ec2.force_add_key_pair(
-        cpi_options['aws']['default_key_name'],
-        ENV['GLOBAL_BOSH_KEY_PATH']
-    )
   end
 
   after do
     # TODO detach volume if still attached (in case of test failure)
     cpi.delete_disk(@volume_id) if @volume_id
-    if @instance_id
-      cpi.delete_vm(@instance_id)
-
-      instance = ec2.instances_for_ids([@instance_id]).first
-      ::Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :terminated)
-
-      cpi.has_vm?(@instance_id).should be_false
-    end
+    cpi.delete_vm(@instance_id) if @instance_id
   end
 
   def vm_lifecycle(ami, network_spec, disk_locality)
@@ -74,6 +55,7 @@ describe Bosh::AwsCloud::Cloud do
 
     @instance_id.should_not be_nil
 
+    # possible race condition here
     cpi.has_vm?(@instance_id).should be_true
 
     vm_metadata = {:job => 'cpi_spec', :index => '0'}
@@ -132,22 +114,11 @@ describe Bosh::AwsCloud::Cloud do
           'default' => {
               'type' => 'manual',
               'ip' => ip,
-              'cloud_properties' => {'subnet' => @subnet_id}
+              'cloud_properties' => {'subnet' => subnet_id}
           }
       }
     end
-
-    before do
-      if ec2.vpcs.first.nil?
-        @vpc = Bosh::Aws::VPC.create(ec2)
-        subnet_configuration = {'vpc_subnet' => {'cidr' => '10.0.0.0/24', 'availability_zone' => availability_zone}}
-        @vpc.create_subnets(subnet_configuration)
-      else
-        @vpc = Bosh::Aws::VPC.find(ec2, ec2.vpcs.first.id)
-      end
-
-      @subnet_id = @vpc.subnets.first[1]
-    end
+    let(:ip) { '10.0.0.10' } # use different IP to avoid race condition
 
     context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
