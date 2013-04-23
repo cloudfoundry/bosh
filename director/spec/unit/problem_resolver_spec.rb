@@ -9,8 +9,8 @@ describe Bosh::Director::ProblemResolver do
     BD::Config.stub!(:cloud).and_return(@cloud)
   end
 
-  def make_job(deployment_name)
-    BD::ProblemResolver.new(deployment_name)
+  def make_job(deployment)
+    BD::ProblemResolver.new(deployment)
   end
 
   def inactive_disk(id, deployment_id = nil)
@@ -39,7 +39,7 @@ describe Bosh::Director::ProblemResolver do
       problems << inactive_disk(disk.id)
     end
 
-    job = make_job("mycloud")
+    job = make_job(@deployment)
 
     job.apply_resolutions({problems[0].id.to_s => "delete_disk", problems[1].id.to_s => "ignore"}).should == 2
 
@@ -52,7 +52,7 @@ describe Bosh::Director::ProblemResolver do
   it "whines on missing resolutions" do
     problem = inactive_disk(22)
 
-    job = make_job("mycloud")
+    job = make_job(@deployment)
 
     lambda {
       job.apply_resolutions({32 => "delete_disk"})
@@ -70,10 +70,10 @@ describe Bosh::Director::ProblemResolver do
         inactive_disk(disks[2].id, @other_deployment.id)
     ]
 
-    job1 = make_job("mycloud")
+    job1 = make_job(@deployment)
     job1.apply_resolutions({problems[0].id.to_s => "ignore", problems[1].id.to_s => "ignore"}).should == 2
 
-    job2 = make_job("mycloud")
+    job2 = make_job(@deployment)
 
     messages = []
     job2.should_receive(:track_and_log).exactly(5).times.and_return { |message| messages << message }

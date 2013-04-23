@@ -5,8 +5,8 @@ require 'spec_helper'
 describe Bosh::Director::Jobs::CloudCheck::Scan do
 
   before do
-    BDM::Deployment.make(name: 'deployment')
-    Bosh::Director::ProblemScanner.stub(new: scanner)
+    deployment = BDM::Deployment.make(name: 'deployment')
+    Bosh::Director::ProblemScanner.should_receive(:new).with(deployment).and_return(scanner)
   end
 
   let(:job) { described_class.new('deployment') }

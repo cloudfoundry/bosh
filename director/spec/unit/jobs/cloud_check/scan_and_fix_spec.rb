@@ -26,7 +26,7 @@ describe Bosh::Director::Jobs::CloudCheck::ScanAndFix do
 
   it 'should call the problem scanner' do
     resolver = double(BD::ProblemResolver).as_null_object
-    BD::ProblemResolver.stub(new: resolver)
+    BD::ProblemResolver.should_receive(:new).with(deployment).and_return(resolver)
     scan_and_fix.stub(:with_deployment_lock).and_yield
 
     scanner = double(BD::ProblemScanner)

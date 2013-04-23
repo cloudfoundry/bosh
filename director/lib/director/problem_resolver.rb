@@ -3,9 +3,8 @@ module Bosh::Director
 
     attr_reader :event_log, :logger
 
-    def initialize(deployment_name)
-      @deployment_manager = Api::DeploymentManager.new
-      @deployment = @deployment_manager.find_by_name(deployment_name)
+    def initialize(deployment)
+      @deployment = deployment
       @resolved_count = 0
 
       #temp

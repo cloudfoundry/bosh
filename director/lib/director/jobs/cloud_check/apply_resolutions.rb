@@ -28,7 +28,7 @@ module Bosh::Director
               hash
             }
 
-          @problem_resolver = ProblemResolver.new(deployment_name)
+          @problem_resolver = ProblemResolver.new(@deployment)
         end
 
         def perform

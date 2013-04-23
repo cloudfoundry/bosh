@@ -2,7 +2,7 @@ require "spec_helper"
 
 describe Bosh::Director::ProblemScanner do
   let!(:deployment) { BDM::Deployment.make(:name => "mycloud") }
-  let!(:problem_scanner) { Bosh::Director::ProblemScanner.new("mycloud") }
+  let!(:problem_scanner) { Bosh::Director::ProblemScanner.new(deployment) }
 
   describe "#reset" do
     it "should mark all open problems as closed" do

@@ -10,9 +10,8 @@ module Bosh::Director
     @queue = :normal
 
     # @param [String] deployment_name Deployment name
-    def initialize(deployment_name)
-      @deployment_manager = Api::DeploymentManager.new
-      @deployment = @deployment_manager.find_by_name(deployment_name)
+    def initialize(deployment)
+      @deployment = deployment
       @instance_manager = Api::InstanceManager.new
 
       @problem_lock = Mutex.new

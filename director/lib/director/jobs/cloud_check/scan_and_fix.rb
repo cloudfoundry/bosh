@@ -26,11 +26,11 @@ module Bosh::Director
           begin
             with_deployment_lock(@deployment, :timeout => 0) do
 
-              scanner = ProblemScanner.new(@deployment.name)
+              scanner = ProblemScanner.new(@deployment)
               scanner.reset(@filtered_jobs)
               scanner.scan_vms(@filtered_jobs)
 
-              resolver = ProblemResolver.new(@deployment.name)
+              resolver = ProblemResolver.new(@deployment)
               # TODO the application for resolutions should be done using a thread pool
               resolver.apply_resolutions(resolutions)
 
