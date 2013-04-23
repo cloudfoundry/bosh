@@ -9,7 +9,7 @@ mbus:
   user:
   password:
 
-director:
+director: &director
   endpoint: http://127.0.0.1:25555
   user:
   password:
@@ -74,3 +74,9 @@ plugins:
     options:
       access_key_id: access_key
       secret_access_key: secret_access_key
+
+  - name: resurrector
+    events:
+      - alerts
+    options:
+      director: *director

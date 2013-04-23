@@ -62,8 +62,8 @@ describe Bhm::Plugins::Pagerduty do
     EM.run do
       @plugin.run
 
-      @plugin.should_receive(:send_http_request).with(uri, alert_request)
-      @plugin.should_receive(:send_http_request).with(uri, heartbeat_request)
+      @plugin.should_receive(:send_http_post_request).with(uri, alert_request)
+      @plugin.should_receive(:send_http_post_request).with(uri, heartbeat_request)
 
       @plugin.process(alert)
       @plugin.process(heartbeat)

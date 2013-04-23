@@ -142,3 +142,8 @@ properties:
   hm.cloud_watch_enabled:
     description: Enable AWS CloudWatch Plugin
     default: false
+
+  # Automatically recreate VMs on which the agent is no longer responsive
+  hm.resurrector_enabled:
+    description: Enable VM resurrector plugin
+    default: false

@@ -91,6 +91,17 @@ plugins:
       secret_access_key: <%= p("aws.secret_access_key") %>
   <% end %>
 
+  <% if p("hm.resurrector_enabled") %>
+  - name: resurrector
+    events:
+      - alert
+    options:
+      director:
+        endpoint: http://<%= p("director.address") %>:<%= p("director.port") %>
+        user: <%= p("hm.director_account.user") %>
+        password: <%= p("hm.director_account.password") %>
+  <% end %>
+
   <% if p("hm.pagerduty_enabled") %>
   - name: pagerduty
     events:

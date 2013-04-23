@@ -1,6 +1,8 @@
 module Bosh::HealthMonitor
   module Plugins
     class Pagerduty < Base
+      include Bosh::HealthMonitor::Plugins::HttpRequestHelper
+
       API_URI = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
 
       def run
@@ -37,22 +39,9 @@ module Bosh::HealthMonitor
           request[:proxy] = { :host => proxy.host, :port => proxy.port }
         end
 
-        send_http_request(API_URI, request)
+        send_http_post_request(API_URI, request)
       rescue => e
         logger.error("Error sending pagerduty event: #{e}")
-      end
-
-      def send_http_request(uri, request)
-        started = Time.now
-        http = EM::HttpRequest.new(uri).post(request)
-
-        http.callback do
-          logger.debug("Pagerduty event sent (took #{Time.now - started} seconds)")
-        end
-
-        http.errback do |e|
-          logger.error("Failed to send pagerduty event: #{e}")
-        end
       end
     end
   end

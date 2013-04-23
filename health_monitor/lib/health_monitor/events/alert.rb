@@ -8,7 +8,7 @@ module Bosh::HealthMonitor
         @id         = @attributes["id"]
         @severity   = @attributes["severity"]
         @title      = @attributes["title"]
-        @summary    = @attributes["summary"]
+        @summary    = @attributes["summary"] || @title
         @source     = @attributes["source"]
         @created_at = Time.at(@attributes["created_at"]) rescue @attributes["created_at"]
       end

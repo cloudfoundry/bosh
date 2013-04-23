@@ -36,6 +36,8 @@ module Bosh::HealthMonitor
         plugin_class = Bhm::Plugins::Varz
       when "cloud_watch"
         plugin_class = Bhm::Plugins::CloudWatch
+      when "resurrector"
+        plugin_class = Bhm::Plugins::Resurrector
       else
         raise PluginError, "Cannot find `#{name}' plugin"
       end
@@ -204,10 +206,13 @@ module Bosh::HealthMonitor
 
       if agent.timed_out?
         @processor.process(:alert,
-          :severity => 2,
-          :source => agent.name,
-          :title => "#{agent.id} has timed out",
-          :created_at => ts)
+          severity: 2,
+          source: agent.name,
+          title: "#{agent.id} has timed out",
+          created_at: ts,
+          deployment: agent.deployment,
+          job: agent.job,
+          index: agent.index)
       end
 
       if agent.rogue?

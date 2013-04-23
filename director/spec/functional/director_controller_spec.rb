@@ -699,10 +699,9 @@ describe Bosh::Director::ApiController do
     end
 
     describe "problem management" do
+      let!(:deployment) { BD::Models::Deployment.make(:name => "mycloud") }
 
       it "exposes problem managent REST API" do
-        deployment = BD::Models::Deployment.make(:name => "mycloud")
-
         get "/deployments/mycloud/problems"
         last_response.status.should == 200
         Yajl::Parser.parse(last_response.body).should == []
@@ -721,6 +720,11 @@ describe Bosh::Director::ApiController do
 
         put "/deployments/mycloud/problems", {},
             payload("application/json", :solution => "default")
+        expect_redirect_to_queued_task(last_response)
+      end
+
+      it 'scans and fixes problems' do
+        put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'job' => [0])
         expect_redirect_to_queued_task(last_response)
       end
     end

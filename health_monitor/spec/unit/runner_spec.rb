@@ -16,7 +16,7 @@ describe Bhm::Runner do
     Bhm.mbus.user.should be_nil
     Bhm.mbus.password.should be_nil
 
-    Bhm.plugins.size.should == 6
+    Bhm.plugins.size.should == 7
 
   end
 

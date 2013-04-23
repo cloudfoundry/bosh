@@ -75,6 +75,8 @@ require "director/lock"
 require "director/nats_rpc"
 require "director/network_reservation"
 require "director/package_compiler"
+require "director/problem_scanner"
+require "director/problem_resolver"
 require "director/resource_pool_updater"
 require "director/sequel"
 require "common/thread_pool"
@@ -99,6 +101,7 @@ require "director/jobs/update_stemcell"
 require "director/jobs/fetch_logs"
 require "director/jobs/vm_state"
 require "director/jobs/cloud_check/scan"
+require "director/jobs/cloud_check/scan_and_fix"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
 
@@ -299,8 +302,6 @@ module Bosh::Director
       json_encode(response)
     end
 
-      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}
-    #                             or
     # PUT /deployments/foo/jobs/dea?new_name=dea_new
     put "/deployments/:deployment/jobs/:job", :consumes => :yaml do
       if params["state"]
@@ -332,7 +333,7 @@ module Bosh::Director
     end
 
     # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}
-    put "/deployments/:deployment/jobs/:job/:index", :consumes => :yaml do
+    put '/deployments/:deployment/jobs/:job/:index', :consumes => :yaml do
       begin
         index = Integer(params[:index])
       rescue ArgumentError
@@ -340,19 +341,18 @@ module Bosh::Director
       end
 
       options = {
-        "job_states" => {
+        'job_states' => {
           params[:job] => {
-            "instance_states" => {
-              index => params["state"]
+            'instance_states' => {
+              index => params['state']
             }
           }
         }
       }
 
-      # we get the deployment here even though it isn't used here, to make sure
-      # the call returns a 404 if the deployment doesn't exist
-      @deployment_manager.find_by_name(params[:deployment])
-      task = @deployment_manager.create_deployment(@user, request.body, options)
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      manifest = request.content_length.nil? ? StringIO.new(deployment.manifest) : request.body
+      task = @deployment_manager.create_deployment(@user, manifest, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -645,6 +645,12 @@ module Bosh::Director
     put "/deployments/:deployment/problems", :consumes => [:json] do
       payload = json_decode(request.body)
       start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload["resolutions"]) }
+    end
+
+    put '/deployments/:deployment/scan_and_fix', :consumes => :json do
+      payload = json_decode(request.body)
+      # payload: {j1 => [i1, i2, ...], j2 => [i1, i2, ...]}
+      start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload["jobs"]) }
     end
 
     get "/info" do

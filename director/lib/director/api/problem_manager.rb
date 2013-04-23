@@ -32,11 +32,17 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(deployment_name)
         task = create_task(user, :cck_apply, "apply resolutions")
 
-        Resque.enqueue(Jobs::CloudCheck::ApplyResolutions, task.id,
-                       deployment.name, resolutions)
+        Resque.enqueue(Jobs::CloudCheck::ApplyResolutions, task.id, deployment.name, resolutions)
         task
       end
 
+      def scan_and_fix(user, deployment_name, jobs)
+        deployment = @deployment_manager.find_by_name(deployment_name)
+        task = create_task(user, :cck_scan_and_fix, "scan and fix")
+
+        Resque.enqueue(Jobs::CloudCheck::ScanAndFix, task.id, deployment.name, jobs)
+        task
+      end
     end
   end
 end
