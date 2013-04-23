@@ -16,7 +16,7 @@ describe CreateRdsDbs do
 
     rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
-    create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979"]
+    create_database_params = ["ccdb", ["subnet-xxxxxxx3", "subnet-xxxxxxx4"], "vpc-13724979"]
     create_database_params << creation_options if creation_options
     rds.should_receive(:create_database).with(*create_database_params).and_return(
         :engine => "mysql",
@@ -26,7 +26,7 @@ describe CreateRdsDbs do
 
     rds.should_receive(:database_exists?).with("uaadb").and_return(false)
     rds.should_receive(:create_database).
-        with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979").and_return(
+        with("uaadb", ["subnet-xxxxxxx3", "subnet-xxxxxxx4"], "vpc-13724979").and_return(
         :engine => "mysql",
         :master_username => "uaa_user",
         :master_user_password => "uaa_password")

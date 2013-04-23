@@ -50,13 +50,13 @@ rds:
   - instance: ccdb
     tag: cc
     subnets:
-      - cf
-      - cf_az2
+      - cf_rds1
+      - cf_rds2
     aws_creation_options:
       db_instance_class: db.m2.x4.large
       allocated_storage: 7
   - instance: uaadb
     tag: uaa
     subnets:
-      - cf
-      - cf_az2
+      - cf_rds1
+      - cf_rds2

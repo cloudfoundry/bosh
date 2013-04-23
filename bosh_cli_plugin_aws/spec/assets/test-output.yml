@@ -7,9 +7,11 @@ vpc:
   id: vpc-13724979
   domain: cfdev.com
   subnets:
-    bosh: subnet-4bdf6c26
-    cf: subnet-xxxxxxx1
-    cf_az2: subnet-xxxxxxx2
+    bosh1: subnet-4bdf6c26
+    cf1: subnet-xxxxxxx1
+    cf2: subnet-xxxxxxx2
+    cf_rds1: subnet-xxxxxxx3
+    cf_rds2: subnet-xxxxxxx4
 elastic_ips:
  router:
   dns_record: "*"
@@ -41,7 +43,7 @@ original_configuration:
     instance_tenancy: default
     cidr: 10.10.0.0/16
     subnets:
-      bosh:
+      bosh1:
         cidr: 10.10.0.0/24
         availability_zone: us-east-1a
       other:

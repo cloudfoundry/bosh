@@ -9,7 +9,7 @@ vpc:
   instance_tenancy: default
   cidr: 10.10.0.0/16
   subnets:
-    bosh:
+    bosh1:
       cidr: 10.10.0.0/24
       availability_zone: us-east-1a
       default_route: igw
@@ -18,11 +18,11 @@ vpc:
         ip: 10.10.0.10  # spin up NAT instance at fixed IP of 10.10.0.10
         security_group: open
         key_name: bosh
-    cf:
+    cf1:
       cidr: 10.10.1.0/24
       availability_zone: us-east-1a
       default_route: cf_nat_box
-    cf_az2:
+    cf2:
       cidr: 10.10.2.0/24
       availability_zone: us-east-1b
   dhcp_options:
@@ -76,13 +76,13 @@ rds:
   - instance: ccdb
     tag: cc
     subnets:
-      - cf
-      - cf_az2
+      - cf_rds1
+      - cf_rds2
   - instance: uaadb
     tag: uaa
     subnets:
-      - cf
-      - cf_az2
+      - cf_rds1
+      - cf_rds2
 s3:
   - bucket_name: b1
     tag: blobstore

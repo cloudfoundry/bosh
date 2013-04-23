@@ -26,7 +26,7 @@ describe Bosh::Aws::MicroboshManifest do
   end
 
   it 'warns when availability_zone is missing' do
-    vpc_config['vpc']['subnets']['bosh'].delete('availability_zone')
+    vpc_config['vpc']['subnets']['bosh1'].delete('availability_zone')
     manifest.should_receive(:warning).with('Missing availability zone in vpc.subnets.bosh').at_least(1).times
     manifest.to_y
   end
