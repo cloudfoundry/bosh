@@ -57,7 +57,7 @@ describe BD::InstanceDeleter do
       persistent_disks.each { |disk| instance.persistent_disks << disk }
 
       @deleter.should_receive(:drain).with(vm.agent_id)
-      @deleter.should_receive(:delete_snapshots).with(persistent_disks)
+      @deleter.should_receive(:delete_snapshots).with(instance)
       @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
       BD::Config.stub!(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with("5.test.%.foo.bosh", 0)
@@ -166,7 +166,7 @@ describe BD::InstanceDeleter do
       @cloud.should_receive(:delete_snapshot).with(snapshot1.snapshot_cid)
       @cloud.should_receive(:delete_snapshot).with(snapshot2.snapshot_cid)
 
-      @deleter.delete_snapshots(instance.persistent_disks)
+      @deleter.delete_snapshots(instance)
     end
   end
 end

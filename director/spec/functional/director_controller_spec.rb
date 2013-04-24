@@ -730,17 +730,43 @@ describe Bosh::Director::ApiController do
     end
 
     describe 'snapshots' do
-      describe 'creating' do
+      before do
+        deployment = BD::Models::Deployment.make(name: "mycloud")
+
+        instance = BD::Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+        disk = BD::Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
+        BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
+
+        instance = BD::Models::Instance.make(deployment: deployment, job: 'job', index: 1)
+        disk = BD::Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
+        BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
+        BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
 
       end
 
-      describe 'deleting' do
+      describe 'creating' do
+        it 'should create a snapshot' do
+          post '/deployments/mycloud/jobs/job/1/snapshots'
+          expect_redirect_to_queued_task(last_response)
+        end
+      end
 
+      describe 'deleting' do
+        it 'should delete a snapshot' do
+          delete '/deployments/mycloud/snapshots/snap1a'
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'should raise an error if the snapshot belongs to a different deployment' do
+          snap = BD::Models::Snapshot.make(snapshot_cid: 'snap2b')
+          delete "/deployments/#{snap.persistent_disk.instance.deployment.name}/snapshots/snap2a"
+          last_response.status.should == 400
+        end
       end
 
       describe 'listing' do
         it 'should list all snapshots for a job' do
-          get '/deployments/mycloud/josb/job/0/snapshots'
+          get '/deployments/mycloud/jobs/job/0/snapshots'
           last_response.status.should == 200
         end
 

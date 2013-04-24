@@ -52,7 +52,7 @@ module Bosh::Director
       end
 
       step { stop }
-      step { take_snapshot }
+      step { take_snapshot } # always take a snapshot?
 
       if @target_state == "detached"
         detach_disk
@@ -162,8 +162,16 @@ module Bosh::Director
     end
 
     def take_snapshot
-      snapshot_manager = Api::SnapshotManager.new
-      snapshot_manager.snapshot(@instance)
+      Api::SnapshotManager.snapshot(@instance.model)
+    end
+
+    def delete_snapshots(disk)
+      Api::SnapshotManager.
+
+
+      disk.snapshots.each do |snapshot|
+        Api::SnapshotManager.delete_snapshots(snapshot)
+      end
     end
 
     def detach_disk
@@ -251,6 +259,8 @@ module Bosh::Director
         end
       end
 
+      delete_snapshots(disk)
+
       begin
         @cloud.delete_disk(disk_cid)
       rescue Bosh::Clouds::DiskNotFound
@@ -260,8 +270,6 @@ module Bosh::Director
                 "as active in DB"
         end
       end
-
-      # should we also delete snapshots?
 
       disk.destroy
     end

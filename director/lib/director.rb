@@ -92,8 +92,10 @@ require "director/problem_handlers/mount_info_mismatch"
 require "director/problem_handlers/missing_vm"
 
 require "director/jobs/base_job"
+require "director/jobs/create_snapshot"
 require "director/jobs/delete_deployment"
 require "director/jobs/delete_release"
+require "director/jobs/delete_snapshots"
 require "director/jobs/delete_stemcell"
 require "director/jobs/update_deployment"
 require "director/jobs/update_release"
@@ -373,21 +375,28 @@ module Bosh::Director
     end
 
     get '/deployments/:deployment/snapshots' do
-      json_encode(@snapshot_manager.snapshots(params[:deployment]))
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      json_encode(@snapshot_manager.snapshots(deployment))
     end
 
-    get '/deployments/:deployment/jobs/:job/:index/snapshot' do
-      json_encode(@snapshot_manager.snapshots(params[:deployment], params[:job], params[:index]))
+    get '/deployments/:deployment/jobs/:job/:index/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      json_encode(@snapshot_manager.snapshots(deployment, params[:job], params[:index]))
     end
 
-    post '/deployments/:deployment/jobs/:job/:index/snapshot' do
-      @snapshot_manager.snapshot_instance(params[:deployment], params[:job], params[:index])
-      status(204)
+    post '/deployments/:deployment/jobs/:job/:index/snapshots' do
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+
+      task = @snapshot_manager.create_snapshot(@user, instance)
+      redirect "/tasks/#{task.id}"
     end
 
-    delete '/deployments/:deployment/jobs/:job/:index/snapshot/:id' do
-      @snapshot_manager.delete_snapshot(params[:id])
-      status(204)
+    delete '/deployments/:deployment/snapshots/:id' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      snapshot = @snapshot_manager.find_by_id(deployment, params[:id])
+
+      task = @snapshot_manager.delete_snapshots(@user, [snapshot])
+      redirect "/tasks/#{task.id}"
     end
 
     get "/deployments" do

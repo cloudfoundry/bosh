@@ -379,6 +379,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:stop).ordered
     @agent_1.should_receive(:unmount_disk).with("disk-id").ordered.and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "disk-id").ordered
+    @cloud.should_receive(:snapshot_disk).with('disk-id').and_return('snap-xxxxxxxx')
 
     @cloud.should_receive(:delete_vm).with("vm-id").ordered
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
@@ -541,6 +542,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
+    @cloud.should_receive(:snapshot_disk).with('old-disk-id').and_return('snap-xxxxxxxx')
     @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
     @agent_1.should_receive(:migrate_disk).with("old-disk-id", "disk-id").and_return({
       "id" => "task-1",
@@ -549,6 +551,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:list_disk).and_return(["old-disk-id"])
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
+    @cloud.should_receive(:delete_snapshot).with('snap-xxxxxxxx')
     @cloud.should_receive(:delete_disk).with("old-disk-id")
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
@@ -592,10 +595,13 @@ describe Bosh::Director::InstanceUpdater do
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
+    @cloud.stub(snapshot_disk: 'snap-xxxxxxxx')
+
     @agent_1.should_receive(:list_disk).and_return(["old-disk-id"])
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
+    @cloud.stub(:delete_snapshot)
     @agent_1.should_receive(:apply).with(plan).and_return({
       "id" => "task-1",
       "state" => "done"
@@ -642,6 +648,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
+    @cloud.should_receive(:snapshot_disk).with('old-disk-id').and_return('snap-xxxxxxxx')
+    @cloud.should_receive(:snapshot_disk).with('new-disk-id').and_return('snap-yyyyyyyy')
 
     # simulating a case where the agent failed to mount
     # Agent still has the "old-disk-id" instead of "new-disk-id"
@@ -650,6 +658,7 @@ describe Bosh::Director::InstanceUpdater do
     # detach and remove old-disk-id
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
+    @cloud.should_receive(:delete_snapshot).with('snap-xxxxxxxx')
     @cloud.should_receive(:delete_disk).with("old-disk-id")
 
     # keep track of the failed disk.
@@ -714,6 +723,8 @@ describe Bosh::Director::InstanceUpdater do
     # keep the new-disk
     @cloud.should_not_receive(:detach_disk).with("vm-id", "new-disk-id")
     @cloud.should_not_receive(:delete_disk).with("new-disk-id")
+    @cloud.should_receive(:snapshot_disk).with("new-disk-id").and_return('snap-xxxxxxxx')
+    @cloud.should_receive(:snapshot_disk).with("old-disk-id").and_return('snap-yyyyyyyy')
 
     # We failed to activate the director's db entry. Agent and Director have
     # different persistent disks info => raise an exception
@@ -759,6 +770,7 @@ describe Bosh::Director::InstanceUpdater do
     # We should leave the disk.
     @cloud.should_not_receive(:detach_disk)
     @cloud.should_not_receive(:delete_disk)
+    @cloud.stub(snapshot_disk: 'snap-xxxxxxxx')
 
     # Everything went ok execpt the last 'apply_state' call. Agent and Director
     # are in agreement. Thus the only thing left to do is to do the last apply
@@ -845,6 +857,7 @@ describe Bosh::Director::InstanceUpdater do
 
       @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(0.01)
       @agent_1.should_receive(:stop).ordered
+      @cloud.should_receive(:snapshot_disk).with("deadbeef").ordered.and_return('snap-xxxxxxxx')
       @agent_1.should_receive(:unmount_disk).with("deadbeef").ordered.and_return(done_task)
       @cloud.should_receive(:detach_disk).with("vm-id", "deadbeef").ordered
       @cloud.should_receive(:delete_vm).with("vm-id").ordered
