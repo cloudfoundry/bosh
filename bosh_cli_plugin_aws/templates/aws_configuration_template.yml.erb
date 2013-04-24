@@ -105,10 +105,13 @@ vpc:
       ssl_cert: cfrouter_cert
 
 ssl_certs:
+  director_cert:
+    private_key_path: <%= director_ssl_key_file %>
+    certificate_path: <%= director_ssl_cert_file %>
   cfrouter_cert:
-    private_key: <%= ssl_key_file %>
-    certificate: <%= ssl_cert_file %>
-    certificate_chain: <%= ssl_cert_chain_file %>
+    private_key_path: <%= elb_ssl_key_file %>
+    certificate_path: <%= elb_ssl_cert_file %>
+    certificate_chain_path: <%= elb_ssl_cert_chain_file %>
 
 elastic_ips:
   # each NAT box automatically reserves 1 elastic IP, which is not listed below

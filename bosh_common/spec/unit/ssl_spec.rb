@@ -12,51 +12,81 @@ describe Bosh::Ssl::Certificate do
       let(:key_path) { File.join(Dir.tmpdir, 'ca.key') }
       let(:certificate_path) { File.join(Dir.tmpdir, 'ca.pem') }
 
-      before do
-        FileUtils.rm_f(key_path)
-        FileUtils.rm_f(certificate_path)
+      context 'when the key exists but the certificate does not' do
+        let(:key_path) { asset('ca/ca.key') }
+
+        before do
+          FileUtils.rm_f(certificate_path)
+        end
+
+        it 'raises an error' do
+          expect {
+            server_certificate.load_or_create
+          }.to raise_error(Bosh::Ssl::Certificate::MatchingFileNotFound, /The key that matches the given certificate could not be found\./)
+        end
       end
 
-      it 'returns self so that it can be appended on to the constructor easily' do
-        server_certificate.load_or_create.should == server_certificate
+      context 'when the certificate exists but the key does not' do
+        let(:certificate_path) { asset('ca/ca.pem') }
+
+        before do
+          FileUtils.rm_f(key_path)
+        end
+
+        it 'raises an error' do
+          expect {
+            server_certificate.load_or_create
+          }.to raise_error(Bosh::Ssl::Certificate::MatchingFileNotFound, /The certificate that matches the given key could not be found\./)
+        end
       end
 
-      it 'creates a new, valid certificate' do
-        server_certificate.load_or_create
+      context 'when both of the files do not exist' do
+        before do
+          FileUtils.rm_f(key_path)
+          FileUtils.rm_f(certificate_path)
+        end
 
-        key = OpenSSL::PKey::RSA.new(File.read(key_path))
-        certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
+        it 'returns self so that it can be appended on to the constructor easily' do
+          server_certificate.load_or_create.should == server_certificate
+        end
 
-        key.to_s.should include('BEGIN RSA PRIVATE KEY')
-        certificate.to_s.should include('BEGIN CERTIFICATE')
+        it 'creates a new, valid certificate' do
+          server_certificate.load_or_create
 
-        certificate.verify(key).should be_true
-      end
+          key = OpenSSL::PKey::RSA.new(File.read(key_path))
+          certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
 
-      it 'sets the subject from the domain we ask for' do
-        server_certificate.load_or_create
+          key.to_s.should include('BEGIN RSA PRIVATE KEY')
+          certificate.to_s.should include('BEGIN CERTIFICATE')
 
-        certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
-        certificate.subject.to_s.should == subject_name
-      end
+          certificate.verify(key).should be_true
+        end
 
-      it 'has a sensible certificate lifetime' do
-        server_certificate.load_or_create
+        it 'sets the subject from the domain we ask for' do
+          server_certificate.load_or_create
 
-        certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
-        start_time = certificate.not_before
-        end_time = certificate.not_after
+          certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
+          certificate.subject.to_s.should == subject_name
+        end
 
-        (end_time - start_time).should == ((3 * 365) + 1) * 24 * 60 * 60 # 3 Years and 1 Day
-      end
+        it 'has a sensible certificate lifetime' do
+          server_certificate.load_or_create
 
-      it 'should start being valid some time in the past' do
-        server_certificate.load_or_create
+          certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
+          start_time = certificate.not_before
+          end_time = certificate.not_after
 
-        certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
-        start_time = certificate.not_before
+          (end_time - start_time).should == ((3 * 365) + 1) * 24 * 60 * 60 # 3 Years and 1 Day
+        end
 
-        start_time.should < (Time.now - 60 * 60 * 12)
+        it 'should start being valid some time in the past' do
+          server_certificate.load_or_create
+
+          certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
+          start_time = certificate.not_before
+
+          start_time.should < (Time.now - 60 * 60 * 12)
+        end
       end
     end
 

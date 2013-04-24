@@ -1,6 +1,6 @@
 ---
 name: <%= p('director.name') %>
-port: <%= p('director.port') %>
+port: <%= p('director.backend_port') %>
 encryption: <%= p('director.encryption') %>
 <% if_p("director.max_tasks") do |max_tasks| %>
 max_tasks: <%= max_tasks %>

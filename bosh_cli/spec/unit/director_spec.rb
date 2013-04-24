@@ -4,7 +4,7 @@ require "spec_helper"
 
 describe Bosh::Cli::Director do
 
-  DUMMY_TARGET = "http://target.example.com:8080"
+  DUMMY_TARGET = "https://target.example.com:8080"
 
   before do
     URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
@@ -401,7 +401,12 @@ describe Bosh::Cli::Director do
       password = "pass"
       auth = "Basic " + Base64.encode64("#{user}:#{password}").strip
 
-      client = mock("httpclient")
+      ssl_config = stub("ssl_config")
+      ssl_config.should_receive(:verify_mode=).
+          with(OpenSSL::SSL::VERIFY_NONE)
+      ssl_config.should_receive(:verify_callback=)
+
+      client = mock("httpclient", :ssl_config => ssl_config)
       client.should_receive(:send_timeout=).
         with(Bosh::Cli::Director::API_TIMEOUT)
       client.should_receive(:receive_timeout=).
@@ -425,7 +430,7 @@ describe Bosh::Cli::Director do
                            :body => "test", :headers => {})
 
       @director.should_receive(:perform_http_request).
-        with(:get, "http://127.0.0.1:8080/stuff", "payload", "h1" => "a",
+        with(:get, "https://127.0.0.1:8080/stuff", "payload", "h1" => "a",
              "h2" => "b", "Content-Type" => "app/zb").
         and_return(mock_response)
 

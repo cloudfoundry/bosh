@@ -307,7 +307,7 @@ module Bosh::Cli::Command
     # set new target and clear out cached values
     # does not persist the new values (set_current() does this)
     def set_target(ip)
-      config.target = "http://#{ip}:#{MICRO_DIRECTOR_PORT}"
+      config.target = "https://#{ip}:#{MICRO_DIRECTOR_PORT}"
       config.target_name = nil
       config.target_version = nil
       config.target_uuid = nil

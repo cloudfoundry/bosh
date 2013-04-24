@@ -5,6 +5,8 @@ module Bosh
     class Certificate
       class SubjectsDoNotMatchException < RuntimeError;
       end
+      class MatchingFileNotFound < RuntimeError;
+      end
 
       attr_reader :key_path, :certificate_path
 
@@ -37,7 +39,19 @@ module Bosh
       private
 
       def load_or_create_key_and_csr_cert
-        File.exists?(@key_path) ? load_key_and_csr_cert : create_key_and_csr_cert
+        if File.exists?(@key_path) && !File.exists?(@certificate_path)
+          raise MatchingFileNotFound, 'The key that matches the given certificate could not be found.'
+        end
+
+        if File.exists?(@certificate_path) && !File.exists?(@key_path)
+          raise MatchingFileNotFound, 'The certificate that matches the given key could not be found.'
+        end
+
+        if File.exists?(@key_path) && File.exists?(@certificate_path)
+          load_key_and_csr_cert
+        else
+          create_key_and_csr_cert
+        end
       end
 
       def load_key_and_csr_cert

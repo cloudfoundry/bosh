@@ -130,15 +130,29 @@ describe Bosh::Aws::AwsConfig do
 
       context "when the ssl key file name is set" do
         it "loads the ssh key file name" do
-          environment["BOSH_SSL_KEY"] = "ssl_key"
+          environment["BOSH_AWS_ELB_SSL_KEY"] = "ssl_key"
 
-          configuration['ssl_certs']['cfrouter_cert']['private_key'].should == "ssl_key"
+          configuration['ssl_certs']['cfrouter_cert']['private_key_path'].should == "ssl_key"
         end
       end
 
       context "when the ssl key file name is not set" do
         it "loads the default ssl key file name" do
-          configuration['ssl_certs']['cfrouter_cert']['private_key'].should == "elb-cfrouter.key"
+          configuration['ssl_certs']['cfrouter_cert']['private_key_path'].should == "elb-cfrouter.key"
+        end
+      end
+
+      context "when the director ssl key file name is set" do
+        it "loads the ssh key file name" do
+          environment["BOSH_DIRECTOR_SSL_KEY"] = "ssl_key"
+
+          configuration['ssl_certs']['director_cert']['private_key_path'].should == "ssl_key"
+        end
+      end
+
+      context "when the director ssl key file name is not set" do
+        it "loads the default ssl key file name" do
+          configuration['ssl_certs']['director_cert']['private_key_path'].should == "director.key"
         end
       end
 
@@ -158,21 +172,35 @@ describe Bosh::Aws::AwsConfig do
 
       context "when the ssl cert file name is set" do
         it "loads the ssh cert file name" do
-          environment["BOSH_SSL_CERT"] = "ssl_cert"
+          environment["BOSH_AWS_ELB_SSL_CERT"] = "ssl_cert"
 
-          configuration['ssl_certs']['cfrouter_cert']['certificate'].should == "ssl_cert"
+          configuration['ssl_certs']['cfrouter_cert']['certificate_path'].should == "ssl_cert"
         end
       end
 
       context "when the ssl cert file name is not set" do
         it "loads the default ssl cert file name" do
-          configuration['ssl_certs']['cfrouter_cert']['certificate'].should == "elb-cfrouter.pem"
+          configuration['ssl_certs']['cfrouter_cert']['certificate_path'].should == "elb-cfrouter.pem"
+        end
+      end
+
+      context "when the director ssl cert file name is set" do
+        it "loads the ssh cert file name" do
+          environment["BOSH_DIRECTOR_SSL_CERT"] = "ssl_cert"
+
+          configuration['ssl_certs']['director_cert']['certificate_path'].should == "ssl_cert"
+        end
+      end
+
+      context "when the director ssl cert file name is not set" do
+        it "loads the default ssl cert file name" do
+          configuration['ssl_certs']['director_cert']['certificate_path'].should == "director.pem"
         end
       end
 
       it "loads the bosh ssl chain zone" do
-        environment["BOSH_SSL_CHAIN"] = "ssl_chain"
-        configuration['ssl_certs']['cfrouter_cert']['certificate_chain'].should == "ssl_chain"
+        environment["BOSH_AWS_ELB_SSL_CHAIN"] = "ssl_chain"
+        configuration['ssl_certs']['cfrouter_cert']['certificate_chain_path'].should == "ssl_chain"
       end
 
       it "should not use a larger database size by default" do

@@ -51,14 +51,9 @@ module Bosh::Deployer
       # be able to override values in the apply_spec
       override_property(@properties, "hm", Config.spec_properties["hm"])
 
-      # TODO this override should be made more generic
-      if Config.spec_properties.has_key?("ntp")
-        @properties["ntp"] = Config.spec_properties["ntp"]
-      end
-
-      if Config.spec_properties.has_key?("compiled_package_cache")
-        @properties["compiled_package_cache"] = Config.spec_properties["compiled_package_cache"]
-      end
+      override_property(@properties, "director", {"ssl" => Config.spec_properties["ssl"]})
+      set_property(@properties, "ntp", Config.spec_properties["ntp"])
+      set_property(@properties, "compiled_package_cache", Config.spec_properties["compiled_package_cache"])
 
       @spec
     end
@@ -89,6 +84,10 @@ module Bosh::Deployer
       @properties[service]["address"] = address
 
       override_property(@properties, service, Config.spec_properties[service])
+    end
+
+    def set_property(properties, key, value)
+      properties[key] = value unless value.nil?
     end
 
     def override_property(properties, service, override)

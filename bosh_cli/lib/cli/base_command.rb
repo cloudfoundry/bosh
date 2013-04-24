@@ -215,7 +215,7 @@ module Bosh::Cli
 
       def normalize_url(url)
         had_port = url.to_s =~ /:\d+$/
-        url = "http://#{url}" unless url.match(/^https?/)
+        url = "https://#{url}" unless url.match(/^http:?/)
         uri = URI.parse(url)
         uri.port = DEFAULT_DIRECTOR_PORT unless had_port
         uri.to_s.strip.gsub(/\/$/, "")

@@ -90,7 +90,7 @@ describe Bosh::Cli::Command::Base do
 
       config = double("config", :target => "target", :resolve_alias => nil, :set_deployment => nil)
 
-      config.should_receive(:target=).with("http://foo:25555")
+      config.should_receive(:target=).with("https://foo:25555")
       config.should_receive(:target_name=).with(nil)
       config.should_receive(:target_version=).with(nil)
       config.should_receive(:target_uuid=).with(nil)

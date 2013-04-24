@@ -72,6 +72,21 @@ module Bosh
         vpc_config['compiled_package_cache']['bucket_name'] || warning('Missing compiled_package_cache bucket_name field')
       end
 
+      def director_ssl_key
+        certificate.key.gsub("\n", "\\n")
+      end
+
+      def director_ssl_cert
+        certificate.certificate.gsub("\n", "\\n")
+      end
+
+      def certificate
+        @cert if @cert
+        key_path = vpc_receipt['ssl_certs']['director_cert']['private_key']
+        cert_path = vpc_receipt['ssl_certs']['director_cert']['certificate']
+        @cert = Bosh::Ssl::Certificate.new(key_path, cert_path, "*.#{vpc_config['vpc']['domain']}").load_or_create
+      end
+
       def bucket_name
         blobstore = vpc_config["s3"].detect { |e| e["tag"] == "blobstore" }
         blobstore ? blobstore["bucket_name"] : warning("Missing bucket tagged as `blobstore'")

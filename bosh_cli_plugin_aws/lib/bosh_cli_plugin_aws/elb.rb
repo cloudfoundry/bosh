@@ -31,10 +31,10 @@ module Bosh::Aws
         cert = certs[cert_name]
         dns_record = settings["dns_record"]
 
-        certificate = Bosh::Ssl::Certificate.new(cert['private_key'],
-                                                       cert['certificate'],
+        certificate = Bosh::Ssl::Certificate.new(cert['private_key_path'],
+                                                       cert['certificate_path'],
                                                        "#{dns_record}.#{domain}",
-                                                       cert['certificate_chain']
+                                                       cert['certificate_chain_path']
         ).load_or_create
 
         uploaded_cert = upload_certificate(cert_name, certificate)

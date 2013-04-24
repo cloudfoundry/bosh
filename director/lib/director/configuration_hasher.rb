@@ -91,9 +91,10 @@ module Bosh::Director
     def bind_template(template, binding_helper, index)
       template.result(binding_helper.get_binding)
     rescue Exception => e
+      @logger.debug(e.inspect)
       job_desc = "#{@job.name}/#{index}"
       line_index = e.backtrace.index{ |l| l.include?(template.filename) }
-      line = e.backtrace[line_index]
+      line = line_index ? e.backtrace[line_index] : ''
       template_name, line = line[0..line.rindex(":") - 1].split(":")
 
       message = "Error filling in template `#{File.basename(template_name)}' " +

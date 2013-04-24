@@ -32,6 +32,10 @@ elastic_ips:
   - 123.4.5.9
 key_pairs:
 - somenamez
+ssl_certs:
+  director_cert:
+    private_key: foo
+    certificate: bar
 original_configuration:
   aws:
     access_key_id: ...

@@ -83,16 +83,24 @@ module Bosh
         @env.fetch("BOSH_KEY_PATH", "#{@env['HOME']}/.ssh/id_rsa_bosh")
       end
 
-      def ssl_key_file
-        @env.fetch("BOSH_SSL_KEY", "elb-cfrouter.key")
+      def elb_ssl_key_file
+        @env.fetch("BOSH_AWS_ELB_SSL_KEY", "elb-cfrouter.key")
       end
 
-      def ssl_cert_file
-        @env.fetch("BOSH_SSL_CERT", "elb-cfrouter.pem")
+      def elb_ssl_cert_file
+        @env.fetch("BOSH_AWS_ELB_SSL_CERT", "elb-cfrouter.pem")
       end
 
-      def ssl_cert_chain_file
-        @env["BOSH_SSL_CHAIN"]
+      def elb_ssl_cert_chain_file
+        @env["BOSH_AWS_ELB_SSL_CHAIN"]
+      end
+
+      def director_ssl_key_file
+        @env.fetch("BOSH_DIRECTOR_SSL_KEY", "director.key")
+      end
+
+      def director_ssl_cert_file
+        @env.fetch("BOSH_DIRECTOR_SSL_CERT", "director.pem")
       end
 
       def has_package_cache_configuration?

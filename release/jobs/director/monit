@@ -14,3 +14,8 @@ check process worker_<%= index %>
   group vcap
   depends on director
 <% end%>
+check process director_nginx
+  with pidfile /var/vcap/sys/run/director/nginx.pid
+  start program "/var/vcap/jobs/director/bin/nginx_ctl start"
+  stop program "/var/vcap/jobs/director/bin/nginx_ctl stop"
+  group vcap

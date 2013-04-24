@@ -66,4 +66,25 @@ describe Bosh::Deployer::Specification do
       spec.properties["compiled_package_cache"].should == props["compiled_package_cache"]
     end
   end
+
+  describe 'director ssl' do
+    it 'updates the apply spec with ssl key and cert' do
+      props = {
+          "director" => {
+            "ssl" => {
+                "cert" => "foo-cert",
+                "key" => "baz-key"
+            }
+          }
+      }
+
+      Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+      Bosh::Deployer::Config.stub(:spec_properties).and_return(props)
+
+      spec = Bosh::Deployer::Specification.load_from_stemcell(spec_dir)
+
+      spec.update("1.1.1.1", "2.2.2.2")
+      spec.properties["ssl"].should == props["ssl"]
+    end
+  end
 end

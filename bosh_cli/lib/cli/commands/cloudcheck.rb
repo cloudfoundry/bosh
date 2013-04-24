@@ -21,7 +21,7 @@ module Bosh::Cli::Command
 
       if non_interactive? && !(@report_mode || @auto_mode)
         err ("Cloudcheck cannot be run in non-interactive mode\n" +
-             "Please use `--auto' flag if you want automated resolutions" +
+             "Please use `--auto' flag if you want automated resolutions " +
              "or `--report' if you just want a report of the errors")
       end
 

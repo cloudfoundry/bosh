@@ -1,6 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Deployer
+
+  class DirectorGatewayError < RuntimeError; end
+
   class InstanceManager
 
     include Helpers
@@ -399,8 +402,11 @@ module Bosh::Deployer
     end
 
     def wait_until_ready(component, wait_time = 1, retries = 300)
-      Bosh::Common.retryable(sleep: wait_time, tries: retries,
-                             on: [Bosh::Agent::Error, Errno::ECONNREFUSED, Errno::ETIMEDOUT]) do |tries, e|
+      retry_on_errors = [Bosh::Agent::Error,
+                         Errno::ECONNREFUSED,
+                         Errno::ETIMEDOUT,
+                         Bosh::Deployer::DirectorGatewayError]
+      Bosh::Common.retryable(sleep: wait_time, tries: retries, on: retry_on_errors) do |tries, e|
         logger.debug("Waiting for #{component} to be ready: #{e.inspect}") if tries > 0
         yield
         true
@@ -421,10 +427,19 @@ module Bosh::Deployer
 
     def wait_until_director_ready
       port = @apply_spec.director_port
-      url = "http://#{bosh_ip}:#{port}/info"
+      url = "https://#{bosh_ip}:#{port}/info"
 
       wait_until_ready("director") do
-        info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
+
+        http_client = HTTPClient.new
+
+        http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        http_client.ssl_config.verify_callback = Proc.new {}
+
+        response = http_client.get(url)
+        message = "Nginx has started but the application it is proxying too has not started yet."
+        raise Bosh::Deployer::DirectorGatewayError.new(message) if response.status == 502 || response.status == 503
+        info = Yajl::Parser.parse(response.body)
         logger.info("Director is ready: #{info.inspect}")
       end
     end

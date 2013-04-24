@@ -119,7 +119,7 @@ module Bosh::Agent
           rescue Exception => e
             # We are essentially running an arbitrary code,
             # hence such a generic rescue clause
-            line_index = e.backtrace.index{ |l| l.include?(src) } || [0]
+            line_index = e.backtrace.index{ |l| l.include?(src) } || 0
             line = e.backtrace[line_index].match(/:(\d+):/).captures.first
             install_failed("failed to process configuration template " +
                            "'#{src}': " +

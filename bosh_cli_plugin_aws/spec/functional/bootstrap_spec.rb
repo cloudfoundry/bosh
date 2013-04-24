@@ -37,7 +37,7 @@ describe "AWS Bootstrap commands" do
         to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
 
     credentials = encoded_credentials("admin", "admin")
-    stub_request(:get, "http://10.10.0.6:25555/info").
+    stub_request(:get, "https://10.10.0.6:25555/info").
         with(:headers => {'Authorization' => "Basic #{credentials}"}).
         to_return(:status => 200, :body => {"user" => "admin"}.to_json, :headers => {})
 
@@ -46,7 +46,7 @@ describe "AWS Bootstrap commands" do
     aws.bootstrap_micro
 
     stemcell_ami_request.should have_been_made
-    a_request(:get, "http://10.10.0.6:25555/info").should have_been_made
+    a_request(:get, "https://10.10.0.6:25555/info").should have_been_made
   end
 
   describe "aws bootstrap bosh" do
@@ -274,7 +274,7 @@ describe "AWS Bootstrap commands" do
             "version" => "1234"
         }
 
-        stub_request(:get, "http://50.200.100.3:25555/info").
+        stub_request(:get, "https://50.200.100.3:25555/info").
             with(:headers => {'Content-Type' => 'application/json'}).
             to_return(:status => 200, :body => new_target_info.to_json).
             to_return(:status => 200, :body => {"user" => "admin"}.to_json).
@@ -283,7 +283,7 @@ describe "AWS Bootstrap commands" do
         aws.should_receive(:ask).with("Enter username: ").and_return(username)
         aws.should_receive(:ask).with("Enter password: ").and_return(password)
 
-        @create_user_request = stub_request(:post, "http://50.200.100.3:25555/users").
+        @create_user_request = stub_request(:post, "https://50.200.100.3:25555/users").
             with(:body => {username: username, password: password}.to_json).
             to_return(:status => 204, :body => new_target_info.to_json)
       end
@@ -318,14 +318,14 @@ describe "AWS Bootstrap commands" do
 
         config_file = File.read(@bosh_config.path)
         config = Psych.load(config_file)
-        config["target"].should == "http://50.200.100.3:25555"
+        config["target"].should == "https://50.200.100.3:25555"
       end
 
       it "creates a new user in new bosh" do
         aws.bootstrap_bosh(bosh_repository_path)
 
         credentials = encoded_credentials("admin", "admin")
-        a_request(:get, "50.200.100.3:25555/info").with(
+        a_request(:get, "https://50.200.100.3:25555/info").with(
             :headers => {
                 'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
@@ -334,7 +334,7 @@ describe "AWS Bootstrap commands" do
         @create_user_request.should have_been_made
 
         credentials = encoded_credentials(username, password)
-        a_request(:get, "50.200.100.3:25555/info").with(
+        a_request(:get, "https://50.200.100.3:25555/info").with(
             :headers => {
                 'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'

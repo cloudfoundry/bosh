@@ -28,7 +28,7 @@ describe Bosh::Cli::Command::Base do
     cmd = make
     cmd.config.should be_a(Bosh::Cli::Config)
 
-    cmd.target.should == "http://localhost:8080"
+    cmd.target.should == "https://localhost:8080"
     cmd.deployment.should == "test"
     cmd.username.should be_nil
     cmd.password.should be_nil
@@ -63,7 +63,7 @@ describe Bosh::Cli::Command::Base do
     cmd2 = make
     cmd2.add_option(:target, "foo")
     cmd2.add_option(:deployment, "bar")
-    cmd2.target.should == "http://foo:25555"
+    cmd2.target.should == "https://foo:25555"
     cmd2.deployment.should == "bar"
   end
 
@@ -72,7 +72,7 @@ describe Bosh::Cli::Command::Base do
 
     cmd = make
     cmd.director.should be_kind_of(Bosh::Cli::Director)
-    cmd.director.director_uri.should == URI.parse("http://localhost:8080")
+    cmd.director.director_uri.should == URI.parse("https://localhost:8080")
   end
 
   it "has logged_in? helper" do

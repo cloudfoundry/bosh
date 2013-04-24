@@ -154,7 +154,7 @@ module Bosh
         end
 
         unless key_pair_by_name(name).nil?
-          err "Key pair #{name} already exists on AWS".red
+          err "Key pair #{name} already exists on AWS"
         end
 
         aws_ec2.key_pairs.import(name, File.read(public_key_path))

@@ -557,6 +557,9 @@ module Bosh
         http_client.receive_timeout = API_TIMEOUT
         http_client.connect_timeout = CONNECT_TIMEOUT
 
+        http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        http_client.ssl_config.verify_callback = Proc.new {}
+
         # HTTPClient#set_auth doesn't seem to work properly,
         # injecting header manually instead.
         # TODO: consider using vanilla Net::HTTP

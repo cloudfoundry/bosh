@@ -60,4 +60,35 @@ describe Bosh::Aws::MicroboshManifest do
     manifest.should_not_receive(:warning).with('Missing name field')
     manifest.to_y
   end
+
+  describe 'loading the director ssl config' do
+    context 'when the setting is set correctly' do
+      it 'loads the director ssl cert files' do
+        vpc_receipt['ssl_certs']['director_cert']['certificate'] = asset('ca/bosh.pem')
+        vpc_receipt['ssl_certs']['director_cert']['private_key'] = asset('ca/bosh.key')
+
+        manifest.director_ssl_cert.should match /BEGIN CERTIFICATE/
+        manifest.director_ssl_cert.should_not include("\n")
+        manifest.director_ssl_key.should match /BEGIN RSA PRIVATE KEY/
+      end
+    end
+
+    context 'when the settings is a file that does not exist' do
+      let(:non_existant_cert) { asset('ca/not_real_ca.pem') }
+      let(:non_existant_key) { asset('ca/not_real_ca.key') }
+
+      before do
+        FileUtils.rm_f(non_existant_cert)
+        FileUtils.rm_f(non_existant_key)
+      end
+
+      it 'creates the certificate for the user' do
+        vpc_receipt['ssl_certs']['director_cert']['certificate'] = non_existant_cert
+        vpc_receipt['ssl_certs']['director_cert']['private_key'] = non_existant_key
+
+        manifest.director_ssl_cert.should match /BEGIN CERTIFICATE/
+        manifest.director_ssl_key.should match /BEGIN RSA PRIVATE KEY/
+      end
+    end
+  end
 end

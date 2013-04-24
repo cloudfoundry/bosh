@@ -31,7 +31,7 @@ describe Bosh::Cli::Command::Base do
     it "normalizes target" do
       @cmd.target.should be_nil
       @cmd.set_target("test")
-      @cmd.target.should == "http://test:25555"
+      @cmd.target.should == "https://test:25555"
     end
 
     it "handles director errors when setting target" do
@@ -46,20 +46,20 @@ describe Bosh::Cli::Command::Base do
 
     it "sets target" do
       @cmd.set_target("test")
-      @cmd.target.should == "http://test:25555"
+      @cmd.target.should == "https://test:25555"
     end
 
     it "supports named targets" do
       @cmd.set_target("test", "mytarget")
-      @cmd.target.should == "http://test:25555"
+      @cmd.target.should == "https://test:25555"
 
       @cmd.set_target("foo", "myfoo")
 
       @cmd.set_target("mytarget")
-      @cmd.target.should == "http://test:25555"
+      @cmd.target.should == "https://test:25555"
 
       @cmd.set_target("myfoo")
-      @cmd.target.should == "http://foo:25555"
+      @cmd.target.should == "https://foo:25555"
     end
 
     it "logs user in" do

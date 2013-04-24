@@ -65,3 +65,8 @@ apply_spec:
         secret_access_key: <%= cache_secret_access_key %>
         bucket_name: <%= cache_bucket_name %>
     <% end %>
+    director:
+      ssl:
+        key: <%= director_ssl_key %>
+        cert: <%= director_ssl_cert %>
+

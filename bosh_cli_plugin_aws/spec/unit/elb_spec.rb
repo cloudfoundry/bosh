@@ -18,7 +18,7 @@ describe Bosh::Aws::ELB do
 
   describe 'creation' do
     let(:new_elb) { mock('a new elb') }
-    let(:cert) { {'certificate' => asset('ca/ca.pem'), 'private_key' => asset('ca/ca.key'), 'certificate_chain' => asset('ca/chain.pem')} }
+    let(:cert) { {'certificate_path' => asset('ca/ca.pem'), 'private_key_path' => asset('ca/ca.key'), 'certificate_chain_path' => asset('ca/chain.pem')} }
     let(:cert_name) { 'my-cert-name' }
     let(:http_listener) { {port: 80, protocol: :http, instance_port: 80, instance_protocol: :http} }
     let(:https_listener) { {port: 443, protocol: :https, instance_port: 80, instance_protocol: :http, ssl_certificate_id: 'certificate_arn'} }
@@ -66,7 +66,7 @@ describe Bosh::Aws::ELB do
         end
 
         context 'if the certificate is self signed (has no certificate chain)' do
-          let(:cert) { {'certificate' => asset('ca/ca.pem'), 'private_key' => asset('ca/ca.key')} }
+          let(:cert) { {'certificate_path' => asset('ca/ca.pem'), 'private_key_path' => asset('ca/ca.key')} }
 
           before do
             certificates.should_receive(:upload).with(anything) do |args|
