@@ -25,6 +25,14 @@ module Bosh
         "vpc-bosh-#{name}"
       end
 
+      def director_ssl_key
+        certificate.key.gsub("\n", "\n        ")
+      end
+
+      def director_ssl_cert
+        certificate.certificate.gsub("\n", "\n        ")
+      end
+
       # RSpec overloads to_yaml when you set up expectations on an object;
       # so to_y is just a way to get directly at the to_yaml implementation without fighting RSpec.
       def to_y

@@ -67,6 +67,8 @@ apply_spec:
     <% end %>
     director:
       ssl:
-        key: <%= director_ssl_key %>
-        cert: <%= director_ssl_cert %>
+        key: |
+          <%= director_ssl_key %>
+        cert: |
+          <%= director_ssl_cert %>
 

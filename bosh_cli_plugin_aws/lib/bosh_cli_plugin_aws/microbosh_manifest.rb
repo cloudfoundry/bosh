@@ -73,17 +73,17 @@ module Bosh
       end
 
       def director_ssl_key
-        certificate.key.gsub("\n", "\\n")
+        certificate.key.gsub("\n", "\n          ")
       end
 
       def director_ssl_cert
-        certificate.certificate.gsub("\n", "\\n")
+        certificate.certificate.gsub("\n", "\n          ")
       end
 
       def certificate
         @cert if @cert
-        key_path = vpc_receipt['ssl_certs']['director_cert']['private_key']
-        cert_path = vpc_receipt['ssl_certs']['director_cert']['certificate']
+        key_path = vpc_config['ssl_certs']['director_cert']['private_key_path']
+        cert_path = vpc_config['ssl_certs']['director_cert']['certificate_path']
         @cert = Bosh::Ssl::Certificate.new(key_path, cert_path, "*.#{vpc_config['vpc']['domain']}").load_or_create
       end
 

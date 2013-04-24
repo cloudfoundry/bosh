@@ -131,6 +131,11 @@ properties:
     address: 10.10.0.7
     port: 25555
     encryption: false
+    ssl:
+      key: |
+        <%= director_ssl_key %>
+      cert: |
+        <%= director_ssl_cert %>
 
   hm:
     http:
