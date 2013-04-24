@@ -109,6 +109,12 @@ properties:
     aws:
       availability_zone: us-east-1a
 
+  ntp:
+  - 0.north-america.pool.ntp.org
+  - 1.north-america.pool.ntp.org
+  - 2.north-america.pool.ntp.org
+  - 3.north-america.pool.ntp.org
+
   blobstore:
     address: 10.10.0.7
     port: 25251

@@ -29,6 +29,12 @@ cloud:
       default_security_groups: ["bosh"]
       region: <%= region %>
       ec2_private_key: <%= private_key_path %>
+    agent:
+      ntp:
+      - 0.north-america.pool.ntp.org
+      - 1.north-america.pool.ntp.org
+      - 2.north-america.pool.ntp.org
+      - 3.north-america.pool.ntp.org
 
 apply_spec:
   agent:
@@ -37,6 +43,11 @@ apply_spec:
     nats:
       address: 10.10.0.6
   properties:
+    ntp:
+    - 0.north-america.pool.ntp.org
+    - 1.north-america.pool.ntp.org
+    - 2.north-america.pool.ntp.org
+    - 3.north-america.pool.ntp.org
     registry:
       address: 10.10.0.6
     aws:
