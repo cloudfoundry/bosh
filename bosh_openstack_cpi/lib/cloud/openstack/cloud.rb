@@ -7,6 +7,8 @@ module Bosh::OpenStackCloud
   class Cloud < Bosh::Cloud
     include Helpers
 
+    BOSH_APP_DIR = "/var/vcap/bosh"
+
     attr_reader :openstack
     attr_reader :registry
     attr_reader :glance
@@ -246,14 +248,23 @@ module Bosh::OpenStackCloud
         cloud_error("Flavor `#{resource_pool["instance_type"]}' not found") if flavor.nil?
         @logger.debug("Using flavor: `#{resource_pool["instance_type"]}'")
 
+        keyname = resource_pool["key_name"] || @default_key_name
+        keypair = with_openstack { @openstack.key_pairs.find { |k| k.name == keyname } }
+        cloud_error("Key-pair `#{keyname}' not found") if keypair.nil?
+        @logger.debug("Using key-pair: `#{keypair.name}' (#{keypair.fingerprint})")
+
         server_params = {
           :name => server_name,
           :image_ref => image.id,
           :flavor_ref => flavor.id,
-          :key_name => resource_pool["key_name"] || @default_key_name,
+          :key_name => keypair.name,
           :security_groups => security_groups,
           :nics => nics,
-          :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec))
+          :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec)),
+          :personality => [{
+                            "path" => "#{BOSH_APP_DIR}/user_data.json",
+                            "contents" => Yajl::Encoder.encode(user_data(server_name, network_spec, keypair.public_key))
+                          }]
         }
 
         availability_zone = select_availability_zone(disk_locality, resource_pool["availability_zone"])
@@ -603,11 +614,12 @@ module Bosh::OpenStackCloud
     # @param [String] server_name server name
     # @param [Hash] network_spec network specification
     # @return [Hash] server user data
-    def user_data(server_name, network_spec)
+    def user_data(server_name, network_spec, public_key = nil)
       data = {}
 
       data["registry"] = { "endpoint" => @registry.endpoint }
       data["server"] = { "name" => server_name }
+      data["openssh"] = { "public_key" => public_key } if public_key
 
       with_dns(network_spec) do |servers|
         data["dns"] = { "nameserver" => servers }
