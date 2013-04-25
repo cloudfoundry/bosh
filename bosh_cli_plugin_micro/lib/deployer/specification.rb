@@ -51,7 +51,7 @@ module Bosh::Deployer
       # be able to override values in the apply_spec
       override_property(@properties, "hm", Config.spec_properties["hm"])
 
-      override_property(@properties, "director", {"ssl" => Config.spec_properties["ssl"]})
+      override_property(@properties, "director", Config.spec_properties["director"])
       set_property(@properties, "ntp", Config.spec_properties["ntp"])
       set_property(@properties, "compiled_package_cache", Config.spec_properties["compiled_package_cache"])
 

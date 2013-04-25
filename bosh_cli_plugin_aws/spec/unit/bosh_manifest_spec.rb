@@ -17,17 +17,19 @@ describe Bosh::Aws::BoshManifest do
   end
 
   it "generates the template" do
-    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef')
-    spec = manifest.to_y.strip
+    manifest = YAML.load(described_class.new(vpc_receipt, route53_receipt, 'deadbeef').to_y)
+
+    director_ssl_properties = manifest['properties']['director'].delete('ssl')
+    director_ssl_properties['key'].should_not be_nil
+    director_ssl_properties['cert'].should_not be_nil
+    spec = YAML.dump(manifest).strip
     spec.should == (<<-YAML).strip
 ---
 name: vpc-bosh-dev102
 director_uuid: deadbeef
-
 release:
   name: bosh
   version: latest
-
 networks:
 - name: default
   type: manual
@@ -44,7 +46,6 @@ networks:
       subnet: subnet-4bdf6c26
 - name: vip_network
   type: vip
-  # Fake network properties to satisfy bosh diff
   subnets:
   - range: 127.0.99.0/24
     gateway: 127.0.99.1
@@ -53,7 +54,6 @@ networks:
   cloud_properties:
     security_groups:
     - bosh
-
 resource_pools:
 - name: default
   stemcell:
@@ -64,7 +64,6 @@ resource_pools:
   cloud_properties:
     instance_type: m1.small
     availability_zone: us-east-1a
-
 compilation:
   reuse_compilation_vms: true
   workers: 8
@@ -72,15 +71,12 @@ compilation:
   cloud_properties:
     instance_type: c1.medium
     availability_zone: us-east-1a
-
-
 update:
   canaries: 1
   canary_watch_time: 30000 - 90000
   update_watch_time: 30000 - 90000
   max_in_flight: 1
   max_errors: 1
-
 jobs:
 - name: bosh
   template:
@@ -97,24 +93,23 @@ jobs:
   persistent_disk: 20480
   networks:
   - name: default
-    default: [dns, gateway]
+    default:
+    - dns
+    - gateway
     static_ips:
     - 10.10.0.7
   - name: vip_network
     static_ips:
     - 50.200.100.3
-
 properties:
   template_only:
     aws:
       availability_zone: us-east-1a
-
   ntp:
   - 0.north-america.pool.ntp.org
   - 1.north-america.pool.ntp.org
   - 2.north-america.pool.ntp.org
   - 3.north-america.pool.ntp.org
-
   blobstore:
     address: 10.10.0.7
     port: 25251
@@ -125,35 +120,29 @@ properties:
     director:
       user: director
       password: DirectoR
-
   networks:
     apps: default
     management: default
-
   nats:
     user: nats
     password: 0b450ada9f830085e2cdeff6
     address: 10.10.0.7
     port: 4222
-
   postgres:
     user: bosh
     password: a7a33139c8e3f34bc201351b
     address: 10.10.0.7
     port: 5432
     database: bosh
-
   redis:
     address: 10.10.0.7
     port: 25255
     password: R3d!S
-
   director:
     name: vpc-bosh-dev102
     address: 10.10.0.7
     port: 25555
     encryption: false
-
   hm:
     http:
       port: 25923
@@ -174,22 +163,20 @@ properties:
     tsdb_enabled: false
     cloud_watch_enabled: true
     resurrector_enabled: true
-
   registry:
     address: 10.10.0.7
     http:
       port: 25777
       user: awsreg
       password: awsreg
-
   aws:
-    access_key_id: ...
-    secret_access_key: ...
+    access_key_id: ! '...'
+    secret_access_key: ! '...'
     region: us-east-1
     default_key_name: dev102
     ec2_endpoint: ec2.us-east-1.amazonaws.com
-    default_security_groups: ["bosh"]
-
+    default_security_groups:
+    - bosh
   dns:
     user: powerdns
     password: powerdns

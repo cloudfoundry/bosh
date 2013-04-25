@@ -68,7 +68,6 @@ describe Bosh::Aws::MicroboshManifest do
         vpc_receipt['ssl_certs']['director_cert']['private_key'] = asset('ca/bosh.key')
 
         manifest.director_ssl_cert.should match /BEGIN CERTIFICATE/
-        manifest.director_ssl_cert.should_not include("\n")
         manifest.director_ssl_key.should match /BEGIN RSA PRIVATE KEY/
       end
     end

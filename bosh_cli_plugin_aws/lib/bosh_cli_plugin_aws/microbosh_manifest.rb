@@ -82,9 +82,17 @@ module Bosh
 
       def certificate
         @cert if @cert
-        key_path = vpc_config['ssl_certs']['director_cert']['private_key_path']
-        cert_path = vpc_config['ssl_certs']['director_cert']['certificate_path']
+        key_path = director_ssl['private_key_path'] || 'director.key'
+        cert_path = director_ssl['certificate_path'] || 'director.pem'
         @cert = Bosh::Ssl::Certificate.new(key_path, cert_path, "*.#{vpc_config['vpc']['domain']}").load_or_create
+      end
+
+      def director_ssl
+        ssl_certs['director_cert'] || {}
+      end
+
+      def ssl_certs
+        vpc_config['ssl_certs'] || {}
       end
 
       def bucket_name
