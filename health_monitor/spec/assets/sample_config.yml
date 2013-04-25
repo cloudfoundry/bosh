@@ -80,3 +80,10 @@ plugins:
       - alerts
     options:
       director: *director
+
+  - name: data_dog
+    events:
+      - heartbeat
+    options:
+      api_key: api_key
+      application_key: application_key

@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_dependency "thin", "~>1.5.0"
   s.add_dependency "sinatra", "~>1.4.2"
   s.add_dependency "aws-sdk", "1.8.5"
+  s.add_dependency "dogapi", "~> 1.6.0"
 
   s.bindir      = 'bin'
   s.executables << 'health_monitor_console'

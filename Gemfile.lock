@@ -186,6 +186,7 @@ PATH
   specs:
     health_monitor (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
+      dogapi (~> 1.6.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 0.12.10)
       logging (~> 1.5.0)
@@ -258,6 +259,8 @@ GEM
     debugger-linecache (1.2.0)
     debugger-ruby_core_source (1.2.0)
     diff-lcs (1.2.4)
+    dogapi (1.6.0)
+      json (>= 1.5.1)
     em-http-request (0.3.0)
       addressable (>= 2.0.0)
       escape_utils

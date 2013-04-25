@@ -20,25 +20,11 @@ module Bosh::HealthMonitor
     end
 
     def lookup_plugin(name, options = {})
-      # TODO: dynamic lookup?
-      case name.to_s
-      when "email"
-        plugin_class = Bhm::Plugins::Email
-      when "logger"
-        plugin_class = Bhm::Plugins::Logger
-      when "pagerduty"
-        plugin_class = Bhm::Plugins::Pagerduty
-      when "nats"
-        plugin_class = Bhm::Plugins::Nats
-      when "tsdb"
-        plugin_class = Bhm::Plugins::Tsdb
-      when "varz"
-        plugin_class = Bhm::Plugins::Varz
-      when "cloud_watch"
-        plugin_class = Bhm::Plugins::CloudWatch
-      when "resurrector"
-        plugin_class = Bhm::Plugins::Resurrector
-      else
+      plugin_class = nil
+      begin
+        class_name = name.to_s.split("_").map(&:capitalize).join
+        plugin_class = Bosh::HealthMonitor::Plugins.const_get(class_name)
+      rescue NameError => e
         raise PluginError, "Cannot find `#{name}' plugin"
       end
 

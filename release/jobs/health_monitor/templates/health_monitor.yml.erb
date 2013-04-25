@@ -119,3 +119,13 @@ plugins:
       - alert
       - heartbeat
   <% end %>
+
+  <% if p("hm.datadog_enabled") %>
+  - name: data_dog
+    events:
+      - alert
+      - heartbeat
+    options:
+      api_key: <%= p('hm.datadog.api_key') %>
+      application_key: <%= p('hm.datadog.application_key') %>
+  <% end %>

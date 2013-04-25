@@ -181,4 +181,20 @@ describe Bhm::AgentManager do
       manager.setup_events
     end
   end
+
+  context "when loading plugin not found" do
+    let(:manager) { make_manager }
+
+    before do
+      config = Psych.load_file(sample_config)
+      config["plugins"] << { "name" => "joes_plugin_thing", "events" => ["alerts", "heartbeats"] }
+      Bhm::config = config
+    end
+
+    it "raises an error" do
+      expect {
+        manager.setup_events
+      }.to raise_error(Bhm::PluginError, "Cannot find `joes_plugin_thing' plugin")
+    end
+  end
 end
