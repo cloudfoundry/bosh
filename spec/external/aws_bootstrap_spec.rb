@@ -24,11 +24,17 @@ describe 'bosh_cli_plugin_aws_external' do
 
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
-    let(:bosh_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
-    let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.16.0/20" } }
-    let(:services_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.32.0/20" } }
-    let(:rds_subnet_1) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.3.0/24" } }
-    let(:rds_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.67.0/24" } }
+    let(:bosh1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
+    let(:bosh_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
+    let(:bosh_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.65.0/24" } }
+    let(:cf1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.16.0/20" } }
+    let(:services1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.32.0/20" } }
+    let(:cf_elb1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
+    let(:cf_elb2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.66.0/24" } }
+    let(:cf_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.3.0/24" } }
+    let(:cf_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.67.0/24" } }
+    let(:services_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.8.0/21" } }
+    let(:services_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.72.0/21" } }
 
     before(:all) do
       run_bosh "aws destroy"
@@ -54,49 +60,43 @@ describe 'bosh_cli_plugin_aws_external' do
     end
 
     it "builds the VPC subnets" do
-      bosh_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      bosh_subnet.instances.first.tags["Name"].should == "cf_nat_box1"
+      bosh1_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+      bosh1_subnet.instances.first.tags["Name"].should == "cf_nat_box1"
 
-      cf_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      cf_subnet.instances.count.should == 0
+      [cf1_subnet, services1_subnet].each do |subnet|
+        subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+        subnet.instances.count.should == 0
 
-      cf_subnet.route_table.routes.any? do |route|
-        route.instance && route.instance.private_ip_address == "10.10.0.10"
-      end.should be_true
+        subnet.route_table.routes.any? do |route|
+          route.instance && route.instance.private_ip_address == "10.10.0.10"
+        end.should be_true
+      end
 
-      services_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      services_subnet.instances.count.should == 0
+      [bosh_rds1_subnet, cf_rds1_subnet, cf_elb1_subnet, services_rds1_subnet].each do |subnet|
+        subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+        subnet.instances.count.should == 0
+      end
 
-      services_subnet.route_table.routes.any? do |route|
-        route.instance && route.instance.private_ip_address == "10.10.0.10"
-      end.should be_true
-
-      rds_subnet_1.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      rds_subnet_1.instances.count.should == 0
-
-      rds_subnet_2.availability_zone.name.should == ENV["BOSH_VPC_SECONDARY_AZ"]
-      rds_subnet_2.instances.count.should == 0
+      [bosh_rds2_subnet, cf_rds2_subnet, cf_elb2_subnet, services_rds2_subnet].each do |subnet|
+        subnet.availability_zone.name.should == ENV["BOSH_VPC_SECONDARY_AZ"]
+        subnet.instances.count.should == 0
+      end
     end
 
     it "associates route tables with subnets" do
-      bosh_routes = bosh_subnet.route_table.routes
+      bosh_routes = bosh1_subnet.route_table.routes
       bosh_default_route = bosh_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
       bosh_default_route.target.id.should match(/igw/)
       bosh_local_route = bosh_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
       bosh_local_route.target.id.should == "local"
 
-      cf_routes = cf_subnet.route_table.routes
-      cf_default_route = cf_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
-      cf_default_route.target.should == bosh_subnet.instances.first
-      cf_local_route = cf_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
-      cf_local_route.target.id.should == "local"
-
-      services_routes = services_subnet.route_table.routes
-      services_default_route = services_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
-      services_default_route.target.should == bosh_subnet.instances.first
-
-      services_local_route = services_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
-      services_local_route.target.id.should == "local"
+      [cf1_subnet, services1_subnet].each do |subnet|
+        routes = subnet.route_table.routes
+        default_route = routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
+        default_route.target.should == bosh1_subnet.instances.first
+        local_route = routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
+        local_route.target.id.should == "local"
+      end
     end
 
     it "assigns DHCP options" do
@@ -168,6 +168,7 @@ describe 'bosh_cli_plugin_aws_external' do
     it "configures ELBs" do
       load_balancer = elb.load_balancers.detect { |lb| lb.name == "cfrouter" }
       load_balancer.should_not be_nil
+      load_balancer.subnets.sort {|s1, s2| s1.id <=> s2.id }.should == [cf_elb1_subnet, cf_elb2_subnet].sort {|s1, s2| s1.id <=> s2.id }
       load_balancer.security_groups.map(&:name).should == ["web"]
 
       config = Bosh::Aws::AwsConfig.new(aws_configuration_template)
