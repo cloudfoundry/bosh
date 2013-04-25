@@ -25,10 +25,10 @@ describe 'bosh_cli_plugin_aws_external' do
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
     let(:bosh_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
-    let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/23" } }
-    let(:services_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.4.0/23" } }
-    let(:rds_subnet_1) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/28" } }
-    let(:rds_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.16/28" } }
+    let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.16.0/20" } }
+    let(:services_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.32.0/20" } }
+    let(:rds_subnet_1) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.3.0/24" } }
+    let(:rds_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.67.0/24" } }
 
     before(:all) do
       run_bosh "aws destroy"
@@ -55,7 +55,7 @@ describe 'bosh_cli_plugin_aws_external' do
 
     it "builds the VPC subnets" do
       bosh_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      bosh_subnet.instances.first.tags["Name"].should == "cf_nat_box"
+      bosh_subnet.instances.first.tags["Name"].should == "cf_nat_box1"
 
       cf_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
       cf_subnet.instances.count.should == 0
@@ -168,7 +168,6 @@ describe 'bosh_cli_plugin_aws_external' do
     it "configures ELBs" do
       load_balancer = elb.load_balancers.detect { |lb| lb.name == "cfrouter" }
       load_balancer.should_not be_nil
-      load_balancer.subnets.should == [bosh_subnet]
       load_balancer.security_groups.map(&:name).should == ["web"]
 
       config = Bosh::Aws::AwsConfig.new(aws_configuration_template)
