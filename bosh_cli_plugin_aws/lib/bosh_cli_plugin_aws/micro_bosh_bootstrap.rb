@@ -38,6 +38,13 @@ module Bosh
         deployment_folder = File.join("deployments", manifest.deployment_name)
 
         FileUtils.mkdir_p deployment_folder
+        if File.exists?(manifest.certificate.certificate_path)
+          FileUtils.cp manifest.certificate.certificate_path, File.join(deployment_folder, manifest.certificate.certificate_path)
+        end
+        if File.exists?(manifest.certificate.key_path)
+          FileUtils.cp manifest.certificate.key_path, File.join(deployment_folder, manifest.certificate.key_path)
+        end
+
         Dir.chdir(deployment_folder) do
           write_yaml(manifest, manifest.file_name)
         end
