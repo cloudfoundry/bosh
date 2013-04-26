@@ -84,6 +84,7 @@ module BoshHelper
   def http_client
     return @bosh if @bosh
     @bosh = HTTPClient.new
+    @bosh.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
     # TODO make user/pass configurable
     @bosh.set_auth(director_url, "admin", "admin")
     @bosh
@@ -95,7 +96,7 @@ module BoshHelper
   end
 
   def director_url
-    "http://#{bosh_director}:25555"
+    "https://#{bosh_director}:25555"
   end
 
   def info
