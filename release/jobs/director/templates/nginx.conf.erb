@@ -25,13 +25,11 @@ http {
       proxy_set_header   X-Forwarded-Proto $scheme;
     }
 
-    <% if_p('director.ssl.key', 'director.ssl.cert') do %>
     ssl on;
     ssl_certificate           /var/vcap/store/director/nginx/director.pem;
     ssl_certificate_key       /var/vcap/store/director/nginx/director.key;
 
     ssl_session_timeout       <%= p('director.timeout') %>;
-    <% end %>
   }
 
   access_log           /var/vcap/sys/log/director/access.log;
