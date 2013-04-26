@@ -10,7 +10,7 @@ mbus:
   password: <%= p("nats.password") %>
 
 director:
-  endpoint: http://<%= p("director.address") %>:<%= p("director.port") %>
+  endpoint: https://<%= p("director.address") %>:<%= p("director.port") %>
   user: <%= p("hm.director_account.user") %>
   password: <%= p("hm.director_account.password") %>
 

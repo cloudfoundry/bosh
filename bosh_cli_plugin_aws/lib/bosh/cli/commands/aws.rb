@@ -71,7 +71,7 @@ module Bosh::Cli::Command
     end
 
     usage "aws generate bosh"
-    desc "generate bosh.yml stub manifest for use with 'bosh diff'"
+    desc "generate bosh.yml deployment manifest"
     def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       target_required
 

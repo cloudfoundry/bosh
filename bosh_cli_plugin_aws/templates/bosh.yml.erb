@@ -157,6 +157,12 @@ properties:
     tsdb_enabled: false
     cloud_watch_enabled: true
     resurrector_enabled: true
+    <% if ENV['BOSH_DATADOG_API_KEY'] && ENV['BOSH_DATADOG_APP_KEY'] %>
+    datadog_enabled: true
+    datadog:
+      api_key: <%= ENV['BOSH_DATADOG_API_KEY'] %>
+      application_key: <%= ENV['BOSH_DATADOG_APP_KEY'] %>
+    <% end %>
 
   registry:
     address: 10.10.0.7
