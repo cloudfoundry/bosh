@@ -57,11 +57,6 @@ module Bosh
       def load_key_and_csr_cert
         key = OpenSSL::PKey::RSA.new(File.read(@key_path))
         csr_cert = OpenSSL::X509::Certificate.new(File.read(@certificate_path))
-        subject = OpenSSL::X509::Name.parse(@subject_string)
-
-        raise SubjectsDoNotMatchException.new(
-                  "The subject you provided is '#{subject}' but the certificate you loaded has a subject of '#{csr_cert.subject}'."
-              ) unless csr_cert.subject == subject
 
         [key, csr_cert]
       end
