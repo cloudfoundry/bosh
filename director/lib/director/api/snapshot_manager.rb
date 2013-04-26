@@ -3,9 +3,9 @@ module Bosh::Director
     class SnapshotManager
       include TaskHelper
 
-      def create_snapshot(user, instance)
+      def create_snapshot(user, instance, options)
         task = create_task(user, :create_snapshot, "create snapshot")
-        Resque.enqueue(Jobs::CreateSnapshot, task.id, instance)
+        Resque.enqueue(Jobs::CreateSnapshot, task.id, instance, options)
         task
       end
 
@@ -52,7 +52,7 @@ module Bosh::Director
         end
       end
 
-      def self.snapshot(instance, options)
+      def self.take_snapshot(instance, options)
         clean = options.fetch(:clean, false)
 
         instance.persistent_disks.each do |disk|

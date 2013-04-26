@@ -386,8 +386,10 @@ module Bosh::Director
 
     post '/deployments/:deployment/jobs/:job/:index/snapshots' do
       instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      # until we can tell the agent to flush and wait, all snapshots are considered dirty
+      options = {clean: false}
 
-      task = @snapshot_manager.create_snapshot(@user, instance)
+      task = @snapshot_manager.create_snapshot(@user, instance, options)
       redirect "/tasks/#{task.id}"
     end
 

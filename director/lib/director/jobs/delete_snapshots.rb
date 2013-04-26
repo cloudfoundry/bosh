@@ -1,12 +1,11 @@
 module Bosh::Director
   module Jobs
-    class DeleteSnapshot < BaseJob
+    class DeleteSnapshots < BaseJob
 
       @queue = :normal
 
       def initialize(snapshots)
         @snapshots = snapshots
-        @cloud = Config.cloud
       end
 
       def perform

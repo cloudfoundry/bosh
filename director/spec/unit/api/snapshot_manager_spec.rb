@@ -3,18 +3,19 @@ require 'spec_helper'
 describe Bosh::Director::Api::SnapshotManager do
   let(:cloud) { double(Bosh::Cloud) }
   let(:manager) { described_class.new }
+  let(:user) { BD::Models::User.make }
 
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment') }
   before(:each) do
     BD::Config.stub(cloud: cloud)
 
-    # instance 1: two disks
+    # instance 1: one disk with two snapshots
     vm = BD::Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment)
-    instance = BD::Models::Instance.make(vm: vm, deployment: deployment, job: 'job', index: 0)
+    @instance = BD::Models::Instance.make(vm: vm, deployment: deployment, job: 'job', index: 0)
 
-    disk = BD::Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
-    BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
-    BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0b')
+    @disk = BD::Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
+    BD::Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a')
+    BD::Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b')
 
     # instance 2: 1 disk
     vm = BD::Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1', deployment: deployment)
@@ -31,87 +32,34 @@ describe Bosh::Director::Api::SnapshotManager do
     BD::Models::Snapshot.make
   end
 
-  describe '#create_snapshot' do
+  let(:task) { double(BDM::Task, id: 'task_id') }
 
+  describe '#create_snapshot' do
+    let(:instance) { double(BDM::Instance) }
+    let(:options) { {} }
+
+    it 'should enqueue a CreateSnapshot job' do
+      manager.should_receive(:create_task).with(user.username, :create_snapshot, "create snapshot").and_return(task)
+      Resque.should_receive(:enqueue).with(BD::Jobs::CreateSnapshot, task.id, instance, options)
+
+      expect(manager.create_snapshot(user.username, instance, options)).to eq task
+    end
   end
 
-  describe '#delete_snapshot' do
+  describe '#delete_snapshots' do
+    let(:snapshots) { [] }
 
+    it 'should enqueue a DeleteSnapshot job' do
+      manager.should_receive(:create_task).with(user.username, :delete_snapshot, "delete snapshot").and_return(task)
+      Resque.should_receive(:enqueue).with(BD::Jobs::DeleteSnapshot, task.id, snapshots)
+
+      expect(manager.delete_snapshots(user.username, snapshots)).to eq task
+    end
   end
 
   describe '#find_by_id' do
     it 'should return the snapshot with the given id' do
-      manager.find_by_id(deployment, 'snap0a').snapshot_cid.should == 'snap0a'
-    end
-  end
-
-  describe '#snapshot_instance' do
-    context 'instance with a persistent_disk' do
-      let(:instance) { BDM::Instance.find(job: 'job', index: 1) }
-
-      it 'should take a snapshot of the persistent disk' do
-        cloud.should_receive(:snapshot_disk).with('disk1').and_return('snap-xxxxxxxx')
-
-        manager.snapshot(instance)
-
-        snapshot = BDM::Snapshot[snapshot_cid: 'snap-xxxxxxxx']
-        snapshot.should_not be_nil
-        snapshot.clean.should be_false
-      end
-
-    end
-
-    context 'instance without a persistent_disk' do
-      let(:instance) { BDM::Instance.find(job: 'job2', index: 0) }
-
-      it 'should not take a snapshot' do
-        cloud.should_not_receive(:snapshot_disk)
-        count = BDM::Snapshot.all.count
-
-        manager.snapshot(instance)
-
-        BDM::Snapshot.all.count.should == count
-      end
-    end
-  end
-
-  describe '#delete_snapshot_by_id' do
-    it 'should delete a existing snapshot' do
-      cloud.should_receive(:delete_snapshot).with('snap0a')
-
-      BDM::Snapshot.all.count.should == 4
-
-      manager.delete_snapshot_by_id(deployment, 'snap0a')
-
-      BDM::Snapshot.all.count.should == 3
-    end
-
-    it 'should raise an error when deleting a non existent snapshot' do
-      cloud.should_not_receive(:delete_snapshot)
-
-      expect {
-        manager.delete_snapshot_by_id(deployment, 'snap4')
-      }.to raise_error Bosh::Director::SnapshotNotFound, 'snapshot snap4 not found'
-    end
-
-    it 'should raise an error when deleting a snapshot belonging to a different deployment' do
-      snapshot = BD::Models::Snapshot.make(snapshot_cid: 'snap_cid')
-      cloud.should_not_receive(:delete_snapshot)
-
-      expect {
-        manager.delete_snapshot_by_id(deployment, snapshot.snapshot_cid)
-      }.to raise_error Bosh::Director::SnapshotNotFound, 'snapshot snap_cid not found in deployment deployment'
-    end
-  end
-
-  describe '#delete_all_snapshots' do
-    it 'should delete all snapshots for a given instance' do
-      cloud.should_receive(:delete_snapshot).with('snap0a')
-      cloud.should_receive(:delete_snapshot).with('snap0b')
-
-      manager.delete_snapshots('deployment', 'job', 0)
-
-      BDM::Snapshot.all.count.should == 2
+      expect(manager.find_by_id(deployment, 'snap0a').snapshot_cid).to eq 'snap0a'
     end
   end
 
@@ -123,7 +71,7 @@ describe Bosh::Director::Api::SnapshotManager do
               1 => %w[snap1a]
           }
       }
-      manager.snapshots(deployment).should == response
+      expect(manager.snapshots(deployment)).to eq response
     end
 
     it 'should list all snapshots for a given instance' do
@@ -132,7 +80,49 @@ describe Bosh::Director::Api::SnapshotManager do
               0 => %w[snap0a snap0b]
           }
       }
-      manager.snapshots(deployment, 'job', 0).should == response
+      expect(manager.snapshots(deployment, 'job', 0)).to eq response
     end
   end
+
+  describe 'class methods' do
+    let(:config) { Psych.load_file(asset('test-director-config.yml')) }
+
+    before do
+      BD::Config.configure(config)
+    end
+
+    describe '#delete_snapshots' do
+
+      it 'deletes the snapshots' do
+        BD::Config.cloud.should_receive(:delete_snapshot).with('snap0a')
+        BD::Config.cloud.should_receive(:delete_snapshot).with('snap0b')
+
+        expect {
+          described_class.delete_snapshots(@disk.snapshots)
+        }.to change { BDM::Snapshot.count }.by -2
+      end
+    end
+
+    describe '#take_snapshot' do
+
+      it 'takes the snapshot' do
+        BD::Config.cloud.should_receive(:snapshot_disk).with('disk0').and_return('snap0c')
+
+        expect {
+          described_class.take_snapshot(@instance, {})
+        }.to change { BDM::Snapshot.count }.by 1
+      end
+
+      context 'with the clean option' do
+        it 'it sets the clean column to true in the db' do
+          BD::Config.cloud.should_receive(:snapshot_disk).with('disk0').and_return('snap0c')
+          described_class.take_snapshot(@instance, {:clean => true})
+
+          snapshot = BDM::Snapshot.find(snapshot_cid: 'snap0c')
+          expect(snapshot.clean).to be_true
+        end
+      end
+    end
+  end
+
 end

@@ -10,7 +10,7 @@ module Bosh::Director
       end
 
       def perform
-        SnapshotManager.snapshot(@instance, @options)
+        Bosh::Director::Api::SnapshotManager.take_snapshot(@instance, @options)
       end
     end
   end

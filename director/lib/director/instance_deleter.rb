@@ -73,7 +73,7 @@ module Bosh::Director
     end
 
     def delete_snapshots(instance)
-      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }
+      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
       Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
     end
 

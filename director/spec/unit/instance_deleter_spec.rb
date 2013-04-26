@@ -156,17 +156,33 @@ describe BD::InstanceDeleter do
   end
 
   describe :delete_snapshots do
-    it 'should delete all snapshots for an instance' do
-      vm = BDM::Vm.make
-      instance = BDM::Instance.make(:vm => vm, :job => "test", :index => 5)
-      disk = BDM::PersistentDisk.make(instance: instance)
-      snapshot1 = BDM::Snapshot.make(persistent_disk: disk)
-      snapshot2 = BDM::Snapshot.make(persistent_disk: disk)
+    let(:vm) { BDM::Vm.make }
+    let(:instance) { BDM::Instance.make(:vm => vm, :job => "test", :index => 5) }
+    let(:disk) { BDM::PersistentDisk.make(instance: instance) }
+    let(:snapshot1) { BDM::Snapshot.make(persistent_disk: disk) }
+    let(:snapshot2) { BDM::Snapshot.make(persistent_disk: disk) }
 
-      @cloud.should_receive(:delete_snapshot).with(snapshot1.snapshot_cid)
-      @cloud.should_receive(:delete_snapshot).with(snapshot2.snapshot_cid)
+    context 'with one disk' do
+      it 'should delete all snapshots for an instance' do
+        snapshots = [snapshot1, snapshot2]
 
-      @deleter.delete_snapshots(instance)
+        Bosh::Director::Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+
+        @deleter.delete_snapshots(instance)
+      end
+    end
+
+    context 'with three disks' do
+      let(:disk2) { BDM::PersistentDisk.make(instance: instance) }
+      let(:disk3) { BDM::PersistentDisk.make(instance: instance) }
+      let(:snapshot3) { BDM::Snapshot.make(persistent_disk: disk2) }
+      it 'should delete all snapshots for an instance' do
+        snapshots = [snapshot1, snapshot2, snapshot3]
+
+        Bosh::Director::Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+
+        @deleter.delete_snapshots(instance)
+      end
     end
   end
 end

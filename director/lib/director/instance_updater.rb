@@ -9,6 +9,8 @@ module Bosh::Director
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
 
+    attr_reader :current_state
+
     # @params [DeploymentPlan::Instance] instance
     def initialize(instance, event_ticker = nil)
       @cloud = Config.cloud
@@ -25,6 +27,8 @@ module Bosh::Director
       @update_config = @job.update # TODO: rename
 
       @vm = @instance.model.vm
+
+      @current_state = {}
     end
 
     def instance_name
@@ -37,22 +41,29 @@ module Bosh::Director
     end
 
     def report_progress
-      @ticker.advance(100.0 / UPDATE_STEPS) if @ticker
+      @ticker.advance(100.0 / update_steps()) if @ticker
+    end
+
+    def update_steps
+      @instance.job_changed? || @instance.packages_changed? ? UPDATE_STEPS + 1 : UPDATE_STEPS
     end
 
     def update(options = {})
-      changes = @instance.changes
+      @canary = options.fetch(:canary, false)
+
       @logger.info("Updating instance #{@instance}, " +
-                   "changes #{changes.inspect}")
+                       "changes #{@instance.changes.inspect}")
 
       # Optimization to only update DNS if nothing else changed.
-      if changes.include?(:dns) && changes.size == 1
+      if dns_change_only?
         update_dns
         return
       end
 
       step { stop }
-      step { take_snapshot } # always take a snapshot?
+      if need_snapshot?
+        step { take_snapshot }
+      end
 
       if @target_state == "detached"
         detach_disk
@@ -70,108 +81,107 @@ module Bosh::Director
 
       step { apply_state(@instance.spec) }
 
-      if @target_state == "started"
-        begin
-          agent.start
-        rescue RuntimeError => e
-          # FIXME: this is somewhat ghetto: we don't have a good way to
-          # negotiate on BOSH protocol between director and agent (yet),
-          # so updating from agent version that doesn't support 'start' RPC
-          # to the one that does might be hard. Right now we decided to
-          # just swallow the exception.
-          # This needs to be removed in one of the following cases:
-          # 1. BOSH protocol handshake gets implemented
-          # 2. All agents updated to support 'start' RPC
-          #    and we no longer care about backward compatibility.
-          @logger.warn("Agent start raised an exception: #{e.inspect}, " +
-                       "ignoring for compatibility")
-        end
-      end
+      start! if need_start?
 
-      min_watch_time, max_watch_time =
-        options[:canary] ? canary_watch_times : update_watch_times
-      current_state = nil
-
-      # Watch times don't include the get_state roundtrip time, so effective
-      # max watch time is roughly:
-      # max_watch_time + N_WATCH_INTERVALS * avg_roundtrip_time
-      step do
-        watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
-          sleep_time = watch_time.to_f / 1000
-          @logger.info("Waiting for #{sleep_time} seconds to " +
-                       "check #{instance_name} status")
-          sleep(sleep_time)
-          @logger.info("Checking if #{instance_name} has been updated " +
-                       "after #{sleep_time} seconds")
-
-          current_state = agent.get_state
-
-          if @target_state == "started"
-            break if current_state["job_state"] == "running"
-          elsif @target_state == "stopped"
-            break if current_state["job_state"] != "running"
-          end
-        end
-      end
+      step { wait_until_running }
 
       if @target_state == "started" && current_state["job_state"] != "running"
-        raise AgentJobNotRunning,
-              "`#{instance_name}' is not running after update"
+        raise AgentJobNotRunning, "`#{instance_name}' is not running after update"
       end
 
       if @target_state == "stopped" && current_state["job_state"] == "running"
-        raise AgentJobNotStopped,
-              "`#{instance_name}' is still running despite the stop command"
+        raise AgentJobNotStopped, "`#{instance_name}' is still running despite the stop command"
       end
     end
 
-    def stop
-      if shutting_down?
-        drain_time = agent.drain("shutdown")
-      else
-        drain_time = agent.drain("update", @instance.spec)
+    # Watch times don't include the get_state roundtrip time, so effective
+    # max watch time is roughly:
+    # max_watch_time + N_WATCH_INTERVALS * avg_roundtrip_time
+    def wait_until_running
+      watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
+        sleep_time = watch_time.to_f / 1000
+        @logger.info("Waiting for #{sleep_time} seconds to check #{instance_name} status")
+        sleep(sleep_time)
+        @logger.info("Checking if #{instance_name} has been updated after #{sleep_time} seconds")
+
+        @current_state = agent.get_state
+
+        if @target_state == "started"
+          break if current_state["job_state"] == "running"
+        elsif @target_state == "stopped"
+          break if current_state["job_state"] != "running"
+        end
       end
+    end
+
+    def start!
+      agent.start
+    rescue RuntimeError => e
+      # FIXME: this is somewhat ghetto: we don't have a good way to
+      # negotiate on BOSH protocol between director and agent (yet),
+      # so updating from agent version that doesn't support 'start' RPC
+      # to the one that does might be hard. Right now we decided to
+      # just swallow the exception.
+      # This needs to be removed in one of the following cases:
+      # 1. BOSH protocol handshake gets implemented
+      # 2. All agents updated to support 'start' RPC
+      #    and we no longer care about backward compatibility.
+      @logger.warn("Agent start raised an exception: #{e.inspect}, ignoring for compatibility")
+    end
+
+    def need_start?
+      @target_state == 'started'
+    end
+
+    def dns_change_only?
+      @instance.changes.include?(:dns) && @instance.changes.size == 1
+    end
+
+    def need_snapshot?
+      @instance.job_changed? || @instance.packages_changed?
+    end
+
+    def stop
+      drain_time = shutting_down? ? agent.drain("shutdown") : agent.drain("update", @instance.spec)
 
       if drain_time > 0
         sleep(drain_time)
       else
-        loop do
-          # This could go on forever if drain script is broken, canceling
-          # the task is a way out.
-          Config.task_checkpoint
-
-          wait_time = drain_time.abs
-          if wait_time > 0
-            @logger.info("`#{@instance}' is draining: " +
-                         "checking back in #{wait_time}s")
-            sleep(wait_time)
-          end
-          # Positive number always means last drain call:
-          break if drain_time >= 0
-
-          # We used to ignore exceptions from drain status for compatibility
-          # with older agents but it doesn't need to happen anymore, as
-          # realistically speaking, all agents have already been updated
-          # to support drain status mechanism and swallowing real errors
-          # would be bad here, as it could mask potential problems.
-          drain_time = agent.drain("status")
-        end
+        wait_for_dynamic_drain(drain_time)
       end
 
       agent.stop
     end
 
+    def wait_for_dynamic_drain(initial_drain_time)
+      drain_time = initial_drain_time
+      loop do
+        # This could go on forever if drain script is broken, canceling the task is a way out.
+        Config.task_checkpoint
+
+        wait_time = drain_time.abs
+        if wait_time > 0
+          @logger.info("`#{@instance}' is draining: checking back in #{wait_time}s")
+          sleep(wait_time)
+        end
+        # Positive number always means last drain call:
+        break if drain_time >= 0
+
+        # We used to ignore exceptions from drain status for compatibility
+        # with older agents but it doesn't need to happen anymore, as
+        # realistically speaking, all agents have already been updated
+        # to support drain status mechanism and swallowing real errors
+        # would be bad here, as it could mask potential problems.
+        drain_time = agent.drain("status")
+      end
+    end
+
     def take_snapshot
-      Api::SnapshotManager.snapshot(@instance.model)
+      Api::SnapshotManager.take_snapshot(@instance.model, clean: true)
     end
 
     def delete_snapshots(disk)
-      Api::SnapshotManager.
-
-
-      disk.snapshots.each do |snapshot|
-        Api::SnapshotManager.delete_snapshots(snapshot)
-      end
+      Api::SnapshotManager.delete_snapshots(disk.snapshots)
     end
 
     def detach_disk
@@ -180,7 +190,7 @@ module Bosh::Director
       if @instance.model.persistent_disk_cid.nil?
         raise AgentUnexpectedDisk,
               "`#{instance_name}' VM has disk attached " +
-              "but it's not reflected in director DB"
+                  "but it's not reflected in director DB"
       end
 
       agent.unmount_disk(@instance.model.persistent_disk_cid)
@@ -218,7 +228,7 @@ module Bosh::Director
       agent.wait_until_ready
     rescue => e
       if @vm
-        @logger.err("error during create_vm(), deleting vm #{@vm.cid}")
+        @logger.error("error during create_vm(), deleting vm #{@vm.cid}")
         delete_vm
       end
       raise e
@@ -230,7 +240,7 @@ module Bosh::Director
     end
 
     # Retrieve list of mounted disks from the agent
-    # @return []Array<String>] list of disk CIDs
+    # @return [Array<String>] list of disk CIDs
     def disk_info
       return @disk_list if @disk_list
 
@@ -255,7 +265,7 @@ module Bosh::Director
         if disk.active
           raise CloudDiskNotAttached,
                 "`#{instance_name}' VM should have persistent disk attached " +
-                "but it doesn't (according to CPI)"
+                    "but it doesn't (according to CPI)"
         end
       end
 
@@ -267,7 +277,7 @@ module Bosh::Director
         if disk.active
           raise CloudDiskMissing,
                 "Disk `#{disk_cid}' is missing according to CPI but marked " +
-                "as active in DB"
+                    "as active in DB"
         end
       end
 
@@ -307,12 +317,12 @@ module Bosh::Director
       end
 
       state = {
-        "deployment" => @deployment_plan.name,
-        "networks" => @instance.network_settings,
-        "resource_pool" => @job.resource_pool.spec,
-        "job" => @job.spec,
-        "index" => @instance.index,
-        "release" => @job.release.spec
+          "deployment" => @deployment_plan.name,
+          "networks" => @instance.network_settings,
+          "resource_pool" => @job.resource_pool.spec,
+          "job" => @job.spec,
+          "index" => @instance.index,
+          "release" => @job.release.spec
       }
 
       if @instance.disk_size > 0
@@ -327,7 +337,7 @@ module Bosh::Director
 
     def attach_missing_disk
       if @instance.model.persistent_disk_cid &&
-         !@instance.disk_currently_attached?
+          !@instance.disk_currently_attached?
         attach_disk
       end
     rescue Bosh::Clouds::NoDiskSpace => e
@@ -345,8 +355,8 @@ module Bosh::Director
       if agent_disk_cid != @instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
               "`#{instance_name}' has invalid disks: agent reports " +
-              "`#{agent_disk_cid}' while director record shows " +
-              "`#{@instance.model.persistent_disk_cid}'"
+                  "`#{agent_disk_cid}' while director record shows " +
+                  "`#{@instance.model.persistent_disk_cid}'"
       end
 
       @instance.model.persistent_disks.each do |disk|
@@ -373,10 +383,10 @@ module Bosh::Director
         @instance.model.db.transaction do
           disk_cid = @cloud.create_disk(@job.persistent_disk, @vm.cid)
           disk =
-            Models::PersistentDisk.create(:disk_cid => disk_cid,
-                                          :active => false,
-                                          :instance_id => @instance.model.id,
-                                          :size => @job.persistent_disk)
+              Models::PersistentDisk.create(:disk_cid => disk_cid,
+                                            :active => false,
+                                            :instance_id => @instance.model.id,
+                                            :size => @job.persistent_disk)
         end
 
         begin
@@ -384,7 +394,7 @@ module Bosh::Director
         rescue Bosh::Clouds::NoDiskSpace => e
           if e.ok_to_retry
             @logger.warn("Retrying attach disk operation " +
-                         "after persistent disk update failed")
+                             "after persistent disk update failed")
             # Recreate the vm
             update_resource_pool(disk_cid)
             begin
@@ -465,35 +475,32 @@ module Bosh::Director
     # @param [Numeric] intervals number of intervals between polling
     #   the state of the jobs
     # @return [Array<Numeric>] watch schedule
-    def watch_schedule(min_watch_time, max_watch_time,
-                       intervals = WATCH_INTERVALS)
+    def watch_schedule(min_watch_time, max_watch_time, intervals = WATCH_INTERVALS)
       delta = (max_watch_time - min_watch_time).to_f
-      step = [1000, delta / intervals].max
+      step = [1000, delta / (intervals - 1)].max
 
-      [min_watch_time, [step] * (delta / step).floor].flatten
+      [min_watch_time] + ([step] * (delta / step).floor)
     end
 
     # @return [Boolean] Is instance shutting down for this update?
     def shutting_down?
       @instance.resource_pool_changed? ||
-        @instance.persistent_disk_changed? ||
-        @instance.networks_changed? ||
-        @target_state == "stopped" ||
-        @target_state == "detached"
+          @instance.persistent_disk_changed? ||
+          @instance.networks_changed? ||
+          @target_state == "stopped" ||
+          @target_state == "detached"
     end
 
-    def canary_watch_times
-      [
-        @update_config.min_canary_watch_time,
-        @update_config.max_canary_watch_time
-      ]
+    def min_watch_time
+      canary? ? @update_config.min_canary_watch_time : @update_config.min_update_watch_time
     end
 
-    def update_watch_times
-      [
-        @update_config.min_update_watch_time,
-        @update_config.max_update_watch_time
-      ]
+    def max_watch_time
+      canary? ? @update_config.max_canary_watch_time : @update_config.max_update_watch_time
+    end
+
+    def canary?
+      @canary
     end
   end
 end
