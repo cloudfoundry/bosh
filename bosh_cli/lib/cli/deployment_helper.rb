@@ -50,7 +50,7 @@ module Bosh::Cli
             "name and director UUID are required")
       end
 
-      if director.uuid != manifest["director_uuid"]
+      if director.uuid != manifest["director_uuid"] && manifest["director_uuid"] != "ignore"
         err("Target director UUID doesn't match UUID from deployment manifest")
       end
 
