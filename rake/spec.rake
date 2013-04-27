@@ -147,7 +147,7 @@ namespace :spec do
           file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
           File.open("BOSH_VERSION", 'w') { |f| f.write file_contents }
           Rake::Task["all:pre_stage_latest"].invoke
-          run("cd pkg/gems && s3cmd get s3://bosh-jenkins-gems/gems/* .")
+          #run("cd pkg/gems && s3cmd get s3://bosh-jenkins-gems/gems/* .")
           Bundler.with_clean_env do
             # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
             run("cd pkg && gem generate_index .")
