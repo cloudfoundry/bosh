@@ -11,9 +11,11 @@ describe Bosh::Director::InstanceUpdater do
       vm: vm_model,
   ) }
 
+  let(:domain) { 'somedomain.com' }
   let(:deployment_plan) { double(
       BD::DeploymentPlan,
-      model: deployment_model
+      model: deployment_model,
+      dns_domain: domain
   ) }
   let(:stemcell) { double(
       BD::DeploymentPlan::Stemcell,
@@ -45,6 +47,7 @@ describe Bosh::Director::InstanceUpdater do
   let(:instance_spec) { Psych.load_file(asset('basic_instance_spec.yml')) }
   let(:job_changed) { false }
   let(:packages_changed) { false }
+  let(:dns_changed) { false }
   let(:disk_currently_attached) { false }
   let(:instance) { double(
       BD::DeploymentPlan::Instance,
@@ -58,7 +61,7 @@ describe Bosh::Director::InstanceUpdater do
       resource_pool_changed?: false,
       persistent_disk_changed?: false,
       networks_changed?: false,
-      dns_changed?: false,
+      dns_changed?: dns_changed,
       spec: instance_spec,
       disk_currently_attached?: disk_currently_attached,
       network_settings: double('NetworkSettings'))
@@ -508,24 +511,126 @@ describe Bosh::Director::InstanceUpdater do
 
   describe '#disk_info' do
     context 'when there is a disk list' do
-      it 'returns the disk list' do
-        pending
+      it 'caches the disk list' do
+        agent_client.stub(:list_disk).once.and_return []
+        expect(subject.disk_info).to eq []
+        expect(subject.disk_info).to eq []
       end
     end
 
     context 'when there is no disk list' do
       it 'gets the list of disks from the agent' do
-        pending
+        agent_client.should_receive(:list_disk).and_return []
+        expect(subject.disk_info).to eq []
       end
+    end
+
+    context "when the agent doesn't support list_disk" do
+
+      it "returns the instance's persistent disk cid" do
+        agent_client.stub(:list_disk).and_raise RuntimeError
+
+        instance.should_receive(:persistent_disk_cid).and_return('disk_cid')
+        expect(subject.disk_info).to eq ['disk_cid']
+      end
+
     end
   end
 
   describe '#delete_disk' do
 
+    let(:disk) { double(
+        BDM::PersistentDisk,
+        disk_cid: 'disk_cid') }
+    let(:vm_cid) { 'vm_cid' }
+
+    before do
+      subject.stub(:disk_info).and_return [disk.disk_cid]
+      agent_client.stub(:unmount_disk)
+      subject.stub(:delete_snapshots)
+      cloud.stub(:detach_disk)
+      cloud.stub(:delete_disk)
+      disk.stub(:destroy)
+      disk.stub(active: true)
+    end
+
+    context 'when the disk is known by the agent' do
+
+      it 'umounts the disk' do
+        agent_client.should_receive(:unmount_disk).with(disk.disk_cid)
+
+        subject.delete_disk(disk, vm_cid)
+      end
+    end
+
+    context 'when the disk is attached' do
+
+      it 'detaches the disk' do
+        cloud.should_receive(:detach_disk).with(vm_cid, disk.disk_cid)
+
+        subject.delete_disk(disk, vm_cid)
+      end
+
+    end
+
+    context 'when the disk is not attached' do
+      it 'raises an exception' do
+        cloud.stub(:detach_disk).with(vm_cid, disk.disk_cid).and_raise(BD::CloudDiskNotAttached)
+
+        expect { subject.delete_disk(disk, vm_cid) }.to raise_exception(BD::CloudDiskNotAttached)
+      end
+    end
+
+    it 'deletes the snapshots' do
+      subject.should_receive(:delete_snapshots).with(disk)
+
+      subject.delete_disk(disk, vm_cid)
+    end
+
+    it 'deletes the disk' do
+      cloud.should_receive(:delete_disk).with(disk.disk_cid)
+
+      subject.delete_disk(disk, vm_cid)
+    end
+
+    context 'when the disk is not found' do
+      it 'raises an exception' do
+        cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+
+        expect { subject.delete_disk(disk, vm_cid) }.to raise_exception(BD::CloudDiskMissing)
+      end
+    end
+
+    it 'destroys the disk' do
+      disk.should_receive(:destroy)
+
+      subject.delete_disk(disk, vm_cid)
+    end
   end
 
   describe '#update_dns' do
+    context 'when DNS is not being changed' do
+      it { should_not_receive(:update_dns_a_record) }
+      it { should_not_receive(:update_dns_ptr_record) }
+    end
 
+    context 'when DNS is being changed' do
+      let(:dns_changed) { true }
+
+      it 'updates the A and PTR records' do
+        instance.stub(:dns_record_info).and_return([
+                                                       ['record 1', '1.1.1.1'],
+                                                       ['record 2', '2.2.2.2'],
+                                                   ])
+
+        subject.should_receive(:update_dns_a_record).with(domain, 'record 1', '1.1.1.1')
+        subject.should_receive(:update_dns_ptr_record).with('record 1', '1.1.1.1')
+        subject.should_receive(:update_dns_a_record).with(domain, 'record 2', '2.2.2.2')
+        subject.should_receive(:update_dns_ptr_record).with('record 2', '2.2.2.2')
+
+        subject.update_dns
+      end
+    end
   end
 
   describe '#update_resource_pool' do
