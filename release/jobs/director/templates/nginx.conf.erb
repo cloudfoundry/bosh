@@ -28,7 +28,6 @@ http {
     ssl on;
     ssl_certificate           /var/vcap/store/director/nginx/director.pem;
     ssl_certificate_key       /var/vcap/store/director/nginx/director.key;
-
     ssl_session_timeout       <%= p('director.timeout') %>;
   }
 
