@@ -500,7 +500,7 @@ module Bosh::AwsCloud
           next
         end
         # work around AWS eventual (in)consistency
-        Bosh::Common.retryable(tries: 10, on: AWS::EC2::Errors::IncorrectState) do
+        Bosh::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
           new_attachment = volume.attach_to(instance, dev_name)
         end
         break

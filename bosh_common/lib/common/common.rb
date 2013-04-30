@@ -47,7 +47,7 @@ module Bosh
 
     # this method will loop until the block returns a true value
     def retryable(options = {}, &block)
-      opts = {:tries => 2, :sleep => 1, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
+      opts = {:tries => 2, :sleep => lambda{|n,e| [2**(n-1), 10].min }, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
       invalid_options = opts.merge(options).keys - opts.keys
 
       raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?

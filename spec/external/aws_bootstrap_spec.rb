@@ -38,7 +38,7 @@ describe 'bosh_cli_plugin_aws_external' do
 
     before(:all) do
       run_bosh "aws destroy"
-      Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min }) do
+      Bosh::Common.retryable(tries: 15) do
         ec2.vpcs.count == 0
       end
 
@@ -50,7 +50,7 @@ describe 'bosh_cli_plugin_aws_external' do
 
     after(:all) do
       run_bosh "aws destroy"
-      Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min }) do
+      Bosh::Common.retryable(tries: 15) do
         ec2.vpcs.count == 0
       end
     end
