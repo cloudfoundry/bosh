@@ -47,6 +47,9 @@ describe Bosh::Director::InstanceUpdater do
   let(:instance_spec) { Psych.load_file(asset('basic_instance_spec.yml')) }
   let(:job_changed) { false }
   let(:packages_changed) { false }
+  let(:resource_pool_changed) { false }
+  let(:persistent_disk_changed) { false }
+  let(:networks_changed) { false }
   let(:dns_changed) { false }
   let(:disk_currently_attached) { false }
   let(:instance) { double(
@@ -58,9 +61,9 @@ describe Bosh::Director::InstanceUpdater do
       changes: changes,
       job_changed?: job_changed,
       packages_changed?: packages_changed,
-      resource_pool_changed?: false,
-      persistent_disk_changed?: false,
-      networks_changed?: false,
+      resource_pool_changed?: resource_pool_changed,
+      persistent_disk_changed?: persistent_disk_changed,
+      networks_changed?: networks_changed,
       dns_changed?: dns_changed,
       spec: instance_spec,
       disk_currently_attached?: disk_currently_attached,
@@ -107,7 +110,7 @@ describe Bosh::Director::InstanceUpdater do
     end
   end
 
-  describe '#update' do
+  describe 'update' do
     context 'with only a dns change' do
       let(:changes) { [:dns].to_set }
 
@@ -147,6 +150,30 @@ describe Bosh::Director::InstanceUpdater do
         subject.stub(current_state: {'job_state' => 'running'})
 
         subject.update
+      end
+    end
+
+    describe 'canary' do
+      before do
+        subject.stub(:stop)
+        subject.stub(:start!)
+        subject.stub(:apply_state)
+        subject.stub(:wait_until_running)
+        subject.stub(current_state: {'job_state' => 'running'})
+      end
+
+      context 'when canary is set to true' do
+        it 'updates the instance to be a canary' do
+          subject.update(:canary => true)
+          expect(subject.canary?).to be_true
+        end
+      end
+
+      context 'when canary is not passed in' do
+        it 'defaults the instance to not be a canary' do
+          subject.update
+          expect(subject.canary?).to be_false
+        end
       end
     end
   end
@@ -239,7 +266,7 @@ describe Bosh::Director::InstanceUpdater do
     end
 
     context 'when target state is not "started"' do
-      let(:state) { "stopped" }
+      let(:state) { 'stopped' }
       it { should_not be_need_start }
     end
   end
@@ -499,13 +526,13 @@ describe Bosh::Director::InstanceUpdater do
     it 'should clean up a VM if creation fails'
   end
 
-  describe '#apply_state' do
+  describe 'apply_state' do
 
     it 'updates the vm' do
-      pending
-    end
-    it 'applies the state to the agent' do
-      pending
+      instance.model.vm.should_receive(:update).with(apply_spec: 'newstate')
+      agent_client.should_receive(:apply).with('newstate')
+
+      subject.apply_state('newstate')
     end
   end
 
@@ -670,8 +697,42 @@ describe Bosh::Director::InstanceUpdater do
     end
   end
 
-  describe '#shutting_down?' do
+  describe 'shutting_down?' do
 
+    context 'when the resource pool has changed' do
+      let(:resource_pool_changed) { true }
+
+      its(:shutting_down?) { should be_true }
+    end
+    context 'when the persistent disks have changed' do
+      let(:persistent_disk_changed) { true }
+
+      its(:shutting_down?) { should be_true }
+    end
+
+    context 'when the networks have changed' do
+      let(:networks_changed) { true }
+
+      its(:shutting_down?) { should be_true }
+    end
+
+    context 'when the target state is detached' do
+      let(:state) { 'detached' }
+
+      its(:shutting_down?) { should be_true }
+    end
+
+    context 'when the target state is stopped' do
+      let(:state) { 'stopped' }
+
+      its(:shutting_down?) { should be_true }
+    end
+
+    context 'when the target state is started' do
+      let(:state) { 'started' }
+
+      its(:shutting_down?) { should be_false }
+    end
   end
 
   describe '#min_watch_time' do
@@ -704,10 +765,6 @@ describe Bosh::Director::InstanceUpdater do
         expect(subject.max_watch_time).to eq 0.02
       end
     end
-  end
-
-  describe '#canary?' do
-
   end
 
 end
