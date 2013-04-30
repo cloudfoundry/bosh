@@ -9,8 +9,8 @@ mbus:
   user: <%= p("nats.user") %>
   password: <%= p("nats.password") %>
 
-director: &director
-  endpoint: <%= p("director.encryption") ? 'https' : 'http' %>://<%= p("director.address") %>:<%= p("director.port") %>
+director:
+  endpoint: https://<%= p("director.address") %>:<%= p("director.port") %>
   user: <%= p("hm.director_account.user") %>
   password: <%= p("hm.director_account.password") %>
 
@@ -96,7 +96,10 @@ plugins:
     events:
       - alert
     options:
-      director: *director
+      director:
+        endpoint: http://<%= p("director.address") %>:<%= p("director.port") %>
+        user: <%= p("hm.director_account.user") %>
+        password: <%= p("hm.director_account.password") %>
   <% end %>
 
   <% if p("hm.pagerduty_enabled") %>
