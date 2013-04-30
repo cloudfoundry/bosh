@@ -1,7 +1,8 @@
 require "spec_helper"
 
 describe Bosh::Aws::MicroBoshBootstrap do
-  let(:bootstrap) { described_class.new(nil, nil) }
+  let(:hm_director_account_options) { {hm_director_user: 'hm', hm_director_password: 'hmpasswd'} }
+  let(:bootstrap) { described_class.new(nil, hm_director_account_options) }
 
   describe "micro_ami" do
     context "when the environment provides an override AMI" do
@@ -30,7 +31,7 @@ describe Bosh::Aws::MicroBoshBootstrap do
   end
 
   describe "deploying microbosh" do
-    let(:microbosh_bootstrap) { described_class.new(nil, {non_interactive: true}) }
+    let(:microbosh_bootstrap) { described_class.new(nil, hm_director_account_options.merge(non_interactive: true)) }
 
     before do
       Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)

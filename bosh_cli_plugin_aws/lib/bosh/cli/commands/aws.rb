@@ -1,4 +1,5 @@
 require "aws-sdk"
+require "securerandom"
 require_relative "../../../bosh_cli_plugin_aws"
 
 module Bosh::Cli::Command
@@ -24,6 +25,9 @@ module Bosh::Cli::Command
     usage "aws bootstrap micro"
     desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
     def bootstrap_micro
+      options[:hm_director_password] = SecureRandom.base64
+      options[:hm_director_user] ||= 'hm'
+
       bootstrap = Bosh::Aws::MicroBoshBootstrap.new(runner, options)
       bootstrap.start
 
@@ -36,7 +40,11 @@ module Bosh::Cli::Command
         end
 
         bootstrap.create_user(username, password)
+      else
+        bootstrap.create_user("admin", SecureRandom.base64)
       end
+
+      bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
     end
 
     usage "aws bootstrap bosh"
@@ -44,6 +52,9 @@ module Bosh::Cli::Command
     def bootstrap_bosh(bosh_repository=nil)
       target_required
       err "To bootstrap BOSH, first log in to `#{config.target}'" unless logged_in?
+
+      options[:hm_director_password] = SecureRandom.base64
+      options[:hm_director_user] ||= 'hm'
 
       bootstrap = Bosh::Aws::BoshBootstrap.new(director, self.options)
       bootstrap.start(bosh_repository)
@@ -55,6 +66,8 @@ module Bosh::Cli::Command
       bootstrap.create_user(username, password)
 
       say "BOSH deployed successfully. You are logged in as #{username}."
+
+      bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
     rescue Bosh::Aws::BootstrapError => e
       err "Unable to bootstrap bosh: #{e.message}"
     end

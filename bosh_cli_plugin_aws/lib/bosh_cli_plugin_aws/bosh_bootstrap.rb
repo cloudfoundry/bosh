@@ -61,7 +61,7 @@ This command should be used for bootstrapping bosh from scratch.
 
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
-          @manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+          @manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, options)
         end
 
         @manifest
@@ -108,6 +108,10 @@ This command should be used for bootstrapping bosh from scratch.
         deployment_command = Bosh::Cli::Command::Deployment.new
         deployment_command.options = self.options
         deployment_command.perform
+
+        new_director = Bosh::Cli::Director.new("https://#{manifest.vip}:25555", nil, nil,
+                                               num_retries: 12, retry_wait_interval: 5)
+        new_director.wait_until_ready
       end
 
       def fetch_and_upload_stemcell

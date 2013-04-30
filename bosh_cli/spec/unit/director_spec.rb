@@ -13,6 +13,15 @@ describe Bosh::Cli::Director do
     @director.stub(retry_wait_interval: 0)
   end
 
+  describe "checking availability" do
+    it "waits until director is ready" do
+      @director.should_receive(:get_status).and_raise(Bosh::Cli::DirectorError)
+      @director.should_receive(:get_status).and_return(cpi: 'aws')
+
+      @director.wait_until_ready
+    end
+  end
+
   describe "fetching status" do
     it "tells if user is authenticated" do
       @director.should_receive(:get).with("/info", "application/json").

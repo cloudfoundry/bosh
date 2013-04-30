@@ -33,6 +33,8 @@ module Bosh
         @user = user
         @password = password
         @track_tasks = !options.delete(:no_track)
+        @num_retries = options.fetch(:num_retries, 5)
+        @retry_wait_interval = options.fetch(:retry_wait_interval, 5)
       end
 
       def uuid
@@ -46,6 +48,13 @@ module Bosh
         true # For compatibility with directors that return 401 for /info
       rescue DirectorError
         false
+      end
+
+      def wait_until_ready
+        num_retries.times do
+          return if exists?
+          sleep retry_wait_interval
+        end
       end
 
       def authenticated?
@@ -615,9 +624,7 @@ module Bosh
         end
       end
 
-      def num_retries; 5; end
-
-      def retry_wait_interval; 5; end
+      attr_reader :num_retries, :retry_wait_interval
     end
 
     class FileWithProgressBar < ::File

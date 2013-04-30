@@ -3,21 +3,22 @@ require 'spec_helper'
 describe Bosh::Aws::BoshManifest do
   let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
   let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
+  let(:manifest_options) {{hm_director_user: 'hm', hm_director_password: 'hm_password'}}
 
   it "sets the correct elastic ip" do
-    described_class.new(vpc_receipt, route53_receipt, 'deadbeef').vip.should == "50.200.100.3"
+    described_class.new(vpc_receipt, route53_receipt, 'deadbeef', manifest_options).vip.should == "50.200.100.3"
   end
 
   it "warns when vip is missing" do
     route53_receipt['elastic_ips']['bosh']['ips'] = []
 
-    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef')
+    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', manifest_options)
     manifest.should_receive(:warning).with("Missing vip field")
     manifest.to_y
   end
 
   it "generates the template" do
-    manifest = YAML.load(described_class.new(vpc_receipt, route53_receipt, 'deadbeef').to_y)
+    manifest = YAML.load(described_class.new(vpc_receipt, route53_receipt, 'deadbeef', manifest_options).to_y)
 
     director_ssl_properties = manifest['properties']['director'].delete('ssl')
     director_ssl_properties['key'].should_not be_nil
@@ -150,8 +151,8 @@ properties:
       user: admin
       password: admin
     director_account:
-      user: admin
-      password: admin
+      user: hm
+      password: hm_password
     intervals:
       poll_director: 60
       poll_grace_period: 30
