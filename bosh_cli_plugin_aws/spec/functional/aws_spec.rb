@@ -14,6 +14,7 @@ describe Bosh::Cli::Command::AWS do
     describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
       let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
+      let(:micro_bosh_yaml) { Psych.load_file("micro_bosh.yml") }
 
       around do |test|
         Dir.mktmpdir do |dir|
@@ -25,16 +26,19 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "uses some of the normal director keys" do
-        @micro_bosh_yaml = Psych.load_file("micro_bosh.yml")
+        micro_bosh_yaml['name'].should == "micro-dev102"
+        micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
+        micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
+        micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
 
-        @micro_bosh_yaml['name'].should == "micro-dev102"
-        @micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
-        @micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
-        @micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
+        micro_bosh_yaml['cloud']['properties']['aws']['access_key_id'].should == "..."
+        micro_bosh_yaml['cloud']['properties']['aws']['secret_access_key'].should == "..."
+        micro_bosh_yaml['cloud']['properties']['aws']['region'].should == "us-east-1"
+      end
 
-        @micro_bosh_yaml['cloud']['properties']['aws']['access_key_id'].should == "..."
-        @micro_bosh_yaml['cloud']['properties']['aws']['secret_access_key'].should == "..."
-        @micro_bosh_yaml['cloud']['properties']['aws']['region'].should == "us-east-1"
+      it "has a health manager username and password populated" do
+        micro_bosh_yaml['apply_spec']['properties']['hm']['director_account']['user'].should == 'hm'
+        micro_bosh_yaml['apply_spec']['properties']['hm']['director_account']['password'].should_not be_nil
       end
     end
 
@@ -48,7 +52,12 @@ describe Bosh::Cli::Command::AWS do
             aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
             aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
-            Psych.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
+
+            yaml = Psych.load_file("bosh.yml")
+
+            yaml['name'].should == "vpc-bosh-dev102"
+            yaml['properties']['hm']['director_account']['user'].should == 'hm'
+            yaml['properties']['hm']['director_account']['password'].should_not be_nil
           end
         end
       end

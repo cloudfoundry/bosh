@@ -53,8 +53,8 @@ module Bosh::Cli::Command
       target_required
       err "To bootstrap BOSH, first log in to `#{config.target}'" unless logged_in?
 
-      options[:hm_director_password] = SecureRandom.base64
       options[:hm_director_user] ||= 'hm'
+      options[:hm_director_password] = SecureRandom.base64
 
       bootstrap = Bosh::Aws::BoshBootstrap.new(director, self.options)
       bootstrap.start(bosh_repository)
@@ -78,7 +78,10 @@ module Bosh::Cli::Command
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
 
-      manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
+      options[:hm_director_user] ||= 'hm'
+      options[:hm_director_password] = SecureRandom.base64
+
+      manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config, options)
 
       write_yaml(manifest, manifest.file_name)
     end
@@ -88,9 +91,12 @@ module Bosh::Cli::Command
     def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       target_required
 
+      options[:hm_director_user] ||= 'hm'
+      options[:hm_director_password] = SecureRandom.base64
+
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
-      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, options)
 
       write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
