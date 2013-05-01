@@ -5,7 +5,6 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(snapshots_cids)
-        super
         @snapshot_cids = snapshots_cids
       end
 

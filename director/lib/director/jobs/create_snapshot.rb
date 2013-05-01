@@ -5,7 +5,6 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(instance_id, options)
-        super
         @instance = Bosh::Director::Api::InstanceManager.new.find_instance(instance_id)
         @options = options
       end
