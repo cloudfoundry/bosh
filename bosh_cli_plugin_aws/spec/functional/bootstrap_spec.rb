@@ -34,39 +34,37 @@ describe "AWS Bootstrap commands" do
 
   describe "aws bootstrap micro" do
     context "when non-interactive" do
+      let(:misc_command) { double('Command Misc') }
+      let(:user_command) { double('Command User') }
+
+      before do
+        Bosh::Cli::Command::User.stub(:new).and_return(user_command)
+        Bosh::Cli::Command::Misc.stub(:new).and_return(misc_command)
+        misc_command.stub(:options=)
+        user_command.stub(:options=)
+      end
+
       it "should bootstrap microbosh" do
         stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami").
             to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
 
-        admin_credentials = encoded_credentials("admin", "admin")
-        admin2_credentials = encoded_credentials("admin", "admin_password")
-
-        admin_auth_headers = {'Authorization' => "Basic #{admin_credentials}", 'Content-Type' => 'application/json'}
-        admin2_auth_headers = {'Authorization' => "Basic #{admin2_credentials}", 'Content-Type' => 'application/json'}
-
         SecureRandom.should_receive(:base64).and_return("hm_password")
         SecureRandom.should_receive(:base64).and_return("admin_password")
 
-        hm_user = {username: 'hm', password: 'hm_password'}
-        admin2_user = {username: 'admin', password: 'admin_password'}
-        stub_request(:get, "https://10.10.0.6:25555/info").
-            to_return(:status => 200, :body => {"user" => "admin"}.to_json, :headers => {})
-        Bosh::Deployer::InstanceManager.any_instance.should_receive(:with_lifecycle)
+        misc_command.should_receive(:login).with("admin", "admin")
+        user_command.should_receive(:create).with("admin", "admin_password").and_return(true)
+        misc_command.should_receive(:login).with("admin", "admin_password")
+        user_command.should_receive(:create).with("hm", "hm_password").and_return(true)
+        misc_command.should_receive(:login).with("hm", "hm_password")
 
-        stub_request(:post, "https://10.10.0.6:25555/users").
-            to_return(status: 204, body: "", headers: {})
+        Bosh::Deployer::InstanceManager.any_instance.should_receive(:with_lifecycle)
 
         aws.bootstrap_micro
 
         stemcell_ami_request.should have_been_made
-        a_request(:get, "https://10.10.0.6:25555/info").should have_been_made.times(3)
-        a_request(:post, "https://10.10.0.6:25555/users").
-            with(body: admin2_user, headers: admin_auth_headers).should have_been_made
-        a_request(:post, "https://10.10.0.6:25555/users").
-          with(body: hm_user, headers: admin2_auth_headers).should have_been_made
       end
 
-      context "not crazy" do
+      context "hm user and password" do
         let(:fake_bootstrap) { double("MicroBosh Bootstrap", start: true) }
         before do
           Bosh::Aws::MicroBoshBootstrap.stub(:new).and_return(fake_bootstrap)
