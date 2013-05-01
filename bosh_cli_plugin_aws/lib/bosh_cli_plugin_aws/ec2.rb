@@ -183,6 +183,10 @@ module Bosh
 
       def remove_all_key_pairs
         aws_ec2.key_pairs.each(&:delete)
+
+        Bosh::Common.retryable(tries: 10, sleep: lambda{|n,e| [2**(n-1), 10].min}) do
+          aws_ec2.key_pairs.to_a.empty?
+        end
       end
 
       def delete_all_security_groups

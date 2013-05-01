@@ -427,7 +427,10 @@ describe Bosh::Aws::EC2 do
 
       it "should remove all key pairs" do
         another_key_pair = double("key pair")
-        fake_aws_ec2.stub(key_pairs: [another_key_pair, aws_key_pair])
+        fake_aws_ec2.stub(:key_pairs).and_return(
+            [another_key_pair, aws_key_pair],
+            []
+        )
 
         aws_key_pair.should_receive :delete
         another_key_pair.should_receive :delete
