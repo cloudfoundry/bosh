@@ -131,7 +131,13 @@ module Bosh
       end
 
       def delete_volumes
-        unattached_volumes.each(&:delete)
+        unattached_volumes.each do |vol|
+          begin
+            vol.delete
+          rescue AWS::EC2::Errors::InvalidVolume::NotFound
+            # ignored
+          end
+        end
       end
 
       def volume_count

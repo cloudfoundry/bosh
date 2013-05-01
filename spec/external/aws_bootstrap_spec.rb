@@ -5,6 +5,14 @@ require "bosh_cli_plugin_aws"
 describe 'bosh_cli_plugin_aws_external' do
   include Bosh::Spec::CommandHelper
 
+  def ec2
+    @ec2 ||= AWS::EC2.new
+  end
+
+  def aws_configuration_template
+    File.join(File.dirname(__FILE__), '..', '..', 'bosh_cli_plugin_aws', 'templates', 'aws_configuration_template.yml.erb')
+  end
+
   before(:all) do
     AWS.config(
         {
@@ -14,16 +22,28 @@ describe 'bosh_cli_plugin_aws_external' do
             :max_retries => 2
         }
     )
+    run_bosh "aws destroy"
+    Bosh::Common.retryable(tries: 15) do
+      ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
+    end
+
+    # creating key pairs here because VPC creation involves creating a NAT instance
+    # and instance creation requires an existing key pair.
+    run_bosh "aws create key_pairs #{aws_configuration_template}"
+    run_bosh "aws create vpc #{aws_configuration_template}"
   end
 
-  let(:ec2) { AWS::EC2.new }
-  let(:elb) { AWS::ELB.new }
-  let(:route53) { AWS::Route53.new }
-
-  let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..', '..', 'bosh_cli_plugin_aws', 'templates', 'aws_configuration_template.yml.erb') }
+  after(:all) do
+    ec2.key_pairs.map(&:name).should == ['bosh']
+    run_bosh "aws destroy"
+    Bosh::Common.retryable(tries: 15) do
+      ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
+    end
+  end
 
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
+    let(:elb) { AWS::ELB.new }
     let(:bosh1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
     let(:bosh_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
     let(:bosh_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.65.0/24" } }
@@ -35,26 +55,6 @@ describe 'bosh_cli_plugin_aws_external' do
     let(:cf_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.67.0/24" } }
     let(:services_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.8.0/21" } }
     let(:services_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.72.0/21" } }
-
-    before(:all) do
-      run_bosh "aws destroy"
-      Bosh::Common.retryable(tries: 15) do
-        ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
-      end
-
-      # creating key pairs here because VPC creation involves creating a NAT instance
-      # and instance creation requires an existing key pair.
-      run_bosh "aws create key_pairs #{aws_configuration_template}"
-      run_bosh "aws create vpc #{aws_configuration_template}"
-    end
-
-    after(:all) do
-      ec2.key_pairs.map(&:name).should == ['bosh']
-      run_bosh "aws destroy"
-      Bosh::Common.retryable(tries: 15) do
-        ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
-      end
-    end
 
     it "builds the VPC" do
       vpc.should_not be_nil
