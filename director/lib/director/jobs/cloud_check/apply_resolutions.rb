@@ -11,8 +11,6 @@ module Bosh::Director
         # @param [String] deployment_name Deployment name
         # @param [Hash] resolutions Problem resolutions
         def initialize(deployment_name, resolutions)
-          super
-
           @deployment_manager = Api::DeploymentManager.new
           @deployment = @deployment_manager.find_by_name(deployment_name)
 
