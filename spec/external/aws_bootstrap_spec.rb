@@ -39,7 +39,7 @@ describe 'bosh_cli_plugin_aws_external' do
     before(:all) do
       run_bosh "aws destroy"
       Bosh::Common.retryable(tries: 15) do
-        ec2.vpcs.count == 0
+        ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
       end
 
       # creating key pairs here because VPC creation involves creating a NAT instance
@@ -49,9 +49,10 @@ describe 'bosh_cli_plugin_aws_external' do
     end
 
     after(:all) do
+      ec2.key_pairs.map(&:name).should == ['bosh']
       run_bosh "aws destroy"
       Bosh::Common.retryable(tries: 15) do
-        ec2.vpcs.count == 0
+        ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
       end
     end
 
@@ -180,44 +181,16 @@ describe 'bosh_cli_plugin_aws_external' do
     end
   end
 
-  describe "key pairs" do
-    before do
-      ec2.key_pairs.map(&:name).should == []
-
-      run_bosh "aws create key_pairs #{aws_configuration_template}"
-    end
-
-    it "creates and deletes key pairs" do
-      ec2.key_pairs.map(&:name).should == [ENV["BOSH_KEY_PAIR_NAME"] || "bosh"]
-    end
-
-    after do
-      run_bosh "aws destroy"
-
-      ec2.key_pairs.map(&:name).should == []
-    end
-  end
-
   describe "S3" do
     let(:s3) { AWS::S3.new }
 
-    before do
-      s3.buckets.count.should == 0
-
-      run_bosh "aws create s3 #{aws_configuration_template}"
-    end
-
     it "creates s3 buckets and deletes them" do
+      s3.buckets.count.should == 0
       blobstore_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"
       artifacts_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-artifacts"
+      run_bosh "aws create s3 #{aws_configuration_template}"
 
       s3.buckets.map(&:name).should include(blobstore_bucket, artifacts_bucket)
-    end
-
-    after do
-      run_bosh "aws destroy"
-
-      s3.buckets.count.should == 0
     end
   end
 
@@ -228,13 +201,9 @@ describe 'bosh_cli_plugin_aws_external' do
     end
     let(:resource_record_sets) { hosted_zone.resource_record_sets }
 
-    before do
-      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
-
-      run_bosh "aws create route53 records #{aws_configuration_template}"
-    end
-
     it "creates A records, allocates IPs, and deletes A records" do
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
+      run_bosh "aws create route53 records #{aws_configuration_template}"
       a_records = resource_record_sets.select { |record_set| record_set.type == "A" }
       a_records.map { |record| record.name.split(".")[0] }.should =~ ["bosh", "bat", "micro"]
       a_records.map(&:ttl).uniq.should == [60]
@@ -243,10 +212,5 @@ describe 'bosh_cli_plugin_aws_external' do
       end
     end
 
-    after do
-      run_bosh "aws destroy"
-
-      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
-    end
   end
 end
