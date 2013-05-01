@@ -26,7 +26,7 @@ describe Bosh::Director::Api::SnapshotManager do
 
     # instance 3: no disks
     vm = BD::Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2', deployment: deployment)
-    instance = BD::Models::Instance.make(vm: vm, deployment: deployment, job: 'job2', index: 0)
+    @instance2 = BD::Models::Instance.make(vm: vm, deployment: deployment, job: 'job2', index: 0)
 
     # snapshot from another deployment
     BD::Models::Snapshot.make
@@ -35,31 +35,31 @@ describe Bosh::Director::Api::SnapshotManager do
   let(:task) { double(BDM::Task, id: 'task_id') }
 
   describe '#create_snapshot' do
-    let(:instance) { double(BDM::Instance) }
+    let(:instance) { double(BDM::Instance, id: 0) }
     let(:options) { {} }
 
     it 'should enqueue a CreateSnapshot job' do
       manager.should_receive(:create_task).with(user.username, :create_snapshot, "create snapshot").and_return(task)
-      Resque.should_receive(:enqueue).with(BD::Jobs::CreateSnapshot, task.id, instance, options)
+      Resque.should_receive(:enqueue).with(BD::Jobs::CreateSnapshot, task.id, instance.id, options)
 
       expect(manager.create_snapshot(user.username, instance, options)).to eq task
     end
   end
 
   describe '#delete_snapshots' do
-    let(:snapshots) { [] }
+    let(:snapshot_cids) { %w[snap0 snap1] }
 
     it 'should enqueue a DeleteSnapshot job' do
       manager.should_receive(:create_task).with(user.username, :delete_snapshot, "delete snapshot").and_return(task)
-      Resque.should_receive(:enqueue).with(BD::Jobs::DeleteSnapshot, task.id, snapshots)
+      Resque.should_receive(:enqueue).with(BD::Jobs::DeleteSnapshots, task.id, snapshot_cids)
 
-      expect(manager.delete_snapshots(user.username, snapshots)).to eq task
+      expect(manager.delete_snapshots(user.username, snapshot_cids)).to eq task
     end
   end
 
-  describe '#find_by_id' do
+  describe '#find_by_cid' do
     it 'should return the snapshot with the given id' do
-      expect(manager.find_by_id(deployment, 'snap0a').snapshot_cid).to eq 'snap0a'
+      expect(manager.find_by_cid(deployment, 'snap0a').snapshot_cid).to eq 'snap0a'
     end
   end
 
@@ -105,18 +105,28 @@ describe Bosh::Director::Api::SnapshotManager do
 
     describe '#take_snapshot' do
 
+      context 'when there is no persistent disk' do
+        it 'does not take a snapshot' do
+          BD::Config.cloud.should_not_receive(:snapshot_disk)
+
+          expect {
+            described_class.take_snapshot(@instance2, {})
+          }.to change { BDM::Snapshot.count }.by 0
+        end
+      end
+
       it 'takes the snapshot' do
         BD::Config.cloud.should_receive(:snapshot_disk).with('disk0').and_return('snap0c')
 
         expect {
-          described_class.take_snapshot(@instance, {})
+          expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
         }.to change { BDM::Snapshot.count }.by 1
       end
 
       context 'with the clean option' do
         it 'it sets the clean column to true in the db' do
           BD::Config.cloud.should_receive(:snapshot_disk).with('disk0').and_return('snap0c')
-          described_class.take_snapshot(@instance, {:clean => true})
+          expect(described_class.take_snapshot(@instance, {:clean => true})).to eq %w[snap0c]
 
           snapshot = BDM::Snapshot.find(snapshot_cid: 'snap0c')
           expect(snapshot.clean).to be_true

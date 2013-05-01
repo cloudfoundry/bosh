@@ -393,11 +393,11 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    delete '/deployments/:deployment/snapshots/:id' do
+    delete '/deployments/:deployment/snapshots/:cid' do
       deployment = @deployment_manager.find_by_name(params[:deployment])
-      snapshot = @snapshot_manager.find_by_id(deployment, params[:id])
+      snapshot = @snapshot_manager.find_by_cid(deployment, params[:cid])
 
-      task = @snapshot_manager.delete_snapshots(@user, [snapshot])
+      task = @snapshot_manager.delete_snapshots(@user, [params[:cid]])
       redirect "/tasks/#{task.id}"
     end
 

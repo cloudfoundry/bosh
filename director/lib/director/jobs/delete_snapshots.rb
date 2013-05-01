@@ -4,12 +4,15 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(snapshots)
-        @snapshots = snapshots
+      def initialize(snapshots_cids)
+        super
+        @snapshot_cids = snapshots_cids
       end
 
       def perform
-        Bosh::Director::Api::SnapshotManager.delete_snapshots(@snapshots)
+        snapshots = @snapshot_cids.collect { |cid| Bosh::Director::Models::Snapshot.find(snapshot_cid: cid) }
+        Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
+        "snapshot(s) #{@snapshot_cids.join(', ')} deleted"
       end
     end
   end

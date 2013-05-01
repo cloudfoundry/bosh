@@ -15,18 +15,25 @@ describe Bosh::Director::InstanceUpdater do
   let(:deployment_plan) { double(
       BD::DeploymentPlan,
       model: deployment_model,
-      dns_domain: domain
+      dns_domain: domain,
+      name: 'deployment'
   ) }
   let(:stemcell) { double(
       BD::DeploymentPlan::Stemcell,
       model: stemcell_model)
   }
 
+  let(:release) { double(
+      BD::DeploymentPlan::Release,
+      spec: 'release-spec'
+  ) }
   let(:resource_pool) { double(
       BD::DeploymentPlan::ResourcePool,
       stemcell: stemcell,
       cloud_properties: double('CloudProperties'),
-      env: {})
+      env: {},
+      spec: 'deployment-plan-spec',
+      release: release)
   }
 
   let(:update_config) { double(
@@ -40,7 +47,9 @@ describe Bosh::Director::InstanceUpdater do
       deployment: deployment_plan,
       resource_pool: resource_pool,
       update: update_config,
-      name: 'test-job')
+      name: 'test-job',
+      spec: 'job-spec',
+      release: release)
   }
   let(:state) { 'started' }
   let(:changes) { Set.new }
@@ -52,6 +61,7 @@ describe Bosh::Director::InstanceUpdater do
   let(:networks_changed) { false }
   let(:dns_changed) { false }
   let(:disk_currently_attached) { false }
+  let(:disk_size) { 0 }
   let(:instance) { double(
       BD::DeploymentPlan::Instance,
       job: job,
@@ -67,7 +77,8 @@ describe Bosh::Director::InstanceUpdater do
       dns_changed?: dns_changed,
       spec: instance_spec,
       disk_currently_attached?: disk_currently_attached,
-      network_settings: double('NetworkSettings'))
+      network_settings: double('NetworkSettings'),
+      disk_size: disk_size)
   }
   let(:cloud) { double('cloud') }
 
@@ -287,29 +298,6 @@ describe Bosh::Director::InstanceUpdater do
     end
   end
 
-  describe '#need_snapshot?' do
-    context 'when the job changed' do
-      let(:job_changed) { true }
-      it { should be_need_snapshot }
-    end
-
-    context 'when the package(s) changed' do
-      let(:packages_changed) { true }
-      it { should be_need_snapshot }
-    end
-
-    context 'when both job and package(s) changed' do
-      let(:job_changed) { true }
-      let(:packages_changed) { true }
-
-      it { should be_need_snapshot }
-    end
-
-    context 'when neither job nor package(s) changed' do
-      it { should_not be_need_snapshot }
-    end
-  end
-
   describe '#stop' do
 
     before do
@@ -523,10 +511,23 @@ describe Bosh::Director::InstanceUpdater do
       end
     end
 
-    it 'should clean up a VM if creation fails'
+    it 'should clean up a VM if creation fails' do
+      expect {
+        BD::VmCreator.should_receive(:create).with(
+            deployment_model, stemcell_model, resource_pool.cloud_properties, instance.network_settings,
+            [persistent_disk_model.disk_cid, new_disk_id], resource_pool.env
+        ).and_raise(RuntimeError)
+
+        cloud.should_receive(:delete_vm).with(vm_model.cid)
+        instance.model.vm.should_receive(:destroy)
+
+        subject.create_vm(new_disk_id)
+        expect(instance.model.vm).to be_nil
+      }.to raise_error(RuntimeError)
+    end
   end
 
-  describe 'apply_state' do
+  describe '#apply_state' do
 
     it 'updates the vm' do
       instance.model.vm.should_receive(:update).with(apply_spec: 'newstate')
@@ -661,6 +662,28 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   describe '#update_resource_pool' do
+
+    context 'when the resource pool has not changed' do
+
+    end
+
+    context 'when the resource pool has changed' do
+      let(:resource_pool_changed) { true }
+      let(:new_disk_cid) { 'new-disk-cid' }
+      let(:instance_state) { {'job_state' => 'running'} }
+
+      it 'recreates the vm' do
+        agent_client.stub(:get_state).and_return(instance_state)
+
+        subject.should_receive(:delete_vm)
+        subject.should_receive(:create_vm).with(new_disk_cid)
+        subject.should_receive(:attach_disk)
+        subject.should_receive(:apply_state)
+        instance.should_receive(:current_state=).with(instance_state)
+
+        subject.update_resource_pool(new_disk_cid)
+      end
+    end
 
   end
 

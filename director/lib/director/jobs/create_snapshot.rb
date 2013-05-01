@@ -4,13 +4,15 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(instance, options)
-        @instance = instance
+      def initialize(instance_id, options)
+        super
+        @instance = Bosh::Director::Api::InstanceManager.new.find_instance(instance_id)
         @options = options
       end
 
       def perform
-        Bosh::Director::Api::SnapshotManager.take_snapshot(@instance, @options)
+        snapshot_cids = Bosh::Director::Api::SnapshotManager.take_snapshot(@instance, @options)
+        "snapshot(s) #{snapshot_cids.join(', ')} created"
       end
     end
   end

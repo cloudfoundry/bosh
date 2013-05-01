@@ -5,21 +5,21 @@ module Bosh::Director
 
       def create_snapshot(user, instance, options)
         task = create_task(user, :create_snapshot, "create snapshot")
-        Resque.enqueue(Jobs::CreateSnapshot, task.id, instance, options)
+        Resque.enqueue(Jobs::CreateSnapshot, task.id, instance.id, options)
         task
       end
 
-      def delete_snapshots(user, snapshots)
+      def delete_snapshots(user, snapshot_cids)
         task = create_task(user, :delete_snapshot, "delete snapshot")
-        Resque.enqueue(Jobs::DeleteSnapshot, task.id, snapshots)
+        Resque.enqueue(Jobs::DeleteSnapshots, task.id, snapshot_cids)
         task
       end
 
-      def find_by_id(deployment, id)
-        snapshot = Models::Snapshot.find(snapshot_cid: id)
-        raise SnapshotNotFound, "snapshot #{id} not found" unless snapshot
+      def find_by_cid(deployment, snapshot_cid)
+        snapshot = Models::Snapshot.find(snapshot_cid: snapshot_cid)
+        raise SnapshotNotFound, "snapshot #{snapshot_cid} not found" unless snapshot
         unless deployment == snapshot.persistent_disk.instance.deployment
-          raise SnapshotNotFound, "snapshot #{id} not found in deployment #{deployment.name}"
+          raise SnapshotNotFound, "snapshot #{snapshot_cid} not found in deployment #{deployment.name}"
         end
         snapshot
       end
@@ -54,12 +54,16 @@ module Bosh::Director
 
       def self.take_snapshot(instance, options)
         clean = options.fetch(:clean, false)
+        snapshot_cids = []
 
         instance.persistent_disks.each do |disk|
           cid = Config.cloud.snapshot_disk(disk.disk_cid)
           snapshot = Models::Snapshot.new(persistent_disk: disk, snapshot_cid: cid, clean: clean)
           snapshot.save
+          snapshot_cids << snapshot.snapshot_cid
         end
+
+        snapshot_cids
       end
     end
   end

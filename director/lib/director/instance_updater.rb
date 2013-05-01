@@ -61,9 +61,7 @@ module Bosh::Director
       end
 
       step { stop }
-      if need_snapshot?
-        step { take_snapshot }
-      end
+      step { take_snapshot }
 
       if @target_state == "detached"
         detach_disk
@@ -135,10 +133,6 @@ module Bosh::Director
 
     def dns_change_only?
       @instance.changes.include?(:dns) && @instance.changes.size == 1
-    end
-
-    def need_snapshot?
-      @instance.job_changed? || @instance.packages_changed?
     end
 
     def stop
