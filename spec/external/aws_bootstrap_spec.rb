@@ -9,6 +9,10 @@ describe 'bosh_cli_plugin_aws_external' do
     @ec2 ||= AWS::EC2.new
   end
 
+  def s3
+    @s3 ||= AWS::S3.new
+  end
+
   def aws_configuration_template
     File.join(File.dirname(__FILE__), '..', '..', 'bosh_cli_plugin_aws', 'templates', 'aws_configuration_template.yml.erb')
   end
@@ -24,7 +28,9 @@ describe 'bosh_cli_plugin_aws_external' do
     )
     run_bosh "aws destroy"
     Bosh::Common.retryable(tries: 15) do
-      ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
+      ec2.vpcs.count == 0 &&
+          ec2.key_pairs.map(&:name).empty? &&
+          s3.buckets.to_a.empty?
     end
 
     # creating key pairs here because VPC creation involves creating a NAT instance
@@ -37,13 +43,16 @@ describe 'bosh_cli_plugin_aws_external' do
     ec2.key_pairs.map(&:name).should == ['bosh']
     run_bosh "aws destroy"
     Bosh::Common.retryable(tries: 15) do
-      ec2.vpcs.count == 0 && ec2.key_pairs.map(&:name).empty?
+      ec2.vpcs.count == 0 &&
+          ec2.key_pairs.map(&:name).empty? &&
+          s3.buckets.to_a.empty?
     end
   end
 
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
     let(:elb) { AWS::ELB.new }
+    let(:route53) { AWS::Route53.new }
     let(:bosh1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
     let(:bosh_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
     let(:bosh_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.65.0/24" } }
@@ -182,10 +191,7 @@ describe 'bosh_cli_plugin_aws_external' do
   end
 
   describe "S3" do
-    let(:s3) { AWS::S3.new }
-
     it "creates s3 buckets and deletes them" do
-      s3.buckets.count.should == 0
       blobstore_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"
       artifacts_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-artifacts"
       run_bosh "aws create s3 #{aws_configuration_template}"
