@@ -4,12 +4,14 @@ require 'tempfile'
 
 require "common/thread_pool"
 
+require "parallel_tests/tasks"
+
 namespace :spec do
 
   desc "Run BOSH integration tests against a local sandbox"
-  RSpec::Core::RakeTask.new(:integration) do |t|
-    t.pattern = "spec/integration/**/*_spec.rb"
-    t.rspec_opts = %w(--format documentation --color)
+  task :integration do
+    Rake::Task["parallel:spec"]
+      .invoke(nil, "spec/integration/.*_spec.rb")
   end
 
   desc "Run unit and functional tests for each BOSH component gem"
