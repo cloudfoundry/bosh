@@ -1,3 +1,5 @@
+require 'benchmark'
+
 module Bosh
   module Spec
     class Sandbox
@@ -161,6 +163,12 @@ module Bosh
       end
 
       def reset(name)
+        time = Benchmark.realtime do
+          do_reset(name)
+        end
+        puts "Reset took #{time} seconds"
+      end
+      def do_reset(name)
         kill_process(worker_pid, "QUIT")
         kill_process(director_pid)
         kill_process(hm_pid)
@@ -200,7 +208,8 @@ module Bosh
           break if $?.exitstatus == 0
           tries += 1
           raise "could not connect to director on port #{director_port}" if tries > 50
-          sleep(0.2)
+          #sleep(0.2)
+          sleep(1)
         end
       end
 
@@ -345,8 +354,8 @@ module Bosh
         write_in_sandbox("blobstore_server.yml", blobstore_config)
         write_in_sandbox(REDIS_CONFIG, redis_config)
 
-        FileUtils.mkdir(sandbox_path('redis'))
-        FileUtils.mkdir(blobstore_storage_dir)
+        FileUtils.mkdir_p(sandbox_path('redis'))
+        FileUtils.mkdir_p(blobstore_storage_dir)
       end
 
       def write_in_sandbox(filename, contents)

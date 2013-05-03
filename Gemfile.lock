@@ -334,6 +334,9 @@ GEM
       tdiff (~> 0.3, >= 0.3.2)
     nokogiri-happymapper (0.5.7)
       nokogiri (~> 1.5)
+    parallel (0.6.4)
+    parallel_tests (0.11.3)
+      parallel
     pg (0.15.1)
     pivotal-tracker (0.5.10)
       builder
@@ -452,6 +455,7 @@ DEPENDENCIES
   net-ssh
   nokogiri-diff
   package_compiler!
+  parallel_tests
   pg
   rack-test
   rake (~> 10.0)

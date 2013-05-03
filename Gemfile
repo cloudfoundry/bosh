@@ -45,6 +45,7 @@ group :bat do
 end
 
 group :development, :test do
+  gem "parallel_tests"
   gem "rack-test"
   gem "guard"
   gem "guard-bundler"
