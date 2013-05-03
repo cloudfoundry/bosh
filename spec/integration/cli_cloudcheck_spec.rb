@@ -27,9 +27,21 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage cloudcheck' do
       run_bosh('cloudcheck --report').should =~ regexp('No problems found')
     end
 
-    it 'supports resolutions for different kinds of problems' do
-      #provides resolution options for unresponsive agents
-      current_sandbox.stop_nats
+    def get_cids
+      Dir[File.join(current_sandbox.agent_tmp_path, 'running_vms', '*')].map {|f| File.basename(f)}
+    end
+
+    it 'provides resolution options for unresponsive agents' do
+      cids = get_cids
+
+      cids.each do |cid|
+        begin
+          Process.kill('INT', cid.to_i)
+        rescue Errno::ESRCH
+          # noop
+        end
+      end
+
       cloudcheck_response = run_bosh_cck_ignore_errors(3)
       cloudcheck_response.should_not =~ regexp('No problems found')
       cloudcheck_response.should =~ regexp('3 unresponsive')
@@ -37,11 +49,11 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage cloudcheck' do
   2. Reboot VM
   3. Recreate VM using last known apply spec
   4. Delete VM reference (DANGEROUS!)')
+    end
 
-      current_sandbox.start_nats
+    it 'provides resolution options for missing VMs' do
+      cid = get_cids.first
 
-      # provides resolution options for missing VMs
-      cid = File.basename(Dir[File.join(current_sandbox.agent_tmp_path, 'running_vms', '*')].first)
       dummy_cloud.delete_vm(cid)
 
       cloudcheck_response = run_bosh_cck_ignore_errors(1)
@@ -50,7 +62,6 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage cloudcheck' do
       cloudcheck_response.should =~ regexp('1. Ignore problem
   2. Recreate VM using last known apply spec
   3. Delete VM reference (DANGEROUS!)')
-
     end
   end
 end

@@ -144,8 +144,8 @@ module Bosh
         FileUtils.cp(testcase_sqlite_db, @sqlite_db)
 
         raise "Please install redis on this machine" unless system("which redis-server > /dev/null")
-        run_with_pid("redis-server #{redis_config}", redis_pid)
-        run_with_pid("bundle exec simple_blobstore_server -c #{blobstore_config}", blobstore_pid, output: blobstore_output)
+        run_with_pid(%W[redis-server #{redis_config}], redis_pid)
+        run_with_pid(%W[simple_blobstore_server -c #{blobstore_config}], blobstore_pid, output: blobstore_output)
         start_nats
 
         tries = 0
@@ -199,8 +199,8 @@ module Bosh
         write_in_sandbox("director_test.yml", load_config_template(DIRECTOR_CONF_TEMPLATE))
         write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
 
-        run_with_pid("bundle exec director -c #{director_config}", director_pid, :output => director_output)
-        run_with_pid("bundle exec worker -c #{director_config}", worker_pid, :output => worker_output, :env => {"QUEUE" => "*"})
+        run_with_pid(%W[director -c #{director_config}], director_pid, :output => director_output)
+        run_with_pid(%W[worker -c #{director_config}], worker_pid, :output => worker_output, :env => {"QUEUE" => "*"})
 
         tries = 0
         loop do
@@ -215,7 +215,7 @@ module Bosh
 
       def start_healthmonitor
         hm_output = "#{logs_path}/health_monitor.out"
-        run_with_pid("bundle exec health_monitor -c #{hm_config}", hm_pid, :output => hm_output)
+        run_with_pid(%W[health_monitor -c #{hm_config}], hm_pid, :output => hm_output)
       end
 
       def blobstore_storage_dir
@@ -252,7 +252,7 @@ module Bosh
       end
 
       def start_nats
-        run_with_pid("bundle exec nats-server -p #{nats_port}", nats_pid)
+        run_with_pid(%W[nats-server -p #{nats_port}], nats_pid)
       end
 
       def stop_nats
@@ -298,17 +298,12 @@ module Bosh
         end
       end
 
-      def run_with_pid(cmd, pidfile, opts = {})
-        env = opts[:env] || {}
-        output = opts[:output] || "/dev/null"
+      def run_with_pid(cmd_array, pidfile, opts = {})
+        env = ENV.to_hash.merge(opts.fetch(:env, {}))
+        output = opts.fetch(:output, :close)
 
         unless process_running?(pidfile)
-          pid = fork do
-            $stdin.reopen("/dev/null")
-            [$stdout, $stderr].each { |stream| stream.reopen(output, "w") }
-            env.each_pair { |k, v| ENV[k] = v }
-            exec cmd
-          end
+          pid = Process.spawn(env, *cmd_array, out: output, err: output, in: :close)
 
           Process.detach(pid)
           File.open(pidfile, "w") { |f| f.write(pid) }
