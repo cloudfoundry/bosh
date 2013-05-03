@@ -68,13 +68,21 @@ namespace :stemcell do
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, [:infrastructure] => 'all:finalize_release_directory' do |t, args|
-    unless changes_in_microbosh?
-      puts 'No changes detected in microbosh components or stemcell_builder...skipping stemcell creation.'
-      next
+  task :micro, [:infrastructure, :tarball] do |t, args|
+    manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..",
+                         "release", "micro","#{args[:infrastructure]}.yml")
+
+    if args[:tarball]
+      release_tarball = args[:tarball]
+    else
+      unless changes_in_microbosh?
+        puts 'No changes detected in microbosh components or stemcell_builder...skipping stemcell creation.'
+        next
+      end
+
+      Rake::Task['all:finalize_release_directory'].invoke
+      release_tarball = build_micro_bosh_release
     end
-    release_tarball = build_micro_bosh_release
-    manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", "micro","#{args[:infrastructure]}.yml")
 
     options = default_options(args)
     options[:stemcell_name] ||= "micro-bosh-stemcell"
@@ -103,16 +111,6 @@ namespace :stemcell do
     options[:micro_src] = args[:micro_src]
 
     build("stemcell-mcf", options)
-  end
-
-  def build_micro_bosh_release
-    release_tarball = nil
-    Dir.chdir('release') do
-      sh('cp config/microbosh-dev-template.yml config/dev.yml')
-      sh('bosh create release --force --with-tarball')
-      release_tarball = `ls -1t dev_releases/micro-bosh*.tgz | head -1`
-    end
-    File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", release_tarball)
   end
 
   def default_options(args)
