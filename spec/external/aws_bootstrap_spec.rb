@@ -26,6 +26,7 @@ describe 'bosh_cli_plugin_aws_external' do
             :max_retries => 2
         }
     )
+    FileUtils.mkdir_p(BOSH_WORK_DIR)
     run_bosh "aws destroy"
     Bosh::Common.retryable(tries: 15) do
       ec2.vpcs.count == 0 &&
