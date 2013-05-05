@@ -218,7 +218,11 @@ module Bosh::Cli
 
       releases.each do |release|
         if release["version"] == "latest"
-          release["version"] = latest_release_versions[release["name"]]
+          latest_release_version = latest_release_versions[release["name"]]
+          unless latest_release_version
+            err("Release '#{release['name']}' not found on director. Unable to resolve 'latest' alias in manifest.")
+          end
+          release["version"] = latest_release_version
         end
 
         # TODO: why do we care about casting to Integer when possible?
