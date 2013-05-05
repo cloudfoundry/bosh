@@ -309,7 +309,10 @@ describe "AWS Bootstrap commands" do
 
         stub_request(:get, "http://127.0.0.1:25555/releases").
             with(:headers => {'Content-Type' => 'application/json'}).
-            to_return(:status => 200, :body => "[]")
+            to_return(
+            {:status => 200, :body => "[]"},
+            {:status => 200, :body => '[{"name" : "bosh", "release_versions" : [{"version" : "1"}]}]'}
+        )
 
         stub_request(:get, %r{http://blob.cfblob.com/rest/objects}).
             to_return(:status => 200)
