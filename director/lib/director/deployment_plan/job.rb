@@ -253,7 +253,7 @@ module Bosh::Director
         end
 
         unless template_names.is_a?(Array)
-          invalid_type("template", "String or Array")
+          invalid_type("template", "String or Array", template_names)
         end
 
         template_names.each do |template_name|
