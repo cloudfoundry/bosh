@@ -6,7 +6,7 @@ rvm gemset use ci_gems --create
 rvm --force gemset empty ci_gems
 
 gem install --no-ri --no-rdoc rake -v $(grep "rake" Gemfile | tr "'" '"' | cut -d '"' -f 4)
-gem install --no-ri --no-rdoc ci_reporter rspec rugged
+gem install --no-ri --no-rdoc ci_reporter rspec rugged parallel_tests
 gem install --no-ri --no-rdoc \
     --source https://s3.amazonaws.com/bosh-ci-pipeline/gems/ \
     --pre \
