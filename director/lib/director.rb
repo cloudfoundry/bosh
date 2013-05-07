@@ -442,14 +442,14 @@ module Bosh::Director
 
       options = {}
       options["force"] = true if params["force"] == "true"
-      task = @deployment_manager.delete_deployment(@task, deployment, options)
+      task = @deployment_manager.delete_deployment(@user, deployment, options)
       redirect "/tasks/#{task.id}"
     end
 
     # TODO: stop, start, restart jobs/instances
 
     post "/stemcells", :consumes => :tgz do
-      task = @stemcell_manager.create_stemcell(@task, request.body)
+      task = @stemcell_manager.create_stemcell(@user, request.body)
       redirect "/tasks/#{task.id}"
     end
 
