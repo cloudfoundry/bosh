@@ -143,19 +143,8 @@ namespace :spec do
       end
 
       task :publish_gems => "spec:system:aws:bat" do
-        cd(ENV['WORKSPACE']) do
-          build_number = ENV['BUILD_NUMBER']
-          file_contents = File.read("BOSH_VERSION")
-          file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
-          File.open("BOSH_VERSION", 'w') { |f| f.write file_contents }
-          Rake::Task["all:pre_stage_latest"].invoke
-          #run("cd pkg/gems && s3cmd get s3://bosh-jenkins-gems/gems/* .")
-          Bundler.with_clean_env do
-            # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
-            run("cd pkg && gem generate_index .")
-          end
-          run("cd pkg && s3cmd sync . s3://bosh-jenkins-gems")
-        end
+        run("s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems")
+        run("s3cmd sync s3://bosh-ci-pipeline/micro-bosh s3://bosh-jenkins-artifacts")
       end
     end
 
