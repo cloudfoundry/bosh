@@ -53,6 +53,12 @@ properties:
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
+  director.enable_scheduled_snapshots:
+    description: Enable/Disable
+    default: false
+  director.snapshot_schedule:
+    description: RufusScheduler cron formatted schedule for snapshots
+    default: '0 0 7 * * * UTC'
   redis.address:
     description: Address of the redis server
   redis.port:
