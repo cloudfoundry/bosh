@@ -2,3 +2,6 @@
 
 require "rspec"
 require "ruby_vim_sdk"
+
+require 'coveralls'
+Coveralls.wear!

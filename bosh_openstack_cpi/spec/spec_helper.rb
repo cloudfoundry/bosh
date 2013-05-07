@@ -9,6 +9,9 @@ include Archive::Tar
 
 require "cloud/openstack"
 
+require 'coveralls'
+Coveralls.wear!
+
 def internal_to(*args, &block)
   example = describe *args, &block
   klass = args[0]

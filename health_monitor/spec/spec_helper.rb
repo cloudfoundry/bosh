@@ -2,6 +2,9 @@ require 'rspec/core'
 
 require 'health_monitor'
 
+require 'coveralls'
+Coveralls.wear!
+
 def spec_asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), "assets", filename))
 end

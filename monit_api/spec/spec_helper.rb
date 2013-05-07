@@ -2,3 +2,6 @@
 
 require "rspec"
 require "monit_api"
+
+require 'coveralls'
+Coveralls.wear!

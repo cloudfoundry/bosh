@@ -1,6 +1,8 @@
 require "yaml"
 require "cloud/vcloud"
 
+require 'coveralls'
+Coveralls.wear!
 
 module VCloudCloud
   module Test

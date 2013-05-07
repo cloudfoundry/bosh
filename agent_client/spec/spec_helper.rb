@@ -2,3 +2,6 @@
 
 require "rspec"
 require "agent_client"
+
+require 'coveralls'
+Coveralls.wear!

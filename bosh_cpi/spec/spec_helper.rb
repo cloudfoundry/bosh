@@ -4,6 +4,9 @@ require "rspec"
 require "cloud"
 require "logger"
 
+require 'coveralls'
+Coveralls.wear!
+
 # add the spec/lib to load path so we can find the dummy provider
 $:.unshift(File.expand_path('../lib', __FILE__))
 

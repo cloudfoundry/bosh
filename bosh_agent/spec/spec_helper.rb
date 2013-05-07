@@ -12,6 +12,9 @@ require "tmpdir"
 require "zlib"
 require "httpclient"
 
+require 'coveralls'
+Coveralls.wear!
+
 tmpdir = Dir.mktmpdir
 ENV["TMPDIR"] = tmpdir
 FileUtils.mkdir_p(tmpdir)

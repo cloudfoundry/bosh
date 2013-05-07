@@ -1,6 +1,8 @@
 require "yaml"
 require "ruby_vcloud_sdk"
 
+require 'coveralls'
+Coveralls.wear!
 
 module VCloudSdk
   module Test

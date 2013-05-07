@@ -11,6 +11,9 @@ require "rspec"
 require "machinist/sequel"
 require "sham"
 
+require 'coveralls'
+Coveralls.wear!
+
 module SpecHelper
   class << self
     attr_accessor :logger

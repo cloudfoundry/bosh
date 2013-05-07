@@ -4,6 +4,9 @@ require "rspec"
 require "cli"
 require "bosh/cli/commands/micro"
 
+require 'coveralls'
+Coveralls.wear!
+
 def spec_asset(filename)
   File.expand_path("../assets/#{filename}", __FILE__)
 end

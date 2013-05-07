@@ -7,6 +7,9 @@ require "tmpdir"
 require "rspec"
 require "rack/test"
 
+require 'coveralls'
+Coveralls.wear!
+
 module SpecHelper
   class << self
     attr_accessor :logger

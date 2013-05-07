@@ -8,6 +8,9 @@ require "cloud/aws"
 MOCK_AWS_ACCESS_KEY_ID = "foo"
 MOCK_AWS_SECRET_ACCESS_KEY = "bar"
 
+require 'coveralls'
+Coveralls.wear!
+
 def internal_to(*args, &block)
   example = describe *args, &block
   klass = args[0]
