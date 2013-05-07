@@ -14,6 +14,7 @@ templates:
   nginx.conf.erb: config/nginx.conf
   nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
+  scheduler_ctl: bin/scheduler_ctl
 packages:
 - director
 - nginx

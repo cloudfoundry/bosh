@@ -37,6 +37,7 @@ Gem::Specification.new do |s|
   s.add_dependency  "rake", "~>10.0.3"
   s.add_dependency  "redis", "~>3.0.2"
   s.add_dependency  "resque", "~>1.23.0"
+  s.add_dependency  "rufus-scheduler", "~> 2.0.18"
   s.add_dependency  "sequel", "~>3.43.0"
   s.add_dependency  "sinatra", "~>1.4.2"
   s.add_dependency  'sys-filesystem', "~> 1.1.0"
@@ -45,6 +46,7 @@ Gem::Specification.new do |s|
 
   s.bindir      = 'bin'
   s.executables << 'director_console'
+  s.executables << 'director_scheduler'
   s.executables << 'director'
   s.executables << 'drain_workers'
   s.executables << 'worker'
