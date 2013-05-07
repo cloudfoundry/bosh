@@ -16,7 +16,7 @@ opts.parse!(ARGV.dup)
 config = Psych.load_file(config_file)
 Bosh::Director::Config.configure(config)
 
-scheduler = Bosh::Director::Scheduler.new(config['scheduled_jobs'])
+scheduler = Bosh::Director::Scheduler.new(config.fetch('scheduled_jobs', []))
 
 ["TERM", "INT", "QUIT"].each do |signal|
   trap(signal) do
