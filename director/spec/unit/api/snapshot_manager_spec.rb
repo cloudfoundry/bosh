@@ -34,7 +34,17 @@ describe Bosh::Director::Api::SnapshotManager do
 
   let(:task) { double(BDM::Task, id: 'task_id') }
 
-  describe '#create_snapshot' do
+  describe 'create_deployment_snapshot_task' do
+    it 'should take snapshots of all instances with persistent disks' do
+      manager.should_receive(:create_task).with(user.username, :snapshot_deployment, 'snapshot deployment').and_return(task)
+      Resque.should_receive(:enqueue).with(BD::Jobs::SnapshotDeployment, task.id, deployment.name)
+
+      expect(manager.create_deployment_snapshot_task(user.username, deployment)).to eq task
+
+    end
+  end
+
+  describe 'create_snapshot_task' do
     let(:instance) { double(BDM::Instance, id: 0) }
     let(:options) { {} }
 
@@ -42,18 +52,18 @@ describe Bosh::Director::Api::SnapshotManager do
       manager.should_receive(:create_task).with(user.username, :create_snapshot, "create snapshot").and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::CreateSnapshot, task.id, instance.id, options)
 
-      expect(manager.create_snapshot(user.username, instance, options)).to eq task
+      expect(manager.create_snapshot_task(user.username, instance, options)).to eq task
     end
   end
 
-  describe '#delete_snapshots' do
+  describe 'delete_snapshots_task' do
     let(:snapshot_cids) { %w[snap0 snap1] }
 
     it 'should enqueue a DeleteSnapshot job' do
       manager.should_receive(:create_task).with(user.username, :delete_snapshot, "delete snapshot").and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::DeleteSnapshots, task.id, snapshot_cids)
 
-      expect(manager.delete_snapshots(user.username, snapshot_cids)).to eq task
+      expect(manager.delete_snapshots_task(user.username, snapshot_cids)).to eq task
     end
   end
 
@@ -111,7 +121,7 @@ describe Bosh::Director::Api::SnapshotManager do
 
           expect {
             described_class.take_snapshot(@instance2, {})
-          }.to change { BDM::Snapshot.count }.by 0
+          }.to_not change { BDM::Snapshot.count }
         end
       end
 

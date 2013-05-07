@@ -93,6 +93,7 @@ require "director/problem_handlers/missing_vm"
 
 require "director/jobs/base_job"
 require "director/jobs/create_snapshot"
+require "director/jobs/snapshot_deployment"
 require "director/jobs/delete_deployment"
 require "director/jobs/delete_release"
 require "director/jobs/delete_snapshots"
@@ -389,7 +390,7 @@ module Bosh::Director
       # until we can tell the agent to flush and wait, all snapshots are considered dirty
       options = {clean: false}
 
-      task = @snapshot_manager.create_snapshot(@user, instance, options)
+      task = @snapshot_manager.create_snapshot_task(@user, instance, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -397,7 +398,7 @@ module Bosh::Director
       deployment = @deployment_manager.find_by_name(params[:deployment])
       snapshot = @snapshot_manager.find_by_cid(deployment, params[:cid])
 
-      task = @snapshot_manager.delete_snapshots(@user, [params[:cid]])
+      task = @snapshot_manager.delete_snapshots_task(@user, [params[:cid]])
       redirect "/tasks/#{task.id}"
     end
 
@@ -544,9 +545,17 @@ module Bosh::Director
 
       verbose = params["verbose"] || "1"
       if verbose == "1"
-        dataset = dataset.filter(:type => [
-            "update_deployment", "delete_deployment", "update_release",
-            "delete_release", "update_stemcell", "delete_stemcell"])
+        dataset = dataset.filter(type: %w[
+          update_deployment
+          delete_deployment
+          update_release
+          delete_release
+          update_stemcell
+          delete_stemcell
+          create_snapshot
+          delete_snapshot
+          snapshot_deployment
+        ])
       end
 
       tasks = dataset.order_by(:timestamp.desc).map do |task|

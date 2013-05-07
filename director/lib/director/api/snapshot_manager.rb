@@ -3,13 +3,19 @@ module Bosh::Director
     class SnapshotManager
       include TaskHelper
 
-      def create_snapshot(user, instance, options)
+      def create_deployment_snapshot_task(user, deployment)
+        task = create_task(user, :snapshot_deployment, "snapshot deployment")
+        Resque.enqueue(Jobs::SnapshotDeployment, task.id, deployment.name)
+        task
+      end
+
+      def create_snapshot_task(user, instance, options)
         task = create_task(user, :create_snapshot, "create snapshot")
         Resque.enqueue(Jobs::CreateSnapshot, task.id, instance.id, options)
         task
       end
 
-      def delete_snapshots(user, snapshot_cids)
+      def delete_snapshots_task(user, snapshot_cids)
         task = create_task(user, :delete_snapshot, "delete snapshot")
         Resque.enqueue(Jobs::DeleteSnapshots, task.id, snapshot_cids)
         task
@@ -52,7 +58,7 @@ module Bosh::Director
         end
       end
 
-      def self.take_snapshot(instance, options)
+      def self.take_snapshot(instance, options={})
         clean = options.fetch(:clean, false)
         snapshot_cids = []
 

@@ -9,7 +9,8 @@ module Bosh::Director
       end
 
       def perform
-        snapshots = @snapshot_cids.collect { |cid| Bosh::Director::Models::Snapshot.find(snapshot_cid: cid) }
+        logger.info("deleting snapshots: #{@snapshot_cids.join(', ')}")
+        snapshots = Bosh::Director::Models::Snapshot.where(snapshot_cid: @snapshot_cids).to_a
         Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
         "snapshot(s) #{@snapshot_cids.join(', ')} deleted"
       end
