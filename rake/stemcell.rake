@@ -54,7 +54,7 @@ namespace :stemcell do
 
 
   desc "Build stemcell"
-  task :basic, [:infrastructure] => 'all:finalize_release_directory' do |t, args|
+  task :basic, [:infrastructure, :version]  do |t, args|
     unless changes_in_bosh_agent?
       puts 'No changes detected in bosh_agent or stemcell_builder...skipping stemcell creation.'
       next
@@ -64,16 +64,27 @@ namespace :stemcell do
     options[:stemcell_version] ||= Bosh::Agent::VERSION
     options[:image_create_disk_size] = 1380
 
+    if args[:version]
+      options[:stemcell_version] = args[:version]
+      options[:agent_gem_src_url] = 'https://s3.amazonaws.com/bosh-ci-pipeline/gems/'
+    else
+      Rake::Task['all:finalize_release_directory'].invoke
+    end
+
     build("stemcell-#{args[:infrastructure]}", options)
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, [:infrastructure, :tarball] do |t, args|
+  task :micro, [:infrastructure, :tarball, :version] do |t, args|
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..",
                          "release", "micro","#{args[:infrastructure]}.yml")
 
+
+    options = default_options(args)
+    options[:stemcell_version] = args[:version] || micro_version
     if args[:tarball]
       release_tarball = args[:tarball]
+      options[:agent_gem_src_url] = 'https://s3.amazonaws.com/bosh-ci-pipeline/gems/'
     else
       unless changes_in_microbosh?
         puts 'No changes detected in microbosh components or stemcell_builder...skipping stemcell creation.'
@@ -84,9 +95,7 @@ namespace :stemcell do
       release_tarball = build_micro_bosh_release
     end
 
-    options = default_options(args)
     options[:stemcell_name] ||= "micro-bosh-stemcell"
-    options[:stemcell_version] ||= micro_version
     options[:image_create_disk_size] = 2048
 
     options = options.merge(bosh_micro_options(manifest, release_tarball))

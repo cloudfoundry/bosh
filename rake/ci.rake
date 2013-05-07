@@ -20,16 +20,22 @@ namespace :ci do
     end
   end
 
-  desc "Build micro bosh stemcell from CI pipeline"
-  task :micro, [:infrastructure] do |t, args|
-    cd(ENV['WORKSPACE']) do
-      update_bosh_version(candidate_build_number)
-      Rake::Task["all:finalize_release_directory"].invoke
+  namespace :stemcell do
+    desc "Build micro bosh stemcell from CI pipeline"
+    task :micro, [:infrastructure] do |t, args|
+      cd(ENV['WORKSPACE']) do
+        tarball_path = "release/micro-bosh-#{candidate_build_number}.tgz"
+        sh("s3cmd -f get #{s3_release_url(candidate_build_number)} #{tarball_path}")
 
-      tarball_path = "release/micro-bosh-#{candidate_build_number}.tgz"
-      sh("s3cmd -f get #{s3_release_url(candidate_build_number)} #{tarball_path}")
+        Rake::Task["stemcell:micro"].invoke(args[:infrastructure], tarball_path, candidate_build_number)
+      end
+    end
 
-      Rake::Task["stemcell:micro"].invoke(args[:infrastructure], tarball_path)
+    desc "Build stemcell from CI pipeline"
+    task :basic, [:infrastructure] do |t, args|
+      cd(ENV['WORKSPACE']) do
+        Rake::Task["stemcell:basic"].invoke(args[:infrastructure], candidate_build_number)
+      end
     end
   end
 
