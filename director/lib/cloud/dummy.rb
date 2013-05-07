@@ -23,15 +23,12 @@ module Bosh
 
       def create_stemcell(image, _)
         stemcell_id = Digest::SHA1.hexdigest(File.read(image))
-        File.open(File.join(@base_dir, "stemcell_#{stemcell_id}"), "w") do |f|
-          f.write(image)
-        end
-
+        File.write(stemcell_file(stemcell_id), image)
         stemcell_id
       end
 
       def delete_stemcell(stemcell_cid)
-        FileUtils.rm(File.join(@base_dir, "stemcell_#{stemcell_cid}"))
+        FileUtils.rm(stemcell_file(stemcell_cid))
       end
 
       def blobstore_uri
@@ -62,7 +59,7 @@ module Bosh
         Process.detach(agent_pid)
 
         FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
-        FileUtils.touch(agent_file(agent_pid))
+        FileUtils.touch(vm_file(agent_pid))
 
         agent_pid.to_s
       end
@@ -80,45 +77,46 @@ module Bosh
         raise NotImplemented, "reboot_vm"
       end
 
-      def has_vm?(pid)
-        File.exists?(agent_file(pid))
-      end
-
-      def agent_file(pid)
-        File.join(@base_dir, "running_vms", pid.to_s)
+      def has_vm?(vm_id)
+        File.exists?(vm_file(vm_id))
       end
 
       def configure_networks(vm, networks)
         raise NotImplemented, "configure_networks"
       end
 
-      def attach_disk(vm, disk)
-        raise NotImplemented, "attach_disk"
+      def attach_disk(vm_id, disk_id)
+        file = attachment_file(vm_id, disk_id)
+        FileUtils.mkdir_p(File.dirname(file))
+        FileUtils.touch(file)
       end
 
-      def detach_disk(vm, disk)
-        raise NotImplemented, "detach_disk"
+      def detach_disk(vm_id, disk_id)
+        FileUtils.rm(attachment_file(vm_id, disk_id))
       end
 
       def create_disk(size, vm_locality = nil)
-        raise NotImplemented, "create_disk"
+        disk_id = SecureRandom.hex
+        file = disk_file(disk_id)
+        FileUtils.mkdir_p(File.dirname(file))
+        File.write(file, size.to_s)
+        disk_id
       end
 
-      def delete_disk(disk)
-        raise NotImplemented, "delete_disk"
+      def delete_disk(disk_id)
+        FileUtils.rm(disk_file(disk_id))
       end
 
       def snapshot_disk(disk_id)
         snapshot_id = SecureRandom.hex
-        File.open(File.join(@base_dir, "snapshot_#{snapshot_id}"), 'w') do |f|
-          f.write(disk_id)
-        end
-
+        file = snapshot_file(snapshot_id)
+        FileUtils.mkdir_p(File.dirname(file))
+        File.write(file, disk_id)
         snapshot_id
       end
 
       def delete_snapshot(snapshot_id)
-        FileUtils.rm(File.join(@base_dir, "snapshot_#{snapshot_id}"))
+        FileUtils.rm(snapshot_file(snapshot_id))
       end
 
       def validate_deployment(old_manifest, new_manifest)
@@ -126,6 +124,27 @@ module Bosh
         raise NotImplemented, "validate_deployment"
       end
 
+      private
+
+      def stemcell_file(stemcell_id)
+        File.join(@base_dir, "stemcell_#{stemcell_id}")
+      end
+
+      def vm_file(vm_id)
+        File.join(@base_dir, "running_vms", vm_id.to_s)
+      end
+
+      def disk_file(disk_id)
+        File.join(@base_dir, "disks", disk_id)
+      end
+
+      def attachment_file(vm_id, disk_id)
+        File.join(@base_dir, "attachments", vm_id, disk_id)
+      end
+
+      def snapshot_file(snapshot_id)
+        File.join(@base_dir, "snapshots", snapshot_id)
+      end
     end
   end
 end

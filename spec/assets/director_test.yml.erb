@@ -9,6 +9,9 @@ redis:
   port: <%= redis_port %>
   password:
 dir: <%= sandbox_root %>/boshdir
+scheduled_jobs:
+  - command: snapshot_deployments
+    schedule: '* * * * * *'
 db:
   database: sqlite://<%= sandbox_root %>/director.sqlite
   max_connections: 32

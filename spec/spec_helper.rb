@@ -38,6 +38,7 @@ module Bosh
     module IntegrationTest
       class CliUsage; end
       class HealthMonitor; end
+      class DirectorScheduler; end
     end
   end
 end

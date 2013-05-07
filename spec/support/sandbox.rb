@@ -23,6 +23,7 @@ module Bosh
 
       DIRECTOR_PID = "director.pid"
       WORKER_PID = "worker.pid"
+      SCHEDULER_PID = "scheduler.pid"
       BLOBSTORE_PID = "blobstore.pid"
       NATS_PID = "nats.pid"
       HM_PID = "health_monitor.pid"
@@ -99,6 +100,10 @@ module Bosh
         sandbox_path(WORKER_PID)
       end
 
+      def scheduler_pid
+        sandbox_path(SCHEDULER_PID)
+      end
+
       def blobstore_pid
         sandbox_path(BLOBSTORE_PID)
       end
@@ -159,7 +164,6 @@ module Bosh
             sleep(0.1)
           end
         end
-
       end
 
       def reset(name)
@@ -237,6 +241,7 @@ module Bosh
 
       def stop
         kill_agents
+        kill_process(scheduler_pid)
         kill_process(worker_pid)
         kill_process(director_pid)
         kill_process(blobstore_pid)
@@ -253,6 +258,10 @@ module Bosh
 
       def start_nats
         run_with_pid(%W[nats-server -p #{nats_port}], nats_pid)
+      end
+
+      def start_scheduler
+        run_with_pid(%W[director_scheduler -c #{director_config}], scheduler_pid)
       end
 
       def stop_nats
