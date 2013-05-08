@@ -139,10 +139,6 @@ module Bosh::Deployer
       end
       save_state
 
-      step "Waiting for the agent" do
-        wait_until_agent_ready
-      end
-
       step "Updating persistent disk" do
         update_persistent_disk
       end
@@ -153,8 +149,16 @@ module Bosh::Deployer
         end
       end
 
-      apply
+      step "Waiting for the agent" do
+        wait_until_agent_ready
+      end
 
+      step "Waiting for the disk" do
+        wait_until_disk_ready
+      end
+
+      apply
+      
       step "Waiting for the director" do
         wait_until_director_ready
       end
@@ -293,7 +297,6 @@ module Bosh::Deployer
       return unless disk_cid
 
       cloud.attach_disk(state.vm_cid, disk_cid)
-      mount_disk(disk_cid)
     end
 
     def detach_disk(disk_cid)
@@ -423,6 +426,10 @@ module Bosh::Deployer
       remote_tunnel(@registry_port)
 
       wait_until_ready("agent") { agent.ping }
+    end
+
+    def wait_until_disk_ready
+      wait_until_ready("disk") { mount_disk(state.disk_cid) }
     end
 
     def wait_until_director_ready
