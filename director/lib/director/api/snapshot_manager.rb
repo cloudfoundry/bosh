@@ -35,15 +35,19 @@ module Bosh::Director
         filter[:job] = job if job
         filter[:index] = index if index
 
-        result = {}
+        result = []
         instances = Models::Instance.filter(filter).all
 
         instances.each do |instance|
           instance.persistent_disks.each do |disk|
             disk.snapshots.each do |snapshot|
-              result[instance.job] ||= {}
-              result[instance.job][instance.index] ||= []
-              result[instance.job][instance.index] << snapshot.snapshot_cid
+              result << {
+                  'job' => instance.job,
+                  'index' => instance.index,
+                  'snapshot_id' => snapshot.snapshot_cid,
+                  'created_at' => snapshot.created_at,
+                  'clean' => snapshot.clean
+              }
             end
           end
         end
