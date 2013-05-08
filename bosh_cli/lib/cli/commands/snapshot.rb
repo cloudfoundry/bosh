@@ -38,11 +38,18 @@ module Bosh::Cli::Command
 
     usage "take snapshot"
     desc "Takes a snapshot"
-    def take(job, index)
+    def take(job = nil, index = nil)
       auth_required
 
       deployment_name = prepare_deployment_manifest["name"]
       say("Deployment `#{deployment_name.green}'")
+
+      unless job && index
+        unless confirmed?("Are you sure you want to take a snapshot of all deployment `#{deployment_name}'?")
+          say("Canceled taking snapshot".green)
+          return
+        end
+      end
 
       status, task_id = director.take_snapshot(deployment_name, job, index)
 

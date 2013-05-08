@@ -126,12 +126,58 @@ describe Bosh::Cli::Command::Snapshot do
         command.options[:target] = "http://bosh-target.example.com"
       end
 
-      it "takes the snapshot" do
-        command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+      context "for all deployment" do
+        context "when interactive" do
+          before do
+            command.options[:non_interactive] = false
+          end
 
-        director.should_receive(:take_snapshot).with("bosh", "foo", "0")
+          context "when the user confirms taking the snapshot" do
+            it "deletes the snapshot" do
+              command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+              command.should_receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(true)
 
-        command.take("foo", "0")
+              director.should_receive(:take_snapshot).with("bosh", nil, nil)
+
+              command.take()
+            end
+          end
+
+          context "when the user does not confirms taking the snapshot" do
+            it "does not delete the snapshot" do
+              command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+              command.should_receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(false)
+
+              director.should_not_receive(:take_snapshot)
+
+              command.take()
+            end
+          end
+        end
+
+        context "when non interactive" do
+          before do
+            command.options[:non_interactive] = true
+          end
+
+          it "takes the snapshot" do
+            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+
+            director.should_receive(:take_snapshot).with("bosh", nil, nil)
+
+            command.take()
+          end
+        end
+      end
+
+      context "for a job and index" do
+        it "takes the snapshot" do
+          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+
+          director.should_receive(:take_snapshot).with("bosh", "foo", "0")
+
+          command.take("foo", "0")
+        end
       end
     end
   end

@@ -359,10 +359,14 @@ module Bosh
         get_json(url)
       end
 
-      def take_snapshot(deployment_name, job, index, options = {})
+      def take_snapshot(deployment_name, job = nil, index = nil, options = {})
         options = options.dup
 
-        url = "/deployments/#{deployment_name}/jobs/#{job}/#{index}/snapshots"
+        if job && index
+          url = "/deployments/#{deployment_name}/jobs/#{job}/#{index}/snapshots"
+        else
+          url = "/deployments/#{deployment_name}/snapshots"
+        end
 
         request_and_track(:post, url, options)
       end
