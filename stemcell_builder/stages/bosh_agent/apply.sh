@@ -8,17 +8,16 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
-agent_dir=$bosh_dir/agent
-
-mkdir -p $chroot/$agent_dir
-
 if [ -z "${agent_gem_src_url:-}" ]; then
+  agent_dir=$bosh_dir/agent
+  mkdir -p $chroot/$agent_dir
   cp -aL $assets_dir/gems $chroot/$agent_dir
   # Install gems from local src
   run_in_bosh_chroot $chroot "
   cd agent/gems
   gem install bosh_agent --no-rdoc --no-ri -l
   "
+  rm -rf $chroot/$agent_dir
 else
   # Install gems from CI pipeline bucket
   run_in_bosh_chroot $chroot "

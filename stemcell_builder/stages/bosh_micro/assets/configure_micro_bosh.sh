@@ -33,7 +33,6 @@ else
 fi
 
 mkdir -p ${bosh_app_dir}/bosh/blob
-mkdir -p ${blobstore_path}
 
 echo "Starting micro bosh compilation"
 
