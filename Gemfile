@@ -2,6 +2,8 @@
 
 source 'https://rubygems.org'
 
+ruby '1.9.3'
+
 gem "agent_client", :path => "agent_client"
 gem "blobstore_client", :path => "blobstore_client"
 gem "bosh_agent", :path => "bosh_agent"
