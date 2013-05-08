@@ -45,7 +45,7 @@ module Bosh::Director
                   'job' => instance.job,
                   'index' => instance.index,
                   'snapshot_id' => snapshot.snapshot_cid,
-                  'created_at' => snapshot.created_at,
+                  'created_at' => snapshot.created_at.to_s,
                   'clean' => snapshot.clean
               }
             end

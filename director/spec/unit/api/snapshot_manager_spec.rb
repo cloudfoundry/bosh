@@ -4,7 +4,7 @@ describe Bosh::Director::Api::SnapshotManager do
   let(:cloud) { double(Bosh::Cloud) }
   let(:manager) { described_class.new }
   let(:user) { BD::Models::User.make }
-  let(:time) { Time.now }
+  let(:time) { Time.now.to_s }
 
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment') }
   before(:each) do
