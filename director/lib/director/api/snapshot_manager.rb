@@ -3,9 +3,9 @@ module Bosh::Director
     class SnapshotManager
       include TaskHelper
 
-      def create_deployment_snapshot_task(user, deployment)
+      def create_deployment_snapshot_task(user, deployment, options = {})
         task = create_task(user, :snapshot_deployment, "snapshot deployment")
-        Resque.enqueue(Jobs::SnapshotDeployment, task.id, deployment.name)
+        Resque.enqueue(Jobs::SnapshotDeployment, task.id, deployment.name, options)
         task
       end
 

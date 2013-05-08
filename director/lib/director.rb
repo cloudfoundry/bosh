@@ -385,6 +385,15 @@ module Bosh::Director
       json_encode(@snapshot_manager.snapshots(deployment, params[:job], params[:index]))
     end
 
+    post '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      # until we can tell the agent to flush and wait, all snapshots are considered dirty
+      options = {clean: false}
+
+      task = @snapshot_manager.create_deployment_snapshot_task(@user, deployment, options)
+      redirect "/tasks/#{task.id}"
+    end
+
     post '/deployments/:deployment/jobs/:job/:index/snapshots' do
       instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
       # until we can tell the agent to flush and wait, all snapshots are considered dirty

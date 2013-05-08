@@ -38,7 +38,7 @@ describe Bosh::Director::Api::SnapshotManager do
   describe 'create_deployment_snapshot_task' do
     it 'should take snapshots of all instances with persistent disks' do
       manager.should_receive(:create_task).with(user.username, :snapshot_deployment, 'snapshot deployment').and_return(task)
-      Resque.should_receive(:enqueue).with(BD::Jobs::SnapshotDeployment, task.id, deployment.name)
+      Resque.should_receive(:enqueue).with(BD::Jobs::SnapshotDeployment, task.id, deployment.name, {})
 
       expect(manager.create_deployment_snapshot_task(user.username, deployment)).to eq task
 
