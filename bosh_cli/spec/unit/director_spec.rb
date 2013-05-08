@@ -275,6 +275,30 @@ describe Bosh::Cli::Director do
       @director.get_time_difference.to_i.should == 100
     end
 
+    it "takes snapshot" do
+      @director.should_receive(:request_and_track).
+        with(:post, "/deployments/foo/jobs/bar/0/snapshots", {}).
+        and_return(true)
+      @director.take_snapshot("foo", "bar", "0")
+    end
+
+    it "lists snapshots" do
+      @director.should_receive(:get).with("/deployments/foo/snapshots", "application/json").
+        and_return([200, JSON.generate([]), {}])
+      @director.list_snapshots("foo")
+    end
+
+    it "lists snapshots for a job and index" do
+      @director.should_receive(:get).with("/deployments/foo/jobs/bar/0/snapshots", "application/json").
+        and_return([200, JSON.generate([]), {}])
+      @director.list_snapshots("foo", "bar", "0")
+    end
+
+    it "deletes snapshot" do
+      @director.should_receive(:request_and_track).
+        with(:delete, "/deployments/foo/snapshots/snap0a", {}).and_return(true)
+      @director.delete_snapshot("foo", "snap0a")
+    end
   end
 
   describe "checking status" do
