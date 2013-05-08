@@ -2,6 +2,6 @@
 
 module Bosh
   module Common
-    class RetryCountExceeded < StandardError; end
+    class RetryCountExceeded < Exception; end
   end
 end

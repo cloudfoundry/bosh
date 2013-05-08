@@ -1,5 +1,6 @@
 # Copyright (c) 2012 VMware, Inc.
 require 'common/errors'
+require 'common/retryable'
 
 module Bosh
 
@@ -45,54 +46,10 @@ module Bosh
 
     module_function :which
 
-    # this method will loop until the block returns a true value
     def retryable(options = {}, &block)
-      opts = {:tries => 2, :sleep => exponential_sleeper, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
-      invalid_options = opts.merge(options).keys - opts.keys
-
-      raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?
-      opts.merge!(options)
-
-      return if opts[:tries] == 0
-
-      on_exception = [ opts[:on] ].flatten
-      tries = opts[:tries]
-      retries = 0
-      retry_exception = nil
-
-      begin
-        loop do
-          y = yield retries, retry_exception
-          return y if y
-          raise RetryCountExceeded if retries+1 >= tries
-          wait(opts[:sleep], retries, on_exception)
-          retries += 1
-        end
-      rescue *on_exception => exception
-        raise unless exception.message =~ opts[:matching]
-        raise if retries+1 >= tries
-
-        wait(opts[:sleep], retries, on_exception, exception)
-
-        retries += 1
-        retry_exception = exception
-        retry
-      ensure
-        opts[:ensure].call(retries)
-      end
+      Bosh::Retryable.new(options).retryer(&block)
     end
 
-    def wait(sleeper, retries, exceptions, exception=nil)
-      sleep sleeper.respond_to?(:call) ? sleeper.call(retries, exception) : sleeper
-    rescue *exceptions
-      # SignalException could be raised while sleeping, so if you want to catch it,
-      # it need to be passed in the list of exceptions to ignore
-    end
-
-    def exponential_sleeper
-      lambda { |tries, _| [2**(tries-1), 10].min } # 1, 2, 4, 8, 10, 10..10 seconds
-    end
-
-    module_function :retryable, :wait, :exponential_sleeper
+    module_function :retryable
   end
 end
