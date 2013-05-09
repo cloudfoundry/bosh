@@ -113,45 +113,6 @@ module Bosh::Cli::Command
       write_yaml(manifest, manifest.file_name)
     end
 
-    usage "aws snapshot deployments"
-    desc "snapshot all EBS volumes in all deployments"
-    def snapshot_deployments(config_file)
-      auth_required
-      config = load_config(config_file)
-
-      say("Creating snapshots for director `#{target_name}'")
-      ec2 = Bosh::Aws::EC2.new(config["aws"])
-
-      deployments = director.list_deployments.map { |d| d["name"] }
-      deployments.each do |deployment|
-        say("  deployment: `#{deployment}'")
-        vms = director.list_vms(deployment)
-        instances = ec2.instances_for_ids(vms.map { |vm| vm["cid"] })
-        vms.each do |vm|
-          instance_id = vm["cid"]
-          instance = instances[instance_id]
-          unless instance.exists?
-            say("    ERROR: instance `#{instance_id}' not found on EC2")
-          else
-            say("    instance: `#{instance_id}'")
-            instance.block_device_mappings.each do |device_path, attachment|
-              say("      volume: `#{attachment.volume.id}' device: `#{device_path}'")
-              device_name = device_path.match("/dev/(.*)")[1]
-              snapshot_name = [deployment, vm['job'], vm['index'], device_name].join('/')
-              vm_metadata = JSON.unparse(vm)
-              tags = {
-                  "device" => device_path,
-                  "bosh_data" => vm_metadata,
-                  "director_uri" => target_url,
-                  "director_uuid" => director.uuid
-              }
-              ec2.snapshot_volume(attachment.volume, snapshot_name, vm_metadata, tags)
-            end
-          end
-        end
-      end
-    end
-
     usage "aws create"
     desc "create everything in migrations"
     option "--trace", "print all HTTP traffic"
