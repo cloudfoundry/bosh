@@ -301,6 +301,12 @@ describe Bosh::Cli::Director do
       @director.list_snapshots("foo", "bar", "0")
     end
 
+    it "deletes all snapshots of a deployment" do
+      @director.should_receive(:request_and_track).
+        with(:delete, "/deployments/foo/snapshots", {}).and_return(true)
+      @director.delete_all_snapshots("foo")
+    end
+
     it "deletes snapshot" do
       @director.should_receive(:request_and_track).
         with(:delete, "/deployments/foo/snapshots/snap0a", {}).and_return(true)

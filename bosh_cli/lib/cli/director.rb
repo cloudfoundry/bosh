@@ -380,6 +380,14 @@ module Bosh
         get_json(url)
       end
 
+      def delete_all_snapshots(deployment_name, options = {})
+        options = options.dup
+
+        url = "/deployments/#{deployment_name}/snapshots"
+
+        request_and_track(:delete, url, options)
+      end
+
       def delete_snapshot(deployment_name, snapshot_cid, options = {})
         options = options.dup
 

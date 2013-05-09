@@ -265,4 +265,90 @@ describe Bosh::Cli::Command::Snapshot do
       end
     end
   end
+
+  describe "deleting all snapshots of a deployment" do
+    context "when director is not set" do
+      before do
+        command.stub(:logged_in? => true)
+        command.stub(:target => nil)
+      end
+
+      it "fails" do
+        expect { command.delete_all }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
+      end
+    end
+
+    context "when deployment is not set" do
+      before do
+        command.stub(:logged_in? => true)
+        command.options[:target] = "http://bosh-target.example.com"
+      end
+
+      it "fails" do
+        expect { command.delete_all }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
+      end
+    end
+
+    context "when user is not logged in" do
+      before do
+        command.stub(:logged_in? => false)
+        command.options[:target] = "http://bosh-target.example.com"
+      end
+
+      it "fails" do
+        expect { command.delete_all }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
+      end
+    end
+
+    context "when the user is logged in" do
+      before do
+        command.stub(:logged_in? => true)
+        command.options[:target] = "http://bosh-target.example.com"
+      end
+
+      context "when interactive" do
+        before do
+          command.options[:non_interactive] = false
+        end
+
+        context "when the user confirms the snapshot deletion" do
+          it "deletes all snapshots" do
+            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+            command.should_receive(:confirmed?)
+                .with("Are you sure you want to delete all snapshots of deployment `bosh'?").and_return(true)
+
+            director.should_receive(:delete_all_snapshots).with("bosh")
+
+            command.delete_all
+          end
+        end
+
+        context "when the user does not confirms the snapshot deletion" do
+          it "does not delete snapshots" do
+            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+            command.should_receive(:confirmed?)
+                .with("Are you sure you want to delete all snapshots of deployment `bosh'?").and_return(false)
+
+            director.should_not_receive(:delete_all_snapshots)
+
+            command.delete_all
+          end
+        end
+      end
+
+      context "when non interactive" do
+        before do
+          command.options[:non_interactive] = true
+        end
+
+        it "deletes all snapshots" do
+          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+
+          director.should_receive(:delete_all_snapshots).with("bosh")
+
+          command.delete_all
+        end
+      end
+    end
+  end
 end

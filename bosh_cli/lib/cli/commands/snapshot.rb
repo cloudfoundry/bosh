@@ -5,7 +5,7 @@ module Bosh::Cli::Command
     include Bosh::Cli::DeploymentHelper
 
     usage "snapshots"
-    desc "List all snapshots in a deployment"
+    desc "List all snapshots"
     def list(job = nil, index = nil)
       auth_required
 
@@ -72,6 +72,24 @@ module Bosh::Cli::Command
       status, task_id = director.delete_snapshot(deployment_name, snapshot_cid)
 
       task_report(status, task_id, "Deleted Snapshot `#{snapshot_cid}'")
+    end
+
+    usage "delete snapshots"
+    desc "Deletes all snapshots of a deployment"
+    def delete_all
+      auth_required
+
+      deployment_name = prepare_deployment_manifest["name"]
+      say("Deployment `#{deployment_name.green}'")
+
+      unless confirmed?("Are you sure you want to delete all snapshots of deployment `#{deployment_name}'?")
+        say("Canceled deleting snapshots".green)
+        return
+      end
+
+      status, task_id = director.delete_all_snapshots(deployment_name)
+
+      task_report(status, task_id, "Deleted all snapshot of deplotment `#{deployment_name}'")
     end
   end
 end
