@@ -11,27 +11,6 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe "listing snapshot" do
-    context "when director is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.stub(:target => nil)
-      end
-
-      it "fails" do
-        expect { command.list }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
-      end
-    end
-
-    context "when deployment is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.list }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
-      end
-    end
 
     context "when user is not logged in" do
       before do
@@ -87,27 +66,6 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe "taking a snapshot" do
-    context "when director is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.stub(:target => nil)
-      end
-
-      it "fails" do
-        expect { command.take("foo", "0") }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
-      end
-    end
-
-    context "when deployment is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.take("foo", "0") }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
-      end
-    end
 
     context "when user is not logged in" do
       before do
@@ -183,27 +141,6 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe "deleting a snapshot" do
-    context "when director is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.stub(:target => nil)
-      end
-
-      it "fails" do
-        expect { command.delete("snap0a") }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
-      end
-    end
-
-    context "when deployment is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.delete("snap0a") }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
-      end
-    end
 
     context "when user is not logged in" do
       before do
@@ -267,27 +204,6 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe "deleting all snapshots of a deployment" do
-    context "when director is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.stub(:target => nil)
-      end
-
-      it "fails" do
-        expect { command.delete_all }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
-      end
-    end
-
-    context "when deployment is not set" do
-      before do
-        command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.delete_all }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
-      end
-    end
 
     context "when user is not logged in" do
       before do
