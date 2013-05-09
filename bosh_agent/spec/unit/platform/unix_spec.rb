@@ -1,18 +1,13 @@
 require 'spec_helper'
-require 'bosh_agent/platform/linux'
+require 'bosh_agent/platform/unix'
 
-describe Bosh::Agent::Platform::Linux do
+describe Bosh::Agent::Platform::UNIX do
 
   let(:disk)      { double("Disk") }
   let(:network)   { double("Network") }
   let(:logrotate) { double("Logrotate") }
   let(:password)  { double("Password") }
-  let(:platform)  { Bosh::Agent::Platform::Linux.new(disk, logrotate, password, network) }
-
-  it 'should call UNIX constructor' do
-    Bosh::Agent::Platform::UNIX.should_receive(:new).with(disk, logrotate, password, network)
-    Bosh::Agent::Platform::Linux.new(disk, logrotate, password, network)
-  end
+  let(:platform)  { Bosh::Agent::Platform::UNIX.new(disk, logrotate, password, network) }
 
   describe "Method delegation" do
 
