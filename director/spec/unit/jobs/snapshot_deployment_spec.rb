@@ -21,10 +21,10 @@ describe Bosh::Director::Jobs::SnapshotDeployment do
 
     # get all the instances
     # call take_snapshot for all the instances
-    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1)
-    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance2)
-    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance3)
-    BD::Api::SnapshotManager.should_not_receive(:take_snapshot).with(instance4)
+    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {})
+    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
+    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
+    BD::Api::SnapshotManager.should_not_receive(:take_snapshot).with(instance4, {})
 
     expect(subject.perform).to eq "snapshots of deployment `deployment' created"
   end

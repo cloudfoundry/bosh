@@ -118,35 +118,6 @@ describe Bosh::Aws::EC2 do
       end
     end
 
-    describe "#snapshot_volume" do
-      let(:fake_volume) { mock("ebs volume") }
-
-      it "can snapshot a volume" do
-        fake_volume.should_receive(:create_snapshot).with("description")
-        ec2.stub(:tag)
-
-        ec2.snapshot_volume(fake_volume, "snapshot name", "description", {})
-      end
-
-      it "tags the snapshot with a snapshot name" do
-        fake_snapshot = mock("ebs snapshot")
-        fake_volume.stub(:create_snapshot).and_return(fake_snapshot)
-
-        fake_snapshot.should_receive(:add_tag).with('Name', :value => "snapshot name")
-
-        ec2.snapshot_volume(fake_volume, "snapshot name", "description", {})
-      end
-
-      it "tags the snapshot with a list of tags" do
-        fake_snapshot = mock("ebs snapshot")
-        fake_volume.stub(:create_snapshot).and_return(fake_snapshot)
-
-        fake_snapshot.should_receive(:add_tag).exactly(3).times
-
-        ec2.snapshot_volume(fake_volume, "snapshot name", "description", {"tag1" => "value1", "tag2" => "value2"})
-      end
-    end
-
     describe "#create_nat_instance" do
       subject(:create_nat_instance) do
         ec2.create_nat_instance(

@@ -2,8 +2,6 @@ module Bosh
   module Aws
     class EC2
 
-      MAX_TAG_KEY_LENGTH = 127
-      MAX_TAG_VALUE_LENGTH = 255
       NAT_AMI_ID = "ami-f619c29f"
 
       attr_reader :elastic_ips
@@ -126,10 +124,6 @@ module Bosh
         end
       end
 
-      def instances_for_ids(ids)
-        aws_ec2.instances.filter('instance-id', *ids)
-      end
-
       def delete_volumes
         unattached_volumes.each do |vol|
           begin
@@ -142,13 +136,6 @@ module Bosh
 
       def volume_count
         unattached_volumes.count
-      end
-
-      def snapshot_volume(volume, snapshot_name, description = "", tags = {})
-        snap = volume.create_snapshot(description.to_s)
-        tag(snap, 'Name', snapshot_name)
-        tags.each_pair { |key, value| tag(snap, key.to_s, value) }
-        snap
       end
 
       def add_key_pair(name, path_to_public_private_key)
@@ -243,14 +230,6 @@ module Bosh
         # only check volumes that don't have status 'deleting' and 'deleted'
         aws_ec2.volumes.filter('status', %w[available creating in_use error]).
             reject { |v| v.attachments.any? }
-      end
-
-      def tag(taggable, key, value)
-        trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
-        trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
-        taggable.add_tag(trimmed_key, :value => trimmed_value)
-      rescue AWS::EC2::Errors::InvalidParameterValue => e
-        say("could not tag #{taggable.id}: #{e.message}")
       end
 
       def select_key_pair_for_instance(name, key_pair)
