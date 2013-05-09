@@ -30,7 +30,6 @@ describe Bosh::Director::VmCreator do
 
 
   it "should create a vm" do
-
     @cloud.should_receive(:create_vm).with(kind_of(String), "stemcell-id", {"ram" => "2gb"}, @network_settings, nil, {})
 
     vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
@@ -70,6 +69,26 @@ describe Bosh::Director::VmCreator do
     lambda {
       Base64.strict_decode64(vm.credentials["sign_key"] + "barbaz")
     }.should raise_error(ArgumentError, /invalid base64/)
+  end
+
+  it 'should retry creating a VM if it is told it is a retryable error' do
+    @cloud.should_receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+    @cloud.should_receive(:create_vm).once
+
+    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                                              @network_settings, nil, @resource_pool_spec.env)
+
+    vm.deployment.should == @deployment
+    Bosh::Director::Models::Vm.all.should == [vm]
+  end
+
+  it 'should not retry creating a VM if it is told it is not a retryable error' do
+    @cloud.should_receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+
+    expect {
+      vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                                                @network_settings, nil, @resource_pool_spec.env)
+    }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
   it "should have deep copy of environment" do
