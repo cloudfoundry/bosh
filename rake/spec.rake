@@ -104,7 +104,7 @@ namespace :spec do
         end
       end
 
-      task :deploy_micro do
+      task :deploy_micro => :get_deployments_aws do
         rm_rf("/tmp/deployments")
         mkdir_p("/tmp/deployments/micro")
         chdir("/tmp/deployments") do
@@ -145,6 +145,18 @@ namespace :spec do
       task :publish_gems => "spec:system:aws:bat" do
         run("s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems")
         run("s3cmd sync s3://bosh-ci-pipeline/micro-bosh s3://bosh-jenkins-artifacts")
+      end
+
+      task :get_deployments_aws do
+        Dir.chdir('/mnt') do
+          if Dir.exists?('deployments')
+            run("git clone #{ENV['BOSH_JENKINS_DEPLOYMENTS_REPO']} deployments")
+          else
+            Dir.chdir('deployments') do
+              run('git pull')
+            end
+          end
+        end
       end
     end
 
@@ -226,10 +238,8 @@ namespace :spec do
                  })
 
       Dir.mktmpdir do |dir|
-        %x{tar xzf #{stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
-        stemcell_manifest = "#{dir}/stemcell.MF"
-        stemcell_properties = Psych.load_file(stemcell_manifest)
-        stemcell_S3_name = "#{stemcell_properties["name"]}-#{stemcell_properties["cloud_properties"]["infrastructure"]}"
+        stemcell_properties = stemcell_manifest(stemcell_tgz)
+        stemcell_S3_name = "#{stemcell_properties['name']}-#{stemcell_properties['cloud_properties']['infrastructure']}"
 
         s3 = AWS::S3.new
         s3.buckets.create(bucket_name) # doesn't fail if already exists in your account
@@ -267,12 +277,14 @@ namespace :spec do
       end
     end
 
-    def stemcell_version(stemcell_path)
+    def stemcell_version(stemcell_tgz)
+      stemcell_manifest(stemcell_tgz)['version']
+    end
+
+    def stemcell_manifest(stemcell_tgz)
       Dir.mktmpdir do |dir|
-        %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
-        stemcell_manifest = "#{dir}/stemcell.MF"
-        st = Psych.load_file(stemcell_manifest)
-        st["version"]
+        system('tar', 'xzf', stemcell_tgz, '--directory', dir, 'stemcell.MF') || raise('Failed to untar stemcell')
+        Psych.load_file(File.join(dir, 'stemcell.MF'))
       end
     end
 
@@ -293,11 +305,11 @@ namespace :spec do
     end
 
     def vpc_outfile_path
-      "/mnt/deployments-aws/workspace/ci2/aws_vpc_receipt.yml"
+      File.join('/mnt', 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_vpc_receipt.yml')
     end
 
     def route53_outfile_path
-      "/mnt/deployments-aws/workspace/ci2/aws_route53_receipt.yml"
+      File.join('/mnt', 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_route53_receipt.yml')
     end
 
     def generate_openstack_micro_bosh(net_type)
