@@ -22,11 +22,11 @@ module Bosh::Cli::Command
       end
 
       snapshots_table = table do |t|
-        t.headings = ["Job/index", "Snapshot ID", "Created at", "Clean"]
+        t.headings = ["Job/index", "Snapshot CID", "Created at", "Clean"]
 
         sorted.each do |snapshot|
           job = "#{snapshot["job"] || "unknown"}/#{snapshot["index"] || "unknown"}"
-          t << [job, snapshot["snapshot_id"], snapshot["created_at"], snapshot["clean"]]
+          t << [job, snapshot["snapshot_cid"], snapshot["created_at"], snapshot["clean"]]
         end
       end
 
@@ -53,7 +53,7 @@ module Bosh::Cli::Command
 
       status, task_id = director.take_snapshot(deployment_name, job, index)
 
-      task_report(status, task_id, "Snapshot toked")
+      task_report(status, task_id, "Snapshot taken")
     end
 
     usage "delete snapshot"

@@ -86,17 +86,17 @@ describe Bosh::Director::Api::SnapshotManager do
   describe '#snapshots' do
     it 'should list all snapshots for a given deployment' do
       response = [
-          { 'job' => 'job', 'index' => 0, 'snapshot_id' => 'snap0a', 'created_at' => time, 'clean' => true },
-          { 'job' => 'job', 'index' => 0, 'snapshot_id' => 'snap0b', 'created_at' => time, 'clean' => false },
-          { 'job' => 'job', 'index' => 1, 'snapshot_id' => 'snap1a', 'created_at' => time, 'clean' => false },
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
+          { 'job' => 'job', 'index' => 1, 'snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
       ]
       expect(manager.snapshots(deployment)).to eq response
     end
 
     it 'should list all snapshots for a given instance' do
       response = [
-          { 'job' => 'job', 'index' => 0, 'snapshot_id' => 'snap0a', 'created_at' => time, 'clean' => true },
-          { 'job' => 'job', 'index' => 0, 'snapshot_id' => 'snap0b', 'created_at' => time, 'clean' => false },
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
       ]
       expect(manager.snapshots(deployment, 'job', 0)).to eq response
     end
