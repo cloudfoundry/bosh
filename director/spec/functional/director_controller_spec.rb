@@ -757,6 +757,11 @@ describe Bosh::Director::ApiController do
       end
 
       describe 'deleting' do
+        it 'should delete all snapshots of a deployment' do
+          delete '/deployments/mycloud/snapshots'
+          expect_redirect_to_queued_task(last_response)
+        end
+
         it 'should delete a snapshot' do
           delete '/deployments/mycloud/snapshots/snap1a'
           expect_redirect_to_queued_task(last_response)

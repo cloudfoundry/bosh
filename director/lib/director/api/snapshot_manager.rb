@@ -15,6 +15,12 @@ module Bosh::Director
         task
       end
 
+      def delete_deployment_snapshots_task(user, deployment)
+        task = create_task(user, :delete_deployment_napshots, "delete deployment snapshots")
+        Resque.enqueue(Jobs::DeleteDeploymentSnapshots, task.id, deployment.name)
+        task
+      end
+
       def delete_snapshots_task(user, snapshot_cids)
         task = create_task(user, :delete_snapshot, "delete snapshot")
         Resque.enqueue(Jobs::DeleteSnapshots, task.id, snapshot_cids)

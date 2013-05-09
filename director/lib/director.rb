@@ -95,6 +95,7 @@ require "director/jobs/base_job"
 require "director/jobs/create_snapshot"
 require "director/jobs/snapshot_deployment"
 require "director/jobs/delete_deployment"
+require "director/jobs/delete_deployment_snapshots"
 require "director/jobs/delete_release"
 require "director/jobs/delete_snapshots"
 require "director/jobs/delete_stemcell"
@@ -400,6 +401,13 @@ module Bosh::Director
       options = {clean: false}
 
       task = @snapshot_manager.create_snapshot_task(@user, instance, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    delete '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+
+      task = @snapshot_manager.delete_deployment_snapshots_task(@user, deployment)
       redirect "/tasks/#{task.id}"
     end
 
