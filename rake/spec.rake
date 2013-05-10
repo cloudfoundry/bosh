@@ -123,12 +123,13 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        return unless Dir.exists?('/tmp/deployments')
-        chdir("/tmp/deployments") do
-          run_bosh "delete deployment bat", :ignore_failures => true
-          run_bosh "micro delete"
+        if Dir.exists?('/tmp/deployments')
+          chdir("/tmp/deployments") do
+            run_bosh "delete deployment bat", :ignore_failures => true
+            run_bosh "micro delete"
+          end
+          rm_rf("/tmp/deployments")
         end
-        rm_rf("/tmp/deployments")
       end
 
       task :bat => :deploy_micro do
