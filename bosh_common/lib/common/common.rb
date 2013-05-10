@@ -1,5 +1,6 @@
 # Copyright (c) 2012 VMware, Inc.
 require 'common/errors'
+require 'common/retryable'
 
 module Bosh
 
@@ -45,54 +46,79 @@ module Bosh
 
     module_function :which
 
-    # this method will loop until the block returns a true value
+    # Retries execution of given block until block returns true
+    #
+    # The block is called with two parameters: the number of tries and the most recent
+    # exception. If the block returns true retrying is stopped.
+    # Examples:
+    #   Bosh::Common.retryable do |retries, exception|
+    #     puts "try #{retries} failed with exception: #{exception}" if retries > 0
+    #     pick_up_soap
+    #   end
+    #
+    #   # Wait for EC2 instance to be terminated
+    #   Bosh::Common.retryable(on: AWS::EC2::Errors::RequestLimitExceeded) do |retries, exception|
+    #     @ec2.instance['i-a3x5g5'].status == :terminated
+    #   end
+    #
+    #
+    # @param [Hash] options
+    # @options opts [Proc] :ensure
+    #   Default: `Proc.new {}`
+    #   Ensure that a block of code is executed, regardless of whether an exception
+    #   was raised. It doesn't matter if the block exits normally, if it retries
+    #   to execute block of code, or if it is terminated by an uncaught exception
+    #   -- the ensure block will get run.
+    #   Example:
+    #   f = File.open("testfile")
+    #
+    #   ensure_cb = Proc.new do |retries|
+    #     puts "total retry attempts: #{retries}"
+    #
+    #     f.close
+    #  end
+    #
+    #  Bosh::Common.retryable(ensure: ensure_cb) do
+    #    # process file
+    #  end
+    #
+    # @options opts [Regexp] :matching
+    #   Default: `/.*/`
+    #   Retry based on the exception message
+    #   Example:
+    #   Bosh::Common.retryable(matching: /IO timeout/) do |retries, exception|
+    #     raise "yo, IO timeout!" if retries == 0
+    #   end
+    #
+    # @options opts [Array<ExceptionClass>] :on
+    #   Default: `[]`
+    #   The array of exception classes to retry on.
+    #   Example:
+    #   Bosh::Common.retryable(on: [StandardError, ArgumentError]) do
+    #     # do something and retry if StandardError or ArgumentError is raised
+    #   end
+    #
+    # @options opts [Proc, Fixnum] :sleep
+    #   Defaults: `lambda { |tries, _| [2**(tries-1), 10].min }`,  1, 2, 4, 8, 10, 10..10 seconds
+    #   If a Fixnum is given, sleep that many seconds between retries.
+    #   If a Proc is given, call it with the expectation that a Fixnum is returned
+    #   and sleep that many seconds. The Proc will be called with the number of tries
+    #   and the raised exception (or nil)
+    #   Example:
+    #   Bosh::Common.retryable(sleep: lambda { |n,e| logger.info(e.message) if e; 4**n }) { }
+    #
+    # @options opts [Fixnum] :tries
+    #   Default: 2
+    #   Number of times to try
+    #   Example:
+    #   Bosh::Common.retryable(tries: 3, on: OpenURI::HTTPError) do
+    #     xml = open("http://example.com/test.xml").read
+    #   end
+    #
     def retryable(options = {}, &block)
-      opts = {:tries => 2, :sleep => exponential_sleeper, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
-      invalid_options = opts.merge(options).keys - opts.keys
-
-      raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?
-      opts.merge!(options)
-
-      return if opts[:tries] == 0
-
-      on_exception = [ opts[:on] ].flatten
-      tries = opts[:tries]
-      retries = 0
-      retry_exception = nil
-
-      begin
-        loop do
-          y = yield retries, retry_exception
-          return y if y
-          raise RetryCountExceeded if retries+1 >= tries
-          wait(opts[:sleep], retries, on_exception)
-          retries += 1
-        end
-      rescue *on_exception => exception
-        raise unless exception.message =~ opts[:matching]
-        raise if retries+1 >= tries
-
-        wait(opts[:sleep], retries, on_exception, exception)
-
-        retries += 1
-        retry_exception = exception
-        retry
-      ensure
-        opts[:ensure].call(retries)
-      end
+      Bosh::Retryable.new(options).retryer(&block)
     end
 
-    def wait(sleeper, retries, exceptions, exception=nil)
-      sleep sleeper.respond_to?(:call) ? sleeper.call(retries, exception) : sleeper
-    rescue *exceptions
-      # SignalException could be raised while sleeping, so if you want to catch it,
-      # it need to be passed in the list of exceptions to ignore
-    end
-
-    def exponential_sleeper
-      lambda { |tries, _| [2**(tries-1), 10].min } # 1, 2, 4, 8, 10, 10..10 seconds
-    end
-
-    module_function :retryable, :wait, :exponential_sleeper
+    module_function :retryable
   end
 end

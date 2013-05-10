@@ -216,7 +216,7 @@ describe Bosh::AwsCloud::ResourceWait do
 
       expect {
         subject.for_resource(resource_arguments) { |_| false }
-      }.to raise_error(Bosh::Common::RetryCountExceeded)
+      }.to raise_error(Bosh::Clouds::CloudError, /Timed out waiting/)
     end
   end
 end

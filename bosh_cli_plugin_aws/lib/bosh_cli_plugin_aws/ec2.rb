@@ -169,7 +169,7 @@ module Bosh
       def remove_key_pair(name)
         key_pair = key_pair_by_name(name)
         key_pair.delete unless key_pair.nil?
-        Bosh::Common.retryable(tries: 15, sleep: lambda{|n,e| [2**(n-1), 10].min}) do
+        Bosh::Common.retryable(tries: 15) do
           key_pair_by_name(name).nil?
         end
       end
@@ -177,7 +177,7 @@ module Bosh
       def remove_all_key_pairs
         aws_ec2.key_pairs.each(&:delete)
 
-        Bosh::Common.retryable(tries: 10, sleep: lambda{|n,e| [2**(n-1), 10].min}) do
+        Bosh::Common.retryable(tries: 10) do
           aws_ec2.key_pairs.to_a.empty?
         end
       end
