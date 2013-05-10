@@ -54,7 +54,7 @@ fi
 
 # Unmap partition
 echo "Removing device mappings for $disk_image_name"
-for try in $(seq 0 3); do
+for try in 1 1 2 3 5 8 13; do
   sleep $try
   echo -n "."
   kpartx -dvs $work/$disk_image_name || continue
