@@ -5,6 +5,7 @@ require "fileutils"
 require "logger"
 require "tmpdir"
 require "zlib"
+require 'tempfile'
 
 require "archive/tar/minitar"
 require "rspec"
@@ -149,7 +150,9 @@ BDM = BD::Models
 RSpec.configure do |rspec|
   rspec.before(:each) do
     unless $redis_63790_started
-      redis_pid = fork { exec("redis-server  --port 63790") }
+      redis_config = Tempfile.new('redis_config')
+      File.write(redis_config.path, 'port 63790')
+      redis_pid = Process.spawn('redis-server', redis_config.path)
       $redis_63790_started = true
 
       at_exit do
@@ -159,6 +162,7 @@ RSpec.configure do |rspec|
           else
             status = 0
           end
+          redis_config.delete
           Process.kill("KILL", redis_pid)
         ensure
           exit status
