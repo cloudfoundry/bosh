@@ -459,6 +459,7 @@ module Bosh::Director
 
       options = {}
       options["force"] = true if params["force"] == "true"
+      options["keep_snapshots"] = true if params["keep_snapshots"] == "true"
       task = @deployment_manager.delete_deployment(@user, deployment, options)
       redirect "/tasks/#{task.id}"
     end

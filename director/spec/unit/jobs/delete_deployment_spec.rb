@@ -94,6 +94,32 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       BDM::Instance[instance.id].should be_nil
     end
 
+    it "should delete the snapshots" do
+      instance = BDM::Instance.make(:vm => nil)
+      disk = BDM::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
+      BDM::Snapshot.make(snapshot_cid: "snap1a", :persistent_disk_id => disk.id)
+
+      @cloud.should_receive(:delete_snapshot).with("snap1a")
+      @cloud.should_receive(:delete_disk).with("disk-cid")
+
+      @job.delete_instance(instance)
+
+      BDM::Instance[instance.id].should be_nil
+    end
+
+    it "should not delete the snapshots if keep_snapshots is set" do
+      instance = BDM::Instance.make(:vm => nil)
+      disk = BDM::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
+      BDM::Snapshot.make(snapshot_cid: "snap1a", :persistent_disk_id => disk.id)
+
+      @cloud.should_not_receive(:delete_snapshot)
+      @cloud.should_receive(:delete_disk).with("disk-cid")
+
+      job = BD::Jobs::DeleteDeployment.new("test_deployment", "keep_snapshots" => true)
+      job.delete_instance(instance)
+
+      BDM::Instance[instance.id].should be_nil
+    end
   end
 
   describe "delete_vm" do
