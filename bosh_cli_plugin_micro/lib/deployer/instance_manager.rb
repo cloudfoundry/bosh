@@ -153,9 +153,7 @@ module Bosh::Deployer
         wait_until_agent_ready
       end
 
-      step "Waiting for the disk" do
-        wait_until_disk_ready
-      end
+      mount_disk(state.disk_cid)
 
       apply
       
@@ -426,10 +424,6 @@ module Bosh::Deployer
       remote_tunnel(@registry_port)
 
       wait_until_ready("agent") { agent.ping }
-    end
-
-    def wait_until_disk_ready
-      wait_until_ready("disk") { mount_disk(state.disk_cid) }
     end
 
     def wait_until_director_ready
