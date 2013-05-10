@@ -15,6 +15,7 @@ module Bosh
       @sleeper         = opts[:sleep]
     end
 
+
     # this method will loop until the block returns a true value
     def retryer(&block)
       loop do

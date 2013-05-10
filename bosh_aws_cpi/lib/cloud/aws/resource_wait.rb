@@ -1,5 +1,8 @@
+require_relative 'helpers'
+
 module Bosh::AwsCloud
   class ResourceWait
+    include Helpers
 
     DEFAULT_TRIES = 12 # a sane amount of retries on AWS (~25 minutes), as things can take anywhere between a minute and forevah
     MAX_SLEEP_EXPONENT = 8

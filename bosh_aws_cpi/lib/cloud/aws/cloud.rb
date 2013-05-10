@@ -210,7 +210,7 @@ module Bosh::AwsCloud
         tries = 10
         sleep_cb = ResourceWait.sleep_callback("Waiting for volume `#{volume.id}' to be deleted", tries)
         ensure_cb = Proc.new do |retries|
-          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries+1 == tries
+          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
         end
         error = AWS::EC2::Errors::Client::VolumeInUse
 

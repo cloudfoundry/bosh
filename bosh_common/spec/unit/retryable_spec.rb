@@ -36,6 +36,19 @@ describe Bosh::Retryable do
     count.should == 3
   end
 
+  it 'should retry when given error is raised and given message matches' do
+    count = 0
+
+    expect {
+      described_class.new(tries: 3, on: StandardError, matching: /Ignore me/).retryer do |tries|
+        count += 1
+        tries <= 2 ? (raise StandardError, "Ignore me") : (raise StandardError)
+      end
+    }.to raise_error StandardError
+
+    count.should == 3
+  end
+
   it 'should sleep on each retry the given number of seconds' do
     Kernel.should_receive(:sleep).with(5).twice
 
