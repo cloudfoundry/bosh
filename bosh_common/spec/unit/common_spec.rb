@@ -1,7 +1,6 @@
 # Copyright (c) 2012 VMware, Inc.
 
 require "spec_helper"
-
 require "common/common"
 
 describe Bosh::Common do
@@ -58,75 +57,16 @@ describe Bosh::Common do
   end
 
   describe "::retryable" do
-    it "should retry the given number of times" do
-      Bosh::Common.stub(:sleep)
+    it 'should create an instance of Bosh::Retryable' do
+      opts = {on: StandardError}
+      retryer = double(Bosh::Retryable)
+      block = Proc.new { true }
 
-      count = 0
+      Bosh::Retryable.should_receive(:new).with(opts).and_return retryer
+      retryer.should_receive(:retryer)
 
-      Bosh::Common.retryable(tries: 2) do |tries|
-        count += 1
-        raise StandardError if tries == 0
-        true
-      end
-
-      count.should == 2
-    end
-
-    it "should sleep on each retry the given number of seconds" do
-      Bosh::Common.should_receive(:sleep).with(5).twice
-
-      Bosh::Common.retryable(tries: 3, sleep: 5) do |tries|
-        raise StandardError if tries < 2
-        true
-      end
-    end
-
-    it "should retry when given error is raised" do
-      Bosh::Common.stub(:sleep)
-
-      count = 0
-
-      Bosh::Common.retryable(tries: 3, on: [ArgumentError, RuntimeError]) do |tries|
-        count += 1
-        raise ArgumentError if tries == 0
-        raise RuntimeError if tries == 1
-        true
-      end
-
-      count.should == 3
-    end
-
-    it "should pass error to sleep callback proc" do
-      Bosh::Common.stub(:sleep)
-
-      count = 0
-      sleep_cb = lambda { |retries, error|
-        error.is_a?(ArgumentError).should be_true if retries == 0
-        error.is_a?(RuntimeError).should be_true if retries == 1
-      }
-
-      Bosh::Common.retryable(tries: 3, on: [ArgumentError, RuntimeError], sleep: sleep_cb) do |tries|
-        count += 1
-        raise ArgumentError if tries == 0
-        raise RuntimeError if tries == 1
-        true
-      end
-    end
-
-    it "should raise an error if that error is raised and isn't in the specified list" do
-      expect {
-        Bosh::Common.retryable(on: [ArgumentError]) do
-          1/0
-        end
-      }.to raise_error(ZeroDivisionError)
-    end
-
-    it "should raise a RetryCountExceeded error if retries exceed" do
-      expect {
-        Bosh::Common.retryable(tries: 2) do
-          false
-        end
-      }.to raise_error(Bosh::Common::RetryCountExceeded)
+      Bosh::Common.retryable(opts, &block)
     end
   end
+
 end
