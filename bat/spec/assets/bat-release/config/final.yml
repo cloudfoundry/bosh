@@ -2,8 +2,6 @@
 final_name: bat
 min_cli_version: 1.5.0.pre.3
 blobstore: 
-  provider: atmos
+  provider: s3
   options: 
-    tag: BAT
-    uid: 0559221ba3f64d73a60dced2912c9e6b/user1
-    url: https://blob.cfblob.com
+    bucket_name: blob.cfblob.com
