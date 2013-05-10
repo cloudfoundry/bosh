@@ -28,4 +28,6 @@ compiled_package_cache:
 
 cloud:
   plugin: dummy
-  # to be added
+  properties:
+    dir: ...
+     # to be added

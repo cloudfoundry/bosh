@@ -33,6 +33,8 @@ module Bosh
         @user = user
         @password = password
         @track_tasks = !options.delete(:no_track)
+        @num_retries = options.fetch(:num_retries, 5)
+        @retry_wait_interval = options.fetch(:retry_wait_interval, 5)
       end
 
       def uuid
@@ -46,6 +48,13 @@ module Bosh
         true # For compatibility with directors that return 401 for /info
       rescue DirectorError
         false
+      end
+
+      def wait_until_ready
+        num_retries.times do
+          return if exists?
+          sleep retry_wait_interval
+        end
       end
 
       def authenticated?
@@ -350,6 +359,43 @@ module Bosh
         get_json(url)
       end
 
+      def take_snapshot(deployment_name, job = nil, index = nil, options = {})
+        options = options.dup
+
+        if job && index
+          url = "/deployments/#{deployment_name}/jobs/#{job}/#{index}/snapshots"
+        else
+          url = "/deployments/#{deployment_name}/snapshots"
+        end
+
+        request_and_track(:post, url, options)
+      end
+
+      def list_snapshots(deployment_name, job = nil, index = nil)
+        if job && index
+          url = "/deployments/#{deployment_name}/jobs/#{job}/#{index}/snapshots"
+        else
+          url = "/deployments/#{deployment_name}/snapshots"
+        end
+        get_json(url)
+      end
+
+      def delete_all_snapshots(deployment_name, options = {})
+        options = options.dup
+
+        url = "/deployments/#{deployment_name}/snapshots"
+
+        request_and_track(:delete, url, options)
+      end
+
+      def delete_snapshot(deployment_name, snapshot_cid, options = {})
+        options = options.dup
+
+        url = "/deployments/#{deployment_name}/snapshots/#{snapshot_cid}"
+
+        request_and_track(:delete, url, options)
+      end
+
       def perform_cloud_scan(deployment_name, options = {})
         options = options.dup
         url = "/deployments/#{deployment_name}/scans"
@@ -615,9 +661,7 @@ module Bosh
         end
       end
 
-      def num_retries; 5; end
-
-      def retry_wait_interval; 5; end
+      attr_reader :num_retries, :retry_wait_interval
     end
 
     class FileWithProgressBar < ::File

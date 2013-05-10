@@ -6,6 +6,9 @@ module Bosh::Director
     include EncryptionHelper
     include MetadataHelper
 
+    # this is used to retry VM creation on clouds that are unreliable (e.g. AWS)
+    MAX_CREATE_VM_TRIES = 5
+
     def self.create(*args)
       new.create(*args)
     end
@@ -38,7 +41,15 @@ module Bosh::Director
         options[:credentials] = credentials
       end
 
-      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
+      count = 0
+      begin
+        vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
+      rescue Bosh::Clouds::VMCreationFailed => e
+        count += 1
+        logger.error("failed to create VM, retrying (#{count})")
+        retry if e.ok_to_retry && count < MAX_CREATE_VM_TRIES
+        raise e
+      end
 
       options[:cid] = vm_cid
       vm = Models::Vm.new(options)

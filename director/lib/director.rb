@@ -92,8 +92,12 @@ require "director/problem_handlers/mount_info_mismatch"
 require "director/problem_handlers/missing_vm"
 
 require "director/jobs/base_job"
+require "director/jobs/create_snapshot"
+require "director/jobs/snapshot_deployment"
 require "director/jobs/delete_deployment"
+require "director/jobs/delete_deployment_snapshots"
 require "director/jobs/delete_release"
+require "director/jobs/delete_snapshots"
 require "director/jobs/delete_stemcell"
 require "director/jobs/update_deployment"
 require "director/jobs/update_release"
@@ -132,6 +136,7 @@ module Bosh::Director
       @property_manager = Api::PropertyManager.new
       @resource_manager = Api::ResourceManager.new
       @release_manager = Api::ReleaseManager.new
+      @snapshot_manager = Api::SnapshotManager.new
       @stemcell_manager = Api::StemcellManager.new
       @task_manager = Api::TaskManager.new
       @user_manager = Api::UserManager.new
@@ -371,6 +376,49 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    get '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      json_encode(@snapshot_manager.snapshots(deployment))
+    end
+
+    get '/deployments/:deployment/jobs/:job/:index/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      json_encode(@snapshot_manager.snapshots(deployment, params[:job], params[:index]))
+    end
+
+    post '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      # until we can tell the agent to flush and wait, all snapshots are considered dirty
+      options = {clean: false}
+
+      task = @snapshot_manager.create_deployment_snapshot_task(@user, deployment, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    post '/deployments/:deployment/jobs/:job/:index/snapshots' do
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      # until we can tell the agent to flush and wait, all snapshots are considered dirty
+      options = {clean: false}
+
+      task = @snapshot_manager.create_snapshot_task(@user, instance, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    delete '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+
+      task = @snapshot_manager.delete_deployment_snapshots_task(@user, deployment)
+      redirect "/tasks/#{task.id}"
+    end
+
+    delete '/deployments/:deployment/snapshots/:cid' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      snapshot = @snapshot_manager.find_by_cid(deployment, params[:cid])
+
+      task = @snapshot_manager.delete_snapshots_task(@user, [params[:cid]])
+      redirect "/tasks/#{task.id}"
+    end
+
     get "/deployments" do
       deployments = Models::Deployment.order_by(:name.asc).map { |deployment|
         name = deployment.name
@@ -411,14 +459,14 @@ module Bosh::Director
 
       options = {}
       options["force"] = true if params["force"] == "true"
-      task = @deployment_manager.delete_deployment(@task, deployment, options)
+      task = @deployment_manager.delete_deployment(@user, deployment, options)
       redirect "/tasks/#{task.id}"
     end
 
     # TODO: stop, start, restart jobs/instances
 
     post "/stemcells", :consumes => :tgz do
-      task = @stemcell_manager.create_stemcell(@task, request.body)
+      task = @stemcell_manager.create_stemcell(@user, request.body)
       redirect "/tasks/#{task.id}"
     end
 
@@ -514,9 +562,17 @@ module Bosh::Director
 
       verbose = params["verbose"] || "1"
       if verbose == "1"
-        dataset = dataset.filter(:type => [
-            "update_deployment", "delete_deployment", "update_release",
-            "delete_release", "update_stemcell", "delete_stemcell"])
+        dataset = dataset.filter(type: %w[
+          update_deployment
+          delete_deployment
+          update_release
+          delete_release
+          update_stemcell
+          delete_stemcell
+          create_snapshot
+          delete_snapshot
+          snapshot_deployment
+        ])
       end
 
       tasks = dataset.order_by(:timestamp.desc).map do |task|

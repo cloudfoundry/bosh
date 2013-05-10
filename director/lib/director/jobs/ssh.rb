@@ -8,8 +8,6 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(deployment_id, options)
-        super
-
         @deployment_id = deployment_id
         @target = options["target"]
         @command = options["command"]

@@ -40,6 +40,18 @@ module IntegrationExampleGroup
     Thread.current[:sandbox] = @current_sandbox
   end
 
+  def regexp(string)
+    Regexp.compile(Regexp.escape(string))
+  end
+
+  def format_output(out)
+    out.gsub(/^\s*/, '').gsub(/\s*$/, '')
+  end
+
+  def expect_output(cmd, expected_output)
+    format_output(run_bosh(cmd)).should == format_output(expected_output)
+  end
+
   def self.included(base)
     base.before(:each) do |example|
       unless $sandbox_started

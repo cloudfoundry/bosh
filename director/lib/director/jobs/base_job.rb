@@ -10,22 +10,22 @@ module Bosh::Director
 
       attr_accessor :task_id
 
-      attr_reader :logger
-      attr_reader :event_log
-      attr_reader :result_file
+      def logger
+        @logger ||= Config.logger
+      end
 
-      def initialize(*args)
-        @logger = Config.logger
-        @event_log = Config.event_log
-        @result_file = Config.result
-        @task_manager = Api::TaskManager.new
-        @task_id = nil
+      def event_log
+        @event_log ||= Config.event_log
+      end
+
+      def result_file
+        @result_file ||= Config.result
       end
 
       # @return [Boolean] Has task been cancelled?
       def task_cancelled?
-        return false if @task_id.nil?
-        task = @task_manager.find_task(@task_id)
+        return false if task_id.nil?
+        task = task_manager.find_task(task_id)
         task && (task.state == "cancelling" || task.state == "timeout")
       end
 
@@ -50,6 +50,12 @@ module Bosh::Director
       def single_step_stage(stage_name)
         begin_stage(stage_name, 1)
         track_and_log(stage_name, false) { yield }
+      end
+
+      private
+
+      def task_manager
+        @task_manager ||= Api::TaskManager.new
       end
     end
   end

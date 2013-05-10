@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require "director"
+require "director/scheduler"
+
+config_file = ::File.expand_path("../../config/bosh-director.yml", __FILE__)
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+config = Psych.load_file(config_file)
+Bosh::Director::Config.configure(config)
+
+scheduler = Bosh::Director::Scheduler.new(config.fetch('scheduled_jobs', []))
+
+["TERM", "INT", "QUIT"].each do |signal|
+  trap(signal) do
+    scheduler.stop!
+  end
+end
+
+scheduler.start!

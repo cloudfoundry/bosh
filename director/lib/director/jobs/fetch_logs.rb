@@ -12,8 +12,6 @@ module Bosh::Director
       attr_accessor :bundle_lifetime
 
       def initialize(instance_id, options = {})
-        super
-
         @blobstore = Config.blobstore
         @instance_id = instance_id
         @log_type = options["type"] || "job"

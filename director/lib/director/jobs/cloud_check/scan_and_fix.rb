@@ -12,8 +12,6 @@ module Bosh::Director
         @queue = :normal
 
         def initialize(deployment_name, jobs)
-          super
-
           @deployment_manager = Api::DeploymentManager.new
           @instance_manager = Bosh::Director::Api::InstanceManager.new
           @deployment = @deployment_manager.find_by_name(deployment_name)

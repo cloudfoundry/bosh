@@ -10,8 +10,6 @@ module Bosh::Director
       # @param [String] name Stemcell name
       # @param [String] version Stemcell version
       def initialize(name, version, options)
-        super
-
         @name = name
         @version = version
         @options = options

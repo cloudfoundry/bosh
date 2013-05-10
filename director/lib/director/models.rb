@@ -1,26 +1,27 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "director/models/compiled_package"
-require "director/models/deployment"
-require "director/models/deployment_problem"
-require "director/models/deployment_property"
-require "director/models/instance"
-require "director/models/log_bundle"
-require "director/models/package"
-require "director/models/release"
-require "director/models/release_version"
-require "director/models/stemcell"
-require "director/models/task"
-require "director/models/template"
-require "director/models/user"
-require "director/models/vm"
-require "director/models/persistent_disk"
+require 'director/models/compiled_package'
+require 'director/models/deployment'
+require 'director/models/deployment_problem'
+require 'director/models/deployment_property'
+require 'director/models/instance'
+require 'director/models/log_bundle'
+require 'director/models/package'
+require 'director/models/release'
+require 'director/models/release_version'
+require 'director/models/stemcell'
+require 'director/models/snapshot'
+require 'director/models/task'
+require 'director/models/template'
+require 'director/models/user'
+require 'director/models/vm'
+require 'director/models/persistent_disk'
 
 module Bosh::Director
   module Models
     VALID_ID = /^[-a-z0-9_.]+$/i
 
-    autoload :Dns, "director/models/dns"
+    autoload :Dns, 'director/models/dns'
   end
 end
 

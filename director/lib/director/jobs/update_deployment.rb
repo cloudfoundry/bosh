@@ -10,8 +10,6 @@ module Bosh::Director
       # @param [String] manifest_file Path to deployment manifest
       # @param [Hash] options Deployment options
       def initialize(manifest_file, options = {})
-        super
-
         logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
         @manifest = File.read(@manifest_file)

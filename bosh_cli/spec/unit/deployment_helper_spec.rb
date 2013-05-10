@@ -171,6 +171,16 @@ describe Bosh::Cli::DeploymentHelper do
         @manifest["releases"].detect { |release| release["name"] == "bat" }["version"].should == "3.1-dev"
         @manifest["releases"].detect { |release| release["name"] == "bosh" }["version"].should == 2
       end
+
+      context 'when the release is not found on the director' do
+        let(:release_list) { [] }
+
+        it 'raises an error' do
+          expect { tester.resolve_release_aliases(@manifest) }.to raise_error(Bosh::Cli::CliError,
+                                                                              "Release 'bosh' not found on director. Unable to resolve 'latest' alias in manifest.")
+        end
+      end
+
     end
 
     it "casts final release versions to Integer" do

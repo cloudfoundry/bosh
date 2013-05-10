@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe BD::InstanceDeleter do
   before(:each) do
@@ -51,10 +51,13 @@ describe BD::InstanceDeleter do
     it "should delete a single instance" do
       vm = BDM::Vm.make
       instance = BDM::Instance.make(:vm => vm, :job => "test", :index => 5)
-      persistent_disks = [BDM::PersistentDisk.make, BDM::PersistentDisk.make]
+      disk = BDM::PersistentDisk.make
+      snapshot = BDM::Snapshot.make(persistent_disk: disk)
+      persistent_disks = [BDM::PersistentDisk.make, disk]
       persistent_disks.each { |disk| instance.persistent_disks << disk }
 
       @deleter.should_receive(:drain).with(vm.agent_id)
+      @deleter.should_receive(:delete_snapshots).with(instance)
       @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
       BD::Config.stub!(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with("5.test.%.foo.bosh", 0)
@@ -152,4 +155,34 @@ describe BD::InstanceDeleter do
     end
   end
 
+  describe :delete_snapshots do
+    let(:vm) { BDM::Vm.make }
+    let(:instance) { BDM::Instance.make(:vm => vm, :job => "test", :index => 5) }
+    let(:disk) { BDM::PersistentDisk.make(instance: instance) }
+    let(:snapshot1) { BDM::Snapshot.make(persistent_disk: disk) }
+    let(:snapshot2) { BDM::Snapshot.make(persistent_disk: disk) }
+
+    context 'with one disk' do
+      it 'should delete all snapshots for an instance' do
+        snapshots = [snapshot1, snapshot2]
+
+        Bosh::Director::Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+
+        @deleter.delete_snapshots(instance)
+      end
+    end
+
+    context 'with three disks' do
+      let(:disk2) { BDM::PersistentDisk.make(instance: instance) }
+      let(:disk3) { BDM::PersistentDisk.make(instance: instance) }
+      let(:snapshot3) { BDM::Snapshot.make(persistent_disk: disk2) }
+      it 'should delete all snapshots for an instance' do
+        snapshots = [snapshot1, snapshot2, snapshot3]
+
+        Bosh::Director::Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+
+        @deleter.delete_snapshots(instance)
+      end
+    end
+  end
 end

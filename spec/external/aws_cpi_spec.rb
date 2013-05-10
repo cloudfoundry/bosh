@@ -40,8 +40,8 @@ describe Bosh::AwsCloud::Cloud do
 
   after do
     # TODO detach volume if still attached (in case of test failure)
-    cpi.delete_disk(@volume_id) if @volume_id
     cpi.delete_vm(@instance_id) if @instance_id
+    cpi.delete_disk(@volume_id) if @volume_id
   end
 
   def vm_lifecycle(ami, network_spec, disk_locality)

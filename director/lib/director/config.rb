@@ -19,7 +19,6 @@ module Bosh::Director
         :max_threads,
         :name,
         :process_uuid,
-        :redis_options,
         :result,
         :revision,
         :task_checkpoint_interval,
@@ -192,9 +191,7 @@ module Bosh::Director
 
       def logger=(logger)
         @logger = logger
-        if @redis_options
-          @redis_options[:logger] = @logger
-        end
+        redis_options[:logger] = @logger
         if redis?
           redis.client.logger = @logger
         end
@@ -204,6 +201,11 @@ module Bosh::Director
         @current_job.task_checkpoint if @current_job
       end
       alias_method :task_checkpoint, :job_cancelled?
+
+
+      def redis_options
+        @redis_options ||= {}
+      end
 
       def redis_options=(options)
         @redis_options = options
@@ -235,7 +237,7 @@ module Bosh::Director
       end
 
       def redis
-        threaded[:redis] ||= Redis.new(@redis_options)
+        threaded[:redis] ||= Redis.new(redis_options)
       end
 
       def redis?

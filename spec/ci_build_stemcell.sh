@@ -31,7 +31,7 @@ fi
 WORK_PATH=$directory/work \
     BUILD_PATH=$directory/build \
     STEMCELL_VERSION=$BUILD_ID \
-    $WORKSPACE/spec/ci_build.sh stemcell:$task[$infrastructure]
+    $WORKSPACE/spec/ci_build.sh ci:stemcell:$task[$infrastructure]
 
 files=$(ls $directory/work/work/*.tgz 2> /dev/null || wc -l)
 if [ "$files" != "0" ]; then

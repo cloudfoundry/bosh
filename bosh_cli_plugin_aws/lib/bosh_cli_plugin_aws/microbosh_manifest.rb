@@ -1,11 +1,13 @@
 module Bosh
   module Aws
     class MicroboshManifest
-      attr_reader :vpc_receipt, :route53_receipt
+      attr_reader :vpc_receipt, :route53_receipt, :hm_director_password, :hm_director_user
 
-      def initialize(vpc_receipt, route53_receipt)
+      def initialize(vpc_receipt, route53_receipt, options={})
         @vpc_receipt = vpc_receipt
         @route53_receipt = route53_receipt
+        @hm_director_user = options[:hm_director_user]
+        @hm_director_password = options[:hm_director_password]
       end
 
       def file_name

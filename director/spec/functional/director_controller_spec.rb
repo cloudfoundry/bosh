@@ -1,8 +1,8 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
-require "rack/test"
+require 'rack/test'
 
 describe Bosh::Director::ApiController do
   include Rack::Test::Methods
@@ -726,6 +726,64 @@ describe Bosh::Director::ApiController do
       it 'scans and fixes problems' do
         put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'job' => [0])
         expect_redirect_to_queued_task(last_response)
+      end
+    end
+
+    describe 'snapshots' do
+      before do
+        deployment = BD::Models::Deployment.make(name: "mycloud")
+
+        instance = BD::Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+        disk = BD::Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
+        BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
+
+        instance = BD::Models::Instance.make(deployment: deployment, job: 'job', index: 1)
+        disk = BD::Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
+        BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
+        BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
+
+      end
+
+      describe 'creating' do
+        it 'should create a snapshot for a job' do
+          post '/deployments/mycloud/jobs/job/1/snapshots'
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'should create a snapshot for a deployment' do
+          post '/deployments/mycloud/snapshots'
+          expect_redirect_to_queued_task(last_response)
+        end
+      end
+
+      describe 'deleting' do
+        it 'should delete all snapshots of a deployment' do
+          delete '/deployments/mycloud/snapshots'
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'should delete a snapshot' do
+          delete '/deployments/mycloud/snapshots/snap1a'
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'should raise an error if the snapshot belongs to a different deployment' do
+          snap = BD::Models::Snapshot.make(snapshot_cid: 'snap2b')
+          delete "/deployments/#{snap.persistent_disk.instance.deployment.name}/snapshots/snap2a"
+          last_response.status.should == 400
+        end
+      end
+
+      describe 'listing' do
+        it 'should list all snapshots for a job' do
+          get '/deployments/mycloud/jobs/job/0/snapshots'
+          last_response.status.should == 200
+        end
+
+        it 'should list all snapshots for a deployment' do
+          get '/deployments/mycloud/snapshots'
+          last_response.status.should == 200
+        end
       end
     end
 

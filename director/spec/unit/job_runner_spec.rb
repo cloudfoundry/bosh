@@ -4,14 +4,18 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::JobRunner do
 
+  let(:sample_job_class) do
+    Class.new(Bosh::Director::Jobs::BaseJob) do
+      define_method :perform do
+        "foo"
+      end
+    end
+  end
+
   before(:each) do
     BD::Config.stub!(:cloud_options).and_return({})
     @task_dir = Dir.mktmpdir
     @task = Bosh::Director::Models::Task.make(:id => 42, :output => @task_dir)
-
-    @sample_job = Class.new(Bosh::Director::Jobs::BaseJob) do
-      define_method(:perform) { |*args| "foo" }
-    end
   end
 
   def make_runner(job_class, task_id)
@@ -25,8 +29,8 @@ describe Bosh::Director::JobRunner do
   end
 
   it "performs the requested job with provided args" do
-    runner = make_runner(@sample_job, 42)
-    runner.run(1, 2, 3)
+    runner = make_runner(sample_job_class, 42)
+    runner.run
     @task.reload
     @task.state.should == "done"
     @task.result.should == "foo"
@@ -34,7 +38,7 @@ describe Bosh::Director::JobRunner do
 
   it "whines when no task is found" do
     expect {
-      make_runner(@sample_job, 155)
+      make_runner(sample_job_class, 155)
     }.to raise_error(Bosh::Director::TaskNotFound)
   end
 
@@ -42,7 +46,7 @@ describe Bosh::Director::JobRunner do
     @task.output = nil
     @task.save
     expect {
-      make_runner(@sample_job, 42)
+      make_runner(sample_job_class, 42)
     }.to raise_error(Bosh::Director::DirectorError, /directory.*missing/)
   end
 
@@ -60,7 +64,7 @@ describe Bosh::Director::JobRunner do
       with(File.join(@task_dir, "result")).
       and_return(result_file)
 
-    make_runner(@sample_job, 42)
+    make_runner(sample_job_class, 42)
 
     config = Bosh::Director::Config
     config.event_log.should == event_log
@@ -84,7 +88,7 @@ describe Bosh::Director::JobRunner do
     task = Bosh::Director::Models::Task[42]
     task.update(:state => "processing")
 
-    runner = make_runner(@sample_job, 42)
+    runner = make_runner(sample_job_class, 42)
 
     task.update(:state => "cancelling")
     runner.checkpoint

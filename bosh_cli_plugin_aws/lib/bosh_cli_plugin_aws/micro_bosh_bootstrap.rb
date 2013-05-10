@@ -28,7 +28,7 @@ module Bosh
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
 
-          @manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
+          @manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config, options)
         end
 
         @manifest

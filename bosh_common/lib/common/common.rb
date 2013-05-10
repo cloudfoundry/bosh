@@ -47,7 +47,7 @@ module Bosh
 
     # this method will loop until the block returns a true value
     def retryable(options = {}, &block)
-      opts = {:tries => 2, :sleep => 1, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
+      opts = {:tries => 2, :sleep => exponential_sleeper, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
       invalid_options = opts.merge(options).keys - opts.keys
 
       raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?
@@ -89,6 +89,10 @@ module Bosh
       # it need to be passed in the list of exceptions to ignore
     end
 
-    module_function :retryable, :wait
+    def exponential_sleeper
+      lambda { |tries, _| [2**(tries-1), 10].min } # 1, 2, 4, 8, 10, 10..10 seconds
+    end
+
+    module_function :retryable, :wait, :exponential_sleeper
   end
 end

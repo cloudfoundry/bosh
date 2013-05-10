@@ -114,6 +114,7 @@ previous_stage=
 
 function stage() {
   echo "=== Applying '$1' stage ==="
+  echo "== Started $(date) =="
   if [ "$mnt_type" == "btrfs" ]
   then
     stage_with_btrfs $1

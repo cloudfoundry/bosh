@@ -4,7 +4,15 @@ describe Bosh::Aws::MicroboshManifest do
   let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
   let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
   let(:vpc_config) { vpc_receipt['original_configuration'] }
-  let(:manifest) { Bosh::Aws::MicroboshManifest.new(vpc_receipt, route53_receipt) }
+  let(:hm_director_user) { 'hm' }
+  let(:hm_director_password) { 'hmpasswd' }
+  let(:manifest_options) { {hm_director_user: hm_director_user, hm_director_password: hm_director_password} }
+  let(:manifest) { Bosh::Aws::MicroboshManifest.new(vpc_receipt, route53_receipt, manifest_options) }
+
+  it 'sets health manager director credentials' do
+    manifest.hm_director_user.should == 'hm'
+    manifest.hm_director_password.should == 'hmpasswd'
+  end
 
   it 'warns when name is missing' do
     vpc_config['name'] = nil
