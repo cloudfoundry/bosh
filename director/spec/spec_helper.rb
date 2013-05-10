@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+$: << File.expand_path('..', __FILE__)
 
 require "digest/sha1"
 require "fileutils"
