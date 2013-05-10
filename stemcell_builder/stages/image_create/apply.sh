@@ -19,12 +19,18 @@ dd if=/dev/null of=$work/$disk_image_name bs=1M seek=$disk_size 2> /dev/null
 parted --script $work/$disk_image_name mklabel msdos
 parted --script $work/$disk_image_name mkpart primary ext2 $part_offset $part_size
 
+losetup -a
+
 # unmap the loop device in case it's already mapped
 kpartx -dvs $work/$disk_image_name
+
+losetup -a
 
 # Map partition in image to loopback
 dev=$(kpartx -avs $work/$disk_image_name | grep "^add" | cut -d" " -f3)
 loopback_dev="/dev/mapper/$dev"
+
+losetup -a
 
 # Format partition
 mkfs.$part_fs $loopback_dev
@@ -52,6 +58,8 @@ if mountpoint -q $mnt; then
   exit 1
 fi
 
+losetup -a
+
 # Unmap partition
 echo "Removing device mappings for $disk_image_name"
 for try in 1 1 2 3 5 8 13; do
@@ -60,6 +68,8 @@ for try in 1 1 2 3 5 8 13; do
   kpartx -dvs $work/$disk_image_name || continue
   break
 done
+
+losetup -a
 
 if [ -b $loopback_dev ]; then
   echo "Could not remove device mapping at $loopback_dev"
