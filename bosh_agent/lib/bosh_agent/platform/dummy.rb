@@ -10,6 +10,10 @@ module Bosh::Agent
     end
 
     def get_data_disk_device_name
+      "dummy"
+    end
+
+    def setup_networking
     end
 
   end
