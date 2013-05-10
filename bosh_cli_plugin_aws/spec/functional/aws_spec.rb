@@ -14,6 +14,7 @@ describe Bosh::Cli::Command::AWS do
     describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
       let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
+      let(:micro_bosh_yaml) { Psych.load_file("micro_bosh.yml") }
 
       around do |test|
         Dir.mktmpdir do |dir|
@@ -25,16 +26,19 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "uses some of the normal director keys" do
-        @micro_bosh_yaml = Psych.load_file("micro_bosh.yml")
+        micro_bosh_yaml['name'].should == "micro-dev102"
+        micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
+        micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
+        micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
 
-        @micro_bosh_yaml['name'].should == "micro-dev102"
-        @micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
-        @micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
-        @micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
+        micro_bosh_yaml['cloud']['properties']['aws']['access_key_id'].should == "..."
+        micro_bosh_yaml['cloud']['properties']['aws']['secret_access_key'].should == "..."
+        micro_bosh_yaml['cloud']['properties']['aws']['region'].should == "us-east-1"
+      end
 
-        @micro_bosh_yaml['cloud']['properties']['aws']['access_key_id'].should == "..."
-        @micro_bosh_yaml['cloud']['properties']['aws']['secret_access_key'].should == "..."
-        @micro_bosh_yaml['cloud']['properties']['aws']['region'].should == "us-east-1"
+      it "has a health manager username and password populated" do
+        micro_bosh_yaml['apply_spec']['properties']['hm']['director_account']['user'].should == 'hm'
+        micro_bosh_yaml['apply_spec']['properties']['hm']['director_account']['password'].should_not be_nil
       end
     end
 
@@ -48,7 +52,12 @@ describe Bosh::Cli::Command::AWS do
             aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
             aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
-            Psych.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
+
+            yaml = Psych.load_file("bosh.yml")
+
+            yaml['name'].should == "vpc-bosh-dev102"
+            yaml['properties']['hm']['director_account']['user'].should == 'hm'
+            yaml['properties']['hm']['director_account']['password'].should_not be_nil
           end
         end
       end
@@ -590,73 +599,6 @@ describe Bosh::Cli::Command::AWS do
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.send(:delete_all_ebs, config_file)
         end
-      end
-    end
-
-    describe "aws snapshot director deployments" do
-      let(:config_file) { asset "config.yml" }
-
-      it "should snapshot EBS volumes in all deployments" do
-        bat_vm_fixtures = [
-            {"agent_id" => "a1b2", "cid" => "i-a1b2c3", "job" => "director", "index" => 0},
-            {"agent_id" => "a3b4", "cid" => "i-d4e5f6", "job" => "postgres", "index" => 0}
-        ]
-        bosh_vm_fixtures = [
-            {"agent_id" => "a1b2", "cid" => "i-g1h2i3", "job" => "director", "index" => 0}
-        ]
-
-        fake_director = mock("director", :uuid => "dir-uuid")
-        fake_ec2 = mock("ec2")
-        fake_instance_collection = mock("instance_collection")
-        fake_instance = mock("instance", :exists? => true)
-
-        fake_attachment = mock("attachment")
-
-        # Inherited from Bosh::Cli::Command::Base
-        aws.stub(
-            auth_required: true,
-            director: fake_director,
-            target: "http://1.2.3.4:56789",
-            target_url: "http://1.2.3.4:56789",
-            target_name: "http://1.2.3.4:56789"
-        )
-
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        AWS::EC2::InstanceCollection.stub(:new).and_return(fake_instance_collection)
-        fake_ec2.should_receive(:snapshot_volume).exactly(4).times
-
-        aws.should_receive(:say).with("Creating snapshots for director `http://1.2.3.4:56789'")
-        fake_director.should_receive(:list_deployments).and_return([{"name" => "bat"}, {"name" => "bosh"}])
-
-        aws.should_receive(:say).with("  deployment: `bat'")
-        fake_director.should_receive(:list_vms).with("bat").and_return(bat_vm_fixtures)
-        fake_ec2.should_receive(:instances_for_ids).with(["i-a1b2c3", "i-d4e5f6"]).and_return(fake_instance_collection)
-        fake_instance_collection.should_receive(:[]).twice.times.and_return(fake_instance)
-
-        aws.should_receive(:say).with("    instance: `i-a1b2c3'")
-        fake_instance.should_receive(:block_device_mappings).
-            and_return({"/dev/sda" => fake_attachment, "/dev/sdb" => fake_attachment})
-        aws.should_receive(:say).with("      volume: `v-a1b2c3' device: `/dev/sda'")
-        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-a1b2c3"))
-        aws.should_receive(:say).with("      volume: `v-a4b5c6' device: `/dev/sdb'")
-        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-a4b5c6"))
-
-        aws.should_receive(:say).with("    instance: `i-d4e5f6'")
-        fake_instance.should_receive(:block_device_mappings).and_return({"/dev/sdc" => fake_attachment})
-        aws.should_receive(:say).with("      volume: `v-d4e5f6' device: `/dev/sdc'")
-        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-d4e5f6"))
-
-        aws.should_receive(:say).with("  deployment: `bosh'")
-        fake_director.should_receive(:list_vms).with("bosh").and_return(bosh_vm_fixtures)
-        fake_ec2.should_receive(:instances_for_ids).with(["i-g1h2i3"]).and_return(fake_instance_collection)
-        fake_instance_collection.should_receive(:[]).and_return(fake_instance)
-
-        aws.should_receive(:say).with("    instance: `i-g1h2i3'")
-        fake_instance.should_receive(:block_device_mappings).and_return({"/dev/sdd" => fake_attachment})
-        aws.should_receive(:say).with("      volume: `v-g1h2i3' device: `/dev/sdd'")
-        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-g1h2i3"))
-
-        aws.snapshot_deployments(config_file)
       end
     end
 

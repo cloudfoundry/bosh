@@ -15,8 +15,8 @@ These options are passed to the AWS CPI when it is instantiated.
   AWS IAM secret access key
 * `default_key_name` (required)  
   default AWS ssh key name to assign to created virtual machines
-* `default_security_group` (required)  
-  default AWS security group to assign to created virtual machines
+* `default_security_groups` (required)  
+  list of AWS security group to assign to created virtual machines
 * `ec2_private_key` (required)  
   local path to the ssh private key, must match `default_key_name`
 * `region` (optional)  

@@ -35,6 +35,7 @@ module Bosh::Director
 
         drain(vm.agent_id)
         @cloud.delete_vm(vm.cid)
+        delete_snapshots(instance)
         delete_persistent_disks(instance.persistent_disks)
         delete_dns(instance.job, instance.index)
 
@@ -69,6 +70,11 @@ module Bosh::Director
         sleep(drain_time)
       end
       agent.stop
+    end
+
+    def delete_snapshots(instance)
+      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
+      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
     end
 
     # Delete persistent disks

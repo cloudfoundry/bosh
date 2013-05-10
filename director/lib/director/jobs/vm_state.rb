@@ -9,7 +9,6 @@ module Bosh::Director
 
       # @param [Integer] deployment_id Deployment id
       def initialize(deployment_id, format)
-        super
         @deployment_id = deployment_id
         @format = format
       end

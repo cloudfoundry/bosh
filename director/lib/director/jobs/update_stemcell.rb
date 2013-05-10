@@ -9,8 +9,6 @@ module Bosh::Director
 
       # @param [String] stemcell_file Stemcell tarball path
       def initialize(stemcell_file)
-        super
-
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new

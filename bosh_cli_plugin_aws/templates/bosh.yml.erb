@@ -16,6 +16,7 @@ networks:
     - 10.10.0.7 - 10.10.0.9
     reserved:
     - 10.10.0.2 - 10.10.0.6
+    - 10.10.0.10 - 10.10.0.10
     dns:
     - 10.10.0.6
     cloud_properties:
@@ -131,6 +132,7 @@ properties:
     address: 10.10.0.7
     port: 25555
     encryption: false
+    enable_scheduled_snapshots: true
     ssl:
       key: |
         <%= director_ssl_key %>
@@ -143,8 +145,8 @@ properties:
       user: admin
       password: admin
     director_account:
-      user: admin
-      password: admin
+      user: <%= hm_director_user %>
+      password: <%= hm_director_password %>
     intervals:
       poll_director: 60
       poll_grace_period: 30
@@ -157,6 +159,12 @@ properties:
     tsdb_enabled: false
     cloud_watch_enabled: true
     resurrector_enabled: true
+    <% if ENV['BOSH_DATADOG_API_KEY'] && ENV['BOSH_DATADOG_APP_KEY'] %>
+    datadog_enabled: true
+    datadog:
+      api_key: <%= ENV['BOSH_DATADOG_API_KEY'] %>
+      application_key: <%= ENV['BOSH_DATADOG_APP_KEY'] %>
+    <% end %>
 
   registry:
     address: 10.10.0.7

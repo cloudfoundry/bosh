@@ -11,13 +11,6 @@ def asset(filename)
   File.join(File.dirname(__FILE__), 'assets', filename)
 end
 
-def mock_volume(id)
-  volume = mock("volume")
-  volume.stub(:id => id)
-  volume.stub(:create_snapshot => nil)
-  volume
-end
-
 def encoded_credentials(username, password)
   Base64.encode64("#{username}:#{password}").strip
 end

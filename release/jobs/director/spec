@@ -14,6 +14,7 @@ templates:
   nginx.conf.erb: config/nginx.conf
   nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
+  scheduler_ctl: bin/scheduler_ctl
 packages:
 - director
 - nginx
@@ -52,6 +53,12 @@ properties:
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
+  director.enable_scheduled_snapshots:
+    description: Enable/Disable
+    default: false
+  director.snapshot_schedule:
+    description: RufusScheduler cron formatted schedule for snapshots
+    default: '0 0 7 * * * UTC'
   redis.address:
     description: Address of the redis server
   redis.port:

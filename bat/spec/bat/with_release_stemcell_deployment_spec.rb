@@ -29,7 +29,7 @@ describe "with release, stemcell and deployment" do
     end
   end
 
-  it "should return vms in a deployment" do
+  xit "should return vms in a deployment" do
     bat_vms = vms(deployment.name)
     bat_vms.size.should == 1
     bat_vms.first.name.should == "batlight/0"

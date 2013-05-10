@@ -4,8 +4,8 @@ module Bosh
 
       attr_reader :director_uuid
 
-      def initialize(vpc_receipt, route53_receipt, director_uuid)
-        super(vpc_receipt, route53_receipt)
+      def initialize(vpc_receipt, route53_receipt, director_uuid, options={})
+        super(vpc_receipt, route53_receipt, options)
         @director_uuid = director_uuid
       end
 

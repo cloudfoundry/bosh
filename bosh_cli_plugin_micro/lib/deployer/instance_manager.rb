@@ -444,7 +444,7 @@ module Bosh::Deployer
         http_client.ssl_config.verify_callback = Proc.new {}
 
         response = http_client.get(url)
-        message = "Nginx has started but the application it is proxying too has not started yet."
+        message = "Nginx has started but the application it is proxying to has not started yet."
         raise Bosh::Deployer::DirectorGatewayError.new(message) if response.status == 502 || response.status == 503
         info = Yajl::Parser.parse(response.body)
         logger.info("Director is ready: #{info.inspect}")

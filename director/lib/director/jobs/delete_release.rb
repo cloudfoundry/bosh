@@ -8,8 +8,6 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(name, options = {})
-        super
-
         @name = name
         @blobstore = Config.blobstore
         @errors = []

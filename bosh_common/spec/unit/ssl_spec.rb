@@ -130,30 +130,6 @@ describe Bosh::Ssl::Certificate do
           server_certificate.chain.should be_nil
         end
       end
-
-      describe 'verifying that the subject of the certificate we load matches the one was ask for' do
-        context 'when it does match' do
-          let(:common_name) { 'myapp.dev102.cf.com' }
-
-          it 'does not raise an exception' do
-            expect {
-              server_certificate.load_or_create
-            }.to_not raise_error(Bosh::Ssl::Certificate::SubjectsDoNotMatchException)
-          end
-        end
-
-        context 'when it does not match' do
-          let(:common_name) { 'myapp.bar.com' }
-
-          it 'raises an exception' do
-            expect {
-              server_certificate.load_or_create
-            }.to raise_error(Bosh::Ssl::Certificate::SubjectsDoNotMatchException,
-              "The subject you provided is '/C=US/O=Pivotal/CN=myapp.bar.com' but the certificate you loaded has a subject of '/C=US/O=Pivotal/CN=myapp.dev102.cf.com'."
-            )
-          end
-        end
-      end
     end
   end
 end

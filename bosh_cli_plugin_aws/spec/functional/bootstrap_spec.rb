@@ -32,21 +32,89 @@ describe "AWS Bootstrap commands" do
     @bosh_config.close
   end
 
-  it "should bootstrap microbosh" do
-    stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami").
-        to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
+  describe "aws bootstrap micro" do
+    context "when non-interactive" do
+      let(:misc_command) { double('Command Misc') }
+      let(:user_command) { double('Command User') }
 
-    credentials = encoded_credentials("admin", "admin")
-    stub_request(:get, "https://10.10.0.6:25555/info").
-        with(:headers => {'Authorization' => "Basic #{credentials}"}).
-        to_return(:status => 200, :body => {"user" => "admin"}.to_json, :headers => {})
+      before do
+        Bosh::Cli::Command::User.stub(:new).and_return(user_command)
+        Bosh::Cli::Command::Misc.stub(:new).and_return(misc_command)
+        misc_command.stub(:options=)
+        user_command.stub(:options=)
+      end
 
-    Bosh::Deployer::InstanceManager.any_instance.should_receive(:with_lifecycle)
+      it "should bootstrap microbosh" do
+        stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami").
+            to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
 
-    aws.bootstrap_micro
+        SecureRandom.should_receive(:base64).and_return("hm_password")
+        SecureRandom.should_receive(:base64).and_return("admin_password")
 
-    stemcell_ami_request.should have_been_made
-    a_request(:get, "https://10.10.0.6:25555/info").should have_been_made
+        misc_command.should_receive(:login).with("admin", "admin")
+        user_command.should_receive(:create).with("admin", "admin_password").and_return(true)
+        misc_command.should_receive(:login).with("admin", "admin_password")
+        user_command.should_receive(:create).with("hm", "hm_password").and_return(true)
+        misc_command.should_receive(:login).with("hm", "hm_password")
+
+        Bosh::Deployer::InstanceManager.any_instance.should_receive(:with_lifecycle)
+
+        aws.bootstrap_micro
+
+        stemcell_ami_request.should have_been_made
+      end
+
+      context "hm user and password" do
+        let(:fake_bootstrap) { double("MicroBosh Bootstrap", start: true) }
+        before do
+          Bosh::Aws::MicroBoshBootstrap.stub(:new).and_return(fake_bootstrap)
+        end
+
+        it "creates default 'hm' user name for hm" do
+          fake_bootstrap.stub(:create_user)
+
+          fake_bootstrap.should_receive(:create_user).with('hm', anything)
+          aws.bootstrap_micro
+        end
+
+        it "passes the generated hm user to the new microbosh bootstrapper" do
+          SecureRandom.stub(:base64).and_return("some_password")
+          fake_bootstrap.stub(:create_user)
+          Bosh::Aws::MicroBoshBootstrap.should_receive(:new).with do |_, options|
+            options[:hm_director_user].should == "hm"
+            options[:hm_director_password].should == "some_password"
+          end
+          aws.bootstrap_micro
+        end
+
+        it "creates a hm user with name from options" do
+          aws.options[:hm_director_user] = 'hm_guy'
+          fake_bootstrap.stub(:create_user)
+          fake_bootstrap.should_receive(:create_user).with('hm_guy', anything)
+          aws.bootstrap_micro
+        end
+      end
+
+    end
+
+    context "when interactive" do
+      before do
+        aws.options[:non_interactive] = false
+
+      end
+
+      it "should ask for a new user" do
+        fake_bootstrap = double("MicroBosh Bootstrap", start: true)
+        Bosh::Aws::MicroBoshBootstrap.stub(:new).and_return(fake_bootstrap)
+
+        aws.should_receive(:ask).with("Enter username: ").and_return("admin")
+        aws.should_receive(:ask).with("Enter password: ").and_return("admin_passwd")
+        fake_bootstrap.should_receive(:create_user).with("admin", "admin_passwd")
+        fake_bootstrap.should_receive(:create_user).with("hm", anything)
+
+        aws.bootstrap_micro
+      end
+    end
   end
 
   describe "aws bootstrap bosh" do
@@ -241,7 +309,10 @@ describe "AWS Bootstrap commands" do
 
         stub_request(:get, "http://127.0.0.1:25555/releases").
             with(:headers => {'Content-Type' => 'application/json'}).
-            to_return(:status => 200, :body => "[]")
+            to_return(
+            {:status => 200, :body => "[]"},
+            {:status => 200, :body => '[{"name" : "bosh", "release_versions" : [{"version" : "1"}]}]'}
+        )
 
         stub_request(:get, %r{http://blob.cfblob.com/rest/objects}).
             to_return(:status => 200)
@@ -282,6 +353,10 @@ describe "AWS Bootstrap commands" do
 
         aws.should_receive(:ask).with("Enter username: ").and_return(username)
         aws.should_receive(:ask).with("Enter password: ").and_return(password)
+
+        SecureRandom.stub(:base64).and_return("hm_password")
+        @create_hm_user_req = stub_request(:post, "https://50.200.100.3:25555/users").
+            with(body: {username: 'hm', password: 'hm_password'}).to_return(status: 204)
 
         @create_user_request = stub_request(:post, "https://50.200.100.3:25555/users").
             with(:body => {username: username, password: password}.to_json).
@@ -339,6 +414,11 @@ describe "AWS Bootstrap commands" do
                 'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
             }).should have_been_made.once
+      end
+
+      it "creates a new hm user in bosh" do
+        aws.bootstrap_bosh(bosh_repository_path)
+        @create_hm_user_req.should have_been_made.once
       end
     end
   end

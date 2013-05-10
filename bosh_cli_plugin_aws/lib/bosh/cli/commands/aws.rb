@@ -1,4 +1,5 @@
 require "aws-sdk"
+require "securerandom"
 require_relative "../../../bosh_cli_plugin_aws"
 
 module Bosh::Cli::Command
@@ -24,6 +25,9 @@ module Bosh::Cli::Command
     usage "aws bootstrap micro"
     desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
     def bootstrap_micro
+      options[:hm_director_password] = SecureRandom.base64
+      options[:hm_director_user] ||= 'hm'
+
       bootstrap = Bosh::Aws::MicroBoshBootstrap.new(runner, options)
       bootstrap.start
 
@@ -36,7 +40,11 @@ module Bosh::Cli::Command
         end
 
         bootstrap.create_user(username, password)
+      else
+        bootstrap.create_user("admin", SecureRandom.base64)
       end
+
+      bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
     end
 
     usage "aws bootstrap bosh"
@@ -44,6 +52,9 @@ module Bosh::Cli::Command
     def bootstrap_bosh(bosh_repository=nil)
       target_required
       err "To bootstrap BOSH, first log in to `#{config.target}'" unless logged_in?
+
+      options[:hm_director_user] ||= 'hm'
+      options[:hm_director_password] = SecureRandom.base64
 
       bootstrap = Bosh::Aws::BoshBootstrap.new(director, self.options)
       bootstrap.start(bosh_repository)
@@ -55,6 +66,8 @@ module Bosh::Cli::Command
       bootstrap.create_user(username, password)
 
       say "BOSH deployed successfully. You are logged in as #{username}."
+
+      bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
     rescue Bosh::Aws::BootstrapError => e
       err "Unable to bootstrap bosh: #{e.message}"
     end
@@ -65,19 +78,25 @@ module Bosh::Cli::Command
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
 
-      manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
+      options[:hm_director_user] ||= 'hm'
+      options[:hm_director_password] = SecureRandom.base64
+
+      manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config, options)
 
       write_yaml(manifest, manifest.file_name)
     end
 
     usage "aws generate bosh"
-    desc "generate bosh.yml stub manifest for use with 'bosh diff'"
+    desc "generate bosh.yml deployment manifest"
     def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       target_required
 
+      options[:hm_director_user] ||= 'hm'
+      options[:hm_director_password] = SecureRandom.base64
+
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
-      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, options)
 
       write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
@@ -92,45 +111,6 @@ module Bosh::Cli::Command
       manifest = Bosh::Aws::BatManifest.new(vpc_config, route53_config, stemcell_version, director.uuid)
 
       write_yaml(manifest, manifest.file_name)
-    end
-
-    usage "aws snapshot deployments"
-    desc "snapshot all EBS volumes in all deployments"
-    def snapshot_deployments(config_file)
-      auth_required
-      config = load_config(config_file)
-
-      say("Creating snapshots for director `#{target_name}'")
-      ec2 = Bosh::Aws::EC2.new(config["aws"])
-
-      deployments = director.list_deployments.map { |d| d["name"] }
-      deployments.each do |deployment|
-        say("  deployment: `#{deployment}'")
-        vms = director.list_vms(deployment)
-        instances = ec2.instances_for_ids(vms.map { |vm| vm["cid"] })
-        vms.each do |vm|
-          instance_id = vm["cid"]
-          instance = instances[instance_id]
-          unless instance.exists?
-            say("    ERROR: instance `#{instance_id}' not found on EC2")
-          else
-            say("    instance: `#{instance_id}'")
-            instance.block_device_mappings.each do |device_path, attachment|
-              say("      volume: `#{attachment.volume.id}' device: `#{device_path}'")
-              device_name = device_path.match("/dev/(.*)")[1]
-              snapshot_name = [deployment, vm['job'], vm['index'], device_name].join('/')
-              vm_metadata = JSON.unparse(vm)
-              tags = {
-                  "device" => device_path,
-                  "bosh_data" => vm_metadata,
-                  "director_uri" => target_url,
-                  "director_uuid" => director.uuid
-              }
-              ec2.snapshot_volume(attachment.volume, snapshot_name, vm_metadata, tags)
-            end
-          end
-        end
-      end
     end
 
     usage "aws create"

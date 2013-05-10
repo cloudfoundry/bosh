@@ -11,21 +11,25 @@ require "director"
 
 
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+
 ASSETS_DIR = File.join(SPEC_ROOT, "assets")
-BOSH_ROOT_DIR = File.expand_path File.join(SPEC_ROOT, "..")
-BOSH_TMP_DIR = File.expand_path File.join(BOSH_ROOT_DIR, "tmp")
 
 Dir.glob("#{SPEC_ROOT}/support/**/*.rb") do |filename|
   require filename
 end
 
-TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
-TEST_RELEASE_DIR = File.join(ASSETS_DIR, "test_release")
+SANDBOX_DIR = Dir.mktmpdir
 
-CLI_DIR        = File.expand_path("../../../cli", __FILE__)
-BOSH_CACHE_DIR = Dir.mktmpdir
-BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
-BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
+TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
+TEST_RELEASE_DIR = File.join(SANDBOX_DIR, "test_release")
+
+BOSH_CACHE_DIR = File.join(SANDBOX_DIR, "cache")
+
+BOSH_WORK_TEMPLATE  = File.join(ASSETS_DIR, "bosh_work_dir")
+BOSH_WORK_DIR  = File.join(SANDBOX_DIR, "bosh_work_dir")
+
+BOSH_CONFIG    = File.join(SANDBOX_DIR, "bosh_config.yml")
+#BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
 
 STDOUT.sync = true
 
@@ -34,6 +38,7 @@ module Bosh
     module IntegrationTest
       class CliUsage; end
       class HealthMonitor; end
+      class DirectorScheduler; end
     end
   end
 end
@@ -42,6 +47,7 @@ RSpec.configure do |c|
   c.before(:each) do |example|
     cleanup_bosh
     setup_test_release_dir
+    setup_bosh_work_dir
   end
 
   c.filter_run :focus => true if ENV["FOCUS"]
@@ -61,6 +67,11 @@ end
 def director_version
   version = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000)`
   "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
+end
+
+
+def setup_bosh_work_dir
+  FileUtils.cp_r(BOSH_WORK_TEMPLATE, BOSH_WORK_DIR, :preserve => true)
 end
 
 def setup_test_release_dir
@@ -91,12 +102,7 @@ def setup_test_release_dir
 end
 
 def cleanup_bosh
-  [
-   BOSH_CONFIG,
-   BOSH_CACHE_DIR,
-   TEST_RELEASE_DIR
-  ].each do |item|
-    FileUtils.rm_rf(item)
-  end
+  FileUtils.rm_rf(SANDBOX_DIR)
+  FileUtils.mkdir_p(SANDBOX_DIR)
 end
 

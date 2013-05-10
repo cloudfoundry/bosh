@@ -33,7 +33,11 @@ db:
   <% unless has_postgres %>
   database: sqlite:///var/vcap/store/director/director.db
   <% end %>
-
+<% if p('director.enable_scheduled_snapshots') %>
+scheduled_jobs:
+  - command: snapshot_deployments
+    schedule: <%= p('director.snapshot_schedule') %>
+<% end %>
 <% if_p('dns.address', 'dns.user', 'dns.password', 'dns.database.port', 'dns.database.name') do |address, user, password, db_port, db_name| %>
 dns:
   server: <%= address %>

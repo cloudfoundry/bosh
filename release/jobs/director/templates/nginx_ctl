@@ -19,11 +19,11 @@ case $1 in
     # the persistent disk
     if [ -s $SSL_DIR/director.key -a -s $SSL_DIR/director.pem ]; then
       cp $SSL_DIR/* $STORE_DIR
-    # otherwise, if the key & cert doesn't exist in the persistent disk
+    # otherwise, if the key or cert doesn't exist in the persistent disk
     # create new ones
-    elif [ ! -f $SSL_DIR/director.key -a ! -f $SSL_DIR/director.pem ]; then
+    elif [ ! -f $STORE_DIR/director.key -o ! -f $STORE_DIR/director.pem ]; then
       openssl req -nodes -new -newkey rsa:1024 -out $STORE_DIR/director.csr \
-        -keyout $STORE_DIR/director.key -subj '/C=ORG/O=Bosh/CN=*'
+        -keyout $STORE_DIR/director.key -subj '/O=Bosh/CN=*'
       openssl x509 -req -days 3650 -in $STORE_DIR/director.csr \
         -signkey $STORE_DIR/director.key -out $STORE_DIR/director.pem
     fi

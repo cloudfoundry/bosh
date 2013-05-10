@@ -162,6 +162,10 @@ module Bosh::Agent
       def compile
         FileUtils.rm_rf install_dir if File.directory?(install_dir)
         FileUtils.mkdir_p install_dir
+
+        pkg_link_dst = File.join(@base_dir, 'packages', @package_name)
+        FileUtils.ln_sf(install_dir, pkg_link_dst)
+
         pct_space_used = pct_disk_used(@compile_base)
         if pct_space_used >= @max_disk_usage_pct
           raise Bosh::Agent::MessageHandlerError,
@@ -175,7 +179,7 @@ module Bosh::Agent
 
           # TODO: error handling
           ENV['BOSH_COMPILE_TARGET'] = compile_dir
-          ENV['BOSH_INSTALL_TARGET'] = install_dir
+          ENV['BOSH_INSTALL_TARGET'] = pkg_link_dst
           ENV['BOSH_PACKAGE_NAME'] = @package_name.to_s
           ENV['BOSH_PACKAGE_VERSION'] = @package_version.to_s
           if File.exist?('packaging')

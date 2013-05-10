@@ -10,8 +10,6 @@ module Bosh::Director
 
         # @param [String] deployment_name Deployment name
         def initialize(deployment_name)
-          super
-
           @deployment_manager = Api::DeploymentManager.new
           @deployment = @deployment_manager.find_by_name(deployment_name)
         end

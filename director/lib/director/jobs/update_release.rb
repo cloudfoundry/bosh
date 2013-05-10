@@ -15,8 +15,6 @@ module Bosh::Director
       # @param [String] tmp_release_dir Directory containing release bundle
       # @param [Hash] options Release update options
       def initialize(tmp_release_dir, options = {})
-        super
-
         @tmp_release_dir = tmp_release_dir
         @release_model = nil
         @release_version_model = nil
