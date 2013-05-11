@@ -389,6 +389,15 @@ describe Bosh::Director::ApiController do
       end
     end
 
+    describe "deleting deployment" do
+      it "deletes the deployment" do
+        deployment = BD::Models::Deployment.create(:name => "test_deployment", :manifest => Psych.dump({"foo" => "bar"}))
+
+        delete "/deployments/test_deployment"
+        expect_redirect_to_queued_task(last_response)
+      end
+    end
+
     describe "deleting release" do
       it "deletes the whole release" do
         release = BD::Models::Release.create(:name => "test_release")
