@@ -255,11 +255,11 @@ module Bosh::Cli::Command
     # @param [optional, Net::SSH::Gateway] gateway
     # @yield [Net::SSH]
     def with_ssh(user, ip, gateway = nil)
+      require "net/scp"
       if gateway
         gateway.ssh(ip, user) { |ssh| yield ssh }
       else
         require "net/ssh"
-        require "net/scp"
         Net::SSH.start(ip, user) { |ssh| yield ssh }
       end
     end
