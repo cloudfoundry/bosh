@@ -35,6 +35,10 @@ module Bosh::OpenStackCloud
       @default_key_name = @openstack_properties["default_key_name"]
       @default_security_groups = @openstack_properties["default_security_groups"]
 
+      unless @openstack_properties["auth_url"].match(/\/tokens$/)
+        @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"
+      end
+
       openstack_params = {
         :provider => "OpenStack",
         :openstack_auth_url => @openstack_properties["auth_url"],
