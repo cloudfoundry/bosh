@@ -1,22 +1,22 @@
-require "rspec"
-require "rspec/core/rake_task"
+require 'rspec'
+require 'rspec/core/rake_task'
 require 'tempfile'
 
-require "common/thread_pool"
+require 'common/thread_pool'
 
-require "parallel_tests/tasks"
+require 'parallel_tests/tasks'
 
 namespace :spec do
 
-  desc "Run BOSH integration tests against a local sandbox"
+  desc 'Run BOSH integration tests against a local sandbox'
   task :integration do
-    Rake::Task["parallel:spec"]
-      .invoke(nil, "spec/integration/.*_spec.rb")
+    Rake::Task['parallel:spec']
+      .invoke(nil, 'spec/integration/.*_spec.rb')
   end
 
-  desc "Run unit and functional tests for each BOSH component gem"
+  desc 'Run unit and functional tests for each BOSH component gem'
   task :parallel_unit do
-    trap("INT") do
+    trap('INT') do
       exit
     end
     
@@ -48,7 +48,7 @@ namespace :spec do
     end
   end
 
-  desc "Run unit and functional tests linearly"
+  desc 'Run unit and functional tests linearly'
   task :unit do
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
@@ -59,41 +59,41 @@ namespace :spec do
     end
   end
 
-  desc "Run integration and unit tests in parallel"
+  desc 'Run integration and unit tests in parallel'
   task :parallel_all do
     unit = Thread.new do
-      Rake::Task["spec:parallel_unit"].invoke
+      Rake::Task['spec:parallel_unit'].invoke
     end
     integration = Thread.new do
-      Rake::Task["spec:integration"].invoke
+      Rake::Task['spec:integration'].invoke
     end
 
     [unit, integration].each(&:join)
   end
 
   namespace :external do
-    desc "AWS CPI can exercise the VM lifecycle"
+    desc 'AWS CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:aws_vm_lifecycle) do |t|
-      t.pattern = "spec/external/aws_cpi_spec.rb"
+      t.pattern = 'spec/external/aws_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
 
-    desc "AWS bootstrap CLI can provision and destroy resources"
+    desc 'AWS bootstrap CLI can provision and destroy resources'
     RSpec::Core::RakeTask.new(:aws_bootstrap) do |t|
-      t.pattern = "spec/external/aws_bootstrap_spec.rb"
+      t.pattern = 'spec/external/aws_bootstrap_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
 
-    desc "OpenStack CPI can exercise the VM lifecycle"
+    desc 'OpenStack CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:openstack_vm_lifecycle) do |t|
-      t.pattern = "spec/external/openstack_cpi_spec.rb"
+      t.pattern = 'spec/external/openstack_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
   end
 
   namespace :system do
     namespace :aws do
-      desc "Run AWS MicroBOSH deployment suite"
+      desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
@@ -105,15 +105,15 @@ namespace :spec do
       end
 
       task :deploy_micro => :get_deployments_aws do
-        rm_rf("/tmp/deployments")
-        mkdir_p("/tmp/deployments/micro")
-        chdir("/tmp/deployments") do
-          chdir("micro") do
+        rm_rf('/tmp/deployments')
+        mkdir_p('/tmp/deployments/micro')
+        chdir('/tmp/deployments') do
+          chdir('micro') do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
           end
-          run_bosh "micro deployment micro"
+          run_bosh 'micro deployment micro'
           run_bosh "micro deploy #{latest_aws_micro_bosh_stemcell_path}"
-          run_bosh "login admin admin"
+          run_bosh 'login admin admin'
 
           run_bosh "upload stemcell #{latest_aws_stemcell_path}", debug_on_fail: true
 
@@ -124,11 +124,11 @@ namespace :spec do
 
       task :teardown_microbosh do
         if Dir.exists?('/tmp/deployments')
-          chdir("/tmp/deployments") do
-            run_bosh "delete deployment bat", :ignore_failures => true
-            run_bosh "micro delete"
+          chdir('/tmp/deployments') do
+            run_bosh 'delete deployment bat', :ignore_failures => true
+            run_bosh 'micro delete'
           end
-          rm_rf("/tmp/deployments")
+          rm_rf('/tmp/deployments')
         end
       end
 
@@ -136,7 +136,7 @@ namespace :spec do
         director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
         ENV['BAT_DIRECTOR'] = director
         ENV['BAT_STEMCELL'] = latest_aws_stemcell_path
-        ENV['BAT_DEPLOYMENT_SPEC'] = "/tmp/deployments/bat.yml"
+        ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/deployments/bat.yml'
         ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
         ENV['BAT_FAST'] = 'true'
         #ENV['BAT_DEBUG'] = 'verbose'
@@ -144,26 +144,26 @@ namespace :spec do
         Rake::Task['bat'].invoke
       end
 
-      task :publish_gems => "spec:system:aws:bat" do
-        run("s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems")
-        run("s3cmd sync s3://bosh-ci-pipeline/micro-bosh s3://bosh-jenkins-artifacts")
+      task :publish_gems => 'spec:system:aws:bat' do
+        run('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
+        run('s3cmd sync s3://bosh-ci-pipeline/micro-bosh s3://bosh-jenkins-artifacts')
       end
 
       task :get_deployments_aws do
         Dir.chdir('/mnt') do
           if Dir.exists?('deployments')
-            run("git clone #{ENV['BOSH_JENKINS_DEPLOYMENTS_REPO']} deployments")
-          else
             Dir.chdir('deployments') do
               run('git pull')
             end
+          else
+            run("git clone #{ENV['BOSH_JENKINS_DEPLOYMENTS_REPO']} deployments")
           end
         end
       end
     end
 
     namespace :openstack do
-      desc "Run OpenStack MicroBOSH deployment suite"
+      desc 'Run OpenStack MicroBOSH deployment suite'
       task :micro do
         Rake::Task['spec:system:openstack:deploy_micro_dynamic_net'].invoke
         Rake::Task['spec:system:openstack:deploy_micro_manual_net'].invoke
@@ -173,7 +173,7 @@ namespace :spec do
 
       task :deploy_micro_dynamic_net do
         begin
-          Rake::Task['spec:system:openstack:deploy_micro'].execute("dynamic")
+          Rake::Task['spec:system:openstack:deploy_micro'].execute('dynamic')
         ensure
           Rake::Task['spec:system:openstack:teardown_microbosh'].execute
         end
@@ -181,25 +181,25 @@ namespace :spec do
 
       task :deploy_micro_manual_net do
         begin
-          Rake::Task['spec:system:openstack:deploy_micro'].execute("manual")
+          Rake::Task['spec:system:openstack:deploy_micro'].execute('manual')
         ensure
           Rake::Task['spec:system:openstack:teardown_microbosh'].execute
         end
       end
 
       task :deploy_micro, [:net_type] do |t, net_type|
-        rm_rf("/tmp/openstack-ci/deployments")
-        mkdir_p("/tmp/openstack-ci/deployments/microbosh")
-        chdir("/tmp/openstack-ci/deployments") do
-          chdir("microbosh") do
+        rm_rf('/tmp/openstack-ci/deployments')
+        mkdir_p('/tmp/openstack-ci/deployments/microbosh')
+        chdir('/tmp/openstack-ci/deployments') do
+          chdir('microbosh') do
             generate_openstack_micro_bosh(net_type)
           end
-          run_bosh "micro deployment microbosh"
+          run_bosh 'micro deployment microbosh'
           run_bosh "micro deploy #{latest_openstack_micro_bosh_stemcell_path}"
-          run_bosh "login admin admin"
+          run_bosh 'login admin admin'
 
           run_bosh "upload stemcell #{latest_openstack_stemcell_path}", debug_on_fail: true
-          status = run_bosh "status"
+          status = run_bosh 'status'
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
           st_version = stemcell_version(latest_openstack_stemcell_path)
           generate_openstack_bat_manifest(net_type, director_uuid, st_version)
@@ -209,22 +209,22 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        chdir("/tmp/openstack-ci/deployments") do
-          run_bosh "delete deployment bat", :ignore_failures => true
+        chdir('/tmp/openstack-ci/deployments') do
+          run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(latest_openstack_stemcell_path)}", :ignore_failures => true
-          run_bosh "micro delete"
+          run_bosh 'micro delete'
         end
-        rm_rf("/tmp/openstack-ci/deployments")
+        rm_rf('/tmp/openstack-ci/deployments')
       end
 
       task :bat do
         cd(ENV['WORKSPACE']) do
-          ENV['BAT_DIRECTOR'] = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
+          ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
           ENV['BAT_STEMCELL'] = latest_openstack_stemcell_path
-          ENV['BAT_DEPLOYMENT_SPEC'] = "/tmp/openstack-ci/deployments/bat.yml"
+          ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/openstack-ci/deployments/bat.yml'
           ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-          ENV['BAT_VCAP_PRIVATE_KEY'] = ENV["BOSH_OPENSTACK_PRIVATE_KEY"]
-          ENV['BAT_DNS_HOST'] = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
+          ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
+          ENV['BAT_DNS_HOST'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
           ENV['BAT_FAST'] = 'true'
           Rake::Task['bat'].execute
         end
@@ -232,7 +232,7 @@ namespace :spec do
     end
 
     def publish_stemcell_to_s3(stemcell_tgz, bucket_name)
-      require "aws-sdk"
+      require 'aws-sdk'
 
       AWS.config({
                      access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
@@ -264,14 +264,14 @@ namespace :spec do
           puts "AMI name written to: #{obj.public_url :secure => false}"
         end
 
-        if stemcell_tgz.include?("/light-")
+        if stemcell_tgz.include?('/light-')
           obj = bucket.objects["last_successful_#{stemcell_S3_name}_light.tgz"]
           obj.write(:file => stemcell_tgz)
           obj.acl = :public_read
-          puts "Lite stemcell written to: #{obj.public_url :secure => false}"
+          puts "Light stemcell written to: #{obj.public_url :secure => false}"
         end
 
-        stemcell_tgz = File.dirname(stemcell_tgz) + "/" + File.basename(stemcell_tgz).gsub("light-", "")
+        stemcell_tgz = File.dirname(stemcell_tgz) + '/' + File.basename(stemcell_tgz).gsub('light-', '')
         obj = bucket.objects["last_successful_#{stemcell_S3_name}.tgz"]
         obj.write(:file => stemcell_tgz)
         obj.acl = :public_read
@@ -316,16 +316,16 @@ namespace :spec do
 
     def generate_openstack_micro_bosh(net_type)
       name = net_type
-      vip = ENV["BOSH_OPENSTACK_VIP_DIRECTOR_IP"]
-      ip = ENV["BOSH_OPENSTACK_MANUAL_IP"]
-      net_id = ENV["BOSH_OPENSTACK_NET_ID"]
-      auth_url = ENV["BOSH_OPENSTACK_AUTH_URL"]
-      username = ENV["BOSH_OPENSTACK_USERNAME"]
-      api_key = ENV["BOSH_OPENSTACK_API_KEY"]
-      tenant = ENV["BOSH_OPENSTACK_TENANT"]
-      region = ENV["BOSH_OPENSTACK_REGION"]
-      private_key_path = ENV["BOSH_OPENSTACK_PRIVATE_KEY"]
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), "templates", "micro_bosh_openstack.yml.erb"))
+      vip = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
+      ip = ENV['BOSH_OPENSTACK_MANUAL_IP']
+      net_id = ENV['BOSH_OPENSTACK_NET_ID']
+      auth_url = ENV['BOSH_OPENSTACK_AUTH_URL']
+      username = ENV['BOSH_OPENSTACK_USERNAME']
+      api_key = ENV['BOSH_OPENSTACK_API_KEY']
+      tenant = ENV['BOSH_OPENSTACK_TENANT']
+      region = ENV['BOSH_OPENSTACK_REGION']
+      private_key_path = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), 'templates', 'micro_bosh_openstack.yml.erb'))
       micro_bosh_manifest = ERB.new(File.read(template_path)).result(binding)
       File.open("micro_bosh.yml", "w+") do |f|
         f.write(micro_bosh_manifest)
@@ -333,16 +333,16 @@ namespace :spec do
     end
 
     def generate_openstack_bat_manifest(net_type, director_uuid, st_version)
-      vip = ENV["BOSH_OPENSTACK_VIP_BAT_IP"]
-      net_id = ENV["BOSH_OPENSTACK_NET_ID"]
+      vip = ENV['BOSH_OPENSTACK_VIP_BAT_IP']
+      net_id = ENV['BOSH_OPENSTACK_NET_ID']
       stemcell_version = st_version
-      net_cidr = ENV["BOSH_OPENSTACK_NETWORK_CIDR"]
-      net_reserved = ENV["BOSH_OPENSTACK_NETWORK_RESERVED"]
-      net_static = ENV["BOSH_OPENSTACK_NETWORK_STATIC"]
-      net_gateway = ENV["BOSH_OPENSTACK_NETWORK_GATEWAY"]
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), "templates", "bat_openstack.yml.erb"))
+      net_cidr = ENV['BOSH_OPENSTACK_NETWORK_CIDR']
+      net_reserved = ENV['BOSH_OPENSTACK_NETWORK_RESERVED']
+      net_static = ENV['BOSH_OPENSTACK_NETWORK_STATIC']
+      net_gateway = ENV['BOSH_OPENSTACK_NETWORK_GATEWAY']
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), 'templates', 'bat_openstack.yml.erb'))
       bat_manifest = ERB.new(File.read(template_path)).result(binding)
-      File.open("bat.yml", "w+") do |f|
+      File.open('bat.yml', 'w+') do |f|
         f.write(bat_manifest)
       end
     end
@@ -350,7 +350,7 @@ namespace :spec do
     def bosh_config_path
       # We should keep a reference to the tempfile, otherwise,
       # when the object gets GC'd, the tempfile is deleted.
-      @bosh_config_tempfile ||= Tempfile.new("bosh_config")
+      @bosh_config_tempfile ||= Tempfile.new('bosh_config')
       @bosh_config_tempfile.path
     end
 
@@ -391,7 +391,7 @@ namespace :spec do
       if @run_bosh_failures == 1 && debug_on_fail
         # get the debug log, but only for the first failure, in case "bosh task last"
         # fails - or we'll end up in an endless loop
-        run_bosh "task last --debug", {:last_number => 100}
+        run_bosh 'task last --debug', {:last_number => 100}
         @run_bosh_failures = 0
       end
       raise
@@ -400,5 +400,5 @@ namespace :spec do
   end
 end
 
-desc "Run unit and integration specs"
-task :spec => ["spec:parallel_unit", "spec:integration"]
+desc 'Run unit and integration specs'
+task :spec => ['spec:parallel_unit', 'spec:integration']
