@@ -89,7 +89,7 @@ module Bosh::Cli::Command
 
       status, task_id = director.delete_all_snapshots(deployment_name)
 
-      task_report(status, task_id, "Deleted all snapshot of deplotment `#{deployment_name}'")
+      task_report(status, task_id, "Deleted all snapshots of deployment `#{deployment_name}'")
     end
   end
 end
