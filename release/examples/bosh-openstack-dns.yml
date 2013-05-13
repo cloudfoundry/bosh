@@ -187,7 +187,7 @@ properties:
     varz_enabled: true
 
   openstack:
-    auth_url: http://192.168.1.1:5000/v2.0/tokens # CHANGE: OpenStack Auth URL
+    auth_url: http://192.168.1.1:5000/v2.0 # CHANGE: OpenStack Auth URL
     username: username # CHANGE: OpenStack Username
     api_key: password # CHANGE: OpenStack Password
     tenant: tenant # CHANGE: OpenStack Tenant
