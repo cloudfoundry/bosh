@@ -24,34 +24,27 @@ describe Bhm::Plugins::ResurrectorHelper::AlertTracker do
 
     it 'is melting down if more than 30% of agents are down' do
       alert_tracker = described_class.new('percent_threshold' => 0.3)
-      31.times { |i| alert_tracker.record(job_instance_keys[i], Time.now.to_i) }
+      31.times { |i| alert_tracker.record(job_instance_keys[i], Time.now) }
 
       alert_tracker.melting_down?('deployment').should be_true
     end
 
     it 'is not melting down if less than 30% of agents are down' do
       alert_tracker = described_class.new('percent_threshold' => 0.3)
-      29.times { |i| alert_tracker.record(job_instance_keys[i], Time.now.to_i) }
+      29.times { |i| alert_tracker.record(job_instance_keys[i], Time.now) }
 
       alert_tracker.melting_down?('deployment').should be_false
     end
 
     it 'is not melting down if less than 7 agents are down' do
       alert_tracker = described_class.new('minimum_down_jobs' => 7, 'percent_threshold' => 0.01)
-      6.times { |i| alert_tracker.record(job_instance_keys[i], Time.now.to_i) }
+      6.times { |i| alert_tracker.record(job_instance_keys[i], Time.now) }
 
       alert_tracker.melting_down?('deployment').should be_false
     end
     
     it 'is not melting down if all agents are responding' do
       alert_tracker = described_class.new('percent_threshold' => 0.0)
-
-      alert_tracker.melting_down?('deployment').should be_false
-    end
-
-    it 'is never melting down if percent threshold is 100%' do
-      alert_tracker = described_class.new('percent_threshold' => 1.0)
-      100.times { |i| alert_tracker.record(job_instance_keys[i], Time.now.to_i) }
 
       alert_tracker.melting_down?('deployment').should be_false
     end
