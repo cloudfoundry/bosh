@@ -19,6 +19,7 @@ describe Bhm::Plugins::DataDog do
       time = Time.now
       dog_client.should_receive(:emit_points).with("bosh.healthmonitor.system.load.1m", [[Time.at(time.to_i) ,0.2]], tags: tags)
 
+      EM.should_receive(:defer).and_yield
       %w[
         cpu.user
         cpu.sys
@@ -42,6 +43,8 @@ describe Bhm::Plugins::DataDog do
 
   context "processing alerts" do
     it "sends datadog alerts" do
+      EM.should_receive(:defer).and_yield
+
       time = Time.now.to_i - 10
       fake_event = double("Datadog Event")
       Dogapi::Event.should_receive(:new).with do |msg, options|
@@ -59,6 +62,8 @@ describe Bhm::Plugins::DataDog do
     end
 
     it "sends datadog a low priority event for warning alerts" do
+      EM.should_receive(:defer).and_yield
+
       Dogapi::Event.should_receive(:new).with do |_, options|
         options[:priority].should == "low"
       end
