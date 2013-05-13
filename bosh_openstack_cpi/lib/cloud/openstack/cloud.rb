@@ -502,7 +502,8 @@ module Bosh::OpenStackCloud
         }
 
         @logger.info("Creating new snapshot for volume `#{disk_id}'...")
-        snapshot = with_openstack { @openstack.snapshots.create(snapshot_params) }
+        snapshot = @openstack.snapshots.new(snapshot_params)
+        with_openstack { snapshot.save(true) }
 
         @logger.info("Creating new snapshot `#{snapshot.id}' for volume `#{disk_id}'...")
         wait_resource(snapshot, :available)
