@@ -11,7 +11,7 @@ module Bosh::HealthMonitor
       attr_accessor attribute
     end
 
-    def initialize(id)
+    def initialize(id, opts={})
       raise ArgumentError, "Agent must have an id" if id.nil?
 
       @id            = id
@@ -19,6 +19,11 @@ module Bosh::HealthMonitor
       @updated_at    = Time.now
       @logger        = Bhm.logger
       @intervals     = Bhm.intervals
+
+      @deployment = opts[:deployment]
+      @job = opts[:job]
+      @index = opts[:index]
+      @cid = opts[:cid]
     end
 
     def name

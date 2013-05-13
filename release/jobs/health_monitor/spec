@@ -147,6 +147,15 @@ properties:
   hm.resurrector_enabled:
     description: Enable VM resurrector plugin
     default: false
+  hm.resurrector.minimum_down_jobs:
+    description: If the total number of down jobs in a deployment is below this threshold, the resurrector will always request a down job be recreated
+    default: 5
+  hm.resurrector.percent_threshold:
+    description: Percentage of total jobs in a deployment that must be down for the resurrector to to stop sending recreate-job requests. Used in 'meltdown' situations so resurrector will not try to recreate the world.
+    default: 0.2
+  hm.resurrector.time_threshold:
+    description: Time (in seconds) for which an alert in the resurrector is considered 'current'; alerts older than this are ignored when deciding to recreate a job.
+    default: 600
 
   # Send metrics and alerts to DataDog
   hm.datadog_enabled:

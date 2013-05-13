@@ -99,6 +99,19 @@ describe Bhm::AgentManager do
       manager.agents_count.should == 2
     end
 
+    it "can provide agent information for a deployment" do
+      manager = make_manager
+      manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
+      manager.add_agent("mycloud", {"agent_id" => "008", "index" => "0", "job" => "nats"})
+      manager.add_agent("mycloud", {"agent_id" => "009", "index" => "28", "job" => "mysql_node"})
+
+      agents = manager.get_agents_for_deployment("mycloud")
+      agents.size.should == 3
+      agents["007"].deployment == "mycloud"
+      agents["007"].job == "mutator"
+      agents["007"].index == "0"
+    end
+
     it "refuses to register agents with malformed director vm data" do
       manager = make_manager
 

@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.name         = "health_monitor"
   s.version      = version
   s.platform     = Gem::Platform::RUBY
-  s.summary      = "BOSH Health Montior"
+  s.summary      = "BOSH Health Monitor"
   s.description  = s.summary
   s.author       = "VMware"
   s.homepage     = 'https://github.com/cloudfoundry/bosh'

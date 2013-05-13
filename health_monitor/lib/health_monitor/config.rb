@@ -7,6 +7,7 @@ module Bosh::HealthMonitor
     attr_accessor :intervals
     attr_accessor :mbus
     attr_accessor :event_mbus
+    attr_accessor :agent_manager
 
     attr_accessor :http_port, :http_user, :http_password
     attr_accessor :plugins
@@ -17,10 +18,11 @@ module Bosh::HealthMonitor
     def config=(config)
       validate_config(config)
 
-      @logger     = Logging.logger(config["logfile"] || STDOUT)
-      @intervals  = OpenStruct.new(config["intervals"])
-      @director   = Director.new(config["director"])
-      @mbus       = OpenStruct.new(config["mbus"])
+      @logger        = Logging.logger(config["logfile"] || STDOUT)
+      @intervals     = OpenStruct.new(config["intervals"])
+      @director      = Director.new(config["director"])
+      @mbus          = OpenStruct.new(config["mbus"])
+      @agent_manager = AgentManager.new
 
       @varz = { }
 
