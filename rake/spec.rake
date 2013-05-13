@@ -94,7 +94,7 @@ namespace :spec do
   namespace :system do
     namespace :aws do
       desc 'Run AWS MicroBOSH deployment suite'
-      task :micro => [:teardown_microbosh] do
+      task :micro do
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
           publish_stemcell_to_s3(latest_aws_stemcell_path, 'bosh-jenkins-artifacts')
