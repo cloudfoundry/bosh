@@ -34,7 +34,9 @@ module Bosh::Cli
       # @return [Bosh::Cli::Config] Current configuration
       def config
         @config ||= begin
-          config_file = options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
+          # Handle the environment variable being set to the empty string.
+          env_bosh_config = ENV['BOSH_CONFIG'].to_s.empty? ? nil : ENV['BOSH_CONFIG']
+          config_file = options[:config] || env_bosh_config || Bosh::Cli::DEFAULT_CONFIG_PATH
           Bosh::Cli::Config.new(config_file)
         end
       end
