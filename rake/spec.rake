@@ -369,7 +369,8 @@ namespace :spec do
       end
 
       unless $?.success?
-        err_msg = "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
+        pwd = Dir.pwd rescue "a deleted directory"
+        err_msg = "Failed: '#{cmd}' from #{pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
 
         if options[:ignore_failures]
           puts("#{err_msg}, continuing anyway")

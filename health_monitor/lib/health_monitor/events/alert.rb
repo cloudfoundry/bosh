@@ -11,6 +11,8 @@ module Bosh::HealthMonitor
         -1 => :ignored
       }
 
+      attr_reader :created_at, :source, :title
+
       def initialize(attributes = {})
         super
         @kind = :alert
@@ -20,6 +22,10 @@ module Bosh::HealthMonitor
         @title      = @attributes["title"]
         @summary    = @attributes["summary"] || @title
         @source     = @attributes["source"]
+
+        # This rescue is just to preserve existing test behavior. However, this
+        # seems like a pretty wacky way to handle errors - wouldn't we rather
+        # have a nice exception?
         @created_at = Time.at(@attributes["created_at"]) rescue @attributes["created_at"]
       end
 

@@ -9,12 +9,11 @@ module Bosh::HealthMonitor
     def initialize(config_file)
       Bhm.config = load_yaml_file(config_file)
 
-      @logger    = Bhm.logger
-      @director  = Bhm.director
-      @intervals = Bhm.intervals
-      @mbus      = Bhm.mbus
-
-      @agent_manager = AgentManager.new
+      @logger        = Bhm.logger
+      @director      = Bhm.director
+      @intervals     = Bhm.intervals
+      @mbus          = Bhm.mbus
+      @agent_manager = Bhm.agent_manager
     end
 
     def run

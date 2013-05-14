@@ -24,12 +24,12 @@ module Bosh::HealthMonitor
 
       def process(event)
         case event
-        when Bosh::HealthMonitor::Events::Heartbeat
-          process_heartbeat(event)
-        when Bosh::HealthMonitor::Events::Alert
-          process_alert(event)
-        else
-          #ignore
+          when Bosh::HealthMonitor::Events::Heartbeat
+            EM.defer { process_heartbeat(event) }
+          when Bosh::HealthMonitor::Events::Alert
+            EM.defer { process_alert(event) }
+          else
+            #ignore
         end
       end
 

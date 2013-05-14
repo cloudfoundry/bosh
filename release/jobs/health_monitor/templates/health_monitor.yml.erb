@@ -97,6 +97,9 @@ plugins:
       - alert
     options:
       director: *director
+      minimum_down_jobs: <%= p("hm.resurrector.minimum_down_jobs") %>
+      percent_threshold: <%= p("hm.resurrector.percent_threshold") %>
+      time_threshold: <%= p("hm.resurrector.time_threshold") %>
   <% end %>
 
   <% if p("hm.pagerduty_enabled") %>
