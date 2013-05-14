@@ -85,6 +85,14 @@ module Bosh
               "Failed to delete object '#{object_id}': #{e.message}"
       end
 
+      def object_exists?(object_id)
+        object_info = decode_object_id(object_id)
+        object = container.files.head(object_info["oid"])
+        object.nil? ? false : true
+      rescue Exception => e
+        raise BlobstoreError, "Failed to create object: #{e.message}"
+      end
+
       private
 
       def generate_object_id
