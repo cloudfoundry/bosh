@@ -69,6 +69,8 @@ describe Bosh::AwsCloud::Cloud do
     snapshot_id = cpi.snapshot_disk(@volume_id)
     snapshot_id.should_not be_nil
 
+    yield if block_given?
+
     cpi.delete_snapshot(snapshot_id)
 
     Bosh::Common.retryable(:tries=> 20, :on => Bosh::Clouds::DiskNotAttached, :sleep => lambda{|n,e| [2**(n-1), 30].min }) do
@@ -104,6 +106,12 @@ describe Bosh::AwsCloud::Cloud do
 
       it 'should exercise the vm lifecycle' do
         vm_lifecycle(ami, network_spec, [@existing_volume_id])
+      end
+
+      it 'should list the disks' do
+        vm_lifecycle(ami, network_spec, [@existing_volume_id]) do
+          cpi.get_disks(@instance_id).should == [@volume_id]
+        end
       end
     end
   end

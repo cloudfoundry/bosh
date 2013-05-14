@@ -28,6 +28,14 @@ module Bosh
     end
 
     ##
+    # Get the vm_id of this host
+    #
+    # @return [String] opaque id later used by other methods of the CPI
+    def current_vm_id
+      not_implemented(:current_vm_id)
+    end
+
+    ##
     # Creates a stemcell
     #
     # @param [String] image_path path to an opaque blob containing the stemcell image
@@ -193,6 +201,17 @@ module Bosh
     # @return [void]
     def detach_disk(vm_id, disk_id)
       not_implemented(:detach_disk)
+    end
+
+    ##
+    # List the attached disks of the VM.
+    #
+    # @param [String] vm_id is the CPI-standard vm_id (eg, returned from current_vm_id)
+    #
+    # @return [array[String]] list of opaque disk_ids that can be used with the
+    # other disk-related methods on the CPI
+    def get_disks(vm_id)
+      not_implemented(:get_disks)
     end
 
     ##

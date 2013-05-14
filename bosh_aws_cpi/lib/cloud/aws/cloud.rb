@@ -75,6 +75,34 @@ module Bosh::AwsCloud
     end
 
     ##
+    # Reads current instance id from EC2 metadata. We are assuming
+    # instance id cannot change while current process is running
+    # and thus memoizing it.
+    def current_vm_id
+      @metadata_lock.synchronize do
+        return @current_vm_id if @current_vm_id
+
+        client = HTTPClient.new
+        client.connect_timeout = METADATA_TIMEOUT
+        # Using 169.254.169.254 is an EC2 convention for getting
+        # instance metadata
+        uri = "http://169.254.169.254/latest/meta-data/instance-id/"
+
+        response = client.get(uri)
+        unless response.status == 200
+          cloud_error("Instance metadata endpoint returned " \
+                      "HTTP #{response.status}")
+        end
+
+        @current_vm_id = response.body
+      end
+
+    rescue HTTPClient::TimeoutError
+      cloud_error("Timed out reading instance metadata, " \
+                  "please make sure CPI is running on EC2 instance")
+    end
+
+    ##
     # Create an EC2 instance and wait until it's in running state
     # @param [String] agent_id agent id associated with new VM
     # @param [String] stemcell_id AMI id of the stemcell used to
@@ -275,6 +303,16 @@ module Bosh::AwsCloud
       end
     end
 
+    def get_disks(vm_id)
+      disks = []
+      @ec2.instances[vm_id].block_devices.each do |block_device|
+        if block_device[:ebs]
+          disks << block_device[:ebs][:volume_id]
+        end
+      end
+      disks
+    end
+
     # Take snapshot of disk
     # @param [String] disk_id disk id of the disk to take the snapshot of
     # @return [String] snapshot id
@@ -368,9 +406,9 @@ module Bosh::AwsCloud
 
           # 1. Create and mount new EBS volume (2GB default)
           disk_size = stemcell_properties["disk"] || 2048
-          volume_id = create_disk(disk_size, current_instance_id)
+          volume_id = create_disk(disk_size, current_vm_id)
           volume = @ec2.volumes[volume_id]
-          instance = @ec2.instances[current_instance_id]
+          instance = @ec2.instances[current_vm_id]
 
           sd_name = attach_ebs_volume(instance, volume)
           ebs_volume = find_ebs_device(sd_name)
@@ -457,34 +495,6 @@ module Bosh::AwsCloud
       settings = registry.read_settings(instance.id)
       yield settings
       registry.update_settings(instance.id, settings)
-    end
-
-    ##
-    # Reads current instance id from EC2 metadata. We are assuming
-    # instance id cannot change while current process is running
-    # and thus memoizing it.
-    def current_instance_id
-      @metadata_lock.synchronize do
-        return @current_instance_id if @current_instance_id
-
-        client = HTTPClient.new
-        client.connect_timeout = METADATA_TIMEOUT
-        # Using 169.254.169.254 is an EC2 convention for getting
-        # instance metadata
-        uri = "http://169.254.169.254/latest/meta-data/instance-id/"
-
-        response = client.get(uri)
-        unless response.status == 200
-          cloud_error("Instance metadata endpoint returned " \
-                      "HTTP #{response.status}")
-        end
-
-        @current_instance_id = response.body
-      end
-
-    rescue HTTPClient::TimeoutError
-      cloud_error("Timed out reading instance metadata, " \
-                  "please make sure CPI is running on EC2 instance")
     end
 
     def attach_ebs_volume(instance, volume)
