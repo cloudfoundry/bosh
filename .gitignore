@@ -65,3 +65,4 @@ aws_vpc_receipt.yml
 not_real_ca.*
 Checkfile
 *.deb
+*.tag*
