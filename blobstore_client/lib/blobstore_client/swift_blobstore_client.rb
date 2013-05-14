@@ -32,9 +32,8 @@ module Bosh
 
         container_name = @options[:container_name]
         @container = swift.directories.get(container_name)
-        if @container.nil?
-          raise NotFound, "Swift container '#{container_name}' not found"
-        end
+        raise NotFound, "Swift container '#{container_name}' not found" if @container.nil?
+
         @container
       end
 
@@ -111,47 +110,22 @@ module Bosh
       end
 
       def validate_options(options)
-        unless options.is_a?(Hash)
-          raise "Invalid options format, Hash expected, #{options.class} given"
-        end
-        unless options.has_key?(:container_name)
-          raise "Swift container name is missing"
-        end
-        unless options.has_key?(:swift_provider)
-          raise "Swift provider is missing"
-        end
+        raise "Invalid options format, Hash expected, #{options.class} given" unless options.is_a?(Hash)
+        raise "Swift container name is missing" unless options.has_key?(:container_name)
+        raise "Swift provider is missing" unless options.has_key?(:swift_provider)
         case options[:swift_provider]
           when "hp"
-            unless options.has_key?(:hp)
-              raise "HP options are missing"
-            end
-            unless options[:hp].is_a?(Hash)
-              raise "Invalid HP options, Hash expected,
-                    #{options[:hp].class} given"
-            end
-            unless options[:hp].has_key?(:hp_account_id)
-              raise "HP account ID is missing"
-            end
-            unless options[:hp].has_key?(:hp_secret_key)
-              raise "HP secret key is missing"
-            end
-            unless options[:hp].has_key?(:hp_tenant_id)
-              raise "HP tenant ID is missing"
-            end
+            raise "HP options are missing" unless options.has_key?(:hp)
+            raise "Invalid HP options, Hash expected, #{options[:hp].class} given" unless options[:hp].is_a?(Hash)
+            raise "HP access key is missing" unless options[:hp].has_key?(:hp_access_key)
+            raise "HP secret key is missing" unless options[:hp].has_key?(:hp_secret_key)
+            raise "HP tenant ID is missing" unless options[:hp].has_key?(:hp_tenant_id)
+            raise "HP availability zone is missing" unless options[:hp].has_key?(:hp_avl_zone)
           when "rackspace"
-            unless options.has_key?(:rackspace)
-              raise "Rackspace options are missing"
-            end
-            unless options[:rackspace].is_a?(Hash)
-              raise "Invalid Rackspace options, Hash expected,
-                    #{options[:rackspace].class} given"
-            end
-            unless options[:rackspace].has_key?(:rackspace_username)
-              raise "Rackspace username is missing"
-            end
-            unless options[:rackspace].has_key?(:rackspace_api_key)
-              raise "Rackspace API key is missing"
-            end
+            raise "Rackspace options are missing" unless options.has_key?(:rackspace)
+            raise "Invalid Rackspace options, Hash expected, #{options[:rackspace].class} given" unless options[:rackspace].is_a?(Hash)
+            raise "Rackspace username is missing" unless options[:rackspace].has_key?(:rackspace_username)
+            raise "Rackspace API key is missing" unless options[:rackspace].has_key?(:rackspace_api_key)
           else
             raise "Swift provider #{options[:swift_provider]} not supported"
         end

@@ -10,9 +10,10 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
                     "rackspace_api_key" => "api_key"
                   },
                   "hp" => {
-                    "hp_account_id" => "account_id",
+                    "hp_access_key" => "access_key",
                     "hp_secret_key" => "secret_key",
-                    "hp_tenant_id"  => "tenant_id"
+                    "hp_tenant_id"  => "tenant_id",
+                    "hp_avl_zone"   => "region"
                   }
                 }
     else
