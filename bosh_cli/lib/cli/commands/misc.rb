@@ -42,6 +42,10 @@ module Bosh::Cli::Command
         nl
       end
 
+      say("Config".green)
+      print_value("", config.filename)
+      nl
+
       say("Director".green)
       if target_url.nil?
         say("  not set".yellow)

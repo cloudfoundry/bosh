@@ -198,5 +198,6 @@ module Bosh::Cli
       raise ConfigError, e.message
     end
 
+    attr_reader :filename
   end
 end
