@@ -259,9 +259,9 @@ module Bosh::Cli::Command
 
     def print_value(label, value, if_none = nil)
       if value
-        message = label.ljust(10) + value.yellow
+        message = label.ljust(10) + ' ' + value.yellow
       else
-        message = label.ljust(10) + (if_none || "n/a").yellow
+        message = label.ljust(10) + ' ' + (if_none || "n/a").yellow
       end
       say(message.indent(2))
     end
