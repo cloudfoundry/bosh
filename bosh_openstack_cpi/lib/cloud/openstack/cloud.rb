@@ -303,7 +303,7 @@ module Bosh::OpenStackCloud
         server = with_openstack { @openstack.servers.get(server_id) }
         if server
           with_openstack { server.destroy }
-          wait_resource(server, :terminated, :state, true)
+          wait_resource(server, [:terminated, :deleted], :state, true)
 
           @logger.info("Deleting settings for server `#{server.id}'...")
           @registry.delete_settings(server.name)
