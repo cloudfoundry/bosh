@@ -25,6 +25,7 @@ require 'sinatra'
 require 'thin'
 require 'securerandom'
 require 'yajl'
+require 'singleton'
 
 # Helpers
 require 'health_monitor/yaml_helper'

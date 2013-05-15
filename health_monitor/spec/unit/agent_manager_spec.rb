@@ -128,7 +128,7 @@ describe Bhm::AgentManager do
     end
 
     it "can analyze all agents" do
-      processor = Bhm::EventProcessor.new
+      processor = Bhm::EventProcessor.instance
       manager = make_manager
       manager.processor = processor
 
