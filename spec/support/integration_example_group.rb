@@ -19,9 +19,9 @@ module IntegrationExampleGroup
     failure_expected = options.fetch(:failure_expected, false)
     Dir.chdir(work_dir || BOSH_WORK_DIR) do
       command = "bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}"
-      puts command
       output = `#{command} 2>&1`
       if $?.exitstatus != 0 && !failure_expected
+        puts command
         puts output
       end
       output
