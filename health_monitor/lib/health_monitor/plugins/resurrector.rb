@@ -16,7 +16,9 @@ module Bosh::HealthMonitor
         @url           = URI(director['endpoint'])
         @user          = director['user']
         @password      = director['password']
+        @processor     = EventProcessor.instance
         @alert_tracker = ResurrectorHelper::AlertTracker.new(@options)
+
       end
 
       def run
@@ -52,6 +54,13 @@ module Bosh::HealthMonitor
 
           if @alert_tracker.melting_down?(deployment)
             # freak out
+            ts = Time.now.to_i
+            @processor.process(:alert,
+                               severity: 1,
+                               source: "HM plugin resurrector",
+                               title: "We are in meltdown. You have 15 minutes to reach minimum safe distance.",
+                               created_at: ts)
+
             logger.error("(Resurrector) we are in meltdown. You have 15 minutes to reach minimum safe distance.")
           else
             # queue instead, and only queue if it isn't already in the queue
