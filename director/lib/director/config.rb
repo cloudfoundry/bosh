@@ -175,6 +175,10 @@ module Bosh::Director
         @compiled_package_cache_blobstore
       end
 
+      def compiled_package_cache_provider
+        use_compiled_package_cache? ? @compiled_package_cache_options["provider"] : nil
+      end
+
       def cloud_type
         if @cloud_options
           @cloud_options["plugin"]
