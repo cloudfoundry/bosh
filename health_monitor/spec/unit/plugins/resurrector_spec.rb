@@ -74,7 +74,7 @@ describe Bhm::Plugins::Resurrector do
         alert_option = {
             :severity => 1,
             :source => "HM plugin resurrector",
-            :title => "We are in meltdown. You have 15 minutes to reach minimum safe distance.",
+            :title => "We are in meltdown.",
             :created_at => 12345
         }
         ev.should_receive(:process).with(:alert, alert_option)

@@ -18,7 +18,6 @@ module Bosh::HealthMonitor
         @password      = director['password']
         @processor     = EventProcessor.instance
         @alert_tracker = ResurrectorHelper::AlertTracker.new(@options)
-
       end
 
       def run
@@ -58,10 +57,10 @@ module Bosh::HealthMonitor
             @processor.process(:alert,
                                severity: 1,
                                source: "HM plugin resurrector",
-                               title: "We are in meltdown. You have 15 minutes to reach minimum safe distance.",
+                               title: "We are in meltdown.",
                                created_at: ts)
 
-            logger.error("(Resurrector) we are in meltdown. You have 15 minutes to reach minimum safe distance.")
+            logger.error("(Resurrector) we are in meltdown.")
           else
             # queue instead, and only queue if it isn't already in the queue
             # what if we can't keep up with the failure rate?
