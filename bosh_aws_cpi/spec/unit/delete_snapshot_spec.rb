@@ -12,8 +12,6 @@ describe Bosh::AwsCloud::Cloud do
     }
 
     it 'should delete a snapshot' do
-      Bosh::AwsCloud::ResourceWait.stub(:for_snapshot)
-
       snapshot.should_receive(:status).and_return(:available)
       snapshot.should_receive(:delete)
 

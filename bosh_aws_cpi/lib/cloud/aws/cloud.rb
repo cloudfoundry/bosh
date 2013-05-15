@@ -321,6 +321,7 @@ module Bosh::AwsCloud
         volume = @ec2.volumes[disk_id]
         snapshot = volume.create_snapshot
         @logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
+        ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
         snapshot.id
       end
     end
@@ -334,10 +335,6 @@ module Bosh::AwsCloud
         if snapshot.status == :in_use
           raise Bosh::Clouds::CloudError, "snapshot '#{snapshot.id}' can not be deleted as it is in use"
         end
-
-        # loop and wait until available before deleting, in case the snapshot isn't
-        # completed yet, as we don't wait when we take the snapshot
-        ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
 
         snapshot.delete
         @logger.info("snapshot '#{snapshot_id}' deleted")

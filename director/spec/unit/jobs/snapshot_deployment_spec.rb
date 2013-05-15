@@ -11,18 +11,67 @@ describe Bosh::Director::Jobs::SnapshotDeployment do
 
   subject { described_class.new(deployment_name) }
 
-  it 'tells the snapshot manager to snapshot a deployment' do
-    BD::Api::DeploymentManager.should_receive(:new).and_return(deployment_manager)
+  before do
+    BD::Api::DeploymentManager.stub(new: deployment_manager)
+    deployment_manager.stub(find_by_name: deployment)
+  end
 
-    deployment_manager.should_receive(:find_by_name).with(deployment_name).and_return(deployment)
+  context 'when snapshotting succeeds' do
+    it 'should snapshot all instances in the deployment' do
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {})
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
+      BD::Api::SnapshotManager.should_not_receive(:take_snapshot).with(instance4, {})
 
-    # get all the instances
-    # call take_snapshot for all the instances
-    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {})
-    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
-    BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
-    BD::Api::SnapshotManager.should_not_receive(:take_snapshot).with(instance4, {})
+      expect(subject.perform).to eq "snapshots of deployment 'deployment' created"
+    end
+  end
 
-    expect(subject.perform).to eq "snapshots of deployment `deployment' created"
+  context 'when snapshotting fails' do
+    before do
+      subject.stub(:send_alert)
+    end
+
+    it 'should be shown in the status message' do
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {}).and_raise(Bosh::Clouds::CloudError)
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {}).and_raise(Bosh::Clouds::CloudError)
+
+      expect(subject.perform).to eq "snapshots of deployment 'deployment' created, with 2 failure(s)"
+    end
+
+    it 'should send an alert on the message bus' do
+      subject.should_receive(:send_alert).with(instance1)
+
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {}).and_raise(Bosh::Clouds::CloudError)
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
+      BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
+
+      subject.perform
+    end
+  end
+
+  describe '#send_alert' do
+    let(:job) { "job" }
+    let(:index) { 0 }
+    let(:fake_instance) { double("fake instance", job: job, index: index) }
+    let(:fake_nats) { double("nats") }
+
+    it 'sends an alert over NATS on hm.director.alert' do
+      fake_nats.should_receive(:publish).with('hm.director.alert', json_match(
+          eq(
+              {
+                  "id" => 'director',
+                  'severity' => 3,
+                  'title' => "director - snapshot failure",
+                  'summary' => "failed to snapshot #{job}/#{index}",
+                  'created_at' => anything,
+              }
+          ))
+      )
+
+      Bosh::Director::Config.stub(:nats => fake_nats)
+      subject.send_alert(fake_instance)
+    end
   end
 end
