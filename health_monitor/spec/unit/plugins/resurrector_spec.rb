@@ -37,6 +37,7 @@ describe Bhm::Plugins::Resurrector do
 
     context 'alerts with deployment, job and index' do
       let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', index: 'i')) }
+      let (:ev) { Bhm::EventProcessor.instance }
 
       before do
         @don = mock(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
@@ -64,6 +65,20 @@ describe Bhm::Plugins::Resurrector do
         @don.should_receive(:melting_down?).and_return(true)
         plugin.run
         plugin.should_not_receive(:send_http_put_request)
+        plugin.process(alert)
+      end
+
+      it 'should alert through EventProcessor while melting down' do
+        @don.should_receive(:melting_down?).and_return(true)
+        Time.stub(:now).and_return(12345)
+        alert_option = {
+            :severity => 1,
+            :source => "HM plugin resurrector",
+            :title => "We are in meltdown. You have 15 minutes to reach minimum safe distance.",
+            :created_at => 12345
+        }
+        ev.should_receive(:process).with(:alert, alert_option)
+        plugin.run
         plugin.process(alert)
       end
     end

@@ -19,7 +19,7 @@ module Bosh::HealthMonitor
       @alerts_received = 0
       @alerts_processed = 0
 
-      @processor = EventProcessor.new
+      @processor = EventProcessor.instance
     end
 
     # Get a hash of agent id -> agent object for all agents associated with the deployment
