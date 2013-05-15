@@ -28,6 +28,13 @@ module Bosh
         swift_provider = @options[:swift_provider]
         swift_options = {:provider => swift_provider}
         swift_options.merge!(@options[swift_provider.to_sym])
+
+        if swift_options.has_key?(:openstack_auth_url)
+          unless swift_options[:openstack_auth_url].match(/\/tokens$/)
+            swift_options[:openstack_auth_url] = swift_options[:openstack_auth_url] + "/tokens"
+          end
+        end
+
         swift = Fog::Storage.new(swift_options)
 
         container_name = @options[:container_name]
@@ -42,7 +49,12 @@ module Bosh
       def create_file(object_id, file)
         object_id ||= generate_object_id
         object = container.files.create(:key => object_id, :body => file)
-        encode_object_id(object_id, object.public_url)
+        begin
+          public_url = object.public_url
+        rescue NotImplementedError
+          public_url = nil
+        end
+        encode_object_id(object_id, public_url)
       rescue Exception => e
         raise BlobstoreError, "Failed to create object: #{e.message}"
       end
@@ -121,6 +133,13 @@ module Bosh
             raise "HP secret key is missing" unless options[:hp].has_key?(:hp_secret_key)
             raise "HP tenant ID is missing" unless options[:hp].has_key?(:hp_tenant_id)
             raise "HP availability zone is missing" unless options[:hp].has_key?(:hp_avl_zone)
+          when "openstack"
+            raise "OpenStack options are missing" unless options.has_key?(:openstack)
+            raise "Invalid OpenStack options, Hash expected, #{options[:openstack].class} given" unless options[:openstack].is_a?(Hash)
+            raise "OpenStack authorization URL is missing" unless options[:openstack].has_key?(:openstack_auth_url)
+            raise "OpenStack user name is missing" unless options[:openstack].has_key?(:openstack_username)
+            raise "OpenStack API key is missing" unless options[:openstack].has_key?(:openstack_api_key)
+            raise "OpenStack tenant is missing" unless options[:openstack].has_key?(:openstack_tenant)
           when "rackspace"
             raise "Rackspace options are missing" unless options.has_key?(:rackspace)
             raise "Invalid Rackspace options, Hash expected, #{options[:rackspace].class} given" unless options[:rackspace].is_a?(Hash)

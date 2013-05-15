@@ -85,18 +85,7 @@ These are the options for the Blobstore client when provider is `swift`:
 * `container_name` (required)
   Name of the container
 * `swift_provider` (required)
-  OpenStack Swift provider (supported: `hp` and `rackspace`)
-
-#### Rackspace Cloud Files
-
-These are the options for the Blobstore client when `swift_provider` is `rackspace`:
-
-* `rackspace_username` (required)
-  Rackspace Cloud Files Username
-* `rackspace_api_key` (required)
-  Rackspace Cloud Files API Key
-* `rackspace_region` (optional)
-  Rackspace Cloud Files Region (`dfw` or `ord`)
+  OpenStack Swift provider (supported: `hp`, `openstack` and `rackspace`)
 
 #### HP Object Storage
 
@@ -110,3 +99,29 @@ These are the options for the Blobstore client when `swift_provider` is `hp`:
   HP Object Storage Project ID
 * `hp_avl_zone` (required)
   HP Object Storage Availability Zone (`region-a.geo-1` or `region-b.geo-1`)
+
+#### OpenStack Object Storage
+
+These are the options for the Blobstore client when `swift_provider` is `openstack`:
+
+* `openstack_auth_url` (required)
+  URL of the OpenStack Identity endpoint to connect to
+* `openstack_username` (required)
+  OpenStack user name
+* `openstack_api_key` (required)
+  OpenStack API key
+* `openstack_tenant` (required)
+  OpenStack tenant name
+* `openstack_region` (optional)
+  OpenStack region
+
+#### Rackspace Cloud Files
+
+These are the options for the Blobstore client when `swift_provider` is `rackspace`:
+
+* `rackspace_username` (required)
+  Rackspace Cloud Files Username
+* `rackspace_api_key` (required)
+  Rackspace Cloud Files API Key
+* `rackspace_region` (optional)
+  Rackspace Cloud Files Region (`dfw` or `ord`)
