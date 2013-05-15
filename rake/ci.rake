@@ -44,6 +44,10 @@ namespace :ci do
   end
 
   def candidate_build_number
+    if ENV['CANDIDATE_BUILD_NUMBER'].to_s.empty?
+      raise 'Please set the CANDIDATE_BUILD_NUMBER environment variable'
+    end
+
     ENV['CANDIDATE_BUILD_NUMBER']
   end
 
