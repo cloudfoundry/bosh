@@ -11,26 +11,27 @@ module Bosh::Director
 
         @queue = :normal
 
-        def initialize(deployment_name, jobs)
+        def initialize(deployment_name, jobs, fix_stateful_jobs=false)
           @deployment_manager = Api::DeploymentManager.new
           @instance_manager = Bosh::Director::Api::InstanceManager.new
           @deployment = @deployment_manager.find_by_name(deployment_name)
           @jobs = jobs # {j1 => [i1, i2, ...], j2 => [i1, i2, ...]}
-          @filtered_jobs = {}
+          @fix_stateful_jobs = fix_stateful_jobs
         end
 
         def perform
-          filter_out_jobs_with_persistent_disks
+          jobs = filtered_jobs
+
           begin
             with_deployment_lock(@deployment, :timeout => 0) do
 
               scanner = ProblemScanner.new(@deployment)
-              scanner.reset(@filtered_jobs)
-              scanner.scan_vms(@filtered_jobs)
+              scanner.reset(jobs)
+              scanner.scan_vms(jobs)
 
               resolver = ProblemResolver.new(@deployment)
               # TODO the application for resolutions should be done using a thread pool
-              resolver.apply_resolutions(resolutions)
+              resolver.apply_resolutions(resolutions(jobs))
 
               "scan and fix complete"
             end
@@ -39,17 +40,15 @@ module Bosh::Director
           end
         end
 
-        def resolutions
+        def resolutions(jobs)
           all_resolutions = {}
-          @filtered_jobs.each do |job, indices|
-            indices.each do |index|
-              instance = @instance_manager.find_by_name(@deployment.name, job, index)
+          jobs.each do |job, index|
+            instance = @instance_manager.find_by_name(@deployment.name, job, index)
 
-              problems = Models::DeploymentProblem.filter(deployment: @deployment, resource_id: instance.vm.id, state: 'open')
-              problems.each do |problem|
-                if problem.type == 'unresponsive_agent' || problem.type == 'missing_vm'
-                  all_resolutions[problem.id.to_s] = :recreate_vm
-                end
+            problems = Models::DeploymentProblem.filter(deployment: @deployment, resource_id: instance.vm.id, state: 'open')
+            problems.each do |problem|
+              if problem.type == 'unresponsive_agent' || problem.type == 'missing_vm'
+                all_resolutions[problem.id.to_s] = :recreate_vm
               end
             end
           end
@@ -57,12 +56,12 @@ module Bosh::Director
           all_resolutions
         end
 
-        def filter_out_jobs_with_persistent_disks
-          @jobs.each do |job, indices|
-            @filtered_jobs[job] = indices.reject do |index|
-              instance = @instance_manager.find_by_name(@deployment.name, job, index)
-              instance.persistent_disk
-            end
+        def filtered_jobs
+          return @jobs if @fix_stateful_jobs
+
+          @jobs.reject do |job, index|
+            instance = @instance_manager.find_by_name(@deployment.name, job, index)
+            instance.persistent_disk
           end
         end
       end

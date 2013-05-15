@@ -5,8 +5,8 @@ module Bosh::Director
     class ProblemManager
       include TaskHelper
 
-      def initialize
-        @deployment_manager = DeploymentManager.new
+      def initialize(deployment_manager = DeploymentManager.new)
+        @deployment_manager = deployment_manager
       end
 
       def perform_scan(user, deployment_name)
@@ -39,8 +39,9 @@ module Bosh::Director
       def scan_and_fix(user, deployment_name, jobs)
         deployment = @deployment_manager.find_by_name(deployment_name)
         task = create_task(user, :cck_scan_and_fix, "scan and fix")
+        fix_stateful_nodes = Bosh::Director::Config.fix_stateful_nodes
 
-        Resque.enqueue(Jobs::CloudCheck::ScanAndFix, task.id, deployment.name, jobs)
+        Resque.enqueue(Jobs::CloudCheck::ScanAndFix, task.id, deployment.name, jobs, fix_stateful_nodes)
         task
       end
     end

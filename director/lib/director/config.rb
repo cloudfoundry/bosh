@@ -24,7 +24,8 @@ module Bosh::Director
         :task_checkpoint_interval,
         :uuid,
         :current_job,
-        :encryption
+        :encryption,
+        :fix_stateful_nodes
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -118,6 +119,8 @@ module Bosh::Director
         end
 
         @encryption = config["encryption"]
+        @fix_stateful_nodes = config.fetch("scan_and_fix", {})
+          .fetch("auto_fix_stateful_nodes", false)
 
         Bosh::Clouds::Config.configure(self)
 
