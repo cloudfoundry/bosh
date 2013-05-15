@@ -12,10 +12,7 @@ describe Bosh::Director::Jobs::SnapshotDeployment do
   subject { described_class.new(deployment_name) }
 
   it 'tells the snapshot manager to snapshot a deployment' do
-    #BD::Api::InstanceManager.should_receive(:new).and_return(instance_manager)
     BD::Api::DeploymentManager.should_receive(:new).and_return(deployment_manager)
-
-    #BD::Api::SnapshotManager.should_receive(:snapshot_deployment).with(deplpyment_name).and_return(cids)
 
     deployment_manager.should_receive(:find_by_name).with(deployment_name).and_return(deployment)
 
