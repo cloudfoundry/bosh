@@ -788,5 +788,49 @@ describe Bosh::Cli::Command::AWS do
         aws.send(:delete_all_elbs, config_file)
       end
     end
+
+    describe "aws bootstrap micro" do
+      subject(:aws) { described_class.new }
+      let(:fake_bootstrap) { double("micro bosh bootstrap") }
+      context "interative" do
+        before(:each) do
+          aws.options[:non_interactive] = false
+        end
+
+        it "prompts the user for admin password" do
+          fake_bootstrap.should_receive(:start)
+          Bosh::Aws::MicroBoshBootstrap.should_receive(:new).with(
+              anything,
+              kind_of(Hash)
+          ).and_return(fake_bootstrap)
+          aws.should_receive(:ask).and_return("username")
+          aws.should_receive(:ask).and_return("password")
+
+          fake_bootstrap.should_receive(:create_user).with("hm", anything).ordered
+          fake_bootstrap.should_receive(:create_user).with("username", "password").ordered
+
+          aws.bootstrap_micro
+        end
+      end
+
+      context "non-interactive" do
+        before(:each) do
+          aws.options[:non_interactive] = true
+        end
+
+        it "saves the randomly generated password??" do
+          fake_bootstrap.should_receive(:start)
+          Bosh::Aws::MicroBoshBootstrap.should_receive(:new).with(
+              anything,
+              kind_of(Hash)
+          ).and_return(fake_bootstrap)
+
+          fake_bootstrap.should_receive(:create_user).with("hm", anything).ordered
+          fake_bootstrap.should_receive(:create_user).with("admin", anything).ordered
+
+          aws.bootstrap_micro
+        end
+      end
+    end
   end
 end
