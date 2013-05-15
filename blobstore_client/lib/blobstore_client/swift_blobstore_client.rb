@@ -11,7 +11,7 @@ module Bosh
 
     class SwiftBlobstoreClient < BaseClient
 
-      # Blobstore client for Swift
+      # Blobstore client for OpenStack Swift
       # @param [Hash] options Swift BlobStore options
       # @option options [Symbol] container_name
       # @option options [Symbol] swift_provider
@@ -41,9 +41,7 @@ module Bosh
 
       def create_file(object_id, file)
         object_id ||= generate_object_id
-        object = container.files.create(:key => object_id,
-                                        :body => file,
-                                        :public => true)
+        object = container.files.create(:key => object_id, :body => file)
         encode_object_id(object_id, object.public_url)
       rescue Exception => e
         raise BlobstoreError, "Failed to create object: #{e.message}"
@@ -56,33 +54,27 @@ module Bosh
             file.write(block)
           end
           if response.status != 200
-            raise BlobstoreError, "Could not fetch object, %s/%s" %
-                  [response.status, response.content]
+            raise BlobstoreError, "Could not fetch object, #{response.status} #{response.content}"
           end
         else
           object = container.files.get(object_info["oid"]) do |block|
             file.write(block)
           end
-          if object.nil?
-            raise NotFound, "Swift object '#{object_id}' not found"
-          end
+          raise NotFound, "Swift object '#{object_info["oid"]}' not found" if object.nil?
         end
       rescue Exception => e
-        raise BlobstoreError,
-              "Failed to find object '#{object_id}': #{e.message}"
+        raise BlobstoreError, "Failed to find object '#{object_id}': #{e.message}"
       end
 
       def delete_object(object_id)
         object_info = decode_object_id(object_id)
         object = container.files.get(object_info["oid"])
-        if object.nil?
-          raise NotFound, "Swift object '#{object_id}' not found"
-        else
-          object.destroy
-        end
+
+        raise NotFound, "Swift object '#{object_id}' not found" if object.nil?
+
+        object.destroy
       rescue Exception => e
-        raise BlobstoreError,
-              "Failed to delete object '#{object_id}': #{e.message}"
+        raise BlobstoreError, "Failed to delete object '#{object_id}': #{e.message}"
       end
 
       def object_exists?(object_id)
@@ -90,7 +82,7 @@ module Bosh
         object = container.files.head(object_info["oid"])
         object.nil? ? false : true
       rescue Exception => e
-        raise BlobstoreError, "Failed to create object: #{e.message}"
+        raise BlobstoreError, "Failed to find object '#{object_id}': #{e.message}"
       end
 
       private
@@ -107,13 +99,13 @@ module Bosh
       def decode_object_id(object_id)
         begin
           object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
-        rescue MultiJson::DecodeError => e
-          raise BlobstoreError, "Failed to parse object_id: #{e.message}"
+        rescue MultiJson::DecodeError
+          object_info = {}
+          object_info["oid"] = object_id
         end
 
-        if !object_info.kind_of?(Hash) || object_info["oid"].nil?
-          raise BlobstoreError, "Invalid object_id: #{object_info.inspect}"
-        end
+        raise BlobstoreError, "Invalid object_id: #{object_info.inspect}" if !object_info.kind_of?(Hash) || object_info["oid"].nil?
+
         object_info
       end
 

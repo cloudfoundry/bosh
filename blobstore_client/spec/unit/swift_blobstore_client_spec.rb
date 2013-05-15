@@ -55,7 +55,6 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           container.should_receive(:files).and_return(files)
           files.should_receive(:create) do |opt|
             opt[:key].should eql "object_id"
-            opt[:public].should eql true
             object
           end
           object.should_receive(:public_url).and_return("public-url")
@@ -200,7 +199,6 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           container.should_receive(:files).and_return(files)
           files.should_receive(:create) do |opt|
             opt[:key].should eql "object_id"
-            opt[:public].should eql true
             object
           end
           object.should_receive(:public_url).and_return("public-url")
