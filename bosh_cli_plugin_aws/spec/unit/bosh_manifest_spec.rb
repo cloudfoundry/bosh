@@ -145,7 +145,6 @@ properties:
     address: 10.10.0.7
     port: 25555
     encryption: false
-    enable_scheduled_snapshots: true
   hm:
     http:
       port: 25923
