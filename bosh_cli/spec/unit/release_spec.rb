@@ -119,9 +119,10 @@ describe Bosh::Cli::Release do
           :container_name => "test",
           :swift_provider => "hp",
           :hp => {
-            :hp_account_id => "foo",
+            :hp_access_key => "foo",
             :hp_secret_key => "bar",
-            :hp_tenant_id => "foo"
+            :hp_tenant_id => "foo",
+            :hp_avl_zone => "avl"
           }
       }
       Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
@@ -133,6 +134,28 @@ describe Bosh::Cli::Release do
       r.has_blobstore_secret?.should be_true
     end
 
+    it "should merge swift (OpenStack) secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/swift-openstack"))
+      opts = {
+          :container_name => "test",
+          :swift_provider => "openstack",
+          :openstack => {
+            :openstack_auth_url => "url",
+            :openstack_username => "foo",
+            :openstack_api_key => "bar",
+            :openstack_tenant => "foo",
+            :openstack_region => "reg"
+          }
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
+      r.blobstore
+    end
+
+    it "should detect blobstore secrets for swift (OpenStack) options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/swift-openstack"))
+      r.has_blobstore_secret?.should be_true
+    end
+
     it "should merge swift (Rackspace) secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
       opts = {
@@ -140,7 +163,8 @@ describe Bosh::Cli::Release do
           :swift_provider => "rackspace",
           :rackspace => {
             :rackspace_username => "foo",
-            :rackspace_api_key => "bar"
+            :rackspace_api_key => "bar",
+            :rackspace_region => "reg"
           }
       }
       Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
