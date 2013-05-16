@@ -7,7 +7,6 @@ require "logger"
 require "tmpdir"
 require "zlib"
 require 'tempfile'
-require "backports/rails/kernel"
 
 require "archive/tar/minitar"
 require "rspec"

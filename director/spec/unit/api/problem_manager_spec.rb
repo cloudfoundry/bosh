@@ -13,7 +13,7 @@ class FakeDeploymentManager
 end
 
 describe Bosh::Director::Api::ProblemManager do
-  let(:deployment) { BD::Models::Deployment.make_unsaved(:name => "mycloud") }
+  !let(:deployment) { BD::Models::Deployment.make(:name => "mycloud") }
   let(:deployment_manager) { FakeDeploymentManager.new }
   let(:manager) { described_class.new(deployment_manager) }
 
