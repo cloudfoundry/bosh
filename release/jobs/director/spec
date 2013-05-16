@@ -59,6 +59,9 @@ properties:
   director.self_snapshot_schedule:
     description: RufusScheduler cron formatted schedule for self snapshots
     default: '0 0 6 * * * UTC'
+  director.auto_fix_stateful_nodes:
+    description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
+    default: true
   redis.address:
     description: Address of the redis server
   redis.port:
