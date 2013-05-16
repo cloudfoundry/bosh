@@ -91,7 +91,10 @@ module Bosh::Cli::Command
 
     # bosh login
     usage "login"
-    desc  "Log in to currently targeted director"
+    desc  "Log in to currently targeted director. " +
+          "The username and password can also be " +
+          "set in the BOSH_USER and BOSH_PASSWORD " +
+          "environment variables."
     def login(username = nil, password = nil)
       target_required
 

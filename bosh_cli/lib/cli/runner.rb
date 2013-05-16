@@ -104,7 +104,11 @@ module Bosh::Cli
       end
 
       opts = @option_parser
-      opts.on("-c", "--config FILE", "Override configuration file") do |file|
+      config_desc = "Override configuration file. Also can be overridden " +
+                    "by BOSH_CONFIG environment variable. Defaults to " +
+                    "$HOME/.bosh_config. Override precedence is command-" +
+                    "line option, then environment variable, then home directory."
+      opts.on("-c", "--config FILE", config_desc) do |file|
         @options[:config] = file
       end
       opts.on("-C", "--cache-dir DIR", "Override cache directory") do |dir|
