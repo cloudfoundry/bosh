@@ -32,6 +32,16 @@ describe Bosh::OpenStackCloud::Helpers do
       @cloud.wait_resource(resource, :stop, :status, false, 0.1)
     end
 
+    it "should accept an Array of target states" do
+      resource = double("resource")
+      resource.stub(:id).and_return("foobar")
+      resource.stub(:reload).and_return(@cloud)
+      resource.stub(:status).and_return(:start, :stop)
+      @cloud.stub(:sleep)
+
+      @cloud.wait_resource(resource, [:stop, :deleted], :status, false, 0.1)
+    end
+
     it "should raise Bosh::Clouds::CloudError if state is error" do
       resource = double("resource")
       resource.stub(:id).and_return("foobar")
