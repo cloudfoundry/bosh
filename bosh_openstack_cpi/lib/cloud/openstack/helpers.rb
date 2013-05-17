@@ -76,11 +76,11 @@ module Bosh::OpenStackCloud
         # If resource reload is nil, perhaps it's because resource went away
         # (ie: a destroy operation). Don't raise an exception if this is
         # expected (allow_notfound).
-        if resource.reload.nil?
+        if with_openstack { resource.reload.nil? }
           break if allow_notfound
           cloud_error("#{desc}: Resource not found")
         else
-          state = resource.send(state_method).downcase.to_sym
+          state =  with_openstack { resource.send(state_method).downcase.to_sym }
         end
 
         # This is not a very strong convention, but some resources
