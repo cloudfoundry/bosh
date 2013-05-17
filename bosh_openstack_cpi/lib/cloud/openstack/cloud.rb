@@ -722,7 +722,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [String] Device name
     def attach_volume(server, volume)
-      volume_attachments = with_openstack { @openstack.get_server_volumes(server.id).body['volumeAttachments'] }
+      volume_attachments = with_openstack { server.volume_attachments }
       device_names = Set.new(volume_attachments.collect! { |v| v["device"] })
 
       new_attachment = nil
@@ -751,7 +751,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [void]
     def detach_volume(server, volume)
-      volume_attachments = with_openstack { @openstack.get_server_volumes(server.id).body['volumeAttachments'] }
+      volume_attachments = with_openstack { server.volume_attachments }
       device_map = volume_attachments.collect! { |v| v["volumeId"] }
 
       unless device_map.include?(volume.id)
