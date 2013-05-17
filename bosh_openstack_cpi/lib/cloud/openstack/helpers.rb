@@ -31,8 +31,8 @@ module Bosh::OpenStackCloud
             if overlimit
               task_checkpoint
               wait_time = overlimit["retryAfter"] || DEFAULT_RETRY_TIMEOUT
-              @logger.debug("OpenStack API overLimit, waiting #{wait_time} " +
-                                "seconds before retrying") if @logger
+              details = "#{overlimit["message"]} - #{overlimit["details"]}"
+              @logger.debug("OpenStack API overLimit (#{details}), waiting #{wait_time} seconds before retrying") if @logger
               sleep(wait_time.to_i)
               retries += 1
               retry
@@ -41,7 +41,8 @@ module Bosh::OpenStackCloud
             # do nothing
           end
         end
-        raise e
+        @logger.error(e) if @logger
+        cloud_error("RequestEntityTooLarge. Check task debug log for details.")
       end
     end
 
