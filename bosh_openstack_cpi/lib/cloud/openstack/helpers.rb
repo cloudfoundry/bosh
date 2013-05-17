@@ -49,7 +49,7 @@ module Bosh::OpenStackCloud
     # Waits for a resource to be on a target state
     #
     # @param [Fog::Model] resource Resource to query
-    # @param [Symbol] target_state Resource's state desired
+    # @param [Array<Symbol>] target_state Resource's state desired
     # @param [Symbol] state_method Resource's method to fetch state
     # @param [Boolean] allow_notfound true if resource could be not found
     # @param [Integer] timeout Timeout for target state (in seconds)
@@ -57,8 +57,8 @@ module Bosh::OpenStackCloud
                       allow_notfound = false, timeout = DEFAULT_TIMEOUT)
 
       started_at = Time.now
-      desc = resource.class.name.split("::").last.to_s + " `" +
-             resource.id.to_s + "'"
+      desc = resource.class.name.split("::").last.to_s + " `" + resource.id.to_s + "'"
+      target_state = Array(target_state)
 
       loop do
         task_checkpoint
@@ -66,12 +66,11 @@ module Bosh::OpenStackCloud
         duration = Time.now - started_at
 
         if duration > timeout
-          cloud_error("Timed out waiting for #{desc} to be #{target_state}")
+          cloud_error("Timed out waiting for #{desc} to be #{target_state.join(", ")}")
         end
 
         if @logger
-          @logger.debug("Waiting for #{desc} to be #{target_state} " \
-                        "(#{duration}s)")
+          @logger.debug("Waiting for #{desc} to be #{target_state.join(", ")} (#{duration}s)")
         end
 
         # If resource reload is nil, perhaps it's because resource went away
@@ -90,17 +89,17 @@ module Bosh::OpenStackCloud
         # set of 'loop breaker' states but that doesn't seem very helpful
         # at the moment
         if state == :error || state == :failed
-          cloud_error("#{desc} state is #{state}, expected #{target_state}")
+          cloud_error("#{desc} state is #{state}, expected #{target_state.join(", ")}")
         end
 
-        break if state == target_state
+        break if target_state.include?(state)
 
         sleep(1)
       end
 
       if @logger
         total = Time.now - started_at
-        @logger.info("#{desc} is now #{target_state}, took #{total}s")
+        @logger.info("#{desc} is now #{target_state.join(", ")}, took #{total}s")
       end
     end
 
