@@ -752,17 +752,14 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [void]
     def detach_volume(server, volume)
-      volume_attachments = with_openstack { server.volume_attachments }
-      device_map = volume_attachments.collect! { |v| v["volumeId"] }
-
-      unless device_map.include?(volume.id)
-        cloud_error("Disk `#{volume.id}' is not attached to " \
-                    "server `#{server.id}'")
-      end
-
       @logger.info("Detaching volume `#{volume.id}' from `#{server.id}'...")
-      with_openstack { volume.detach(server.id, volume.id) }
-      wait_resource(volume, :available)
+      volume_attachments = with_openstack { server.volume_attachments }
+      if volume_attachments.find { |a| a["volumeId"] == volume.id }
+        with_openstack { volume.detach(server.id, volume.id) }
+        wait_resource(volume, :available)
+      else
+        @logger.info("Disk `#{volume.id}' is not attached to server `#{server.id}'. Skipping.")
+      end
     end
 
     ##

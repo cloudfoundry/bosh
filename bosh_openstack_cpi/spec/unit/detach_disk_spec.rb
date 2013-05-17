@@ -48,7 +48,7 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.detach_disk("i-test", "v-foobar")
   end
 
-  it "raises an error when volume is not attached to a server" do
+  it "bypasses the detaching process when volume is not attached to a server" do
     server = double("server", :id => "i-test", :name => "i-test")
     volume = double("volume", :id => "v-barfoo")
     volume_attachments = [{"volumeId" => "v-foobar"}]
@@ -59,10 +59,31 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     server.should_receive(:volume_attachments).and_return(volume_attachments)
+    volume.should_not_receive(:detach)
 
-    expect {
-      cloud.detach_disk("i-test", "v-barfoo")
-    }.to raise_error(Bosh::Clouds::CloudError, /is not attached to server/)
+    old_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "v-foobar" => "/dev/vdc",
+          "v-barfoo" => "/dev/vdd"
+        }
+      }
+    }
+
+    new_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "v-foobar" => "/dev/vdc"
+        }
+      }
+    }
+
+    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
+    @registry.should_receive(:update_settings).with("i-test", new_settings)
+
+    cloud.detach_disk("i-test", "v-barfoo")
   end
 
 end
