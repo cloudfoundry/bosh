@@ -1,12 +1,8 @@
 module Bosh::HealthMonitor
   class EventProcessor
-    include Singleton
+    attr_reader :plugins
 
     def initialize
-      self.reset
-    end
-
-    def reset
       @events = {}
       @plugins = {}
 

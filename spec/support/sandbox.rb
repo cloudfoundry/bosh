@@ -174,6 +174,7 @@ module Bosh
         end
         puts "Reset took #{time} seconds"
       end
+
       def do_reset(name)
         kill_process(worker_pid, "QUIT")
         kill_process(director_pid)
@@ -219,9 +220,11 @@ module Bosh
       def director_output_path
         "#{base_log_path}.director.out"
       end
+
       def worker_output_path
         "#{base_log_path}.worker.out"
       end
+
       def base_log_path
         File.join(logs_path, @name)
       end

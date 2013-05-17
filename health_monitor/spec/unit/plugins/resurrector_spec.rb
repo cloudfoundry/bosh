@@ -37,9 +37,10 @@ describe Bhm::Plugins::Resurrector do
 
     context 'alerts with deployment, job and index' do
       let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', index: 'i')) }
-      let (:ev) { Bhm::EventProcessor.instance }
+      let (:event_processor) { Bhm::EventProcessor.new }
 
       before do
+        Bhm.event_processor = event_processor
         @don = mock(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
         Bhm::Plugins::ResurrectorHelper::AlertTracker.should_receive(:new).and_return(@don)
       end
@@ -77,7 +78,7 @@ describe Bhm::Plugins::Resurrector do
             :title => "We are in meltdown.",
             :created_at => 12345
         }
-        ev.should_receive(:process).with(:alert, alert_option)
+        event_processor.should_receive(:process).with(:alert, alert_option)
         plugin.run
         plugin.process(alert)
       end

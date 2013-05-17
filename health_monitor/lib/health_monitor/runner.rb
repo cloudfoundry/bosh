@@ -25,6 +25,8 @@ module Bosh::HealthMonitor
 
       EM.run do
         connect_to_mbus
+        @director_monitor = DirectorMonitor.new(Bhm)
+        @director_monitor.subscribe
         @agent_manager.setup_events
         setup_timers
         start_http_server

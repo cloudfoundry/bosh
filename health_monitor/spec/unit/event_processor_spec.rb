@@ -14,8 +14,7 @@ describe Bhm::EventProcessor do
     }
 
     Bhm.logger = Logging.logger(StringIO.new)
-    @processor = Bhm::EventProcessor.instance
-    @processor.reset
+    @processor = Bhm::EventProcessor.new
 
     @logger_plugin = Bhm::Plugins::Logger.new
     @email_plugin = Bhm::Plugins::Email.new(email_options)

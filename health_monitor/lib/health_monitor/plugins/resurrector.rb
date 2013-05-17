@@ -16,7 +16,7 @@ module Bosh::HealthMonitor
         @url           = URI(director['endpoint'])
         @user          = director['user']
         @password      = director['password']
-        @processor     = EventProcessor.instance
+        @processor     = Bhm.event_processor
         @alert_tracker = ResurrectorHelper::AlertTracker.new(@options)
       end
 
