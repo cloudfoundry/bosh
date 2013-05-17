@@ -137,6 +137,34 @@ properties:
     description: AWS access_key_id used for the compiled package cache
   compiled_package_cache.options.secret_access_key:
     description: AWS secret_access_key used for the compiled package cache
+  compiled_package_cache.options.swift_provider:
+    description:  OpenStack Swift provider (supported providers are hp, openstack and rackspace)
+  compiled_package_cache.options.container_name:
+    description: Name of the container
+  compiled_package_cache.options.hp_access_key:
+    description: HP Object Storage Access Key
+  compiled_package_cache.options.hp_secret_key:
+    description: HP Object Storage Secret Key
+  compiled_package_cache.options.hp_tenant_id:
+    description: HP Object Storage Project ID
+  compiled_package_cache.options.hp_avl_zone:
+    description: HP Object Storage Availability Zone (region-a.geo-1 or region-b.geo-1)
+  compiled_package_cache.options.openstack_auth_url:
+    description: URL of the OpenStack Identity endpoint to connect to
+  compiled_package_cache.options.openstack_username:
+    description: OpenStack user name
+  compiled_package_cache.options.openstack_api_key:
+    description: OpenStack API key
+  compiled_package_cache.options.openstack_tenant:
+    description: OpenStack tenant name
+  compiled_package_cache.options.openstack_region:
+    description: OpenStack region (optional)
+  compiled_package_cache.options.rackspace_username:
+    description: Rackspace Cloud Files Username
+  compiled_package_cache.options.rackspace_api_key:
+    description: Rackspace Cloud Files API Key
+  compiled_package_cache.options.rackspace_region:
+    description: Rackspace Cloud Files Region (optional, dfw or ord)
   ntp:
     description: List of ntp server IPs
     default: []

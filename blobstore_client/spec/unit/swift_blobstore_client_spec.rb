@@ -5,16 +5,25 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
   def swift_options(container_name, swift_provider, credentials)
     if credentials
       options = {
-                  "rackspace" => {
-                    "rackspace_username" => "username",
-                    "rackspace_api_key" => "api_key"
-                  },
-                  "hp" => {
-                    "hp_account_id" => "account_id",
-                    "hp_secret_key" => "secret_key",
-                    "hp_tenant_id"  => "tenant_id"
-                  }
-                }
+        "hp" => {
+          "hp_access_key" => "access_key",
+          "hp_secret_key" => "secret_key",
+          "hp_tenant_id"  => "tenant_id",
+          "hp_avl_zone"   => "region"
+        },
+        "openstack" => {
+          "openstack_auth_url" => "auth_url",
+          "openstack_username" => "username",
+          "openstack_api_key"  => "api_key",
+          "openstack_tenant"   => "tenant",
+          "openstack_region" => "region"
+        },
+        "rackspace" => {
+          "rackspace_username" => "username",
+          "rackspace_api_key" => "api_key",
+          "rackspace_region" => "region"
+        }
+      }
     else
       options = {}
     end
@@ -35,290 +44,434 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
   end
 
   describe "on HP Cloud Storage" do
+    let(:data)  { "some content" }
+    let(:directories) { double("directories") }
+    let(:container) { double("container") }
+    let(:files) { double("files") }
+    let(:object) { double("object") }
 
     describe "with credentials" do
-
       before(:each) do
         @client = swift_blobstore(swift_options('test-container', 'hp', true))
       end
 
-      it "should create an object" do
-        data = "some content"
-        directories = double("directories")
-        container = double("container")
-        files = double("files")
-        object = double("object")
+      describe "#create_file" do
+        it "should create an object" do
+          @client.should_receive(:generate_object_id).and_return("object_id")
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:create) do |opt|
+            opt[:key].should eql "object_id"
+            object
+          end
+          object.should_receive(:public_url).and_return("public-url")
 
-        @client.should_receive(:generate_object_id).and_return("object_id")
-        @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container").and_return(container)
-        container.should_receive(:files).and_return(files)
-        files.should_receive(:create) do |opt|
-          opt[:key].should eql "object_id"
-          opt[:public].should eql true
-          object
+          object_id = @client.create(data)
+          object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
+          object_info["oid"].should eql("object_id")
+          object_info["purl"].should eql("public-url")
         end
-        object.should_receive(:public_url).and_return("public-url")
-
-        object_id = @client.create(data)
-        object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
-        object_info["oid"].should eql("object_id")
-        object_info["purl"].should eql("public-url")
       end
 
-      it "should fetch an object without a public url" do
-        data = "some content"
-        directories = double("directories")
-        container = double("container")
-        files = double("files")
-        object = double("object")
+      describe "#get_file" do
+        it "should fetch an object without a public url" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:get).with("object_id").and_yield(data).and_return(object)
 
-        @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container") \
-                   .and_return(container)
-        container.should_receive(:files).and_return(files)
-        files.should_receive(:get).with("object_id").and_yield(data) \
-             .and_return(object)
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.get(oid).should eql(data)
+        end
 
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        @client.get(oid).should eql(data)
+        it "should fetch an object with a public url" do
+          response = mock("response")
+
+          @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
+          response.stub!(:status).and_return(200)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
+          @client.get(oid).should eql(data)
+        end
       end
 
-      it "should fetch an object with a public url" do
-        data = "some content"
-        response = mock("response")
+      describe "#delete_object" do
+        it "should delete an object" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:get).with("object_id").and_return(object)
+          object.should_receive(:destroy)
 
-        @http_client.should_receive(:get).with("public-url") \
-                    .and_yield(data).and_return(response)
-        response.stub!(:status).and_return(200)
-
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id",
-                                             :purl => "public-url"})))
-        @client.get(oid).should eql(data)
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.delete(oid)
+        end
       end
 
-      it "should delete an object" do
-        directories = double("directories")
-        container = double("container")
-        files = double("files")
-        object = double("object")
+      describe "#object_exists?" do
+        it "should return true if object exists" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:head).with("object_id").and_return(object)
 
-        @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container") \
-                   .and_return(container)
-        container.should_receive(:files).and_return(files)
-        files.should_receive(:get).with("object_id").and_return(object)
-        object.should_receive(:destroy)
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.exists?(oid).should be_true
+        end
 
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        @client.delete(oid)
-      end
+        it "should return false if object doesn't exists" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:head).with("object_id").and_return(nil)
 
-      describe '#object_exists?' do
-        it 'should raise an error' do
-          expect {
-            @client.exists?('doesntexist')
-          }.to raise_error '#exists? not implemented'
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.exists?(oid).should be_false
         end
       end
     end
 
     describe "without credentials" do
-
       before(:each) do
-        @client = swift_blobstore(swift_options("test-container",
-                                                "hp",
-                                                false))
+        @client = swift_blobstore(swift_options("test-container", "hp", false))
       end
 
-      it "should refuse to create an object" do
-        data = "some content"
-
-        lambda {
-          object_id = @client.create(data)
-        }.should raise_error(Bosh::Blobstore::BlobstoreError)
-      end
-
-      it "should refuse to fetch an object without a public url" do
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        lambda {
-          @client.get(oid)
-        }.should raise_error(Bosh::Blobstore::BlobstoreError)
-      end
-
-      it "should fetch an object with a public url" do
-        data = "some content"
-        response = mock("response")
-
-        @http_client.should_receive(:get).with("public-url") \
-                    .and_yield(data).and_return(response)
-        response.stub!(:status).and_return(200)
-
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id",
-                                             :purl => "public-url"})))
-        @client.get(oid).should eql(data)
-      end
-
-      it "should refuse to delete an object" do
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        lambda {
-          @client.delete(oid)
-        }.should raise_error(Bosh::Blobstore::BlobstoreError)
-      end
-
-      describe '#object_exists?' do
-        it 'should raise an error' do
+      describe "#create_file" do
+        it "should refuse to create an object" do
           expect {
-            @client.exists?('doesntexist')
-          }.to raise_error '#exists? not implemented'
+            @client.create(data)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+      end
+
+      describe "#get_file" do
+        it "should refuse to fetch an object without a public url" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.get(oid)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+
+        it "should fetch an object with a public url" do
+          response = mock("response")
+
+          @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
+          response.stub!(:status).and_return(200)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
+          @client.get(oid).should eql(data)
+        end
+      end
+
+      describe "#delete_object" do
+        it "should refuse to delete an object" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.delete(oid)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+      end
+
+      describe "#object_exists?" do
+        it "should raise a BlobstoreError exception" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.exists?(oid).should be_true
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+      end
+    end
+  end
+
+  describe "on OpenStack Cloud Storage" do
+    let(:data)  { "some content" }
+    let(:directories) { double("directories") }
+    let(:container) { double("container") }
+    let(:files) { double("files") }
+    let(:object) { double("object") }
+
+    describe "with credentials" do
+      before(:each) do
+        @client = swift_blobstore(swift_options('test-container', 'openstack', true))
+      end
+
+      describe "#create_file" do
+        it "should create an object" do
+          @client.should_receive(:generate_object_id).and_return("object_id")
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:create) do |opt|
+            opt[:key].should eql "object_id"
+            object
+          end
+          object.should_receive(:public_url).and_raise(NotImplementedError)
+
+          object_id = @client.create(data)
+          object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
+          object_info["oid"].should eql("object_id")
+          object_info["purl"].should be_nil
+        end
+      end
+
+      describe "#get_file" do
+        it "should fetch an object without a public url" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:get).with("object_id").and_yield(data).and_return(object)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.get(oid).should eql(data)
+        end
+
+        it "should fetch an object with a public url" do
+          response = mock("response")
+
+          @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
+          response.stub!(:status).and_return(200)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
+          @client.get(oid).should eql(data)
+        end
+      end
+
+      describe "#delete_object" do
+        it "should delete an object" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:get).with("object_id").and_return(object)
+          object.should_receive(:destroy)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.delete(oid)
+        end
+      end
+
+      describe "#object_exists?" do
+        it "should return true if object exists" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:head).with("object_id").and_return(object)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.exists?(oid).should be_true
+        end
+
+        it "should return false if object doesn't exists" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:head).with("object_id").and_return(nil)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.exists?(oid).should be_false
+        end
+      end
+    end
+
+    describe "without credentials" do
+      before(:each) do
+        @client = swift_blobstore(swift_options("test-container", "openstack", false))
+      end
+
+      describe "#create_file" do
+        it "should refuse to create an object" do
+          expect {
+            @client.create(data)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+      end
+
+      describe "#get_file" do
+        it "should refuse to fetch an object without a public url" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.get(oid)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+
+        it "should fetch an object with a public url" do
+          response = mock("response")
+
+          @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
+          response.stub!(:status).and_return(200)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
+          @client.get(oid).should eql(data)
+        end
+      end
+
+      describe "#delete_object" do
+        it "should refuse to delete an object" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.delete(oid)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+      end
+
+      describe "#object_exists?" do
+        it "should raise a BlobstoreError exception" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.exists?(oid).should be_true
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
         end
       end
     end
   end
 
   describe "on Rackspace Cloud Files" do
+    let(:data)  { "some content" }
+    let(:directories) { double("directories") }
+    let(:container) { double("container") }
+    let(:files) { double("files") }
+    let(:object) { double("object") }
 
     describe "with credentials" do
-
       before(:each) do
-        @client = swift_blobstore(swift_options("test-container",
-                                                "rackspace",
-                                                true))
+        @client = swift_blobstore(swift_options("test-container", "rackspace", true))
       end
 
-      it "should create an object" do
-        data = "some content"
-        directories = double("directories")
-        container = double("container")
-        files = double("files")
-        object = double("object")
+      describe "#create_file" do
+        it "should create an object" do
+          @client.should_receive(:generate_object_id).and_return("object_id")
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:create) do |opt|
+            opt[:key].should eql "object_id"
+            object
+          end
+          object.should_receive(:public_url).and_return("public-url")
 
-        @client.should_receive(:generate_object_id).and_return("object_id")
-        @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container") \
-                   .and_return(container)
-        container.should_receive(:files).and_return(files)
-        files.should_receive(:create).with { |opt|
-          opt[:key].should eql "object_id"
-          #opt[:body].should eql data
-          opt[:public].should eql true
-        }.and_return(object)
-        object.should_receive(:public_url).and_return("public-url")
-
-        object_id = @client.create(data)
-        object_info = MultiJson.decode(Base64.decode64(
-                                         URI::unescape(object_id)))
-        object_info["oid"].should eql("object_id")
-        object_info["purl"].should eql("public-url")
+          object_id = @client.create(data)
+          object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
+          object_info["oid"].should eql("object_id")
+          object_info["purl"].should eql("public-url")
+        end
       end
 
-      it "should fetch an object without a public url" do
-        data = "some content"
-        directories = double("directories")
-        container = double("container")
-        files = double("files")
-        object = double("object")
+      describe "#get_file" do
+        it "should fetch an object without a public url" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:get).with("object_id").and_yield(data).and_return(object)
 
-        @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container") \
-                   .and_return(container)
-        container.should_receive(:files).and_return(files)
-        files.should_receive(:get).with("object_id").and_yield(data) \
-             .and_return(object)
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.get(oid).should eql(data)
+        end
 
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        @client.get(oid).should eql(data)
+        it "should fetch an object with a public url" do
+          response = mock("response")
+
+          @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
+          response.stub!(:status).and_return(200)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
+          @client.get(oid).should eql(data)
+        end
       end
 
-      it "should fetch an object with a public url" do
-        data = "some content"
-        response = mock("response")
+      describe "#delete_object" do
+        it "should delete an object" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:get).with("object_id").and_return(object)
+          object.should_receive(:destroy)
 
-        @http_client.should_receive(:get).with("public-url") \
-                    .and_yield(data).and_return(response)
-        response.stub!(:status).and_return(200)
-
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id",
-                                             :purl => "public-url"})))
-        @client.get(oid).should eql(data)
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.delete(oid)
+        end
       end
 
-      it "should delete an object" do
-        directories = double("directories")
-        container = double("container")
-        files = double("files")
-        object = double("object")
+      describe "#object_exists?" do
+        it "should return true if object exists" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:head).with("object_id").and_return(object)
 
-        @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container") \
-                   .and_return(container)
-        container.should_receive(:files).and_return(files)
-        files.should_receive(:get).with("object_id").and_return(object)
-        object.should_receive(:destroy)
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.exists?(oid).should be_true
+        end
 
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        @client.delete(oid)
+        it "should return false if object doesn't exists" do
+          @swift.stub(:directories).and_return(directories)
+          directories.should_receive(:get).with("test-container").and_return(container)
+          container.should_receive(:files).and_return(files)
+          files.should_receive(:head).with("object_id").and_return(nil)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+          @client.exists?(oid).should be_false
+        end
       end
-
     end
 
     describe "without credentials" do
-
       before(:each) do
-        @client = swift_blobstore(swift_options("test-container",
-                                                "rackspace",
-                                                false))
+        @client = swift_blobstore(swift_options("test-container", "rackspace", false))
       end
 
-      it "should refuse to create an object" do
-        data = "some content"
-
-        lambda {
-          object_id = @client.create(data)
-        }.should raise_error(Bosh::Blobstore::BlobstoreError)
+      describe "#create_file" do
+        it "should refuse to create an object" do
+          expect {
+            @client.create(data)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
       end
 
-      it "should refuse to fetch an object without a public url" do
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        lambda {
-          @client.get(oid)
-        }.should raise_error(Bosh::Blobstore::BlobstoreError)
+      describe "#get_file" do
+        it "should refuse to fetch an object without a public url" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
+
+          expect {
+            @client.get(oid)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+
+        it "should fetch an object with a public url" do
+          response = mock("response")
+
+          @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
+          response.stub!(:status).and_return(200)
+
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
+          @client.get(oid).should eql(data)
+        end
       end
 
-      it "should fetch an object with a public url" do
-        data = "some content"
-        response = mock("response")
+      describe "#delete_object" do
+        it "should refuse to delete an object" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
 
-        @http_client.should_receive(:get).with("public-url") \
-                    .and_yield(data).and_return(response)
-        response.stub!(:status).and_return(200)
-
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id",
-                                             :purl => "public-url"})))
-        @client.get(oid).should eql(data)
+          expect {
+            @client.delete(oid)
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
       end
 
-      it "should refuse to delete an object" do
-        oid = URI::escape(Base64.encode64(MultiJson.encode(
-                                            {:oid => "object_id"})))
-        lambda {
-          @client.delete(oid)
-        }.should raise_error(Bosh::Blobstore::BlobstoreError)
-      end
+      describe "#object_exists?" do
+        it "should raise a BlobstoreError exception" do
+          oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id"})))
 
+          expect {
+            @client.exists?(oid).should be_true
+          }.to raise_error(Bosh::Blobstore::BlobstoreError)
+        end
+      end
     end
-
   end
-
 end

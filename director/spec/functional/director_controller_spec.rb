@@ -93,7 +93,8 @@ describe Bosh::Director::ApiController do
               "extras" => { "domain_name" => "bosh" }
             },
             "compiled_package_cache" => {
-                "status" => true
+              "status" => true,
+              "extras" => { "provider" => "local"}
             }
           }
       }
