@@ -19,6 +19,7 @@ require "irb"
 require "irb/completion"
 require "ostruct"
 require "optparse"
+require "psych"
 
 @provider = nil
 config_file = nil
