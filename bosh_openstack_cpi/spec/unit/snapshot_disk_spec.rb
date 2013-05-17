@@ -16,9 +16,10 @@ describe Bosh::OpenStackCloud::Cloud do
 
     cloud = mock_cloud do |openstack|
       openstack.volumes.should_receive(:get).with("v-foobar").and_return(volume)
-      openstack.snapshots.should_receive(:create).with(snapshot_params).and_return(snapshot)
+      openstack.snapshots.should_receive(:new).with(snapshot_params).and_return(snapshot)
     end
 
+    snapshot.should_receive(:save).with(true)
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
     cloud.should_receive(:wait_resource).with(snapshot, :available)
 
