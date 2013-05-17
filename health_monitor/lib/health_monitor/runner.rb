@@ -34,11 +34,11 @@ module Bosh::HealthMonitor
       end
     end
 
-    def stop
+    def stop(soft=false)
       @logger.info("HealthMonitor shutting down...")
       @http_server.stop! if @http_server
       EM.stop
-      exit(1)
+      exit(1) unless soft
     end
 
     def setup_timers

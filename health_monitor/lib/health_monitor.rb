@@ -57,6 +57,7 @@ require 'health_monitor/events/heartbeat'
 
 # Plugins
 require 'health_monitor/plugins/base'
+require 'health_monitor/plugins/dummy'
 require 'health_monitor/plugins/http_request_helper'
 require 'health_monitor/plugins/resurrector_helper'
 require 'health_monitor/plugins/cloud_watch'
