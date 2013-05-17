@@ -82,7 +82,7 @@ describe Bosh::Registry do
       config["cloud"] = {
         "plugin" => "openstack",
         "openstack" => {
-          "auth_url" => "http://127.0.0.1:5000/v2.0/tokens",
+          "auth_url" => "http://127.0.0.1:5000/v2.0",
           "username" => "foo",
           "api_key" => "bar",
           "tenant" => "foo",

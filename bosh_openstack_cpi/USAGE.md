@@ -119,7 +119,7 @@ This is a sample of how OpenStack specific properties are used in a BOSH deploym
 
     properties:
       openstack:
-        auth_url: http://pistoncloud.com/:5000/v2.0/tokens
+        auth_url: http://pistoncloud.com/:5000/v2.0
         username: christopher
         api_key: QRoqsenPsNGX6
         tenant: Bosh
