@@ -3,6 +3,10 @@ genisoimage/genisoimage:
   object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f1111677
   sha: 51b6b62e34161b4ac295d15b48c128ecbb52186d
   size: 605096
+mysql/client-5.1.62-rel13.3-435-Linux-x86_64.tar.gz:
+  object_id: rest/objects/4e4e78bca21e122204e4e9863926b104fb68b259c9fc
+  sha: 6e5a17195831688a5f14f20aa5d9cd5d5f4164db
+  size: 4105211
 nats/vendor/cache/daemons-1.1.4.gem:
   object_id: rest/objects/4e4e78bca61e122204e4e98643d9ae04fbd4f12c0c03
   sha: 6603f661cc3b9f591db66b5fbb18d648288651a0

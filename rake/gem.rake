@@ -20,8 +20,7 @@ COMPONENTS = %w(agent_client
                 ruby_vim_sdk
                 simple_blobstore_server)
 
-COMPONENTS_WITH_PG = %w(director bosh_registry)
-
+COMPONENTS_WITH_DB = %w(director bosh_registry)
 
 def root
   @root ||= File.expand_path('../../', __FILE__)
@@ -71,7 +70,8 @@ COMPONENTS.each do |component|
             lockfile.specs
         ).each do |spec|
           sh "cp /tmp/all_the_gems/#{Process.pid}/#{spec.name}-*.gem ."
-          sh "cp /tmp/all_the_gems/#{Process.pid}/pg*.gem ." if COMPONENTS_WITH_PG.include?(component)
+          sh "cp /tmp/all_the_gems/#{Process.pid}/pg*.gem ." if COMPONENTS_WITH_DB.include?(component)
+          sh "cp /tmp/all_the_gems/#{Process.pid}/mysql*.gem ." if COMPONENTS_WITH_DB.include?(component)
         end
       end
     end

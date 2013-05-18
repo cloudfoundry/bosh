@@ -140,16 +140,18 @@ module Bosh::Director
       end
 
       def configure_db(db_config)
-        patch_sqlite if db_config["database"].index("sqlite://") == 0
+        patch_sqlite if db_config["adapter"] == "sqlite"
 
-        connection_options = {}
-        [:max_connections, :pool_timeout].each do |key|
-          connection_options[key] = db_config[key.to_s]
+        connection_options = db_config.delete('connection_options') {{}}
+        db_config.delete_if { |_, v| v.to_s.empty? }
+        db_config = db_config.merge(connection_options)
+
+        db = Sequel.connect(db_config)
+        if logger
+          db.logger = logger
+          db.sql_log_level = :debug
         end
 
-        db = Sequel.connect(db_config["database"], connection_options)
-        db.logger = @logger
-        db.sql_log_level = :debug
         db
       end
 

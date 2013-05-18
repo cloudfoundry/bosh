@@ -2,12 +2,8 @@
 name: <%= p('director.name') %>
 port: <%= p('director.backend_port') %>
 encryption: <%= p('director.encryption') %>
-<% if_p("director.max_tasks") do |max_tasks| %>
-max_tasks: <%= max_tasks %>
-<% end %>
-<% if_p("director.max_threads") do |max_threads| %>
-max_threads: <%= max_threads %>
- <% end %>
+max_tasks: <%= p('director.max_tasks') %>
+max_threads: <%= p('director.max_threads') %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
@@ -20,24 +16,18 @@ redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
   password: <%= p('redis.password') %>
-  <% if_p("redis.loglevel") do |redis_loglevel| %>
   logging:
-    level: <%= redis_loglevel %>
-  <% end %>
+    level: <%= p('redis.loglevel') %>
 mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
 dir: /var/vcap/store/director
 db:
-  <% has_postgres = false %>
-  <% if_p('postgres.user', 'postgres.password', 'postgres.address', 'postgres.port',
-          'postgres.database') do |user, password, address, port, database| %>
-    <% has_postgres = true %>
-  database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= port %>/<%= database %>
-  max_connections: 32
-  pool_timeout: 10
-  <% end %>
-  <% unless has_postgres %>
-  database: sqlite:///var/vcap/store/director/director.db
-  <% end %>
+  adapter: <%= p('director_db.adapter') %>
+  user: <%= p('director_db.user') %>
+  password: <%= p('director_db.password') %>
+  host: <%= p('director_db.host') %>
+  port: <%= p('director_db.port') %>
+  database: <%= p('director_db.database') %>
+  connection_options: <%= p('director_db.connection_options') %>
 scheduled_jobs:
   <% if p('director.snapshot_schedule') %>
   - command: snapshot_deployments
@@ -56,10 +46,15 @@ dns:
   domain_name: <%= domain_name %>
   <% end %>
   db:
-    database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= db_port %>/<%= db_name %>
-    max_connections: 32
-    pool_timeout: 10
+    adapter: postgres
+    user: <%= user %>
+    password: <%= password %>
+    host: <%= address %>
+    port: <%= db_port %>
+    database: <%= db_name %>
+    connection_options: { max_connections: 32, pool_timeout: 10 }
 <% end %>
+
 blobstore:
   provider: <%= p('blobstore.provider') %>
   options:

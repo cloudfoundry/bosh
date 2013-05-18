@@ -25,7 +25,7 @@ unless config["db"] && config["db"]["database"]
   abort ("Director database config missing from config file")
 end
 
-db = Sequel.connect(config["db"]["database"])
+db = Bosh::Director::Config.configure_db(config["db"])
 
 def migrate(database, schema_table, dir, target = nil)
   options = {}
@@ -42,7 +42,7 @@ migrate(db, nil, migrations_dir)
 
 if config["dns"] && config["dns"]["db"]
   dns_migrations_dir = File.expand_path("../../db/migrations/dns", __FILE__)
-  dns_db = Sequel.connect(config["dns"]["db"]["database"])
+  dns_db = Bosh::Director::Config.configure_db(config["dns"]["db"])
   migrate(dns_db, "dns_schema",
           dns_migrations_dir)
 end

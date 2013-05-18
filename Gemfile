@@ -32,6 +32,7 @@ group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
   gem "pg"
+  gem "mysql"
 end
 
 group :development do

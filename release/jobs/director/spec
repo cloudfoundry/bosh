@@ -20,6 +20,7 @@ packages:
 - nginx
 - genisoimage
 - libpq
+- mysqlclient
 - ruby
 
 properties:
@@ -62,9 +63,7 @@ properties:
   director.auto_fix_stateful_nodes:
     description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
     default: true
-  resque.loglevel:
-    description: Level of log messages for Resque workers (fatal, error, warn, info, debug)
-    default: info
+
   redis.address:
     description: Address of the redis server
   redis.port:
@@ -75,6 +74,7 @@ properties:
   redis.loglevel:
     description: Level of log messages for Redis connections (fatal, error, warn, info, debug)
     default: info
+
   nats.user:
     description: Username to connect to nats with
     default: nats
@@ -85,17 +85,29 @@ properties:
   nats.port:
     description: Port that the nats server listens on
     default: 4222
-  postgres.user:
-    description: Username used for the director database (postgres)
-  postgres.password:
-    description: Password used for the director database (postgres)
-  postgres.address:
-    description: Address of the director database (postges)
-  postgres.port:
-    description: Port of the director database (postgres)
+
+  # Director Database
+  director_db.adapter:
+    description: The type of database used
+    default: postgres
+  director_db.user:
+    description: Username used for the director database
+    default: bosh
+  director_db.password:
+    description: Password used for the director database
+  director_db.host:
+    description: Address of the director database
+  director_db.port:
+    description: Port of the director database
     default: 5432
-  postgres.database:
-    description: Name of the director database (postgres)
+  director_db.database:
+    description: Name of the director database
+    default: bosh
+  director_db.connection_options:
+    description: Additional options for the database
+    default: '{ max_connections: 32, pool_timeout: 10 }'
+
+  # DNS
   dns.address:
     description: Address of the powerdns server
   dns.domain_name:
@@ -109,6 +121,8 @@ properties:
     default: 5432
   dns.database.name:
     description: Name of the powerdns database (postgres in powerdns job)
+
+  # Blobstore
   blobstore.provider:
     description: Provider of the blobstore used by director and agent (dav|simple|s3)
     default: 'dav'
@@ -131,6 +145,8 @@ properties:
     description: Username agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
+
+  # Compiled Package Cache
   compiled_package_cache.provider:
     description: Provider of the blobstore used for the compiled package cache
     default: 's3'
@@ -168,9 +184,11 @@ properties:
     description: Rackspace Cloud Files API Key
   compiled_package_cache.options.rackspace_region:
     description: Rackspace Cloud Files Region (optional, dfw or ord)
+
   ntp:
     description: List of ntp server IPs
     default: []
+
   agent.blobstore.access_key_id:
     description: AWS access_key_id for agent used by s3 blobstore plugin
   agent.blobstore.secret_access_key:
