@@ -723,24 +723,32 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [String] Device name
     def attach_volume(server, volume)
+      @logger.info("Attaching volume `#{volume.id}' to `#{server.id}'...")
       volume_attachments = with_openstack { server.volume_attachments }
-      device_names = Set.new(volume_attachments.collect! { |v| v["device"] })
+      device = volume_attachments.find { |a| a["volumeId"] == volume.id }
 
-      new_attachment = nil
-      ("c".."z").each do |char|
-        dev_name = "/dev/vd#{char}"
-        if device_names.include?(dev_name)
-          @logger.warn("`#{dev_name}' on `#{server.id}' is taken")
-          next
+      if device.nil?
+        device_names = Set.new(volume_attachments.collect { |v| v["device"] })
+        new_attachment = nil
+        ("c".."z").each do |char|
+          dev_name = "/dev/vd#{char}"
+          if device_names.include?(dev_name)
+            @logger.warn("`#{dev_name}' on `#{server.id}' is taken")
+            next
+          end
+          @logger.info("Attaching volume `#{volume.id}' to `#{server.id}', " \
+                       "device name is `#{dev_name}'")
+          with_openstack { volume.attach(server.id, dev_name) }
+          wait_resource(volume, :"in-use")
+          new_attachment = dev_name
+          break
         end
-        @logger.info("Attaching volume `#{volume.id}' to `#{server.id}', " \
-                     "device name is `#{dev_name}'")
-        with_openstack { volume.attach(server.id, dev_name) }
-        wait_resource(volume, :"in-use")
-        new_attachment = dev_name
-        break
+        cloud_error("Server has too many disks attached") if new_attachment.nil?
+      else
+        new_attachment = device["device"]
+        @logger.info("Disk `#{volume.id}' is already attached to server `#{server.id}' " \
+                     "in `#{new_attachment}'. Skipping.")
       end
-      cloud_error("Server has too many disks attached") if new_attachment.nil?
 
       new_attachment
     end
