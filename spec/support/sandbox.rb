@@ -34,6 +34,8 @@ module Bosh
 
       TESTCASE_SQLITE_DB = "director.sqlite"
 
+      attr_accessor :director_fix_stateful_nodes
+
       def pick_unique_name(name)
         @used_names ||= Set.new
         name = name.downcase.gsub(/[^a-z0-9]/, "_")
@@ -172,6 +174,7 @@ module Bosh
         end
         puts "Reset took #{time} seconds"
       end
+
       def do_reset(name)
         kill_process(worker_pid, "QUIT")
         kill_process(director_pid)
@@ -182,10 +185,7 @@ module Bosh
 
         FileUtils.cp(@sqlite_db, testcase_sqlite_db)
 
-        name = pick_unique_name(name)
-        base_log_path = File.join(logs_path, name)
-        director_output = "#{base_log_path}.director.out"
-        worker_output = "#{base_log_path}.worker.out"
+        @name = pick_unique_name(name)
 
         FileUtils.rm_rf(blobstore_storage_dir)
         FileUtils.mkdir_p(blobstore_storage_dir)
@@ -203,8 +203,8 @@ module Bosh
         write_in_sandbox("director_test.yml", load_config_template(DIRECTOR_CONF_TEMPLATE))
         write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
 
-        run_with_pid(%W[director -c #{director_config}], director_pid, :output => director_output)
-        run_with_pid(%W[worker -c #{director_config}], worker_pid, :output => worker_output, :env => {"QUEUE" => "*"})
+        run_with_pid(%W[director -c #{director_config}], director_pid, :output => director_output_path)
+        run_with_pid(%W[worker -c #{director_config}], worker_pid, :output => worker_output_path, :env => {"QUEUE" => "*"})
 
         tries = 0
         loop do
@@ -215,6 +215,25 @@ module Bosh
           #sleep(0.2)
           sleep(1)
         end
+      end
+
+      def director_output_path
+        "#{base_log_path}.director.out"
+      end
+
+      def worker_output_path
+        "#{base_log_path}.worker.out"
+      end
+
+      def base_log_path
+        File.join(logs_path, @name)
+      end
+
+      def reconfigure_director
+        kill_process(director_pid)
+        director_output = "#{base_log_path}.director.out"
+        write_in_sandbox("director_test.yml", load_config_template(DIRECTOR_CONF_TEMPLATE))
+        run_with_pid(%W[director -c #{director_config}], director_pid, :output => director_output)
       end
 
       def start_healthmonitor

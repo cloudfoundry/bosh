@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::AwsCloud::ResourceWait do
 
   before do
-    Bosh::Common.stub(:sleep)
+    Kernel.stub(:sleep)
     described_class.stub(:task_checkpoint, :logger)
   end
 

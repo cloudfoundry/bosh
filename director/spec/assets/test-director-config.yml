@@ -25,7 +25,8 @@ compiled_package_cache:
   provider: local
   options:
     blobstore_path: /path/to/some/bucket
-
+scan_and_fix:
+  auto_fix_stateful_nodes: false
 cloud:
   plugin: dummy
   properties:

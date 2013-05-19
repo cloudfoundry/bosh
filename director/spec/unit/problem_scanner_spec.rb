@@ -4,7 +4,7 @@ describe Bosh::Director::ProblemScanner do
   let!(:deployment) { BDM::Deployment.make(:name => "mycloud") }
   let!(:problem_scanner) { Bosh::Director::ProblemScanner.new(deployment) }
 
-  describe "#reset" do
+  describe "reset" do
     it "should mark all open problems as closed" do
       problem = BDM::DeploymentProblem.make({
                                                 :counter => 1,
@@ -17,6 +17,31 @@ describe Bosh::Director::ProblemScanner do
 
       BDM::DeploymentProblem.any?(&:open?).should be_false
       BDM::DeploymentProblem[problem.id].state.should == "closed"
+    end
+
+    context "when reseting a specific list of job instances" do
+      it "only marks the specific job instances that are open as closed" do
+        instance1 = BDM::Instance.make(:deployment => deployment, job: 'job1', index: 0)
+        instance2 = BDM::Instance.make(:deployment => deployment, job: 'job1', index: 1)
+
+        problem1 = BDM::DeploymentProblem.make({
+                                                  :counter => 1,
+                                                  :type => 'inactive_disk',
+                                                  :deployment => deployment,
+                                                  :state => 'open',
+                                                  :resource_id => instance1.vm.id
+                                               })
+        problem2 = BDM::DeploymentProblem.make({
+                                                  :counter => 1,
+                                                  :type => 'inactive_disk',
+                                                  :deployment => deployment,
+                                                  :state => 'open',
+                                                  :resource_id => instance2.vm.id
+                                              })
+        problem_scanner.reset([['job1', 0]])
+        BDM::DeploymentProblem[problem1.id].state.should == "closed"
+        BDM::DeploymentProblem[problem2.id].state.should == "open"
+      end
     end
   end
 
@@ -242,138 +267,99 @@ describe Bosh::Director::ProblemScanner do
   end
 
   describe "VM scan" do
-    it 'scans a subset of vms'
+    let(:cloud) { double(Bosh::Cloud) }
 
-    it "scans for unresponsive agents" do
-      2.times do |i|
-        vm = BDM::Vm.make(cid: 'vm-cid', agent_id: "agent-#{i}", deployment: deployment)
-        BDM::Instance.make(vm: vm, deployment: deployment, job: "job-#{i}", index: i)
-      end
-
-      unresponsive_agent = mock(BD::AgentClient)
-      responsive_agent = mock(BD::AgentClient)
-
-      BD::AgentClient.stub!(:new).with("agent-0", anything).and_return(unresponsive_agent)
-      BD::AgentClient.stub!(:new).with("agent-1", anything).and_return(responsive_agent)
-
-      # Unresponsive agent
-      unresponsive_agent.stub(:get_state).and_raise(BD::RpcTimeout)
-
-      # Working agent
-      good_state = {
-          "deployment" => "mycloud",
-          "job" => {"name" => "job-1"},
-          "index" => 1
-      }
-      responsive_agent.stub(:get_state).and_return(good_state)
-      responsive_agent.stub(:list_disk).and_return([])
-
-      fake_cloud = double(Bosh::Cloud)
-      BD::Config.stub(:cloud).and_return(fake_cloud)
-      fake_cloud.stub(:has_vm?).with("vm-cid").and_return(true)
-
-      problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_call_original
-      problem_scanner.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync")
-
-      problem_scanner.scan_vms
-      BDM::DeploymentProblem.count.should == 1
-
-      problem = BDM::DeploymentProblem.first
-      problem.state.should == "open"
-      problem.type.should == "unresponsive_agent"
-      problem.deployment.should == deployment
-      problem.resource_id.should == 1
-      problem.data.should == {}
-    end
-
-    context "when cloud.has_vm? is implemented" do
-      it "scans for missing vm" do
-        2.times do |i|
+    context "when cloud.has_vm?" do
+      before do
+        3.times do |i|
           vm = BDM::Vm.make(cid: 'vm-cid', agent_id: "agent-#{i}", deployment: deployment)
           BDM::Instance.make(vm: vm, deployment: deployment, job: "job-#{i}", index: i)
         end
-
-        unresponsive_agent = mock(BD::AgentClient)
+        unresponsive_agent1 = mock(BD::AgentClient)
+        unresponsive_agent2 = mock(BD::AgentClient)
         responsive_agent = mock(BD::AgentClient)
 
-        BD::AgentClient.stub!(:new).with("agent-0", anything).and_return(unresponsive_agent)
-        BD::AgentClient.stub!(:new).with("agent-1", anything).and_return(responsive_agent)
+        BD::AgentClient.stub!(:new).with("agent-0", anything).and_return(unresponsive_agent1)
+        BD::AgentClient.stub!(:new).with("agent-1", anything).and_return(unresponsive_agent2)
+        BD::AgentClient.stub!(:new).with("agent-2", anything).and_return(responsive_agent)
 
         # Unresponsive agent
-        unresponsive_agent.should_receive(:get_state).and_raise(BD::RpcTimeout)
+        unresponsive_agent1.stub(:get_state).and_raise(BD::RpcTimeout)
+        unresponsive_agent2.stub(:get_state).and_raise(BD::RpcTimeout)
 
         # Working agent
         good_state = {
             "deployment" => "mycloud",
-            "job" => {"name" => "job-1"},
-            "index" => 1
+            "job" => {"name" => "job-2"},
+            "index" => 2
         }
-
-        responsive_agent.should_receive(:get_state).and_return(good_state)
-        responsive_agent.should_receive(:list_disk).and_return([])
-        0
-        fake_cloud = double(Bosh::Cloud)
-        BD::Config.stub(:cloud).and_return(fake_cloud)
-        fake_cloud.should_receive(:has_vm?).with("vm-cid").and_return(false)
-
-        problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_call_original
-        problem_scanner.should_receive(:track_and_log).with("1 OK, 0 unresponsive, 1 missing, 0 unbound, 0 out of sync")
-
-        problem_scanner.scan_vms
-        BDM::DeploymentProblem.count.should == 1
-
-        problem = BDM::DeploymentProblem.first
-        problem.state.should == "open"
-        problem.type.should == "missing_vm"
-        problem.deployment.should == deployment
-        problem.resource_id.should == 1
-        problem.data.should == {}
+        responsive_agent.stub(:get_state).and_return(good_state)
+        responsive_agent.stub(:list_disk).and_return([])
+        BD::Config.stub(:cloud).and_return(cloud)
+        cloud.stub(:has_vm?).with("vm-cid").and_return(true)
       end
-    end
 
-    context "when cloud.has_vm? is not implemented" do
-      it "falls back to only identifying unresponsive agents" do
-        2.times do |i|
-          vm = BDM::Vm.make(cid: 'vm-cid', agent_id: "agent-#{i}", deployment: deployment)
-          BDM::Instance.make(vm: vm, deployment: deployment, job: "job-#{i}", index: i)
+      context "is implemented" do
+        it "scans a subset of vms" do
+          problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_yield
+          problem_scanner.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync")
+
+          expect {
+            problem_scanner.scan_vms([['job-1', 1],['job-2', 2]])
+          }.to change { BDM::DeploymentProblem.count }.by(1)
         end
 
-        unresponsive_agent = mock(BD::AgentClient)
-        responsive_agent = mock(BD::AgentClient)
+        it "scans for unresponsive agents" do
+          problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_call_original
+          problem_scanner.should_receive(:track_and_log).with("1 OK, 2 unresponsive, 0 missing, 0 unbound, 0 out of sync")
 
-        BD::AgentClient.stub!(:new).with("agent-0", anything).and_return(unresponsive_agent)
-        BD::AgentClient.stub!(:new).with("agent-1", anything).and_return(responsive_agent)
+          problem_scanner.scan_vms
+          BDM::DeploymentProblem.count.should == 2
 
-        # Unresponsive agent
-        unresponsive_agent.should_receive(:get_state).and_raise(BD::RpcTimeout)
+          problem = BDM::DeploymentProblem.first
+          problem.state.should == "open"
+          problem.type.should == "unresponsive_agent"
+          problem.deployment.should == deployment
+          problem.resource_id.should == 1
+          problem.data.should == {}
+        end
 
-        # Working agent
-        good_state = {
-            "deployment" => "mycloud",
-            "job" => {"name" => "job-1"},
-            "index" => 1
-        }
+        it "scans for missing vms" do
+          cloud.should_receive(:has_vm?).with("vm-cid").and_return(false)
 
-        responsive_agent.should_receive(:get_state).and_return(good_state)
-        responsive_agent.should_receive(:list_disk).and_return([])
-        0
-        fake_cloud = double(Bosh::Cloud)
-        BD::Config.stub(:cloud).and_return(fake_cloud)
+          problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_call_original
+          problem_scanner.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 1 missing, 0 unbound, 0 out of sync")
 
-        fake_cloud.should_receive(:has_vm?).with("vm-cid").and_raise(Bosh::Clouds::NotImplemented)
-        problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_call_original
-        problem_scanner.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync")
+          problem_scanner.scan_vms
+          BDM::DeploymentProblem.count.should == 2
 
-        problem_scanner.reset
-        problem_scanner.scan_vms
-        BDM::DeploymentProblem.count.should == 1
+          problem = BDM::DeploymentProblem.first
+          problem.state.should == "open"
+          problem.type.should == "missing_vm"
+          problem.deployment.should == deployment
+          problem.resource_id.should == 1
+          problem.data.should == {}
+        end
+      end
 
-        problem = BDM::DeploymentProblem.first
-        problem.state.should == "open"
-        problem.type.should == "unresponsive_agent"
-        problem.deployment.should == deployment
-        problem.resource_id.should == 1
-        problem.data.should == {}
+      context "is not implemented" do
+        it "falls back to only identifying unresponsive agents" do
+          cloud.should_receive(:has_vm?).with("vm-cid").and_raise(Bosh::Clouds::NotImplemented)
+
+          problem_scanner.should_receive(:track_and_log).with("Checking VM states").and_call_original
+          problem_scanner.should_receive(:track_and_log).with("1 OK, 2 unresponsive, 0 missing, 0 unbound, 0 out of sync")
+
+          problem_scanner.reset
+          problem_scanner.scan_vms
+          BDM::DeploymentProblem.count.should == 2
+
+          problem = BDM::DeploymentProblem.first
+          problem.state.should == "open"
+          problem.type.should == "unresponsive_agent"
+          problem.deployment.should == deployment
+          problem.resource_id.should == 1
+          problem.data.should == {}
+        end
       end
     end
 

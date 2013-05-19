@@ -11,6 +11,9 @@ describe Bosh::AwsCloud::Cloud do
       end
 
       volume.should_receive(:create_snapshot).and_return(snapshot)
+      Bosh::AwsCloud::ResourceWait.should_receive(:for_snapshot).with(
+        snapshot: snapshot, state: :completed
+      )
 
       cloud.snapshot_disk('vol-xxxxxxxx')
     end

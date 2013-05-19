@@ -67,6 +67,7 @@ require "director/vm_reuser"
 require "director/deployment_plan"
 require "director/deployment_plan_compiler"
 require "director/duration"
+require "director/hash_string_vals"
 require "director/instance_deleter"
 require "director/instance_updater"
 require "director/job_runner"
@@ -121,6 +122,39 @@ module Bosh::Director
     end
   end
 
+  module ApiControllerHelpers
+    def task_timeout?(task)
+      # Some of the old task entries might not have the checkpoint_time
+      unless task.checkpoint_time
+        task.checkpoint_time = Time.now
+        task.save
+      end
+
+      # If no checkpoint update in 3 cycles --> timeout
+      (task.state == "processing" || task.state == "cancelling") &&
+          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
+    end
+
+    def protected!
+      unless authorized?
+        response['WWW-Authenticate'] = %(Basic realm="BOSH Director")
+        throw(:halt, [401, "Not authorized\n"])
+      end
+    end
+
+    def authorized?
+      @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+      @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
+    end
+
+    def convert_job_instance_hash(hash)
+      hash.reduce([]) do |jobs, kv|
+        job, indicies = kv
+        jobs + indicies.map { |index| [job, index] }
+      end
+    end
+  end
+
   class ApiController < Sinatra::Base
     PUBLIC_URLS = ["/info"]
 
@@ -164,31 +198,7 @@ module Bosh::Director
       end
     end
 
-    helpers do
-      def task_timeout?(task)
-        # Some of the old task entries might not have the checkpoint_time
-        unless task.checkpoint_time
-          task.checkpoint_time = Time.now
-          task.save
-        end
-
-        # If no checkpoint update in 3 cycles --> timeout
-        (task.state == "processing" || task.state == "cancelling") &&
-          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
-      end
-
-      def protected!
-        unless authorized?
-          response['WWW-Authenticate'] = %(Basic realm="BOSH Director")
-          throw(:halt, [401, "Not authorized\n"])
-        end
-      end
-
-      def authorized?
-        @auth ||=  Rack::Auth::Basic::Request.new(request.env)
-        @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
-      end
-    end
+    helpers ApiControllerHelpers
 
     before do
       auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
@@ -704,10 +714,12 @@ module Bosh::Director
       start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload["resolutions"]) }
     end
 
-    put '/deployments/:deployment/scan_and_fix', :consumes => :json do
-      payload = json_decode(request.body)
-      # payload: {j1 => [i1, i2, ...], j2 => [i1, i2, ...]}
-      start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload["jobs"]) }
+    put "/deployments/:deployment/scan_and_fix", :consumes => :json do
+      jobs_json = json_decode(request.body)["jobs"]
+      # payload: [['j1', 'i1'], ['j1', 'i2'], ['j2', 'i1'], ...]
+      payload = convert_job_instance_hash(jobs_json)
+
+      start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
     end
 
     get "/info" do
@@ -723,7 +735,8 @@ module Bosh::Director
             "extras" => { "domain_name" => dns_domain_name }
           },
           "compiled_package_cache" => {
-            "status" => Config.use_compiled_package_cache?
+            "status" => Config.use_compiled_package_cache?,
+            "extras" => { "provider" => Config.compiled_package_cache_provider }
           }
         }
       }

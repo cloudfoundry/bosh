@@ -25,6 +25,8 @@ module Bosh::HealthMonitor
 
       EM.run do
         connect_to_mbus
+        @director_monitor = DirectorMonitor.new(Bhm)
+        @director_monitor.subscribe
         @agent_manager.setup_events
         setup_timers
         start_http_server
@@ -32,11 +34,11 @@ module Bosh::HealthMonitor
       end
     end
 
-    def stop
+    def stop(soft=false)
       @logger.info("HealthMonitor shutting down...")
       @http_server.stop! if @http_server
       EM.stop
-      exit(1)
+      exit(1) unless soft
     end
 
     def setup_timers

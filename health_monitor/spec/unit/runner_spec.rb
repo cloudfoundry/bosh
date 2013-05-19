@@ -17,11 +17,5 @@ describe Bhm::Runner do
     Bhm.mbus.password.should be_nil
 
     Bhm.plugins.size.should == 8
-
   end
-
-  it "validates configuration file" do
-    pending
-  end
-
 end

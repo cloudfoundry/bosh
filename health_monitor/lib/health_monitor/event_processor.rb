@@ -1,5 +1,7 @@
 module Bosh::HealthMonitor
   class EventProcessor
+    attr_reader :plugins
+
     def initialize
       @events = {}
       @plugins = {}

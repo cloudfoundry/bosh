@@ -67,6 +67,9 @@ describe Bosh::Director::ApiController do
         },
         'compiled_package_cache' => {
           'status' => true,
+          'extras' => {
+            'provider' => 'local'
+          }
         }
       }
     }

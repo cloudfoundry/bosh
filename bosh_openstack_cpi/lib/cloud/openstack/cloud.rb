@@ -35,6 +35,10 @@ module Bosh::OpenStackCloud
       @default_key_name = @openstack_properties["default_key_name"]
       @default_security_groups = @openstack_properties["default_security_groups"]
 
+      unless @openstack_properties["auth_url"].match(/\/tokens$/)
+        @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"
+      end
+
       openstack_params = {
         :provider => "OpenStack",
         :openstack_auth_url => @openstack_properties["auth_url"],
@@ -303,7 +307,7 @@ module Bosh::OpenStackCloud
         server = with_openstack { @openstack.servers.get(server_id) }
         if server
           with_openstack { server.destroy }
-          wait_resource(server, :terminated, :state, true)
+          wait_resource(server, [:terminated, :deleted], :state, true)
 
           @logger.info("Deleting settings for server `#{server.id}'...")
           @registry.delete_settings(server.name)
@@ -502,7 +506,8 @@ module Bosh::OpenStackCloud
         }
 
         @logger.info("Creating new snapshot for volume `#{disk_id}'...")
-        snapshot = with_openstack { @openstack.snapshots.create(snapshot_params) }
+        snapshot = @openstack.snapshots.new(snapshot_params)
+        with_openstack { snapshot.save(true) }
 
         @logger.info("Creating new snapshot `#{snapshot.id}' for volume `#{disk_id}'...")
         wait_resource(snapshot, :available)
@@ -718,7 +723,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [String] Device name
     def attach_volume(server, volume)
-      volume_attachments = with_openstack { @openstack.get_server_volumes(server.id).body['volumeAttachments'] }
+      volume_attachments = with_openstack { server.volume_attachments }
       device_names = Set.new(volume_attachments.collect! { |v| v["device"] })
 
       new_attachment = nil
@@ -747,7 +752,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [void]
     def detach_volume(server, volume)
-      volume_attachments = with_openstack { @openstack.get_server_volumes(server.id).body['volumeAttachments'] }
+      volume_attachments = with_openstack { server.volume_attachments }
       device_map = volume_attachments.collect! { |v| v["volumeId"] }
 
       unless device_map.include?(volume.id)

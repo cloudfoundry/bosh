@@ -33,6 +33,8 @@ compiled_package_cache:
     endpoint: http://127.0.0.1:<%= blobstore_port %>
     user: bs_admin
     password: bs_pass
+scan_and_fix:
+  auto_fix_stateful_nodes: <%= director_fix_stateful_nodes || false %>
 cloud:
   plugin: dummy
   properties:

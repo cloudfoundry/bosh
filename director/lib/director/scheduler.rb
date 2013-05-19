@@ -7,8 +7,6 @@ module Bosh::Director
 
     attr_reader :scheduler
 
-    COMMANDS = %w[snapshot_deployments]
-
     def initialize(scheduled_jobs=[])
       @scheduled_jobs = scheduled_jobs
     end
@@ -21,11 +19,15 @@ module Bosh::Director
       @logger ||= Config.logger
     end
 
+    def cloud
+      @cloud ||= Config.cloud
+    end
+
     def add_jobs
       @scheduled_jobs.each do |scheduled_job|
         command = scheduled_job['command'].to_s
         schedule = scheduled_job['schedule']
-        raise "unknown command scheduled job `#{command}'" unless COMMANDS.include?(command)
+        raise "unknown command scheduled job `#{command}'" unless respond_to? command
         scheduler.cron(schedule) do |job|
           self.send(command.to_sym)
           logger.info("ran `#{command}', next run at `#{job.next_time}'")
@@ -47,12 +49,20 @@ module Bosh::Director
     end
 
     def snapshot_deployments
-      logger.info('starting snapshots')
+      logger.info('starting snapshots of deployments')
       snapshot_manager ||= Bosh::Director::Api::SnapshotManager.new
       Bosh::Director::Models::Deployment.all do |deployment|
         snapshot_manager.create_deployment_snapshot_task('scheduler', deployment)
       end
       #TODO track task and alert/log if failed
+    end
+
+    def snapshot_self
+      logger.info('starting self_snapshot')
+      vm_id = cloud.current_vm_id
+      disks = cloud.get_disks(vm_id)
+
+      disks.each { |disk| cloud.snapshot_disk(disk) }
     end
   end
 end

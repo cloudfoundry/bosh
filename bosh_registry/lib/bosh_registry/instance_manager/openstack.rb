@@ -12,6 +12,11 @@ module Bosh::Registry
         @logger = Bosh::Registry.logger
 
         @openstack_properties = cloud_config["openstack"]
+
+        unless @openstack_properties["auth_url"].match(/\/tokens$/)
+          @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"
+        end
+
         @openstack_options = {
           :provider => "OpenStack",
           :openstack_auth_url => @openstack_properties["auth_url"],

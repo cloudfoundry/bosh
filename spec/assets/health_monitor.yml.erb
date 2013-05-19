@@ -9,7 +9,7 @@ mbus:
   user:
   password:
 
-director:
+director: &director
   endpoint: http://127.0.0.1:<%= director_port %>
   user: admin
   password: admin
@@ -34,3 +34,8 @@ plugins:
       endpoint: nats://localhost:<%= nats_port %>
       user:
       password:
+  - name: resurrector
+    events:
+      - alert
+    options:
+      director: *director

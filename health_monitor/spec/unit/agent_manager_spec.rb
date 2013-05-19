@@ -1,10 +1,13 @@
 require 'spec_helper'
 
 describe Bhm::AgentManager do
+  let(:event_processor) { double(Bhm::EventProcessor) }
+  let(:manager) { described_class.new(event_processor) }
 
-
-  def make_manager
-    Bhm::AgentManager.new
+  before do
+    event_processor.stub(:process)
+    event_processor.stub(:enable_pruning)
+    event_processor.stub(:add_plugin)
   end
 
   context "stubbed config" do
@@ -18,9 +21,7 @@ describe Bhm::AgentManager do
       Bhm.intervals = OpenStruct.new(:agent_timeout => 10, :rogue_agent_alert => 10)
     end
 
-
     it "can process heartbeats" do
-      manager = make_manager
       manager.agents_count.should == 0
       manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
       manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
@@ -29,22 +30,26 @@ describe Bhm::AgentManager do
       manager.agents_count.should == 2
     end
 
-    it "can process alerts" do
-      manager = make_manager
-
+    it "increments alerts_processed on good alerts" do
       good_alert = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i})
-      bad_alert = Yajl::Encoder.encode({"id" => "778", "severity" => -2, "title" => nil, "summary" => "zbb", "created_at" => Time.now.utc.to_i})
-      malformed_alert = Yajl::Encoder.encode("zb")
 
-      manager.process_event(:alert, "hm.agent.alert.007", good_alert)
-      manager.process_event(:alert, "hm.agent.alert.007", bad_alert)
-      manager.process_event(:alert, "hm.agent.alert.007", malformed_alert)
+      expect {
+        manager.process_event(:alert, "hm.agent.alert.007", good_alert)
+        manager.process_event(:alert, "hm.agent.alert.007", good_alert)
+      }.to change(manager, :alerts_processed).by(2)
+    end
 
-      manager.alerts_processed.should == 1
+    it "does not increment alerts_processed on bad alerts" do
+      event_processor.should_receive(:process).at_least(:once).and_raise(Bosh::HealthMonitor::InvalidEvent)
+      alert = Yajl::Encoder.encode({"id" => "778", "severity" => -2, "title" => nil, "summary" => "zbb", "created_at" => Time.now.utc.to_i})
+
+      expect {
+        manager.process_event(:alert, "hm.agent.alert.007", alert)
+        manager.process_event(:alert, "hm.agent.alert.007", alert)
+      }.to_not change(manager, :alerts_processed)
     end
 
     it "can process agent shutdowns" do
-      manager = make_manager
       manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
       manager.add_agent("mycloud", {"agent_id" => "008", "index" => "0", "job" => "nats"})
       manager.add_agent("mycloud", {"agent_id" => "009", "index" => "28", "job" => "mysql_node"})
@@ -57,14 +62,11 @@ describe Bhm::AgentManager do
     end
 
     it "can start managing agent" do
-      manager = make_manager
-
       manager.add_agent("mycloud", {"agent_id" => "007", "job" => "zb", "index" => "0"}).should be_true
       manager.agents_count.should == 1
     end
 
     it "can sync deployments" do
-      manager = make_manager
       vm1 = {"agent_id" => "007", "index" => "0", "job" => "mutator"}
       vm2 = {"agent_id" => "008", "index" => "0", "job" => "nats"}
       vm3 = {"agent_id" => "009", "index" => "28", "job" => "mysql_node"}
@@ -83,7 +85,6 @@ describe Bhm::AgentManager do
     end
 
     it "can sync agents" do
-      manager = make_manager
       vm1 = {"agent_id" => "007", "index" => "0", "job" => "mutator"}
       vm2 = {"agent_id" => "008", "index" => "0", "job" => "nats"}
       vm3 = {"agent_id" => "009", "index" => "28", "job" => "mysql_node"}
@@ -100,7 +101,6 @@ describe Bhm::AgentManager do
     end
 
     it "can provide agent information for a deployment" do
-      manager = make_manager
       manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
       manager.add_agent("mycloud", {"agent_id" => "008", "index" => "0", "job" => "nats"})
       manager.add_agent("mycloud", {"agent_id" => "009", "index" => "28", "job" => "mysql_node"})
@@ -113,25 +113,17 @@ describe Bhm::AgentManager do
     end
 
     it "refuses to register agents with malformed director vm data" do
-      manager = make_manager
-
       manager.add_agent("mycloud", {"job" => "zb", "index" => "0"}).should be_false # no agent_id
       manager.add_agent("mycloud", ["zb"]).should be_false # not a Hash
     end
 
     it "can analyze agent" do
-      manager = make_manager
-
       manager.analyze_agent("007").should be_false # No such agent yet
       manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
       manager.analyze_agent("007").should be_true
     end
 
     it "can analyze all agents" do
-      processor = Bhm::EventProcessor.new
-      manager = make_manager
-      manager.processor = processor
-
       manager.analyze_agents.should == 0
 
       # 3 regular agents
@@ -160,21 +152,19 @@ describe Bhm::AgentManager do
 
       manager.process_event(:heartbeat, "512", nil)
       # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
-      processor.should_receive(:process).with(:alert, anything).exactly(4).times
+      event_processor.should_receive(:process).with(:alert, anything).exactly(4).times
       manager.analyze_agents.should == 5
       manager.agents_count.should == 4
 
       # Now previously removed "256" gets reported as a good citizen
       # 5 agents total, 3 timed out, 1 rogue
       manager.add_agent("mycloud", {"agent_id" => "256", "index" => "0", "job" => "redis_node"})
-      processor.should_receive(:process).with(:alert, anything).exactly(4).times
+      event_processor.should_receive(:process).with(:alert, anything).exactly(4).times
       manager.analyze_agents.should == 5
     end
   end
 
   context "real config" do
-
-    let(:manager) { make_manager }
     let(:mock_nats) { mock('nats') }
 
     before do
@@ -196,8 +186,6 @@ describe Bhm::AgentManager do
   end
 
   context "when loading plugin not found" do
-    let(:manager) { make_manager }
-
     before do
       config = Psych.load_file(sample_config)
       config["plugins"] << { "name" => "joes_plugin_thing", "events" => ["alerts", "heartbeats"] }

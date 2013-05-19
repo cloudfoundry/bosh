@@ -3,6 +3,11 @@ require 'director/scheduler'
 
 describe Bosh::Director::Scheduler do
 
+  before do
+    @cloud = stub(:Cloud)
+    BD::Config.stub(:cloud).and_return(@cloud)
+  end
+
   describe 'scheduling jobs' do
     let(:scheduled_jobs) { [{'schedule' => '0 1 * * *', 'command' => 'snapshot_deployments'}] }
     subject { described_class.new(scheduled_jobs) }
@@ -28,6 +33,18 @@ describe Bosh::Director::Scheduler do
         fake_snapshot_manager.should_receive(:create_deployment_snapshot_task).with('scheduler', deployments[1])
         subject.snapshot_deployments
       end
+    end
+
+    describe 'snapshot_self' do
+     it 'should snapshot all of my disks' do
+       vm_id = "id-foo"
+       disks = ["vol-id1", "vol-id2"]
+       @cloud.should_receive(:current_vm_id).and_return(vm_id)
+       @cloud.should_receive(:get_disks).with(vm_id).and_return(disks)
+       @cloud.should_receive(:snapshot_disk).with(disks[0])
+       @cloud.should_receive(:snapshot_disk).with(disks[1])
+       subject.snapshot_self
+     end
     end
   end
 

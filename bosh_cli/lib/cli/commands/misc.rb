@@ -42,6 +42,10 @@ module Bosh::Cli::Command
         nl
       end
 
+      say("Config".green)
+      print_value("", config.filename)
+      nl
+
       say("Director".green)
       if target_url.nil?
         say("  not set".yellow)
@@ -87,7 +91,10 @@ module Bosh::Cli::Command
 
     # bosh login
     usage "login"
-    desc  "Log in to currently targeted director"
+    desc  "Log in to currently targeted director. " +
+          "The username and password can also be " +
+          "set in the BOSH_USER and BOSH_PASSWORD " +
+          "environment variables."
     def login(username = nil, password = nil)
       target_required
 
@@ -259,9 +266,9 @@ module Bosh::Cli::Command
 
     def print_value(label, value, if_none = nil)
       if value
-        message = label.ljust(10) + value.yellow
+        message = label.ljust(10) + ' ' + value.yellow
       else
-        message = label.ljust(10) + (if_none || "n/a").yellow
+        message = label.ljust(10) + ' ' + (if_none || "n/a").yellow
       end
       say(message.indent(2))
     end

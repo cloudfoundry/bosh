@@ -31,6 +31,8 @@ module Bosh::Cli::Command
       bootstrap = Bosh::Aws::MicroBoshBootstrap.new(runner, options)
       bootstrap.start
 
+      bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
+
       if interactive?
         username = ask("Enter username: ")
         password = ask("Enter password: ") { |q| q.echo = "*" }
@@ -43,8 +45,6 @@ module Bosh::Cli::Command
       else
         bootstrap.create_user("admin", SecureRandom.base64)
       end
-
-      bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
     end
 
     usage "aws bootstrap bosh"

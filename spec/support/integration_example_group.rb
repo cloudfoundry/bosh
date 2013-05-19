@@ -18,8 +18,10 @@ module IntegrationExampleGroup
   def run_bosh(cmd, work_dir = nil, options = {})
     failure_expected = options.fetch(:failure_expected, false)
     Dir.chdir(work_dir || BOSH_WORK_DIR) do
-      output = `bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd} 2>&1`
+      command = "bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}"
+      output = `#{command} 2>&1`
       if $?.exitstatus != 0 && !failure_expected
+        puts command
         puts output
       end
       output

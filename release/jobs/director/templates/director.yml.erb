@@ -33,11 +33,17 @@ db:
   <% unless has_postgres %>
   database: sqlite:///var/vcap/store/director/director.db
   <% end %>
-<% if p('director.enable_scheduled_snapshots') %>
 scheduled_jobs:
+  <% if p('director.snapshot_schedule') %>
   - command: snapshot_deployments
     schedule: <%= p('director.snapshot_schedule') %>
-<% end %>
+  <% end %>
+  <% if p('director.self_snapshot_schedule') %>
+  - command: snapshot_self
+    schedule: <%= p('director.self_snapshot_schedule') %>
+  <% end %>
+scan_and_fix:
+  auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
 <% if_p('dns.address', 'dns.user', 'dns.password', 'dns.database.port', 'dns.database.name') do |address, user, password, db_port, db_name| %>
 dns:
   server: <%= address %>
@@ -70,6 +76,46 @@ compiled_package_cache:
     bucket_name: <%= bucket_name %>
     access_key_id: <%= access_key_id %>
     secret_access_key: <%= secret_access_key %>
+<% end %>
+<% if_p('compiled_package_cache.options.swift_provider',
+        'compiled_package_cache.options.container_name') do |swift_provider, container_name| %>
+compiled_package_cache:
+  provider: swift
+  options:
+    swift_provider: <%= swift_provider %>
+    container_name: <%= container_name %>
+    <% if_p('compiled_package_cache.options.hp_access_key',
+            'compiled_package_cache.options.hp_secret_key',
+            'compiled_package_cache.options.hp_tenant_id',
+            'compiled_package_cache.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
+    hp:
+      hp_access_key: <%= hp_access_key %>
+      hp_secret_key: <%= hp_secret_key %>
+      hp_tenant_id: <%= hp_tenant_id %>
+      hp_avl_zone: <%= hp_avl_zone %>
+    <% end %>
+    <% if_p('compiled_package_cache.options.openstack_auth_url',
+            'compiled_package_cache.options.openstack_username',
+            'compiled_package_cache.options.openstack_api_key',
+            'compiled_package_cache.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
+    openstack:
+      openstack_auth_url: <%= openstack_auth_url %>
+      openstack_username: <%= openstack_username %>
+      openstack_api_key: <%= openstack_api_key %>
+      openstack_tenant: <%= openstack_tenant %>
+      <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
+      openstack_region: <%= openstack_region %>
+      <% end %>
+    <% end %>
+    <% if_p('compiled_package_cache.options.rackspace_username',
+            'compiled_package_cache.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
+    rackspace:
+      rackspace_username: <%= rackspace_username %>
+      rackspace_api_key: <%= rackspace_api_key %>
+      <% if_p('compiled_package_cache.options.rackspace_region') do |rackspace_region| %>
+      rackspace_region: <%= rackspace_region %>
+      <% end %>
+    <% end %>
 <% end %>
 cloud:
 <% plugin = nil %>

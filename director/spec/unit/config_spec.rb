@@ -33,6 +33,25 @@ describe Bosh::Director::Config do
     end
   end
 
+  context "automatically fix stateful nodes" do
+    it "can set fixing stateful nodes in config" do
+      test_config["scan_and_fix"]["auto_fix_stateful_nodes"] = true
+      described_class.configure(test_config)
+
+      described_class.fix_stateful_nodes.should == true
+    end
+
+    it "sets a default" do
+      test_config["scan_and_fix"].delete("auto_fix_stateful_nodes")
+
+      described_class.configure(test_config)
+      described_class.fix_stateful_nodes.should == false
+
+      test_config.delete("scan_and_fix")
+      described_class.configure(test_config)
+      described_class.fix_stateful_nodes.should == false
+    end
+  end
 
   context "compiled package cache" do
     context "is configured" do

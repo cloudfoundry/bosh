@@ -10,6 +10,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   it 'shows status', no_reset: true do
     expect_output('status', <<-OUT)
+     Config
+                #{BOSH_CONFIG}
+
      Director
        not set
 

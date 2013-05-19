@@ -93,7 +93,8 @@ describe Bosh::Director::ApiController do
               "extras" => { "domain_name" => "bosh" }
             },
             "compiled_package_cache" => {
-                "status" => true
+              "status" => true,
+              "extras" => { "provider" => "local"}
             }
           }
       }
@@ -733,7 +734,7 @@ describe Bosh::Director::ApiController do
       end
 
       it 'scans and fixes problems' do
-        put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'job' => [0])
+        put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'jobs' => { 'job' => [0] })
         expect_redirect_to_queued_task(last_response)
       end
     end

@@ -24,7 +24,7 @@ namespace :ci do
     desc "Build micro bosh stemcell from CI pipeline"
     task :micro, [:infrastructure] do |t, args|
       cd(ENV['WORKSPACE']) do
-        tarball_path = "release/micro-bosh-#{candidate_build_number}.tgz"
+        tarball_path = "release/bosh-#{candidate_build_number}.tgz"
         sh("s3cmd -f get #{s3_release_url(candidate_build_number)} #{tarball_path}")
 
         Rake::Task["stemcell:micro"].invoke(args[:infrastructure], tarball_path, candidate_build_number)
@@ -44,10 +44,14 @@ namespace :ci do
   end
 
   def candidate_build_number
+    if ENV['CANDIDATE_BUILD_NUMBER'].to_s.empty?
+      raise 'Please set the CANDIDATE_BUILD_NUMBER environment variable'
+    end
+
     ENV['CANDIDATE_BUILD_NUMBER']
   end
 
   def s3_release_url(build_number)
-    "s3://bosh-ci-pipeline/micro-bosh-#{build_number}.tgz"
+    "s3://bosh-ci-pipeline/bosh-#{build_number}.tgz"
   end
 end

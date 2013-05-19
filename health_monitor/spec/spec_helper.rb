@@ -1,4 +1,5 @@
 require 'rspec/core'
+require 'tempfile'
 
 require 'health_monitor'
 
@@ -25,7 +26,6 @@ def heartbeat_payload(attrs = {})
     :timestamp => Time.now
   }.merge(attrs)
 end
-
 
 def make_alert(attrs = {})
   defaults = {

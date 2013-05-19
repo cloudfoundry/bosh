@@ -157,21 +157,10 @@ module Bosh::Director
       # are Strings.
       # @return [void]
       def normalize_manifest
-        %w(name version).each do |property|
-          @manifest[property] = @manifest[property].to_s
-        end
+        Bosh::Director.hash_string_vals(@manifest, 'name', 'version')
 
-        @manifest["packages"].each do |package_meta|
-          %w(name version sha1).each do |property|
-            package_meta[property] = package_meta[property].to_s
-          end
-        end
-
-        @manifest["jobs"].each do |job_meta|
-          %w(name version sha1).each do |property|
-            job_meta[property] = job_meta[property].to_s
-          end
-        end
+        @manifest['packages'].each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
+        @manifest['jobs'].each { |j| Bosh::Director.hash_string_vals(j, 'name', 'version', 'sha1') }
       end
 
       # Resolves package dependencies, makes sure there are no cycles
