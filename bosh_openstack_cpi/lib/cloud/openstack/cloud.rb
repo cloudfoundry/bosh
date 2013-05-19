@@ -325,7 +325,7 @@ module Bosh::OpenStackCloud
     def has_vm?(server_id)
       with_thread_name("has_vm?(#{server_id})") do
         server = with_openstack { @openstack.servers.get(server_id) }
-        !server.nil?
+        !server.nil? && ![:terminated, :deleted].include?(server.state.downcase.to_sym)
       end
     end
 
