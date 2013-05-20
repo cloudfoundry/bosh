@@ -14,21 +14,23 @@ module Bosh::AwsCloud
       zone_names.first || @default
     end
 
-    def select_from_instance_id(instance_id)
+    def select_availability_zone(instance_id)
       if instance_id
         region.instances[instance_id].availability_zone
-      else
+      elsif @default
         @default
+      else
+        random_availability_zone
       end
     end
+
+    private
 
     def random_availability_zone
       zones = []
       region.availability_zones.each { |zone| zones << zone.name }
       zones[Random.rand(zones.size)]
     end
-
-    private
 
     def ensure_same_availability_zone(zone_names)
       raise Bosh::Clouds::CloudError,
