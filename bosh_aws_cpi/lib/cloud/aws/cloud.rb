@@ -192,37 +192,24 @@ module Bosh::AwsCloud
     # @return [String] created EBS volume id
     def create_disk(size, instance_id = nil)
       with_thread_name("create_disk(#{size}, #{instance_id})") do
-        unless size.kind_of?(Integer)
-          raise ArgumentError, "disk size needs to be an integer"
-        end
+        validate_disk_size(size)
 
-        if size < 1024
-          cloud_error("AWS CPI minimum disk size is 1 GiB")
-        end
+        # if the disk is created for an instance, use the same availability zone as they must match
+        volume = @ec2.volumes.create(:size => (size / 1024.0).ceil,
+                                     :availability_zone => @az_selector.select_availability_zone(instance_id))
 
-        if size > 1024 * 1000
-          cloud_error("AWS CPI maximum disk size is 1 TiB")
-        end
-
-        if instance_id
-          az = @az_selector.select_from_instance_id(instance_id)
-        else
-          az = @az_selector.random_availability_zone
-        end
-
-        # if the disk is created for an instance, use the same availability
-        # zone as they must match
-        volume_params = {
-            :size => (size / 1024.0).ceil,
-            :availability_zone => az
-        }
-
-        volume = @ec2.volumes.create(volume_params)
-        @logger.info("Creating volume `#{volume.id}'")
+        @logger.info("Creating volume '#{volume.id}'")
         ResourceWait.for_volume(volume: volume, state: :available)
 
         volume.id
       end
+    end
+
+    def validate_disk_size(size)
+      raise ArgumentError, "disk size needs to be an integer" unless size.kind_of?(Integer)
+
+      cloud_error("AWS CPI minimum disk size is 1 GiB") if size < 1024
+      cloud_error("AWS CPI maximum disk size is 1 TiB") if size > 1024 * 1000
     end
 
     ##
