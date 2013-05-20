@@ -95,6 +95,16 @@ module Bosh::Deployer
           end
         end
       end
+
+      at_exit do
+        status = $!.is_a?(::SystemExit) ? $!.status : nil
+        close_ssh_sessions
+        exit status if status
+      end
+    end
+
+    def close_ssh_sessions
+      @sessions.each_value { |s| s.close }
     end
 
   end
