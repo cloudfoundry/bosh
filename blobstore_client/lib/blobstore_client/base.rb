@@ -77,6 +77,7 @@ module Bosh
 
       protected
 
+      # @return [String] the id
       def create_file(id, file)
         # needs to be implemented in each subclass
         raise "#create not implemented"
