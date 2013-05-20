@@ -165,10 +165,6 @@ module Bosh
         path
       end
 
-      def generate_object_id
-        SecureRandom.uuid
-      end
-
       def read_only?
         @options[:access_key_id].nil? && @options[:secret_access_key].nil?
       end

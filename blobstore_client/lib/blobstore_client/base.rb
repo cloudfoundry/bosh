@@ -98,6 +98,10 @@ module Bosh
         raise "#exists? not implemented"
       end
 
+      def generate_object_id
+        SecureRandom.uuid
+      end
+
       def temp_path
         path = File.join(Dir::tmpdir, "temp-path-#{SecureRandom.uuid}")
         begin

@@ -9,21 +9,18 @@ server {
 
   location /resources {
     root /var/vcap/store/blobstore/store/;
+    client_body_temp_path /var/vcap/store/blobstore/tmp/uploads;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
 
     auth_basic "Blobstore Read";
     auth_basic_user_file read_users;
-  }
 
-  location /write {
-    root /var/vcap/store/blobstore/store/;
-    client_body_temp_path /var/vcap/store/blobstore/tmp/uploads;
-
-    dav_methods PUT;
-    create_full_put_path on;
-
-    auth_basic "Blobstore Write";
-    auth_basic_user_file write_users;
+    limit_except GET {
+      auth_basic "Blobstore Write";
+      auth_basic_user_file write_users;
+    }
   }
 
 }
-
