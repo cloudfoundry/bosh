@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RUN_DIR=/var/vcap/sys/run/blobstore_nginx
-LOG_DIR=/var/vcap/sys/log/blobstore_nginx
+RUN_DIR=/var/vcap/sys/run/blobstore
+LOG_DIR=/var/vcap/sys/log/blobstore
 PIDFILE=$RUN_DIR/nginx.pid
 
 case $1 in
@@ -9,6 +9,7 @@ case $1 in
   start)
     mkdir -p $RUN_DIR
     mkdir -p $LOG_DIR
+    mkdir -p /var/vcap/store/blobstore/tmp/uploads
 
     echo $$ > $PIDFILE
 
