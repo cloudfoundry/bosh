@@ -2,26 +2,23 @@
 loglevel: debug
 
 http:
-  port: <%= p("registry.http.port") %>
-  user: <%= p("registry.http.user") %>
-  password: <%= p("registry.http.password") %>
+  port: <%= p('registry.http.port') %>
+  user: <%= p('registry.http.user') %>
+  password: <%= p('registry.http.password') %>
 
 db:
-  <% database = "sqlite:///var/vcap/store/director/director.db" %>
-  <% if_p("postgres.user",
-          "postgres.password",
-          "postgres.address",
-          "postgres.database") do |user, pass, address, db| %>
-    <% database = "postgres://#{user}:#{pass}@#{address}/#{db}" %>
-  <% end %>
-  database: <%= database %>
-  max_connections: <%= p("registry.db.max_connections") %>
-  pool_timeout: <%= p("registry.db.pool_timeout") %>
+  adapter: <%= p('registry.db.adapter') %>
+  user: <%= p('registry.db.user') %>
+  password: <%= p('registry.db.password') %>
+  host: <%= p('registry.db.host') %>
+  port: <%= p('registry.db.port') %>
+  database: <%= p('registry.db.database') %>
+  connection_options: <%= p('registry.db.connection_options') %>
 
 cloud:
 <% plugin = nil %>
 <% if_p('aws.access_key_id', 'aws.secret_access_key', 'aws.region') do |access_key_id, secret_access_key, region| %>
-  plugin: aws <% plugin = "aws" %>
+  plugin: aws <% plugin = 'aws' %>
   aws:
     access_key_id: <%= access_key_id %>
     secret_access_key: <%= secret_access_key %>
@@ -31,17 +28,17 @@ cloud:
     <% end %>
 <% end %>
 <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key', 'openstack.tenant') do |auth_url, username, api_key, tenant| %>
-  plugin: openstack <% plugin = "openstack" %>
+  plugin: openstack <% plugin = 'openstack' %>
   openstack:
     auth_url: <%= auth_url %>
     username: <%= username %>
     api_key: <%= api_key %>
     tenant: <%= tenant %>
-    <% if_p("openstack.region") do |region| %>
+    <% if_p('openstack.region') do |region| %>
     region: <%= region %>
     <% end %>
-    <% if_p("openstack.endpoint_type") do |endpoint_type| %>
+    <% if_p('openstack.endpoint_type') do |endpoint_type| %>
     endpoint_type: <%= endpoint_type %>
     <% end %>
 <% end %>
-<% raise "Could not find cloud plugin" if plugin.nil? %>
+<% raise 'Could not find cloud plugin' if plugin.nil? %>

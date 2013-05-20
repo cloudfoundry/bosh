@@ -21,13 +21,13 @@ redis:
 mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
 dir: /var/vcap/store/director
 db:
-  adapter: <%= p('director_db.adapter') %>
-  user: <%= p('director_db.user') %>
-  password: <%= p('director_db.password') %>
-  host: <%= p('director_db.host') %>
-  port: <%= p('director_db.port') %>
-  database: <%= p('director_db.database') %>
-  connection_options: <%= p('director_db.connection_options') %>
+  adapter: <%= p('director.db.adapter') %>
+  user: <%= p('director.db.user') %>
+  password: <%= p('director.db.password') %>
+  host: <%= p('director.db.host') %>
+  port: <%= p('director.db.port') %>
+  database: <%= p('director.db.database') %>
+  connection_options: <%= p('director.db.connection_options') %>
 scheduled_jobs:
   <% if p('director.snapshot_schedule') %>
   - command: snapshot_deployments
@@ -39,20 +39,22 @@ scheduled_jobs:
   <% end %>
 scan_and_fix:
   auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
-<% if_p('dns.address', 'dns.user', 'dns.password', 'dns.database.port', 'dns.database.name') do |address, user, password, db_port, db_name| %>
+<% if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
+        'dns.db.port', 'dns.db.database', 'dns.db.connection_options', 'dns.address') do |
+                        adapter, user, password, db_host, port, database, connection_options, address| %>
 dns:
   server: <%= address %>
   <% if_p('dns.domain_name') do |domain_name| %>
   domain_name: <%= domain_name %>
   <% end %>
   db:
-    adapter: postgres
+    adapter: <%= adapter %>
     user: <%= user %>
     password: <%= password %>
-    host: <%= address %>
-    port: <%= db_port %>
-    database: <%= db_name %>
-    connection_options: { max_connections: 32, pool_timeout: 10 }
+    host: <%= db_host %>
+    port: <%= port %>
+    database: <%= database %>
+    connection_options: <%= connection_options %>
 <% end %>
 
 blobstore:
@@ -191,7 +193,7 @@ cloud:
             disk_path: <%= dc['disk_path'] || "BOSH_Disks" %>
             datastore_pattern: <%= dc['datastore_pattern'] %>
             persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
-            allow_mixed_datastores: <%= dc['allow_mixed_datastores'] || true %>
+            allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
             clusters:
               <% dc['clusters'].each do |cluster| %>
                 <% case cluster

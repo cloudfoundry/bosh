@@ -12,9 +12,11 @@ redis:
 
 dir: /tmp/boshdir
 db:
-  database: "sqlite:///:memory:"
-  max_connections: 32
-  pool_timeout: 10
+  adapter: sqlite
+  database: '/:memory:'
+  connection_options:
+    max_connections: 32
+    pool_timeout: 10
 blobstore:
   provider: simple
   options:

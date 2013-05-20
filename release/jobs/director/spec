@@ -87,23 +87,23 @@ properties:
     default: 4222
 
   # Director Database
-  director_db.adapter:
+  director.db.adapter:
     description: The type of database used
     default: postgres
-  director_db.user:
+  director.db.user:
     description: Username used for the director database
     default: bosh
-  director_db.password:
+  director.db.password:
     description: Password used for the director database
-  director_db.host:
+  director.db.host:
     description: Address of the director database
-  director_db.port:
+  director.db.port:
     description: Port of the director database
     default: 5432
-  director_db.database:
+  director.db.database:
     description: Name of the director database
     default: bosh
-  director_db.connection_options:
+  director.db.connection_options:
     description: Additional options for the database
     default: '{ max_connections: 32, pool_timeout: 10 }'
 
@@ -112,15 +112,20 @@ properties:
     description: Address of the powerdns server
   dns.domain_name:
     description: TLD of the dns zone used by bosh
-  dns.user:
-    description: DNS Database user (postgres in powerdns job)
-  dns.password:
-    description: DNS Database password (postgres in powerdns job)
-  dns.database.port:
-    description: Port that the powerdns database listens on (postgres in powerdns job)
+  dns.db.user:
+    description: DNS Database user
+    default: bosh
+  dns.db.password:
+    description: DNS Database password
+  dns.db.port:
+    description: Port that the powerdns database listens on
     default: 5432
-  dns.database.name:
-    description: Name of the powerdns database (postgres in powerdns job)
+  dns.db.database:
+    description: Name of the powerdns database
+    default: bosh_dns
+  dns.db.connection_options:
+    description: Additional options for the powerdns database
+    default: '{ max_connections: 32, pool_timeout: 10 }'
 
   # Blobstore
   blobstore.provider:

@@ -8,6 +8,7 @@ templates:
 packages:
   - registry
   - libpq
+  - mysqlclient
   - ruby
 
 properties:
@@ -19,21 +20,26 @@ properties:
   registry.http.password:
     description: Password clients must use to access Registry via HTTP Basic Auth
 
-  registry.db.max_connections:
-    description: Maximum size of the connection pool
-    default: 32
-  registry.db.pool_timeout:
-    description: Number of seconds to wait if a connection cannot be acquired before raising an error
-    default: 10
-
-  postgres.user:
-    description: User for the Postgres database connection (optional, if not set registry will use a sqlite database)
-  postgres.password:
-    description: Password for the Postgres database connection (optional, if not set registry will use a sqlite database)
-  postgres.address:
-    description: Address of the Postgres database connection (optional, if not set registry will use a sqlite database)
-  postgres.database:
-    description: Database for the Postgres database connection (optional, if not set registry will use a sqlite database)
+  # Registry Database
+  registry.db.adapter:
+    description: The type of database used
+    default: postgres
+  registry.db.user:
+    description: Username used for the registry database
+    default: bosh
+  registry.db.password:
+    description: Password used for the registry database
+  registry.db.host:
+    description: Address of the registry database
+  registry.db.port:
+    description: Port of the registry database
+    default: 5432
+  registry.db.database:
+    description: Name of the registry database
+    default: bosh_registry
+  registry.db.connection_options:
+    description: Additional options for the database
+    default: '{ max_connections: 32, pool_timeout: 10 }'
 
   # For AWS
   aws.access_key_id:

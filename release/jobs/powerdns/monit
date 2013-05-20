@@ -1,9 +1,3 @@
-check process powerdns_postgres
-  with pidfile /var/vcap/sys/run/powerdns/postgres.pid
-  start program "/var/vcap/jobs/powerdns/bin/postgres_ctl start"
-  stop program "/var/vcap/jobs/powerdns/bin/postgres_ctl stop"
-  group vcap
-
 <% if spec.index.to_i == 0 %>
 check process powerdns_nginx
   with pidfile /var/vcap/sys/run/powerdns/nginx.pid

@@ -84,4 +84,72 @@ describe Bosh::Director::Config do
       end
     end
   end
+
+  context "database" do
+    let(:database_options) do
+      {
+        'adapter' => 'sqlite',
+        'connection_options' => {
+            'max_connections' => 32
+        }
+
+      }
+    end
+    let(:database_connection) { double('Database Connection').as_null_object }
+
+    before do
+      Sequel.stub(:connect).and_return(database_connection)
+    end
+
+    it "configures a new database connection" do
+      expect(described_class.configure_db(database_options)).to eq database_connection
+    end
+
+    it "patches sequel for the sqlite adapter" do
+      described_class.should_receive(:patch_sqlite)
+      described_class.configure_db(database_options)
+
+      described_class.should_not_receive(:patch_sqlite)
+      described_class.configure_db(database_options.merge('adapter' => 'postgres'))
+    end
+
+    it "merges connection options together with the rest of the database options" do
+      expected_options = {
+          'adapter' => 'sqlite',
+          'max_connections' => 32
+      }
+      Sequel.should_receive(:connect).with(expected_options).and_return(database_connection)
+      described_class.configure_db(database_options)
+    end
+
+    it "ignores empty and nil options" do
+      Sequel.should_receive(:connect).with('baz' => 'baz').and_return(database_connection)
+      described_class.configure_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
+    end
+
+    context "when logger is available" do
+      before do
+        described_class.stub(:logger).and_return(double('Fake Logger'))
+      end
+
+      it "sets the database logger" do
+        database_connection.should_receive(:logger=)
+        database_connection.should_receive(:sql_log_level=)
+        described_class.configure_db(database_options)
+      end
+    end
+
+    context "when logger is unavailable" do
+      before do
+        described_class.stub(:logger).and_return(nil)
+      end
+
+      it "does not sets the database logger" do
+        database_connection.should_not_receive(:logger=)
+        database_connection.should_not_receive(:sql_log_level=)
+        described_class.configure_db(database_options)
+      end
+    end
+  end
+
 end

@@ -1,24 +1,33 @@
-launch=gpgsql
-gpgsql-host=127.0.0.1
-gpgsql-port=<%= p("dns.database.port") %>
-gpgsql-user=<%= p("dns.user") %>
-gpgsql-password=<%= p("dns.password") %>
-gpgsql-dbname=<%= p("dns.database.name") %>
+<%
+    adapters = {
+            'mysql' => 'gmysql',
+            'postgres' => 'gpgsql',
+            'sqlite' => 'gsqlite3'
+    }
+    db_module = adapters[p('dns.db.adapter')]
+%>
+launch=<%= db_module %>
+<%= db_module %>-host=<%= p('dns.db.host') %>
+<%= db_module %>-port=<%= p('dns.db.port') %>
+<%= db_module %>-user=<%= p('dns.db.user') %>
+<%= db_module %>-password=<%= p('dns.db.password') %>
+<%= db_module %>-dbname=<%= p('dns.db.database') %>
+
 config-dir=/var/vcap/jobs/powerdns/config
 daemon=yes
 guardian=no
 max-tcp-connections=256
 module-dir=/usr/local/lib
 allow-recursion-override=yes
-<% if_p("dns.recursor") do |recursor| %>
+<% if_p('dns.recursor') do |recursor| %>
 recursor=<%= recursor %>
 <% end %>
 setgid=vcap
 setuid=vcap
 version-string=anonymous
-<% if_p("dns.webserver.port",
-        "dns.webserver.address",
-        "dns.webserver.password") do |web_port, web_address, web_pass|  %>
+<% if_p('dns.webserver.port',
+        'dns.webserver.address',
+        'dns.webserver.password') do |web_port, web_address, web_pass|  %>
 webserver=yes
 webserver-port=<%= web_port %>
 webserver-address=<%= web_address %>
