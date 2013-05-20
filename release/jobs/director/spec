@@ -107,8 +107,8 @@ properties:
   dns.database.name:
     description: Name of the powerdns database (postgres in powerdns job)
   blobstore.provider:
-    description: Provider of the blobstore used by director and agent (simple|s3)
-    default: 'simple'
+    description: Provider of the blobstore used by director and agent (dav|simple|s3)
+    default: 'dav'
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
   blobstore.access_key_id:
