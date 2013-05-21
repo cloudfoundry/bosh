@@ -9,16 +9,16 @@ packages:
   - postgres
 
 properties:
-  postgres.port:
-    description: TCP port Postgres listens on
-    default: 5432
-  postgres.listen_address:
-    description: IP address Postgres listens on
-    default: 0.0.0.0
   postgres.user:
     description: Username clients must use to access Postgres
   postgres.password:
     description: Password clients must use to access Postgres
+  postgres.listen_address:
+    description: IP address Postgres listens on
+    default: 0.0.0.0
+  postgres.port:
+    description: TCP port Postgres listens on
+    default: 5432
   postgres.database:
     description: Default Postgres database (it will be created during the startup process)
     default: bosh

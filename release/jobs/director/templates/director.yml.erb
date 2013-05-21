@@ -27,7 +27,7 @@ db:
   host: <%= p('director.db.host') %>
   port: <%= p('director.db.port') %>
   database: <%= p('director.db.database') %>
-  connection_options: <%= p('director.db.connection_options') %>
+  connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
 scheduled_jobs:
   <% if p('director.snapshot_schedule') %>
   - command: snapshot_deployments
@@ -54,7 +54,7 @@ dns:
     host: <%= db_host %>
     port: <%= port %>
     database: <%= database %>
-    connection_options: <%= connection_options %>
+    connection_options: <%= JSON.generate(connection_options) %>
 <% end %>
 
 blobstore:

@@ -105,7 +105,9 @@ properties:
     default: bosh
   director.db.connection_options:
     description: Additional options for the database
-    default: '{ max_connections: 32, pool_timeout: 10 }'
+    default:
+      max_connections: 32
+      pool_timeout: 10
 
   # DNS
   dns.address:
@@ -125,7 +127,9 @@ properties:
     default: bosh_dns
   dns.db.connection_options:
     description: Additional options for the powerdns database
-    default: '{ max_connections: 32, pool_timeout: 10 }'
+    default:
+      max_connections: 32
+      pool_timeout: 10
 
   # Blobstore
   blobstore.provider:

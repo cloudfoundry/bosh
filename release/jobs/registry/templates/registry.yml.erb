@@ -13,7 +13,7 @@ db:
   host: <%= p('registry.db.host') %>
   port: <%= p('registry.db.port') %>
   database: <%= p('registry.db.database') %>
-  connection_options: <%= p('registry.db.connection_options') %>
+  connection_options: <%= JSON.generate(p('registry.db.connection_options')) %>
 
 cloud:
 <% plugin = nil %>

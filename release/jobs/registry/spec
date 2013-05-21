@@ -39,7 +39,9 @@ properties:
     default: bosh_registry
   registry.db.connection_options:
     description: Additional options for the database
-    default: '{ max_connections: 32, pool_timeout: 10 }'
+    default:
+      max_connections: 32
+      pool_timeout: 10
 
   # For AWS
   aws.access_key_id:
