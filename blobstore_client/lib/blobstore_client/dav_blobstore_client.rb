@@ -2,6 +2,7 @@
 
 require 'base64'
 require 'httpclient'
+require 'digest/sha1'
 
 module Bosh
   module Blobstore
@@ -11,7 +12,7 @@ module Bosh
         super(options)
         @client = HTTPClient.new
         @endpoint = @options[:endpoint]
-        @bucket = @options[:bucket] || "resources"
+        #@bucket = @options[:bucket] || "resources" # dav (or simple) doesn't support buckets
         @headers = {}
         user = @options[:user]
         password = @options[:password]
@@ -21,8 +22,10 @@ module Bosh
         end
       end
 
-      def url(id=nil)
-        ["#{@endpoint}/#{@bucket}", id].compact.join("/")
+      def url(id)
+        prefix = Digest::SHA1.hexdigest(id)[0, 2]
+
+        [@endpoint, prefix, id].compact.join('/')
       end
 
       def create_file(id, file)

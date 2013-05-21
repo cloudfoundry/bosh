@@ -14,12 +14,12 @@ describe Bosh::Blobstore::DavBlobstoreClient do
     it 'should set up authentication when present' do
       response.stub(status: 200, content: 'content_id')
 
-      httpclient.should_receive(:get).with('http://localhost/resources/foo', {},
+      httpclient.should_receive(:get).with('http://localhost/88/foobar', {},
                                            {'Authorization' => 'Basic am9objpzbWl0aA=='}).and_return(response)
       client = Bosh::Blobstore::DavBlobstoreClient.new({'endpoint' => 'http://localhost',
                                                            'user' => 'john',
                                                            'password' => 'smith'})
-      client.get('foo')
+      client.get('foobar')
     end
 
   end
@@ -32,7 +32,8 @@ describe Bosh::Blobstore::DavBlobstoreClient do
       response.stub(status: 201, content: '')
       httpclient.should_receive(:put) do |*args|
         uri, body, _ = args
-        uri.should eql('http://localhost/resources/foobar')
+        # sha1 of foobar is 8843d7f92416211de9ebb963ff4ce28125932878
+        uri.should eql('http://localhost/88/foobar')
         body.should be_kind_of(File)
         body.read.should eql('some object')
         response
@@ -44,7 +45,7 @@ describe Bosh::Blobstore::DavBlobstoreClient do
     it 'should accept object id suggestion' do
       response.stub(status: 201, content: '')
       httpclient.should_receive(:put) do |uri, body, _|
-        uri.should eql('http://localhost/resources/foobar')
+        uri.should eql('http://localhost/88/foobar')
         body.should be_kind_of(File)
         body.read.should eql('some object')
         response
@@ -65,35 +66,35 @@ describe Bosh::Blobstore::DavBlobstoreClient do
 
     it 'should fetch an object' do
       response.stub(status: 200)
-      httpclient.should_receive(:get).with('http://localhost/resources/some object', {}, {}).
-          and_yield('content_id').
+      httpclient.should_receive(:get).with('http://localhost/88/foobar', {}, {}).
+          and_yield('content').
           and_return(response)
 
-      client.get('some object').should eql('content_id')
+      client.get('foobar').should eql('content')
     end
 
     it 'should raise an exception when there is an error fetching an object' do
       response.stub(status: 500, content: 'error message')
-      httpclient.should_receive(:get).with('http://localhost/resources/some object', {}, {}).and_return(response)
+      httpclient.should_receive(:get).with('http://localhost/88/foobar', {}, {}).and_return(response)
 
       expect {
-        client.get('some object')
+        client.get('foobar')
       }.to raise_error Bosh::Blobstore::BlobstoreError, /Could not fetch object/
     end
 
     it 'should delete an object' do
       response.stub(status: 204, content: '')
-      httpclient.should_receive(:delete).with('http://localhost/resources/some object', {}).and_return(response)
+      httpclient.should_receive(:delete).with('http://localhost/88/foobar', {}).and_return(response)
 
-      client.delete('some object')
+      client.delete('foobar')
     end
 
     it 'should raise an exception when there is an error deleting an object' do
       response.stub(status: 404, content: '')
-      httpclient.should_receive(:delete).with('http://localhost/resources/some object', {}).and_return(response)
+      httpclient.should_receive(:delete).with('http://localhost/88/foobar', {}).and_return(response)
 
       expect {
-        client.delete('some object')
+        client.delete('foobar')
       }.to raise_error Bosh::Blobstore::BlobstoreError, /Could not delete object/
     end
 
@@ -101,21 +102,21 @@ describe Bosh::Blobstore::DavBlobstoreClient do
       it 'should return true for an object that already exists' do
         response.stub(status: 200)
 
-        httpclient.should_receive(:head).with('http://localhost/resources/foobar', {:header => {}}).and_return(response)
+        httpclient.should_receive(:head).with('http://localhost/88/foobar', {:header => {}}).and_return(response)
         client.exists?('foobar').should be_true
       end
 
       it 'should return false for an object that does not exist' do
         response.stub(status: 404)
 
-        httpclient.should_receive(:head).with('http://localhost/resources/doesntexist', {:header => {}}).and_return(response)
-        client.exists?('doesntexist').should be_false
+        httpclient.should_receive(:head).with('http://localhost/88/foobar', {:header => {}}).and_return(response)
+        client.exists?('foobar').should be_false
       end
 
       it 'should raise a BlobstoreError if response status is neither 200 nor 404' do
         response.stub(status: 500, content: '')
 
-        httpclient.should_receive(:head).with('http://localhost/resources/foobar', {:header => {}}).and_return(response)
+        httpclient.should_receive(:head).with('http://localhost/88/foobar', {:header => {}}).and_return(response)
 
         expect {
           client.exists?('foobar')

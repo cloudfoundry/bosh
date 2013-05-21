@@ -7,7 +7,7 @@ server {
 
   client_max_body_size 1G;
 
-  location /resources {
+  location / {
     root /var/vcap/store/blobstore/store/;
     client_body_temp_path /var/vcap/store/blobstore/tmp/uploads;
 
