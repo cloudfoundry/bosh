@@ -33,8 +33,7 @@ module Bosh
 
         response = @client.put(url(id), file, @headers)
         if response.status != 201
-          raise BlobstoreError,
-                "Could not create object, #{response.status}/#{response.content}"
+          raise BlobstoreError, "Could not create object, #{response.status}/#{response.content}"
         end
 
         id
@@ -46,16 +45,14 @@ module Bosh
         end
 
         if response.status != 200
-          raise BlobstoreError,
-                "Could not fetch object, #{response.status}/#{response.content}"
+          raise BlobstoreError, "Could not fetch object, #{response.status}/#{response.content}"
         end
       end
 
       def delete_object(id)
         response = @client.delete(url(id), @headers)
         if response.status != 204
-          raise BlobstoreError,
-                "Could not delete object, #{response.status}/#{response.content}"
+          raise BlobstoreError, "Could not delete object, #{response.status}/#{response.content}"
         end
       end
 
