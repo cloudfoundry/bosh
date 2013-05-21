@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+unless ARGV[0]
+  puts 'Usage: pry.rb <director_config_yaml>'
+  exit 1
+end
+
+require 'yaml'
+
+require 'pry'
+require 'sequel'
+require 'sequel/adapters/sqlite'
+require 'cloud'
+require 'cloud/vsphere'
+
+db = Sequel.sqlite
+Sequel.extension :migration
+
+Sequel::TimestampMigrator.new(db, File.expand_path('../../db/migrations', __FILE__), {}).run
+
+bosh_director_config = OpenStruct.new(logger: Logger.new(STDOUT), uuid: 'uuid', task_checkpoint: nil, db: Sequel.sqlite)
+
+Bosh::Clouds::Config.configure(bosh_director_config)
+
+director_config = YAML.load_file(ARGV[0])
+vsphere_properties = director_config['cloud']['properties']
+
+cpi = Bosh::Clouds::VSphere.new(vsphere_properties)
+
+puts "You are connected to #{vsphere_properties['vcenters'].first['host']}"
+
+# Welcome to the vSphere console!
+# you can access the cpi through the 'cpi' object
+
+Pry.start binding
