@@ -43,52 +43,40 @@ describe Bosh::Common::TemplateEvaluationContext do
     eval_template("<%= spec.index %>", @context).should == "0"
   end
 
-  it "supports 'p' helper" do
-    eval_template("<%= p('router.token') %>", @context).should == "zbb"
+  describe 'p' do
+    it 'looks up properties' do
+      eval_template("<%= p('router.token') %>", @context).should == "zbb"
 
-    eval_template("<%= p('vtrue') %>", @context).should == "true"
-    eval_template("<%= p('vfalse') %>", @context).should == "false"
-  end
-
-  describe "returning default values" do
-    it "raises an error if no default is passed in and no value or default is found in the spec" do
+      eval_template("<%= p('vtrue') %>", @context).should == "true"
+      eval_template("<%= p('vfalse') %>", @context).should == "false"
       expect {
         eval_template("<%= p('bar.baz') %>", @context)
-      }.to raise_error(Bosh::Common::UnknownProperty,"Can't find property `[\"bar.baz\"]'")
-    end
-
-    it "should return a default value if it passed into the 'p' helper" do
+      }.to raise_error(Bosh::Common::UnknownProperty, "Can't find property `[\"bar.baz\"]'")
       eval_template("<%= p('bar.baz', 22) %>", @context).should == "22"
     end
 
-    it "returns the default from the spec if it's a hash with a default key, and no default is passed in" do
-      @spec["properties"]["foo"] = {"default" => "default_foo"}
-      @context = make(@spec)
-      eval_template("<%= p('foo') %>", @context).should == "default_foo"
-    end
-
-    it "gives precedence to defaults in the spec over passed in defaults" do
-      @spec["properties"]["foo"] = {"default" => "default_foo"}
-      @context = make(@spec)
-      eval_template("<%= p('foo', 22) %>", @context).should == "default_foo"
-    end
-  end
-
-  it "supports chaining property lookup via 'p' helper" do
-    eval_template(<<-TMPL, @context).strip.should == "zbb"
-      <%= p(%w(a b router.token c)) %>
-    TMPL
-
-    expect {
-      eval_template(<<-TMPL, @context)
-        <%= p(%w(a b c)) %>
+    it 'supports hash properties' do
+      eval_template(<<-TMPL, @context).strip.should == "zbb"
+        <%= p(%w(a b router c))['token'] %>
       TMPL
-    }.to raise_error(Bosh::Common::UnknownProperty,
-                     "Can't find property `[\"a\", \"b\", \"c\"]'")
+    end
 
-    eval_template(<<-TMPL, @context).strip.should == "22"
-      <%= p(%w(a b c), 22) %>
-    TMPL
+    it 'chains property lookups' do
+      eval_template(<<-TMPL, @context).strip.should == "zbb"
+        <%= p(%w(a b router.token c)) %>
+      TMPL
+
+      expect {
+        eval_template(<<-TMPL, @context)
+          <%= p(%w(a b c)) %>
+        TMPL
+      }.to raise_error(Bosh::Common::UnknownProperty,
+                       "Can't find property `[\"a\", \"b\", \"c\"]'")
+
+      eval_template(<<-TMPL, @context).strip.should == "22"
+        <%= p(%w(a b c), 22) %>
+      TMPL
+    end
   end
 
   it "allows 'false' and 'nil' defaults for 'p' helper" do
