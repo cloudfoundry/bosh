@@ -100,7 +100,6 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         },
         "agent_id" => agent_id,
         "networks" => networks_spec,
-        "preformatted" => false,
         "disks" => {
             "system" => "root name",
             "ephemeral" => "/dev/sdb",

@@ -219,24 +219,6 @@ describe Bosh::Agent::Bootstrap do
       end
     end
 
-    context "pre-partitioned disk" do
-      before do
-        Bosh::Agent::Config.settings = {"preformatted" => "yes"}
-      end
-
-      it "should mount data disk without partitioning" do
-        Bosh::Agent::Util.should_not_receive(:partition_disk)
-        @processor.should_not_receive(:sh).with(%r{mkswap})
-        @processor.should_not_receive(:sh).with(%r{/sbin/mke2fs -t ext4 -j})
-
-        FileUtils.stub(:mkdir_p)
-        @processor.should_receive(:sh).with(%r[mount #{data_disk} .+/data])
-
-        @processor.setup_data_disk
-      end
-
-    end
-
   end
 
   def complete_settings
@@ -245,4 +227,3 @@ describe Bosh::Agent::Bootstrap do
   end
 
 end
-
