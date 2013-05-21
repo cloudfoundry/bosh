@@ -334,29 +334,36 @@ module Bosh::AwsCloud
     # @raise [Bosh::Clouds:NotSupported] if the security groups change
     def configure_networks(instance_id, network_spec)
       with_thread_name("configure_networks(#{instance_id}, ...)") do
-        @logger.info("Configuring `#{instance_id}' to use the following " \
-                     "network settings: #{network_spec.pretty_inspect}")
+        @logger.info("Configuring '#{instance_id}' to use new network settings: #{network_spec.pretty_inspect}")
 
         instance = @ec2.instances[instance_id]
 
-        actual_group_names = instance.security_groups.collect { |sg| sg.name }
-        specified_group_names = extract_security_group_names(network_spec)
-        new_group_names = specified_group_names.empty? ? Array(@aws_properties["default_security_groups"]) : specified_group_names
-
-        # If the security groups change, we need to recreate the VM
-        # as you can't change the security group of a running instance,
-        # we need to send the InstanceUpdater a request to do it for us
-        unless actual_group_names.sort == new_group_names.sort
-          raise Bosh::Clouds::NotSupported,
-                "security groups change requires VM recreation: %s to %s" %
-                    [actual_group_names.join(", "), new_group_names.join(", ")]
-        end
+        compare_security_groups(instance, network_spec)
 
         NetworkConfigurator.new(network_spec).configure(@ec2, instance)
 
         update_agent_settings(instance) do |settings|
           settings["networks"] = network_spec
         end
+      end
+    end
+
+    # If the security groups change, we need to recreate the VM
+    # as you can't change the security group of a running instance,
+    # we need to send the InstanceUpdater a request to do it for us
+    def compare_security_groups(instance, network_spec)
+      actual_group_names = instance.security_groups.collect { |sg| sg.name }
+      specified_group_names = extract_security_group_names(network_spec)
+      if specified_group_names.empty?
+        new_group_names = Array(@aws_properties["default_security_groups"])
+      else
+        new_group_names = specified_group_names
+      end
+
+      unless actual_group_names.sort == new_group_names.sort
+        raise Bosh::Clouds::NotSupported,
+              "security groups change requires VM recreation: %s to %s" %
+                  [actual_group_names.join(", "), new_group_names.join(", ")]
       end
     end
 
