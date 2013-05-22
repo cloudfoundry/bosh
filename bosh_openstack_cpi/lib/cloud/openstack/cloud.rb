@@ -48,7 +48,12 @@ module Bosh::OpenStackCloud
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
-      @openstack = Fog::Compute.new(openstack_params)
+      begin
+        @openstack = Fog::Compute.new(openstack_params)
+      rescue Exception => e
+        @logger.error(e)
+        cloud_error("Unable to connect to the OpenStack Compute API. Check task debug log for details.")  
+      end
 
       glance_params = {
         :provider => "OpenStack",
@@ -59,7 +64,12 @@ module Bosh::OpenStackCloud
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
-      @glance = Fog::Image.new(glance_params)
+      begin
+        @glance = Fog::Image.new(glance_params)
+      rescue Exception => e
+        @logger.error(e)
+        cloud_error("Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
+      end
 
       registry_endpoint = @registry_properties["endpoint"]
       registry_user = @registry_properties["user"]
