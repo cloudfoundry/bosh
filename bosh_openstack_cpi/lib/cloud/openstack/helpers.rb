@@ -85,11 +85,11 @@ module Bosh::OpenStackCloud
         end
 
         # This is not a very strong convention, but some resources
-        # have 'error' and 'failed' states, we probably don't want to keep
+        # have 'error', 'failed' and 'killed' states, we probably don't want to keep
         # waiting if we're in these states. Alternatively we could introduce a
         # set of 'loop breaker' states but that doesn't seem very helpful
         # at the moment
-        if state == :error || state == :failed
+        if state == :error || state == :failed || state == :killed
           cloud_error("#{desc} state is #{state}, expected #{target_state.join(", ")}")
         end
 
