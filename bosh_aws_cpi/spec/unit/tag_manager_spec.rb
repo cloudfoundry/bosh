@@ -25,4 +25,14 @@ describe Bosh::AwsCloud::TagManager do
 
     Bosh::AwsCloud::TagManager.tag(instance, 'key', 'value')
   end
+
+  it 'should do nothing if key is nil' do
+    instance.should_not_receive(:add_tag)
+    Bosh::AwsCloud::TagManager.tag(instance, nil, 'value')
+  end
+
+  it 'should do nothing if value is nil' do
+    instance.should_not_receive(:add_tag)
+    Bosh::AwsCloud::TagManager.tag(instance, 'key', nil)
+  end
 end
