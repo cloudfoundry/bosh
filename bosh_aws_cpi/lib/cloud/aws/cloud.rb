@@ -484,38 +484,39 @@ module Bosh::AwsCloud
     end
 
     def attach_ebs_volume(instance, volume)
-      device_names = Set.new(instance.block_device_mappings.to_hash.keys)
-      new_attachment = nil
+      device_name = select_device_name(instance)
+      cloud_error('Instance has too many disks attached') unless device_name
 
-      ("f".."p").each do |char| # f..p is what console suggests
-                                # Some kernels will remap sdX to xvdX, so agent needs
-                                # to lookup both (sd, then xvd)
-        dev_name = "/dev/sd#{char}"
-        if device_names.include?(dev_name)
-          @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
-          next
-        end
-        # work around AWS eventual (in)consistency
-        Bosh::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
-          new_attachment = volume.attach_to(instance, dev_name)
-        end
-        break
+      # Work around AWS eventual (in)consistency:
+      # even tough we don't call attach_disk until the disk is ready,
+      # AWS might still lie and say that the disk isn't ready yet, so
+      # we try again just to be really sure it is telling the truth
+      attachment = nil
+      Bosh::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
+        attachment = volume.attach_to(instance, device_name)
       end
 
-      if new_attachment.nil?
-        # TODO: better messaging?
-        cloud_error("Instance has too many disks attached")
-      end
+      @logger.info("Attaching '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
+      ResourceWait.for_attachment(attachment: attachment, state: :attached)
 
-      @logger.info("Attaching `#{volume.id}' to `#{instance.id}'")
-      ResourceWait.for_attachment(attachment: new_attachment, state: :attached)
-
-      device_name = new_attachment.device
-
-      @logger.info("Attached `#{volume.id}' to `#{instance.id}', " \
-                   "device name is `#{device_name}'")
+      device_name = attachment.device
+      @logger.info("Attached '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
 
       device_name
+    end
+
+    def select_device_name(instance)
+      device_names = Set.new(instance.block_device_mappings.to_hash.keys)
+
+      ('f'..'p').each do |char| # f..p is what console suggests
+                                # Some kernels will remap sdX to xvdX, so agent needs
+                                # to lookup both (sd, then xvd)
+        device_name = "/dev/sd#{char}"
+        return device_name unless device_names.include?(device_name)
+        @logger.warn("'#{device_name}' on '#{instance.id}' is taken")
+      end
+
+      nil
     end
 
     def detach_ebs_volume(instance, volume, force=false)
