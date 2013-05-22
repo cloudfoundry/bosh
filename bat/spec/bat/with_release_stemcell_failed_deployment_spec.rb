@@ -2,8 +2,9 @@ require "spec_helper"
 
 describe "with release, stemcell and failed deployment" do
 
+  let(:deployment_manifest) { with_deployment }
   let(:failed_deployment_result) do
-    bosh("deployment #{with_deployment.to_path}").should succeed
+    bosh("deployment #{deployment_manifest.to_path}").should succeed
     bosh("deploy", :on_error => :return)
   end
 
@@ -19,7 +20,8 @@ describe "with release, stemcell and failed deployment" do
   end
 
   after(:all) do
-    cleanup deployment
+    bosh("delete deployment #{spec.fetch('properties', {}).fetch('name', 'bat')}")
+    deployment_manifest.delete
     cleanup release
     cleanup stemcell
   end
