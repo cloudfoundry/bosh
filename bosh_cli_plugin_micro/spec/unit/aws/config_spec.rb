@@ -84,6 +84,6 @@ describe Bosh::Deployer::Config do
     cloud.respond_to?(:ec2).should be_true
     cloud.ec2.should be_kind_of(AWS::EC2)
     cloud.respond_to?(:registry).should be_true
-    cloud.registry.should be_kind_of(Bosh::AwsCloud::RegistryClient)
+    cloud.registry.should be_kind_of(Bosh::Registry::Client)
   end
 end

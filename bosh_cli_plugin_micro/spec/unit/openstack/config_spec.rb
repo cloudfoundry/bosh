@@ -88,6 +88,6 @@ describe Bosh::Deployer::Config do
     cloud = Bosh::Deployer::Config.cloud
     cloud.respond_to?(:openstack).should be_true
     cloud.respond_to?(:registry).should be_true
-    cloud.registry.should be_kind_of(Bosh::OpenStackCloud::RegistryClient)
+    cloud.registry.should be_kind_of(Bosh::Registry::Client)
   end
 end

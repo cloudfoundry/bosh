@@ -18,10 +18,10 @@ require "common/exec"
 require "common/thread_pool"
 require "common/thread_formatter"
 
+require 'bosh_registry/client'
 require "cloud"
 require "cloud/openstack/helpers"
 require "cloud/openstack/cloud"
-require "cloud/openstack/registry_client"
 require "cloud/openstack/tag_manager"
 require "cloud/openstack/version"
 

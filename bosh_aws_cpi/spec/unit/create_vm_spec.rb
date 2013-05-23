@@ -41,7 +41,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:cloud) { described_class.new(options) }
 
   before do
-    Bosh::AwsCloud::RegistryClient.
+    Bosh::Registry::Client.
         stub(:new).
         and_return(registry)
     AWS::EC2.
