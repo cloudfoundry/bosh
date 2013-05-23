@@ -74,7 +74,7 @@ module Bosh::OpenStackCloud
       registry_endpoint = @registry_properties["endpoint"]
       registry_user = @registry_properties["user"]
       registry_password = @registry_properties["password"]
-      @registry = RegistryClient.new(registry_endpoint,
+      @registry = Bosh::Registry::Client.new(registry_endpoint,
                                      registry_user,
                                      registry_password)
 
