@@ -1011,23 +1011,18 @@ module VSphereCloud
     end
 
     def fix_device_unit_numbers(devices, device_changes)
-      max_unit_numbers = {}
-      devices.each do |device|
-        if device.controller_key
-          max_unit_number = max_unit_numbers[device.controller_key]
-          if max_unit_number.nil? || max_unit_number < device.unit_number
-            max_unit_numbers[device.controller_key] = device.unit_number
-          end
-        end
+      grouped_devices = devices.group_by(&:controller_key)
+
+      next_unit_numbers = grouped_devices.inject({}) do |memo, (key, devices)|
+        memo[key] = devices.map(&:unit_number).max + 1
       end
 
-      device_changes.each do |device_change|
-        device = device_change.device
-        if device.controller_key && device.unit_number.nil?
-          max_unit_number = max_unit_numbers[device.controller_key] || 0
-          device.unit_number = max_unit_number + 1
-          max_unit_numbers[device.controller_key] = device.unit_number
-        end
+      unnumbered_devices = device_changes.map(&:device).select do |device|
+        device.controller_key && device.unit_number.nil?
+      end
+
+      unnumbered_devices.group_by(&:controller_key).each do |key, devices|
+        devices.each_with_index { |d,i| d.unit_number = next_unit_numbers[key] + i }
       end
     end
 
