@@ -63,6 +63,7 @@ PATH
       aws-sdk (= 1.8.5)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
+      bosh_registry (~> 1.5.0.pre.3)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
 
@@ -129,6 +130,7 @@ PATH
     bosh_openstack_cpi (1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
+      bosh_registry (~> 1.5.0.pre.3)
       fog (~> 1.11.1)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)

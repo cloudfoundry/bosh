@@ -32,7 +32,7 @@ describe Bosh::AwsCloud::Cloud do
     delegate = double('delegate', logger: Logger.new(STDOUT))
     delegate.stub(:task_checkpoint)
     Bosh::Clouds::Config.configure(delegate)
-    Bosh::AwsCloud::RegistryClient.stub(:new).and_return(double('registry').as_null_object)
+    Bosh::Registry::Client.stub(:new).and_return(double('registry').as_null_object)
 
     @instance_id = nil
     @volume_id = nil

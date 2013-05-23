@@ -65,7 +65,7 @@ module Bosh::AwsCloud
       # Registry updates are not really atomic in relation to
       # EC2 API calls, so they might get out of sync. Cloudcheck
       # is supposed to fix that.
-      @registry = RegistryClient.new(registry_endpoint,
+      @registry = Bosh::Registry::Client.new(registry_endpoint,
                                      registry_user,
                                      registry_password)
 
