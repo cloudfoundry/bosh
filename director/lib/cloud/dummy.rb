@@ -107,11 +107,11 @@ module Bosh
         FileUtils.rm(disk_file(disk_id))
       end
 
-      def snapshot_disk(disk_id)
+      def snapshot_disk(_, metadata)
         snapshot_id = SecureRandom.hex
         file = snapshot_file(snapshot_id)
         FileUtils.mkdir_p(File.dirname(file))
-        File.write(file, disk_id)
+        File.write(file, metadata.to_json)
         snapshot_id
       end
 

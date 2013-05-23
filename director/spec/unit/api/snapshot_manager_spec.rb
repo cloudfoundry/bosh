@@ -123,6 +123,18 @@ describe Bosh::Director::Api::SnapshotManager do
 
     describe '#take_snapshot' do
 
+      let(:metadata) {
+        {
+            agent_id: 'agent0',
+            instance_id: 1,
+            director_name: 'Test Director',
+            director_uuid: BD::Config.uuid,
+            deployment: 'deployment',
+            job: 'job',
+            index: 0
+        }
+      }
+
       context 'when there is no persistent disk' do
         it 'does not take a snapshot' do
           BD::Config.cloud.should_not_receive(:snapshot_disk)
@@ -134,7 +146,7 @@ describe Bosh::Director::Api::SnapshotManager do
       end
 
       it 'takes the snapshot' do
-        BD::Config.cloud.should_receive(:snapshot_disk).with('disk0').and_return('snap0c')
+        BD::Config.cloud.should_receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
 
         expect {
           expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
@@ -143,7 +155,7 @@ describe Bosh::Director::Api::SnapshotManager do
 
       context 'with the clean option' do
         it 'it sets the clean column to true in the db' do
-          BD::Config.cloud.should_receive(:snapshot_disk).with('disk0').and_return('snap0c')
+          BD::Config.cloud.should_receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
           expect(described_class.take_snapshot(@instance, {:clean => true})).to eq %w[snap0c]
 
           snapshot = BDM::Snapshot.find(snapshot_cid: 'snap0c')

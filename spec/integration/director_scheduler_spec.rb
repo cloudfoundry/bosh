@@ -32,6 +32,13 @@ describe Bosh::Spec::IntegrationTest::DirectorScheduler do
       break unless snapshots.empty?
       sleep 1
     end
+
+    keys = %w[deployment job index director_name director_uuid agent_id instance_id]
+    snapshots.each do |snapshot|
+      json = JSON.parse(File.read(snapshot))
+      expect(json.keys - keys).to be_empty
+    end
+
     expect(snapshots).to_not be_empty
   end
 end
