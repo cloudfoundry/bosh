@@ -24,5 +24,5 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_cpi", "~>#{version}"
   s.add_dependency "membrane", "~>0.0.2"
   s.add_dependency "ruby_vim_sdk", "~>#{version}"
-  s.add_dependency "sequel", "~>3.43.0"
+  s.add_dependency "sequel", "~>3.46.0"
 end

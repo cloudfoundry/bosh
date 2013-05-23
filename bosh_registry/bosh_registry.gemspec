@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.bindir       = "bin"
   s.executables  = %w(bosh_registry migrate)
 
-  s.add_dependency "sequel", "~>3.43.0"
+  s.add_dependency "sequel", "~>3.46.0"
   s.add_dependency "sinatra", "~>1.4.2"
   s.add_dependency "thin", "~>1.5.0"
   s.add_dependency "yajl-ruby", "~>1.1.0"
