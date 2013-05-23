@@ -41,7 +41,7 @@ module Bosh::Deployer
         update_agent_service_address(service, bosh_ip)
       end
 
-      services = %w{postgres director redis blobstore nats registry dns}
+      services = %w{director redis blobstore nats registry dns}
       services.each do |service|
         update_service_address(service, service_ip)
       end

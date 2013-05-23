@@ -24,10 +24,10 @@ properties:
   redis:
     address: 127.0.0.1
     password: redis
-  postgres:
-    user: postgres
-    password: postgres
-    address: 127.0.0.1
+  postgres: &bosh_db
+    password: bosh
+    host: 127.0.0.1
+    listen_address: 127.0.0.1
     database: bosh
   blobstore:
     address: 127.0.0.1
@@ -40,6 +40,8 @@ properties:
   director:
     address: 127.0.0.1
     name: micro
+    port: 25555
+    db: *bosh_db
   hm:
     http:
       user: hm

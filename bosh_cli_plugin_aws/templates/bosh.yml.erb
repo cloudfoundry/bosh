@@ -115,15 +115,17 @@ properties:
     address: 10.10.0.7
     port: 4222
 
-  postgres:
+  postgres: &bosh_db
+    adapter: postgres
     user: bosh
     password: a7a33139c8e3f34bc201351b
-    address: 10.10.0.7
+    host: 127.0.0.1
+    listen_address: 127.0.0.1
     port: 5432
     database: bosh
 
   redis:
-    address: 10.10.0.7
+    address: 127.0.0.1
     port: 25255
     password: R3d!S
 
@@ -132,6 +134,7 @@ properties:
     address: 10.10.0.7
     port: 25555
     encryption: false
+    db: *bosh_db
     ssl:
       key: |
         <%= director_ssl_key %>
@@ -167,6 +170,7 @@ properties:
 
   registry:
     address: 10.10.0.7
+    db: *bosh_db
     http:
       port: 25777
       user: awsreg
@@ -181,16 +185,8 @@ properties:
     default_security_groups: ["bosh"]
 
   dns:
-    user: powerdns
-    password: powerdns
     address: 10.10.0.7
-    replication:
-      user: foo
-      password: bar
-      basic_auth: foo:nosuchuser
-    database:
-      name: powerdns
-      port: 5342
+    db: *bosh_db
 
   <% if compiled_package_cache? %>
   compiled_package_cache:

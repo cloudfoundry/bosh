@@ -11,6 +11,7 @@ packages:
 properties:
   postgres.user:
     description: Username clients must use to access Postgres
+    default: bosh
   postgres.password:
     description: Password clients must use to access Postgres
   postgres.listen_address:
