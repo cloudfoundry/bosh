@@ -883,34 +883,6 @@ module VSphereCloud
       end
     end
 
-    def fetch_file(datacenter_name, datastore_name, path)
-      retry_block do
-        url = "https://#{Config.vcenter.host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
-        "&dsName=#{URI.escape(datastore_name)}"
-
-        response = @rest_client.get(url)
-
-        if response.code < 400
-          response.body
-        elsif response.code == 404
-          nil
-        else
-          raise "Could not fetch file: #{url}, status code: #{response.code}"
-        end
-      end
-    end
-
-    def upload_file(datacenter_name, datastore_name, path, contents)
-      retry_block do
-        url = "https://#{Config.vcenter.host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
-              "&dsName=#{URI.escape(datastore_name)}"
-        response = @rest_client.put(url, contents, {"Content-Type" => "application/octet-stream",
-                                                    "Content-Length" => contents.length})
-
-        raise "Could not upload file: #{url}, status code: #{response.code}" unless response.code < 400
-      end
-    end
-
     def clone_vm(vm, name, folder, resource_pool, options={})
       relocation_spec =Vim::Vm::RelocateSpec.new
       relocation_spec.datastore = options[:datastore] if options[:datastore]
@@ -1107,6 +1079,36 @@ module VSphereCloud
     # (which comes from AWS). This is a vm snapshot.
     def take_snapshot(vm, name)
       vm.create_snapshot(name, nil, false, false)
+    end
+
+    def folder_url(host, folder_path, datacenter_name, datastore_name)
+      query_string = "dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
+
+      "https://#{host}/folder/#{folder_path}?#{query_string}"
+    end
+
+    def fetch_file(datacenter_name, datastore_name, path)
+      url = folder_url(Config.vcenter.host, path, datacenter_name, datastore_name)
+
+      retry_block do
+        response = @rest_client.get(url)
+
+        return response.body if response.code < 400
+        return nil if response.code == 404
+        raise "Could not fetch file: #{url}, status code: #{response.code}"
+      end
+    end
+
+
+    def upload_file(datacenter_name, datastore_name, path, contents)
+      url = folder_url(Config.vcenter.host, path, datacenter_name, datastore_name)
+
+      retry_block do
+        response = @rest_client.put(url, contents, {"Content-Type" => "application/octet-stream",
+                                                    "Content-Length" => contents.length})
+
+        raise "Could not upload file: #{url}, status code: #{response.code}" if response.code >= 400
+      end
     end
   end
 end
