@@ -5,6 +5,9 @@ module Bosh::Deployer
 
     class Vsphere < InstanceManager
 
+      def remote_tunnel(port)
+      end
+
       def disk_model
         if @disk_model.nil?
           require "cloud/vsphere"
