@@ -101,77 +101,43 @@ module Bosh::OpenStackCloud
       with_thread_name("create_stemcell(#{image_path}...)") do
         begin
           Dir.mktmpdir do |tmp_dir|
-            @logger.info("Extracting stemcell to `#{tmp_dir}'...")
-            image_name = "BOSH-#{generate_unique_name}"
-
-            # 1. Unpack image to temp directory
-            unpack_image(tmp_dir, image_path)
-            root_image = File.join(tmp_dir, "root.img")
-        
-            # 2. If image contains a kernel file, upload it to glance service
-            kernel_id = nil
-            if cloud_properties["kernel_file"]
-              kernel_image = File.join(tmp_dir, cloud_properties["kernel_file"])
-              unless File.exists?(kernel_image)
-                cloud_error("Kernel image " \
-                            "#{cloud_properties['kernel_file']} " \
-                            "is missing from stemcell archive")
-              end
-              kernel_params = {
-                :name => "#{image_name}-AKI",
-                :disk_format => "aki",
-                :container_format => "aki",
-                :location => kernel_image,
-                :properties => {
-                  :stemcell => image_name
-                }
-              }
-              @logger.info("Uploading kernel image...")
-              kernel_id = upload_image(kernel_params)
-            end
-
-            # 3. If image contains a ramdisk file, upload it to glance service
-            ramdisk_id = nil
-            if cloud_properties["ramdisk_file"]
-              ramdisk_image = File.join(tmp_dir, cloud_properties["ramdisk_file"])
-              unless File.exists?(ramdisk_image)
-                cloud_error("Ramdisk image " \
-                            "#{cloud_properties['ramdisk_file']} " \
-                            "is missing from stemcell archive")
-              end
-              ramdisk_params = {
-                :name => "#{image_name}-ARI",
-                :disk_format => "ari",
-                :container_format => "ari",
-                :location => ramdisk_image,
-                :properties => {
-                  :stemcell => image_name
-                }
-              }
-              @logger.info("Uploading ramdisk image...")
-              ramdisk_id = upload_image(ramdisk_params)
-            end
-
-            # 4. Upload image using Glance service
+            @logger.info("Creating new image...")
             image_params = {
-              :name => image_name,
+              :name => "BOSH-#{generate_unique_name}",
               :disk_format => cloud_properties["disk_format"],
               :container_format => cloud_properties["container_format"],
-              :location => root_image,
               :is_public => true
             }
+            
             image_properties = {}
-            image_properties[:kernel_id] = kernel_id if kernel_id
-            image_properties[:ramdisk_id] = ramdisk_id if ramdisk_id
             vanilla_options = ["name", "version", "os_type", "os_distro", "architecture", "auto_disk_config"]
             vanilla_options.reject{ |o| cloud_properties[o].nil? }.each do |key|
               image_properties[key.to_sym] = cloud_properties[key]
+            end            
+            image_params[:properties] = image_properties unless image_properties.empty?
+            
+            # If image_location is set in cloud properties, then pass the copy-from parm. Then Glance will fetch it 
+            # from the remote location on a background job and store it in its repository.
+            # Otherwise, unpack image to temp directory and upload to Glance the root image.
+            if cloud_properties["image_location"]
+              @logger.info("Using remote image from `#{cloud_properties["image_location"]}'...")
+              image_params[:copy_from] = cloud_properties["image_location"]
+            else
+              @logger.info("Extracting stemcell file to `#{tmp_dir}'...")
+              unpack_image(tmp_dir, image_path)
+              image_params[:location] = File.join(tmp_dir, "root.img")
             end
-            unless image_properties.empty?
-              image_params[:properties] = image_properties
-            end
-            @logger.info("Uploading image...")
-            upload_image(image_params)
+
+            # Upload image using Glance service            
+            @logger.debug("Using image parms: `#{image_params.inspect}'")
+            image = with_openstack { @glance.images.create(image_params) }
+            
+            @logger.info("Creating new image `#{image.id}'...")
+            # FIX-ME: By-pass the wait-resource until Fog::Image::OpenStack implements the get method (fog PR 1828
+            # merged and a new fog gem released)
+            # wait_resource(image, :active)
+            
+            image.id.to_s
           end
         rescue => e
           @logger.error(e)
@@ -191,30 +157,6 @@ module Bosh::OpenStackCloud
         @logger.info("Deleting stemcell `#{stemcell_id}'...")
         image = with_openstack { @glance.images.find_by_id(stemcell_id) }
         if image
-          kernel_id = image.properties["kernel_id"]
-          if kernel_id
-            kernel = with_openstack { @glance.images.find_by_id(kernel_id) }
-            if kernel && kernel.properties["stemcell"]
-              if kernel.properties["stemcell"] == image.name
-                @logger.info("Deleting kernel `#{kernel_id}'...")
-                with_openstack { kernel.destroy }
-                @logger.info("Kernel `#{kernel_id}' is now deleted")
-              end
-            end
-          end
-
-          ramdisk_id = image.properties["ramdisk_id"]
-          if ramdisk_id
-            ramdisk = with_openstack { @glance.images.find_by_id(ramdisk_id) }
-            if ramdisk && ramdisk.properties["stemcell"]
-              if ramdisk.properties["stemcell"] == image.name
-                @logger.info("Deleting ramdisk `#{ramdisk_id}'...")
-                with_openstack { ramdisk.destroy }
-                @logger.info("Ramdisk `#{ramdisk_id}' is now deleted")
-              end
-            end
-          end
-
           with_openstack { image.destroy }
           @logger.info("Stemcell `#{stemcell_id}' is now deleted")
         else
@@ -778,21 +720,6 @@ module Bosh::OpenStackCloud
       else
         @logger.info("Disk `#{volume.id}' is not attached to server `#{server.id}'. Skipping.")
       end
-    end
-
-    ##
-    # Uploads a new image to OpenStack via Glance
-    #
-    # @param [Hash] image_params Image params
-    # @return [String] OpenStack image UUID
-    def upload_image(image_params)
-      @logger.info("Creating new image...")
-      started_at = Time.now
-      image = with_openstack { @glance.images.create(image_params) }
-      total = Time.now - started_at
-      @logger.info("Created new image `#{image.id}', took #{total}s")
-
-      image.id.to_s
     end
 
     ##
