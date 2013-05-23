@@ -445,8 +445,8 @@ module Bosh::Director
           raise DirectorError, "Can't extract job properties before parsing job templates"
         end
 
-        return collection if @templates.all? { |template| template.properties.nil? }
-        return extract_template_properties(collection) if @templates.none? { |template| template.properties.nil? }
+        return collection if @templates.none? { |template| template.properties }
+        return extract_template_properties(collection) if @templates.all? { |template| template.properties }
         raise JobIncompatibleSpecs, "Job `#{name}' has specs with conflicting property definition styles between" +
             " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
             " `properties' and one which doesn't."
