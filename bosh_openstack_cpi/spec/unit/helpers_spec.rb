@@ -54,6 +54,30 @@ describe Bosh::OpenStackCloud::Helpers do
       }.to raise_error Bosh::Clouds::CloudError, /state is error/
     end
 
+    it "should raise Bosh::Clouds::CloudError if state is failed" do
+      resource = double("resource")
+      resource.stub(:id).and_return("foobar")
+      resource.stub(:reload).and_return(@cloud)
+      resource.stub(:status).and_return(:failed)
+      @cloud.stub(:sleep)
+
+      expect {
+        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+      }.to raise_error Bosh::Clouds::CloudError, /state is failed/
+    end
+    
+    it "should raise Bosh::Clouds::CloudError if state is killed" do
+      resource = double("resource")
+      resource.stub(:id).and_return("foobar")
+      resource.stub(:reload).and_return(@cloud)
+      resource.stub(:status).and_return(:killed)
+      @cloud.stub(:sleep)
+
+      expect {
+        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+      }.to raise_error Bosh::Clouds::CloudError, /state is killed/
+    end
+    
     it "should raise Bosh::Clouds::CloudError if resource not found" do
       resource = double("resource")
       resource.stub(:id).and_return("foobar")
