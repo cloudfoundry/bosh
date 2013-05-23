@@ -9,9 +9,7 @@ module Bosh::Cli::Command
 
     # The URL of the public stemcell index.
     PUBLIC_STEMCELL_INDEX_URL =
-      "https://blob.cfblob.com/rest/objects/4e4e78bca2" +
-      "1e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e2538" +
-      "5d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI="
+      "https://s3.amazonaws.com/blob.cfblob.com/stemcells/public_stemcells_index.yml"
 
     DEFAULT_PUB_STEMCELL_TAG = "stable"
     ALL_STEMCELLS_TAG = "all"
