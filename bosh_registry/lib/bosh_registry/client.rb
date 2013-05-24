@@ -2,6 +2,7 @@
 # Copyright (c) 2012 Piston Cloud Computing, Inc.
 require 'httpclient'
 require 'cloud/errors'
+require 'base64'
 
 module Bosh::Registry
   ##
