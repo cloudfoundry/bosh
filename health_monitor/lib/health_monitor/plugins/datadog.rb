@@ -50,15 +50,11 @@ module Bosh::HealthMonitor
       end
 
       def process_alert(alert)
-        create_event(alert)
-        create_metric(alert)
-      end
-
-      def create_event(alert)
         msg, title, source, timestamp = alert.to_hash.values_at(:summary,
                                                                 :title,
                                                                 :source,
                                                                 :created_at)
+
 
         # DataDog only supports "low" and "normal" priority
         priority = normal_priority?(alert.severity) ? "normal" : "low"
@@ -72,37 +68,8 @@ module Bosh::HealthMonitor
         )
       end
 
-      def create_metric(alert)
-        title, source, timestamp = alert.to_hash.values_at(:title,
-                                                           :source,
-                                                           :created_at)
-
-        # Hmmm. DataDog was not designed for this.
-        # We need to ramp a value up quickly, wait long enough for it to become
-        # an alert, then make sure the average over the last 5 minutes goes
-        # back to 0.
-        ramp_up = [[Time.at(timestamp), 10], [Time.at(timestamp)+60, 10]]
-        tear_down = (4..9).map { |minutes| [Time.at(timestamp) + minutes*60, 0]}
-        data_points = ramp_up + tear_down
-
-        alert_id = sanitize_for_id(title)
-        dog_client.emit_points("bosh.healthmonitor.alerts.#{alert_id}",
-                               data_points, tags: tags(source))
-      end
-
-      def tags(source)
-        %W(source:#{source})
-      end
-
       def normal_priority?(severity)
         NORMAL_PRIORITY.include?(severity)
-      end
-
-      def sanitize_for_id(title)
-        title.downcase
-          .tr("!@#%^&*()+|}{?></.,';\\[]'", "")
-          .tr(" -", "_")
-          .squeeze("_")
       end
     end
   end
