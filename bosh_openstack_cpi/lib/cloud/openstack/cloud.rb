@@ -437,16 +437,22 @@ module Bosh::OpenStackCloud
     # Takes a snapshot of an OpenStack volume
     #
     # @param [String] disk_id OpenStack volume UUID
+    # @param [Hash] metadata Metadata key/value pairs to add to snapshot
     # @return [String] OpenStack snapshot UUID
     # @raise [Bosh::Clouds::CloudError] if volume is not found
-    def snapshot_disk(disk_id)
+    def snapshot_disk(disk_id, metadata)
       with_thread_name("snapshot_disk(#{disk_id})") do
         volume = with_openstack { @openstack.volumes.get(disk_id) }
         cloud_error("Volume `#{disk_id}' not found") unless volume
 
+        devices = []
+        volume.attachments.each { |attachment| devices << attachment["device"] }
+       
+        description = [:deployment, :job, :index].collect { |key| metadata[key] }
+        description << devices.first.split('/').last unless devices.empty?
         snapshot_params = {
           :name => "snapshot-#{generate_unique_name}",
-          :description => "",
+          :description => description.join('/'),
           :volume_id => volume.id
         }
 
@@ -454,6 +460,10 @@ module Bosh::OpenStackCloud
         snapshot = @openstack.snapshots.new(snapshot_params)
         with_openstack { snapshot.save(true) }
 
+        # TODO: Current OpenStack Compute API doesn't support adding metadata for a snapshot,
+        # although OpenStack Volume API supports it. When the Compute API implements metada for snapshots, 
+        # we should add metadata for :agent_id, :instance_id, :director_name and :director_uuid.    
+        
         @logger.info("Creating new snapshot `#{snapshot.id}' for volume `#{disk_id}'...")
         wait_resource(snapshot, :available)
 
