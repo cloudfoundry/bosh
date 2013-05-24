@@ -27,6 +27,7 @@ module Bosh::AwsCloud
       @options = options.dup
 
       validate_options
+      initialize_registry
 
       @logger = Bosh::Clouds::Config.logger
 
@@ -35,7 +36,6 @@ module Bosh::AwsCloud
       @agent_properties = @options["agent"] || {}
       @aws_properties = @options["aws"]
       @aws_region = @aws_properties["region"]
-      @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
       @fast_path_delete = @aws_properties["fast_path_delete"]
@@ -51,23 +51,12 @@ module Bosh::AwsCloud
 
       aws_params[:proxy_uri] = @aws_properties["proxy_uri"] if @aws_properties["proxy_uri"]
 
-      registry_endpoint = @registry_properties["endpoint"]
-      registry_user = @registry_properties["user"]
-      registry_password = @registry_properties["password"]
-
       # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
       # so we need to trigger eager autoload while constructing CPI
       AWS.eager_autoload!
 
       AWS.config(aws_params)
       @ec2 = AWS::EC2.new
-
-      # Registry updates are not really atomic in relation to
-      # EC2 API calls, so they might get out of sync. Cloudcheck
-      # is supposed to fix that.
-      @registry = Bosh::Registry::Client.new(registry_endpoint,
-                                     registry_user,
-                                     registry_password)
 
       @region = @ec2.regions[@aws_region]
       @az_selector = AvailabilityZoneSelector.new(@region, @aws_properties["default_availability_zone"])
@@ -620,6 +609,20 @@ module Bosh::AwsCloud
 
       settings["env"] = environment if environment
       settings.merge(agent_properties)
+    end
+
+    def initialize_registry
+      registry_properties = @options.fetch('registry')
+      registry_endpoint   = registry_properties.fetch('endpoint')
+      registry_user       = registry_properties.fetch('user')
+      registry_password   = registry_properties.fetch('password')
+
+      # Registry updates are not really atomic in relation to
+      # EC2 API calls, so they might get out of sync. Cloudcheck
+      # is supposed to fix that.
+      @registry = Bosh::Registry::Client.new(registry_endpoint,
+                                             registry_user,
+                                             registry_password)
     end
   end
 end

@@ -25,12 +25,12 @@ module Bosh::OpenStackCloud
       @options = options.dup
 
       validate_options
+      initialize_registry
 
       @logger = Bosh::Clouds::Config.logger
 
       @agent_properties = @options["agent"] || {}
       @openstack_properties = @options["openstack"]
-      @registry_properties = @options["registry"]
 
       @default_key_name = @openstack_properties["default_key_name"]
       @default_security_groups = @openstack_properties["default_security_groups"]
@@ -70,13 +70,6 @@ module Bosh::OpenStackCloud
         @logger.error(e)
         cloud_error("Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
       end
-
-      registry_endpoint = @registry_properties["endpoint"]
-      registry_user = @registry_properties["user"]
-      registry_password = @registry_properties["password"]
-      @registry = Bosh::Registry::Client.new(registry_endpoint,
-                                     registry_user,
-                                     registry_password)
 
       @metadata_lock = Mutex.new
     end
@@ -764,6 +757,17 @@ module Bosh::OpenStackCloud
           @options["registry"]["password"]
         raise ArgumentError, "Invalid registry configuration parameters"
       end
+    end
+
+    def initialize_registry
+      registry_properties = @options.fetch('registry')
+      registry_endpoint   = registry_properties.fetch('endpoint')
+      registry_user       = registry_properties.fetch('user')
+      registry_password   = registry_properties.fetch('password')
+
+      @registry = Bosh::Registry::Client.new(registry_endpoint,
+                                             registry_user,
+                                             registry_password)
     end
 
   end
