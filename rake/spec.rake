@@ -97,6 +97,8 @@ namespace :spec do
       task :micro do
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
+          ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
+          #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
           publish_stemcell_to_s3(latest_aws_stemcell_path, 'bosh-jenkins-artifacts')
           publish_stemcell_to_s3(latest_aws_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
         ensure
@@ -167,6 +169,8 @@ namespace :spec do
       task :micro do
         Rake::Task['spec:system:openstack:deploy_micro_dynamic_net'].invoke
         Rake::Task['spec:system:openstack:deploy_micro_manual_net'].invoke
+        ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
+        #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
         publish_stemcell_to_s3(latest_openstack_stemcell_path, 'bosh-jenkins-artifacts')
         publish_stemcell_to_s3(latest_openstack_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
       end
@@ -225,6 +229,63 @@ namespace :spec do
           ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
           ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
           ENV['BAT_DNS_HOST'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
+          ENV['BAT_FAST'] = 'true'
+          Rake::Task['bat'].execute
+        end
+      end
+    end
+
+    namespace :vsphere do
+      desc 'Run vSphere MicroBOSH deployment suite'
+      task :micro do
+        begin
+          Rake::Task['spec:system:vsphere:deploy_micro'].invoke
+          ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
+          #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
+          publish_stemcell_to_s3(latest_vsphere_stemcell_path, 'bosh-jenkins-artifacts')
+          publish_stemcell_to_s3(latest_vsphere_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+        ensure
+          Rake::Task['spec:system:vsphere:teardown_microbosh'].execute
+        end
+      end
+
+      task :deploy_micro do
+        rm_rf('/tmp/vsphere-ci/deployments')
+        mkdir_p('/tmp/vsphere-ci/deployments/microbosh')
+        cd('/tmp/vsphere-ci/deployments') do
+          cd('microbosh') do
+            generate_vsphere_micro_bosh
+          end
+          run_bosh 'micro deployment microbosh'
+          run_bosh "micro deploy #{latest_vsphere_micro_bosh_stemcell_path}"
+          run_bosh 'login admin admin'
+
+          run_bosh "upload stemcell #{latest_vsphere_stemcell_path}", debug_on_fail: true
+          status = run_bosh 'status'
+          director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
+          st_version = stemcell_version(latest_vsphere_stemcell_path)
+          generate_vsphere_bat_manifest(director_uuid, st_version)
+        end
+
+        Rake::Task['spec:system:vsphere:bat'].execute
+      end
+
+      task :teardown_microbosh do
+        cd('/tmp/vsphere-ci/deployments') do
+          run_bosh 'delete deployment bat', :ignore_failures => true
+          run_bosh "delete stemcell bosh-stemcell #{stemcell_version(latest_vsphere_stemcell_path)}", :ignore_failures => true
+          run_bosh 'micro delete'
+        end
+        rm_rf('/tmp/vsphere-ci/deployments')
+      end
+
+      task :bat do
+        cd(ENV['WORKSPACE']) do
+          ENV['BAT_DIRECTOR'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
+          ENV['BAT_STEMCELL'] = latest_vsphere_stemcell_path
+          ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/vsphere-ci/deployments/bat.yml'
+          ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
+          ENV['BAT_DNS_HOST'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
           ENV['BAT_FAST'] = 'true'
           Rake::Task['bat'].execute
         end
@@ -306,6 +367,14 @@ namespace :spec do
       Dir.glob("#{ENV['JENKINS_HOME']}/workspace/openstack_bosh_stemcell/bosh-stemcell-openstack-*.tgz").first
     end
 
+    def latest_vsphere_micro_bosh_stemcell_path
+      File.join(ENV['WORKSPACE'], "micro-bosh-stemcell-vsphere.tgz")
+    end
+
+    def latest_vsphere_stemcell_path
+      File.join(ENV['WORKSPACE'], "bosh-stemcell-vsphere.tgz")
+    end
+
     def vpc_outfile_path
       File.join('/mnt', 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_vpc_receipt.yml')
     end
@@ -341,6 +410,45 @@ namespace :spec do
       net_static = ENV['BOSH_OPENSTACK_NETWORK_STATIC']
       net_gateway = ENV['BOSH_OPENSTACK_NETWORK_GATEWAY']
       template_path = File.expand_path(File.join(File.dirname(__FILE__), 'templates', 'bat_openstack.yml.erb'))
+      bat_manifest = ERB.new(File.read(template_path)).result(binding)
+      File.open('bat.yml', 'w+') do |f|
+        f.write(bat_manifest)
+      end
+    end
+
+    def generate_vsphere_micro_bosh
+      ip = ENV['BOSH_VSPHERE_MICROBOSH_IP']
+      netmask = ENV['BOSH_VSPHERE_NETMASK']
+      gateway = ENV['BOSH_VSPHERE_GATEWAY']
+      dns = ENV['BOSH_VSPHERE_DNS']
+      net_id = ENV['BOSH_VSPHERE_NET_ID']
+      ntp_server = ENV['BOSH_VSPHERE_NTP_SERVER']
+      vcenter = ENV['BOSH_VSPHERE_VCENTER']
+      vcenter_user = ENV['BOSH_VSPHERE_VCENTER_USER']
+      vcenter_pwd = ENV['BOSH_VSPHERE_VCENTER_PASSWORD']
+      vcenter_dc = ENV['BOSH_VSPHERE_VCENTER_DC']
+      vcenter_cluster = ENV['BOSH_VSPHERE_VCENTER_CLUSTER']
+      vcenter_rp = ENV['BOSH_VSPHERE_VCENTER_RESOURCE_POOL']
+      vcenter_folder_prefix = ENV['BOSH_VSPHERE_VCENTER_FOLDER_PREFIX']
+      vcenter_ubosh_folder_prefix = ENV['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']
+      vcenter_datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN']
+      vcenter_ubosh_datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN']
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), 'templates', 'micro_bosh_vsphere.yml.erb'))
+      micro_bosh_manifest = ERB.new(File.read(template_path)).result(binding)
+      File.open("micro_bosh.yml", "w+") do |f|
+        f.write(micro_bosh_manifest)
+      end
+    end
+
+    def generate_vsphere_bat_manifest(director_uuid, st_version)
+      ip = ENV['BOSH_VSPHERE_BAT_IP']
+      net_id = ENV['BOSH_VSPHERE_NET_ID']
+      stemcell_version = st_version
+      net_cidr = ENV['BOSH_VSPHERE_NETWORK_CIDR']
+      net_reserved = ENV['BOSH_VSPHERE_NETWORK_RESERVED']
+      net_static = ENV['BOSH_VSPHERE_NETWORK_STATIC']
+      net_gateway = ENV['BOSH_VSPHERE_NETWORK_GATEWAY']
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), 'templates', 'bat_vsphere.yml.erb'))
       bat_manifest = ERB.new(File.read(template_path)).result(binding)
       File.open('bat.yml', 'w+') do |f|
         f.write(bat_manifest)
