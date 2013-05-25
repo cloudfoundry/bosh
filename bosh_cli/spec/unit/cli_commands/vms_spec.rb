@@ -6,10 +6,13 @@ describe Bosh::Cli::Command::Vms do
   let(:command) { described_class.new }
   let(:director) { double(Bosh::Cli::Director) }
   let(:deployment) { 'dep1' }
+  let(:target) { 'http://example.org' }
 
   before(:each) do
     command.stub(:director).and_return(director)
     command.stub(:nl)
+    command.stub(:logged_in? => true)
+    command.options[:target] = target
   end
 
   describe '#list' do
@@ -24,8 +27,8 @@ describe Bosh::Cli::Command::Vms do
           ]
         }
 
-        command.should_receive(:show_deployment).with('dep1', {})
-        command.should_receive(:show_deployment).with('dep2', {})
+        command.should_receive(:show_deployment).with('dep1', target: target)
+        command.should_receive(:show_deployment).with('dep2', target: target)
 
         command.list
       end
@@ -34,7 +37,7 @@ describe Bosh::Cli::Command::Vms do
     context 'with a deployment argument' do
 
       it 'lists vms in the deployment' do
-        command.should_receive(:show_deployment).with('dep1', {})
+        command.should_receive(:show_deployment).with('dep1', target: target)
 
         command.list('dep1')
       end
