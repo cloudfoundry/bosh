@@ -9,17 +9,21 @@ module Bosh::HealthMonitor
       def validate_options
         options.kind_of?(Hash) &&
             options["api_key"] &&
-            options["application_key"]
+            options["application_key"] &&
+            options["pagerduty_service_name"]
       end
 
       def run
         @api_key = options["api_key"]
         @application_key = options["application_key"]
+        @pagerduty_service_name = options["pagerduty_service_name"]
+
         logger.info("DataDog plugin is running...")
       end
 
       def dog_client
-        @dog_client ||= Dogapi::Client.new(@api_key, @application_key)
+        client = Dogapi::Client.new(@api_key, @application_key)
+        @dog_client ||= PagingDatadogClient.new(@pagerduty_service_name, client)
       end
 
       def process(event)

@@ -1,12 +1,14 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::DataDog do
-  subject { described_class.new("api_key" => "api_key", "application_key" => "application_key") }
+  subject { described_class.new("api_key" => "api_key",
+    "application_key" => "application_key",
+    "pagerduty_service_name" => "service_name")
+  }
   let(:dog_client) { double("DataDog Client") }
   before do
     subject.stub(dog_client: dog_client)
   end
-
 
   context "processing metrics" do
     it "sends datadog metrics" do
