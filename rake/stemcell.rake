@@ -18,7 +18,7 @@ namespace :stemcell do
   end
 
   def changes_in_microbosh?
-    microbosh_components = COMPONENTS - %w(bosh_aws_bootstrap bosh_cli bosh_deployer)
+    microbosh_components = COMPONENTS - %w(bosh_cli bosh_cli_plugin_aws bosh_cli_plugin_micro)
     components_changed = microbosh_components.inject(false) do |changes, component|
       changes || gem_components_changed?(component)
     end
