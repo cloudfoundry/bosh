@@ -19,14 +19,14 @@ These options are passed to the AWS CPI when it is instantiated.
   list of AWS security group to assign to created virtual machines
 * `ec2_private_key` (required)  
   local path to the ssh private key, must match `default_key_name`
-* `region` (optional)  
-  EC2 region, defaults to `us-east-1`
+* `region` (required)
+  EC2 region
 * `ec2_endpoint` (optional)  
   URL of the EC2 endpoint to connect to, defaults to the endpoint corresponding to the selected region,
-  or `DEFAULT_EC2_ENDPOINT` if no region has been selected
+  or `default_ec2_endpoint` if no region has been selected
 * `elb_endpoint` (optional)  
   URL of the ELB endpoint to connect to, default to the endpoint corresponding to the selected region,
-  or `DEFAULT_ELB_ENDPOINT` if no region has been selected
+  or `default_elb_endpoint` if no region has been selected
 * `max_retries` (optional)  
   maximum number of time to retry an AWS API call, defaults to `DEFAULT_MAX_RETRIES`
 
