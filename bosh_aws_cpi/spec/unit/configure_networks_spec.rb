@@ -96,8 +96,7 @@ describe Bosh::AwsCloud::Cloud do
     it "checks that at least one dynamic or manual network is defined" do
       expect {
         mock_cloud { |ec2| ec2.instances.stub(:[]).with("i-foobar").and_return(instance) }.
-            configure_networks("i-foobar",
-                               "net_a" => vip_network_spec)
+            configure_networks("i-foobar", "net_a" => vip_network_spec)
       }.to raise_error(Bosh::Clouds::CloudError,
                        "Exactly one dynamic or manual network must be defined")
     end
