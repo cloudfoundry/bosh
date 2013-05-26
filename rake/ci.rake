@@ -42,6 +42,22 @@ namespace :ci do
   end
 
   namespace :system do
+    namespace :openstack do
+      task :micro do
+        cd(ENV['WORKSPACE']) do
+          begin
+            download_latest_stemcell('openstack', 'micro')
+            download_latest_stemcell('openstack', 'basic')
+            Rake::Task['spec:system:openstack:micro'].invoke
+          ensure
+            rm_f(Dir.glob('*bosh-stemcell-*.tgz'))
+          end
+        end
+      end
+    end
+  end
+  
+  namespace :system do
     namespace :vsphere do
       task :micro do
         cd(ENV['WORKSPACE']) do
@@ -56,8 +72,6 @@ namespace :ci do
       end
     end
   end
-
-
 
   def publish_stemcell(infrastructure, type)
     path = Dir.glob("/mnt/stemcells/#{infrastructure}-#{type}/work/work/*-stemcell-*-#{candidate_build_number}.tgz").first
