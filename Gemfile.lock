@@ -71,12 +71,12 @@ PATH
   remote: bosh_cli
   specs:
     bosh_cli (1.5.0.pre.3)
-      archive-tar-minitar (~> 0.5)
       blobstore_client (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
       json_pure (~> 1.7.6)
+      minitar (~> 0.5.4)
       net-scp (~> 1.1.0)
       net-ssh (>= 2.2.1)
       net-ssh-gateway (~> 1.1.0)
@@ -252,7 +252,6 @@ GEM
   remote: https://rubygems.org/
   specs:
     addressable (2.3.4)
-    archive-tar-minitar (0.5.2)
     arr-pm (0.0.8)
       cabin (> 0)
     aws-sdk (1.8.5)

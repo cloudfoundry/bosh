@@ -322,7 +322,7 @@ SECTION 7: Mozilla Public License, V1.1
 
 SECTION 8: Ruby Clause-6
 
-   >>> archive-tar-minitar-0.5.2
+   >>> minitar-0.5.4
    >>> eventmachine-0.12.10
    >>> mime-types-1.16
    >>> netaddr-1.5.0
@@ -4469,7 +4469,7 @@ info@rabbitmq.com.
 Ruby Clause-6 is applicable to the following component(s).
 
 
->>> archive-tar-minitar-0.5.2
+>>> minitar-0.5.4
 
 [PLEASE NOTE:  VMWARE, INC. ELECTS TO USE AND DISTRIBUTE THIS COMPONENT UNDER THE TERMS OF THE RUBY LICENSE.  PLEASE SEE THE APPENDIX TO REVIEW THE FULL TEXT OF RUBY LICENSE. THE ORIGINAL LICENSE TERMS ARE REPRODUCED BELOW ONLY AS A REFERENCE.] 
 
