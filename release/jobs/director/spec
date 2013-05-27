@@ -62,6 +62,9 @@ properties:
   director.auto_fix_stateful_nodes:
     description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
     default: true
+  resque.loglevel:
+    description: Level of log messages for Resque workers (fatal, error, warn, info, debug)
+    default: info
   redis.address:
     description: Address of the redis server
   redis.port:
