@@ -48,13 +48,18 @@ end
 
 Bosh::Director::Config.configure(config)
 
+resque_logging = config.fetch('resque', {}).fetch('logging', {})
+resque_log_device = Logger::LogDevice.new(resque_logging.fetch('file', STDOUT))
+resque_logger_level = resque_logging.fetch('level', 'info').upcase
+Resque.logger = Logger.new(resque_log_device)
+Resque.logger.level = Logger.const_get(resque_logger_level)
+
 worker = nil
 queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
 
 begin
   worker = Resque::Worker.new(*queues)
-  worker.verbose = ENV['LOGGING'] || ENV['VERBOSE']
-  worker.very_verbose = ENV['VVERBOSE']
+  worker.term_child = true
 rescue Resque::NoQueueError
   abort "set QUEUE env var, e.g. $ QUEUE=critical,high rake resque:work"
 end

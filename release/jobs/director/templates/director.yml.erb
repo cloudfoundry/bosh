@@ -11,6 +11,11 @@ max_threads: <%= max_threads %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
+<% if_p("resque.loglevel") do |resque_loglevel| %>
+resque:
+  logging:
+    level: <%= resque_loglevel %>
+<% end %>    
 redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
