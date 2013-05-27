@@ -253,7 +253,7 @@ module Bosh::Agent
 
     def tmp_permissions
       %x[chown root:#{BOSH_APP_USER} /tmp]
-      %x[chmod 0770 /tmp]
+      %x[chmod 0777 /tmp]
       %x[chmod 0700 /var/tmp]
     end
 
