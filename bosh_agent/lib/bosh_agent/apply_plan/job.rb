@@ -7,6 +7,8 @@ module Bosh::Agent
       class InstallationError < StandardError; end
       class ConfigurationError < StandardError; end
 
+      include ApplyPlan::Helpers
+
       attr_reader :install_path
       attr_reader :link_path
       attr_reader :template
@@ -22,32 +24,23 @@ module Bosh::Agent
       #     helper instance.
       def initialize(job_name, template_name, template_spec,
           config_binding = nil)
-        unless template_spec.is_a?(Hash)
-          raise ArgumentError, "Invalid job template_spec, " +
-                               "Hash expected, #{template_spec.class} given"
-        end
-
-        %w(name version sha1 blobstore_id).each do |key|
-          if template_spec[key].nil?
-            raise ArgumentError, "Invalid spec, #{key} is missing"
-          end
-        end
+        validate_spec(template_spec)
 
         @base_dir = Bosh::Agent::Config.base_dir
         @name = "#{job_name}.#{template_name}"
         @template = template_name
-        @version = template_spec["version"]
-        @checksum = template_spec["sha1"]
-        @blobstore_id = template_spec["blobstore_id"]
+        @version = template_spec['version']
+        @checksum = template_spec['sha1']
+        @blobstore_id = template_spec['blobstore_id']
         @config_binding = config_binding
 
-        @install_path = File.join(@base_dir, "data", "jobs",
+        @install_path = File.join(@base_dir, 'data', 'jobs',
                                   @template, @version)
-        @link_path = File.join(@base_dir, "jobs", @template)
+        @link_path = File.join(@base_dir, 'jobs', @template)
       end
 
       def install
-        fetch_template
+        fetch_bits
         bind_configuration
         harden_permissions
       rescue SystemCallError => e
@@ -62,14 +55,6 @@ module Bosh::Agent
       end
 
       private
-
-      def fetch_template
-        FileUtils.mkdir_p(File.dirname(@install_path))
-        FileUtils.mkdir_p(File.dirname(@link_path))
-
-        Bosh::Agent::Util.unpack_blob(@blobstore_id, @checksum, @install_path)
-        Bosh::Agent::Util.create_symlink(@install_path, @link_path)
-      end
 
       def bind_configuration
         if @config_binding.nil?
