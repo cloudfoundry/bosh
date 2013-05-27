@@ -212,7 +212,7 @@ module Bosh::Cli
           when 127 # git command not found
             false
           else
-            !git_status.lines.to_a.last.include?("working directory clean")
+            !git_status.lines.to_a.last.include?("nothing to commit")
         end
       end
 
