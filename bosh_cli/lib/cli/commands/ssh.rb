@@ -99,6 +99,8 @@ module Bosh::Cli::Command
       deployment_name = prepare_deployment_manifest["name"]
 
       say("Target deployment is `#{deployment_name}'")
+      nl
+      say("Setting up ssh artifacts")
       status, task_id = director.setup_ssh(
         deployment_name, job, index, user,
         public_key, encrypt_password(password))
@@ -120,16 +122,20 @@ module Bosh::Cli::Command
         end
       end
 
-      if options[:gateway_host]
-        require "net/ssh/gateway"
-        gw_host = options[:gateway_host]
-        gw_user = options[:gateway_user] || ENV["USER"]
-        gateway = Net::SSH::Gateway.new(gw_host, gw_user)
-      else
-        gateway = nil
-      end
-
       begin
+        if options[:gateway_host]
+          require "net/ssh/gateway"
+          gw_host = options[:gateway_host]
+          gw_user = options[:gateway_user] || ENV["USER"]
+          begin
+            gateway = Net::SSH::Gateway.new(gw_host, gw_user)
+          rescue Net::SSH::AuthenticationFailed
+            err("Authentication failed with gateway #{gw_host} and user #{gw_user}.")
+          end
+        else
+          gateway = nil
+        end
+
         yield sessions, user, gateway
       ensure
         nl
