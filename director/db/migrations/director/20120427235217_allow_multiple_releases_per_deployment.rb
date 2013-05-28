@@ -18,8 +18,13 @@ Sequel.migration do
       self[:deployments_releases].insert(attrs)
     end
 
+    # Needed for mysql in order to drop column
     alter_table :deployments do
-      drop_foreign_key :release_id
+      drop_constraint :release_id, :type => :foreign_key
+    end
+
+    alter_table :deployments do
+      drop_column :release_id
     end
   end
 
