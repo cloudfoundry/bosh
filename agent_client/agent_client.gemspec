@@ -17,6 +17,9 @@ Gem::Specification.new do |s|
 
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = "lib"
+  s.test_files   = s.files.grep(%r{^(test|spec|features)/})
+  s.bindir       = 'bin'
+  s.executables  << 'agent_client'
 
   s.add_dependency "httpclient", "=2.2.4"
   s.add_dependency "yajl-ruby", "~>1.1.0"
