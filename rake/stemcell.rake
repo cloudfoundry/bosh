@@ -231,7 +231,7 @@ namespace :stemcell do
     STDOUT.puts "building in #{work_path}..."
     cmd = "sudo #{env} #{builder_path} #{work_path} #{spec_path} #{settings_path}"
     puts cmd
-    system(cmd)
+    sh(cmd)
   end
 
   namespace "public" do
