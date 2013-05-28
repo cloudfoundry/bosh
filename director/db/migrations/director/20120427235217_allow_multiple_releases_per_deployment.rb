@@ -18,9 +18,12 @@ Sequel.migration do
       self[:deployments_releases].insert(attrs)
     end
 
-    # Needed for mysql in order to drop column
-    alter_table :deployments do
-      drop_constraint :release_id, :type => :foreign_key
+    # Needed for mysql in order to drop column (doesn't work with other adapters)
+    # newer versions of sequel support drop_foreign_key but the version breaks tests
+    if adapter_scheme == :mysql
+      alter_table :deployments do
+        drop_constraint :release_id, :type => :foreign_key
+      end
     end
 
     alter_table :deployments do
