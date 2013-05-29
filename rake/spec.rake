@@ -148,7 +148,7 @@ namespace :spec do
 
       task :publish_gems => 'spec:system:aws:bat' do
         run('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
-        run('s3cmd sync s3://bosh-ci-pipeline/micro-bosh s3://bosh-jenkins-artifacts')
+        run('s3cmd sync s3://bosh-ci-pipeline/bosh s3://bosh-jenkins-artifacts')
       end
 
       task :get_deployments_aws do
