@@ -117,7 +117,7 @@ module Bosh::Cli
       end
 
       def target_name
-        config.target_name || target_url
+        options[:target] || config.target_name || target_url
       end
 
       # Sets or returns command exit code
