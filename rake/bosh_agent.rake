@@ -1,5 +1,7 @@
 namespace :bosh_agent do
   task :update, [:vm, :gw_host, :gw_user] => :pre_stage_latest do |_, args|
+    require_relative 'lib/vm_sudo'
+
     args.with_defaults(gw_user: 'vcap')
 
     vm = args[:vm]
@@ -20,24 +22,14 @@ namespace :bosh_agent do
     puts "Local gem path: #{gem_path}"
 
     puts "Uploading gem"
-
-    # remove file on remote
-
     sh "bosh scp #{vm} --upload --gateway_host #{gateway_host} --gateway_user #{gateway_user} #{gem_path} /tmp"
 
-    run_on_vm_sudo(vm, gateway_user, gateway_host, '/var/vcap/bosh/bin/gem uninstall bosh_agent') # Use full gem path until this chore is
-                                                                                                  # addressed: https://www.pivotaltracker.com/story/show/50760173
+    vm_sudo = Bosh::VmSudo.new(vm, gateway_user, gateway_host)
+    vm_sudo.run('/var/vcap/bosh/bin/gem uninstall bosh_agent') # Use full gem path until this chore is
+                                                               # addressed: https://www.pivotaltracker.com/story/show/50760173
 
-    run_on_vm_sudo(vm, gateway_user, gateway_host, "/var/vcap/bosh/bin/gem install /tmp/#{gem_file}")
-    run_on_vm_sudo(vm, gateway_user, gateway_host, "sv restart agent")
-    run_on_vm_sudo(vm, gateway_user, gateway_host, "rm /tmp/#{gem_file}")
-  end
-
-  def run_on_vm_sudo(vm, gw_user, gw_host, command)
-    ip = `bosh vms | grep #{vm} | cut -d "|" -f 5 | cut -d "," -f 1`.strip
-
-    sh <<-CMD
-ssh -A #{gw_user}@#{gw_host} 'ssh #{gw_user}@#{ip} -o StrictHostKeyChecking=no "echo c1oudc0w | sudo -S #{command}"'
-    CMD
+    vm_sudo.run("/var/vcap/bosh/bin/gem install /tmp/#{gem_file}")
+    vm_sudo.run('sv restart agent')
+    vm_sudo.run("rm /tmp/#{gem_file}")
   end
 end
