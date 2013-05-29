@@ -4,6 +4,11 @@ require "bosh_cli_plugin_aws/migration_helper"
 
 namespace "migrations" do
 
+
+  def migration_directory(args)
+    "#{args[:component]}/db/migrations/#{args[:type]}"
+  end
+
   desc "Generate new migration"
   task "new", :component, :name, :type do |task, args|
     type = args[:type]
@@ -11,7 +16,7 @@ namespace "migrations" do
     if type.nil? && component == 'director'
       puts "Please provide migration type: rake #{task.name}[<component>,<name>,<type>]"
       exit(1)
-    elsif type && !File.directory?(Bosh::Aws::MigrationHelper.migration_directory(args))
+    elsif type && !File.directory?(migration_directory(args))
       Dir.chdir("#{component}/db/migrations")
       valid_types = Dir["*"].select { |file| File.directory?(file) }
       if valid_types.empty?

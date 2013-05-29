@@ -21,10 +21,6 @@ module Bosh
         end
       end
 
-      def self.migration_directory(args)
-        "#{args[:component]}/db/migrations/#{args[:type]}"
-      end
-
       def self.aws_migration_directory
         File.expand_path("../../migrations", File.dirname(__FILE__))
       end
