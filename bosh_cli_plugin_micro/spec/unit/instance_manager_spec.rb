@@ -178,4 +178,46 @@ describe Bosh::Deployer::InstanceManager do
     }.to raise_error(Bosh::Cli::CliError)
   end
 
+  it "should provide a nice error if unable to connect to agent" do
+    spec = Psych.load_file(spec_asset("apply_spec.yml"))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+    Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+
+    @deployer.stub!(:run_command)
+    @deployer.stub!(:wait_until_agent_ready).and_raise(Bosh::Deployer::DirectorGatewayError)      
+    @deployer.stub!(:load_stemcell_manifest).and_return({})
+
+    @cloud.should_receive(:create_stemcell).and_return("SC-CID-CREATE")
+    @cloud.should_receive(:create_vm).and_return("VM-CID-CREATE")
+
+    expect {
+      @deployer.create(BOSH_STEMCELL_TGZ)
+    }.to raise_error(Bosh::Cli::CliError, /Unable to connect to Bosh agent/)
+  end
+  
+  it "should provide a nice error if unable to connect to director" do
+    spec = Psych.load_file(spec_asset("apply_spec.yml"))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+    Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+
+    @deployer.stub!(:run_command)
+    @deployer.stub!(:wait_until_agent_ready)
+    @deployer.stub!(:wait_until_director_ready).and_raise(Bosh::Deployer::DirectorGatewayError)
+    @deployer.stub!(:load_apply_spec).and_return(spec)
+    @deployer.stub!(:load_stemcell_manifest).and_return({})
+
+    @cloud.should_receive(:create_stemcell).and_return("SC-CID-CREATE")
+    @cloud.should_receive(:create_vm).and_return("VM-CID-CREATE")
+    @cloud.should_receive(:create_disk).and_return("DISK-CID-CREATE")
+    @cloud.should_receive(:attach_disk).with("VM-CID-CREATE", "DISK-CID-CREATE")
+    @agent.should_receive(:run_task).with(:mount_disk, "DISK-CID-CREATE").and_return({})
+    @agent.should_receive(:run_task).with(:stop)
+    @agent.should_receive(:run_task).with(:apply, spec)
+    @agent.should_receive(:run_task).with(:start)
+
+    expect {
+      @deployer.create(BOSH_STEMCELL_TGZ)
+    }.to raise_error(Bosh::Cli::CliError, /Unable to connect to Bosh Director/)
+  end
+
 end
