@@ -1,5 +1,15 @@
 # Bosh agent
 
+This project contains the Agent running on BOSH managed servers which is used by BOSH to orchestrate the behavior of a BOSH managed server.
+
+The Agent performs the following tasks:
+
+* mount any persistent disks assigned to its VM
+* compile packages and upload result to blobstore
+* apply a "spec" to install packages and 1+ job templates
+* start & stop job processes via monit
+* setup ssh connection
+
 ## Configuration
 
 `bosh_agent` can be run in two configuration modes - infrastructure registry or CLI option overrides.
@@ -24,3 +34,52 @@ Alternately, you can run `bosh_agent` without loading settings (without the `-c`
 * `bosh_agent -n https://vcap:vcap@0.0.0.0:6868` => overrides default settings to tell `bosh_agent` to use https (as used by "bosh micro deploy" and mcf)
 
 Run `bosh_agent --help` to see all the CLI option overrides.
+
+## API
+
+When an agent is running is provides an HTTP API and also subscribes on NATS.
+
+## HTTP
+
+There is a Ruby client, `agent_client`, for communicating with an agent via the HTTP API.
+
+## NATS pub/sub
+
+Each agent publishes the following messages:
+
+* `hm.agent.heartbeat.#{@agent_id}` - a heartbeat announcement
+* `hm.agent.alert.#{@agent_id}` - system alerts
+* `hm.agent.shutdown.#{@agent_id}` - shutdown announcement
+
+Each agent subscribes to the following messages:
+
+* `agent.#{@agent_id}` - for direct communication with a specific Agent
+
+## Agent API
+
+The following commands (methods) are supported by each Agent (sent via NATS or the HTTP API):
+
+* `apply`
+  * `apply` - the agent's server is to become a job or upgrade to a new version of the job
+* `compile_package`
+  * `compile_package` - the agent is to download a package, compile it, and upload the results to the blobstore
+* `disk`
+  * `list_disk` - list disks mounted on agent's server
+  * `migrate_disk` - copy data from an old disk to a new disk
+  * `mount_disk` - mount a disk
+  * `unmount_disk` - unmount a disk
+* `drain`
+  * `drain` - prepare the agent/job for shutdown
+* `logs`
+  * `fetch_logs` - package up and ship the current logs (job or agent or all)
+* `ssh`
+  * `ssh` - create a new ssh user, and set up an SSH connection or run a command; or cleanup a user
+* `state`
+  * `state` - a collection of information about the agent and the job
+
+Methods that are implemented within `handler.rb`:
+
+* `get_task` - poll for the results of a long running task
+* `shutdown` - tell the agent to shutdown running processes (via monit)
+
+Each supported method is a `Bosh::Agent::Message::XYZ` class.
