@@ -15,48 +15,39 @@ module Bosh::Cli::Command
     usage "status"
     desc  "Show current status (current target, user, deployment info etc)"
     def status
-      cpi = nil
-      features = nil
-
-      if config.target
-        say("Updating director data...", " ")
-
-        begin
-          timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
-            director = Bosh::Cli::Director.new(config.target)
-            status = director.get_status
-
-            config.target_name = status["name"]
-            config.target_version = status["version"]
-            config.target_uuid = status["uuid"]
-            cpi = status["cpi"]
-            features = status["features"]
-            config.save
-            say("done".green)
-          end
-        rescue TimeoutError
-          say("timed out".red)
-        rescue => e
-          say("error: #{e.message}")
-        end
-        nl
-      end
-
       say("Config".green)
       print_value("", config.filename)
-      nl
 
+      nl
       say("Director".green)
-      if target_url.nil?
+      if target.nil?
         say("  not set".yellow)
       else
-        print_value("Name", config.target_name)
-        print_value("URL", target_url)
-        print_value("Version", config.target_version)
-        print_value("User", username, "not logged in")
-        print_value("UUID", config.target_uuid)
-        print_value("CPI", cpi, "n/a (update director)")
-        print_feature_list(features) if features
+        begin
+          timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
+            director = Bosh::Cli::Director.new(target)
+            status = director.get_status
+
+            print_value("Name", status["name"])
+            print_value("URL", target_url)
+            print_value("Version", status["version"])
+            print_value("User", username, "not logged in")
+            print_value("UUID", status["uuid"])
+            print_value("CPI", status["cpi"], "n/a")
+            print_feature_list(status["features"]) if status["features"]
+            
+            unless options[:target]
+              config.target_name = status["name"]
+              config.target_version = status["version"]
+              config.target_uuid = status["uuid"]
+              config.save
+            end
+          end
+        rescue TimeoutError
+          say("  timed out fetching director status".red)
+        rescue => e
+          say("  error fetching director status: #{e.message}".red)
+        end
       end
 
       nl
