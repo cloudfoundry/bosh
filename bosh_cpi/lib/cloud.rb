@@ -4,9 +4,9 @@ module Bosh; module Clouds; end; end
 
 require "forwardable"
 
-require "cloud/config"
-require "cloud/errors"
-require "cloud/provider"
+require "clouds/config"
+require "clouds/errors"
+require "clouds/provider"
 
 module Bosh
 
