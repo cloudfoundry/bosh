@@ -23,17 +23,28 @@ describe Bosh::Cli::Command::Base do
   end
 
   it "can access configuration and respects options" do
-    add_config("target" => "localhost:8080", "deployment" => "test")
+    add_config("target" => "localhost:8080", "target_name" => "microbosh", "deployment" => "test")
 
     cmd = make
     cmd.config.should be_a(Bosh::Cli::Config)
 
     cmd.target.should == "https://localhost:8080"
+    cmd.target_name.should == "microbosh"
     cmd.deployment.should == "test"
     cmd.username.should be_nil
     cmd.password.should be_nil
   end
 
+  it "respects target option" do
+    add_config("target" => "localhost:8080", "target_name" => "microbosh")
+
+    cmd = make
+    cmd.add_option(:target, "new-target")
+
+    cmd.target.should == "https://new-target:25555"
+    cmd.target_name.should == "new-target"
+  end
+  
   it "looks up target, deployment and credentials in the right order" do
     cmd = make
 
