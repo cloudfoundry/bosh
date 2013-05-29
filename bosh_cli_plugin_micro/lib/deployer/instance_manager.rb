@@ -5,6 +5,11 @@ module Bosh::Deployer
   class DirectorGatewayError < RuntimeError; end
 
   class InstanceManager
+    
+    CONNECTION_EXCEPTIONS = [Bosh::Agent::Error,
+                             Errno::ECONNREFUSED,
+                             Errno::ETIMEDOUT,
+                             Bosh::Deployer::DirectorGatewayError]
 
     include Helpers
 
@@ -139,8 +144,12 @@ module Bosh::Deployer
       end
       save_state
 
-      step "Waiting for the agent" do
-        wait_until_agent_ready
+      step "Waiting for the agent" do        
+        begin
+          wait_until_agent_ready
+        rescue *CONNECTION_EXCEPTIONS
+          err "Unable to connect to Bosh agent. Check logs for more details."
+        end
       end
 
       step "Updating persistent disk" do
@@ -156,7 +165,11 @@ module Bosh::Deployer
       apply
 
       step "Waiting for the director" do
-        wait_until_director_ready
+        begin
+          wait_until_director_ready
+        rescue *CONNECTION_EXCEPTIONS
+          err "Unable to connect to Bosh Director. Retry manually or check logs for more details."
+        end
       end
     end
 
@@ -402,11 +415,7 @@ module Bosh::Deployer
     end
 
     def wait_until_ready(component, wait_time = 1, retries = 300)
-      retry_on_errors = [Bosh::Agent::Error,
-                         Errno::ECONNREFUSED,
-                         Errno::ETIMEDOUT,
-                         Bosh::Deployer::DirectorGatewayError]
-      Bosh::Common.retryable(sleep: wait_time, tries: retries, on: retry_on_errors) do |tries, e|
+      Bosh::Common.retryable(sleep: wait_time, tries: retries, on: CONNECTION_EXCEPTIONS) do |tries, e|
         logger.debug("Waiting for #{component} to be ready: #{e.inspect}") if tries > 0
         yield
         true
@@ -429,7 +438,7 @@ module Bosh::Deployer
       port = @apply_spec.director_port
       url = "https://#{bosh_ip}:#{port}/info"
 
-      wait_until_ready("director") do
+      wait_until_ready("director", 1, 600) do
 
         http_client = HTTPClient.new
 
