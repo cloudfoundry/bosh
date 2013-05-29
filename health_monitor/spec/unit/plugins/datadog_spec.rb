@@ -1,13 +1,65 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::DataDog do
-  subject { described_class.new("api_key" => "api_key",
-    "application_key" => "application_key",
-    "pagerduty_service_name" => "service_name")
-  }
+  let(:options) { { "api_key" => "api_key", "application_key" => "application_key" } }
+  subject { described_class.new(options) }
+
   let(:dog_client) { double("DataDog Client") }
+
   before do
     subject.stub(dog_client: dog_client)
+    Bhm.stub(:logger => stub.as_null_object)
+  end
+
+  describe "validating the options" do
+    context "when we specify both the api keu and the application key" do
+      it "is valid" do
+        subject.validate_options.should == true
+      end
+    end
+
+    context "when we omit the application key " do
+      let(:options) { { "api_key" => "api_key" } }
+
+      it "is not valid" do
+        subject.validate_options.should == false
+      end
+    end
+
+    context "when we omit the api key " do
+      let(:options) { { "application_key" => "application_key" } }
+
+      it "is not valid" do
+        subject.validate_options.should == false
+      end
+    end
+  end
+
+  describe "creating a data dog client" do
+    before do
+      datadog_plugin.run
+    end
+
+    let(:datadog_plugin) { described_class.new(options) }
+    let(:client) { datadog_plugin.dog_client }
+
+    context "when we specify the pager duty service name" do
+      let(:options) { { "api_key" => "api_key", "application_key" => "application_key", "pagerduty_service_name" => "pdsn" } }
+
+      it "creates a paging client" do
+        client.should be_a PagingDatadogClient
+      end
+
+      it "has the correct pager duty service name" do
+        client.datadog_recipient.should == "pdsn"
+      end
+    end
+
+    context "when we do not specify the pager duty service name" do
+      it "creates a regular client" do
+        client.should be_a Dogapi::Client
+      end
+    end
   end
 
   context "processing metrics" do

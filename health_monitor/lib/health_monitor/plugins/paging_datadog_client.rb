@@ -1,4 +1,6 @@
 class PagingDatadogClient
+  attr_reader :datadog_recipient
+
   def initialize(datadog_recipient, datadog_client)
     @datadog_recipient = datadog_recipient
     @datadog_client = datadog_client

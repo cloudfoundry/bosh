@@ -7,10 +7,7 @@ module Bosh::HealthMonitor
       NORMAL_PRIORITY = [:alert, :critical, :error]
 
       def validate_options
-        options.kind_of?(Hash) &&
-            options["api_key"] &&
-            options["application_key"] &&
-            options["pagerduty_service_name"]
+        !!(options.kind_of?(Hash) && options["api_key"] && options["application_key"])
       end
 
       def run
@@ -22,8 +19,9 @@ module Bosh::HealthMonitor
       end
 
       def dog_client
+        return @dog_client if @dog_client
         client = Dogapi::Client.new(@api_key, @application_key)
-        @dog_client ||= PagingDatadogClient.new(@pagerduty_service_name, client)
+        @dog_client = @pagerduty_service_name ? PagingDatadogClient.new(@pagerduty_service_name, client) : client
       end
 
       def process(event)
