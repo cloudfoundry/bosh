@@ -137,10 +137,6 @@ compiled_package_cache:
   secret_access_key: <%= cache_secret_access_key %>
   bucket_name: <%= cache_bucket_name %>
 <%- end -%>
-s3:
-  - bucket_name: <%= vpc_deployment_name %>-bosh-blobstore
-  - bucket_name: <%= vpc_deployment_name %>-bosh-artifacts
-
 <%- rds_sizes = production_resources? ? {:large => "db.m1.large", :huge => "db.m2.4xlarge"} : Hash.new("db.t1.micro") -%>
 rds:
   - instance: ccdb

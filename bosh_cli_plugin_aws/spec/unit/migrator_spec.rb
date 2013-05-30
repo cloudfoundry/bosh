@@ -8,7 +8,7 @@ end
 
 describe Bosh::Aws::Migrator do
 
-  let(:config) { {'aws' => {}, 'name' => "deployment-name"} }
+  let(:config) { {'aws' => {}, 'name' => 'deployment-name', 'vpc' => {'domain' => 'deployment-name.foo.com'}} }
   let(:subject) { described_class.new(config) }
   let(:mock_s3) { mock("Bosh::Aws::S3").as_null_object }
 
@@ -29,16 +29,25 @@ describe Bosh::Aws::Migrator do
     mock_s3.stub(:upload_to_bucket).and_return(nil)
   end
 
-  it "should not create an s3 bucket if there is one already" do
+  it "should not create the old s3 bucket if there is one already" do
     mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
     mock_s3.should_not_receive(:create_bucket)
 
     subject.migrate
   end
 
-  it "should create an s3 bucket if one isn't there" do
+  it "should not create the new s3 bucket if there is one already" do
     mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(false)
-    mock_s3.should_receive(:create_bucket).with('deployment-name-bosh-artifacts')
+    mock_s3.should_receive(:bucket_exists?).with('deployment-name-foo-com-bosh-artifacts').and_return(true)
+    mock_s3.should_not_receive(:create_bucket)
+
+    subject.migrate
+  end
+
+  it "should create an s3 bucket if one isn't there" do
+    mock_s3.should_receive(:bucket_exists?).exactly(3).times.with('deployment-name-bosh-artifacts').and_return(false)
+    mock_s3.should_receive(:bucket_exists?).with('deployment-name-foo-com-bosh-artifacts').and_return(false)
+    mock_s3.should_receive(:create_bucket).with('deployment-name-foo-com-bosh-artifacts')
 
     subject.migrate
   end

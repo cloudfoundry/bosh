@@ -9,6 +9,12 @@ module Bosh
         aws_s3.buckets.create(bucket_name)
       end
 
+      def copy_bucket(old_bucket, new_bucket)
+        fetch_bucket(old_bucket).objects.each do |object|
+          object.move_to(object.key, :bucket_name => new_bucket)
+        end
+      end
+
       def delete_bucket(bucket_name)
         bucket = fetch_bucket(bucket_name)
 
@@ -32,8 +38,7 @@ module Bosh
       end
 
       def bucket_exists?(bucket_name)
-        bucket = fetch_bucket(bucket_name)
-        bucket.exists?
+        bucket_names.include?(bucket_name)
       end
 
       def upload_to_bucket(bucket_name, object_name, io)

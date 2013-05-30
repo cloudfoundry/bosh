@@ -82,7 +82,6 @@ describe Bosh::Aws::AwsConfig do
       it "loads vpc domains" do
         configuration['name'].should == "burritos"
         configuration['vpc']['domain'].should == "burritos.cf-app.com"
-        configuration['s3'][0].should == {"bucket_name" => "burritos-bosh-blobstore"}
       end
 
       it "loads the primary availability zone" do
@@ -285,7 +284,6 @@ describe Bosh::Aws::AwsConfig do
     it "loads vpc domains" do
       configuration['name'].should == "example-com"
       configuration['vpc']['domain'].should == "example.com"
-      configuration['s3'][0].should == {"bucket_name" => "example-com-bosh-blobstore"}
     end
   end
 end

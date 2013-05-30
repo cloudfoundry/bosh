@@ -54,8 +54,18 @@ module Bosh
         end
       end
 
+      def s3_safe_vpc_domain
+        @config['vpc']['domain'].gsub('.', '-')
+      end
+
       def bucket_name
-        "#{@config['name']}-bosh-artifacts"
+        # TODO: delete this conditional at some point in the future when we're
+        # confident most users have migrated to the new bucket name
+        if aws_s3.bucket_exists?("#{@config['name']}-bosh-artifacts")
+          "#{@config['name']}-bosh-artifacts"
+        else
+          "#{s3_safe_vpc_domain}-bosh-artifacts"
+        end
       end
 
       def migrations_name
@@ -109,8 +119,16 @@ module Bosh
         Object.const_get(MigrationHelper.to_class_name(name))
       end
 
+      def eql?(other)
+        version == other.version
+      end
+
       def <=>(other)
         version <=> other.version
+      end
+
+      def hash
+        (name.to_s + version.to_s).hash
       end
 
       def to_hash
