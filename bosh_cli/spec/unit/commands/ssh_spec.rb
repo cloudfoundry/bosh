@@ -141,10 +141,6 @@ describe Bosh::Cli::Command::Ssh do
     end
 
     describe 'session' do
-      before do
-        command.add_option(:default_password, 'password')
-      end
-
       it 'should try to setup interactive shell when a job index is given' do
         command.should_receive(:setup_interactive_shell).with('dea', 0)
         command.shell('dea', '0')

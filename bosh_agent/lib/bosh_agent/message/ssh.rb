@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'fileutils'
+
 module Bosh::Agent
   module Message
     class Ssh < Base
@@ -8,10 +10,10 @@ module Bosh::Agent
       def self.process(args)
         ssh = self.new(args)
         case ssh.command
-        when "setup"
-          ssh.setup
-        when "cleanup"
-          ssh.cleanup
+          when "setup"
+            ssh.setup
+          when "cleanup"
+            ssh.cleanup
         end
       end
 
@@ -24,14 +26,14 @@ module Bosh::Agent
       end
 
       attr_reader :command
+      attr_reader :passwd_file
+      attr_reader :sudoers_dir
 
-      def initialize(args)
+      def initialize(args, options={})
         @command, @params = args
-      end
-
-      def shell_cmd(cmd)
-        shell_output = %x[#{cmd} 2>&1]
-        raise "'#{cmd}' failed, error: #{shell_output}" if $?.exitstatus != 0
+        @passwd_file = options.fetch(:passwd_file, '/etc/passwd')
+        @sudoers_dir = options.fetch(:sudoers_dir, '/etc/sudoers.d')
+        @command_runner = options.fetch(:command_runner, Bosh::Exec)
       end
 
       def setup
@@ -47,6 +49,8 @@ module Bosh::Agent
           else
             shell_cmd(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash #{user}])
           end
+
+          grant_nopass_sudo user
 
           # Add user to admin and vcap group
           shell_cmd(%Q[usermod -G admin,vcap #{user}])
@@ -84,7 +88,7 @@ module Bosh::Agent
 
           users = []
           # list users
-          File.open("/etc/passwd", "r") do |f|
+          File.open(passwd_file) do |f|
             while user_entry = f.gets
               next unless user_match = /(^.*?):/.match(user_entry)
               user = user_match[1]
@@ -99,6 +103,8 @@ module Bosh::Agent
             next unless user =~ /^#{SSH_USER_PREFIX}/
             logger.info("deleting user #{user}")
             shell_cmd(%Q[userdel -r #{user}])
+
+            revoke_nopass_sudo user
           end
 
           # Stop sshd. Note, SshdMonitor handles the race between stopping sshd
@@ -110,6 +116,28 @@ module Bosh::Agent
           return {"command" => @command, "status" => "failure", "error" => e.message}
         end
       end
+
+      private
+
+      def shell_cmd(cmd)
+        @command_runner.sh cmd
+      end
+
+      def grant_nopass_sudo(user)
+        open(sudoers_file(user), 'a') do |f|
+          f.write("\n#{user} ALL=(ALL) NOPASSWD:ALL\n")
+          f.chmod(0440)
+        end
+      end
+
+      def revoke_nopass_sudo(user)
+        FileUtils.rm_f(sudoers_file(user))
+      end
+
+      def sudoers_file(user)
+        File.join(sudoers_dir, user)
+      end
+
     end
   end
 end
