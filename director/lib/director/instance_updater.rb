@@ -51,8 +51,7 @@ module Bosh::Director
     def update(options = {})
       @canary = options.fetch(:canary, false)
 
-      @logger.info("Updating instance #{@instance}, " +
-                       "changes #{@instance.changes.inspect}")
+      @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
 
       # Optimization to only update DNS if nothing else changed.
       if dns_change_only?
