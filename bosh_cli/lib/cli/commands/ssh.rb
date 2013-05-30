@@ -14,8 +14,6 @@ module Bosh::Cli::Command
     option "--public_key FILE", "Public key"
     option "--gateway_host HOST", "Gateway host"
     option "--gateway_user USER", "Gateway user"
-    option "--default_password PASSWORD",
-           "Use default ssh password (NOT RECOMMENDED)"
     def shell(*args)
       job, index, command = parse_args(args)
 
@@ -157,14 +155,6 @@ module Bosh::Cli::Command
     def setup_interactive_shell(job, index)
       deployment_required
       password = options[:default_password]
-
-      if password.nil?
-        password = ask(
-          "Enter password (use it to " +
-          "sudo on remote host): ") { |q| q.echo = "*" }
-
-        err("Please provide ssh password") if password.blank?
-      end
 
       setup_ssh(job, index, password) do |sessions, user, gateway|
         session = sessions.first

@@ -107,7 +107,6 @@ describe Bosh::Cli::Command::Base do
         Bosh::Cli::Director.should_receive(:new).and_return(director)
         Process.stub(:waitpid)
         
-        ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
@@ -128,7 +127,6 @@ describe Bosh::Cli::Command::Base do
         Process.stub(:waitpid)
         
         ssh.add_option(:gateway_host, gw_host)
-        ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
@@ -154,7 +152,6 @@ describe Bosh::Cli::Command::Base do
         
         ssh.add_option(:gateway_host, gw_host)
         ssh.add_option(:gateway_user, gw_user)
-        ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
@@ -179,7 +176,6 @@ describe Bosh::Cli::Command::Base do
         
         ssh.add_option(:gateway_host, gw_host)
         ssh.add_option(:gateway_user, gw_user)
-        ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
