@@ -2,7 +2,9 @@ namespace :ci do
   desc "Publish CI pipeline gems to S3"
   task :publish_pipeline_gems do
     cd(ENV['WORKSPACE']) do
-      update_bosh_version(current_build_number)
+      require_relative 'helpers/version_file'
+      version_file = Bosh::Helpers::VersionFile.new(current_build_number)
+      version_file.write
       Rake::Task["all:finalize_release_directory"].invoke
       Bundler.with_clean_env do
         # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
