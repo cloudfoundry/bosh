@@ -76,6 +76,8 @@ namespace :stemcell do
 
   desc "Build micro bosh stemcell"
   task :micro, [:infrastructure, :tarball, :version] do |t, args|
+    require_relative('helpers/micro_bosh_release')
+
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..",
                          "release", "micro","#{args[:infrastructure]}.yml")
 
@@ -92,7 +94,9 @@ namespace :stemcell do
       end
 
       Rake::Task['all:finalize_release_directory'].invoke
-      release_tarball = build_micro_bosh_release
+      release = Bosh::Helpers::MicroBoshRelease.new
+      build_micro_bosh_release_value = release.build
+      release_tarball = build_micro_bosh_release_value
     end
 
     options[:stemcell_name] ||= "micro-bosh-stemcell"

@@ -14,8 +14,12 @@ namespace :ci do
 
   desc "Publish CI pipeline MicroBOSH release to S3"
   task :publish_microbosh_release => [:publish_pipeline_gems] do
+    require_relative('helpers/micro_bosh_release')
+
     cd(ENV['WORKSPACE']) do
-      release_tarball = build_micro_bosh_release
+      release = Bosh::Helpers::MicroBoshRelease.new
+      build_micro_bosh_release_value = release.build
+      release_tarball = build_micro_bosh_release_value
       sh("s3cmd put #{release_tarball} #{s3_release_url(current_build_number)}")
     end
   end
