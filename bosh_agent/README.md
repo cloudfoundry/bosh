@@ -37,25 +37,9 @@ Run `bosh_agent --help` to see all the CLI option overrides.
 
 ## API
 
-When an agent is running is provides an HTTP API and also subscribes on NATS.
+When an agent is running is provides an API. By default, and within a normal bosh deployment, a bosh agent listens and responds to API requests via NATS. Alternately, it can be run to respond to HTTPS requests. See the section above for configuration.
 
-## HTTP
-
-There is a Ruby client, `agent_client`, for communicating with an agent via the HTTP API.
-
-## NATS pub/sub
-
-Each agent publishes the following messages:
-
-* `hm.agent.heartbeat.#{@agent_id}` - a heartbeat announcement
-* `hm.agent.alert.#{@agent_id}` - system alerts
-* `hm.agent.shutdown.#{@agent_id}` - shutdown announcement
-
-Each agent subscribes to the following messages:
-
-* `agent.#{@agent_id}` - for direct communication with a specific Agent
-
-## Agent API
+### Agent API
 
 The following commands (methods) are supported by each Agent (sent via NATS or the HTTP API):
 
@@ -83,3 +67,26 @@ Methods that are implemented within `handler.rb`:
 * `shutdown` - tell the agent to shutdown running processes (via monit)
 
 Each supported method is a `Bosh::Agent::Message::XYZ` class.
+
+### HTTPS client library
+
+There is a Ruby client [agent_client](https://github.com/cloudfoundry/bosh/tree/master/agent_client) for communicating with an agent running the HTTPS API.
+
+Currently it does not support NATS.
+
+Its current use cases are within [bosh_cli_plugin_micro](https://github.com/cloudfoundry/bosh/tree/master/bosh_cli_plugin_micro) (the rubygem responsible for `bosh micro deploy`) and within the Micro Cloud Foundry [micro](https://github.com/cloudfoundry/micro) project.
+
+### NATS pub/sub
+
+Within a normal bosh deployment, a bosh agent is configured to listen on NATS for API requests.
+
+Each agent publishes the following messages:
+
+* `hm.agent.heartbeat.#{@agent_id}` - a heartbeat announcement
+* `hm.agent.alert.#{@agent_id}` - system alerts
+* `hm.agent.shutdown.#{@agent_id}` - shutdown announcement
+
+Each agent subscribes to the following messages:
+
+* `agent.#{@agent_id}` - for direct communication with a specific Agent for the API requests above.
+
