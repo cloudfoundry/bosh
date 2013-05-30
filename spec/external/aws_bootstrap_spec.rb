@@ -191,16 +191,6 @@ describe 'bosh_cli_plugin_aws_external' do
     end
   end
 
-  describe "S3" do
-    it "creates s3 buckets and deletes them" do
-      blobstore_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"
-      artifacts_bucket = "#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-artifacts"
-      run_bosh "aws create s3 #{aws_configuration_template}"
-
-      s3.buckets.map(&:name).should include(blobstore_bucket, artifacts_bucket)
-    end
-  end
-
   describe "Route53" do
     let(:route53) { AWS::Route53.new }
     let(:hosted_zone) do
