@@ -101,7 +101,7 @@ module Bosh::Cli::Command
       write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
 
-    usage "aws generate bat_manifest"
+    usage "aws generate bat"
     desc "generate bat.yml"
     def create_bat_manifest(vpc_receipt_file, route53_receipt_file, stemcell_version)
       target_required

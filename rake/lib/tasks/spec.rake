@@ -117,7 +117,7 @@ namespace :spec do
           run_bosh "upload stemcell #{latest_aws_stemcell_path}", debug_on_fail: true
 
           st_version = stemcell_version(latest_aws_stemcell_path)
-          run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{st_version}'"
+          run_bosh "aws generate bat '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{st_version}'"
         end
       end
 
