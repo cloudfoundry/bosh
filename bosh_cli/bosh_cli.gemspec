@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.executables  = %w(bosh)
 
   s.add_dependency "bosh_common", "~>#{version}"
-  s.add_dependency "json_pure", "~>1.7.6"
+  s.add_dependency "json_pure", "~>1.7"
   s.add_dependency "highline", "~>1.6.2"
   s.add_dependency "progressbar", "~>0.9.0"
   s.add_dependency "httpclient", "=2.2.4"
