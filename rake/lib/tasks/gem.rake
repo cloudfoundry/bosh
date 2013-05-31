@@ -23,7 +23,7 @@ COMPONENTS = %w(agent_client
 COMPONENTS_WITH_DB = %w(director bosh_registry)
 
 def root
-  @root ||= File.expand_path('../../', __FILE__)
+  @root ||= File.expand_path('../../../../', __FILE__)
 end
 
 def version

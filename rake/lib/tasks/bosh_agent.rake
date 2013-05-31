@@ -1,6 +1,6 @@
 namespace :bosh_agent do
   task :update, [:instance_name, :gw_host, :gw_user] => :pre_stage_latest do |_, args|
-    require_relative 'helpers/instance'
+    require_relative '../helpers/instance'
 
     options = args.with_defaults(gw_user: 'vcap')
     instance = Bosh::Helpers::Instance.new(options)

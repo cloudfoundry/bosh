@@ -2,7 +2,7 @@ namespace :ci do
   desc "Publish CI pipeline gems to S3"
   task :publish_pipeline_gems do
     cd(ENV['WORKSPACE']) do
-      require_relative 'helpers/version_file'
+      require_relative '../helpers/version_file'
       version_file = Bosh::Helpers::VersionFile.new(current_build_number)
       version_file.write
       Rake::Task["all:finalize_release_directory"].invoke
@@ -16,7 +16,7 @@ namespace :ci do
 
   desc "Publish CI pipeline MicroBOSH release to S3"
   task :publish_microbosh_release => [:publish_pipeline_gems] do
-    require_relative('helpers/micro_bosh_release')
+    require_relative('../helpers/micro_bosh_release')
 
     cd(ENV['WORKSPACE']) do
       release = Bosh::Helpers::MicroBoshRelease.new
