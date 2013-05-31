@@ -8,7 +8,9 @@ module Bosh
         "blobstore_provider" => "local",
         "base_dir"  => "/var/vcap",
         "platform_name" => "ubuntu",
-        "agent_uri" => "https://vcap:vcap@localhost:6969"
+        "agent_uri" => "https://vcap:vcap@localhost:6969",
+        "user" => "vcap",
+        "password" => "vcap"
       }
 
       AGENT_START_RETRIES=16
@@ -36,7 +38,7 @@ module Bosh
       def connect_to_agent
         num_tries = 0
         begin
-          @agent = Bosh::Agent::Client.create(@options["agent_uri"], "user" => "vcap", "password" => "vcap")
+          @agent = Bosh::Agent::Client.create(@options["agent_uri"], "user" => @options["user"], "password" => @options["password"])
           @agent.ping
         rescue => e
           num_tries += 1
