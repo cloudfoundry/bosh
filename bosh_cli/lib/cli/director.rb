@@ -672,13 +672,17 @@ module Bosh
     end
 
     class FileWithProgressBar < ::File
+
       def progress_bar
         return @progress_bar if @progress_bar
         out = Bosh::Cli::Config.output || StringIO.new
-        @progress_bar = ProgressBar.new(File.basename(self.path),
-                                        File.size(self.path), out)
+        @progress_bar = ProgressBar.new(file_name, size, out)
         @progress_bar.file_transfer_mode
         @progress_bar
+      end
+
+      def file_name
+        File.basename(self.path)
       end
 
       def stop_progress_bar
@@ -686,7 +690,11 @@ module Bosh
       end
 
       def size
-        File.size(self.path)
+        @size || File.size(self.path)
+      end
+
+      def size=(size)
+        @size=size
       end
 
       def read(*args)
@@ -699,6 +707,16 @@ module Bosh
         end
 
         result
+      end
+
+      def write(*args)
+        count = super(*args)
+        if count
+          progress_bar.inc(count)
+        else
+          progress_bar.finish
+        end
+        count
       end
     end
 

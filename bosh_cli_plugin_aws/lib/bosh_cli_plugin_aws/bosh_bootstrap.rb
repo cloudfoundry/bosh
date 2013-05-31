@@ -1,26 +1,21 @@
 require_relative "bootstrap"
+require 'net/https'
 
 module Bosh
   module Aws
     BootstrapError = Class.new(StandardError)
 
     class BoshBootstrap < Bootstrap
-      attr_accessor :director
+      attr_accessor :director, :s3
 
-      def initialize(director, options)
+      def initialize(director, s3, options)
         self.options = options
         self.options[:non_interactive] = true
         self.director = director
+        self.s3 = s3
       end
 
-      def validate_requirements(release_path)
-        release_exist = stemcell_exist = false
-
-        Dir.chdir(release_path) do
-          unless File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
-            raise BootstrapError, "Please point to a valid release folder"
-          end
-        end
+      def validate_requirements
 
         release_exist = director.list_releases.detect { |r| r['name'] == 'bosh' }
         stemcell_exist = director.list_stemcells.detect { |r| r['name'] == 'bosh-stemcell' }
@@ -37,14 +32,12 @@ This command should be used for bootstrapping bosh from scratch.
         return release_exist, stemcell_exist
       end
 
-      def start(bosh_repository=nil)
-        bosh_repository ||= ENV.fetch('BOSH_REPOSITORY') { raise BootstrapError, "A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable" }
-        release_path = File.join(bosh_repository, "release")
+      def start
 
-        release_exist, stemcell_exist = validate_requirements(release_path)
+        release_exist, stemcell_exist = validate_requirements
 
         generate_manifest
-        create_and_upload_release(bosh_repository, release_path) unless release_exist
+        fetch_and_upload_release unless release_exist
         fetch_and_upload_stemcell unless stemcell_exist
 
         deploy
@@ -80,18 +73,10 @@ This command should be used for bootstrapping bosh from scratch.
         deployment_command.set_current(File.join(deployment_folder, manifest.file_name))
       end
 
-      def create_and_upload_release(bosh_repository, release_path)
-        Dir.chdir(bosh_repository) do
-          Bundler.with_clean_env do
-            Bosh::Exec.sh "bundle exec rake release:create_dev_release"
-          end
-        end
-
-        Dir.chdir(release_path) do
-          release_command = Bosh::Cli::Command::Release.new
-          release_command.options = self.options
-          release_command.upload
-        end
+      def fetch_and_upload_release
+        release_command = Bosh::Cli::Command::Release.new
+        release_command.options = self.options
+        release_command.upload(bosh_release)
       end
 
       def target_bosh_and_log_in
@@ -117,17 +102,36 @@ This command should be used for bootstrapping bosh from scratch.
       def fetch_and_upload_stemcell
         stemcell_command = Bosh::Cli::Command::Stemcell.new
         stemcell_command.options = self.options
-
-        stemcell = Tempfile.new "bosh_stemcell"
-        stemcell.write bosh_stemcell
-        stemcell.close
-
-        stemcell_command.upload(stemcell.path)
+        stemcell_command.upload(bosh_stemcell)
       end
 
       def bosh_stemcell
-        ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"] ||
-            Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell-aws_light.tgz")
+        if bosh_stemcell_override
+          say("Using stemcell #{bosh_stemcell_override}")
+          return bosh_stemcell_override
+        end
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, "last_successful_bosh-stemcell-aws_light.tgz", "bosh_stemcell.tgz")
+      end
+
+      def bosh_release
+        if bosh_release_override
+          say("Using release #{bosh_release_override}")
+          return bosh_release_override
+        end
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, "bosh-#{bosh_version}.tgz", "bosh_release.tgz")
+      end
+
+      def bosh_stemcell_override
+        ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"]
+      end
+
+      def bosh_release_override
+        ENV["BOSH_OVERRIDE_RELEASE_TGZ"]
+      end
+
+      def bosh_version
+        ENV["BOSH_VERSION_OVERRIDE"] ||
+            Bosh::Aws::VERSION.split('.').last
       end
     end
   end

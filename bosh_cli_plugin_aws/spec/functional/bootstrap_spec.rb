@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe "AWS Bootstrap commands" do
   let(:aws) { Bosh::Cli::Command::AWS.new }
+  let(:mock_s3) { mock(Bosh::Aws::S3) }
   let(:bosh_config)  { File.expand_path(File.join(File.dirname(__FILE__), "..", "assets", "bosh_config.yml")) }
 
   before do
@@ -9,9 +10,11 @@ describe "AWS Bootstrap commands" do
 
     WebMock.disable_net_connect!
     aws.stub(:sleep)
+    aws.stub(:s3).and_return(mock_s3)
   end
 
   around do |example|
+
     @bosh_config = Tempfile.new("bosh_config")
     FileUtils.cp(bosh_config, @bosh_config.path)
     aws.add_option(:config, @bosh_config.path)
@@ -118,7 +121,6 @@ describe "AWS Bootstrap commands" do
   end
 
   describe "aws bootstrap bosh" do
-    let(:bosh_repository_path) { File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..")) }
     let(:deployment_name) { 'vpc-bosh-test' }
     let(:stemcell_stub)  { File.expand_path(File.join(File.dirname(__FILE__), "..", "assets", "stemcell_stub.tgz")) }
 
@@ -137,9 +139,6 @@ describe "AWS Bootstrap commands" do
           with(:headers => {'Content-Type' => 'application/json'}).
           to_return(:status => 200, :body => '{"uuid": "1234abc"}')
 
-      stub_request(:get, /last_successful_bosh-stemcell-aws_light\.tgz$/).
-          to_return(:status => 200, :body => File.read(stemcell_stub))
-
       Bosh::Cli::Config.output = File.open("/dev/null", "w")
       Bosh::Cli::Config.cache = Bosh::Cli::Cache.new(Dir.mktmpdir)
 
@@ -154,7 +153,7 @@ describe "AWS Bootstrap commands" do
       end
 
       it "raises an error" do
-        expect { aws.bootstrap_bosh(bosh_repository_path) }.to raise_error(/Please choose target first/)
+        expect { aws.bootstrap_bosh }.to raise_error(/Please choose target first/)
       end
     end
 
@@ -195,68 +194,23 @@ describe "AWS Bootstrap commands" do
       end
 
       it "use the existent release" do
+        mock_s3.should_not_receive(:copy_remote_file)
         Bosh::Exec.should_not_receive(:sh).with("bundle exec rake release:create_dev_release")
         Bosh::Cli::Command::Release.any_instance.should_not_receive(:upload)
 
         expect do
-          aws.bootstrap_bosh(bosh_repository_path)
+          aws.bootstrap_bosh
         end.to_not raise_error
       end
 
       it "use the existent stemcell" do
+        mock_s3.should_not_receive(:copy_remote_file)
         Bosh::Cli::Command::Stemcell.any_instance.should_not_receive(:upload)
         expect do
-          aws.bootstrap_bosh(bosh_repository_path)
+          aws.bootstrap_bosh
         end.to_not raise_error
       end
 
-    end
-
-    context "when bosh_repository is not specified" do
-      before do
-        aws.options[:target] = 'http://localhost:25555'
-        @bosh_repo = ENV['BOSH_REPOSITORY']
-        ENV.delete('BOSH_REPOSITORY')
-      end
-
-      after do
-        ENV['BOSH_REPOSITORY'] = @bosh_repo
-      end
-
-      it "complains about its presence" do
-        expect { aws.bootstrap_bosh }.to raise_error(/A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable/)
-      end
-    end
-
-    context "when bosh_repository is specified via an env variable" do
-      before do
-        aws.options[:target] = 'http://localhost:25555'
-      end
-
-      after do
-        ENV.delete('BOSH_REPOSITORY')
-      end
-
-      it "does not fail on bosh repo path" do
-        ENV['BOSH_REPOSITORY'] = "/"
-
-        expect { aws.bootstrap_bosh }.to_not raise_error(/A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable/)
-      end
-    end
-
-    context "when the release path is not an actual release" do
-      let(:tmpdir) { Dir.mktmpdir }
-
-      before do
-        aws.options[:target] = 'http://localhost:25555'
-        Dir.chdir(tmpdir) do
-          Dir.mkdir("release")
-        end
-      end
-
-      it "complains about its presence" do
-        expect { aws.bootstrap_bosh(tmpdir.to_s) }.to raise_error(/Please point to a valid release folder/)
-      end
     end
 
     context "when the target already have a deployment" do
@@ -280,7 +234,7 @@ describe "AWS Bootstrap commands" do
       end
 
       it "bails telling the user this command is only useful for the initial deployment" do
-        expect { aws.bootstrap_bosh(bosh_repository_path) }.to raise_error(/Deployment `#{deployment_name}' already exists\./)
+        expect { aws.bootstrap_bosh }.to raise_error(/Deployment `#{deployment_name}' already exists\./)
       end
     end
 
@@ -290,7 +244,8 @@ describe "AWS Bootstrap commands" do
 
       before do
         Bosh::Cli::PackageBuilder.any_instance.stub(:resolve_globs).and_return([])
-        Bosh::Exec.should_receive(:sh).with("bundle exec rake release:create_dev_release")
+        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','last_successful_bosh-stemcell-aws_light.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
+        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-3.tgz','bosh_release.tgz').and_return('bosh_release.tgz')
 
         aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
         aws.config.set_alias('target', '1234', 'http://127.0.0.1:25555')
@@ -365,31 +320,31 @@ describe "AWS Bootstrap commands" do
 
       it "generates an updated manifest for bosh" do
         File.exist?("deployments/bosh/bosh.yml").should be_false
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
         File.exist?("deployments/bosh/bosh.yml").should be_true
       end
 
       it "runs deployment diff" do
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
 
         generated_manifest = File.read("deployments/bosh/bosh.yml")
         generated_manifest.should include("# Fake network properties to satisfy bosh diff")
       end
 
       it "uploads the latest stemcell" do
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
 
         @stemcell_upload_request.should have_been_made
       end
 
       it "deploys bosh" do
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
 
         @deployment_request.should have_been_made
       end
 
       it "sets the target to the new bosh" do
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
 
         config_file = File.read(@bosh_config.path)
         config = Psych.load(config_file)
@@ -397,7 +352,7 @@ describe "AWS Bootstrap commands" do
       end
 
       it "creates a new user in new bosh" do
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
 
         credentials = encoded_credentials("admin", "admin")
         a_request(:get, "https://50.200.100.3:25555/info").with(
@@ -417,7 +372,7 @@ describe "AWS Bootstrap commands" do
       end
 
       it "creates a new hm user in bosh" do
-        aws.bootstrap_bosh(bosh_repository_path)
+        aws.bootstrap_bosh
         @create_hm_user_req.should have_been_made.once
       end
     end

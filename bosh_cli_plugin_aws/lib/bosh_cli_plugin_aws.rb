@@ -10,6 +10,7 @@ Bosh::Clouds::Config.configure(Config.new(true, Logger.new('/dev/null')))
 require "cloud/aws/resource_wait"
 require "common/ssl"
 
+require "bosh_cli_plugin_aws/version"
 require "bosh_cli_plugin_aws/ec2"
 require "bosh_cli_plugin_aws/route53"
 require "bosh_cli_plugin_aws/s3"

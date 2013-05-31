@@ -59,6 +59,20 @@ module Bosh
         nil
       end
 
+      def copy_remote_file(bucket_name, remote_file, file_name)
+        say("Fetching remote file #{remote_file} from #{bucket_name} bucket")
+        bucket = aws_s3.buckets[bucket_name]
+        object = bucket.objects[remote_file]
+        release_file = Tempfile.new file_name
+        Bosh::Cli::FileWithProgressBar.open(release_file, 'wb') do |f|
+          f.size=object.content_length
+          object.read do |chunk|
+            f.write chunk
+          end
+        end
+        release_file
+      end
+
       private
 
       def fetch_bucket(bucket_name)
