@@ -1,17 +1,5 @@
-# Example apply spec for bosh-sample-release (wordpress)
-
-After deploying the [single-VM example](https://github.com/cloudfoundry/bosh-sample-release/blob/master/examples/wordpress-openstack-vip-micro.yml), ssh into the `core/0` vm and get the spec used to setup the VM.
-
-```
-$ git clone https://github.com/cloudfoundry/bosh-sample-release.git
-$ cd bosh-sample-release
-$ bosh upload release releases/wordpress-2.yml
-# change director UUID, IP address, cloud_properties in examples/wordpress-openstack-vip-micro.yml
-$ bosh deploy
-$ bosh ssh core/0
-$ sudo grep apply /var/vcap/bosh/log/current
-...
-2013-05-30_23:54:40.48236 #[977] INFO: Message: {"method"=>"apply", "arguments"=>[{"deployment"=>"wordpress",
+# deploying all job templates from wordpress-2.yml
+{"method"=>"apply", "arguments"=>[{"deployment"=>"wordpress",
  "release"=>{"name"=>"wordpress", "version"=>"2"}, "job"=>{"name"=>"core", "release"=>"wordpress", 
  "templates"=>[{"name"=>"mysql", "version"=>"2", "sha1"=>"5484694f00c2a700ec7980485385a32dbcd32d5e", 
  "blobstore_id"=>"b0ef62b7-639a-42d6-93bb-e6dc7dfe1bea"}, {"name"=>"debian_nfs_server", "version"=>"2", 
@@ -47,11 +35,3 @@ $ sudo grep apply /var/vcap/bosh/log/current
  "mysql"=>"a41256997a3c4e8a48b581e6f47385f1b124b926", "nginx"=>"cf24d6f0a5c7ab2b1037f93e891c14da664541d7", 
  "wordpress"=>"4884ec2fd2e2464c7cd7bf2f42d7c1b8f24584e1"}}], 
  "reply_to"=>"director.f9ec4415-9416-4f76-93ba-a58220d62e19.c87679bf-ecdd-45b0-99a3-19dd6e734d4a"}
-```
-
-This is stored in `bosh-sample-release.rb` and can be converted to YAML:
-
-``` ruby
-spec = eval(File.read("bosh-sample-release.rb"))
-File.open("bosh-sample-release.yml", "w") {|f| f << spec.to_yaml}
-```

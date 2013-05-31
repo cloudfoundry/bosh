@@ -40,3 +40,4 @@ During `bosh deploy` the servers take on behaviors during deployment. In bosh ve
 
 See the [example spec documentation](https://github.com/cloudfoundry/bosh/blob/agent_client_readme_apply_spec/agent_client/docs/example_specs/bosh-sample-release.md) for what an "apply spec" looks like in detail and how to get an your own apply spec from your own bosh deployments.
 
+TODO: write up how to do this with the library
