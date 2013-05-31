@@ -15,7 +15,7 @@ describe Bosh::Cli::Command::Vms do
     command.options[:target] = target
   end
 
-  describe '#list' do
+  describe 'list' do
 
     context 'with no arguments' do
 
@@ -45,7 +45,7 @@ describe Bosh::Cli::Command::Vms do
     end
   end
 
-  describe '#show_deployment' do
+  describe 'show_deployment' do
     let(:vitals) { false }
     let(:details) { false }
 
@@ -81,7 +81,8 @@ describe Bosh::Cli::Command::Vms do
                         'ephemeral' => {'percent' => 12},
                         'persistent' => {'percent' => 13},
                     },
-                }
+                },
+                'resurrection_paused' => true
             },
         ]
       }
@@ -116,6 +117,7 @@ describe Bosh::Cli::Command::Vms do
           expect(s.to_s).to include '192.168.0.1'
           expect(s.to_s).to include 'cid1'
           expect(s.to_s).to include 'agent1'
+          expect(s.to_s).to include 'paused'
         end
         command.should_receive(:say).with('VMs total: 1')
 

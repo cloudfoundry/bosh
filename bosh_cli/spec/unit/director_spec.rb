@@ -232,6 +232,14 @@ describe Bosh::Cli::Director do
       @director.change_job_state("foo", "manifest", "dea", 0, "detached")
     end
 
+    it "changes job instance resurrection state" do
+      @director.should_receive(:request).
+          with(:put, "/deployments/foo/jobs/dea/0/resurrection",
+               "application/json", JSON.dump(resurrection_paused: true)).
+          and_return(true)
+      @director.change_vm_resurrection("foo", "dea", 0, true)
+    end
+
     it "gets task state" do
       @director.should_receive(:get).
         with("/tasks/232").

@@ -83,4 +83,17 @@ describe Bosh::Director::Jobs::CloudCheck::ScanAndFix do
   it 'should create a list of resolutions' do
     scan_and_fix.resolutions(jobs).should == resolutions
   end
+
+  it 'should not recreate vms with resurrection_paused turned on' do
+    unresponsive_instance = BDM::Instance.find(deployment: deployment, job: 'job1', index: 0)
+    unresponsive_instance.resurrection_paused = true
+    unresponsive_instance.save
+
+    missing_vm_instance = BDM::Instance.find(deployment: deployment, job: 'job1', index: 1)
+    missing_vm_instance.resurrection_paused = true
+    missing_vm_instance.save
+
+    scan_and_fix.resolutions(jobs).should be_empty
+  end
+
 end

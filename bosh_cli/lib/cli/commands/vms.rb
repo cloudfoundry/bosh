@@ -34,7 +34,7 @@ module Bosh::Cli::Command
       vms_table = table do |t|
         headings = ["Job/index", "State", "Resource Pool", "IPs"]
         if options[:details]
-          headings += ["CID", "Agent ID"]
+          headings += ["CID", "Agent ID", "Resurrection"]
         end
         if options[:vitals]
           headings += [{:value => "Load\n(avg01, avg05, avg15)", :alignment => :center}]
@@ -52,7 +52,7 @@ module Bosh::Cli::Command
           row = [job, vm["job_state"], vm["resource_pool"], ips]
 
           if options[:details]
-            row += [vm["vm_cid"], vm["agent_id"]]
+            row += [vm["vm_cid"], vm["agent_id"], vm["resurrection_paused"] ? 'paused' : 'active']
           end
 
           if options[:vitals]

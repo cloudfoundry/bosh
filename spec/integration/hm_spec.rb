@@ -77,6 +77,13 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
       expect(foobar_vm[:cid]).to_not eq original_cid
     end
 
+    it "does not resurrect stateless nodes when paused" do
+      run_bosh("vm resurrection foobar 0 off")
+      original_cid = kill_job_agent('foobar/0')
+      foobar_vm = wait_for_vm('foobar/0')
+      expect(foobar_vm).to be_nil
+    end
+
     it "does not resurrect stateful nodes by default" do
       original_cid = kill_job_agent('foobar_ng/0')
       foobar_ng_vm = wait_for_vm('foobar_ng/0')

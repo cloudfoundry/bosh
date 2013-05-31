@@ -270,6 +270,12 @@ module Bosh
         request_and_track(:put, url, options)
       end
 
+      def change_vm_resurrection(deployment_name, job_name, index, value)
+        url = "/deployments/#{deployment_name}/jobs/#{job_name}/#{index}/resurrection"
+        payload = JSON.generate("resurrection_paused" => value)
+        put(url, "application/json", payload)
+      end
+
       # TODO: should pass 'force' with options, not as a separate argument
       def rename_job(deployment_name, manifest_yaml, old_name, new_name,
                      force = false, options = {})
@@ -623,6 +629,7 @@ module Bosh
         raise # We handle these upstream
       rescue => e
         # httpclient (sadly) doesn't have a generic exception
+        puts "Perform request #{method}, #{uri}, #{headers.inspect}, #{payload.inspect}"
         err("REST API call exception: #{e}")
       end
 

@@ -44,7 +44,7 @@ module Bosh::Director
           all_resolutions = {}
           jobs.each do |job, index|
             instance = @instance_manager.find_by_name(@deployment.name, job, index)
-
+            next if instance.resurrection_paused
             problems = Models::DeploymentProblem.filter(deployment: @deployment, resource_id: instance.vm.id, state: 'open')
             problems.each do |problem|
               if problem.type == 'unresponsive_agent' || problem.type == 'missing_vm'

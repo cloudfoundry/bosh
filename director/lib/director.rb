@@ -405,6 +405,14 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    put '/deployments/:deployment/jobs/:job/:index/resurrection', consumes: :json do
+      payload = json_decode(request.body)
+
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      instance.resurrection_paused = payload['resurrection_paused']
+      instance.save
+    end
+
     post '/deployments/:deployment/jobs/:job/:index/snapshots' do
       instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
       # until we can tell the agent to flush and wait, all snapshots are considered dirty
