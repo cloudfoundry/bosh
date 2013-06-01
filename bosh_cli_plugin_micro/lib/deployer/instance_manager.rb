@@ -67,8 +67,8 @@ module Bosh::Deployer
       Config.cloud
     end
 
-    def agent
-      Config.agent
+    def agent_client
+      Config.agent_client
     end
 
     def logger

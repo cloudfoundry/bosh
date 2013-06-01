@@ -250,7 +250,7 @@ module Bosh::Cli::Command
         end
       end
 
-      say(deployer.agent.send(message.to_sym, *args).pretty_inspect)
+      say(deployer.agent_client.send(message.to_sym, *args).pretty_inspect)
     end
 
     usage "micro apply"
