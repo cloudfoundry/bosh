@@ -266,6 +266,7 @@ GEM
     escape_utils (0.3.2)
     eventmachine (0.12.10)
     excon (0.21.0)
+    fakefs (0.4.2)
     ffi (1.7.0)
     fog (1.11.1)
       builder
@@ -444,6 +445,7 @@ DEPENDENCIES
   ci_reporter
   debugger
   director!
+  fakefs
   guard
   guard-bundler
   guard-rspec

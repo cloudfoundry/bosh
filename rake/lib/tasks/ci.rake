@@ -1,13 +1,11 @@
-require_relative '../helpers/do_not_add_to_me'
+require_relative '../helpers/build'
 
 namespace :ci do
-  include Bosh::Helpers::DoNotAddToMe
-
   desc "Publish CI pipeline gems to S3"
   task :publish_pipeline_gems do
     cd(ENV['WORKSPACE']) do
       require_relative '../helpers/version_file'
-      version_file = Bosh::Helpers::VersionFile.new(current_build_number)
+      version_file = Bosh::Helpers::VersionFile.new(Bosh::Helpers::Build.current.number)
       version_file.write
       Rake::Task["all:finalize_release_directory"].invoke
       Bundler.with_clean_env do
@@ -26,7 +24,7 @@ namespace :ci do
       release = Bosh::Helpers::MicroBoshRelease.new
       build_micro_bosh_release_value = release.build
       release_tarball = build_micro_bosh_release_value
-      sh("s3cmd put #{release_tarball} #{s3_release_url(current_build_number)}")
+      sh("s3cmd put #{release_tarball} #{Bosh::Helpers::Build.current.s3_release_url}")
     end
   end
 end

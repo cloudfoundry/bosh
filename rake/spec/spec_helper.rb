@@ -2,7 +2,6 @@ require "rspec"
 require "rake"
 
 shared_context "rake" do
-
   let(:rake) { Rake::Application.new }
   let(:task_name) { self.class.top_level_description }
   let(:task_path) { "rake/lib/tasks/#{task_name.split(":").first}" }
@@ -21,13 +20,8 @@ shared_context "rake" do
   end
 end
 
-
 module RSpecRakeHelper
   def self.included(klass)
     klass.include_context("rake")
   end
-end
-
-RSpec.configure do |c|
-  c.include RSpecRakeHelper
 end

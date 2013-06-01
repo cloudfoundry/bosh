@@ -57,7 +57,7 @@ group :development, :test do
   gem "rspec"
   gem "tracker-git", github: "cboone/tracker-git", branch: "edge"
   gem "webmock"
-
+  gem "fakefs"
   gem "simplecov"
   gem "simplecov-rcov"
 

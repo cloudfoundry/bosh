@@ -2,6 +2,8 @@ require 'spec_helper'
 require "tmpdir"
 
 describe "migrations:aws:new" do
+  include RSpecRakeHelper
+
   let(:name) { "cool_migration" }
   let(:class_name) { "CoolMigration" }
   let(:timestamp) { Time.now }
