@@ -5,6 +5,9 @@ require "rspec"
 require "sequel"
 require "sequel/adapters/sqlite"
 
+require 'coveralls'
+Coveralls.wear!
+
 Sequel.extension :migration
 db = Sequel.sqlite(':memory:')
 migration = File.expand_path("../../db/migrations", __FILE__)

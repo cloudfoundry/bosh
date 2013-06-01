@@ -3,6 +3,9 @@
 require "rspec/core"
 require "webmock"
 
+require 'coveralls'
+Coveralls.wear!
+
 require "cli"
 
 def spec_asset(dir_or_file_name)

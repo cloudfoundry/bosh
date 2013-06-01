@@ -60,6 +60,7 @@ group :development, :test do
   gem "fakefs"
   gem "simplecov"
   gem "simplecov-rcov"
+  gem 'coveralls', require: false
 
   # for director
   gem "machinist", "~>1.0"
