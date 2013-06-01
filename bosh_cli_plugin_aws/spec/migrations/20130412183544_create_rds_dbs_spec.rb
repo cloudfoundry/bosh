@@ -14,6 +14,9 @@ describe CreateRdsDbs do
     retries_needed = opts[:retries_needed] || 0
     creation_options = opts[:aws_creation_options]
 
+    rds.should_receive(:database_exists?).with("bosh").and_return(false)
+
+    "bosh", ["subnet-xxxxxxx5", "subnet-xxxxxxx6"], "vpc-13724979"
     rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
     create_database_params = ["ccdb", ["subnet-xxxxxxx3", "subnet-xxxxxxx4"], "vpc-13724979"]

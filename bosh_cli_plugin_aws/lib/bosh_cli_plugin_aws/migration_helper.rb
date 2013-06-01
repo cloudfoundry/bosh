@@ -44,6 +44,15 @@ module Bosh
       def self.to_class_name(name)
         name.split('_').map(&:capitalize).join('')
       end
+
+      def self.all_rds_instances_available?(rds, opts = {})
+        silent = opts[:silent]
+        say("checking rds status...") unless silent
+        rds.databases.all? do |db_instance|
+          say("  #{db_instance.db_name} #{db_instance.db_instance_status} #{db_instance.endpoint_address}") unless silent
+          !db_instance.endpoint_address.nil?
+        end
+      end
     end
   end
 end

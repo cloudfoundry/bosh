@@ -190,3 +190,11 @@ rds:
       allocated_storage: 100
       iops: 1000
       <%- end -%>
+  - instance: bosh
+    tag: bosh
+    subnets:
+      - bosh_rds1
+      - bosh_rds2
+    aws_creation_options:
+      db_instance_class: <%= rds_sizes[:large] %>
+      multi_az: true
