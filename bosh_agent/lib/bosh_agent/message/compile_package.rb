@@ -4,6 +4,24 @@ require 'blobstore_client'
 
 module Bosh::Agent
   module Message
+    # This agent message "compile_package" fetches the source package from
+    # the blobstore, fetches the dependency compiled packages, compiles the
+    # source package, packs it into a tgz blob, and uploads it to the same
+    # blobstore. It returns the uploaded blob's blobstore_id & sha1.
+    #
+    # This message has the following uses:
+    # * the package_compiler (within the stemcell_builder) to
+    #   compile packages to the microbosh/mcf stemcell's local blobstore
+    # * the director requests packages be compiled during deployment
+    #   if they are not yet compiled and available in the blobstore
+    #
+    # Source packages must have a `packaging` executable script. It can find the
+    # unpackaged source files in the directory it is run in (which is also provided
+    # as $BOSH_COMPILE_TARGET variable).
+    # The packaging script MUST place all compiled assets within the single folder
+    # specified as $BOSH_INSTALL_TARGET.
+    # The packaging script is also provided the environment variables $BOSH_PACKAGE_NAME
+    # and $BOSH_PACKAGE_VERSION
     class CompilePackage
       attr_accessor :blobstore_id, :package_name, :package_version, :package_sha1
       attr_accessor :compile_base, :install_base
