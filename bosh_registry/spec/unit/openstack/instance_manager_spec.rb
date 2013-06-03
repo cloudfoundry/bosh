@@ -61,6 +61,21 @@ describe Bosh::Registry::InstanceManager do
                        "Instance IP mismatch, expected IP is `10.0.2.1', " \
                        "actual IP(s): `10.0.0.1, 10.0.1.1'")
     end
+
+    it 'it should create a new fog connection if there is an Unauthorized error' do
+      create_instance(:instance_id => 'foo', :settings => 'bar')
+      @compute.should_receive(:servers).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
+      actual_ip_is('10.0.0.1', nil)
+      manager.read_settings('foo', '10.0.0.1').should == 'bar'
+    end
+
+    it 'it should raise a ConnectionError if there is a persistent Unauthorized error' do
+      create_instance(:instance_id => 'foo', :settings => 'bar')
+      @compute.should_receive(:servers).twice.and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
+      expect {
+        manager.read_settings('foo', '10.0.0.1').should == 'bar'
+      }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized') 
+    end
   end
 
 end
