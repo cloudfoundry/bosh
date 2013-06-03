@@ -13,7 +13,9 @@ module Bosh::Cli::Command
       no_track_unsupported
 
       if deployment_name.nil?
-        director.list_deployments.each { |dep| show_deployment(dep['name'], options) }
+        deps = director.list_deployments
+        err("No deployments") if deps.empty?
+        deps.each { |dep| show_deployment(dep['name'], options) }
       else
         show_deployment deployment_name, options
       end
