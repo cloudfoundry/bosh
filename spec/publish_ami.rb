@@ -10,4 +10,4 @@ end
 
 stemcell_tgz = File.expand_path(ARGV[0])
 ami = Bosh::Helpers:Ami.new(stemcell_tgz)
-ami.publish
+ami.publish_light_stemcell(ami.publish)
