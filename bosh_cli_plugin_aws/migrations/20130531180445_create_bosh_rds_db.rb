@@ -1,23 +1,30 @@
 class CreateBoshRdsDb < Bosh::Aws::Migration
+  include Bosh::Aws::MigrationHelper
+
   def execute
-    puts ::Bosh::Aws::MigrationHelper.aws_migration_directory
-    receipt = {}
-
     vpc_receipt = load_receipt("aws_vpc_receipt")
-    vpc_subnets = vpc_receipt["vpc"]["subnets"]
+    db_names   = %w(bosh)
+    db_configs = config['rds'].select {|c| db_names.include?(c['instance']) }
+    RdsDb.aws_rds = rds
+    dbs = []
 
-      rds_db_config = config['rds'].find { |db| db['instance'] == 'bosh' }
-      instance_id = rds_db_config["instance"]
-      tag = rds_db_config["tag"]
-      subnets = rds_db_config["subnets"]
-
-      subnet_ids = subnets.map { |s| vpc_subnets[s] }
-
-      unless rds.database_exists?(instance_id)
-          creation_opts = [instance_id, subnet_ids, vpc_receipt["vpc"]["id"]]
-        creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
-        response = rds.create_database(*creation_opts)
+    begin
+      db_configs.each do |rds_db_conf|
+        rds_args = { vpc_receipt: vpc_receipt, rds_db_conf: rds_db_conf }
+        rds_db = RdsDb.new(rds_args)
+        dbs << rds_db
+        rds_db.create!
       end
+
+      if RdsDb.was_rds_eventually_available?
+        dbs.each { |db| db.update_receipt }
+      else
+        err "RDS was not available within 30 minutes, giving up"
+      end
+
+    ensure
+      save_receipt("aws_rds_receipt", RdsDb.receipt)
     end
+  end
 
 end

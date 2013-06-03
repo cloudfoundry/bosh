@@ -23,21 +23,21 @@ module Bosh
 
       class RdsDb
 
-        attr_accessor :instance_id, :receipt, :tag, :subnets, :subnet_ids
+        attr_accessor :instance_id, :receipt, :tag, :subnet_ids
 
         def initialize(args = {})
-          RdsDb.aws_rds  = args.fetch(:aws_rds)
-          @instance_id   = args.fetch(:instance_id)
-          @tag           = args.fetch(:tag)
-          @subnets       = args.fetch(:subnets)
-          @subnet_ids    = args.fetch(:subnet_ids)
-          @vpc_receipt   = args.fetch(:vpc_receipt)
-          @rds_db_conf   = args.fetch(:rds_db_conf)
+          vpc_receipt   = args.fetch(:vpc_receipt)
+          vpc_subnets   = vpc_receipt.fetch('vpc').fetch('subnets')
+          @rds_db_conf  = args.fetch(:rds_db_conf)
+          @instance_id  = @rds_db_conf.fetch('instance')
+          @tag          = @rds_db_conf.fetch('tag')
+          @subnet_ids   = @rds_db_conf.fetch('subnets').map { |s| vpc_subnets[s] }
+          @vpc_id       = vpc_receipt.fetch('vpc').fetch('id')
         end
 
         def create!
           return if RdsDb.aws_rds.database_exists? @instance_id
-          creation_opts = [@instance_id, @subnet_ids, @vpc_receipt["vpc"]["id"]]
+          creation_opts = [@instance_id, @subnet_ids, @vpc_id]
 
           if @rds_db_conf["aws_creation_options"]
             creation_opts << @rds_db_conf["aws_creation_options"]
@@ -66,6 +66,20 @@ module Bosh
                   }
               ]
           }
+        end
+
+        def update_receipt
+          return unless RdsDb.deployment_properties[instance_id]
+
+          db_instance = RdsDb.aws_rds.database(instance_id)
+          RdsDb.receipt['deployment_manifest']['properties'][instance_id].merge!(
+               'address' => db_instance.endpoint_address,
+               'port'    => db_instance.endpoint_port
+          )
+        end
+
+        def self.deployment_properties
+          RdsDb.receipt.fetch('deployment_manifest', {}).fetch('properties', {})
         end
 
         def self.aws_rds
