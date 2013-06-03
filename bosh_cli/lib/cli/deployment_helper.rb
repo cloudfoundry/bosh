@@ -237,6 +237,10 @@ module Bosh::Cli
       jobs.include?(jobname) ? true : false
     end
 
+    def job_must_exist_in_deployment(job)
+      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
+    end
+
     private
 
     def find_deployment(name)

@@ -19,8 +19,8 @@ module Bosh::Cli::Command
     def shell(*args)
       job, index, command = parse_args(args)
 
-      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
-      
+      job_must_exist_in_deployment(job)
+
       if command.empty?
         if index.nil?
           err("You should specify the job index. Can't run interactive shell on more than one instance")
@@ -49,8 +49,8 @@ module Bosh::Cli::Command
         err("Please specify either --upload or --download")
       end
 
-      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
-      
+      job_must_exist_in_deployment(job)
+
       if args.size != 2
         err("Please enter valid source and destination paths")
       end
@@ -66,7 +66,7 @@ module Bosh::Cli::Command
         err("SSH cleanup doesn't accept any extra args")
       end
       
-      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
+      job_must_exist_in_deployment(job)
 
       manifest_name = prepare_deployment_manifest["name"]
 
