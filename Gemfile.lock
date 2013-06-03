@@ -297,7 +297,7 @@ GEM
     highline (1.6.18)
     httpclient (2.2.4)
     json (1.7.7)
-    json_pure (1.7.7)
+    json_pure (1.8.0)
     libxml-ruby (2.6.0)
     listen (1.0.2)
       rb-fsevent (>= 0.9.3)
