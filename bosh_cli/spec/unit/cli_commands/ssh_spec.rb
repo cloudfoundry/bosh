@@ -58,23 +58,33 @@ describe Bosh::Cli::Command::Base do
     it "should try to execute given command remotely" do
       @interactive_shell = false
       @execute_command = false
+      ssh.stub(:job_exists_in_deployment?).and_return(true)
       ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
       ssh.stub(:perform_operation) { @execute_command = true }
       ssh.shell("dea", "ls -l")
       @interactive_shell.should == false && @execute_command.should == true
     end
 
-    context '#setup_interactive shell' do
+    context '#shell' do
       it 'should fail to setup ssh when a job name is not given' do
         expect {
           ssh.shell()
         }.to raise_error(Bosh::Cli::CliError, 'Please provide job name')
       end
-  
+
+      it 'should fail to setup ssh when a job name does not exists in deployment' do
+        ssh.stub(:job_exists_in_deployment?).and_return(false)
+        expect {
+          ssh.shell('dea/0')
+        }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
+      end
+      
       it 'should fail to setup ssh when a job index is not given' do
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
         expect {
           ssh.shell('dea')
-        }.to raise_error(Bosh::Cli::CliError, "Can't run interactive shell on more than one instance")
+        }.to raise_error(Bosh::Cli::CliError, 
+                         "You should specify the job index. Can't run interactive shell on more than one instance")
       end
 
       it 'should fail to setup ssh when a job index is not an Integer' do
@@ -86,6 +96,7 @@ describe Bosh::Cli::Command::Base do
       it 'should try to setup interactive shell when a job index is given' do
         @interactive_shell = false
         @execute_command = false
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
         ssh.stub(:execute_command) { @execute_command = true }
         ssh.shell('dea', '0')
@@ -97,6 +108,7 @@ describe Bosh::Cli::Command::Base do
         Process.stub(:waitpid)
         
         ssh.add_option(:default_password, 'password')
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
@@ -117,6 +129,7 @@ describe Bosh::Cli::Command::Base do
         
         ssh.add_option(:gateway_host, gw_host)
         ssh.add_option(:default_password, 'password')
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
@@ -142,6 +155,7 @@ describe Bosh::Cli::Command::Base do
         ssh.add_option(:gateway_host, gw_host)
         ssh.add_option(:gateway_user, gw_user)
         ssh.add_option(:default_password, 'password')
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
@@ -166,6 +180,7 @@ describe Bosh::Cli::Command::Base do
         ssh.add_option(:gateway_host, gw_host)
         ssh.add_option(:gateway_user, gw_user)
         ssh.add_option(:default_password, 'password')
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
@@ -179,6 +194,25 @@ describe Bosh::Cli::Command::Base do
           ssh.shell('dea/0')
         }.to raise_error(Bosh::Cli::CliError, 
                          "Authentication failed with gateway #{gw_host} and user #{gw_user}.")
+      end
+    end
+
+    context '#scp' do
+      it 'should fail to setup ssh when a job name does not exists in deployment' do
+        ssh.add_option(:upload, true)
+        ssh.stub(:job_exists_in_deployment?).and_return(false)
+        expect {
+          ssh.scp('dea/0')
+        }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
+      end
+    end
+    
+    context '#cleanup' do
+      it 'should fail to setup ssh when a job name does not exists in deployment' do
+        ssh.stub(:job_exists_in_deployment?).and_return(false)
+        expect {
+          ssh.cleanup('dea/0')
+        }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
       end
     end
   end
