@@ -32,6 +32,14 @@ describe Bosh::Cli::Command::Vms do
 
         command.list
       end
+
+      it 'raises an error if there are not any deployments' do
+        director.stub(:list_deployments) {[]}
+
+        expect {
+          command.list
+        }.to raise_error(Bosh::Cli::CliError, 'No deployments')
+      end
     end
 
     context 'with a deployment argument' do
