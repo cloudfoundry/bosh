@@ -603,13 +603,12 @@ module Bosh::OpenStackCloud
     end
 
     ##
-    # Generates initial agent settings. These settings will be read by agent
-    # from OpenStack registry (also a BOSH component) on a target server. Disk
-    # conventions for OpenStack are:
-    # system disk: /dev/vda
-    # ephemeral disk: /dev/ vdb
-    # OpenStack volumes can be configured to map to other device names later
-    # (vdc through vdz, also some kernels will remap vd* to xvd*).
+    # Generates initial agent settings. These settings will be read by Bosh Agent from Bosh Registry on a target 
+    # server. Disk conventions in Bosh Agent for OpenStack are:
+    # - system disk: /dev/sda
+    # - ephemeral disk: /dev/sdb
+    # - persistent disks: /dev/sdc through /dev/sdz
+    # As some kernels remap device names (from sd* to vd* or xvd*), Bosh Agent will lookup for the proper device name 
     #
     # @param [String] server_name Name of the OpenStack server (will be picked
     #   up by agent to fetch registry settings)
@@ -626,8 +625,8 @@ module Bosh::OpenStackCloud
         "agent_id" => agent_id,
         "networks" => network_spec,
         "disks" => {
-          "system" => "/dev/vda",
-          "ephemeral" => "/dev/vdb",
+          "system" => "/dev/sda",
+          "ephemeral" => "/dev/sdb",
           "persistent" => {}
         }
       }
@@ -686,7 +685,9 @@ module Bosh::OpenStackCloud
         device_names = Set.new(volume_attachments.collect { |v| v["device"] })
         new_attachment = nil
         ("c".."z").each do |char|
-          dev_name = "/dev/vd#{char}"
+          # As some kernels remap device names (from sd* to vd* or xvd*), Bosh Agent will lookup for the 
+          # proper device name if we set it initially to sd*.
+          dev_name = "/dev/sd#{char}"
           if device_names.include?(dev_name)
             @logger.warn("`#{dev_name}' on `#{server.id}' is taken")
             next
