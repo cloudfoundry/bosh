@@ -3,7 +3,7 @@
 set -e
 source .rvmrc
 
-rm -f *.tgz stemcell-ami.txt
+rm -f *.tgz
 
 if [ $1 == 'micro' ]
 then

@@ -7,7 +7,6 @@ module Bosh
 
       def publish(ami_id)
         ami.extract_stemcell(exclude: 'image') do |tmp_dir, stemcell_properties|
-          File.open('stemcell-ami.txt', "w") { |f| f << ami_id }
           stemcell_properties["cloud_properties"]["ami"] = { ami.region => ami_id }
 
           FileUtils.touch("#{tmp_dir}/image")
