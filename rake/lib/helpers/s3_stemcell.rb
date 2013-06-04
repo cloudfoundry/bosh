@@ -1,32 +1,36 @@
 require 'rake'
 require_relative 'build'
+require_relative 'pipeline'
 
 module Bosh
   module Helpers
-    class S3Stemcell < Struct.new(:infrastructure, :type)
+    class S3Stemcell
+      def initialize(infrastructure, type)
+        @infrastructure, @type = infrastructure, type
+        @pipeline = Pipeline.new(infrastructure, type)
+      end
+
       def publish
         path = Dir.glob("/mnt/stemcells/#{infrastructure}-#{type}/work/work/*-stemcell-*-#{Build.candidate.number}.tgz").first
         if path
-          Rake::FileUtilsExt.sh("s3cmd put #{path} #{base_url}")
+          pipeline.publish(path)
         end
       end
 
       def download_latest
-        version_cmd = "s3cmd ls  #{base_url} " +
+        version_cmd = "s3cmd ls  #{pipeline.base_url} " +
             "| sed -e 's/.*bosh-ci-pipeline.*stemcell-#{infrastructure}-\\(.*\\)\.tgz/\\1/' " +
             "| sort -n | tail -1"
         version = %x[#{version_cmd}].chomp
 
         stemcell_filename = "#{type == 'micro' ? 'micro-' : ''}bosh-stemcell-#{infrastructure}-#{version}.tgz"
-        latest_stemcell_url = base_url + stemcell_filename
+        latest_stemcell_url = pipeline.base_url + stemcell_filename
         Rake::FileUtilsExt.sh("s3cmd -f get #{latest_stemcell_url}")
         FileUtils.ln_s("#{stemcell_filename}", "#{type == 'micro' ? 'micro-' : ''}bosh-stemcell-#{infrastructure}.tgz", force: true)
       end
 
       private
-      def base_url
-        "s3://bosh-ci-pipeline/stemcells/#{infrastructure}/#{type}/"
-      end
+      attr_reader :infrastructure, :type, :pipeline
     end
   end
 end
