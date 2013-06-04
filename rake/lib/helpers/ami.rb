@@ -4,10 +4,13 @@ require 'ostruct'
 require 'yaml'
 require 'rake'
 require_relative('aws_registry')
+require_relative('light_stemcell')
 
 module Bosh
   module Helpers
     class Ami
+      attr_reader :stemcell_tgz
+
       def initialize(stemcell_tgz, aws_registry=AwsRegistry.new)
         @stemcell_tgz = stemcell_tgz
         @aws_registry = aws_registry
@@ -19,7 +22,7 @@ module Bosh
 
         aws = {
             "default_key_name" => "fake",
-            "region" => aws_registry.region,
+            "region" => region,
             "access_key_id" => access_key_id,
             "secret_access_key" => secret_access_key
         }
@@ -47,26 +50,9 @@ module Bosh
         end
       end
 
-      def publish_light_stemcell(ami_id)
-        extract_stemcell(exclude: 'image') do |tmp_dir, stemcell_properties|
-          File.open('stemcell-ami.txt', "w") { |f| f << ami_id }
-          stemcell_properties["cloud_properties"]["ami"] = {aws_registry.region => ami_id}
-
-          FileUtils.touch("#{tmp_dir}/image")
-
-          File.open("#{tmp_dir}/stemcell.MF", 'w') do |out|
-            Psych.dump(stemcell_properties, out)
-          end
-
-          light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
-          Dir.chdir(tmp_dir) do
-            Rake::FileUtilsExt.sh("tar cvzf #{light_stemcell_name} *")
-          end
-        end
+      def region
+        aws_registry.region
       end
-
-      private
-      attr_reader :stemcell_tgz, :aws_registry
 
       def extract_stemcell(tar_options={}, &block)
         Dir.mktmpdir do |tmp_dir|
@@ -79,6 +65,13 @@ module Bosh
           block.call(tmp_dir, stemcell_properties)
         end
       end
+
+      def publish_light_stemcell(ami_id)
+        LightStemcell.new(self).publish(ami_id)
+      end
+
+      private
+      attr_reader :aws_registry
     end
   end
 end

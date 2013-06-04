@@ -2,6 +2,7 @@
 #
 
 require_relative('../rake/lib/helpers/ami')
+require_relative('../rake/lib/helpers/light_stemcell')
 
 unless ARGV.length == 1
   puts "usage: #{$0} </path/to/stemcell.tgz>"
