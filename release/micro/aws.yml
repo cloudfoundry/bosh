@@ -26,7 +26,8 @@ properties:
     address: 127.0.0.1
     password: redis
   postgres: &bosh_db
-    password: bosh
+    user: postgres
+    password: postges
     host: 127.0.0.1
     listen_address: 127.0.0.1
     database: bosh
