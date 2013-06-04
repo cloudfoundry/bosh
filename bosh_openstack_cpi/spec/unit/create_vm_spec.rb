@@ -13,8 +13,8 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       "agent_id" => "agent-id",
       "networks" => { "network_a" => network_spec },
       "disks" => {
-        "system" => "/dev/vda",
-        "ephemeral" => "/dev/vdb",
+        "system" => "/dev/sda",
+        "ephemeral" => "/dev/sdb",
         "persistent" => {}
       },
       "env" => {
