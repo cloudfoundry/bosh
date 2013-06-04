@@ -1,3 +1,5 @@
+require 'rake'
+
 module Bosh
   module Helpers
     class Instance

@@ -3,6 +3,7 @@ require 'bosh_aws_cpi'
 require 'ostruct'
 require 'net/http'
 require 'yaml'
+require 'rake'
 
 module Bosh
   module Helpers

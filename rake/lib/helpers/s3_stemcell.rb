@@ -1,3 +1,4 @@
+require 'rake'
 require_relative 'build'
 
 module Bosh
