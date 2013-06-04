@@ -96,8 +96,8 @@ namespace :spec do
           Rake::Task['spec:system:aws:publish_gems'].invoke
           ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
           #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
-          publish_stemcell_to_s3(latest_aws_stemcell_path, 'bosh-jenkins-artifacts')
-          publish_stemcell_to_s3(latest_aws_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+          promote_stemcell(latest_aws_stemcell_path)
+          promote_stemcell(latest_aws_micro_bosh_stemcell_path)
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
@@ -168,8 +168,8 @@ namespace :spec do
         Rake::Task['spec:system:openstack:deploy_micro_manual_net'].invoke
         ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
         #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
-        publish_stemcell_to_s3(latest_openstack_stemcell_path, 'bosh-jenkins-artifacts')
-        publish_stemcell_to_s3(latest_openstack_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+        promote_stemcell(latest_openstack_stemcell_path)
+        promote_stemcell(latest_openstack_micro_bosh_stemcell_path)
       end
 
       task :deploy_micro_dynamic_net do
@@ -239,8 +239,8 @@ namespace :spec do
           Rake::Task['spec:system:vsphere:deploy_micro'].invoke
           ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
           #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
-          publish_stemcell_to_s3(latest_vsphere_stemcell_path, 'bosh-jenkins-artifacts')
-          publish_stemcell_to_s3(latest_vsphere_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+          promote_stemcell(latest_vsphere_stemcell_path)
+          promote_stemcell(latest_vsphere_micro_bosh_stemcell_path)
         ensure
           Rake::Task['spec:system:vsphere:teardown_microbosh'].execute
         end
@@ -289,9 +289,9 @@ namespace :spec do
       end
     end
 
-    def publish_stemcell_to_s3(stemcell_tgz, bucket_name)
+    def promote_stemcell(stemcell_tgz)
       require 'aws-sdk'
-
+      bucket_name = 'bosh-jenkins-artifacts'
       AWS.config({
                      access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
                      secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
