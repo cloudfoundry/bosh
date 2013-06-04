@@ -9,5 +9,5 @@ unless ARGV.length == 1
 end
 
 stemcell_tgz = File.expand_path(ARGV[0])
-ami = Bosh::Helpers:Ami.new(stemcell_tgz)
+ami = Bosh::Helpers::Ami.new(stemcell_tgz)
 ami.publish_light_stemcell(ami.publish)
