@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 #
 
-require_relative('../rake/lib/helpers/ami')
-require_relative('../rake/lib/helpers/light_stemcell')
-
 unless ARGV.length == 1
   puts "usage: #{$0} </path/to/stemcell.tgz>"
   exit(1)
 end
 
 stemcell_tgz = File.expand_path(ARGV[0])
-ami = Bosh::Helpers::Ami.new(stemcell_tgz)
-ami.publish_light_stemcell(ami.publish)
+
+require_relative '../rake/lib/helpers/candidate_artifacts'
+
+candidate_artifacts = Bosh::Helpers::CandidateArtifacts.new(stemcell_tgz)
+candidate_artifacts.publish
