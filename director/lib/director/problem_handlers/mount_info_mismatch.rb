@@ -45,12 +45,17 @@ module Bosh::Director
 
       resolution :reattach_disk do
         plan { "Reattach disk to instance" }
-        action { reattach_disk }
+        action { reattach_disk(false) }
       end
 
-      def reattach_disk
+      resolution :reattach_disk_and_reboot do
+        plan { "Reattach disk and reboot instance" }
+        action { reattach_disk(true) }
+      end
+      
+      def reattach_disk(reboot = false)
         cloud.attach_disk(@vm_cid, @disk_cid)
-        agent_timeout_guard(@vm) { |agent| agent.mount_disk(@disk_cid) }
+        reboot ? reboot_vm(@vm) : agent_timeout_guard(@vm) { |agent| agent.mount_disk(@disk_cid) }
       end
     end
   end

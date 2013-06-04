@@ -143,6 +143,36 @@ describe Bosh::Director::ProblemScanner do
           "index" => 1
       }
       agent.should_receive(:get_state).and_return(good_state)
+      agent.should_receive(:list_disk).and_raise(Bosh::Director::RpcTimeout)
+
+      # if list_disk is not present fall back to db --> no error
+      problem_scanner.reset
+      problem_scanner.scan_vms
+      problem_scanner.scan_disks
+      BDM::DeploymentProblem.count.should == 1
+      problem = BDM::DeploymentProblem.first
+      problem.state.should == "open"
+      problem.type.should == "mount_info_mismatch"
+      problem.deployment.should == deployment
+      problem.resource_id.should == 1
+      problem.data.should == {'owner_vms' => []}
+    end
+    
+    it "scan disk when agent reports it has no disks attached" do
+      vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => deployment)
+      instance = BDM::Instance.make(:vm => vm, :deployment => deployment, :job => "job", :index => 1)
+      BDM::PersistentDisk.make(:instance_id => instance.id,
+                               :active => true)
+
+      agent = mock("agent")
+      BD::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+
+      good_state = {
+          "deployment" => "mycloud",
+          "job" => {"name" => "job"},
+          "index" => 1
+      }
+      agent.should_receive(:get_state).and_return(good_state)
       agent.should_receive(:list_disk).and_return([])
 
       # if list_disk is not present fall back to db --> no error

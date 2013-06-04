@@ -54,8 +54,17 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     describe "reattach_disk" do
       it "attaches disk" do
         @cloud.should_receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
+        @cloud.should_not_receive(:reboot_vm)        
         @agent.should_receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
+      end
+
+      it "attaches disk and reboots the vm" do
+        @cloud.should_receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
+        @cloud.should_receive(:reboot_vm).with(@vm.cid)
+        @agent.should_receive(:wait_until_ready)
+        @agent.should_not_receive(:mount_disk)
+        @handler.apply_resolution(:reattach_disk_and_reboot)
       end
     end
   end
