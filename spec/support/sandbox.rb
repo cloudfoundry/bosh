@@ -280,7 +280,8 @@ module Bosh
       end
 
       def start_scheduler
-        run_with_pid(%W[director_scheduler -c #{director_config}], scheduler_pid)
+        scheduler_output = "#{base_log_path}.scheduler.out"
+        run_with_pid(%W[director_scheduler -c #{director_config}], scheduler_pid, output: scheduler_output)
       end
 
       def stop_nats
