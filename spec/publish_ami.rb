@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 
-require_relative('../rake/lib/helpers/build/ami')
+require_relative('../rake/lib/helpers/ami')
 
 unless ARGV.length == 1
   puts "usage: #{$0} </path/to/stemcell.tgz>"
