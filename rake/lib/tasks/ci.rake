@@ -1,18 +1,19 @@
 require_relative '../helpers/build'
+require_relative '../helpers/fog_bulk_uploader'
 
 namespace :ci do
   desc "Publish CI pipeline gems to S3"
   task :publish_pipeline_gems do
-    cd(ENV['WORKSPACE']) do
-      require_relative '../helpers/version_file'
-      version_file = Bosh::Helpers::VersionFile.new(Bosh::Helpers::Build.current.number)
-      version_file.write
-      Rake::Task["all:finalize_release_directory"].invoke
+    require_relative '../helpers/version_file'
+    version_file = Bosh::Helpers::VersionFile.new(Bosh::Helpers::Build.current.number)
+    version_file.write
+    Rake::Task["all:finalize_release_directory"].invoke
+    cd('pkg') do
       Bundler.with_clean_env do
-        # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
-        sh("cd pkg && gem generate_index .")
+      # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
+        sh('gem', 'generate_index', '.')
       end
-      sh("cd pkg && s3cmd sync . s3://bosh-ci-pipeline/gems/")
+      Bosh::Helpers::FogBulkUploader.s3_pipeline.upload_r('.', 'gems')
     end
   end
 
