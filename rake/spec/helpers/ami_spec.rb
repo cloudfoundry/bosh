@@ -22,28 +22,5 @@ module Bosh::Helpers
         expect(ami.publish).to eq('fake-ami-id')
       end
     end
-
-    describe 'publish_light_stemcell' do
-      it 'creates a new tgz' do
-        Rake::FileUtilsExt.should_receive(:sh).with('tar cvzf ./light-fake-stemcell.tgz *')
-        ami.publish_light_stemcell('fake-ami-id')
-      end
-
-      it 'replaces the raw image with a blank placeholder' do
-        Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf fake-stemcell\.tgz --directory .* --exclude=image/)
-
-        FileUtils.should_receive(:touch).and_return do |file|
-          expect(file).to match('/image')
-        end
-        ami.publish_light_stemcell('fake-ami-id')
-      end
-
-      it 'adds the ami to the stemcell manifest' do
-        Psych.should_receive(:dump).and_return do |stemcell_properties, out|
-          expect(stemcell_properties['cloud_properties']['ami']).to eq({'fake-region' => 'fake-ami-id'})
-        end
-        ami.publish_light_stemcell('fake-ami-id')
-      end
-    end
   end
 end

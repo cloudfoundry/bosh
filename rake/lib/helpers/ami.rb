@@ -66,10 +66,6 @@ module Bosh
         end
       end
 
-      def publish_light_stemcell(ami_id)
-        LightStemcell.new(self).publish(ami_id)
-      end
-
       private
       attr_reader :aws_registry
     end

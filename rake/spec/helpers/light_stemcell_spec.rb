@@ -27,7 +27,7 @@ module Bosh::Helpers
         Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf fake-stemcell\.tgz --directory .* --exclude=image/)
 
         FileUtils.should_receive(:touch).and_return do |file|
-          expect(file).to match('/image')
+          expect(file).to match('image')
         end
         light_stemcell.publish('fake-ami-id')
       end
@@ -36,6 +36,13 @@ module Bosh::Helpers
         Psych.should_receive(:dump).and_return do |stemcell_properties, out|
           expect(stemcell_properties['cloud_properties']['ami']).to eq({'fake-region' => 'fake-ami-id'})
         end
+        light_stemcell.publish('fake-ami-id')
+      end
+
+      it 'names the stemcell manifest correctly' do
+        File.stub(:open)
+        File.should_receive(:open).with('stemcell.MF', 'w')
+
         light_stemcell.publish('fake-ami-id')
       end
     end
