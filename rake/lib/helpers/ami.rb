@@ -1,18 +1,12 @@
 require 'cloud'
 require 'bosh_aws_cpi'
 require 'ostruct'
-require 'net/http'
 require 'yaml'
 require 'rake'
+require_relative('aws_registry')
 
 module Bosh
   module Helpers
-    class AwsRegistry
-      def region
-        Net::HTTP.get('169.254.169.254', '/latest/meta-data/placement/availability-zone').chop
-      end
-    end
-
     class Ami
       def initialize(stemcell_tgz, aws_registry=AwsRegistry.new)
         @stemcell_tgz = stemcell_tgz
