@@ -39,7 +39,7 @@ module Bosh
 
         cloud = Bosh::Clouds::Provider.create("aws", options)
 
-        extract_stemcell(stemcell_tgz) do |tmp_dir, stemcell_properties|
+        extract_stemcell do |tmp_dir, stemcell_properties|
           ami_id = cloud.create_stemcell("#{tmp_dir}/image", stemcell_properties['cloud_properties'])
           cloud.ec2.images[ami_id].public = true
 
@@ -48,7 +48,7 @@ module Bosh
       end
 
       def publish_light_stemcell(ami_id)
-        extract_stemcell(stemcell_tgz, exclude: 'image') do |tmp_dir, stemcell_properties|
+        extract_stemcell(exclude: 'image') do |tmp_dir, stemcell_properties|
           File.open('stemcell-ami.txt', "w") { |f| f << ami_id }
           stemcell_properties["cloud_properties"]["ami"] = {aws_registry.region => ami_id}
 
@@ -68,7 +68,7 @@ module Bosh
       private
       attr_reader :stemcell_tgz, :aws_registry
 
-      def extract_stemcell(stemcell_tgz, tar_options={}, &block)
+      def extract_stemcell(tar_options={}, &block)
         Dir.mktmpdir do |tmp_dir|
           tar_cmd = "tar xzf #{stemcell_tgz} --directory #{tmp_dir}"
           tar_cmd << " --exclude=#{tar_options[:exclude]}" if tar_options.has_key?(:exclude)
