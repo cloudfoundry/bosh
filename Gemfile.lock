@@ -316,7 +316,7 @@ GEM
     mime-types (1.23)
     minitar (0.5.4)
     multi_json (1.7.2)
-    mysql (2.9.1)
+    mysql2 (0.3.11)
     nats (0.4.28)
       daemons (>= 1.1.5)
       eventmachine (= 0.12.10)
@@ -455,7 +455,7 @@ DEPENDENCIES
   machinist (~> 1.0)
   minitar
   monit_api!
-  mysql
+  mysql2
   nats
   net-ssh
   nokogiri-diff
