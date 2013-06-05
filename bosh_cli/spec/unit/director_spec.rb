@@ -264,6 +264,14 @@ describe Bosh::Cli::Director do
       @director.get_task_output(232, 42).should == ["test", 57]
     end
 
+    it "doesn't set task output body and new offset if there's a byte range unsatisfiable response" do
+      @director.should_receive(:get).
+        with("/tasks/232/output", nil,
+             nil, { "Range" => "bytes=42-" }).
+        and_return([416, "Byte range unsatisfiable", { :content_range => "bytes */100" }])
+      @director.get_task_output(232, 42).should == [nil, nil]
+    end
+    
     it "doesn't set task output new offset if it wasn't a partial response" do
       @director.should_receive(:get).
         with("/tasks/232/output", nil, nil,
