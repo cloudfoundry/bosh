@@ -74,7 +74,7 @@ module Bosh
       private
       attr_reader :stemcell_tgz, :aws_registry
 
-      def extract_stemcell(stemcell_tgz, tar_options, &block)
+      def extract_stemcell(stemcell_tgz, tar_options={}, &block)
         Dir.mktmpdir do |tmp_dir|
           tar_cmd = "tar xzf #{stemcell_tgz} --directory #{tmp_dir}"
           tar_cmd << " --exclude=#{tar_options[:exclude]}" if tar_options.has_key?(:exclude)
