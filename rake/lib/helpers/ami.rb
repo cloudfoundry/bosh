@@ -54,7 +54,7 @@ module Bosh
       end
 
       def publish_light_stemcell(ami_id)
-        extract_stemcell(stemcell_tgz, 'stemcell.MF') do |tmp_dir, stemcell_properties|
+        extract_stemcell(stemcell_tgz, exclude: 'image') do |tmp_dir, stemcell_properties|
           File.open('stemcell-ami.txt', "w") { |f| f << ami_id }
           stemcell_properties["cloud_properties"]["ami"] = {aws_registry.region => ami_id}
 
@@ -74,9 +74,13 @@ module Bosh
       private
       attr_reader :stemcell_tgz, :aws_registry
 
-      def extract_stemcell(stemcell_tgz, tgz_args='', &block)
+      def extract_stemcell(stemcell_tgz, tar_options, &block)
         Dir.mktmpdir do |tmp_dir|
-          Rake::FileUtilsExt.sh('tar', 'xzf', stemcell_tgz, '--directory', tmp_dir, tgz_args)
+          tar_cmd = "tar xzf #{stemcell_tgz} --directory #{tmp_dir}"
+          tar_cmd << " --exclude=#{tar_options[:exclude]}" if tar_options.has_key?(:exclude)
+
+          Rake::FileUtilsExt.sh(tar_cmd)
+
           stemcell_properties = Psych.load_file("#{tmp_dir}/stemcell.MF")
           block.call(tmp_dir, stemcell_properties)
         end

@@ -30,7 +30,7 @@ module Bosh::Helpers
       end
 
       it 'replaces the raw image with a blank placeholder' do
-        Rake::FileUtilsExt.should_receive(:sh).with('tar', 'xzf', 'fake-stemcell.tgz', '--directory', anything, 'stemcell.MF')
+        Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf fake-stemcell\.tgz --directory .* --exclude=image/)
 
         FileUtils.should_receive(:touch).and_return do |file|
           expect(file).to match('/image')
