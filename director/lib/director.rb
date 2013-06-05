@@ -158,6 +158,7 @@ module Bosh::Director
   class ApiController < Sinatra::Base
     PUBLIC_URLS = ["/info"]
 
+
     include Api::ApiHelper
     include Api::Http
     include DnsHelper
@@ -237,6 +238,43 @@ module Bosh::Director
       end
     end
 
+    get "/" do
+      redirect '/index.html'
+    end
+
+    get "/api-docs" do
+      res = File.read(File.join(settings.root, 'public/api', 'api-docs.json'))
+      body res
+      status 200
+    end
+
+    get "/api-docs/:api" do
+      res = File.read(File.join(settings.root, 'public/api', "#{params[:api].to_s}.json"))
+      body res
+      status 200
+    end
+
+    # TODO: how do I insert variable values in the src2swagger stuff?
+    #
+    ##~ root = source2swagger.namespace("api-docs")
+    ##~ root.basePath = "http://127.0.0.1:8080"
+    ##~ root.swaggerVersion = "1.1"
+    ##~ root.apiVersion = "1.0"
+    ##~ root.apis.add :path => "/api-docs/users", :description => ""
+    ##~ root.apis.add :path => "/api-docs/releases", :description => ""
+    ##~ root.apis.add :path => "/api-docs/deployments", :description => ""
+
+    ##~ s = source2swagger.namespace("users")
+    ##~ s.basePath =  "http://127.0.0.1:8080"
+    ##~ s.swaggerVersion = "1.1"
+    ##~ s.apiVersion = "1.0"
+    ##~ s.resourcePath = "/users"
+    
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/users", :description => "User management"
+    ##
+    ##~ a.operations.add :httpMethod => "POST", :summary => "Creates a user", :deprecated => false, :nickname => "create_user"
+
     post "/users", :consumes => [:json] do
       user = @user_manager.get_user_from_request(request)
       @user_manager.create_user(user)
@@ -244,6 +282,13 @@ module Bosh::Director
       nil
     end
 
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/users/{username}", :description => "User management"
+    ##
+    ##~ op = a.operations.add 
+    ##~ op.set :httpMethod => "PUT", :summary => "Updates a user", :deprecated => false, :nickname => "update_user"
+    ##~ op.parameters.add :name => "username", :description => "The username of the user to be updated", :dataType => "string", :allowMultiple => false, :required => true, :paramType => "path"
+    
     put "/users/:username", :consumes => [:json] do
       user = @user_manager.get_user_from_request(request)
       if user.username != params[:username]
@@ -254,12 +299,30 @@ module Bosh::Director
       nil
     end
 
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/users/{username}", :description => "User management"
+    ##
+    ##~ op = a.operations.add 
+    ##~ op.set :httpMethod => "DELETE", :summary => "Deletes a user", :deprecated => false, :nickname => "delete_user"
+    ##~ op.parameters.add :name => "username", :description => "The username of the user to be deleted", :dataType => "string", :allowMultiple => false, :required => true, :paramType => "path"
+    
     delete "/users/:username" do
       @user_manager.delete_user(params[:username])
       status(204)
       nil
     end
 
+    ##~ s = source2swagger.namespace("releases")
+    ##~ s.basePath =  "http://127.0.0.1:8080"
+    ##~ s.swaggerVersion = "1.1"
+    ##~ s.apiVersion = "1.0"
+    ##~ s.resourcePath = "/users"
+    
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/releases", :description => "Release management"
+    ##
+    ##~ a.operations.add :httpMethod => "POST", :summary => "Creates a release", :deprecated => false, :nickname => "create_release"
+    
     post "/releases", :consumes => :tgz do
       options = {}
       options["rebase"] = true if params["rebase"] == "true"
@@ -268,6 +331,11 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/releases", :description => "Release management"
+    ##
+    ##~ a.operations.add :httpMethod => "GET", :summary => "List all releases", :deprecated => false, :nickname => "list_releases"
+    
     get "/releases" do
       releases = Models::Release.order_by(:name.asc).map do |release|
         release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
@@ -284,6 +352,13 @@ module Bosh::Director
       json_encode(releases)
     end
 
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/releases/{name}", :description => "Release management"
+    ##
+    ##~ op = a.operations.add
+    ##~ op.set :httpMethod => "DELETE", :summary => "Delete a release", :deprecated => false, :nickname => "delete_release"
+    ##~ op.parameters.add :name => "name", :description => "The name of the release to be deleted", :dataType => "string", :allowMultiple => false, :required => true, :paramType => "path"
+    
     delete "/releases/:name" do
       release = @release_manager.find_by_name(params[:name])
 
@@ -295,6 +370,17 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    ##~ s = source2swagger.namespace("deployments")
+    ##~ s.basePath =  "http://127.0.0.1:8080"
+    ##~ s.swaggerVersion = "1.1"
+    ##~ s.apiVersion = "1.0"
+    ##~ s.resourcePath = "/deployments"
+    
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/deployments", :description => "Deployment management"
+    ##~ op = a.operations.add
+    ##~ op.set :httpMethod => "POST", :summary => "Create a deployment", :deprecated => false, :nickname => "create_deployment"
+    
     post "/deployments", :consumes => :yaml do
       options = {}
       options["recreate"] = true if params["recreate"] == "true"
@@ -303,6 +389,14 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    ##~ a = s.apis.add
+    ##~ a.set :path => "/deployments/{deployment}/jobs/{job}/{index}", :description => "Deployment management"
+    ##~ op = a.operations.add
+    ##~ op.set :httpMethod => "GET", :summary => "Find deployment instance?", :deprecated => false, :nickname => "find_deployment_instance"
+    ##~ op.parameters.add :name => "deployment", :description => "The name of the deployment", :dataType => "string", :allowMultiple => false, :required => true, :paramType => "path"
+    ##~ op.parameters.add :name => "job", :description => "The name of the job", :dataType => "string", :allowMultiple => false, :required => true, :paramType => "path"
+    ##~ op.parameters.add :name => "index", :description => "The index of the job", :dataType => "string", :allowMultiple => false, :required => true, :paramType => "path"
+    
     get "/deployments/:deployment/jobs/:job/:index" do
       instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
 
