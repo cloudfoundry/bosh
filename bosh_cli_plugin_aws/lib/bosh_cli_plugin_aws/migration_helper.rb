@@ -97,7 +97,7 @@ module Bosh
         def self.was_rds_eventually_available?
           return true if all_rds_instances_available?(:silent => true)
           (1..180).any? do |attempt|
-            Kernel.sleep 10
+            Kernel.sleep 20
             all_rds_instances_available?
           end
         end

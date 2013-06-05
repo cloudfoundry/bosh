@@ -24,7 +24,7 @@ class CreateRdsDbs < Bosh::Aws::Migration
       if RdsDb.was_rds_eventually_available?
         dbs.each { |db| db.update_receipt }
       else
-        err "RDS was not available within 30 minutes, giving up"
+        err "RDS was not available within 60 minutes, giving up"
       end
 
     ensure
