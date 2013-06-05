@@ -66,7 +66,7 @@ describe Bosh::Director::ApiController do
      "test purposes (even though user doesn't exist)" do
     basic_authorize "admin", "admin"
     get "/"
-    last_response.status.should == 404
+    last_response.status.should == 302
   end
 
   describe "Fetching status" do
