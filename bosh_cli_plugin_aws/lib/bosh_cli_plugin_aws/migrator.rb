@@ -75,9 +75,8 @@ module Bosh
       def run_migrations(migrations_to_run)
         migrations_to_run.each do |migration|
           migration.load_class.new(@config, bucket_name).run
+          record_migration(migration)
         end
-
-        record_migrations(migrations_to_run)
       end
 
       def load_migrations
@@ -96,8 +95,9 @@ module Bosh
         end.sort
       end
 
-      def record_migrations(executed_migrations)
-        migration_yaml = YAML.dump((executed_migrations | environment_migrations).collect do |m|
+      def record_migration(migration)
+        environment_migrations << migration
+        migration_yaml = YAML.dump(environment_migrations.collect do |m|
           m.to_hash
         end)
         aws_s3.upload_to_bucket(bucket_name, migrations_name, migration_yaml)
