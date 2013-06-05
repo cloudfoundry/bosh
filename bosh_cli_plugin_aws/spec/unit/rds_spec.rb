@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Aws::RDS do
-  let(:rds) { described_class.new({}) }
+  subject(:rds) { described_class.new({}) }
   let(:db_instance_1) { double("database instance", name: 'bosh_db', id: "db1") }
   let(:db_instance_2) { double("database instance", name: 'cc_db', id: "db2") }
   let(:fake_aws_rds) { double("aws_rds", db_instances: [db_instance_1, db_instance_2]) }
