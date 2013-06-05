@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH CLI plugin for Micro BOSH deployment"
-  s.description  = s.summary
+  s.description  = "BOSH CLI plugin for Micro BOSH deployment\n#{`git rev-parse HEAD`[0, 6]}"
   s.author       = "VMware"
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'

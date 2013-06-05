@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.name                    = 'bosh_agent'
   s.version                 =  version
   s.summary                 = 'Agent for Cloud Foundry BOSH release engineering tool.'
-  s.description             = 'This agent listens for instructions from the bosh director on each server that bosh manages.'
+  s.description             = "This agent listens for instructions from the bosh director on each server that bosh manages.\n#{`git rev-parse HEAD`[0, 6]}"
   s.author                  = 'VMware'
   s.homepage                = 'https://github.com/cloudfoundry/bosh'
   s.license                 = 'Apache 2.0'
