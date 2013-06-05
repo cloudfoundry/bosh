@@ -27,7 +27,11 @@ describe Bosh::Cli::DirectorTask do
 
     @director.stub!(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=20-").
-      and_return([416, "done", {}])
+      and_return([416, "Byte range unsatisfiable", { :content_range => "bytes */100" }])
+
+    @director.stub!(:get).
+      with("/tasks/10/output", nil, nil, "Range" => "bytes=20-").
+      and_return([206, "done", {}])
 
     @task.output.should == "test\n"
     @task.output.should == nil     # No newline yet

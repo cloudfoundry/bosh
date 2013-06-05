@@ -476,6 +476,8 @@ module Bosh
           new_offset = $1.to_i + 1
         else
           new_offset = nil
+          # Delete the "Byte range unsatisfiable" message
+          body = nil if response_code == 416
         end
 
         # backward compatible with renaming soap log to cpi log
