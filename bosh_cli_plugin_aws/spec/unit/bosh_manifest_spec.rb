@@ -3,23 +3,24 @@ require 'spec_helper'
 describe Bosh::Aws::BoshManifest do
   let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
   let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
+  let(:rds_receipt) { Psych.load_file(asset "test-aws_rds_bosh_receipt.yml") }
   let(:manifest_options) {{hm_director_user: 'hm', hm_director_password: 'hm_password'}}
 
   it "sets the correct elastic ip" do
-    described_class.new(vpc_receipt, route53_receipt, 'deadbeef', manifest_options).vip.should == "50.200.100.3"
+    described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options).vip.should == "50.200.100.3"
   end
 
   it "warns when vip is missing" do
     route53_receipt['elastic_ips']['bosh']['ips'] = []
 
-    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', manifest_options)
+    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options)
     manifest.should_receive(:warning).with("Missing vip field")
     manifest.to_y
   end
 
   describe "generated yaml" do
     let(:manifest) do
-      manifest_yaml = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', manifest_options).to_y
+      manifest_yaml = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options).to_y
       YAML.load(manifest_yaml)
     end
     let(:properties) { manifest['properties'] }
@@ -32,10 +33,6 @@ describe Bosh::Aws::BoshManifest do
       director_ssl_properties = properties['director']['ssl']
       expect(director_ssl_properties['key']).to_not be_nil
       expect(director_ssl_properties['cert']).to_not be_nil
-    end
-
-    it "defaults to postgres for director database" do
-      expect(properties['director']['db']['adapter']).to eq 'postgres'
     end
 
     it "sets director_uuid" do
@@ -73,6 +70,14 @@ describe Bosh::Aws::BoshManifest do
       expect(aws['region']).to eq 'us-east-1'
       expect(aws['default_key_name']).to eq 'dev102'
       expect(aws['ec2_endpoint']).to eq 'ec2.us-east-1.amazonaws.com'
+    end
+
+    it "sets the rds properties" do
+      db = properties['mysql']
+      expect(db['user']).to eq 'uaf71ad63a7cbd2'
+      expect(db['password']).to eq 'p76ad85e9793e58b7112a4881be100dee'
+      expect(db['host']).to eq 'bosh.cabaz18bo7yr.us-east-1.rds.amazonaws.com'
+      expect(db['port']).to eq 3306
     end
   end
 end

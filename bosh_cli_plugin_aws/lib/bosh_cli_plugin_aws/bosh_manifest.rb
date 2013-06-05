@@ -2,11 +2,12 @@ module Bosh
   module Aws
     class BoshManifest < MicroboshManifest
 
-      attr_reader :director_uuid
+      attr_reader :director_uuid, :rds_receipt
 
-      def initialize(vpc_receipt, route53_receipt, director_uuid, options={})
+      def initialize(vpc_receipt, route53_receipt, director_uuid, rds_receipt, options={})
         super(vpc_receipt, route53_receipt, options)
         @director_uuid = director_uuid
+        @rds_receipt = rds_receipt
       end
 
       def file_name
@@ -31,6 +32,26 @@ module Bosh
 
       def director_ssl_cert
         certificate.certificate.gsub("\n", "\n        ")
+      end
+
+      def bosh_rds_properties
+        rds_receipt['deployment_manifest']['properties']['bosh']
+      end
+
+      def bosh_rds_host
+        bosh_rds_properties['address']
+      end
+
+      def bosh_rds_port
+        bosh_rds_properties['port']
+      end
+
+      def bosh_rds_password
+        bosh_rds_properties['roles'].first['password']
+      end
+
+      def bosh_rds_user
+        bosh_rds_properties['roles'].first['name']
       end
 
       # RSpec overloads to_yaml when you set up expectations on an object;

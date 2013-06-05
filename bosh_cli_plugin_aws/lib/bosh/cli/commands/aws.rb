@@ -88,7 +88,7 @@ module Bosh::Cli::Command
 
     usage "aws generate bosh"
     desc "generate bosh.yml deployment manifest"
-    def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
+    def create_bosh_manifest(vpc_receipt_file, route53_receipt_file, bosh_rds_receipt_file)
       target_required
 
       options[:hm_director_user] ||= 'hm'
@@ -96,7 +96,8 @@ module Bosh::Cli::Command
 
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
-      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, options)
+      bosh_rds_config = load_yaml_file(bosh_rds_receipt_file)
+      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
 
       write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
@@ -342,6 +343,7 @@ module Bosh::Cli::Command
 
         delete_all_rds_subnet_groups(config_file)
         delete_all_rds_security_groups(config_file)
+        rds.delete_db_parameter_group('utf8')
       end
     end
 

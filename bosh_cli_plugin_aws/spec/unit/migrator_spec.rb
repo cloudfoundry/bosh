@@ -154,15 +154,18 @@ describe Bosh::Aws::Migrator do
         subject.migrate
       end
 
-      it "should write the migrations in the S3 bucket" do
+      it "should write the migrations in the S3 bucket after each migration" do
         mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
 
         mock_s3.stub(:create_bucket)
+        successful_migrations = []
+        @expected_migrations.each do |migration|
 
-        mock_s3.should_receive(:upload_to_bucket)
-           .with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml",
-                 YAML.dump(@expected_migrations.collect{|m|m.to_hash}))
-
+          successful_migrations << migration
+          mock_s3.should_receive(:upload_to_bucket)
+             .with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml",
+                   YAML.dump(successful_migrations.collect{|m|m.to_hash}))
+        end
         subject.migrate
       end
     end

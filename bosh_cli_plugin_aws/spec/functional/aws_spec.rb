@@ -45,13 +45,14 @@ describe Bosh::Cli::Command::AWS do
     describe "aws generate bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
       let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
+      let(:bosh_rds_receipt_yml) { asset "test-aws_rds_bosh_receipt.yml" }
 
       it "generates required bosh deployment keys" do
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
             aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
-            aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
+            aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml, bosh_rds_receipt_yml)
 
             yaml = Psych.load_file("bosh.yml")
 
@@ -634,6 +635,12 @@ describe Bosh::Cli::Command::AWS do
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
+      def mock_deletes(fake_rds)
+        fake_rds.should_receive :delete_subnet_groups
+        fake_rds.should_receive :delete_security_groups
+        fake_rds.should_receive :delete_db_parameter_group
+      end
+
       it "should delete db_subnets when dbs don't exist" do
         fake_ec2 = mock("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
@@ -642,9 +649,10 @@ describe Bosh::Cli::Command::AWS do
         fake_rds = mock("rds")
         fake_rds.should_receive(:database_names).and_return([])
         fake_rds.should_receive(:databases).and_return([])
-        fake_rds.should_not_receive(:delete_databases)
-        fake_rds.should_receive(:delete_subnet_groups)
-        fake_rds.should_receive(:delete_security_groups)
+
+
+        mock_deletes(fake_rds)
+
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
 
         aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").
@@ -667,12 +675,12 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             aws.stub(:say).twice
             aws.stub(:confirmed?).and_return(true)
+
             fake_rds.stub(:database_names).and_return(%w[foo bar])
             fake_rds.stub(:databases).and_return([])
+            mock_deletes(fake_rds)
 
             fake_rds.should_receive :delete_databases
-            fake_rds.should_receive :delete_subnet_groups
-            fake_rds.should_receive :delete_security_groups
 
             aws.send(:delete_all_rds_dbs, config_file)
           end
@@ -722,9 +730,9 @@ describe Bosh::Cli::Command::AWS do
 
               ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
 
+              mock_deletes(fake_rds)
+
               fake_rds.should_receive :delete_databases
-              fake_rds.should_receive :delete_subnet_groups
-              fake_rds.should_receive :delete_security_groups
 
               aws.send(:delete_all_rds_dbs, config_file)
             end
@@ -747,6 +755,7 @@ describe Bosh::Cli::Command::AWS do
           fake_rds.should_receive :delete_databases
           fake_rds.should_receive :delete_subnet_groups
           fake_rds.should_receive :delete_security_groups
+          fake_rds.should_receive :delete_db_parameter_group
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.send(:delete_all_rds_dbs, config_file)

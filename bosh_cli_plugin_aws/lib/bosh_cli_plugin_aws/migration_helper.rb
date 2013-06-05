@@ -26,13 +26,13 @@ module Bosh
         attr_accessor :instance_id, :receipt, :tag, :subnet_ids
 
         def initialize(args = {})
-          vpc_receipt   = args.fetch(:vpc_receipt)
-          vpc_subnets   = vpc_receipt.fetch('vpc').fetch('subnets')
+          vpc_receipt   = args.fetch(:vpc_receipt).fetch('vpc')
+          vpc_subnets   = vpc_receipt.fetch('subnets')
           @rds_db_conf  = args.fetch(:rds_db_conf)
           @instance_id  = @rds_db_conf.fetch('instance')
           @tag          = @rds_db_conf.fetch('tag')
           @subnet_ids   = @rds_db_conf.fetch('subnets').map { |s| vpc_subnets[s] }
-          @vpc_id       = vpc_receipt.fetch('vpc').fetch('id')
+          @vpc_id       = vpc_receipt.fetch('id')
         end
 
         def create!

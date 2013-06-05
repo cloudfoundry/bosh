@@ -25,6 +25,7 @@ describe "AWS Bootstrap commands" do
       Dir.chdir dirname do
         FileUtils.cp(asset("test-output.yml"), "aws_vpc_receipt.yml")
         FileUtils.cp(asset("test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
+        FileUtils.cp(asset("test-aws_rds_bosh_receipt.yml"), "aws_rds_bosh_receipt.yml")
 
         example.run
       end

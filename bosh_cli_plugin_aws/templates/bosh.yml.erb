@@ -65,7 +65,6 @@ jobs:
   template:
   - nats
   - blobstore
-  - postgres
   - redis
   - powerdns
   - director
@@ -115,13 +114,12 @@ properties:
     address: 10.10.0.7
     port: 4222
 
-  postgres: &bosh_db
-    adapter: postgres
-    user: bosh
-    password: a7a33139c8e3f34bc201351b
-    host: 127.0.0.1
-    listen_address: 127.0.0.1
-    port: 5432
+  mysql: &bosh_db
+    adapter: mysql2
+    user: <%= bosh_rds_user %>
+    password: <%= bosh_rds_password %>
+    host: <%= bosh_rds_host %>
+    port: <%= bosh_rds_port %>
     database: bosh
 
   redis:

@@ -23,7 +23,7 @@ class CreateBoshRdsDb < Bosh::Aws::Migration
       end
 
     ensure
-      save_receipt("aws_rds_receipt", RdsDb.receipt)
+      save_receipt("aws_rds_bosh_receipt", RdsDb.receipt)
     end
   end
 

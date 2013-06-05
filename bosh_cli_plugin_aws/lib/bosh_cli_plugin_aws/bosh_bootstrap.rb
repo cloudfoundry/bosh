@@ -51,10 +51,12 @@ This command should be used for bootstrapping bosh from scratch.
         unless @manifest
           vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
           route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
+          bosh_rds_receipt_filename = File.expand_path("aws_rds_bosh_receipt.yml")
 
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
-          @manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, options)
+          bosh_rds_config = load_yaml_file(bosh_rds_receipt_filename)
+          @manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
         end
 
         @manifest
