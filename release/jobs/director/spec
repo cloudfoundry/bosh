@@ -242,6 +242,9 @@ properties:
   openstack.endpoint_type:
     description: OpenStack endpoint type (optional, by default publicURL)
     default: publicURL
+  openstack.stemcell_public_visibility:
+    description: Set public visibility for stemcells (optional, false by default)
+    default: false
   openstack.default_key_name:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:

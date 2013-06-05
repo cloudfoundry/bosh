@@ -34,6 +34,7 @@ module Bosh::OpenStackCloud
 
       @default_key_name = @openstack_properties["default_key_name"]
       @default_security_groups = @openstack_properties["default_security_groups"]
+      @stemcell_public_visibility = @openstack_properties["stemcell_public_visibility"]
 
       unless @openstack_properties["auth_url"].match(/\/tokens$/)
         @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"
@@ -99,7 +100,7 @@ module Bosh::OpenStackCloud
               :name => "BOSH-#{generate_unique_name}",
               :disk_format => cloud_properties["disk_format"],
               :container_format => cloud_properties["container_format"],
-              :is_public => true
+              :is_public => @stemcell_public_visibility.nil? ? false : @stemcell_public_visibility,
             }
             
             image_properties = {}

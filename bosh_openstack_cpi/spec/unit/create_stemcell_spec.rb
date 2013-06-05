@@ -20,7 +20,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :disk_format => "qcow2",
         :container_format => "bare",
         :location => "#{@tmp_dir}/root.img",
-        :is_public => true
+        :is_public => false
       }
 
       cloud = mock_glance do |glance|
@@ -46,7 +46,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :disk_format => "qcow2",
         :container_format => "bare",
         :copy_from => "http://cloud-images.ubuntu.com/bosh/root.img",
-        :is_public => true
+        :is_public => false
       }
 
       cloud = mock_glance do |glance|
@@ -73,7 +73,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :disk_format => "qcow2",
         :container_format => "bare",
         :location => "#{@tmp_dir}/root.img",
-        :is_public => true,
+        :is_public => false,
         :properties => {
           :name => "bosh-stemcell",
           :version => "x.y.z",
@@ -108,6 +108,34 @@ describe Bosh::OpenStackCloud::Cloud do
       sc_id.should == "i-bar"
     end
 
+    it "sets stemcell visibility to public when required" do
+      image_params = {
+        :name => "BOSH-#{unique_name}",
+        :disk_format => "qcow2",
+        :container_format => "bare",
+        :location => "#{@tmp_dir}/root.img",
+        :is_public => true,
+      }
+
+      cloud_options = mock_cloud_options
+      cloud_options["openstack"]["stemcell_public_visibility"] = true
+      cloud = mock_glance(cloud_options) do |glance|
+        glance.images.should_receive(:create).with(image_params).and_return(image)
+      end
+
+      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
+      cloud.should_receive(:generate_unique_name).and_return(unique_name)
+      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
+      # FIX-ME: cloud.should_receive(:wait_resource).with(image, :active)
+
+      sc_id = cloud.create_stemcell("/tmp/foo", {
+        "container_format" => "bare",
+        "disk_format" => "qcow2",
+      })
+
+      sc_id.should == "i-bar"
+    end    
+    
     it "should throw an error for non existent root image in stemcell archive" do  
       result = Bosh::Exec::Result.new("cmd", "output", 0)
       Bosh::Exec.should_receive(:sh).and_return(result)
