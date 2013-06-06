@@ -4,6 +4,9 @@ require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
+  let(:manual) { {"type" => "manual", 
+                  "cloud_properties" => {"subnet" => "sn-xxxxxxxx", "security_groups" => %w[default]}} }
+  
   before(:each) do
     @registry = mock_registry
   end
@@ -25,11 +28,32 @@ describe Bosh::AwsCloud::Cloud do
     }.should raise_error Bosh::Clouds::NotSupported
   end
 
+  it "forces recreation when IP address differ" do
+    sec_grp = double("security_group", :name => "default")
+    instance = double("instance",
+                      :id => "i-foobar",
+                      :security_groups => [sec_grp],
+                      :private_ip_address => "10.10.10.1")
+
+    cloud = mock_cloud do |ec2|
+      ec2.instances.stub(:[]).
+          with("i-foobar").
+          and_return(instance)
+    end
+
+    network_spec = { "net_a" => manual }
+    network_spec["net_a"]["ip"] = "10.10.10.2"
+    expect {
+      cloud.configure_networks("i-foobar", network_spec)
+    }.to raise_error(Bosh::Clouds::NotSupported, "IP address change requires VM recreation: 10.10.10.1 to 10.10.10.2")
+  end  
+  
   it "adds elastic ip from to the instance for vip network" do
     sec_grp = double("security_group", :name => "default")
     instance = double("instance",
                       :id => "i-foobar",
-                      :security_groups => [sec_grp])
+                      :security_groups => [sec_grp],
+                      :private_ip_address => "10.10.10.1")
     Bosh::Clouds::Config.stub(:task_checkpoint)
 
     cloud = mock_cloud do |ec2|
@@ -58,7 +82,8 @@ describe Bosh::AwsCloud::Cloud do
     sec_grp = double("security_group", :name => "default")
     instance = double("instance",
                       :id => "i-foobar",
-                      :security_groups => [sec_grp])
+                      :security_groups => [sec_grp],
+                      :private_ip_address => "10.10.10.1")
 
     cloud = mock_cloud do |ec2|
       ec2.instances.stub(:[]).

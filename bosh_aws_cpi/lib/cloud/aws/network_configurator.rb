@@ -61,8 +61,7 @@ module Bosh::AwsCloud
     end
 
     def private_ip
-      cloud_error "private IP only exist for manual network" unless vpc?
-      @network.private_ip
+      vpc? ? @network.private_ip : nil
     end
 
     def vpc?
