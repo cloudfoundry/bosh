@@ -33,6 +33,37 @@ describe Bosh::AwsCloud::NetworkConfigurator do
 
   end
 
+  describe "#private_ip" do
+    it "should extract private ip address for manual network" do
+      spec = {}
+      spec["network_a"] = manual
+      spec["network_a"]["ip"] = "10.0.0.1"
+
+      nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
+      nc.private_ip.should == "10.0.0.1"
+    end
+
+    it "should extract private ip address from manual network when there's also vip network" do
+      spec = {}
+      spec["network_a"] = vip
+      spec["network_a"]["ip"] = "10.0.0.1"
+      spec["network_b"] = manual
+      spec["network_b"]["ip"] = "10.0.0.2"      
+
+      nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
+      nc.private_ip.should == "10.0.0.2"
+    end     
+    
+    it "should not extract private ip address for dynamic network" do
+      spec = {}
+      spec["network_a"] = dynamic
+      spec["network_a"]["ip"] = "10.0.0.1"
+
+      nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
+      nc.private_ip.should be_nil
+    end     
+  end
+  
   describe "network types" do
 
     it "should raise an error if both dynamic and manual networks are defined" do

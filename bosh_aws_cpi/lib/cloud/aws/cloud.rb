@@ -305,16 +305,20 @@ module Bosh::AwsCloud
     # Configure network for an EC2 instance
     # @param [String] instance_id EC2 instance id
     # @param [Hash] network_spec network properties
-    # @raise [Bosh::Clouds:NotSupported] if the security groups change
+    # @raise [Bosh::Clouds:NotSupported] if there's a network change that requires the recreation of the VM
     def configure_networks(instance_id, network_spec)
       with_thread_name("configure_networks(#{instance_id}, ...)") do
         logger.info("Configuring '#{instance_id}' to use new network settings: #{network_spec.pretty_inspect}")
 
         instance = @ec2.instances[instance_id]
 
+        network_configurator = NetworkConfigurator.new(network_spec)
+        
         compare_security_groups(instance, network_spec)
+        
+        compare_private_ip_addresses(instance, network_configurator.private_ip)
 
-        NetworkConfigurator.new(network_spec).configure(@ec2, instance)
+        network_configurator.configure(@ec2, instance)
 
         update_agent_settings(instance) do |settings|
           settings["networks"] = network_spec
@@ -338,6 +342,24 @@ module Bosh::AwsCloud
         raise Bosh::Clouds::NotSupported,
               "security groups change requires VM recreation: %s to %s" %
                   [actual_group_names.join(", "), new_group_names.join(", ")]
+      end
+    end
+
+    ##
+    # Compares actual instance private IP addresses with the IP address specified at the network spec
+    #
+    # @param [AWS::EC2::Instance] instance EC2 instance
+    # @param [String] specified_ip_address IP address specified at the network spec (if Manual Network)
+    # @return [void]
+    # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't 
+    # change the IP address of a running server, so we need to send the InstanceUpdater a request to do it for us
+    def compare_private_ip_addresses(instance, specified_ip_address)
+      actual_ip_address = instance.private_ip_address
+
+      unless specified_ip_address.nil? || actual_ip_address == specified_ip_address
+        raise Bosh::Clouds::NotSupported,
+              "IP address change requires VM recreation: %s to %s" %
+              [actual_ip_address, specified_ip_address]
       end
     end
 
