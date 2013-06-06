@@ -78,6 +78,7 @@ module Bosh::OpenStackCloud
     # @option cloud_properties [String] infrastructure Stemcell infraestructure
     # @option cloud_properties [String] disk_format Image disk format
     # @option cloud_properties [String] container_format Image container format
+    # @option cloud_properties [String] is_public should the image be public
     # @option cloud_properties [optional, String] kernel_file Name of the
     #   kernel image file provided at the stemcell archive
     # @option cloud_properties [optional, String] ramdisk_file Name of the
@@ -138,13 +139,16 @@ module Bosh::OpenStackCloud
               ramdisk_id = upload_image(ramdisk_params)
             end
 
+            # All images should be private on glacnce by default
+            cloud_properties["is_public"] ||= false
+
             # 4. Upload image using Glance service
             image_params = {
               :name => image_name,
               :disk_format => cloud_properties["disk_format"],
               :container_format => cloud_properties["container_format"],
               :location => root_image,
-              :is_public => true
+              :is_public => cloud_properties["is_public"]
             }
             image_properties = {}
             image_properties[:kernel_id] = kernel_id if kernel_id

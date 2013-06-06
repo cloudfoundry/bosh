@@ -33,11 +33,72 @@ describe Bosh::OpenStackCloud::Cloud do
 
       sc_id = cloud.create_stemcell("/tmp/foo", {
         "container_format" => "ami",
-        "disk_format" => "ami"
+        "disk_format" => "ami",
+        "is_public" => true
       })
 
       sc_id.should == "i-bar"
     end
+
+    it "creates stemcell using an image without kernel nor ramdisk and private state" do
+      image = double("image", :id => "i-bar", :name => "i-bar")
+      unique_name = SecureRandom.uuid
+      image_params = {
+        :name => "BOSH-#{unique_name}",
+        :disk_format => "ami",
+        :container_format => "ami",
+        :location => "#{@tmp_dir}/root.img",
+        :is_public => false
+      }
+
+      cloud = mock_glance do |glance|
+        glance.images.should_receive(:create).
+          with(image_params).and_return(image)
+      end
+
+      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
+      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
+      cloud.should_receive(:generate_unique_name).and_return(unique_name)
+
+      sc_id = cloud.create_stemcell("/tmp/foo", {
+        "container_format" => "ami",
+        "disk_format" => "ami",
+        "is_public" => false
+      })
+
+      sc_id.should == "i-bar"
+    end
+
+    it "creates stemcell using an image without kernel nor ramdisk and private state as default value" do
+      image = double("image", :id => "i-bar", :name => "i-bar")
+      unique_name = SecureRandom.uuid
+      image_params = {
+        :name => "BOSH-#{unique_name}",
+        :disk_format => "ami",
+        :container_format => "ami",
+        :location => "#{@tmp_dir}/root.img",
+        :is_public => false
+      }
+
+      cloud = mock_glance do |glance|
+        glance.images.should_receive(:create).
+          with(image_params).and_return(image)
+      end
+
+      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
+      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
+      cloud.should_receive(:generate_unique_name).and_return(unique_name)
+
+      
+      sc_id = cloud.create_stemcell("/tmp/foo", {
+        "container_format" => "ami",
+        "disk_format" => "ami",
+      })
+
+      sc_id.should == "i-bar"
+    end
+
+
 
     it "creates stemcell using an image with kernel and ramdisk files" do
       image = double("image", :id => "i-bar", :name => "i-bar")
@@ -92,7 +153,8 @@ describe Bosh::OpenStackCloud::Cloud do
         "container_format" => "ami",
         "disk_format" => "ami",
         "kernel_file" => "kernel.img",
-        "ramdisk_file" => "initrd.img"
+        "ramdisk_file" => "initrd.img",
+        "is_public" => true
       })
 
       sc_id.should == "i-bar"
@@ -164,7 +226,8 @@ describe Bosh::OpenStackCloud::Cloud do
         "container_format" => "ami",
         "disk_format" => "ami",
         "kernel_file" => "kernel.img",
-        "ramdisk_file" => "initrd.img"
+        "ramdisk_file" => "initrd.img",
+        "is_public" => true
       })
 
       sc_id.should == "i-bar"
