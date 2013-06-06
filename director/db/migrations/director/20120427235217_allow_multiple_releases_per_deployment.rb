@@ -20,10 +20,8 @@ Sequel.migration do
 
     # Needed for mysql in order to drop column (doesn't work with other adapters)
     # newer versions of sequel support drop_foreign_key but the version breaks tests
-    if adapter_scheme == :mysql
-      alter_table :deployments do
-        drop_constraint :release_id, :type => :foreign_key
-      end
+    if [:mysql2, :mysql].include?(adapter_scheme)
+      run("alter table deployments drop FOREIGN KEY deployments_ibfk_1")
     end
 
     alter_table :deployments do
