@@ -1,5 +1,5 @@
 require_relative '../../helpers/build'
-require_relative '../../helpers/s3_stemcell'
+require_relative '../../helpers/pipeline'
 
 namespace :ci do
   namespace :system do
@@ -7,8 +7,9 @@ namespace :ci do
       task :micro do
         cd(ENV['WORKSPACE']) do
           begin
-            Bosh::Helpers::S3Stemcell.new('vsphere', 'micro').download_latest
-            Bosh::Helpers::S3Stemcell.new('vsphere', 'basic').download_latest
+            pipeline = Bosh::Helpers::Pipeline.new
+            pipeline.download_latest_stemcell(infrastructure: 'vsphere', name: 'micro-bosh-stemcell')
+            pipeline.download_latest_stemcell(infrastructure: 'vsphere', name: 'bosh-stemcell')
             Rake::Task['spec:system:vsphere:micro'].invoke
           ensure
             rm_f(Dir.glob('*bosh-stemcell-*.tgz'))
@@ -16,5 +17,7 @@ namespace :ci do
         end
       end
     end
+
+
   end
 end

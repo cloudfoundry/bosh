@@ -25,3 +25,7 @@ module RSpecRakeHelper
     klass.include_context("rake")
   end
 end
+
+def spec_asset(name)
+  File.expand_path("../assets/#{name}", __FILE__)
+end

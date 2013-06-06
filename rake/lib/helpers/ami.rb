@@ -3,16 +3,15 @@ require 'bosh_aws_cpi'
 require 'ostruct'
 require 'yaml'
 require 'rake'
-require_relative('aws_registry')
-require_relative('light_stemcell')
+require_relative 'aws_registry'
 
 module Bosh
   module Helpers
     class Ami
-      attr_reader :stemcell_tgz
+      attr_reader :stemcell
 
-      def initialize(stemcell_tgz, aws_registry=AwsRegistry.new)
-        @stemcell_tgz = stemcell_tgz
+      def initialize(stemcell, aws_registry=AwsRegistry.new)
+        @stemcell = stemcell
         @aws_registry = aws_registry
       end
 
@@ -42,8 +41,8 @@ module Bosh
 
         cloud = Bosh::Clouds::Provider.create("aws", options)
 
-        extract_stemcell do |tmp_dir, stemcell_properties|
-          ami_id = cloud.create_stemcell("#{tmp_dir}/image", stemcell_properties['cloud_properties'])
+        stemcell.extract do |tmp_dir, stemcell_manifest|
+          ami_id = cloud.create_stemcell("#{tmp_dir}/image", stemcell_manifest['cloud_properties'])
           cloud.ec2.images[ami_id].public = true
 
           ami_id
@@ -52,18 +51,6 @@ module Bosh
 
       def region
         aws_registry.region
-      end
-
-      def extract_stemcell(tar_options={}, &block)
-        Dir.mktmpdir do |tmp_dir|
-          tar_cmd = "tar xzf #{stemcell_tgz} --directory #{tmp_dir}"
-          tar_cmd << " --exclude=#{tar_options[:exclude]}" if tar_options.has_key?(:exclude)
-
-          Rake::FileUtilsExt.sh(tar_cmd)
-
-          stemcell_properties = Psych.load_file("#{tmp_dir}/stemcell.MF")
-          block.call(tmp_dir, stemcell_properties)
-        end
       end
 
       private

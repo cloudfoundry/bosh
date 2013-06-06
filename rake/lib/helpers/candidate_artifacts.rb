@@ -1,21 +1,20 @@
-require_relative 'ami'
-require_relative 'light_stemcell'
+require_relative 'pipeline'
+require_relative 'stemcell'
 
 module Bosh
   module Helpers
     class CandidateArtifacts
       def initialize(stemcell_tgz)
-        @stemcell_tgz = stemcell_tgz
+        @pipeline = Pipeline.new
+        @stemcell = Stemcell.new(stemcell_tgz)
       end
 
       def publish
-        ami = Bosh::Helpers::Ami.new(stemcell_tgz)
-        light_stemcell = LightStemcell.new(ami)
-        light_stemcell.publish(ami.publish)
+        pipeline.publish(stemcell.create_light_stemcell)
       end
 
       private
-      attr_reader :stemcell_tgz
+      attr_reader :pipeline, :stemcell
     end
   end
 end

@@ -4,33 +4,29 @@ require_relative '../../lib/helpers/candidate_artifacts'
 module Bosh
   module Helpers
     describe CandidateArtifacts do
-      let(:ami_id) do
-        'fake-ami-id'
-      end
-
-      let(:ami) do
-        double(Ami, publish: ami_id).as_null_object
-      end
-
       let(:light_stemcell) do
-        double(LightStemcell).as_null_object
+        double(Stemcell, path: light_stemcell_path)
       end
 
-      subject(:candidate_artifacts) { described_class.new('fake-stemcell.tgz') }
+      let(:light_stemcell_path) { 'light-fake-stemcell.tgz' }
+
+      let(:stemcell) do
+        double(Stemcell, path: stemcell_path, infrastructure: 'aws', name: 'bosh-stemcell')
+      end
+
+      let(:stemcell_path) { 'fake-stemcell.tgz' }
+
+      subject(:candidate_artifacts) { described_class.new(stemcell_path) }
 
       before do
-        Ami.stub(:new).with('fake-stemcell.tgz').and_return(ami)
-        LightStemcell.stub(:new).with(ami).and_return(light_stemcell)
+        Pipeline.any_instance.stub(:publish)
+        Stemcell.stub(:new).with(stemcell_path).and_return(stemcell)
       end
 
-      it 'creates an ami from a stemcell' do
-        ami.should_receive(:publish).and_return(ami_id)
 
-        candidate_artifacts.publish
-      end
-
-      it 'publishes a light stemcell for the new ami and provided stemcell' do
-        light_stemcell.should_receive(:publish).with(ami_id)
+      it 'publishes the light stemcell to the pipeline' do
+        stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)
+        Pipeline.any_instance.should_receive(:publish).with(light_stemcell)
 
         candidate_artifacts.publish
       end

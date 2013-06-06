@@ -1,5 +1,6 @@
 require_relative '../../helpers/build'
-require_relative '../../helpers/s3_stemcell'
+require_relative '../../helpers/pipeline'
+require_relative '../../helpers/stemcell'
 
 namespace :ci do
   namespace :stemcell do
@@ -11,7 +12,7 @@ namespace :ci do
 
         Rake::Task["stemcell:micro"].invoke(args[:infrastructure], tarball_path, Bosh::Helpers::Build.candidate.number)
       end
-      Bosh::Helpers::S3Stemcell.new(args[:infrastructure], 'micro').publish
+      publish_stemcell(args[:infrastructure], 'micro')
     end
 
     desc "Build stemcell from CI pipeline"
@@ -19,7 +20,12 @@ namespace :ci do
       cd(ENV['WORKSPACE']) do
         Rake::Task["stemcell:basic"].invoke(args[:infrastructure], Bosh::Helpers::Build.candidate.number)
       end
-      Bosh::Helpers::S3Stemcell.new(args[:infrastructure], 'basic').publish
+      publish_stemcell(args[:infrastructure], 'basic')
     end
+  end
+
+  def publish_stemcell(infrastructure, type)
+    stemcell = Stemcell.from_jenkins_build(infrastructure, type, Bosh::Helpers::Build.candidate)
+    Pipeline.new.publish_stemcell(stemcell)
   end
 end

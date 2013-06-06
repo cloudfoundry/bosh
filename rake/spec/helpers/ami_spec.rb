@@ -1,17 +1,22 @@
 require 'spec_helper'
 require_relative '../../lib/helpers/ami'
+require_relative '../../lib/helpers/stemcell'
 
 module Bosh::Helpers
   describe Ami do
+    let(:stemcell) do
+      stemcell = double(Stemcell)
+      stemcell_manifest = {'cloud_properties' => {'ami' => ''}}
+      stemcell.stub(:extract).and_yield('/foo/bar', stemcell_manifest)
+      stemcell
+    end
+
     subject(:ami) do
-      Ami.new('fake-stemcell.tgz', double(AwsRegistry, region: 'fake-region'))
+      Ami.new(stemcell, double(AwsRegistry, region: 'fake-region'))
     end
 
     before do
       Logger.stub(:new)
-      Rake::FileUtilsExt.stub(:sh)
-      stemcell_manifest = {'cloud_properties' => {'ami' => ''}}
-      Psych.stub(:load_file).and_return(stemcell_manifest)
     end
 
     describe 'publish' do
