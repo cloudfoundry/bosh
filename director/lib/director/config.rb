@@ -298,7 +298,9 @@ module Bosh::Director
         end
 
         unless director
-          director = Bosh::Director::Models::DirectorAttribute.create(uuid: gen_uuid)
+          director = Bosh::Director::Models::DirectorAttribute.new
+          director.uuid = gen_uuid
+          director.save
           @logger.info("Generated director UUID #{director.uuid}")
         end
 
@@ -319,7 +321,9 @@ module Bosh::Director
 
             if state["uuid"]
               Bosh::Director::Models::DirectorAttribute.delete
-              Bosh::Director::Models::DirectorAttribute.create(uuid: state["uuid"])
+              director = Bosh::Director::Models::DirectorAttribute.new
+              director.uuid = state["uuid"]
+              director.save
               @logger.info("Using director UUID #{state["uuid"]} from #{state_file}")
               new_uuid = state["uuid"]
             end
