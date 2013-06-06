@@ -102,6 +102,14 @@ module Bosh::OpenStackCloud
     end
 
     ##
+    # Returns the private IP address for this network configuration
+    #
+    # @return [String] private ip address
+    def private_ip
+      @network.is_a?(ManualNetwork) ? @network.private_ip : nil   
+    end
+
+    ##
     # Returns the nics for this network configuration
     #
     # @return [Array] nics

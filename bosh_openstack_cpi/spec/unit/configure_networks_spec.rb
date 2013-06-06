@@ -9,6 +9,49 @@ describe Bosh::OpenStackCloud::Cloud do
     @registry = mock_registry
   end
 
+  it "configures the network when using dynamic network" do
+    server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
+    security_group = double("security_groups", :name => "default")
+
+    server.should_receive(:security_groups).and_return([security_group])
+
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+      openstack.addresses.should_receive(:each)
+    end
+
+    network_spec = { "net_a" => dynamic_network_spec }
+    old_settings = { "foo" => "bar", "networks" => network_spec }
+    new_settings = { "foo" => "bar", "networks" => network_spec }
+
+    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
+    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    
+    cloud.configure_networks("i-test", network_spec)
+  end
+
+  it "configures the network when using manual network" do
+    server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
+    security_group = double("security_groups", :name => "default")
+
+    server.should_receive(:security_groups).and_return([security_group])
+
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+      openstack.addresses.should_receive(:each)
+    end
+
+    network_spec = { "net_a" => manual_network_spec }
+    network_spec["net_a"]["ip"] = "10.10.10.1"
+    old_settings = { "foo" => "bar", "networks" => network_spec }
+    new_settings = { "foo" => "bar", "networks" => network_spec }
+
+    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
+    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    
+    cloud.configure_networks("i-test", network_spec)
+  end
+  
   it "forces recreation when security groups differ" do
     server = double("server", :id => "i-test", :name => "i-test")
     security_group = double("security_groups", :name => "newgroups")
@@ -24,8 +67,25 @@ describe Bosh::OpenStackCloud::Cloud do
     }.to raise_error Bosh::Clouds::NotSupported
   end
 
+  it "forces recreation when IP address differ" do
+    server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
+    security_group = double("security_groups", :name => "default")
+
+    server.should_receive(:security_groups).and_return([security_group])
+
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+    end
+
+    network_spec = { "net_a" => manual_network_spec }
+    network_spec["net_a"]["ip"] = "10.10.10.2"
+    expect {
+      cloud.configure_networks("i-test", network_spec)
+    }.to raise_error(Bosh::Clouds::NotSupported, "IP address change requires VM recreation: 10.10.10.1 to 10.10.10.2")
+  end
+  
   it "adds floating ip to the server for vip network" do
-    server = double("server", :id => "i-test", :name => "i-test")
+    server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => nil)
     security_group = double("security_groups", :name => "default")
@@ -50,7 +110,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   it "removes floating ip from the server if vip network is gone" do
-    server = double("server", :id => "i-test", :name => "i-test")
+    server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => "i-test")
     security_group = double("security_groups", :name => "default")
