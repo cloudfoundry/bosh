@@ -51,6 +51,7 @@ require "bosh_agent/platform/microcloud"
 require "bosh_agent/bootstrap"
 
 require "bosh_agent/alert"
+require "bosh_agent/auth_alert"
 require "bosh_agent/alert_processor"
 require "bosh_agent/smtp_server"
 require "bosh_agent/heartbeat"
