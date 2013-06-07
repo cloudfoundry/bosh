@@ -32,18 +32,32 @@ describe PagingDatadogClient do
     end
 
     describe "modified calls" do
+      let(:priority) { "normal" }
       let(:alert) {
         Dogapi::Event.new(
           "message",
           :date_happened => Time.now.to_i - 300,
-          :priority => "high",
+          :priority => priority,
           :tags => ["some", "tags"]
         )
       }
 
-      it "adds the datadog recipient to the end of the message" do
-        paging_client.emit_event(alert)
-        wrapped_client.last_event.msg_text.should == "message @#{datadog_recipient}"
+      context "with a normal priority alert" do
+        let(:priority) { "normal" }
+
+        it "adds the datadog recipient to the end of the message" do
+          paging_client.emit_event(alert)
+          wrapped_client.last_event.msg_text.should == "message @#{datadog_recipient}"
+        end
+      end
+
+      context "with a low prioity alert" do
+        let(:priority) { "low" }
+
+        it "does not add the datadog recipient to the end of the message" do
+          paging_client.emit_event(alert)
+          wrapped_client.last_event.msg_text.should_not include("@#{datadog_recipient}")
+        end
       end
 
       it "keeps the rest of the attributes the same" do

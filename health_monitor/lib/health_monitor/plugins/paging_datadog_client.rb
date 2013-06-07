@@ -12,7 +12,11 @@ class PagingDatadogClient
 
   def emit_event(event)
     event_hash = event.to_hash
-    new_message = "#{event.msg_text} @#{@datadog_recipient}"
+    new_message = if event.priority == "normal"
+                    "#{event.msg_text} @#{@datadog_recipient}"
+                  else
+                    event.msg_text
+                  end
     new_event = Dogapi::Event.new(new_message, event_hash)
 
     @datadog_client.emit_event(new_event)
