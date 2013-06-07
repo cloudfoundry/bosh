@@ -62,6 +62,7 @@ def mock_cloud(options = nil)
   addresses = double("addresses")
   snapshots = double("snapshots")
   key_pairs = double("key_pairs")
+  security_groups = double("security_groups")
 
   glance = double(Fog::Image)
   Fog::Image.stub(:new).and_return(glance)
@@ -75,6 +76,7 @@ def mock_cloud(options = nil)
   openstack.stub(:addresses).and_return(addresses)
   openstack.stub(:snapshots).and_return(snapshots)
   openstack.stub(:key_pairs).and_return(key_pairs)
+  openstack.stub(:security_groups).and_return(security_groups)
 
   Fog::Compute.stub(:new).and_return(openstack)
 
