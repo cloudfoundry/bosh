@@ -72,6 +72,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
           with(openstack_params(unique_name, %w[default], [])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -101,6 +102,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
           with(openstack_params(unique_name, %w[default], [], "1.2.3.4")).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -132,6 +134,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
           with(openstack_params(unique_name, security_groups, [])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(security_groups)
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -162,6 +165,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
           with(openstack_params(unique_name, %w[default], [nic])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -193,6 +197,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
           with(openstack_params(unique_name, %w[default], [nic])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -218,6 +223,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -238,6 +244,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   it "raises a Retryable Error when cannot create an OpenStack server" do
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
@@ -253,9 +260,21 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
+  it "raises an error when a security group doesn't exists" do
+    cloud = mock_cloud do |openstack|
+      openstack.security_groups.should_receive(:collect).and_return(%w[foo])
+    end
+
+    expect {
+      cloud.create_vm("agent-id", "sc-id", resource_pool_spec, { "network_a" => dynamic_network_spec },
+                      nil, { "test_env" => "value" })
+    }.to raise_error(Bosh::Clouds::CloudError, "Security group `default' not found")
+  end
+  
   it "raises an error when flavor doesn't have ephemeral disk" do
     flavor = double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :ephemeral => nil)
     cloud = mock_cloud do |openstack|
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
     end
@@ -269,6 +288,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   it "raises an error when flavor doesn't have enough ephemeral disk capacity" do
     flavor = double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :ephemeral => 1)
     cloud = mock_cloud do |openstack|
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
     end
