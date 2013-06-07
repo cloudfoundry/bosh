@@ -10,7 +10,7 @@ module Bosh
       end
 
       def publish
-        pipeline.publish(stemcell.create_light_stemcell)
+        pipeline.publish_stemcell(stemcell.create_light_stemcell)
       end
 
       private

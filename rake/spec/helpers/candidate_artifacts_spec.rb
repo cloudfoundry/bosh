@@ -19,14 +19,14 @@ module Bosh
       subject(:candidate_artifacts) { described_class.new(stemcell_path) }
 
       before do
-        Pipeline.any_instance.stub(:publish)
+        Pipeline.any_instance.stub(:publish_stemcell)
         Stemcell.stub(:new).with(stemcell_path).and_return(stemcell)
       end
 
 
       it 'publishes the light stemcell to the pipeline' do
         stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)
-        Pipeline.any_instance.should_receive(:publish).with(light_stemcell)
+        Pipeline.any_instance.should_receive(:publish_stemcell).with(light_stemcell)
 
         candidate_artifacts.publish
       end
