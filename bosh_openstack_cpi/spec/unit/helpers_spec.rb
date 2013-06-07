@@ -105,7 +105,7 @@ describe Bosh::OpenStackCloud::Helpers do
       @openstack = double("openstack")
     end
 
-    it "should raise the exception if not RequestEntityTooLarge exception" do
+    it "should raise the exception if not a rescued exception" do
       response = Excon::Response.new(:body => "")
 
       @openstack.should_receive(:servers)
@@ -119,89 +119,107 @@ describe Bosh::OpenStackCloud::Helpers do
       }.to raise_error(NoMemoryError)
     end
 
-    it "should raise a CloudError exception if response has no body" do
-      response = Excon::Response.new(:body => "")
-
-      @openstack.should_receive(:servers)
-        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-      @cloud.should_not_receive(:sleep)
-
-      expect {
-        @cloud.with_openstack do
-          @openstack.servers
-        end
-      }.to raise_error(Bosh::Clouds::CloudError, "RequestEntityTooLarge. Check task debug log for details.")
-    end
-
-    it "should raise a CloudError exception if response is not JSON" do
-      response = Excon::Response.new(:body => "foo = bar")
-
-      @openstack.should_receive(:servers)
-        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-      @cloud.should_not_receive(:sleep)
-
-      expect {
-        @cloud.with_openstack do
-          @openstack.servers
-        end
-      }.to raise_error(Bosh::Clouds::CloudError, "RequestEntityTooLarge. Check task debug log for details.")
-    end
-
-    it "should retry the amount of seconds received at the response body" do
-      body = { "overLimit" => {
-          "message" => "This request was rate-limited.",
-          "code" => 413,
-          "retryAfter" => "5",
-          "details" => "Only 10 POST request(s) can be made to * every minute."}
-      }
-      response = Excon::Response.new(:body => JSON.dump(body))
-
-      @openstack.should_receive(:servers)
-        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-      @cloud.should_receive(:sleep).with(5)
-      @openstack.should_receive(:servers).and_return(nil)
-
-      @cloud.with_openstack do
-        @openstack.servers
+    context "InternalServerError" do
+      it "should raise a CloudError exception when OpenStack API returns a InternalServerError" do  
+        @openstack.should_receive(:servers).and_raise(Excon::Errors::InternalServerError.new("InternalServerError"))
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API returned a Internal Server error. Check task debug log for details.")
       end
     end
-
-    it "should retry the default number of seconds if not set at the response body" do
-      body = { "overLimitFault" => {
-          "message" => "This request was rate-limited.",
-          "code" => 413,
-          "details" => "Only 10 POST request(s) can be made to * every minute."}
-      }
-      response = Excon::Response.new(:body => JSON.dump(body))
-
-      @openstack.should_receive(:servers)
-        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-      @cloud.should_receive(:sleep).with(1)
-      @openstack.should_receive(:servers).and_return(nil)
-
-      @cloud.with_openstack do
-        @openstack.servers
+    
+    context "RequestEntityTooLarge" do
+      it "should raise a CloudError exception if response has no body" do
+        response = Excon::Response.new(:body => "")
+  
+        @openstack.should_receive(:servers)
+          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_not_receive(:sleep)
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
       end
-    end
-
-    it "should retry the max number of retries" do
-      body = { "overLimit" => {
-          "message" => "This request was rate-limited.",
-          "code" => 413,
-          "retryAfter" => "5",
-          "details" => "Only 10 POST request(s) can be made to * every minute."}
-      }
-      response = Excon::Response.new(:body => JSON.dump(body))
-
-      @openstack.should_receive(:servers).exactly(11)
-        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-      @cloud.should_receive(:sleep).with(5).exactly(10)
-
-      expect {
+  
+      it "should raise a CloudError exception if response is not JSON" do
+        response = Excon::Response.new(:body => "foo = bar")
+  
+        @openstack.should_receive(:servers)
+          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_not_receive(:sleep)
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
+      end
+  
+      it "should retry the amount of seconds received at the response body" do
+        body = { "overLimit" => {
+            "message" => "This request was rate-limited.",
+            "code" => 413,
+            "retryAfter" => "5",
+            "details" => "Only 10 POST request(s) can be made to * every minute."}
+        }
+        response = Excon::Response.new(:body => JSON.dump(body))
+  
+        @openstack.should_receive(:servers)
+          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_receive(:sleep).with(5)
+        @openstack.should_receive(:servers).and_return(nil)
+  
         @cloud.with_openstack do
           @openstack.servers
         end
-      }.to raise_error(Bosh::Clouds::CloudError, "RequestEntityTooLarge. Check task debug log for details.")
+      end
+  
+      it "should retry the default number of seconds if not set at the response body" do
+        body = { "overLimitFault" => {
+            "message" => "This request was rate-limited.",
+            "code" => 413,
+            "details" => "Only 10 POST request(s) can be made to * every minute."}
+        }
+        response = Excon::Response.new(:body => JSON.dump(body))
+  
+        @openstack.should_receive(:servers)
+          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_receive(:sleep).with(1)
+        @openstack.should_receive(:servers).and_return(nil)
+  
+        @cloud.with_openstack do
+          @openstack.servers
+        end
+      end
+  
+      it "should retry the max number of retries" do
+        body = { "overLimit" => {
+            "message" => "This request was rate-limited.",
+            "code" => 413,
+            "retryAfter" => "5",
+            "details" => "Only 10 POST request(s) can be made to * every minute."}
+        }
+        response = Excon::Response.new(:body => JSON.dump(body))
+  
+        @openstack.should_receive(:servers).exactly(11)
+          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_receive(:sleep).with(5).exactly(10)
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
+      end
     end
   end
 end
