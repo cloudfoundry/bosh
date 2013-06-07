@@ -1,5 +1,6 @@
 require 'rake'
 require 'yaml'
+require_relative 'ami'
 
 module Bosh
   module Helpers
