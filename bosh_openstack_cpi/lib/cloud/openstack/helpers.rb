@@ -42,7 +42,10 @@ module Bosh::OpenStackCloud
           end
         end
         @logger.error(e) if @logger
-        cloud_error("RequestEntityTooLarge. Check task debug log for details.")
+        cloud_error("OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
+      rescue Excon::Errors::InternalServerError => e
+        @logger.error(e) if @logger
+        cloud_error("OpenStack API returned a Internal Server error. Check task debug log for details.")
       end
     end
 
