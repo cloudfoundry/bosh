@@ -25,7 +25,7 @@ namespace :ci do
   end
 
   def publish_stemcell(infrastructure, type)
-    stemcell = Stemcell.from_jenkins_build(infrastructure, type, Bosh::Helpers::Build.candidate)
-    Pipeline.new.publish_stemcell(stemcell)
+    stemcell = Bosh::Helpers::Stemcell.from_jenkins_build(infrastructure, type, Bosh::Helpers::Build.candidate)
+    Bosh::Helpers::Pipeline.new.publish_stemcell(stemcell)
   end
 end
