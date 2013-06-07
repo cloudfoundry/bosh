@@ -165,6 +165,18 @@ describe Bosh::Director::ApiController do
         expect_redirect_to_queued_task(last_response)
       end
 
+      it 'allows putting the job instance into different resurrection_paused values' do
+        deployment = BD::Models::Deployment.
+            create(:name => "foo", :manifest => Psych.dump({"foo" => "bar"}))
+        instance = BD::Models::Instance.
+            create(:deployment => deployment, :job => "dea",
+                   :index => "0", :state => "started")
+        put "/deployments/foo/jobs/dea/0/resurrection", {},
+            payload("application/json", JSON.dump({"resurrection_paused" => true}))
+        last_response.status.should == 200
+        expect(instance.reload.resurrection_paused).to be_true
+      end
+
       it "doesn't like invalid indices" do
         put "/deployments/foo/jobs/dea/zb?state=stopped", {},
             payload("text/yaml", spec_asset("test_conf.yaml"))

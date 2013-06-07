@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH AWS CPI"
-  s.description  = s.summary
+  s.description  = "BOSH AWS CPI\n#{`git rev-parse HEAD`[0, 6]}"
   s.author       = "VMware"
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_dependency "aws-sdk", "1.8.5"
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
+  s.add_dependency "bosh_registry", "~>#{version}"
   s.add_dependency "httpclient", "=2.2.4"
   s.add_dependency "yajl-ruby", ">=0.8.2"
 end

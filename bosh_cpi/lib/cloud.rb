@@ -183,7 +183,7 @@ module Bosh
     # Take snapshot of disk
     # @param [String] disk_id disk id of the disk to take the snapshot of
     # @return [String] snapshot id
-    def snapshot_disk(disk_id)
+    def snapshot_disk(disk_id, metadata={})
       not_implemented(:snapshot_disk)
     end
 

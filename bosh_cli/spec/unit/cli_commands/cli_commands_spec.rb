@@ -263,9 +263,9 @@ describe Bosh::Cli::Command::Base do
       context "when the director doesn't include commit hash information (version < 1.5)" do
         let(:release) do
           {
-              "name" => "release-1",
-              "versions" => ["2.1-dev", "15", "2", "1"],
-              "in_use" => ["2.1-dev"]
+              'name' => 'release-1',
+              'versions' => ['2.1-dev', '15', '2', '1'],
+              'in_use' => ['2.1-dev']
           }
         end
 
@@ -293,12 +293,12 @@ describe Bosh::Cli::Command::Base do
       context "when the director includes commit hash information (version >= 1.5)" do
         let(:release) do
           {
-              "name" => "release-1",
-              "release_versions" => [
-                  {"version" => "2.1-dev", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => true},
-                  {"version" => "15", "commit_hash" => "1a2b3c4d", "uncommitted_changes" => true, "currently_deployed" => false},
-                  {"version" => "2", "commit_hash" => "00000000", "uncommitted_changes" => true, "currently_deployed" => false},
-                  {"version" => "1", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => false}
+              'name' => 'release-1',
+              'release_versions' => [
+                  {'version' => '2.1-dev', 'commit_hash' => 'unknown', 'uncommitted_changes' => false, 'currently_deployed' => true},
+                  {'version' => '15', 'commit_hash' => '1a2b3c4d', 'uncommitted_changes' => true, 'currently_deployed' => false},
+                  {'version' => '2', 'commit_hash' => '00000000', 'uncommitted_changes' => true, 'currently_deployed' => false},
+                  {'version' => '1', 'commit_hash' => 'unknown', 'uncommitted_changes' => false, 'currently_deployed' => false}
               ]
           }
         end

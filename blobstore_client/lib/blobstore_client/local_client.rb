@@ -15,7 +15,7 @@ module Bosh
       protected
 
       def create_file(id, file)
-        id ||= SecureRandom.uuid
+        id ||= generate_object_id
         dst = object_file_path(id)
         raise BlobstoreError, "object id #{id} is already in use" if File.exist?(dst)
         File.open(dst, 'w') do |fh|

@@ -22,7 +22,7 @@ describe "with release, stemcell and deployment" do
       Dir.mktmpdir do |tmpdir|
         ssh(static_ip, "vcap", "echo #{password} | sudo -S pkill -9 agent", ssh_options)
         # wait for agent to restart
-        sleep(5)
+        wait_for_vm('batlight/0')
         bosh("logs batlight 0 --agent --dir #{tmpdir}")
         # TODO check log for 2 agent starts (first is initial start and second is after crash)
       end

@@ -117,7 +117,7 @@ module Bosh::Cli
       end
 
       def target_name
-        config.target_name || target_url
+        options[:target] || config.target_name || target_url
       end
 
       # Sets or returns command exit code
@@ -212,7 +212,7 @@ module Bosh::Cli
           when 127 # git command not found
             false
           else
-            !git_status.lines.to_a.last.include?("working directory clean")
+            !git_status.lines.to_a.last.include?("nothing to commit")
         end
       end
 

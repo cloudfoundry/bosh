@@ -31,8 +31,8 @@ module Bosh::OpenStackCloud
             if overlimit
               task_checkpoint
               wait_time = overlimit["retryAfter"] || DEFAULT_RETRY_TIMEOUT
-              @logger.debug("OpenStack API overLimit, waiting #{wait_time} " +
-                                "seconds before retrying") if @logger
+              details = "#{overlimit["message"]} - #{overlimit["details"]}"
+              @logger.debug("OpenStack API overLimit (#{details}), waiting #{wait_time} seconds before retrying") if @logger
               sleep(wait_time.to_i)
               retries += 1
               retry
@@ -41,7 +41,8 @@ module Bosh::OpenStackCloud
             # do nothing
           end
         end
-        raise e
+        @logger.error(e) if @logger
+        cloud_error("RequestEntityTooLarge. Check task debug log for details.")
       end
     end
 
@@ -76,19 +77,19 @@ module Bosh::OpenStackCloud
         # If resource reload is nil, perhaps it's because resource went away
         # (ie: a destroy operation). Don't raise an exception if this is
         # expected (allow_notfound).
-        if resource.reload.nil?
+        if with_openstack { resource.reload.nil? }
           break if allow_notfound
           cloud_error("#{desc}: Resource not found")
         else
-          state = resource.send(state_method).downcase.to_sym
+          state =  with_openstack { resource.send(state_method).downcase.to_sym }
         end
 
         # This is not a very strong convention, but some resources
-        # have 'error' and 'failed' states, we probably don't want to keep
+        # have 'error', 'failed' and 'killed' states, we probably don't want to keep
         # waiting if we're in these states. Alternatively we could introduce a
         # set of 'loop breaker' states but that doesn't seem very helpful
         # at the moment
-        if state == :error || state == :failed
+        if state == :error || state == :failed || state == :killed
           cloud_error("#{desc} state is #{state}, expected #{target_state.join(", ")}")
         end
 

@@ -41,7 +41,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:cloud) { described_class.new(options) }
 
   before do
-    Bosh::AwsCloud::RegistryClient.
+    Bosh::Registry::Client.
         stub(:new).
         and_return(registry)
     AWS::EC2.
@@ -100,7 +100,6 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         },
         "agent_id" => agent_id,
         "networks" => networks_spec,
-        "preformatted" => false,
         "disks" => {
             "system" => "root name",
             "ephemeral" => "/dev/sdb",

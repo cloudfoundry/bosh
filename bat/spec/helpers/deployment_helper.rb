@@ -3,6 +3,10 @@ require "tmpdir"
 
 module DeploymentHelper
 
+  def spec
+    @spec ||= {}
+  end
+
   def stemcell
     @stemcell ||= Stemcell.from_path(BH::read_environment('BAT_STEMCELL'))
   end

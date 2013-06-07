@@ -71,9 +71,18 @@ module Bosh::Director
       def self.take_snapshot(instance, options={})
         clean = options.fetch(:clean, false)
         snapshot_cids = []
+        metadata = {
+            deployment: instance.deployment.name,
+            job: instance.job,
+            index: instance.index,
+            director_name: Config.name,
+            director_uuid: Config.uuid,
+            agent_id: instance.vm.agent_id,
+            instance_id: instance.vm_id
+        }
 
         instance.persistent_disks.each do |disk|
-          cid = Config.cloud.snapshot_disk(disk.disk_cid)
+          cid = Config.cloud.snapshot_disk(disk.disk_cid, metadata)
           snapshot = Models::Snapshot.new(persistent_disk: disk, snapshot_cid: cid, clean: clean)
           snapshot.save
           snapshot_cids << snapshot.snapshot_cid

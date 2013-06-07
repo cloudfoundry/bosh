@@ -2,37 +2,32 @@
 name: <%= p('director.name') %>
 port: <%= p('director.backend_port') %>
 encryption: <%= p('director.encryption') %>
-<% if_p("director.max_tasks") do |max_tasks| %>
-max_tasks: <%= max_tasks %>
-<% end %>
-<% if_p("director.max_threads") do |max_threads| %>
-max_threads: <%= max_threads %>
- <% end %>
+max_tasks: <%= p('director.max_tasks') %>
+max_threads: <%= p('director.max_threads') %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
+<% if_p("resque.loglevel") do |resque_loglevel| %>
+resque:
+  logging:
+    level: <%= resque_loglevel %>
+<% end %>    
 redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
   password: <%= p('redis.password') %>
-  <% if_p("redis.loglevel") do |redis_loglevel| %>
   logging:
-    level: <%= redis_loglevel %>
-  <% end %>
+    level: <%= p('redis.loglevel') %>
 mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
 dir: /var/vcap/store/director
 db:
-  <% has_postgres = false %>
-  <% if_p('postgres.user', 'postgres.password', 'postgres.address', 'postgres.port',
-          'postgres.database') do |user, password, address, port, database| %>
-    <% has_postgres = true %>
-  database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= port %>/<%= database %>
-  max_connections: 32
-  pool_timeout: 10
-  <% end %>
-  <% unless has_postgres %>
-  database: sqlite:///var/vcap/store/director/director.db
-  <% end %>
+  adapter: <%= p('director.db.adapter') %>
+  user: <%= p('director.db.user') %>
+  password: <%= p('director.db.password') %>
+  host: <%= p('director.db.host') %>
+  port: <%= p('director.db.port') %>
+  database: <%= p('director.db.database') %>
+  connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
 scheduled_jobs:
   <% if p('director.snapshot_schedule') %>
   - command: snapshot_deployments
@@ -44,17 +39,24 @@ scheduled_jobs:
   <% end %>
 scan_and_fix:
   auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
-<% if_p('dns.address', 'dns.user', 'dns.password', 'dns.database.port', 'dns.database.name') do |address, user, password, db_port, db_name| %>
+<% if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
+        'dns.db.port', 'dns.db.database', 'dns.db.connection_options', 'dns.address') do |
+                        adapter, user, password, db_host, port, database, connection_options, address| %>
 dns:
   server: <%= address %>
   <% if_p('dns.domain_name') do |domain_name| %>
   domain_name: <%= domain_name %>
   <% end %>
   db:
-    database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= db_port %>/<%= db_name %>
-    max_connections: 32
-    pool_timeout: 10
+    adapter: <%= adapter %>
+    user: <%= user %>
+    password: <%= password %>
+    host: <%= db_host %>
+    port: <%= port %>
+    database: <%= database %>
+    connection_options: <%= JSON.generate(connection_options) %>
 <% end %>
+
 blobstore:
   provider: <%= p('blobstore.provider') %>
   options:
@@ -167,6 +169,9 @@ cloud:
       <% if_p("openstack.endpoint_type") do |endpoint_type| %>
       endpoint_type: <%= endpoint_type %>
       <% end %>
+      <% if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
+      stemcell_public_visibility: <%= stemcell_public_visibility %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
     registry:
@@ -191,7 +196,7 @@ cloud:
             disk_path: <%= dc['disk_path'] || "BOSH_Disks" %>
             datastore_pattern: <%= dc['datastore_pattern'] %>
             persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
-            allow_mixed_datastores: <%= dc['allow_mixed_datastores'] || true %>
+            allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
             clusters:
               <% dc['clusters'].each do |cluster| %>
                 <% case cluster

@@ -52,6 +52,7 @@ require "bosh_agent/file_aggregator"
 require "bosh_agent/ntp"
 require "bosh_agent/sshd_monitor"
 
+require "bosh_agent/apply_plan/helpers"
 require "bosh_agent/apply_plan/job"
 require "bosh_agent/apply_plan/package"
 require "bosh_agent/apply_plan/plan"

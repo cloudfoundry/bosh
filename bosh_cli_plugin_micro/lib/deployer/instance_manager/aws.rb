@@ -37,7 +37,11 @@ module Bosh::Deployer
         @registry_port = uri.port
 
         @registry_db = Tempfile.new("bosh_registry_db")
-        @registry_db_url = "sqlite://#{@registry_db.path}"
+
+        @registry_connection_settings = {
+            'adapter' => 'sqlite',
+            'database' => @registry_db.path
+        }
 
         registry_config = {
           "logfile" => "./bosh_registry.log",
@@ -46,9 +50,7 @@ module Bosh::Deployer
             "user" => user,
             "password" => password
           },
-          "db" => {
-            "database" => @registry_db_url
-          },
+          "db" => @registry_connection_settings,
           "cloud" => {
             "plugin" => "aws",
             "aws" => properties["aws"]
@@ -63,7 +65,7 @@ module Bosh::Deployer
       def start
         configure()
 
-        Sequel.connect(@registry_db_url) do |db|
+        Sequel.connect(@registry_connection_settings) do |db|
           migrate(db)
           instances = @deployments["registry_instances"]
           db[:registry_instances].insert_multiple(instances) if instances
@@ -109,9 +111,9 @@ module Bosh::Deployer
           Process.waitpid(@registry_pid)
         end
 
-        return unless @registry_db_url
+        return unless @registry_connection_settings
 
-        Sequel.connect(@registry_db_url) do |db|
+        Sequel.connect(@registry_connection_settings) do |db|
           @deployments["registry_instances"] = db[:registry_instances].map {|row| row}
         end
 

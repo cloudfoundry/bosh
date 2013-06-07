@@ -2,6 +2,7 @@
 name: registry
 dependencies:
 - libpq
+- mysqlclient
 - ruby
 files:
 - bosh/bosh_registry/*.gem

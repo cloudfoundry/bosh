@@ -39,7 +39,7 @@ time rsync -aHA $chroot/ $mnt
 
 # Unmount partition
 echo "Unmounting $mnt"
-for try in $(seq 0 3); do
+for try in $(seq 0 9); do
   sleep $try
   echo -n "."
   umount $mnt || continue
@@ -48,13 +48,13 @@ done
 echo
 
 if mountpoint -q $mnt; then
-  echo "Could not unmount $mnt after 4 tries"
+  echo "Could not unmount $mnt after 10 tries"
   exit 1
 fi
 
 # Unmap partition
 echo "Removing device mappings for $disk_image_name"
-for try in $(seq 0 3); do
+for try in $(seq 0 9); do
   sleep $try
   echo -n "."
   kpartx -dvs $work/$disk_image_name || continue

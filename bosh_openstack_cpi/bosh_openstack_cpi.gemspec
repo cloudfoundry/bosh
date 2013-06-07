@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH OpenStack CPI"
-  s.description  = s.summary
+  s.description  = "BOSH OpenStack CPI\n#{`git rev-parse HEAD`[0, 6]}"
   s.author       = "Piston Cloud Computing / VMware"
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "fog", "~>1.11.1"
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
+  s.add_dependency "bosh_registry", "~>#{version}"
   s.add_dependency "httpclient", "=2.2.4"
   s.add_dependency "yajl-ruby", ">=0.8.2"
 end

@@ -49,15 +49,15 @@ module Bosh::Cli::Command
 
     usage "aws bootstrap bosh"
     desc "bootstrap full bosh deployment"
-    def bootstrap_bosh(bosh_repository=nil)
+    def bootstrap_bosh(config_file = nil)
       target_required
       err "To bootstrap BOSH, first log in to `#{config.target}'" unless logged_in?
 
       options[:hm_director_user] ||= 'hm'
       options[:hm_director_password] = SecureRandom.base64
 
-      bootstrap = Bosh::Aws::BoshBootstrap.new(director, self.options)
-      bootstrap.start(bosh_repository)
+      bootstrap = Bosh::Aws::BoshBootstrap.new(director, s3(config_file), self.options)
+      bootstrap.start
 
       say "For security purposes, please provide a username and password for BOSH Director"
       username = ask("Enter username: ")
@@ -88,7 +88,7 @@ module Bosh::Cli::Command
 
     usage "aws generate bosh"
     desc "generate bosh.yml deployment manifest"
-    def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
+    def create_bosh_manifest(vpc_receipt_file, route53_receipt_file, bosh_rds_receipt_file)
       target_required
 
       options[:hm_director_user] ||= 'hm'
@@ -96,12 +96,13 @@ module Bosh::Cli::Command
 
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
-      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, options)
+      bosh_rds_config = load_yaml_file(bosh_rds_receipt_file)
+      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
 
       write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
 
-    usage "aws generate bat_manifest"
+    usage "aws generate bat"
     desc "generate bat.yml"
     def create_bat_manifest(vpc_receipt_file, route53_receipt_file, stemcell_version)
       target_required
@@ -165,6 +166,11 @@ module Bosh::Cli::Command
     end
 
     private
+
+    def s3(config_file)
+      config = load_config(config_file)
+      Bosh::Aws::S3.new(config["aws"])
+    end
 
     def delete_vpc(details_file)
       details = load_yaml_file details_file
@@ -337,6 +343,7 @@ module Bosh::Cli::Command
 
         delete_all_rds_subnet_groups(config_file)
         delete_all_rds_security_groups(config_file)
+        rds.delete_db_parameter_group('utf8')
       end
     end
 

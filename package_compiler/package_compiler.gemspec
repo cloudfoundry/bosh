@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "Bosh package compiler"
-  s.description  = s.summary
+  s.description  = "Bosh package compiler\n#{`git rev-parse HEAD`[0, 6]}"
   s.author       = "VMware"
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'

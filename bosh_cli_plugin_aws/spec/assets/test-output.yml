@@ -12,6 +12,8 @@ vpc:
     cf2: subnet-xxxxxxx2
     cf_rds1: subnet-xxxxxxx3
     cf_rds2: subnet-xxxxxxx4
+    bosh_rds1: subnet-xxxxxxx5
+    bosh_rds2: subnet-xxxxxxx6
 elastic_ips:
  router:
   dns_record: "*"

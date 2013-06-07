@@ -1,0 +1,42 @@
+---
+cpi: vsphere
+properties:
+  uuid: <%= director_uuid %>
+  static_ip: <%= ip %>
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: <%= stemcell_version %>
+  instances: 1
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@<%= ip %>:4222
+  network:
+    cidr: <%= net_cidr %>
+    reserved:
+      - <%= net_reserved %>
+    static:
+      - <%= net_static %>
+    gateway: <%= net_gateway %>
+    vlan: <%= net_id %>
+
+
+
+#cpi: vsphere
+#properties:
+#  uuid: 3e0e196b-cb47-4770-925e-c28968a3f1ed
+#  network:
+#    cidr: 10.42.112.0/23
+#    reserved:
+#      - 10.42.112.2 - 10.42.112.9
+#      - 10.42.113.245 - 10.42.113.254
+#    static:
+#      - 10.42.112.10 - 10.42.112.140
+#    gateway: 10.42.112.1
+#    dns: 172.22.22.153
+#    vlan: VLAN1035
+#  pool_size: 1
+#  stemcell:
+#    name: bosh-stemcell
+#    version: 0.6.7
+#  jobs: 1
+#  static_ip: 10.42.112.11
+#  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222

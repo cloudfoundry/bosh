@@ -19,9 +19,11 @@ module Bosh::Cli::Command
     def shell(*args)
       job, index, command = parse_args(args)
 
+      job_must_exist_in_deployment(job)
+
       if command.empty?
         if index.nil?
-          err("Can't run interactive shell on more than one instance")
+          err("You should specify the job index. Can't run interactive shell on more than one instance")
         end
         setup_interactive_shell(job, index)
       else
@@ -47,6 +49,8 @@ module Bosh::Cli::Command
         err("Please specify either --upload or --download")
       end
 
+      job_must_exist_in_deployment(job)
+
       if args.size != 2
         err("Please enter valid source and destination paths")
       end
@@ -61,6 +65,8 @@ module Bosh::Cli::Command
       if args.size > 0
         err("SSH cleanup doesn't accept any extra args")
       end
+      
+      job_must_exist_in_deployment(job)
 
       manifest_name = prepare_deployment_manifest["name"]
 
@@ -99,6 +105,8 @@ module Bosh::Cli::Command
       deployment_name = prepare_deployment_manifest["name"]
 
       say("Target deployment is `#{deployment_name}'")
+      nl
+      say("Setting up ssh artifacts")
       status, task_id = director.setup_ssh(
         deployment_name, job, index, user,
         public_key, encrypt_password(password))
@@ -120,16 +128,20 @@ module Bosh::Cli::Command
         end
       end
 
-      if options[:gateway_host]
-        require "net/ssh/gateway"
-        gw_host = options[:gateway_host]
-        gw_user = options[:gateway_user] || ENV["USER"]
-        gateway = Net::SSH::Gateway.new(gw_host, gw_user)
-      else
-        gateway = nil
-      end
-
       begin
+        if options[:gateway_host]
+          require "net/ssh/gateway"
+          gw_host = options[:gateway_host]
+          gw_user = options[:gateway_user] || ENV["USER"]
+          begin
+            gateway = Net::SSH::Gateway.new(gw_host, gw_user)
+          rescue Net::SSH::AuthenticationFailed
+            err("Authentication failed with gateway #{gw_host} and user #{gw_user}.")
+          end
+        else
+          gateway = nil
+        end
+
         yield sessions, user, gateway
       ensure
         nl

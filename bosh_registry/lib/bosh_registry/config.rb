@@ -35,14 +35,16 @@ module Bosh::Registry
     end
 
     def connect_db(db_config)
-      connection_options = {
-        :max_connections => db_config["max_connections"],
-        :pool_timeout => db_config["pool_timeout"]
-      }
+      connection_options = db_config.delete('connection_options') {{}}
+      db_config.delete_if { |_, v| v.to_s.empty? }
+      db_config = db_config.merge(connection_options)
 
-      db = Sequel.connect(db_config["database"], connection_options)
-      db.logger = @logger
-      db.sql_log_level = :debug
+      db = Sequel.connect(db_config)
+      if logger
+        db.logger = @logger
+        db.sql_log_level = :debug
+      end
+
       db
     end
 

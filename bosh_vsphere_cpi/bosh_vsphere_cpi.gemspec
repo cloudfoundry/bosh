@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH VSphere CPI"
-  s.description  = s.summary
+  s.description  = "BOSH VSphere CPI\n#{`git rev-parse HEAD`[0, 6]}"
   s.author       = "VMware"
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
@@ -16,6 +16,9 @@ Gem::Specification.new do |s|
 
   s.files        = `git ls-files -- db/* lib/*`.split("\n") + %w(README)
   s.require_path = "lib"
+  s.bindir       = 'bin'
+
+  s.executables = 'vsphere_cpi_console'
 
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"

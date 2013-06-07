@@ -83,6 +83,11 @@ rds:
     subnets:
       - cf_rds1
       - cf_rds2
+  - instance: bosh
+    tag: bosh
+    subnets:
+      - bosh_rds1
+      - bosh_rds2
 s3:
   - bucket_name: b1
     tag: blobstore

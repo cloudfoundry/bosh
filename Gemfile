@@ -32,13 +32,12 @@ group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
   gem "pg"
+  gem "mysql2"
 end
 
 group :development do
   gem "ruby_gntp"
   gem "debugger" if RUBY_VERSION < "2.0.0"
-
-  gem "fpm", github: "mmb/fpm", branch: "control_tar_group"
 end
 
 group :bat do
@@ -58,7 +57,7 @@ group :development, :test do
   gem "rspec"
   gem "tracker-git", github: "cboone/tracker-git", branch: "edge"
   gem "webmock"
-
+  gem "fakefs"
   gem "simplecov"
   gem "simplecov-rcov"
 

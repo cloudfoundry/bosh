@@ -70,7 +70,7 @@ module Bosh
 
         # in Ruby 1.8 File doesn't respond to :path
         path = file.respond_to?(:path) ? file.path : file
-        store_in_s3(path, object_id)
+        store_in_s3(path, full_oid_path(object_id) )
 
         object_id
       rescue AWS::Errors::Base => e
@@ -83,6 +83,8 @@ module Bosh
       # @param [String] object_id object id to retrieve
       # @param [File] file file to store the retrived object in
       def get_file(object_id, file)
+
+        object_id = full_oid_path(object_id)
         return @simple.get_file(object_id, file) if @simple
 
         if @encryption_key
@@ -112,7 +114,7 @@ module Bosh
       # @param [String] object_id object id to delete
       def delete_object(object_id)
         raise BlobstoreError, "unsupported action" if @simple
-
+        object_id = full_oid_path(object_id)
         object = get_object_from_s3(object_id)
         unless object.exists?
           raise BlobstoreError, "no such object: #{object_id}"
@@ -125,6 +127,7 @@ module Bosh
       end
 
       def object_exists?(object_id)
+        object_id = full_oid_path(object_id)
         return simple.exists?(object_id) if simple
 
         get_object_from_s3(object_id).exists?
@@ -165,12 +168,12 @@ module Bosh
         path
       end
 
-      def generate_object_id
-        SecureRandom.uuid
-      end
-
       def read_only?
         @options[:access_key_id].nil? && @options[:secret_access_key].nil?
+      end
+
+      def full_oid_path(object_id)
+         @options[:folder] ?  @options[:folder] + "/" + object_id : object_id
       end
 
     end

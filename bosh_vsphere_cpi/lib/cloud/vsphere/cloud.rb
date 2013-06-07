@@ -46,8 +46,19 @@ module VSphereCloud
         end
       end
 
+      setup_at_exit
+    end
+
+    def setup_at_exit
       # HACK: finalizer not getting called, so we'll rely on at_exit
       at_exit { @client.logout }
+    end
+
+    def has_vm?(vm_cid)
+      get_vm_by_cid(vm_cid)
+      true
+    rescue Bosh::Clouds::VMNotFound
+      false
     end
 
     def create_stemcell(image, _)

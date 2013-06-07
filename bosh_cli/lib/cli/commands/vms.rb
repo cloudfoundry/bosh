@@ -11,16 +11,19 @@ module Bosh::Cli::Command
     def list(deployment_name = nil)
       auth_required
       no_track_unsupported
-      show_details = options[:details]
-      show_vitals = options[:vitals]
 
       if deployment_name.nil?
-        manifest = prepare_deployment_manifest
-        deployment_name = manifest["name"]
+        deps = director.list_deployments
+        err("No deployments") if deps.empty?
+        deps.each { |dep| show_deployment(dep['name'], options) }
+      else
+        show_deployment deployment_name, options
       end
+    end
 
-      say("Deployment `#{deployment_name.green}'")
-      vms = director.fetch_vm_state(deployment_name)
+    def show_deployment(name, options={})
+      say("Deployment `#{name.green}'")
+      vms = director.fetch_vm_state(name)
       err("No VMs") if vms.empty?
 
       sorted = vms.sort do |a, b|
@@ -32,10 +35,10 @@ module Bosh::Cli::Command
 
       vms_table = table do |t|
         headings = ["Job/index", "State", "Resource Pool", "IPs"]
-        if show_details
-          headings += ["CID", "Agent ID"]
+        if options[:details]
+          headings += ["CID", "Agent ID", "Resurrection"]
         end
-        if show_vitals
+        if options[:vitals]
           headings += [{:value => "Load\n(avg01, avg05, avg15)", :alignment => :center}]
           headings += ["CPU\nUser", "CPU\nSys", "CPU\nWait"]
           headings += ["Memory Usage", "Swap Usage"]
@@ -50,11 +53,11 @@ module Bosh::Cli::Command
 
           row = [job, vm["job_state"], vm["resource_pool"], ips]
 
-          if show_details
-            row += [vm["vm_cid"], vm["agent_id"]]
+          if options[:details]
+            row += [vm["vm_cid"], vm["agent_id"], vm["resurrection_paused"] ? 'paused' : 'active']
           end
 
-          if show_vitals
+          if options[:vitals]
             if vitals
               cpu =  vitals["cpu"]
               mem =  vitals["mem"]

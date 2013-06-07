@@ -2,34 +2,36 @@
 name: powerdns
 
 templates:
-  access_list.erb: config/access_list
-  nginx.conf.erb: config/nginx.conf
-  nginx_ctl.erb: bin/nginx_ctl
   pdns.conf.erb: config/pdns.conf
-  pg_hba.conf.erb: config/pg_hba.conf
-  postgres_ctl.erb: bin/postgres_ctl
-  postgresql.conf.erb: config/postgresql.conf
   powerdns_ctl.erb: bin/powerdns_ctl
-  recovery.conf.erb: config/recovery.conf
 
 packages:
-  - nginx
-  - postgres
   - powerdns
 
 properties:
 
-  dns.database.port:
+  dns.db.adapter:
+    description: Adapter for the PowerDNS database connection
+    default: postgres
+  dns.db.user:
+    description: User for the PowerDNS database connection
+    default: bosh
+  dns.db.password:
+    description: Password for the PowerDNS database connection
+  dns.db.host:
+    description: Address for the PowerDNS database
+  dns.db.port:
     description: Port for the PowerDNS database connection
     default: 5432
-  dns.user:
-    description: User for the PowerDNS database connection
-  dns.password:
-    description: Password for the PowerDNS database connection
-  dns.database.name:
+  dns.db.database:
     description: Database for the PowerDNS database connection
+    default: bosh_dns
+
   dns.recursor:
     description: If recursion is desired, IP address of a recursing nameserver (optional)
+  dns.address:
+    description: Address of the primary PowerDNS instance
+
   dns.webserver.port:
     description: TCP port PowerDNS webserver listens on (optional)
     default: 8081
@@ -38,11 +40,3 @@ properties:
     default: 0.0.0.0
   dns.webserver.password:
     description: Password clients must use to access PowerDNS webserver (optional)
-  dns.address:
-    description: Address of the primary PowerDNS instance
-  dns.replication.user:
-    description: Username for the HA replication process
-  dns.replication.password:
-    description: Password for the HA replication process
-  dns.replication.basic_auth:
-    description: "username:encrypted-password (HTTP Basic Authentication) for the HA replication process"

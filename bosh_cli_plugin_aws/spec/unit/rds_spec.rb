@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Aws::RDS do
-  let(:rds) { described_class.new({}) }
+  subject(:rds) { described_class.new({}) }
   let(:db_instance_1) { double("database instance", name: 'bosh_db', id: "db1") }
   let(:db_instance_2) { double("database instance", name: 'cc_db', id: "db2") }
   let(:fake_aws_rds) { double("aws_rds", db_instances: [db_instance_1, db_instance_2]) }
@@ -177,6 +177,21 @@ describe Bosh::Aws::RDS do
       Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-1234").and_return(vpc)
       rds.stub(:subnet_group_exists?).with("mydb").and_return(true)
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+      fake_aws_rds_client.stub(:describe_db_parameter_groups).and_return(true)
+    end
+
+    it "creats the utf8 db_parameter_group" do
+      fake_aws_rds_client.should_receive(:describe_db_parameter_groups).
+          with(:db_parameter_group_name => 'utf8').
+          and_raise(AWS::RDS::Errors::DBParameterGroupNotFound)
+      fake_aws_rds_client.should_receive(:create_db_parameter_group).
+          with(:db_parameter_group_name => 'utf8',
+               :db_parameter_group_family => 'mysql5.5',
+               :description => 'utf8')
+
+      fake_aws_rds_client.stub(:modify_db_parameter_group)
+      fake_aws_rds_client.should_receive(:create_db_instance).and_return(fake_response)
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234")
     end
 
     it "can create an RDS given a name" do
@@ -189,6 +204,7 @@ describe Bosh::Aws::RDS do
         options[:allocated_storage].should == 5
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
+        options[:db_parameter_group_name].should == "utf8"
         options[:master_username].should be_kind_of(String)
         options[:master_username].length.should be >= 8
         options[:master_user_password].should be_kind_of(String)

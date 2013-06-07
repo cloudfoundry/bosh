@@ -8,6 +8,7 @@ describe CreateRdsDbs do
 
   before do
     subject.stub(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
+    Kernel.stub(:sleep)
   end
 
   def make_rds!(opts = {})

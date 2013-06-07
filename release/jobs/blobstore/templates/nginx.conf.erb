@@ -2,8 +2,8 @@ user vcap;
 worker_processes  2;
 daemon off;
 
-error_log  /var/vcap/sys/log/nginx/error.log;
-pid        /var/vcap/sys/run/nginx/nginx.pid;
+error_log  /var/vcap/sys/log/blobstore/error.log;
+pid        /var/vcap/sys/run/blobstore/nginx.pid;
 
 events {
   worker_connections  8192;
@@ -14,7 +14,7 @@ http {
   default_type  text/html;
   server_tokens off;
 
-  access_log	/var/vcap/sys/log/nginx/access.log;
+  access_log	/var/vcap/sys/log/blobstore/access.log;
 
   sendfile on;
   tcp_nopush on;

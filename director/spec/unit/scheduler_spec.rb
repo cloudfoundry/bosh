@@ -3,9 +3,15 @@ require 'director/scheduler'
 
 describe Bosh::Director::Scheduler do
 
+
+  let(:cloud) {stub(:Cloud)}
+  let(:uuid) {'deadbeef'}
+  let(:director_name) {'Test Director'}
+
   before do
-    @cloud = stub(:Cloud)
-    BD::Config.stub(:cloud).and_return(@cloud)
+    BD::Config.stub(:cloud).and_return(cloud)
+    BD::Config.stub(:uuid).and_return(uuid)
+    BD::Config.stub(:name).and_return(director_name)
   end
 
   describe 'scheduling jobs' do
@@ -39,10 +45,19 @@ describe Bosh::Director::Scheduler do
      it 'should snapshot all of my disks' do
        vm_id = "id-foo"
        disks = ["vol-id1", "vol-id2"]
-       @cloud.should_receive(:current_vm_id).and_return(vm_id)
-       @cloud.should_receive(:get_disks).with(vm_id).and_return(disks)
-       @cloud.should_receive(:snapshot_disk).with(disks[0])
-       @cloud.should_receive(:snapshot_disk).with(disks[1])
+       metadata = {
+           deployment: 'self',
+           job: 'director',
+           index: 0,
+           director_name: director_name,
+           director_uuid: uuid,
+           agent_id: 'self',
+           instance_id: vm_id
+       }
+       cloud.should_receive(:current_vm_id).and_return(vm_id)
+       cloud.should_receive(:get_disks).with(vm_id).and_return(disks)
+       cloud.should_receive(:snapshot_disk).with(disks[0], metadata)
+       cloud.should_receive(:snapshot_disk).with(disks[1], metadata)
        subject.snapshot_self
      end
     end

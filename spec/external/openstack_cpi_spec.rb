@@ -38,7 +38,7 @@ describe Bosh::OpenStackCloud::Cloud do
     delegate = double("delegate", logger: Logger.new(STDOUT))
     delegate.stub(:task_checkpoint)
     Bosh::Clouds::Config.configure(delegate)
-    Bosh::OpenStackCloud::RegistryClient.stub(:new).and_return(double("registry").as_null_object)
+    Bosh::Registry::Client.stub(:new).and_return(double("registry").as_null_object)
 
     @server_id = nil
     @volume_id = nil
@@ -66,8 +66,8 @@ describe Bosh::OpenStackCloud::Cloud do
 
     cpi.has_vm?(@server_id).should be_true
 
-    vm_metadata = {:job => "openstack_cpi_spec", :index => "0"}
-    cpi.set_vm_metadata(@server_id, vm_metadata)
+    metadata = {:deployment => 'deployment', :job => "openstack_cpi_spec", :index => "0"}
+    cpi.set_vm_metadata(@server_id, metadata)
 
     @volume_id = cpi.create_disk(2048, @server_id)
     @volume_id.should_not be_nil
@@ -76,7 +76,11 @@ describe Bosh::OpenStackCloud::Cloud do
 
     cpi.detach_disk(@server_id, @volume_id)
 
-    snapshot_id = cpi.snapshot_disk(@volume_id)
+    metadata[:instance_id] = 'instance'
+    metadata[:agent_id] = 'agent'
+    metadata[:director_name] = 'Director'
+    metadata[:director_uuid] = '6d06b0cc-2c08-43c5-95be-f1b2dd247e18'
+    snapshot_id = cpi.snapshot_disk(@volume_id, metadata)
     snapshot_id.should_not be_nil
 
     cpi.delete_snapshot(snapshot_id)

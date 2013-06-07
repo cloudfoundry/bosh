@@ -58,7 +58,6 @@ create-rds-output*.yml
 /release/jobs/micro_*/templates/
 /release/src/bosh/*
 /tmp/*
-stemcell-ami.txt
 aws_rds_receipt.yml
 aws_route53_receipt.yml
 aws_vpc_receipt.yml

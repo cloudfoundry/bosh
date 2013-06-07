@@ -232,6 +232,15 @@ module Bosh::Cli
       end
     end
 
+    def job_exists_in_deployment?(jobname)
+      jobs = prepare_deployment_manifest["jobs"].map { |job| job["name"] }
+      jobs.include?(jobname) ? true : false
+    end
+
+    def job_must_exist_in_deployment(job)
+      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
+    end
+
     private
 
     def find_deployment(name)

@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.name          = "bosh_cli_plugin_aws"
   s.version       = version
   s.platform      = Gem::Platform::RUBY
-  s.description   = %q{BOSH plugin to easily create and delete an AWS VPC}
-  s.summary       = %q{BOSH plugin to easily create and delete an AWS VPC}
+  s.summary       = "BOSH plugin to easily create and delete an AWS VPC"
+  s.description   = "BOSH plugin to easily create and delete an AWS VPC\n#{`git rev-parse HEAD`[0, 6]}"
   s.author        = "VMware"
   s.homepage      = 'https://github.com/cloudfoundry/bosh'
   s.license       = 'Apache 2.0'

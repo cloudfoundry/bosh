@@ -405,6 +405,14 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    put '/deployments/:deployment/jobs/:job/:index/resurrection', consumes: :json do
+      payload = json_decode(request.body)
+
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      instance.resurrection_paused = payload['resurrection_paused']
+      instance.save
+    end
+
     post '/deployments/:deployment/jobs/:job/:index/snapshots' do
       instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
       # until we can tell the agent to flush and wait, all snapshots are considered dirty
@@ -644,8 +652,12 @@ module Bosh::Director
       end
     end
 
+    # JMS and MB: We don't know why this code exists. According to JP it shouldn't. We want to remove it.
+    # To get comforable with that idea, we log something we can look for in production.
+    #
     # GET /resources/deadbeef
     get "/resources/:id" do
+      @logger.warn('Something is proxying a blob through the director. Find out why before we remove this method. ZAUGYZ')
       tmp_file = @resource_manager.get_resource_path(params[:id])
       send_disposable_file(tmp_file, :type => "application/x-gzip")
     end

@@ -1,71 +1,26 @@
-upstream backend {
-  server 127.0.0.1:<%= p("blobstore.backend_port") %>;
-}
-
 server {
   listen      <%= p("blobstore.port") %>;
   server_name "";
 
-  access_log  /var/vcap/sys/log/nginx/blobstore_access.log;
-  error_log   /var/vcap/sys/log/nginx/blobstore_error.log;
+  access_log  /var/vcap/sys/log/blobstore/blobstore_access.log;
+  error_log   /var/vcap/sys/log/blobstore/blobstore_error.log;
 
   client_max_body_size 1G;
 
-  error_page 400 = /400.html;
-  location /400.html {
-    internal;
-
-    if ($http_host) {
-      break;
-    }
-
-    proxy_buffering             off;
-    proxy_set_header            X-Real_IP $remote_addr;
-    proxy_set_header            X-Forwarded_For $proxy_add_x_forwarded_for;
-    proxy_redirect              off;
-    proxy_connect_timeout       10;
-    proxy_send_timeout          30;
-    proxy_read_timeout          30;
-    proxy_pass                  http://backend;
-  }
-
   location / {
-    proxy_buffering             off;
-    proxy_set_header            X-Real_IP $remote_addr;
-    proxy_set_header            X-Forwarded_For $proxy_add_x_forwarded_for;
-    proxy_redirect              off;
-    proxy_connect_timeout       10;
-    proxy_send_timeout          30;
-    proxy_read_timeout          30;
-    proxy_pass                  http://backend;
+    root /var/vcap/store/blobstore/store/;
+    client_body_temp_path /var/vcap/store/blobstore/tmp/uploads;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+
+    auth_basic "Blobstore Read";
+    auth_basic_user_file read_users;
+
+    limit_except GET {
+      auth_basic "Blobstore Write";
+      auth_basic_user_file write_users;
+    }
   }
 
-  # Handle file upload
-  location = /resources {
-      # Pass altered request body to this location
-      upload_pass   @upload;
-
-      # Store files to this directory
-      upload_store /var/vcap/store/blobstore/tmp/uploads;
-
-      # Allow uploaded files to be read only by user
-      upload_store_access user:r;
-
-      # Set specified fields in request body
-      upload_set_form_field $upload_field_name.name "$upload_file_name";
-      upload_set_form_field $upload_field_name.content_type "$upload_content_type";
-      upload_set_form_field $upload_field_name.path "$upload_tmp_path";
-
-      upload_max_file_size 0;
-      upload_cleanup 400 404 499 500-505;
-  }
-
-  location @upload {
-    proxy_pass http://backend;
-  }
-
-  location /protected/ {
-    internal;
-    alias /var/vcap/store/blobstore/store/;
-  }
 }

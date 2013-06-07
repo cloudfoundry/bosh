@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'fileutils'
+
 module Bosh::Director
   class Config
 
@@ -83,17 +85,6 @@ module Bosh::Director
           :logger   => redis_logger
         }
 
-        state_json = File.join(@base_dir, "state.json")
-        File.open(state_json, File::RDWR|File::CREAT, 0644) do |file|
-          file.flock(File::LOCK_EX)
-          state = Yajl::Parser.parse(file.read) || {}
-          @uuid = state["uuid"] ||= SecureRandom.uuid
-          file.rewind
-          file.write(Yajl::Encoder.encode(state))
-          file.flush
-          file.truncate(file.pos)
-        end
-
         @revision = get_revision
 
         @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
@@ -118,6 +109,9 @@ module Bosh::Director
           @dns_domain_name = canonical(@dns["domain_name"]) if @dns["domain_name"]
         end
 
+        @uuid = override_uuid || retrieve_uuid
+        @logger.info("Director UUID: #{@uuid}")
+
         @encryption = config["encryption"]
         @fix_stateful_nodes = config.fetch("scan_and_fix", {})
           .fetch("auto_fix_stateful_nodes", false)
@@ -140,16 +134,18 @@ module Bosh::Director
       end
 
       def configure_db(db_config)
-        patch_sqlite if db_config["database"].index("sqlite://") == 0
+        patch_sqlite if db_config["adapter"] == "sqlite"
 
-        connection_options = {}
-        [:max_connections, :pool_timeout].each do |key|
-          connection_options[key] = db_config[key.to_s]
+        connection_options = db_config.delete('connection_options') {{}}
+        db_config.delete_if { |_, v| v.to_s.empty? }
+        db_config = db_config.merge(connection_options)
+
+        db = Sequel.connect(db_config)
+        if logger
+          db.logger = logger
+          db.sql_log_level = :debug
         end
 
-        db = Sequel.connect(db_config["database"], connection_options)
-        db.logger = @logger
-        db.sql_log_level = :debug
         db
       end
 
@@ -291,6 +287,63 @@ module Bosh::Director
             db
           end
         end
+      end
+
+      def retrieve_uuid
+        directors = Bosh::Director::Models::DirectorAttribute.all
+        director = directors.first
+
+        if directors.size > 1
+          @logger.warn("More than one UUID stored in director table, using #{director.uuid}")
+        end
+
+        unless director
+          director = Bosh::Director::Models::DirectorAttribute.new
+          director.uuid = gen_uuid
+          director.save
+          @logger.info("Generated director UUID #{director.uuid}")
+        end
+
+        director.uuid
+      end
+
+      def override_uuid
+        new_uuid = nil
+
+        if File.exists?(state_file)
+          open(state_file, 'r+') do |file|
+
+            # lock before read to avoid director/worker race condition
+            file.flock(File::LOCK_EX)
+            state = Yajl::Parser.parse(file) || {}
+            # empty state file to prevent blocked processes from attempting to set UUID
+            file.truncate(0)
+
+            if state["uuid"]
+              Bosh::Director::Models::DirectorAttribute.delete
+              director = Bosh::Director::Models::DirectorAttribute.new
+              director.uuid = state["uuid"]
+              director.save
+              @logger.info("Using director UUID #{state["uuid"]} from #{state_file}")
+              new_uuid = state["uuid"]
+            end
+
+            # unlock after storing UUID
+            file.flock(File::LOCK_UN)
+          end
+
+          FileUtils.rm_f(state_file)
+        end
+
+        new_uuid
+      end
+
+      def state_file
+        File.join(base_dir, "state.json")
+      end
+
+      def gen_uuid
+        SecureRandom.uuid
       end
 
     end

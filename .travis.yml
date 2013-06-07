@@ -6,12 +6,6 @@ rvm:
 env:
   - SUITE=parallel_unit
   - SUITE=integration
-notifications:
-  email:
-    recipients:
-      - martin@englund.nu
-    on_success: change
-    on_failure: always
 matrix:
   allow_failures:
     - rvm: ruby-2.0.0

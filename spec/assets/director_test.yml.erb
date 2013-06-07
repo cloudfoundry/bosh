@@ -13,14 +13,18 @@ scheduled_jobs:
   - command: snapshot_deployments
     schedule: '* * * * * *'
 db:
-  database: sqlite://<%= sandbox_root %>/director.sqlite
-  max_connections: 32
-  pool_timeout: 10
-dns:
-  db:
-    database: sqlite://<%= sandbox_root %>/director-dns.sqlite
+  adapter: sqlite
+  database: <%= sandbox_root %>/director.sqlite
+  connection_options:
     max_connections: 32
     pool_timeout: 10
+dns:
+  db:
+    adapter: sqlite
+    database: <%= sandbox_root %>/director-dns.sqlite
+    connection_options:
+      max_connections: 32
+      pool_timeout: 10
 blobstore:
   provider: simple
   options:

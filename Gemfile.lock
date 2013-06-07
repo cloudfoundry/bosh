@@ -8,20 +8,6 @@ GIT
       pivotal-tracker
       rest-client
 
-GIT
-  remote: git://github.com/mmb/fpm.git
-  revision: b7479a107052ff0ea4fd9106febb64dafe24261a
-  branch: control_tar_group
-  specs:
-    fpm (0.4.34)
-      arr-pm (~> 0.0.8)
-      backports (= 2.6.2)
-      cabin (>= 0.6.0)
-      clamp (= 0.6.0)
-      ftw (~> 0.0.30)
-      json (~> 1.7.7)
-      open4
-
 PATH
   remote: agent_client
   specs:
@@ -63,6 +49,7 @@ PATH
       aws-sdk (= 1.8.5)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
+      bosh_registry (~> 1.5.0.pre.3)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
 
@@ -70,12 +57,12 @@ PATH
   remote: bosh_cli
   specs:
     bosh_cli (1.5.0.pre.3)
-      archive-tar-minitar (~> 0.5)
       blobstore_client (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
-      json_pure (~> 1.7.6)
+      json_pure (~> 1.7)
+      minitar (~> 0.5.4)
       net-scp (~> 1.1.0)
       net-ssh (>= 2.2.1)
       net-ssh-gateway (~> 1.1.0)
@@ -129,6 +116,7 @@ PATH
     bosh_openstack_cpi (1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
+      bosh_registry (~> 1.5.0.pre.3)
       fog (~> 1.11.1)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
@@ -250,20 +238,14 @@ GEM
   remote: https://rubygems.org/
   specs:
     addressable (2.3.4)
-    archive-tar-minitar (0.5.2)
-    arr-pm (0.0.8)
-      cabin (> 0)
     aws-sdk (1.8.5)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
       uuidtools (~> 2.1)
-    backports (2.6.2)
     bcrypt-ruby (3.0.1)
     builder (3.1.4)
-    cabin (0.6.0)
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
-    clamp (0.6.0)
     coderay (1.0.9)
     columnize (0.3.6)
     crack (0.3.2)
@@ -284,6 +266,7 @@ GEM
     escape_utils (0.3.2)
     eventmachine (0.12.10)
     excon (0.21.0)
+    fakefs (0.4.2)
     ffi (1.7.0)
     fog (1.11.1)
       builder
@@ -296,11 +279,6 @@ GEM
       nokogiri (~> 1.5.0)
       ruby-hmac
     formatador (0.2.4)
-    ftw (0.0.33)
-      addressable
-      backports (>= 2.6.2)
-      cabin (> 0)
-      http_parser.rb (= 0.5.3)
     gibberish (1.2.2)
     guard (1.8.0)
       formatador (>= 0.2.4)
@@ -317,10 +295,9 @@ GEM
     happymapper (0.4.0)
       libxml-ruby (~> 2.0)
     highline (1.6.18)
-    http_parser.rb (0.5.3)
     httpclient (2.2.4)
     json (1.7.7)
-    json_pure (1.7.7)
+    json_pure (1.8.0)
     libxml-ruby (2.6.0)
     listen (1.0.2)
       rb-fsevent (>= 0.9.3)
@@ -339,6 +316,7 @@ GEM
     mime-types (1.23)
     minitar (0.5.4)
     multi_json (1.7.2)
+    mysql2 (0.3.11)
     nats (0.4.28)
       daemons (>= 1.1.5)
       eventmachine (= 0.12.10)
@@ -356,7 +334,6 @@ GEM
       tdiff (~> 0.3, >= 0.3.2)
     nokogiri-happymapper (0.5.7)
       nokogiri (~> 1.5)
-    open4 (1.3.0)
     parallel (0.6.4)
     parallel_tests (0.11.3)
       parallel
@@ -468,7 +445,7 @@ DEPENDENCIES
   ci_reporter
   debugger
   director!
-  fpm!
+  fakefs
   guard
   guard-bundler
   guard-rspec
@@ -478,6 +455,7 @@ DEPENDENCIES
   machinist (~> 1.0)
   minitar
   monit_api!
+  mysql2
   nats
   net-ssh
   nokogiri-diff

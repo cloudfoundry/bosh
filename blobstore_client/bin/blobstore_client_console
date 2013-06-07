@@ -32,6 +32,15 @@ opts_parser.parse!
 
 unless @provider && config_file
   puts opts_parser
+  puts "\nExample config file:"
+  puts <<-YAML
+---
+endpoint: http://1.2.3.4:25250
+user: agent
+password: agent
+bucket: resources
+
+  YAML
   exit(1)
 end
 

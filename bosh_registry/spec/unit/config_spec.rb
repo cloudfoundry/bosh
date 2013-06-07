@@ -43,7 +43,7 @@ describe Bosh::Registry do
       }.to raise_error(Bosh::Registry::ConfigError, /Could not find Provider Plugin/)
     end
 
-    it "reads provided configuration file and sets singletons fo AWS" do
+    it "reads provided configuration file and sets singletons for AWS" do
       config = valid_config
       config["cloud"] = {
         "plugin" => "aws",
@@ -110,6 +110,66 @@ describe Bosh::Registry do
       im.should be_kind_of(Bosh::Registry::InstanceManager::Openstack)
     end
 
+  end
+
+  describe "database configuration" do
+
+    let(:database_options) do
+      {
+          'adapter' => 'sqlite',
+          'connection_options' => {
+              'max_connections' => 32
+          }
+
+      }
+    end
+    let(:database_connection) { double('Database Connection').as_null_object }
+
+    before do
+      Sequel.stub(:connect).and_return(database_connection)
+    end
+
+    it "configures a new database connection" do
+      expect(described_class.connect_db(database_options)).to eq database_connection
+    end
+
+    it "merges connection options together with the rest of the database options" do
+      expected_options = {
+          'adapter' => 'sqlite',
+          'max_connections' => 32
+      }
+      Sequel.should_receive(:connect).with(expected_options).and_return(database_connection)
+      described_class.connect_db(database_options)
+    end
+
+    it "ignores empty and nil options" do
+      Sequel.should_receive(:connect).with('baz' => 'baz').and_return(database_connection)
+      described_class.connect_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
+    end
+
+    context "when logger is available" do
+      before do
+        described_class.stub(:logger).and_return(double('Fake Logger'))
+      end
+
+      it "sets the database logger" do
+        database_connection.should_receive(:logger=)
+        database_connection.should_receive(:sql_log_level=)
+        described_class.connect_db(database_options)
+      end
+    end
+
+    context "when logger is unavailable" do
+      before do
+        described_class.stub(:logger).and_return(nil)
+      end
+
+      it "does not sets the database logger" do
+        database_connection.should_not_receive(:logger=)
+        database_connection.should_not_receive(:sql_log_level=)
+        described_class.connect_db(database_options)
+      end
+    end
   end
 
 end

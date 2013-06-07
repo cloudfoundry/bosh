@@ -54,6 +54,30 @@ describe Bosh::OpenStackCloud::Helpers do
       }.to raise_error Bosh::Clouds::CloudError, /state is error/
     end
 
+    it "should raise Bosh::Clouds::CloudError if state is failed" do
+      resource = double("resource")
+      resource.stub(:id).and_return("foobar")
+      resource.stub(:reload).and_return(@cloud)
+      resource.stub(:status).and_return(:failed)
+      @cloud.stub(:sleep)
+
+      expect {
+        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+      }.to raise_error Bosh::Clouds::CloudError, /state is failed/
+    end
+    
+    it "should raise Bosh::Clouds::CloudError if state is killed" do
+      resource = double("resource")
+      resource.stub(:id).and_return("foobar")
+      resource.stub(:reload).and_return(@cloud)
+      resource.stub(:status).and_return(:killed)
+      @cloud.stub(:sleep)
+
+      expect {
+        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+      }.to raise_error Bosh::Clouds::CloudError, /state is killed/
+    end
+    
     it "should raise Bosh::Clouds::CloudError if resource not found" do
       resource = double("resource")
       resource.stub(:id).and_return("foobar")
@@ -85,17 +109,17 @@ describe Bosh::OpenStackCloud::Helpers do
       response = Excon::Response.new(:body => "")
 
       @openstack.should_receive(:servers)
-        .and_raise(Bosh::Clouds::CloudError)
+        .and_raise(NoMemoryError)
       @cloud.should_not_receive(:sleep)
 
       expect {
         @cloud.with_openstack do
           @openstack.servers
         end
-      }.to raise_error(Bosh::Clouds::CloudError)
+      }.to raise_error(NoMemoryError)
     end
 
-    it "should raise the exception if response has no body" do
+    it "should raise a CloudError exception if response has no body" do
       response = Excon::Response.new(:body => "")
 
       @openstack.should_receive(:servers)
@@ -106,10 +130,10 @@ describe Bosh::OpenStackCloud::Helpers do
         @cloud.with_openstack do
           @openstack.servers
         end
-      }.to raise_error(Excon::Errors::RequestEntityTooLarge)
+      }.to raise_error(Bosh::Clouds::CloudError, "RequestEntityTooLarge. Check task debug log for details.")
     end
 
-    it "should raise the exception if response is not JSON" do
+    it "should raise a CloudError exception if response is not JSON" do
       response = Excon::Response.new(:body => "foo = bar")
 
       @openstack.should_receive(:servers)
@@ -120,7 +144,7 @@ describe Bosh::OpenStackCloud::Helpers do
         @cloud.with_openstack do
           @openstack.servers
         end
-      }.to raise_error(Excon::Errors::RequestEntityTooLarge)
+      }.to raise_error(Bosh::Clouds::CloudError, "RequestEntityTooLarge. Check task debug log for details.")
     end
 
     it "should retry the amount of seconds received at the response body" do
@@ -177,7 +201,7 @@ describe Bosh::OpenStackCloud::Helpers do
         @cloud.with_openstack do
           @openstack.servers
         end
-      }.to raise_error(Excon::Errors::RequestEntityTooLarge)
+      }.to raise_error(Bosh::Clouds::CloudError, "RequestEntityTooLarge. Check task debug log for details.")
     end
   end
 end

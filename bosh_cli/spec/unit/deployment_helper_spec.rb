@@ -257,4 +257,18 @@ describe Bosh::Cli::DeploymentHelper do
       manifest["resource_pools"][2]["stemcell"]["version"].should == 4.1
     end
   end
+  
+  describe '#job_exists_in_deployment?' do    
+    let(:manifest) { { 'name' => 'mycloud', 'jobs' => [{'name' => 'job1'}] } }
+
+    it 'should return true if job exists in deployment' do
+      tester.should_receive(:prepare_deployment_manifest).and_return(manifest)
+      tester.job_exists_in_deployment?('job1').should be_true    
+    end
+
+    it 'should return false if job does not exists in deployment' do
+      tester.should_receive(:prepare_deployment_manifest).and_return(manifest)
+      tester.job_exists_in_deployment?('job2').should be_false     
+    end
+  end
 end

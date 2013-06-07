@@ -54,8 +54,18 @@ module Bosh
         end
       end
 
+      def s3_safe_vpc_domain
+        @config['vpc']['domain'].gsub('.', '-')
+      end
+
       def bucket_name
-        "#{@config['name']}-bosh-artifacts"
+        # TODO: delete this conditional at some point in the future when we're
+        # confident most users have migrated to the new bucket name
+        if aws_s3.bucket_exists?("#{@config['name']}-bosh-artifacts")
+          "#{@config['name']}-bosh-artifacts"
+        else
+          "#{s3_safe_vpc_domain}-bosh-artifacts"
+        end
       end
 
       def migrations_name
@@ -65,9 +75,8 @@ module Bosh
       def run_migrations(migrations_to_run)
         migrations_to_run.each do |migration|
           migration.load_class.new(@config, bucket_name).run
+          record_migration(migration)
         end
-
-        record_migrations(migrations_to_run)
       end
 
       def load_migrations
@@ -86,8 +95,9 @@ module Bosh
         end.sort
       end
 
-      def record_migrations(executed_migrations)
-        migration_yaml = YAML.dump((executed_migrations | environment_migrations).collect do |m|
+      def record_migration(migration)
+        environment_migrations << migration
+        migration_yaml = YAML.dump(environment_migrations.collect do |m|
           m.to_hash
         end)
         aws_s3.upload_to_bucket(bucket_name, migrations_name, migration_yaml)
@@ -109,8 +119,16 @@ module Bosh
         Object.const_get(MigrationHelper.to_class_name(name))
       end
 
+      def eql?(other)
+        version == other.version
+      end
+
       def <=>(other)
         version <=> other.version
+      end
+
+      def hash
+        (name.to_s + version.to_s).hash
       end
 
       def to_hash

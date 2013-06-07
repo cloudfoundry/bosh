@@ -99,10 +99,6 @@ module Bosh
 
       private
 
-      def generate_object_id
-        SecureRandom.uuid
-      end
-
       def encode_object_id(object_id, public_url = nil)
         json = MultiJson.encode({:oid => object_id, :purl => public_url})
         URI::escape(Base64.encode64(json))

@@ -97,11 +97,6 @@ module Bosh
         vpc_config['ssl_certs'] || {}
       end
 
-      def bucket_name
-        blobstore = vpc_config["s3"].detect { |e| e["tag"] == "blobstore" }
-        blobstore ? blobstore["bucket_name"] : warning("Missing bucket tagged as `blobstore'")
-      end
-
       # RSpec overloads to_yaml when you set up expectations on an object;
       # so to_y is just a way to get directly at the to_yaml implementation without fighting RSpec.
       def to_y
