@@ -90,6 +90,8 @@ module Bosh
 
         it 'names the stemcell manifest correctly' do
           FileUtils.stub(:touch)
+          # Example fails on linux without File.stub
+          File.stub(:open).and_call_original
           File.should_receive(:open).with('stemcell.MF', 'w')
 
           subject.create_light_stemcell
