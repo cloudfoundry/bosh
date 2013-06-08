@@ -1,10 +1,12 @@
 <%
     adapters = {
+            'mysql2' => 'gmysql',
             'mysql' => 'gmysql',
             'postgres' => 'gpgsql',
             'sqlite' => 'gsqlite3'
     }
     db_module = adapters[p('dns.db.adapter')]
+    raise "unknown adapter #{p('dns.db.adapter')} for powerdns" unless db_module
 %>
 launch=<%= db_module %>
 <%= db_module %>-host=<%= p('dns.db.host') %>
