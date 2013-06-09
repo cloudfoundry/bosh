@@ -38,15 +38,7 @@ module Bosh::Cli::Command
             print_feature_list(status["features"]) if status["features"]
 
             if options[:internal]
-              begin
-                if internal_config = director.get_internal_config
-                  print_value("Blobstore", blobstore_url(internal_config["blobstore"]))
-                else
-                  print_value("Internal", "n/a (not available for target bosh)")
-                end
-              rescue Bosh::Cli::AuthError
-                print_value("Internal", "requires authentication")
-              end
+              print_internal_config
             end
 
             unless options[:target]
@@ -372,6 +364,18 @@ module Bosh::Cli::Command
       end
 
       "(#{result.join(", ")})"
+    end
+
+    def print_internal_config
+      begin
+        if internal_config = director.get_internal_config
+          print_value("Blobstore", blobstore_url(internal_config["blobstore"]))
+        else
+          print_value("Internal", "n/a (not available for target bosh)")
+        end
+      rescue Bosh::Cli::AuthError
+        print_value("Internal", "requires authentication")
+      end
     end
 
     def blobstore_url(blobstore_options)
