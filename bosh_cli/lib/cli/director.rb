@@ -93,6 +93,13 @@ module Bosh
         get_json("/info")
       end
 
+      def get_internal_info
+        get_json("/internal_info")
+      rescue ResourceNotFound =>e
+        # Endpoint not supported on target director
+        nil
+      end
+
       def list_stemcells
         get_json("/stemcells")
       end

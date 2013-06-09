@@ -63,6 +63,23 @@ describe Bosh::Cli::Director do
   end
 
   describe "API calls" do
+    it "get internal information" do
+      info = {
+        "blobstore" => {
+          "provider" => "dav",
+          "options" => {
+            "endpoint" => "http://1.2.3.4:25250",
+            "user" => "username",
+            "password" => "pwd"
+          }
+        }
+      }
+      @director.should_receive(:get).
+        with("/internal_info", "application/json").
+        and_return([200, JSON.generate(info), {}])
+      @director.get_internal_info.should == info
+    end
+
     it "creates user" do
       @director.should_receive(:post).
         with("/users", "application/json",
