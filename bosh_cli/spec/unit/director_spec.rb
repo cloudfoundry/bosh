@@ -75,9 +75,9 @@ describe Bosh::Cli::Director do
         }
       }
       @director.should_receive(:get).
-        with("/internal_info", "application/json").
+        with("/internal_config", "application/json").
         and_return([200, JSON.generate(info), {}])
-      @director.get_internal_info.should == info
+      @director.get_internal_config.should == info
     end
 
     it "creates user" do

@@ -39,8 +39,8 @@ module Bosh::Cli::Command
 
             if options[:internal]
               begin
-                if internal_info = director.get_internal_info
-                  print_value("Blobstore", blobstore_url(internal_info["blobstore"]))
+                if internal_config = director.get_internal_config
+                  print_value("Blobstore", blobstore_url(internal_config["blobstore"]))
                 else
                   print_value("Internal", "n/a (not available for target bosh)")
                 end

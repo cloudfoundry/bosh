@@ -93,8 +93,8 @@ module Bosh
         get_json("/info")
       end
 
-      def get_internal_info
-        get_json("/internal_info")
+      def get_internal_config
+        get_json("/internal_config")
       rescue ResourceNotFound =>e
         # Endpoint not supported on target director
         nil
