@@ -295,9 +295,9 @@ describe Bosh::Cli::Command::Base do
           {
               'name' => 'release-1',
               'release_versions' => [
-                  {'version' => '2.1-dev', 'commit_hash' => 'unknown', 'uncommitted_changes' => false, 'currently_deployed' => true},
-                  {'version' => '15', 'commit_hash' => '1a2b3c4d', 'uncommitted_changes' => true, 'currently_deployed' => false},
-                  {'version' => '2', 'commit_hash' => '00000000', 'uncommitted_changes' => true, 'currently_deployed' => false},
+                  {'version' => '2.1-dev', 'commit_hash' => 'unknown', 'uncommitted_changes' => false, 'currently_deployed' => true, 'job_names' => ['job-1']},
+                  {'version' => '15', 'commit_hash' => '1a2b3c4d', 'uncommitted_changes' => true, 'currently_deployed' => false, 'job_names' => ['job-1']},
+                  {'version' => '2', 'commit_hash' => '00000000', 'uncommitted_changes' => true, 'currently_deployed' => false, 'job_names' => ['job-1']},
                   {'version' => '1', 'commit_hash' => 'unknown', 'uncommitted_changes' => false, 'currently_deployed' => false}
               ]
           }
@@ -316,6 +316,19 @@ describe Bosh::Cli::Command::Base do
           OUT
         end
 
+        let(:releases_with_jobs_table) do
+          <<-OUT.gsub(/^\s*/, '').chomp
+      +-----------+----------+-------------+-------+
+      | Name      | Versions | Commit Hash | Jobs  |
+      +-----------+----------+-------------+-------+
+      | release-1 | 1        | unknown     | n/a   |
+      |           | 2        | 00000000+   | job-1 |
+      |           | 2.1-dev* | unknown     | job-1 |
+      |           | 15       | 1a2b3c4d+   | job-1 |
+      +-----------+----------+-------------+-------+
+          OUT
+        end
+
         it "lists releases in a nice table and includes information about current deployments and uncommitted changes" do
           @director.stub(list_releases: [release])
 
@@ -324,6 +337,18 @@ describe Bosh::Cli::Command::Base do
           @cmd.should_receive(:say).with("(+) Uncommitted changes")
           @cmd.should_receive(:say).with("Releases total: 1")
 
+          @cmd.list
+        end
+
+        it "lists releases in a nice table and includes job names if available" do
+          @director.stub(list_releases: [release])
+
+          @cmd.should_receive(:say).with(releases_with_jobs_table)
+          @cmd.should_receive(:say).with("(*) Currently deployed")
+          @cmd.should_receive(:say).with("(+) Uncommitted changes")
+          @cmd.should_receive(:say).with("Releases total: 1")
+
+          @cmd.add_option(:jobs, true)
           @cmd.list
         end
       end
