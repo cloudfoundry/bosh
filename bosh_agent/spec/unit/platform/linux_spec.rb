@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh_agent/platform/linux'
 
 describe Bosh::Agent::Platform::Linux do
 

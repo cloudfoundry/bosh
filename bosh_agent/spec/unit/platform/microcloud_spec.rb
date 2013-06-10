@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh_agent/platform/microcloud'
 
 describe Bosh::Agent::Platform::Microcloud, dummy_infrastructure: true do
   let(:platform) { Bosh::Agent::Platform::Microcloud.new }

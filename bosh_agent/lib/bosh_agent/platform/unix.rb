@@ -1,5 +1,3 @@
-require 'bosh_agent/platform'
-
 module Bosh::Agent
 
   class Platform::UNIX
