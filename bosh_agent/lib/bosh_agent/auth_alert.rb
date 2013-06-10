@@ -42,9 +42,9 @@ module Bosh::Agent::SyslogMonitor
     end
   end
 
-  def self.start(nats)
+  def self.start(nats, agent_id)
     EventMachine::run do
-      EventMachine::start_server "127.0.0.1", PORT, Server, nats
+      EventMachine::start_server "127.0.0.1", PORT, Server, nats, agent_id
     end
   end
 end

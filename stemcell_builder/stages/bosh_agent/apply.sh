@@ -43,3 +43,6 @@ cp $dir/assets/empty_state.yml $chroot/$bosh_dir/state.yml
 
 # the bosh agent installs a config that rotates on size
 mv $chroot/etc/cron.daily/logrotate $chroot/etc/cron.hourly/logrotate
+
+# we need to capture ssh events
+cp $dir/assets/rsyslog.d/10-auth_agent_forwarder.conf $chroot/etc/rsyslog.d/10-auth_agent_forwarder.conf

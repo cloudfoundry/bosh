@@ -134,7 +134,7 @@ module Bosh::Agent
     end
 
     def setup_syslog_monitor
-      Bosh::Agent::SyslogMonitor.start(@nats)
+      Bosh::Agent::SyslogMonitor.start(@nats, @agent_id)
     end
 
     def handle_message(json)
