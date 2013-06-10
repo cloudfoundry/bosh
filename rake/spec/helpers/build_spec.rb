@@ -14,7 +14,7 @@ module Bosh::Helpers
         Build.current
       end
 
-      its(:s3_release_url) { should eq('s3://bosh-ci-pipeline/bosh-current.tgz') }
+      its(:s3_release_url) { should eq('s3://bosh-ci-pipeline/release/bosh-current.tgz') }
     end
 
     describe '.candidate' do
@@ -22,7 +22,7 @@ module Bosh::Helpers
         Build.candidate
       end
 
-      its(:s3_release_url) { should eq('s3://bosh-ci-pipeline/bosh-candidate.tgz') }
+      its(:s3_release_url) { should eq('s3://bosh-ci-pipeline/release/bosh-candidate.tgz') }
     end
 
     describe '.job_name' do
