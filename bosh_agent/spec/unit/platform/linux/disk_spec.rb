@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-require 'bosh_agent/platform/linux/disk'
 
 describe Bosh::Agent::Platform::Linux::Disk do
 

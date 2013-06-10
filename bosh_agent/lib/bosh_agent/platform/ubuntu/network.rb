@@ -1,13 +1,11 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'bosh_agent/platform/ubuntu'
-require 'bosh_agent/platform/linux/network'
 
 module Bosh::Agent
   class Platform::Ubuntu::Network < Platform::Linux::Network
     include Bosh::Exec
 
-    def initialize
-      super(File.join File.dirname(__FILE__), 'templates')
+    def initialize(template_dir)
+      super
     end
 
     def write_network_interfaces
