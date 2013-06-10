@@ -33,6 +33,22 @@ describe Bosh::Blobstore::S3BlobstoreClient do
       }.to raise_error Bosh::Blobstore::BlobstoreError,
                        "can't use read-only with an encryption key"
     end
+
+    it "should be processed and passed to the AWS::S3 class" do
+      options = {"bucket_name"       => "test",
+                 "access_key_id"     => "KEY",
+                 "secret_access_key" => "SECRET",
+                 "endpoint"          => "https://s3.example.com"}
+      @s3 = double(AWS::S3)
+      AWS::S3.should_receive(:new)
+        .with({:access_key_id     => "KEY",
+               :secret_access_key => "SECRET",
+               :use_ssl           => true,
+               :port              => 443,
+               :s3_endpoint       => "s3.example.com"})
+        .and_return(@s3)
+      Bosh::Blobstore::S3BlobstoreClient.new(options)
+    end
   end
 
   describe "create" do
