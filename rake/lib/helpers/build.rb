@@ -16,7 +16,7 @@ module Bosh
       end
 
       def s3_release_url
-        "s3://bosh-ci-pipeline/bosh-#{number}.tgz"
+        "s3://bosh-ci-pipeline/release/bosh-#{number}.tgz"
       end
     end
   end
