@@ -165,3 +165,5 @@ properties:
     description: API Key for DataDog
   hm.datadog.application_key:
     description: Health Monitor Application Key for DataDog
+  hm.datadog.pagerduty_service_name:
+    description: Service name to alert in PagerDuty upon HM events

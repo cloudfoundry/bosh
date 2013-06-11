@@ -87,3 +87,4 @@ plugins:
     options:
       api_key: api_key
       application_key: application_key
+      pagerduty_service_name: pagerduty_service_name
