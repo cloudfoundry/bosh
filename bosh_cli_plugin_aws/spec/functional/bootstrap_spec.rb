@@ -49,7 +49,7 @@ describe "AWS Bootstrap commands" do
       end
 
       it "should bootstrap microbosh" do
-        stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami").
+        stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami_us-east-1").
             to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
 
         SecureRandom.should_receive(:base64).and_return("hm_password")
@@ -245,8 +245,8 @@ describe "AWS Bootstrap commands" do
 
       before do
         Bosh::Cli::PackageBuilder.any_instance.stub(:resolve_globs).and_return([])
-        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','last_successful_bosh-stemcell-aws_light.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
-        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-3.tgz','bosh_release.tgz').and_return('bosh_release.tgz')
+        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
+        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','/release/bosh-3.tgz','bosh_release.tgz').and_return('bosh_release.tgz')
 
         aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
         aws.config.set_alias('target', '1234', 'http://127.0.0.1:25555')

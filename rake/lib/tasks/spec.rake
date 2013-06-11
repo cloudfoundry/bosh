@@ -94,10 +94,6 @@ namespace :spec do
       task :micro do
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
-          ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
-          #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
-          promote_stemcell(latest_aws_stemcell_path)
-          promote_stemcell(latest_aws_micro_bosh_stemcell_path)
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
@@ -145,7 +141,10 @@ namespace :spec do
 
       task :publish_gems => 'spec:system:aws:bat' do
         run('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
-        run('s3cmd sync s3://bosh-ci-pipeline/bosh s3://bosh-jenkins-artifacts')
+        run('s3cmd sync s3://bosh-ci-pipeline/release s3://bosh-jenkins-artifacts')
+        run('s3cmd sync s3://bosh-ci-pipeline/bosh-stemcell s3://bosh-jenkins-artifacts')
+        run('s3cmd sync s3://bosh-ci-pipeline/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+        publish_latest_light_micro_bosh_stemcell_ami_text_file
       end
 
       task :get_deployments_aws do
@@ -289,7 +288,7 @@ namespace :spec do
       end
     end
 
-    def promote_stemcell(stemcell_tgz)
+    def publish_latest_light_micro_bosh_stemcell_ami_text_file
       require 'aws-sdk'
       bucket_name = 'bosh-jenkins-artifacts'
       AWS.config({
@@ -297,7 +296,9 @@ namespace :spec do
                      secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
                  })
 
-      Dir.mktmpdir do |dir|
+       Dir.mktmpdir do |dir|
+        stemcell_tgz = 'latest-light-micro-bosh-stemcell.tgz'
+        run("s3cmd get s3://bosh-ci-pipeline/micro-bosh-stemcell/aws/latest-light-micro-bosh-stemcell-aws.tgz #{stemcell_tgz}")
         stemcell_properties = stemcell_manifest(stemcell_tgz)
         stemcell_S3_name = "#{stemcell_properties['name']}-#{stemcell_properties['cloud_properties']['infrastructure']}"
 
@@ -305,35 +306,14 @@ namespace :spec do
         s3.buckets.create(bucket_name) # doesn't fail if already exists in your account
         bucket = s3.buckets[bucket_name]
 
-        if stemcell_properties['cloud_properties']['ami']
-          ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
+        ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
 
-          obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami_us-east-1"]
+        obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami_us-east-1"]
 
-          obj.write(ami_id)
-          obj.acl = :public_read
-          puts "AMI name written to: #{obj.public_url :secure => false}"
-
-          # NOTE: this URL is deprecated
-          obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami"]
-
-          obj.write(ami_id)
-          obj.acl = :public_read
-          puts "AMI name written to: #{obj.public_url :secure => false}"
-        end
-
-        if stemcell_tgz.include?('/light-')
-          obj = bucket.objects["last_successful_#{stemcell_S3_name}_light.tgz"]
-          obj.write(:file => stemcell_tgz)
-          obj.acl = :public_read
-          puts "Light stemcell written to: #{obj.public_url :secure => false}"
-        end
-
-        stemcell_tgz = File.dirname(stemcell_tgz) + '/' + File.basename(stemcell_tgz).gsub('light-', '')
-        obj = bucket.objects["last_successful_#{stemcell_S3_name}.tgz"]
-        obj.write(:file => stemcell_tgz)
+        obj.write(ami_id)
         obj.acl = :public_read
-        puts "Stemcell written to: #{obj.public_url :secure => false}"
+
+        puts "AMI name written to: #{obj.public_url :secure => false}"
       end
     end
 
