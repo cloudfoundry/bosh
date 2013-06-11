@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-require 'bosh_agent/platform/linux/logrotate'
 
 describe Bosh::Agent::Platform::Linux::Logrotate do
   let(:system_root)         { Dir.mktmpdir }
