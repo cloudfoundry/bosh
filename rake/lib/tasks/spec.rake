@@ -349,11 +349,11 @@ namespace :spec do
     end
 
     def latest_aws_micro_bosh_stemcell_path
-      Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_micro_bosh_stemcell/lastSuccessful/archive/light-*.tgz").first
+      File.join(ENV['WORKSPACE'], "light-micro-bosh-stemcell-aws.tgz")
     end
 
     def latest_aws_stemcell_path
-      Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_bosh_stemcell/lastSuccessful/archive/light-*.tgz").first
+      File.join(ENV['WORKSPACE'], "light-bosh-stemcell-aws.tgz")
     end
 
     def latest_openstack_micro_bosh_stemcell_path
