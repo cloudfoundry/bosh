@@ -1,13 +1,14 @@
 module Bosh
   module Helpers
     class Pipeline
-      def publish(local_path, s3_path)
-        Rake::FileUtilsExt.sh("s3cmd put #{local_path} #{base_url+s3_path}")
-      end
 
       def publish_stemcell(stemcell)
         s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
-        publish(stemcell.path, s3_path)
+        latest_filename = "latest-#{stemcell.name}-#{stemcell.infrastructure}.tgz"
+        s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
+
+        Rake::FileUtilsExt.sh("s3cmd put #{stemcell.path} #{base_url+s3_path}")
+        Rake::FileUtilsExt.sh("s3cmd cp #{base_url+s3_path} #{base_url+s3_latest_path}")
       end
 
       def base_url
@@ -20,15 +21,9 @@ module Bosh
         light          = args.fetch(:light, false)
         s3_path        = File.join(base_url, name, infrastructure) + '/'
 
-        version_cmd = "s3cmd ls #{s3_path} " +
-            "| sed -e 's/.*#{light ? 'light-' : ''}#{name}-#{infrastructure}-\\(.*\\)\.tgz/\\1/' " +
-            "| sort -n | tail -1"
-        version = `#{version_cmd}`.chomp
-
-        stemcell_filename = "#{light ? 'light-' : ''}#{name}-#{infrastructure}-#{version}.tgz"
+        stemcell_filename = "latest-#{light ? 'light-' : ''}#{name}-#{infrastructure}.tgz"
         latest_stemcell_url = s3_path + stemcell_filename
         Rake::FileUtilsExt.sh("s3cmd -f get #{latest_stemcell_url}")
-        FileUtils.ln_s("#{stemcell_filename}", "#{light ? 'light-' : ''}#{name}-#{infrastructure}.tgz", force: true)
       end
 
     end

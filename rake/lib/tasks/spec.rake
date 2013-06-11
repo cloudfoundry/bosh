@@ -349,27 +349,27 @@ namespace :spec do
     end
 
     def latest_aws_micro_bosh_stemcell_path
-      File.join(ENV['WORKSPACE'], "light-micro-bosh-stemcell-aws.tgz")
+      File.join(ENV['WORKSPACE'], "latest-light-micro-bosh-stemcell-aws.tgz")
     end
 
     def latest_aws_stemcell_path
-      File.join(ENV['WORKSPACE'], "light-bosh-stemcell-aws.tgz")
+      File.join(ENV['WORKSPACE'], "latest-light-bosh-stemcell-aws.tgz")
     end
 
     def latest_openstack_micro_bosh_stemcell_path
-      File.join(ENV['WORKSPACE'], "micro-bosh-stemcell-openstack.tgz")
+      File.join(ENV['WORKSPACE'], "latest-micro-bosh-stemcell-openstack.tgz")
     end
 
     def latest_openstack_stemcell_path
-      File.join(ENV['WORKSPACE'], "bosh-stemcell-openstack.tgz")
+      File.join(ENV['WORKSPACE'], "latest-bosh-stemcell-openstack.tgz")
     end
 
     def latest_vsphere_micro_bosh_stemcell_path
-      File.join(ENV['WORKSPACE'], "micro-bosh-stemcell-vsphere.tgz")
+      File.join(ENV['WORKSPACE'], "latest-micro-bosh-stemcell-vsphere.tgz")
     end
 
     def latest_vsphere_stemcell_path
-      File.join(ENV['WORKSPACE'], "bosh-stemcell-vsphere.tgz")
+      File.join(ENV['WORKSPACE'], "latest-bosh-stemcell-vsphere.tgz")
     end
 
     def vpc_outfile_path
