@@ -127,9 +127,7 @@ module Bosh::OpenStackCloud
             image = with_openstack { @glance.images.create(image_params) }
             
             @logger.info("Creating new image `#{image.id}'...")
-            # FIX-ME: By-pass the wait-resource until Fog::Image::OpenStack implements the get method (fog PR 1828
-            # merged and a new fog gem released)
-            # wait_resource(image, :active)
+            wait_resource(image, :active)
             
             image.id.to_s
           end
