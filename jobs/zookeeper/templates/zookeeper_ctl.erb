@@ -1,0 +1,51 @@
+#!/bin/bash
+
+JOB=zookeeper
+
+RUN_DIR=/var/vcap/sys/run/$JOB
+LOG_DIR=/var/vcap/sys/log/$JOB
+STORE_DIR=/var/vcap/store/$JOB
+
+PIDFILE=$RUN_DIR/$JOB.pid
+RUNAS=vcap
+
+PATH=$PATH:/var/vcap/jobs/$JOB/bin
+export PATH
+
+export INDEX="%<= spec['index'] %>"
+export DATA_DIR=<%= p('zookeeper.dataDir') %>
+
+export TMPDIR=/var/vcap/data/tmp/$JOB
+
+export JAVA_HOME=/var/vcap/packages/java17
+
+case $1 in
+
+  # remember to make the start idempotent!
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMPDIR $DATA_DIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMPDIR $DATA_DIR
+    echo $INDEX > $DATA_DIR/myid
+
+    # check if the rpms are installed
+    # if not, install this
+
+    # copy the zoo.cfg to where PHD expects it to be
+    cp /var/vcap/jobs/$JOB/config/zoo.cfg /etc/phd
+
+    exec chpst -u $RUNAS:$RUNAS \
+      java -jar xxx.jar
+      >>$LOG_DIR/$JOB.stdout.log 2>>$LOG_DIR/$JOB.stderr.log
+    ;;
+
+  stop)
+    PID=$(head -1 $PIDFILE)
+    kill $PID
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+    rm -f $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: $JOB_ctl {start|stop}" ;;
+esac
+exit 0

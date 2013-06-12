@@ -1,0 +1,8 @@
+---
+name: zookeeper
+templates:
+  zookeeper_ctl.erb: bin/zookeeper_ctl
+  zoo.cfg.erb: config/zoo.cfg
+packages:
+  - java17
+  - zookeeper_server

@@ -1,0 +1,18 @@
+maxClientCnxns=50
+# The number of milliseconds of each tick
+tickTime=2000
+# The number of ticks that the initial 
+# synchronization phase can take
+initLimit=10
+# The number of ticks that can pass between 
+# sending a request and getting an acknowledgement
+syncLimit=5
+# the directory where the snapshot is stored. default  (/var/lib/gphd/zookeeper-3.4.5_gphd_2_0_1_0)
+# note that /var/lib is on the root file system, which only is a 2 GB disk, it should be stored on
+# either /var/vcap/data or /var/vcap/store
+dataDir=<%= p("zookeeper.dataDir") %>
+# the port at which the clients will connect
+clientPort=2181
+server.1=0.zookeeper.default.phd.bosh:2888:3888
+server.2=0.zookeeper.default.phd.bosh:2888:3888
+server.3=0.zookeeper.default.phd.bosh:2888:3888
