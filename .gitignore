@@ -61,3 +61,5 @@ aws_route53_receipt.yml
 aws_vpc_receipt.yml
 bosh_warden_cpi/chef/cookbooks/
 bosh_warden_cpi/chef/tmp/
+bosh_warden_cpi/blobstore
+.vagrant*

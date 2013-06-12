@@ -1,9 +1,8 @@
 ---
 name: dev-test
-director_uuid: 145257f1-36f9-49cf-bbac-168d49a521ad
-
+director_uuid: 8a043ef3-909b-4c04-9688-8d566b5cc0cd
 release:
-  name: appcloud
+  name: cf-release
   version: latest
 
 compilation:
@@ -58,8 +57,8 @@ resource_pools:
   network: default
   size: 3
   stemcell:
-    name: bosh-stemcell
-    version: 1.5.0.pre.3
+    name: warden-stemcell
+    version: latest
   cloud_properties:
     cpu: 4
 
