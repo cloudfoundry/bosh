@@ -182,7 +182,11 @@ module Bosh::OpenStackCloud
 
         network_configurator = NetworkConfigurator.new(network_spec)
 
+        openstack_security_groups = with_openstack { @openstack.security_groups }.collect { |sg| sg.name }
         security_groups = network_configurator.security_groups(@default_security_groups)
+        security_groups.each do |sg|
+          cloud_error("Security group `#{sg}' not found") unless openstack_security_groups.include?(sg)
+        end
         @logger.debug("Using security groups: `#{security_groups.join(', ')}'")
 
         nics = network_configurator.nics
