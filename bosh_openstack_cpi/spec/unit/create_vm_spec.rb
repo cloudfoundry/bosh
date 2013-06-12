@@ -260,7 +260,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
-  it "raises an error when a security group doesn't exists" do
+  it "raises an error when a security group doesn't exist" do
     cloud = mock_cloud do |openstack|
       openstack.security_groups.should_receive(:collect).and_return(%w[foo])
     end
