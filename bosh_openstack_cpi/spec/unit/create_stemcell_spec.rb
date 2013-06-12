@@ -30,7 +30,7 @@ describe Bosh::OpenStackCloud::Cloud do
       Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
       cloud.should_receive(:generate_unique_name).and_return(unique_name)
       cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      # FIX-ME: cloud.should_receive(:wait_resource).with(image, :active)
+      cloud.should_receive(:wait_resource).with(image, :active)
 
       sc_id = cloud.create_stemcell("/tmp/foo", {
         "container_format" => "bare",
@@ -56,7 +56,7 @@ describe Bosh::OpenStackCloud::Cloud do
       Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
       cloud.should_receive(:generate_unique_name).and_return(unique_name)
       cloud.should_not_receive(:unpack_image)
-      # FIX-ME: cloud.should_receive(:wait_resource).with(image, :active)
+      cloud.should_receive(:wait_resource).with(image, :active)
 
       sc_id = cloud.create_stemcell("/tmp/foo", {
         "container_format" => "bare",
@@ -91,7 +91,7 @@ describe Bosh::OpenStackCloud::Cloud do
       Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
       cloud.should_receive(:generate_unique_name).and_return(unique_name)
       cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      # FIX-ME: cloud.should_receive(:wait_resource).with(image, :active)
+      cloud.should_receive(:wait_resource).with(image, :active)
 
       sc_id = cloud.create_stemcell("/tmp/foo", {
         "name" => "bosh-stemcell",
@@ -126,7 +126,7 @@ describe Bosh::OpenStackCloud::Cloud do
       Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
       cloud.should_receive(:generate_unique_name).and_return(unique_name)
       cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      # FIX-ME: cloud.should_receive(:wait_resource).with(image, :active)
+      cloud.should_receive(:wait_resource).with(image, :active)
 
       sc_id = cloud.create_stemcell("/tmp/foo", {
         "container_format" => "bare",
