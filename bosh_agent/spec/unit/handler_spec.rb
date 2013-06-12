@@ -52,6 +52,14 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
+  it "should not start syslog monitor if alerts are disabled via config" do
+    Bosh::Agent::Config.process_alerts = false
+    Bosh::Agent::SyslogMonitor.should_not_receive(:start)
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
+  end
+
   it "should result in an exception payload" do
     handler = Bosh::Agent::Handler.new
 

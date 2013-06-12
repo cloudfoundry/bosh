@@ -80,7 +80,6 @@ module Bosh::Agent
 
         setup_heartbeats
         setup_sshd_monitor
-        setup_syslog_monitor
 
         if @process_alerts
           if (@smtp_port.nil? || @smtp_user.nil? || @smtp_password.nil?)
@@ -89,6 +88,7 @@ module Bosh::Agent
           else
             @logger.debug("SMTP: #{@smtp_password}")
             @processor = Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
+            setup_syslog_monitor
           end
         end
       end

@@ -43,8 +43,10 @@ module Bosh::Agent::SyslogMonitor
   end
 
   def self.start(nats, agent_id)
-    EventMachine::run do
-      EventMachine::start_server "127.0.0.1", PORT, Server, nats, agent_id
+    unless EM.reactor_running?
+      raise Error, "Cannot start syslog monitor as event loop is not running"
     end
+
+    EventMachine::start_server "127.0.0.1", PORT, Server, nats, agent_id
   end
 end

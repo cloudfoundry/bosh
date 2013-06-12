@@ -62,7 +62,7 @@ opts = OptionParser.new do |opts|
     options["smtp_port"] = opt
   end
 
-  opts.on("--no-alerts", "Don't process alerts from Monit") do |opt|
+  opts.on("--no-alerts", "Don't process alerts from Monit or sshd") do |opt|
     options["process_alerts"] = false
   end
 
