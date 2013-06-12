@@ -1,9 +1,8 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'bosh_agent/platform/linux'
 
 module Bosh::Agent
   class Platform::Linux::Password
-    USERS = ['root', BOSH_APP_USER]
+    USERS = ['root', Bosh::Agent::BOSH_APP_USER]
 
     # Update passwords
     def update(settings)
