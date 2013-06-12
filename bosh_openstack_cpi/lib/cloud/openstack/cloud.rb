@@ -680,32 +680,25 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [String] Device name
     def attach_volume(server, volume)
-      @logger.info("Attaching volume `#{volume.id}' to `#{server.id}'...")
+      @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}'...")
       volume_attachments = with_openstack { server.volume_attachments }
       device = volume_attachments.find { |a| a["volumeId"] == volume.id }
 
       if device.nil?
-        device_names = Set.new(volume_attachments.collect { |v| v["device"] })
-        new_attachment = nil
-        ("c".."z").each do |char|
-          # As some kernels remap device names (from sd* to vd* or xvd*), Bosh Agent will lookup for the 
-          # proper device name if we set it initially to sd*.
-          dev_name = "/dev/sd#{char}"
-          if device_names.include?(dev_name)
-            @logger.warn("`#{dev_name}' on `#{server.id}' is taken")
-            next
-          end
-          @logger.info("Attaching volume `#{volume.id}' to `#{server.id}', " \
-                       "device name is `#{dev_name}'")
-          with_openstack { volume.attach(server.id, dev_name) }
-          wait_resource(volume, :"in-use")
-          new_attachment = dev_name
-          break
-        end
-        cloud_error("Server has too many disks attached") if new_attachment.nil?
+        # Let OpenStack pick the device name
+        with_openstack { volume.attach(server.id, nil) }
+        wait_resource(volume, :"in-use")
+        
+        volume_attachments = with_openstack { server.volume_attachments }
+        device = volume_attachments.find { |a| a["volumeId"] == volume.id }
+
+        cloud_error("Unable to attach volume `#{volume.id}' to server `#{server.id}'") if device.nil?
+        
+        new_attachment = device["device"]
+        @logger.info("Attached volume `#{volume.id}' to server `#{server.id}', device name is `#{new_attachment}'")        
       else
         new_attachment = device["device"]
-        @logger.info("Disk `#{volume.id}' is already attached to server `#{server.id}' " \
+        @logger.info("Volume `#{volume.id}' is already attached to server `#{server.id}' " \
                      "in `#{new_attachment}'. Skipping.")
       end
 
@@ -719,13 +712,13 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [void]
     def detach_volume(server, volume)
-      @logger.info("Detaching volume `#{volume.id}' from `#{server.id}'...")
+      @logger.info("Detaching volume `#{volume.id}' from server `#{server.id}'...")
       volume_attachments = with_openstack { server.volume_attachments }
       if volume_attachments.find { |a| a["volumeId"] == volume.id }
         with_openstack { volume.detach(server.id, volume.id) }
         wait_resource(volume, :available)
       else
-        @logger.info("Disk `#{volume.id}' is not attached to server `#{server.id}'. Skipping.")
+        @logger.info("Volume `#{volume.id}' is not attached to server `#{server.id}'. Skipping.")
       end
     end
 
