@@ -71,6 +71,10 @@ module Bosh
           end
         end
         release_file
+      rescue AWS::S3::Errors::NoSuchKey => e
+        new_exception = Exception.new("Can't find #{remote_file} in bucket #{bucket_name}")
+        new_exception.set_backtrace(e.backtrace)
+        raise new_exception
       end
 
       private

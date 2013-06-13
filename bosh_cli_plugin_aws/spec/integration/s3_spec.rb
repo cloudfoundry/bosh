@@ -34,6 +34,13 @@ describe "S3 buckets integration test", s3_credentials: true do
       s3.fetch_object_contents(another_bucket_name, "file.txt").should == "hello friends"
       s3.objects_in_bucket(bucket_name).should_not include("file.txt")
 
+      Dir.mktmpdir do |dir|
+        file = s3.copy_remote_file(another_bucket_name, "file.txt", File.join(dir, "new_file.txt"))
+        file.read.should == "hello friends"
+      end
+
+      expect { s3.copy_remote_file(another_bucket_name, "bad_file_name.txt", "new_file.txt")}.to raise_error(Exception, "Can't find bad_file_name.txt in bucket #{another_bucket_name}")
+
       s3.delete_bucket(bucket_name)
       s3.delete_bucket(bucket_name)
       s3.delete_bucket(another_bucket_name)
