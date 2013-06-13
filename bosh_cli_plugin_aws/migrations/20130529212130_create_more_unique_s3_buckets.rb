@@ -1,17 +1,21 @@
 class CreateMoreUniqueS3Buckets < Bosh::Aws::Migration
-
   def s3_safe_full_domain_name
     config['vpc']['domain'].gsub(".","-")
   end
 
+  def old_prefix
+    config['name']
+  end
+
   def buckets
     {
-     "#{s3_safe_full_domain_name}-bosh-blobstore" => "#{config['name']}-bosh-blobstore",
-     "#{s3_safe_full_domain_name}-bosh-artifacts" => "#{config['name']}-bosh-artifacts"
+     "#{s3_safe_full_domain_name}-bosh-blobstore" => "#{old_prefix}-bosh-blobstore",
+     "#{s3_safe_full_domain_name}-bosh-artifacts" => "#{old_prefix}-bosh-artifacts"
     }
   end
 
   def execute
+    return if s3_safe_full_domain_name == old_prefix
 
     buckets.each_key do |bucket|
       say "creating bucket #{bucket}"
@@ -25,6 +29,5 @@ class CreateMoreUniqueS3Buckets < Bosh::Aws::Migration
       say "deleting bucket #{old_bucket}"
       s3.delete_bucket(old_bucket)
     end
-
   end
 end

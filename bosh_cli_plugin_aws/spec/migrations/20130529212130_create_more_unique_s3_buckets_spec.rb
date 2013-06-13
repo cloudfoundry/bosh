@@ -10,9 +10,20 @@ describe CreateMoreUniqueS3Buckets do
     s3.stub(:create_bucket)
   end
 
+  context "when the old and new buckets have the same name" do
+    it "should not do anything" do
+      config['vpc']['domain'] = 'run.pivotal.io'
+      config['name'] = 'run-pivotal-io'
+
+      s3.should_not_receive :create_bucket
+      s3.should_not_receive :copy_bucket
+      s3.should_not_receive :delete_bucket
+
+      subject.execute
+    end
+  end
 
   context "when old buckets exists" do
-
     before do
       s3.should_receive(:bucket_exists?).with("dev102-bosh-blobstore").and_return(true)
       s3.should_receive(:bucket_exists?).with("dev102-bosh-artifacts").and_return(true)
