@@ -16,7 +16,7 @@ describe CreateMoreUniqueS3Buckets do
       config['name'] = 'run-pivotal-io'
 
       s3.should_not_receive :create_bucket
-      s3.should_not_receive :copy_bucket
+      s3.should_not_receive :move_bucket
       s3.should_not_receive :delete_bucket
 
       subject.execute
@@ -27,7 +27,7 @@ describe CreateMoreUniqueS3Buckets do
     before do
       s3.should_receive(:bucket_exists?).with("dev102-bosh-blobstore").and_return(true)
       s3.should_receive(:bucket_exists?).with("dev102-bosh-artifacts").and_return(true)
-      s3.stub(:copy_bucket)
+      s3.stub(:move_bucket)
       s3.stub(:delete_bucket)
     end
 
@@ -38,8 +38,8 @@ describe CreateMoreUniqueS3Buckets do
     end
 
     it "should copy the existing bucket content" do
-      s3.should_receive(:copy_bucket).with("dev102-bosh-blobstore", "dev102-cf-com-bosh-blobstore").ordered
-      s3.should_receive(:copy_bucket).with("dev102-bosh-artifacts", "dev102-cf-com-bosh-artifacts").ordered
+      s3.should_receive(:move_bucket).with("dev102-bosh-blobstore", "dev102-cf-com-bosh-blobstore").ordered
+      s3.should_receive(:move_bucket).with("dev102-bosh-artifacts", "dev102-cf-com-bosh-artifacts").ordered
       subject.execute
     end
 
@@ -64,7 +64,7 @@ describe CreateMoreUniqueS3Buckets do
     end
 
     it "should not copy the existing bucket content" do
-      s3.should_not_receive(:copy_bucket)
+      s3.should_not_receive(:move_bucket)
       subject.execute
     end
 

@@ -29,7 +29,7 @@ describe "S3 buckets integration test", s3_credentials: true do
       s3.objects_in_bucket(bucket_name).should include("file.txt")
       s3.fetch_object_contents(bucket_name, "file.txt").should == "hello friends"
 
-      s3.copy_bucket(bucket_name, another_bucket_name)
+      s3.move_bucket(bucket_name, another_bucket_name)
       s3.objects_in_bucket(another_bucket_name).should include("file.txt")
       s3.fetch_object_contents(another_bucket_name, "file.txt").should == "hello friends"
       s3.objects_in_bucket(bucket_name).should_not include("file.txt")

@@ -24,8 +24,8 @@ class CreateMoreUniqueS3Buckets < Bosh::Aws::Migration
 
     buckets.each_pair do |new_bucket, old_bucket|
       next unless s3.bucket_exists?(old_bucket)
-      say "copying contents of #{old_bucket} to #{new_bucket}"
-      s3.copy_bucket(old_bucket, new_bucket)
+      say "moving contents of #{old_bucket} to #{new_bucket}"
+      s3.move_bucket(old_bucket, new_bucket)
       say "deleting bucket #{old_bucket}"
       s3.delete_bucket(old_bucket)
     end

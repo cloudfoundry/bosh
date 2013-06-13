@@ -9,7 +9,7 @@ module Bosh
         aws_s3.buckets.create(bucket_name)
       end
 
-      def copy_bucket(old_bucket, new_bucket)
+      def move_bucket(old_bucket, new_bucket)
         fetch_bucket(old_bucket).objects.each do |object|
           object.move_to(object.key, :bucket_name => new_bucket)
         end
