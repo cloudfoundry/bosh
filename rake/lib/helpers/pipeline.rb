@@ -12,12 +12,21 @@ module Bosh
         latest_filename = "#{latest_filename_parts.join('-')}.tgz"
         s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
 
-        Rake::FileUtilsExt.sh("s3cmd put #{stemcell.path} #{base_url+s3_path}")
-        Rake::FileUtilsExt.sh("s3cmd cp #{base_url+s3_path} #{base_url+s3_latest_path}")
+        s3_upload(stemcell.path, base_url + s3_path)
+        s3_copy(base_url + s3_path, base_url + s3_latest_path, true)
       end
 
       def base_url
         "s3://bosh-ci-pipeline/"
+      end
+
+      def s3_upload(file, remote_uri)
+        Rake::FileUtilsExt.sh("s3cmd put #{file} #{remote_uri}")
+      end
+
+      def s3_copy(src_uri, dst_uri, overwrite=false)
+        overwrite_flag = overwrite ? '--force' : ''
+        Rake::FileUtilsExt.sh("s3cmd cp #{overwrite_flag} #{src_uri} #{dst_uri}")
       end
 
       def download_latest_stemcell(args={})
