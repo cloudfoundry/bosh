@@ -66,9 +66,14 @@ module Bosh
         name = options["name"]
         key_pair = select_key_pair_for_instance(name, options["key_name"])
 
+        nat_ami_id = NAT_AMI_ID
+
+        # find ami of nat
+        nat_images = aws_ec2.images.filter('name', 'ami-vpc-nat*')
+        nat_ami_id = nat_images.sort{ |b, a| a.name <=> b.name }.reject{|x| x.name.include? 'i386'}.first.id if not nat_images.to_a.empty?
 
         instance_options = {
-            image_id: NAT_AMI_ID,
+            image_id: nat_ami_id,
             instance_type: options.fetch("instance_type", "m1.small"),
             subnet: options["subnet_id"],
             private_ip_address: options["ip"],
