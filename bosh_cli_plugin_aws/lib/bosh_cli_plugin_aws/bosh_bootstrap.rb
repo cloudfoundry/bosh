@@ -112,7 +112,7 @@ This command should be used for bootstrapping bosh from scratch.
           say("Using stemcell #{bosh_stemcell_override}")
           return bosh_stemcell_override
         end
-        s3.copy_remote_file(AWS_JENKINS_BUCKET, "/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz", "bosh_stemcell.tgz")
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, "bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz", "bosh_stemcell.tgz")
       end
 
       def bosh_release
@@ -120,7 +120,7 @@ This command should be used for bootstrapping bosh from scratch.
           say("Using release #{bosh_release_override}")
           return bosh_release_override
         end
-        s3.copy_remote_file(AWS_JENKINS_BUCKET, "/release/bosh-#{bosh_version}.tgz", "bosh_release.tgz")
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, "release/bosh-#{bosh_version}.tgz", "bosh_release.tgz")
       end
 
       def bosh_stemcell_override
