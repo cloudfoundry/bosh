@@ -933,10 +933,6 @@ module VSphereCloud
       vm.clone(folder, name, clone_spec)
     end
 
-    def take_snapshot(vm, name)
-      vm.create_snapshot(name, nil, false, false)
-    end
-
     def generate_unique_name
       SecureRandom.uuid
     end
@@ -1114,6 +1110,14 @@ module VSphereCloud
           raise TimeoutException if Time.now - started > timeout
           sleep(1.0)
         end
+    end
+
+    private
+
+    # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
+    # (which comes from AWS). This is a vm snapshot.
+    def take_snapshot(vm, name)
+      vm.create_snapshot(name, nil, false, false)
     end
   end
 end
