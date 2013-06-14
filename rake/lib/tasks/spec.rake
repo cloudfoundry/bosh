@@ -297,23 +297,25 @@ namespace :spec do
                  })
 
        Dir.mktmpdir do |dir|
-        stemcell_tgz = 'latest-light-micro-bosh-stemcell.tgz'
-        run("s3cmd get s3://bosh-ci-pipeline/micro-bosh-stemcell/aws/latest-light-micro-bosh-stemcell-aws.tgz #{stemcell_tgz}")
-        stemcell_properties = stemcell_manifest(stemcell_tgz)
-        stemcell_S3_name = "#{stemcell_properties['name']}-#{stemcell_properties['cloud_properties']['infrastructure']}"
+        Dir.chdir(dir) do
+          stemcell_tgz = 'latest-light-micro-bosh-stemcell.tgz'
+          run("s3cmd get s3://bosh-ci-pipeline/micro-bosh-stemcell/aws/latest-light-micro-bosh-stemcell-aws.tgz #{stemcell_tgz}")
+          stemcell_properties = stemcell_manifest(stemcell_tgz)
+          stemcell_S3_name = "#{stemcell_properties['name']}-#{stemcell_properties['cloud_properties']['infrastructure']}"
 
-        s3 = AWS::S3.new
-        s3.buckets.create(bucket_name) # doesn't fail if already exists in your account
-        bucket = s3.buckets[bucket_name]
+          s3 = AWS::S3.new
+          s3.buckets.create(bucket_name) # doesn't fail if already exists in your account
+          bucket = s3.buckets[bucket_name]
 
-        ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
+          ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
 
-        obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami_us-east-1"]
+          obj = bucket.objects["last_successful_#{stemcell_S3_name}_ami_us-east-1"]
 
-        obj.write(ami_id)
-        obj.acl = :public_read
+          obj.write(ami_id)
+          obj.acl = :public_read
 
-        puts "AMI name written to: #{obj.public_url :secure => false}"
+          puts "AMI name written to: #{obj.public_url :secure => false}"
+        end
       end
     end
 
