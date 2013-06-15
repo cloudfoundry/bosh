@@ -11,6 +11,7 @@ module Bosh
 
         aws_config['ec2_endpoint'] ||= ['ec2', aws_config['region'], 'amazonaws.com'].compact.join('.')
         aws_config['elb_endpoint'] ||= ['elasticloadbalancing', aws_config['region'], 'amazonaws.com'].compact.join('.')
+        aws_config['rds_endpoint'] ||= ['rds', aws_config['region'], 'amazonaws.com'].compact.join('.')
 
         @s3 = S3.new(aws_config)
         @elb = ELB.new(aws_config)
