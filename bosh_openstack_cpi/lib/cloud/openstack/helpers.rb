@@ -13,8 +13,10 @@ module Bosh::OpenStackCloud
     # Raises CloudError exception
     #
     # @param [String] message Message about what went wrong
-    def cloud_error(message)
+    # @param [Exception] exception Exception to be logged (optional)
+    def cloud_error(message, exception = nil)
       @logger.error(message) if @logger
+      @logger.error(exception) if @logger && exception
       raise Bosh::Clouds::CloudError, message
     end
 
@@ -24,29 +26,43 @@ module Bosh::OpenStackCloud
         yield
       rescue Excon::Errors::RequestEntityTooLarge => e
         # If we find a rate limit error, parse message, wait, and retry
-        unless e.response.body.empty? || retries >= MAX_RETRIES
-          begin
-            message = JSON.parse(e.response.body)
-            overlimit = message["overLimit"] || message["overLimitFault"]
-            if overlimit
-              task_checkpoint
-              wait_time = overlimit["retryAfter"] || e.response.headers["Retry-After"] || DEFAULT_RETRY_TIMEOUT
-              details = "#{overlimit["message"]} - #{overlimit["details"]}"
-              @logger.debug("OpenStack API overLimit (#{details}), waiting #{wait_time} seconds before retrying") if @logger
-              sleep(wait_time.to_i)
-              retries += 1
-              retry
-            end
-          rescue JSON::ParserError
-            # do nothing
-          end
+        overlimit = parse_openstack_response(e.response, "overLimit", "overLimitFault")
+        unless overlimit.nil? || retries >= MAX_RETRIES
+          task_checkpoint
+          wait_time = overlimit["retryAfter"] || e.response.headers["Retry-After"] || DEFAULT_RETRY_TIMEOUT
+          details = "#{overlimit["message"]} - #{overlimit["details"]}"
+          @logger.debug("OpenStack API Over Limit (#{details}), waiting #{wait_time} seconds before retrying") if @logger
+          sleep(wait_time.to_i)
+          retries += 1
+          retry
         end
-        @logger.error(e) if @logger
-        cloud_error("OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
+        cloud_error("OpenStack API Request Entity Too Large error. Check task debug log for details.", e)
+      rescue Excon::Errors::BadRequest => e
+        badrequest = parse_openstack_response(e.response, "badRequest")
+        details = badrequest.nil? ? "" : " (#{badrequest["message"]})"   
+        cloud_error("OpenStack API Bad Request#{details}. Check task debug log for details.", e)
       rescue Excon::Errors::InternalServerError => e
-        @logger.error(e) if @logger
-        cloud_error("OpenStack API returned a Internal Server error. Check task debug log for details.")
+        cloud_error("OpenStack API Internal Server error. Check task debug log for details.", e)
       end
+    end
+    
+    ##
+    # Parses and look ups for keys in an OpenStack response 
+    #
+    # @param [Excon::Response] response Response from OpenStack API
+    # @param [Array<String>] keys Keys to look up in response
+    # @return [Hash] Contents at the first key found, or nil if not found
+    def parse_openstack_response(response, *keys)
+      unless response.body.empty?
+        begin
+          body = JSON.parse(response.body)
+          key = keys.detect { |k| body.has_key?(k)}
+          return body[key] if key
+        rescue JSON::ParserError
+          # do nothing
+        end
+      end
+      nil
     end
 
     ##
