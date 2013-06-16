@@ -181,7 +181,26 @@ describe Bosh::OpenStackCloud::Helpers do
           @openstack.servers
         end
       end
-  
+
+      it "should retry the amount of seconds received at the response headers" do
+        body = { "overLimitFault" => {
+            "message" => "This request was rate-limited.",
+            "code" => 413,
+            "details" => "Only 10 POST request(s) can be made to * every minute."}
+        }
+        headers = {"Retry-After" => 5}
+        response = Excon::Response.new(:body => JSON.dump(body), :headers => headers)
+
+        @openstack.should_receive(:servers)
+        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_receive(:sleep).with(5)
+        @openstack.should_receive(:servers).and_return(nil)
+
+        @cloud.with_openstack do
+          @openstack.servers
+        end
+      end
+
       it "should retry the default number of seconds if not set at the response body" do
         body = { "overLimitFault" => {
             "message" => "This request was rate-limited.",
@@ -192,7 +211,7 @@ describe Bosh::OpenStackCloud::Helpers do
   
         @openstack.should_receive(:servers)
           .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-        @cloud.should_receive(:sleep).with(1)
+        @cloud.should_receive(:sleep).with(3)
         @openstack.should_receive(:servers).and_return(nil)
   
         @cloud.with_openstack do

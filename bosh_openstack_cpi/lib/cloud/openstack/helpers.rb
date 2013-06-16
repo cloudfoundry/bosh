@@ -7,7 +7,7 @@ module Bosh::OpenStackCloud
 
     DEFAULT_TIMEOUT = 300 # Default timeout for target state (in seconds)
     MAX_RETRIES = 10 # Max number of retries
-    DEFAULT_RETRY_TIMEOUT = 1 # Default timeout before retrying a call (in seconds)
+    DEFAULT_RETRY_TIMEOUT = 3 # Default timeout before retrying a call (in seconds)
 
     ##
     # Raises CloudError exception
@@ -30,7 +30,7 @@ module Bosh::OpenStackCloud
             overlimit = message["overLimit"] || message["overLimitFault"]
             if overlimit
               task_checkpoint
-              wait_time = overlimit["retryAfter"] || DEFAULT_RETRY_TIMEOUT
+              wait_time = overlimit["retryAfter"] || e.response.headers["Retry-After"] || DEFAULT_RETRY_TIMEOUT
               details = "#{overlimit["message"]} - #{overlimit["details"]}"
               @logger.debug("OpenStack API overLimit (#{details}), waiting #{wait_time} seconds before retrying") if @logger
               sleep(wait_time.to_i)
