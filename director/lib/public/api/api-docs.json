@@ -1,0 +1,1 @@
+{"basePath":"http://127.0.0.1:8080","swaggerVersion":"1.1","apiVersion":"1.0","apis":[{"path":"/api-docs/users","description":""},{"path":"/api-docs/releases","description":""},{"path":"/api-docs/deployments","description":""}]}

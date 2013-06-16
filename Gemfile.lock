@@ -177,6 +177,7 @@ PATH
       rufus-scheduler (~> 2.0.18)
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
+      source2swagger (~> 0.0.2)
       sys-filesystem (~> 1.1.0)
       thin (~> 1.5.0)
       yajl-ruby (~> 1.1.0)
@@ -404,6 +405,8 @@ GEM
       rack-protection (~> 1.4)
       tilt (~> 1.3, >= 1.3.4)
     slop (3.4.4)
+    source2swagger (0.0.2)
+      json
     sqlite3 (1.3.7)
     sys-filesystem (1.1.0)
       ffi
