@@ -89,6 +89,10 @@ module Bosh::Director
         end
 
         snapshot_cids
+
+      rescue Bosh::Clouds::NotImplemented
+        Config.logger.info('CPI does not support disk snapshots; skipping')
+        []
       end
     end
   end

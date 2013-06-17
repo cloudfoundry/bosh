@@ -76,6 +76,9 @@ module Bosh::Director
       }
 
       disks.each { |disk| cloud.snapshot_disk(disk, metadata) }
+
+    rescue Bosh::Clouds::NotImplemented
+      logger.info('CPI does not support disk snapshots; skipping')
     end
   end
 end

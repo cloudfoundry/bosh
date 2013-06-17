@@ -162,6 +162,14 @@ describe Bosh::Director::Api::SnapshotManager do
           expect(snapshot.clean).to be_true
         end
       end
+
+      context 'with a CPI that does not support snapshots' do
+        it 'does nothing' do
+          BD::Config.cloud.stub(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
+
+          expect(described_class.take_snapshot(@instance)).to be_empty
+        end
+      end
     end
   end
 

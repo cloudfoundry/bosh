@@ -27,8 +27,8 @@ module Bosh::Director
       end
 
       def snapshot(instance)
-        Bosh::Director::Api::SnapshotManager.take_snapshot(instance, @options)
         logger.info("taking snapshot of: #{instance.job}/#{instance.index} (#{instance.vm.cid})")
+        Bosh::Director::Api::SnapshotManager.take_snapshot(instance, @options)
       rescue Bosh::Clouds::CloudError
         @errors += 1
         logger.error("failed to take snapshot of: #{instance.job}/#{instance.index} (#{instance.vm.cid})")

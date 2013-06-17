@@ -80,6 +80,14 @@ describe Bosh::Director::Scheduler do
        cloud.should_receive(:snapshot_disk).with(disks[1], metadata)
        subject.snapshot_self
      end
+
+     context 'with a CPI that does not support snapshots' do
+       it 'does nothing' do
+         cloud.should_receive(:current_vm_id).and_raise(Bosh::Clouds::NotImplemented)
+
+         expect { subject.snapshot_self }.to_not raise_error
+       end
+     end
     end
   end
 
