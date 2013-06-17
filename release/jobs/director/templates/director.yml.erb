@@ -29,13 +29,13 @@ db:
   database: <%= p('director.db.database') %>
   connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
 scheduled_jobs:
-  <% if p('director.snapshot_schedule') %>
+  <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
   - command: snapshot_deployments
-    schedule: <%= p('director.snapshot_schedule') %>
+    schedule: <%= snapshot_schedule %>
   <% end %>
-  <% if p('director.self_snapshot_schedule') %>
+  <% if_p('director.self_snapshot_schedule') do |self_snapshot_schedule| %>
   - command: snapshot_self
-    schedule: <%= p('director.self_snapshot_schedule') %>
+    schedule: <%= self_snapshot_schedule %>
   <% end %>
 scan_and_fix:
   auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>

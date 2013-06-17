@@ -28,6 +28,7 @@ module Bosh::Director
     end
 
     def add_jobs
+      return if @scheduled_jobs.nil? || !@scheduled_jobs.is_a?(Array)
       @scheduled_jobs.each do |scheduled_job|
         command = scheduled_job['command'].to_s
         schedule = scheduled_job['schedule']

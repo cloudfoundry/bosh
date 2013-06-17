@@ -15,17 +15,37 @@ describe Bosh::Director::Scheduler do
   end
 
   describe 'scheduling jobs' do
+    let(:fake_scheduler) { double('Scheduler') }
     let(:scheduled_jobs) { [{'schedule' => '0 1 * * *', 'command' => 'snapshot_deployments'}] }
-    subject { described_class.new(scheduled_jobs) }
 
     it 'schedules jobs at the appropriate time' do
-      fake_scheduler = double('Scheduler')
+      subject = described_class.new(scheduled_jobs)
       subject.stub(:scheduler).and_return(fake_scheduler)
       fake_scheduler.should_receive(:cron).with('0 1 * * *').and_yield(double('Job', next_time: "tomorrow"))
       subject.should_receive(:snapshot_deployments)
       subject.add_jobs
     end
 
+    it 'do not schedules jobs if scheduled_jobs is nil' do 
+      subject = described_class.new(nil)     
+      subject.stub(:scheduler).and_return(fake_scheduler)
+      fake_scheduler.should_not_receive(:cron)     
+      subject.add_jobs
+    end
+
+    it 'do not schedules jobs if scheduled_jobs is not an Array' do
+      subject = described_class.new({})      
+      subject.stub(:scheduler).and_return(fake_scheduler)
+      fake_scheduler.should_not_receive(:cron)     
+      subject.add_jobs
+    end
+
+    it 'do not schedules jobs if scheduled_jobs is empty' do
+      subject = described_class.new([])      
+      subject.stub(:scheduler).and_return(fake_scheduler)
+      fake_scheduler.should_not_receive(:cron)     
+      subject.add_jobs
+    end
   end
 
   describe 'job commands' do
