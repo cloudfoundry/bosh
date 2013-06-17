@@ -119,50 +119,7 @@ describe Bosh::OpenStackCloud::Helpers do
       }.to raise_error(NoMemoryError)
     end
 
-    context "InternalServerError" do
-      it "should raise a CloudError exception when OpenStack API returns a InternalServerError" do  
-        @openstack.should_receive(:servers).and_raise(Excon::Errors::InternalServerError.new("InternalServerError"))
-  
-        expect {
-          @cloud.with_openstack do
-            @openstack.servers
-          end
-        }.to raise_error(Bosh::Clouds::CloudError, 
-                         "OpenStack API returned a Internal Server error. Check task debug log for details.")
-      end
-    end
-    
-    context "RequestEntityTooLarge" do
-      it "should raise a CloudError exception if response has no body" do
-        response = Excon::Response.new(:body => "")
-  
-        @openstack.should_receive(:servers)
-          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-        @cloud.should_not_receive(:sleep)
-  
-        expect {
-          @cloud.with_openstack do
-            @openstack.servers
-          end
-        }.to raise_error(Bosh::Clouds::CloudError, 
-                         "OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
-      end
-  
-      it "should raise a CloudError exception if response is not JSON" do
-        response = Excon::Response.new(:body => "foo = bar")
-  
-        @openstack.should_receive(:servers)
-          .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-        @cloud.should_not_receive(:sleep)
-  
-        expect {
-          @cloud.with_openstack do
-            @openstack.servers
-          end
-        }.to raise_error(Bosh::Clouds::CloudError, 
-                         "OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
-      end
-  
+    context "RequestEntityTooLarge" do  
       it "should retry the amount of seconds received at the response body" do
         body = { "overLimit" => {
             "message" => "This request was rate-limited.",
@@ -181,7 +138,26 @@ describe Bosh::OpenStackCloud::Helpers do
           @openstack.servers
         end
       end
-  
+
+      it "should retry the amount of seconds received at the response headers" do
+        body = { "overLimitFault" => {
+            "message" => "This request was rate-limited.",
+            "code" => 413,
+            "details" => "Only 10 POST request(s) can be made to * every minute."}
+        }
+        headers = {"Retry-After" => 5}
+        response = Excon::Response.new(:body => JSON.dump(body), :headers => headers)
+
+        @openstack.should_receive(:servers)
+        .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
+        @cloud.should_receive(:sleep).with(5)
+        @openstack.should_receive(:servers).and_return(nil)
+
+        @cloud.with_openstack do
+          @openstack.servers
+        end
+      end
+
       it "should retry the default number of seconds if not set at the response body" do
         body = { "overLimitFault" => {
             "message" => "This request was rate-limited.",
@@ -192,7 +168,7 @@ describe Bosh::OpenStackCloud::Helpers do
   
         @openstack.should_receive(:servers)
           .and_raise(Excon::Errors::RequestEntityTooLarge.new("", "", response))
-        @cloud.should_receive(:sleep).with(1)
+        @cloud.should_receive(:sleep).with(3)
         @openstack.should_receive(:servers).and_return(nil)
   
         @cloud.with_openstack do
@@ -218,8 +194,86 @@ describe Bosh::OpenStackCloud::Helpers do
             @openstack.servers
           end
         }.to raise_error(Bosh::Clouds::CloudError, 
-                         "OpenStack API returned a RequestEntityTooLarge error. Check task debug log for details.")
+                         "OpenStack API Request Entity Too Large error. Check task debug log for details.")
+      end
+    end    
+    
+    context "BadRequest" do
+      it "should raise a CloudError exception with OpenStack API message if there is a BadRequest" do  
+        message = "Invalid volume: Volume still has 1 dependent snapshots"
+        response = Excon::Response.new(:body => JSON.dump({"badRequest" => {"message" => message}}))
+        @openstack.should_receive(:servers).and_raise(Excon::Errors::BadRequest.new("", "", response))
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API Bad Request (#{message}). Check task debug log for details.")
+      end
+
+      it "should raise a CloudError exception without OpenStack API message if there is a BadRequest" do  
+        response = Excon::Response.new(:body => "")
+        @openstack.should_receive(:servers).and_raise(Excon::Errors::BadRequest.new("", "", response))
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API Bad Request. Check task debug log for details.")
       end
     end
+
+    context "InternalServerError" do
+      it "should raise a CloudError exception when OpenStack API returns a InternalServerError" do  
+        @openstack.should_receive(:servers).and_raise(Excon::Errors::InternalServerError.new("InternalServerError"))
+  
+        expect {
+          @cloud.with_openstack do
+            @openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError, 
+                         "OpenStack API Internal Server error. Check task debug log for details.")
+      end
+    end
+  end
+
+  describe "parse_openstack_response" do    
+    it "should return nil if response has no body" do
+      response = Excon::Response.new()
+
+      expect(@cloud.parse_openstack_response(response, "key")).to be_nil
+    end
+
+    it "should return nil if response has an empty body" do
+      response = Excon::Response.new(:body => JSON.dump(""))
+
+      expect(@cloud.parse_openstack_response(response, "key")).to be_nil
+    end
+    
+    it "should return nil if response is not JSON" do
+      response = Excon::Response.new(:body => "foo = bar")
+      
+      expect(@cloud.parse_openstack_response(response, "key")).to be_nil
+    end      
+
+    it "should return nil if response is no key is found" do
+      response = Excon::Response.new(:body => JSON.dump({"foo" => "bar"}))
+      
+      expect(@cloud.parse_openstack_response(response, "key")).to be_nil
+    end 
+
+    it "should return the contents if key is found" do
+      response = Excon::Response.new(:body => JSON.dump({"key" => "foo"}))
+      
+      expect(@cloud.parse_openstack_response(response, "key")).to eql("foo")
+    end 
+
+    it "should return the contents of the first key found" do
+      response = Excon::Response.new(:body => JSON.dump({"key1" => "foo", "key2" => "bar"}))
+      
+      expect(@cloud.parse_openstack_response(response, "key2", "key1")).to eql("bar")
+    end 
   end
 end
