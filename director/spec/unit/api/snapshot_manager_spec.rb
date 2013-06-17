@@ -59,7 +59,7 @@ describe Bosh::Director::Api::SnapshotManager do
 
   describe 'delete_deployment_snapshots' do
     it 'should enqueue a DeleteDeploymentSnapshots job' do
-      manager.should_receive(:create_task).with(user.username, :delete_deployment_napshots, "delete deployment snapshots").and_return(task)
+      manager.should_receive(:create_task).with(user.username, :delete_deployment_snapshots, "delete deployment snapshots").and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::DeleteDeploymentSnapshots, task.id, deployment.name)
 
       expect(manager.delete_deployment_snapshots_task(user.username, deployment)).to eq task
