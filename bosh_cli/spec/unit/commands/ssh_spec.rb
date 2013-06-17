@@ -175,7 +175,7 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should setup ssh with gateway host' do
-          Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user).and_return(net_ssh)
+          Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
           net_ssh.should_receive(:open).with(anything, 22).and_return(2345)
           Process.should_receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
 
@@ -198,7 +198,7 @@ describe Bosh::Cli::Command::Ssh do
           end
 
           it 'should setup ssh with gateway host and user' do
-            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user).and_return(net_ssh)
+            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
             net_ssh.should_receive(:open).with(anything, 22).and_return(2345)
             Process.should_receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
 
@@ -213,8 +213,25 @@ describe Bosh::Cli::Command::Ssh do
             command.shell('dea/0')
           end
 
+          it 'should setup ssh with gateway host and user and identity file' do
+            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {keys: ['/tmp/private_file']}).and_return(net_ssh)
+            net_ssh.should_receive(:open).with(anything, 22).and_return(2345)
+            Process.should_receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
+
+            director.should_receive(:setup_ssh).and_return([:done, 42])
+            director.should_receive(:get_task_result_log).with(42).
+                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+            director.should_receive(:cleanup_ssh)
+
+            net_ssh.should_receive(:close)
+            net_ssh.should_receive(:shutdown!)
+
+            command.add_option(:gateway_identity_file, '/tmp/private_file')
+            command.shell('dea/0')
+          end
+
           it 'should fail to setup ssh with gateway host and user when authentication fails' do
-            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user).and_raise(Net::SSH::AuthenticationFailed)
+            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {}).and_raise(Net::SSH::AuthenticationFailed)
 
             director.should_receive(:setup_ssh).and_return([:done, 42])
             director.should_receive(:get_task_result_log).with(42).
