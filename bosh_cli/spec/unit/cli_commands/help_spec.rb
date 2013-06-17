@@ -13,6 +13,6 @@ describe Bosh::Cli::Command::Help do
   it 'should raise an error when no help is found for a command' do
     expect {
       command.help('all')
-    }.to raise_error(Bosh::Cli::CliError, "No help found for command `all'")
+    }.to raise_error(Bosh::Cli::CliError, "No help found for command `all'. Run 'bosh help --all' to see all available BOSH commands.")
   end
 end
