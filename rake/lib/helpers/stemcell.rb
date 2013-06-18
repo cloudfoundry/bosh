@@ -11,7 +11,7 @@ module Bosh
 
       attr_reader :path
 
-      def initialize(path)
+      def initialize(path='')
         @path = path
         validate_stemcell
       end
