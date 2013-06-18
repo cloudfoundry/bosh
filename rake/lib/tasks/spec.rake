@@ -424,7 +424,7 @@ namespace :spec do
       net_id = ENV['BOSH_VSPHERE_NET_ID']
       stemcell_version = st_version
       net_cidr = ENV['BOSH_VSPHERE_NETWORK_CIDR']
-      net_reserved = ENV['BOSH_VSPHERE_NETWORK_RESERVED']
+      net_reserved = ENV['BOSH_VSPHERE_NETWORK_RESERVED'].split(/[|,]/).map(&:strip)
       net_static = ENV['BOSH_VSPHERE_NETWORK_STATIC']
       net_gateway = ENV['BOSH_VSPHERE_NETWORK_GATEWAY']
       template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'bat_vsphere.yml.erb'))
