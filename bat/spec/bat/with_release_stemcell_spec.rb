@@ -162,10 +162,6 @@ describe "with release and stemcell and two deployments" do
       ssh(static_ip, "vcap", "ifconfig eth0", ssh_options).should match /#{static_ip}/
     end
 
-    it "should create a disk" do
-      persistent_disk(static_ip).should_not be_nil
-    end
-
     context "second deployment" do
       before(:all) do
         ssh(static_ip, "vcap", "echo 'foobar' > #{save_file}", ssh_options)
