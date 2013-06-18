@@ -274,7 +274,8 @@ module Bosh::Director
           Hash["version", rv.version.to_s,
                "commit_hash", rv.commit_hash,
                "uncommitted_changes", rv.uncommitted_changes,
-               "currently_deployed", !rv.deployments.empty?]
+               "currently_deployed", !rv.deployments.empty?,
+               "job_names", rv.templates.map(&:name)]
         end
 
         Hash["name", release.name,

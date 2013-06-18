@@ -137,6 +137,7 @@ module Bosh::Cli::Command
 
     usage "releases"
     desc "Show the list of available releases"
+    option "--jobs", "include job templates"
     def list
       auth_required
       releases = director.list_releases.sort do |r1, r2|
@@ -146,7 +147,7 @@ module Bosh::Cli::Command
       err("No releases") if releases.empty?
 
       if releases.first.has_key? "release_versions"
-        releases_table = build_releases_table(releases)
+        releases_table = build_releases_table(releases, options)
       elsif releases.first.has_key? "versions"
         releases_table = build_releases_table_for_old_director(releases)
       end
@@ -548,12 +549,22 @@ module Bosh::Cli::Command
       end
     end
 
-    def build_releases_table(releases)
+    # Builds table of release information
+    # Default headings: "Name", "Versions", "Commit Hash"
+    # Extra headings: options[:job] => "Jobs"
+    def build_releases_table(releases, options = {})
+      show_jobs = options[:jobs]
       table do |t|
         t.headings = "Name", "Versions", "Commit Hash"
+        t.headings << "Jobs" if show_jobs
         releases.each do |release|
           versions, commit_hashes = formatted_versions(release).transpose
-          t << [release["name"], versions.join("\n"), commit_hashes.join("\n")]
+          row = [release["name"], versions.join("\n"), commit_hashes.join("\n")]
+          if show_jobs
+            jobs = formatted_jobs(release).transpose
+            row << jobs.join("\n")
+          end
+          t << row
         end
       end
     end
@@ -570,6 +581,16 @@ module Bosh::Cli::Command
       version_number = version["version"] + (version["currently_deployed"] ? "*" : "")
       commit_hash = version["commit_hash"] + (version["uncommitted_changes"] ? "+" : "")
       [version_number, commit_hash]
+    end
+
+    def formatted_jobs(release)
+      sort_versions(release["release_versions"]).map do |v|
+        if job_names = v["job_names"]
+          [job_names.join(", ")]
+        else
+          ["n/a  "] # with enough whitespace to match "Jobs" header
+        end
+      end
     end
 
     def commit_hash
