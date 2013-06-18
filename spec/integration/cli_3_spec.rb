@@ -14,7 +14,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
     end
 
     out = run_bosh('releases')
-    out.should =~ /bosh-release.+0\.1\-dev/
+    expect(out).to match /bosh-release.+0\.1\-dev/
   end
 
   # ~41s
@@ -26,7 +26,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       FileUtils.rm_rf('dev_releases')
 
       run_bosh('create release --with-tarball', Dir.pwd)
-      File.exists?(release_1).should be_true
+      expect(File.exists?(release_1)).to be_true
     end
 
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
@@ -39,25 +39,25 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
         FileUtils.touch(new_file)
 
         run_bosh('create release --force --with-tarball', Dir.pwd)
-        File.exists?(release_2).should be_true
+        expect(File.exists?(release_2)).to be_true
       ensure
         FileUtils.rm_rf(new_file)
       end
     end
 
     out = run_bosh("upload release #{release_2}")
-    out.should =~ regexp("foo (0.1-dev)                 SKIP\n")
+    expect(out).to match regexp("foo (0.1-dev)                 SKIP\n")
     # No job skipping for the moment (because of rebase),
     # will be added back once job matching is implemented
-    out.should =~ regexp("foobar (0.1-dev)              UPLOAD\n")
-    out.should =~ regexp("bar (0.2-dev)                 UPLOAD\n")
-    out.should =~ regexp('Checking if can repack release for faster upload')
-    out.should =~ regexp('Release repacked')
-    out.should =~ /Release uploaded/
+    expect(out).to match regexp("foobar (0.1-dev)              UPLOAD\n")
+    expect(out).to match regexp("bar (0.2-dev)                 UPLOAD\n")
+    expect(out).to match regexp('Checking if can repack release for faster upload')
+    expect(out).to match regexp('Release repacked')
+    expect(out).to match /Release uploaded/
 
     out = run_bosh('releases')
-    out.should =~ /releases total: 1/i
-    out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
+    expect(out).to match /releases total: 1/i
+    expect(out).to match /bosh-release.+0\.1\-dev.*0\.2\-dev/m
   end
 
   # ~57s
@@ -70,7 +70,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
       run_bosh('create release', Dir.pwd)
-      File.exists?(release_1).should be_true
+      expect(File.exists?(release_1)).to be_true
 
       run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh('login admin admin')
@@ -83,21 +83,21 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
         `git add .`
         `git commit -m 'second dev release'`
         run_bosh('create release', Dir.pwd)
-        File.exists?(release_2).should be_true
+        expect(File.exists?(release_2)).to be_true
       ensure
         FileUtils.rm_rf(new_file)
       end
 
       out = run_bosh("upload release #{release_2}", Dir.pwd)
-      out.should =~ regexp('Building tarball')
-      out.should_not =~ regexp('Checking if can repack')
-      out.should_not =~ regexp('Release repacked')
-      out.should =~ /Release uploaded/
+      expect(out).to match regexp('Building tarball')
+      expect(out).not_to match regexp('Checking if can repack')
+      expect(out).not_to match regexp('Release repacked')
+      expect(out).to match /Release uploaded/
     end
 
     out = run_bosh('releases')
-    out.should =~ /releases total: 1/i
-    out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
+    expect(out).to match /releases total: 1/i
+    expect(out).to match /bosh-release.+0\.1\-dev.*0\.2\-dev/m
 
     run_bosh('delete release bosh-release 0.2-dev')
     expect_output('releases', <<-OUT)
@@ -124,7 +124,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
     run_bosh('login admin admin')
     out = run_bosh("upload release #{release_filename}", nil, failure_expected: true)
 
-    out.should =~ /Release is invalid, please fix, verify and upload again/
+    expect(out).to match /Release is invalid, please fix, verify and upload again/
   end
 
   # ~25s
@@ -136,7 +136,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
     run_bosh("upload release #{release_filename}")
 
     out = run_bosh('delete release appcloud')
-    out.should =~ regexp('Deleted `appcloud')
+    expect(out).to match regexp('Deleted `appcloud')
 
     expect_output('releases', <<-OUT)
     No releases
@@ -152,6 +152,6 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
     run_bosh("upload release #{release_filename}")
 
     out = run_bosh('delete release appcloud 0.1')
-    out.should =~ regexp('Deleted `appcloud/0.1')
+    expect(out).to match regexp('Deleted `appcloud/0.1')
   end
 end
