@@ -274,7 +274,7 @@ describe Bosh::Director::ApiController do
         BD::Models::ReleaseVersion.
             create(release: release1, version: 1)
         deployment1 = BD::Models::Deployment.create(name: 'deployment-1')
-        deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
+        release1 = deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
         release2 = BD::Models::Release.create(name: 'release-2')
         BD::Models::ReleaseVersion.
             create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
@@ -286,9 +286,9 @@ describe Bosh::Director::ApiController do
         expected_collection =
           [
               {"name"=>"release-1",
-               "release_versions"=> [Hash["version", "1", "commit_hash", "unknown", "uncommitted_changes", false, "currently_deployed", true]]},
+               "release_versions"=> [Hash["version", "1", "commit_hash", "unknown", "uncommitted_changes", false, "currently_deployed", true, "job_names", []]]},
               {"name"=>"release-2",
-               "release_versions"=> [Hash["version", "2", "commit_hash", "0b2c3d", "uncommitted_changes", true, "currently_deployed", false]]}
+               "release_versions"=> [Hash["version", "2", "commit_hash", "0b2c3d", "uncommitted_changes", true, "currently_deployed", false, "job_names", []]]}
           ]
 
         body.should == Yajl::Encoder.encode(expected_collection)
