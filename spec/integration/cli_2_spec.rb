@@ -13,14 +13,15 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
     run_bosh('login admin admin')
     out = run_bosh("upload stemcell #{stemcell_filename}")
 
-    out.should =~ /Stemcell uploaded and created/
+    expect(out).to match /Stemcell uploaded and created/
 
     out = run_bosh('stemcells')
-    out.should =~ /stemcells total: 1/i
-    out.should =~ /ubuntu-stemcell.+1/
-    out.should =~ regexp(expected_id.to_s)
+    expect(out).to match /stemcells total: 1/i
+    expect(out).to match /ubuntu-stemcell.+1/
+    expect(out).to match regexp(expected_id.to_s)
 
-    File.exists?(File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_true
+    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+    expect(File).to be_exists(stemcell_path)
   end
 
   # ~40s
@@ -32,12 +33,14 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')
     out = run_bosh("upload stemcell #{stemcell_filename}")
-    out.should =~ /Stemcell uploaded and created/
+    expect(out).to match /Stemcell uploaded and created/
 
-    File.exists?(File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_true
+    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+    expect(File).to be_exists(stemcell_path)
     out = run_bosh('delete stemcell ubuntu-stemcell 1')
-    out.should =~ /Deleted stemcell `ubuntu-stemcell\/1'/
-    File.exists?(File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")).should be_false
+    expect(out).to match /Deleted stemcell `ubuntu-stemcell\/1'/
+    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+    expect(File).not_to be_exists(stemcell_path)
   end
 
   # <9s
@@ -46,7 +49,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
       FileUtils.rm_rf('dev_releases')
 
       out = run_bosh('create release --final', Dir.pwd, failure_expected: true)
-      out.should match(/Can't create final release without blobstore secret/)
+      expect(out).to match(/Can't create final release without blobstore secret/)
     end
   end
 
@@ -58,11 +61,22 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
     run_bosh('login admin admin')
     out = run_bosh("upload release #{release_filename}")
 
-    out.should =~ /release uploaded/i
+    expect(out).to match /release uploaded/i
 
     out = run_bosh('releases')
-    out.should =~ /releases total: 1/i
-    out.should =~ /appcloud.+0\.1/
+    expect(out).to match /releases total: 1/i
+    expect(out).to match /appcloud.+0\.1/
+  end
+
+  it 'fails to upload a release that is already uploaded' do
+    release_filename = spec_asset('valid_release.tgz')
+
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+    run_bosh('login admin admin')
+    run_bosh("upload release #{release_filename}")
+    out = run_bosh("upload release #{release_filename}", nil, failure_expected: true)
+
+    expect(out).to match 'This release version has already been uploaded'
   end
 
   # ~32s
@@ -77,10 +91,10 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
       FileUtils.touch(new_file)
       run_bosh('create release --force', Dir.pwd)
       FileUtils.rm_rf(new_file)
-      File.exists?(release_1).should be_true
+      expect(File.exists?(release_1)).to be_true
       release_manifest = Psych.load_file(release_1)
-      release_manifest['commit_hash'].should == commit_hash
-      release_manifest['uncommitted_changes'].should be_true
+      expect(release_manifest['commit_hash']).to eq commit_hash
+      expect(release_manifest['uncommitted_changes']).to be_true
 
       run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh('login admin admin')
@@ -99,5 +113,4 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
     Releases total: 1
     OUT
   end
-
 end
