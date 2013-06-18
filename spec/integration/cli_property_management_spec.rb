@@ -5,7 +5,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage property management' do
 
   describe 'property management' do
 
-    it 'can get/set/delete deployment properties' do
+    it 'can get/set/unset deployment properties' do
       release_filename = spec_asset('valid_release.tgz')
       deployment_manifest = yaml_file(
         'minimal', Bosh::Spec::Deployments.minimal_manifest)
@@ -16,22 +16,19 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage property management' do
       run_bosh("upload release #{release_filename}")
 
       run_bosh('deploy')
-
-      run_bosh('set property foo bar').should =~ regexp(
-        "Property `foo' set to `bar'")
-      run_bosh('get property foo').should =~ regexp(
-        "Property `foo' value is `bar'")
-      run_bosh('set property foo baz').should =~ regexp(
-        "Property `foo' set to `baz'")
-      run_bosh('unset property foo').should =~ regexp(
-        "Property `foo' has been unset")
+      expect(run_bosh('set property foo bar')).to match /Property `foo' set to `bar'/
+      expect(run_bosh('get property foo')).to match /Property `foo' value is `bar'/
+      expect(run_bosh('set property foo baz')).to match /Property `foo' set to `baz'/
+      expect(run_bosh('unset property foo')).to match /Property `foo' has been unset/
+      expect(run_bosh('get property foo', nil, failure_expected: true)).to match /Error 110003: Property `foo' not found/
+      expect(run_bosh('unset property foo', nil, failure_expected: true)).to match /Error 110003: Property `foo' not found/
 
       run_bosh('set property nats.user admin')
       run_bosh('set property nats.password pass')
 
       props = run_bosh('properties --terse')
-      props.should =~ regexp("nats.user\tadmin")
-      props.should =~ regexp("nats.password\tpass")
+      expect(props).to match /nats.user\tadmin/
+      expect(props).to match /nats.password\tpass/
     end
 
   end
