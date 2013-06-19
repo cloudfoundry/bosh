@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 module Bosh; module Agent; end; end
 
 module Bosh::Agent
@@ -15,17 +17,17 @@ module Bosh::Agent
 
     def handle_method(method, args)
       payload = {
-        "method" => method, "arguments" => args,
-        "reply_to" => @options["reply_to"] || self.class.name
+        'method' => method, 'arguments' => args,
+        'reply_to' => @options['reply_to'] || self.class.name
       }
-      result = post_json("/agent", Yajl::Encoder.encode(payload))
+      result = post_json('/agent', Yajl::Encoder.encode(payload))
     end
 
     private
 
     def request(method, uri, content_type = nil, payload = nil, headers = {})
       headers = headers.dup
-      headers["Content-Type"] = content_type if content_type
+      headers['Content-Type'] = content_type if content_type
 
       http_client = ::HTTPClient.new
 
@@ -46,15 +48,15 @@ module Bosh::Agent
       raise Error, "Request details:\n" +
           "uri: #{@base_uri + uri}\n" +
           "payload: #{payload}\n" +
-          (@options['user'] ? "user: #{@options['user']}\n" : "") +
-          (@options['password'] ? "password: #{@options['password']}\n" : "") +
+          (@options['user'] ? "user: #{@options['user']}\n" : '') +
+          (@options['password'] ? "password: #{@options['password']}\n" : '') +
           "#{e.class}: #{e.message}"
     end
 
     def post_json(url, payload)
-      response = request(:post, url, "application/json", payload)
+      response = request(:post, url, 'application/json', payload)
       status = response.code
-      raise AuthError, "Authentication failed" if status == 401
+      raise AuthError, 'Authentication failed' if status == 401
       raise Error, "Agent HTTP #{status}" if status != 200
       Yajl::Parser.parse(response.body)
     end
