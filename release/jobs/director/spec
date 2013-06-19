@@ -20,7 +20,7 @@ packages:
 - nginx
 - genisoimage
 - libpq
-- mysqlclient
+- mysql
 - ruby
 
 properties:

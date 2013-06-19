@@ -8,7 +8,7 @@ templates:
 packages:
   - registry
   - libpq
-  - mysqlclient
+  - mysql
   - ruby
 
 properties:

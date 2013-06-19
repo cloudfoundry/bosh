@@ -2,7 +2,7 @@
 name: director
 dependencies:
 - libpq
-- mysqlclient
+- mysql
 - ruby
 files:
 - bosh/director/*.gem

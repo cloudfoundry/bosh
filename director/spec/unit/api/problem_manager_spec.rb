@@ -13,7 +13,8 @@ class FakeDeploymentManager
 end
 
 describe Bosh::Director::Api::ProblemManager do
-  !let(:deployment) { BD::Models::Deployment.make(:name => "mycloud") }
+  let(:deployment_name) { "mycloud" }
+  !let(:deployment) { BD::Models::Deployment.make(:name => deployment_name) }
   let(:deployment_manager) { FakeDeploymentManager.new }
   let(:manager) { described_class.new(deployment_manager) }
 
@@ -37,7 +38,7 @@ describe Bosh::Director::Api::ProblemManager do
       end
 
       it "enqueues a task" do
-        Resque.should_receive(:enqueue).with(BD::Jobs::CloudCheck::ScanAndFix, 42, "mycloud", [], true)
+        Resque.should_receive(:enqueue).with(BD::Jobs::CloudCheck::ScanAndFix, 42, deployment_name, [], true)
         manager.scan_and_fix("admin", deployment.name, [])
       end
     end

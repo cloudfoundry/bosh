@@ -88,10 +88,10 @@ describe Bosh::Director::Config do
   context "database" do
     let(:database_options) do
       {
-        'adapter' => 'sqlite',
-        'connection_options' => {
-            'max_connections' => 32
-        }
+          'adapter' => 'sqlite',
+          'connection_options' => {
+              'max_connections' => 32
+          }
 
       }
     end
@@ -212,6 +212,13 @@ describe Bosh::Director::Config do
 
       end
 
+    end
+
+    context 'database backup' do
+      it 'configured a database backup adapter' do
+        described_class.configure_db(database_options)
+        expect(described_class.configure_db(database_options)).to eq database_connection
+      end
     end
 
   end

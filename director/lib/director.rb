@@ -13,6 +13,7 @@ require "logger"
 require "monitor"
 require "optparse"
 require "ostruct"
+require "pathname"
 require "pp"
 require "thread"
 require "tmpdir"
@@ -20,6 +21,7 @@ require "yaml"
 require "time"
 require "zlib"
 
+require "common/runs_commands"
 require "common/exec"
 require "common/properties"
 
@@ -72,6 +74,7 @@ require "director/instance_deleter"
 require "director/instance_updater"
 require "director/job_runner"
 require "director/job_updater"
+require "director/tar_gziper"
 require "director/lock"
 require "director/nats_rpc"
 require "director/network_reservation"
@@ -93,6 +96,7 @@ require "director/problem_handlers/mount_info_mismatch"
 require "director/problem_handlers/missing_vm"
 
 require "director/jobs/base_job"
+require "director/jobs/backup"
 require "director/jobs/create_snapshot"
 require "director/jobs/snapshot_deployment"
 require "director/jobs/delete_deployment"
@@ -109,8 +113,11 @@ require "director/jobs/cloud_check/scan"
 require "director/jobs/cloud_check/scan_and_fix"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
+require "director/jobs/backup_create"
 
 require "director/models/helpers/model_helper"
+
+require 'director/db_backup'
 
 module Bosh::Director
   autoload :Models, "director/models"
@@ -165,6 +172,7 @@ module Bosh::Director
     def initialize
       super
       @deployment_manager = Api::DeploymentManager.new
+      @backup_manager = Api::BackupManager.new
       @instance_manager = Api::InstanceManager.new
       @problem_manager = Api::ProblemManager.new
       @property_manager = Api::PropertyManager.new
@@ -733,6 +741,14 @@ module Bosh::Director
       payload = convert_job_instance_hash(jobs_json)
 
       start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
+    end
+
+    post "/backups" do
+      start_task { @backup_manager.create_backup(@user) }
+    end
+
+    get '/backups' do
+      send_file "#{@backup_manager.destination_path}/backup.tgz"
     end
 
     get "/info" do

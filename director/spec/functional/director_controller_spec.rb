@@ -63,7 +63,7 @@ describe Bosh::Director::ApiController do
   end
 
   it "allows Basic HTTP Auth with admin/admin credentials for " +
-     "test purposes (even though user doesn't exist)" do
+         "test purposes (even though user doesn't exist)" do
     basic_authorize "admin", "admin"
     get "/"
     last_response.status.should == 404
@@ -86,16 +86,16 @@ describe Bosh::Director::ApiController do
           "version" => "#{BD::VERSION} (#{BD::Config.revision})",
           "uuid" => BD::Config.uuid,
           "user" => "admin",
-          "cpi"  => "dummy",
+          "cpi" => "dummy",
           "features" => {
-            "dns" => {
-              "status" => true,
-              "extras" => { "domain_name" => "bosh" }
-            },
-            "compiled_package_cache" => {
-              "status" => true,
-              "extras" => { "provider" => "local"}
-            }
+              "dns" => {
+                  "status" => true,
+                  "extras" => {"domain_name" => "bosh"}
+              },
+              "compiled_package_cache" => {
+                  "status" => true,
+                  "extras" => {"provider" => "local"}
+              }
           }
       }
 
@@ -109,13 +109,13 @@ describe Bosh::Director::ApiController do
     describe "creating a stemcell" do
       it "expects compressed stemcell file" do
         post "/stemcells", {},
-            payload("application/x-compressed", spec_asset("tarball.tgz"))
+             payload("application/x-compressed", spec_asset("tarball.tgz"))
         expect_redirect_to_queued_task(last_response)
       end
 
       it "only consumes application/x-compressed" do
         post "/stemcells", {},
-            payload("application/octet-stream", spec_asset("tarball.tgz"))
+             payload("application/octet-stream", spec_asset("tarball.tgz"))
         last_response.status.should == 404
       end
     end
@@ -123,13 +123,13 @@ describe Bosh::Director::ApiController do
     describe "creating a release" do
       it "expects compressed release file" do
         post "/releases", {},
-            payload("application/x-compressed", spec_asset("tarball.tgz"))
+             payload("application/x-compressed", spec_asset("tarball.tgz"))
         expect_redirect_to_queued_task(last_response)
       end
 
       it "only consumes application/x-compressed" do
         post "/releases", {},
-            payload("application/octet-stream", spec_asset("tarball.tgz"))
+             payload("application/octet-stream", spec_asset("tarball.tgz"))
         last_response.status.should == 404
       end
     end
@@ -137,13 +137,13 @@ describe Bosh::Director::ApiController do
     describe "creating a deployment" do
       it "expects compressed deployment file" do
         post "/deployments", {},
-            payload("text/yaml", spec_asset("test_conf.yaml"))
+             payload("text/yaml", spec_asset("test_conf.yaml"))
         expect_redirect_to_queued_task(last_response)
       end
 
       it "only consumes text/yaml" do
         post "/deployments", {},
-            payload("text/plain", spec_asset("test_conf.yaml"))
+             payload("text/plain", spec_asset("test_conf.yaml"))
         last_response.status.should == 404
       end
     end
@@ -283,13 +283,12 @@ describe Bosh::Director::ApiController do
         last_response.status.should == 200
         body = last_response.body
 
-        expected_collection =
-          [
-              {"name"=>"release-1",
-               "release_versions"=> [Hash["version", "1", "commit_hash", "unknown", "uncommitted_changes", false, "currently_deployed", true, "job_names", []]]},
-              {"name"=>"release-2",
-               "release_versions"=> [Hash["version", "2", "commit_hash", "0b2c3d", "uncommitted_changes", true, "currently_deployed", false, "job_names", []]]}
-          ]
+        expected_collection = [
+            {"name" => "release-1",
+             "release_versions" => [Hash["version", "1", "commit_hash", "unknown", "uncommitted_changes", false, "currently_deployed", true, "job_names", []]]},
+            {"name" => "release-2",
+             "release_versions" => [Hash["version", "2", "commit_hash", "0b2c3d", "uncommitted_changes", true, "currently_deployed", false, "job_names", []]]}
+        ]
 
         body.should == Yajl::Encoder.encode(expected_collection)
       end
@@ -308,7 +307,7 @@ describe Bosh::Director::ApiController do
         num_dummies = Random.new.rand(3..7)
         stemcells = (1..num_dummies).map { |i|
           BD::Models::Stemcell.create(
-            :name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
+              :name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
         }
         releases = (1..num_dummies).map { |i|
           release = BD::Models::Release.create(:name => "release-#{i}")
@@ -368,18 +367,18 @@ describe Bosh::Director::ApiController do
 
         15.times do |i|
           vm_params = {
-            "agent_id" => "agent-#{i}",
-            "cid" => "cid-#{i}",
-            "deployment_id" => deployment.id
+              "agent_id" => "agent-#{i}",
+              "cid" => "cid-#{i}",
+              "deployment_id" => deployment.id
           }
           vm = BD::Models::Vm.create(vm_params)
 
           instance_params = {
-            "deployment_id" => deployment.id,
-            "vm_id" => vm.id,
-            "job" => "job-#{i}",
-            "index" => i,
-            "state" => "started"
+              "deployment_id" => deployment.id,
+              "vm_id" => vm.id,
+              "job" => "job-#{i}",
+              "index" => i,
+              "state" => "started"
           }
           instance = BD::Models::Instance.create(instance_params)
         end
@@ -393,10 +392,10 @@ describe Bosh::Director::ApiController do
 
         15.times do |i|
           body[i].should == {
-            "agent_id" => "agent-#{i}",
-            "job" => "job-#{i}",
-            "index" => i,
-            "cid" => "cid-#{i}"
+              "agent_id" => "agent-#{i}",
+              "job" => "job-#{i}",
+              "index" => i,
+              "cid" => "cid-#{i}"
           }
         end
       end
@@ -487,7 +486,7 @@ describe Bosh::Director::ApiController do
     describe "polling task status" do
       it "has API call that return task status" do
         post "/releases", {},
-            payload("application/x-compressed", spec_asset("tarball.tgz"))
+             payload("application/x-compressed", spec_asset("tarball.tgz"))
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
         get "/tasks/#{new_task_id}"
@@ -512,7 +511,7 @@ describe Bosh::Director::ApiController do
 
       it "has API call that return task output and task output with ranges" do
         post "/releases", {},
-            payload("application/x-compressed", spec_asset("tarball.tgz"))
+             payload("application/x-compressed", spec_asset("tarball.tgz"))
 
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
@@ -531,7 +530,7 @@ describe Bosh::Director::ApiController do
 
       it "has API call that return task output with ranges" do
         post "/releases", {},
-            payload("application/x-compressed", spec_asset("tarball.tgz"))
+             payload("application/x-compressed", spec_asset("tarball.tgz"))
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
         output_file = File.new(File.join(@temp_dir, "debug"), 'w+')
@@ -625,9 +624,9 @@ describe Bosh::Director::ApiController do
     end
 
     describe "users" do
-      let (:username)  { "john" }
-      let (:password)  { "123" }
-      let (:user_data) {{"username" => "john", "password" => "123"}}
+      let (:username) { "john" }
+      let (:password) { "123" }
+      let (:user_data) { {"username" => "john", "password" => "123"} }
 
       it "creates a user" do
         BD::Models::User.all.size.should == 0
@@ -684,7 +683,7 @@ describe Bosh::Director::ApiController do
     describe "property management" do
 
       it "REST API for creating, updating, getting and deleting " +
-         "deployment properties" do
+             "deployment properties" do
 
         deployment = BD::Models::Deployment.make(:name => "mycloud")
 
@@ -695,7 +694,7 @@ describe Bosh::Director::ApiController do
         last_response.status.should == 404
 
         post "/deployments/mycloud/properties", {},
-            payload("application/json", {:name => "foo", :value => "bar"})
+             payload("application/json", {:name => "foo", :value => "bar"})
         last_response.status.should == 204
 
         get "/deployments/mycloud/properties/foo"
@@ -746,7 +745,7 @@ describe Bosh::Director::ApiController do
       end
 
       it 'scans and fixes problems' do
-        put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'jobs' => { 'job' => [0] })
+        put '/deployments/mycloud/scan_and_fix', {}, payload("application/json", 'jobs' => {'job' => [0]})
         expect_redirect_to_queued_task(last_response)
       end
     end
@@ -763,7 +762,6 @@ describe Bosh::Director::ApiController do
         disk = BD::Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
         BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
         BD::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
-
       end
 
       describe 'creating' do
@@ -807,8 +805,32 @@ describe Bosh::Director::ApiController do
           last_response.status.should == 200
         end
       end
+
+      describe "backup" do
+        describe "creating" do
+          it "returns a successful response" do
+            post "/backups"
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
+        describe "fetching" do
+          it "returns the backup tarball" do
+            Dir.mktmpdir do |temp|
+              FileUtils.touch(File.join(temp, 'backup.tgz'))
+              BD::Api::BackupManager.any_instance.stub(destination_path: temp)
+
+              get "/backups"
+              expect(last_response.status).to eq 200
+            end
+          end
+
+          it "returns file not found for missing tarball" do
+            get "/backups"
+            expect(last_response.status).to eq 404
+          end
+        end
+      end
     end
-
   end
-
 end

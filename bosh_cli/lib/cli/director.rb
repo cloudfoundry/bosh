@@ -495,6 +495,15 @@ module Bosh
         [body, response_code]
       end
 
+      def create_backup
+        request_and_track(:post, "/backups", {})
+      end
+
+      def fetch_backup
+        _, path, _ = get("/backups", nil, nil, {}, :file => true)
+        path
+      end
+
       [:post, :put, :get, :delete].each do |method_name|
         define_method method_name do |*args|
           request(method_name, *args)

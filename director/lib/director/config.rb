@@ -34,6 +34,8 @@ module Bosh::Director
         attr_accessor option
       end
 
+      attr_reader :db_config
+
       def clear
         CONFIG_OPTIONS.each do |option|
           self.instance_variable_set("@#{option}".to_sym, nil)
@@ -101,6 +103,7 @@ module Bosh::Director
         @blobstore = nil
         @compiled_package_cache = nil
 
+        @db_config = config['db']
         @db = configure_db(config["db"])
         @dns = config["dns"]
         @dns_domain_name = "bosh"

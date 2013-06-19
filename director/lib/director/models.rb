@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+#
 
 require 'director/models/compiled_package'
 require 'director/models/deployment'

@@ -9,7 +9,7 @@ redis:
 dir: /tmp/boshdir
 db:
   adapter: sqlite
-  database: director.db
+  database: /tmp/director.db
   max_connections: 32
   pool_timeout: 10
 blobstore:
