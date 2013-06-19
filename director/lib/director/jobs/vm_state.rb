@@ -14,6 +14,8 @@ module Bosh::Director
       end
 
       def perform
+        @domain = Models::Dns::Domain.find(name: Config.dns_domain_name, type: "NATIVE") if Config.dns_enabled?
+        
         vms = Models::Vm.filter(:deployment_id => @deployment_id)
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           vms.each do |vm|
@@ -30,6 +32,7 @@ module Bosh::Director
 
       def process_vm(vm)
         ips = []
+        dns_records = []
         job_name = nil
         job_state = nil
         resource_pool = nil
@@ -57,9 +60,17 @@ module Bosh::Director
 
         instance = Models::Instance.find(deployment_id: @deployment_id, job: job_name, index: index)
 
+        if @domain
+          ips.each do |ip|
+            records = Models::Dns::Record.filter(domain_id: @domain.id, type: "A", content: ip)
+            dns_records << records.collect { |record| record.name } unless records.empty?
+          end
+        end
+
         {
           :vm_cid => vm.cid,
           :ips => ips,
+          :dns => dns_records.flatten,
           :agent_id => vm.agent_id,
           :job_name => job_name,
           :index => index,
