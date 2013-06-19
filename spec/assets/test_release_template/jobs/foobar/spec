@@ -2,6 +2,11 @@
 name: foobar
 templates:
   foobar_ctl: bin/foobar_ctl
+  drain.erb: bin/drain
 packages:
 - foo
 - bar
+properties:
+  test_property:
+    description: A test property
+    default: 1

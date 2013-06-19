@@ -136,7 +136,7 @@ module Bosh::Agent
 
         unless output.match(/\A-{0,1}\d+\Z/) && exit_status == 0
           raise Bosh::Agent::MessageHandlerError,
-            "Drain script exit #{exit_status}: #{result}"
+            "Drain script exit #{exit_status}: #{output}"
         end
         return output.to_i
       end

@@ -78,7 +78,7 @@ describe Bosh::Agent::Message::Drain do
   end
 
 
-  it "should return 0 if it receives an update but doesn't have a previouisly applied job" do
+  it "should return 0 if it receives an update but doesn't have a previously applied job" do
     set_state({ })
 
     handler = Bosh::Agent::Message::Drain.new(["update", new_spec])
@@ -112,6 +112,69 @@ describe Bosh::Agent::Message::Drain do
     handler.stub!(:run_drain_script).and_return(121)
     handler.should_receive(:run_drain_script).with("job_unchanged", "hash_unchanged", ["mysqlclient", "ruby"])
     handler.drain.should == 121
+  end
+
+  it 'raises if drain output is invalid' do
+    set_state(old_spec)
+
+    bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
+    tmpdir = File.join(@base_dir, 'tmp')
+
+    FileUtils.mkdir_p(bindir)
+    FileUtils.mkdir_p(tmpdir)
+
+    drain_script = File.join(bindir, 'drain')
+    drain_out    = File.join(tmpdir, 'yay.out')
+
+    File.open(drain_script, 'w') do |fh|
+      fh.puts "#!/bin/bash\necho $@ > #{drain_out}\necho -n 'broken'"
+    end
+    FileUtils.chmod(0777, drain_script)
+
+    handler = Bosh::Agent::Message::Drain.new(["update", new_spec])
+    expect {
+      handler.drain
+    }.to raise_error(Bosh::Agent::MessageHandlerError, 'Drain script exit 0: broken')
+
+  end
+
+  it 'raises if drain script exits non-zero' do
+    set_state(old_spec)
+
+    bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
+    tmpdir = File.join(@base_dir, 'tmp')
+
+    FileUtils.mkdir_p(bindir)
+    FileUtils.mkdir_p(tmpdir)
+
+    drain_script = File.join(bindir, 'drain')
+    drain_out    = File.join(tmpdir, 'yay.out')
+
+    File.open(drain_script, 'w') do |fh|
+      fh.puts "#!/bin/bash\necho $@ > #{drain_out}\necho -n '0'\nexit 1"
+    end
+    FileUtils.chmod(0777, drain_script)
+
+    handler = Bosh::Agent::Message::Drain.new(["update", new_spec])
+    expect {
+      handler.drain
+    }.to raise_error(Bosh::Agent::MessageHandlerError, 'Drain script exit 1: 0')
+
+  end
+
+  it 'does not attempt to run the drain script when drain script is not found' do
+    set_state(old_spec)
+    Process.should_not_receive(:spawn)
+    handler = Bosh::Agent::Message::Drain.new(["update", new_spec])
+    handler.drain
+  end
+
+  it 'raises when drain type is unknown' do
+    set_state(old_spec)
+    handler = Bosh::Agent::Message::Drain.new(["hello", new_spec])
+    expect {
+      handler.drain
+    }.to raise_error(Bosh::Agent::MessageHandlerError, 'Unknown drain type hello')
   end
 
   it "should set BOSH_CURRENT_STATE environment variable"

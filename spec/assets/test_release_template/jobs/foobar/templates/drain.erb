@@ -1,0 +1,9 @@
+#!/bin/sh
+
+
+(
+  echo "$@"
+  echo <%= p('test_property') %>
+) > drain-test.log
+
+echo 0

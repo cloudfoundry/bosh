@@ -54,7 +54,7 @@ module Bosh
         # (won't be able to bind to port)
         agent_cmd = %W[bosh_agent -a #{agent_id} -s #{blobstore_uri} -p simple -b #{agent_base_dir} -n #{nats_uri} -r #{root_dir} --no-alerts]
         agent_log = "#{@options['dir']}/agent.#{agent_id}.log"
-        agent_pid = Process.spawn(*agent_cmd, out: agent_log, err: agent_log)
+        agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir, out: agent_log, err: agent_log)
 
         Process.detach(agent_pid)
 
