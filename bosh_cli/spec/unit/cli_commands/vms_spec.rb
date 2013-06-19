@@ -55,6 +55,7 @@ describe Bosh::Cli::Command::Vms do
 
   describe 'show_deployment' do
     let(:vitals) { false }
+    let(:dns) { false }
     let(:details) { false }
 
     before(:each) do
@@ -64,6 +65,7 @@ describe Bosh::Cli::Command::Vms do
                 'job_name' => 'job1',
                 'index' => 0,
                 'ips' => %w{192.168.0.1},
+                'dns' => %w{index.job.network.deployment.microbosh},
                 'vitals' => 'vitals',
                 'job_state' => 'awesome',
                 'resource_pool' => 'rp1',
@@ -108,7 +110,7 @@ describe Bosh::Cli::Command::Vms do
         end
         command.should_receive(:say).with('VMs total: 1')
 
-        command.show_deployment deployment, details: details, vitals: vitals
+        command.show_deployment deployment, details: details, dns: dns, vitals: vitals
       end
 
     end
@@ -129,11 +131,30 @@ describe Bosh::Cli::Command::Vms do
         end
         command.should_receive(:say).with('VMs total: 1')
 
-        command.show_deployment deployment, details: details, vitals: vitals
+        command.show_deployment deployment, details: details, dns: dns, vitals: vitals
       end
 
     end
 
+    context 'with DNS A records' do
+      let(:dns) { true }
+
+      it 'shows DNS A records' do
+        command.should_receive(:say).with("Deployment `#{deployment}'")
+        command.should_receive(:say) do |s|
+          expect(s.to_s).to include 'job1/0'
+          expect(s.to_s).to include 'awesome'
+          expect(s.to_s).to include 'rp1'
+          expect(s.to_s).to include '192.168.0.1'
+          expect(s.to_s).to include 'index.job.network.deployment.microbosh'
+        end
+        command.should_receive(:say).with('VMs total: 1')
+
+        command.show_deployment deployment, details: details, dns: dns, vitals: vitals
+      end
+
+    end
+    
     context 'with vitals' do
       let(:vitals) { true }
 
@@ -156,7 +177,7 @@ describe Bosh::Cli::Command::Vms do
         end
         command.should_receive(:say).with('VMs total: 1')
 
-        command.show_deployment deployment, details: details, vitals: vitals
+        command.show_deployment deployment, details: details, dns: dns, vitals: vitals
       end
 
     end
