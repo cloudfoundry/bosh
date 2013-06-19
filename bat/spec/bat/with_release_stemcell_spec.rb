@@ -3,7 +3,6 @@ require "spec_helper"
 describe "with release and stemcell and two deployments" do
 
   let(:deployed_regexp) { /Deployed \`.*' to \`.*'/ }
-  let(:save_file) { "/var/vcap/store/batarang/save" }
 
   before(:all) do
     requirement previous_release
@@ -142,12 +141,17 @@ describe "with release and stemcell and two deployments" do
 
       @first_deployment_result.should succeed_with deployed_regexp
 
-      # or there will be an IP collision with the other deployment
-      use_static_ip
+      # second deployment can't use static IP or there will be a collision with the first deployment
+      no_static_ip
       use_deployment_name("bat2")
       with_deployment do
         deployments.should include("bat2")
       end
+      # Not sure why these are necessary since the before(:all) should call them
+      # before setting up future deployments. But without these, the state leaks
+      # into subsequent tests.
+      use_deployment_name("bat")
+      use_static_ip
     end
 
     it "should use job colocation", ssh: true do
@@ -164,8 +168,10 @@ describe "with release and stemcell and two deployments" do
     end
 
     context "second deployment" do
+      SAVE_FILE = "/var/vcap/store/batarang/save"
+
       before(:all) do
-        ssh(static_ip, "vcap", "echo 'foobar' > #{save_file}", @our_ssh_options)
+        ssh(static_ip, "vcap", "echo 'foobar' > #{SAVE_FILE}", @our_ssh_options)
         @size = persistent_disk(static_ip)
         use_persistent_disk(4096)
         #use_job("batfoo")
@@ -175,7 +181,7 @@ describe "with release and stemcell and two deployments" do
 
       it "should migrate disk contents", ssh: true do
         persistent_disk(static_ip).should_not == @size
-        ssh(static_ip, "vcap", "cat #{save_file}", @our_ssh_options).should match /foobar/
+        ssh(static_ip, "vcap", "cat #{SAVE_FILE}", @our_ssh_options).should match /foobar/
       end
 
       xit "should rename a job" do

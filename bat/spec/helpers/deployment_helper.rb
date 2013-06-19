@@ -216,6 +216,10 @@ module DeploymentHelper
     @spec["properties"]["use_static_ip"] = true
   end
 
+  def no_static_ip
+    @spec["properties"]["use_static_ip"] = false
+  end
+
   def static_ip
     @spec["properties"]["static_ip"]
   end
