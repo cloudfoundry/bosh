@@ -113,7 +113,6 @@ require "director/jobs/cloud_check/scan"
 require "director/jobs/cloud_check/scan_and_fix"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
-require "director/jobs/backup_create"
 
 require "director/models/helpers/model_helper"
 
