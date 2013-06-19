@@ -106,6 +106,7 @@ describe "with release and stemcell and two deployments" do
       reload_deployment_spec
       # using password 'foobar'
       use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
+      @our_ssh_options = ssh_options.merge(password: "foobar")
       use_static_ip
       @jobs = %w[
         /var/vcap/packages/batlight/bin/batlight
@@ -124,7 +125,7 @@ describe "with release and stemcell and two deployments" do
     end
 
     it "should set vcap password", ssh: true do
-      ssh(static_ip, "vcap", "echo foobar | sudo -S whoami", ssh_options.merge(password: "foobar")).should == "[sudo] password for vcap: root\n"
+      ssh(static_ip, "vcap", "echo foobar | sudo -S whoami", @our_ssh_options).should == "[sudo] password for vcap: root\n"
     end
 
     it "should not change the deployment on a noop" do
@@ -152,19 +153,19 @@ describe "with release and stemcell and two deployments" do
     it "should use job colocation", ssh: true do
       @jobs.each do |job|
         grep = "pgrep -lf #{job}"
-        ssh(static_ip, "vcap", grep, ssh_options).should match %r{#{job}}
+        ssh(static_ip, "vcap", grep, @our_ssh_options).should match %r{#{job}}
       end
     end
 
     it "should deploy using a static network", ssh: true do
       pending "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
       pending "doesn't work on OpenStack as the VIP IP isn't visible to the VM" if openstack?
-      ssh(static_ip, "vcap", "ifconfig eth0", ssh_options).should match /#{static_ip}/
+      ssh(static_ip, "vcap", "ifconfig eth0", @our_ssh_options).should match /#{static_ip}/
     end
 
     context "second deployment" do
       before(:all) do
-        ssh(static_ip, "vcap", "echo 'foobar' > #{save_file}", ssh_options)
+        ssh(static_ip, "vcap", "echo 'foobar' > #{save_file}", @our_ssh_options)
         @size = persistent_disk(static_ip)
         use_persistent_disk(4096)
         #use_job("batfoo")
@@ -174,7 +175,7 @@ describe "with release and stemcell and two deployments" do
 
       it "should migrate disk contents", ssh: true do
         persistent_disk(static_ip).should_not == @size
-        ssh(static_ip, "vcap", "cat #{save_file}", ssh_options).should match /foobar/
+        ssh(static_ip, "vcap", "cat #{save_file}", @our_ssh_options).should match /foobar/
       end
 
       xit "should rename a job" do
