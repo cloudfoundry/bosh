@@ -1,0 +1,5 @@
+LineLength:
+  Max: 119
+
+Lambda:
+  Enabled: false
