@@ -54,7 +54,14 @@ module Bosh::Cli
 
     def validate
       @manifest["jobs"].each do |job_spec|
-        validate_templates(job_spec)
+        # TODO: this should be refactored, but it works for jobs
+        # with multiple job templates (colocated)
+        job_templates = Array(job_spec['template'])
+        job_templates.each do |job_template|
+          job_spec_for_template = job_spec.dup
+          job_spec_for_template['template'] = job_template
+          validate_templates(job_spec_for_template)
+        end
       end
     end
 
