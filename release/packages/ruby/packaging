@@ -1,10 +1,19 @@
 set -e
 
+tar xzf ruby/yaml-0.1.4.tar.gz
+(
+   set -e
+   cd yaml-0.1.4
+   ./configure --prefix=${BOSH_INSTALL_TARGET}  --disable-install-doc
+   make
+   make install
+)
+
 tar xzf ruby/ruby-1.9.3-p327.tar.gz
 (
   set -e
   cd ruby-1.9.3-p327
-  ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc
+  ./configure --with-opt-dir=${BOSH_INSTALL_TARGET} --with-yaml --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc
   make
   make install
 )
