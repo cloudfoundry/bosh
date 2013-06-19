@@ -119,7 +119,6 @@ describe "with release, stemcell and deployment" do
           result.output.should match /This will be a new property/
           result.output.should match /Property `newprop' set to `something'/
       end
-
     end
 
     context "with existing property" do
@@ -147,8 +146,7 @@ describe "with release, stemcell and deployment" do
       end
 
       it "should succeed when the release is valid" do
-        bosh("upload release #{previous_release.to_path}").should
-        succeed_with /Release uploaded/
+        bosh("upload release #{previous_release.to_path}").should succeed_with /Release uploaded/
       end
 
       it "should fail when the release already is uploaded" do
@@ -180,15 +178,15 @@ describe "with release, stemcell and deployment" do
         end
 
         it "should be possible to delete a different version" do
-          bosh("delete release #{previous_release.name} #{previous_release.version}").should
-          succeed_with /Deleted release/
+          results = bosh("delete release #{previous_release.name} #{previous_release.version}")
+          results.should succeed_with(/Deleted `#{previous_release.name}/)
         end
       end
 
       context "not in use" do
         it "should be possible to delete a single release" do
-          bosh("delete release #{previous_release.name} #{previous_release.version}").should
-          succeed_with /Deleted release/
+          results = bosh("delete release #{previous_release.name} #{previous_release.version}")
+          results.should succeed_with(/Deleted `#{previous_release.name}/)
           releases.should_not include(previous_release)
         end
       end
@@ -206,5 +204,4 @@ describe "with release, stemcell and deployment" do
       }
     end
   end
-
 end
