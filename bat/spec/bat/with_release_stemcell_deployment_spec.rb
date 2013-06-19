@@ -102,6 +102,23 @@ describe "with release, stemcell and deployment" do
     end
   end
 
+  describe "backup" do
+    it "works" do
+      bosh("backup").should succeed_with /Backup of BOSH director was put in/
+
+      files = tar_contents("bosh_backup.tgz", entries=true)
+
+      file_names = files.map(&:name).join(" ")
+      expect(file_names).to match(/logs\.tgz/)
+      expect(file_names).to match(/task_logs\.tgz/)
+      expect(file_names).to match(/director_db\.sql/)
+
+      files.each do |file|
+        expect(file.size).to be_> 0
+      end
+    end
+  end
+
   describe "managed properties" do
     context "with no property" do
 

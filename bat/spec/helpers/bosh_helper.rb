@@ -216,11 +216,13 @@ module BoshHelper
     Dir.glob("*.tgz").first
   end
 
-  def tar_contents(tgz)
+  def tar_contents(tgz, entries=false)
     list = []
     tar = Zlib::GzipReader.open(tgz)
     Minitar.open(tar).each do |entry|
-      list << entry.name if entry.file?
+      is_file = entry.file?
+      entry = entry.name unless entries
+      list << entry if is_file
     end
     list
   end
