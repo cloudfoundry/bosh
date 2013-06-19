@@ -67,6 +67,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       disk_wrapper.should_receive(:mount_exists?).and_return true
       disk_wrapper.mount_persistent_disk(2)
     end
+
     it 'mounts only block devices' do
       Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
       File.should_receive(:blockdev?).with('/dev/sdy1').and_return(false)
