@@ -239,6 +239,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     addressable (2.3.4)
+    ast (1.1.0)
     aws-sdk (1.8.5)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
@@ -338,6 +339,9 @@ GEM
     parallel (0.6.4)
     parallel_tests (0.11.3)
       parallel
+    parser (2.0.0.beta5)
+      ast (~> 1.0)
+      slop (~> 3.4)
     pg (0.15.1)
     pivotal-tracker (0.5.10)
       builder
@@ -359,6 +363,7 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
+    rainbow (1.1.4)
     rake (10.0.4)
     rb-fsevent (0.9.3)
     rb-inotify (0.9.0)
@@ -383,6 +388,9 @@ GEM
     rspec-expectations (2.13.0)
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-mocks (2.13.1)
+    rubocop (0.8.3)
+      parser (= 2.0.0.beta5)
+      rainbow (>= 1.1.4)
     ruby-atmos-pure (1.0.5)
       log4r (>= 1.1.9)
       ruby-hmac (>= 0.4.0)
@@ -469,6 +477,7 @@ DEPENDENCIES
   redis
   rest-client
   rspec
+  rubocop
   ruby_gntp
   ruby_vcloud_sdk!
   ruby_vim_sdk!
