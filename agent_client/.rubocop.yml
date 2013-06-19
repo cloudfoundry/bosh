@@ -3,3 +3,7 @@ LineLength:
 
 Lambda:
   Enabled: false
+
+AllCops:
+  Excludes:
+    - docs/**
