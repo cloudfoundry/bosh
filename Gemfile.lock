@@ -249,8 +249,15 @@ GEM
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
     coderay (1.0.9)
+    columnize (0.3.6)
     crack (0.3.2)
     daemons (1.1.9)
+    debugger (1.6.0)
+      columnize (>= 0.3.1)
+      debugger-linecache (~> 1.2.0)
+      debugger-ruby_core_source (~> 1.2.1)
+    debugger-linecache (1.2.0)
+    debugger-ruby_core_source (1.2.2)
     diff-lcs (1.2.4)
     dogapi (1.6.0)
       json (>= 1.5.1)
@@ -446,6 +453,7 @@ DEPENDENCIES
   bosh_vcloud_cpi!
   bosh_vsphere_cpi!
   ci_reporter
+  debugger
   director!
   fakefs
   guard
