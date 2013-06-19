@@ -19,6 +19,39 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage deployment process' do
       out.should =~ regexp("Deployed `#{filename}' to `Test Director'")
     end
 
+    it 'successfully do two deployments from one release' do
+      release_filename = spec_asset('valid_release.tgz')
+      minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
+      deployment_manifest = yaml_file(
+          'minimal', minimal_manifest)
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
+      run_bosh("deployment #{deployment_manifest.path}")
+      run_bosh('login admin admin')
+      run_bosh("upload release #{release_filename}")
+      filename = File.basename(deployment_manifest.path)
+
+      out = run_bosh('deploy')
+      out.should =~ regexp("Deployed `#{filename}' to `Test Director'")
+      minimal_manifest['name'] = 'minimal2'
+      deployment_manifest = yaml_file(
+          'minimal2', minimal_manifest)
+      run_bosh("deployment #{deployment_manifest.path}")
+      out = run_bosh('deploy')
+      filename = File.basename(deployment_manifest.path)
+      out.should =~ regexp("Deployed `#{filename}' to `Test Director'")
+      expect_output('deployments', <<-OUT)
+      +----------+--------------+-------------+
+      | Name     | Release(s)   | Stemcell(s) |
+      +----------+--------------+-------------+
+      | minimal  | appcloud/0.1 |             |
+      +----------+--------------+-------------+
+      | minimal2 | appcloud/0.1 |             |
+      +----------+--------------+-------------+
+
+      Deployments total: 2
+      OUT
+    end
+
     it 'generates release and deploys it via simple manifest' do
       # Test release created with bosh (see spec/assets/test_release_template)
       release_file = 'dev_releases/bosh-release-0.1-dev.tgz'
