@@ -17,6 +17,7 @@ Before you can run BAT, you need to set the following environment variables:
 * **BAT_DNS_HOST**: DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
 * **BAT_FAIL_FAST**: Stop running tests after the first failure
 
+The 'dns' property MUST NOT be specified in the bat deployment spec properties. At all.
   
 ## Optional Environment Variables
 
