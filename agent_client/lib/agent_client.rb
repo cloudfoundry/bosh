@@ -1,15 +1,17 @@
+# encoding: UTF-8
+
 module Bosh; module Agent; end; end
 
-require "httpclient"
+require 'httpclient'
 
-require "agent_client/version"
-require "agent_client/errors"
-require "agent_client/base"
-require "agent_client/http_client"
+require 'agent_client/version'
+require 'agent_client/errors'
+require 'agent_client/base'
+require 'agent_client/http_client'
 
-require "uri"
-require "yajl"
-require "openssl"
+require 'uri'
+require 'yajl'
+require 'openssl'
 
 module Bosh
   module Agent
@@ -17,7 +19,7 @@ module Bosh
       def self.create(uri, options = { })
         scheme = URI.parse(uri).scheme
         case scheme
-        when "https"
+        when 'https'
           HTTPClient.new(uri, options)
         else
           raise "Invalid client scheme, available providers are: 'https' agent uri was: #{uri}"

@@ -23,6 +23,7 @@ module Bosh
       end
 
       protected
+
       def handle_method(method_name, args)
       end
     end

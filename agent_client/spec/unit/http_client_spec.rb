@@ -40,7 +40,7 @@ describe Bosh::Agent::HTTPClient do
       payload = '{"method":"shh","arguments":["hunting","wabbits"],"reply_to":"elmer"}'
 
       @httpclient.should_receive(:request).with(:post, 'https://localhost/agent',
-                                                :body => payload, :header => headers).and_return(response)
+                                                body: payload, header: headers).and_return(response)
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost', { 'reply_to' => 'elmer' })
 
@@ -60,7 +60,7 @@ describe Bosh::Agent::HTTPClient do
       payload = '{"method":"ping","arguments":[],"reply_to":"fudd"}'
 
       @httpclient.should_receive(:request).with(:post, 'https://localhost/agent',
-                                                :body => payload, :header => headers).and_return(response)
+                                                body: payload, header: headers).and_return(response)
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost', { 'reply_to' => 'fudd' })
 
@@ -80,7 +80,7 @@ describe Bosh::Agent::HTTPClient do
       payload = '{"method":"compile_package","arguments":["id","sha1"],"reply_to":"bugs"}'
 
       @httpclient.should_receive(:request).with(:post, 'https://localhost/agent',
-                                                :body => payload, :header => headers).and_return(response)
+                                                body: payload, header: headers).and_return(response)
 
       response2 = mock('response2')
       response2.stub!(:code).and_return(200)
@@ -93,7 +93,7 @@ describe Bosh::Agent::HTTPClient do
       end
 
       @httpclient.should_receive(:request).with(:post, 'https://localhost/agent',
-                                                :body => payload, :header => headers).and_return(response2)
+                                                body: payload, header: headers).and_return(response2)
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost', { 'reply_to' => 'bugs' })
 
@@ -146,13 +146,10 @@ describe Bosh::Agent::HTTPClient do
         end
         @httpclient.stub(:request).and_raise(ZeroDivisionError, '3.14')
 
-
-        expect {
-          @client.foo('argz')
-        }.to raise_error(
-                 Bosh::Agent::Error,
-                 /base_uri.+foo.+argz.+yooser.+90553076.+ZeroDivisionError: 3\.14/m
-             )
+        expect { @client.foo('argz') }.to raise_error(
+                                              Bosh::Agent::Error,
+                                              /base_uri.+foo.+argz.+yooser.+90553076.+ZeroDivisionError: 3\.14/m
+                                          )
       end
     end
   end

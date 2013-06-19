@@ -20,7 +20,7 @@ module Bosh::Agent
         'method' => method, 'arguments' => args,
         'reply_to' => @options['reply_to'] || self.class.name
       }
-      result = post_json('/agent', Yajl::Encoder.encode(payload))
+      post_json('/agent', Yajl::Encoder.encode(payload))
     end
 
     private
@@ -35,14 +35,13 @@ module Bosh::Agent
       http_client.receive_timeout = IO_TIMEOUT
       http_client.connect_timeout = CONNECT_TIMEOUT
       http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      http_client.ssl_config.verify_callback = Proc.new {}
+      http_client.ssl_config.verify_callback = proc {}
 
       if @options['user'] && @options['password']
         http_client.set_auth(@base_uri, @options['user'], @options['password'])
       end
 
-      http_client.request(method, @base_uri + uri,
-                          :body => payload, :header => headers)
+      http_client.request(method, @base_uri + uri, body: payload, header: headers)
 
     rescue => e
       raise Error, "Request details:\n" +
@@ -60,6 +59,5 @@ module Bosh::Agent
       raise Error, "Agent HTTP #{status}" if status != 200
       Yajl::Parser.parse(response.body)
     end
-
   end
 end
