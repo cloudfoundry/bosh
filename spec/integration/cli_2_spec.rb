@@ -79,6 +79,35 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
     expect(out).to match 'This release version has already been uploaded'
   end
 
+  context 'when deployed' do
+    it 'fails to delete release in use but deletes a different release' do
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
+      run_bosh('login admin admin')
+
+      run_bosh('create release', TEST_RELEASE_DIR)
+      run_bosh('upload release', TEST_RELEASE_DIR)
+
+      # change something in TEST_RELEASE_DIR
+      FileUtils.touch(File.join(TEST_RELEASE_DIR, 'src', 'bar', 'pretend_something_changed'))
+
+      run_bosh('create release --force', TEST_RELEASE_DIR)
+      run_bosh('upload release', TEST_RELEASE_DIR)
+
+      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+
+      deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
+      run_bosh("deployment #{deployment_manifest.path}")
+
+      run_bosh('deploy')
+
+      out = run_bosh('delete release bosh-release', nil, failure_expected: true)
+      expect(out).to match /Error 30007: Release `bosh-release' is still in use/
+
+      out = run_bosh('delete release bosh-release 0.2-dev')
+      expect(out).to match %r{Deleted `bosh-release/0.2-dev'}
+    end
+  end
+
   # ~32s
   it 'marks releases that have uncommitted changes' do
     release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.yml')
