@@ -248,6 +248,9 @@ properties:
   openstack.endpoint_type:
     description: OpenStack endpoint type (optional, by default publicURL)
     default: publicURL
+  openstack.state_timeout:
+    description: Timeout (in seconds) for OpenStack resources desired state (optional, by default 300)
+    default: 300
   openstack.stemcell_public_visibility:
     description: Set public visibility for stemcells (optional, false by default)
     default: false

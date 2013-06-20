@@ -18,7 +18,7 @@ describe Bosh::OpenStackCloud::Helpers do
       @cloud.stub(:sleep)
 
       expect {
-        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+        @cloud.wait_resource(resource, :stop, :status, false)
       }.to raise_error Bosh::Clouds::CloudError, /Timed out/
     end
 
@@ -29,7 +29,7 @@ describe Bosh::OpenStackCloud::Helpers do
       resource.stub(:status).and_return(:start, :stop)
       @cloud.stub(:sleep)
 
-      @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+      @cloud.wait_resource(resource, :stop, :status, false)
     end
 
     it "should accept an Array of target states" do
@@ -39,7 +39,7 @@ describe Bosh::OpenStackCloud::Helpers do
       resource.stub(:status).and_return(:start, :stop)
       @cloud.stub(:sleep)
 
-      @cloud.wait_resource(resource, [:stop, :deleted], :status, false, 0.1)
+      @cloud.wait_resource(resource, [:stop, :deleted], :status, false)
     end
 
     it "should raise Bosh::Clouds::CloudError if state is error" do
@@ -50,7 +50,7 @@ describe Bosh::OpenStackCloud::Helpers do
       @cloud.stub(:sleep)
 
       expect {
-        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+        @cloud.wait_resource(resource, :stop, :status, false)
       }.to raise_error Bosh::Clouds::CloudError, /state is error/
     end
 
@@ -62,7 +62,7 @@ describe Bosh::OpenStackCloud::Helpers do
       @cloud.stub(:sleep)
 
       expect {
-        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+        @cloud.wait_resource(resource, :stop, :status, false)
       }.to raise_error Bosh::Clouds::CloudError, /state is failed/
     end
     
@@ -74,7 +74,7 @@ describe Bosh::OpenStackCloud::Helpers do
       @cloud.stub(:sleep)
 
       expect {
-        @cloud.wait_resource(resource, :stop, :status, false, 0.1)
+        @cloud.wait_resource(resource, :stop, :status, false)
       }.to raise_error Bosh::Clouds::CloudError, /state is killed/
     end
     
@@ -85,7 +85,7 @@ describe Bosh::OpenStackCloud::Helpers do
       @cloud.stub(:sleep)
 
       expect {
-        @cloud.wait_resource(resource, :deleted, :status, false, 0.1)
+        @cloud.wait_resource(resource, :deleted, :status, false)
       }.to raise_error Bosh::Clouds::CloudError, /Resource not found/
     end
 
@@ -96,7 +96,7 @@ describe Bosh::OpenStackCloud::Helpers do
       resource.stub(:status).and_return(:deleted)
       @cloud.stub(:sleep)
 
-      @cloud.wait_resource(resource, :deleted, :status, true, 0.1)
+      @cloud.wait_resource(resource, :deleted, :status, true)
     end
   end
 

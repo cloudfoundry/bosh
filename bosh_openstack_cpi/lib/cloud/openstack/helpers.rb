@@ -5,7 +5,7 @@ module Bosh::OpenStackCloud
 
   module Helpers
 
-    DEFAULT_TIMEOUT = 300 # Default timeout for target state (in seconds)
+    DEFAULT_STATE_TIMEOUT = 300 # Default timeout for target state (in seconds)
     MAX_RETRIES = 10 # Max number of retries
     DEFAULT_RETRY_TIMEOUT = 3 # Default timeout before retrying a call (in seconds)
 
@@ -72,20 +72,19 @@ module Bosh::OpenStackCloud
     # @param [Array<Symbol>] target_state Resource's state desired
     # @param [Symbol] state_method Resource's method to fetch state
     # @param [Boolean] allow_notfound true if resource could be not found
-    # @param [Integer] timeout Timeout for target state (in seconds)
-    def wait_resource(resource, target_state, state_method = :status,
-                      allow_notfound = false, timeout = DEFAULT_TIMEOUT)
+    def wait_resource(resource, target_state, state_method = :status, allow_notfound = false)
 
       started_at = Time.now
       desc = resource.class.name.split("::").last.to_s + " `" + resource.id.to_s + "'"
       target_state = Array(target_state)
+      state_timeout = @state_timeout || DEFAULT_STATE_TIMEOUT
 
       loop do
         task_checkpoint
 
         duration = Time.now - started_at
 
-        if duration > timeout
+        if duration > state_timeout
           cloud_error("Timed out waiting for #{desc} to be #{target_state.join(", ")}")
         end
 

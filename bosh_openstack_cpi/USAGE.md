@@ -24,6 +24,8 @@ The registry options are passed to the Openstack CPI by the BOSH director based 
   OpenStack region
 * `endpoint_type` (optional)
   OpenStack endpoint type (publicURL (default), adminURL, internalURL)
+* `state_timeout` (optional)
+  Timeout (in seconds) for OpenStack resources desired state (by default 300)
 * `stemcell_public_visibility` (optional)
   Set public visibility for stemcells (true or false (default))
 * `default_key_name` (required)
