@@ -37,7 +37,10 @@ properties:
     description: Number of nginx workers for director
   director.timeout:
     default: 7200
-    description: Timeout for nginx
+    description: Timeout for connection from bosh CLI to nginx
+  director.proxy_timeout:
+    default: 900
+    description: Timeout for proxy connection from nginx to director
   director.max_upload_size:
     default: 5000m
     description: Max allowed file size for upload
