@@ -30,7 +30,8 @@ def mock_cloud_options
       "username" => "admin",
       "api_key" => "nova",
       "tenant" => "admin",
-      "region" => "RegionOne"
+      "region" => "RegionOne",
+      "state_timeout" => 0.1
     },
     "registry" => {
       "endpoint" => "localhost:42288",
