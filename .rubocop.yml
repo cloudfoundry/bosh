@@ -1,0 +1,5 @@
+AllCops:
+  Includes:
+    - agent_client/**
+  Excludes:
+    - '**'

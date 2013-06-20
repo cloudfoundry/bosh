@@ -1,3 +1,5 @@
+inherit_from: ../.rubocop.yml
+
 LineLength:
   Max: 119
 
