@@ -38,7 +38,6 @@ end
 group :development do
   gem 'ruby_gntp'
   gem 'debugger' if RUBY_VERSION < '2.0.0'
-  gem 'rubocop', require: false
 end
 
 group :bat do
@@ -49,6 +48,7 @@ group :bat do
 end
 
 group :development, :test do
+  gem 'rubocop', require: false
   gem 'parallel_tests'
   gem 'rack-test'
   gem 'guard'
