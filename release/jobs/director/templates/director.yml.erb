@@ -169,6 +169,9 @@ cloud:
       <% if_p("openstack.endpoint_type") do |endpoint_type| %>
       endpoint_type: <%= endpoint_type %>
       <% end %>
+      <% if_p("openstack.state_timeout") do |state_timeout| %>
+      state_timeout: <%= state_timeout %>
+      <% end %>
       <% if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
       stemcell_public_visibility: <%= stemcell_public_visibility %>
       <% end %>
