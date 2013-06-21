@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "spec_helper"
+require 'spec_helper'
 
 describe Bosh::Cli::DeploymentHelper do
   class DeploymentHelperTester
@@ -10,8 +10,8 @@ describe Bosh::Cli::DeploymentHelper do
       @fake_director = fake_director
     end
 
-    def director;
-      @fake_director;
+    def director
+      @fake_director
     end
   end
 
@@ -20,130 +20,130 @@ describe Bosh::Cli::DeploymentHelper do
   let(:release_list) do
     [
         {
-            "name" => "bat",
-            "release_versions" => [
+            'name' => 'bat',
+            'release_versions' => [
                 {
-                    "version" => "1",
-                    "commit_hash" => "unknown",
-                    "uncommitted_changes" => false,
-                    "currently_deployed" => false,
+                    'version' => '1',
+                    'commit_hash' => 'unknown',
+                    'uncommitted_changes' => false,
+                    'currently_deployed' => false,
                 },
                 {
-                    "version" => "3.1-dev",
-                    "commit_hash" => "unknown",
-                    "uncommitted_changes" => false,
-                    "currently_deployed" => false,
+                    'version' => '3.1-dev',
+                    'commit_hash' => 'unknown',
+                    'uncommitted_changes' => false,
+                    'currently_deployed' => false,
                 },
                 {
-                    "version" => "3",
-                    "commit_hash" => "unknown",
-                    "uncommitted_changes" => false,
-                    "currently_deployed" => false,
+                    'version' => '3',
+                    'commit_hash' => 'unknown',
+                    'uncommitted_changes' => false,
+                    'currently_deployed' => false,
                 },
             ],
         },
         {
-            "name" => "bosh",
-            "release_versions" => [
+            'name' => 'bosh',
+            'release_versions' => [
                 {
-                    "version" => "2",
-                    "commit_hash" => "unknown",
-                    "uncommitted_changes" => false,
-                    "currently_deployed" => false,
+                    'version' => '2',
+                    'commit_hash' => 'unknown',
+                    'uncommitted_changes' => false,
+                    'currently_deployed' => false,
                 },
                 {
-                    "version" => "1.2-dev",
-                    "commit_hash" => "unknown",
-                    "uncommitted_changes" => false,
-                    "currently_deployed" => false,
+                    'version' => '1.2-dev',
+                    'commit_hash' => 'unknown',
+                    'uncommitted_changes' => false,
+                    'currently_deployed' => false,
                 },
             ],
         },
     ]
   end
 
-  describe "#latest_release_versions" do
-    context "for director version < 1.5" do
+  describe '#latest_release_versions' do
+    context 'for director version < 1.5' do
       before do
         old_style_release_list =
             [
                 {
-                    "name" => "bat",
-                    "versions" => ["1", "3.1-dev", "3", "2"],
-                    "in_use" => ["1"],
+                    'name' => 'bat',
+                    'versions' => ['1', '3.1-dev', '3', '2'],
+                    'in_use' => ['1'],
                 },
                 {
-                    "name" => "bosh",
-                    "versions" => ["2", "1.2-dev"],
-                    "in_use" => [],
+                    'name' => 'bosh',
+                    'versions' => ['2', '1.2-dev'],
+                    'in_use' => [],
                 },
             ]
         fake_director.stub(list_releases: old_style_release_list)
       end
 
-      it "should have the latest version for each release" do
+      it 'should have the latest version for each release' do
         tester.latest_release_versions.should == {
-            "bat" => "3.1-dev",
-            "bosh" => "2"
+            'bat' => '3.1-dev',
+            'bosh' => '2'
         }
       end
     end
 
-    context "for director version >= 1.5" do
+    context 'for director version >= 1.5' do
       before do
         fake_director.stub(list_releases: release_list)
       end
 
-      it "should have the latest version for each release" do
+      it 'should have the latest version for each release' do
         tester.latest_release_versions.should == {
-            "bat" => "3.1-dev",
-            "bosh" => "2"
+            'bat' => '3.1-dev',
+            'bosh' => '2'
         }
       end
     end
   end
 
-  describe "#resolve_release_aliases" do
-    context "when release versions are explicit" do
-      context "when manifest has single release" do
+  describe '#resolve_release_aliases' do
+    context 'when release versions are explicit' do
+      context 'when manifest has single release' do
         before do
           @manifest = {
-              "release" => {
-                  "name" => "bat",
-                  "version" => "3.1-dev"
+              'release' => {
+                  'name' => 'bat',
+                  'version' => '3.1-dev'
               }
           }
         end
 
-        it "should leave the version as is" do
+        it 'should leave the version as is' do
           tester.resolve_release_aliases(@manifest)
 
-          @manifest["release"]["version"].should == "3.1-dev"
+          @manifest['release']['version'].should == '3.1-dev'
         end
 
       end
 
-      context "manifest with multiple releases" do
+      context 'manifest with multiple releases' do
         before do
           @manifest = {
-              "releases" => [
+              'releases' => [
                   {
-                      "name" => "bat",
-                      "version" => "3.1-dev"
+                      'name' => 'bat',
+                      'version' => '3.1-dev'
                   },
                   {
-                      "name" => "bosh",
-                      "version" => "1.2-dev"
+                      'name' => 'bosh',
+                      'version' => '1.2-dev'
                   }
               ]
           }
         end
 
-        it "should leave the versions as they are" do
+        it 'should leave the versions as they are' do
           tester.resolve_release_aliases(@manifest)
 
-          @manifest["releases"].detect { |release| release["name"] == "bat" }["version"].should == "3.1-dev"
-          @manifest["releases"].detect { |release| release["name"] == "bosh" }["version"].should == "1.2-dev"
+          @manifest['releases'].detect { |release| release['name'] == 'bat' }['version'].should == '3.1-dev'
+          @manifest['releases'].detect { |release| release['name'] == 'bosh' }['version'].should == '1.2-dev'
         end
       end
     end
@@ -151,25 +151,25 @@ describe Bosh::Cli::DeploymentHelper do
     context "when some release versions are set to 'latest'" do
       before do
         @manifest = {
-            "releases" => [
+            'releases' => [
                 {
-                    "name" => "bat",
-                    "version" => "3.1-dev"
+                    'name' => 'bat',
+                    'version' => '3.1-dev'
                 },
                 {
-                    "name" => "bosh",
-                    "version" => "latest"
+                    'name' => 'bosh',
+                    'version' => 'latest'
                 }
             ]
         }
         fake_director.stub(list_releases: release_list)
       end
 
-      it "should resolve the version to the latest for that release" do
+      it 'should resolve the version to the latest for that release' do
         tester.resolve_release_aliases(@manifest)
 
-        @manifest["releases"].detect { |release| release["name"] == "bat" }["version"].should == "3.1-dev"
-        @manifest["releases"].detect { |release| release["name"] == "bosh" }["version"].should == 2
+        @manifest['releases'].detect { |release| release['name'] == 'bat' }['version'].should == '3.1-dev'
+        @manifest['releases'].detect { |release| release['name'] == 'bosh' }['version'].should == 2
       end
 
       context 'when the release is not found on the director' do
@@ -183,30 +183,30 @@ describe Bosh::Cli::DeploymentHelper do
 
     end
 
-    it "casts final release versions to Integer" do
-      manifest = { "release" => { "name" => "foo", "version" => "12321" } }
+    it 'casts final release versions to Integer' do
+      manifest = {'release' => {'name' => 'foo', 'version' => '12321'}}
 
       tester.resolve_release_aliases(manifest)
 
-      manifest["release"]["version"].should == 12321
+      manifest['release']['version'].should == 12321
     end
   end
 
-  describe "#prepare_deployment_manifest" do
+  describe '#prepare_deployment_manifest' do
     def make_cmd(options = {})
       cmd = Bosh::Cli::Command::Base.new(options)
       cmd.extend(Bosh::Cli::DeploymentHelper)
       cmd
     end
 
-    it "checks that actual director UUID matches the one in manifest" do
+    it 'checks that actual director UUID matches the one in manifest' do
       cmd = make_cmd
       manifest = {
-          "name" => "mycloud",
-          "director_uuid" => "deadbeef"
+          'name' => 'mycloud',
+          'director_uuid' => 'deadbeef'
       }
 
-      manifest_file = Tempfile.new("manifest")
+      manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
       manifest_file.close
       director = mock(Bosh::Cli::Director)
@@ -214,7 +214,7 @@ describe Bosh::Cli::DeploymentHelper do
       cmd.stub!(:deployment).and_return(manifest_file.path)
       cmd.stub!(:director).and_return(director)
 
-      director.should_receive(:uuid).and_return("deadcafe")
+      director.should_receive(:uuid).and_return('deadcafe')
 
       expect {
         cmd.prepare_deployment_manifest
@@ -224,51 +224,100 @@ describe Bosh::Cli::DeploymentHelper do
     it "resolves 'latest' release alias for multiple stemcells" do
       cmd = make_cmd
       manifest = {
-          "name" => "mycloud",
-          "director_uuid" => "deadbeef",
-          "release" => {"name" => "appcloud", "version" => 42},
-          "resource_pools" => [
-              {"stemcell" => {"name" => "foo", "version" => "latest"}},
-              {"stemcell" => {"name" => "foo", "version" => 22}},
-              {"stemcell" => {"name" => "bar", "version" => "latest"}},
+          'name' => 'mycloud',
+          'director_uuid' => 'deadbeef',
+          'release' => {'name' => 'appcloud', 'version' => 42},
+          'resource_pools' => [
+              {'stemcell' => {'name' => 'foo', 'version' => 'latest'}},
+              {'stemcell' => {'name' => 'foo', 'version' => 22}},
+              {'stemcell' => {'name' => 'bar', 'version' => 'latest'}},
           ]
       }
 
-      manifest_file = Tempfile.new("manifest")
+      manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
       manifest_file.close
-      director = mock(Bosh::Cli::Director, :uuid => "deadbeef")
+      director = mock(Bosh::Cli::Director, :uuid => 'deadbeef')
 
       cmd.stub!(:deployment).and_return(manifest_file.path)
       cmd.stub!(:director).and_return(director)
 
       stemcells = [
-          {"name" => "foo", "version" => "22.6.4"},
-          {"name" => "foo", "version" => "22"},
-          {"name" => "bar", "version" => "4.0.8"},
-          {"name" => "bar", "version" => "4.1"}
+          {'name' => 'foo', 'version' => '22.6.4'},
+          {'name' => 'foo', 'version' => '22'},
+          {'name' => 'bar', 'version' => '4.0.8'},
+          {'name' => 'bar', 'version' => '4.1'}
       ]
 
       director.should_receive(:list_stemcells).and_return(stemcells)
 
       manifest = cmd.prepare_deployment_manifest
-      manifest["resource_pools"][0]["stemcell"]["version"].should == "22.6.4"
-      manifest["resource_pools"][1]["stemcell"]["version"].should == 22
-      manifest["resource_pools"][2]["stemcell"]["version"].should == 4.1
+      manifest['resource_pools'][0]['stemcell']['version'].should == '22.6.4'
+      manifest['resource_pools'][1]['stemcell']['version'].should == 22
+      manifest['resource_pools'][2]['stemcell']['version'].should == 4.1
     end
   end
-  
-  describe '#job_exists_in_deployment?' do    
-    let(:manifest) { { 'name' => 'mycloud', 'jobs' => [{'name' => 'job1'}] } }
+
+  describe '#job_exists_in_deployment?' do
+    let(:manifest) do
+      {
+          'name' => 'mycloud',
+          'jobs' => [
+              {
+                  'name' => 'job1'
+              }
+          ]
+      }
+    end
+
+    before do
+      tester.stub(prepare_deployment_manifest: manifest)
+    end
 
     it 'should return true if job exists in deployment' do
-      tester.should_receive(:prepare_deployment_manifest).and_return(manifest)
-      tester.job_exists_in_deployment?('job1').should be_true    
+      tester.job_exists_in_deployment?('job1').should be_true
     end
 
     it 'should return false if job does not exists in deployment' do
-      tester.should_receive(:prepare_deployment_manifest).and_return(manifest)
-      tester.job_exists_in_deployment?('job2').should be_false     
+      tester.job_exists_in_deployment?('job2').should be_false
+    end
+  end
+
+  describe 'job_unique_in_deployment?' do
+    let(:manifest) do
+      {
+          'name' => 'mycloud',
+          'jobs' => [
+              {
+                  'name' => 'job1',
+                  'instances' => 1
+              },
+              {
+                  'name' => 'job2',
+                  'instances' => 2
+              }
+          ]
+      }
+    end
+
+    before do
+      tester.stub(prepare_deployment_manifest: manifest)
+    end
+
+    context 'when the job is in the manifest' do
+      it 'should return true if only one instance of job in deployment' do
+        expect(tester.job_unique_in_deployment?('job1')).to be_true
+      end
+
+      it 'should return false if more than one instance of job in deployment' do
+        expect(tester.job_unique_in_deployment?('job2')).to be_false
+      end
+    end
+
+    context 'when the job is not in the manifest' do
+      it 'should return false' do
+        expect(tester.job_unique_in_deployment?('job3')).to be_false
+      end
     end
   end
 end

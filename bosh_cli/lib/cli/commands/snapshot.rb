@@ -7,63 +7,63 @@ module Bosh::Cli::Command
     def list(job = nil, index = nil)
       auth_required
 
-      deployment_name = prepare_deployment_manifest["name"]
+      deployment_name = prepare_deployment_manifest['name']
       say("Deployment `#{deployment_name.green}'")
 
       snapshots = director.list_snapshots(deployment_name, job, index)
 
       sorted = snapshots.sort do |a, b|
-        s = a["job"].to_s <=> b["job"].to_s
-        s = a["index"].to_i <=> b["index"].to_i if s == 0
-        s = a["created_at"].to_s <=> b["created_at"].to_s if s == 0
+        s = a['job'].to_s <=> b['job'].to_s
+        s = a['index'].to_i <=> b['index'].to_i if s == 0
+        s = a['created_at'].to_s <=> b['created_at'].to_s if s == 0
         s
       end
 
       snapshots_table = table do |t|
-        t.headings = ["Job/index", "Snapshot CID", "Created at", "Clean"]
+        t.headings = ['Job/index', 'Snapshot CID', 'Created at', 'Clean']
 
         sorted.each do |snapshot|
-          job = "#{snapshot["job"] || "unknown"}/#{snapshot["index"] || "unknown"}"
-          t << [job, snapshot["snapshot_cid"], snapshot["created_at"], snapshot["clean"]]
+          job = "#{snapshot['job'] || 'unknown'}/#{snapshot['index'] || 'unknown'}"
+          t << [job, snapshot['snapshot_cid'], snapshot['created_at'], snapshot['clean']]
         end
       end
 
       nl
       say(snapshots_table)
       nl
-      say("Snapshots total: %d" % snapshots.size)
+      say('Snapshots total: %d' % snapshots.size)
     end
 
-    usage "take snapshot"
-    desc "Takes a snapshot"
+    usage 'take snapshot'
+    desc 'Takes a snapshot'
     def take(job = nil, index = nil)
       auth_required
 
-      deployment_name = prepare_deployment_manifest["name"]
+      deployment_name = prepare_deployment_manifest['name']
       say("Deployment `#{deployment_name.green}'")
 
       unless job && index
         unless confirmed?("Are you sure you want to take a snapshot of all deployment `#{deployment_name}'?")
-          say("Canceled taking snapshot".green)
+          say('Canceled taking snapshot'.green)
           return
         end
       end
 
       status, task_id = director.take_snapshot(deployment_name, job, index)
 
-      task_report(status, task_id, "Snapshot taken")
+      task_report(status, task_id, 'Snapshot taken')
     end
 
-    usage "delete snapshot"
-    desc "Deletes a snapshot"
+    usage 'delete snapshot'
+    desc 'Deletes a snapshot'
     def delete(snapshot_cid)
       auth_required
 
-      deployment_name = prepare_deployment_manifest["name"]
+      deployment_name = prepare_deployment_manifest['name']
       say("Deployment `#{deployment_name.green}'")
 
       unless confirmed?("Are you sure you want to delete snapshot `#{snapshot_cid}'?")
-        say("Canceled deleting snapshot".green)
+        say('Canceled deleting snapshot'.green)
         return
       end
 
@@ -72,16 +72,16 @@ module Bosh::Cli::Command
       task_report(status, task_id, "Deleted Snapshot `#{snapshot_cid}'")
     end
 
-    usage "delete snapshots"
-    desc "Deletes all snapshots of a deployment"
+    usage 'delete snapshots'
+    desc 'Deletes all snapshots of a deployment'
     def delete_all
       auth_required
 
-      deployment_name = prepare_deployment_manifest["name"]
+      deployment_name = prepare_deployment_manifest['name']
       say("Deployment `#{deployment_name.green}'")
 
       unless confirmed?("Are you sure you want to delete all snapshots of deployment `#{deployment_name}'?")
-        say("Canceled deleting snapshots".green)
+        say('Canceled deleting snapshots'.green)
         return
       end
 

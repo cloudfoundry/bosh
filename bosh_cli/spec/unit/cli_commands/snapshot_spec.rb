@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 
-require "spec_helper"
+require 'spec_helper'
 
 describe Bosh::Cli::Command::Snapshot do
   let(:command) { described_class.new }
@@ -10,54 +10,44 @@ describe Bosh::Cli::Command::Snapshot do
     command.stub(:director).and_return(director)
   end
 
-  describe "listing snapshot" do
+  describe 'listing snapshot' do
+    it_behaves_like 'a command which requires user is logged in', ->(command) { command.list }
 
-    context "when user is not logged in" do
-      before do
-        command.stub(:logged_in? => false)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.list }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
-      end
-    end
-
-    context "when the user is logged in" do
+    context 'when the user is logged in' do
       before do
         command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
+        command.options[:target] = 'http://bosh-target.example.com'
       end
 
-      context "when there are snapshots" do
+      context 'when there are snapshots' do
         let(:snapshots) {[
           { 'job' => 'job', 'index' => 0, 'snapshot_id' => 'snap0a', 'created_at' => Time.now, 'clean' => true }
         ]}
 
-        it "list all snapshots for the deployment" do
-          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        it 'list all snapshots for the deployment' do
+          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:list_snapshots).with("bosh", nil, nil).and_return(snapshots)
+          director.should_receive(:list_snapshots).with('bosh', nil, nil).and_return(snapshots)
 
           command.list
         end
 
-        it "list all snapshots for a job and index" do
-          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        it 'list all snapshots for a job and index' do
+          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:list_snapshots).with("bosh", "foo", "0").and_return(snapshots)
+          director.should_receive(:list_snapshots).with('bosh', 'foo', '0').and_return(snapshots)
 
-          command.list("foo", "0")
+          command.list('foo', '0')
         end
       end
 
-      context "when there are no snapshots" do
+      context 'when there are no snapshots' do
         let(:snapshots) { [] }
 
-        it "should not fail" do
-          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        it 'should not fail' do
+          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:list_snapshots).with("bosh", nil, nil).and_return(snapshots)
+          director.should_receive(:list_snapshots).with('bosh', nil, nil).and_return(snapshots)
 
           command.list
         end
@@ -65,45 +55,35 @@ describe Bosh::Cli::Command::Snapshot do
     end
   end
 
-  describe "taking a snapshot" do
+  describe 'taking a snapshot' do
+    it_behaves_like 'a command which requires user is logged in', ->(command) { command.take('foo', '0') }
 
-    context "when user is not logged in" do
-      before do
-        command.stub(:logged_in? => false)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.take("foo", "0") }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
-      end
-    end
-
-    context "when the user is logged in" do
+    context 'when the user is logged in' do
       before do
         command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
+        command.options[:target] = 'http://bosh-target.example.com'
       end
 
-      context "for all deployment" do
-        context "when interactive" do
+      context 'for all deployment' do
+        context 'when interactive' do
           before do
             command.options[:non_interactive] = false
           end
 
-          context "when the user confirms taking the snapshot" do
-            it "deletes the snapshot" do
-              command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+          context 'when the user confirms taking the snapshot' do
+            it 'deletes the snapshot' do
+              command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
               command.should_receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(true)
 
-              director.should_receive(:take_snapshot).with("bosh", nil, nil)
+              director.should_receive(:take_snapshot).with('bosh', nil, nil)
 
               command.take()
             end
           end
 
-          context "when the user does not confirms taking the snapshot" do
-            it "does not delete the snapshot" do
-              command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+          context 'when the user does not confirms taking the snapshot' do
+            it 'does not delete the snapshot' do
+              command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
               command.should_receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(false)
 
               director.should_not_receive(:take_snapshot)
@@ -113,135 +93,115 @@ describe Bosh::Cli::Command::Snapshot do
           end
         end
 
-        context "when non interactive" do
+        context 'when non interactive' do
           before do
             command.options[:non_interactive] = true
           end
 
-          it "takes the snapshot" do
-            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+          it 'takes the snapshot' do
+            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-            director.should_receive(:take_snapshot).with("bosh", nil, nil)
+            director.should_receive(:take_snapshot).with('bosh', nil, nil)
 
             command.take()
           end
         end
       end
 
-      context "for a job and index" do
-        it "takes the snapshot" do
-          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+      context 'for a job and index' do
+        it 'takes the snapshot' do
+          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:take_snapshot).with("bosh", "foo", "0")
+          director.should_receive(:take_snapshot).with('bosh', 'foo', '0')
 
-          command.take("foo", "0")
+          command.take('foo', '0')
         end
       end
     end
   end
 
-  describe "deleting a snapshot" do
+  describe 'deleting a snapshot' do
+    it_behaves_like 'a command which requires user is logged in', ->(command) { command.delete('snap0a') }
 
-    context "when user is not logged in" do
-      before do
-        command.stub(:logged_in? => false)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.delete("snap0a") }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
-      end
-    end
-
-    context "when the user is logged in" do
+    context 'when the user is logged in' do
       before do
         command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
+        command.options[:target] = 'http://bosh-target.example.com'
       end
 
-      context "when interactive" do
+      context 'when interactive' do
         before do
           command.options[:non_interactive] = false
         end
 
-        context "when the user confirms the snapshot deletion" do
-          it "deletes the snapshot" do
-            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        context 'when the user confirms the snapshot deletion' do
+          it 'deletes the snapshot' do
+            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
             command.should_receive(:confirmed?).with("Are you sure you want to delete snapshot `snap0a'?").and_return(true)
 
-            director.should_receive(:delete_snapshot).with("bosh", "snap0a")
+            director.should_receive(:delete_snapshot).with('bosh', 'snap0a')
 
-            command.delete("snap0a")
+            command.delete('snap0a')
           end
         end
 
-        context "when the user does not confirms the snapshot deletion" do
-          it "does not delete the snapshot" do
-            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        context 'when the user does not confirms the snapshot deletion' do
+          it 'does not delete the snapshot' do
+            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
             command.should_receive(:confirmed?).with("Are you sure you want to delete snapshot `snap0a'?").and_return(false)
 
             director.should_not_receive(:delete_snapshot)
 
-            command.delete("snap0a")
+            command.delete('snap0a')
           end
         end
       end
 
-      context "when non interactive" do
+      context 'when non interactive' do
         before do
           command.options[:non_interactive] = true
         end
 
-        it "deletes the snapshot" do
-          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        it 'deletes the snapshot' do
+          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:delete_snapshot).with("bosh", "snap0a")
+          director.should_receive(:delete_snapshot).with('bosh', 'snap0a')
 
-          command.delete("snap0a")
+          command.delete('snap0a')
         end
       end
     end
   end
 
-  describe "deleting all snapshots of a deployment" do
+  describe 'deleting all snapshots of a deployment' do
+    it_behaves_like 'a command which requires user is logged in', ->(command) { command.delete_all }
 
-    context "when user is not logged in" do
-      before do
-        command.stub(:logged_in? => false)
-        command.options[:target] = "http://bosh-target.example.com"
-      end
-
-      it "fails" do
-        expect { command.delete_all }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
-      end
-    end
-
-    context "when the user is logged in" do
+    context 'when the user is logged in' do
       before do
         command.stub(:logged_in? => true)
-        command.options[:target] = "http://bosh-target.example.com"
+        command.options[:target] = 'http://bosh-target.example.com'
       end
 
-      context "when interactive" do
+      context 'when interactive' do
         before do
           command.options[:non_interactive] = false
         end
 
-        context "when the user confirms the snapshot deletion" do
-          it "deletes all snapshots" do
-            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        context 'when the user confirms the snapshot deletion' do
+          it 'deletes all snapshots' do
+            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
             command.should_receive(:confirmed?)
                 .with("Are you sure you want to delete all snapshots of deployment `bosh'?").and_return(true)
 
-            director.should_receive(:delete_all_snapshots).with("bosh")
+            director.should_receive(:delete_all_snapshots).with('bosh')
 
             command.delete_all
           end
         end
 
-        context "when the user does not confirms the snapshot deletion" do
-          it "does not delete snapshots" do
-            command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        context 'when the user does not confirms the snapshot deletion' do
+          it 'does not delete snapshots' do
+            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
             command.should_receive(:confirmed?)
                 .with("Are you sure you want to delete all snapshots of deployment `bosh'?").and_return(false)
 
@@ -252,15 +212,15 @@ describe Bosh::Cli::Command::Snapshot do
         end
       end
 
-      context "when non interactive" do
+      context 'when non interactive' do
         before do
           command.options[:non_interactive] = true
         end
 
-        it "deletes all snapshots" do
-          command.stub(:prepare_deployment_manifest).and_return({"name" => "bosh"})
+        it 'deletes all snapshots' do
+          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:delete_all_snapshots).with("bosh")
+          director.should_receive(:delete_all_snapshots).with('bosh')
 
           command.delete_all
         end

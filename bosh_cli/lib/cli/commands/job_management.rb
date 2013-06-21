@@ -38,6 +38,8 @@ module Bosh::Cli::Command
       change_job_state(:recreate, job, index)
     end
 
+    private
+
     def change_job_state(operation, job, index)
       auth_required
       manifest_yaml = prepare_deployment_manifest(:yaml => true)
