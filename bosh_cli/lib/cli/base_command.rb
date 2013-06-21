@@ -237,6 +237,13 @@ module Bosh::Cli
         end
       end
 
+      def valid_index_for(job, index, options = {})
+        index = '0' if job_unique_in_deployment?(job)
+        err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
+        index = index.to_i if options[:integer_index]
+        index
+      end
+
       def normalize_url(url)
         had_port = url.to_s =~ /:\d+$/
         url = "https://#{url}" unless url.match(/^http:?/)
