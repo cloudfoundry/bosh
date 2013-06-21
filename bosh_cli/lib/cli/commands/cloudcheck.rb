@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class CloudCheck < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh cloudcheck
     usage "cloudcheck"
     desc "Cloud consistency check and interactive repair"

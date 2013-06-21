@@ -2,11 +2,9 @@
 
 module Bosh::Cli::Command
   class Ssh < Base
-    include Bosh::Cli::DeploymentHelper
-
-    SSH_USER_PREFIX = "bosh_"
-    SSH_DSA_PUB = File.expand_path("~/.ssh/id_dsa.pub")
-    SSH_RSA_PUB = File.expand_path("~/.ssh/id_rsa.pub")
+    SSH_USER_PREFIX = 'bosh_'
+    SSH_DSA_PUB = File.expand_path('~/.ssh/id_dsa.pub')
+    SSH_RSA_PUB = File.expand_path('~/.ssh/id_rsa.pub')
 
     # bosh ssh
     usage "ssh"
@@ -217,26 +215,6 @@ module Bosh::Cli::Command
           end
         end
       end
-    end
-
-    # @param [Array] args
-    # @return [Array] job, index, command
-    def parse_args(args)
-      job = args.shift
-      err("Please provide job name") if job.nil?
-      job, index = job.split("/", 2)
-
-      if index
-        if index =~ /^\d+$/
-          index = index.to_i
-        else
-          err("Invalid job index, integer number expected")
-        end
-      elsif args[0] =~ /^\d+$/
-        index = args.shift.to_i
-      end
-
-      [job, index, args]
     end
 
     # @return [String] Public key

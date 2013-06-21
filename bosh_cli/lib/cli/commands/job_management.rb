@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class JobManagement < Base
-    include Bosh::Cli::DeploymentHelper
-
     FORCE = "Proceed even when there are other manifest changes"
 
     # bosh start

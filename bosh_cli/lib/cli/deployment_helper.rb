@@ -232,9 +232,13 @@ module Bosh::Cli
       end
     end
 
-    def job_exists_in_deployment?(jobname)
-      jobs = prepare_deployment_manifest["jobs"].map { |job| job["name"] }
-      jobs.include?(jobname) ? true : false
+    def job_unique_in_deployment?(job_name)
+      job = find_job(job_name)
+      job.fetch('instances') == 1 if job
+    end
+
+    def job_exists_in_deployment?(job_name)
+      !!find_job(job_name)
     end
 
     def job_must_exist_in_deployment(job)
@@ -242,6 +246,11 @@ module Bosh::Cli
     end
 
     private
+
+    def find_job(job_name)
+      jobs = prepare_deployment_manifest.fetch('jobs')
+      jobs.find { |job| job.fetch('name') == job_name }
+    end
 
     def find_deployment(name)
       if File.exists?(name)

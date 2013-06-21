@@ -1,7 +1,5 @@
 module Bosh::Cli::Command
   class Vm < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh vm
     usage "vm resurrection"
     desc "Enable/Disable resurrection for a given vm"

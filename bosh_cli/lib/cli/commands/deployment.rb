@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class Deployment < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh deployment
     usage "deployment"
     desc "Get/set current deployment"

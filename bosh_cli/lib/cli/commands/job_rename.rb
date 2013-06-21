@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class JobRename < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh rename
     usage "rename job"
     desc "Renames a job. NOTE, your deployment manifest must also be " +

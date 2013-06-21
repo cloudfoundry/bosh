@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class LogManagement < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh logs
     usage "logs"
     desc "Fetch job or agent logs from a BOSH-managed VM"

@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class Vms < Base
-    include Bosh::Cli::DeploymentHelper
-
     usage "vms"
     desc  "List all VMs in a deployment"
     option "--details", "Return detailed VM information"

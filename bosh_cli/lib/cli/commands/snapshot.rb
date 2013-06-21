@@ -2,10 +2,8 @@
 
 module Bosh::Cli::Command
   class Snapshot < Base
-    include Bosh::Cli::DeploymentHelper
-
-    usage "snapshots"
-    desc "List all snapshots"
+    usage 'snapshots'
+    desc 'List all snapshots'
     def list(job = nil, index = nil)
       auth_required
 

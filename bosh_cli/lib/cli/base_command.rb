@@ -4,6 +4,7 @@ module Bosh::Cli
   module Command
     class Base
       extend Bosh::Cli::CommandDiscovery
+      include Bosh::Cli::DeploymentHelper
 
       attr_accessor :options
       attr_reader :work_dir
@@ -162,6 +163,26 @@ module Bosh::Cli
 
       protected
 
+      # @param [Array] args
+      # @return [Array] job, index, command
+      def parse_args(args)
+        job = args.shift
+        err('Please provide job name') if job.nil?
+        job, index = job.split('/', 2)
+
+        if index
+          if index =~ /^\d+$/
+            index = index.to_i
+          else
+            err('Invalid job index, integer number expected')
+          end
+        elsif args[0] =~ /^\d+$/
+          index = args.shift.to_i
+        end
+
+        [job, index, args]
+      end
+
       def auth_required
         target_required
         err("Please log in first") unless logged_in?
@@ -223,7 +244,6 @@ module Bosh::Cli
         uri.port = DEFAULT_DIRECTOR_PORT unless had_port
         uri.to_s.strip.gsub(/\/$/, "")
       end
-
     end
   end
 end

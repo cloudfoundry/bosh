@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class PropertyManagement < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh set property
     usage "set property"
     desc "Set deployment property"
