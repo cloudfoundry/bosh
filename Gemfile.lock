@@ -249,7 +249,14 @@ GEM
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
     coderay (1.0.9)
+    colorize (0.5.8)
     columnize (0.3.6)
+    coveralls (0.6.7)
+      colorize
+      multi_json (~> 1.3)
+      rest-client
+      simplecov (>= 0.7)
+      thor
     crack (0.3.2)
     daemons (1.1.9)
     debugger (1.6.0)
@@ -453,6 +460,7 @@ DEPENDENCIES
   bosh_vcloud_cpi!
   bosh_vsphere_cpi!
   ci_reporter
+  coveralls
   debugger
   director!
   fakefs

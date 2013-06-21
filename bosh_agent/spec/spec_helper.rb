@@ -4,6 +4,9 @@ require "rspec"
 
 ENV["RACK_ENV"] = "test"
 
+require 'coveralls'
+Coveralls.wear!
+
 require "bosh_agent"
 
 require "digest/sha1"

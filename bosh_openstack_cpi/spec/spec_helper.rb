@@ -2,6 +2,10 @@
 # Copyright (c) 2012 Piston Cloud Computing, Inc.
 
 require "rspec"
+
+require 'coveralls'
+Coveralls.wear!
+
 require "tmpdir"
 require "zlib"
 require "archive/tar/minitar"
