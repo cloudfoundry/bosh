@@ -67,6 +67,7 @@ module Bosh::Cli
         has_blobstore_secrets?(bs, "swift", "rackspace") ||
         has_blobstore_secrets?(bs, "swift", "hp") ||
         has_blobstore_secrets?(bs, "swift", "openstack") ||
+        has_blobstore_secrets?(bs, "azure", "storage_access_key") ||
         has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key")
     end
 

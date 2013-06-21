@@ -3,7 +3,7 @@
 module Bosh
   module Blobstore
     class Client
-      PROVIDER_NAMES = %w[dav simple s3 swift atmos local]
+      PROVIDER_NAMES = %w[dav simple s3 swift atmos local azure]
 
       def self.create(blobstore_provider, options = {})
         unless PROVIDER_NAMES.include? blobstore_provider
