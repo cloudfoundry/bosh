@@ -100,6 +100,7 @@ namespace :spec do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         begin
+          Rake::Task['spec:system:aws:deploy_micro'].invoke
           Rake::Task['spec:system:aws:bat'].invoke
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
@@ -134,7 +135,7 @@ namespace :spec do
         end
       end
 
-      task :bat => :deploy_micro do
+      task :bat do
         director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
         ENV['BAT_DIRECTOR'] = director
         ENV['BAT_STEMCELL'] = latest_aws_stemcell_path
@@ -164,15 +165,12 @@ namespace :spec do
       task :micro do
         Rake::Task['spec:system:openstack:deploy_micro_dynamic_net'].invoke
         Rake::Task['spec:system:openstack:deploy_micro_manual_net'].invoke
-        ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
-        #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
-        promote_stemcell(latest_openstack_stemcell_path)
-        promote_stemcell(latest_openstack_micro_bosh_stemcell_path)
       end
 
       task :deploy_micro_dynamic_net do
         begin
           Rake::Task['spec:system:openstack:deploy_micro'].execute('dynamic')
+          Rake::Task['spec:system:openstack:bat'].execute
         ensure
           Rake::Task['spec:system:openstack:teardown_microbosh'].execute
         end
@@ -181,6 +179,7 @@ namespace :spec do
       task :deploy_micro_manual_net do
         begin
           Rake::Task['spec:system:openstack:deploy_micro'].execute('manual')
+          Rake::Task['spec:system:openstack:bat'].execute
         ensure
           Rake::Task['spec:system:openstack:teardown_microbosh'].execute
         end
@@ -203,8 +202,6 @@ namespace :spec do
           st_version = stemcell_version(latest_openstack_stemcell_path)
           generate_openstack_bat_manifest(net_type, director_uuid, st_version)
         end
-
-        Rake::Task['spec:system:openstack:bat'].execute
       end
 
       task :teardown_microbosh do
@@ -235,12 +232,9 @@ namespace :spec do
       task :micro do
         begin
           Rake::Task['spec:system:vsphere:deploy_micro'].invoke
-          ## TODO: the stemcells already exist in the bosh-ci-pipeline bucket, so
-          #  we should just `s3cmd cp` from the pipeline bucket to artifacts bucket
-          promote_stemcell(latest_vsphere_stemcell_path)
-          promote_stemcell(latest_vsphere_micro_bosh_stemcell_path)
+          Rake::Task['spec:system:vsphere:bat'].invoke
         ensure
-          Rake::Task['spec:system:vsphere:teardown_microbosh'].execute
+          Rake::Task['spec:system:vsphere:teardown_microbosh'].invoke
         end
       end
 
@@ -261,8 +255,6 @@ namespace :spec do
           st_version = stemcell_version(latest_vsphere_stemcell_path)
           generate_vsphere_bat_manifest(director_uuid, st_version)
         end
-
-        Rake::Task['spec:system:vsphere:bat'].execute
       end
 
       task :teardown_microbosh do
