@@ -17,9 +17,7 @@ module Bosh::Cli::Command
     def shell(*args)
       job, index, command = parse_args(args)
       job_must_exist_in_deployment(job)
-
-      index = 0 if job_unique_in_deployment?(job)
-      err("You should specify the job index. Can't run interactive shell on more than one instance") if index.nil?
+      index = valid_index_for(job, index, integer_index: true)
 
       if command.empty?
         setup_interactive_shell(job, index)

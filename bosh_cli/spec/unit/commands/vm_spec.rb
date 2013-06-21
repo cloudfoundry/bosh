@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-require 'cli'
-
 describe Bosh::Cli::Command::Vm do
   let(:command) { described_class.new }
   let(:director) { double(Bosh::Cli::Director) }

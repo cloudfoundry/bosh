@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'net/ssh/gateway'
 
-describe Bosh::Cli::Command::Base do
+describe Bosh::Cli::Command::Ssh do
   # TODO: the whole spec needs to be rewritten
 
   before :all do
@@ -11,7 +11,7 @@ describe Bosh::Cli::Command::Base do
     File.write(@public_key, 'PUBLIC_KEY')
   end
 
-  let(:ssh) { Bosh::Cli::Command::Ssh.new }
+  let(:ssh) { described_class.new }
   let(:net_ssh) { double('net/ssh') }
   let(:director) { double('director') }
   let(:gw_host) { 'gw_host' }
@@ -113,7 +113,7 @@ describe Bosh::Cli::Command::Base do
           expect {
             ssh.shell('dea')
           }.to raise_error(Bosh::Cli::CliError,
-                           "You should specify the job index. Can't run interactive shell on more than one instance")
+                           'You should specify the job index. There is more than one instance of this job type.')
         end
       end
       

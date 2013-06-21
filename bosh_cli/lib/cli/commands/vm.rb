@@ -6,9 +6,7 @@ module Bosh::Cli::Command
     def resurrection_state(*args)
       job, index, resurrection_value = parse_args(args)
       job_must_exist_in_deployment(job)
-
-      index = 0 if job_unique_in_deployment?(job)
-      err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
+      index = valid_index_for(job, index, integer_index: true)
 
       resurrection_value = resurrection_value.first
       manifest = prepare_deployment_manifest
