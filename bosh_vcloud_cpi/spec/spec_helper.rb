@@ -126,6 +126,10 @@ module Bosh
           logger.level = Logger::DEBUG
           logger
         end
+
+        def uuid()
+          "Global variables named Config must die"
+        end
       end
     end
   end
