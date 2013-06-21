@@ -9,6 +9,7 @@ describe "initialization", :skip_task_check do
       BAT_STEMCELL
       BAT_DEPLOYMENT_SPEC
       BAT_VCAP_PASSWORD
+      BAT_DNS_HOST
     ].each do |var|
       it "should have #{var} set" do
         ENV[var].should_not be_nil
