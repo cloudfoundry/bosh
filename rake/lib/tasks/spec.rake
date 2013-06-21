@@ -100,7 +100,7 @@ namespace :spec do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         begin
-          Rake::Task['spec:system:aws:publish_gems'].invoke
+          Rake::Task['spec:system:aws:bat'].invoke
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
