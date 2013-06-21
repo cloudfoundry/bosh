@@ -3,6 +3,7 @@ AllCops:
     - Gemfile
     - Rakefile
   Excludes:
+   - bin/**
    - aws/**
    - bat/**
    - blobstore_client/**
