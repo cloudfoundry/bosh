@@ -128,7 +128,7 @@ namespace :spec do
         if Dir.exists?('/tmp/deployments')
           chdir('/tmp/deployments') do
             run_bosh 'delete deployment bat', :ignore_failures => true
-            run_bosh 'micro delete'
+            run_bosh 'micro delete', :ignore_failures => true
           end
           rm_rf('/tmp/deployments')
         end
@@ -219,7 +219,7 @@ namespace :spec do
         chdir('/tmp/openstack-ci/deployments') do
           run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(latest_openstack_stemcell_path)}", :ignore_failures => true
-          run_bosh 'micro delete'
+          run_bosh 'micro delete', :ignore_failures => true
         end
         rm_rf('/tmp/openstack-ci/deployments')
       end
@@ -277,7 +277,7 @@ namespace :spec do
         cd('/tmp/vsphere-ci/deployments') do
           run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(latest_vsphere_stemcell_path)}", :ignore_failures => true
-          run_bosh 'micro delete'
+          run_bosh 'micro delete', :ignore_failures => true
         end
         rm_rf('/tmp/vsphere-ci/deployments')
       end
