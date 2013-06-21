@@ -1,117 +1,154 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "spec_helper"
-require "net/ssh/gateway"
+require 'spec_helper'
+require 'net/ssh/gateway'
 
 describe Bosh::Cli::Command::Base do
   # TODO: the whole spec needs to be rewritten
 
   before :all do
-    @public_key = File.join(Dir.mktmpdir, "public_key")
-    File.open(@public_key, "w+") do |f|
-      f.write("PUBLIC_KEY")
-    end
+    @public_key = File.join(Dir.mktmpdir, 'public_key')
+    File.write(@public_key, 'PUBLIC_KEY')
   end
 
   let(:ssh) { Bosh::Cli::Command::Ssh.new }
   let(:net_ssh) { double('net/ssh') }
   let(:director) { double('director') }
-  let(:gw_host) { "gw_host" }
-  let(:gw_user) { "vcap" }
+  let(:gw_host) { 'gw_host' }
+  let(:gw_user) { 'vcap' }
   
   describe Bosh::Cli::Command::Ssh do
-    it "should get the public key" do
+    it 'should get the public key' do
       ssh.add_option(:public_key, @public_key)
       public_key = ssh.send(:get_public_key)
-      public_key.should == "PUBLIC_KEY"
+      public_key.should == 'PUBLIC_KEY'
     end
     
-    it "should get the public key from users home directory or raise exception" do
+    it 'should get the public key from users home directory or raise exception' do
       public_key = nil
       begin
         public_key = ssh.send(:get_public_key)
       rescue Bosh::Cli::CliError
-        public_key = "SOMETHING"
+        public_key = 'SOMETHING'
       end
       public_key.should_not be_nil
     end
 
-    it "should contact director to setup ssh on the job" do
+    it 'should contact director to setup ssh on the job' do
       director.stub(:setup_ssh).and_return([:done, 42])
 
       director.stub(:get_task_result_log).with(42).
-        and_return(JSON.generate([{ "status" => "success", "ip" => "127.0.0.1" }]))
+        and_return(JSON.generate([{ 'status' => 'success', 'ip' => '127.0.0.1'}]))
       director.stub(:cleanup_ssh)
       Bosh::Cli::Director.should_receive(:new).and_return(director)
-      ssh.stub(:prepare_deployment_manifest).and_return("test")
+      ssh.stub(:prepare_deployment_manifest).and_return('test')
       ssh.stub(:cleanup_ssh)
-      ssh.stub(:get_public_key).and_return("PUBKEY")
+      ssh.stub(:get_public_key).and_return('PUBKEY')
       ssh.send(
-        :setup_ssh, "dea", 0, "temp_pass") do |results, _, _|
+        :setup_ssh, 'dea', 0, 'temp_pass') do |results, _, _|
         results.each do |result|
-          result["status"].should == "success"
-          result["ip"].should == "127.0.0.1"
+          result['status'].should == 'success'
+          result['ip'].should == '127.0.0.1'
         end
       end
     end   
     
-    it "should try to execute given command remotely" do
+    it 'should try to execute given command remotely' do
       @interactive_shell = false
       @execute_command = false
       ssh.stub(:job_exists_in_deployment?).and_return(true)
-      ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
-      ssh.stub(:perform_operation) { @execute_command = true }
-      ssh.shell("dea", "ls -l")
-      @interactive_shell.should == false && @execute_command.should == true
+      ssh.stub(:job_unique_in_deployment?).and_return(false)
+      ssh.should_receive(:perform_operation).with(:exec, 'dea', 0, ['ls -l'])
+      ssh.shell('dea/0', 'ls -l')
     end
 
     context '#shell' do
-      it 'should fail to setup ssh when a job name is not given' do
-        expect {
-          ssh.shell()
-        }.to raise_error(Bosh::Cli::CliError, 'Please provide job name')
+      describe 'invalid arguments' do
+        it 'should fail to setup ssh when a job name is not given' do
+          expect {
+            ssh.shell()
+          }.to raise_error(Bosh::Cli::CliError, 'Please provide job name')
+        end
+
+        it 'should fail to setup ssh when a job index is not an Integer' do
+          expect {
+            ssh.shell('dea/dea')
+          }.to raise_error(Bosh::Cli::CliError, 'Invalid job index, integer number expected')
+        end
       end
 
-      it 'should fail to setup ssh when a job name does not exists in deployment' do
-        ssh.stub(:job_exists_in_deployment?).and_return(false)
-        expect {
-          ssh.shell('dea/0')
-        }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
+      context 'when there is no instance with that job name in the deployment' do
+        context 'when specifying the job index' do
+          it 'should fail to setup ssh' do
+            ssh.stub(:job_exists_in_deployment?).and_return(false)
+            expect {
+              ssh.shell('dea/0')
+            }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
+          end
+        end
+
+        context 'when not specifying the job index' do
+          it 'should fail to setup ssh' do
+            ssh.stub(:job_exists_in_deployment?).and_return(false)
+            expect {
+              ssh.shell('dea')
+            }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
+          end
+        end
       end
-      
-      it 'should fail to setup ssh when a job index is not given' do
-        ssh.stub(:job_exists_in_deployment?).and_return(true)
-        expect {
+
+      context 'when there is only one instance with that job name in the deployment' do
+        it 'should implicitly chooses the only instance' do
+          ssh.stub(:job_exists_in_deployment?).and_return(true)
+          ssh.stub(:job_unique_in_deployment?).and_return(true)
+          ssh.should_receive(:setup_interactive_shell).with('dea', 0)
           ssh.shell('dea')
-        }.to raise_error(Bosh::Cli::CliError, 
-                         "You should specify the job index. Can't run interactive shell on more than one instance")
+        end
       end
 
-      it 'should fail to setup ssh when a job index is not an Integer' do
-        expect {
-          ssh.shell('dea/dea')
-        }.to raise_error(Bosh::Cli::CliError, 'Invalid job index, integer number expected')
+      context 'when there are many instances with that job name in the deployment' do
+        it 'should fail to setup ssh when a job index is not given' do
+          ssh.stub(:job_exists_in_deployment?).and_return(true)
+          ssh.stub(:job_unique_in_deployment?).and_return(false)
+          expect {
+            ssh.shell('dea')
+          }.to raise_error(Bosh::Cli::CliError,
+                           "You should specify the job index. Can't run interactive shell on more than one instance")
+        end
       end
       
       it 'should try to setup interactive shell when a job index is given' do
         @interactive_shell = false
         @execute_command = false
         ssh.stub(:job_exists_in_deployment?).and_return(true)
+        ssh.stub(:job_unique_in_deployment?).and_return(false)
         ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
         ssh.stub(:execute_command) { @execute_command = true }
         ssh.shell('dea', '0')
         @interactive_shell.should == true && @execute_command.should == false
-      end  
- 
+      end
+
+      it 'should try to setup interactive shell when a job index is given as part of the job name' do
+        @interactive_shell = false
+        @execute_command = false
+        ssh.stub(:job_exists_in_deployment?).and_return(true)
+        ssh.stub(:job_unique_in_deployment?).and_return(false)
+        ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
+        ssh.stub(:execute_command) { @execute_command = true }
+        ssh.shell('dea/0')
+        @interactive_shell.should == true && @execute_command.should == false
+      end
+
       it 'should setup ssh' do
         Bosh::Cli::Director.should_receive(:new).and_return(director)
         Process.stub(:waitpid)
         
         ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
+        ssh.stub(:job_unique_in_deployment?).and_return(false)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
-        ssh.stub(:prepare_deployment_manifest).and_return('test')
+        ssh.stub(:prepare_deployment_manifest).and_return({})
         ssh.should_receive(:fork)
         
         director.should_receive(:setup_ssh).and_return([:done, 42])
@@ -124,12 +161,13 @@ describe Bosh::Cli::Command::Base do
   
       it 'should setup ssh with gateway host' do
         Bosh::Cli::Director.should_receive(:new).and_return(director)
-        Net::SSH::Gateway.should_receive(:new).with(gw_host, ENV["USER"]).and_return(net_ssh)
+        Net::SSH::Gateway.should_receive(:new).with(gw_host, ENV['USER']).and_return(net_ssh)
         Process.stub(:waitpid)
         
         ssh.add_option(:gateway_host, gw_host)
         ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
+        ssh.stub(:job_unique_in_deployment?).and_return(false)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
@@ -156,6 +194,7 @@ describe Bosh::Cli::Command::Base do
         ssh.add_option(:gateway_user, gw_user)
         ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
+        ssh.stub(:job_unique_in_deployment?).and_return(false)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
@@ -181,6 +220,7 @@ describe Bosh::Cli::Command::Base do
         ssh.add_option(:gateway_user, gw_user)
         ssh.add_option(:default_password, 'password')
         ssh.stub(:job_exists_in_deployment?).and_return(true)
+        ssh.stub(:job_unique_in_deployment?).and_return(false)
         ssh.stub(:deployment_required)      
         ssh.stub(:get_public_key).and_return('PUBKEY')
         ssh.stub(:prepare_deployment_manifest).and_return('test')
