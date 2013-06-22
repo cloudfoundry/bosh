@@ -14,7 +14,7 @@ module Bosh::Cli::Command
       job_desc = job_description(job, index)
       op_desc = "start #{job_desc}"
       new_state = 'started'
-      completion_desc = "#{job_desc.green} has been started"
+      completion_desc = "#{job_desc.make_green} has been started"
 
       status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
       task_report(status, task_id, completion_desc)
@@ -32,12 +32,12 @@ module Bosh::Cli::Command
       job_desc = job_description(job, index)
       if hard?
         op_desc = "stop #{job_desc} and power off its VM(s)"
-        completion_desc = "#{job_desc.green} has been detached, " +
+        completion_desc = "#{job_desc.make_green} has been detached, " +
             'VM(s) powered off'
         new_state = 'detached'
       else
         op_desc = "stop #{job_desc}"
-        completion_desc = "#{job_desc.green} has been stopped, " +
+        completion_desc = "#{job_desc.make_green} has been stopped, " +
             'VM(s) still running'
         new_state = 'stopped'
       end
@@ -56,7 +56,7 @@ module Bosh::Cli::Command
       job_desc = job_description(job, index)
       op_desc = "restart #{job_desc}"
       new_state = 'restart'
-      completion_desc = "#{job_desc.green} has been restarted"
+      completion_desc = "#{job_desc.make_green} has been restarted"
 
       status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
       task_report(status, task_id, completion_desc)
@@ -72,7 +72,7 @@ module Bosh::Cli::Command
       job_desc = job_description(job, index)
       op_desc = "recreate #{job_desc}"
       new_state = 'recreate'
-      completion_desc = "#{job_desc.green} has been recreated"
+      completion_desc = "#{job_desc.make_green} has been recreated"
 
       status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
       task_report(status, task_id, completion_desc)
@@ -110,7 +110,7 @@ module Bosh::Cli::Command
     end
 
     def perform_vm_state_change(job, index, new_state, operation_desc)
-      say("You are about to #{operation_desc.green}")
+      say("You are about to #{operation_desc.make_green}")
       manifest = prepare_deployment_manifest
 
       if interactive?

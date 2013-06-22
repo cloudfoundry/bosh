@@ -42,7 +42,7 @@ module Bosh::Cli
 
     def compile
       if exists?
-        quit("You already have this version in `#{tarball_path.green}'")
+        quit("You already have this version in `#{tarball_path.make_green}'")
       end
 
       FileUtils.cp(@manifest_file,
@@ -53,7 +53,7 @@ module Bosh::Cli
       @packages.each do |package|
         say("#{package.name} (#{package.version})".ljust(30), " ")
         if remote_package_exists?(package)
-          say("SKIP".yellow)
+          say("SKIP".make_yellow)
           next
         end
         package_filename = find_package(package)
@@ -69,7 +69,7 @@ module Bosh::Cli
       @jobs.each do |job|
         say("#{job.name} (#{job.version})".ljust(30), " ")
         if remote_job_exists?(job)
-          say("SKIP".yellow)
+          say("SKIP".make_yellow)
           next
         end
         job_filename = find_job(job)
@@ -87,8 +87,8 @@ module Bosh::Cli
         unless $?.exitstatus == 0
           raise InvalidRelease, "Cannot create release tarball: #{tar_out}"
         end
-        say("Generated #{tarball_path.green}")
-        say("Release size: #{pretty_size(tarball_path).green}")
+        say("Generated #{tarball_path.make_green}")
+        say("Release size: #{pretty_size(tarball_path).make_green}")
       end
     end
 
@@ -129,7 +129,7 @@ module Bosh::Cli
       end
 
       if build_data.nil?
-        say("MISSING".red)
+        say("MISSING".make_red)
         err("Cannot find object with given checksum")
       end
 
@@ -139,13 +139,13 @@ module Bosh::Cli
       filename = index.filename(version)
 
       if File.exists?(filename)
-        say("FOUND LOCAL".green)
+        say("FOUND LOCAL".make_green)
         if Digest::SHA1.file(filename) != sha1
           err("#{desc} is corrupted locally")
         end
       elsif blobstore_id
-        say("FOUND REMOTE".yellow)
-        say("Downloading #{blobstore_id.to_s.green}...")
+        say("FOUND REMOTE".make_yellow)
+        say("Downloading #{blobstore_id.to_s.make_green}...")
         tmp_file = Tempfile.new("")
         @blobstore.get(blobstore_id, tmp_file)
         tmp_file.close

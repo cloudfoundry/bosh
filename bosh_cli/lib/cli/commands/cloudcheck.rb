@@ -43,14 +43,14 @@ module Bosh::Cli::Command
 
       verify_problems
       nl
-      say("Found #{pluralize(@problems.size, "problem")}".yellow)
+      say("Found #{pluralize(@problems.size, "problem")}".make_yellow)
       nl
 
       @resolutions = {}
 
       @problems.each_with_index do |problem, index|
         description = problem["description"].to_s.chomp(".") + "."
-        say("Problem #{index+1} of #{@problems.size}: #{description}".yellow)
+        say("Problem #{index+1} of #{@problems.size}: #{description}".make_yellow)
         next if @report_mode
         if @auto_mode
           @resolutions[problem["id"]] = {
@@ -82,7 +82,7 @@ module Bosh::Cli::Command
         exit(1)
       end
 
-      say("Cloudcheck is finished".green)
+      say("Cloudcheck is finished".make_green)
     end
 
     private
@@ -91,7 +91,7 @@ module Bosh::Cli::Command
       err("Invalid problem list format") unless @problems.kind_of?(Enumerable)
 
       if @problems.empty?
-        say("No problems found".green)
+        say("No problems found".make_green)
         exit(0)
       end
 
@@ -125,22 +125,22 @@ module Bosh::Cli::Command
             choice.to_i <= resolutions.size
           break
         end
-        say("Please enter a number between 1 and #{resolutions.size}".red)
+        say("Please enter a number between 1 and #{resolutions.size}".make_red)
       end
 
       resolutions[choice.to_i-1] # -1 accounts for 0-based indexing
     end
 
     def confirm_resolutions
-      say("Below is the list of resolutions you've provided".yellow)
-      say("Please make sure everything is fine and confirm your changes".yellow)
+      say("Below is the list of resolutions you've provided".make_yellow)
+      say("Please make sure everything is fine and confirm your changes".make_yellow)
       nl
 
       @problems.each_with_index do |problem, index|
         plan = @resolutions[problem["id"]]["plan"]
         padding = " " * ((index+1).to_s.size + 4)
         say("  #{index+1}. #{problem["description"]}")
-        say("#{padding}#{plan.to_s.yellow}")
+        say("#{padding}#{plan.to_s.make_yellow}")
         nl
       end
 

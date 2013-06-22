@@ -64,7 +64,7 @@ module Bosh::Cli
         stage_header = event["stage"]
 
         if tags.size > 0
-          stage_header += " " + tags.sort.join(", ").green
+          stage_header += " " + tags.sort.join(", ").make_green
         end
 
         unless @seen_stages.include?(stage_header)
@@ -123,7 +123,7 @@ module Bosh::Cli
       error += ": #{message}" if message
 
       # TODO: add KB article link and maybe cck reference?
-      @buffer.puts("\n" + error.red)
+      @buffer.puts("\n" + error.make_red)
     end
 
     def refresh
@@ -178,12 +178,12 @@ module Bosh::Cli
 
       case state.to_s
       when "done"
-        progress_bar.title = "Done".green
+        progress_bar.title = "Done".make_green
         progress_bar.finished_steps = progress_bar.total
       when "error"
-        progress_bar.title = "Error".red
+        progress_bar.title = "Error".make_red
       else
-        progress_bar.title = "Not done".yellow
+        progress_bar.title = "Not done".make_yellow
       end
 
       progress_bar.bar_visible = false
@@ -273,10 +273,10 @@ module Bosh::Cli
 
         if event["state"] == "failed"
           # TODO: truncate?
-          status = [task_name.red, event_data["error"]].compact.join(": ")
+          status = [task_name.make_red, event_data["error"]].compact.join(": ")
           @stage_has_error = true
         else
-          status = task_name.yellow
+          status = task_name.make_yellow
         end
         @buffer.puts("  #{status} (#{format_time(task_time)})")
       when "in_progress"

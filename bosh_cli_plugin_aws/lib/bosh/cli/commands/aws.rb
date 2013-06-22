@@ -209,7 +209,7 @@ module Bosh::Cli::Command
         true # retryable block must yield true if we only want to retry on Exceptions
       end
 
-      say "deleted VPC and all dependencies".green
+      say "deleted VPC and all dependencies".make_green
     end
 
     def delete_all_vpcs(config_file)
@@ -220,7 +220,7 @@ module Bosh::Cli::Command
       dhcp_options = []
 
       unless vpc_ids.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         say("VPCs:\n\t#{vpc_ids.join("\n\t")}")
 
         if confirmed?("Are you sure you want to delete all VPCs?")
@@ -273,7 +273,7 @@ module Bosh::Cli::Command
       bucket_names = s3.bucket_names
 
       unless bucket_names.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         say("Buckets:\n\t#{bucket_names.join("\n\t")}")
 
         s3.empty if confirmed?("Are you sure you want to empty and delete all buckets?")
@@ -290,13 +290,13 @@ module Bosh::Cli::Command
 
       formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
       unless formatted_names.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         say("Instances:\n\t#{formatted_names.join("\n\t")}")
 
         if confirmed?("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?")
           say "Terminating instances and waiting for them to die..."
           if !ec2.terminate_instances
-            say "Warning: instances did not terminate yet after 100 retries".red
+            say "Warning: instances did not terminate yet after 100 retries".make_red
           end
         end
       else
@@ -334,7 +334,7 @@ module Bosh::Cli::Command
 
       formatted_names = rds.database_names.map { |instance, db| "#{instance}\t(database_name: #{db})" }
 
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
       say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
       if confirmed?("Are you sure you want to delete all databases?")
@@ -368,7 +368,7 @@ module Bosh::Cli::Command
       check_volume_count(config)
 
       if ec2.volume_count > 0
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         say("It will delete #{ec2.volume_count} EBS volume(s)")
 
         ec2.delete_volumes if confirmed?("Are you sure you want to delete all unattached EBS volumes?")
@@ -395,7 +395,7 @@ module Bosh::Cli::Command
       config = load_config(config_file)
       route53 = Bosh::Aws::Route53.new(config["aws"])
 
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
 
       omit_types = options[:omit_types] || %w[NS SOA]
       if omit_types.empty?

@@ -25,9 +25,9 @@ module Bosh::Cli::Command
       nl
 
       if stemcell.valid?
-        say("`#{tarball_path}' is a valid stemcell".green)
+        say("`#{tarball_path}' is a valid stemcell".make_green)
       else
-        say("Validation errors:".red)
+        say("Validation errors:".make_red)
         stemcell.errors.each do |error|
           say("- %s" % [error])
         end
@@ -168,7 +168,7 @@ module Bosh::Cli::Command
         err("The downloaded file sha1 `#{file_sha1}' does not match the " +
             "expected sha1 `#{sha1}'")
       else
-        say("Download complete".green)
+        say("Download complete".make_green)
       end
     end
 
@@ -186,10 +186,10 @@ module Bosh::Cli::Command
         err("Stemcell `#{name}/#{version}' does not exist")
       end
 
-      say("You are going to delete stemcell `#{name}/#{version}'".red)
+      say("You are going to delete stemcell `#{name}/#{version}'".make_red)
 
       unless confirmed?
-        say("Canceled deleting stemcell".green)
+        say("Canceled deleting stemcell".make_green)
         return
       end
 

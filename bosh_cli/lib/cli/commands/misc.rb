@@ -15,13 +15,13 @@ module Bosh::Cli::Command
     usage "status"
     desc  "Show current status (current target, user, deployment info etc)"
     def status
-      say("Config".green)
+      say("Config".make_green)
       print_value("", config.filename)
 
       nl
-      say("Director".green)
+      say("Director".make_green)
       if target.nil?
-        say("  not set".yellow)
+        say("  not set".make_yellow)
       else
         begin
           timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
@@ -44,24 +44,24 @@ module Bosh::Cli::Command
             end
           end
         rescue TimeoutError
-          say("  timed out fetching director status".red)
+          say("  timed out fetching director status".make_red)
         rescue => e
-          say("  error fetching director status: #{e.message}".red)
+          say("  error fetching director status: #{e.message}".make_red)
         end
       end
 
       nl
-      say("Deployment".green)
+      say("Deployment".make_green)
 
       if deployment
         print_value("Manifest", deployment)
       else
-        say("  not set".yellow)
+        say("  not set".make_yellow)
       end
 
       if in_release_dir?
         nl
-        say("Release".green)
+        say("Release".make_green)
 
         dev_version = Bosh::Cli::VersionsIndex.new(
           File.join(work_dir, "dev_releases")).latest_version
@@ -112,12 +112,12 @@ module Bosh::Cli::Command
       director.password = password
 
       if director.authenticated?
-        say("Logged in as `#{username}'".green)
+        say("Logged in as `#{username}'".make_green)
         logged_in = true
       elsif non_interactive?
-        err("Cannot log in as `#{username}'".red)
+        err("Cannot log in as `#{username}'".make_red)
       else
-        say("Cannot log in as `#{username}', please try again".red)
+        say("Cannot log in as `#{username}', please try again".make_red)
         login(username)
       end
 
@@ -134,7 +134,7 @@ module Bosh::Cli::Command
       target_required
       config.set_credentials(target, nil, nil)
       config.save
-      say("You are no longer logged in to `#{target}'".yellow)
+      say("You are no longer logged in to `#{target}'".make_yellow)
     end
 
     # bosh purge
@@ -145,7 +145,7 @@ module Bosh::Cli::Command
         err("Cache directory overriden, please remove manually")
       else
         FileUtils.rm_rf(cache.cache_dir)
-        say("Purged cache".green)
+        say("Purged cache".make_green)
       end
     end
 
@@ -170,7 +170,7 @@ module Bosh::Cli::Command
 
       director_url = normalize_url(director_url)
       if target && director_url == normalize_url(target)
-        say("Target already set to `#{target_name.green}'")
+        say("Target already set to `#{target_name.make_green}'")
         return
       end
 
@@ -199,7 +199,7 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to `#{target_name.green}'")
+      say("Target set to `#{target_name.make_green}'")
 
       if interactive? && !logged_in?
         redirect("login")
@@ -231,7 +231,7 @@ module Bosh::Cli::Command
     def set_alias(name, command)
       config.set_alias(:cli, name, command.to_s.strip)
       config.save
-      say("Alias `#{name.green}' created for command `#{command.green}'")
+      say("Alias `#{name.make_green}' created for command `#{command.make_green}'")
     end
 
     # bosh aliases
@@ -257,9 +257,9 @@ module Bosh::Cli::Command
 
     def print_value(label, value, if_none = nil)
       if value
-        message = label.ljust(10) + ' ' + value.yellow
+        message = label.ljust(10) + ' ' + value.make_yellow
       else
-        message = label.ljust(10) + ' ' + (if_none || "n/a").yellow
+        message = label.ljust(10) + ' ' + (if_none || "n/a").make_yellow
       end
       say(message.indent(2))
     end
@@ -272,7 +272,7 @@ module Bosh::Cli::Command
           else
             name = config.target
           end
-          say("Current target is #{name.green}")
+          say("Current target is #{name.make_green}")
         else
           say(config.target)
         end
@@ -312,7 +312,7 @@ module Bosh::Cli::Command
             t << [name, dev_version.gsub(/\-dev$/, "").rjust(8),
                   final_version.to_s.rjust(8)]
           rescue Bosh::Cli::InvalidIndex => e
-            say("Problem with #{entity} index for `#{name}': #{e.message}".red)
+            say("Problem with #{entity} index for `#{name}': #{e.message}".make_red)
           end
         else
           say("Spec file `#{spec_file}' is invalid")
@@ -336,7 +336,7 @@ module Bosh::Cli::Command
           print_value(feature, format_feature_status(status, extras))
         end
       else
-        say("Unknown feature list: #{features.inspect}".red)
+        say("Unknown feature list: #{features.inspect}".make_red)
       end
     end
 

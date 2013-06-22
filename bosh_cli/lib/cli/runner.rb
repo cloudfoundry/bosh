@@ -59,7 +59,7 @@ module Bosh::Cli
         exit_code = command.run(@args, @options)
         exit(exit_code)
       rescue OptionParser::ParseError => e
-        say(e.message.red)
+        say(e.message.make_red)
         say("Usage: bosh #{command.usage_with_params.columnize(60, 7)}")
         if command.has_options?
           say(command.options_summary.indent(7))
@@ -67,11 +67,11 @@ module Bosh::Cli
       end
 
     rescue OptionParser::ParseError => e
-      say(e.message.red)
+      say(e.message.make_red)
       say(@option_parser.to_s)
       exit(1)
     rescue Bosh::Cli::CliError => e
-      say(e.message.red)
+      say(e.message.make_red)
       exit(e.exit_code)
     end
 
@@ -172,13 +172,13 @@ module Bosh::Cli
         begin
           next unless require_plugin plugin_path
         rescue Exception => e
-          err("Failed to load plugin #{plugin_path}: #{e.message}".red)
+          err("Failed to load plugin #{plugin_path}: #{e.message}".make_red)
         end
 
         if Config.commands =~ original_commands
           say(("File #{plugin_path} has been loaded as plugin but it didn't " +
               "contain any commands.\nMake sure this plugin is updated to be " +
-              "compatible with BOSH CLI 1.0.").columnize(80).yellow)
+              "compatible with BOSH CLI 1.0.").columnize(80).make_yellow)
         end
       end
     end
@@ -188,9 +188,9 @@ module Bosh::Cli
         spec.matches_for_glob(plugins_glob)
       }.flatten.uniq
     rescue
-      err("Cannot load plugins, ".yellow +
-              "please run `gem update --system' to ".yellow +
-              "update your RubyGems".yellow)
+      err("Cannot load plugins, ".make_yellow +
+              "please run `gem update --system' to ".make_yellow +
+              "update your RubyGems".make_yellow)
     end
 
     def require_plugin(file)

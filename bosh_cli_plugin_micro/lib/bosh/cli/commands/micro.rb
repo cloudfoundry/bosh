@@ -63,16 +63,16 @@ module Bosh::Cli::Command
 
       if old_director_ip != ip
         set_target(ip)
-        say "#{"WARNING!".red} Your target has been changed to `#{target.red}'!"
+        say "#{"WARNING!".make_red} Your target has been changed to `#{target.make_red}'!"
       end
 
-      say "Deployment set to '#{manifest_filename.green}'"
+      say "Deployment set to '#{manifest_filename.make_green}'"
       config.set_deployment(manifest_filename)
       config.save
     end
 
     def show_current
-      say(deployment ? "Current deployment is '#{deployment.green}'" : "Deployment not set")
+      say(deployment ? "Current deployment is '#{deployment.make_green}'" : "Deployment not set")
     end
 
     usage "micro status"
@@ -82,7 +82,7 @@ module Bosh::Cli::Command
       stemcell_name = deployer_state(:stemcell_name)
       vm_cid = deployer_state(:vm_cid)
       disk_cid = deployer_state(:disk_cid)
-      deployment = config.deployment ? config.deployment.green : "not set".red
+      deployment = config.deployment ? config.deployment.make_green : "not set".make_red
 
       say("Stemcell CID".ljust(15) + stemcell_cid)
       say("Stemcell name".ljust(15) + stemcell_name)
@@ -93,7 +93,7 @@ module Bosh::Cli::Command
 
       update_target
 
-      target_name = target ? target.green : "not set".red
+      target_name = target ? target.make_green : "not set".make_red
       say("Target".ljust(15) + target_name)
     end
 
@@ -123,7 +123,7 @@ module Bosh::Cli::Command
 
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
-      desc = "`#{rel_path.green}' to `#{target_name.green}'"
+      desc = "`#{rel_path.make_green}' to `#{target_name.make_green}'"
 
       if update
         unless deployer.exists?
@@ -140,7 +140,7 @@ module Bosh::Cli::Command
 
         # make sure the user knows a persistent disk is required
         unless dig_hash(manifest, "resources", "persistent_disk")
-          quit("No persistent disk configured in #{MICRO_BOSH_YAML}".red)
+          quit("No persistent disk configured in #{MICRO_BOSH_YAML}".make_red)
         end
 
         confirmation = "Deploying new"
@@ -176,7 +176,7 @@ module Bosh::Cli::Command
 
       update_target
 
-      say("Deployed #{desc}, took #{format_time(duration).green} to complete")
+      say("Deployed #{desc}, took #{format_time(duration).make_green} to complete")
     end
 
     usage  "micro delete"
@@ -189,10 +189,10 @@ module Bosh::Cli::Command
       name = deployer.state.name
 
       say "\nYou are going to delete micro BOSH deployment `#{name}'.\n\n" \
-      "THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red
+      "THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red
 
       unless confirmed?
-        say "Canceled deleting deployment".green
+        say "Canceled deleting deployment".make_green
         return
       end
 
@@ -208,7 +208,7 @@ module Bosh::Cli::Command
 
       duration = renderer.duration || (Time.now - start_time)
 
-      say("Deleted deployment '#{name}', took #{format_time(duration).green} to complete")
+      say("Deleted deployment '#{name}', took #{format_time(duration).make_green} to complete")
     end
 
     usage "micro deployments"
@@ -352,9 +352,9 @@ module Bosh::Cli::Command
 
     def deployer_state(column)
       if value = deployer.state.send(column)
-        value.green
+        value.make_green
       else
-        "n/a".red
+        "n/a".make_red
       end
     end
 

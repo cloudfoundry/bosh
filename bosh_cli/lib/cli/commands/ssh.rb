@@ -204,7 +204,7 @@ module Bosh::Cli::Command
               file = File.basename(args[0])
               path = "#{args[1]}/#{file}.#{job}.#{session['index']}"
               ssh.scp.download!(args[0], path)
-              say("Downloaded file to #{path}".green)
+              say("Downloaded file to #{path}".make_green)
             else
               err("Unknown operation #{operation}")
             end

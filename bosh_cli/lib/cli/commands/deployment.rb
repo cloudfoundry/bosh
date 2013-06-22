@@ -59,11 +59,11 @@ module Bosh::Cli::Command
         config.target_name = status["name"]
         config.target_version = status["version"]
         config.target_uuid = status["uuid"]
-        say("#{"WARNING!".red} Your target has been " +
-            "changed to `#{target.red}'!")
+        say("#{"WARNING!".make_red} Your target has been " +
+            "changed to `#{target.make_red}'!")
       end
 
-      say("Deployment set to `#{manifest_filename.green}'")
+      say("Deployment set to `#{manifest_filename.make_green}'")
       config.set_deployment(manifest_filename)
       config.save
     end
@@ -90,10 +90,10 @@ module Bosh::Cli::Command
 
       if interactive?
         inspect_deployment_changes(Psych.load(manifest_yaml))
-        say("Please review all changes carefully".yellow)
+        say("Please review all changes carefully".make_yellow)
       end
 
-      desc = "`#{File.basename(deployment).green}' to `#{target_name.green}'"
+      desc = "`#{File.basename(deployment).make_green}' to `#{target_name.make_green}'"
 
       unless confirmed?("Deploying #{desc}")
         cancel_deployment
@@ -112,12 +112,12 @@ module Bosh::Cli::Command
       auth_required
       force = !!options[:force]
 
-      say("\nYou are going to delete deployment `#{name}'.".red)
+      say("\nYou are going to delete deployment `#{name}'.".make_red)
       nl
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
 
       unless confirmed?
-        say("Canceled deleting deployment".green)
+        say("Canceled deleting deployment".make_green)
         return
       end
 
@@ -143,7 +143,7 @@ module Bosh::Cli::Command
       end
       if release_name == release.dev_name || release_name == release.final_name
         nl
-        say("Analyzing release directory...".yellow)
+        say("Analyzing release directory...".make_yellow)
       else
         err("This release was not found in deployment manifest")
       end
@@ -169,7 +169,7 @@ module Bosh::Cli::Command
 
       unless validator.jobs_without_properties.empty?
         nl
-        say("Legacy jobs (no properties defined): ".yellow)
+        say("Legacy jobs (no properties defined): ".make_yellow)
         validator.jobs_without_properties.sort { |a, b|
           a.name <=> b.name
         }.each do |job|
@@ -179,17 +179,17 @@ module Bosh::Cli::Command
 
       if validator.template_errors.empty?
         nl
-        say("No template errors found".green)
+        say("No template errors found".make_green)
       else
         nl
-        say("Template errors: ".yellow)
+        say("Template errors: ".make_yellow)
         validator.template_errors.each do |error|
           nl
           path = Pathname.new(error.template_path)
           rel_path = path.relative_path_from(Pathname.new(release.dir))
 
           say(" - #{rel_path}:")
-          say("     line #{error.line}:".yellow + " #{error.exception.to_s}")
+          say("     line #{error.line}:".make_yellow + " #{error.exception.to_s}")
         end
       end
     end
@@ -242,7 +242,7 @@ module Bosh::Cli::Command
         File.open(save_as, "w") do |f|
           f.write(deployment["manifest"])
         end
-        say("Deployment manifest saved to `#{save_as}'".green)
+        say("Deployment manifest saved to `#{save_as}'".make_green)
       else
         say(deployment["manifest"])
       end
@@ -252,7 +252,7 @@ module Bosh::Cli::Command
     def show_current
       if deployment
         if interactive?
-          say("Current deployment is `#{deployment.green}'")
+          say("Current deployment is `#{deployment.make_green}'")
         else
           say(deployment)
         end
