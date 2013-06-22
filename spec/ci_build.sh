@@ -19,8 +19,4 @@ find . -name *.gemspec | cut -d '/' -f2 | xargs bundle update
 
 bundle check || bundle install --without development
 
-if [ -n "$TRACKER_PROJECT_ID" ] && [ -n "$TRACKER_TOKEN" ] ; then
-    bundle exec rake $@ && bundle list | grep "tracker-git" > /dev/null && bundle exec tracker --note-delivery
-else
-    bundle exec rake $@
-fi
+bundle exec rake $@
