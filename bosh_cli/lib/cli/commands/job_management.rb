@@ -72,32 +72,32 @@ module Bosh::Cli::Command
       when :start
         op_desc = "start #{job_desc}"
         new_state = "started"
-        completion_desc = "#{job_desc.green} has been started"
+        completion_desc = "#{job_desc.make_green} has been started"
       when :stop
         if hard
           op_desc = "stop #{job_desc} and power off its VM(s)"
-          completion_desc = "#{job_desc.green} has been stopped, " +
+          completion_desc = "#{job_desc.make_green} has been stopped, " +
                             "VM(s) powered off"
           new_state = "detached"
         else
           op_desc = "stop #{job_desc}"
-          completion_desc = "#{job_desc.green} has been stopped, " +
+          completion_desc = "#{job_desc.make_green} has been stopped, " +
                             "VM(s) still running"
           new_state = "stopped"
         end
       when :restart
         op_desc = "restart #{job_desc}"
         new_state = "restart"
-        completion_desc = "#{job_desc.green} has been restarted"
+        completion_desc = "#{job_desc.make_green} has been restarted"
       when :recreate
         op_desc = "recreate #{job_desc}"
         new_state = "recreate"
-        completion_desc = "#{job_desc.green} has been recreated"
+        completion_desc = "#{job_desc.make_green} has been recreated"
       else
         err("Unknown operation: `#{operation}'")
       end
 
-      say("You are about to #{op_desc.green}")
+      say("You are about to #{op_desc.make_green}")
 
       if interactive?
         other_changes_present = inspect_deployment_changes(

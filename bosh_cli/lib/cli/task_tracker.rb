@@ -48,7 +48,7 @@ module Bosh
       def track
         nl
         @renderer.time_adjustment = @director.get_time_difference
-        say("Director task #{@task_id.to_s.yellow}")
+        say("Director task #{@task_id.to_s.make_yellow}")
 
         cached_output = get_cached_task_output
         if cached_output
@@ -99,8 +99,8 @@ module Bosh
           self.class.new(@director, @task_id,
                          @options.merge(:log_type => "debug")).track
         else
-          say("Please use 'bosh task #{@task_id}' command ".red +
-                "to see the debug log".red)
+          say("Please use 'bosh task #{@task_id}' command ".make_red +
+                "to see the debug log".make_red)
         end
       end
 
@@ -126,12 +126,12 @@ module Bosh
         @renderer.finish(task_status)
 
         nl
-        say("Task #{@task_id} #{task_status.to_s.yellow}")
+        say("Task #{@task_id} #{task_status.to_s.make_yellow}")
 
         if task_status == :done && @renderer.duration_known?
           say("Started\t\t#{@renderer.started_at.utc.to_s}")
           say("Finished\t#{@renderer.finished_at.utc.to_s}")
-          say("Duration\t#{format_time(@renderer.duration).yellow}")
+          say("Duration\t#{format_time(@renderer.duration).make_yellow}")
         end
       end
 

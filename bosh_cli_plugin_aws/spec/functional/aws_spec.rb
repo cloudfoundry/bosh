@@ -371,7 +371,7 @@ describe Bosh::Cli::Command::AWS do
         Bosh::Aws::S3.stub(:new).and_return(fake_s3)
         fake_s3.stub(:bucket_names).and_return(["buckets of fun", "barrel of monkeys"])
 
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).with("Buckets:\n\tbuckets of fun\n\tbarrel of monkeys")
         aws.should_receive(:confirmed?).with("Are you sure you want to empty and delete all buckets?").and_return(false)
 
@@ -457,7 +457,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(2)
         fake_ec2.stub(:instance_names).and_return({"I12345" => "instance_1", "I67890" => "instance_2"})
 
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
         aws.should_receive(:confirmed?).
             with("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?").
@@ -536,7 +536,7 @@ describe Bosh::Cli::Command::AWS do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:volume_count).and_return(2)
 
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).with("It will delete 2 EBS volume(s)")
         aws.should_receive(:confirmed?).
             with("Are you sure you want to delete all unattached EBS volumes?").
@@ -616,7 +616,7 @@ describe Bosh::Cli::Command::AWS do
 
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
 
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).
             with("Database Instances:\n\tinstance1\t(database_name: bosh_db)\n\tinstance2\t(database_name: important_db)")
         aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").

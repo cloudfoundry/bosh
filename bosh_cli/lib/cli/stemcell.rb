@@ -90,8 +90,8 @@ module Bosh::Cli
       say("\nStemcell info")
       say("-------------")
 
-      say("Name:    %s" % [manifest["name"] || "missing".red])
-      say("Version: %s" % [manifest["version"] || "missing".red])
+      say("Name:    %s" % [manifest["name"] || "missing".make_red])
+      say("Version: %s" % [manifest["version"] || "missing".make_red])
     end
   end
 end

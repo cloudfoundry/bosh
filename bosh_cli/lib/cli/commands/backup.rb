@@ -11,7 +11,7 @@ module Bosh::Cli::Command
       if status == :done
         tmp_path = director.fetch_backup
         FileUtils.mv(tmp_path, path)
-        say("Backup of BOSH director was put in `#{path.yellow}'.")
+        say("Backup of BOSH director was put in `#{path.make_yellow}'.")
       else
         [status, task_id]
       end

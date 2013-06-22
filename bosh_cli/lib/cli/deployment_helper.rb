@@ -119,7 +119,7 @@ module Bosh::Cli
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
       @_diff_key_visited = { "name" => 1, "director_uuid" => 1 }
 
-      say("Detecting changes in deployment...".green)
+      say("Detecting changes in deployment...".make_green)
       nl
 
       if !diff.changed? && !show_empty_changeset
@@ -170,8 +170,8 @@ module Bosh::Cli
       end
 
       if old_stemcells.size != new_stemcells.size
-        say("Stemcell update seems to be inconsistent with current ".red +
-            "deployment. Please carefully review changes above.".red)
+        say("Stemcell update seems to be inconsistent with current ".make_red +
+            "deployment. Please carefully review changes above.".make_red)
         unless confirmed?("Are you sure this configuration is correct?")
           cancel_deployment
         end
@@ -195,7 +195,7 @@ module Bosh::Cli
       diff.changed?
     rescue Bosh::Cli::ResourceNotFound
       say("Cannot get current deployment information from director, " +
-          "possibly a new deployment".red)
+          "possibly a new deployment".make_red)
       true
     end
 
@@ -252,7 +252,7 @@ module Bosh::Cli
     end
 
     def cancel_deployment
-      quit("Deployment canceled".red)
+      quit("Deployment canceled".make_red)
     end
 
     def manifest_error(err)
@@ -271,7 +271,7 @@ module Bosh::Cli
     def print_summary(diff, key, title = nil)
       title ||= key.to_s.gsub(/[-_]/, " ").capitalize
 
-      say(title.green)
+      say(title.make_green)
       summary = diff[key].summary
       if summary.empty?
         say("No changes")
@@ -333,14 +333,14 @@ module Bosh::Cli
 
     def warn_about_release_changes(release_diff)
       if release_diff[:name].changed?
-        say("Release name has changed: %s -> %s".red % [
+        say("Release name has changed: %s -> %s".make_red % [
           release_diff[:name].old, release_diff[:name].new])
         unless confirmed?("This is very serious and potentially destructive " +
                             "change. ARE YOU SURE YOU WANT TO DO IT?")
           cancel_deployment
         end
       elsif release_diff[:version].changed?
-        say("Release version has changed: %s -> %s".yellow % [
+        say("Release version has changed: %s -> %s".make_yellow % [
           release_diff[:version].old, release_diff[:version].new])
         unless confirmed?("Are you sure you want to deploy this version?")
           cancel_deployment

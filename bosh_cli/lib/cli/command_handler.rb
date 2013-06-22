@@ -97,7 +97,7 @@ module Bosh::Cli
         desc = desc.select { |word| word.is_a?(String) }
         column_width = terminal_width - padding - margin
 
-        result << name.ljust(margin).yellow + " " +
+        result << name.ljust(margin).make_yellow + " " +
           desc.join(" ").columnize(
             column_width, [margin + 1, name.size + 1].max)
       end

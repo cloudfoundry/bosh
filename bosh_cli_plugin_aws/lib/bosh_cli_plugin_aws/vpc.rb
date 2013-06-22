@@ -158,7 +158,7 @@ module Bosh
 
         new_dhcp_options = @ec2.dhcp_options.create(options)
         new_dhcp_options.associate(vpc_id)
-        #say "\tcreated and associated DHCP options #{new_dhcp_options.id}".green
+        #say "\tcreated and associated DHCP options #{new_dhcp_options.id}".make_green
 
         default_dhcp_opts.delete
       end
@@ -173,7 +173,7 @@ module Bosh
         @aws_vpc.security_groups.each { |group| group.delete if group.name == name }
         true
       rescue ::AWS::EC2::Errors::DependencyViolation => e
-        say "unable to delete security group: #{name}: #{e.message}".yellow
+        say "unable to delete security group: #{name}: #{e.message}".make_yellow
         false
       end
     end
