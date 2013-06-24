@@ -10,6 +10,8 @@ describe Bosh::Cli::Command::JobManagement do
 
   before(:each) do
     director.stub(:change_job_state)
+    command.stub(target: 'http://bosh.example.com')
+    command.stub(logged_in?: true)
     command.stub(inspect_deployment_changes: false)
     command.stub(:nl)
     command.stub(confirmed?: true)

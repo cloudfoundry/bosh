@@ -22,6 +22,8 @@ describe Bosh::Cli::Command::LogManagement do
   end
 
   before do
+    command.stub(target: 'http://bosh.example.com')
+    command.stub(logged_in?: true)
     command.stub(director: director)
     command.stub(prepare_deployment_manifest: manifest)
     command.stub(:say)
