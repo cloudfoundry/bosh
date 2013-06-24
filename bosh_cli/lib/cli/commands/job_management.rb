@@ -10,6 +10,7 @@ module Bosh::Cli::Command
     option '--force', FORCE
     def start_job(job, index = nil)
       check_arguments(:start, job)
+      index = valid_index_for(job, index)
 
       job_desc = job_description(job, index)
       op_desc = "start #{job_desc}"
@@ -28,6 +29,7 @@ module Bosh::Cli::Command
     option '--force', FORCE
     def stop_job(job, index = nil)
       check_arguments(:stop, job)
+      index = valid_index_for(job, index)
 
       job_desc = job_description(job, index)
       if hard?
@@ -52,6 +54,7 @@ module Bosh::Cli::Command
     option '--force', FORCE
     def restart_job(job, index = nil)
       check_arguments(:restart, job)
+      index = valid_index_for(job, index)
 
       job_desc = job_description(job, index)
       op_desc = "restart #{job_desc}"
@@ -68,6 +71,7 @@ module Bosh::Cli::Command
     option '--force', FORCE
     def recreate_job(job, index = nil)
       check_arguments(:recreate, job)
+      index = valid_index_for(job, index)
 
       job_desc = job_description(job, index)
       op_desc = "recreate #{job_desc}"

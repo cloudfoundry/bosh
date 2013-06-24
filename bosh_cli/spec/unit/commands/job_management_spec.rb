@@ -18,6 +18,18 @@ describe Bosh::Cli::Command::JobManagement do
     command.stub(:prepare_deployment_manifest).with(yaml: true).and_return(manifest_yaml)
   end
 
+  let(:deployment_manifest) do
+    {
+        'name' => deployment,
+        'jobs' => [
+            {
+                'name' => 'dea',
+                'instances' => instance_count
+            }
+        ]
+    }
+  end
+
   shared_examples_for 'a command which modifies the vm state' do |options|
     method_name = options.fetch(:with) { raise ArgumentError.new('You need to specify which method the command' +
                                                                      ' uses to modify the VM state. (:start_job)') }
@@ -34,7 +46,7 @@ describe Bosh::Cli::Command::JobManagement do
 
     it 'complains if the job does not exist' do
       expect {
-        command.public_send(method_name, 'some_fake_job', '1')
+        command.public_send(method_name, 'some_fake_job', '0')
       }.to raise_error(Bosh::Cli::CliError, "Job `some_fake_job' doesn't exist")
     end
 
@@ -43,7 +55,7 @@ describe Bosh::Cli::Command::JobManagement do
       command.options[:soft] = true
 
       expect {
-        command.public_send(method_name, 'dea', '1')
+        command.public_send(method_name, 'dea', '0')
       }.to raise_error(Bosh::Cli::CliError, 'Cannot handle both --hard and --soft options, please choose one')
     end
 
@@ -53,25 +65,31 @@ describe Bosh::Cli::Command::JobManagement do
       next if method_name == :stop_job
 
       expect {
-        command.public_send(method_name, 'dea', '1')
+        command.public_send(method_name, 'dea', '0')
       }.to raise_error(Bosh::Cli::CliError, "--hard and --soft options only make sense for `stop' operation")
     end
 
     context 'if an index is supplied' do
       it 'tells the user what it is about to do' do
-        command.should_receive(:say).with("You are about to #{verb} dea/1#{operation_description_extra}")
-        command.should_receive(:say).with("Performing `#{verb} dea/1#{operation_description_extra}'...")
+        command.should_receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
+        command.should_receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
 
-        command.public_send(method_name, 'dea', '1')
+        command.public_send(method_name, 'dea', '0')
       end
     end
 
     context 'if an index is not supplied' do
       it 'tells the user what it is about to do' do
-        command.should_receive(:say).with("You are about to #{verb} dea#{operation_description_extra}")
-        command.should_receive(:say).with("Performing `#{verb} dea#{operation_description_extra}'...")
 
-        command.public_send(method_name, 'dea')
+        if instance_count == 1
+          command.should_receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
+          command.should_receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
+          command.public_send(method_name, 'dea')
+        else
+          expect {
+            command.public_send(method_name, 'dea')
+          }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index. There is more than one instance of this job type.')
+        end
       end
     end
 
@@ -88,7 +106,7 @@ describe Bosh::Cli::Command::JobManagement do
         context 'when we do not force the command' do
           it 'refuses if there are job changes' do
             expect {
-              command.public_send(method_name, 'dea', '4')
+              command.public_send(method_name, 'dea', '0')
             }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment " +
                 "changes are present. Please use `--force' to override.")
           end
@@ -108,37 +126,54 @@ describe Bosh::Cli::Command::JobManagement do
 
           it 'cancels the deployment' do
             expect {
-              command.public_send(method_name, 'dea', '4')
+              command.public_send(method_name, 'dea', '0')
             }.to raise_error(Bosh::Cli::GracefulExit, 'Deployment canceled')
           end
         end
 
-        it 'changes the job state' do
-          director.should_receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '4', new_state)
-          command.public_send(method_name, 'dea', '4')
+        context 'if an index is supplied' do
+          it 'changes the job state' do
+            director.should_receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state)
+            command.public_send(method_name, 'dea', '0')
+          end
+
+          it 'reports back on the task report' do
+            director.stub(change_job_state: %w(done 23))
+            command.should_receive(:task_report).with('done', '23', "dea/0 has been #{past_verb}#{extra_task_report_info}")
+            command.public_send(method_name, 'dea', '0')
+          end
         end
 
-        it 'reports back on the task report' do
-          director.stub(change_job_state: %w(done 23))
-          command.should_receive(:task_report).with('done', '23', "dea/4 has been #{past_verb}#{extra_task_report_info}")
-          command.public_send(method_name, 'dea', '4')
+        context 'if an index is not supplied' do
+          it 'changes the job state' do
+            if instance_count == 1
+              director.should_receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state)
+              command.public_send(method_name, 'dea')
+            else
+              expect {
+                command.public_send(method_name, 'dea')
+              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index. There is more than one instance of this job type.')
+            end
+          end
+
+          it 'reports back on the task report' do
+            if instance_count == 1
+              director.stub(change_job_state: %w(done 23))
+              command.should_receive(:task_report).with('done', '23', "dea/0 has been #{past_verb}#{extra_task_report_info}")
+              command.public_send(method_name, 'dea')
+            else
+              expect {
+                command.public_send(method_name, 'dea')
+              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index. There is more than one instance of this job type.')
+            end
+          end
         end
       end
     end
   end
 
   context 'if there is only one job of the specified type in the deployment' do
-    let(:deployment_manifest) do
-      {
-          'name' => deployment,
-          'jobs' => [
-              {
-                  'name' => 'dea',
-                  'instances' => 1
-              }
-          ]
-      }
-    end
+    let(:instance_count) { 1 }
 
     describe 'starting a job' do
       it_behaves_like 'a command which modifies the vm state', with: :start_job,
@@ -177,17 +212,7 @@ describe Bosh::Cli::Command::JobManagement do
   end
 
   context 'if there are many jobs of the specified type in the deployment' do
-    let(:deployment_manifest) do
-      {
-          'name' => deployment,
-          'jobs' => [
-              {
-                  'name' => 'dea',
-                  'instances' => 100
-              }
-          ]
-      }
-    end
+    let(:instance_count) { 100 }
 
     describe 'starting a job' do
       it_behaves_like 'a command which modifies the vm state', with: :start_job,
