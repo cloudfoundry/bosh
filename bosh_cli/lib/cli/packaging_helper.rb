@@ -65,7 +65,7 @@ module Bosh::Cli
       item = @final_index[fingerprint]
 
       if item.nil?
-        say("NOT FOUND".red)
+        say("NOT FOUND".make_red)
         return nil
       end
 
@@ -73,7 +73,7 @@ module Bosh::Cli
       version      = item["version"]
 
       if blobstore_id.nil?
-        say("No blobstore id".red)
+        say("No blobstore id".make_red)
         return nil
       end
 
@@ -81,18 +81,18 @@ module Bosh::Cli
       need_fetch = true
 
       if File.exists?(filename)
-        say("FOUND LOCAL".green)
+        say("FOUND LOCAL".make_green)
         if file_checksum(filename) == item["sha1"]
           @tarball_path = filename
           need_fetch = false
         else
-          say("LOCAL CHECKSUM MISMATCH".red)
+          say("LOCAL CHECKSUM MISMATCH".make_red)
           need_fetch = true
         end
       end
 
       if need_fetch
-        say("Downloading `#{name} (#{version})'...".green)
+        say("Downloading `#{name} (#{version})'...".make_green)
         tmp_file = File.open(File.join(Dir.mktmpdir, name), "w")
         @blobstore.get(blobstore_id, tmp_file)
         tmp_file.close
@@ -121,7 +121,7 @@ module Bosh::Cli
       item = @dev_index[fingerprint]
 
       if item.nil?
-        say("NOT FOUND".red)
+        say("NOT FOUND".make_red)
         return nil
       end
 
@@ -129,9 +129,9 @@ module Bosh::Cli
       filename = @dev_index.filename(version)
 
       if File.exists?(filename)
-        say("FOUND LOCAL".green)
+        say("FOUND LOCAL".make_green)
       else
-        say("TARBALL MISSING".red)
+        say("TARBALL MISSING".make_red)
         return nil
       end
 
@@ -140,7 +140,7 @@ module Bosh::Cli
         @version = version
         @used_dev_version = true
       else
-        say("`#{name} (#{version})' tarball corrupted".red)
+        say("`#{name} (#{version})' tarball corrupted".make_red)
         return nil
       end
     end
@@ -182,7 +182,7 @@ module Bosh::Cli
 
       @version = version
       @tarball_generated = true
-      say("Generated version #{version}".green)
+      say("Generated version #{version}".make_green)
       true
     end
 

@@ -15,11 +15,11 @@ module Bosh::Cli::Command
       manifest = Psych.load(manifest_yaml)
 
       force = options[:force]
-      say("You are about to rename `#{old_name.green}' to `#{new_name.green}'")
+      say("You are about to rename `#{old_name.make_green}' to `#{new_name.make_green}'")
 
       unless confirmed?
         nl
-        say("Job rename canceled".green)
+        say("Job rename canceled".make_green)
         exit(0)
       end
 

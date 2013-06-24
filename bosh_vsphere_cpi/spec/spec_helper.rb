@@ -2,6 +2,9 @@
 
 require "rspec"
 
+require 'coveralls'
+Coveralls.wear!
+
 require "sequel"
 require "sequel/adapters/sqlite"
 

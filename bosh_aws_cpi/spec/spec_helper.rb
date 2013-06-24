@@ -3,6 +3,9 @@
 require "rspec"
 require "tmpdir"
 
+require 'coveralls'
+Coveralls.wear!
+
 require "cloud/aws"
 
 MOCK_AWS_ACCESS_KEY_ID = "foo"

@@ -88,9 +88,9 @@ module Bosh::Cli::Command
         removed = line[0..0] == "-"
 
         if added
-          say(line.chomp.green)
+          say(line.chomp.make_green)
         elsif removed
-          say(line.chomp.red)
+          say(line.chomp.make_red)
         else
           say(line)
         end
@@ -128,7 +128,7 @@ module Bosh::Cli::Command
 
         unless obj
           @errors += 1
-          say("Could not find #{path.red}.")
+          say("Could not find #{path.make_red}.")
           say("'#{@template_file}' has it but '#{@deployment_file}' does not.")
           #say("\nIt should exist in \n#{obj.to_yaml}\n")
           if starting_obj == @deployment_obj
@@ -199,7 +199,7 @@ module Bosh::Cli::Command
       path = users_farthest_found_path.join('.')
       what_we_need = find(path, @template_obj)
       what_we_need = delete_all_except(what_we_need, delete_all_except_name)
-      say("Add this to '#{path}':".red + "\n#{what_we_need.to_yaml}\n\n")
+      say("Add this to '#{path}':".make_red + "\n#{what_we_need.to_yaml}\n\n")
     end
 
     # Loads the template file as YAML.  First, it replaces all of the ruby

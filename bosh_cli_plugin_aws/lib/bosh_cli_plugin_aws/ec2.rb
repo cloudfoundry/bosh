@@ -27,7 +27,7 @@ module Bosh
         count.times do
           @elastic_ips << allocate_elastic_ip.public_ip
         end
-        #say "\tallocated #{eip.public_ip}".green
+        #say "\tallocated #{eip.public_ip}".make_green
       end
 
       def allocate_elastic_ip

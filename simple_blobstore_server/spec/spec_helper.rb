@@ -5,4 +5,7 @@ require "rack/test"
 
 ENV["RACK_ENV"] = "test"
 
+require 'coveralls'
+Coveralls.wear!
+
 require "simple_blobstore_server"

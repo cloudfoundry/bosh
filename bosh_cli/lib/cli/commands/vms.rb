@@ -23,7 +23,7 @@ module Bosh::Cli::Command
     end
 
     def show_deployment(name, options={})
-      say("Deployment `#{name.green}'")
+      say("Deployment `#{name.make_green}'")
       vms = director.fetch_vm_state(name)
       err("No VMs") if vms.empty?
 

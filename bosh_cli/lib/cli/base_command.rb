@@ -139,11 +139,11 @@ module Bosh::Cli
       def task_report(status, task_id, success_msg = nil, error_msg = nil)
         case status
           when :non_trackable
-            report = "Can't track director task".red
+            report = "Can't track director task".make_red
           when :track_timeout
-            report = "Task tracking timeout".red
+            report = "Task tracking timeout".make_red
           when :running
-            report = "Task #{task_id.yellow} running"
+            report = "Task #{task_id.make_yellow} running"
           when :error
             report = error_msg
           when :done
@@ -176,12 +176,12 @@ module Bosh::Cli
       end
 
       def show_deployment
-        say("Current deployment is #{deployment.green}")
+        say("Current deployment is #{deployment.make_green}")
       end
 
       def no_track_unsupported
         if @options.delete(:no_track)
-          say("Ignoring `" + "--no-track".yellow + "' option")
+          say("Ignoring `" + "--no-track".make_yellow + "' option")
         end
       end
 

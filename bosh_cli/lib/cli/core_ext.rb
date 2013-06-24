@@ -66,23 +66,23 @@ module BoshExtensions
   end
 
   def load_yaml_file(path, expected_type = Hash)
-    err("Cannot find file `#{path}'".red) unless File.exist?(path)
+    err("Cannot find file `#{path}'".make_red) unless File.exist?(path)
 
     begin
       yaml_str = ERB.new(File.read(path)).result
     rescue SystemCallError => e
-      err("Cannot load YAML file at `#{path}': #{e}".red)
+      err("Cannot load YAML file at `#{path}': #{e}".make_red)
     end
 
     begin
       Bosh::Cli::YamlHelper.check_duplicate_keys(yaml_str)
     rescue => e
-      err("Incorrect YAML structure in `#{path}': #{e}".red)
+      err("Incorrect YAML structure in `#{path}': #{e}".make_red)
     end
 
     yaml = Psych::load(yaml_str)
     if expected_type && !yaml.is_a?(expected_type)
-      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".red)
+      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".make_red)
     end
 
     yaml
@@ -100,7 +100,7 @@ module BoshExtensions
   end
 
   def warning(message)
-    warn("[WARNING] #{message}".yellow)
+    warn("[WARNING] #{message}".make_yellow)
   end
 end
 
@@ -112,19 +112,19 @@ module BoshStringExtensions
     :yellow => "\e[0m\e[33m"
   }
 
-  def red
-    colorize(:red)
+  def make_red
+    make_color(:red)
   end
 
-  def green
-    colorize(:green)
+  def make_green
+    make_color(:green)
   end
 
-  def yellow
-    colorize(:yellow)
+  def make_yellow
+    make_color(:yellow)
   end
 
-  def colorize(color_code)
+  def make_color(color_code)
     if Bosh::Cli::Config.output &&
        Bosh::Cli::Config.output.tty? &&
        Bosh::Cli::Config.colorize &&

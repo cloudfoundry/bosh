@@ -49,6 +49,7 @@ end
 
 group :development, :test do
   gem 'rubocop', require: false
+  gem 'coveralls', require: false
   gem 'parallel_tests'
   gem 'rack-test'
   gem 'guard'

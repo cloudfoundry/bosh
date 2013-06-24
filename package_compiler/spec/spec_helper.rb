@@ -1,5 +1,8 @@
 require 'rspec/core'
 
+require 'coveralls'
+Coveralls.wear!
+
 require 'package_compiler'
 
 def spec_asset(filename)

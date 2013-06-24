@@ -1,6 +1,9 @@
 require "rspec"
 require "rake"
 
+require 'coveralls'
+Coveralls.wear!
+
 shared_context "rake" do
   let(:rake) { Rake::Application.new }
   let(:task_name) { self.class.top_level_description }

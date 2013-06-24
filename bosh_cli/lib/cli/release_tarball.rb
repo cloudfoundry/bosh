@@ -55,17 +55,17 @@ module Bosh::Cli
           if package_matches.include?(package["sha1"]) ||
              (package["fingerprint"] &&
               package_matches.include?(package["fingerprint"]))
-            say("SKIP".green)
+            say("SKIP".make_green)
             @skipped += 1
             FileUtils.rm_rf(File.join("packages", "#{package["name"]}.tgz"))
           else
-            say("UPLOAD".red)
+            say("UPLOAD".make_red)
           end
         end
 
         local_jobs.each do |job|
           say("#{job["name"]} (#{job["version"]})".ljust(30), " ")
-          say("UPLOAD".red)
+          say("UPLOAD".make_red)
         end
 
         return nil if @skipped == 0

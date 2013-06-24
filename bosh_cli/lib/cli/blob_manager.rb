@@ -77,7 +77,7 @@ module Bosh::Cli
       process_blobs_directory
 
       unless dirty?
-        say("No blobs to upload".green)
+        say("No blobs to upload".make_green)
         return
       end
 
@@ -85,16 +85,16 @@ module Bosh::Cli
       say("You have some blobs that need to be uploaded:")
       @new_blobs.each do |blob|
         size = File.size(File.join(@blobs_dir, blob))
-        say("%s\t%s\t%s" % ["new".green, blob, pretty_size(size)])
+        say("%s\t%s\t%s" % ["new".make_green, blob, pretty_size(size)])
       end
 
       @updated_blobs.each do |blob|
         size = File.size(File.join(@blobs_dir, blob))
-        say("%s\t%s\t%s" % ["new version".yellow, blob, pretty_size(size)])
+        say("%s\t%s\t%s" % ["new version".make_yellow, blob, pretty_size(size)])
       end
 
       nl
-      say("When ready please run `#{"bosh upload blobs".green}'")
+      say("When ready please run `#{"bosh upload blobs".make_green}'")
     end
 
     # Registers a file as BOSH blob
@@ -137,13 +137,13 @@ module Bosh::Cli
       FileUtils.cp(local_path, blob_dst, :preserve => true)
       FileUtils.chmod(0644, blob_dst)
       if update
-        say("Updated #{blob_path.yellow}")
+        say("Updated #{blob_path.make_yellow}")
       else
-        say("Added #{blob_path.yellow}")
+        say("Added #{blob_path.make_yellow}")
       end
 
       say("When you are done testing the new blob, please run\n" +
-          "`#{"bosh upload blobs".green}' and commit changes.")
+          "`#{"bosh upload blobs".make_green}' and commit changes.")
     end
 
     # Synchronizes the contents of blobs directory with blobs index.
@@ -222,7 +222,7 @@ module Bosh::Cli
           if checksum == entry["sha"]
             need_download = false
           else
-            progress(path, "checksum mismatch, re-downloading...\n".red)
+            progress(path, "checksum mismatch, re-downloading...\n".make_red)
           end
         end
 
@@ -251,7 +251,7 @@ module Bosh::Cli
 
       progress(path, "uploading...")
       object_id = @blobstore.create(File.open(blob_path, "r"))
-      progress(path, "uploaded\n".green)
+      progress(path, "uploaded\n".make_green)
 
       @index[path] = {
         "object_id" => object_id,
@@ -295,7 +295,7 @@ module Bosh::Cli
       @blobstore.get(blob["object_id"], tmp_file)
       tmp_file.close
       progress_bar.kill
-      progress(path, "downloaded\n".green)
+      progress(path, "downloaded\n".make_green)
 
       if file_checksum(tmp_file.path) != blob["sha"]
         err("Checksum mismatch for downloaded blob `#{path}'")
@@ -311,7 +311,7 @@ module Bosh::Cli
     # @param [String] label Operation happening to a blob
     def progress(path, label)
       say("\r", " " * 80)
-      say("\r#{path.truncate(40).yellow} #{label}", "")
+      say("\r#{path.truncate(40).make_yellow} #{label}", "")
       Bosh::Cli::Config.output.flush # Ruby 1.8 compatibility
     end
 

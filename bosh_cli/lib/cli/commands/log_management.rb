@@ -57,7 +57,7 @@ module Bosh::Cli::Command
       end
 
       nl
-      say("Downloading log bundle (#{resource_id.to_s.green})...")
+      say("Downloading log bundle (#{resource_id.to_s.make_green})...")
 
       begin
         time = Time.now.strftime("%Y-%m-%d@%H-%M-%S")
@@ -66,7 +66,7 @@ module Bosh::Cli::Command
         tmp_file = director.download_resource(resource_id)
 
         FileUtils.mv(tmp_file, log_file)
-        say("Logs saved in `#{log_file.green}'")
+        say("Logs saved in `#{log_file.make_green}'")
       rescue Bosh::Cli::DirectorError => e
         err("Unable to download logs from director: #{e}")
       ensure

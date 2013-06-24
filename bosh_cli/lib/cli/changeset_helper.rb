@@ -55,17 +55,17 @@ module Bosh::Cli
 
       @children.each_pair do |k, v|
         if v.state == :mismatch
-          out << indent + "#{k} type changed: ".yellow +
+          out << indent + "#{k} type changed: ".make_yellow +
               "#{v.old.class.to_s} -> #{v.new.class.to_s}"
           out << diff(v.old, v.new, indent + "  ")
         elsif v.leaf?
           case v.state
           when :added
-            out << indent + "added #{k}: ".yellow + v.new.to_s
+            out << indent + "added #{k}: ".make_yellow + v.new.to_s
           when :removed
-            out << indent + "removed #{k}: ".red + v.old.to_s
+            out << indent + "removed #{k}: ".make_red + v.old.to_s
           when :changed
-            out << indent + "changed #{k}: ".yellow
+            out << indent + "changed #{k}: ".make_yellow
             out << diff(v.old, v.new, indent + "  ")
           end
         else
@@ -94,12 +94,12 @@ module Bosh::Cli
 
       removed.each do |line|
         line = line.inspect if line.is_a?(Hash)
-        lines << "#{indent}- #{line}".red
+        lines << "#{indent}- #{line}".make_red
       end
 
       added.each do |line|
         line = line.inspect if line.is_a?(Hash)
-        lines << "#{indent}+ #{line}".green
+        lines << "#{indent}+ #{line}".make_green
       end
 
       lines.join("\n")

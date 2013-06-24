@@ -37,7 +37,7 @@ module Bosh::Cli::Command
 
       blob_manager.blobs_to_upload.each do |blob|
         nl
-        if confirmed?("Upload blob #{blob.yellow}?")
+        if confirmed?("Upload blob #{blob.make_yellow}?")
           blob_manager.upload_blob(blob)
         end
       end

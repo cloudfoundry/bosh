@@ -9,6 +9,7 @@ TAGS
 .yardoc
 doc
 cov
+*/coverage
 spec_reports
 spec_coverage
 spec.log

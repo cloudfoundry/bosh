@@ -1,6 +1,9 @@
 require 'rspec/core'
 require 'tempfile'
 
+require 'coveralls'
+Coveralls.wear!
+
 require 'health_monitor'
 
 def spec_asset(filename)
