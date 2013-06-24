@@ -7,8 +7,6 @@ if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
 fi
 
-source .rvmrc
-
 gem list | grep bundler > /dev/null || gem install bundler
 
 # prune old gems

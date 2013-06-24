@@ -1,7 +1,6 @@
 #!/bin/bash --login
 
 set -e
-source .rvmrc
 
 rm -f *.tgz
 
