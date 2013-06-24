@@ -89,9 +89,9 @@ module Bosh::Cli
         Bosh::Cli::Runner.new(args, @options).run
       end
 
-      def confirmed?(question = "Are you sure?")
+      def confirmed?(question = 'Are you sure?')
         return true if non_interactive?
-        ask("#{question} (type 'yes' to continue): ") == "yes"
+        ask("#{question} (type 'yes' to continue): ") == 'yes'
       end
 
       # @return [String] Target director URL
@@ -109,12 +109,12 @@ module Bosh::Cli
 
       # @return [String] Director username
       def username
-        options[:username] || ENV["BOSH_USER"] || config.username(target)
+        options[:username] || ENV['BOSH_USER'] || config.username(target)
       end
 
       # @return [String] Director password
       def password
-        options[:password] || ENV["BOSH_PASSWORD"] || config.password(target)
+        options[:password] || ENV['BOSH_PASSWORD'] || config.password(target)
       end
 
       def target_name
@@ -142,7 +142,7 @@ module Bosh::Cli
           when :non_trackable
             report = "Can't track director task".red
           when :track_timeout
-            report = "Task tracking timeout".red
+            report = 'Task tracking timeout'.red
           when :running
             report = "Task #{task_id.yellow} running"
           when :error
@@ -185,15 +185,15 @@ module Bosh::Cli
 
       def auth_required
         target_required
-        err("Please log in first") unless logged_in?
+        err('Please log in first') unless logged_in?
       end
 
       def target_required
-        err("Please choose target first") if target.nil?
+        err('Please choose target first') if target.nil?
       end
 
       def deployment_required
-        err("Please choose deployment first") if deployment.nil?
+        err('Please choose deployment first') if deployment.nil?
       end
 
       def show_deployment
@@ -202,7 +202,7 @@ module Bosh::Cli
 
       def no_track_unsupported
         if @options.delete(:no_track)
-          say("Ignoring `" + "--no-track".yellow + "' option")
+          say('Ignoring `' + '--no-track'.yellow + "' option")
         end
       end
 
@@ -214,15 +214,15 @@ module Bosh::Cli
 
       def raise_dirty_state_error
         say("\n%s\n" % [`git status`])
-        err("Your current directory has some local modifications, " +
+        err('Your current directory has some local modifications, ' +
                 "please discard or commit them first.\n\n" +
-                "Use the --force option to skip this check.")
+                'Use the --force option to skip this check.')
       end
 
       def in_release_dir?
-        File.directory?("packages") &&
-            File.directory?("jobs") &&
-            File.directory?("src")
+        File.directory?('packages') &&
+            File.directory?('jobs') &&
+            File.directory?('src')
       end
 
       def dirty_state?
@@ -233,7 +233,7 @@ module Bosh::Cli
           when 127 # git command not found
             false
           else
-            !git_status.lines.to_a.last.include?("nothing to commit")
+            !git_status.lines.to_a.last.include?('nothing to commit')
         end
       end
 
@@ -249,7 +249,7 @@ module Bosh::Cli
         url = "https://#{url}" unless url.match(/^http:?/)
         uri = URI.parse(url)
         uri.port = DEFAULT_DIRECTOR_PORT unless had_port
-        uri.to_s.strip.gsub(/\/$/, "")
+        uri.to_s.strip.gsub(/\/$/, '')
       end
     end
   end

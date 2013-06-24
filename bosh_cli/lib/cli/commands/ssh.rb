@@ -95,8 +95,7 @@ module Bosh::Cli::Command
     # @param [Integer] index
     # @param [optional,String] password
     def setup_ssh(job, index, password = nil)
-      public_key = get_public_key
-      user = SSH_USER_PREFIX + rand(36**9).to_s(36)
+      user = random_ssh_username
       deployment_name = prepare_deployment_manifest['name']
 
       say("Target deployment is `#{deployment_name}'")
@@ -147,6 +146,10 @@ module Bosh::Cli::Command
       end
     end
 
+    def random_ssh_username
+      SSH_USER_PREFIX + rand(36**9).to_s(36)
+    end
+
     # @param [String] job Job name
     # @param [Integer] index Job index
     def setup_interactive_shell(job, index)
@@ -172,15 +175,11 @@ module Bosh::Cli::Command
 
         if gateway
           port = gateway.open(session['ip'], 22)
-          ssh_session = fork do
-            exec("ssh #{user}@localhost -p #{port}")
-          end
+          ssh_session = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s)
           Process.waitpid(ssh_session)
           gateway.close(port)
         else
-          ssh_session = fork do
-            exec("ssh #{user}@#{session['ip']}")
-          end
+          ssh_session = Process.spawn('ssh', "#{user}@#{session['ip']}")
           Process.waitpid(ssh_session)
         end
       end
@@ -215,7 +214,7 @@ module Bosh::Cli::Command
     end
 
     # @return [String] Public key
-    def get_public_key
+    def public_key
       public_key_path = options[:public_key]
 
       if public_key_path
