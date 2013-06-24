@@ -1,11 +1,11 @@
-script: 'bundle exec rake spec:$SUITE'
+script: 'bundle exec rake $TASKS'
 bundler_args: "--local --without development"
 rvm:
   - ruby-1.9.3
   - ruby-2.0.0
 env:
-  - SUITE=parallel_unit
-  - SUITE=integration
+  - TASKS="rubocop spec:parallel_unit"
+  - TASKS="spec:integration"
 matrix:
   allow_failures:
     - rvm: ruby-2.0.0
