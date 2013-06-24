@@ -64,42 +64,6 @@ describe "with release and stemcell and two deployments" do
     deployment.delete
   end
 
-  context "drain" do
-
-    it "should drain when updating", ssh: true do
-      reload_deployment_spec
-      use_static_ip
-      deployment = with_deployment
-      bosh("deployment #{deployment.to_path}")
-      bosh("deploy").should succeed_with deployed_regexp
-      deployment.delete
-
-      use_release("latest")
-      with_deployment do
-        ssh(static_ip, "vcap", "ls /tmp/drain 2> /dev/null", ssh_options).should
-        match %r{/tmp/drain}
-      end
-    end
-
-    xit "should drain dynamically when updating", ssh: true do
-      use_dynamic_drain
-      use_release("latest")
-      deployment = with_deployment
-      bosh("deployment #{deployment.to_path}")
-      bosh("deploy").should succeed_with deployed_regexp
-      deployment.delete
-
-      use_release(previous_release.version)
-      with_deployment do
-        output = ssh(static_ip, "vcap", "cat /tmp/drain 2> /dev/null", ssh_options)
-        drain_times = output.split.map { |time| time.to_i }
-        drain_times.size.should == 3
-        (drain_times[1] - drain_times[0]).should be > 3
-        (drain_times[2] - drain_times[1]).should be > 4
-      end
-    end
-  end
-
   context "first deployment" do
     before(:all) do
       reload_deployment_spec
