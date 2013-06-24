@@ -4,8 +4,9 @@ require "spec_helper"
 
 describe Bosh::Cli::JobPropertyValidator do
   before do
-    File.stub(:read).with('/jobs/director/templates/director.yml.erb').and_return("---\nname: <%= p('director.name') %>")
-    File.stub(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return("---\nprovider: <%= p('blobstore.provider') %>")
+    File.stub(:read).with('/jobs/director/templates/director.yml.erb').and_return('---\nname: <%= p("director.name") %>')
+    File.stub(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return('---\nprovider: <%= p("blobstore.provider") %>')
+    File.stub(:read).with('/jobs/blobstore/templates/test.yml.erb').and_return('---\nhost: <%= spec.networks.send("foo").ip %>')
   end
 
   let(:director_job) do
@@ -23,32 +24,46 @@ describe Bosh::Cli::JobPropertyValidator do
            name: 'blobstore',
            properties: {'blobstore.provider' =>
                             {'description' => 'Type of blobstore'}},
-           all_templates: %w[/jobs/blobstore/templates/blobstore.yml.erb])
+           all_templates: %w[/jobs/blobstore/templates/blobstore.yml.erb /jobs/blobstore/templates/test.yml.erb])
   end
 
-  let(:built_jobs) do
-    [director_job, blobstore_job]
-  end
+  let(:built_jobs) { [director_job, blobstore_job] }
 
   let(:deployment_manifest) do
     {
         'properties' => deployment_properties,
-        'jobs' => [{'name' => 'bosh',
-                    'template' => job_template_list}]
+        'networks' => [{
+          'name' => 'foo',
+          'type' => 'manual',
+          'subnets' => [{
+            'range' => '10.10.0.0/24',
+            'reserved' => [
+                '10.0.0.2 - 10.0.0.9',
+                '10.0.0.255 - 10.0.0.255'
+            ],
+            'static' => ['10.0.0.10 - 10.0.0.20'],
+            'gateway' => '10.0.0.1',
+            'dns' => ['10.0.0.2']
+          }]
+        }],
+        'jobs' => [{
+          'name' => 'bosh',
+          'instances' => 2,
+          'template' => job_template_list,
+          'networks' => [
+            'name' => 'foo',
+          ]
+        }]
     }
   end
 
   subject(:validator) { described_class.new(built_jobs, deployment_manifest) }
 
   context 'missing deployment manifest properties' do
-    let(:deployment_properties) do
-      {}
-    end
+    let(:deployment_properties) { {} }
 
     context 'colocated jobs' do
-      let(:job_template_list) do
-        %w[director blobstore]
-      end
+      let(:job_template_list) { %w[director blobstore] }
 
       it 'should have template errors' do
         validator.validate
@@ -79,9 +94,7 @@ describe Bosh::Cli::JobPropertyValidator do
       }
     end
 
-    let(:job_template_list) do
-      %w[director blobstore]
-    end
+    let(:job_template_list) { %w[director blobstore] }
 
     it 'should not have template errors' do
       validator.validate
@@ -110,17 +123,11 @@ describe Bosh::Cli::JobPropertyValidator do
              all_templates: [])
     end
 
-    let(:built_jobs) do
-      [director_job, no_props_job]
-    end
+    let(:built_jobs) { [director_job, no_props_job] }
 
-    let(:job_template_list) do
-      %w[director noprops]
-    end
+    let(:job_template_list) { %w[director noprops] }
 
-    let(:deployment_properties)do
-      {}
-    end
+    let(:deployment_properties) { {} }
 
     it 'should identify legacy jobs with no properties' do
       validator.validate
