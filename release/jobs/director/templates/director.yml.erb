@@ -28,6 +28,8 @@ db:
   port: <%= p('director.db.port') %>
   database: <%= p('director.db.database') %>
   connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
+snapshots:
+  enabled: <%= p('director.enable_snapshots') %>
 scheduled_jobs:
   <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
   - command: snapshot_deployments
