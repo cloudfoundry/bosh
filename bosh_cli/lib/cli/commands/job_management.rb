@@ -69,9 +69,9 @@ module Bosh::Cli::Command
           recreate: '%s has been recreated'
       }
 
-      def initialize(command, force = false)
+      def initialize(command, vm_state)
         @command = command
-        @force = force
+        @vm_state = vm_state
       end
 
       def change(state, job, index)
@@ -85,17 +85,24 @@ module Bosh::Cli::Command
       end
 
       private
-      attr_reader :command
-
-      def force?
-        !!@force
-      end
+      attr_reader :command, :vm_state
 
       def job_description(job, index)
         index ? "#{job}/#{index}" : "#{job}"
       end
 
       def perform_vm_state_change(job, index, new_state, operation_desc)
+        vm_state.change(job, index, new_state, operation_desc)
+      end
+    end
+
+    class VmState
+      def initialize(command, force)
+        @command = command
+        @force = force
+      end
+
+      def change(job, index, new_state, operation_desc)
         command.say("You are about to #{operation_desc.make_green}")
         manifest = command.prepare_deployment_manifest
         manifest_yaml = Psych.dump(manifest)
@@ -113,13 +120,20 @@ module Bosh::Cli::Command
         command.director.change_job_state(manifest['name'], manifest_yaml, job, index, new_state)
       end
 
+      private
+      attr_reader :command
+
+      def force?
+        !!@force
+      end
+
       def check_if_manifest_changed(manifest)
         other_changes_present = command.inspect_deployment_changes(
-            manifest, :show_empty_changeset => false)
+            manifest, show_empty_changeset: false)
 
         if other_changes_present && !force?
           command.err('Cannot perform job management when other deployment changes ' +
-                  "are present. Please use `--force' to override.")
+                          "are present. Please use `--force' to override.")
         end
       end
     end
@@ -127,7 +141,8 @@ module Bosh::Cli::Command
     def change_job_state(state, job, index = nil)
       check_arguments(state, job)
       index = valid_index_for(job, index)
-      JobState.new(self, force?).change(state, job, index)
+      vm_state = VmState.new(self, force?)
+      JobState.new(self, vm_state).change(state, job, index)
     end
 
     def hard?
