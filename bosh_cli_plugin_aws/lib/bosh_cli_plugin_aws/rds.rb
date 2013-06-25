@@ -13,13 +13,13 @@ module Bosh
       DEFAULT_RDS_PROTOCOL = :tcp
       DEFAULT_MYSQL_PORT = 3306
 
-      def initialize(credentials)
-        @credentials = credentials
+      def initialize(provider)
+        @provider = provider
       end
 
       def create_database(name, subnet_ids, vpc_id, options = {})
         create_db_parameter_group('utf8')
-        vpc = Bosh::Aws::VPC.find(Bosh::Aws::EC2.new(@credentials), vpc_id)
+        vpc = Bosh::Aws::VPC.find(@provider.ec2, vpc_id)
         create_vpc_db_security_group(vpc, name) if vpc.security_group_by_name(name).nil?
         create_subnet_group(name, subnet_ids) unless subnet_group_exists?(name)
 
@@ -154,11 +154,11 @@ module Bosh
       end
 
       def aws_rds
-        @aws_rds ||= ::AWS::RDS.new(@credentials)
+        @provider.rds
       end
 
       def aws_rds_client
-        @aws_rds_client ||= ::AWS::RDS::Client.new(@credentials)
+        @provider.rds_client
       end
 
       private

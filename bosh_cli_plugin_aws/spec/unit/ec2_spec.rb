@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Aws::EC2 do
-  let(:ec2) { described_class.new({}) }
+  let(:provider) { mock(:provider) }
+  let(:ec2) { described_class.new(provider) }
 
   describe "elastic IPs" do
     describe "allocation" do
@@ -148,6 +149,7 @@ describe Bosh::Aws::EC2 do
       end
 
       it "creates an instance with the given options and default NAT options" do
+        provider.should_receive(:region).and_return("us-east-1")
         instances.should_receive(:create).with(
            {
              subnet: "subnet_id",
@@ -163,6 +165,7 @@ describe Bosh::Aws::EC2 do
       end
 
       it "should tag the NAT instance with a name" do
+        provider.should_receive(:region).and_return("us-east-1")
         nat_instance.should_receive(:add_tag).with("Name", {value: "name"})
 
         create_nat_instance
@@ -170,6 +173,7 @@ describe Bosh::Aws::EC2 do
 
       it "should associate an elastic IP to the NAT instance" do
         elastic_ip = double('elastic_ip')
+        provider.should_receive(:region).and_return("us-east-1")
 
         ec2.should_receive(:allocate_elastic_ip).and_return(elastic_ip)
         nat_instance.should_receive(:associate_elastic_ip).with(elastic_ip)
@@ -179,6 +183,7 @@ describe Bosh::Aws::EC2 do
 
       it "should retry to associate the elastic IP if elastic ip not yet allocated" do
         elastic_ip = double('elastic_ip')
+        provider.should_receive(:region).and_return("us-east-1")
 
         ec2.should_receive(:allocate_elastic_ip).and_return(elastic_ip)
 
@@ -192,6 +197,7 @@ describe Bosh::Aws::EC2 do
       end
 
       it "should disable source/destination checking for the NAT instance" do
+        provider.should_receive(:region).and_return("us-east-1")
         fake_aws_client.should_receive(:modify_instance_attribute).with(
            {
              instance_id: 'i-123',
@@ -203,7 +209,6 @@ describe Bosh::Aws::EC2 do
       end
 
       context "when no key pair name is given" do
-
         subject(:create_nat_instance_without_key_pair) do
           ec2.create_nat_instance(
               "name" => "name",
@@ -214,6 +219,7 @@ describe Bosh::Aws::EC2 do
         end
 
         it "uses the key pair name on AWS if only one exists" do
+          provider.should_receive(:region).and_return("us-east-1")
           instances.should_receive(:create).with(
               {
                   subnet: "subnet_id",
