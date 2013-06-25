@@ -114,12 +114,10 @@ module Bosh::Cli::Command
       end
 
       def check_if_manifest_changed(manifest)
-        return if force?
-
         other_changes_present = command.inspect_deployment_changes(
             manifest, :show_empty_changeset => false)
 
-        if other_changes_present
+        if other_changes_present && !force?
           command.err('Cannot perform job management when other deployment changes ' +
                   "are present. Please use `--force' to override.")
         end
