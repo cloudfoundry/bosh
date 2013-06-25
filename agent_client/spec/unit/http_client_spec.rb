@@ -44,7 +44,7 @@ describe Bosh::Agent::HTTPClient do
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost', { 'reply_to' => 'elmer' })
 
-      @client.shh('hunting', 'wabbits').should == 'iam'
+      expect(@client.shh('hunting', 'wabbits')).to eq 'iam'
     end
 
     it 'should receive a message value' do
@@ -64,7 +64,7 @@ describe Bosh::Agent::HTTPClient do
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost', { 'reply_to' => 'fudd' })
 
-      @client.ping.should == 'pong'
+      expect(@client.ping).to eq 'pong'
     end
 
     it 'should run_task' do
@@ -97,7 +97,7 @@ describe Bosh::Agent::HTTPClient do
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost', { 'reply_to' => 'bugs' })
 
-      @client.run_task(:compile_package, 'id', 'sha1').should == { 'state' => 'done' }
+      expect(@client.run_task(:compile_package, 'id', 'sha1')).to eq('state' => 'done')
     end
 
     it 'should raise handler exception when method is invalid' do
@@ -113,7 +113,7 @@ describe Bosh::Agent::HTTPClient do
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost')
 
-      lambda { @client.no_such_method }.should raise_error(Bosh::Agent::HandlerError)
+      expect { @client.no_such_method }.to raise_error(Bosh::Agent::HandlerError)
 
     end
 
@@ -129,7 +129,7 @@ describe Bosh::Agent::HTTPClient do
 
       @client = Bosh::Agent::HTTPClient.new('https://localhost')
 
-      lambda { @client.ping }.should raise_error(Bosh::Agent::AuthError)
+      expect { @client.ping }.to raise_error(Bosh::Agent::AuthError)
     end
   end
 
