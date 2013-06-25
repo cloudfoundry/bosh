@@ -10,6 +10,7 @@ module Bosh::Director
 
       CONFIG_OPTIONS = [
         :base_dir,
+        :blobstore_options,
         :cloud_options,
         :db,
         :dns,

@@ -14,6 +14,7 @@ module Bosh::Cli::Command
     # bosh status
     usage "status"
     desc  "Show current status (current target, user, deployment info etc)"
+    option "--internal", "show bosh internal information"
     def status
       say("Config".make_green)
       print_value("", config.filename)
@@ -25,8 +26,8 @@ module Bosh::Cli::Command
       else
         begin
           timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
-            director = Bosh::Cli::Director.new(target)
-            status = director.get_status
+            anon_director = Bosh::Cli::Director.new(target)
+            status = anon_director.get_status
 
             print_value("Name", status["name"])
             print_value("URL", target_url)
@@ -35,7 +36,11 @@ module Bosh::Cli::Command
             print_value("UUID", status["uuid"])
             print_value("CPI", status["cpi"], "n/a")
             print_feature_list(status["features"]) if status["features"]
-            
+
+            if options[:internal]
+              print_internal_config
+            end
+
             unless options[:target]
               config.target_name = status["name"]
               config.target_version = status["version"]
@@ -180,7 +185,7 @@ module Bosh::Cli::Command
         status = director.get_status
       rescue Bosh::Cli::AuthError
         status = {}
-      rescue Bosh::Cli::DirectorError
+      rescue Bosh::Cli::DirectorError => e
         err("Cannot talk to director at `#{director_url}', " +
             "please set correct target")
       end
@@ -359,6 +364,26 @@ module Bosh::Cli::Command
       end
 
       "(#{result.join(", ")})"
+    end
+
+    def print_internal_config
+      begin
+        if internal_config = director.get_internal_config
+          print_value("Blobstore", blobstore_url(internal_config["blobstore"]))
+        else
+          print_value("Internal", "n/a (not available for target bosh)")
+        end
+      rescue Bosh::Cli::AuthError
+        print_value("Internal", "requires authentication")
+      end
+    end
+
+    def blobstore_url(blobstore_options)
+      uri = URI(blobstore_options["options"]["endpoint"])
+      uri.scheme = blobstore_options["provider"]
+      uri.user = blobstore_options["options"]["user"]
+      uri.password = blobstore_options["options"]["password"]
+      uri.to_s
     end
   end
 end

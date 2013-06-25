@@ -771,5 +771,16 @@ module Bosh::Director
       content_type(:json)
       json_encode(status)
     end
+
+    get "/internal_config" do
+      info = {
+        "blobstore" => {
+          "provider" => Config.blobstore_options["provider"],
+          "options" => Config.blobstore_options["options"]
+        }
+      }
+      content_type(:json)
+      json_encode(info)
+    end
   end
 end
