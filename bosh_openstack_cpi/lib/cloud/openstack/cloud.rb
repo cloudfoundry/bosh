@@ -683,36 +683,40 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [String] Device name
     def attach_volume(server, volume)
-      @logger.info("Attaching volume `#{volume.id}' to `#{server.id}'...")
+      @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}'...")
       volume_attachments = with_openstack { server.volume_attachments }
       device = volume_attachments.find { |a| a["volumeId"] == volume.id }
 
-      if device.nil?
-        device_names = Set.new(volume_attachments.collect { |v| v["device"] })
-        new_attachment = nil
-        ("c".."z").each do |char|
-          # As some kernels remap device names (from sd* to vd* or xvd*), Bosh Agent will lookup for the 
-          # proper device name if we set it initially to sd*.
-          dev_name = "/dev/sd#{char}"
-          if device_names.include?(dev_name)
-            @logger.warn("`#{dev_name}' on `#{server.id}' is taken")
-            next
-          end
-          @logger.info("Attaching volume `#{volume.id}' to `#{server.id}', " \
-                       "device name is `#{dev_name}'")
-          with_openstack { volume.attach(server.id, dev_name) }
-          wait_resource(volume, :"in-use")
-          new_attachment = dev_name
-          break
-        end
-        cloud_error("Server has too many disks attached") if new_attachment.nil?
+      if device.nil?                
+        device_name = select_device_name(volume_attachments)
+        cloud_error("Server has too many disks attached") if device_name.nil?
+
+        @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}', device name is `#{device_name}'")
+        with_openstack { volume.attach(server.id, device_name) }
+        wait_resource(volume, :"in-use")        
       else
-        new_attachment = device["device"]
-        @logger.info("Disk `#{volume.id}' is already attached to server `#{server.id}' " \
-                     "in `#{new_attachment}'. Skipping.")
+        device_name = device["device"]
+        @logger.info("Volume `#{volume.id}' is already attached to server `#{server.id}' in `#{device_name}'. Skipping.")
       end
 
-      new_attachment
+      device_name
+    end
+
+    ##
+    # Select the first available device name
+    #
+    # @param [Array] volume_attachments Volume attachments
+    # @return [String] First available device name or nil is none is available 
+    def select_device_name(volume_attachments)
+      ("c".."z").each do |char|
+        # Some kernels remap device names (from sd* to vd* or xvd*). 
+        device_names = ["/dev/sd#{char}", "/dev/vd#{char}", "/dev/xvd#{char}"]
+        # Bosh Agent will lookup for the proper device name if we set it initially to sd*.
+        return "/dev/sd#{char}" if volume_attachments.select { |v| device_names.include?( v["device"]) }.empty?
+        @logger.warn("`/dev/sd#{char}' is already taken")
+      end
+
+      nil
     end
 
     ##
