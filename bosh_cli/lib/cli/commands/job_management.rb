@@ -9,16 +9,7 @@ module Bosh::Cli::Command
     desc 'Start job/instance'
     option '--force', FORCE
     def start_job(job, index = nil)
-      check_arguments(:start, job)
-      index = valid_index_for(job, index)
-
-      job_desc = job_description(job, index)
-      op_desc = "start #{job_desc}"
-      new_state = 'started'
-      completion_desc = "#{job_desc.make_green} has been started"
-
-      status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
-      task_report(status, task_id, completion_desc)
+      change_job_state(:start, job, index)
     end
 
     # bosh stop
@@ -28,24 +19,11 @@ module Bosh::Cli::Command
     option '--hard', 'Power off VM'
     option '--force', FORCE
     def stop_job(job, index = nil)
-      check_arguments(:stop, job)
-      index = valid_index_for(job, index)
-
-      job_desc = job_description(job, index)
       if hard?
-        op_desc = "stop #{job_desc} and power off its VM(s)"
-        completion_desc = "#{job_desc.make_green} has been detached, " +
-            'VM(s) powered off'
-        new_state = 'detached'
+        change_job_state(:detach, job, index)
       else
-        op_desc = "stop #{job_desc}"
-        completion_desc = "#{job_desc.make_green} has been stopped, " +
-            'VM(s) still running'
-        new_state = 'stopped'
+        change_job_state(:stop, job, index)
       end
-
-      status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
-      task_report(status, task_id, completion_desc)
     end
 
     # bosh restart
@@ -53,16 +31,7 @@ module Bosh::Cli::Command
     desc 'Restart job/instance (soft stop + start)'
     option '--force', FORCE
     def restart_job(job, index = nil)
-      check_arguments(:restart, job)
-      index = valid_index_for(job, index)
-
-      job_desc = job_description(job, index)
-      op_desc = "restart #{job_desc}"
-      new_state = 'restart'
-      completion_desc = "#{job_desc.make_green} has been restarted"
-
-      status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
-      task_report(status, task_id, completion_desc)
+      change_job_state(:restart, job, index)
     end
 
     # bosh recreate
@@ -70,19 +39,47 @@ module Bosh::Cli::Command
     desc 'Recreate job/instance (hard stop + start)'
     option '--force', FORCE
     def recreate_job(job, index = nil)
-      check_arguments(:recreate, job)
+      change_job_state(:recreate, job, index)
+    end
+
+    private
+
+    OPERATION_DESCRIPTIONS = {
+        start: 'start %s',
+        stop: 'stop %s',
+        detach: 'stop %s and power off its VM(s)',
+        restart: 'restart %s',
+        recreate: 'recreate %s'
+    }
+
+    NEW_STATES = {
+        start: 'started',
+        stop: 'stopped',
+        detach: 'detached',
+        restart: 'restart',
+        recreate: 'recreate'
+    }
+
+    COMPLETION_DESCRIPTIONS = {
+        start: '%s has been started',
+        stop: '%s has been stopped, VM(s) still running',
+        detach: '%s has been detached, VM(s) powered off',
+        restart: '%s has been restarted',
+        recreate: '%s has been recreated'
+    }
+
+    def change_job_state(state, job, index = nil)
+      check_arguments(state, job)
       index = valid_index_for(job, index)
 
       job_desc = job_description(job, index)
-      op_desc = "recreate #{job_desc}"
-      new_state = 'recreate'
-      completion_desc = "#{job_desc.make_green} has been recreated"
+      op_desc = OPERATION_DESCRIPTIONS.fetch(state) % job_desc
+      new_state = NEW_STATES.fetch(state)
+      completion_desc = COMPLETION_DESCRIPTIONS.fetch(state) % job_desc.make_green
 
       status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
       task_report(status, task_id, completion_desc)
     end
-
-    private
 
     def job_description(job, index)
       index ? "#{job}/#{index}" : "#{job}"
@@ -108,9 +105,13 @@ module Bosh::Cli::Command
         err('Cannot handle both --hard and --soft options, please choose one')
       end
 
-      if operation != :stop && (hard? || soft?)
+      if !hard_and_soft_options_allowed?(operation) && (hard? || soft?)
         err("--hard and --soft options only make sense for `stop' operation")
       end
+    end
+
+    def hard_and_soft_options_allowed?(operation)
+      operation == :stop || operation == :detach
     end
 
     def perform_vm_state_change(job, index, new_state, operation_desc)
