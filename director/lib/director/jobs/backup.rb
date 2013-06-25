@@ -25,7 +25,7 @@ module Bosh::Director
           begin
             files << backup_blobstore(tmpdir)
           rescue Bosh::Blobstore::NotImplemented
-            logger.info('Skipping blobstore backup because blobstore client does not support list operation')
+            logger.warn('Skipping blobstore backup because blobstore client does not support list operation')
           end
 
           backup_file = "#{@dest_dir}/backup.tgz"
@@ -73,7 +73,7 @@ module Bosh::Director
         output = "#{tmpdir}/blobs.tgz"
 
         track_and_log('Backing up blobstore') do
-          blobstore_client = BD::Config.blobstore
+          blobstore_client = Config.blobstore
 
           files = blobstore_client.list
 

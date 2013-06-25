@@ -26,7 +26,7 @@ describe Bosh::Director::Jobs::Backup do
 
   it 'backs up the database' do
     db_config = double('db_config')
-    BD::Config.stub(db_config: db_config)
+    Bosh::Director::Config.stub(db_config: db_config)
 
     db_adapter = double('db adapter')
     db_adapter_creator = double('db adapter creator')
@@ -40,7 +40,7 @@ describe Bosh::Director::Jobs::Backup do
   context 'backing up the blobstore' do
     it 'backs up the blobstore' do
       blobstore_client = double('blobstore client')
-      BD::Config.should_receive(:blobstore).and_return(blobstore_client)
+      Bosh::Director::Config.should_receive(:blobstore).and_return(blobstore_client)
 
       file_list = %w(foo bar)
       blobstore_client.should_receive(:list).and_return(file_list)
@@ -55,7 +55,7 @@ describe Bosh::Director::Jobs::Backup do
     describe '#backup_blobstore' do
       it 'raises NotImplemented when the blobstore client does not support listing objects' do
         blobstore_client = double('blobstore client')
-        BD::Config.should_receive(:blobstore).and_return(blobstore_client)
+        Bosh::Director::Config.should_receive(:blobstore).and_return(blobstore_client)
 
         blobstore_client.should_receive(:list).and_raise(Bosh::Blobstore::NotImplemented)
 
