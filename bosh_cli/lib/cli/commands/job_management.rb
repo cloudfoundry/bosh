@@ -117,6 +117,7 @@ module Bosh::Cli::Command
     def perform_vm_state_change(job, index, new_state, operation_desc)
       say("You are about to #{operation_desc.make_green}")
       manifest = prepare_deployment_manifest
+      manifest_yaml = Psych.dump(manifest)
 
       if interactive?
         check_if_manifest_changed(manifest)
@@ -128,7 +129,6 @@ module Bosh::Cli::Command
 
       nl
       say("Performing `#{operation_desc}'...")
-      manifest_yaml = Psych.dump(manifest)
       director.change_job_state(manifest['name'], manifest_yaml, job, index, new_state)
     end
 

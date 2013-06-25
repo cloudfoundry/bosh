@@ -66,21 +66,20 @@ describe "with release, stemcell and deployment" do
 
   context "job" do
     it "should restart a job" do
-      bosh("restart bat 0").should succeed_with %r{bat/0 has been restarted}
+      bosh("restart batlight 0").should succeed_with %r{batlight/0 has been restarted}
       # TODO verify that the process gets a new pid
     end
 
     it "should recreate a job" do
-      bosh("recreate bat 0").should succeed_with %r{bat/0 has been recreated}
+      bosh("recreate batlight 0").should succeed_with %r{batlight/0 has been recreated}
       # TODO verify that the VM gets a new cid
     end
 
     it "should stop and start a job" do
-      bosh("stop bat 0").should succeed_with %r{bat/0 has been stopped}
-      bosh("start bat 0").should succeed_with %r{bat/0 has been started}
+      bosh("stop batlight 0").should succeed_with %r{batlight/0 has been stopped}
+      bosh("start batlight 0").should succeed_with %r{batlight/0 has been started}
       # TODO verify that the process gets a new pid
     end
-
   end
 
   context "logs" do
