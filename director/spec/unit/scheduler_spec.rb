@@ -12,6 +12,7 @@ describe Bosh::Director::Scheduler do
     BD::Config.stub(:cloud).and_return(cloud)
     BD::Config.stub(:uuid).and_return(uuid)
     BD::Config.stub(:name).and_return(director_name)
+    BD::Config.stub(:enable_snapshots).and_return(true)
   end
 
   describe 'scheduling jobs' do
@@ -79,6 +80,16 @@ describe Bosh::Director::Scheduler do
        cloud.should_receive(:snapshot_disk).with(disks[0], metadata)
        cloud.should_receive(:snapshot_disk).with(disks[1], metadata)
        subject.snapshot_self
+     end
+
+     context 'when snapshotting is disabled' do
+       it 'does nothing' do
+         BD::Config.stub(:enable_snapshots).and_return(false)
+         cloud.should_not_receive(:current_vm_id)
+         cloud.should_not_receive(:get_disks)
+         cloud.should_not_receive(:snapshot_disk)
+         subject.snapshot_self
+       end
      end
 
      context 'with a CPI that does not support snapshots' do

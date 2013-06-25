@@ -19,6 +19,7 @@ describe Bosh::Director::ApiController do
         "provider" => "local",
         "options" => {"blobstore_path" => @blobstore_dir}
     }
+    test_config["snapshots"]["enabled"] = true
     BD::Config.configure(test_config)
   end
 
@@ -95,6 +96,9 @@ describe Bosh::Director::ApiController do
               "compiled_package_cache" => {
                   "status" => true,
                   "extras" => {"provider" => "local"}
+              },
+              "snapshots" => {
+                  "status" => true
               }
           }
       }

@@ -27,7 +27,8 @@ module Bosh::Director
         :uuid,
         :current_job,
         :encryption,
-        :fix_stateful_nodes
+        :fix_stateful_nodes,
+        :enable_snapshots
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -118,6 +119,7 @@ module Bosh::Director
         @encryption = config["encryption"]
         @fix_stateful_nodes = config.fetch("scan_and_fix", {})
           .fetch("auto_fix_stateful_nodes", false)
+        @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
 
         Bosh::Clouds::Config.configure(self)
 

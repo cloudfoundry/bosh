@@ -63,6 +63,11 @@ module Bosh::Director
 
     def snapshot_self
       logger.info('starting self_snapshot')
+      unless Config.enable_snapshots
+        logger.info('Snapshots are disabled; skipping')
+        return
+      end
+      
       vm_id = cloud.current_vm_id
       disks = cloud.get_disks(vm_id)
       metadata = {
