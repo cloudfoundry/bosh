@@ -75,27 +75,37 @@ module Bosh
         object_exists?(oid)
       end
 
+      # @return [Array]
+      def list
+        list_objects
+      end
+
       protected
 
       # @return [String] the id
       def create_file(id, file)
         # needs to be implemented in each subclass
-        raise "#create not implemented"
+        raise NotImplemented, "#create not implemented"
       end
 
       def get_file(id, file)
         # needs to be implemented in each subclass
-        raise "#get not implemented"
+        raise NotImplemented, "#get not implemented"
       end
 
       def delete_object(oid)
         # needs to be implemented in each subclass
-        raise "#delete not implemented"
+        raise NotImplemented, "#delete not implemented"
       end
 
       def object_exists?(oid)
         # needs to be implemented in each subclass
-        raise "#exists? not implemented"
+        raise NotImplemented, "#exists? not implemented"
+      end
+
+      def list_objects
+        # needs to be implemented in each subclass
+        raise NotImplemented, "#list_objects not implemented"
       end
 
       def generate_object_id

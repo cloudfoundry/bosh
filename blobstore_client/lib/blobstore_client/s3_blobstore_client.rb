@@ -177,6 +177,9 @@ module Bosh
          @options[:folder] ?  @options[:folder] + "/" + object_id : object_id
       end
 
+      def list_objects
+        @s3.buckets[bucket_name].objects.map { |obj| obj.key }
+      end
     end
   end
 end

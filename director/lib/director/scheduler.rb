@@ -11,6 +11,18 @@ module Bosh::Director
       @scheduled_jobs = scheduled_jobs
     end
 
+    def start!
+      logger.info('starting scheduler')
+      add_jobs if scheduler.cron_jobs.empty?
+      scheduler.start
+      scheduler.join
+    end
+
+    def stop!
+      logger.info('stopping scheduler')
+      scheduler.stop
+    end
+
     def scheduler
       @scheduler ||= Rufus::Scheduler::PlainScheduler.new
     end
@@ -39,18 +51,6 @@ module Bosh::Director
         end
         logger.info("added scheduled job `#{command}' with interval '#{schedule}'")
       end
-    end
-
-    def start!
-      logger.info('starting scheduler')
-      add_jobs if scheduler.cron_jobs.empty?
-      scheduler.start
-      scheduler.join
-    end
-
-    def stop!
-      logger.info('stopping scheduler')
-      scheduler.stop
     end
 
     def snapshot_deployments

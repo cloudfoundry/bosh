@@ -2,6 +2,8 @@ module Bosh::Director
   module Jobs
     class Backup < BaseJob
 
+      attr_accessor :db_adapter_creator
+
       @queue = :normal
 
       def initialize(dest_dir, options={})
@@ -10,44 +12,53 @@ module Bosh::Director
       end
 
       def perform
-        event_log.begin_stage("Backing up director", 3)
+        Dir.mktmpdir(nil, @dest_dir) do |tmpdir|
 
-        files = []
+          event_log.begin_stage('Backing up director', 3)
 
-        files << backup_logs
-        files << backup_task_logs
-        files << backup_database
-        # TODO: back_up_blobstore
+          files = []
 
-        backup_file = "#{@dest_dir}/backup.tgz"
-        @tar_gzipper.compress(files, backup_file)
-        "Backup created at #{backup_file}"
+          files << backup_logs(tmpdir)
+          files << backup_task_logs(tmpdir)
+          files << backup_database(tmpdir)
+
+          begin
+            files << backup_blobstore(tmpdir)
+          rescue Bosh::Blobstore::NotImplemented
+            logger.info('Skipping blobstore backup because blobstore client does not support list operation')
+          end
+
+          backup_file = "#{@dest_dir}/backup.tgz"
+          @tar_gzipper.compress(files, backup_file)
+          "Backup created at #{backup_file}"
+
+        end
       end
 
-      def backup_logs
-        output = "#{@dest_dir}/logs.tgz"
+      def backup_logs(tmpdir)
+        output = "#{tmpdir}/logs.tgz"
 
-        track_and_log("Backing up logs") do
-          @tar_gzipper.compress("/var/vcap/sys/log", output)
+        track_and_log('Backing up logs') do
+          @tar_gzipper.compress('/var/vcap/sys/log', output)
         end
 
         output
       end
 
-      def backup_task_logs
-        output = "#{@dest_dir}/task_logs.tgz"
+      def backup_task_logs(tmpdir)
+        output = "#{tmpdir}/task_logs.tgz"
 
-        track_and_log("Backing up task logs") do
-          @tar_gzipper.compress("/var/vcap/store/director/tasks", output)
+        track_and_log('Backing up task logs') do
+          @tar_gzipper.compress('/var/vcap/store/director/tasks', output)
         end
 
         output
       end
 
-      def backup_database
-        output = "#{@dest_dir}/director_db.sql"
+      def backup_database(tmpdir)
+        output = "#{tmpdir}/director_db.sql"
 
-        track_and_log("Backing up database") do
+        track_and_log('Backing up database') do
           @db_adapter_creator ||= Bosh::Director::DbBackup
           db_adapter = db_adapter_creator.create(Config.db_config)
           db_adapter.export(output)
@@ -56,8 +67,25 @@ module Bosh::Director
         output
       end
 
-      attr_accessor :db_adapter_creator
+       # raises NotImplemented if the blobstore client doesn't support list()
+      def backup_blobstore(tmpdir)
+        blobs = "#{tmpdir}/blobs"
+        output = "#{tmpdir}/blobs.tgz"
 
+        track_and_log('Backing up blobstore') do
+          blobstore_client = BD::Config.blobstore
+
+          files = blobstore_client.list
+
+          files.each do |file_id|
+            blobstore_client.get(file_id, "#{blobs}/#{file_id}")
+          end
+        end
+
+        @tar_gzipper.compress(blobs, output)
+
+        output
+      end
     end
   end
 end
