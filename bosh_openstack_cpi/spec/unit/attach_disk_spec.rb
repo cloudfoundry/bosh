@@ -43,8 +43,8 @@ describe Bosh::OpenStackCloud::Cloud do
   it "picks available device name" do
     server = double("server", :id => "i-test", :name => "i-test")
     volume = double("volume", :id => "v-foobar")
-    volume_attachments = [{"volumeId" => "v-c", "device" => "/dev/sdc"},
-                          {"volumeId" => "v-d", "device" => "/dev/sdd"}]
+    volume_attachments = [{"volumeId" => "v-c", "device" => "/dev/vdc"},
+                          {"volumeId" => "v-d", "device" => "/dev/xvdd"}]
     attachment = double("attachment", :device => "/dev/sdd")
 
     cloud = mock_cloud do |openstack|
