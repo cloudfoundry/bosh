@@ -1,13 +1,14 @@
 require 'spec_helper'
 
 describe Bosh::Aws::RDS do
-  subject(:rds) { described_class.new({}) }
+  let(:provider) { mock(:provider) }
+  subject(:rds) { described_class.new(provider) }
   let(:db_instance_1) { double("database instance", name: 'bosh_db', id: "db1") }
   let(:db_instance_2) { double("database instance", name: 'cc_db', id: "db2") }
   let(:fake_aws_rds) { double("aws_rds", db_instances: [db_instance_1, db_instance_2]) }
 
   before(:each) do
-    rds.stub(:aws_rds).and_return(fake_aws_rds)
+    provider.stub(:rds).and_return(fake_aws_rds)
   end
 
   describe "subnet_group_exists?" do
@@ -173,7 +174,7 @@ describe Bosh::Aws::RDS do
     let(:vpc) { Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc) }
 
     before(:each) do
-      Bosh::Aws::EC2.stub(new: fake_ec2)
+      provider.stub(ec2: fake_ec2)
       Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-1234").and_return(vpc)
       rds.stub(:subnet_group_exists?).with("mydb").and_return(true)
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)

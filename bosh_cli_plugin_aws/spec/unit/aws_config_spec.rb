@@ -34,6 +34,7 @@ describe Bosh::Aws::AwsConfig do
       environment["BOSH_AWS_SECRET_ACCESS_KEY"]   = "secret_access_key"
       environment["BOSH_VPC_SUBDOMAIN"]           = "burritos"
       environment["BOSH_CACHE_SECRET_ACCESS_KEY"] = "subdomain"
+      environment["BOSH_AWS_REGION"]              = "us-east-1"
     end
 
     describe "validating yaml content" do
