@@ -245,6 +245,10 @@ module Bosh::Cli
       err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
     end
 
+    def cancel_deployment
+      quit("Deployment canceled".make_red)
+    end
+
     private
 
     def find_job(job_name)
@@ -258,10 +262,6 @@ module Bosh::Cli
       else
         File.expand_path(File.join(work_dir, "deployments", "#{name}.yml"))
       end
-    end
-
-    def cancel_deployment
-      quit("Deployment canceled".make_red)
     end
 
     def manifest_error(err)

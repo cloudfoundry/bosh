@@ -44,45 +44,92 @@ module Bosh::Cli::Command
 
     private
 
-    OPERATION_DESCRIPTIONS = {
-        start: 'start %s',
-        stop: 'stop %s',
-        detach: 'stop %s and power off its VM(s)',
-        restart: 'restart %s',
-        recreate: 'recreate %s'
-    }
+    class JobState
+      OPERATION_DESCRIPTIONS = {
+          start: 'start %s',
+          stop: 'stop %s',
+          detach: 'stop %s and power off its VM(s)',
+          restart: 'restart %s',
+          recreate: 'recreate %s'
+      }
 
-    NEW_STATES = {
-        start: 'started',
-        stop: 'stopped',
-        detach: 'detached',
-        restart: 'restart',
-        recreate: 'recreate'
-    }
+      NEW_STATES = {
+          start: 'started',
+          stop: 'stopped',
+          detach: 'detached',
+          restart: 'restart',
+          recreate: 'recreate'
+      }
 
-    COMPLETION_DESCRIPTIONS = {
-        start: '%s has been started',
-        stop: '%s has been stopped, VM(s) still running',
-        detach: '%s has been detached, VM(s) powered off',
-        restart: '%s has been restarted',
-        recreate: '%s has been recreated'
-    }
+      COMPLETION_DESCRIPTIONS = {
+          start: '%s has been started',
+          stop: '%s has been stopped, VM(s) still running',
+          detach: '%s has been detached, VM(s) powered off',
+          restart: '%s has been restarted',
+          recreate: '%s has been recreated'
+      }
+
+      def initialize(command, force = false)
+        @command = command
+        @force = force
+      end
+
+      def change(state, job, index)
+        job_desc = job_description(job, index)
+        op_desc = OPERATION_DESCRIPTIONS.fetch(state) % job_desc
+        new_state = NEW_STATES.fetch(state)
+        completion_desc = COMPLETION_DESCRIPTIONS.fetch(state) % job_desc.make_green
+
+        status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
+        command.task_report(status, task_id, completion_desc)
+      end
+
+      private
+      attr_reader :command
+
+      def force?
+        !!@force
+      end
+
+      def job_description(job, index)
+        index ? "#{job}/#{index}" : "#{job}"
+      end
+
+      def perform_vm_state_change(job, index, new_state, operation_desc)
+        command.say("You are about to #{operation_desc.make_green}")
+        manifest = command.prepare_deployment_manifest
+        manifest_yaml = Psych.dump(manifest)
+
+        if command.interactive?
+          check_if_manifest_changed(manifest)
+
+          unless command.confirmed?("#{operation_desc.capitalize}?")
+            command.cancel_deployment
+          end
+        end
+
+        command.nl
+        command.say("Performing `#{operation_desc}'...")
+        command.director.change_job_state(manifest['name'], manifest_yaml, job, index, new_state)
+      end
+
+      def check_if_manifest_changed(manifest)
+        return if force?
+
+        other_changes_present = command.inspect_deployment_changes(
+            manifest, :show_empty_changeset => false)
+
+        if other_changes_present
+          command.err('Cannot perform job management when other deployment changes ' +
+                  "are present. Please use `--force' to override.")
+        end
+      end
+    end
 
     def change_job_state(state, job, index = nil)
       check_arguments(state, job)
       index = valid_index_for(job, index)
-
-      job_desc = job_description(job, index)
-      op_desc = OPERATION_DESCRIPTIONS.fetch(state) % job_desc
-      new_state = NEW_STATES.fetch(state)
-      completion_desc = COMPLETION_DESCRIPTIONS.fetch(state) % job_desc.make_green
-
-      status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
-      task_report(status, task_id, completion_desc)
-    end
-
-    def job_description(job, index)
-      index ? "#{job}/#{index}" : "#{job}"
+      JobState.new(self, force?).change(state, job, index)
     end
 
     def hard?
@@ -112,24 +159,6 @@ module Bosh::Cli::Command
 
     def hard_and_soft_options_allowed?(operation)
       operation == :stop || operation == :detach
-    end
-
-    def perform_vm_state_change(job, index, new_state, operation_desc)
-      say("You are about to #{operation_desc.make_green}")
-      manifest = prepare_deployment_manifest
-      manifest_yaml = Psych.dump(manifest)
-
-      if interactive?
-        check_if_manifest_changed(manifest)
-
-        unless confirmed?("#{operation_desc.capitalize}?")
-          cancel_deployment
-        end
-      end
-
-      nl
-      say("Performing `#{operation_desc}'...")
-      director.change_job_state(manifest['name'], manifest_yaml, job, index, new_state)
     end
 
     def check_if_manifest_changed(manifest)
