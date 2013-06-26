@@ -180,6 +180,8 @@ module Bosh::Director
               network_settings[name]["type"] == "dynamic"
             network_settings[name] = @current_state["networks"][name]
           end
+
+          network_settings[name]['dns_record_name'] = dns_record_name(name)
         end
         network_settings
       end
@@ -201,11 +203,16 @@ module Bosh::Director
       def dns_record_info
         dns_record_info = {}
         network_settings.each do |network_name, network|
-          name = [index, job.canonical_name, canonical(network_name),
-                  job.deployment.canonical_name, dns_domain_name].join(".")
+          name = dns_record_name(network_name)
           dns_record_info[name] = network["ip"]
         end
         dns_record_info
+      end
+
+      ##
+      # @return [String] dns record name
+      def dns_record_name(network_name)
+        [index, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join(".")  
       end
 
       ##
@@ -353,7 +360,8 @@ module Bosh::Director
           "packages" => job.package_spec,
           "persistent_disk" => job.persistent_disk,
           "configuration_hash" => configuration_hash,
-          "properties" => job.properties
+          "properties" => job.properties,
+          "dns_domain_name" => dns_domain_name
         }
 
         if template_hashes

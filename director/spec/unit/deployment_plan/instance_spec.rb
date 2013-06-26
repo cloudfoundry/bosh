@@ -4,6 +4,12 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan::Instance do
 
+  let(:domain_name) { 'test_domain' }
+  
+  before(:each) do
+    BD::Config.stub(:dns_domain_name).and_return(domain_name)
+  end
+  
   def make(job, index)
     BD::DeploymentPlan::Instance.new(job, index)
   end
@@ -13,7 +19,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
   end
 
   it "trusts current state to have current IP for dynamic network" do
-    plan = mock(BD::DeploymentPlan)
+    plan = mock(BD::DeploymentPlan, :canonical_name => 'mycloud')
 
     network = BD::DeploymentPlan::DynamicNetwork.new(plan, {
       "name" => "net_a",
@@ -22,7 +28,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
 
     plan.stub!(:network).with("net_a").and_return(network)
 
-    job = mock(BD::DeploymentPlan::Job, :deployment => plan)
+    job = mock(BD::DeploymentPlan::Job, :deployment => plan, :canonical_name => 'job')
 
     job.stub(:instance_state).with(0).and_return("started")
     job.stub(:default_network).and_return({})
@@ -36,7 +42,8 @@ describe Bosh::Director::DeploymentPlan::Instance do
     instance.network_settings.should == {
       "net_a" => {
         "type" => "dynamic",
-        "cloud_properties" => {"foo" => "bar"}
+        "cloud_properties" => {"foo" => "bar"},
+        "dns_record_name" => "0.job.net-a.mycloud.#{domain_name}"  
       }
     }
 
@@ -45,7 +52,8 @@ describe Bosh::Director::DeploymentPlan::Instance do
       "ip" => "10.0.0.6",
       "netmask" => "255.255.255.0",
       "gateway" => "10.0.0.1",
-      "cloud_properties" => {"bar" => "baz"}
+      "cloud_properties" => {"bar" => "baz"},
+      "dns_record_name" => "0.job.net-a.mycloud.#{domain_name}"
     }
 
     instance.current_state = {
@@ -231,6 +239,60 @@ describe Bosh::Director::DeploymentPlan::Instance do
         instance_model.vm.update(:env => {"key" => "value2"})
 
         instance.resource_pool_changed?.should be_true
+      end
+    end
+
+    describe 'spec' do
+      let(:deployment_name) { 'mycloud' }
+      let(:job_spec) { {:name => 'job', :release => 'release', :templates => []} }
+      let(:job_index) { 0 }
+      let(:release_spec) { {:name => 'release', :version => '1.1-dev'} }      
+      let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'bosh-stemcell', 'version' => '1.0'}} }
+      let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
+      let(:properties) { {'key' => 'value'} }
+      let(:reservation)  { BD::NetworkReservation.new_dynamic }
+      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
+      
+      it 'returns instance spec' do
+        deployment = make_deployment('mycloud')
+        plan = mock(BD::DeploymentPlan, :model => deployment, :name => deployment_name, :canonical_name => deployment_name)
+        job = mock(BD::DeploymentPlan::Job, :deployment => plan, :spec => job_spec, 
+                   :canonical_name => 'job', :instances => ['instance0'])
+        release = mock(BD::DeploymentPlan::Release, :spec => release_spec)
+        resource_pool = mock(BD::DeploymentPlan::ResourcePool, :spec => resource_pool_spec)
+
+        network = BD::DeploymentPlan::DynamicNetwork.new(plan, network_spec)
+        network.reserve(reservation)
+        plan.stub(:network).and_return(network)            
+        
+        job.stub(:release).and_return(release)
+        job.stub(:instance_state).with(job_index).and_return('started')
+        job.stub(:default_network).and_return({})
+        job.stub(:resource_pool).and_return(resource_pool)        
+        job.stub(:package_spec).and_return(packages)
+        job.stub(:persistent_disk).and_return(0)        
+        job.stub(:properties).and_return(properties)
+
+        instance = make(job, job_index)
+        instance.add_network_reservation(network_spec['name'], reservation)
+        
+        spec = instance.spec
+        expect(spec['deployment']).to eql(deployment_name)
+        expect(spec['release']).to eql(release_spec)
+        expect(spec['job']).to eql(job_spec)
+        expect(spec['index']).to eql(job_index)
+        expect(spec['networks']).to include(network_spec['name'])
+        expect(spec['networks'][network_spec['name']]).to include(
+          'type' => 'dynamic',
+          'cloud_properties' => network_spec['cloud_properties'],
+          'dns_record_name' => "#{job_index}.#{job.canonical_name}.#{network_spec['name']}.#{plan.canonical_name}.#{domain_name}"
+        )              
+        expect(spec['resource_pool']).to eql(resource_pool_spec)
+        expect(spec['packages']).to eql(packages)
+        expect(spec['persistent_disk']).to eql(0)
+        expect(spec['configuration_hash']).to eql(nil)
+        expect(spec['properties']).to eql(properties)
+        expect(spec['dns_domain_name']).to eql(domain_name)
       end
     end
 
