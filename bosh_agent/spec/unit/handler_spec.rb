@@ -19,9 +19,7 @@ describe Bosh::Agent::Handler do
     Bosh::Agent::Config.smtp_user      = "user"
     Bosh::Agent::Config.smtp_password  = "pass"
 
-    EM.stub!(:next_tick).and_return do |block|
-      block.call
-    end
+    EM.stub!(:next_tick).and_yield
   end
 
   it "should result in a value payload" do
@@ -328,5 +326,28 @@ describe Bosh::Agent::Handler do
     handler = Bosh::Agent::Handler.new
     handler.start
     handler.publish("reply", payload)
+  end
+
+  describe 'prepare_network_change' do
+    let(:udev_file) { '/etc/udev/rules.d/70-persistent-net.rules' }
+    let(:settings_file) { Tempfile.new('test') }
+    
+    it 'should reboot the instance' do      
+      handler = Bosh::Agent::Handler.new
+      handler.start
+      Bosh::Agent::Config.configure = true
+      Bosh::Agent::Config.settings_file = settings_file 
+      
+      EM.should_receive(:defer).and_yield
+      @nats.should_receive(:publish).and_yield
+      File.should_receive(:exist?).with(udev_file).and_return(false)
+      File.should_receive(:delete).with(settings_file)
+      handler.should_receive(:sh).with('/sbin/reboot', :on_error => :return)
+      
+      handler.handle_message(Yajl::Encoder.encode('method' => 'prepare_network_change', 
+                                                  'reply_to' => 'inbox.client_id',
+                                                  'arguments' => []))
+  
+    end
   end
 end
