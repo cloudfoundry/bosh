@@ -271,7 +271,7 @@ module Bosh::AwsCloud
         volume.attachments.each {|attachment| devices << attachment.device}
 
         name = [:deployment, :job, :index].collect { |key| metadata[key] }
-        name << devices.first.split('/').last
+        name << devices.first.split('/').last unless devices.empty?
 
         snapshot = volume.create_snapshot(name.join('/'))
         logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
@@ -279,7 +279,7 @@ module Bosh::AwsCloud
         [:agent_id, :instance_id, :director_name, :director_uuid].each do |key|
           TagManager.tag(snapshot, key, metadata[key])
         end
-        TagManager.tag(snapshot, :device, devices.first)
+        TagManager.tag(snapshot, :device, devices.first) unless devices.empty?
         TagManager.tag(snapshot, 'Name', name.join('/'))
 
         ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
