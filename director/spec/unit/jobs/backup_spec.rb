@@ -38,14 +38,23 @@ describe Bosh::Director::Jobs::Backup do
   end
 
   context 'backing up the blobstore' do
+    before do
+      Dir.stub(:mkdir)
+    end
+
     it 'backs up the blobstore' do
       blobstore_client = double('blobstore client')
       Bosh::Director::Config.should_receive(:blobstore).and_return(blobstore_client)
 
+      fooFile = double(File)
+      barFile = double(File)
+      File.should_receive(:new).with('/tmpdir/blobs/foo', 'w').and_yield(fooFile)
+      File.should_receive(:new).with('/tmpdir/blobs/bar', 'w').and_yield(barFile)
+
       file_list = %w(foo bar)
       blobstore_client.should_receive(:list).and_return(file_list)
-      blobstore_client.should_receive(:get).with('foo', '/tmpdir/blobs/foo')
-      blobstore_client.should_receive(:get).with('bar', '/tmpdir/blobs/bar')
+      blobstore_client.should_receive(:get).with('foo', fooFile)
+      blobstore_client.should_receive(:get).with('bar', barFile)
 
       tar_gzipper.should_receive(:compress).with('/tmpdir/blobs', '/tmpdir/blobs.tgz')
 
@@ -62,8 +71,6 @@ describe Bosh::Director::Jobs::Backup do
         expect { backup_task.backup_blobstore('/foo') }.to raise_error(Bosh::Blobstore::NotImplemented)
       end
     end
-
-
   end
 
   context '#perform' do

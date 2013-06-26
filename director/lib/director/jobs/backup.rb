@@ -69,8 +69,10 @@ module Bosh::Director
 
        # raises NotImplemented if the blobstore client doesn't support list()
       def backup_blobstore(tmpdir)
-        blobs = "#{tmpdir}/blobs"
+        blobs_dir = "#{tmpdir}/blobs"
         output = "#{tmpdir}/blobs.tgz"
+
+        Dir.mkdir(blobs_dir)
 
         track_and_log('Backing up blobstore') do
           blobstore_client = Config.blobstore
@@ -78,11 +80,14 @@ module Bosh::Director
           files = blobstore_client.list
 
           files.each do |file_id|
-            blobstore_client.get(file_id, "#{blobs}/#{file_id}")
+            File.open("#{blobs_dir}/#{file_id}", 'w') do |file|
+              logger.debug("Writing file #{file.path}")
+              blobstore_client.get(file_id, file)
+            end
           end
         end
 
-        @tar_gzipper.compress(blobs, output)
+        @tar_gzipper.compress(blobs_dir, output)
 
         output
       end
