@@ -48,8 +48,10 @@ describe Bosh::Director::Jobs::Backup do
 
       fooFile = double(File)
       barFile = double(File)
-      File.should_receive(:new).with('/tmpdir/blobs/foo', 'w').and_yield(fooFile)
-      File.should_receive(:new).with('/tmpdir/blobs/bar', 'w').and_yield(barFile)
+      fooFile.stub(:path).and_return('foo')
+      barFile.stub(:path).and_return('bar')
+      File.should_receive(:open).with('/tmpdir/blobs/foo', 'w').and_yield(fooFile)
+      File.should_receive(:open).with('/tmpdir/blobs/bar', 'w').and_yield(barFile)
 
       file_list = %w(foo bar)
       blobstore_client.should_receive(:list).and_return(file_list)

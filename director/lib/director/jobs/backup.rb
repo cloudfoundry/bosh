@@ -30,8 +30,8 @@ module Bosh::Director
 
           backup_file = "#{@dest_dir}/backup.tgz"
           @tar_gzipper.compress(files, backup_file)
-          "Backup created at #{backup_file}"
 
+          "Backup created at #{backup_file}"
         end
       end
 
