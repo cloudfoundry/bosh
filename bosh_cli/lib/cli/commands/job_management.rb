@@ -81,17 +81,5 @@ module Bosh::Cli::Command
     def hard_and_soft_options_allowed?(operation)
       operation == :stop || operation == :detach
     end
-
-    def check_if_manifest_changed(manifest)
-      return if force?
-
-      other_changes_present = inspect_deployment_changes(
-          manifest, :show_empty_changeset => false)
-
-      if other_changes_present
-        err('Cannot perform job management when other deployment changes ' +
-                "are present. Please use `--force' to override.")
-      end
-    end
   end
 end
