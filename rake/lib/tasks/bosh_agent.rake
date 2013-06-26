@@ -1,4 +1,5 @@
 namespace :bosh_agent do
+  desc "Update the BOSH Agent code running on an instance"
   task :update, [:instance_name, :gw_host, :gw_user] => :pre_stage_latest do |_, args|
     require_relative '../helpers/instance'
 
