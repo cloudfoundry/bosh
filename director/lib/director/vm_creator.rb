@@ -1,3 +1,5 @@
+require 'common/deep_copy'
+
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
   # @todo refactor to accept Instance or IdleVM instead of passing in all of the
@@ -23,8 +25,7 @@ module Bosh::Director
       vm = nil
       vm_cid = nil
 
-      env.extend(DeepCopy)
-      env = env._deep_copy
+      env = Bosh::Common::DeepCopy.copy(env)
 
       agent_id = self.class.generate_agent_id
 

@@ -208,10 +208,6 @@ RSpec::Matchers.define :have_flag_set do |method_name|
   end
 end
 
-class Object
-  include Bosh::Director::DeepCopy
-end
-
 def asset(filename)
   File.expand_path("../assets/#{filename}", __FILE__)
 end

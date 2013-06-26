@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'common/deep_copy'
+
 module Bosh::Director
   class DeploymentPlan
     class Job
@@ -270,7 +272,7 @@ module Bosh::Director
         # Manifest can contain global and per-job properties section
         job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true)
 
-        @all_properties = deployment.properties._deep_copy
+        @all_properties = Bosh::Common::DeepCopy.copy(deployment.properties)
 
         if job_properties
           @all_properties.recursive_merge!(job_properties)

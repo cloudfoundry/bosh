@@ -189,7 +189,6 @@ module Bosh::Director
     def parse_properties
       @properties = safe_property(@manifest, "properties",
                                   :class => Hash, :default => {})
-      @properties.extend(DeepCopy)
     end
 
     def parse_releases
