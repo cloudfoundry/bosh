@@ -3,6 +3,8 @@
 module Bosh::Agent
 
   class Handler
+    include Bosh::Exec
+
     attr_accessor :nats
     attr_reader :processors
 
@@ -242,7 +244,7 @@ module Bosh::Agent
       # of generating an exception
       if json.bytesize < NATS_MAX_PAYLOAD_SIZE
         EM.next_tick do
-          @nats.publish(reply_to, json, blk)
+          @nats.publish(reply_to, json, &blk)
         end
       else
         msg = "message > NATS_MAX_PAYLOAD, stored in blobstore"
@@ -250,7 +252,7 @@ module Bosh::Agent
         exception = RemoteException.new(msg, nil, unencrypted)
         @logger.fatal(msg)
         EM.next_tick do
-          @nats.publish(reply_to, exception.to_hash, blk)
+          @nats.publish(reply_to, exception.to_hash, &blk)
         end
       end
     end
@@ -306,8 +308,8 @@ module Bosh::Agent
         File.delete(settings_file)
       end
 
-      @logger.info("Halt after networking change")
-      `/sbin/halt`
+      @logger.info("Reboot after networking change")
+      sh('/sbin/reboot', :on_error => :return)
     end
 
     def handle_shutdown(reply_to)
