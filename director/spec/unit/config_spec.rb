@@ -53,6 +53,21 @@ describe Bosh::Director::Config do
     end
   end
 
+  context "enable_snapshots" do
+    it "can enable snapshots in config" do
+      test_config["snapshots"]["enabled"] = true
+      described_class.configure(test_config)
+
+      described_class.enable_snapshots.should == true
+    end
+
+    it "sets a default" do
+      described_class.configure(test_config)
+
+      described_class.enable_snapshots.should == false
+    end
+  end
+
   context "compiled package cache" do
     context "is configured" do
       before(:each) do

@@ -69,6 +69,11 @@ module Bosh::Director
       end
 
       def self.take_snapshot(instance, options={})
+        unless Config.enable_snapshots
+          Config.logger.info('Snapshots are disabled; skipping')
+          return []
+        end
+
         clean = options.fetch(:clean, false)
         snapshot_cids = []
         metadata = {
