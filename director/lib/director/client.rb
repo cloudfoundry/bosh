@@ -9,7 +9,7 @@ module Bosh::Director
       @service_name = service_name
       @client_id = client_id
       @nats_rpc = Config.nats_rpc
-      @timeout = options[:timeout] || 30
+      @timeout = options[:timeout] || 45
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
 
