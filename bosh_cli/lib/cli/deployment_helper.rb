@@ -264,10 +264,6 @@ module Bosh::Cli
       end
     end
 
-    def manifest_error(err)
-      err("Deployment manifest error: #{err}")
-    end
-
     def manifest_target_upgrade_notice
       <<-EOS.gsub(/^\s*/, "").gsub(/\n$/, "")
         Please upgrade your deployment manifest to use director UUID instead
@@ -290,54 +286,71 @@ module Bosh::Cli
       @_diff_key_visited[key.to_s] = 1
     end
 
-    def normalize_deployment_manifest(manifest)
-      normalized = manifest.dup
-
-      %w(releases networks jobs resource_pools).each do |section|
-        normalized[section] ||= []
-
-        unless normalized[section].kind_of?(Array)
-          manifest_error("#{section} is expected to be an array")
-        end
-
-        normalized[section] = normalized[section].inject({}) do |acc, e|
-          if e["name"].blank?
-            manifest_error("missing name for one of entries in '#{section}'")
-          end
-          if acc.has_key?(e["name"])
-            manifest_error("duplicate entry '#{e['name']}' in '#{section}'")
-          end
-          acc[e["name"]] = e
-          acc
-        end
+    class DeploymentManifest
+      def initialize(manifest_hash)
+        @manifest_hash = manifest_hash
       end
 
-      normalized["networks"].each do |network_name, network|
-        # VIP and dynamic networks do not require subnet,
-        # but if it's there we can run some sanity checks
-        next unless network.has_key?("subnets")
+      def normalize
+        normalized = manifest_hash.dup
 
-        unless network["subnets"].kind_of?(Array)
-          manifest_error("network subnets is expected to be an array")
+        %w(releases networks jobs resource_pools).each do |section|
+          normalized[section] ||= []
+
+          unless normalized[section].kind_of?(Array)
+            manifest_error("#{section} is expected to be an array")
+          end
+
+          normalized[section] = normalized[section].inject({}) do |acc, e|
+            if e["name"].blank?
+              manifest_error("missing name for one of entries in '#{section}'")
+            end
+            if acc.has_key?(e["name"])
+              manifest_error("duplicate entry '#{e['name']}' in '#{section}'")
+            end
+            acc[e["name"]] = e
+            acc
+          end
         end
 
-        subnets = network["subnets"].inject({}) do |acc, e|
-          if e["range"].blank?
-            manifest_error("missing range for one of subnets " +
+        normalized["networks"].each do |network_name, network|
+          # VIP and dynamic networks do not require subnet,
+          # but if it's there we can run some sanity checks
+          next unless network.has_key?("subnets")
+
+          unless network["subnets"].kind_of?(Array)
+            manifest_error("network subnets is expected to be an array")
+          end
+
+          subnets = network["subnets"].inject({}) do |acc, e|
+            if e["range"].blank?
+              manifest_error("missing range for one of subnets " +
                                "in '#{network_name}'")
-          end
-          if acc.has_key?(e["range"])
-            manifest_error("duplicate network range '#{e['range']}' " +
+            end
+            if acc.has_key?(e["range"])
+              manifest_error("duplicate network range '#{e['range']}' " +
                                "in '#{network}'")
+            end
+            acc[e["range"]] = e
+            acc
           end
-          acc[e["range"]] = e
-          acc
+
+          normalized["networks"][network_name]["subnets"] = subnets
         end
 
-        normalized["networks"][network_name]["subnets"] = subnets
+        normalized
       end
 
-      normalized
+      private
+      attr_reader :manifest_hash
+
+      def manifest_error(err)
+        err("Deployment manifest error: #{err}")
+      end
+    end
+
+    def normalize_deployment_manifest(manifest_hash)
+      DeploymentManifest.new(manifest_hash).normalize
     end
 
     def warn_about_release_changes(release_diff)
