@@ -765,6 +765,9 @@ module Bosh::Director
           "compiled_package_cache" => {
             "status" => Config.use_compiled_package_cache?,
             "extras" => { "provider" => Config.compiled_package_cache_provider }
+          },
+          "snapshots" => {
+            "status" => Config.enable_snapshots
           }
         }
       }

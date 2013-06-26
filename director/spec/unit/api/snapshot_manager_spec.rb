@@ -107,6 +107,7 @@ describe Bosh::Director::Api::SnapshotManager do
 
     before do
       BD::Config.configure(config)
+      BD::Config.stub(:enable_snapshots).and_return(true)
     end
 
     describe '#delete_snapshots' do
@@ -160,6 +161,14 @@ describe Bosh::Director::Api::SnapshotManager do
 
           snapshot = BDM::Snapshot.find(snapshot_cid: 'snap0c')
           expect(snapshot.clean).to be_true
+        end
+      end
+
+      context 'when snapshotting is disabled' do
+        it 'does nothing' do
+          BD::Config.stub(:enable_snapshots).and_return(false)
+          
+          expect(described_class.take_snapshot(@instance)).to be_empty
         end
       end
 

@@ -19,6 +19,7 @@ describe Bosh::Director::ApiController do
         'provider' => 'local',
         'options' => {'blobstore_path' => @blobstore_dir}
     }
+    test_config["snapshots"]["enabled"] = true
     BD::Config.configure(test_config)
     basic_authorize 'admin', 'admin'
   end
@@ -70,6 +71,9 @@ describe Bosh::Director::ApiController do
           'extras' => {
             'provider' => 'local'
           }
+        },
+        'snapshots' => {
+          'status' => true
         }
       }
     }

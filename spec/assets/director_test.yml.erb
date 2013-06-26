@@ -39,6 +39,8 @@ compiled_package_cache:
     password: bs_pass
 scan_and_fix:
   auto_fix_stateful_nodes: <%= director_fix_stateful_nodes || false %>
+snapshots:
+  enabled: true
 cloud:
   plugin: dummy
   properties:

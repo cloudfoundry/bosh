@@ -73,6 +73,7 @@ apply_spec:
         bucket_name: <%= cache_bucket_name %>
     <% end %>
     director:
+      enable_snapshots: true
       ssl:
         key: |
           <%= director_ssl_key %>
