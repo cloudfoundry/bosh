@@ -4,7 +4,6 @@ require "deployer"
 
 module Bosh::Cli::Command
   class Micro < Base
-    include Bosh::Cli::DeploymentHelper
     include Bosh::Deployer::Helpers
 
     MICRO_DIRECTOR_PORT = 25555
