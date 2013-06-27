@@ -5,19 +5,27 @@ module Bosh::Director
     class UpdateStemcell < BaseJob
       include ValidationHelper
 
+      UPDATE_STEPS = 5
+      
       @queue = :normal
 
       # @param [String] stemcell_file Stemcell tarball path
-      def initialize(stemcell_file)
+      def initialize(stemcell_file, options = {})
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
+        @remote_stemcell = options['remote'] || false
       end
 
       def perform
         logger.info("Processing update stemcell")
-        event_log.begin_stage("Update stemcell", 5)
+        event_log.begin_stage("Update stemcell", update_steps)
 
+        if @remote_stemcell
+          downloaded_stemcell_dir = Dir.mktmpdir("downloaded-stemcell")        
+          download_remote_stemcell(downloaded_stemcell_dir)
+        end
+        
         stemcell_dir = Dir.mktmpdir("stemcell")
 
         track_and_log("Extracting stemcell archive") do
@@ -74,7 +82,51 @@ module Bosh::Director
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
+        FileUtils.rm_rf(downloaded_stemcell_dir) if downloaded_stemcell_dir
         FileUtils.rm_rf(@stemcell_file) if @stemcell_file
+      end
+      
+      def download_remote_stemcell(downloaded_stemcell_dir)
+        track_and_log("Downloading remote stemcell") do
+          stemcell_uri = URI.parse(@stemcell_file)
+          
+          random_name = "stemcell-#{SecureRandom.uuid}"
+          stemcell_file = File.join(downloaded_stemcell_dir, random_name)
+          
+          Net::HTTP.start(stemcell_uri.host, stemcell_uri.port, 
+                          :use_ssl => stemcell_uri.scheme == 'https',
+                          :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+            http.request_get(stemcell_uri.request_uri) do |response|
+              unless response.kind_of? Net::HTTPSuccess
+                logger.error("Downloading remote stemcell from #{@stemcell_file} failed: #{response.message}")
+                if response.kind_of? Net::HTTPNotFound 
+                  msg = "No stemcell found at `#{@stemcell_file}'."
+                else
+                  msg = "Downloading remote stemcell failed. Check task debug log for details."
+                end
+                raise StemcellNotFound, msg
+              end
+                
+              File.open(stemcell_file, 'wb') do |file|
+                response.read_body do |chunk|
+                  file.write(chunk)
+                end
+              end
+            end
+          end
+          
+          @stemcell_file = stemcell_file
+        end
+      rescue URI::Error, SocketError, Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, Errno::ECONNREFUSED, EOFError,
+             Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+        logger.error("Downloading remote stemcell from #{@stemcell_file} failed: #{e.inspect}")
+        raise ResourceError, "Downloading remote stemcell failed. Check task debug log for details."
+      end
+      
+      private
+      
+      def update_steps
+        @remote_stemcell ? UPDATE_STEPS + 1 : UPDATE_STEPS
       end
     end
   end
