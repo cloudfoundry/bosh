@@ -10,7 +10,7 @@ module VCloudCloud
           rescue VCloudSdk::ApiError => e
             raise e if attempt >= attempts-1
             delay = backoff ** attempt
-            Bosh::Clouds.Config.logger.error("Retry-attempt #{attempt+1}/" +
+            Bosh::Clouds::Config.logger.error("Retry-attempt #{attempt+1}/" +
               "#{attempts} failed to #{op}, retrying in #{delay} seconds.\t#{e}")
             sleep (delay)
           end
