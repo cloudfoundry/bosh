@@ -15,9 +15,9 @@ module Bosh::Agent
     MAX_NATS_RETRIES = 10
     NATS_RECONNECT_SLEEP = 0.5
 
-    # Seconds after an unexpected error until we kill the agent so it can be
-    # restarted.
-    KILL_AGENT_THREAD_TIMEOUT = 15
+    # Seconds  until we kill the agent so it can be restarted:
+    KILL_AGENT_THREAD_TIMEOUT_ON_ERRORS = 15 # When there's an unexpected error
+    KILL_AGENT_THREAD_TIMEOUT_ON_RESTART = 1 # When we force a restart 
 
     def initialize
       @agent_id  = Config.agent_id
@@ -286,7 +286,7 @@ module Bosh::Agent
         @logger.info("#{e.inspect}: #{e.backtrace}")
         return RemoteException.from(e).to_hash
       rescue Exception => e
-        kill_main_thread_in(KILL_AGENT_THREAD_TIMEOUT)
+        kill_main_thread_in(KILL_AGENT_THREAD_TIMEOUT_ON_ERRORS)
         @logger.error("#{e.inspect}: #{e.backtrace}")
         return {:exception => "#{e.inspect}: #{e.backtrace}"}
       end
@@ -296,6 +296,15 @@ module Bosh::Agent
       SecureRandom.uuid
     end
 
+    ##
+    # When there's a network change on an existing vm, director sends a prepare_network_change message to the vm      
+    # agent. After agent replies to director with a `true` message, the post_prepare_network_change method is called
+    # (via EM callback).
+    #
+    # The post_prepare_network_change  method will delete the udev network persistent rules, delete the agent settings 
+    # and then it should restart the agent to get the new agent settings (set by director-cpi). For a simple network 
+    # change (i.e. dns changes) this is enough, as when the agent is restarted it will apply the new network settings. 
+    # But for other network changes (i.e. IP change), the CPI will be responsible to reboot or recreate the vm if needed.    
     def post_prepare_network_change
       if Bosh::Agent::Config.configure
         udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
@@ -308,8 +317,8 @@ module Bosh::Agent
         File.delete(settings_file)
       end
 
-      @logger.info("Reboot after networking change")
-      sh('/sbin/reboot', :on_error => :return)
+      @logger.info("Restarting agent to prepare for a network change")
+      kill_main_thread_in(KILL_AGENT_THREAD_TIMEOUT_ON_RESTART)
     end
 
     def handle_shutdown(reply_to)

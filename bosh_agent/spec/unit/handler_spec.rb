@@ -332,7 +332,7 @@ describe Bosh::Agent::Handler do
     let(:udev_file) { '/etc/udev/rules.d/70-persistent-net.rules' }
     let(:settings_file) { Tempfile.new('test') }
     
-    it 'should reboot the instance' do      
+    it 'should delete the settings file and restart the agent' do      
       handler = Bosh::Agent::Handler.new
       handler.start
       Bosh::Agent::Config.configure = true
@@ -342,7 +342,7 @@ describe Bosh::Agent::Handler do
       @nats.should_receive(:publish).and_yield
       File.should_receive(:exist?).with(udev_file).and_return(false)
       File.should_receive(:delete).with(settings_file)
-      handler.should_receive(:sh).with('/sbin/reboot', :on_error => :return)
+      handler.should_receive(:kill_main_thread_in).with(1)
       
       handler.handle_message(Yajl::Encoder.encode('method' => 'prepare_network_change', 
                                                   'reply_to' => 'inbox.client_id',
