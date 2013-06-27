@@ -1,3 +1,5 @@
+require 'common/deep_copy'
+
 module Bosh::Cli
   class DeploymentManifest
     def initialize(manifest_hash)
@@ -5,7 +7,7 @@ module Bosh::Cli
     end
 
     def normalize
-      normalized = manifest_hash.dup
+      normalized = Bosh::Common::DeepCopy.copy(manifest_hash)
 
       %w(releases networks jobs resource_pools).each do |section|
         normalized[section] ||= []
