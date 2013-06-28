@@ -204,8 +204,8 @@ module Bosh::Cli
         director.list_releases.inject({}) do |hash, release|
           name = release["name"]
           versions = release["versions"] || release["release_versions"].map { |release_version| release_version["version"] }
-          latest_version = versions.sort { |v1, v2| version_cmp(v1, v2) }.last
-          hash[name] = latest_version
+          latest_version = versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max
+          hash[name] = latest_version.to_s
           hash
         end
       end
