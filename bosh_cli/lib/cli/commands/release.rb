@@ -77,7 +77,7 @@ module Bosh::Cli::Command
     end
 
     usage "upload release"
-    desc "Upload release"
+    desc "Upload release (release_file can be a local file or a remote URI)"
     option "--rebase",
            "Rebases this release onto the latest version",
            "known by director (discards local job/package",
@@ -101,16 +101,20 @@ module Bosh::Cli::Command
         end
       end
 
-      unless File.exist?(release_file)
-        err("Release file doesn't exist")
-      end
-
-      file_type = `file --mime-type -b '#{release_file}'`
-
-      if file_type =~ /text\/(plain|yaml)/
-        upload_manifest(release_file, upload_options)
+      if release_file =~ /^#{URI::regexp}$/
+        upload_remote_release(release_file, upload_options)
       else
-        upload_tarball(release_file, upload_options)
+        unless File.exist?(release_file)
+          err("Release file doesn't exist")
+        end
+
+        file_type = `file --mime-type -b '#{release_file}'`
+
+        if file_type =~ /text\/(plain|yaml)/
+          upload_manifest(release_file, upload_options)
+        else
+          upload_tarball(release_file, upload_options)
+        end
       end
     end
 
@@ -258,6 +262,19 @@ module Bosh::Cli::Command
       end
     end
 
+    def upload_remote_release(release_location, upload_options = {})
+      nl
+      if upload_options[:rebase]
+        say("Uploading remote release `#{release_location}' (#{"will be rebased".make_yellow})")
+        status, task_id = director.rebase_remote_release(release_location)
+        task_report(status, task_id, "Release rebased")
+      else
+        say("Uploading remote release `#{release_location}'")
+        status, task_id = director.upload_remote_release(release_location)
+        task_report(status, task_id, "Release uploaded")                
+      end
+    end
+    
     def create_from_manifest(manifest_file)
       say("Recreating release from the manifest")
       Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)

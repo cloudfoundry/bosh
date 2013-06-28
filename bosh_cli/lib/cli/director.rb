@@ -165,6 +165,24 @@ module Bosh
         upload_and_track(:post, "/releases?rebase=true", filename, options)
       end
 
+      def upload_remote_release(release_location, options = {})
+        options = options.dup
+        payload = { 'location' => release_location }  
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = 'application/json'          
+
+        request_and_track(:post, '/releases', options)
+      end           
+
+      def rebase_remote_release(release_location, options = {})
+        options = options.dup
+        payload = { 'location' => release_location }  
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = 'application/json'          
+
+        request_and_track(:post, '/releases?rebase=true', options)
+      end
+      
       def delete_stemcell(name, version, options = {})
         options = options.dup
         force = options.delete(:force)
