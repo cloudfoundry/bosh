@@ -20,16 +20,30 @@ describe Bosh::Director::Api::ReleaseManager do
         subject.stub(:write_file)
       end
 
-      it 'enqueues a resque job' do
-        Dir.stub(mktmpdir: 'FAKE_TMPDIR')
-
-        Resque.should_receive(:enqueue).with(BD::Jobs::UpdateRelease, task.id, 'FAKE_TMPDIR', {})
-
-        subject.create_release(user, 'FAKE_RELEASE_BUNDLE')
-      end
-
       it 'returns the task created by JobQueue' do
         expect(subject.create_release(user, 'FAKE_RELEASE_BUNDLE')).to eq(task)
+      end
+
+      context 'local release' do
+        it 'enqueues a resque job' do
+          Dir.stub(mktmpdir: 'FAKE_TMPDIR')
+
+          Resque.should_receive(:enqueue).with(BD::Jobs::UpdateRelease, task.id, 'FAKE_TMPDIR', {})
+
+          subject.create_release(user, 'FAKE_RELEASE_BUNDLE')
+        end
+      end
+
+      context 'remote release' do
+        it 'enqueues a resque job' do
+          Dir.stub(mktmpdir: 'FAKE_TMPDIR')
+
+          Resque.should_receive(:enqueue)
+            .with(BD::Jobs::UpdateRelease, task.id, 'FAKE_TMPDIR', {'remote' => true,
+                                                                    'location' => 'FAKE_RELEASE_BUNDLE'})
+
+          subject.create_release(user, 'FAKE_RELEASE_BUNDLE', {'remote' => true})
+        end
       end
     end
   end

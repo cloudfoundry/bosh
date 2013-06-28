@@ -47,6 +47,7 @@ require "director/ip_util"
 require "director/lock_helper"
 require "director/metadata_helper"
 require "director/validation_helper"
+require "director/download_helper"
 
 require "director/version"
 require "director/next_rebase_version"
@@ -271,9 +272,20 @@ module Bosh::Director
 
     post "/releases", :consumes => :tgz do
       options = {}
+      options["remote"] = false
       options["rebase"] = true if params["rebase"] == "true"
 
       task = @release_manager.create_release(@user, request.body, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    post "/releases", :consumes => :json do
+      options = {}
+      options["remote"] = true
+      options["rebase"] = true if params["rebase"] == "true"
+      payload = json_decode(request.body)
+
+      task = @release_manager.create_release(@user, payload["location"], options)
       redirect "/tasks/#{task.id}"
     end
 
