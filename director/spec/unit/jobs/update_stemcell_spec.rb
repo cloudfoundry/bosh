@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require File.expand_path("../../../spec_helper", __FILE__)
+require 'net/http'
 
 describe Bosh::Director::Jobs::UpdateStemcell do
 
@@ -22,7 +23,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     FileUtils.rm_rf(@stemcell_file.path)
   end
 
-  it "should upload the stemcell" do
+  it "should upload a local stemcell" do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
       contents = File.open(image) { |f| f.read }
       contents.should eql("image contents")
@@ -38,6 +39,23 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     stemcell.sha1.should == "shawone"
   end
 
+  it "should upload a remote stemcell" do
+    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
+      contents = File.open(image) { |f| f.read }
+      contents.should eql("image contents")
+      "stemcell-cid"
+    end
+    
+    update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, {'remote' => true})
+    update_stemcell_job.should_receive(:download_remote_stemcell)    
+    update_stemcell_job.perform
+    
+    stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
+    stemcell.should_not be_nil
+    stemcell.cid.should == "stemcell-cid"
+    stemcell.sha1.should == "shawone"
+  end
+  
   it "should cleanup the stemcell file" do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
       contents = File.open(image) { |f| f.read }
@@ -68,5 +86,60 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     expect {
       update_stemcell_job.perform
     }.to raise_exception(Bosh::Director::StemcellInvalidArchive)
+  end
+  
+  describe 'download_remote_stemcell' do
+    let(:http) { mock('http') }
+    let(:http_200) { Net::HTTPSuccess.new('1.1', '200', 'OK') }
+    let(:http_404) { Net::HTTPNotFound.new('1.1', 404, 'Not Found') }
+    let(:http_500) { Net::HTTPInternalServerError.new('1.1', '500', 'Internal Server Error') }
+    let(:stemcell_uri) { 'http://example.com/stemcell.tgz' }
+
+    it 'should download a remote stemcell' do
+      update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(stemcell_uri, {'remote' => true})
+      SecureRandom.stub(:uuid).and_return('uuid')
+      Net::HTTP.stub(:start).and_yield(http)
+      http.should_receive(:request_get).and_yield(http_200)
+      http_200.should_receive(:read_body)
+      
+      update_stemcell_job.download_remote_stemcell(@tmpdir)
+    end
+    
+    it 'should return a StemcellNotFound exception if remote server returns a NotFound error' do
+      update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(stemcell_uri, {'remote' => true})
+      Net::HTTP.stub(:start).and_yield(http)
+      http.should_receive(:request_get).and_yield(http_404)
+      
+      expect {
+        update_stemcell_job.download_remote_stemcell(@tmpdir)
+      }.to raise_error(Bosh::Director::StemcellNotFound, "No stemcell found at `#{stemcell_uri}'.")
+    end
+    
+    it 'should return a StemcellNotFound exception if remote server returns an error code' do
+      update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(stemcell_uri, {'remote' => true})
+      Net::HTTP.stub(:start).and_yield(http)
+      http.should_receive(:request_get).and_yield(http_500)
+      
+      expect {
+        update_stemcell_job.download_remote_stemcell(@tmpdir)
+      }.to raise_error(Bosh::Director::StemcellNotFound, 'Downloading remote stemcell failed. Check task debug log for details.')
+    end
+    
+    it 'should return a ResourceError exception if stemcell URI is invalid' do
+      update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new('http://example.com?a|b', {'remote' => true})
+      
+      expect {
+        update_stemcell_job.download_remote_stemcell(@tmpdir)
+      }.to raise_error(Bosh::Director::ResourceError, 'Downloading remote stemcell failed. Check task debug log for details.')
+    end
+    
+    it 'should return a ResourceError exception if there is a connection error' do
+      update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(stemcell_uri, {'remote' => true})
+      Net::HTTP.stub(:start).and_raise(Timeout::Error) 
+      
+      expect {
+        update_stemcell_job.download_remote_stemcell(@tmpdir)
+      }.to raise_error(Bosh::Director::ResourceError, 'Downloading remote stemcell failed. Check task debug log for details.')
+    end
   end
 end

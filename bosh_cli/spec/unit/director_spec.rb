@@ -85,12 +85,21 @@ describe Bosh::Cli::Director do
       @director.delete_user("joe").should == false
     end
 
-    it "uploads stemcell" do
+    it "uploads local stemcell" do
       @director.should_receive(:upload_and_track).
           with(:post, "/stemcells", "/path",
                {:content_type => "application/x-compressed"}).
           and_return(true)
       @director.upload_stemcell("/path")
+    end
+
+    it "uploads remote stemcell" do
+      @director.should_receive(:request_and_track).
+          with(:post, "/stemcells", 
+               {:content_type => "application/json", 
+                :payload => JSON.generate("location" => "stemcell_uri")}).
+          and_return(true)
+      @director.upload_remote_stemcell("stemcell_uri")
     end
 
     it "lists stemcells" do

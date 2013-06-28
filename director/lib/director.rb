@@ -492,8 +492,14 @@ module Bosh::Director
     # TODO: stop, start, restart jobs/instances
 
     post "/stemcells", :consumes => :tgz do
-      task = @stemcell_manager.create_stemcell(@user, request.body)
+      task = @stemcell_manager.create_stemcell(@user, request.body, :remote => false)
       redirect "/tasks/#{task.id}"
+    end
+
+    post "/stemcells", :consumes => :json do
+      payload = json_decode(request.body)
+      task = @stemcell_manager.create_stemcell(@user, payload["location"], :remote => true)
+      redirect "/tasks/#{task.id}"      
     end
 
     get "/stemcells" do
