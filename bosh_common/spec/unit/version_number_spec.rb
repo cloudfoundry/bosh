@@ -90,4 +90,45 @@ describe Bosh::Common::VersionNumber do
       end
     end
   end
+
+  describe 'final?' do
+    it 'marks a release as final if does not end in -dev' do
+      expect(version('10.1-dev')).to_not be_final
+      expect(version('10.1')).to be_final
+    end
+  end
+
+  describe 'next_minor' do
+    it 'returns a new VersionNumber with the next sequential minor version' do
+      expect(version('10').next_minor).to eq version('10.1')
+      expect(version('10.1').next_minor).to eq version('10.2')
+      expect(version('10.1.2').next_minor).to eq version('10.2.0')
+    end
+
+    it 'does not modify the existing version' do
+      version = version('10')
+
+      expect {
+        version.next_minor
+      }.to_not change(version, :to_s)
+    end
+  end
+
+  describe 'dev' do
+    it 'returns a new VersionNumber with -dev suffix' do
+      expect(version('10').dev).to_not be_final
+    end
+
+    it 'does not add more than one -dev suffix' do
+      expect(version('10-dev').dev.to_s).to eq '10-dev'
+    end
+
+    it 'does not modify the existing version' do
+      version = version('10')
+
+      expect {
+        version.dev
+      }.to_not change(version, :to_s)
+    end
+  end
 end

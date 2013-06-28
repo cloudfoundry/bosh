@@ -37,5 +37,17 @@ module Bosh::Common
     def to_s
       @version
     end
+
+    def final?
+      !@version.end_with?('-dev')
+    end
+
+    def next_minor
+      self.class.new("#{major}.#{minor + 1}")
+    end
+
+    def dev
+      final? ? self.class.new("#{@version}-dev") : self
+    end
   end
 end

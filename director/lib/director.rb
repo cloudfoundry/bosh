@@ -49,10 +49,10 @@ require "director/metadata_helper"
 require "director/validation_helper"
 
 require "director/version"
+require "director/next_rebase_version"
 require "director/config"
 require "director/event_log"
 require "director/task_result_file"
-require "director/version_calc"
 require "director/blob_util"
 
 require "director/client"

@@ -2,8 +2,6 @@
 
 module Bosh::Director
   class BlobUtil
-    extend ::Bosh::Director::VersionCalc
-
     # @param [String] path Path to a file to be uploaded
     # @return [String] Created blob id
     def self.create_blob(path)
