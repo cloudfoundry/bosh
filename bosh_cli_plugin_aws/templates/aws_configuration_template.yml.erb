@@ -177,19 +177,6 @@ rds:
       allocated_storage: 100
       iops: 1000
       <%- end -%>
-  - instance: mysql-service-cf-internal
-    tag: mysql
-    subnets:
-      - services_rds1
-      - services_rds2
-    aws_creation_options:
-      db_name: mgmt
-      engine_version: 5.5.27
-      db_instance_class: <%= rds_sizes[:large] %>
-      <%- if production_resources? -%>
-      allocated_storage: 100
-      iops: 1000
-      <%- end -%>
   - instance: bosh
     tag: bosh
     subnets:
