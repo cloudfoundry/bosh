@@ -85,6 +85,15 @@ module Bosh
         upload_and_track(:post, "/stemcells", filename, options)
       end
 
+      def upload_remote_stemcell(stemcell_location, options = {})
+        options = options.dup               
+        payload = { 'location' => stemcell_location }  
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = 'application/json'          
+
+        request_and_track(:post, '/stemcells', options)
+      end      
+      
       def get_version
         get_status["version"]
       end
