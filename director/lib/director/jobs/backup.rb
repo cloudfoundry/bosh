@@ -6,9 +6,13 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(dest_dir, options={})
+      def initialize(dest_dir, tar_gzipper=Bosh::Director::TarGziper.new, blobstore_client=App.instance.blobstores.blobstore)
         @dest_dir = dest_dir
-        @tar_gzipper = options.fetch(:tar_gzipper, Bosh::Director::TarGziper.new)
+        @tar_gzipper = tar_gzipper
+        @blobstore_client = blobstore_client
+
+        #@tar_gzipper = options.fetch(:tar_gzipper, Bosh::Director::TarGziper.new)
+        #@blobstore_client = options.fetch(:blobstore_client, Blobstores.blobstore)
       end
 
       def perform
@@ -75,14 +79,12 @@ module Bosh::Director
         Dir.mkdir(blobs_dir)
 
         track_and_log('Backing up blobstore') do
-          blobstore_client = Config.blobstore
-
-          files = blobstore_client.list
+          files = @blobstore_client.list
 
           files.each do |file_id|
             File.open("#{blobs_dir}/#{file_id}", 'w') do |file|
               logger.debug("Writing file #{file.path}")
-              blobstore_client.get(file_id, file)
+              @blobstore_client.get(file_id, file)
             end
           end
         end

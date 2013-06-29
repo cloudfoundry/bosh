@@ -3,8 +3,13 @@
 require 'fileutils'
 
 module Bosh::Director
-  class Config
 
+  # We are in the slow painful process of extracting all of this class-level
+  # behavior into instance behavior, much of it on the App class. When this
+  # process is complete, the Config will be responsible only for maintaining
+  # configuration information - not holding the state of the world.
+
+  class Config
     class << self
       include DnsHelper
 
@@ -54,6 +59,7 @@ module Bosh::Director
       end
 
       def configure(config)
+
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
 
@@ -96,12 +102,9 @@ module Bosh::Director
         @nats_uri = config["mbus"]
 
         @cloud_options = config["cloud"]
-        @blobstore_options = config["blobstore"]
-
         @compiled_package_cache_options = config["compiled_package_cache"]
         @name = config["name"] || ""
 
-        @blobstore = nil
         @compiled_package_cache = nil
 
         @db_config = config['db']
@@ -152,17 +155,6 @@ module Bosh::Director
         end
 
         db
-      end
-
-      def blobstore
-        @lock.synchronize do
-          if @blobstore.nil?
-            provider = @blobstore_options["provider"]
-            options = @blobstore_options["options"]
-            @blobstore = Bosh::Blobstore::Client.create(provider, options)
-          end
-        end
-        @blobstore
       end
 
       def compiled_package_cache_blobstore
@@ -351,6 +343,23 @@ module Bosh::Director
         SecureRandom.uuid
       end
 
+    end
+
+    class << self
+      def load_file(path)
+        Config.new(YAML.load_file(path))
+      end
+      def load_hash(hash)
+        Config.new(hash)
+      end
+    end
+
+    attr_reader :hash
+
+    private
+
+    def initialize(hash)
+      @hash = hash
     end
 
   end

@@ -21,6 +21,7 @@ describe Bosh::Director::ApiController do
     }
     test_config["snapshots"]["enabled"] = true
     BD::Config.configure(test_config)
+    @director_app = BD::App.new(BD::Config.load_hash(test_config))
   end
 
   after(:each) do
@@ -28,7 +29,7 @@ describe Bosh::Director::ApiController do
   end
 
   def app
-    @app ||= Bosh::Director::ApiController.new
+    @rack_app ||= Bosh::Director::ApiController.new
   end
 
   def login_as_admin
@@ -626,7 +627,7 @@ describe Bosh::Director::ApiController do
       end
 
       it "can fetch resources from blobstore" do
-        id = BD::Config.blobstore.create("some data")
+        id = @director_app.blobstores.blobstore.create("some data")
         get "/resources/#{id}"
         last_response.status.should == 200
         last_response.body.should == "some data"

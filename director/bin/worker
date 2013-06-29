@@ -26,6 +26,8 @@ opts.parse!(ARGV.dup)
 config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
 config = nil
 
+# What is up with this? There does not appear to be any double-escaped 'index' in
+# the director.yml.erb. Maybe this code can go away?
 if erb
   class ConfigBindingHelper
     attr_reader :index
@@ -41,14 +43,15 @@ if erb
 
   template = ERB.new(File.read(config_file), 0, "%<>-")
   contents = template.result(ConfigBindingHelper.new(index).get_binding)
-  config = Psych.load(contents)
+  config_hash = Psych.load(contents)
+  config = Config.load_hash(config_hash)
 else
-  config = Psych.load_file(config_file)
+  config = Config.load_file(config_file)
 end
 
-Bosh::Director::Config.configure(config)
+Bosh::Director::App.new(config)
 
-resque_logging = config.fetch('resque', {}).fetch('logging', {})
+resque_logging = config.hash.fetch('resque', {}).fetch('logging', {})
 resque_log_device = Logger::LogDevice.new(resque_logging.fetch('file', STDOUT))
 resque_logger_level = resque_logging.fetch('level', 'info').upcase
 Resque.logger = Logger.new(resque_log_device)

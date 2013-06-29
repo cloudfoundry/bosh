@@ -14,9 +14,9 @@ end
 opts.parse!(ARGV.dup)
 
 config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
-config = Psych.load_file(config_file)
+config = Config.load_file(config_file)
 
-Bosh::Director::Config.configure(config)
+Bosh::Director::App.new(config)
 
 thin_server = Thin::Server.new("127.0.0.1", config["port"], :signals => false) do
   use Rack::CommonLogger

@@ -36,3 +36,9 @@ cloud:
   properties:
     dir: ...
      # to be added
+backup_destination:
+  provider: s3
+  options:
+    bucket_name: foo
+    access_key_id: asdf
+    secret_access_key: zxcv

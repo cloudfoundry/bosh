@@ -1,4 +1,71 @@
 ---
+<%
+  def blobstore_config(name, config_name)
+    config = p(config_name, nil)
+    return '' unless config
+
+    provider = config['provider']
+
+    # Some blobstore configs in the manifest have an extra 'options' hash
+    # and some just put the options at the same hash level as 'provider'.
+    # This line makes 'options' optional.
+    config = config['options'] if config['options']
+
+    opts = case provider
+      when 's3'
+        {
+          'bucket_name' => config['bucket_name'],
+          'access_key_id' => config['access_key_id'],
+          'secret_access_key' => config['secret_access_key'],
+        }
+      when 'swift'
+        swift_provider = config['swift_provider']
+        swift_stuff = case swift_provider
+          when 'hp'
+            {
+              'hp' => {
+                'hp_access_key' => config['hp_access_key'],
+                'hp_secret_key' => config['hp_secret_key'],
+                'hp_tenant_id' => config['hp_tenant_id'],
+                'hp_avl_zone' => config['hp_avl_zone'],
+              }
+            }
+          when 'openstack'
+            openstack_stuff = {
+              'openstack' => {
+                'openstack_auth_url' => config['openstack_auth_url'],
+                'openstack_username' => config['openstack_username'],
+                'openstack_api_key' => config['openstack_api_key'],
+                'openstack_tenant' => config['openstack_tenant'],
+              }
+            }
+            openstack_stuff['openstack_region'] = config['openstack_region'] if config['openstack_region']
+            openstack_stuff
+          when 'rackspace'
+            rackspace_stuff = {
+              'rackspace' => {
+                'rackspace_username' => config['rackspace_username'],
+                'rackspace_api_key' => config['rackspace_api_key'],
+              }
+            }
+            rackspace_stuff['rackspace_region'] = config['rackspace_region'] if config['rackspace_region']
+            rackspace_stuff
+        end
+        {
+          'swift_provider' => swift_provider,
+          'container_name' => config['container_name'],
+        }.merge(swift_stuff)
+      else {
+        'endpoint' => config['address'],
+        'user' => config['user'],
+        'password' => config['password'],
+      }
+    end
+
+    { 'provider' => provider, 'options' => opts }.to_yaml
+  end
+%>
+
 name: <%= p('director.name') %>
 port: <%= p('director.backend_port') %>
 encryption: <%= p('director.encryption') %>
@@ -59,68 +126,10 @@ dns:
     connection_options: <%= JSON.generate(connection_options) %>
 <% end %>
 
-blobstore:
-  provider: <%= p('blobstore.provider') %>
-  options:
-<% if p('blobstore.provider') == "s3" %>
-    bucket_name: <%= p('blobstore.bucket_name') %>
-    access_key_id: <%= p('blobstore.access_key_id') %>
-    secret_access_key: <%= p('blobstore.secret_access_key') %>
-<% else %>
-    endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
-    user: <%= p('blobstore.director.user') %>
-    password: <%= p('blobstore.director.password') %>
-<% end %>
-<% if_p('compiled_package_cache.options.bucket_name',
-        'compiled_package_cache.options.access_key_id',
-        'compiled_package_cache.options.secret_access_key') do |bucket_name, access_key_id, secret_access_key| %>
-compiled_package_cache:
-  provider: s3
-  options:
-    bucket_name: <%= bucket_name %>
-    access_key_id: <%= access_key_id %>
-    secret_access_key: <%= secret_access_key %>
-<% end %>
-<% if_p('compiled_package_cache.options.swift_provider',
-        'compiled_package_cache.options.container_name') do |swift_provider, container_name| %>
-compiled_package_cache:
-  provider: swift
-  options:
-    swift_provider: <%= swift_provider %>
-    container_name: <%= container_name %>
-    <% if_p('compiled_package_cache.options.hp_access_key',
-            'compiled_package_cache.options.hp_secret_key',
-            'compiled_package_cache.options.hp_tenant_id',
-            'compiled_package_cache.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
-    hp:
-      hp_access_key: <%= hp_access_key %>
-      hp_secret_key: <%= hp_secret_key %>
-      hp_tenant_id: <%= hp_tenant_id %>
-      hp_avl_zone: <%= hp_avl_zone %>
-    <% end %>
-    <% if_p('compiled_package_cache.options.openstack_auth_url',
-            'compiled_package_cache.options.openstack_username',
-            'compiled_package_cache.options.openstack_api_key',
-            'compiled_package_cache.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
-    openstack:
-      openstack_auth_url: <%= openstack_auth_url %>
-      openstack_username: <%= openstack_username %>
-      openstack_api_key: <%= openstack_api_key %>
-      openstack_tenant: <%= openstack_tenant %>
-      <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
-      openstack_region: <%= openstack_region %>
-      <% end %>
-    <% end %>
-    <% if_p('compiled_package_cache.options.rackspace_username',
-            'compiled_package_cache.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
-    rackspace:
-      rackspace_username: <%= rackspace_username %>
-      rackspace_api_key: <%= rackspace_api_key %>
-      <% if_p('compiled_package_cache.options.rackspace_region') do |rackspace_region| %>
-      rackspace_region: <%= rackspace_region %>
-      <% end %>
-    <% end %>
-<% end %>
+<%= blobstore_config('blobstore', 'blobstore') %>
+<%= blobstore_config('backup_destination', 'director.backup_destination') %>
+<%= blobstore_config('compiled_package_cache', 'compiled_package_cache') %>
+
 cloud:
 <% plugin = nil %>
 <% if_p('aws.access_key_id', 'aws.secret_access_key',

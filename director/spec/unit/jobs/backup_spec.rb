@@ -4,7 +4,8 @@ require 'blobstore_client'
 describe Bosh::Director::Jobs::Backup do
   let(:dest_dir) { '/dest_dir' }
   let(:tar_gzipper) { double('tar gzipper') }
-  let(:backup_task) { described_class.new(dest_dir, tar_gzipper: tar_gzipper) }
+  let(:blobstore_client) { double(Bosh::Blobstore::Client) }
+  let(:backup_task) { described_class.new(dest_dir, tar_gzipper, blobstore_client) }
 
   context '#backup_logs' do
     let(:log_directory) { '/var/vcap/sys/log' }
@@ -43,9 +44,6 @@ describe Bosh::Director::Jobs::Backup do
     end
 
     it 'backs up the blobstore' do
-      blobstore_client = double('blobstore client')
-      Bosh::Director::Config.should_receive(:blobstore).and_return(blobstore_client)
-
       fooFile = double(File)
       barFile = double(File)
       fooFile.stub(:path).and_return('foo')
@@ -65,9 +63,6 @@ describe Bosh::Director::Jobs::Backup do
 
     describe '#backup_blobstore' do
       it 'raises NotImplemented when the blobstore client does not support listing objects' do
-        blobstore_client = double('blobstore client')
-        Bosh::Director::Config.should_receive(:blobstore).and_return(blobstore_client)
-
         blobstore_client.should_receive(:list).and_raise(Bosh::Blobstore::NotImplemented)
 
         expect { backup_task.backup_blobstore('/foo') }.to raise_error(Bosh::Blobstore::NotImplemented)
