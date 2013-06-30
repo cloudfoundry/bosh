@@ -78,7 +78,11 @@ module Bosh::Cli::Command
               row << "#{mem["percent"]}% (#{pretty_size(mem["kb"].to_i * 1024)})"
               row << "#{swap["percent"]}% (#{pretty_size(swap["kb"].to_i * 1024)})"
               row << "#{disk["system"]["percent"]}%"
-              row << "#{disk["ephemeral"]["percent"]}%"
+              if disk["ephemeral"].nil?
+                row << "n/a"
+              else
+                row << "#{disk["ephemeral"]["percent"]}%"
+              end
               if disk["persistent"].nil?
                 row << "n/a"
               else
