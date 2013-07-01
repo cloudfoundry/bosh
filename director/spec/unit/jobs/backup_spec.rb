@@ -5,7 +5,7 @@ describe Bosh::Director::Jobs::Backup do
   let(:dest_dir) { '/dest_dir' }
   let(:tar_gzipper) { double('tar gzipper') }
   let(:blobstore_client) { double(Bosh::Blobstore::Client) }
-  let(:backup_task) { described_class.new(dest_dir, tar_gzipper, blobstore_client) }
+  let(:backup_task) { described_class.new(dest_dir, tar_gzipper: tar_gzipper, blobstore: blobstore_client) }
 
   context '#backup_logs' do
     let(:log_directory) { '/var/vcap/sys/log' }

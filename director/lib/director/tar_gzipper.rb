@@ -1,7 +1,7 @@
 require "tmpdir"
 
 module Bosh::Director
-  class TarGziper
+  class TarGzipper
     include Bosh::RunsCommands
 
     SourceNotFound = Class.new(RuntimeError)

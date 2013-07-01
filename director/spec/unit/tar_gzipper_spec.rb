@@ -3,7 +3,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-describe Bosh::Director::TarGziper do
+describe Bosh::Director::TarGzipper do
   let(:src) { Dir.mktmpdir }
   let(:dest) { Tempfile.new("logs").path }
   let(:tar_gzipper) { described_class.new }
@@ -33,7 +33,7 @@ describe Bosh::Director::TarGziper do
     it "raises an error" do
       expect {
         tar_gzipper.compress(src, dest)
-      }.to raise_error(Bosh::Director::TarGziper::SourceNotFound, "The source directory #{src} could not be found.")
+      }.to raise_error(Bosh::Director::TarGzipper::SourceNotFound, "The source directory #{src} could not be found.")
     end
   end
 
@@ -43,7 +43,7 @@ describe Bosh::Director::TarGziper do
     it "raises an error" do
       expect {
         tar_gzipper.compress(src, dest)
-      }.to raise_error(Bosh::Director::TarGziper::SourceNotAbsolute, "The source directory #{src} is not an absolute path.")
+      }.to raise_error(Bosh::Director::TarGzipper::SourceNotAbsolute, "The source directory #{src} is not an absolute path.")
     end
   end
 

@@ -6,10 +6,10 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(dest_dir, tar_gzipper=Bosh::Director::TarGziper.new, blobstore_client=App.instance.blobstores.blobstore)
+      def initialize(dest_dir, options = {})
         @dest_dir = dest_dir
-        @tar_gzipper = tar_gzipper
-        @blobstore_client = blobstore_client
+        @tar_gzipper = options.fetch(:tar_gzipper) { TarGzipper.new }
+        @blobstore_client = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
       end
 
       def perform
