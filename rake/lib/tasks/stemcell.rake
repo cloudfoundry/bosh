@@ -64,7 +64,6 @@ namespace :stemcell do
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
 
-
     if args[:version]
       options[:stemcell_version] = args[:version]
       options[:agent_gem_src_url] = 'https://s3.amazonaws.com/bosh-ci-pipeline/gems/'
@@ -152,9 +151,13 @@ namespace :stemcell do
       image_create_disk_size: (args[:disk_size] || 2048).to_i
     }
 
-    # Pass OVFTOOL environment variable when targeting vsphere
-    if infrastructure == "vsphere"
-      options[:image_vsphere_ovf_ovftool_path] = ENV["OVFTOOL"]
+    case infrastructure
+      when "vsphere"
+        # Pass OVFTOOL environment variable when targeting vsphere
+        options[:image_vsphere_ovf_ovftool_path] = ENV["OVFTOOL"]
+      when "openstack"
+        # Increase the disk size to 10Gb to deal with flavors that doesn't have ephemeral disk
+        options[:image_create_disk_size] = 10240 unless args[:disk_size]
     end
 
     options
