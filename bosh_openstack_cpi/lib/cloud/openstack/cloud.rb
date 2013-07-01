@@ -8,6 +8,7 @@ module Bosh::OpenStackCloud
     include Helpers
 
     BOSH_APP_DIR = "/var/vcap/bosh"
+    FIRST_DEVICE_NAME_LETTER = "b"
 
     attr_reader :openstack
     attr_reader :registry
@@ -691,7 +692,7 @@ module Bosh::OpenStackCloud
       device = volume_attachments.find { |a| a["volumeId"] == volume.id }
 
       if device.nil?                
-        device_name = select_device_name(volume_attachments)
+        device_name = select_device_name(volume_attachments, first_device_name_letter(server))
         cloud_error("Server has too many disks attached") if device_name.nil?
 
         @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}', device name is `#{device_name}'")
@@ -709,9 +710,10 @@ module Bosh::OpenStackCloud
     # Select the first available device name
     #
     # @param [Array] volume_attachments Volume attachments
-    # @return [String] First available device name or nil is none is available 
-    def select_device_name(volume_attachments)
-      ("c".."z").each do |char|
+    # @param [String] first_device_name_letter First available letter for device names
+    # @return [String] First available device name or nil is none is available
+    def select_device_name(volume_attachments, first_device_name_letter)
+      (first_device_name_letter.."z").each do |char|
         # Some kernels remap device names (from sd* to vd* or xvd*). 
         device_names = ["/dev/sd#{char}", "/dev/vd#{char}", "/dev/xvd#{char}"]
         # Bosh Agent will lookup for the proper device name if we set it initially to sd*.
@@ -720,6 +722,23 @@ module Bosh::OpenStackCloud
       end
 
       nil
+    end
+
+    ##
+    # Returns the first letter to be used on device names
+    #
+    # @param [Fog::Compute::OpenStack::Server] server OpenStack server
+    # @return [String] First available letter
+    def first_device_name_letter(server)
+      letter = "#{FIRST_DEVICE_NAME_LETTER}"
+      return letter if server.flavor.nil?
+      return letter unless server.flavor.has_key?('id')
+      flavor = with_openstack { @openstack.flavors.find { |f| f.id == server.flavor['id'] } }
+      return letter if flavor.nil?
+
+      letter.succ! if flavor_has_ephemeral_disk?(flavor)
+      letter.succ! if flavor_has_swap_disk?(flavor)
+      letter
     end
 
     ##
@@ -781,7 +800,16 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Flavor] OpenStack flavor
     # @return [Boolean] true if flavor has ephemeral disk, false otherwise
     def flavor_has_ephemeral_disk?(flavor)
-      flavor.ephemeral.nil? || flavor.ephemeral <= 0 ? false : true
+      flavor.ephemeral.nil? || flavor.ephemeral.to_i <= 0 ? false : true
+    end
+
+    ##
+    # Checks if the OpenStack flavor has swap disk
+    #
+    # @param [Fog::Compute::OpenStack::Flavor] OpenStack flavor
+    # @return [Boolean] true if flavor has swap disk, false otherwise
+    def flavor_has_swap_disk?(flavor)
+      flavor.swap.nil? || flavor.swap.to_i <= 0 ? false : true
     end
 
     ##
