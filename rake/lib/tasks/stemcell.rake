@@ -54,7 +54,7 @@ namespace :stemcell do
 
 
   desc "Build stemcell"
-  task :basic, [:infrastructure, :version]  do |t, args|
+  task :basic, [:infrastructure, :version, :disk_size]  do |t, args|
     # TODO: see https://www.pivotaltracker.com/story/show/51928035
     #unless changes_in_bosh_agent?
     #  puts 'No changes detected in bosh_agent or stemcell_builder...skipping stemcell creation.'
@@ -63,7 +63,7 @@ namespace :stemcell do
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
-    options[:image_create_disk_size] = 2048
+
 
     if args[:version]
       options[:stemcell_version] = args[:version]
@@ -76,7 +76,7 @@ namespace :stemcell do
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, [:infrastructure, :tarball, :version] do |t, args|
+  task :micro, [:infrastructure, :tarball, :version, :disk_size] do |t, args|
     require_relative('../helpers/micro_bosh_release')
 
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..",
@@ -102,7 +102,6 @@ namespace :stemcell do
     end
 
     options[:stemcell_name] ||= "micro-bosh-stemcell"
-    options[:image_create_disk_size] = 2048
 
     options = options.merge(bosh_micro_options(manifest, release_tarball))
     options[:non_interactive] = true
@@ -136,20 +135,21 @@ namespace :stemcell do
     end
 
     options = {
-      :system_parameters_infrastructure => infrastructure,
-      :stemcell_name => ENV["STEMCELL_NAME"],
-      :stemcell_version => ENV["STEMCELL_VERSION"],
-      :stemcell_infrastructure => infrastructure,
-      :stemcell_hypervisor => get_hypervisor(infrastructure),
-      :bosh_protocol_version => Bosh::Agent::BOSH_PROTOCOL,
-      :UBUNTU_ISO => ENV["UBUNTU_ISO"],
-      :UBUNTU_MIRROR => ENV["UBUNTU_MIRROR"],
-      :TW_LOCAL_PASSPHRASE => ENV["TW_LOCAL_PASSPHRASE"],
-      :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
-      :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-      :bosh_release_src_dir => File.expand_path("../../../../release/src/bosh", __FILE__),
-      :bosh_agent_src_dir => File.expand_path("../../../../bosh_agent", __FILE__),
-      :mcf_enabled => "no"
+      system_parameters_infrastructure: infrastructure,
+      stemcell_name: ENV["STEMCELL_NAME"],
+      stemcell_version: ENV["STEMCELL_VERSION"],
+      stemcell_infrastructure: infrastructure,
+      stemcell_hypervisor: get_hypervisor(infrastructure),
+      bosh_protocol_version: Bosh::Agent::BOSH_PROTOCOL,
+      UBUNTU_ISO: ENV["UBUNTU_ISO"],
+      UBUNTU_MIRROR: ENV["UBUNTU_MIRROR"],
+      TW_LOCAL_PASSPHRASE: ENV["TW_LOCAL_PASSPHRASE"],
+      TW_SITE_PASSPHRASE: ENV["TW_SITE_PASSPHRASE"],
+      ruby_bin: ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
+      bosh_release_src_dir: File.expand_path("../../../../release/src/bosh", __FILE__),
+      bosh_agent_src_dir: File.expand_path("../../../../bosh_agent", __FILE__),
+      mcf_enabled: "no",
+      image_create_disk_size: (args[:disk_size] || 2048).to_i
     }
 
     # Pass OVFTOOL environment variable when targeting vsphere
