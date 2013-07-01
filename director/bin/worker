@@ -26,8 +26,7 @@ opts.parse!(ARGV.dup)
 config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
 config = nil
 
-# What is up with this? There does not appear to be any double-escaped 'index' in
-# the director.yml.erb. Maybe this code can go away?
+# Is this code even used anymore?
 if erb
   class ConfigBindingHelper
     attr_reader :index
@@ -44,9 +43,9 @@ if erb
   template = ERB.new(File.read(config_file), 0, "%<>-")
   contents = template.result(ConfigBindingHelper.new(index).get_binding)
   config_hash = Psych.load(contents)
-  config = Config.load_hash(config_hash)
+  config = Bosh::Director::Config.load_hash(config_hash)
 else
-  config = Config.load_file(config_file)
+  config = Bosh::Director::Config.load_file(config_file)
 end
 
 Bosh::Director::App.new(config)

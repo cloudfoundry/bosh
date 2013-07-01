@@ -9,12 +9,12 @@ module Bosh::Director
 
       # @param [String] name Stemcell name
       # @param [String] version Stemcell version
-      def initialize(name, version, options)
+      def initialize(name, version, options = {})
         @name = name
         @version = version
         @options = options
         @cloud = Config.cloud
-        @blobstore = Config.blobstore
+        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @stemcell_manager = Api::StemcellManager.new
       end
 

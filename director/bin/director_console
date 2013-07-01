@@ -41,7 +41,7 @@ module Bosh
         end
 
         puts "=> Loading #{config_file}"
-        Bosh::Director::App.new(Config.load_file(config_file))
+        Bosh::Director::App.new(Bosh::Director::Config.load_file(config_file))
 
         context.instance_eval do
           include BD::Models

@@ -18,10 +18,10 @@ describe Bosh::Director::BlobUtil do
     BD::Config.stub(:compiled_package_cache_blobstore).and_return(compiled_package_cache_blobstore)
   end
 
-  describe '.save_to_global_cache' do
+  describe 'save_to_global_cache' do
     it 'copies from the local blobstore to the compiled package cache' do
       fake_local_blobstore = mock(Bosh::Blobstore::LocalClient)
-      BD::Config.should_receive(:blobstore).and_return(fake_local_blobstore)
+      BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
 
       fake_local_blobstore.should_receive(:get).with('blob_id', an_instance_of(File))
       compiled_package_cache_blobstore.should_receive(:create) do |file, cache_filename|
@@ -46,10 +46,8 @@ describe Bosh::Director::BlobUtil do
 
   end
 
-  describe '.fetch_from_global_cache' do
+  describe 'fetch_from_global_cache' do
     it 'returns nil if compiled package not in global cache' do
-      BD::Config.should_not_receive(:blobstore)
-
       compiled_package_cache_blobstore.should_receive(:get).and_raise(Bosh::Blobstore::NotFound)
 
       BD::BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key).should be_nil
@@ -69,7 +67,7 @@ describe Bosh::Director::BlobUtil do
         mock_compiled_package
       end
 
-      BD::Config.should_receive(:blobstore).and_return(mock(Bosh::Blobstore::Client, create: blob_id))
+      BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(mock(Bosh::Blobstore::Client, create: blob_id))
 
       Digest::SHA1.stub_chain(:file, :hexdigest).and_return("cp sha1")
       BDM::CompiledPackage.stub(:generate_build_number)

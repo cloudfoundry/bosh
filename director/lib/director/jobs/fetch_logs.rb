@@ -12,7 +12,7 @@ module Bosh::Director
       attr_accessor :bundle_lifetime
 
       def initialize(instance_id, options = {})
-        @blobstore = Config.blobstore
+        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @instance_id = instance_id
         @log_type = options["type"] || "job"
         @filters = options["filters"]

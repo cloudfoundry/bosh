@@ -4,14 +4,14 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::Jobs::FetchLogs do
 
+  let(:blobstore) { double('Blobstore') }
+
   before(:each) do
     @deployment = BDM::Deployment.make
-    @blobstore = mock("blobstore")
-    BD::Config.stub!(:blobstore).and_return(@blobstore)
   end
 
   def make_job(instance_id)
-    BD::Jobs::FetchLogs.new(instance_id)
+    BD::Jobs::FetchLogs.new(instance_id, blobstore: blobstore)
   end
 
   it "asks agent to fetch logs" do
@@ -79,7 +79,7 @@ describe Bosh::Director::Jobs::FetchLogs do
 
     agent.should_receive(:fetch_logs).once.
         and_return("blobstore_id" => "deadbeef2")
-    @blobstore.should_receive(:delete).with("deadbeef1").and_return(true)
+    blobstore.should_receive(:delete).with("deadbeef1").and_return(true)
 
     sleep(0.05)
     job.should_receive(:with_deployment_lock).with(@deployment).and_yield

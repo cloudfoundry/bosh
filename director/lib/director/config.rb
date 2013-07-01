@@ -347,7 +347,7 @@ module Bosh::Director
 
     class << self
       def load_file(path)
-        Config.new(YAML.load_file(path))
+        Config.new(Psych.load_file(path))
       end
       def load_hash(hash)
         Config.new(hash)

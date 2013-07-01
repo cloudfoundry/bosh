@@ -3,10 +3,11 @@
 require 'spec_helper'
 
 describe Bosh::Director::Jobs::UpdateRelease do
+  let(:blobstore) { double('Blobstore') }
 
   before(:each) do
-    @blobstore = mock(Bosh::Blobstore::Client)
-    BD::Config.stub!(:blobstore).and_return(@blobstore)
+    # Stubbing the blobstore used in BlobUtil :( needs refactoring
+    BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     @release_dir = Dir.mktmpdir("release_dir")
   end
 
@@ -151,7 +152,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "rebases original versions saving the major version" do
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(4).times.and_return("b1", "b2", "b3", "b4")
       @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
@@ -193,7 +194,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "uses major.1-dev version for initial rebase if no version exists" do
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(6).times.and_return("b1", "b2", "b3", "b4", "b5", "b6")
 
       @rv.destroy
@@ -232,7 +233,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
       dup_release_dir = Dir.mktmpdir
       FileUtils.cp(File.join(@release_dir, "release.tgz"), dup_release_dir)
 
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(4).times.and_return("b1", "b2", "b3", "b4")
       @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
@@ -280,7 +281,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         :release => @release, :name => "baz",
         :version => "333", :fingerprint => "deadbeef")
 
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(3).times.and_return("b1", "b2", "b3")
       @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
@@ -315,7 +316,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         f.write(create_package({"test" => "test contents"}))
       end
 
-      @blobstore.should_receive(:create).with(
+      blobstore.should_receive(:create).with(
         have_a_path_of(package_path)).and_return("blob_id")
 
       @job.create_package(
@@ -442,7 +443,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     it "should create a proper template and upload job bits to blobstore" do
       File.open(@tarball, "w") { |f| f.write(@job_bits) }
 
-      @blobstore.should_receive(:create).and_return do |f|
+      blobstore.should_receive(:create).and_return do |f|
         f.rewind
         Digest::SHA1.hexdigest(f.read).should ==
           Digest::SHA1.hexdigest(@job_bits)

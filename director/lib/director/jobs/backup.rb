@@ -10,9 +10,6 @@ module Bosh::Director
         @dest_dir = dest_dir
         @tar_gzipper = tar_gzipper
         @blobstore_client = blobstore_client
-
-        #@tar_gzipper = options.fetch(:tar_gzipper, Bosh::Director::TarGziper.new)
-        #@blobstore_client = options.fetch(:blobstore_client, Blobstores.blobstore)
       end
 
       def perform

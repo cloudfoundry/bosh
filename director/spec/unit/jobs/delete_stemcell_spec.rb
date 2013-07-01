@@ -5,16 +5,15 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::Jobs::DeleteStemcell do
 
   describe "perform" do
+    let(:blobstore) { double('Blobstore') }
 
     before(:each) do
       @cloud = mock("cloud")
-      @blobstore = mock("blobstore")
       BD::Config.stub!(:cloud).and_return(@cloud)
-      BD::Config.stub!(:blobstore).and_return(@blobstore)
     end
 
     it "should fail for unknown stemcells" do
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", blobstore: blobstore)
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       lambda { job.perform }.should raise_exception(BD::StemcellNotFound)
@@ -28,7 +27,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid").
           and_raise("error")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", blobstore: blobstore)
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       lambda { job.perform }.should raise_exception("error")
@@ -42,7 +41,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid").
           and_raise("error")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {"force" => true})
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", "force" => true, blobstore: blobstore)
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       lambda { job.perform }.should_not raise_error
@@ -56,7 +55,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
       deployment = BDM::Deployment.make
       deployment.add_stemcell(stemcell)
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", blobstore: blobstore)
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       expect { job.perform }.to raise_exception(BD::StemcellInUse)
@@ -69,7 +68,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", blobstore: blobstore)
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       job.perform
@@ -89,9 +88,9 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid")
 
-      @blobstore.should_receive(:delete).with("compiled-package-blb-id")
+      blobstore.should_receive(:delete).with("compiled-package-blb-id")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", blobstore: blobstore)
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       job.perform
