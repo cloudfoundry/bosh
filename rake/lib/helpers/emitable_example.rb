@@ -28,6 +28,6 @@ class EmitableExample
   end
 
   def description
-    example.metadata.fetch(:description).downcase.tr(',/()', '').tr(' :', '-').squeeze('-')
+    example.metadata.fetch(:full_description).downcase.gsub(/[^a-z0-9]/, '-').squeeze('-').gsub(/^-?(.*?)-?$/, '\1')
   end
 end

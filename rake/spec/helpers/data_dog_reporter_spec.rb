@@ -9,7 +9,7 @@ module Bosh
       let(:example) do
         double(RSpec::Core::Example, metadata:
           {
-            description: 'foo bar baz',
+            full_description: 'foo bar baz',
             execution_result: {run_time: 3.14}
           })
       end
