@@ -397,6 +397,7 @@ GEM
       rack (>= 1.0.0)
     thor (0.18.1)
     tilt (1.4.1)
+    timecop (0.6.1)
     trollop (1.16.2)
     tzinfo (0.3.37)
     uuidtools (2.1.4)
@@ -459,4 +460,5 @@ DEPENDENCIES
   simplecov
   simplecov-rcov
   sqlite3
+  timecop
   webmock

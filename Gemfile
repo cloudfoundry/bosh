@@ -74,4 +74,5 @@ group :development, :test do
   gem 'nokogiri-diff'
 
   gem 'sqlite3'
+  gem 'timecop'
 end

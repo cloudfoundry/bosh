@@ -2,6 +2,7 @@
 
 require 'rspec/core'
 require 'webmock'
+require 'timecop'
 
 require 'cli'
 
