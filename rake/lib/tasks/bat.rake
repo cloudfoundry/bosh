@@ -11,7 +11,7 @@ RSpec::Core::RakeTask.new(:bat) do |t|
   t.rspec_opts = rspec_opts
 end
 
-namespace 'bat' do
+namespace :bat do
   desc 'Verify BAT environment'
   RSpec::Core::RakeTask.new(:env) do |t|
     cd 'bat'
