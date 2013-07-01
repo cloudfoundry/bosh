@@ -31,3 +31,6 @@ AllCops:
    - spec/**
    - stemcell_builder/**
    - vendor/**
+
+LineLength:
+  Max: 119

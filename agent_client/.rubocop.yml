@@ -1,8 +1,5 @@
 inherit_from: ../.rubocop.yml
 
-LineLength:
-  Max: 119
-
 ParameterLists:
   Max: 5 # We'll reduce this later
 
