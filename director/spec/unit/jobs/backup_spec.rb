@@ -5,7 +5,13 @@ describe Bosh::Director::Jobs::Backup do
   let(:dest_dir) { '/dest_dir' }
   let(:tar_gzipper) { double('tar gzipper') }
   let(:blobstore_client) { double(Bosh::Blobstore::Client) }
-  let(:backup_task) { described_class.new(dest_dir, tar_gzipper: tar_gzipper, blobstore: blobstore_client) }
+  let(:db_adapter) { double('db adapter') }
+  let(:backup_task) do
+    described_class.new(dest_dir,
+                        tar_gzipper: tar_gzipper,
+                        blobstore: blobstore_client,
+                        db_adapter: db_adapter)
+  end
 
   context '#backup_logs' do
     let(:log_directory) { '/var/vcap/sys/log' }
@@ -26,13 +32,6 @@ describe Bosh::Director::Jobs::Backup do
   end
 
   it 'backs up the database' do
-    db_config = double('db_config')
-    Bosh::Director::Config.stub(db_config: db_config)
-
-    db_adapter = double('db adapter')
-    db_adapter_creator = double('db adapter creator')
-    backup_task.db_adapter_creator = db_adapter_creator
-    db_adapter_creator.should_receive(:create).with(db_config).and_return(db_adapter)
     db_adapter.should_receive(:export).with('/foo/director_db.sql')
 
     expect(backup_task.backup_database('/foo')).to eq('/foo/director_db.sql')

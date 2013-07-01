@@ -1,15 +1,13 @@
 module Bosh::Director
   module Jobs
     class Backup < BaseJob
-
-      attr_accessor :db_adapter_creator
-
       @queue = :normal
 
       def initialize(dest_dir, options = {})
         @dest_dir = dest_dir
         @tar_gzipper = options.fetch(:tar_gzipper) { TarGzipper.new }
         @blobstore_client = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
+        @db_adapter = options.fetch(:db_adapter) { Bosh::Director::DbBackup.create(Config.db_config) }
       end
 
       def perform
@@ -60,9 +58,7 @@ module Bosh::Director
         output = "#{tmpdir}/director_db.sql"
 
         track_and_log('Backing up database') do
-          @db_adapter_creator ||= Bosh::Director::DbBackup
-          db_adapter = db_adapter_creator.create(Config.db_config)
-          db_adapter.export(output)
+          @db_adapter.export(output)
         end
 
         output
