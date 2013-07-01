@@ -330,9 +330,10 @@ module Bosh
       def run_with_pid(cmd_array, pidfile, opts = {})
         env = ENV.to_hash.merge(opts.fetch(:env, {}))
         output = opts.fetch(:output, :close)
+        err_output = output == :close ? output : "#{output}.err"
 
         unless process_running?(pidfile)
-          pid = Process.spawn(env, *cmd_array, out: output, err: output, in: :close)
+          pid = Process.spawn(env, *cmd_array, out: output, err: err_output, in: :close)
 
           Process.detach(pid)
           File.open(pidfile, "w") { |f| f.write(pid) }
