@@ -70,9 +70,9 @@ module Bosh::Director
       end
 
       step { update_resource_pool }
-      step { update_persistent_disk }
       step { update_networks }
       step { update_dns }
+      step { update_persistent_disk }
 
       update_vm_metadata(@vm)
 
