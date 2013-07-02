@@ -42,6 +42,12 @@ module Bosh::OpenStackCloud
         details = badrequest.nil? ? "" : " (#{badrequest["message"]})"   
         cloud_error("OpenStack API Bad Request#{details}. Check task debug log for details.", e)
       rescue Excon::Errors::InternalServerError => e
+        unless retries >= MAX_RETRIES
+          retries += 1
+          @logger.debug("OpenStack API Internal Server error, retrying (#{retries})") if @logger
+          sleep(DEFAULT_RETRY_TIMEOUT)
+          retry
+        end
         cloud_error("OpenStack API Internal Server error. Check task debug log for details.", e)
       end
     end
