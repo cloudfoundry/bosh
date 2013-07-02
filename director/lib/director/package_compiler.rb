@@ -162,8 +162,8 @@ module Bosh::Director
       @event_log.begin_stage("Compiling packages", compilation_count)
       number_of_workers = @deployment_plan.compilation.workers
 
-      ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-        begin
+      begin
+        ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
           loop do
             # process as many tasks without waiting
             loop do
@@ -177,15 +177,18 @@ module Bosh::Director
             break if !pool.working? && @ready_tasks.empty?
             sleep(0.1)
           end
-        ensure
-          # Delete all of the VMs if we were reusing compilation VMs. This can't
-          # happen until everything was done compiling.
-          if @deployment_plan.compilation.reuse_compilation_vms
+        end
+      ensure
+        # Delete all of the VMs if we were reusing compilation VMs. This can't
+        # happen until everything was done compiling.
+        if @deployment_plan.compilation.reuse_compilation_vms
+          # Using a new ThreadPool instead of reusing the previous one,
+          # as if there's a failed compilation, the thread pool will stop
+          # processing any new thread.
+          ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
             @vm_reuser.each do |vm_data|
               pool.process { tear_down_vm(vm_data) }
             end
-
-            pool.wait
           end
         end
       end
