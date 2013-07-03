@@ -1,0 +1,206 @@
+<VApp xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" deployed="false" status="8" name="%s" id="urn:vcloud:vapp:%s" type="application/vnd.vmware.vcloud.vApp+xml" href="%s/api/vApp/vapp-%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2.22.0/CIM_VirtualSystemSettingData.xsd http://schemas.dmtf.org/ovf/envelope/1 http://schemas.dmtf.org/ovf/envelope/1/dsp8023_1.1.0.xsd http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2.22.0/CIM_ResourceAllocationSettingData.xsd">
+    <Link rel="power:powerOn" href="%s"/>
+    <Link rel="power:powerOff" href="%s"/>
+    <Link rel="undeploy" type="application/vnd.vmware.vcloud.undeployVAppParams+xml" href="%s"/>
+    <Link rel="deploy" type="application/vnd.vmware.vcloud.deployVAppParams+xml" href="%s/api/vApp/vapp-%s/action/deploy"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml" href="%s/api/vApp/vapp-%s/controlAccess/"/>
+    <Link rel="controlAccess" type="application/vnd.vmware.vcloud.controlAccess+xml" href="%s/api/vApp/vapp-%s/action/controlAccess"/>
+    <Link rel="recompose" type="application/vnd.vmware.vcloud.recomposeVAppParams+xml" href="%s/api/vApp/vapp-%s/action/recomposeVApp"/>
+    <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/a974dae0-d10c-4f7c-9f4f-4bdaf7826a3a"/>
+    <Link rel="edit" type="application/vnd.vmware.vcloud.vApp+xml" href="%s/api/vApp/vapp-%s"/>
+    <Link rel="remove" href="%s/api/vApp/vapp-%s"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/vApp/vapp-%s/owner"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/vApp/vapp-%s/metadata"/>
+    <Description>test</Description>
+    <LeaseSettingsSection type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vApp/vapp-%s/leaseSettingsSection/" ovf:required="false">
+        <ovf:Info>Lease settings section</ovf:Info>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vApp/vapp-%s/leaseSettingsSection/"/>
+        <DeploymentLeaseInSeconds>604800</DeploymentLeaseInSeconds>
+        <StorageLeaseInSeconds>2592000</StorageLeaseInSeconds>
+        <StorageLeaseExpiration>2011-09-28T11:21:35.767-07:00</StorageLeaseExpiration>
+    </LeaseSettingsSection>
+    <ovf:StartupSection xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" vcloud:href="%s/api/vApp/vapp-%s/startupSection/" vcloud:type="application/vnd.vmware.vcloud.startupSection+xml">
+        <ovf:Info>VApp startup section</ovf:Info>
+        <ovf:Item ovf:stopDelay="120" ovf:stopAction="powerOff" ovf:startDelay="120" ovf:startAction="powerOn" ovf:order="1" ovf:id="vm1"/>
+        <ovf:Item ovf:stopDelay="120" ovf:stopAction="powerOff" ovf:startDelay="120" ovf:startAction="powerOn" ovf:order="2" ovf:id="vm2"/>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.startupSection+xml" href="%s/api/vApp/vapp-%s/startupSection/"/>
+    </ovf:StartupSection>
+    <ovf:NetworkSection xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" vcloud:href="%s/api/vApp/vapp-%s/networkSection/" vcloud:type="application/vnd.vmware.vcloud.networkSection+xml">
+        <ovf:Info>The list of logical networks</ovf:Info>
+        <ovf:Network ovf:name="none">
+            <ovf:Description>This is a special place-holder used for disconnected network interfaces.</ovf:Description>
+        </ovf:Network>
+    </ovf:NetworkSection>
+    <NetworkConfigSection type="application/vnd.vmware.vcloud.networkConfigSection+xml" href="%s" ovf:required="false">
+        <ovf:Info>The configuration parameters for logical networks</ovf:Info>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.networkConfigSection+xml" href="%s"/>
+        <NetworkConfig networkName="none">
+            <Description>This is a special place-holder used for disconnected network interfaces.</Description>
+            <Configuration>
+                <IpScope>
+                    <IsInherited>false</IsInherited>
+                    <Gateway>196.254.254.254</Gateway>
+                    <Netmask>255.255.0.0</Netmask>
+                    <Dns1>196.254.254.254</Dns1>
+                </IpScope>
+                <FenceMode>isolated</FenceMode>
+            </Configuration>
+            <IsDeployed>false</IsDeployed>
+        </NetworkConfig>
+    </NetworkConfigSection>
+    <Owner type="application/vnd.vmware.vcloud.owner+xml">
+        <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    </Owner>
+    <InMaintenanceMode>false</InMaintenanceMode>
+    <Children>
+        <Vm needsCustomization="true" deployed="false" status="8" name="vm1" id="urn:vcloud:vm:%s" type="application/vnd.vmware.vcloud.vm+xml" href="%s">
+            <Link rel="power:powerOn" href="%s/api/vApp/vm-%s/power/action/powerOn"/>
+            <Link rel="deploy" type="application/vnd.vmware.vcloud.deployVAppParams+xml" href="%s/api/vApp/vm-%s/action/deploy"/>
+            <Link rel="edit" type="application/vnd.vmware.vcloud.vm+xml" href="%s/api/vApp/vm-%s"/>
+            <Link rel="remove" href="%s/api/vApp/vm-%s"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/vApp/vm-%s/metadata"/>
+            <Link rel="screen:thumbnail" href="%s/api/vApp/vm-%s/screen"/>
+            <Link rel="media:insertMedia" type="application/vnd.vmware.vcloud.mediaInsertOrEjectParams+xml" href="%s"/>
+            <Link rel="media:ejectMedia" type="application/vnd.vmware.vcloud.mediaInsertOrEjectParams+xml" href="%s/api/vApp/vm-%s/media/action/ejectMedia"/>
+            <Link rel="disk:attach" type="application/vnd.vmware.vcloud.diskAttachOrDetachParams+xml" href="%s"/>
+            <Link rel="disk:detach" type="application/vnd.vmware.vcloud.diskAttachOrDetachParams+xml" href="%s"/>
+            <Link rel="upgrade" href="%s/api/vApp/vm-%s/action/upgradeHardwareVersion"/>
+            <Link rel="up" type="application/vnd.vmware.vcloud.vApp+xml" href="%s/api/vApp/vapp-%s"/>
+            <Description>A virtual machine</Description>
+            <ovf:VirtualHardwareSection xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" ovf:transport="" vcloud:href="%s/api/vApp/vm-%s/virtualHardwareSection/" vcloud:type="application/vnd.vmware.vcloud.virtualHardwareSection+xml">
+                <ovf:Info>Virtual hardware requirements</ovf:Info>
+                <ovf:System>
+                    <vssd:ElementName>Virtual Hardware Family</vssd:ElementName>
+                    <vssd:InstanceID>0</vssd:InstanceID>
+                    <vssd:VirtualSystemIdentifier>vm1</vssd:VirtualSystemIdentifier>
+                    <vssd:VirtualSystemType>vmx-04</vssd:VirtualSystemType>
+                </ovf:System>
+                <ovf:Item>
+                    <rasd:Address>00:50:56:02:01:56</rasd:Address>
+                    <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                    <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
+                    <rasd:Connection vcloud:primaryNetworkConnection="true" vcloud:ipAddressingMode="NONE">none</rasd:Connection>
+                    <rasd:Description>VMXNET3 ethernet adapter</rasd:Description>
+                    <rasd:ElementName>Network adapter 0</rasd:ElementName>
+                    <rasd:InstanceID>1</rasd:InstanceID>
+                    <rasd:ResourceSubType>VMXNET3</rasd:ResourceSubType>
+                    <rasd:ResourceType>10</rasd:ResourceType>
+                </ovf:Item>
+                <ovf:Item>
+                    <rasd:Address>0</rasd:Address>
+                    <rasd:Description>SCSI Controller</rasd:Description>
+                    <rasd:ElementName>SCSI Controller 0</rasd:ElementName>
+                    <rasd:InstanceID>%s</rasd:InstanceID>
+                    <rasd:ResourceSubType>lsilogic</rasd:ResourceSubType>
+                    <rasd:ResourceType>6</rasd:ResourceType>
+                </ovf:Item>
+                <ovf:Item>
+                    <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                    <rasd:Description>Hard disk</rasd:Description>
+                    <rasd:ElementName>Hard disk 1</rasd:ElementName>
+                    <rasd:HostResource vcloud:capacity="200" vcloud:busSubType="lsilogic" vcloud:busType="6"/>
+                    <rasd:InstanceID>2000</rasd:InstanceID>
+                    <rasd:Parent>2</rasd:Parent>
+                    <rasd:ResourceType>17</rasd:ResourceType>
+                </ovf:Item>
+                <ovf:Item>
+                    <rasd:Address>0</rasd:Address>
+                    <rasd:Description>IDE Controller</rasd:Description>
+                    <rasd:ElementName>IDE Controller 0</rasd:ElementName>
+                    <rasd:InstanceID>3</rasd:InstanceID>
+                    <rasd:ResourceType>5</rasd:ResourceType>
+                </ovf:Item>
+                <ovf:Item>
+                    <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                    <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
+                    <rasd:Description>CD/DVD Drive</rasd:Description>
+                    <rasd:ElementName>CD/DVD Drive 1</rasd:ElementName>
+                    <rasd:HostResource/>
+                    <rasd:InstanceID>3000</rasd:InstanceID>
+                    <rasd:Parent>3</rasd:Parent>
+                    <rasd:ResourceType>15</rasd:ResourceType>
+                </ovf:Item>
+                <ovf:Item>
+                    <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                    <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
+                    <rasd:Description>Floppy Drive</rasd:Description>
+                    <rasd:ElementName>Floppy Drive 1</rasd:ElementName>
+                    <rasd:HostResource/>
+                    <rasd:InstanceID>8000</rasd:InstanceID>
+                    <rasd:ResourceType>14</rasd:ResourceType>
+                </ovf:Item>
+                <ovf:Item vcloud:href="%s/api/vApp/vm-%s/virtualHardwareSection/cpu" vcloud:type="application/vnd.vmware.vcloud.rasdItem+xml">
+                    <rasd:AllocationUnits>hertz * 10^6</rasd:AllocationUnits>
+                    <rasd:Description>Number of Virtual CPUs</rasd:Description>
+                    <rasd:ElementName>1 virtual CPU(s)</rasd:ElementName>
+                    <rasd:InstanceID>4</rasd:InstanceID>
+                    <rasd:Reservation>0</rasd:Reservation>
+                    <rasd:ResourceType>3</rasd:ResourceType>
+                    <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+                    <rasd:Weight>0</rasd:Weight>
+                    <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/cpu"/>
+                </ovf:Item>
+                <ovf:Item vcloud:href="%s/api/vApp/vm-%s/virtualHardwareSection/memory" vcloud:type="application/vnd.vmware.vcloud.rasdItem+xml">
+                    <rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>
+                    <rasd:Description>Memory Size</rasd:Description>
+                    <rasd:ElementName>32 MB of memory</rasd:ElementName>
+                    <rasd:InstanceID>5</rasd:InstanceID>
+                    <rasd:Reservation>0</rasd:Reservation>
+                    <rasd:ResourceType>4</rasd:ResourceType>
+                    <rasd:VirtualQuantity>32</rasd:VirtualQuantity>
+                    <rasd:Weight>0</rasd:Weight>
+                    <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/memory"/>
+                </ovf:Item>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.virtualHardwareSection+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/"/>
+                <Link rel="down" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/cpu"/>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/cpu"/>
+                <Link rel="down" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/memory"/>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/memory"/>
+                <Link rel="down" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/disks"/>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/disks"/>
+                <Link rel="down" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/media"/>
+                <Link rel="down" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/networkCards"/>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/networkCards"/>
+                <Link rel="down" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/serialPorts"/>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItemsList+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/serialPorts"/>
+            </ovf:VirtualHardwareSection>
+            <ovf:OperatingSystemSection xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" xmlns:vmw="http://www.vmware.com/schema/ovf" ovf:id="93" vcloud:href="%s/api/vApp/vm-%s/operatingSystemSection/" vcloud:type="application/vnd.vmware.vcloud.operatingSystemSection+xml" vmw:osType="ubuntuGuest">
+                <ovf:Info>Specifies the operating system installed</ovf:Info>
+                <ovf:Description>Ubuntu Linux (32-bit)</ovf:Description>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.operatingSystemSection+xml" href="%s/api/vApp/vm-%s/operatingSystemSection/"/>
+            </ovf:OperatingSystemSection>
+            <NetworkConnectionSection type="application/vnd.vmware.vcloud.networkConnectionSection+xml" href="%s" ovf:required="false">
+                <ovf:Info>Specifies the available VM network connections</ovf:Info>
+                <PrimaryNetworkConnectionIndex>0</PrimaryNetworkConnectionIndex>
+                <NetworkConnection network="none" needsCustomization="true">
+                    <NetworkConnectionIndex>0</NetworkConnectionIndex>
+                    <IsConnected>false</IsConnected>
+                    <MACAddress>00:50:56:02:01:56</MACAddress>
+                    <IpAddressAllocationMode>NONE</IpAddressAllocationMode>
+                </NetworkConnection>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.networkConnectionSection+xml" href="%s"/>
+            </NetworkConnectionSection>
+            <GuestCustomizationSection type="application/vnd.vmware.vcloud.guestCustomizationSection+xml" href="%s/api/vApp/vm-%s/guestCustomizationSection/" ovf:required="false">
+                <ovf:Info>Specifies Guest OS Customization Settings</ovf:Info>
+                <Enabled>false</Enabled>
+                <ChangeSid>false</ChangeSid>
+                <VirtualMachineId>%s</VirtualMachineId>
+                <JoinDomainEnabled>false</JoinDomainEnabled>
+                <UseOrgSettings>false</UseOrgSettings>
+                <AdminPasswordEnabled>true</AdminPasswordEnabled>
+                <AdminPasswordAuto>true</AdminPasswordAuto>
+                <ResetPasswordRequired>false</ResetPasswordRequired>
+                <ComputerName>vm1-001</ComputerName>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.guestCustomizationSection+xml" href="%s/api/vApp/vm-%s/guestCustomizationSection/"/>
+            </GuestCustomizationSection>
+            <ovf:ProductSection ovf:instance="" ovf:class="" ovf:required="true">
+                <ovf:Info>Information about the installed software</ovf:Info>
+                <ovf:Product>UnOS</ovf:Product>
+            </ovf:ProductSection>
+            <RuntimeInfoSection xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" vcloud:href="%s/api/vApp/vm-%s/runtimeInfoSection" vcloud:type="application/vnd.vmware.vcloud.virtualHardwareSection+xml">
+                <ovf:Info>Specifies Runtime info</ovf:Info>
+            </RuntimeInfoSection>
+            <VAppScopedLocalId>vm1</VAppScopedLocalId>
+        </Vm>
+    </Children>
+</VApp>

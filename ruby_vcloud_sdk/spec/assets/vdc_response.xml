@@ -1,0 +1,57 @@
+        <Vdc xmlns="http://www.vmware.com/vcloud/v1.5" status="1" name="%s" id="urn:vcloud:vdc:%s" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.vcloud.org+xml" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/vdc/%s/metadata"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" href="%s/api/vdc/%s/action/uploadVAppTemplate"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.media+xml" href="%s"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml" href="%s/api/vdc/%s/action/instantiateVAppTemplate"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.cloneVAppParams+xml" href="%s/api/vdc/%s/action/cloneVApp"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.cloneVAppTemplateParams+xml" href="%s/api/vdc/%s/action/cloneVAppTemplate"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.cloneMediaParams+xml" href="%s/api/vdc/%s/action/cloneMedia"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.captureVAppParams+xml" href="%s/api/vdc/%s/action/captureVApp"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.composeVAppParams+xml" href="%s/api/vdc/%s/action/composeVApp"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.diskCreateParams+xml" href="%s"/>
+            <Description/>
+            <AllocationModel>AllocationVApp</AllocationModel>
+            <StorageCapacity>
+                <Units>MB</Units>
+                <Allocated>0</Allocated>
+                <Limit>0</Limit>
+                <Used>4800</Used>
+                <Overhead>0</Overhead>
+            </StorageCapacity>
+            <ComputeCapacity>
+                <Cpu>
+                    <Units>MHz</Units>
+                    <Allocated>0</Allocated>
+                    <Limit>0</Limit>
+                    <Used>0</Used>
+                    <Overhead>0</Overhead>
+                </Cpu>
+                <Memory>
+                    <Units>MB</Units>
+                    <Allocated>0</Allocated>
+                    <Limit>0</Limit>
+                    <Used>0</Used>
+                    <Overhead>0</Overhead>
+                </Memory>
+            </ComputeCapacity>
+            <ResourceEntities>
+                <ResourceEntity type="application/vnd.vmware.vcloud.vApp+xml" name="%s" href="%s/api/vApp/vapp-%s"/>
+                <ResourceEntity type="application/vnd.vmware.vcloud.vAppTemplate+xml" name="%s" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+                <ResourceEntity type="application/vnd.vmware.vcloud.media+xml" name="%s" href="%s/api/vApp/vapp-%s"/>
+                <ResourceEntity type="application/vnd.vmware.vcloud.disk+xml" name="%s" href="%s"/>
+            </ResourceEntities>
+             <AvailableNetworks>
+                <Network type="application/vnd.vmware.vcloud.network+xml" name="%s" href="%s"/>
+            </AvailableNetworks>
+            <Capabilities>
+                <SupportedHardwareVersions>
+                    <SupportedHardwareVersion>vmx-04</SupportedHardwareVersion>
+                    <SupportedHardwareVersion>vmx-07</SupportedHardwareVersion>
+                </SupportedHardwareVersions>
+            </Capabilities>
+            <NicQuota>0</NicQuota>
+            <NetworkQuota>1024</NetworkQuota>
+            <VmQuota>100</VmQuota>
+            <IsEnabled>true</IsEnabled>
+        </Vdc>

@@ -1,0 +1,4 @@
+<DiskCreateParams xmlns="http://www.vmware.com/vcloud/v1.5">
+  <Disk name="%s" size="%s" busType="6" busSubType="lsilogic">
+  </Disk>
+</DiskCreateParams>

@@ -1,0 +1,3 @@
+<Entity xmlns="http://www.vmware.com/vcloud/v1.5" name="%s" id="%s" type="application/vnd.vmware.vcloud.entity+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.147.49.240/api/v1.5/schema/master.xsd">
+    <Link rel="alternate" type="application/vnd.vmware.vcloud.vApp+xml" href="%s"/>
+</Entity>

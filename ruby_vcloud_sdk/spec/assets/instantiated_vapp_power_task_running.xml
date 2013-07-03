@@ -1,0 +1,6 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="running" startTime="2011-09-12T08:47:40.356-07:00" operationName="vappDeploy" operation="Starting Virtual Application test17_3_8(2b685484-ed2f-48c3-9396-5ad29cb282f4)" expiryTime="2011-12-11T08:47:40.356-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="task:cancel" href="%s/api/task/%s/action/cancel"/>
+    <Owner type="application/vnd.vmware.vcloud.vApp+xml" name="%s" href="%s/api/vApp/vapp-2b685484-ed2f-48c3-9396-5ad29cb282f4"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+</Task>

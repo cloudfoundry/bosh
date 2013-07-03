@@ -1,0 +1,11 @@
+        <Media xmlns="http://www.vmware.com/vcloud/v1.5" size="833536" imageType="iso" status="1" name="%s" id="urn:vcloud:media:%s" type="application/vnd.vmware.vcloud.media+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/a974dae0-d10c-4f7c-9f4f-4bdaf7826a3a"/>
+            <Link rel="catalogItem" type="application/vnd.vmware.vcloud.catalogItem+xml" href="%s/api/catalogItem/a0185003-1a65-4fe4-9fe1-08e81ce26ef6"/>
+            <Link rel="remove" href="%s"/>
+            <Link rel="edit" type="application/vnd.vmware.vcloud.media+xml" href="%s/api/media/%s"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/media/%s/owner"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/media/%s/metadata"/>
+            <Owner type="application/vnd.vmware.vcloud.owner+xml">
+                <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            </Owner>
+        </Media>
