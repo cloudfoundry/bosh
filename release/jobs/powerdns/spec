@@ -25,7 +25,7 @@ properties:
     default: 5432
   dns.db.database:
     description: Database for the PowerDNS database connection
-    default: bosh_dns
+    default: bosh
 
   dns.recursor:
     description: If recursion is desired, IP address of a recursing nameserver (optional)
