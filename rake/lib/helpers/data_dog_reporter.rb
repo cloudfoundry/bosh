@@ -4,7 +4,7 @@ require_relative 'emitable_example'
 module Bosh
   module Helpers
     class DataDogReporter
-      def initialize(data_dog_client = Dogapi::Client.new(ENV.fetch('BATS_DATADOG_API_KEY')))
+      def initialize(data_dog_client = Dogapi::Client.new(ENV.fetch('BAT_DATADOG_API_KEY')))
         @data_dog_client = data_dog_client
       end
 

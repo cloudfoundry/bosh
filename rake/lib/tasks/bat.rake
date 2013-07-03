@@ -4,6 +4,9 @@ require 'rspec/core/rake_task'
 rspec_opts = %w(--format documentation --color)
 rspec_opts << '--fail-fast' if (ENV['BAT_FAIL_FAST'] || 'false').downcase == 'true'
 
+data_dog_formatter_path = File.expand_path('../../helpers/data_dog_formatter.rb', __FILE__)
+rspec_opts << "--format Bosh::Helpers::DataDogFormatter --require #{data_dog_formatter_path}" if ENV.key?('BAT_DATADOG_API_KEY')
+
 desc 'Run BAT tests'
 RSpec::Core::RakeTask.new(:bat) do |t|
   cd 'bat'
