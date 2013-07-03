@@ -5,8 +5,9 @@ module Bosh::Director
   class JobQueue
     include Api::TaskHelper
 
-    def enqueue(job_class, description, user_name, params)
-      task = create_task(user_name, job_class.job_type, description)
+    def enqueue(user, job_class, description, params)
+      task = create_task(user, job_class.job_type, description)
+
       Resque.enqueue(job_class, task.id, *params)
 
       task

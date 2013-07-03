@@ -13,13 +13,13 @@ describe Bosh::Director::JobQueue do
 
   describe '#enqueue' do
     it 'enqueues a resque job' do
-
-      # this is temporary until we refactor the TaskHelper out of existence
       task = double(id: '123')
+
       subject.should_receive(:create_task).with('whoami', :snow, 'busy doing something').and_return(task)
       Resque.should_receive(:enqueue).with(job_class, '123', 'foo', 'bar')
 
-      retval = subject.enqueue(job_class, 'busy doing something', 'whoami', [ 'foo', 'bar' ])
+      retval = subject.enqueue('whoami', job_class, 'busy doing something', [ 'foo', 'bar' ])
+
       expect(retval).to be(task)
     end
   end
