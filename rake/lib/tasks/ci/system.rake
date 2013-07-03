@@ -9,6 +9,7 @@ namespace :ci do
 
       cd(ENV['WORKSPACE']) do
         begin
+          ENV['BAT_INFRASTRUCTURE'] = infrastructure
           pipeline = Bosh::Helpers::Pipeline.new
           pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.match('aws'))
           pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.match('aws'))

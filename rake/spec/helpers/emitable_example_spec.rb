@@ -14,12 +14,13 @@ module Bosh
       end
 
       subject do
+        ENV.stub(:fetch).with('BAT_INFRASTRUCTURE').and_return('openstack')
         EmitableExample.new(example)
       end
 
-      its(:metric) { should eq 'bosh.ci.bat.test_example_duration3' }
+      its(:metric) { should eq 'bosh.ci.bat.duration' }
       its(:value) { should eq run_time }
-      its(:options) { should eq(tags: %w[infrastructure:test example:some-context-should-r3sult-in-some-behavior]) }
+      its(:options) { should eq(tags: %w[infrastructure:openstack example:some-context-should-r3sult-in-some-behavior]) }
     end
   end
 end

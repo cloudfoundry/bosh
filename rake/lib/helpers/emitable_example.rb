@@ -6,7 +6,7 @@ module Bosh
       end
 
       def metric
-        'bosh.ci.bat.test_example_duration3'
+        'bosh.ci.bat.duration'
       end
 
       def value
@@ -14,7 +14,7 @@ module Bosh
       end
 
       def options
-        {tags: %W[infrastructure:test example:#{description}]}
+        {tags: %W[infrastructure:#{ENV.fetch('BAT_INFRASTRUCTURE')} example:#{description}]}
       end
 
       def to_a

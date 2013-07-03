@@ -14,8 +14,12 @@ module Bosh
           })
       end
 
+      before do
+        ENV.stub(:fetch).with('BAT_INFRASTRUCTURE').and_return('vsphere')
+      end
+
       it 'should send a message to DataDog when an example passes' do
-        data_dog_client.should_receive(:emit_point).with('bosh.ci.bat.test_example_duration3', 3.14, tags: %w[infrastructure:test example:foo-bar-baz])
+        data_dog_client.should_receive(:emit_point).with('bosh.ci.bat.duration', 3.14, tags: %w[infrastructure:vsphere example:foo-bar-baz])
         sender.report_on(example)
       end
     end
