@@ -1,0 +1,56 @@
+---
+http_interactions:
+- request:
+    method: put
+    uri: http://asdfuhuru.blob.core.windows.net/test-container?restype=container
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:18 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Length:
+      - '0'
+      Content-Type:
+      - ''
+      X-Ms-Blob-Public-Access:
+      - blob
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:kPbykVU8IuJQuaBcSZ4fQeHwtRLH3kH3azZtUR0VuXI=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Transfer-Encoding:
+      - chunked
+      Last-Modified:
+      - Wed, 03 Jul 2013 14:13:18 GMT
+      Etag:
+      - ! '"0x8D0460E9A09C884"'
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      X-Ms-Request-Id:
+      - fc0bc11b-5d80-4477-9e65-584ab5ac53a8
+      X-Ms-Version:
+      - '2012-02-12'
+      Date:
+      - Wed, 03 Jul 2013 14:13:18 GMT
+    body:
+      encoding: US-ASCII
+      string: ''
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:19 GMT
+recorded_with: VCR 2.5.0

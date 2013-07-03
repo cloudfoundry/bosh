@@ -428,6 +428,7 @@ GEM
     uuid (2.3.7)
       macaddr (~> 1.0)
     uuidtools (2.1.4)
+    vcr (2.5.0)
     vegas (0.1.11)
       rack (>= 1.0.0)
     webmock (1.11.0)
@@ -489,4 +490,5 @@ DEPENDENCIES
   simplecov-rcov
   sqlite3
   timecop
+  vcr
   webmock

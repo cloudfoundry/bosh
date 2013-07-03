@@ -1,0 +1,52 @@
+---
+http_interactions:
+- request:
+    method: delete
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/object-id-1
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:23 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Length:
+      - '0'
+      Content-Type:
+      - ''
+      X-Ms-Delete-Snapshots:
+      - include
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:phX1I1Jdypl1eJA5W3ldZ8SFpA4EE6woEjTnH0BrjdA=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 202
+      message: Accepted
+    headers:
+      Transfer-Encoding:
+      - chunked
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      X-Ms-Request-Id:
+      - 04a822de-bddd-4c9d-b748-a4863ed14f06
+      X-Ms-Version:
+      - '2012-02-12'
+      Date:
+      - Wed, 03 Jul 2013 14:13:20 GMT
+    body:
+      encoding: US-ASCII
+      string: ''
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:23 GMT
+recorded_with: VCR 2.5.0
