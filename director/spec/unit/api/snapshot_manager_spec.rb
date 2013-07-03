@@ -2,11 +2,11 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::SnapshotManager do
   let(:cloud) { double(Bosh::Cloud) }
-  let(:manager) { described_class.new }
   let(:user) { BD::Models::User.make }
   let(:time) { Time.now.to_s }
 
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment') }
+
   before(:each) do
     BD::Config.stub(cloud: cloud)
 
@@ -31,16 +31,18 @@ describe Bosh::Director::Api::SnapshotManager do
 
     # snapshot from another deployment
     BD::Models::Snapshot.make
+
+    Resque.stub(:enqueue)
+    BD::JobQueue.any_instance.stub(create_task: task)
   end
 
   let(:task) { double(BDM::Task, id: 'task_id') }
 
   describe 'create_deployment_snapshot_task' do
     it 'should take snapshots of all instances with persistent disks' do
-      manager.should_receive(:create_task).with(user.username, :snapshot_deployment, 'snapshot deployment').and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::SnapshotDeployment, task.id, deployment.name, {})
 
-      expect(manager.create_deployment_snapshot_task(user.username, deployment)).to eq task
+      expect(subject.create_deployment_snapshot_task(user.username, deployment)).to eq task
 
     end
   end
@@ -50,19 +52,17 @@ describe Bosh::Director::Api::SnapshotManager do
     let(:options) { {} }
 
     it 'should enqueue a CreateSnapshot job' do
-      manager.should_receive(:create_task).with(user.username, :create_snapshot, "create snapshot").and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::CreateSnapshot, task.id, instance.id, options)
 
-      expect(manager.create_snapshot_task(user.username, instance, options)).to eq task
+      expect(subject.create_snapshot_task(user.username, instance, options)).to eq task
     end
   end
 
   describe 'delete_deployment_snapshots' do
     it 'should enqueue a DeleteDeploymentSnapshots job' do
-      manager.should_receive(:create_task).with(user.username, :delete_deployment_snapshots, "delete deployment snapshots").and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::DeleteDeploymentSnapshots, task.id, deployment.name)
 
-      expect(manager.delete_deployment_snapshots_task(user.username, deployment)).to eq task
+      expect(subject.delete_deployment_snapshots_task(user.username, deployment)).to eq task
     end
   end
 
@@ -70,16 +70,15 @@ describe Bosh::Director::Api::SnapshotManager do
     let(:snapshot_cids) { %w[snap0 snap1] }
 
     it 'should enqueue a DeleteSnapshot job' do
-      manager.should_receive(:create_task).with(user.username, :delete_snapshot, "delete snapshot").and_return(task)
       Resque.should_receive(:enqueue).with(BD::Jobs::DeleteSnapshots, task.id, snapshot_cids)
 
-      expect(manager.delete_snapshots_task(user.username, snapshot_cids)).to eq task
+      expect(subject.delete_snapshots_task(user.username, snapshot_cids)).to eq task
     end
   end
 
   describe '#find_by_cid' do
     it 'should return the snapshot with the given id' do
-      expect(manager.find_by_cid(deployment, 'snap0a').snapshot_cid).to eq 'snap0a'
+      expect(subject.find_by_cid(deployment, 'snap0a').snapshot_cid).to eq 'snap0a'
     end
   end
 
@@ -90,7 +89,7 @@ describe Bosh::Director::Api::SnapshotManager do
           { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
           { 'job' => 'job', 'index' => 1, 'snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
       ]
-      expect(manager.snapshots(deployment)).to eq response
+      expect(subject.snapshots(deployment)).to eq response
     end
 
     it 'should list all snapshots for a given instance' do
@@ -98,7 +97,7 @@ describe Bosh::Director::Api::SnapshotManager do
           { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
           { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
       ]
-      expect(manager.snapshots(deployment, 'job', 0)).to eq response
+      expect(subject.snapshots(deployment, 'job', 0)).to eq response
     end
   end
 
