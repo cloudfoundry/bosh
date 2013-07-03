@@ -195,6 +195,28 @@ module Bosh::WardenCloud
 
     end
 
+    ##
+    # Checks if a VM exists
+    #
+    # @param [String] vm_id vm id
+    # @return [Boolean] True if the vm exists
+
+    def has_vm?(vm_id)
+      with_thread_name("has_vm(#{vm_id})") do
+        vm = Models::VM[vm_id.to_i]
+        cloud_error("Cannot find VM #{vm}") unless vm
+        container_id = vm.container_id
+
+        handles = with_warden do |client|
+          request = Warden::Protocol::ListRequest.new
+          response = client.call(request)
+          response.handles
+        end
+        return false if handles.nil?
+        return handles.include?(container_id)
+      end
+    end
+
     def reboot_vm(vm_id)
       # no-op
     end
