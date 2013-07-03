@@ -8,6 +8,10 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :delete_deployment
+      end
+
       def initialize(deployment_name, options = {})
         @deployment_name = deployment_name
         @force = options["force"]

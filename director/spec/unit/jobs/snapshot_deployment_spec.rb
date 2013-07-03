@@ -16,6 +16,12 @@ describe Bosh::Director::Jobs::SnapshotDeployment do
     deployment_manager.stub(find_by_name: deployment)
   end
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:snapshot_deployment)
+    end
+  end
+
   context 'when snapshotting succeeds' do
     it 'should snapshot all instances in the deployment' do
       BD::Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {})

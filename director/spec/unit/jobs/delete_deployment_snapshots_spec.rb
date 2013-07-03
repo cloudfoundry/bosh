@@ -21,6 +21,12 @@ describe Bosh::Director::Jobs::DeleteDeploymentSnapshots do
 
   subject { described_class.new(deployment_name) }
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:delete_deployment_snapshots)
+    end
+  end
+
   it 'tells the snapshot manager to delete all snapshots of a deployment' do
     BD::Api::DeploymentManager.should_receive(:new).and_return(deployment_manager)
     deployment_manager.should_receive(:find_by_name).with(deployment_name).and_return(deployment)

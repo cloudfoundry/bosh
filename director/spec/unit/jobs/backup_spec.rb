@@ -13,6 +13,12 @@ describe Bosh::Director::Jobs::Backup do
                         db_adapter: db_adapter)
   end
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:bosh_backup)
+    end
+  end
+
   context '#backup_logs' do
     let(:log_directory) { '/var/vcap/sys/log' }
 

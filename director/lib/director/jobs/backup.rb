@@ -3,6 +3,10 @@ module Bosh::Director
     class Backup < BaseJob
       @queue = :normal
 
+      def self.job_type
+        :bosh_backup
+      end
+
       def initialize(dest_dir, options = {})
         @dest_dir = dest_dir
         @tar_gzipper = options.fetch(:tar_gzipper) { TarGzipper.new }

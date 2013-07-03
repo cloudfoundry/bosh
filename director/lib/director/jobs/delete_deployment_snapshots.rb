@@ -5,6 +5,10 @@ module Bosh::Director
 
       attr_reader :deployment
 
+      def self.job_type
+        :delete_deployment_snapshots
+      end
+
       def initialize(deployment_name)
         @deployment = deployment_manager.find_by_name(deployment_name)
       end

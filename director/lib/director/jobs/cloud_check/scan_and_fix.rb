@@ -11,6 +11,10 @@ module Bosh::Director
 
         @queue = :normal
 
+        def self.job_type
+          :cck_scan_and_fix
+        end
+
         def initialize(deployment_name, jobs, fix_stateful_jobs=false)
           @deployment_manager = Api::DeploymentManager.new
           @instance_manager = Bosh::Director::Api::InstanceManager.new

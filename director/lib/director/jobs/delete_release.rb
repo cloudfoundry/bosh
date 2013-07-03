@@ -7,6 +7,10 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :delete_release
+      end
+
       def initialize(name, options = {})
         @name = name
         @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }

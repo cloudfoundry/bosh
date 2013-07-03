@@ -18,6 +18,12 @@ describe Bosh::Director::Jobs::BaseJob do
       and_return(@result_file)
   end
 
+  describe 'described_class.job_type' do
+    it 'should complain that the method is not implemented' do
+      expect { described_class.job_type }.to raise_error(NotImplementedError)
+    end
+  end
+
   it "should set up the task" do
     testjob_class = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do

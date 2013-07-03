@@ -8,6 +8,12 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
     Bosh::Director::ProblemResolver.stub(new: resolver)
   end
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:cck_apply)
+    end
+  end
+
   let(:resolutions) { {1 => 'delete_disk', 2 => 'ignore'} }
   let(:normalized_resolutions) { {'1' => 'delete_disk', '2' => 'ignore'} }
   let(:job) { described_class.new('deployment', resolutions) }

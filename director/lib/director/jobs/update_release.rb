@@ -13,6 +13,10 @@ module Bosh::Director
       attr_accessor :release_model
       attr_accessor :tmp_release_dir
 
+      def self.job_type
+        :update_release
+      end
+
       # @param [String] tmp_release_dir Directory containing release bundle
       # @param [Hash] options Release update options
       def initialize(tmp_release_dir, options = {})

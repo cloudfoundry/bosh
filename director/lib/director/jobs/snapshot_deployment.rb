@@ -5,6 +5,10 @@ module Bosh::Director
 
       attr_reader :deployment
 
+      def self.job_type
+        :snapshot_deployment
+      end
+
       def initialize(deployment_name, options = {})
         @deployment = deployment_manager.find_by_name(deployment_name)
         @options = options

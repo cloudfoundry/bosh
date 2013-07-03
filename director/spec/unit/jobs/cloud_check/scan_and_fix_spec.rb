@@ -24,6 +24,12 @@ describe Bosh::Director::Jobs::CloudCheck::ScanAndFix do
   let(:fix_stateful_jobs) { true }
   let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:cck_scan_and_fix)
+    end
+  end
+
   context 'when we do not want to recreate jobs with persistent disks' do
     let(:fix_stateful_jobs) { false }
     let(:jobs) { [['job1', 0], ['job1', 1], ['job2', 1]] }

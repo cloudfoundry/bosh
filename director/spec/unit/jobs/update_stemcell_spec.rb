@@ -23,6 +23,12 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     FileUtils.rm_rf(@stemcell_file.path)
   end
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:update_stemcell)
+    end
+  end
+
   it "should upload a local stemcell" do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
       contents = File.open(image) { |f| f.read }

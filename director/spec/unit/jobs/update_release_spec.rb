@@ -15,6 +15,12 @@ describe Bosh::Director::Jobs::UpdateRelease do
     FileUtils.remove_entry_secure(@release_dir) if File.exist?(@release_dir)
   end
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:update_release)
+    end
+  end
+
   describe "updating a release" do
     let(:manifest) do
       {

@@ -7,6 +7,10 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :vms
+      end
+
       # @param [Integer] deployment_id Deployment id
       def initialize(deployment_id, format)
         @deployment_id = deployment_id

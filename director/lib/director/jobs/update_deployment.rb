@@ -7,6 +7,10 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :update_deployment
+      end
+
       # @param [String] manifest_file Path to deployment manifest
       # @param [Hash] options Deployment options
       def initialize(manifest_file, options = {})

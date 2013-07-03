@@ -8,6 +8,10 @@ module Bosh::Director
 
         @queue = :normal
 
+        def self.job_type
+          :cck_apply
+        end
+
         # @param [String] deployment_name Deployment name
         # @param [Hash] resolutions Problem resolutions
         def initialize(deployment_name, resolutions)

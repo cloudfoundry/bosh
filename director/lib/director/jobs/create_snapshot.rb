@@ -4,6 +4,10 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :create_snapshot
+      end
+
       def initialize(instance_id, options)
         @instance = Bosh::Director::Api::InstanceManager.new.find_instance(instance_id)
         @options = options

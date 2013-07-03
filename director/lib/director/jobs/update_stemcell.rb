@@ -9,6 +9,10 @@ module Bosh::Director
       
       @queue = :normal
 
+      def self.job_type
+        :update_stemcell
+      end
+
       # @param [String] stemcell_file Stemcell tarball path
       def initialize(stemcell_file, options = {})
         @stemcell_file = stemcell_file

@@ -8,6 +8,10 @@ module Bosh::Director
 
         @queue = :normal
 
+        def self.job_type
+          :cck_scan
+        end
+
         # @param [String] deployment_name Deployment name
         def initialize(deployment_name)
           @deployment_manager = Api::DeploymentManager.new

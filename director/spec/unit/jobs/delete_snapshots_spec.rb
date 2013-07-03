@@ -5,10 +5,15 @@ describe Bosh::Director::Jobs::DeleteSnapshots do
 
   subject(:job) { described_class.new(%w(snap0 snap1)) }
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:delete_snapshot)
+    end
+  end
+
   it 'tells the snapshot manager to delete the snapshots' do
     BD::Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
 
     expect(job.perform).to eq 'snapshot(s) snap0, snap1 deleted'
   end
-
 end

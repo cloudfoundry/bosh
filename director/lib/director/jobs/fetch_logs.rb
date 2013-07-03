@@ -11,6 +11,10 @@ module Bosh::Director
 
       attr_accessor :bundle_lifetime
 
+      def self.job_type
+        :fetch_logs
+      end
+
       def initialize(instance_id, options = {})
         @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @instance_id = instance_id

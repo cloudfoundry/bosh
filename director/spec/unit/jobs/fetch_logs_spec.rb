@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::Jobs::FetchLogs do
 
@@ -12,6 +12,12 @@ describe Bosh::Director::Jobs::FetchLogs do
 
   def make_job(instance_id)
     BD::Jobs::FetchLogs.new(instance_id, blobstore: blobstore)
+  end
+
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:fetch_logs)
+    end
   end
 
   it "asks agent to fetch logs" do

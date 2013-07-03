@@ -7,6 +7,10 @@ module Bosh::Director
       SSH_TAG = "ssh"
       @queue = :normal
 
+      def self.job_type
+        :ssh
+      end
+
       def initialize(deployment_id, options = {})
         @deployment_id = deployment_id
         @target = options["target"]

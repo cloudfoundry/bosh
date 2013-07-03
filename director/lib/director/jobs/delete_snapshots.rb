@@ -4,6 +4,10 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :delete_snapshot
+      end
+
       def initialize(snapshots_cids)
         @snapshot_cids = snapshots_cids
       end

@@ -11,6 +11,12 @@ describe Bosh::Director::Jobs::VmState do
     BD::Config.stub!(:dns_domain_name).and_return("microbosh")    
   end
 
+  describe 'described_class.job_type' do
+    it 'returns a symbol representing job type' do
+      expect(described_class.job_type).to eq(:vms)
+    end
+  end
+
   it "parses agent info into vm_state" do
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
