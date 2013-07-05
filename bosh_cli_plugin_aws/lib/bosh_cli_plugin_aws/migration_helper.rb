@@ -96,7 +96,7 @@ module Bosh
 
         def self.was_rds_eventually_available?
           return true if all_rds_instances_available?(:silent => true)
-          (1..180).any? do |attempt|
+          (1..540).any? do |attempt|  # wait up to 3 hours, checking every 20s
             Kernel.sleep 20
             all_rds_instances_available?
           end
