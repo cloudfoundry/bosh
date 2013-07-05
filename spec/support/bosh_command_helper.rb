@@ -1,17 +1,16 @@
 module Bosh::Spec
   module CommandHelper
     def run(cmd)
-      lines = []
-      IO.popen(cmd).each do |line|
-        puts line.chomp
-        lines << line.chomp
-      end.close # force the process to close so that $? is set
+      output =
+        IO.popen(cmd).inject('') do |lines, line|
+          puts line.chomp
+          lines << line
+        end.close # force the process to close so that $? is set
 
-      cmd_out = lines.join("\n")
       if $?.success?
-        return cmd_out
+        output
       else
-        raise "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
+        raise "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.exitstatus}\n\n#{output}"
       end
     end
 
