@@ -7,13 +7,8 @@ if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
 fi
 
-gem list | grep bundler > /dev/null || gem install bundler
-
-# prune old gems
-yes n | gem cleanup
-
-# bundle update all bosh gems so the Gemfile.lock will be updated with the most recent CANDIDATE_BUILD_NUMBER
-find . -name *.gemspec | cut -d '/' -f2 | xargs bundle update
+# Cleanup any left over gems and bundler config
+rm -rf .bundle tmp
 
 bundle install --without development --local --path tmp/ruby
 
