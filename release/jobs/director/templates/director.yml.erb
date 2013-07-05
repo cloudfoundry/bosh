@@ -62,7 +62,7 @@
       }
     end
 
-    { 'provider' => provider, 'options' => opts }.to_yaml
+    { 'provider' => provider, 'options' => opts }.to_yaml.sub(/\A---\n/, '')
   end
 %>
 
