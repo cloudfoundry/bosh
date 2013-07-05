@@ -15,6 +15,6 @@ yes n | gem cleanup
 # bundle update all bosh gems so the Gemfile.lock will be updated with the most recent CANDIDATE_BUILD_NUMBER
 find . -name *.gemspec | cut -d '/' -f2 | xargs bundle update
 
-bundle check || bundle install --without development
+bundle install --without development --local --path tmp/ruby
 
 bundle exec rake $@
