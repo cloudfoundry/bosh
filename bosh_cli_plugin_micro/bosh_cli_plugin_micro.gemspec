@@ -19,11 +19,13 @@ Gem::Specification.new do |s|
 
   s.add_dependency "bosh_cli", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
-  s.add_dependency "bosh_vcloud_cpi", "~>#{version}"
   s.add_dependency "bosh_vsphere_cpi", "~>#{version}"
   s.add_dependency "bosh_aws_cpi", "~>#{version}"
   s.add_dependency "bosh_openstack_cpi", "~>#{version}"
   s.add_dependency "bosh_registry", "~>#{version}"
   s.add_dependency "agent_client", "~>#{version}"
+
+  s.add_dependency "bosh_vcloud_cpi", "~> 0.4.9"
+
   s.add_dependency "sqlite3", "~>1.3.7"
 end

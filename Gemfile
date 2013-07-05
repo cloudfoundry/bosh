@@ -16,13 +16,11 @@ gemspec path: 'bosh_cli_plugin_micro'
 gemspec path: 'bosh_encryption'
 gemspec path: 'bosh_openstack_cpi'
 gemspec path: 'bosh_registry'
-gemspec path: 'bosh_vcloud_cpi'
 gemspec path: 'bosh_vsphere_cpi'
 gemspec path: 'director'
 gemspec path: 'health_monitor'
 gemspec path: 'monit_api'
 gemspec path: 'package_compiler'
-gemspec path: 'ruby_vcloud_sdk'
 gemspec path: 'ruby_vim_sdk'
 gemspec path: 'simple_blobstore_server'
 
@@ -69,9 +67,6 @@ group :development, :test do
   gem 'redis'
   gem 'nats'
   gem 'rugged'
-
-  # from ruby_vcloud_sdk
-  gem 'nokogiri-diff'
 
   gem 'sqlite3'
   gem 'timecop'

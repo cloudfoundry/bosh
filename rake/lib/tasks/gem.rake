@@ -10,13 +10,11 @@ COMPONENTS = %w(agent_client
                 bosh_encryption
                 bosh_openstack_cpi
                 bosh_registry
-                bosh_vcloud_cpi
                 bosh_vsphere_cpi
                 director
                 health_monitor
                 monit_api
                 package_compiler
-                ruby_vcloud_sdk
                 ruby_vim_sdk
                 simple_blobstore_server)
 
