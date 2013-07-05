@@ -1,11 +1,11 @@
 module Bosh::Spec
   module CommandHelper
     def run(cmd)
-      output =
-        IO.popen(cmd).inject('') do |lines, line|
-          puts line.chomp
-          lines << line
-        end.close # force the process to close so that $? is set
+      output = ''
+      IO.popen(cmd).each do |line|
+        puts line.chomp
+        output << line
+      end.close # force the process to close so that $? is set
 
       if $?.success?
         output
