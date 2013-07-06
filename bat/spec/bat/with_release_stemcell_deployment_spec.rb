@@ -103,7 +103,7 @@ describe "with release, stemcell and deployment" do
 
   describe "backup" do
     it "works" do
-      bosh("backup").should succeed_with /Backup of BOSH director was put in/
+      bosh("backup bosh_backup.tgz").should succeed_with /Backup of BOSH director was put in/
 
       files = tar_contents("bosh_backup.tgz", entries=true)
 
