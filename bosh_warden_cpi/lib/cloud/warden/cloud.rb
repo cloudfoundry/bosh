@@ -248,7 +248,7 @@ module Bosh::WardenCloud
 
         FileUtils.touch(image_file)
         File.truncate(image_file, size << 20) # 1 MB == 1<<20 Byte
-        sh "mkfs -t #{@fs_type} -F #{image_file} 2>&1"
+        sh "/sbin/mkfs -t #{@fs_type} -F #{image_file} 2>&1"
 
         # Get a device number from the pool
         number = @pool.acquire
