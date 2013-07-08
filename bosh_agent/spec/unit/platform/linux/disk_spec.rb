@@ -95,6 +95,15 @@ describe Bosh::Agent::Platform::Linux::Disk do
       disk_wrapper.get_data_disk_device_name.should == '/dev/xvdq'
     end
 
+    it 'should raise an error when data disk device name is not present at settings' do
+      Bosh::Agent::Config.settings = { 'disks' => {  } }
+      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+
+      expect {
+        disk_wrapper.get_data_disk_device_name
+      }.to raise_error(Bosh::Agent::FatalError)
+    end
+
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
@@ -118,6 +127,13 @@ describe Bosh::Agent::Platform::Linux::Disk do
 
       Dir.should_receive(:glob).with(%w(/dev/sdq /dev/vdq /dev/xvdq)).twice.and_return(%w(/dev/vdq))
       disk_wrapper.get_data_disk_device_name.should == '/dev/vdq'
+    end
+
+    it 'should not get data disk device name when not present at settings' do
+      Bosh::Agent::Config.settings = { 'disks' => {  } }
+      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+
+      expect(disk_wrapper.get_data_disk_device_name).to be_nil
     end
 
     it 'should look up disk by cid' do
