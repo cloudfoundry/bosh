@@ -1,114 +1,100 @@
 require 'spec_helper'
 require 'blobstore_client'
+require 'fakefs/spec_helpers'
 
 describe Bosh::Director::Jobs::Backup do
-  let(:backup_file) { '/dest_dir/backup.tgz' }
-  let(:tar_gzipper) { double('tar gzipper') }
-  let(:blobstore_client) { double(Bosh::Blobstore::Client) }
-  let(:db_adapter) { double('db adapter') }
-  let(:backup_task) do
-    described_class.new(backup_file,
-                        tar_gzipper: tar_gzipper,
-                        blobstore: blobstore_client,
-                        db_adapter: db_adapter)
-  end
-
-  describe 'described_class.job_type' do
+  describe '.job_type' do
     it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:bosh_backup)
+      expect(Bosh::Director::Jobs::Backup.job_type).to eq(:bosh_backup)
     end
   end
 
-  context '#backup_logs' do
-    let(:log_directory) { '/var/vcap/sys/log' }
+  describe '#perform' do
+    include FakeFS::SpecHelpers
+
+    let(:backup_file) { '/dest_dir/backup.tgz' }
+    let(:tmp_output_dir) { File.join('/tmp/random') }
+    let(:tar_gzipper) { double('tar gzipper') }
+    let(:blobstore_client) { double(Bosh::Blobstore::Client) }
+    let(:db_adapter) { double('db adapter') }
+
+    subject(:backup_task) do
+      Bosh::Director::Jobs::Backup.new(backup_file,
+                                       tar_gzipper: tar_gzipper,
+                                       blobstore: blobstore_client,
+                                       db_adapter: db_adapter)
+    end
+
+    before do
+      FileUtils.mkdir_p(tmp_output_dir)
+      Dir.stub(:mktmpdir).and_yield(tmp_output_dir)
+
+      tar_gzipper.stub(:compress)
+      db_adapter.stub(:export)
+      blobstore_client.stub(:list).and_return([])
+    end
 
     it 'zips up the logs' do
-      tar_gzipper.should_receive(:compress).with(log_directory, '/foo/logs.tgz')
-      expect(backup_task.backup_logs('/foo')).to eq('/foo/logs.tgz')
-    end
-  end
-
-  context '#backup_task_logs' do
-    let(:task_log_directory) { '/var/vcap/store/director/tasks' }
-
-    it 'zips up the task logs' do
-      tar_gzipper.should_receive(:compress).with(task_log_directory, '/foo/task_logs.tgz')
-      expect(backup_task.backup_task_logs('/foo')).to eq('/foo/task_logs.tgz')
-    end
-  end
-
-  it 'backs up the database' do
-    db_adapter.should_receive(:export).with('/foo/director_db.sql')
-
-    expect(backup_task.backup_database('/foo')).to eq('/foo/director_db.sql')
-  end
-
-  context 'backing up the blobstore' do
-    before do
-      Dir.stub(:mkdir)
-    end
-
-    it 'backs up the blobstore' do
-      fooFile = double(File)
-      barFile = double(File)
-      fooFile.stub(:path).and_return('foo')
-      barFile.stub(:path).and_return('bar')
-      File.should_receive(:open).with('/tmpdir/blobs/foo', 'w').and_yield(fooFile)
-      File.should_receive(:open).with('/tmpdir/blobs/bar', 'w').and_yield(barFile)
-
-      file_list = %w(foo bar)
-      blobstore_client.should_receive(:list).and_return(file_list)
-      blobstore_client.should_receive(:get).with('foo', fooFile)
-      blobstore_client.should_receive(:get).with('bar', barFile)
-
-      tar_gzipper.should_receive(:compress).with('/tmpdir/blobs', '/tmpdir/blobs.tgz')
-
-      expect(backup_task.backup_blobstore('/tmpdir')).to eq('/tmpdir/blobs.tgz')
-    end
-
-    describe '#backup_blobstore' do
-      it 'raises NotImplemented when the blobstore client does not support listing objects' do
-        blobstore_client.should_receive(:list).and_raise(Bosh::Blobstore::NotImplemented)
-
-        expect { backup_task.backup_blobstore('/foo') }.to raise_error(Bosh::Blobstore::NotImplemented)
-      end
-    end
-  end
-
-  context '#perform' do
-    before do
-      Dir.should_receive(:mktmpdir).and_yield('/temporary_dir')
-    end
-
-    it 'skips backing up the blobstore when the blobstore client does not support listing objects' do
-      backup_task.should_receive(:backup_logs).with('/temporary_dir').and_return('backup_logs')
-      backup_task.should_receive(:backup_task_logs).with('/temporary_dir').and_return('backup_task_logs')
-      backup_task.should_receive(:backup_database).with('/temporary_dir').and_return('backup_database')
-      backup_task.should_receive(:backup_blobstore).with('/temporary_dir').and_raise(Bosh::Blobstore::NotImplemented)
-
-      tar_gzipper.should_receive(:compress).with(%w(backup_logs backup_task_logs backup_database), backup_file)
+      tar_gzipper.should_receive(:compress).with('/var/vcap/sys/log', File.join(tmp_output_dir, 'logs.tgz'))
 
       backup_task.perform
     end
 
+    it 'zips up the task logs' do
+      tar_gzipper.should_receive(:compress).with('/var/vcap/store/director/tasks', File.join(tmp_output_dir, 'task_logs.tgz'))
+
+      backup_task.perform
+    end
+
+    it 'backs up the database' do
+      db_adapter.should_receive(:export).with(File.join(tmp_output_dir, 'director_db.sql'))
+
+      backup_task.perform
+    end
+
+    it 'backs up the blobstore' do
+      foo_file = double(File, path: 'foo')
+      bar_file = double(File, path: 'bar')
+
+      tmp_blobs_output_dir = File.join(tmp_output_dir, 'blobs')
+
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'foo'), 'w').and_yield(foo_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'bar'), 'w').and_yield(bar_file)
+
+      blobstore_client.stub(:list).and_return(%w[foo bar])
+      blobstore_client.should_receive(:get).with('foo', foo_file) # get *writes* the file
+      blobstore_client.should_receive(:get).with('bar', bar_file)
+
+      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, File.join(tmp_output_dir, 'blobs.tgz'))
+
+      backup_task.perform
+    end
+
+    context 'when the blobstore client does not support listing objects' do
+      before do
+        blobstore_client.stub(:list).and_raise(Bosh::Blobstore::NotImplemented)
+
+      end
+
+      it 'backup everything else' do
+        expect {
+          tar_gzipper.should_receive(:compress).exactly(3).times
+          backup_task.perform
+        }.not_to raise_error(Bosh::Blobstore::NotImplemented)
+      end
+    end
+
     it 'combines the tarballs' do
-      backup_task.should_receive(:backup_logs).with('/temporary_dir').and_return('backup_logs')
-      backup_task.should_receive(:backup_task_logs).with('/temporary_dir').and_return('backup_task_logs')
-      backup_task.should_receive(:backup_database).with('/temporary_dir').and_return('backup_database')
-      backup_task.should_receive(:backup_blobstore).with('/temporary_dir').and_return('backup_blobstore')
-
-      tar_gzipper.should_receive(:compress).with(%w(backup_logs backup_task_logs backup_database backup_blobstore), backup_file)
-
+      tar_gzipper.should_receive(:compress).with([
+                                                   File.join(tmp_output_dir, 'logs.tgz'),
+                                                   File.join(tmp_output_dir, 'task_logs.tgz'),
+                                                   File.join(tmp_output_dir, 'director_db.sql'),
+                                                   File.join(tmp_output_dir, 'blobs.tgz')
+                                                 ], backup_file)
       backup_task.perform
     end
 
     it 'returns the destination of the logs' do
-      backup_task.stub(:backup_logs)
-      backup_task.stub(:backup_task_logs)
-      backup_task.stub(:backup_database)
-      backup_task.stub(:backup_blobstore)
-      tar_gzipper.stub(:compress)
-
       expect(backup_task.perform).to eq "Backup created at #{backup_file}"
     end
   end

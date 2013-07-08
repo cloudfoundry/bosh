@@ -38,6 +38,7 @@ module Bosh::Director
         end
       end
 
+      private
       def backup_logs(tmpdir)
         output = "#{tmpdir}/logs.tgz"
 
