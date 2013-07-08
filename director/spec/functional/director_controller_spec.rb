@@ -138,7 +138,13 @@ describe Bosh::Director::ApiController do
         expect_redirect_to_queued_task(last_response)
       end
 
-      it "only consumes application/x-compressed" do
+      it "expects remote release location" do
+        post "/releases", {},
+             payload("application/json", JSON.dump("location" => "http://release_url"))
+        expect_redirect_to_queued_task(last_response)
+      end
+
+      it "only consumes application/x-compressed and application/json" do
         post "/releases", {},
              payload("application/octet-stream", spec_asset("tarball.tgz"))
         last_response.status.should == 404

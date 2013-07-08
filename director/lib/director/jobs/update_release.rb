@@ -6,6 +6,7 @@ module Bosh::Director
   module Jobs
     class UpdateRelease < BaseJob
       include LockHelper
+      include DownloadHelper
 
       @queue = :normal
 
@@ -34,6 +35,9 @@ module Bosh::Director
 
         @packages_unchanged = false
         @jobs_unchanged = false
+        
+        @remote_release = options['remote'] || false
+        @remote_release_location = options['location'] if @remote_release 
       end
 
       # Extracts release tarball, verifies release manifest and saves release
@@ -45,6 +49,7 @@ module Bosh::Director
           logger.info("Release rebase will be performed")
         end
 
+        single_step_stage("Downloading remote release") { download_remote_release } if @remote_release
         single_step_stage("Extracting release") { extract_release }
         single_step_stage("Verifying manifest") { verify_manifest }
 
@@ -64,6 +69,11 @@ module Bosh::Director
           FileUtils.rm_rf(@tmp_release_dir)
         end
         # TODO: delete task status file or cleanup later?
+      end
+
+      def download_remote_release         
+        release_file = File.join(@tmp_release_dir, Api::ReleaseManager::RELEASE_TGZ)
+        download_remote_file('release', @remote_release_location, release_file)
       end
 
       # Extracts release tarball
