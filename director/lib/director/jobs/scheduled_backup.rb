@@ -12,7 +12,7 @@ module Bosh::Director
       def perform
         @backup_job.perform
 
-        blobstore_path = "backup-#{Time.now.iso8601}.tgz"
+        blobstore_path = "backup-#{Time.now.utc.iso8601}.tgz"
 
         File.open(@backup_job.backup_file) do |f|
           @backup_destination.create(f, blobstore_path)

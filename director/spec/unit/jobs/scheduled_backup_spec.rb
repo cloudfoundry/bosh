@@ -11,7 +11,7 @@ describe Bosh::Director::Jobs::ScheduledBackup do
 
   before do
     backup_job.stub(:perform) { FileUtils.touch 'backup_dest' }
-    Time.stub(now: Time.parse('2013-07-02T09:55:40-07:00'))
+    Time.stub(now: Time.parse('2013-07-02T09:55:40Z'))
   end
 
   describe 'perform' do
@@ -23,13 +23,13 @@ describe Bosh::Director::Jobs::ScheduledBackup do
     it 'pushes a backup to the destination blobstore' do
       backup_destination.should_receive(:create).with do |backup_file, file_name|
         expect(backup_file.path).to eq 'backup_dest'
-        expect(file_name).to eq 'backup-2013-07-02T09:55:40-07:00.tgz'
+        expect(file_name).to eq 'backup-2013-07-02T09:55:40Z.tgz'
       end
       task.perform
     end
 
     it 'returns a string when successful' do
-      expect(task.perform).to eq "Stored `backup-2013-07-02T09:55:40-07:00.tgz' in backup blobstore"
+      expect(task.perform).to eq "Stored `backup-2013-07-02T09:55:40Z.tgz' in backup blobstore"
     end
   end
 
