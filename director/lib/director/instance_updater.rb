@@ -439,6 +439,10 @@ module Bosh::Director
         update_resource_pool
         return
       end
+
+      # Give some time to the agent to restart before pinging if it's ready
+      sleep(5)
+
       agent.wait_until_ready
     end
 
