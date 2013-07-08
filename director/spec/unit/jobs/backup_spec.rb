@@ -2,12 +2,12 @@ require 'spec_helper'
 require 'blobstore_client'
 
 describe Bosh::Director::Jobs::Backup do
-  let(:dest_dir) { '/dest_dir' }
+  let(:backup_file) { '/dest_dir/backup.tgz' }
   let(:tar_gzipper) { double('tar gzipper') }
   let(:blobstore_client) { double(Bosh::Blobstore::Client) }
   let(:db_adapter) { double('db adapter') }
   let(:backup_task) do
-    described_class.new(dest_dir,
+    described_class.new(backup_file,
                         tar_gzipper: tar_gzipper,
                         blobstore: blobstore_client,
                         db_adapter: db_adapter)
@@ -77,27 +77,27 @@ describe Bosh::Director::Jobs::Backup do
 
   context '#perform' do
     before do
-      Dir.should_receive(:mktmpdir).with(nil, dest_dir).and_yield("#{dest_dir}/working_dir")
+      Dir.should_receive(:mktmpdir).and_yield('/temporary_dir')
     end
 
     it 'skips backing up the blobstore when the blobstore client does not support listing objects' do
-      backup_task.should_receive(:backup_logs).and_return('backup_logs')
-      backup_task.should_receive(:backup_task_logs).and_return('backup_task_logs')
-      backup_task.should_receive(:backup_database).and_return('backup_database')
-      backup_task.should_receive(:backup_blobstore).and_raise(Bosh::Blobstore::NotImplemented)
+      backup_task.should_receive(:backup_logs).with('/temporary_dir').and_return('backup_logs')
+      backup_task.should_receive(:backup_task_logs).with('/temporary_dir').and_return('backup_task_logs')
+      backup_task.should_receive(:backup_database).with('/temporary_dir').and_return('backup_database')
+      backup_task.should_receive(:backup_blobstore).with('/temporary_dir').and_raise(Bosh::Blobstore::NotImplemented)
 
-      tar_gzipper.should_receive(:compress).with(%w(backup_logs backup_task_logs backup_database), "#{dest_dir}/backup.tgz")
+      tar_gzipper.should_receive(:compress).with(%w(backup_logs backup_task_logs backup_database), backup_file)
 
       backup_task.perform
     end
 
     it 'combines the tarballs' do
-      backup_task.should_receive(:backup_logs).and_return('backup_logs')
-      backup_task.should_receive(:backup_task_logs).and_return('backup_task_logs')
-      backup_task.should_receive(:backup_database).and_return('backup_database')
-      backup_task.should_receive(:backup_blobstore).and_return('backup_blobstore')
+      backup_task.should_receive(:backup_logs).with('/temporary_dir').and_return('backup_logs')
+      backup_task.should_receive(:backup_task_logs).with('/temporary_dir').and_return('backup_task_logs')
+      backup_task.should_receive(:backup_database).with('/temporary_dir').and_return('backup_database')
+      backup_task.should_receive(:backup_blobstore).with('/temporary_dir').and_return('backup_blobstore')
 
-      tar_gzipper.should_receive(:compress).with(%w(backup_logs backup_task_logs backup_database backup_blobstore), "#{dest_dir}/backup.tgz")
+      tar_gzipper.should_receive(:compress).with(%w(backup_logs backup_task_logs backup_database backup_blobstore), backup_file)
 
       backup_task.perform
     end
@@ -109,7 +109,7 @@ describe Bosh::Director::Jobs::Backup do
       backup_task.stub(:backup_blobstore)
       tar_gzipper.stub(:compress)
 
-      expect(backup_task.perform).to eq "Backup created at #{dest_dir}/backup.tgz"
+      expect(backup_task.perform).to eq "Backup created at #{backup_file}"
     end
   end
 end

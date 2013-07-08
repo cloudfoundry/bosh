@@ -767,7 +767,7 @@ module Bosh::Director
     end
 
     get '/backups' do
-      send_file "#{@backup_manager.destination_path}/backup.tgz"
+      send_file @backup_manager.destination_path
     end
 
     get "/info" do

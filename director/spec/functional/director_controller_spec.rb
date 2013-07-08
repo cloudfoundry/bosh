@@ -834,8 +834,9 @@ describe Bosh::Director::ApiController do
         describe "fetching" do
           it "returns the backup tarball" do
             Dir.mktmpdir do |temp|
-              FileUtils.touch(File.join(temp, 'backup.tgz'))
-              BD::Api::BackupManager.any_instance.stub(destination_path: temp)
+              backup_file = File.join(temp, 'backup.tgz')
+              FileUtils.touch(backup_file)
+              BD::Api::BackupManager.any_instance.stub(destination_path: backup_file)
 
               get "/backups"
               expect(last_response.status).to eq 200

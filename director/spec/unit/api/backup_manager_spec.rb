@@ -16,13 +16,13 @@ describe Bosh::Director::Api::BackupManager do
       BD::JobQueue.any_instance.stub(:create_task => task)
     end
 
-    it "enqueues a task to create a backup of BOSH" do
-      Resque.should_receive(:enqueue).with(BD::Jobs::Backup, task_id, "/var/vcap/store/director")
+    it 'enqueues a task to create a backup of BOSH' do
+      Resque.should_receive(:enqueue).with(BD::Jobs::Backup, task_id, '/var/vcap/store/director/backup.tgz')
 
       backup_manager.create_backup(user)
     end
 
-    it "returns the task so it can be tracked" do
+    it 'returns the task so it can be tracked' do
       backup_manager.create_backup(user).should == task
     end
   end

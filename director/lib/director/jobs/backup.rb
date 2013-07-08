@@ -7,15 +7,17 @@ module Bosh::Director
         :bosh_backup
       end
 
-      def initialize(dest_dir, options = {})
-        @dest_dir = dest_dir
+      attr_reader :backup_file
+
+      def initialize(dest, options={})
+        @backup_file = dest
         @tar_gzipper = options.fetch(:tar_gzipper) { TarGzipper.new }
         @blobstore_client = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @db_adapter = options.fetch(:db_adapter) { Bosh::Director::DbBackup.create(Config.db_config) }
       end
 
       def perform
-        Dir.mktmpdir(nil, @dest_dir) do |tmpdir|
+        Dir.mktmpdir do |tmpdir|
 
           event_log.begin_stage('Backing up director', 3)
 
@@ -31,10 +33,9 @@ module Bosh::Director
             logger.warn('Skipping blobstore backup because blobstore client does not support list operation')
           end
 
-          backup_file = "#{@dest_dir}/backup.tgz"
-          @tar_gzipper.compress(files, backup_file)
+          @tar_gzipper.compress(files, @backup_file)
 
-          "Backup created at #{backup_file}"
+          "Backup created at #{@backup_file}"
         end
       end
 
