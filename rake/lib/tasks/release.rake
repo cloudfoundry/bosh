@@ -1,7 +1,18 @@
 namespace :release do
-  desc 'Create bosh dev release'
+  desc 'Create BOSH dev release'
   task :create_dev_release => :'all:finalize_release_directory' do
     create_release
+  end
+
+  desc 'Upload BOSH dev release'
+  task :upload_dev_release, [:rebase] => :create_dev_release do |_, args|
+    args.with_defaults(rebase: false)
+
+    rebase_arg = args[:rebase] ? '--rebase' : ''
+
+    Dir.chdir('release') do
+      sh("bosh -n upload release #{rebase_arg}")
+    end
   end
 
   def create_release(options={})
