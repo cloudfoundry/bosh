@@ -32,11 +32,11 @@ snapshots:
   enabled: <%= p('director.enable_snapshots') %>
 scheduled_jobs:
   <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
-  - command: snapshot_deployments
+  - command: SnapshotDeployments
     schedule: <%= snapshot_schedule %>
   <% end %>
   <% if_p('director.self_snapshot_schedule') do |self_snapshot_schedule| %>
-  - command: snapshot_self
+  - command: SnapshotSelf
     schedule: <%= self_snapshot_schedule %>
   <% end %>
 scan_and_fix:

@@ -1,17 +1,22 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 $: << File.expand_path('..', __FILE__)
 
-require "digest/sha1"
-require "fileutils"
-require "logger"
-require "tmpdir"
-require "zlib"
+require 'digest/sha1'
+require 'fileutils'
+require 'logger'
+require 'tmpdir'
+require 'zlib'
 require 'tempfile'
 
-require "archive/tar/minitar"
-require "rspec"
-require "machinist/sequel"
-require "sham"
+require 'archive/tar/minitar'
+require 'rspec'
+require 'machinist/sequel'
+require 'sham'
+require 'rspec/fire'
+
+RSpec.configure do |config|
+  config.include(RSpec::Fire)
+end
 
 module SpecHelper
   class << self

@@ -54,6 +54,7 @@ group :development, :test do
   gem 'guard-rspec'
   gem 'ci_reporter'
   gem 'rspec'
+  gem 'rspec-fire'
   gem 'webmock'
   gem 'fakefs'
   gem 'simplecov'

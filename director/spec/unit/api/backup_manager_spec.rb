@@ -1,15 +1,14 @@
 require 'spec_helper'
 
 describe Bosh::Director::Api::BackupManager do
-
   let(:user) { Bosh::Director::Models::User.make }
   let(:command_runner) { double('command_runner') }
   let(:backup_manager) { described_class.new }
 
-  describe "create_bosh_backup" do
+  describe '#create_bosh_backup' do
     let(:task_id) { 42 }
-    let(:task) { double("task", :id => task_id) }
-    let(:user) { stub }
+    let(:task) { double('Task', id: task_id) }
+    let(:user) { double('User') }
 
     before do
       Resque.stub(:enqueue)

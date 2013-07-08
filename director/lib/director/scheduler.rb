@@ -2,88 +2,56 @@ require 'rufus/scheduler'
 
 module Bosh::Director
   class Scheduler
-
-    class UnknownCommand < StandardError; end
-
-    attr_reader :scheduler
-
-    def initialize(scheduled_jobs=[])
-      @scheduled_jobs = scheduled_jobs
+    def initialize(scheduled_jobs=[], options={})
+      if scheduled_jobs.nil? || scheduled_jobs.is_a?(Array)
+        @scheduled_jobs = scheduled_jobs
+        @scheduler = options.fetch(:scheduler) { Rufus::Scheduler::PlainScheduler.new }
+        @queue = options.fetch(:queue) { JobQueue.new }
+      else
+        raise 'scheduled_jobs must be an array'
+      end
     end
 
     def start!
       logger.info('starting scheduler')
-      add_jobs if scheduler.cron_jobs.empty?
-      scheduler.start
-      scheduler.join
+      add_jobs unless @added_already
+      @scheduler.start
+      @scheduler.join
     end
 
     def stop!
       logger.info('stopping scheduler')
-      scheduler.stop
-    end
-
-    def scheduler
-      @scheduler ||= Rufus::Scheduler::PlainScheduler.new
+      @scheduler.stop
     end
 
     def logger
       @logger ||= Config.logger
     end
 
-    def cloud
-      @cloud ||= Config.cloud
-    end
-
-    def snapshot_manager
-      @snapshot_manger ||= Bosh::Director::Api::SnapshotManager.new
-    end
+    private
 
     def add_jobs
-      return if @scheduled_jobs.nil? || !@scheduled_jobs.is_a?(Array)
+      return if @scheduled_jobs.nil?
+      @added_already = true
+
       @scheduled_jobs.each do |scheduled_job|
-        command = scheduled_job['command'].to_s
-        schedule = scheduled_job['schedule']
-        raise "unknown command scheduled job `#{command}'" unless respond_to? command
-        scheduler.cron(schedule) do |job|
-          self.send(command.to_sym)
-          logger.info("ran `#{command}', next run at `#{job.next_time}'")
+        begin
+          director_job_class = Bosh::Director::Jobs.const_get(scheduled_job['command'].to_s)
+        rescue NameError
+          raise "unknown job `Bosh::Director::Jobs::#{scheduled_job['command']}'"
         end
-        logger.info("added scheduled job `#{command}' with interval '#{schedule}'")
+
+        @scheduler.cron(scheduled_job['schedule']) do |_|
+          logger.info("enqueueing `#{scheduled_job['command']}'")
+
+          @queue.enqueue('scheduler',
+                         director_job_class,
+                         "scheduled #{scheduled_job['command']}",
+                         scheduled_job['params'])
+        end
+
+        logger.info("added scheduled job `#{director_job_class}' with interval '#{scheduled_job['schedule']}'")
       end
-    end
-
-    def snapshot_deployments
-      logger.info('starting snapshots of deployments')
-
-      Bosh::Director::Models::Deployment.all do |deployment|
-        snapshot_manager.create_deployment_snapshot_task('scheduler', deployment)
-      end
-    end
-
-    def snapshot_self
-      logger.info('starting self_snapshot')
-      unless Config.enable_snapshots
-        logger.info('Snapshots are disabled; skipping')
-        return
-      end
-      
-      vm_id = cloud.current_vm_id
-      disks = cloud.get_disks(vm_id)
-      metadata = {
-          deployment: 'self',
-          job: 'director',
-          index: 0,
-          director_name: Config.name,
-          director_uuid: Config.uuid,
-          agent_id: 'self',
-          instance_id: vm_id
-      }
-
-      disks.each { |disk| cloud.snapshot_disk(disk, metadata) }
-
-    rescue Bosh::Clouds::NotImplemented
-      logger.info('CPI does not support disk snapshots; skipping')
     end
   end
 end
