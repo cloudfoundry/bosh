@@ -12,7 +12,12 @@ module Bosh
           end
 
           def export(path)
-            sh "PGPASSWORD=#{@db_config['password']} /var/vcap/packages/postgres/bin/pg_dump --username=#{@db_config['user']} #{@db_config['database']} > #{path}"
+            username = @db_config.fetch('user')
+            password = @db_config.fetch('password')
+            host = @db_config.fetch('host')
+            port = @db_config.fetch('port')
+            database = @db_config.fetch('database')
+            sh "PGPASSWORD=#{password} /var/vcap/packages/postgres/bin/pg_dump --host #{host} --port #{port} --username=#{username} #{database} > #{path}"
             path
           end
         end
