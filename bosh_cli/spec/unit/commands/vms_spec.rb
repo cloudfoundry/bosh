@@ -57,45 +57,44 @@ describe Bosh::Cli::Command::Vms do
     let(:vitals) { false }
     let(:dns) { false }
     let(:details) { false }
-
-    before(:each) do
-      director.stub(:fetch_vm_state).with(deployment) {
-        [
-            {
-                'job_name' => 'job1',
-                'index' => 0,
-                'ips' => %w{192.168.0.1},
-                'dns' => %w{index.job.network.deployment.microbosh},
-                'vitals' => 'vitals',
-                'job_state' => 'awesome',
-                'resource_pool' => 'rp1',
-                'vm_cid' => 'cid1',
-                'agent_id' => 'agent1',
-                'vitals' => {
-                    'load' => [1, 2, 3],
-                    'cpu' => {
-                        'user' => 4,
-                        'sys' => 5,
-                        'wait' => 6,
-                    },
-                    'mem' => {
-                        'percent' => 7,
-                        'kb' => 8,
-                    },
-                    'swap' => {
-                        'percent' => 9,
-                        'kb' => 10,
-                    },
-                    'disk' => {
-                        'system' => {'percent' => 11},
-                        'ephemeral' => {'percent' => 12},
-                        'persistent' => {'percent' => 13},
-                    },
-                },
-                'resurrection_paused' => true
+    let(:vm_state) {
+      {
+        'job_name' => 'job1',
+        'index' => 0,
+        'ips' => %w{192.168.0.1},
+        'dns' => %w{index.job.network.deployment.microbosh},
+        'vitals' => 'vitals',
+        'job_state' => 'awesome',
+        'resource_pool' => 'rp1',
+        'vm_cid' => 'cid1',
+        'agent_id' => 'agent1',
+        'vitals' => {
+            'load' => [1, 2, 3],
+            'cpu' => {
+                'user' => 4,
+                'sys' => 5,
+                'wait' => 6,
             },
-        ]
+            'mem' => {
+                'percent' => 7,
+                'kb' => 8,
+            },
+            'swap' => {
+                'percent' => 9,
+                'kb' => 10,
+            },
+            'disk' => {
+                'system' => {'percent' => 11},
+                'ephemeral' => {'percent' => 12},
+                'persistent' => {'percent' => 13},
+            },
+        },
+        'resurrection_paused' => true
       }
+    }
+ 
+    before(:each) do
+      director.stub(:fetch_vm_state).with(deployment) { [vm_state] }
     end
 
     context 'default' do
@@ -174,6 +173,22 @@ describe Bosh::Cli::Command::Vms do
           expect(s.to_s).to include '11%'
           expect(s.to_s).to include '12%'
           expect(s.to_s).to include '13%'
+        end
+        command.should_receive(:say).with('VMs total: 1')
+
+        command.show_deployment deployment, details: details, dns: dns, vitals: vitals
+      end
+
+      it 'shows the vm vitals with unavailable ephemeral and persistent disks' do
+        new_vm_state = vm_state
+        new_vm_state['vitals']['disk'].delete('ephemeral')
+        new_vm_state['vitals']['disk'].delete('persistent')
+        director.stub(:fetch_vm_state).with(deployment) { [new_vm_state] }
+
+        command.should_receive(:say).with("Deployment `#{deployment}'")
+        command.should_receive(:say) do |s|
+          expect(s.to_s).to_not include '12%'
+          expect(s.to_s).to_not include '13%'
         end
         command.should_receive(:say).with('VMs total: 1')
 

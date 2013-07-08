@@ -262,9 +262,10 @@ module Bosh::Agent
 
         def get_usage
           usage = {
-              :system =>      {:percent => fs_usage_safe('/')},
-              :ephemeral =>   {:percent => fs_usage_safe(File.join(base_dir, 'data'))}
+              :system => {:percent => fs_usage_safe('/')}
           }
+          ephemeral_percent = fs_usage_safe(File.join(base_dir, 'data'))
+          usage[:ephemeral] = {:percent => ephemeral_percent} if ephemeral_percent
           persistent_percent = fs_usage_safe(File.join(base_dir, 'store'))
           usage[:persistent] = {:percent => persistent_percent} if persistent_percent
 

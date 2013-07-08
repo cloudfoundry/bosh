@@ -34,7 +34,9 @@ module Bosh::Agent
           settings = @config.settings
           dev_path = settings['disks']['ephemeral']
           unless dev_path
-            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk" if @config.infrastructure_name == "aws"
+            @logger.warn("No ephemeral disk set, using root device for BOSH agent data!!!")
+            return nil
           end
           get_available_path(dev_path)
         else

@@ -5,7 +5,7 @@ require "spec_helper"
 
 describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
-  def agent_settings(unique_name, network_spec = dynamic_network_spec)
+  def agent_settings(unique_name, network_spec = dynamic_network_spec, ephemeral = "/dev/sdb")
     {
       "vm" => {
         "name" => "vm-#{unique_name}"
@@ -14,7 +14,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       "networks" => { "network_a" => network_spec },
       "disks" => {
         "system" => "/dev/sda",
-        "ephemeral" => "/dev/sdb",
+        "ephemeral" => ephemeral,
         "persistent" => {}
       },
       "env" => {
@@ -269,20 +269,6 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       cloud.create_vm("agent-id", "sc-id", resource_pool_spec, { "network_a" => dynamic_network_spec },
                       nil, { "test_env" => "value" })
     }.to raise_error(Bosh::Clouds::CloudError, "Security group `default' not found")
-  end
-  
-  it "raises an error when flavor doesn't have ephemeral disk" do
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :ephemeral => nil)
-    cloud = mock_cloud do |openstack|
-      openstack.security_groups.should_receive(:collect).and_return(%w[default])
-      openstack.images.should_receive(:find).and_return(image)
-      openstack.flavors.should_receive(:find).and_return(flavor)
-    end
-
-    expect {
-      cloud.create_vm("agent-id", "sc-id", resource_pool_spec, { "network_a" => dynamic_network_spec },
-                      nil, { "test_env" => "value" })
-    }.to raise_error(Bosh::Clouds::CloudError, "Flavor `m1.tiny' doesn't have ephemeral disk")
   end
 
   it "raises an error when flavor doesn't have enough ephemeral disk capacity" do

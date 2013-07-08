@@ -153,48 +153,49 @@ module Bosh::Agent
     end
 
     def setup_data_disk
+      data_mount = File.join(base_dir, "data")
+      FileUtils.mkdir_p(data_mount)
+
       data_disk = Bosh::Agent::Config.platform.get_data_disk_device_name
-
-      unless File.blockdev?(data_disk)
-        logger.warn("Data disk is not a block device: #{data_disk}")
-        return
-      end
-
-      swap_partition = "#{data_disk}1"
-      data_partition = "#{data_disk}2"
-
-      swap_turned_on = sh("cat /proc/swaps | grep #{swap_partition}", :on_error => :return).success?
-      data_partition_mounted = sh("mount | grep #{data_partition}", :on_error => :return).success?
-
-      if Dir.glob("#{data_disk}[1-2]").empty?
-        logger.info("Found unformatted drive")
-        logger.info("Partition #{data_disk}")
-        Bosh::Agent::Util.partition_disk(data_disk, data_sfdisk_input)
-
-        logger.info("Create swap and data partitions")
-        sh "mkswap #{swap_partition}"
-
-        mke2fs_options = ["-t ext4", "-j"]
-        mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
-        sh "/sbin/mke2fs #{mke2fs_options.join(" ")} #{data_partition}"
-      end
-
-      unless swap_turned_on
-        logger.info("Swapon partition #{swap_partition}")
-        sh "swapon #{swap_partition}"
-      end
-
-      unless data_partition_mounted
-        data_mount = File.join(base_dir, "data")
-        FileUtils.mkdir_p(data_mount)
-
-        unless Pathname.new(data_mount).mountpoint?
-          logger.info("Mount data partition #{data_partition} to #{data_mount}")
-          sh "mount #{data_partition} #{data_mount}"
+      if data_disk
+        unless File.blockdev?(data_disk)
+          logger.warn("Data disk is not a block device: #{data_disk}")
+          return
         end
 
-        setup_data_sys
+        swap_partition = "#{data_disk}1"
+        data_partition = "#{data_disk}2"
+
+        swap_turned_on = sh("cat /proc/swaps | grep #{swap_partition}", :on_error => :return).success?
+        data_partition_mounted = sh("mount | grep #{data_partition}", :on_error => :return).success?
+
+        if Dir.glob("#{data_disk}[1-2]").empty?
+          logger.info("Found unformatted drive")
+          logger.info("Partition #{data_disk}")
+          Bosh::Agent::Util.partition_disk(data_disk, data_sfdisk_input)
+
+          logger.info("Create swap and data partitions")
+          sh "mkswap #{swap_partition}"
+
+          mke2fs_options = ["-t ext4", "-j"]
+          mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
+          sh "/sbin/mke2fs #{mke2fs_options.join(" ")} #{data_partition}"
+        end
+
+        unless swap_turned_on
+          logger.info("Swapon partition #{swap_partition}")
+          sh "swapon #{swap_partition}"
+        end
+
+        unless data_partition_mounted
+          unless Pathname.new(data_mount).mountpoint?
+            logger.info("Mount data partition #{data_partition} to #{data_mount}")
+            sh "mount #{data_partition} #{data_mount}"
+          end
+        end
       end
+
+      setup_data_sys
     end
 
     def data_sfdisk_input
