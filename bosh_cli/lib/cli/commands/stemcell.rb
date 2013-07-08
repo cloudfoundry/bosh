@@ -66,14 +66,14 @@ module Bosh::Cli::Command
         end
         
         stemcell_location = stemcell.stemcell_file
+
+        nl
+        say("Uploading stemcell...")
+        nl
       else
         nl
         say("Using remote stemcell `#{stemcell_location}'")
       end
-
-      nl
-      say("Uploading stemcell...")
-      nl
 
       if stemcell_type == "local"
         status, task_id = director.upload_stemcell(stemcell_location)
