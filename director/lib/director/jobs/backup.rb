@@ -17,18 +17,17 @@ module Bosh::Director
       end
 
       def perform
-        Dir.mktmpdir do |tmpdir|
-
+        Dir.mktmpdir do |tmp_output_dir|
           event_log.begin_stage('Backing up director', 3)
 
           files = []
 
-          files << backup_logs(tmpdir)
-          files << backup_task_logs(tmpdir)
-          files << backup_database(tmpdir)
+          files << backup_logs(tmp_output_dir)
+          files << backup_task_logs(tmp_output_dir)
+          files << backup_database(tmp_output_dir)
 
           begin
-            files << backup_blobstore(tmpdir)
+            files << backup_blobstore(tmp_output_dir)
           rescue Bosh::Blobstore::NotImplemented
             logger.warn('Skipping blobstore backup because blobstore client does not support list operation')
           end
@@ -49,8 +48,8 @@ module Bosh::Director
         output
       end
 
-      def backup_task_logs(tmpdir)
-        output = "#{tmpdir}/task_logs.tgz"
+      def backup_task_logs(output_dir)
+        output = "#{output_dir}/task_logs.tgz"
 
         track_and_log('Backing up task logs') do
           @tar_gzipper.compress('/var/vcap/store/director/tasks', output)
@@ -59,8 +58,8 @@ module Bosh::Director
         output
       end
 
-      def backup_database(tmpdir)
-        output = "#{tmpdir}/director_db.sql"
+      def backup_database(output_dir)
+        output = "#{output_dir}/director_db.sql"
 
         track_and_log('Backing up database') do
           @db_adapter.export(output)
@@ -70,9 +69,9 @@ module Bosh::Director
       end
 
        # raises NotImplemented if the blobstore client doesn't support list()
-      def backup_blobstore(tmpdir)
-        blobs_dir = "#{tmpdir}/blobs"
-        output = "#{tmpdir}/blobs.tgz"
+      def backup_blobstore(output_dir)
+        blobs_dir = "#{output_dir}/blobs"
+        output = "#{output_dir}/blobs.tgz"
 
         Dir.mkdir(blobs_dir)
 
