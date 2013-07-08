@@ -35,14 +35,18 @@ module Bosh::Director
       end
 
       def create_release(user, release_bundle, options = {})
-        release_dir = Dir.mktmpdir('release')
+        release_dir = Dir.mktmpdir("release")
 
-        unless check_available_disk_space(release_dir, release_bundle.size)
-          raise NotEnoughDiskSpace, "Uploading release archive failed. " +
-            "Insufficient space on BOSH director in #{release_dir}"
+        if options['remote']
+          options['location'] = release_bundle
+        else
+          unless check_available_disk_space(release_dir, release_bundle.size)
+            raise NotEnoughDiskSpace, "Uploading release archive failed. " +
+              "Insufficient space on BOSH director in #{release_dir}"
+          end
+  
+          write_file(File.join(release_dir, RELEASE_TGZ), release_bundle)
         end
-
-        write_file(File.join(release_dir, RELEASE_TGZ), release_bundle)
 
         JobQueue.new.enqueue(user, Jobs::UpdateRelease, 'create release', [release_dir, options])
       end

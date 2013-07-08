@@ -157,7 +157,7 @@ describe Bosh::Cli::Director do
       @director.list_recent_tasks(50, 2)
     end
 
-    it "uploads release" do
+    it "uploads local release" do
       @director.should_receive(:upload_and_track).
           with(:post, "/releases", "/path",
                {:content_type => "application/x-compressed"}).
@@ -165,12 +165,30 @@ describe Bosh::Cli::Director do
       @director.upload_release("/path")
     end
 
-    it "uploads release (with rebase)" do
+    it "uploads local release (with rebase)" do
       @director.should_receive(:upload_and_track).
           with(:post, "/releases?rebase=true", "/path",
                {:content_type => "application/x-compressed"}).
           and_return(true)
       @director.rebase_release("/path")
+    end
+
+    it "uploads remote release" do
+      @director.should_receive(:request_and_track).
+          with(:post, "/releases", 
+               {:content_type => "application/json", 
+                :payload => JSON.generate("location" => "release_uri")}).
+          and_return(true)
+      @director.upload_remote_release("release_uri")
+    end
+
+    it "uploads remote release (with rebase)" do
+      @director.should_receive(:request_and_track).
+          with(:post, "/releases?rebase=true", 
+               {:content_type => "application/json", 
+                :payload => JSON.generate("location" => "release_uri")}).
+          and_return(true)
+      @director.rebase_remote_release("release_uri")
     end
 
     it "gets release info" do

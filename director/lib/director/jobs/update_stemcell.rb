@@ -4,6 +4,7 @@ module Bosh::Director
   module Jobs
     class UpdateStemcell < BaseJob
       include ValidationHelper
+      include DownloadHelper
 
       UPDATE_STEPS = 5
       
@@ -92,39 +93,10 @@ module Bosh::Director
       
       def download_remote_stemcell(downloaded_stemcell_dir)
         track_and_log("Downloading remote stemcell") do
-          stemcell_uri = URI.parse(@stemcell_file)
-          
-          random_name = "stemcell-#{SecureRandom.uuid}"
-          stemcell_file = File.join(downloaded_stemcell_dir, random_name)
-          
-          Net::HTTP.start(stemcell_uri.host, stemcell_uri.port, 
-                          :use_ssl => stemcell_uri.scheme == 'https',
-                          :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
-            http.request_get(stemcell_uri.request_uri) do |response|
-              unless response.kind_of? Net::HTTPSuccess
-                logger.error("Downloading remote stemcell from #{@stemcell_file} failed: #{response.message}")
-                if response.kind_of? Net::HTTPNotFound 
-                  msg = "No stemcell found at `#{@stemcell_file}'."
-                else
-                  msg = "Downloading remote stemcell failed. Check task debug log for details."
-                end
-                raise StemcellNotFound, msg
-              end
-                
-              File.open(stemcell_file, 'wb') do |file|
-                response.read_body do |chunk|
-                  file.write(chunk)
-                end
-              end
-            end
-          end
-          
-          @stemcell_file = stemcell_file
+          downloaded_stemcell_file = File.join(downloaded_stemcell_dir, "stemcell-#{SecureRandom.uuid}")
+          download_remote_file('stemcell', @stemcell_file, downloaded_stemcell_file)
+          @stemcell_file = downloaded_stemcell_file          
         end
-      rescue URI::Error, SocketError, Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, Errno::ECONNREFUSED, EOFError,
-             Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        logger.error("Downloading remote stemcell from #{@stemcell_file} failed: #{e.inspect}")
-        raise ResourceError, "Downloading remote stemcell failed. Check task debug log for details."
       end
       
       private

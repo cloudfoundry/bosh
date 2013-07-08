@@ -33,6 +33,28 @@ describe Bosh::Director::Jobs::UpdateRelease do
       }
     end
 
+    context 'processing update release' do
+      it 'with a local release' do
+        job = BD::Jobs::UpdateRelease.new(@release_dir)
+        job.should_not_receive(:download_remote_release)
+        job.should_receive(:extract_release)
+        job.should_receive(:verify_manifest)
+        job.should_receive(:process_release)
+        
+        job.perform
+      end
+
+      it 'with a remote release' do
+        job = BD::Jobs::UpdateRelease.new(@release_dir, {'remote' => true, 'location' => 'release_location'})
+        job.should_receive(:download_remote_release)
+        job.should_receive(:extract_release)
+        job.should_receive(:verify_manifest)
+        job.should_receive(:process_release)
+        
+        job.perform
+      end
+    end
+    
     context "commit_hash and uncommitted changes flag" do
       it "sets commit_hash and uncommitted changes flag on release_version" do
         release_dir = ReleaseHelper.create_release_tarball(manifest)
