@@ -22,7 +22,7 @@ describe Bosh::Director::Jobs::Backup do
   context '#backup_logs' do
     let(:log_directory) { '/var/vcap/sys/log' }
 
-    it "zips up the logs" do
+    it 'zips up the logs' do
       tar_gzipper.should_receive(:compress).with(log_directory, '/foo/logs.tgz')
       expect(backup_task.backup_logs('/foo')).to eq('/foo/logs.tgz')
     end
@@ -31,7 +31,7 @@ describe Bosh::Director::Jobs::Backup do
   context '#backup_task_logs' do
     let(:task_log_directory) { '/var/vcap/store/director/tasks' }
 
-    it "zips up the task logs" do
+    it 'zips up the task logs' do
       tar_gzipper.should_receive(:compress).with(task_log_directory, '/foo/task_logs.tgz')
       expect(backup_task.backup_task_logs('/foo')).to eq('/foo/task_logs.tgz')
     end
