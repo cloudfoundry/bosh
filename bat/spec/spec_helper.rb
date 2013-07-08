@@ -7,6 +7,7 @@ require "stemcell"
 require "release"
 require "deployment"
 require "vm"
+require 'fileutils'
 
 require 'tempfile'
 require 'common/exec'

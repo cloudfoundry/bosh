@@ -102,12 +102,16 @@ describe "with release, stemcell and deployment" do
   end
 
   describe "backup" do
+    after do
+      FileUtils.rm_f('bosh_backup.tgz')
+    end
+
     it "works" do
-      bosh("backup bosh_backup.tgz").should succeed_with /Backup of BOSH director was put in/
+      bosh('backup bosh_backup.tgz').should succeed_with /Backup of BOSH director was put in/
 
-      files = tar_contents("bosh_backup.tgz", entries=true)
+      files = tar_contents('bosh_backup.tgz', entries=true)
 
-      file_names = files.map(&:name).join(" ")
+      file_names = files.map(&:name).join(' ')
       expect(file_names).to match(/logs\.tgz/)
       expect(file_names).to match(/task_logs\.tgz/)
       expect(file_names).to match(/director_db\.sql/)
