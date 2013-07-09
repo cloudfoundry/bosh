@@ -1,5 +1,5 @@
 module Bosh
-  module Helpers
+  module Dev
     class Build < Struct.new(:number, :job_name)
       attr_reader :number, :job_name
 

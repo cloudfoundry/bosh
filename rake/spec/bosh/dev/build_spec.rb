@@ -1,7 +1,7 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/build'
+require_relative '../../../lib/bosh/dev/build'
 
-module Bosh::Helpers
+module Bosh::Dev
   describe Build do
     before do
       ENV.stub(:fetch).with('BUILD_NUMBER').and_return('current')

@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/ami'
-require_relative '../../lib/helpers/stemcell'
+require_relative '../../../lib/bosh/dev/ami'
+require_relative '../../../lib/bosh/dev/stemcell'
 
-module Bosh::Helpers
+module Bosh::Dev
   describe Ami do
     let(:stemcell) do
       stemcell = double(Stemcell)

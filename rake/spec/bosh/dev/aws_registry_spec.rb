@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/aws_registry'
+require_relative '../../../lib/bosh/dev/aws_registry'
 
 module Bosh
-  module Helpers
+  module Dev
     describe AwsRegistry do
       it 'queries AWS for its region' do
         Net::HTTP.stub(:get).with('169.254.169.254', '/latest/meta-data/placement/availability-zone').and_return("us-east-1\n")

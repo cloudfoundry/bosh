@@ -2,7 +2,7 @@ require 'fog'
 require 'logger'
 
 module Bosh
-  module Helpers
+  module Dev
     class FogBulkUploader
       attr_reader :base_dir
 

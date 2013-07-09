@@ -3,7 +3,7 @@ require 'yaml'
 require_relative 'ami'
 
 module Bosh
-  module Helpers
+  module Dev
     class Stemcell
       def self.from_jenkins_build(infrastructure, type, build)
         new(Dir.glob("/mnt/stemcells/#{infrastructure}-#{type}/work/work/*-stemcell-*-#{build.number}.tgz").first)

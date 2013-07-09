@@ -1,5 +1,5 @@
 module Bosh
-  module Helpers
+  module Dev
     class Pipeline
 
       def publish_stemcell(stemcell)

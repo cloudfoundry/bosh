@@ -1,9 +1,9 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/pipeline'
-require_relative '../../lib/helpers/stemcell'
+require_relative '../../../lib/bosh/dev/pipeline'
+require_relative '../../../lib/bosh/dev/stemcell'
 
 module Bosh
-  module Helpers
+  module Dev
     describe Pipeline do
       subject(:pipeline) { Pipeline.new }
 

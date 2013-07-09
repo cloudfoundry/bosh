@@ -1,5 +1,5 @@
 module Bosh
-  module Helpers
+  module Dev
     class VersionFile < Struct.new(:version_number)
       def write
         file_contents = File.read("BOSH_VERSION")

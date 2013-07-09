@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/data_dog_formatter'
+require_relative '../../../lib/bosh/dev/data_dog_formatter'
 
 module Bosh
-  module Helpers
+  module Dev
     describe DataDogFormatter do
       subject(:formatter) { DataDogFormatter.new(StringIO.new, sender) }
       let(:sender) { stub(DataDogReporter) }

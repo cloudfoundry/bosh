@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'helpers/fog_bulk_uploader'
+require_relative '../../../lib/bosh/dev/fog_bulk_uploader'
 require 'fakefs/spec_helpers'
 
-describe Bosh::Helpers::FogBulkUploader do
+describe Bosh::Dev::FogBulkUploader do
   include FakeFS::SpecHelpers
 
   let(:fog_options) do
@@ -15,7 +15,7 @@ describe Bosh::Helpers::FogBulkUploader do
   let(:fog_storage) { Fog::Storage.new(fog_options) }
   let(:base_dir) { 'base-dir' }
 
-  subject { Bosh::Helpers::FogBulkUploader.new(base_dir, fog_options) }
+  subject { Bosh::Dev::FogBulkUploader.new(base_dir, fog_options) }
 
   let(:src) { 'source_dir' }
   let(:dst) { 'dest_dir' }
@@ -45,7 +45,7 @@ describe Bosh::Helpers::FogBulkUploader do
   end
 
   it 'raises an error when base_directory is not found in provider' do
-    uploader = Bosh::Helpers::FogBulkUploader.new('foo', fog_options)
+    uploader = Bosh::Dev::FogBulkUploader.new('foo', fog_options)
     expect {
       uploader.base_directory
     }.to raise_error("bucket 'foo' not found")
@@ -56,7 +56,7 @@ describe Bosh::Helpers::FogBulkUploader do
       ENV.should_receive(:fetch).with('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT').and_return('access key')
       ENV.should_receive(:fetch).with('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT').and_return('secret key')
       ENV.should_receive(:fetch).with('BOSH_CI_PIPELINE_BUCKET', anything).and_call_original
-      uploader = Bosh::Helpers::FogBulkUploader.s3_pipeline
+      uploader = Bosh::Dev::FogBulkUploader.s3_pipeline
       expect(uploader.base_dir).to eq('bosh-ci-pipeline')
     end
   end

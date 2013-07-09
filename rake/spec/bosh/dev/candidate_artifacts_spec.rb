@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/candidate_artifacts'
+require_relative '../../../lib/bosh/dev/candidate_artifacts'
 
 module Bosh
-  module Helpers
+  module Dev
     describe CandidateArtifacts do
       let(:light_stemcell) do
         double(Stemcell, path: light_stemcell_path)

@@ -1,11 +1,11 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
-require_relative '../../lib/helpers/stemcell'
-require_relative '../../lib/helpers/ami'
-require_relative '../../lib/helpers/build'
+require_relative '../../../lib/bosh/dev/stemcell'
+require_relative '../../../lib/bosh/dev/ami'
+require_relative '../../../lib/bosh/dev/build'
 
 module Bosh
-  module Helpers
+  module Dev
     describe Stemcell do
       let(:stemcell_path) { spec_asset('stemcell.tgz') }
 

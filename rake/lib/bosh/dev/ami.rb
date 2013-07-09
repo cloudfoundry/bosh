@@ -6,7 +6,7 @@ require 'rake'
 require_relative 'aws_registry'
 
 module Bosh
-  module Helpers
+  module Dev
     class Ami
       attr_reader :stemcell
 

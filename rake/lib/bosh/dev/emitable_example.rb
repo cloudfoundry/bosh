@@ -1,5 +1,5 @@
 module Bosh
-  module Helpers
+  module Dev
     class EmitableExample
       def initialize(example)
         @example = example

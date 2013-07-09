@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/data_dog_reporter'
+require_relative '../../../lib/bosh/dev/data_dog_reporter'
 
 module Bosh
-  module Helpers
+  module Dev
     describe DataDogReporter do
       subject(:sender) { described_class.new(data_dog_client) }
       let(:data_dog_client) { double(Dogapi::Client) }

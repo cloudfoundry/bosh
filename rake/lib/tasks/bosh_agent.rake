@@ -1,10 +1,10 @@
 namespace :bosh_agent do
   desc "Update the BOSH Agent code running on an instance"
   task :update, [:instance_name, :gw_host, :gw_user] => :pre_stage_latest do |_, args|
-    require_relative '../helpers/instance'
+    require_relative '../bosh/dev/instance'
 
     options = args.with_defaults(gw_user: 'vcap')
-    instance = Bosh::Helpers::Instance.new(options)
+    instance = Bosh::Dev::Instance.new(options)
 
     local_gem_path = Dir.glob('pkg/gems/bosh_agent*.gem').max_by { |f| File.mtime(f) }
     remote_gem_path = File.join('/tmp', File.basename(local_gem_path))

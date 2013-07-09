@@ -1,7 +1,7 @@
 require 'rake'
 
 module Bosh
-  module Helpers
+  module Dev
     class Instance
       include Rake::FileUtilsExt
 

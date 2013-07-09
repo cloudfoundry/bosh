@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../../lib/helpers/emitable_example'
+require_relative '../../../lib/bosh/dev/emitable_example'
 
 module Bosh
-  module Helpers
+  module Dev
     describe EmitableExample do
       let(:run_time) { 3.14 }
       let(:example) do

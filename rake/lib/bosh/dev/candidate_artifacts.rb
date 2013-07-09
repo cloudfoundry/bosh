@@ -2,7 +2,7 @@ require_relative 'pipeline'
 require_relative 'stemcell'
 
 module Bosh
-  module Helpers
+  module Dev
     class CandidateArtifacts
       def initialize(stemcell_tgz)
         @pipeline = Pipeline.new
