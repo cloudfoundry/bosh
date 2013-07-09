@@ -265,11 +265,11 @@ module Bosh::Cli::Command
     def upload_remote_release(release_location, upload_options = {})
       nl
       if upload_options[:rebase]
-        say("Uploading remote release `#{release_location}' (#{"will be rebased".make_yellow})")
+        say("Using remote release `#{release_location}' (#{"will be rebased".make_yellow})")
         status, task_id = director.rebase_remote_release(release_location)
         task_report(status, task_id, "Release rebased")
       else
-        say("Uploading remote release `#{release_location}'")
+        say("Using remote release `#{release_location}'")
         status, task_id = director.upload_remote_release(release_location)
         task_report(status, task_id, "Release uploaded")                
       end
