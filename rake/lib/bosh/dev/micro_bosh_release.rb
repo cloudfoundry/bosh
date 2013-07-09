@@ -12,7 +12,7 @@ module Bosh
         end
 
         release_tarball = `ls -1t release/dev_releases/bosh*.tgz | head -1`.chomp
-        File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..", release_tarball)
+        File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..", "..", release_tarball)
       end
     end
   end
