@@ -24,12 +24,8 @@ module Bosh::Director
         source_paths.each do |source_path|
           FileUtils.cp_r(source_path, filename)
         end
-        sh "#{tar_path} -z -c -f #{dest} #{filename}"
+        sh "tar -z -c -f #{dest} #{filename}"
       end
-    end
-
-    def tar_path
-      '/bin/tar'
     end
   end
 end
