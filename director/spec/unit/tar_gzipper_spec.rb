@@ -6,7 +6,6 @@ require 'fileutils'
 describe Bosh::Director::TarGzipper do
   let(:src) { Dir.mktmpdir }
   let(:dest) { Tempfile.new('logs').path }
-  let(:tar_gzipper) { described_class.new }
 
   before do
     path = File.join(src, 'var', 'vcap', 'sys', 'log1')
@@ -32,7 +31,7 @@ describe Bosh::Director::TarGzipper do
 
     it 'raises an error' do
       expect {
-        tar_gzipper.compress(src, dest)
+        subject.compress(src, dest)
       }.to raise_error(Bosh::Director::TarGzipper::SourceNotFound, "The source directory #{src} could not be found.")
     end
   end
@@ -42,43 +41,43 @@ describe Bosh::Director::TarGzipper do
 
     it 'raises an error' do
       expect {
-        tar_gzipper.compress(src, dest)
+        subject.compress(src, dest)
       }.to raise_error(Bosh::Director::TarGzipper::SourceNotAbsolute, "The source directory #{src} is not an absolute path.")
     end
   end
 
   it 'packages the source directory into the destination tarball' do
-    tar_gzipper.stub(tar_path: 'tar')
-    tar_gzipper.compress(src, dest)
+    subject.stub(tar_path: 'tar')
+    subject.compress(src, dest)
 
-    `tar tzvf #{dest}`.should match(%r{log1/hello.log})
+    `tar tzvf #{dest}`.should include('log1/hello.log')
   end
 
   it 'moves the sources files to a temporary directory first to avoid errors if we change the files as we are tarring them' do
-    tar_gzipper.stub(tar_path: 'tar')
-    tar_gzipper.compress(src, dest)
+    subject.stub(tar_path: 'tar')
+    subject.compress(src, dest)
 
     `tar tzvf #{dest}`.should include('bosh_tgz')
   end
 
   it 'uses the correct tar path' do
     command_runner = double('command runner')
-    tar_gzipper.command_runner = command_runner
+    subject.command_runner = command_runner
     command_runner.should_receive(:sh).with(%r{^/bin/tar })
 
-    tar_gzipper.compress(src, dest)
+    subject.compress(src, dest)
   end
 
   context 'if multiple source directories are specified' do
-    let(:sources) { ["#{src}/var/vcap/sys/log1", "#{src}/var/vcap/sys/log2"]}
+    let(:sources) { %W[#{src}/var/vcap/sys/log1 #{src}/var/vcap/sys/log2] }
 
     it 'packages the list of source directories into the destination tarball' do
-      tar_gzipper.stub(tar_path: 'tar')
-      tar_gzipper.compress(sources, dest)
+      subject.stub(tar_path: 'tar')
+      subject.compress(sources, dest)
 
       tar_cmd = `tar tzvf #{dest}`
-      expect(tar_cmd).to match(%r{log1/hello.log})
-      expect(tar_cmd).to match(%r{log2/goodbye.log})
+      expect(tar_cmd).to include('log1/hello.log')
+      expect(tar_cmd).to include('log2/goodbye.log')
     end
   end
 end
