@@ -274,6 +274,12 @@ GEM
       rspec (~> 2.11)
     highline (1.6.19)
     httpclient (2.2.4)
+    jenkins_api_client (0.12.1)
+      json
+      mixlib-shellout (~> 1.1.0)
+      nokogiri (~> 1.5.0)
+      terminal-table (>= 1.4.0)
+      thor (>= 0.16.0)
     json (1.7.7)
     json_pure (1.8.0)
     listen (1.0.2)
@@ -290,6 +296,7 @@ GEM
     method_source (0.8.1)
     mime-types (1.23)
     minitar (0.5.4)
+    mixlib-shellout (1.1.0)
     multi_json (1.7.2)
     mysql2 (0.3.11)
     nats (0.4.28)
@@ -425,6 +432,7 @@ DEPENDENCIES
   guard-rspec
   health_monitor!
   httpclient
+  jenkins_api_client
   json
   machinist (~> 1.0)
   minitar

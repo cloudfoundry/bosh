@@ -71,4 +71,5 @@ group :development, :test do
 
   gem 'sqlite3'
   gem 'timecop'
+  gem 'jenkins_api_client'
 end
