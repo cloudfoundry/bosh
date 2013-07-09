@@ -8,7 +8,7 @@ require "rugged"
 
 # microBOSH version should reflect the version of all the BOSH components, not just the agent.
 def micro_version
-  @micro_version ||= File.read("#{File.expand_path('../../../../', __FILE__)}/BOSH_VERSION").strip
+  @micro_version ||= File.read("#{File.expand_path('../../../../../../', __FILE__)}/BOSH_VERSION").strip
 end
 
 namespace :stemcell do
@@ -76,9 +76,9 @@ namespace :stemcell do
 
   desc "Build micro bosh stemcell"
   task :micro, [:infrastructure, :tarball, :version, :disk_size] do |t, args|
-    require_relative('../bosh/dev/micro_bosh_release')
+    require 'bosh/dev/micro_bosh_release'
 
-    manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..",
+    manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..", "..", "..",
                          "release", "micro","#{args[:infrastructure]}.yml")
 
 
@@ -145,8 +145,8 @@ namespace :stemcell do
       TW_LOCAL_PASSPHRASE: ENV["TW_LOCAL_PASSPHRASE"],
       TW_SITE_PASSPHRASE: ENV["TW_SITE_PASSPHRASE"],
       ruby_bin: ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-      bosh_release_src_dir: File.expand_path("../../../../release/src/bosh", __FILE__),
-      bosh_agent_src_dir: File.expand_path("../../../../bosh_agent", __FILE__),
+      bosh_release_src_dir: File.expand_path("../../../../../../release/src/bosh", __FILE__),
+      bosh_agent_src_dir: File.expand_path("../../../../../../bosh_agent", __FILE__),
       mcf_enabled: "no",
       image_create_disk_size: (args[:disk_size] || 2048).to_i
     }
@@ -166,7 +166,7 @@ namespace :stemcell do
   def bosh_micro_options(manifest, tarball)
     {
       :bosh_micro_enabled => "yes",
-      :bosh_micro_package_compiler_path => File.expand_path("../../../../package_compiler", __FILE__),
+      :bosh_micro_package_compiler_path => File.expand_path("../../../../../../package_compiler", __FILE__),
       :bosh_micro_manifest_yml_path => manifest,
       :bosh_micro_release_tgz_path => tarball,
     }
@@ -218,7 +218,7 @@ namespace :stemcell do
 
     rm_rf "#{build_path}"
     mkdir_p build_path
-    stemcell_build_dir = File.expand_path("../../../../stemcell_builder", __FILE__)
+    stemcell_build_dir = File.expand_path("../../../../../../stemcell_builder", __FILE__)
     cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, :preserve => true
 
     work_path = ENV["WORK_PATH"] || File.join(root, "work")

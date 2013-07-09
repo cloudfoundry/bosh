@@ -1,6 +1,6 @@
 require 'rake'
 require 'yaml'
-require_relative 'ami'
+require 'bosh/dev/ami'
 
 module Bosh
   module Dev

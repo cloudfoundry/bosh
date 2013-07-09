@@ -1,5 +1,5 @@
 require 'dogapi'
-require_relative 'emitable_example'
+require 'bosh/dev/emitable_example'
 
 module Bosh
   module Dev

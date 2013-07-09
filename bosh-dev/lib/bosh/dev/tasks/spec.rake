@@ -333,7 +333,7 @@ namespace :spec do
       tenant = ENV['BOSH_OPENSTACK_TENANT']
       region = ENV['BOSH_OPENSTACK_REGION']
       private_key_path = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'micro_bosh_openstack.yml.erb'))
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'micro_bosh_openstack.yml.erb'))
       micro_bosh_manifest = ERB.new(File.read(template_path)).result(binding)
       File.open("micro_bosh.yml", "w+") do |f|
         f.write(micro_bosh_manifest)
@@ -348,7 +348,7 @@ namespace :spec do
       net_reserved = ENV['BOSH_OPENSTACK_NETWORK_RESERVED']
       net_static = ENV['BOSH_OPENSTACK_NETWORK_STATIC']
       net_gateway = ENV['BOSH_OPENSTACK_NETWORK_GATEWAY']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'bat_openstack.yml.erb'))
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'bat_openstack.yml.erb'))
       bat_manifest = ERB.new(File.read(template_path)).result(binding)
       File.open('bat.yml', 'w+') do |f|
         f.write(bat_manifest)
@@ -372,7 +372,7 @@ namespace :spec do
       vcenter_ubosh_folder_prefix = ENV['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']
       vcenter_datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN']
       vcenter_ubosh_datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'micro_bosh_vsphere.yml.erb'))
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'micro_bosh_vsphere.yml.erb'))
       micro_bosh_manifest = ERB.new(File.read(template_path)).result(binding)
       File.open("micro_bosh.yml", "w+") do |f|
         f.write(micro_bosh_manifest)
@@ -387,7 +387,7 @@ namespace :spec do
       net_reserved = ENV['BOSH_VSPHERE_NETWORK_RESERVED'].split(/[|,]/).map(&:strip)
       net_static = ENV['BOSH_VSPHERE_NETWORK_STATIC']
       net_gateway = ENV['BOSH_VSPHERE_NETWORK_GATEWAY']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'templates', 'bat_vsphere.yml.erb'))
+      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'bat_vsphere.yml.erb'))
       bat_manifest = ERB.new(File.read(template_path)).result(binding)
       File.open('bat.yml', 'w+') do |f|
         f.write(bat_manifest)

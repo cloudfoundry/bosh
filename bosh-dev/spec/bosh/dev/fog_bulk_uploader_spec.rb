@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/fog_bulk_uploader'
+require 'bosh/dev/fog_bulk_uploader'
 require 'fakefs/spec_helpers'
 
 describe Bosh::Dev::FogBulkUploader do

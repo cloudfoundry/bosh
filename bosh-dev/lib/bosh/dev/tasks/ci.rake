@@ -1,10 +1,10 @@
-require_relative '../bosh/dev/build'
-require_relative '../bosh/dev/fog_bulk_uploader'
+require 'bosh/dev/build'
+require 'bosh/dev/fog_bulk_uploader'
 
 namespace :ci do
   desc "Publish CI pipeline gems to S3"
   task :publish_pipeline_gems do
-    require_relative '../bosh/dev/version_file'
+    require 'bosh/dev/version_file'
     version_file = Bosh::Dev::VersionFile.new(Bosh::Dev::Build.current.number)
     version_file.write
     Rake::Task["all:finalize_release_directory"].invoke
@@ -19,7 +19,7 @@ namespace :ci do
 
   desc "Publish CI pipeline MicroBOSH release to S3"
   task :publish_microbosh_release => [:publish_pipeline_gems] do
-    require_relative('../bosh/dev/micro_bosh_release')
+    require 'bosh/dev/micro_bosh_release'
 
     cd(ENV['WORKSPACE']) do
       release = Bosh::Dev::MicroBoshRelease.new

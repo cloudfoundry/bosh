@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/emitable_example'
+require 'bosh/dev/emitable_example'
 
 module Bosh
   module Dev

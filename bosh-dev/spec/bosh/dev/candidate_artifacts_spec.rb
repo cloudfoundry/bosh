@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/candidate_artifacts'
+require 'bosh/dev/candidate_artifacts'
 
 module Bosh
   module Dev

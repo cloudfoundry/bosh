@@ -1,7 +1,7 @@
 namespace :bosh_agent do
   desc "Update the BOSH Agent code running on an instance"
   task :update, [:instance_name, :gw_host, :gw_user] => :pre_stage_latest do |_, args|
-    require_relative '../bosh/dev/instance'
+    require 'bosh/dev/instance'
 
     options = args.with_defaults(gw_user: 'vcap')
     instance = Bosh::Dev::Instance.new(options)

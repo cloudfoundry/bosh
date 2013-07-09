@@ -1,6 +1,6 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/pipeline'
-require_relative '../../../lib/bosh/dev/stemcell'
+require 'bosh/dev/pipeline'
+require 'bosh/dev/stemcell'
 
 module Bosh
   module Dev

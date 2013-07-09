@@ -4,7 +4,7 @@ namespace :artifacts do
     task :publish, [:stemcell_tgz] do |_, args|
       stemcell_tgz = args.stemcell_tgz || abort('stemcell_tgz is a required parameter')
 
-      require_relative '../bosh/dev/candidate_artifacts'
+      require 'bosh/dev/candidate_artifacts'
 
       candidate_artifacts = Bosh::Dev::CandidateArtifacts.new(stemcell_tgz)
       candidate_artifacts.publish

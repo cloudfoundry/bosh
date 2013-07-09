@@ -46,6 +46,8 @@ group :bat do
 end
 
 group :development, :test do
+  gemspec path: 'bosh-dev'
+
   gem 'rubocop', require: false
   gem 'parallel_tests'
   gem 'rack-test'

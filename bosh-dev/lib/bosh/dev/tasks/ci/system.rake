@@ -1,5 +1,5 @@
-require_relative '../../bosh/dev/build'
-require_relative '../../bosh/dev/pipeline'
+require 'bosh/dev/build'
+require 'bosh/dev/pipeline'
 
 namespace :ci do
   namespace :system do

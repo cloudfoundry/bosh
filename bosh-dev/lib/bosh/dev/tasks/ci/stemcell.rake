@@ -1,6 +1,6 @@
-require_relative '../../bosh/dev/build'
-require_relative '../../bosh/dev/pipeline'
-require_relative '../../bosh/dev/stemcell'
+require 'bosh/dev/build'
+require 'bosh/dev/pipeline'
+require 'bosh/dev/stemcell'
 
 namespace :ci do
   namespace :stemcell do

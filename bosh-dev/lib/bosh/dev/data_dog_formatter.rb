@@ -1,5 +1,5 @@
 require 'rspec/core/formatters/base_formatter'
-require_relative 'data_dog_reporter'
+require 'bosh/dev/data_dog_reporter'
 
 module Bosh
   module Dev

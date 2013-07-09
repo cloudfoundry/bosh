@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
-require_relative '../../../lib/bosh/dev/stemcell'
-require_relative '../../../lib/bosh/dev/ami'
-require_relative '../../../lib/bosh/dev/build'
+require 'bosh/dev/stemcell'
+require 'bosh/dev/ami'
+require 'bosh/dev/build'
 
 module Bosh
   module Dev

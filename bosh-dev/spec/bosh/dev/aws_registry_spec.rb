@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/aws_registry'
+require 'bosh/dev/aws_registry'
 
 module Bosh
   module Dev

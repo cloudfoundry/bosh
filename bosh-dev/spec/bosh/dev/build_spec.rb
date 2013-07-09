@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/build'
+require 'bosh/dev/build'
 
 module Bosh::Dev
   describe Build do

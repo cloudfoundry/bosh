@@ -1,6 +1,6 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/ami'
-require_relative '../../../lib/bosh/dev/stemcell'
+require 'bosh/dev/ami'
+require 'bosh/dev/stemcell'
 
 module Bosh::Dev
   describe Ami do

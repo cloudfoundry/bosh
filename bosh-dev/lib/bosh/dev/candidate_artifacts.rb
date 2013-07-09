@@ -1,5 +1,5 @@
-require_relative 'pipeline'
-require_relative 'stemcell'
+require 'bosh/dev/pipeline'
+require 'bosh/dev/stemcell'
 
 module Bosh
   module Dev

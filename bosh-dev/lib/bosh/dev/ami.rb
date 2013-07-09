@@ -3,7 +3,7 @@ require 'bosh_aws_cpi'
 require 'ostruct'
 require 'yaml'
 require 'rake'
-require_relative 'aws_registry'
+require 'bosh/dev/aws_registry'
 
 module Bosh
   module Dev

@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../../lib/bosh/dev/data_dog_formatter'
+require 'bosh/dev/data_dog_formatter'
 
 module Bosh
   module Dev
