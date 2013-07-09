@@ -35,13 +35,13 @@ describe Bosh::Director::Jobs::Backup do
     end
 
     it 'zips up the logs' do
-      tar_gzipper.should_receive(:compress).with('/var/vcap/sys/log', File.join(tmp_output_dir, 'logs.tgz'))
+      tar_gzipper.should_receive(:compress).with('/', ['var/vcap/sys/log'], File.join(tmp_output_dir, 'logs.tgz'))
 
       backup_task.perform
     end
 
     it 'zips up the task logs' do
-      tar_gzipper.should_receive(:compress).with('/var/vcap/store/director/tasks', File.join(tmp_output_dir, 'task_logs.tgz'))
+      tar_gzipper.should_receive(:compress).with('/', ['var/vcap/store/director/tasks'], File.join(tmp_output_dir, 'task_logs.tgz'))
 
       backup_task.perform
     end
@@ -56,7 +56,7 @@ describe Bosh::Director::Jobs::Backup do
       foo_file = double(File, path: 'foo')
       bar_file = double(File, path: 'bar')
 
-      tmp_blobs_output_dir = File.join(tmp_output_dir, 'blobs')
+      tmp_blobs_output_dir = tmp_output_dir
 
       File.stub(:open).with(File.join(tmp_blobs_output_dir, 'foo'), 'w').and_yield(foo_file)
       File.stub(:open).with(File.join(tmp_blobs_output_dir, 'bar'), 'w').and_yield(bar_file)
@@ -65,7 +65,7 @@ describe Bosh::Director::Jobs::Backup do
       blobstore_client.should_receive(:get).with('foo', foo_file) # get *writes* the file
       blobstore_client.should_receive(:get).with('bar', bar_file)
 
-      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, File.join(tmp_output_dir, 'blobs.tgz'))
+      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, %w[foo bar], File.join(tmp_output_dir, 'blobs.tgz'))
 
       backup_task.perform
     end
@@ -85,12 +85,9 @@ describe Bosh::Director::Jobs::Backup do
     end
 
     it 'combines the tarballs' do
-      tar_gzipper.should_receive(:compress).with([
-                                                   File.join(tmp_output_dir, 'logs.tgz'),
-                                                   File.join(tmp_output_dir, 'task_logs.tgz'),
-                                                   File.join(tmp_output_dir, 'director_db.sql'),
-                                                   File.join(tmp_output_dir, 'blobs.tgz')
-                                                 ], backup_file)
+      tar_gzipper.should_receive(:compress).with(tmp_output_dir,
+                                                 %w(logs.tgz task_logs.tgz director_db.sql blobs.tgz),
+                                                 backup_file)
       backup_task.perform
     end
 

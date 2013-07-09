@@ -4,69 +4,52 @@ require 'tmpdir'
 require 'fileutils'
 
 describe Bosh::Director::TarGzipper do
-  let(:src) { Dir.mktmpdir }
+  let(:base_dir) { Dir.mktmpdir }
+  let(:sources) { %w(1 one) }
   let(:dest) { Tempfile.new('logs').path }
 
   before do
-    path = File.join(src, 'var', 'vcap', 'sys', 'log1')
+    path = File.join(base_dir, '1', '2')
     FileUtils.mkdir_p(path)
     File.write(File.join(path, 'hello.log'), 'hello')
 
-    path = File.join(src, 'var', 'vcap', 'sys', 'log2')
+    path = File.join(base_dir, 'one', 'two')
     FileUtils.mkdir_p(path)
     File.write(File.join(path, 'goodbye.log'), 'goodbye')
   end
 
   after do
-    FileUtils.rm_rf(src)
+    FileUtils.rm_rf(base_dir)
     FileUtils.rm_rf(dest)
   end
 
   context 'if the source directory does not exist' do
-    let(:src) { '/tmp/this/is/not/here' }
+    let(:base_dir) { '/tmp/this/is/not/here' }
 
-    before do
-      FileUtils.rm_rf(src)
+    it 'raises an error' do
+      FileUtils.rm_rf(base_dir)
+
+      expect {
+        subject.compress(base_dir, sources, dest)
+      }.to raise_error("The base directory #{base_dir} could not be found.")
     end
+  end
+
+  context 'if the base_dir is not absolute' do
+    let(:base_dir) { 'tmp' }
 
     it 'raises an error' do
       expect {
-        subject.compress(src, dest)
-      }.to raise_error(Bosh::Director::TarGzipper::SourceNotFound, "The source directory #{src} could not be found.")
+        subject.compress(base_dir, sources, dest)
+      }.to raise_error("The base directory #{base_dir} is not an absolute path.")
     end
   end
 
-  context 'if the source directory is not absolute' do
-    let(:src) { 'tmp/file' }
+  it 'packages the sources into the destination tarball' do
+    subject.compress(base_dir, sources, dest)
 
-    it 'raises an error' do
-      expect {
-        subject.compress(src, dest)
-      }.to raise_error(Bosh::Director::TarGzipper::SourceNotAbsolute, "The source directory #{src} is not an absolute path.")
-    end
-  end
-
-  it 'packages the source directory into the destination tarball' do
-    subject.compress(src, dest)
-
-    `tar tzvf #{dest}`.should include('log1/hello.log')
-  end
-
-  it 'moves the sources files to a temporary directory first to avoid errors if we change the files as we are tarring them' do
-    subject.compress(src, dest)
-
-    `tar tzvf #{dest}`.should include('bosh_tgz')
-  end
-
-  context 'if multiple source directories are specified' do
-    let(:sources) { %W[#{src}/var/vcap/sys/log1 #{src}/var/vcap/sys/log2] }
-
-    it 'packages the list of source directories into the destination tarball' do
-      subject.compress(sources, dest)
-
-      tar_cmd = `tar tzvf #{dest}`
-      expect(tar_cmd).to include('log1/hello.log')
-      expect(tar_cmd).to include('log2/goodbye.log')
-    end
+    output = `tar tzvf #{dest}`
+    expect(output).to include(' 1/2/hello.log')
+    expect(output).to include(' one/two/goodbye.log')
   end
 end

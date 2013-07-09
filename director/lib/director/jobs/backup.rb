@@ -22,17 +22,23 @@ module Bosh::Director
 
           files = []
 
-          files << backup_logs("#{tmp_output_dir}/logs.tgz")
-          files << backup_task_logs("#{tmp_output_dir}/task_logs.tgz")
-          files << backup_database("#{tmp_output_dir}/director_db.sql")
+          backup_logs("#{tmp_output_dir}/logs.tgz")
+          files << 'logs.tgz'
+
+          backup_task_logs("#{tmp_output_dir}/task_logs.tgz")
+          files << 'task_logs.tgz'
+
+          backup_database("#{tmp_output_dir}/director_db.sql")
+          files << 'director_db.sql'
 
           begin
-            files << backup_blobstore("#{tmp_output_dir}/blobs.tgz")
+            backup_blobstore("#{tmp_output_dir}/blobs.tgz")
+            files << 'blobs.tgz'
           rescue Bosh::Blobstore::NotImplemented
             logger.warn('Skipping blobstore backup because blobstore client does not support list operation')
           end
 
-          @tar_gzipper.compress(files, @backup_file)
+          @tar_gzipper.compress(tmp_output_dir, files, @backup_file)
 
           "Backup created at #{@backup_file}"
         end
@@ -41,32 +47,24 @@ module Bosh::Director
       private
       def backup_logs(output)
         track_and_log('Backing up logs') do
-          @tar_gzipper.compress('/var/vcap/sys/log', output)
+          @tar_gzipper.compress('/', ['var/vcap/sys/log'], output)
         end
-
-        output
       end
 
       def backup_task_logs(output)
         track_and_log('Backing up task logs') do
-          @tar_gzipper.compress('/var/vcap/store/director/tasks', output)
+          @tar_gzipper.compress('/', ['var/vcap/store/director/tasks'], output)
         end
-
-        output
       end
 
       def backup_database(output)
         track_and_log('Backing up database') do
           @db_adapter.export(output)
         end
-
-        output
       end
 
       def backup_blobstore(output)
-        Dir.mktmpdir do |tmpdir|
-
-          blobs_dir = "#{tmpdir}/blobs"
+        Dir.mktmpdir do |blobs_dir|
 
           track_and_log('Backing up blobstore') do
             files = @blobstore_client.list
@@ -77,12 +75,10 @@ module Bosh::Director
                 @blobstore_client.get(file_id, file)
               end
             end
+
+            @tar_gzipper.compress(blobs_dir, files, output)
           end
-
-          @tar_gzipper.compress(blobs_dir, output)
         end
-
-        output
       end
     end
   end
