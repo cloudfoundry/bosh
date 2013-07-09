@@ -27,5 +27,5 @@ module RSpecRakeHelper
 end
 
 def spec_asset(name)
-  File.expand_path("../../../assets/#{name}", __FILE__)
+  File.join(File.dirname(__FILE__), 'assets', name)
 end
