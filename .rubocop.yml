@@ -22,7 +22,7 @@ AllCops:
    - health_monitor/**
    - monit_api/**
    - package_compiler/**
-   - rake/**
+   - bosh-dev/**
    - release/**
    - ruby_vim_sdk/**
    - simple_blobstore_server/**
