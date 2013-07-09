@@ -18,8 +18,9 @@ module Bosh::Cli
       DEFAULT_DIRECTOR_PORT = 25555
 
       # @param [Bosh::Cli::Runner] runner
-      def initialize(runner = nil)
+      def initialize(runner = nil, director = nil)
         @runner = runner
+        @director = director
         @options = {}
         @work_dir = Dir.pwd
         @exit_code = 0
