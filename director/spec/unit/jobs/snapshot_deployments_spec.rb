@@ -4,10 +4,9 @@ describe Bosh::Director::Jobs::SnapshotDeployments do
   let(:snapshot_manager) { instance_double('Bosh::Director::Api::SnapshotManager') }
   subject { described_class.new(snapshot_manager: snapshot_manager) }
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:snapshot_deployments)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :snapshot_deployments }
+    it_behaves_like 'a Resque job'
   end
 
   describe '#perform' do

@@ -13,6 +13,7 @@ require 'rspec'
 require 'machinist/sequel'
 require 'sham'
 require 'rspec/fire'
+require 'support/job_example_group'
 
 RSpec.configure do |config|
   config.include(RSpec::Fire)

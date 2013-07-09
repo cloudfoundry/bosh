@@ -12,10 +12,9 @@ describe Bosh::Director::Jobs::DeleteStemcell do
       BD::Config.stub!(:cloud).and_return(@cloud)
     end
 
-    describe 'described_class.job_type' do
-      it 'returns a symbol representing job type' do
-        expect(described_class.job_type).to eq(:delete_stemcell)
-      end
+    describe 'Resque job class expectations' do
+      let(:job_type) { :delete_stemcell }
+      it_behaves_like 'a Resque job'
     end
 
     it "should fail for unknown stemcells" do

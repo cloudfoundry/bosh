@@ -4,10 +4,9 @@ require 'spec_helper'
 
 describe Bosh::Director::Jobs::UpdateDeployment do
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:update_deployment)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :update_deployment }
+    it_behaves_like 'a Resque job'
   end
 
   describe 'instance methods' do

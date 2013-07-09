@@ -12,10 +12,9 @@ describe Bosh::Director::Jobs::SnapshotSelf do
                         enable_snapshots: enable_snapshots)
   end
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:snapshot_self)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :snapshot_self }
+    it_behaves_like 'a Resque job'
   end
 
   describe '#perform' do

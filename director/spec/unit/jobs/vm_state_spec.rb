@@ -11,10 +11,9 @@ describe Bosh::Director::Jobs::VmState do
     BD::Config.stub!(:dns_domain_name).and_return("microbosh")    
   end
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:vms)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :vms }
+    it_behaves_like 'a Resque job'
   end
 
   it "parses agent info into vm_state" do

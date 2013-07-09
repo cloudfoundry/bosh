@@ -23,10 +23,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     FileUtils.rm_rf(@stemcell_file.path)
   end
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:update_stemcell)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :update_stemcell }
+    it_behaves_like 'a Resque job'
   end
 
   it "should upload a local stemcell" do

@@ -14,6 +14,11 @@ describe Bosh::Director::Jobs::ScheduledBackup do
     Time.stub(now: Time.parse('2013-07-02T09:55:40Z'))
   end
 
+  describe 'Resque job class expectations' do
+    let(:job_type) { :scheduled_backup }
+    it_behaves_like 'a Resque job'
+  end
+
   describe 'perform' do
     it 'creates a backup' do
       backup_job.should_receive(:perform)

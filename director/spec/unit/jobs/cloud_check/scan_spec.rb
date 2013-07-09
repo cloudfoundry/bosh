@@ -3,11 +3,9 @@
 require 'spec_helper'
 
 describe Bosh::Director::Jobs::CloudCheck::Scan do
-
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:cck_scan)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :cck_scan }
+    it_behaves_like 'a Resque job'
   end
 
   describe 'instance methods' do

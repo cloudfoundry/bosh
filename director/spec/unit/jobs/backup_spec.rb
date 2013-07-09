@@ -3,10 +3,9 @@ require 'blobstore_client'
 require 'fakefs/spec_helpers'
 
 describe Bosh::Director::Jobs::Backup do
-  describe '.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(Bosh::Director::Jobs::Backup.job_type).to eq(:bosh_backup)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :bosh_backup }
+    it_behaves_like 'a Resque job'
   end
 
   describe '#perform' do

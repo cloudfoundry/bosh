@@ -16,10 +16,9 @@ describe Bosh::Director::Jobs::SnapshotDeployment do
     deployment_manager.stub(find_by_name: deployment)
   end
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:snapshot_deployment)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :snapshot_deployment }
+    it_behaves_like 'a Resque job'
   end
 
   context 'when snapshotting succeeds' do

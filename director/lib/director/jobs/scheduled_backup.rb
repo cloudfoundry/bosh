@@ -1,8 +1,13 @@
 module Bosh::Director
   module Jobs
     class ScheduledBackup < BaseJob
+      @queue = :normal
 
       attr_reader :backup_job
+
+      def self.job_type
+        :scheduled_backup
+      end
 
       def initialize(options={})
         @backup_job = options.fetch(:backup_job) { Backup.new(backup_file) }

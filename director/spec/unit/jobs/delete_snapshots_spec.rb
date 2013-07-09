@@ -5,10 +5,9 @@ describe Bosh::Director::Jobs::DeleteSnapshots do
 
   subject(:job) { described_class.new(%w(snap0 snap1)) }
 
-  describe 'described_class.job_type' do
-    it 'returns a symbol representing job type' do
-      expect(described_class.job_type).to eq(:delete_snapshot)
-    end
+  describe 'Resque job class expectations' do
+    let(:job_type) { :delete_snapshot }
+    it_behaves_like 'a Resque job'
   end
 
   it 'tells the snapshot manager to delete the snapshots' do
