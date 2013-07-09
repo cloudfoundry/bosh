@@ -94,8 +94,8 @@ module Bosh::Director
       @logger.debug(e.inspect)
       job_desc = "#{@job.name}/#{index}"
       line_index = e.backtrace.index{ |l| l.include?(template.filename) }
-      line = line_index ? e.backtrace[line_index] : ''
-      template_name, line = line[0..line.rindex(":") - 1].split(":")
+      line = line_index ? e.backtrace[line_index] : '(unknown):(unknown)'
+      template_name, line = line.split(':')
 
       message = "Error filling in template `#{File.basename(template_name)}' " +
                 "for `#{job_desc}' (line #{line}: #{e})"
