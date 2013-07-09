@@ -67,6 +67,8 @@ properties:
   director.self_snapshot_schedule:
     description: RufusScheduler cron formatted schedule for self snapshots
     default: '0 0 6 * * * UTC'
+  director.backup_schedule:
+    description: RufusScheduler cron formatted schedule for backups
   director.auto_fix_stateful_nodes:
     description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
     default: true
@@ -169,28 +171,8 @@ properties:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
 
   # Blobstore destination for backups
-  director.backup_destination.provider:
-    description: Provider of the blobstore used by director for backups (dav|simple|s3)
-    default: 'dav'
-  director.backup_destination.bucket_name:
-    description: AWS S3 Bucket used by s3 blobstore plugin
-  director.backup_destination.access_key_id:
-    description: AWS access_key_id used by s3 blobstore plugin
-  director.backup_destination.secret_access_key:
-    description: AWS secret_access_key used by s3 blobstore plugin
-  director.backup_destination.address:
-    description: Addess of blobstore server used by simple blobstore plugin
-  director.backup_destination.port:
-    description: Port of blobstore server used by simple blobstore plugin
-    default: 25250
-  director.backup_destination.director.user:
-    description: Username director uses to connect to blobstore used by simple blobstore plugin
-  director.backup_destination.director.password:
-    description: Password director uses to connect to blobstore used by simple blobstore plugin
-  director.backup_destination.agent.user:
-    description: Username agent uses to connect to blobstore used by simple blobstore plugin
-  director.backup_destination.agent.password:
-    description: Password agent uses to connect to blobstore used by simple blobstore plugin
+  director.backup_destination:
+    description: Configuration of the blobstore used by director for backups (dav|simple|s3)
 
   # Compiled Package Cache
   compiled_package_cache.provider:

@@ -1,3 +1,8 @@
+<%
+  def blobstore_options(name, options)
+    YAML.dump(name => options).sub(/\A---\n/, '')
+  end
+%>
 ---
 name: <%= p('director.name') %>
 port: <%= p('director.backend_port') %>
@@ -30,6 +35,7 @@ db:
   connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
 snapshots:
   enabled: <%= p('director.enable_snapshots') %>
+
 scheduled_jobs:
   <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
   - command: SnapshotDeployments
@@ -39,6 +45,11 @@ scheduled_jobs:
   - command: SnapshotSelf
     schedule: <%= self_snapshot_schedule %>
   <% end %>
+  <% if_p('director.backup_schedule') do |backup_schedule| %>
+  - command: ScheduledBackup
+    schedule: <%= backup_schedule %>
+  <% end %>
+
 scan_and_fix:
   auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
 <% if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
@@ -121,6 +132,10 @@ compiled_package_cache:
       rackspace_region: <%= rackspace_region %>
       <% end %>
     <% end %>
+<% end %>
+
+<% if_p('director.backup_destination') do |backup_destination| %>
+<%= blobstore_options('backup_destination', backup_destination) %>
 <% end %>
 
 cloud:
