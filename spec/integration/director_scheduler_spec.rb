@@ -19,15 +19,19 @@ describe Bosh::Spec::IntegrationTest::DirectorScheduler do
     run_bosh("deployment #{deployment_manifest.path}")
 
     run_bosh('deploy')
+
+    current_sandbox.start_scheduler
   end
 
   def snapshots
     Dir[File.join(current_sandbox.agent_tmp_path, 'snapshots', '*')]
   end
 
-  it "snapshots a disk on a defined schedule" do
-    current_sandbox.start_scheduler
+  def backups
+    Dir[File.join(current_sandbox.sandbox_root, 'backup_destination', '*')]
+  end
 
+  it 'snapshots a disk on a defined schedule' do
     30.times do
       break unless snapshots.empty?
       sleep 1
@@ -40,5 +44,14 @@ describe Bosh::Spec::IntegrationTest::DirectorScheduler do
     end
 
     expect(snapshots).to_not be_empty
+  end
+
+  it 'backs up bosh on a defined schedule' do
+    30.times do
+      break unless backups.empty?
+      sleep 1
+    end
+
+    expect(backups).to_not be_empty
   end
 end

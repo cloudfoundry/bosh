@@ -11,7 +11,9 @@ redis:
 dir: <%= sandbox_root %>/boshdir
 scheduled_jobs:
   - command: SnapshotDeployments
-    schedule: '* * * * * *'
+    schedule: '*/2 * * * * *'
+  - command: ScheduledBackup
+    schedule: '*/3 * * * * *'
 db:
   adapter: sqlite
   database: <%= sandbox_root %>/director.sqlite
@@ -31,6 +33,10 @@ blobstore:
     endpoint: http://127.0.0.1:<%= blobstore_port %>
     user: bs_admin
     password: bs_pass
+backup_destination:
+  provider: local
+  options:
+    blobstore_path: <%= sandbox_root %>/backup_destination
 compiled_package_cache:
   provider: simple
   options:
