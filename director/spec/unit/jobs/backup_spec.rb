@@ -16,12 +16,16 @@ describe Bosh::Director::Jobs::Backup do
     let(:tar_gzipper) { double('tar gzipper') }
     let(:blobstore_client) { double(Bosh::Blobstore::Client) }
     let(:db_adapter) { double('db adapter') }
+    let(:base_dir) { '/a/base/dir' }
+    let(:log_dir) { '/logs/are/here' }
 
     subject(:backup_task) do
       Bosh::Director::Jobs::Backup.new(backup_file,
                                        tar_gzipper: tar_gzipper,
                                        blobstore: blobstore_client,
-                                       db_adapter: db_adapter)
+                                       db_adapter: db_adapter,
+                                       base_dir: base_dir,
+                                       log_dir: log_dir)
     end
 
     before do
@@ -34,13 +38,13 @@ describe Bosh::Director::Jobs::Backup do
     end
 
     it 'zips up the logs' do
-      tar_gzipper.should_receive(:compress).with('/', ['var/vcap/sys/log'], File.join(tmp_output_dir, 'logs.tgz'))
+      tar_gzipper.should_receive(:compress).with('/logs/are', ['here'], File.join(tmp_output_dir, 'logs.tgz'))
 
       backup_task.perform
     end
 
     it 'zips up the task logs' do
-      tar_gzipper.should_receive(:compress).with('/', ['var/vcap/store/director/tasks'], File.join(tmp_output_dir, 'task_logs.tgz'))
+      tar_gzipper.should_receive(:compress).with('/a/base/dir', ['tasks'], File.join(tmp_output_dir, 'task_logs.tgz'))
 
       backup_task.perform
     end

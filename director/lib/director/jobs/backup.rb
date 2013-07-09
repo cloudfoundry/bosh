@@ -14,6 +14,8 @@ module Bosh::Director
         @tar_gzipper = options.fetch(:tar_gzipper) { TarGzipper.new }
         @blobstore_client = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @db_adapter = options.fetch(:db_adapter) { Bosh::Director::DbBackup.create(Config.db_config) }
+        @base_dir = options.fetch(:base_dir) { Config.base_dir }
+        @log_dir = options.fetch(:log_dir) { Config.log_dir }
       end
 
       def perform
@@ -22,8 +24,10 @@ module Bosh::Director
 
           files = []
 
-          backup_logs("#{tmp_output_dir}/logs.tgz")
-          files << 'logs.tgz'
+          if @log_dir
+            backup_logs("#{tmp_output_dir}/logs.tgz")
+            files << 'logs.tgz'
+          end
 
           backup_task_logs("#{tmp_output_dir}/task_logs.tgz")
           files << 'task_logs.tgz'
@@ -47,13 +51,13 @@ module Bosh::Director
       private
       def backup_logs(output)
         track_and_log('Backing up logs') do
-          @tar_gzipper.compress('/', ['var/vcap/sys/log'], output)
+          @tar_gzipper.compress(File.dirname(@log_dir), [File.basename(@log_dir)], output)
         end
       end
 
       def backup_task_logs(output)
         track_and_log('Backing up task logs') do
-          @tar_gzipper.compress('/', ['var/vcap/store/director/tasks'], output)
+          @tar_gzipper.compress(@base_dir, %w(tasks), output)
         end
       end
 
