@@ -1,4 +1,4 @@
-require "tmpdir"
+require 'tmpdir'
 
 module Bosh::Director
   class TarGzipper
@@ -20,7 +20,7 @@ module Bosh::Director
         end
       end
 
-      Dir.mktmpdir("bosh_tgz") do |filename|
+      Dir.mktmpdir('bosh_tgz') do |filename|
         source_paths.each do |source_path|
           FileUtils.cp_r(source_path, filename)
         end
