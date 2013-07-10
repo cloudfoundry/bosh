@@ -1,3 +1,5 @@
+require 'bosh/dev/pipeline'
+
 module Bosh
   module Dev
     class Build < Struct.new(:number, :job_name)
@@ -16,7 +18,7 @@ module Bosh
       end
 
       def s3_release_url
-        "s3://bosh-ci-pipeline/release/bosh-#{number}.tgz"
+        File.join(Pipeline.new.base_url, "release/bosh-#{number}.tgz")
       end
     end
   end
