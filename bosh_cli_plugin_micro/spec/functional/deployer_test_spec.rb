@@ -34,7 +34,7 @@ describe Bosh::Deployer do
 
     it "should respond to agent ping" do
       pending "VM cid" unless @deployer.state.vm_cid
-      @deployer.agent.ping.should == "pong"
+      @deployer.agent_client.ping.should == "pong"
     end
 
     it "should destroy the Bosh deployment" do

@@ -73,8 +73,8 @@ describe Bosh::Deployer::Config do
     config = Psych.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     config["dir"] = @dir
     Bosh::Deployer::Config.configure(config)
-    agent = Bosh::Deployer::Config.agent
-    agent.should be_kind_of(Bosh::Agent::HTTPClient)
+    agent_client = Bosh::Deployer::Config.agent_client
+    agent_client.should be_kind_of(Bosh::Agent::HTTPClient)
   end
 
   it "should have openstack and registry object access" do

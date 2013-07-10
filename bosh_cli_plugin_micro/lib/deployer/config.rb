@@ -71,7 +71,7 @@ module Bosh::Deployer
         @cloud
       end
 
-      def agent
+      def agent_client
         uri = URI.parse(agent_url)
         user, password = uri.userinfo.split(":", 2)
         uri.userinfo = nil
