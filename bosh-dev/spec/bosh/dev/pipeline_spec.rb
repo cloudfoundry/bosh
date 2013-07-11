@@ -50,6 +50,16 @@ module Bosh
           pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: true)
         end
       end
+
+      describe '#stemcell_filename' do
+        it 'downloads the specified stemcell version from the pipeline bucket' do
+          expect(pipeline.stemcell_filename('123', infrastructure: 'aws', name: 'bosh-stemcell')).to eq('bosh-stemcell-aws-123.tgz')
+        end
+
+        it 'downloads the specified light stemcell version from the pipeline bucket' do
+          expect(pipeline.stemcell_filename('123', infrastructure: 'aws', name: 'bosh-stemcell', light: true)).to eq('light-bosh-stemcell-aws-123.tgz')
+        end
+      end
     end
   end
 end

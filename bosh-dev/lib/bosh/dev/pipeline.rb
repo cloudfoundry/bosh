@@ -43,6 +43,15 @@ module Bosh
       def download_stemcell(version, options={})
         infrastructure = options.fetch(:infrastructure)
         name           = options.fetch(:name)
+
+        s3_uri = File.join(base_url, name, infrastructure, stemcell_filename(version, options))
+
+        Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
+      end
+
+      def stemcell_filename(version, options={})
+        infrastructure = options.fetch(:infrastructure)
+        name           = options.fetch(:name)
         light          = options.fetch(:light, false)
 
         stemcell_filename_parts = []
@@ -51,9 +60,7 @@ module Bosh
         stemcell_filename_parts << infrastructure
         stemcell_filename_parts << version
 
-        s3_uri = "#{File.join(base_url, name, infrastructure, stemcell_filename_parts.join('-'))}.tgz"
-
-        Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
+        "#{File.join(stemcell_filename_parts.join('-'))}.tgz"
       end
     end
   end
