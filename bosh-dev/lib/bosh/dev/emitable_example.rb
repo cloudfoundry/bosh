@@ -6,7 +6,7 @@ module Bosh
       end
 
       def metric
-        'bosh.ci.bat.duration'
+        'ci.bosh.bat.duration'
       end
 
       def value
