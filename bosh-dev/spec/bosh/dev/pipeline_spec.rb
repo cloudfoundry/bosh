@@ -25,8 +25,7 @@ module Bosh
         pipeline.publish_stemcell(stemcell)
       end
 
-      describe 'download_latest_stemcell' do
-
+      describe '#download_latest_stemcell' do
         it 'downloads the latest stemcell from the pipeline bucket' do
           Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz')
           pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'bosh-stemcell')
@@ -35,6 +34,20 @@ module Bosh
         it 'downloads the latest light stemcell from the pipeline bucket' do
           Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz')
           pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'bosh-stemcell', light: true)
+        end
+      end
+
+      describe '#download_stemcell' do
+        it 'downloads the specified stemcell version from the pipeline bucket' do
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz')
+
+          pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell')
+        end
+
+        it 'downloads the specified light stemcell version from the pipeline bucket' do
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz')
+
+          pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: true)
         end
       end
     end
