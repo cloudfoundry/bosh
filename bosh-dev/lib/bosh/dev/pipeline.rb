@@ -17,7 +17,7 @@ module Bosh
       end
 
       def base_url
-        "s3://bosh-ci-pipeline/"
+        's3://bosh-ci-pipeline/'
       end
 
       def s3_upload(file, remote_uri)
@@ -40,6 +40,21 @@ module Bosh
         Rake::FileUtilsExt.sh("s3cmd -f get #{latest_stemcell_url}")
       end
 
+      def download_stemcell(version, options={})
+        infrastructure = options.fetch(:infrastructure)
+        name           = options.fetch(:name)
+        light          = options.fetch(:light, false)
+
+        stemcell_filename_parts = []
+        stemcell_filename_parts << 'light' if light
+        stemcell_filename_parts << name
+        stemcell_filename_parts << infrastructure
+        stemcell_filename_parts << version
+
+        s3_uri = "#{File.join(base_url, name, infrastructure, stemcell_filename_parts.join('-'))}.tgz"
+
+        Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
+      end
     end
   end
 end
