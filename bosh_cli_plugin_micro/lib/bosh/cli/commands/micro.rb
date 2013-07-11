@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'pp'
+
 require "deployer"
 
 module Bosh::Cli::Command
@@ -279,7 +281,7 @@ AGENT_HELP
         end
       end
 
-      say(deployer.agent.send(message.to_sym, *args))
+      say(deployer.agent.send(message.to_sym, *args).pretty_inspect)
     end
 
     usage "micro apply"
