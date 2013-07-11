@@ -33,3 +33,6 @@ Encoding:
 
 LineLength:
   Max: 119
+
+Documentation:
+  Enabled: false
