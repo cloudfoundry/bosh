@@ -86,8 +86,12 @@ module Bosh
         cloud_storage_dir
       end
 
-      def testcase_sqlite_db
+      def sqlite_db
         sandbox_path(TESTCASE_SQLITE_DB)
+      end
+
+      def backup_sqlite_db
+        sandbox_path('director.db')
       end
 
       def logs_path
@@ -129,9 +133,7 @@ module Bosh
       def start
         setup_sandbox_root
 
-        @sqlite_db = sandbox_path("director.db")
-        FileUtils.rm_rf(testcase_sqlite_db)
-
+        FileUtils.rm_rf(sqlite_db)
         Dir.chdir(DIRECTOR_PATH) do
           output = `bin/migrate -c #{director_config}`
           unless $?.exitstatus == 0
@@ -140,6 +142,7 @@ module Bosh
             exit 1
           end
         end
+        FileUtils.cp(sqlite_db, backup_sqlite_db)
 
         FileUtils.mkdir_p(cloud_storage_dir)
 
@@ -147,8 +150,6 @@ module Bosh
         FileUtils.mkdir_p(logs_path)
 
         blobstore_output = "#{logs_path}/blobstore.out"
-
-        FileUtils.cp(testcase_sqlite_db, @sqlite_db)
 
         raise "Please install redis on this machine" unless system("which redis-server > /dev/null")
         run_with_pid(%W[redis-server #{redis_config}], redis_pid)
@@ -183,7 +184,7 @@ module Bosh
 
         Redis.new(:host => "localhost", :port => redis_port).flushdb
 
-        FileUtils.cp(@sqlite_db, testcase_sqlite_db)
+        FileUtils.cp(backup_sqlite_db, sqlite_db)
 
         @name = pick_unique_name(name)
 
@@ -267,7 +268,7 @@ module Bosh
         kill_process(redis_pid)
         kill_process(nats_pid)
         kill_process(hm_pid)
-        FileUtils.rm_f(@sqlite_db)
+        FileUtils.rm_f(backup_sqlite_db)
         FileUtils.rm_f(db_path)
         FileUtils.rm_f(dns_db_path)
         FileUtils.rm_rf(director_tmp_path)
