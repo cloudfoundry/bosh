@@ -2,7 +2,8 @@ require 'jenkins_api_client'
 
 task :build_check do
   %w(BOSH_CI_JOB BOSH_CI_SERVER).each do |v|
-    fail("Please set #{v}") unless ENV[v]
+    usage = "ex BOSH_CI_JOB=jenkins_job_1 BOSH_CI_SERVER=198.51.100.5 #{File.basename($0)} #{ARGV.join(' ')}"
+    fail("Please set #{v}\n  #{usage}") unless ENV[v]
   end
 
   client = JenkinsApi::Client.new(server_ip: ENV['BOSH_CI_SERVER'])
