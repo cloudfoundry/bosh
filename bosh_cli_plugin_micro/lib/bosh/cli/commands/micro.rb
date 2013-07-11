@@ -238,7 +238,37 @@ module Bosh::Cli::Command
     end
 
     usage "micro agent <args>"
-    desc  "Send agent messages"
+    desc  <<-AGENT_HELP
+Send agent messages
+
+  Message Types:
+
+    start - Start all jobs on MicroBOSH
+
+    stop - Stop all jobs on MicroBOSH
+
+    ping - Check to see if the agent is responding
+
+    drain TYPE SPEC - Tell the agent to begin draining
+      TYPE - One of 'shutdown', 'update' or 'status'.
+      SPEC - The drain spec to use.
+
+    state [full] - Get the state of a system
+      full - Get additional information about system vitals
+
+    list_disk - List disk CIDs mounted on the system
+
+    migrate_disk OLD NEW - Migrate a disk
+      OLD - The CID of the source disk.
+      NEW - The CID of the destination disk.
+
+    mount_disk CID - Mount a disk on the system
+      CID - The cloud ID of the disk to mount.
+
+    unmount_disk CID - Unmount a disk from the system
+      CID - The cloud ID of the disk to unmount.
+
+AGENT_HELP
     def agent(*args)
       message = args.shift
       args = args.map do |arg|
