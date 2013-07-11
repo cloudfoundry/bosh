@@ -9,11 +9,10 @@ module Bosh::Cli
       paragraphs = string.split("\n")
 
       wrapped_paragraphs = paragraphs.map do |paragraph|
-        indented = paragraph.start_with?('      ') ? '  ' : ''
-        lines = break_into_lines(paragraph)
+        lines = wrapped_lines(paragraph)
         lines = indent_lines(lines)
 
-        indented + lines.join("\n")
+        paragraph_indentation(paragraph) + lines.join("\n")
       end
 
       wrapped_paragraphs.join("\n")
@@ -24,7 +23,11 @@ module Bosh::Cli
     attr_reader :width
     attr_reader :left_margin
 
-    def break_into_lines(string)
+    def paragraph_indentation(paragraph)
+      paragraph.start_with?('      ') ? '  ' : ''
+    end
+
+    def wrapped_lines(string)
       result = []
       buffer = ''
 
