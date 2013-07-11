@@ -8,7 +8,7 @@ module Bosh
       let(:example) do
         double(RSpec::Core::Example, metadata:
           {
-            full_description: 'Some context should, r3sult in some_behavior.',
+            full_description: 'Some context should, r3sult in:some_behavior.',
             execution_result: {run_time: run_time}
           })
       end
@@ -18,7 +18,7 @@ module Bosh
         EmitableExample.new(example)
       end
 
-      its(:metric) { should eq 'bosh.ci.bat.duration' }
+      its(:metric) { should eq 'ci.bosh.bat.duration' }
       its(:value) { should eq run_time }
       its(:options) { should eq(tags: %w[infrastructure:openstack example:some-context-should-r3sult-in-some-behavior]) }
     end
