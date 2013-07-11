@@ -1,4 +1,5 @@
 require 'tmpdir'
+require 'open3'
 
 module Bosh::Director
   class TarGzipper
@@ -19,9 +20,9 @@ module Bosh::Director
         raise "The base directory #{base_dir} is not an absolute path."
       end
 
-      Dir.chdir(base_dir) do
-        sh "tar -z -c -f #{dest} #{sources.join(' ')}"
-      end
+      out, err, status = Open3.capture3('tar', '-C', base_dir, '-czf', dest, *sources)
+      raise("tar exited #{status.exitstatus}, output: '#{out}', error: '#{err}'") unless status.success?
+      out
     end
   end
 end

@@ -1,23 +1,25 @@
-require 'common/runs_commands'
+require 'open3'
 
 module Bosh
   module Director
     module DbBackup
       module Adapter
         class Postgres
-          include Bosh::RunsCommands
 
           def initialize(db_config)
             @db_config = db_config
           end
 
           def export(path)
-            username = @db_config.fetch('user')
-            password = @db_config.fetch('password')
-            host = @db_config.fetch('host')
-            port = @db_config.fetch('port')
-            database = @db_config.fetch('database')
-            sh "PGPASSWORD=#{password} /var/vcap/packages/postgres/bin/pg_dump --host #{host} --port #{port} --username=#{username} #{database} > #{path}"
+            out, err, status = Open3.capture3({'PGPASSWORD' => @db_config.fetch('password')},
+                    'pg_dump',
+                    '--host', @db_config.fetch('host'),
+                    '--port', @db_config.fetch('port').to_s,
+                    '--username', @db_config.fetch('user'),
+                    '--file', path,
+                    @db_config.fetch('database'))
+
+            raise("pg_dump exited #{status.exitstatus}, output: '#{out}', error: '#{err}'") unless status.success?
             path
           end
         end

@@ -1,27 +1,24 @@
-require 'common/runs_commands'
+require 'open3'
 
 module Bosh
   module Director
     module DbBackup
       module Adapter
         class Mysql2
-          include Bosh::RunsCommands
-
           def initialize(db_config)
             @db_config = db_config
           end
 
-          def export(output_path)
-            cli_options = generate_cli_options(%w(user password host port))
-            database_name = @db_config['database']
-            sh "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/vcap/packages/mysql/lib/mysql /var/vcap/packages/mysql/bin/mysqldump #{cli_options} #{database_name} > #{output_path}"
-            output_path
-          end
-
-          private
-
-          def generate_cli_options(params)
-            params.map { |p| "--#{p}=#{@db_config[p]}"}.join " "
+          def export(path)
+            out, err, status = Open3.capture3({'MYSQL_PWD' => @db_config.fetch('password')},
+                                              'mysqldump',
+                                              '--user',        @db_config.fetch('user'),
+                                              '--host',        @db_config.fetch('host'),
+                                              '--port',        @db_config.fetch('port').to_s,
+                                              '--result-file', path,
+                                              @db_config.fetch('database'))
+            raise("mysqldump exited #{status.exitstatus}, output: '#{out}', error: '#{err}'") unless status.success?
+            path
           end
         end
       end
