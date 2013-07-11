@@ -84,7 +84,8 @@ describe Bosh::Deployer::Specification do
       spec = Bosh::Deployer::Specification.load_from_stemcell(spec_dir)
 
       spec.update("1.1.1.1", "2.2.2.2")
-      spec.properties["ssl"].should == props["ssl"]
+      expect(spec.properties['director']['ssl']).to eq props['director']['ssl']
+      expect(spec.properties['director']['ssl']).to_not be_nil
     end
   end
 end
