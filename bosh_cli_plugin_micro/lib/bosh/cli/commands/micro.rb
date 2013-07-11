@@ -279,7 +279,7 @@ AGENT_HELP
         end
       end
 
-      say(deployer.agent.send(message.to_sym, *args).pretty_inspect)
+      say(deployer.agent.send(message.to_sym, *args))
     end
 
     usage "micro apply"
