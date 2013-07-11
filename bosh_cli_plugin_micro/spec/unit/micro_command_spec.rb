@@ -100,6 +100,32 @@ describe Bosh::Cli::Command::Base do
 
       @cmd.set_current("foo")
     end
-  end
 
+    describe 'agent command' do
+      let(:runner) { double(Bosh::Cli::Runner) }
+      let(:command) { Bosh::Cli::Command::Micro.new(runner) }
+
+      let(:agent) { double(Bosh::Agent::HTTPClient) }
+      let(:deployer) { double(Bosh::Deployer::InstanceManager, agent: agent) }
+      let(:request) { 'ping' }
+      let(:response) { 'pong' }
+
+      before do
+        # Make it appear as if our current directory is a deployments directory
+        File.stub(basename: 'deployments')
+
+        # Fake out the deployer object
+        Bosh::Deployer::InstanceManager.stub(:create).and_return(deployer)
+      end
+
+      it 'sends the command to an agent and shows the returned output' do
+        agent.should_receive(request.to_sym).and_return(response)
+        command.should_receive(:say) do |pong|
+          expect(pong).to include response
+        end
+
+        command.agent(request)
+      end
+    end
+  end
 end

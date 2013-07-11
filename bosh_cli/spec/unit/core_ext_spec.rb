@@ -44,10 +44,15 @@ describe String do
 
   describe 'columnize' do
     it 'wraps long lines' do
+      message = 'hello this is a line that has quite a lot of words'
+      formatted_message = "hello this is a line\nthat has quite a lot\nof words"
+
       line_wrap = double(Bosh::Cli::LineWrap)
-      line_wrap.should_receive(:wrap).with('hello this is a line that has quite a lot of words')
+      line_wrap.should_receive(:wrap)
+        .with(message)
+        .and_return(formatted_message)
       Bosh::Cli::LineWrap.should_receive(:new).with(20, 0).and_return(line_wrap)
-      'hello this is a line that has quite a lot of words'.columnize(20)
+      expect(message.columnize(20)).to eq formatted_message
     end
   end
 end
