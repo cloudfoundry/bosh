@@ -55,6 +55,7 @@ require "cli/stemcell"
 require "cli/director"
 require "cli/director_task"
 
+require 'cli/line_wrap'
 require 'cli/backup_destination_path'
 
 require "cli/versions_index"

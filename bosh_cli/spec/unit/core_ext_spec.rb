@@ -41,6 +41,15 @@ describe String do
     Bosh::Cli::Config.output.stub(:tty?).and_return(false)
     "string".make_green.should == "string"
   end
+
+  describe 'columnize' do
+    it 'wraps long lines' do
+      line_wrap = double(Bosh::Cli::LineWrap)
+      line_wrap.should_receive(:wrap).with('hello this is a line that has quite a lot of words')
+      Bosh::Cli::LineWrap.should_receive(:new).with(20, 0).and_return(line_wrap)
+      'hello this is a line that has quite a lot of words'.columnize(20)
+    end
+  end
 end
 
 describe Object do

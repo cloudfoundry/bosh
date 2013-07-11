@@ -156,18 +156,7 @@ module BoshStringExtensions
   end
 
   def columnize(width = 80, left_margin = 0)
-    result = ""
-    buf = ""
-    self.split(/\s+/).each do |word|
-      if buf.size + word.size > width
-        result << buf << "\n" << " " * left_margin
-        buf = word + " "
-      else
-        buf << word << " "
-      end
-
-    end
-    result + buf
+    Bosh::Cli::LineWrap.new(width, left_margin).wrap(self)
   end
 
   def indent(margin = 2)
