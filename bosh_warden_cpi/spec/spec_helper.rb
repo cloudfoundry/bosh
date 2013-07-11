@@ -60,7 +60,7 @@ end
 # DB migration
 Sequel.extension :migration
 db = Sequel.sqlite(":memory:")
-migration = File.expand_path("../../db/migrations/warden_cpi", __FILE__)
+migration = File.expand_path("../../db/migrations", __FILE__)
 Sequel::TimestampMigrator.new(db, migration, :table => "warden_cpi_schema").run
 
 require "cloud"
