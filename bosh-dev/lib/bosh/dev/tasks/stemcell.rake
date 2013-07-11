@@ -96,8 +96,7 @@ namespace :stemcell do
 
       Rake::Task['all:finalize_release_directory'].invoke
       release = Bosh::Dev::MicroBoshRelease.new
-      build_micro_bosh_release_value = release.build
-      release_tarball = build_micro_bosh_release_value
+      release_tarball = release.build
     end
 
     options[:stemcell_name] ||= "micro-bosh-stemcell"
