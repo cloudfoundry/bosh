@@ -113,10 +113,11 @@ namespace :spec do
       end
 
       task :deploy_micro => :get_deployments_aws do
-        rm_rf('/tmp/deployments')
-        mkdir_p('/tmp/deployments/micro')
-        chdir('/tmp/deployments') do
-          chdir('micro') do
+        rm_rf(bat_helper.artifacts_dir)
+        mkdir_p(bat_helper.micro_bosh_deployment_dir)
+
+        chdir(bat_helper.artifacts_dir) do
+          chdir(bat_helper.micro_bosh_deployment_dir) do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
           end
           run_bosh 'micro deployment micro'
@@ -131,12 +132,12 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        if Dir.exists?('/tmp/deployments')
-          chdir('/tmp/deployments') do
+        if Dir.exists?(bat_helper.artifacts_dir)
+          chdir(bat_helper.artifacts_dir) do
             run_bosh 'delete deployment bat', :ignore_failures => true
             run_bosh 'micro delete', :ignore_failures => true
           end
-          rm_rf('/tmp/deployments')
+          rm_rf(bat_helper.artifacts_dir)
         end
       end
 
@@ -144,10 +145,9 @@ namespace :spec do
         director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
         ENV['BAT_DIRECTOR'] = director
         ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-        ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/deployments/bat.yml'
+        ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
         ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
         ENV['BAT_FAST'] = 'true'
-        #ENV['BAT_DEBUG'] = 'verbose'
         ENV['BAT_DNS_HOST'] = Resolv.getaddress(director)
         Rake::Task['bat'].invoke
       end
@@ -195,10 +195,11 @@ namespace :spec do
       end
 
       task :deploy_micro, [:net_type] do |t, net_type|
-        rm_rf('/tmp/openstack-ci/deployments')
-        mkdir_p('/tmp/openstack-ci/deployments/microbosh')
-        chdir('/tmp/openstack-ci/deployments') do
-          chdir('microbosh') do
+        rm_rf(bat_helper.artifacts_dir)
+        mkdir_p(bat_helper.micro_bosh_deployment_dir)
+
+        chdir(bat_helper.artifacts_dir) do
+          chdir(bat_helper.micro_bosh_deployment_dir) do
             generate_openstack_micro_bosh(net_type)
           end
           run_bosh 'micro deployment microbosh'
@@ -214,19 +215,19 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        chdir('/tmp/openstack-ci/deployments') do
+        chdir(bat_helper.artifacts_dir) do
           run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
           run_bosh 'micro delete', :ignore_failures => true
         end
-        rm_rf('/tmp/openstack-ci/deployments')
+        rm_rf(bat_helper.artifacts_dir)
       end
 
       task :bat do
         cd(ENV['WORKSPACE']) do
           ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
           ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-          ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/openstack-ci/deployments/bat.yml'
+          ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
           ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
           ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
           ENV['BAT_DNS_HOST'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
@@ -252,10 +253,11 @@ namespace :spec do
       end
 
       task :deploy_micro do
-        rm_rf('/tmp/vsphere-ci/deployments')
-        mkdir_p('/tmp/vsphere-ci/deployments/microbosh')
-        cd('/tmp/vsphere-ci/deployments') do
-          cd('microbosh') do
+        rm_rf(bat_helper.artifacts_dir)
+        mkdir_p(bat_helper.micro_bosh_deployment_dir)
+
+        cd(bat_helper.artifacts_dir) do
+          cd(bat_helper.micro_bosh_deployment_dir) do
             generate_vsphere_micro_bosh
           end
           run_bosh 'micro deployment microbosh'
@@ -271,19 +273,19 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        cd('/tmp/vsphere-ci/deployments') do
+        cd(bat_helper.artifacts_dir) do
           run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
           run_bosh 'micro delete', :ignore_failures => true
         end
-        rm_rf('/tmp/vsphere-ci/deployments')
+        rm_rf(bat_helper.artifacts_dir)
       end
 
       task :bat do
         cd(ENV['WORKSPACE']) do
           ENV['BAT_DIRECTOR'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
           ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-          ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/vsphere-ci/deployments/bat.yml'
+          ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
           ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
           ENV['BAT_DNS_HOST'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
           ENV['BAT_FAST'] = 'true'
