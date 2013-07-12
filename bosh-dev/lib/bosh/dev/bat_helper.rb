@@ -12,10 +12,19 @@ module Bosh
 
         @workspace_dir = workspace_dir
         @infrastructure = infrastructure
+        @pipeline = Bosh::Dev::Pipeline.new
       end
 
       def light?
         infrastructure == AWS
+      end
+
+      def bosh_stemcell_path
+        File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure, 'bosh-stemcell', light?))
+      end
+
+      def micro_bosh_stemcell_path
+        File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure, 'micro-bosh-stemcell', light?))
       end
 
       def run_rake
@@ -23,9 +32,8 @@ module Bosh
           ENV['BAT_INFRASTRUCTURE'] = infrastructure
 
           begin
-            pipeline = Bosh::Dev::Pipeline.new
-            pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: light?)
-            pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: light?)
+            @pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: light?)
+            @pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: light?)
 
             Rake::Task["spec:system:#{infrastructure}:micro"].invoke
           ensure

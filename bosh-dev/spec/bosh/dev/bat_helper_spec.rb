@@ -120,4 +120,28 @@ describe Bosh::Dev::BatHelper do
       subject.cleanup_stemcells
     end
   end
+
+  describe '#bosh_stemcell_path' do
+    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+      let(:infrastructure) { i }
+
+      let(:expected_filename) do
+        Bosh::Dev::Pipeline.new.latest_stemcell_filename(subject.infrastructure, 'bosh-stemcell', subject.light?)
+      end
+
+      its(:bosh_stemcell_path) { should eq(File.join(subject.workspace_dir, expected_filename)) }
+    end
+  end
+
+  describe '#micro_bosh_stemcell_path' do
+    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+      let(:infrastructure) { i }
+
+      let(:expected_filename) do
+        Bosh::Dev::Pipeline.new.latest_stemcell_filename(subject.infrastructure, 'micro-bosh-stemcell', subject.light?)
+      end
+
+      its(:micro_bosh_stemcell_path) { should eq(File.join(subject.workspace_dir, expected_filename)) }
+    end
+  end
 end
