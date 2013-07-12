@@ -1,23 +1,9 @@
-require 'bosh/dev/build'
-require 'bosh/dev/pipeline'
+require 'bosh/dev/bat_helper'
 
 namespace :ci do
   namespace :system do
     task :micro, [:infrastructure] do |_, args|
-      infrastructure = args.infrastructure || abort('infrastructure is a required parameter')
-      %w{aws openstack vsphere}.include?(infrastructure) || abort("invalid infrastructure: #{infrastructure}")
-
-      cd(ENV['WORKSPACE']) do
-        begin
-          ENV['BAT_INFRASTRUCTURE'] = infrastructure
-          pipeline = Bosh::Dev::Pipeline.new
-          pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.match('aws'))
-          pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.match('aws'))
-          Rake::Task["spec:system:#{infrastructure}:micro"].invoke
-        ensure
-          rm_f(Dir.glob('*bosh-stemcell-*.tgz'))
-        end
-      end
+      Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], args.infrastructure).run_rake
     end
   end
 end
