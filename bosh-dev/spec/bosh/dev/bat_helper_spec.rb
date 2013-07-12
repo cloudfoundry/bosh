@@ -105,6 +105,22 @@ describe Bosh::Dev::BatHelper do
     end
   end
 
+  describe '#artifacts_dir' do
+    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+      let(:infrastructure) { i }
+
+      its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure)) }
+    end
+  end
+
+  describe '#micro_bosh_deployment_dir' do
+    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+      let(:infrastructure) { i }
+
+      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, 'micro_bosh')) }
+    end
+  end
+
   describe '#cleanup_stemcells' do
     it 'correctly creates the glob used to delete the stemcells' do
       FileUtils.stub(:rm_f)

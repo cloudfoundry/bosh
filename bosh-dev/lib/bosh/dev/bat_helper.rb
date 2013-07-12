@@ -27,6 +27,14 @@ module Bosh
         File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure, 'micro-bosh-stemcell', light?))
       end
 
+      def artifacts_dir
+        File.join('/tmp', 'ci-artifacts', infrastructure)
+      end
+
+      def micro_bosh_deployment_dir
+        File.join(artifacts_dir, 'micro_bosh')
+      end
+
       def run_rake
         Dir.chdir(workspace_dir) do
           ENV['BAT_INFRASTRUCTURE'] = infrastructure
