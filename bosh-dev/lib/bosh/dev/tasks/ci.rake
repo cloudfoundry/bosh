@@ -23,8 +23,7 @@ namespace :ci do
 
     cd(ENV['WORKSPACE']) do
       release = Bosh::Dev::MicroBoshRelease.new
-      release_tarball = release.build
-      sh("s3cmd put #{release_tarball} #{Bosh::Dev::Build.current.s3_release_url}")
+      sh("s3cmd put #{release.tarball} #{Bosh::Dev::Build.current.s3_release_url}")
     end
   end
 

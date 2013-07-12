@@ -3,15 +3,13 @@ require 'rake'
 module Bosh
   module Dev
     class MicroBoshRelease
-      include Rake::FileUtilsExt
-
-      def build
+      def tarball
         Dir.chdir('release') do
-          sh('cp config/bosh-dev-template.yml config/dev.yml')
-          sh('bosh create release --force --with-tarball')
+          FileUtils.cp('config/bosh-dev-template.yml', 'config/dev.yml')
+          Rake::FileUtilsExt.sh('bosh create release --force --with-tarball')
         end
 
-        release_tarball = `ls -1t release/dev_releases/bosh*.tgz | head -1`.chomp
+        release_tarball = Dir.glob('release/dev_releases/bosh*.tgz').max_by { |f| File.mtime(f) }
         File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..", "..", release_tarball)
       end
     end
