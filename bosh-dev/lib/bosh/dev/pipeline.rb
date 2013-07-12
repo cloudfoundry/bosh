@@ -29,38 +29,44 @@ module Bosh
         Rake::FileUtilsExt.sh("s3cmd cp #{overwrite_flag} #{src_uri} #{dst_uri}")
       end
 
-      def download_latest_stemcell(args={})
-        infrastructure = args.fetch(:infrastructure)
-        name           = args.fetch(:name)
-        light          = args.fetch(:light, false)
-        s3_path        = File.join(base_url, name, infrastructure) + '/'
+      def download_latest_stemcell(options={})
+        infrastructure = options.fetch(:infrastructure)
+        name           = options.fetch(:name)
+        light          = options.fetch(:light)
 
-        stemcell_filename = "latest-#{light ? 'light-' : ''}#{name}-#{infrastructure}.tgz"
-        latest_stemcell_url = s3_path + stemcell_filename
-        Rake::FileUtilsExt.sh("s3cmd -f get #{latest_stemcell_url}")
+        s3_uri = File.join(base_url, name, infrastructure, latest_stemcell_filename(infrastructure, name, light))
+
+        Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
+      end
+
+      def latest_stemcell_filename(infrastructure, name, light)
+        stemcell_filename_parts = []
+        stemcell_filename_parts << 'latest'
+        stemcell_filename_parts << 'light' if light
+        stemcell_filename_parts << name
+        stemcell_filename_parts << infrastructure
+
+        "#{stemcell_filename_parts.join('-')}.tgz"
       end
 
       def download_stemcell(version, options={})
         infrastructure = options.fetch(:infrastructure)
         name           = options.fetch(:name)
+        light          = options.fetch(:light)
 
-        s3_uri = File.join(base_url, name, infrastructure, stemcell_filename(version, options))
+        s3_uri = File.join(base_url, name, infrastructure, stemcell_filename(version, infrastructure, name, light))
 
         Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
       end
 
-      def stemcell_filename(version, options={})
-        infrastructure = options.fetch(:infrastructure)
-        name           = options.fetch(:name)
-        light          = options.fetch(:light, false)
-
+      def stemcell_filename(version, infrastructure, name, light)
         stemcell_filename_parts = []
         stemcell_filename_parts << 'light' if light
         stemcell_filename_parts << name
         stemcell_filename_parts << infrastructure
         stemcell_filename_parts << version
 
-        "#{File.join(stemcell_filename_parts.join('-'))}.tgz"
+        "#{stemcell_filename_parts.join('-')}.tgz"
       end
     end
   end
