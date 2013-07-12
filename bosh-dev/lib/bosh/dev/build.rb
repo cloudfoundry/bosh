@@ -2,11 +2,12 @@ require 'bosh/dev/pipeline'
 
 module Bosh
   module Dev
-    class Build < Struct.new(:number, :job_name)
-      attr_reader :number, :job_name
+    class Build
+      attr_reader :number
 
       def initialize(number)
-        @number, @job_name = number, ENV.fetch('JOB_NAME')
+        @number = number
+        @job_name = ENV.fetch('JOB_NAME')
         @pipeline = Pipeline.new
       end
 
@@ -34,7 +35,7 @@ module Bosh
       end
 
       private
-      attr_reader :pipeline
+      attr_reader :pipeline, :job_name
     end
   end
 end
