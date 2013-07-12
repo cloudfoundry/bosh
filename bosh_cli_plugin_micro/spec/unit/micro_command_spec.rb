@@ -111,11 +111,8 @@ describe Bosh::Cli::Command::Base do
       let(:response) { 'pong' }
 
       before do
-        # Make it appear as if our current directory is a deployments directory
         File.stub(basename: 'deployments')
-
-        # Fake out the deployer object
-        Bosh::Deployer::InstanceManager.stub(:create).and_return(deployer)
+        command.stub(deployer: deployer)
       end
 
       it 'sends the command to an agent and shows the returned output' do
