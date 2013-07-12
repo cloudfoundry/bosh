@@ -17,6 +17,10 @@ module Bosh
         new(ENV.fetch('CANDIDATE_BUILD_NUMBER'))
       end
 
+      def upload(release)
+        Rake::FileUtilsExt.sh("s3cmd put #{release.tarball} #{s3_release_url}")
+      end
+
       def s3_release_url
         File.join(Pipeline.new.base_url, "release/bosh-#{number}.tgz")
       end
