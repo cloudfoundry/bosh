@@ -1,11 +1,12 @@
-require "rspec"
-require "rake"
+require 'rspec'
+require 'rake'
+require 'rspec/fire'
 
-shared_context "rake" do
+shared_context 'rake' do
   let(:rake) { Rake::Application.new }
   let(:task_name) { self.class.top_level_description }
-  let(:task_path) { "rake/lib/tasks/#{task_name.split(":").first}" }
-  let(:root) { File.expand_path("../../../../", File.dirname(__FILE__))}
+  let(:task_path) { "rake/lib/tasks/#{task_name.split(':').first}" }
+  let(:root) { File.expand_path('../../../../', File.dirname(__FILE__))}
   subject { rake[task_name] }
 
   def loaded_files_excluding_current_rake_file
@@ -22,10 +23,14 @@ end
 
 module RSpecRakeHelper
   def self.included(klass)
-    klass.include_context("rake")
+    klass.include_context('rake')
   end
 end
 
 def spec_asset(name)
   File.join(File.dirname(__FILE__), 'assets', name)
+end
+
+RSpec.configure do |config|
+  config.include(RSpec::Fire)
 end
