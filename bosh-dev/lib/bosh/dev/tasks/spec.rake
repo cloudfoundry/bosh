@@ -1,6 +1,7 @@
 require 'rspec'
 require 'rspec/core/rake_task'
 require 'tempfile'
+require 'bosh/dev/bat_helper'
 
 namespace :spec do
   desc 'Run BOSH integration tests against a local sandbox'
@@ -97,6 +98,10 @@ namespace :spec do
 
   namespace :system do
     namespace :aws do
+      def bat_helper
+        @bat_helper ||= Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'aws')
+      end
+
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         begin
@@ -115,12 +120,12 @@ namespace :spec do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
           end
           run_bosh 'micro deployment micro'
-          run_bosh "micro deploy #{latest_aws_micro_bosh_stemcell_path}"
+          run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
-          run_bosh "upload stemcell #{latest_aws_stemcell_path}", debug_on_fail: true
+          run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
 
-          st_version = stemcell_version(latest_aws_stemcell_path)
+          st_version = stemcell_version(bat_helper.bosh_stemcell_path)
           run_bosh "aws generate bat '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{st_version}'"
         end
       end
@@ -138,7 +143,7 @@ namespace :spec do
       task :bat do
         director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
         ENV['BAT_DIRECTOR'] = director
-        ENV['BAT_STEMCELL'] = latest_aws_stemcell_path
+        ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
         ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/deployments/bat.yml'
         ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
         ENV['BAT_FAST'] = 'true'
@@ -161,6 +166,10 @@ namespace :spec do
     end
 
     namespace :openstack do
+      def bat_helper
+        @bat_helper ||= Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'openstack')
+      end
+
       desc 'Run OpenStack MicroBOSH deployment suite'
       task :micro do
         Rake::Task['spec:system:openstack:deploy_micro_dynamic_net'].invoke
@@ -193,13 +202,13 @@ namespace :spec do
             generate_openstack_micro_bosh(net_type)
           end
           run_bosh 'micro deployment microbosh'
-          run_bosh "micro deploy #{latest_openstack_micro_bosh_stemcell_path}"
+          run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
-          run_bosh "upload stemcell #{latest_openstack_stemcell_path}", debug_on_fail: true
+          run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
           status = run_bosh 'status'
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
-          st_version = stemcell_version(latest_openstack_stemcell_path)
+          st_version = stemcell_version(bat_helper.bosh_stemcell_path)
           generate_openstack_bat_manifest(net_type, director_uuid, st_version)
         end
       end
@@ -207,7 +216,7 @@ namespace :spec do
       task :teardown_microbosh do
         chdir('/tmp/openstack-ci/deployments') do
           run_bosh 'delete deployment bat', :ignore_failures => true
-          run_bosh "delete stemcell bosh-stemcell #{stemcell_version(latest_openstack_stemcell_path)}", :ignore_failures => true
+          run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
           run_bosh 'micro delete', :ignore_failures => true
         end
         rm_rf('/tmp/openstack-ci/deployments')
@@ -216,7 +225,7 @@ namespace :spec do
       task :bat do
         cd(ENV['WORKSPACE']) do
           ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
-          ENV['BAT_STEMCELL'] = latest_openstack_stemcell_path
+          ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
           ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/openstack-ci/deployments/bat.yml'
           ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
           ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
@@ -228,6 +237,10 @@ namespace :spec do
     end
 
     namespace :vsphere do
+      def bat_helper
+        @bat_helper ||= Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'vsphere')
+      end
+
       desc 'Run vSphere MicroBOSH deployment suite'
       task :micro do
         begin
@@ -246,13 +259,13 @@ namespace :spec do
             generate_vsphere_micro_bosh
           end
           run_bosh 'micro deployment microbosh'
-          run_bosh "micro deploy #{latest_vsphere_micro_bosh_stemcell_path}"
+          run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
-          run_bosh "upload stemcell #{latest_vsphere_stemcell_path}", debug_on_fail: true
+          run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
           status = run_bosh 'status'
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
-          st_version = stemcell_version(latest_vsphere_stemcell_path)
+          st_version = stemcell_version(bat_helper.bosh_stemcell_path)
           generate_vsphere_bat_manifest(director_uuid, st_version)
         end
       end
@@ -260,7 +273,7 @@ namespace :spec do
       task :teardown_microbosh do
         cd('/tmp/vsphere-ci/deployments') do
           run_bosh 'delete deployment bat', :ignore_failures => true
-          run_bosh "delete stemcell bosh-stemcell #{stemcell_version(latest_vsphere_stemcell_path)}", :ignore_failures => true
+          run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
           run_bosh 'micro delete', :ignore_failures => true
         end
         rm_rf('/tmp/vsphere-ci/deployments')
@@ -269,7 +282,7 @@ namespace :spec do
       task :bat do
         cd(ENV['WORKSPACE']) do
           ENV['BAT_DIRECTOR'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
-          ENV['BAT_STEMCELL'] = latest_vsphere_stemcell_path
+          ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
           ENV['BAT_DEPLOYMENT_SPEC'] = '/tmp/vsphere-ci/deployments/bat.yml'
           ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
           ENV['BAT_DNS_HOST'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
@@ -288,30 +301,6 @@ namespace :spec do
         system('tar', 'xzf', stemcell_tgz, '--directory', dir, 'stemcell.MF') || raise('Failed to untar stemcell')
         Psych.load_file(File.join(dir, 'stemcell.MF'))
       end
-    end
-
-    def latest_aws_micro_bosh_stemcell_path
-      File.join(ENV['WORKSPACE'], "latest-light-micro-bosh-stemcell-aws.tgz")
-    end
-
-    def latest_aws_stemcell_path
-      File.join(ENV['WORKSPACE'], "latest-light-bosh-stemcell-aws.tgz")
-    end
-
-    def latest_openstack_micro_bosh_stemcell_path
-      File.join(ENV['WORKSPACE'], "latest-micro-bosh-stemcell-openstack.tgz")
-    end
-
-    def latest_openstack_stemcell_path
-      File.join(ENV['WORKSPACE'], "latest-bosh-stemcell-openstack.tgz")
-    end
-
-    def latest_vsphere_micro_bosh_stemcell_path
-      File.join(ENV['WORKSPACE'], "latest-micro-bosh-stemcell-vsphere.tgz")
-    end
-
-    def latest_vsphere_stemcell_path
-      File.join(ENV['WORKSPACE'], "latest-bosh-stemcell-vsphere.tgz")
     end
 
     def vpc_outfile_path
@@ -444,7 +433,6 @@ namespace :spec do
       end
       raise
     end
-
   end
 end
 
