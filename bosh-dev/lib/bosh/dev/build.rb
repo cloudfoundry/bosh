@@ -23,7 +23,7 @@ module Bosh
       end
 
       def s3_release_url
-        File.join(Pipeline.new.base_url, "release/bosh-#{number}.tgz")
+        File.join(pipeline.base_url, "release/bosh-#{number}.tgz")
       end
 
       def sync_buckets
