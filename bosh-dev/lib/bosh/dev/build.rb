@@ -20,11 +20,11 @@ module Bosh
       end
 
       def upload(release)
-        pipeline.s3_upload(release.tarball, s3_release_url)
+        pipeline.s3_upload(release.tarball, "release/bosh-#{number}.tgz")
       end
 
       def s3_release_url
-        File.join(pipeline.base_url, "release/bosh-#{number}.tgz")
+        File.join("s3://#{pipeline.bucket}/", "release/bosh-#{number}.tgz")
       end
 
       def sync_buckets
