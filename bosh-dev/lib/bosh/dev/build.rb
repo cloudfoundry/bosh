@@ -7,6 +7,7 @@ module Bosh
 
       def initialize(number)
         @number, @job_name = number, ENV.fetch('JOB_NAME')
+        @pipeline = Pipeline.new
       end
 
       def self.current
@@ -18,12 +19,15 @@ module Bosh
       end
 
       def upload(release)
-        Rake::FileUtilsExt.sh("s3cmd put #{release.tarball} #{s3_release_url}")
+        pipeline.s3_upload(release.tarball, s3_release_url)
       end
 
       def s3_release_url
         File.join(Pipeline.new.base_url, "release/bosh-#{number}.tgz")
       end
+
+      private
+      attr_reader :pipeline
     end
   end
 end
