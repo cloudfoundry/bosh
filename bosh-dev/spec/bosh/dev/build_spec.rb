@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'bosh/dev/build'
 require 'bosh/dev/pipeline'
+require 'bosh/dev/micro_bosh_release'
 
 module Bosh::Dev
   describe Build do
@@ -12,6 +13,10 @@ module Bosh::Dev
       ENV.stub(:fetch).with('JOB_NAME').and_return('current_job')
 
       Bosh::Dev::Pipeline.any_instance.stub(base_url: fake_s3_bucket)
+    end
+
+    subject do
+      Build.new(123)
     end
 
     describe '.current' do
@@ -30,12 +35,17 @@ module Bosh::Dev
       its(:s3_release_url) { should eq(File.join(fake_s3_bucket, 'release/bosh-candidate.tgz')) }
     end
 
-    describe '.job_name' do
-      subject do
-        Build.candidate
-      end
-
+    describe '#job_name' do
       its(:job_name) { should eq('current_job') }
+    end
+
+    describe '#upload' do
+      let(:release) { double(MicroBoshRelease, tarball: 'release-tarball.tgz') }
+
+      it 'uploads the release to the pipeline bucket with its build number' do
+        Rake::FileUtilsExt.should_receive(:sh).with('s3cmd put release-tarball.tgz s3://FAKE_BOSH_CI_PIPELINE_BUCKET/release/bosh-123.tgz')
+        subject.upload(release)
+      end
     end
   end
 end
