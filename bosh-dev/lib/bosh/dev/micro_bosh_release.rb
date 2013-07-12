@@ -10,7 +10,7 @@ module Bosh
         end
 
         release_tarball = Dir.glob('release/dev_releases/bosh*.tgz').max_by { |f| File.mtime(f) }
-        File.join(File.expand_path(File.dirname(__FILE__)), "..", "..", "..", "..", release_tarball)
+        File.join(File.expand_path(File.dirname(__FILE__)), '..', '..', '..', '..', release_tarball)
       end
     end
   end
