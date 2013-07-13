@@ -16,8 +16,6 @@ describe Bosh::Agent::AlertProcessor do
 
   it "receives alerts via built-in SMTP based server" do
     EM.run do
-      # TODO: clean this timer up by also stopping event loop from process_email_alert
-      # itself (possibly using alias method chain is some test helper)
       EM.add_timer(0.2) { EM.stop }
 
       outgoing_email = {

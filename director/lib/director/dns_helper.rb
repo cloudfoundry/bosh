@@ -3,7 +3,6 @@
 module Bosh::Director
   module DnsHelper
 
-    # TODO serial can't be 0
     # primary_ns contact serial refresh retry expire minimum
     SOA = "localhost hostmaster@localhost 0 10800 604800 30"
     TTL_5M = 300
@@ -21,7 +20,6 @@ module Bosh::Director
       reverse(ip, 3)
     end
 
-    # TODO: rename to reflect DNS-related purpose
     def canonical(string)
       # a-z, 0-9, -, case insensitive, and must start with a letter
       string = string.downcase.gsub(/_/, "-").gsub(/[^a-z0-9-]/, "")

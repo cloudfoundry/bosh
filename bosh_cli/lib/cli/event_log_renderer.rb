@@ -122,7 +122,6 @@ module Bosh::Cli
       error += " #{code}" if code
       error += ": #{message}" if message
 
-      # TODO: add KB article link and maybe cck reference?
       @buffer.puts("\n" + error.make_red)
     end
 
@@ -272,7 +271,6 @@ module Bosh::Cli
         end
 
         if event["state"] == "failed"
-          # TODO: truncate?
           status = [task_name.make_red, event_data["error"]].compact.join(": ")
           @stage_has_error = true
         else

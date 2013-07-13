@@ -4,8 +4,6 @@ require 'spec_helper'
 
 describe Bosh::Director::PackageCompiler do
 
-  # TODO: add tests for build numbers and some error conditions
-
   before(:each) do
     @cloud = mock(:cpi)
     BD::Config.stub!(:cloud).and_return(@cloud)
@@ -47,7 +45,6 @@ describe Bosh::Director::PackageCompiler do
   def make_compiled(package, stemcell, sha1 = "deadbeef",
                     blobstore_id = "deadcafe")
     # A little bit of prep to satisfy dependency keys
-    # TODO: make less manual to set up
     deps = package.dependency_set.map do |dep_name|
       BD::Models::Package.find(:name => dep_name)
     end
@@ -249,11 +246,6 @@ describe Bosh::Director::PackageCompiler do
       }
     }
     it "reuses compilation VMs" do
-      # TODO add fair stemcell scheduling for compilation reuse:
-      # right now it seems there's a race and same stemcell can hijack
-      # all num_workers VMs, thus we test with one stemcell
-      # NOTE: test compilations are so fast that we're not guaranteed that
-      # all 3 VMs will actually be created, hence using fuzzy expectations
       prepare_samples
       @plan.stub(:jobs).and_return([@j_dea])
 

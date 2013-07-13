@@ -3,8 +3,6 @@
 module Bosh::Director
   class DeploymentPlan
     class UpdateConfig
-      # TODO: it would be nice if update config was aware of which job
-      # it related to to properly format error messages
       include ValidationHelper
 
       attr_accessor :canaries

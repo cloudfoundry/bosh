@@ -8,7 +8,6 @@ module Bosh::Agent
     def update(settings)
       password = settings.fetch('env', {}).fetch('bosh', {})['password']
 
-      # TODO - also support user/password hash override
       if password
         USERS.each { |user| update_password(user, password) }
       end

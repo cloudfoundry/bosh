@@ -23,7 +23,6 @@ require "director/deployment_plan/manual_network"
 require "director/deployment_plan/vip_network"
 
 module Bosh::Director
-  # TODO: cleanup exceptions
   # DeploymentPlan encapsulates essential director data structures retrieved
   # from the deployment manifest and the running environment.
   class DeploymentPlan
@@ -48,7 +47,6 @@ module Bosh::Director
     attr_reader :job_rename
     attr_reader :recreate
 
-    # TODO: decouple initialization from manifest parsing to make testing easier
     def initialize(manifest, options = {})
       @manifest = manifest
       @recreate = !!options["recreate"]
@@ -159,7 +157,6 @@ module Bosh::Director
     end
 
     # Adds a VM to deletion queue
-    # TODO: rename to "mark_vm_for_deletion"
     # @param [Bosh::Director::Models::Vm] vm VM DB model
     #
     def delete_vm(vm)
@@ -167,7 +164,6 @@ module Bosh::Director
     end
 
     # Adds instance to deletion queue
-    # TODO: rename to  "mark_instance_for_deletion"
     # @param [Bosh::Director::Models::Instance] instance Instance DB model
     def delete_instance(instance)
       if @jobs_name_index.has_key?(instance.job)

@@ -24,7 +24,6 @@ describe "with release, stemcell and deployment" do
         # wait for agent to restart
         wait_for_vm('batlight/0')
         bosh("logs batlight 0 --agent --dir #{tmpdir}")
-        # TODO check log for 2 agent starts (first is initial start and second is after crash)
       end
     end
   end
@@ -64,21 +63,18 @@ describe "with release, stemcell and deployment" do
     end
   end
 
-  context "job" do
-    it "should restart a job" do
-      bosh("restart batlight 0").should succeed_with %r{batlight/0 has been restarted}
-      # TODO verify that the process gets a new pid
+  context 'job' do
+    it 'should restart a job' do
+      bosh('restart batlight 0').should succeed_with %r{batlight/0 has been restarted}
     end
 
-    it "should recreate a job" do
-      bosh("recreate batlight 0").should succeed_with %r{batlight/0 has been recreated}
-      # TODO verify that the VM gets a new cid
+    it 'should recreate a job' do
+      bosh('recreate batlight 0').should succeed_with %r{batlight/0 has been recreated}
     end
 
-    it "should stop and start a job" do
-      bosh("stop batlight 0").should succeed_with %r{batlight/0 has been stopped}
-      bosh("start batlight 0").should succeed_with %r{batlight/0 has been started}
-      # TODO verify that the process gets a new pid
+    it 'should stop and start a job' do
+      bosh('stop batlight 0').should succeed_with %r{batlight/0 has been stopped}
+      bosh('start batlight 0').should succeed_with %r{batlight/0 has been started}
     end
   end
 

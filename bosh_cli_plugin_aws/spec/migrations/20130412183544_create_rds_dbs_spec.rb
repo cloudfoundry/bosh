@@ -56,7 +56,6 @@ describe CreateRdsDbs do
   context "when the config file has option overrides" do
     let(:config_file) { asset "config_with_override.yml" }
 
-    # TODO: Where are the assertions for this test?  Buried in `make_rds!`?  Fix this!
     it "should create all rds databases with option overrides" do
       ccdb_opts = Psych.load_file(config_file)["rds"].find { |db_opts| db_opts["instance"] == "ccdb" }
       make_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
@@ -116,7 +115,6 @@ describe CreateRdsDbs do
 
   context "when the RDS is not immediately available" do
 
-    # TODO: Where are the assertions for this test?  Buried in `make_rds!`?  Fix this!
     it "should try several times and continue when available" do
       make_rds!(retries_needed: 3)
       expect { subject.execute }.to_not raise_error

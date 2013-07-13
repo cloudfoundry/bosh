@@ -55,11 +55,6 @@ namespace :stemcell do
 
   desc "Build stemcell"
   task :basic, [:infrastructure, :version, :disk_size]  do |t, args|
-    # TODO: see https://www.pivotaltracker.com/story/show/51928035
-    #unless changes_in_bosh_agent?
-    #  puts 'No changes detected in bosh_agent or stemcell_builder...skipping stemcell creation.'
-    #  next
-    #end
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -87,12 +82,6 @@ namespace :stemcell do
       release_tarball = args[:tarball]
       options[:agent_gem_src_url] = 'https://s3.amazonaws.com/bosh-ci-pipeline/gems/'
     else
-      # TODO: see https://www.pivotaltracker.com/story/show/51928035
-      #unless changes_in_microbosh?
-      #  puts 'No changes detected in microbosh components or stemcell_builder...skipping stemcell creation.'
-      #  next
-      #end
-
       Rake::Task['all:finalize_release_directory'].invoke
       release = Bosh::Dev::MicroBoshRelease.new
       release_tarball = release.tarball

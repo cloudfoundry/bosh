@@ -33,7 +33,6 @@ module Bosh
           @http_client = HTTPClient.new(:proxy => proxy)
         end
         @http_client ||= HTTPClient.new
-        # TODO: Remove this line once we get the proper certificate for atmos
         @http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
 

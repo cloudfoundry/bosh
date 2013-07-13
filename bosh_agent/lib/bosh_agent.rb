@@ -68,7 +68,6 @@ require "bosh_agent/apply_plan/job"
 require "bosh_agent/apply_plan/package"
 require "bosh_agent/apply_plan/plan"
 
-# TODO the message handlers will be loaded dynamically
 require "bosh_agent/message/base"
 require "bosh_agent/message/disk"
 require "bosh_agent/message/state"

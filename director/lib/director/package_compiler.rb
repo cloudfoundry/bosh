@@ -5,10 +5,6 @@ module Bosh::Director
     include LockHelper
     include MetadataHelper
 
-    # TODO Support nested dependencies
-    # TODO Decouple tsort from the actual compilation
-    # TODO (optimization) Compile packages with the most dependents first
-
     attr_reader :compilations_performed
 
     # @param [DeploymentPlan] deployment_plan Deployment plan

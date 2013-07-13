@@ -15,9 +15,6 @@ module Bosh::Cli
     end
 
     def result
-      # TODO: erb is just a fancy eval, so it's not very trustworthy,
-      # consider using more constrained template engine.
-      # Note that we use $SAFE=4 for ERB which is a strawman sandbox.
       ERB.new(@raw_manifest, 4).result(binding.taint)
     rescue SyntaxError => e
       raise MalformedManifest,

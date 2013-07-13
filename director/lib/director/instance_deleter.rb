@@ -61,7 +61,6 @@ module Bosh::Director
           sleep(drain_time)
           drain_time = agent.drain("status")
         rescue => e
-          # TODO: refactor error handling?
           @logger.warn("Failed to check drain-status: #{e.inspect}")
           raise if e.kind_of?(Bosh::Director::TaskCancelled)
           break
@@ -88,7 +87,6 @@ module Bosh::Director
           @cloud.delete_disk(disk.disk_cid)
         rescue Bosh::Clouds::DiskNotFound => e
           @logger.warn("Disk not found: #{disk.disk_cid}")
-          # TODO: investigate if we really want to swallow the error
           raise if disk.active
         end
         disk.destroy

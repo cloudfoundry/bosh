@@ -61,10 +61,6 @@ module VSphereCloud
         @password = config["password"]
         @datacenters = {}
 
-        # TODO: current limitation to support a single vDC.
-        # Primarily due to stemcell replication logic calling CloneVM_Task which
-        # does not copy across datacenters. Should use CopyDatastoreFile_Task /
-        # CopyVirtualDisk_Task.
         unless config["datacenters"].size == 1
           raise "vSphere CPI only supports a single datacenter."
         end

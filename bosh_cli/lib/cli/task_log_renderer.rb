@@ -28,7 +28,7 @@ module Bosh::Cli
     end
 
     def duration_known?
-      false # TODO: make it available for basic renderer
+      false
     end
 
     def add_output(output)

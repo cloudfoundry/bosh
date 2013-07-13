@@ -16,7 +16,6 @@ module Bosh::Deployer
         @disk_model
       end
 
-      # TODO extract
       def update_spec(spec)
         properties = spec.properties
 

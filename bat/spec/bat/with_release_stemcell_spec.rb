@@ -96,7 +96,6 @@ describe "with release and stemcell and two deployments" do
       events(get_task_id(deployment_result.output)).each do |event|
         event["stage"].should_not match /^Updating/
       end
-      # TODO validate by checking job pid before and after
     end
 
     it "should do two deployments from one release" do

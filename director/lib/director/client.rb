@@ -75,7 +75,6 @@ module Bosh::Director
           begin
             response = @encryption_handler.decrypt(response["encrypted_data"])
           rescue Bosh::EncryptionHandler::CryptError => e
-            # TODO: that's not really a remote exception, should we just raise?
             response["exception"] = "CryptError: #{e.inspect} #{e.backtrace}"
           end
           @logger.info("Response: #{response}")
@@ -148,8 +147,6 @@ module Bosh::Director
     # @param [String] blob_id Blob id
     # @return [String] Blob contents
     def download_and_delete_blob(blob_id)
-      # TODO: handle exceptions
-      # (no reason to fail completely if blobstore doesn't work)
       blob = @resource_manager.get_resource(blob_id)
       blob
     ensure

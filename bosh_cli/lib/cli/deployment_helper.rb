@@ -5,7 +5,6 @@ module Bosh::Cli
     include VersionCalc
 
     def prepare_deployment_manifest(options = {})
-      # TODO: extract to helper class
       deployment_required
       manifest_filename = deployment
 
@@ -113,7 +112,6 @@ module Bosh::Cli
                 "check if director works properly")
       end
 
-      # TODO: validate new deployment manifest
       diff = Bosh::Cli::HashChangeset.new
       diff.add_hash(normalize_deployment_manifest(manifest), :new)
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
@@ -225,7 +223,6 @@ module Bosh::Cli
           release["version"] = latest_release_version
         end
 
-        # TODO: why do we care about casting to Integer when possible?
         if release["version"].to_i.to_s == release["version"]
           release["version"] = release["version"].to_i
         end

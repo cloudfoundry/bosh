@@ -5,7 +5,6 @@ module Bosh::Deployer
 
     class Openstack < InstanceManager
 
-      # TODO extract
       def update_spec(spec)
         properties = spec.properties
 
@@ -155,8 +154,6 @@ module Bosh::Deployer
 
       private
 
-      # TODO this code is similar to has_stemcell_copy?
-      # move the two into bosh_common later
       def has_bosh_registry?(path=ENV['PATH'])
         path.split(":").each do |dir|
           return true if File.exist?(File.join(dir, "bosh_registry"))

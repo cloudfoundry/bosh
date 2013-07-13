@@ -120,7 +120,6 @@ module Bosh
       end
 
       def validate_deployment(old_manifest, new_manifest)
-        # There is TODO in vSphere CPI that questions the necessity of this method
         raise NotImplemented, "validate_deployment"
       end
 

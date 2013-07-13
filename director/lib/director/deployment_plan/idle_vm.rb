@@ -9,8 +9,6 @@ module Bosh::Director
     # reserved for an instance to minimize the number of CPI operations
     # (network & storage) required for the VM to match the instance
     # requirements.
-    #
-    # @todo rename class to ResourcePoolVm
     class IdleVm
       # @return [DeploymentPlan::ResourcePool] Associated resource pool
       attr_reader :resource_pool
@@ -25,7 +23,6 @@ module Bosh::Director
       attr_accessor :current_state
 
       # @return [DeploymentPlan::Instance, nil] Instance that reserved this VM
-      # @todo rename to reserved_instance
       attr_accessor :bound_instance
 
       ##

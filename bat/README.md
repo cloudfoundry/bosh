@@ -132,6 +132,3 @@ Add TCP ports `22` and `4567` to the **default** security group.
 
 When all of the above is ready, running `bundle exec rake bat:env` will verify environment variables are set correctly.
 To run the whole test suite, run `bundle exec rake bat`.
-
-## TODO
-* add rake task to download stemcell (for full automation)

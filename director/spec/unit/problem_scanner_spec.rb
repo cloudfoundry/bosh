@@ -103,7 +103,6 @@ describe Bosh::Director::ProblemScanner do
       problem.data.should == {}
     end
 
-    # TODO: WAT?
     it "old agents without list_disk method" do
       vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => deployment)
       instance = BDM::Instance.make(:vm => vm, :deployment => deployment, :job => "job", :index => 1)

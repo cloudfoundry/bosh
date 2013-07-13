@@ -119,7 +119,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
         update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
 
-        # TODO: replace with attr_writer to avoid instance_eval
         update_deployment_job.instance_eval do
           @deployment_plan_compiler = deployment_plan_compiler
         end
@@ -164,7 +163,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     describe "perform" do
 
-      # TODO: refactor to use less mocks (and a real manifest)
       it "should do a basic update" do
         deployment = Bosh::Director::Models::Deployment.
             make(:name => "test_deployment")

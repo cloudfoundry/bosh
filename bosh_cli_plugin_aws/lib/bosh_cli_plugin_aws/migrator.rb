@@ -59,8 +59,6 @@ module Bosh
       end
 
       def bucket_name
-        # TODO: delete this conditional at some point in the future when we're
-        # confident most users have migrated to the new bucket name
         if aws_s3.bucket_exists?("#{@config['name']}-bosh-artifacts")
           "#{@config['name']}-bosh-artifacts"
         else

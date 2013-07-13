@@ -507,8 +507,6 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    # TODO: stop, start, restart jobs/instances
-
     post "/stemcells", :consumes => :tgz do
       task = @stemcell_manager.create_stemcell(@user, request.body, :remote => false)
       redirect "/tasks/#{task.id}"

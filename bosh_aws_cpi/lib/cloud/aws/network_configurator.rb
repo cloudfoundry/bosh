@@ -18,7 +18,6 @@ module Bosh::AwsCloud
     # Creates new network spec
     #
     # @param [Hash] spec raw network spec passed by director
-    # TODO Add network configuration examples
     def initialize(spec)
       unless spec.is_a?(Hash)
         raise ArgumentError, "Invalid spec, Hash expected, " \

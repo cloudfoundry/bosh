@@ -380,7 +380,6 @@ module Bosh::AwsCloud
     #   root disk size
     # @return [String] EC2 AMI name of the stemcell
     def create_stemcell(image_path, stemcell_properties)
-      # TODO: refactor into several smaller methods
       with_thread_name("create_stemcell(#{image_path}...)") do
         creator = StemcellCreator.new(region, stemcell_properties)
 
@@ -431,7 +430,6 @@ module Bosh::AwsCloud
     def set_vm_metadata(vm, metadata)
       instance = @ec2.instances[vm]
 
-      # TODO should we clear existing tags that don't exist in metadata?
       metadata.each_pair do |key, value|
         TagManager.tag(instance, key, value)
       end
@@ -493,7 +491,7 @@ module Bosh::AwsCloud
     end
 
     def initialize_aws
-      aws_logger = logger # TODO make configurable
+      aws_logger = logger
       aws_params = {
           access_key_id:     aws_properties['access_key_id'],
           secret_access_key: aws_properties['secret_access_key'],

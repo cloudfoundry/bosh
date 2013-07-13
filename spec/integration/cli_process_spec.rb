@@ -82,7 +82,6 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage deployment process' do
 
       expect(run_bosh('cloudcheck --report')).to match /No problems found/
       expect($?).to eq 0
-      # TODO: figure out which artifacts should be created by the given manifest
     end
 
     it 'can delete deployment' do
@@ -97,9 +96,6 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage deployment process' do
 
       run_bosh('deploy')
       expect(run_bosh('delete deployment minimal')).to match /Deleted deployment `minimal'/
-      # TODO: test that we don't have artifacts,
-      # possibly upgrade to more featured deployment,
-      # possibly merge to the previous spec
     end
   end
 end

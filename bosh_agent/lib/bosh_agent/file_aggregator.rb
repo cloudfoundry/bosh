@@ -16,7 +16,6 @@ module Bosh::Agent
     # Generates a tarball including all the requested entries
     # @return tarball path
     def generate_tarball
-      # TODO: check if space left?
       tmpdir = Dir.mktmpdir
       out_dir = Dir.mktmpdir
       @used_dirs << out_dir

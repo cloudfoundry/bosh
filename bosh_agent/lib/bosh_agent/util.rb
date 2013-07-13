@@ -4,8 +4,6 @@ module Bosh::Agent
   class Util
     include Bosh::Exec
 
-    # TODO: convert to module?
-    # TODO: don't use MessageHandlerError here?
     class << self
       def base_dir
         Bosh::Agent::Config.base_dir

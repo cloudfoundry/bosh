@@ -76,7 +76,6 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should rollback the job if the canaries failed" do
-    # TODO: should this test use real job_spec, not the mock one?
     instance_1 = mock("instance-1")
     instance_1.stub!(:index).and_return(1)
     instance_2 = mock("instance-1")

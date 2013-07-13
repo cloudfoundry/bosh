@@ -66,16 +66,13 @@ module Bosh::Director
       end
 
       def validate
-        # TODO: think about flapping agent problem
         if agent_alive?
           handler_error("Agent is responding now, skipping resolution")
         end
       end
 
       def delete_vm
-        # TODO: this is useful to kill stuck compilation VMs
       end
-
     end
   end
 end

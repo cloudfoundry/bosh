@@ -10,7 +10,6 @@ module Bosh::Director
 
       @queue = :normal
 
-      # TODO: remove these, only being used in tests, better to refactor tests
       attr_accessor :release_model
       attr_accessor :tmp_release_dir
 
@@ -68,7 +67,6 @@ module Bosh::Director
         if @tmp_release_dir && File.exists?(@tmp_release_dir)
           FileUtils.rm_rf(@tmp_release_dir)
         end
-        # TODO: delete task status file or cleanup later?
       end
 
       def download_remote_release         
@@ -109,12 +107,6 @@ module Bosh::Director
         @version = @manifest["version"]
         @commit_hash = @manifest.fetch("commit_hash", nil)
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
-
-        # TODO: make sure all jobs are there
-        # TODO: make sure there are no extra jobs
-
-        # TODO: make sure all packages are there
-        # TODO: make sure there are no extra packages
       end
 
       # Processes uploaded release, creates jobs and packages in DB if needed
@@ -180,7 +172,6 @@ module Bosh::Director
 
       # Resolves package dependencies, makes sure there are no cycles
       # and all dependencies are present
-      # TODO: cleanup exceptions raised by CycleHelper
       # @return [void]
       def resolve_package_dependencies(packages)
         packages_by_name = {}
@@ -290,7 +281,6 @@ module Bosh::Director
 
         event_log.begin_stage("Creating new packages", packages.size)
         packages.each do |package_meta|
-          # TODO: don't expose version to event log if rebase?
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           event_log.track(package_desc) do
             logger.info("Creating new package `#{package_desc}'")
@@ -315,7 +305,6 @@ module Bosh::Director
             logger.info("Package `#{package_desc}' already exists, " +
                         "verifying checksum")
 
-            # TODO: make sure package dependencies have not changed
             expected = package.sha1
             received = package_meta["sha1"]
 
@@ -376,7 +365,6 @@ module Bosh::Director
             raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
           end
 
-          # TODO: verify sha1
           package.blobstore_id = BlobUtil.create_blob(package_tgz)
         end
 
@@ -531,7 +519,6 @@ module Bosh::Director
           raise JobMissingMonit, "Job `#{template.name}' is missing monit file"
         end
 
-        # TODO: verify sha1
         template.blobstore_id = BlobUtil.create_blob(job_tgz)
 
         package_names = []
@@ -606,8 +593,6 @@ module Bosh::Director
       end
 
       private
-      # TODO: can make most of other methods private as well but first need to
-      # refactor tests for that
 
       # Returns the next release version (to be used for rebased release)
       # @return [String]

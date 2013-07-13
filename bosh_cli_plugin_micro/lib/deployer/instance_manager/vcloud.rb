@@ -5,7 +5,6 @@ module Bosh::Deployer
 
     class Vcloud < InstanceManager
 
-      # TODO extract
       def update_spec(spec)
         properties = spec.properties
 

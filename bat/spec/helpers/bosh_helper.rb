@@ -21,7 +21,6 @@ module BoshHelper
       "--user admin --password admin " +
       "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
-    # TODO write to log
     begin
       result = Bosh::Exec.sh(command, options)
     rescue Bosh::Exec::Error => e
@@ -109,7 +108,6 @@ module BoshHelper
     return @bosh if @bosh
     @bosh = HTTPClient.new
     @bosh.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    # TODO make user/pass configurable
     @bosh.set_auth(director_url, "admin", "admin")
     @bosh
   end

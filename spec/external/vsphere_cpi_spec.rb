@@ -86,7 +86,6 @@ describe VSphereCloud::Cloud do
   end
 
   after do
-    # TODO detach volume if still attached (in case of test failure)
     cpi.delete_vm(@vm_id) if @vm_id
     cpi.delete_disk(@disk_id) if @disk_id
   end

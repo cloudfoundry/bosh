@@ -33,8 +33,6 @@ module Bosh::Director
       end
     end
 
-    # TODO: extract this logic into its own class (as there is a lot of shared
-    # state being passed along)
     # Binds information about existing deployment to a plan
     # @return [void]
     def bind_existing_deployment
@@ -60,14 +58,10 @@ module Bosh::Director
         reservations = get_network_reservations(state)
 
         instance = vm.instance
-        # TODO: what if it's a job VM but DB is broken?
-        # i.e. let's say state has mysql_node/0 but VM in DB has no instance.
-        # Should we protect against it (or are we doing it somewhere already)?
         if instance
           bind_instance(instance, state, reservations)
         else
           @logger.debug("Binding resource pool VM")
-          # TODO: protect against malformed state
           resource_pool = @deployment_plan.resource_pool(
               state["resource_pool"]["name"])
           if resource_pool
@@ -340,8 +334,6 @@ module Bosh::Director
       soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
                                                       :name => dns_domain_name,
                                                       :type => "SOA")
-      # TODO increment SOA serial
-      # TODO: make configurable?
       soa_record.content = SOA
       soa_record.ttl = 300
       soa_record.save

@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Director::Models
-  # TODO: rename to JobTemplate/Role?
   class Template < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :release
     many_to_many :release_versions

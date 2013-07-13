@@ -349,8 +349,6 @@ module ReleaseHelper
     tmp_dir = Dir.mktmpdir
     release_dir = Dir.mktmpdir
 
-    # TODO: use membrane to validate this release manifest
-
     jobs_dir = File.join(tmp_dir, "jobs")
     packages_dir = File.join(tmp_dir, "packages")
 

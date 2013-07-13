@@ -26,7 +26,6 @@ module Bosh::Director
       attr_accessor :network_reservations
 
       # @return [String] job state
-      # @todo rename since it's confusing with current_state and can be a verb
       attr_accessor :state
 
       # @return [Hash] current state as provided by the BOSH Agent
@@ -73,11 +72,6 @@ module Bosh::Director
         "#{@job.name}/#{@index}"
       end
 
-      # TODO: this method will probably go away after some further
-      # DeploymentPlanCompiler refactoring, as it's not 100% consistent
-      # with other deployment plan parts. Ideally most of the model lookup
-      # logic should be in this class, but this particular method allows caller
-      # to explicitly set which model to use.
       # @param [Models::Instance] model Instance DB model
       # @return [void]
       def use_model(model)
@@ -410,7 +404,6 @@ module Bosh::Director
           idle_vm.bound_instance = self
           # this also means we no longer need previous VM network reservation
           # (instance has its own)
-          # TODO: should we check that instance has its own reservation?
           idle_vm.release_reservation
         end
 

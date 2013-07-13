@@ -7,8 +7,6 @@ autoload :VSphereCloud, "cloud/vsphere/cloud"
 module Bosh
   module Clouds
 
-    # TODO: figure out why this metaprogramming exists and if possible, get rid of it.
-    # Ripping it out currently makes a test fail in mysterious ways.
     class VSphere
       extend Forwardable
 
