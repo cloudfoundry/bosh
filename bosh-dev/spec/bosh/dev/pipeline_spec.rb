@@ -7,6 +7,15 @@ module Bosh
     describe Pipeline do
       subject(:pipeline) { Pipeline.new }
 
+      its(:bucket) { should eq('bosh-ci-pipeline') }
+
+      describe '#s3_upload' do
+        it 'uploads the file to the specific path on the pipeline bucket' do
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd put foobar s3://bosh-ci-pipeline/foobar-path')
+          pipeline.s3_upload('foobar', 'foobar-path')
+        end
+      end
+
       describe '#publish_stemcell' do
         let(:stemcell) { double(Stemcell, is_light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
