@@ -47,5 +47,39 @@ module Bosh::Dev
         subject.upload(release)
       end
     end
+
+    describe '#sync_buckets' do
+      before do
+        Rake::FileUtilsExt.stub(:sh)
+      end
+
+      it 'syncs the pipeline gems' do
+        Rake::FileUtilsExt.should_receive(:sh).
+            with('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
+
+        subject.sync_buckets
+      end
+
+      it 'syncs the releases' do
+        Rake::FileUtilsExt.should_receive(:sh).
+            with('s3cmd sync s3://bosh-ci-pipeline/release s3://bosh-jenkins-artifacts')
+
+        subject.sync_buckets
+      end
+
+      it 'syncs the bosh stemcells' do
+        Rake::FileUtilsExt.should_receive(:sh).
+            with('s3cmd sync s3://bosh-ci-pipeline/bosh-stemcell s3://bosh-jenkins-artifacts')
+
+        subject.sync_buckets
+      end
+
+      it 'syncs the micro bosh stemcells' do
+        Rake::FileUtilsExt.should_receive(:sh).
+            with('s3cmd sync s3://bosh-ci-pipeline/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+
+        subject.sync_buckets
+      end
+    end
   end
 end

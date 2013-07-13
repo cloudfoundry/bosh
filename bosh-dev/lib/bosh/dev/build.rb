@@ -26,6 +26,13 @@ module Bosh
         File.join(Pipeline.new.base_url, "release/bosh-#{number}.tgz")
       end
 
+      def sync_buckets
+        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
+        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/release s3://bosh-jenkins-artifacts')
+        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/bosh-stemcell s3://bosh-jenkins-artifacts')
+        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+      end
+
       private
       attr_reader :pipeline
     end
