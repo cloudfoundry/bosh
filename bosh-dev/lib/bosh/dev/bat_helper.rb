@@ -28,7 +28,7 @@ module Bosh
       end
 
       def artifacts_dir
-        File.join('/tmp', 'ci-artifacts', infrastructure)
+        File.join('/tmp', 'ci-artifacts', infrastructure, 'deployments')
       end
 
       def micro_bosh_deployment_dir
