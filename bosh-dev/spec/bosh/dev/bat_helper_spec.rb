@@ -109,7 +109,7 @@ describe Bosh::Dev::BatHelper do
     Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
       let(:infrastructure) { i }
 
-      its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure)) }
+      its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure, 'deployments')) }
     end
   end
 
