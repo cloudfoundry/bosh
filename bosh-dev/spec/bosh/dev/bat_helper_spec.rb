@@ -160,38 +160,4 @@ describe Bosh::Dev::BatHelper do
       its(:micro_bosh_stemcell_path) { should eq(File.join(subject.workspace_dir, expected_filename)) }
     end
   end
-
-  describe '#sync_buckets' do
-    before do
-      RakeFileUtils.stub(:sh)
-    end
-
-    it 'syncs the pipeline gems' do
-      RakeFileUtils.should_receive(:sh).with(
-          's3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
-
-      subject.sync_buckets
-    end
-
-    it 'syncs the releases' do
-      RakeFileUtils.should_receive(:sh).with(
-          's3cmd sync s3://bosh-ci-pipeline/release s3://bosh-jenkins-artifacts')
-
-      subject.sync_buckets
-    end
-
-    it 'syncs the bosh stemcells' do
-      RakeFileUtils.should_receive(:sh).with(
-          's3cmd sync s3://bosh-ci-pipeline/bosh-stemcell s3://bosh-jenkins-artifacts')
-
-      subject.sync_buckets
-    end
-
-    it 'syncs the micro bosh stemcells' do
-      RakeFileUtils.should_receive(:sh).with(
-          's3cmd sync s3://bosh-ci-pipeline/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
-
-      subject.sync_buckets
-    end
-  end
 end
