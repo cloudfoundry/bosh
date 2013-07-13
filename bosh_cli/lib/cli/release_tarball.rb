@@ -47,9 +47,6 @@ module Bosh::Cli
       @skipped = 0
 
       Dir.chdir(@unpack_dir) do
-        # TODO: this code can be dried up a little bit (as it is somewhat
-        # similar to what's going on in ReleaseCompiler)
-
         local_packages.each do |package|
           say("#{package["name"]} (#{package["version"]})".ljust(30), " ")
           if package_matches.include?(package["sha1"]) ||

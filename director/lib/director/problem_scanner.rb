@@ -22,13 +22,11 @@ module Bosh::Director
       @logger = Config.logger
     end
 
-
-    #TODO : remove/refactor shared with base_job
     def begin_stage(stage_name, n_steps)
       event_log.begin_stage(stage_name, n_steps)
       logger.info(stage_name)
     end
-    #TODO : remove/refactor shared with base_job
+
     def track_and_log(task, log = true)
       event_log.track(task) do |ticker|
         logger.info(task) if log
@@ -153,7 +151,7 @@ module Bosh::Director
 
       agent = AgentClient.new(vm.agent_id, agent_options)
       begin
-        state = agent.get_state # TODO: handle invalid state
+        state = agent.get_state
 
         # gather mounted disk info. (used by scan_disk)
         begin
@@ -192,7 +190,6 @@ module Bosh::Director
 
     def problem_found(type, resource, data = {})
       @problem_lock.synchronize do
-        # TODO: audit trail
         similar_open_problems = Models::DeploymentProblem.
             filter(:deployment_id => deployment.id, :type => type.to_s,
                    :resource_id => resource.id, :state => "open").all

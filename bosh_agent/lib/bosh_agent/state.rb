@@ -20,8 +20,6 @@ module Bosh::Agent
 
     # Fetches the state from file (unless it's been already fetched)
     # and returns the value of a given key.
-    # TODO: ideally agent shouldn't expose naked hash but use
-    # some kind of abstraction.
     # @param key Key that will be looked up in state hash
     def [](key)
       @lock.synchronize { @data[key] }

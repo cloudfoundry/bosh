@@ -52,8 +52,6 @@ module VSphereCloud
     #   persistent pool.
     def validate_persistent_datastore(dc_name, datastore_name)
       datacenter = datacenters[dc_name]
-      # TODO: should actually check vCenter since we can move disks across
-      # datacenters.
       if datacenter.nil?
         raise "Invalid datacenter #{dc_name} #{datacenters.inspect}"
       end

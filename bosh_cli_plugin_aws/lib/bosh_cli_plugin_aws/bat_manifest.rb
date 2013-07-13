@@ -32,7 +32,6 @@ module Bosh
         ERB.new(File.read(get_template("bat.yml.erb"))).result(binding)
       end
 
-      #TODO DELETE ME SRSLY
       def get_template(template)
         File.expand_path("../../../templates/#{template}", __FILE__)
       end

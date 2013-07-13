@@ -27,9 +27,6 @@ describe Bosh::Agent::Message::CompilePackage do
         should be_an_instance_of(Bosh::Blobstore::SimpleBlobstoreClient)
   end
 
-
-  # TODO: this is essentially re-testing the blobstore client,
-  # but I didnt know the API well enough
   it "should unpack a package" do
     dummy_compile_data
 

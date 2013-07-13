@@ -2,9 +2,6 @@
 
 module Bosh::Agent
 
-  # TODO: payload max size should be enforced via underlying LineText2 protocol
-  # but it seems to be missing there, potentially need to monkeypatch LineText2
-  # to add it.
   class SmtpServer < EM::Protocols::SmtpServer
 
     class Error < StandardError; end

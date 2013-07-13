@@ -65,9 +65,6 @@ module Bosh::HealthMonitor
             # queue instead, and only queue if it isn't already in the queue
             # what if we can't keep up with the failure rate?
             # - maybe not, maybe the meltdown detection takes care of the rate issue
-
-            # TODO may need to batch recreation, but this gets called once per event since this
-            # is async, we will fail on a second call as there already is a deployment running
             logger.warn("(Resurrector) notifying director to recreate unresponsive VM: #{deployment} #{job}/#{index}")
 
             send_http_put_request(url.to_s, request)

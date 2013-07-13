@@ -48,7 +48,6 @@ module Bosh::Director
                          "log_type='#{@log_type}', filters='#{@filters}'")
 
             task = agent.fetch_logs(@log_type, @filters)
-            # TODO: should be using result?
             blobstore_id = task["blobstore_id"]
           end
 

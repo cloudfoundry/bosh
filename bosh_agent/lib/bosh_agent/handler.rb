@@ -48,7 +48,6 @@ module Bosh::Agent
       find_message_processors
     end
 
-    # TODO: add runtime loading of message handlers
     def find_message_processors
       message_consts = Bosh::Agent::Message.constants
       @processors = {}
@@ -226,8 +225,6 @@ module Bosh::Agent
       end
     end
 
-    # TODO once we upgrade to nats 0.4.22 we can use
-    # NATS.server_info[:max_payload] instead of NATS_MAX_PAYLOAD_SIZE
     NATS_MAX_PAYLOAD_SIZE = 1024 * 1024
 
     def publish(reply_to, payload, &blk)
@@ -240,15 +237,12 @@ module Bosh::Agent
 
       json = Yajl::Encoder.encode(payload)
 
-      # TODO figure out if we want to try to scale down the message instead
-      # of generating an exception
       if json.bytesize < NATS_MAX_PAYLOAD_SIZE
         EM.next_tick do
           @nats.publish(reply_to, json, &blk)
         end
       else
         msg = "message > NATS_MAX_PAYLOAD, stored in blobstore"
-        # TODO this stores the exception content unencrypted, we should store the encrypted and decrypt on fetch
         exception = RemoteException.new(msg, nil, unencrypted)
         @logger.fatal(msg)
         EM.next_tick do

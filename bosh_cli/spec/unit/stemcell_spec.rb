@@ -11,7 +11,4 @@ describe Bosh::Cli::Stemcell do
       sc.should be_valid
     end    
   end
-
-  # TODO: add whining on potential errors
-  
 end

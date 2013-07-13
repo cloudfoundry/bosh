@@ -303,7 +303,6 @@ module Bosh
         put(url, "application/json", payload)
       end
 
-      # TODO: should pass 'force' with options, not as a separate argument
       def rename_job(deployment_name, manifest_yaml, old_name, new_name,
                      force = false, options = {})
         options = options.dup
@@ -329,7 +328,6 @@ module Bosh
 
         status, task_id = request_and_track(:get, url, options)
 
-        # TODO: this should be done in command handler, not in director.rb
         return nil if status != :done
         get_task_result(task_id)
       end
@@ -341,7 +339,6 @@ module Bosh
 
         status, task_id = request_and_track(:get, url, options)
 
-        # TODO: this should be done in command handler, not in director.rb
         if status != :done
           raise DirectorError, "Failed to fetch VMs information from director"
         end
@@ -652,7 +649,6 @@ module Bosh
 
         # HTTPClient#set_auth doesn't seem to work properly,
         # injecting header manually instead.
-        # TODO: consider using vanilla Net::HTTP
         if @user && @password
           headers["Authorization"] = "Basic " +
               Base64.encode64("#{@user}:#{@password}").strip

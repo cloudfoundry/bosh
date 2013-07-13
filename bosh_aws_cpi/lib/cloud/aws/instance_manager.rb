@@ -66,7 +66,6 @@ module Bosh::AwsCloud
 
       instance.terminate
 
-      # TODO: should this be done before or after deleting VM?
       @logger.info("Deleting instance settings for '#{instance.id}'")
       @registry.delete_settings(instance.id)
 

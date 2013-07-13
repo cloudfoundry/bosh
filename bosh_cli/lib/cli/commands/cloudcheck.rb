@@ -144,7 +144,6 @@ module Bosh::Cli::Command
         nl
       end
 
-      # TODO: allow editing resolutions?
       cancel unless confirmed?("Apply resolutions?")
     end
 

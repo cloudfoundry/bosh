@@ -490,7 +490,6 @@ module Bosh::Deployer
       end
     end
 
-    # TODO remove
     def load_apply_spec(dir)
       load_spec("#{dir}/apply_spec.yml") do
         err "this isn't a micro bosh stemcell - apply_spec.yml missing"

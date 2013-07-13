@@ -2,8 +2,6 @@ require 'common/deep_copy'
 
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
-  # @todo refactor to accept Instance or IdleVM instead of passing in all of the
-  # arguments directly.
   class VmCreator
     include EncryptionHelper
     include MetadataHelper

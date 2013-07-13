@@ -16,7 +16,6 @@ module Bosh::Director
         property.save
 
       rescue Sequel::ValidationFailed => e
-        # TODO: this is consistent with UserManager but doesn't quite feel right
         if e.errors[[:name, :deployment_id]].include?(:unique)
           raise PropertyAlreadyExists,
                 "Property `#{property_name}' already exists " +

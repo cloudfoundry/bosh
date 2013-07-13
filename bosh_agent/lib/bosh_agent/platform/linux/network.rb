@@ -81,7 +81,6 @@ module Bosh::Agent
       mac_addresses
     end
 
-    # TODO: do we need search option?
     def write_resolv_conf
       template = ERB.new("<% dns.each do |server| %>\nnameserver <%= server %>\n<% end %>\n", 0, '%<>')
       result = template.result(binding)

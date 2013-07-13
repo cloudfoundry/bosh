@@ -469,10 +469,6 @@ module Bosh::OpenStackCloud
         snapshot = @openstack.snapshots.new(snapshot_params)
         with_openstack { snapshot.save(true) }
 
-        # TODO: Current OpenStack Compute API doesn't support adding metadata for a snapshot,
-        # although OpenStack Volume API supports it. When the Compute API implements metada for snapshots, 
-        # we should add metadata for :agent_id, :instance_id, :director_name and :director_uuid.    
-        
         @logger.info("Creating new snapshot `#{snapshot.id}' for volume `#{disk_id}'...")
         wait_resource(snapshot, :available)
 

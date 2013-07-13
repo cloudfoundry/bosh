@@ -9,7 +9,6 @@ describe Bosh::Agent::Handler do
     EM.stub(:run).and_yield
     NATS.stub(:connect).and_return(@nats)
 
-    # TODO: refactor the whole thing to avoid stubs such as these
     Bosh::Agent::AlertProcessor.stub(:start)
     Bosh::Agent::Heartbeat.stub(:enable)
     Bosh::Agent::SyslogMonitor.stub(:start)

@@ -3,8 +3,6 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::ConfigurationHasher do
-  # TODO: less mocking, too cumbersome to support
-
   it "should hash a simple job" do
     template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
 

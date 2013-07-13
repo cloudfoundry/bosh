@@ -2,7 +2,6 @@
 
 module Bosh::Cli
   class JobPropertyValidator
-    # TODO: tests
 
     attr_reader :template_errors
     attr_reader :jobs_without_properties
@@ -49,13 +48,10 @@ module Bosh::Cli
       end
 
       @template_errors = []
-      # TODO: track missing props and show the list to user (super helpful!)
     end
 
     def validate
       @manifest["jobs"].each do |job_spec|
-        # TODO: this should be refactored, but it works for jobs
-        # with multiple job templates (colocated)
         job_templates = Array(job_spec['template'])
         job_templates.each do |job_template|
           job_spec_for_template = job_spec.dup
@@ -80,7 +76,6 @@ module Bosh::Cli
 
       # Spec is usually more than that but jobs rarely use anything but
       # networks and properties.
-      # TODO: provide all keys in the spec?
       spec = {
         'job' => {
             'name' => job_spec['name']
@@ -91,7 +86,6 @@ module Bosh::Cli
       }
 
       built_job.all_templates.each do |template_path|
-        # TODO: add progress bar?
         evaluate_template(built_job, template_path, spec)
       end
     end

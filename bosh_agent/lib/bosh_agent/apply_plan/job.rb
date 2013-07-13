@@ -138,7 +138,6 @@ module Bosh::Agent
         end
       end
 
-      # TODO: move from util here? (not being used anywhere else)
       def run_post_install_hook
         Bosh::Agent::Util.run_hook("post_install", @template)
       end

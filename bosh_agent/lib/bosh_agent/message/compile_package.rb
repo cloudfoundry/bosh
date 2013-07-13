@@ -58,8 +58,6 @@ module Bosh::Agent
 
       def start
         begin
-          # TODO implement sha1 verification
-          # TODO propagate errors
           install_dependencies
           get_source_package
           unpack_source_package
@@ -127,7 +125,6 @@ module Bosh::Agent
 
         FileUtils.mkdir_p compile_dir
         Dir.chdir(compile_dir) do
-          # TODO: error handling
           output = `tar -zxf #{@source_file} 2>&1`
           @logger.info(output)
           # stick the output in the blobstore
@@ -195,7 +192,6 @@ module Bosh::Agent
           # Prevent these from getting inhereted from the agent
           %w{GEM_HOME BUNDLE_GEMFILE RUBYOPT}.each { |key| ENV.delete(key) }
 
-          # TODO: error handling
           ENV['BOSH_COMPILE_TARGET'] = compile_dir
           ENV['BOSH_INSTALL_TARGET'] = pkg_link_dst
           ENV['BOSH_PACKAGE_NAME'] = @package_name.to_s

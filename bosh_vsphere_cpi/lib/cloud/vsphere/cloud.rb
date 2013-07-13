@@ -76,7 +76,6 @@ module VSphereCloud
           name = "sc-#{generate_unique_name}"
           @logger.info("Generated name: #{name}")
 
-          # TODO: make stemcell friendly version of the calls below
           stemcell_size = File.size(image) / (1024 * 1024)
           cluster, datastore = @resources.place(0, stemcell_size, [])
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
@@ -332,7 +331,6 @@ module VSphereCloud
       end
     end
 
-    # TODO add option to force hard/soft reboot
     def reboot_vm(vm_cid)
       with_thread_name("reboot_vm(#{vm_cid})") do
         vm = get_vm_by_cid(vm_cid)
@@ -660,7 +658,6 @@ module VSphereCloud
     end
 
     def validate_deployment(old_manifest, new_manifest)
-      # TODO: still needed? what does it verify? cloud properties? should be replaced by normalize cloud properties?
     end
 
     def get_vm_by_cid(vm_cid)
@@ -675,7 +672,6 @@ module VSphereCloud
     end
 
     def replicate_stemcell(cluster, datastore, stemcell)
-      # TODO: support more than a single datacenter
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
                                                    cluster.datacenter.template_folder.name, stemcell])
       raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
@@ -1076,13 +1072,11 @@ module VSphereCloud
             http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
             disk_file_path = File.join(File.dirname(ovf), file_item.path)
-            # TODO; capture the error if file is not found a provide a more meaningful error
             disk_file = File.open(disk_file_path)
             disk_file_size = File.size(disk_file_path)
 
             progress_thread = Thread.new do
               loop do
-                # TODO: fix progress calculation to work across multiple disks
                 lease_updater.progress = disk_file.pos * 100 / disk_file_size
                 sleep(2)
               end

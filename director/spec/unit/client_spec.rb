@@ -155,8 +155,6 @@ describe Bosh::Director::Client do
         message["sequence_number"].to_i.should > Time.now.to_i
         message["client_id"].should == "bar"
 
-        # TODO accessor for session_id
-        # message["session_id"].should == handler.session_id
         blk.call("encrypted_data" => handler.encrypt(response))
       }
 

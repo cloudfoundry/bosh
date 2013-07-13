@@ -24,7 +24,7 @@ module Bosh::Director
 
       @deployment_plan = @job.deployment
       @resource_pool_spec = @job.resource_pool
-      @update_config = @job.update # TODO: rename
+      @update_config = @job.update
 
       @vm = @instance.model.vm
 

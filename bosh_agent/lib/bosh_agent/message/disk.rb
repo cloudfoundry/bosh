@@ -54,7 +54,6 @@ module Bosh::Agent
         disk_info = []
         settings = Bosh::Agent::Config.settings
 
-        # TODO abstraction for settings
         if settings["disks"].kind_of?(Hash) && settings["disks"]["persistent"].kind_of?(Hash)
           cids = settings["disks"]["persistent"]
         else
@@ -188,7 +187,6 @@ module Bosh::Agent
           logger.info("Unmounted #{@block} on #{@mountpoint}")
           return {:message => "Unmounted #{@block} on #{@mountpoint}" }
         else
-          # TODO: should we raise MessageHandlerError here?
           return {:message => "Unknown mount for partition: #{partition}"}
         end
       end

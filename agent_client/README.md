@@ -27,8 +27,6 @@ A bosh agent can compile a package from a bosh release (such as [cf-release](git
 
 This feature of a bosh agent is used to create the microbosh and micro cloudfoundry (mcf) stemcells (via the [package_compiled](https://github.com/cloudfoundry/bosh/tree/master/package_compiler) command).
 
-TODO: write up how to do this with the library
-
 ### Apply a deployment spec
 
 During `bosh deploy` the servers take on behaviors during deployment. In bosh vernacular, the bosh director is "applying a spec" to each server. It is the bosh agent for each server that receives this "apply a spec" request and then starts running the jobs on its server. Broken down, once its receives the `apply` request it then:
@@ -39,5 +37,3 @@ During `bosh deploy` the servers take on behaviors during deployment. In bosh ve
 * starts monit, which in turn starts the jobs' start scripts
 
 See the [example spec documentation](https://github.com/cloudfoundry/bosh/blob/agent_client_readme_apply_spec/agent_client/docs/example_specs/bosh-sample-release.md) for what an "apply spec" looks like in detail and how to get an your own apply spec from your own bosh deployments.
-
-TODO: write up how to do this with the library

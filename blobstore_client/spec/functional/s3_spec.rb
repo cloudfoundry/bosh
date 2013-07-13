@@ -59,8 +59,6 @@ describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
     describe "unencrypted" do
       describe "list objects" do
         it "lists objects in the bucket" do
-          # TODO: this should not assert the value is an array; just that it is an iterator
-          # that successively returns the same values.
           expect(s3.list).to eq ['public']
         end
       end

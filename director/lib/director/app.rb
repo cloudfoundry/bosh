@@ -25,7 +25,6 @@ module Bosh::Director
 
       # This is the legacy config system that we are trying to get rid of by
       # decomposing and moving all the dependent components into this App
-      # TODO: kill this line and drink champagne
       Bosh::Director::Config.configure(config.hash)
 
       @blobstores = Blobstores.new(config)

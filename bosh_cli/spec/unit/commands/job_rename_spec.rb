@@ -3,10 +3,6 @@
 require "spec_helper"
 
 describe Bosh::Cli::Command::Base do
-
-  # TODO: this spec is not in line with the rest of them: it's testing command,
-  # not the rename behavior. Logic should probably be extracted into JobRenamer
-  # or something like that.
   describe Bosh::Cli::Command::JobRename do
     it "should rename the job" do
       mock_director = mock(Object)

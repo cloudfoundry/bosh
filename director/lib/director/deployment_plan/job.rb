@@ -25,7 +25,7 @@ module Bosh::Director
       attr_accessor :canonical_name
 
       # @return [Integer] Persistent disk size (no disk if zero)
-      attr_accessor :persistent_disk # TODO: rename to 'disk_size' (?)
+      attr_accessor :persistent_disk
 
       # @return [DeploymentPlan] Current deployment plan
       attr_accessor :deployment
@@ -51,14 +51,14 @@ module Bosh::Director
       attr_accessor :packages
 
       # @return [DeploymentPlan::UpdateConfig] Job update settings
-      attr_accessor :update # TODO rename to update_config or update_settings
+      attr_accessor :update
 
       # @return [Array<Models::Instance>] List of excess instance models that
       #   are not needed for current deployment
       attr_accessor :unneeded_instances
 
       # @return [String] Expected job state
-      attr_accessor :state # TODO rename to avoid confusion
+      attr_accessor :state
 
       # @return [Hash<Integer, String>] Individual instance expected states
       attr_accessor :instance_states
@@ -131,8 +131,6 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
-        # TODO(lisbakke): Remove Legacy code when the agent has been updated
-        # to accept templates as an array.
         first_template = @templates[0]
         result = {
           "name" => @name,
@@ -247,7 +245,6 @@ module Bosh::Director
           raise DirectorError, "Cannot parse template before parsing release"
         end
 
-        # TODO support plural "templates" syntax as well
         template_names = safe_property(@job_spec, "template")
 
         if template_names.is_a?(String)
@@ -350,7 +347,6 @@ module Bosh::Director
       end
 
       def parse_networks
-        # TODO: refactor to make more readable
         @default_network = {}
 
         network_specs = safe_property(@job_spec, "networks", :class => Array)

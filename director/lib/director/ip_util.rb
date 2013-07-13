@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Director
-  # TODO: rename to IpHelper to be consistent
   module IpUtil
 
     def each_ip(ranges, &block)

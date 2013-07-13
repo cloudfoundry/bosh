@@ -56,7 +56,6 @@ module Bosh::Agent
       job_state = Bosh::Agent::Monit.service_group_state
       monit_vitals = Bosh::Agent::Monit.get_vitals
 
-      # TODO(?): move DiskUtil out of Message namespace
       disk_usage = Bosh::Agent::Message::DiskUtil.get_usage
 
       job_name = @state["job"] ? @state["job"]["name"] : nil

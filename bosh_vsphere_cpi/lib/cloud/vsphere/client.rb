@@ -56,7 +56,6 @@ module VSphereCloud
 
       filter_spec = PC::FilterSpec.new(:prop_set => property_specs, :object_set => object_spec)
 
-      # TODO: cache partial results
       attempts = 0
       begin
         properties_response = get_all_properties(filter_spec)
@@ -214,7 +213,6 @@ module VSphereCloud
                                     :ensure => ["info.state"])[task]
 
         duration = Time.now - started
-        # TODO: make configurable?
         raise "Task taking too long" if duration > 3600 # 1 hour
 
         # Update the polling interval based on task progress

@@ -69,7 +69,6 @@ module Bosh::Cli
             out << diff(v.old, v.new, indent + "  ")
           end
         else
-          # TODO: track renames?
           child_summary = v.summary(level + 1)
 
           unless child_summary.empty?

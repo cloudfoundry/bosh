@@ -72,8 +72,6 @@ describe Bosh::Agent::ApplyPlan::Job do
 
   describe "installation" do
     it "fetches job template, binds configuration" do
-      # TODO: cannot really test permission hardening,
-      # as it's only being run in 'configure' mode
       config = {
         "job" => { "name" => "ccdb" },
         "index" => "42",

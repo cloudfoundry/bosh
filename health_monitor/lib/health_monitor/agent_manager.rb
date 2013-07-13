@@ -126,7 +126,7 @@ module Bosh::HealthMonitor
       agent_id = vm_data["agent_id"]
       agent_cid = vm_data["cid"]
 
-      if agent_id.nil? # TODO: alert?
+      if agent_id.nil?
         @logger.warn("No agent id for VM: #{vm_data}")
         return false
       end
@@ -186,7 +186,6 @@ module Bosh::HealthMonitor
       ts = Time.now.to_i
 
       if agent.nil?
-        # TODO: consider alerting about missing agent?
         @logger.error("Can't analyze agent #{agent_id} as it is missing from agents index, skipping...")
         return false
       end
@@ -257,7 +256,6 @@ module Bosh::HealthMonitor
         @logger.warn("No handler found for `#{kind}' event")
       end
 
-      # TODO: log backtrace
     rescue Yajl::ParseError => e
       @logger.error("Cannot parse incoming event: #{e}")
     rescue Bhm::InvalidEvent => e
@@ -275,8 +273,6 @@ module Bosh::HealthMonitor
     end
 
     def on_heartbeat(agent, message)
-      # TODO: check if job and index are the same
-      # from director POV and actual heartbeat
       agent.updated_at = Time.now
 
       if message.is_a?(Hash)

@@ -34,7 +34,6 @@ module Bosh::Director
               scanner.scan_vms(jobs)
 
               resolver = ProblemResolver.new(@deployment)
-              # TODO the application for resolutions should be done using a thread pool
               resolver.apply_resolutions(resolutions(jobs))
 
               "scan and fix complete"

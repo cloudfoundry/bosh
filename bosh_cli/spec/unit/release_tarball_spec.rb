@@ -23,7 +23,4 @@ describe Bosh::Cli::ReleaseTarball do
       repacked_tarball.valid?(:allow_sparse => true).should be_true
     end
   end
-
-  # TODO: add whining on potential errors
-
 end

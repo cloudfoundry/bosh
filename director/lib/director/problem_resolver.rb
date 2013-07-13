@@ -12,12 +12,11 @@ module Bosh::Director
       @logger = Config.logger
     end
 
-    #TODO : remove/refactor shared with base_job
     def begin_stage(stage_name, n_steps)
       event_log.begin_stage(stage_name, n_steps)
       logger.info(stage_name)
     end
-    #TODO : remove/refactor shared with base_job
+
     def track_and_log(task, log = true)
       event_log.track(task) do |ticker|
         logger.info(task) if log
@@ -70,7 +69,6 @@ module Bosh::Director
     end
 
     def apply_resolution(problem)
-      # TODO: add audit
       handler = ProblemHandlers::Base.create_from_model(problem)
       handler.job = self
 
@@ -87,13 +85,11 @@ module Bosh::Director
         log_resolution_error(problem, e)
       end
 
-      problem.state = "resolved" # TODO: add 'ignored' state?
+      problem.state = "resolved"
       problem.save
       @resolved_count += 1
 
     rescue => e
-      # TODO: need to understand if something here is potentially fatal
-      # and deserves re-raising
       log_resolution_error(problem, e)
     end
 
