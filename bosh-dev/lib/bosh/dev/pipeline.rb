@@ -24,6 +24,16 @@ module Bosh
         Rake::FileUtilsExt.sh("s3cmd put #{file} #{remote_uri}")
       end
 
+      def download_stemcell(version, options={})
+        infrastructure = options.fetch(:infrastructure)
+        name           = options.fetch(:name)
+        light          = options.fetch(:light)
+
+        s3_uri = File.join("s3://#{bucket}/", name, infrastructure, stemcell_filename(version, infrastructure, name, light))
+
+        Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
+      end
+
       def download_latest_stemcell(args={})
         infrastructure = args.fetch(:infrastructure)
         name           = args.fetch(:name)
@@ -44,16 +54,7 @@ module Bosh
         "#{stemcell_filename_parts.join('-')}.tgz"
       end
 
-      def download_stemcell(version, options={})
-        infrastructure = options.fetch(:infrastructure)
-        name           = options.fetch(:name)
-        light          = options.fetch(:light)
-
-        s3_uri = File.join("s3://#{bucket}/", name, infrastructure, stemcell_filename(version, infrastructure, name, light))
-
-        Rake::FileUtilsExt.sh("s3cmd -f get #{s3_uri}")
-      end
-
+      private
       def stemcell_filename(version, infrastructure, name, light)
         stemcell_filename_parts = []
         stemcell_filename_parts << 'light' if light
@@ -64,7 +65,6 @@ module Bosh
         "#{stemcell_filename_parts.join('-')}.tgz"
       end
 
-      private
       def s3_copy(src_uri, dst_uri, overwrite=false)
         overwrite_flag = overwrite ? '--force' : ''
         Rake::FileUtilsExt.sh("s3cmd cp #{overwrite_flag} #{src_uri} #{dst_uri}")

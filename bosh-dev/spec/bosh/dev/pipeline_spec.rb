@@ -36,6 +36,20 @@ module Bosh
         end
       end
 
+      describe '#download_stemcell' do
+        it 'downloads the specified stemcell version from the pipeline bucket' do
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz')
+
+          pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: false)
+        end
+
+        it 'downloads the specified light stemcell version from the pipeline bucket' do
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz')
+
+          pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: true)
+        end
+      end
+
       describe '#download_latest_stemcell' do
         it 'downloads the latest stemcell from the pipeline bucket' do
           Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz')
@@ -55,30 +69,6 @@ module Bosh
 
         it 'generates the latest light stemcell filename' do
           expect(pipeline.latest_stemcell_filename('aws', 'bosh-stemcell', true)).to eq('latest-light-bosh-stemcell-aws.tgz')
-        end
-      end
-
-      describe '#download_stemcell' do
-        it 'downloads the specified stemcell version from the pipeline bucket' do
-          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz')
-
-          pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: false)
-        end
-
-        it 'downloads the specified light stemcell version from the pipeline bucket' do
-          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd -f get s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz')
-
-          pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: true)
-        end
-      end
-
-      describe '#stemcell_filename' do
-        it 'generates the versioned stemcell filename' do
-          expect(pipeline.stemcell_filename('123', 'aws', 'bosh-stemcell', false)).to eq('bosh-stemcell-aws-123.tgz')
-        end
-
-        it 'generates the versioned light stemcell filename' do
-          expect(pipeline.stemcell_filename('123', 'aws', 'bosh-stemcell', true)).to eq('light-bosh-stemcell-aws-123.tgz')
         end
       end
     end
