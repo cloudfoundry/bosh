@@ -7,22 +7,24 @@ module Bosh
     describe Pipeline do
       subject(:pipeline) { Pipeline.new }
 
-      it 'publishes a stemcell to S3 bucket' do
-        stemcell = double(Stemcell, is_light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell')
+      describe '#publish_stemcell' do
+        it 'publishes a stemcell to S3 bucket' do
+          stemcell = double(Stemcell, is_light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell')
 
-        Rake::FileUtilsExt.should_receive(:sh).with('s3cmd put /tmp/bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws.tgz')
-        Rake::FileUtilsExt.should_receive(:sh).with('s3cmd cp --force s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz')
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd put /tmp/bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws.tgz')
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd cp --force s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz')
 
-        pipeline.publish_stemcell(stemcell)
-      end
+          pipeline.publish_stemcell(stemcell)
+        end
 
-      it 'publishes a light stemcell to S3 bucket' do
-        stemcell = double(Stemcell, is_light?: true, path: '/tmp/light-bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell')
+        it 'publishes a light stemcell to S3 bucket' do
+          stemcell = double(Stemcell, is_light?: true, path: '/tmp/light-bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell')
 
-        Rake::FileUtilsExt.should_receive(:sh).with('s3cmd put /tmp/light-bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz')
-        Rake::FileUtilsExt.should_receive(:sh).with('s3cmd cp --force s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz')
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd put /tmp/light-bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz')
+          Rake::FileUtilsExt.should_receive(:sh).with('s3cmd cp --force s3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz')
 
-        pipeline.publish_stemcell(stemcell)
+          pipeline.publish_stemcell(stemcell)
+        end
       end
 
       describe '#download_latest_stemcell' do
