@@ -53,6 +53,13 @@ module Bosh
       def cleanup_stemcells
         FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
       end
+
+      def sync_buckets
+        RakeFileUtils.sh('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
+        RakeFileUtils.sh('s3cmd sync s3://bosh-ci-pipeline/release s3://bosh-jenkins-artifacts')
+        RakeFileUtils.sh('s3cmd sync s3://bosh-ci-pipeline/bosh-stemcell s3://bosh-jenkins-artifacts')
+        RakeFileUtils.sh('s3cmd sync s3://bosh-ci-pipeline/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+      end
     end
   end
 end
