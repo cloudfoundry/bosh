@@ -117,8 +117,12 @@ describe Bosh::Dev::BatHelper do
     Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
       let(:infrastructure) { i }
 
-      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, 'micro')) }
+      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, subject.micro_bosh_deployment_name)) }
     end
+  end
+
+  describe '#micro_bosh_deployment_name' do
+    its(:micro_bosh_deployment_name) { should == 'microbosh' }
   end
 
   describe '#cleanup_stemcells' do
