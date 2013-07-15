@@ -279,23 +279,4 @@ describe Bosh::Blobstore::S3BlobstoreClient do
 
     end
   end
-
-  describe '#list' do
-    let(:options) {
-      {
-          bucket_name: 'test',
-          access_key_id: 'KEY',
-          secret_access_key: 'SECRET'
-      }
-    }
-    let(:client) { s3_blobstore(options) }
-
-    it 'lists blob oids' do
-      blob = double(AWS::S3::S3Object, key: 'foo')
-      bucket = double(AWS::S3::Bucket, objects: [blob])
-
-      s3.should_receive(:buckets).and_return('test' => bucket)
-      expect(client.list).to eq ['foo']
-    end
-  end
 end
