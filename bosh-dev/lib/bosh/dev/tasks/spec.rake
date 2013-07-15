@@ -98,10 +98,6 @@ namespace :spec do
 
   namespace :system do
     namespace :aws do
-      def bat_helper
-        @bat_helper ||= Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'aws')
-      end
-
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         begin
@@ -113,6 +109,8 @@ namespace :spec do
       end
 
       task :deploy_micro => :get_deployments_aws do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'aws')
+
         rm_rf(bat_helper.artifacts_dir)
         mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
@@ -132,6 +130,8 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'aws')
+
         if Dir.exists?(bat_helper.artifacts_dir)
           chdir(bat_helper.artifacts_dir) do
             run_bosh 'delete deployment bat', :ignore_failures => true
@@ -142,7 +142,9 @@ namespace :spec do
       end
 
       task :bat do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'aws')
         director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
+
         ENV['BAT_DIRECTOR'] = director
         ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
         ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
@@ -166,10 +168,6 @@ namespace :spec do
     end
 
     namespace :openstack do
-      def bat_helper
-        @bat_helper ||= Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'openstack')
-      end
-
       desc 'Run OpenStack MicroBOSH deployment suite'
       task :micro do
         Rake::Task['spec:system:openstack:deploy_micro_dynamic_net'].invoke
@@ -195,6 +193,8 @@ namespace :spec do
       end
 
       task :deploy_micro, [:net_type] do |t, net_type|
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'openstack')
+
         rm_rf(bat_helper.artifacts_dir)
         mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
@@ -215,6 +215,8 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'openstack')
+
         chdir(bat_helper.artifacts_dir) do
           run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
@@ -224,6 +226,8 @@ namespace :spec do
       end
 
       task :bat do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'openstack')
+
         cd(ENV['WORKSPACE']) do
           ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
           ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
@@ -238,10 +242,6 @@ namespace :spec do
     end
 
     namespace :vsphere do
-      def bat_helper
-        @bat_helper ||= Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'vsphere')
-      end
-
       desc 'Run vSphere MicroBOSH deployment suite'
       task :micro do
         begin
@@ -253,6 +253,8 @@ namespace :spec do
       end
 
       task :deploy_micro do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'vsphere')
+
         rm_rf(bat_helper.artifacts_dir)
         mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
@@ -273,6 +275,8 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'vsphere')
+
         cd(bat_helper.artifacts_dir) do
           run_bosh 'delete deployment bat', :ignore_failures => true
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
@@ -282,6 +286,8 @@ namespace :spec do
       end
 
       task :bat do
+        bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'vsphere')
+
         cd(ENV['WORKSPACE']) do
           ENV['BAT_DIRECTOR'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
           ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
