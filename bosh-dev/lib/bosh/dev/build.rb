@@ -24,18 +24,23 @@ module Bosh
       end
 
       def s3_release_url
-        File.join("s3://#{pipeline.bucket}/", "release/bosh-#{number}.tgz")
+        File.join(s3_pipeline_uri, "release/bosh-#{number}.tgz")
       end
 
       def sync_buckets
-        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/gems/ s3://bosh-jenkins-gems')
-        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/release s3://bosh-jenkins-artifacts')
-        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/bosh-stemcell s3://bosh-jenkins-artifacts')
-        Rake::FileUtilsExt.sh('s3cmd sync s3://bosh-ci-pipeline/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+        Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'gems')} s3://bosh-jenkins-gems")
+        Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'release')} s3://bosh-jenkins-artifacts")
+        Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
+        Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
       end
 
       private
+
       attr_reader :pipeline, :job_name
+      
+      def s3_pipeline_uri
+        "s3://#{pipeline.bucket}/"
+      end
     end
   end
 end
