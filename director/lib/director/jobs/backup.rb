@@ -35,12 +35,8 @@ module Bosh::Director
           backup_database("#{tmp_output_dir}/director_db.sql")
           files << 'director_db.sql'
 
-          begin
-            backup_blobstore("#{tmp_output_dir}/blobs.tgz")
-            files << 'blobs.tgz'
-          rescue Bosh::Blobstore::NotImplemented
-            logger.warn('Skipping blobstore backup because blobstore client does not support list operation')
-          end
+          backup_blobstore("#{tmp_output_dir}/blobs.tgz")
+          files << 'blobs.tgz'
 
           @tar_gzipper.compress(tmp_output_dir, files, @backup_file)
 
@@ -71,16 +67,16 @@ module Bosh::Director
         Dir.mktmpdir do |blobs_dir|
 
           track_and_log('Backing up blobstore') do
-            files = @blobstore_client.list
+            packages = Models::Package.all
 
-            files.each do |file_id|
-              File.open("#{blobs_dir}/#{file_id}", 'w') do |file|
+            packages.each do |package|
+              File.open("#{blobs_dir}/#{package.blobstore_id}", 'w') do |file|
                 logger.debug("Writing file #{file.path}")
-                @blobstore_client.get(file_id, file)
+                @blobstore_client.get(package.blobstore_id, file)
               end
             end
 
-            @tar_gzipper.compress(blobs_dir, files, output)
+            @tar_gzipper.compress(blobs_dir, packages.map { |package| package.blobstore_id }, output)
           end
         end
       end

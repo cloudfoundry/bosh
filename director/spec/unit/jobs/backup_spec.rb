@@ -61,30 +61,18 @@ describe Bosh::Director::Jobs::Backup do
 
       tmp_blobs_output_dir = tmp_output_dir
 
-      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'foo'), 'w').and_yield(foo_file)
-      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'bar'), 'w').and_yield(bar_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'foo_blob_id'), 'w').and_yield(foo_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'bar_blob_id'), 'w').and_yield(bar_file)
 
-      blobstore_client.stub(:list).and_return(%w[foo bar])
-      blobstore_client.should_receive(:get).with('foo', foo_file) # get *writes* the file
-      blobstore_client.should_receive(:get).with('bar', bar_file)
+      Bosh::Director::Models::Package.make(name: 'foo', blobstore_id: 'foo_blob_id')
+      Bosh::Director::Models::Package.make(name: 'bar', blobstore_id: 'bar_blob_id')
 
-      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, %w[foo bar], File.join(tmp_output_dir, 'blobs.tgz'))
+      blobstore_client.should_receive(:get).with('foo_blob_id', foo_file) # get *writes* the file
+      blobstore_client.should_receive(:get).with('bar_blob_id', bar_file)
+
+      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, %w[foo_blob_id bar_blob_id], File.join(tmp_output_dir, 'blobs.tgz'))
 
       backup_task.perform
-    end
-
-    context 'when the blobstore client does not support listing objects' do
-      before do
-        blobstore_client.stub(:list).and_raise(Bosh::Blobstore::NotImplemented)
-
-      end
-
-      it 'backup everything else' do
-        expect {
-          tar_gzipper.should_receive(:compress).exactly(3).times
-          backup_task.perform
-        }.not_to raise_error(Bosh::Blobstore::NotImplemented)
-      end
     end
 
     it 'combines the tarballs' do
