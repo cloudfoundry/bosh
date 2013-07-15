@@ -7,51 +7,90 @@ require 'bosh/dev/build'
 module Bosh
   module Dev
     describe Stemcell do
-      let(:stemcell_path) { spec_asset('stemcell.tgz') }
+      let(:stemcell_path) { spec_asset('micro-bosh-stemcell-aws.tgz') }
 
       subject { Stemcell.new(stemcell_path) }
 
-      it 'has a manifest' do
-        expect(subject.manifest).to be_a Hash
+      describe '.from_jenkins_build' do
+        it 'constructs correct jenkins path' do
+          Stemcell.stub(:new)
+          Dir.should_receive(:glob).with('/mnt/stemcells/aws-micro/work/work/*-stemcell-*-123.tgz').and_return([])
+
+          Stemcell.from_jenkins_build('aws', 'micro', double(Build, number: 123))
+        end
       end
 
-      it 'has a name' do
-        expect(subject.name).to eq 'micro-bosh-stemcell'
+      describe '#initialize' do
+        it 'errors if path does not exist' do
+          expect {
+            Stemcell.new('/not/found/stemcell.tgz')
+          }.to raise_error "Cannot find file `/not/found/stemcell.tgz'"
+        end
       end
 
-      it 'has an infrastructure' do
-        expect(subject.infrastructure).to eq 'aws'
+      describe '#manifest' do
+        it 'has a manifest' do
+          expect(subject.manifest).to be_a Hash
+        end
       end
 
-      it 'has a path' do
-        expect(subject.path).to eq stemcell_path
+      describe '#name' do
+        it 'has a name' do
+          expect(subject.name).to eq 'micro-bosh-stemcell'
+        end
       end
 
-      it 'errors if path does not exist' do
-        expect {
-          Stemcell.new('/not/found/stemcell.tgz')
-        }.to raise_error "Cannot find file `/not/found/stemcell.tgz'"
+      describe '#infrastructure' do
+        it 'has an infrastructure' do
+          expect(subject.infrastructure).to eq 'aws'
+        end
       end
 
-      it 'has a version' do
-        expect(subject.version).to eq '714'
+      describe '#path' do
+        it 'has a path' do
+          expect(subject.path).to eq(stemcell_path)
+        end
       end
 
-      it 'knows if stemcell is light' do
-        expect(subject.is_light?).to be_false
+      describe '#version' do
+        it 'has a version' do
+          expect(subject.version).to eq('714')
+        end
       end
 
-      it 'extracts stemcell' do
-        Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf .*#{stemcell_path} --directory/)
-        subject.extract {}
+      describe '#is_light?' do
+        context 'when infrastructure is "aws"' do
+          context 'when there is not an "ami" key in the "cloud_properties" section of the manifest' do
+            its(:is_light?) { should be_false }
+          end
+
+          context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
+            let(:stemcell_path) { spec_asset('light-micro-bosh-stemcell-aws.tgz') }
+
+            its(:is_light?) { should be_true }
+          end
+        end
+
+        context 'when infrastructure is anything but "aws"' do
+          let(:stemcell_path) { spec_asset('micro-bosh-stemcell-vsphere.tgz') }
+
+          its(:is_light?) { should be_false }
+        end
       end
 
-      it 'extracts stemcell and excludes files' do
-        Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf .*#{stemcell_path} --directory .* --exclude=image/)
-        subject.extract(exclude: 'image') {}
+      describe '#extract' do
+        it 'extracts stemcell' do
+          Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf .*#{stemcell_path} --directory/)
+          subject.extract {}
+        end
+
+        it 'extracts stemcell and excludes files' do
+          Rake::FileUtilsExt.should_receive(:sh).with(/tar xzf .*#{stemcell_path} --directory .* --exclude=image/)
+          subject.extract(exclude: 'image') {}
+        end
       end
 
-      describe 'create_light_stemcell' do
+      describe '#create_light_stemcell' do
         let(:ami) do
           double(Ami, publish: 'fake-ami-id', region: 'fake-region')
         end
@@ -59,7 +98,6 @@ module Bosh
         before do
           Ami.stub(new: ami)
           Rake::FileUtilsExt.stub(:sh)
-          File.stub(:exists?).with(/.*stemcell\.tgz/).and_return(true)
         end
 
         it 'creates an ami from the stemcell' do
@@ -69,8 +107,15 @@ module Bosh
         end
 
         it 'creates a new tgz' do
-          Rake::FileUtilsExt.stub(:sh).with(/tar xzf/).and_call_original
-          Rake::FileUtilsExt.should_receive(:sh).with(/tar cvzf .*light-stemcell.tgz \*/)
+          Rake::FileUtilsExt.should_receive(:sh) do |command|
+            command.should match(/tar xzf #{subject.path} --directory .*/)
+          end
+
+          expected_tarfile = File.join(File.dirname(subject.path), 'light-micro-bosh-stemcell-aws.tgz')
+          Rake::FileUtilsExt.should_receive(:sh) do |command|
+            command.should match(/tar cvzf #{expected_tarfile} \*/)
+          end
+
           subject.create_light_stemcell
         end
 
@@ -85,6 +130,7 @@ module Bosh
           Psych.should_receive(:dump).and_return do |stemcell_properties, out|
             expect(stemcell_properties['cloud_properties']['ami']).to eq({'fake-region' => 'fake-ami-id'})
           end
+
           subject.create_light_stemcell
         end
 
@@ -99,16 +145,6 @@ module Bosh
 
         it 'returns a stemcell object' do
           expect(subject.create_light_stemcell).to be_a Stemcell
-        end
-      end
-
-      describe '.from_jenkins_build' do
-
-        it 'constructs correct jenkins path' do
-          Stemcell.stub(:new)
-          Dir.should_receive(:glob).with('/mnt/stemcells/aws-micro/work/work/*-stemcell-*-123.tgz').and_return([])
-
-          Stemcell.from_jenkins_build('aws', 'micro', double(Build, number: 123))
         end
       end
     end
