@@ -7,7 +7,8 @@ module Bosh
           :allocated_storage => 5,
           :db_instance_class => "db.t1.micro",
           :engine => "mysql",
-          :multi_az => true
+          :multi_az => true,
+          :engine_version => "5.5.31"
       }
       DEFAULT_RDS_PROTOCOL = :tcp
       DEFAULT_MYSQL_PORT = 3306
