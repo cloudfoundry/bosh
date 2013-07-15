@@ -75,11 +75,6 @@ module Bosh
         object_exists?(oid)
       end
 
-      # @return [Array]
-      def list
-        list_objects
-      end
-
       protected
 
       # @return [String] the id
@@ -100,11 +95,6 @@ module Bosh
 
       def object_exists?(oid)
         # needs to be implemented in each subclass
-        not_supported
-      end
-
-      # Optional; if not supported, blobstore will not be backed up
-      def list_objects
         not_supported
       end
 

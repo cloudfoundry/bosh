@@ -176,10 +176,6 @@ module Bosh
       def full_oid_path(object_id)
          @options[:folder] ?  @options[:folder] + "/" + object_id : object_id
       end
-
-      def list_objects
-        @s3.buckets[bucket_name].objects.map { |obj| obj.key }
-      end
     end
   end
 end
