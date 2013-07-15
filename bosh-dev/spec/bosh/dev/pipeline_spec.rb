@@ -10,7 +10,8 @@ module Bosh
 
       let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: '...', aws_secret_access_key: '...') }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
-      subject(:pipeline) { Pipeline.new(fog_storage: fog_storage) }
+      let(:logger) { instance_double('Logger') }
+      subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger) }
 
       before do
         Fog.mock!
@@ -26,6 +27,8 @@ module Bosh
         end
 
         it 'uploads the file to the specific path on the pipeline bucket' do
+          logger.should_receive(:info).with("uploaded 'foobar-path' -> s3://bosh-ci-pipeline/foo-bar.tgz")
+
           pipeline.s3_upload('foobar-path', 'foo-bar.tgz')
           expect(bucket_files.map(&:key)).to include 'foo-bar.tgz'
           expect(bucket_files.get('foo-bar.tgz').body).to eq 'test data'
@@ -38,6 +41,7 @@ module Bosh
         before do
           FileUtils.mkdir('/tmp')
           File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
+          logger.stub(:info)
         end
 
         describe 'when publishing a full stemcell' do
@@ -45,6 +49,8 @@ module Bosh
           let(:stemcell) { instance_double('Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
           it 'publishes a stemcell to an S3 bucket' do
+            logger.should_receive(:info).with("uploaded '/tmp/bosh-stemcell-aws.tgz' -> s3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws.tgz")
+
             pipeline.publish_stemcell(stemcell)
 
             expect(bucket_files.map(&:key)).to include 'bosh-stemcell/aws/bosh-stemcell-aws.tgz'
@@ -52,6 +58,8 @@ module Bosh
           end
 
           it 'updates the latest stemcell in the S3 bucket' do
+            logger.should_receive(:info).with("uploaded '/tmp/bosh-stemcell-aws.tgz' -> s3://bosh-ci-pipeline/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz")
+
             pipeline.publish_stemcell(stemcell)
 
             expect(bucket_files.map(&:key)).to include 'bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz'
@@ -87,11 +95,15 @@ module Bosh
         end
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
+          logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz' -> 'bosh-stemcell-aws-123.tgz'")
+
           pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: false)
           expect(File.read('bosh-stemcell-aws-123.tgz')).to eq 'this is a thinga-ma-jiggy'
         end
 
         it 'downloads the specified light stemcell version from the pipeline bucket' do
+          logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz' -> 'light-bosh-stemcell-aws-123.tgz'")
+
           pipeline.download_stemcell('123', infrastructure: 'aws', name: 'bosh-stemcell', light: true)
           expect(File.read('light-bosh-stemcell-aws-123.tgz')).to eq 'this a completely different thingy'
         end
@@ -104,11 +116,16 @@ module Bosh
         end
 
         it 'downloads the latest stemcell from the pipeline bucket' do
+          logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz' -> 'latest-bosh-stemcell-aws.tgz'")
+
           pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'bosh-stemcell', light: false)
           expect(File.read('latest-bosh-stemcell-aws.tgz')).to eq 'this is a thinga-ma-jiggy'
         end
 
         it 'downloads the latest light stemcell from the pipeline bucket' do
+          logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz' -> 'latest-light-bosh-stemcell-aws.tgz'")
+
+
           pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'bosh-stemcell', light: true)
           expect(File.read('latest-light-bosh-stemcell-aws.tgz')).to eq 'this a completely different thingy'
         end

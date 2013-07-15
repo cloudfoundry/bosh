@@ -1,4 +1,5 @@
 require 'fog'
+require 'logger'
 
 module Bosh
   module Dev
@@ -13,6 +14,7 @@ module Bosh
           }
           Fog::Storage.new(fog_options)
         end
+        @logger = options.fetch(:logger) { Logger.new(STDOUT) }
       end
 
       def publish_stemcell(stemcell)
@@ -31,6 +33,7 @@ module Bosh
       def s3_upload(file, remote_path)
         directory = fog_storage.directories.get(bucket)
         directory.files.create(key: remote_path, body: File.open(file))
+        logger.info("uploaded '#{file}' -> s3://#{bucket}/#{remote_path}")
       end
 
       def download_stemcell(version, options={})
@@ -46,6 +49,8 @@ module Bosh
             file.write(chunk)
           end
         end
+
+        logger.info("downloaded 's3://#{bucket}/#{File.join(name, infrastructure, filename)}' -> '#{filename}'")
       end
 
       def download_latest_stemcell(options={})
@@ -61,7 +66,7 @@ module Bosh
       end
 
       private
-      attr_reader :fog_storage
+      attr_reader :fog_storage, :logger
 
       def stemcell_filename(version, infrastructure, name, light)
         stemcell_filename_parts = []
