@@ -4,8 +4,13 @@ require 'bosh/dev/pipeline'
 
 describe Bosh::Dev::BatHelper do
   let(:infrastructure) { 'aws' }
+  let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', download_latest_stemcell: nil, latest_stemcell_filename: 'a latest stemcell version from pipeline') }
 
   subject { Bosh::Dev::BatHelper.new('/FAKE/WORKSPACE/DIR', infrastructure) }
+
+  before do
+    Bosh::Dev::Pipeline.stub(new: fake_pipeline)
+  end
 
   describe '#initialize' do
     its(:workspace_dir) { should eq('/FAKE/WORKSPACE/DIR') }
@@ -35,13 +40,11 @@ describe Bosh::Dev::BatHelper do
   end
 
   describe '#run_rake' do
-    let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', download_latest_stemcell: nil) }
     let(:fake_rake_task) { double('a Rake Task', invoke: nil) }
 
     before do
       ENV.delete('BAT_INFRASTRUCTURE')
 
-      Bosh::Dev::Pipeline.stub(new: fake_pipeline)
       Rake::Task.stub(:[] => fake_rake_task)
       Dir.stub(:chdir).and_yield
     end
@@ -145,11 +148,7 @@ describe Bosh::Dev::BatHelper do
     Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
       let(:infrastructure) { i }
 
-      let(:expected_filename) do
-        Bosh::Dev::Pipeline.new.latest_stemcell_filename(subject.infrastructure, 'bosh-stemcell', subject.light?)
-      end
-
-      its(:bosh_stemcell_path) { should eq(File.join(subject.workspace_dir, expected_filename)) }
+      its(:bosh_stemcell_path) { should eq('/FAKE/WORKSPACE/DIR/a latest stemcell version from pipeline') }
     end
   end
 
@@ -157,11 +156,7 @@ describe Bosh::Dev::BatHelper do
     Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
       let(:infrastructure) { i }
 
-      let(:expected_filename) do
-        Bosh::Dev::Pipeline.new.latest_stemcell_filename(subject.infrastructure, 'micro-bosh-stemcell', subject.light?)
-      end
-
-      its(:micro_bosh_stemcell_path) { should eq(File.join(subject.workspace_dir, expected_filename)) }
+      its(:micro_bosh_stemcell_path) { should eq('/FAKE/WORKSPACE/DIR/a latest stemcell version from pipeline') }
     end
   end
 end
