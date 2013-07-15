@@ -2,12 +2,7 @@ module Bosh
   module Dev
     class Pipeline
       def publish_stemcell(stemcell)
-        latest_filename_parts = ['latest']
-        latest_filename_parts << 'light' if stemcell.light?
-        latest_filename_parts << stemcell.name
-        latest_filename_parts << stemcell.infrastructure
-
-        latest_filename = "#{latest_filename_parts.join('-')}.tgz"
+        latest_filename = latest_stemcell_filename(stemcell.infrastructure, stemcell.name, stemcell.light?)
         s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
 
         s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
