@@ -117,7 +117,7 @@ describe Bosh::Dev::BatHelper do
     Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
       let(:infrastructure) { i }
 
-      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, 'micro_bosh')) }
+      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, 'micro')) }
     end
   end
 

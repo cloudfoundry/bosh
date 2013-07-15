@@ -32,7 +32,7 @@ module Bosh
       end
 
       def micro_bosh_deployment_dir
-        File.join(artifacts_dir, 'micro_bosh')
+        File.join(artifacts_dir, 'micro')
       end
 
       def run_rake
