@@ -12,4 +12,4 @@ fi
 
 bundle install --without development --local --path tmp/ruby
 
-bundle exec rake $@
+bundle exec rake --trace $@
