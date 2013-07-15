@@ -7,6 +7,7 @@ module Bosh
       let(:light_stemcell) do
         double(Stemcell, path: light_stemcell_path)
       end
+      let(:pipeline) { instance_double('Pipeline') }
 
       let(:light_stemcell_path) { 'light-fake-stemcell.tgz' }
 
@@ -19,14 +20,14 @@ module Bosh
       subject(:candidate_artifacts) { described_class.new(stemcell_path) }
 
       before do
-        Pipeline.any_instance.stub(:publish_stemcell)
+        Pipeline.stub(new: pipeline)
         Stemcell.stub(:new).with(stemcell_path).and_return(stemcell)
       end
 
 
       it 'publishes the light stemcell to the pipeline' do
         stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)
-        Pipeline.any_instance.should_receive(:publish_stemcell).with(light_stemcell)
+        pipeline.should_receive(:publish_stemcell).with(light_stemcell)
 
         candidate_artifacts.publish
       end
