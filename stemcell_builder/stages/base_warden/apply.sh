@@ -16,3 +16,6 @@ echo "Storing stemcell archive in chroot at $chroot/var/vcap/stemcell_base.tar.g
 mkdir -p $chroot/var/vcap
 mv $tmpfile $chroot/var/vcap/stemcell_base.tar.gz
 chmod 0700 $chroot/var/vcap/stemcell_base.tar.gz
+
+# Install lucid kernel patch for Warden in Warden
+apt_get install linux-image-generic-lts-backport-natty
