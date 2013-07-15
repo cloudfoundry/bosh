@@ -118,7 +118,7 @@ namespace :spec do
           chdir(bat_helper.micro_bosh_deployment_dir) do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
           end
-          run_bosh 'micro deployment micro'
+          run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
@@ -202,7 +202,7 @@ namespace :spec do
           chdir(bat_helper.micro_bosh_deployment_dir) do
             generate_openstack_micro_bosh(net_type)
           end
-          run_bosh 'micro deployment microbosh'
+          run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
@@ -262,7 +262,7 @@ namespace :spec do
           cd(bat_helper.micro_bosh_deployment_dir) do
             generate_vsphere_micro_bosh
           end
-          run_bosh 'micro deployment microbosh'
+          run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
