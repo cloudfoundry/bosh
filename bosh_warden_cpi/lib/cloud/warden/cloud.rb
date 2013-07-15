@@ -203,6 +203,7 @@ module Bosh::WardenCloud
 
     def has_vm?(vm_id)
       with_thread_name("has_vm(#{vm_id})") do
+        result = false
         vm = Models::VM[vm_id.to_i]
         cloud_error("Cannot find VM #{vm}") unless vm
         container_id = vm.container_id
@@ -212,8 +213,10 @@ module Bosh::WardenCloud
           response = client.call(request)
           response.handles
         end
-        return false if handles.nil?
-        return handles.include?(container_id)
+        unless handles.nil?
+          result = handles.include?(container_id)
+        end
+        result
       end
     end
 
