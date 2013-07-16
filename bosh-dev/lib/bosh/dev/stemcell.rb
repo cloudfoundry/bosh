@@ -38,7 +38,11 @@ module Bosh
       end
 
       def is_light?
-        infrastructure == 'aws' && cloud_properties.has_key?('ami')
+        infrastructure == 'aws' && ami_id
+      end
+
+      def ami_id
+        cloud_properties.fetch('ami', nil)
       end
 
       def extract(tar_options={}, &block)
