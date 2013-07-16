@@ -30,8 +30,4 @@ describe Bosh::Agent::Platform::Centos::Disk do
       end
     end
   end
-
-  it 'should override the default Linux rescan_scsi_bus method' do
-    pending 'refactoring needed as rescan_scsi_bus is a private method'
-  end
 end

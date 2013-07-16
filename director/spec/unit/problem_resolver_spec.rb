@@ -93,8 +93,4 @@ describe Bosh::Director::ProblemResolver do
         "Ignoring problem foobar (malformed id)"
     ]
   end
-
-  it "continues despite erroneous resolutions" do
-    pending
-  end
 end

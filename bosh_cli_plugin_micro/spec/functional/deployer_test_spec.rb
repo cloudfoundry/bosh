@@ -1,9 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Deployer do
-
   def setup(config_yml)
     @stemcell_tgz = ENV['BOSH_STEMCELL_TGZ']
     @dir = ENV['BOSH_DEPLOYER_DIR'] || Dir.mktmpdir("bd_spec")
@@ -19,12 +17,6 @@ describe Bosh::Deployer do
 
     after(:all) do
       FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
-    end
-
-    it "should access vSphere cloud" do
-      pending "can't connect to an existing environment" do
-        @deployer.cloud.should be_kind_of(Bosh::Clouds::VSphere)
-      end
     end
 
     it "should create a Bosh VM" do

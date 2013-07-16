@@ -461,10 +461,6 @@ describe Bosh::Director::ApiController do
 
         body["versions"].sort.should == (1..10).map { |i| i.to_s }.sort
       end
-
-      it "returns packages and jobs" do
-        pending "TBD"
-      end
     end
 
     describe "listing tasks" do

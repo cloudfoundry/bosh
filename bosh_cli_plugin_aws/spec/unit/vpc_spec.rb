@@ -172,8 +172,6 @@ describe Bosh::Aws::VPC do
         }
         vpc.create_nat_instances(subnet_specs)
       end
-
-      pending "should validate the NAT instance options"
     end
   end
 

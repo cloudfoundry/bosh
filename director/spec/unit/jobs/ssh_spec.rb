@@ -7,6 +7,4 @@ describe Bosh::Director::Jobs::Ssh do
     let(:job_type) { :ssh }
     it_behaves_like 'a Resque job'
   end
-
-  pending '#perform'
 end

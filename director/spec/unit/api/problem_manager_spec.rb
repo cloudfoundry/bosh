@@ -26,8 +26,6 @@ describe Bosh::Director::Api::ProblemManager do
     end
   end
 
-  pending '#get_problems'
-
   describe '#apply_resolutions' do
     it 'returns a task' do
       Resque.stub(:enqueue)

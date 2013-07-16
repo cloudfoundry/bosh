@@ -126,16 +126,6 @@ describe "messages" do
     end
   end
 
-  it "should respond to list disk message" do
-    pending "need to fake disks"
-    nats('list_disk', [])
-  end
-
-  it "should respond to fetch logs message" do
-    pending "need blobstore"
-    nats('fetch_logs', ['agent', ['--all']])
-  end
-
   it "should respond to start message" do
     nats('start') do |msg|
       value = get_value(msg)
@@ -172,15 +162,6 @@ describe "messages" do
           break
         end
       end
-    end
-  end
-
-  it "should respond to compile message" do
-    pending "need to mock package to compile"
-    nats('compile_package') do |msg|
-      msg.should have_key('value')
-      value = msg['value']
-      value.should have_key('state')
     end
   end
 
