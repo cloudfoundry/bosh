@@ -18,13 +18,15 @@ module Bosh
         subject { VersionFile.new('FAKE_NUMBER') }
 
         it 'updates BOSH_VERSION with the :version_number' do
-          Dir.mktmpdir do
-            File.write(VersionFile::BOSH_VERSION_FILE, "1.5.0.pre.3\n")
-            expect(File.read(VersionFile::BOSH_VERSION_FILE)).to match(/1\.5\.0\.pre\.3/)
+          Dir.mktmpdir do |tmpdir|
+            Dir.chdir(tmpdir) do
+              File.write(VersionFile::BOSH_VERSION_FILE, "1.5.0.pre.3\n")
+              expect(File.read(VersionFile::BOSH_VERSION_FILE)).to match(/1\.5\.0\.pre\.3/)
 
-            subject.write
+              subject.write
 
-            expect(File.read(VersionFile::BOSH_VERSION_FILE)).to match(/1\.5\.0\.pre\.FAKE_NUMBER/)
+              expect(File.read(VersionFile::BOSH_VERSION_FILE)).to match(/1\.5\.0\.pre\.FAKE_NUMBER/)
+            end
           end
         end
       end
