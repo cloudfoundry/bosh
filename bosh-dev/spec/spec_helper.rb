@@ -27,8 +27,10 @@ module RSpecRakeHelper
   end
 end
 
+SPEC_ROOT = File.dirname(__FILE__)
+
 def spec_asset(name)
-  File.join(File.dirname(__FILE__), 'assets', name)
+  File.join(SPEC_ROOT, 'assets', name)
 end
 
 RSpec.configure do |config|
