@@ -66,10 +66,9 @@ namespace :stemcell do
 
     if args[:version]
       options[:stemcell_version] = args[:version]
-      options[:agent_gem_src_url] = 'https://s3.amazonaws.com/bosh-ci-pipeline/gems/'
-    else
-      Rake::Task['all:finalize_release_directory'].invoke
     end
+
+    Rake::Task['all:finalize_release_directory'].invoke
 
     build("stemcell-#{args[:infrastructure]}", options)
   end
