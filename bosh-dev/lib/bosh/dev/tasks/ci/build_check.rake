@@ -1,17 +1,17 @@
 require 'jenkins_api_client'
 
-task :build_check do
-  %w(BOSH_CI_JOB BOSH_CI_SERVER).each do |v|
-    usage = "ex BOSH_CI_JOB=jenkins_job_1 BOSH_CI_SERVER=198.51.100.5 #{File.basename($0)} #{ARGV.join(' ')}"
-    fail("Please set #{v}\n  #{usage}") unless ENV[v]
-  end
+task :build_check, [:server, :job_name] do |_, args|
+  require 'bosh/dev/build_check'
 
-  client = JenkinsApi::Client.new(server_ip: ENV['BOSH_CI_SERVER'])
-  color = client.job.list_details(ENV['BOSH_CI_JOB'])['color']
+  args.with_defaults(
+      server: 'bosh-jenkins.cf-app.com',
+      job_name: 'bosh_build_flow'
+  )
 
-  if color.start_with? 'red'
-    fail 'The build is red'
+  jenkins_client = JenkinsApi::Client.new(server_ip: args.server)
+  if Bosh::Dev::BuildCheck.new(jenkins_client, args.job_name).failing?
+    fail 'The build is red!'
   else
-    puts "The build is #{color}"
+    puts 'The build is green. Shipping.'
   end
 end
