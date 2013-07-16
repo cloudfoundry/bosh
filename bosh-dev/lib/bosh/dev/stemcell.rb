@@ -5,6 +5,8 @@ require 'bosh/dev/ami'
 module Bosh
   module Dev
     class Stemcell
+      DEFAULT_AWS_AMI_REGION ='us-east-1'
+
       def self.from_jenkins_build(infrastructure, type, build)
         new(Dir.glob("/mnt/stemcells/#{infrastructure}-#{type}/work/work/*-stemcell-*-#{build.number}.tgz").first)
       end
@@ -41,8 +43,8 @@ module Bosh
         infrastructure == 'aws' && ami_id
       end
 
-      def ami_id
-        cloud_properties.fetch('ami', nil)
+      def ami_id(region = DEFAULT_AWS_AMI_REGION)
+        cloud_properties.fetch('ami', {}).fetch(region, nil)
       end
 
       def extract(tar_options={}, &block)
