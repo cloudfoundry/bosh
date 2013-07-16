@@ -167,12 +167,6 @@ describe VimSdk::Soap::SoapDeserializer do
     end
   end
 
-  it "should deserialize a managed object"
-
-  it "should deserialize an enum"
-
-  it "should fail to deserialize a bad boolean value"
-
   it "should unwrap nested localized method faults" do
 
     response = <<RESPONSE
@@ -198,9 +192,4 @@ RESPONSE
     value.msg.should == "A general system error occurred: Error deleting disk Device or resource busy"
     value.reason.should == "Error deleting disk Device or resource busy"
   end
-end
-
-describe VimSdk::Soap::SoapResponseDeserializer do
-  it "should deserialize a fault"
-  it "should deserialize a response"
 end

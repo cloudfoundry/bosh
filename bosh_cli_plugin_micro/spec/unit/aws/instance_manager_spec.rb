@@ -194,8 +194,4 @@ describe Bosh::Deployer::InstanceManager do
       @deployer.has_bosh_registry?(path).should be_true
     end
   end
-
-  describe '#update_spec' do
-    it 'should have tests'
-  end
 end
