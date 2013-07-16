@@ -4,6 +4,7 @@ module Bosh::Dev
     ALL = %w[openstack vsphere] << AWS
 
     attr_reader :name
+
     def initialize(name)
       @name = name
     end
