@@ -64,19 +64,20 @@ module Bosh::Director
       end
 
       def backup_blobstore(output)
-        Dir.mktmpdir do |blobs_dir|
+        Dir.mktmpdir do |tmp_dir|
+          Dir.mkdir(File.join(tmp_dir, 'blobs'))
 
           track_and_log('Backing up blobstore') do
-            packages = Models::Package.all
-
-            packages.each do |package|
-              File.open("#{blobs_dir}/#{package.blobstore_id}", 'w') do |file|
-                logger.debug("Writing file #{file.path}")
-                @blobstore_client.get(package.blobstore_id, file)
+            [Models::Package.all, Models::CompiledPackage.all].each do |packages|
+              packages.each do |package|
+                File.open(File.join(tmp_dir, 'blobs', package.blobstore_id), 'w') do |file|
+                  logger.debug("Writing file #{file.path}")
+                  @blobstore_client.get(package.blobstore_id, file)
+                end
               end
             end
 
-            @tar_gzipper.compress(blobs_dir, packages.map { |package| package.blobstore_id }, output)
+            @tar_gzipper.compress(tmp_dir, 'blobs', output)
           end
         end
       end
