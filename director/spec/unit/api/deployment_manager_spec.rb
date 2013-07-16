@@ -9,8 +9,6 @@ describe Bosh::Director::Api::DeploymentManager do
     BD::JobQueue.any_instance.stub(create_task: task)
   end
 
-  pending '#find_by_name'
-
   describe '#create_deployment' do
 
     before do
@@ -51,8 +49,4 @@ describe Bosh::Director::Api::DeploymentManager do
       expect(subject.delete_deployment(user, deployment)).to eq(task)
     end
   end
-
-  pending '#deployment_to_json'
-
-  pending '#deployment_vms_to_json'
 end

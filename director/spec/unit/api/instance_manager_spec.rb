@@ -10,14 +10,6 @@ describe Bosh::Director::Api::InstanceManager do
     BD::JobQueue.any_instance.stub(create_task: task)
   end
 
-  pending '#find_instance'
-
-  pending '#find_by_name'
-
-  pending '#filter_by'
-
-  pending '#agent_client_for'
-
   describe '#fetch_logs' do
     let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
     let(:job) { 'FAKE_JOB' }

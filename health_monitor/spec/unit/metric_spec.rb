@@ -10,9 +10,4 @@ describe Bhm::Metric do
     metric.timestamp.should == ts
     metric.tags.should == ["bar", "baz"]
   end
-
-  it "validates its attributes" do
-    pending
-  end
-
 end

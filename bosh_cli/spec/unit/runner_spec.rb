@@ -73,15 +73,10 @@ describe Bosh::Cli::Runner do
 
         runner.load_gem_plugins
       end
-
-      pending 'raises an error if a plugin fails to load'
-      pending "warns the user if a loaded plugin doesn't result in any new CLI commands"
     end
-
   end
 
   describe 'error output' do
-
     let(:runner) { described_class.new(['bad_argument']) }
 
     it 'writes error output to stderr' do

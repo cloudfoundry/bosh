@@ -9,10 +9,6 @@ describe Bosh::Director::Api::ReleaseManager do
     BD::JobQueue.any_instance.stub(create_task: task)
   end
 
-  pending '#find_by_name'
-
-  pending '#find_by_version'
-
   describe '#create_release' do
     context 'when sufficient disk space is available' do
       before do

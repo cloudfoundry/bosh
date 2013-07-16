@@ -154,21 +154,6 @@ describe Bosh::Blobstore::S3BlobstoreClient do
       }.to raise_error Bosh::Blobstore::BlobstoreError
     end
 
-    context "encrypted" do
-      let(:options) {
-        {
-          :bucket_name       => "test",
-          :access_key_id     => "KEY",
-          :secret_access_key => "SECRET",
-          :encryption_key => "asdasdasd"
-        }
-      }
-
-      it "should get an object" do
-        pending "requires refactoring of get_file"
-      end
-    end
-
     context 'unencrypted' do
       it 'should get an object' do
         blob = double('blob')
