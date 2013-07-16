@@ -47,13 +47,13 @@ module Bosh::Director
       private
       def backup_logs(output)
         track_and_log('Backing up logs') do
-          @tar_gzipper.compress(File.dirname(@log_dir), [File.basename(@log_dir)], output)
+          @tar_gzipper.compress(File.dirname(@log_dir), [File.basename(@log_dir)], output, copy_first: true)
         end
       end
 
       def backup_task_logs(output)
         track_and_log('Backing up task logs') do
-          @tar_gzipper.compress(@base_dir, %w(tasks), output)
+          @tar_gzipper.compress(@base_dir, %w(tasks), output, copy_first: true)
         end
       end
 

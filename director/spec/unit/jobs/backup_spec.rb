@@ -38,13 +38,13 @@ describe Bosh::Director::Jobs::Backup do
     end
 
     it 'zips up the logs' do
-      tar_gzipper.should_receive(:compress).with('/logs/are', ['here'], File.join(tmp_output_dir, 'logs.tgz'))
+      tar_gzipper.should_receive(:compress).with('/logs/are', ['here'], File.join(tmp_output_dir, 'logs.tgz'), copy_first: true)
 
       backup_task.perform
     end
 
     it 'zips up the task logs' do
-      tar_gzipper.should_receive(:compress).with('/a/base/dir', ['tasks'], File.join(tmp_output_dir, 'task_logs.tgz'))
+      tar_gzipper.should_receive(:compress).with('/a/base/dir', ['tasks'], File.join(tmp_output_dir, 'task_logs.tgz'), copy_first: true)
 
       backup_task.perform
     end
