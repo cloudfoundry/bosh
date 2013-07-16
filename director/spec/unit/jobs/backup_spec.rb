@@ -56,21 +56,29 @@ describe Bosh::Director::Jobs::Backup do
     end
 
     it 'backs up the blobstore' do
-      foo_file = double(File, path: 'foo')
-      bar_file = double(File, path: 'bar')
+      foo_package_file = double(File, path: 'foo')
+      bar_package_file = double(File, path: 'bar')
+      foo_compiled_package_file = double(File, path: 'foo_compiled')
+      bar_compiled_package_file = double(File, path: 'bar_compiled')
 
       tmp_blobs_output_dir = tmp_output_dir
 
-      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'foo_blob_id'), 'w').and_yield(foo_file)
-      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'bar_blob_id'), 'w').and_yield(bar_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'foo_package_blob_id'), 'w').and_yield(foo_package_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'bar_package_blob_id'), 'w').and_yield(bar_package_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'foo_compiled_package_blob_id'), 'w').and_yield(foo_compiled_package_file)
+      File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'bar_compiled_package_blob_id'), 'w').and_yield(bar_compiled_package_file)
 
-      Bosh::Director::Models::Package.make(name: 'foo', blobstore_id: 'foo_blob_id')
-      Bosh::Director::Models::Package.make(name: 'bar', blobstore_id: 'bar_blob_id')
+      foo_pkg = Bosh::Director::Models::Package.make(name: 'foo_package', blobstore_id: 'foo_package_blob_id')
+      bar_pkg = Bosh::Director::Models::Package.make(name: 'bar_package', blobstore_id: 'bar_package_blob_id')
+      Bosh::Director::Models::CompiledPackage.make(package: foo_pkg, blobstore_id: 'foo_compiled_package_blob_id')
+      Bosh::Director::Models::CompiledPackage.make(package: bar_pkg, blobstore_id: 'bar_compiled_package_blob_id')
 
-      blobstore_client.should_receive(:get).with('foo_blob_id', foo_file) # get *writes* the file
-      blobstore_client.should_receive(:get).with('bar_blob_id', bar_file)
+      blobstore_client.should_receive(:get).with('foo_package_blob_id', foo_package_file) # get *writes* the file
+      blobstore_client.should_receive(:get).with('bar_package_blob_id', bar_package_file)
+      blobstore_client.should_receive(:get).with('foo_compiled_package_blob_id', foo_compiled_package_file)
+      blobstore_client.should_receive(:get).with('bar_compiled_package_blob_id', bar_compiled_package_file)
 
-      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, %w[foo_blob_id bar_blob_id], File.join(tmp_output_dir, 'blobs.tgz'))
+      tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, 'blobs', File.join(tmp_output_dir, 'blobs.tgz'))
 
       backup_task.perform
     end
