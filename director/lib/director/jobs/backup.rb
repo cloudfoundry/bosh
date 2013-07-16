@@ -20,7 +20,7 @@ module Bosh::Director
 
       def perform
         Dir.mktmpdir do |tmp_output_dir|
-          event_log.begin_stage('Backing up director', 3)
+          event_log.begin_stage('Backing up director', 4)
 
           files = []
 
