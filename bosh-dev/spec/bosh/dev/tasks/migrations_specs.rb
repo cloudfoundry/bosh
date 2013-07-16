@@ -1,15 +1,26 @@
 require 'spec_helper'
-require "tmpdir"
+require 'tmpdir'
 
-describe "migrations:aws:new" do
-  include RSpecRakeHelper
-
-  let(:name) { "cool_migration" }
-  let(:class_name) { "CoolMigration" }
+describe 'migrations:aws:new' do
+  let(:rake) { Rake::Application.new }
+  let(:task_path) { 'rake/lib/tasks/migrations' }
+  let(:root) { File.expand_path('../../../../', File.dirname(__FILE__))}
+  let(:name) { 'cool_migration' }
+  let(:class_name) { 'CoolMigration' }
   let(:timestamp) { Time.now }
-  let(:timestamp_string) {timestamp.getutc.strftime("%Y%m%d%H%M%S") }
+  let(:timestamp_string) {timestamp.getutc.strftime('%Y%m%d%H%M%S') }
+
+  subject { rake['migrations:aws:new'] }
+
+  def loaded_files_excluding_current_rake_file
+    $".reject { |file| file == File.join(root, "#{task_path}.rake").to_s }
+  end
 
   before do
+    Rake.application = rake
+    Rake.application.rake_require(task_path, [root], loaded_files_excluding_current_rake_file)
+
+    Rake::Task.define_task(:environment)
     Time.stub(:new).and_return(timestamp)
 
     @tempdir= Dir.mktmpdir
@@ -21,11 +32,11 @@ describe "migrations:aws:new" do
     FileUtils.rm_rf(@tempdir)
   end
 
-  it "errors without a name" do
+  it 'errors without a name' do
     expect { subject.invoke }.to raise_error(SystemExit)
   end
 
-  it "generates migration from the template with the correct timestamped filename" do
+  it 'generates migration from the template with the correct timestamped filename' do
     subject.invoke(name)
 
     File.exists?("#{@tempdir}/#{timestamp_string}_#{name}.rb").should be_true
@@ -38,7 +49,7 @@ end
     H
   end
 
-  it "generates the spec template for the migration" do
+  it 'generates the spec template for the migration' do
     subject.invoke(name)
 
     File.exists?("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb").should be_true

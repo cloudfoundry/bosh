@@ -8,10 +8,6 @@ def spec_asset(name)
   File.join(SPEC_ROOT, 'assets', name)
 end
 
-Dir.glob(File.join(SPEC_ROOT, 'support', '**', '*.rb')) do |filename|
-  require filename
-end
-
 RSpec.configure do |config|
   config.include(RSpec::Fire)
 end
