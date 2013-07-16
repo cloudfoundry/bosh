@@ -58,23 +58,23 @@ module Bosh
         end
       end
 
-      describe '#is_light?' do
+      describe '#light?' do
         context 'when infrastructure is "aws"' do
           context 'when there is not an "ami" key in the "cloud_properties" section of the manifest' do
-            its(:is_light?) { should be_false }
+            it { should_not be_light }
           end
 
           context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
             let(:stemcell_path) { spec_asset('light-micro-bosh-stemcell-aws.tgz') }
 
-            its(:is_light?) { should be_true }
+            it { should be_light }
           end
         end
 
         context 'when infrastructure is anything but "aws"' do
           let(:stemcell_path) { spec_asset('micro-bosh-stemcell-vsphere.tgz') }
 
-          its(:is_light?) { should be_false }
+          it { should_not be_light }
         end
       end
 

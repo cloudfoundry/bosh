@@ -3,7 +3,7 @@ module Bosh
     class Pipeline
       def publish_stemcell(stemcell)
         latest_filename_parts = ['latest']
-        latest_filename_parts << 'light' if stemcell.is_light?
+        latest_filename_parts << 'light' if stemcell.light?
         latest_filename_parts << stemcell.name
         latest_filename_parts << stemcell.infrastructure
 
