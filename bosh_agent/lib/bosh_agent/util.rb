@@ -38,7 +38,8 @@ module Bosh::Agent
           logger.info("hexdigest of #{blob_data_file}")
 
           unless blob_sha1 == sha1
-            raise Bosh::Agent::MessageHandlerError, "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}"
+            raise Bosh::Agent::MessageHandlerError,
+                  "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}, Blobstore ID: #{blobstore_id}, Install Path: #{install_path}"
           end
 
           logger.info("Installing to: #{install_path}")
