@@ -171,8 +171,6 @@ describe Bosh::Director::DeploymentPlan do
         plan.parse_networks
       }.should raise_error(BD::ValidationMissingField)
     end
-
-    it "should create other types of network when specified"
   end
 
   describe :parse_compilation do
@@ -248,13 +246,6 @@ describe Bosh::Director::DeploymentPlan do
         plan.parse_resource_pools
       }.should raise_error(BD::DeploymentDuplicateResourcePoolName,
                            "Duplicate resource pool name `bar'")
-    end
-
-    pending "should require at least one resource pool" do
-      lambda {
-        plan = BD::DeploymentPlan.new({"resource_pools" => []})
-        plan.parse_resource_pools
-      }.should raise_error(%q{No resource pools specified.})
     end
   end
 
