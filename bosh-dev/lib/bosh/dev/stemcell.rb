@@ -17,7 +17,7 @@ module Bosh
       end
 
       def create_light_stemcell
-        raise "Stemcell is already a light-stemcell" if is_light?
+        raise "Stemcell is already a light-stemcell" if light?
         Stemcell.new(create_light_aws_stemcell) if infrastructure == 'aws'
       end
 
@@ -37,7 +37,7 @@ module Bosh
         cloud_properties.fetch('version')
       end
 
-      def is_light?
+      def light?
         infrastructure == 'aws' && ami_id
       end
 
