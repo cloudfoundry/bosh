@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Agent::Handler do
 
@@ -72,7 +72,7 @@ describe Bosh::Agent::Handler do
     exception[:message].should == "boo!"
   end
 
-  pending "should process long running tasks" do
+  it "should process long running tasks" do
     handler = Bosh::Agent::Handler.new
     handler.start
 
@@ -97,8 +97,6 @@ describe Bosh::Agent::Handler do
     end
     handler.handle_get_task("another_bogus_id", agent_task_id)
   end
-
-  it "should have running state for long running task"
 
   it "should support CamelCase message handler class names" do
     ::Bosh::Agent::Message::CamelCasedMessageHandler = Class.new do
@@ -158,12 +156,11 @@ describe Bosh::Agent::Handler do
       @cipher = Gibberish::AES.new(@credentials["crypt_key"])
     end
 
-    pending "should decrypt message and encrypt response with credentials" do
-
+    it "should decrypt message and encrypt response with credentials" do
       # The expectation uses a non-existent message handler to avoid the handler
       # to spawn a thread.
       @nats.should_receive(:publish).with("inbox.client_id",
-                                          kind_of(String), nil
+                                          kind_of(String)
       ) { |*args|
         msg = @encryption_handler.decode(args[1])
         msg["session_id"].should == @encryption_handler.session_id
@@ -177,7 +174,7 @@ describe Bosh::Agent::Handler do
         "method" => "bogus_ping", "arguments" => []
       )
 
-      result = @handler.handle_message(
+      @handler.handle_message(
         @encryption_handler.encode(
           "reply_to" => "inbox.client_id",
           "session_id" => @encryption_handler.session_id,
@@ -205,13 +202,13 @@ describe Bosh::Agent::Handler do
       )
     end
 
-    pending "should handle session errors" do
+    it "should handle session errors" do
       encrypted_data = @encryption_handler.encrypt(
         "method" => "bogus_message", "arguments" => []
       )
 
       @nats.should_receive(:publish).with("inbox.client_id",
-                                          kind_of(String), nil)
+                                          kind_of(String))
 
       @handler.handle_message(
         @encryption_handler.encode(
@@ -281,13 +278,13 @@ describe Bosh::Agent::Handler do
       )
     end
 
-    pending "should handle sequence number errors" do
+    it "should handle sequence number errors" do
       encrypted_data = @encryption_handler.encrypt(
         "method" => "bogus_message", "arguments" => []
       )
 
       @nats.should_receive(:publish).with("inbox.client_id",
-                                          kind_of(String), nil)
+                                          kind_of(String))
       @handler.handle_message(
         @encryption_handler.encode(
           "reply_to" => "inbox.client_id",
@@ -314,9 +311,9 @@ describe Bosh::Agent::Handler do
     end
   end
 
-  pending "should raise a RemoteException when message > NATS_MAX_PAYLOAD" do
+  it "should raise a RemoteException when message > NATS_MAX_PAYLOAD" do
     payload = "a" * (Bosh::Agent::Handler::NATS_MAX_PAYLOAD_SIZE + 1)
-    @nats.should_receive(:publish).with("reply", "exception", nil)
+    @nats.should_receive(:publish).with("reply", "exception")
 
     mock = double(Bosh::Agent::RemoteException)
     mock.stub(:to_hash).and_return("exception")
