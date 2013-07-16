@@ -26,15 +26,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       received_network.should == network
     end
 
-    pending "should require at least one subnet" do
-      lambda {
-        BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-            "name" => "foo",
-            "subnets" => []
-        })
-      }.should raise_error(/at least one subnet/)
-    end
-
     it "should not allow overlapping subnets" do
       subnet_a = stub(BD::DeploymentPlan::NetworkSubnet)
       subnet_b = stub(BD::DeploymentPlan::NetworkSubnet)
