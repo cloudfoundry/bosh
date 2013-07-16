@@ -16,6 +16,7 @@ module Bosh
 
       before do
         ENV.stub(:fetch).with('BAT_INFRASTRUCTURE').and_return('vsphere')
+        subject.stub(:puts)
       end
 
       it 'should send a message to DataDog when an example passes' do
