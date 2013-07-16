@@ -254,8 +254,4 @@ describe VimSdk::Soap::SoapSerializer do
     serializer.serialize(value, property)
     writer.string.should == "<test xmlns=\"urn:test\" xsi:type=\"Test2\"><test>foo</test><test2>bar</test2></test>"
   end
-
-  it "should fail serializing native ruby arrays as any type"
-
-  it "should serialize a fault"
 end

@@ -177,9 +177,6 @@ describe Bosh::Agent::Message::Drain do
     }.to raise_error(Bosh::Agent::MessageHandlerError, 'Unknown drain type hello')
   end
 
-  it "should set BOSH_CURRENT_STATE environment variable"
-  it "should set BOSH_APPLY_SPEC environment variable"
-
   def old_spec
     {
       "configuration_hash"=>"bfa2468a257de0ead95e1812038030209dc5b0b7",
