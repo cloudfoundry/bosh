@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/bat_helper'
-require 'bosh/dev/pipeline'
 
 describe Bosh::Dev::BatHelper do
   let(:infrastructure) { 'aws' }
@@ -14,7 +13,10 @@ describe Bosh::Dev::BatHelper do
 
   describe '#initialize' do
     its(:workspace_dir) { should eq('/FAKE/WORKSPACE/DIR') }
-    its(:infrastructure) { should eq('aws') }
+
+    it 'sets infrastrucutre' do
+      expect(subject.infrastructure.name).to eq('aws')
+    end
 
     context 'with an invalid infrastructure' do
       it 'raises an ArgumentError' do
@@ -30,7 +32,7 @@ describe Bosh::Dev::BatHelper do
       it { should be_light }
     end
 
-    (Bosh::Dev::BatHelper::INFRASTRUCTURE - [Bosh::Dev::BatHelper::AWS]).each do |i|
+    (Bosh::Dev::Infrastructure::ALL - [Bosh::Dev::Infrastructure::AWS]).each do |i|
       context "when infrastructure is '#{i}'" do
         let(:infrastructure) { i }
 
@@ -77,7 +79,7 @@ describe Bosh::Dev::BatHelper do
       end
     end
 
-    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+    Bosh::Dev::Infrastructure::ALL.each do |i|
       context "when infrastructure is '#{i}'" do
         let(:infrastructure) { i }
 
@@ -109,15 +111,15 @@ describe Bosh::Dev::BatHelper do
   end
 
   describe '#artifacts_dir' do
-    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+    Bosh::Dev::Infrastructure::ALL.each do |i|
       let(:infrastructure) { i }
 
-      its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure, 'deployments')) }
+      its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure.name, 'deployments')) }
     end
   end
 
   describe '#micro_bosh_deployment_dir' do
-    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+    Bosh::Dev::Infrastructure::ALL.each do |i|
       let(:infrastructure) { i }
 
       its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, subject.micro_bosh_deployment_name)) }
@@ -145,7 +147,7 @@ describe Bosh::Dev::BatHelper do
   end
 
   describe '#bosh_stemcell_path' do
-    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+    Bosh::Dev::Infrastructure::ALL.each do |i|
       let(:infrastructure) { i }
 
       its(:bosh_stemcell_path) { should eq('/FAKE/WORKSPACE/DIR/a latest stemcell version from pipeline') }
@@ -153,7 +155,7 @@ describe Bosh::Dev::BatHelper do
   end
 
   describe '#micro_bosh_stemcell_path' do
-    Bosh::Dev::BatHelper::INFRASTRUCTURE.each do |i|
+    Bosh::Dev::Infrastructure::ALL.each do |i|
       let(:infrastructure) { i }
 
       its(:micro_bosh_stemcell_path) { should eq('/FAKE/WORKSPACE/DIR/a latest stemcell version from pipeline') }
