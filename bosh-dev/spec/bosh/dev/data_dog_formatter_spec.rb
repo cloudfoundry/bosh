@@ -5,7 +5,7 @@ module Bosh
   module Dev
     describe DataDogFormatter do
       subject(:formatter) { DataDogFormatter.new(StringIO.new, sender) }
-      let(:sender) { stub(DataDogReporter) }
+      let(:sender) { double(DataDogReporter) }
       let(:example) do
         double(RSpec::Core::Example, metadata:
           {
