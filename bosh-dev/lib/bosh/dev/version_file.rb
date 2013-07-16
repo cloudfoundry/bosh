@@ -1,10 +1,28 @@
 module Bosh
   module Dev
-    class VersionFile < Struct.new(:version_number)
+    class VersionFile
+      BOSH_VERSION_FILE = 'BOSH_VERSION'
+
+      attr_reader :version_number
+
+      def initialize(version_number)
+        raise ArgumentError.new('Version number must be specified.') unless version_number
+
+        @version_number = version_number
+      end
+
       def write
-        file_contents = File.read("BOSH_VERSION")
-        file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}")
-        File.open("BOSH_VERSION", 'w') { |f| f.write file_contents }
+        File.write(BOSH_VERSION_FILE, updated_version_string)
+      end
+
+      private
+
+      def existing_version_string
+        File.read(BOSH_VERSION_FILE)
+      end
+
+      def updated_version_string
+        existing_version_string.gsub(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}")
       end
     end
   end
