@@ -14,34 +14,34 @@ describe Bosh::Agent::Handler do
     Bosh::Agent::SyslogMonitor.stub(:start)
 
     Bosh::Agent::Config.process_alerts = true
-    Bosh::Agent::Config.smtp_port      = 55213
-    Bosh::Agent::Config.smtp_user      = "user"
-    Bosh::Agent::Config.smtp_password  = "pass"
+    Bosh::Agent::Config.smtp_port = 55213
+    Bosh::Agent::Config.smtp_user = 'user'
+    Bosh::Agent::Config.smtp_password = 'pass'
 
     EM.stub!(:next_tick).and_yield
   end
 
-  it "should result in a value payload" do
+  it 'should result in a value payload' do
     handler = Bosh::Agent::Handler.new
     payload = handler.process(Bosh::Agent::Message::Ping, nil)
-    payload.should == {:value => "pong"}
+    payload.should == {:value => 'pong'}
   end
 
-  it "should attempt to start alert processor when handler starts" do
-    Bosh::Agent::AlertProcessor.should_receive(:start).with("127.0.0.1", 55213, "user", "pass")
+  it 'should attempt to start alert processor when handler starts' do
+    Bosh::Agent::AlertProcessor.should_receive(:start).with('127.0.0.1', 55213, 'user', 'pass')
 
     handler = Bosh::Agent::Handler.new
     handler.start
   end
 
-  it "should attempt to start syslog monitor when handler starts" do
+  it 'should attempt to start syslog monitor when handler starts' do
     Bosh::Agent::SyslogMonitor.should_receive(:start).with(@nats, anything)
 
     handler = Bosh::Agent::Handler.new
     handler.start
   end
 
-  it "should not start alert processor if alerts are disabled via config" do
+  it 'should not start alert processor if alerts are disabled via config' do
     Bosh::Agent::Config.process_alerts = false
     Bosh::Agent::AlertProcessor.should_not_receive(:start)
 
@@ -49,7 +49,7 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
-  it "should not start syslog monitor if alerts are disabled via config" do
+  it 'should not start syslog monitor if alerts are disabled via config' do
     Bosh::Agent::Config.process_alerts = false
     Bosh::Agent::SyslogMonitor.should_not_receive(:start)
 
@@ -57,56 +57,61 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
-  it "should result in an exception payload" do
+  it 'should result in an exception payload' do
     handler = Bosh::Agent::Handler.new
 
     klazz = Class.new do
       def self.process(args)
-        raise Bosh::Agent::MessageHandlerError, "boo!"
+        raise Bosh::Agent::MessageHandlerError, 'boo!'
       end
     end
     payload = handler.process(klazz, nil)
     payload.should have_key :exception
     exception = payload[:exception]
     exception.should have_key :message
-    exception[:message].should == "boo!"
+    exception[:message].should == 'boo!'
   end
 
-  it "should process long running tasks" do
+  it 'should process long running tasks' do
     handler = Bosh::Agent::Handler.new
     handler.start
 
     klazz = Class.new do
       def self.process(args)
-        "result"
+        'result'
       end
-      def self.long_running?; true; end
+
+      def self.long_running?;
+        true;
+      end
     end
 
     agent_task_id = nil
     @nats.should_receive(:publish) do |reply_to, payload|
-      reply_to.should == "bogus_reply_to"
+      reply_to.should == 'bogus_reply_to'
       msg = Yajl::Parser.new.parse(payload)
-      agent_task_id = msg["value"]["agent_task_id"]
+      agent_task_id = msg['value']['agent_task_id']
     end
-    handler.process_long_running("bogus_reply_to", klazz, nil)
+    handler.process_long_running('bogus_reply_to', klazz, nil)
 
     @nats.should_receive(:publish) do |reply_to, payload|
       msg = Yajl::Parser.new.parse(payload)
-      msg.should == {"value" => "result"}
+      msg.should == {'value' => 'result'}
     end
-    handler.handle_get_task("another_bogus_id", agent_task_id)
+    handler.handle_get_task('another_bogus_id', agent_task_id)
   end
 
-  it "should support CamelCase message handler class names" do
+  it 'should support CamelCase message handler class names' do
     ::Bosh::Agent::Message::CamelCasedMessageHandler = Class.new do
-      def self.process(args); end
+      def self.process(args)
+        ;
+      end
     end
     handler = Bosh::Agent::Handler.new
-    handler.processors.keys.should include("camel_cased_message_handler")
+    handler.processors.keys.should include('camel_cased_message_handler')
   end
 
-  it "handle message should fail on broken json" do
+  it 'handle message should fail on broken json' do
     logger = Bosh::Agent::Config.logger
 
     logger.should_receive(:info).with(/Message processors/)
@@ -116,7 +121,7 @@ describe Bosh::Agent::Handler do
     handler.handle_message('}}}b0rked}}}json')
   end
 
-  it "should retry nats connection when it fails" do
+  it 'should retry nats connection when it fails' do
     retries = Bosh::Agent::Handler::MAX_NATS_RETRIES
     NATS.stub(:connect).and_raise(NATS::ConnectError)
     handler = Bosh::Agent::Handler.new
@@ -125,12 +130,12 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
-  it "should report unexpected errors then terminate its thread in 15 seconds" do
+  it 'should report unexpected errors then terminate its thread in 15 seconds' do
     handler = Bosh::Agent::Handler.new
 
     klazz = Class.new do
       def self.process(args)
-        raise "How unexpected of you!"
+        raise 'How unexpected of you!'
       end
     end
     handler.should_receive(:kill_main_thread_in).once
@@ -142,7 +147,7 @@ describe Bosh::Agent::Handler do
     payload[:exception].should match(/#<RuntimeError: How unexpected of you!/)
   end
 
-  describe "Encryption" do
+  describe 'Encryption' do
 
     before(:each) do
       @credentials = Bosh::EncryptionHandler.generate_credentials
@@ -151,40 +156,40 @@ describe Bosh::Agent::Handler do
       @handler = Bosh::Agent::Handler.new
       @handler.nats = @nats
 
-      @encryption_handler = Bosh::EncryptionHandler.new("client_id", @credentials)
+      @encryption_handler = Bosh::EncryptionHandler.new('client_id', @credentials)
 
-      @cipher = Gibberish::AES.new(@credentials["crypt_key"])
+      @cipher = Gibberish::AES.new(@credentials['crypt_key'])
     end
 
-    it "should decrypt message and encrypt response with credentials" do
+    it 'should decrypt message and encrypt response with credentials' do
       # The expectation uses a non-existent message handler to avoid the handler
       # to spawn a thread.
-      @nats.should_receive(:publish).with("inbox.client_id",
+      @nats.should_receive(:publish).with('inbox.client_id',
                                           kind_of(String)
       ) { |*args|
         msg = @encryption_handler.decode(args[1])
-        msg["session_id"].should == @encryption_handler.session_id
+        msg['session_id'].should == @encryption_handler.session_id
 
-        decrypted_data = @encryption_handler.decrypt(msg["encrypted_data"])
-        decrypted_data["exception"].should have_key("message")
-        decrypted_data["exception"]["message"].should match(/bogus_ping/)
+        decrypted_data = @encryption_handler.decrypt(msg['encrypted_data'])
+        decrypted_data['exception'].should have_key('message')
+        decrypted_data['exception']['message'].should match(/bogus_ping/)
       }
 
       encrypted_data = @encryption_handler.encrypt(
-        "method" => "bogus_ping", "arguments" => []
+          'method' => 'bogus_ping', 'arguments' => []
       )
 
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => encrypted_data
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => encrypted_data
+          )
       )
     end
 
-    it "should handle decrypt failure" do
-      @encryption_handler.encrypt("random" => "stuff")
+    it 'should handle decrypt failure' do
+      @encryption_handler.encrypt('random' => 'stuff')
 
       @handler.stub!(:log_encryption_error)
       @handler.should_receive(:log_encryption_error) { |*args|
@@ -194,44 +199,44 @@ describe Bosh::Agent::Handler do
       }
 
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => "junk"
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => 'junk'
+          )
       )
     end
 
-    it "should handle session errors" do
+    it 'should handle session errors' do
       encrypted_data = @encryption_handler.encrypt(
-        "method" => "bogus_message", "arguments" => []
+          'method' => 'bogus_message', 'arguments' => []
       )
 
-      @nats.should_receive(:publish).with("inbox.client_id",
+      @nats.should_receive(:publish).with('inbox.client_id',
                                           kind_of(String))
 
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => encrypted_data
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => encrypted_data
+          )
       )
 
       encrypted_data2 = @encryption_handler.encrypt(
-        "method" => "bogus_message", "arguments" => []
+          'method' => 'bogus_message', 'arguments' => []
       )
 
       message = @encryption_handler.decode(
           @cipher.decrypt(encrypted_data)
       )
 
-      data = @encryption_handler.decode(message["json_data"])
-      data["session_id"] = "bosgus_session_id"
+      data = @encryption_handler.decode(message['json_data'])
+      data['session_id'] = 'bosgus_session_id'
 
       json_data = @encryption_handler.encode(data)
-      message["hmac"] = @encryption_handler.signature(json_data)
-      message["json_data"] = json_data
+      message['hmac'] = @encryption_handler.signature(json_data)
+      message['json_data'] = json_data
 
       encrypted_bad_data = @cipher.encrypt(@encryption_handler.encode(message))
 
@@ -243,22 +248,22 @@ describe Bosh::Agent::Handler do
       }
 
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => encrypted_bad_data
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => encrypted_bad_data
+          )
       )
     end
 
-    it "should handle signature errors" do
+    it 'should handle signature errors' do
       encrypted_data = @encryption_handler.encrypt(
-        "method" => "bogus_message", "arguments" => []
+          'method' => 'bogus_message', 'arguments' => []
       )
       message = @encryption_handler.decode(
           @cipher.decrypt(encrypted_data)
       )
-      message["hmac"] = @encryption_handler.signature("some other data")
+      message['hmac'] = @encryption_handler.signature('some other data')
 
       encrypted_bad_data = @cipher.encrypt(@encryption_handler.encode(message))
 
@@ -270,27 +275,27 @@ describe Bosh::Agent::Handler do
       }
 
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => encrypted_bad_data
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => encrypted_bad_data
+          )
       )
     end
 
-    it "should handle sequence number errors" do
+    it 'should handle sequence number errors' do
       encrypted_data = @encryption_handler.encrypt(
-        "method" => "bogus_message", "arguments" => []
+          'method' => 'bogus_message', 'arguments' => []
       )
 
-      @nats.should_receive(:publish).with("inbox.client_id",
+      @nats.should_receive(:publish).with('inbox.client_id',
                                           kind_of(String))
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => encrypted_data
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => encrypted_data
+          )
       )
 
       @handler.stub!(:log_encryption_error)
@@ -302,48 +307,48 @@ describe Bosh::Agent::Handler do
 
       # Send it again
       @handler.handle_message(
-        @encryption_handler.encode(
-          "reply_to" => "inbox.client_id",
-          "session_id" => @encryption_handler.session_id,
-          "encrypted_data" => encrypted_data
-        )
+          @encryption_handler.encode(
+              'reply_to' => 'inbox.client_id',
+              'session_id' => @encryption_handler.session_id,
+              'encrypted_data' => encrypted_data
+          )
       )
     end
   end
 
-  it "should raise a RemoteException when message > NATS_MAX_PAYLOAD" do
-    payload = "a" * (Bosh::Agent::Handler::NATS_MAX_PAYLOAD_SIZE + 1)
-    @nats.should_receive(:publish).with("reply", "exception")
+  it 'should raise a RemoteException when message > NATS_MAX_PAYLOAD' do
+    payload = 'a' * (Bosh::Agent::Handler::NATS_MAX_PAYLOAD_SIZE + 1)
+    @nats.should_receive(:publish).with('reply', 'exception')
 
     mock = double(Bosh::Agent::RemoteException)
-    mock.stub(:to_hash).and_return("exception")
+    mock.stub(:to_hash).and_return('exception')
     Bosh::Agent::RemoteException.should_receive(:new).and_return(mock)
 
     handler = Bosh::Agent::Handler.new
     handler.start
-    handler.publish("reply", payload)
+    handler.publish('reply', payload)
   end
 
   describe 'prepare_network_change' do
     let(:udev_file) { '/etc/udev/rules.d/70-persistent-net.rules' }
     let(:settings_file) { Tempfile.new('test') }
-    
-    it 'should delete the settings file and restart the agent' do      
+
+    it 'should delete the settings file and restart the agent' do
       handler = Bosh::Agent::Handler.new
       handler.start
       Bosh::Agent::Config.configure = true
-      Bosh::Agent::Config.settings_file = settings_file 
-      
+      Bosh::Agent::Config.settings_file = settings_file
+
       EM.should_receive(:defer).and_yield
       @nats.should_receive(:publish).and_yield
       File.should_receive(:exist?).with(udev_file).and_return(false)
       File.should_receive(:delete).with(settings_file)
       handler.should_receive(:kill_main_thread_in).with(1)
-      
-      handler.handle_message(Yajl::Encoder.encode('method' => 'prepare_network_change', 
+
+      handler.handle_message(Yajl::Encoder.encode('method' => 'prepare_network_change',
                                                   'reply_to' => 'inbox.client_id',
                                                   'arguments' => []))
-  
+
     end
   end
 end
