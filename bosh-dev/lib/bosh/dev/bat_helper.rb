@@ -1,62 +1,60 @@
-module Bosh
-  module Dev
-    class BatHelper
-      AWS = 'aws'
-      INFRASTRUCTURE = %w[openstack vsphere] << AWS
+require 'bosh/dev/infrastructure'
+require 'bosh/dev/pipeline'
 
-      attr_reader :workspace_dir
-      attr_reader :infrastructure
+module Bosh::Dev
+  class BatHelper
+    attr_reader :workspace_dir
+    attr_reader :infrastructure
 
-      def initialize(workspace_dir, infrastructure)
-        raise ArgumentError.new("invalid infrastructure: #{infrastructure}") unless INFRASTRUCTURE.include?(infrastructure)
+    def initialize(workspace_dir, infrastructure)
+      raise ArgumentError.new("invalid infrastructure: #{infrastructure}") unless Infrastructure::ALL.include?(infrastructure)
 
-        @workspace_dir = workspace_dir
-        @infrastructure = infrastructure
-        @pipeline = Bosh::Dev::Pipeline.new
-      end
+      @workspace_dir = workspace_dir
+      @infrastructure = Infrastructure.new(infrastructure)
+      @pipeline = Pipeline.new
+    end
 
-      def light?
-        infrastructure == AWS
-      end
+    def light?
+      infrastructure.light?
+    end
 
-      def bosh_stemcell_path
-        File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure, 'bosh-stemcell', light?))
-      end
+    def bosh_stemcell_path
+      File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure.name, 'bosh-stemcell', light?))
+    end
 
-      def micro_bosh_stemcell_path
-        File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure, 'micro-bosh-stemcell', light?))
-      end
+    def micro_bosh_stemcell_path
+      File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure.name, 'micro-bosh-stemcell', light?))
+    end
 
-      def artifacts_dir
-        File.join('/tmp', 'ci-artifacts', infrastructure, 'deployments')
-      end
+    def artifacts_dir
+      File.join('/tmp', 'ci-artifacts', infrastructure.name, 'deployments')
+    end
 
-      def micro_bosh_deployment_dir
-        File.join(artifacts_dir, micro_bosh_deployment_name)
-      end
+    def micro_bosh_deployment_dir
+      File.join(artifacts_dir, micro_bosh_deployment_name)
+    end
 
-      def micro_bosh_deployment_name
-        'microbosh'
-      end
+    def micro_bosh_deployment_name
+      'microbosh'
+    end
 
-      def run_rake
-        Dir.chdir(workspace_dir) do
-          ENV['BAT_INFRASTRUCTURE'] = infrastructure
+    def run_rake
+      Dir.chdir(workspace_dir) do
+        ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
 
-          begin
-            @pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: light?)
-            @pipeline.download_latest_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: light?)
+        begin
+          @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: light?)
+          @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'bosh-stemcell', light: light?)
 
-            Rake::Task["spec:system:#{infrastructure}:micro"].invoke
-          ensure
-            cleanup_stemcells
-          end
+          @infrastructure.run_system_micro_tests
+        ensure
+          cleanup_stemcells
         end
       end
+    end
 
-      def cleanup_stemcells
-        FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
-      end
+    def cleanup_stemcells
+      FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
     end
   end
 end
