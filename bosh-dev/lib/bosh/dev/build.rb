@@ -27,6 +27,11 @@ module Bosh
         File.join(s3_pipeline_uri, "release/bosh-#{number}.tgz")
       end
 
+      def promote_artifacts(aws_credentials)
+        sync_buckets
+        update_light_micro_bosh_ami_pointer_file(aws_credentials[:access_key_id], aws_credentials[:secret_access_key])
+      end
+
       def sync_buckets
         Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'gems')} s3://bosh-jenkins-gems")
 
@@ -35,12 +40,12 @@ module Bosh
         Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
       end
 
-      def update_light_micro_bosh_ami_pointer_file(aws_credentials)
+      def update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
         pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
 
         stemcell = Bosh::Dev::Stemcell.new(pipeline.latest_stemcell_filename('aws', 'micro-bosh-stemcell', true))
 
-        connection = fog_storage(aws_credentials[:access_key_id], aws_credentials[:secret_access_key])
+        connection = fog_storage(access_key_id, secret_access_key)
         directory = connection.directories.create(key: 'bosh-jenkins-artifacts')
         directory.files.create(key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
                                body: stemcell.ami_id,

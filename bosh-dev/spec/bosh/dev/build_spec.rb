@@ -15,6 +15,8 @@ module Bosh::Dev
     let(:fake_s3_bucket) { 'FAKE_BOSH_CI_PIPELINE_BUCKET' }
     let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline') }
 
+    subject { Build.new(123) }
+
     before do
       ENV.stub(:fetch).with('BUILD_NUMBER').and_return('current')
       ENV.stub(:fetch).with('CANDIDATE_BUILD_NUMBER').and_return('candidate')
@@ -23,10 +25,6 @@ module Bosh::Dev
       fake_pipeline.stub(bucket: fake_s3_bucket)
 
       Bosh::Dev::Pipeline.stub(new: fake_pipeline)
-    end
-
-    subject do
-      Build.new(123)
     end
 
     describe '.current' do
@@ -56,6 +54,16 @@ module Bosh::Dev
         fake_pipeline.should_receive(:s3_upload).with('release-tarball.tgz', 'release/bosh-123.tgz')
 
         subject.upload(release)
+      end
+    end
+
+    describe '#promote_artifacts' do
+      it 'syncs buckets and updates AWS aim text reference' do
+        subject.should_receive(:sync_buckets)
+        subject.should_receive(:update_light_micro_bosh_ami_pointer_file).
+            with('FAKE_ACCESS_KEY_ID', 'FAKE_SECRET_ACCESS_KEY')
+
+        subject.promote_artifacts(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
       end
     end
 
@@ -93,27 +101,14 @@ module Bosh::Dev
       end
     end
 
-    describe '#fog_storage' do
-      it 'configures Fog::Storage correctly' do
-        Fog::Storage.should_receive(:new).with(provider: 'AWS',
-                                               aws_access_key_id: 'FAKE_ACCESS_KEY_ID',
-                                               aws_secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
-
-        subject.fog_storage('FAKE_ACCESS_KEY_ID', 'FAKE_SECRET_ACCESS_KEY')
-      end
-    end
-
     describe '#update_light_micro_bosh_ami_pointer_file' do
-      let(:aws_credentials) do
-        {
-            access_key_id: 'FAKE_ACCESS_KEY_ID',
-            secret_access_key: 'FAKE_SECRET_ACCESS_KEY'
-        }
-      end
+      let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
+      let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
+
       let(:fog_storage) do
         Fog::Storage.new(provider: 'AWS',
-                         aws_access_key_id: aws_credentials[:access_key_id],
-                         aws_secret_access_key: aws_credentials[:secret_access_key])
+                         aws_access_key_id: access_key_id,
+                         aws_secret_access_key: secret_access_key)
       end
       let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
       let(:fake_stemcell) { instance_double('Bosh::Dev::Stemcell') }
@@ -140,7 +135,7 @@ module Bosh::Dev
         fake_pipeline.should_receive(:download_latest_stemcell).
             with(infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
 
-        subject.update_light_micro_bosh_ami_pointer_file(aws_credentials)
+        subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end
 
       it 'initializes a Stemcell with the downloaded stemcell filename' do
@@ -149,13 +144,13 @@ module Bosh::Dev
 
         Bosh::Dev::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
-        subject.update_light_micro_bosh_ami_pointer_file(aws_credentials)
+        subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end
 
       it 'updates the S3 object with the AMI ID from the stemcell.MF' do
         fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
 
-        subject.update_light_micro_bosh_ami_pointer_file(aws_credentials)
+        subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
 
         expect(fog_storage.
                    directories.get('bosh-jenkins-artifacts').
@@ -163,11 +158,21 @@ module Bosh::Dev
       end
 
       it 'is publicly reachable' do
-        subject.update_light_micro_bosh_ami_pointer_file(aws_credentials)
+        subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
 
         expect(fog_storage.
                    directories.get('bosh-jenkins-artifacts').
                    files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
+      end
+    end
+
+    describe '#fog_storage' do
+      it 'configures Fog::Storage correctly' do
+        Fog::Storage.should_receive(:new).with(provider: 'AWS',
+                                               aws_access_key_id: 'FAKE_ACCESS_KEY_ID',
+                                               aws_secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
+
+        subject.fog_storage('FAKE_ACCESS_KEY_ID', 'FAKE_SECRET_ACCESS_KEY')
       end
     end
   end
