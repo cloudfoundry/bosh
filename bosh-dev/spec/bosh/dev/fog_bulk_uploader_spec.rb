@@ -55,7 +55,6 @@ describe Bosh::Dev::FogBulkUploader do
     it 'creates a new uploader for the aws pipeline from environment variables' do
       ENV.should_receive(:fetch).with('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT').and_return('access key')
       ENV.should_receive(:fetch).with('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT').and_return('secret key')
-      ENV.should_receive(:fetch).with('BOSH_CI_PIPELINE_BUCKET', anything).and_call_original
       uploader = Bosh::Dev::FogBulkUploader.s3_pipeline
       expect(uploader.base_dir).to eq('bosh-ci-pipeline')
     end

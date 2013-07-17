@@ -11,7 +11,7 @@ module Bosh::Dev
           aws_access_key_id: ENV.fetch('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'),
           aws_secret_access_key: ENV.fetch('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT')
       }
-      bucket = ENV.fetch('BOSH_CI_PIPELINE_BUCKET', 'bosh-ci-pipeline')
+      bucket = 'bosh-ci-pipeline'
 
       new(bucket, options)
     end
