@@ -3,6 +3,8 @@ require 'logger'
 
 module Bosh::Dev
   class Pipeline
+    attr_reader :fog_storage
+
     def initialize(options={})
       @fog_storage = options.fetch(:fog_storage) do
         fog_options = {
@@ -69,7 +71,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :fog_storage, :logger
+    attr_reader :logger
 
     def stemcell_filename(version, infrastructure, name, light)
       stemcell_filename_parts = []

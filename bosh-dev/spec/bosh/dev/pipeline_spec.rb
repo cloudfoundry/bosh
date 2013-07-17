@@ -8,7 +8,7 @@ module Bosh
     describe Pipeline do
       include FakeFS::SpecHelpers
 
-      let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: '...', aws_secret_access_key: '...') }
+      let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: 'fake access key', aws_secret_access_key: 'fake secret key') }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
       let(:logger) { instance_double('Logger') }
       subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger) }
@@ -21,6 +21,25 @@ module Bosh
 
       its(:bucket) { should eq('bosh-ci-pipeline') }
       its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/gems/') }
+
+      describe '#fog_storage' do
+        subject(:pipeline) do
+          Pipeline.new(logger: logger)
+        end
+
+        before do
+          ENV.stub(:to_hash).and_return({
+                                            'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake access key',
+                                            'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake secret key',
+                                        })
+        end
+
+        it 'uses the aws access key and secret key configured in Jenkins' do
+          expect(pipeline.fog_storage).not_to be_nil
+          expect(pipeline.fog_storage.instance_variable_get(:@aws_access_key_id)).to eq('fake access key')
+          expect(pipeline.fog_storage.instance_variable_get(:@aws_secret_access_key)).to eq('fake secret key')
+        end
+      end
 
       describe '#s3_upload' do
         before do

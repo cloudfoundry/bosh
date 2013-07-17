@@ -4,27 +4,12 @@ require 'bosh/dev/pipeline'
 
 module Bosh::Dev
   class FogBulkUploader
-    attr_reader :base_dir
+    attr_reader :base_dir, :fog_storage
 
-    def self.s3_pipeline
-      options = {
-          provider: 'AWS',
-          aws_access_key_id: ENV.to_hash.fetch('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'),
-          aws_secret_access_key: ENV.to_hash.fetch('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT')
-      }
-
-      pipeline = Pipeline.new
-      new(pipeline.bucket, options)
-    end
-
-    def initialize(base_dir, options)
-      @options = options.clone
-      @base_dir = base_dir
+    def initialize(pipeline=Pipeline.new)
+      @base_dir = pipeline.bucket
+      @fog_storage = pipeline.fog_storage
       @logger = Logger.new(STDOUT)
-    end
-
-    def fog_storage
-      @fog_storage ||= Fog::Storage.new(@options)
     end
 
     def upload_r(source_dir, dest_dir)

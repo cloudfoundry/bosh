@@ -13,7 +13,7 @@ namespace :ci do
         # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
         sh('gem', 'generate_index', '.')
       end
-      Bosh::Dev::FogBulkUploader.s3_pipeline.upload_r('.', 'gems')
+      Bosh::Dev::FogBulkUploader.new.upload_r('.', 'gems')
     end
   end
 
