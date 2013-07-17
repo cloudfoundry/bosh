@@ -89,7 +89,7 @@ module Bosh::AwsCloud
       valid_states = [:completed]
       validate_states(valid_states, target_state)
 
-      new.for_resource(resource: snapshot, target_state: target_state) do |current_state|
+      new.for_resource(resource: snapshot, target_state: target_state, tries: 18) do |current_state|
         current_state == target_state
       end
     end
