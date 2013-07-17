@@ -27,21 +27,29 @@ module Bosh::Dev
       Bosh::Dev::Pipeline.stub(new: fake_pipeline)
     end
 
-    describe '.current' do
-      subject do
-        Build.current
-      end
-
-      its(:s3_release_url) { should eq(File.join('s3://', fake_s3_bucket, 'release/bosh-current.tgz')) }
-    end
-
     describe '.candidate' do
       subject do
         Build.candidate
       end
 
-      its(:s3_release_url) { should eq(File.join('s3://', fake_s3_bucket, 'release/bosh-candidate.tgz')) }
+      context 'when running the "publish_candidate_gems" job' do
+        before do
+          ENV.stub(:fetch).with('JOB_NAME').and_return('publish_candidate_gems')
+        end
+
+        its(:number) { should eq 'current'}
+      end
+
+      context 'when running the jobs downstream to publish_candidate_gems' do
+        before do
+          ENV.stub(:fetch).with('JOB_NAME').and_return('something_that_needs_candidates')
+        end
+
+        its(:number) { should eq 'candidate'}
+      end
     end
+
+    its(:s3_release_url) { should eq(File.join('s3://', fake_s3_bucket, 'release/bosh-123.tgz')) }
 
     describe '#job_name' do
       its(:job_name) { should eq('current_job') }

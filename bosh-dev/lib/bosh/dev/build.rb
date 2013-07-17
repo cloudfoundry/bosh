@@ -4,18 +4,18 @@ module Bosh::Dev
   class Build
     attr_reader :number
 
+    def self.candidate
+      if ENV.fetch('JOB_NAME') == 'publish_candidate_gems'
+        new(ENV.fetch('BUILD_NUMBER'))
+      else
+        new(ENV.fetch('CANDIDATE_BUILD_NUMBER'))
+      end
+    end
+
     def initialize(number)
       @number = number
       @job_name = ENV.fetch('JOB_NAME')
       @pipeline = Pipeline.new
-    end
-
-    def self.current
-      new(ENV.fetch('BUILD_NUMBER'))
-    end
-
-    def self.candidate
-      new(ENV.fetch('CANDIDATE_BUILD_NUMBER'))
     end
 
     def upload(release)

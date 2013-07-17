@@ -5,7 +5,7 @@ namespace :ci do
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
     require 'bosh/dev/version_file'
-    version_file = Bosh::Dev::VersionFile.new(Bosh::Dev::Build.current.number)
+    version_file = Bosh::Dev::VersionFile.new(Bosh::Dev::Build.candidate.number)
     version_file.write
     Rake::Task['all:finalize_release_directory'].invoke
     cd('pkg') do
@@ -23,7 +23,7 @@ namespace :ci do
 
     cd(ENV['WORKSPACE']) do
       release = Bosh::Dev::MicroBoshRelease.new
-      Bosh::Dev::Build.current.upload(release)
+      Bosh::Dev::Build.candidate.upload(release)
     end
   end
 
