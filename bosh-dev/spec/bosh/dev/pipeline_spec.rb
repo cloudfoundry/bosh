@@ -20,6 +20,7 @@ module Bosh
       end
 
       its(:bucket) { should eq('bosh-ci-pipeline') }
+      its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/gems/') }
 
       describe '#s3_upload' do
         before do

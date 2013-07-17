@@ -3,7 +3,6 @@ require 'logger'
 
 module Bosh::Dev
   class Pipeline
-
     def initialize(options={})
       @fog_storage = options.fetch(:fog_storage) do
         fog_options = {
@@ -27,6 +26,10 @@ module Bosh::Dev
 
     def bucket
       'bosh-ci-pipeline'
+    end
+
+    def gems_dir_url
+      "https://s3.amazonaws.com/#{bucket}/gems/"
     end
 
     def s3_upload(file, remote_path)

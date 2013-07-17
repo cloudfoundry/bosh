@@ -80,7 +80,8 @@ namespace :stemcell do
     options[:stemcell_version] = args[:version] || micro_version
     if args[:tarball]
       release_tarball = args[:tarball]
-      options[:agent_gem_src_url] = 'https://s3.amazonaws.com/bosh-ci-pipeline/gems/'
+      pipeline = Bosh::Dev::Pipeline.new
+      options[:agent_gem_src_url] = pipeline.gems_dir_url
     else
       Rake::Task['all:finalize_release_directory'].invoke
       release = Bosh::Dev::MicroBoshRelease.new
