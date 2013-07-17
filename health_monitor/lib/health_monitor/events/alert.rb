@@ -41,7 +41,7 @@ module Bosh::HealthMonitor
         add_error("timestamp is missing") if @created_at.nil?
 
         if @created_at && !@created_at.kind_of?(Time)
-          add_error("timestamp is invalid")
+          add_error('created_at is invalid UNIX timestamp')
         end
       end
 

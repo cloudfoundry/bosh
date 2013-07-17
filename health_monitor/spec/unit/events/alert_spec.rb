@@ -15,7 +15,7 @@ describe Bhm::Events::Alert do
 
     test_alert = make_alert(:id => nil, :severity => -3, :created_at => "foobar")
     test_alert.validate
-    test_alert.error_message.should == "id is missing, severity is invalid (non-negative integer expected), timestamp is invalid"
+    test_alert.error_message.should == "id is missing, severity is invalid (non-negative integer expected), created_at is invalid UNIX timestamp"
   end
 
   it "has short description" do
