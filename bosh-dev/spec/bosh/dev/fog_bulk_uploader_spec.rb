@@ -7,8 +7,8 @@ describe Bosh::Dev::FogBulkUploader do
 
   let(:fog_options) do
     {
-        provider:              'AWS',
-        aws_access_key_id:     'access key',
+        provider: 'AWS',
+        aws_access_key_id: 'access key',
         aws_secret_access_key: 'secret key'
     }
   end
@@ -19,7 +19,7 @@ describe Bosh::Dev::FogBulkUploader do
 
   let(:src) { 'source_dir' }
   let(:dst) { 'dest_dir' }
-  let(:fake_logger) { double('Logger', info: true)}
+  let(:fake_logger) { double('Logger', info: true) }
   let(:files) {
     %w[
       test_file
@@ -32,7 +32,7 @@ describe Bosh::Dev::FogBulkUploader do
   before do
     Fog.mock!
 
-    fog_storage.directories.create(key: base_dir )
+    fog_storage.directories.create(key: base_dir)
     FileUtils.mkdir_p(src)
 
     Dir.chdir(src) do
@@ -42,6 +42,11 @@ describe Bosh::Dev::FogBulkUploader do
       end
     end
     Logger.stub(:new).and_return(fake_logger)
+
+    ENV.stub(:to_hash).and_return({
+                                      'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'access key',
+                                      'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'secret key'
+                                  })
   end
 
   it 'raises an error when base_directory is not found in provider' do
@@ -53,8 +58,6 @@ describe Bosh::Dev::FogBulkUploader do
 
   describe 'aws_pipeline' do
     it 'creates a new uploader for the aws pipeline from environment variables' do
-      ENV.should_receive(:fetch).with('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT').and_return('access key')
-      ENV.should_receive(:fetch).with('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT').and_return('secret key')
       uploader = Bosh::Dev::FogBulkUploader.s3_pipeline
       expect(uploader.base_dir).to eq('bosh-ci-pipeline')
     end

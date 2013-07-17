@@ -1,5 +1,6 @@
 require 'fog'
 require 'logger'
+require 'bosh/dev/pipeline'
 
 module Bosh::Dev
   class FogBulkUploader
@@ -8,12 +9,12 @@ module Bosh::Dev
     def self.s3_pipeline
       options = {
           provider: 'AWS',
-          aws_access_key_id: ENV.fetch('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'),
-          aws_secret_access_key: ENV.fetch('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT')
+          aws_access_key_id: ENV.to_hash.fetch('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'),
+          aws_secret_access_key: ENV.to_hash.fetch('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT')
       }
-      bucket = 'bosh-ci-pipeline'
 
-      new(bucket, options)
+      pipeline = Pipeline.new
+      new(pipeline.bucket, options)
     end
 
     def initialize(base_dir, options)
