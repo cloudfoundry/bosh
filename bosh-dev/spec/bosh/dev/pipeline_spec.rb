@@ -11,7 +11,7 @@ module Bosh
       let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: 'fake access key', aws_secret_access_key: 'fake secret key') }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
       let(:bucket_name) { 'bosh-ci-pipeline' }
-      let(:logger) { instance_double('Logger') }
+      let(:logger) { instance_double('Logger').as_null_object }
       subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger) }
 
       before do

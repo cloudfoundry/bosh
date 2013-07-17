@@ -1,5 +1,5 @@
 require 'bosh/dev/build'
-require 'bosh/dev/fog_bulk_uploader'
+require 'bosh/dev/bulk_uploader'
 
 namespace :ci do
   desc 'Publish CI pipeline gems to S3'
@@ -13,7 +13,7 @@ namespace :ci do
         # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
         sh('gem', 'generate_index', '.')
       end
-      Bosh::Dev::FogBulkUploader.new.upload_r('.', 'gems')
+      Bosh::Dev::BulkUploader.new.upload_r('.', 'gems')
     end
   end
 

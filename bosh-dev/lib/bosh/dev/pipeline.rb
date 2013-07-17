@@ -18,11 +18,12 @@ module Bosh::Dev
     end
 
     def create(options)
-      base_directory.files.create(
+      uploaded_file = base_directory.files.create(
           key: options.fetch(:key),
           body: options.fetch(:body),
           public: options.fetch(:public)
       )
+      logger.info("uploaded to #{uploaded_file.public_url}")
     end
 
     def publish_stemcell(stemcell)
