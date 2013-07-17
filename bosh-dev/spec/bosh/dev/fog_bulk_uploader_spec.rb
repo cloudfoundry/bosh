@@ -5,7 +5,7 @@ require 'fakefs/spec_helpers'
 describe Bosh::Dev::FogBulkUploader do
   include FakeFS::SpecHelpers
 
-  let(:bucket_name) { 'bosh-ci-pipeline' }
+  let(:bucket_name) { 'fake-bucket' }
   let(:pipeline) { double(Bosh::Dev::Pipeline, bucket: bucket_name, fog_storage: fog_storage) }
   let(:src) { 'source_dir' }
   let(:dst) { 'dest_dir' }
@@ -54,7 +54,7 @@ describe Bosh::Dev::FogBulkUploader do
     end
 
     it 'creates a new uploader for the aws pipeline from environment variables' do
-      expect(uploader.base_dir).to eq(pipeline.bucket)
+      expect(uploader.base_dir).to eq('bosh-ci-pipeline')
     end
 
     describe '#fog_storage' do
