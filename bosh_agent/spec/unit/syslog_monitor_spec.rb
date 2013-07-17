@@ -16,15 +16,25 @@ describe Bosh::Agent::SyslogMonitor do
   let(:invalid_msg) { "<38>Jun  7 19:26:05 localhost sshd[23075]: Invalid user foo from ::1" }
   let(:misc_msg) { "<38>Jan  1 00:00:00 localhost monkeyd[1337]: Printer on fire" }
 
+  let(:time) { Time.now }
+  let(:uuid) { 'abc' }
+
+  before do
+    Timecop.freeze
+    UUIDTools::UUID.stub(random_create: uuid)
+  end
+
+  after do
+    Timecop.return
+  end
+
   it "converts auth login message into nats alert" do
-    time = Time.now
-    Time.stub(:now).and_return(time)
     expected_json = Yajl::Encoder.encode({
-      "id"         => 1,
+      "id"         => uuid,
       "severity"   => 4,  # warning, see alert.rb
       "title"      => "SSH Login",
       "summary"    => "sshd[22636]: Accepted publickey for bosh_8ckfjuxt7 from 10.10.0.7 port 40312 ssh2",
-      "created_at" => time
+      "created_at" => time.to_i
     })
     nats.should_receive(:publish).with("hm.agent.alert.agent_id", expected_json)
 
@@ -32,14 +42,12 @@ describe Bosh::Agent::SyslogMonitor do
   end
 
   it "converts auth logout message into nats alert" do
-    time = Time.now
-    Time.stub(:now).and_return(time)
     expected_json = Yajl::Encoder.encode({
-      "id"         => 1,
+      "id"         => uuid,
       "severity"   => 4,  # warning, see alert.rb
       "title"      => "SSH Logout",
       "summary"    => "sshd[22647]: Received disconnect from 10.10.0.7: 11: disconnected by user",
-      "created_at" => time
+      "created_at" => time.to_i
     })
     nats.should_receive(:publish).with("hm.agent.alert.agent_id", expected_json)
 

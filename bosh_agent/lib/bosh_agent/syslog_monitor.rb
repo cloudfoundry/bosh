@@ -2,6 +2,7 @@
 
 require 'eventmachine'
 require 'syslog_protocol'
+require 'uuidtools'
 
 module Bosh::Agent::SyslogMonitor
 
@@ -22,20 +23,20 @@ module Bosh::Agent::SyslogMonitor
       parsed = SyslogProtocol.parse(data)
 
       if parsed.content.end_with?('disconnected by user')
-        title = "SSH Logout"
+        title = 'SSH Logout'
       elsif parsed.content.include?('Accepted publickey for')
-        title = "SSH Login"
+        title = 'SSH Login'
       else
         return
       end
 
       json = Yajl::Encoder.encode(
         {
-          "id" => 1,
-          "severity" => SEVERITY,
-          "title" => title,
-          "summary" => parsed.content,
-          "created_at" => Time.now
+          'id' => UUIDTools::UUID.random_create,
+          'severity' => SEVERITY,
+          'title' => title,
+          'summary' => parsed.content,
+          'created_at' => Time.now.to_i
         }
       )
       @nats.publish("hm.agent.alert.#{@agent_id}", json)
@@ -44,9 +45,9 @@ module Bosh::Agent::SyslogMonitor
 
   def self.start(nats, agent_id)
     unless EM.reactor_running?
-      raise Error, "Cannot start syslog monitor as event loop is not running"
+      raise Error, 'Cannot start syslog monitor as event loop is not running'
     end
 
-    EventMachine::start_server "127.0.0.1", PORT, Server, nats, agent_id
+    EventMachine::start_server '127.0.0.1', PORT, Server, nats, agent_id
   end
 end

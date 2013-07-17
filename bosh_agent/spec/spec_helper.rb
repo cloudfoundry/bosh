@@ -11,6 +11,7 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 require "httpclient"
+require 'timecop'
 
 tmpdir = Dir.mktmpdir
 ENV["TMPDIR"] = tmpdir
