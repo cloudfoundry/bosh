@@ -228,16 +228,14 @@ namespace :spec do
       task :bat do
         bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'openstack')
 
-        cd(ENV['WORKSPACE']) do
-          ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
-          ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-          ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-          ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-          ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
-          ENV['BAT_DNS_HOST'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
-          ENV['BAT_FAST'] = 'true'
-          Rake::Task['bat'].execute
-        end
+        ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
+        ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
+        ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
+        ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
+        ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
+        ENV['BAT_DNS_HOST'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
+        ENV['BAT_FAST'] = 'true'
+        Rake::Task['bat'].execute
       end
     end
 
@@ -288,15 +286,13 @@ namespace :spec do
       task :bat do
         bat_helper = Bosh::Dev::BatHelper.new(ENV['WORKSPACE'], 'vsphere')
 
-        cd(ENV['WORKSPACE']) do
-          ENV['BAT_DIRECTOR'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
-          ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-          ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-          ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-          ENV['BAT_DNS_HOST'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
-          ENV['BAT_FAST'] = 'true'
-          Rake::Task['bat'].execute
-        end
+        ENV['BAT_DIRECTOR'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
+        ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
+        ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
+        ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
+        ENV['BAT_DNS_HOST'] = ENV['BOSH_VSPHERE_MICROBOSH_IP']
+        ENV['BAT_FAST'] = 'true'
+        Rake::Task['bat'].execute
       end
     end
 

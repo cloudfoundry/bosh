@@ -21,10 +21,8 @@ namespace :ci do
   task :publish_microbosh_release => [:publish_pipeline_gems] do
     require 'bosh/dev/micro_bosh_release'
 
-    cd(ENV['WORKSPACE']) do
-      release = Bosh::Dev::MicroBoshRelease.new
-      Bosh::Dev::Build.candidate.upload(release)
-    end
+    release = Bosh::Dev::MicroBoshRelease.new
+    Bosh::Dev::Build.candidate.upload(release)
   end
 
   desc 'Promote from pipeline to artifacts bucket'
