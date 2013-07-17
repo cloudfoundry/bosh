@@ -17,6 +17,14 @@ module Bosh::Dev
       @logger = options.fetch(:logger) { Logger.new(STDOUT) }
     end
 
+    def create(options)
+      base_directory.files.create(
+          key: options.fetch(:key),
+          body: options.fetch(:body),
+          public: options.fetch(:public)
+      )
+    end
+
     def publish_stemcell(stemcell)
       latest_filename = latest_stemcell_filename(stemcell.infrastructure, stemcell.name, stemcell.light?)
       s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
@@ -72,6 +80,10 @@ module Bosh::Dev
     private
 
     attr_reader :logger
+
+    def base_directory
+      fog_storage.directories.get(bucket) or raise "bucket '#{bucket}' not found"
+    end
 
     def stemcell_filename(version, infrastructure, name, light)
       stemcell_filename_parts = []

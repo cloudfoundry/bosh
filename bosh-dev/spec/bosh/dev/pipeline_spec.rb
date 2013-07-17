@@ -10,17 +10,46 @@ module Bosh
 
       let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: 'fake access key', aws_secret_access_key: 'fake secret key') }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
+      let(:bucket_name) { 'bosh-ci-pipeline' }
       let(:logger) { instance_double('Logger') }
       subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger) }
 
       before do
         Fog.mock!
         Fog::Mock.reset
-        fog_storage.directories.create(key: 'bosh-ci-pipeline')
+        fog_storage.directories.create(key: bucket_name) if bucket_name
       end
 
       its(:bucket) { should eq('bosh-ci-pipeline') }
       its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/gems/') }
+
+      describe '#create' do
+        let(:bucket) { fog_storage.directories.get(bucket_name) }
+
+        it 'creates the specified file on the pipeline bucket' do
+          pipeline.create(key: 'dest_dir/foo/bar/baz.txt', body: 'contents of baz', public: true)
+
+          expect(bucket.files.get('dest_dir/foo/bar/baz.txt')).not_to be_nil
+          expect(bucket.files.get('dest_dir/foo/bar/baz.txt').body).to eq('contents of baz')
+          expect(bucket.files.get('dest_dir/foo/bar/baz.txt').public_url).not_to be_nil
+        end
+
+        it 'publicizes the bucket only when asked to' do
+          pipeline.create(key: 'dest_dir/foo/bar/baz.txt', body: 'contents of baz', public: false)
+
+          expect(bucket.files.get('dest_dir/foo/bar/baz.txt').public_url).to be_nil
+        end
+
+        context 'when the bucket does not exist' do
+          let(:bucket_name) { false }
+
+          it 'raises an error' do
+            expect {
+              pipeline.create({})
+            }.to raise_error("bucket 'bosh-ci-pipeline' not found")
+          end
+        end
+      end
 
       describe '#fog_storage' do
         subject(:pipeline) do
