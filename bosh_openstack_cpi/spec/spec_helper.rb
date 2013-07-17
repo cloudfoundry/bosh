@@ -1,13 +1,12 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 # Copyright (c) 2012 Piston Cloud Computing, Inc.
-
-require "rspec"
-require "tmpdir"
-require "zlib"
-require "archive/tar/minitar"
+require 'rspec'
+require 'tmpdir'
+require 'zlib'
+require 'archive/tar/minitar'
 include Archive::Tar
 
-require "cloud/openstack"
+require 'cloud/openstack'
 
 def internal_to(*args, &block)
   example = describe *args, &block
@@ -25,22 +24,22 @@ end
 
 def mock_cloud_options
   {
-    "openstack" => {
-      "auth_url" => "http://127.0.0.1:5000/v2.0",
-      "username" => "admin",
-      "api_key" => "nova",
-      "tenant" => "admin",
-      "region" => "RegionOne",
-      "state_timeout" => 0.1
+    'openstack' => {
+      'auth_url' => 'http://127.0.0.1:5000/v2.0',
+      'username' => 'admin',
+      'api_key' => 'nova',
+      'tenant' => 'admin',
+      'region' => 'RegionOne',
+      'state_timeout' => 0.1
     },
-    "registry" => {
-      "endpoint" => "localhost:42288",
-      "user" => "admin",
-      "password" => "admin"
+    'registry' => {
+      'endpoint' => 'localhost:42288',
+      'user' => 'admin',
+      'password' => 'admin'
     },
-    "agent" => {
-      "foo" => "bar",
-      "baz" => "zaz"
+    'agent' => {
+      'foo' => 'bar',
+      'baz' => 'zaz'
     }
   }
 end
@@ -49,21 +48,21 @@ def make_cloud(options = nil)
   Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options)
 end
 
-def mock_registry(endpoint = "http://registry:3333")
-  registry = mock("registry", :endpoint => endpoint)
+def mock_registry(endpoint = 'http://registry:3333')
+  registry = mock('registry', :endpoint => endpoint)
   Bosh::Registry::Client.stub!(:new).and_return(registry)
   registry
 end
 
 def mock_cloud(options = nil)
-  servers = double("servers")
-  images = double("images")
-  flavors = double("flavors")
-  volumes = double("volumes")
-  addresses = double("addresses")
-  snapshots = double("snapshots")
-  key_pairs = double("key_pairs")
-  security_groups = double("security_groups")
+  servers = double('servers')
+  images = double('images')
+  flavors = double('flavors')
+  volumes = double('volumes')
+  addresses = double('addresses')
+  snapshots = double('snapshots')
+  key_pairs = double('key_pairs')
+  security_groups = double('security_groups')
 
   glance = double(Fog::Image)
   Fog::Image.stub(:new).and_return(glance)
@@ -87,7 +86,7 @@ def mock_cloud(options = nil)
 end
 
 def mock_glance(options = nil)
-  images = double("images")
+  images = double('images')
 
   openstack = double(Fog::Compute)
   Fog::Compute.stub(:new).and_return(openstack)
@@ -104,42 +103,42 @@ end
 
 def dynamic_network_spec
   {
-    "type" => "dynamic",
-    "cloud_properties" => {
-      "security_groups" => %w[default]
+    'type' => 'dynamic',
+    'cloud_properties' => {
+      'security_groups' => %w[default]
     }
   }
 end
 
 def manual_network_spec
   {
-    "type" => "manual",
-    "cloud_properties" => {
-      "security_groups" => %w[default],
-      "net_id" => "net"
+    'type' => 'manual',
+    'cloud_properties' => {
+      'security_groups' => %w[default],
+      'net_id' => 'net'
     }
   }
 end
 
 def vip_network_spec
   {
-    "type" => "vip",
-    "ip" => "10.0.0.1"
+    'type' => 'vip',
+    'ip' => '10.0.0.1'
   }
 end
 
 def combined_network_spec
   {
-    "network_a" => dynamic_network_spec,
-    "network_b" => vip_network_spec
+    'network_a' => dynamic_network_spec,
+    'network_b' => vip_network_spec
   }
 end
 
 def resource_pool_spec
   {
-    "key_name" => "test_key",
-    "availability_zone" => "foobar-1a",
-    "instance_type" => "m1.tiny"
+    'key_name' => 'test_key',
+    'availability_zone' => 'foobar-1a',
+    'instance_type' => 'm1.tiny'
   }
 end
 

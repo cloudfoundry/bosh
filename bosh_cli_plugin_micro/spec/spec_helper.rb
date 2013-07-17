@@ -1,8 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-
-require "rspec"
-require "cli"
-require "bosh/cli/commands/micro"
+require 'rspec'
+require 'cli'
+require 'bosh/cli/commands/micro'
 
 def spec_asset(filename)
   File.expand_path("../assets/#{filename}", __FILE__)
