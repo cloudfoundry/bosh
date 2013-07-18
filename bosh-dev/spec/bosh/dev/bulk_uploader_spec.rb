@@ -45,10 +45,9 @@ describe Bosh::Dev::BulkUploader do
   end
 
   describe 'upload_r' do
-    let(:bucket) { fog_storage.directories.get(bucket_name) }
 
     it 'recursively uploads a directory into base_dir' do
-      pipeline.should_receive(:create) do |options|
+      pipeline.should_receive(:create).with do |options|
         expect(options[:public]).to eq(true)
 
         case options[:key]
