@@ -13,11 +13,13 @@ require "cloud/vsphere/resources/resource_pool"
 require "cloud/vsphere/resources/scorer"
 require "cloud/vsphere/resources/util"
 require "cloud/vsphere/models/disk"
+require "cloud/vsphere/vm_configurable"
+require "cloud/vsphere/stemcell_manager"
 
 module VSphereCloud
-
   class Cloud < Bosh::Cloud
     include VimSdk
+    include VmConfigurable
 
     class TimeoutException < StandardError; end
 
@@ -61,76 +63,23 @@ module VSphereCloud
       false
     end
 
-    def create_stemcell(image, _)
-      with_thread_name("create_stemcell(#{image}, _)") do
-        result = nil
-        Dir.mktmpdir do |temp_dir|
-          @logger.info("Extracting stemcell to: #{temp_dir}")
-          output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
-          raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
-
-          ovf_file = Dir.entries(temp_dir).find { |entry| File.extname(entry) == ".ovf" }
-          raise "Missing OVF" if ovf_file.nil?
-          ovf_file = File.join(temp_dir, ovf_file)
-
-          name = "sc-#{generate_unique_name}"
-          @logger.info("Generated name: #{name}")
-
-          stemcell_size = File.size(image) / (1024 * 1024)
-          cluster, datastore = @resources.place(0, stemcell_size, [])
-          @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
-
-          import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool.mob, datastore.mob)
-          lease = obtain_nfc_lease(cluster.resource_pool.mob, import_spec_result.import_spec,
-                                   cluster.datacenter.template_folder.mob)
-          @logger.info("Waiting for NFC lease")
-          state = wait_for_nfc_lease(lease)
-          raise "Could not acquire HTTP NFC lease (state is: #{state})" unless state == Vim::HttpNfcLease::State::READY
-
-          @logger.info("Uploading")
-          vm = upload_ovf(ovf_file, lease, import_spec_result.file_item)
-          result = name
-
-          @logger.info("Removing NICs")
-          devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", ensure_all: true)
-          config = Vim::Vm::ConfigSpec.new
-          config.device_change = []
-
-          nics = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualEthernetCard) }
-          nics.each do |nic|
-            nic_config = create_delete_device_spec(nic)
-            config.device_change << nic_config
-          end
-          client.reconfig_vm(vm, config)
-
-          @logger.info("Taking initial snapshot")
-          task = take_snapshot(vm, "initial")
-          client.wait_for_task(task)
-        end
-        result
-      end
+    def stemcell_manager
+      @stemcell ||= StemcellManager.new(@client, @logger, @resources)
     end
+
+    def create_stemcell(image, _)
+       with_thread_name("create_stemcell(#{image}, _)") do
+         "sc-#{generate_unique_name}".tap do |name|
+            Dir.mktmpdir { |temp_dir| vm = stemcell_manager.create(image, name, temp_dir) }
+            @logger.info("Taking initial snapshot")
+            @client.wait_for_task(take_snapshot(vm, "initial"))
+          end
+       end
+     end
 
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
-        Bosh::ThreadPool.new(max_threads: 32, logger: @logger).wrap do |pool|
-          @resources.datacenters.each_value do |datacenter|
-            @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-            templates = client.get_property(datacenter.template_folder.mob, Vim::Folder, "childEntity", ensure_all: true)
-            template_properties = client.get_properties(templates, Vim::VirtualMachine, ["name"])
-            template_properties.each_value do |properties|
-              template_name = properties["name"].gsub("%2f", "/")
-              if template_name.split("/").first.strip == stemcell
-                @logger.info("Found: #{template_name}")
-                pool.process do
-                  @logger.info("Deleting: #{template_name}")
-                  client.delete_vm(properties[:obj])
-                  @logger.info("Deleted: #{template_name}")
-                end
-              end
-            end
-          end
-        end
+        stemcell_manager.delete(stemcell)
       end
     end
 
@@ -858,83 +807,6 @@ module VSphereCloud
       SecureRandom.uuid
     end
 
-    def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})
-      backing_info = Vim::Vm::Device::VirtualDisk::FlatVer2BackingInfo.new
-      backing_info.datastore = datastore
-      if options[:independent]
-        backing_info.disk_mode = Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT
-      else
-        backing_info.disk_mode = Vim::Vm::Device::VirtualDiskOption::DiskMode::PERSISTENT
-      end
-      backing_info.file_name = file_name
-
-      virtual_disk = Vim::Vm::Device::VirtualDisk.new
-      virtual_disk.key = -1
-      virtual_disk.controller_key = controller_key
-      virtual_disk.backing = backing_info
-      virtual_disk.capacity_in_kb = space * 1024
-
-      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
-      device_config_spec.device = virtual_disk
-      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::ADD
-      if options[:create]
-        device_config_spec.file_operation = Vim::Vm::Device::VirtualDeviceSpec::FileOperation::CREATE
-      end
-      device_config_spec
-    end
-
-    def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)
-      raise "Can't find network: #{v_network_name}" if network.nil?
-      if network.class == Vim::Dvs::DistributedVirtualPortgroup
-        portgroup_properties = client.get_properties(network, Vim::Dvs::DistributedVirtualPortgroup,
-                                                     ["config.key", "config.distributedVirtualSwitch"],
-                                                     ensure_all: true)
-
-        switch = portgroup_properties["config.distributedVirtualSwitch"]
-        switch_uuid = client.get_property(switch, Vim::DistributedVirtualSwitch, "uuid", ensure_all: true)
-
-        port = Vim::Dvs::PortConnection.new
-        port.switch_uuid = switch_uuid
-        port.portgroup_key = portgroup_properties["config.key"]
-
-        backing_info = Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo.new
-        backing_info.port = port
-
-        dvs_index[port.portgroup_key] = v_network_name
-      else
-        backing_info = Vim::Vm::Device::VirtualEthernetCard::NetworkBackingInfo.new
-        backing_info.device_name = v_network_name
-        backing_info.network = network
-      end
-
-      nic = Vim::Vm::Device::VirtualVmxnet3.new
-      nic.key = -1
-      nic.controller_key = controller_key
-      nic.backing = backing_info
-
-      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
-      device_config_spec.device = nic
-      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::ADD
-      device_config_spec
-    end
-
-    def create_delete_device_spec(device, options = {})
-      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
-      device_config_spec.device = device
-      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE
-      if options[:destroy]
-        device_config_spec.file_operation = Vim::Vm::Device::VirtualDeviceSpec::FileOperation::DESTROY
-      end
-      device_config_spec
-    end
-
-    def create_edit_device_spec(device)
-      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
-      device_config_spec.device = device
-      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::EDIT
-      device_config_spec
-    end
-
     def fix_device_unit_numbers(devices, device_changes)
       grouped_devices = devices.group_by(&:controller_key)
 
@@ -951,71 +823,6 @@ module VSphereCloud
       end
     end
 
-    def import_ovf(name, ovf, resource_pool, datastore)
-      import_spec_params = Vim::OvfManager::CreateImportSpecParams.new
-      import_spec_params.entity_name = name
-      import_spec_params.locale = 'US'
-      import_spec_params.deployment_option = ''
-
-      ovf_file = File.open(ovf)
-      ovf_descriptor = ovf_file.read
-      ovf_file.close
-
-      @client.service_content.ovf_manager.create_import_spec(ovf_descriptor, resource_pool,
-                                                             datastore, import_spec_params)
-    end
-
-    def obtain_nfc_lease(resource_pool, import_spec, folder)
-      resource_pool.import_vapp(import_spec, folder, nil)
-    end
-
-    def wait_for_nfc_lease(lease)
-      loop do
-        state = client.get_property(lease, Vim::HttpNfcLease, "state")
-        unless state == Vim::HttpNfcLease::State::INITIALIZING
-          return state
-        end
-        sleep(1.0)
-      end
-    end
-
-    def upload_ovf(ovf, lease, file_items)
-      info = client.get_property(lease, Vim::HttpNfcLease, "info", ensure_all: true)
-      lease_updater = LeaseUpdater.new(client, lease)
-
-      info.device_url.each do |device_url|
-        device_key = device_url.import_key
-        file_items.each do |file_item|
-          if device_key == file_item.device_id
-            http_client = HTTPClient.new
-            http_client.send_timeout = 14400 # 4 hours
-            http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-            disk_file_path = File.join(File.dirname(ovf), file_item.path)
-            disk_file = File.open(disk_file_path)
-            disk_file_size = File.size(disk_file_path)
-
-            progress_thread = Thread.new do
-              loop do
-                lease_updater.progress = disk_file.pos * 100 / disk_file_size
-                sleep(2)
-              end
-            end
-
-            @logger.info("Uploading disk to: #{device_url.url}")
-
-            http_client.post(device_url.url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
-                                "Content-Length" => disk_file_size})
-
-            progress_thread.kill
-            disk_file.close
-          end
-        end
-      end
-      lease_updater.finish
-      info.entity
-    end
-
     def wait_until_off(vm, timeout)
         started = Time.now
         loop do
@@ -1024,6 +831,10 @@ module VSphereCloud
           raise TimeoutException if Time.now - started > timeout
           sleep(1.0)
         end
+    end
+
+    def snapshot_disk(_)
+      raise Bosh::Clouds::NotImplemented
     end
 
     private
