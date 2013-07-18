@@ -3,9 +3,9 @@ module Bosh
     class EC2
 
       NAT_AMI_ID = {
-        "us-east-1" => "ami-f619c29f",      # ami-vpc-nat-1.1.0-bets
-        "us-west-1" => "ami-3bcc9e7e",      # ami-vpc-nat-1.0.0-bets
-        "us-west-2" => "ami-52ff7262",      # ami-vpc-nat-1.0.0-bets
+        "us-east-1" => "ami-f619c29f",      # ami-vpc-nat-1.1.0-beta
+        "us-west-1" => "ami-3bcc9e7e",      # ami-vpc-nat-1.0.0-beta
+        "us-west-2" => "ami-52ff7262",      # ami-vpc-nat-1.0.0-beta
         "eu-west-1" => "ami-e5e2d991",      # ami-vpc-nat-1.1.0-beta
         "ap-southeast-1" => "ami-02eb9350", # ami-vpc-nat-1.0.0-beta
         "ap-northeast-1" => "ami-14d86d15", # ami-vpc-nat-1.0.0-beta
