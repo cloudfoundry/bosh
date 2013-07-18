@@ -23,7 +23,7 @@ module Bosh::Dev
     end
 
     def s3_release_url
-      File.join(s3_pipeline_uri, "release/bosh-#{number}.tgz")
+      File.join(pipeline.s3_url, "release/bosh-#{number}.tgz")
     end
 
     def promote_artifacts(aws_credentials)
@@ -32,11 +32,11 @@ module Bosh::Dev
     end
 
     def sync_buckets
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'gems')} s3://bosh-jenkins-gems")
+      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'gems')} s3://bosh-jenkins-gems")
 
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'release')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(s3_pipeline_uri, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'release')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
     end
 
     def update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
@@ -60,9 +60,5 @@ module Bosh::Dev
     private
 
     attr_reader :pipeline, :job_name
-
-    def s3_pipeline_uri
-      "s3://#{pipeline.bucket}/"
-    end
   end
 end

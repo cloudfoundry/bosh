@@ -20,7 +20,7 @@ module Bosh
         fog_storage.directories.create(key: bucket_name) if bucket_name
       end
 
-      its(:bucket) { should eq('bosh-ci-pipeline') }
+      its(:s3_url) { should eq('s3://bosh-ci-pipeline/') }
       its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/gems/') }
 
       describe '#create' do

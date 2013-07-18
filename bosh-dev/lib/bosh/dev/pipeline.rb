@@ -15,6 +15,7 @@ module Bosh::Dev
         Fog::Storage.new(fog_options)
       end
       @logger = options.fetch(:logger) { Logger.new(STDOUT) }
+      @bucket = 'bosh-ci-pipeline'
     end
 
     def create(options)
@@ -33,10 +34,6 @@ module Bosh::Dev
       s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
       s3_upload(stemcell.path, s3_path)
       s3_upload(stemcell.path, s3_latest_path)
-    end
-
-    def bucket
-      'bosh-ci-pipeline'
     end
 
     def gems_dir_url
@@ -78,9 +75,13 @@ module Bosh::Dev
       stemcell_filename('latest', infrastructure, name, light)
     end
 
+    def s3_url
+      "s3://#{bucket}/"
+    end
+
     private
 
-    attr_reader :logger
+    attr_reader :logger, :bucket
 
     def base_directory
       fog_storage.directories.get(bucket) or raise "bucket '#{bucket}' not found"

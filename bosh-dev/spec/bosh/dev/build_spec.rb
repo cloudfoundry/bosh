@@ -12,8 +12,7 @@ module Bosh::Dev
   describe Build do
     include FakeFS::SpecHelpers
 
-    let(:fake_s3_bucket) { 'FAKE_BOSH_CI_PIPELINE_BUCKET' }
-    let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline') }
+    let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', s3_url: 's3://FAKE_BOSH_CI_PIPELINE_BUCKET/') }
 
     subject { Build.new(123) }
 
@@ -22,7 +21,6 @@ module Bosh::Dev
       ENV.stub(:fetch).with('CANDIDATE_BUILD_NUMBER').and_return('candidate')
       ENV.stub(:fetch).with('JOB_NAME').and_return('current_job')
 
-      fake_pipeline.stub(bucket: fake_s3_bucket)
 
       Bosh::Dev::Pipeline.stub(new: fake_pipeline)
     end
@@ -49,7 +47,7 @@ module Bosh::Dev
       end
     end
 
-    its(:s3_release_url) { should eq(File.join('s3://', fake_s3_bucket, 'release/bosh-123.tgz')) }
+    its(:s3_release_url) { should eq(File.join(fake_pipeline.s3_url, 'release/bosh-123.tgz')) }
 
     describe '#job_name' do
       its(:job_name) { should eq('current_job') }
