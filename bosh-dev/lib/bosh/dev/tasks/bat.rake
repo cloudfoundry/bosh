@@ -8,16 +8,17 @@ rspec_opts << '--format Bosh::Dev::DataDogFormatter --require bosh/dev/data_dog_
 
 desc 'Run BAT tests'
 RSpec::Core::RakeTask.new(:bat) do |t|
-  cd 'bat'
-  t.pattern = %w[spec/env_spec.rb spec/bat/*_spec.rb]
+  bats_root = File.expand_path('../../../../../../bat', File.dirname(__FILE__))
+  t.pattern = %W[#{bats_root}/spec/env_spec.rb #{bats_root}/spec/bat/*_spec.rb]
   t.rspec_opts = rspec_opts
 end
+
 
 namespace :bat do
   desc 'Verify BAT environment'
   RSpec::Core::RakeTask.new(:env) do |t|
-    cd 'bat'
-    t.pattern = 'spec/env_spec.rb'
+    cd File.expand_path('../../../../../../bat', File.dirname(__FILE__))
+    t.pattern = %W[#{bats_root}/spec/env_spec.rb]
     t.rspec_opts = rspec_opts
   end
 end
