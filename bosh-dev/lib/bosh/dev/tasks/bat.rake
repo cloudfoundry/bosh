@@ -1,11 +1,12 @@
 require 'rspec'
 require 'rspec/core/rake_task'
-bats_root = File.expand_path('../../../../../../bat', File.dirname(__FILE__))
 
 rspec_opts = %w(--format documentation --color)
 rspec_opts << '--fail-fast' if (ENV['BAT_FAIL_FAST'] || 'false').downcase == 'true'
 
-rspec_opts << "--format Bosh::Dev::DataDogFormatter --require #{bats_root}/bosh/dev/data_dog_formatter" if ENV.key?('BAT_DATADOG_API_KEY')
+rspec_opts << "--format Bosh::Dev::DataDogFormatter --require bosh/dev/data_dog_formatter" if ENV.key?('BAT_DATADOG_API_KEY')
+
+bats_root = File.expand_path('../../../../../../bat', File.dirname(__FILE__))
 
 desc 'Run BAT tests'
 RSpec::Core::RakeTask.new(:bat) do |t|
