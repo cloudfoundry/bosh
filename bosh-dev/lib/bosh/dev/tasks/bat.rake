@@ -6,14 +6,12 @@ rspec_opts << '--fail-fast' if (ENV['BAT_FAIL_FAST'] || 'false').downcase == 'tr
 
 rspec_opts << "--format Bosh::Dev::DataDogFormatter --require bosh/dev/data_dog_formatter" if ENV.key?('BAT_DATADOG_API_KEY')
 
-bats_root = File.expand_path('../../../../../../bat', File.dirname(__FILE__))
-
 desc 'Run BAT tests'
 RSpec::Core::RakeTask.new(:bat) do |t|
   require 'fileutils'
   puts "Curent directory is #{FileUtils.pwd}"
 
-  t.pattern = %W[#{bats_root}/spec/env_spec.rb #{bats_root}/spec/bat/*_spec.rb]
+  t.pattern = %W[bat/spec/env_spec.rb bat/spec/bat/*_spec.rb]
   t.rspec_opts = rspec_opts
 end
 
@@ -23,7 +21,7 @@ namespace :bat do
     require 'fileutils'
     puts "Curent directory is #{FileUtils.pwd}"
 
-    t.pattern = %W[#{bats_root}/spec/env_spec.rb]
+    t.pattern = %W[spec/env_spec.rb]
     t.rspec_opts = rspec_opts
   end
 end
