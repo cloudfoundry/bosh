@@ -1,14 +1,17 @@
 require File.dirname(__FILE__) + "/lib/cloud/warden/version"
+version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|
   s.name         = "bosh_warden_cpi"
-  s.version      = "1.5.0.pre.3"
+  s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH Warden CPI"
   s.description  = s.summary
   s.author       = "VMware"
-  s.email        = "support@vmware.com"
-  s.homepage     = "http://www.vmware.com"
+  s.homepage     = 'https://github.com/cloudfoundry/bosh'
+  s.license      = 'Apache 2.0'
+  s.email        = "support@cloudfoundry.com"
+  s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
   s.files        = `git ls-files -- lib/* db/*`.split("\n") + %w(README)
   s.test_files   = `git ls-files -- spec/*`.split("\n")
