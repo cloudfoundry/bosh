@@ -6,7 +6,7 @@ describe Bosh::Director::Lock do
 
   it "should acquire a lock" do
     redis = mock("redis")
-    BD::Config.stub!(:redis).and_return(redis)
+    BD::Config.stub(:redis).and_return(redis)
 
     started = Time.now.to_f
 
@@ -20,11 +20,11 @@ describe Bosh::Director::Lock do
     redis.should_receive(:watch).with("foo").any_number_of_times
     redis.should_receive(:multi).any_number_of_times.and_yield
 
-    redis.stub!(:get).with("foo").and_return do
+    redis.stub(:get).with("foo").and_return do
       stored_value
     end
 
-    redis.stub!(:set).with("foo", anything()) do |_, value|
+    redis.stub(:set).with("foo", anything()) do |_, value|
       stored_value = value
     end
 
@@ -45,7 +45,7 @@ describe Bosh::Director::Lock do
 
   it "should not let two clients to acquire the same lock at the same time" do
     redis = mock("redis")
-    BD::Config.stub!(:redis).and_return(redis)
+    BD::Config.stub(:redis).and_return(redis)
 
     stored_value = nil
     redis.should_receive(:setnx).with("foo", anything).any_number_of_times.
@@ -90,7 +90,7 @@ describe Bosh::Director::Lock do
 
   it "should return immediately with lock busy if try lock fails to get lock" do
     redis = mock("redis")
-    BD::Config.stub!(:redis).and_return(redis)
+    BD::Config.stub(:redis).and_return(redis)
 
     stored_value = nil
     redis.should_receive(:setnx).with("foo", anything).any_number_of_times.

@@ -14,9 +14,9 @@ describe Bosh::Deployer::InstanceManager do
     @cloud = mock('cloud')
     @ec2 = mock('ec2')
     @cloud.stub(:ec2).and_return(@ec2)
-    Bosh::Deployer::Config.stub!(:cloud).and_return(@cloud)
+    Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
     @agent = mock('agent')
-    @deployer.stub!(:agent).and_return(@agent)
+    @deployer.stub(:agent).and_return(@agent)
   end
 
   after(:each) do
@@ -43,15 +43,15 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it 'should create a Bosh instance' do
-    @deployer.stub!(:service_ip).and_return('10.0.0.10')
+    @deployer.stub(:service_ip).and_return('10.0.0.10')
     spec = Psych.load_file(spec_asset('apply_spec_aws.yml'))
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
 
-    @deployer.stub!(:run_command)
-    @deployer.stub!(:wait_until_agent_ready)
-    @deployer.stub!(:wait_until_director_ready)
-    @deployer.stub!(:load_apply_spec).and_return(spec)
-    @deployer.stub!(:load_stemcell_manifest).and_return({'cloud_properties' => {}})
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready)
+    @deployer.stub(:wait_until_director_ready)
+    @deployer.stub(:load_apply_spec).and_return(spec)
+    @deployer.stub(:load_stemcell_manifest).and_return({'cloud_properties' => {}})
 
     @deployer.state.uuid.should_not be_nil
 
@@ -106,17 +106,17 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it 'should update a Bosh instance' do
-    @deployer.stub!(:service_ip).and_return('10.0.0.10')
+    @deployer.stub(:service_ip).and_return('10.0.0.10')
     spec = Psych.load_file(spec_asset('apply_spec_aws.yml'))
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
 
     disk_cid = '22'
-    @deployer.stub!(:run_command)
-    @deployer.stub!(:wait_until_agent_ready)
-    @deployer.stub!(:wait_until_director_ready)
-    @deployer.stub!(:load_apply_spec).and_return(spec)
-    @deployer.stub!(:load_stemcell_manifest).and_return({'cloud_properties' => {}})
-    @deployer.stub!(:persistent_disk_changed?).and_return(false)
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready)
+    @deployer.stub(:wait_until_director_ready)
+    @deployer.stub(:load_apply_spec).and_return(spec)
+    @deployer.stub(:load_stemcell_manifest).and_return({'cloud_properties' => {}})
+    @deployer.stub(:persistent_disk_changed?).and_return(false)
 
     @deployer.state.stemcell_cid = 'SC-CID-UPDATE'
     @deployer.state.vm_cid = 'VM-CID-UPDATE'

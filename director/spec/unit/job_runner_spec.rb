@@ -13,7 +13,7 @@ describe Bosh::Director::JobRunner do
   end
 
   before(:each) do
-    BD::Config.stub!(:cloud_options).and_return({})
+    BD::Config.stub(:cloud_options).and_return({})
     @task_dir = Dir.mktmpdir
     @task = Bosh::Director::Models::Task.make(:id => 42, :output => @task_dir)
   end
@@ -55,12 +55,12 @@ describe Bosh::Director::JobRunner do
     debug_log = Logger.new(StringIO.new)
     result_file = mock("result file")
 
-    Bosh::Director::EventLog.stub!(:new).with(File.join(@task_dir, "event")).
+    Bosh::Director::EventLog.stub(:new).with(File.join(@task_dir, "event")).
       and_return(event_log)
 
-    Logger.stub!(:new).with(File.join(@task_dir, "debug")).and_return(debug_log)
+    Logger.stub(:new).with(File.join(@task_dir, "debug")).and_return(debug_log)
 
-    Bosh::Director::TaskResultFile.stub!(:new).
+    Bosh::Director::TaskResultFile.stub(:new).
       with(File.join(@task_dir, "result")).
       and_return(result_file)
 

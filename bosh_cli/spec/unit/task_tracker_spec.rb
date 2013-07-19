@@ -13,7 +13,7 @@ describe Bosh::Cli::TaskTracker do
 
   def make_tracker(task_id, options)
     tracker = Bosh::Cli::TaskTracker.new(@director, task_id, options)
-    tracker.stub!(:sleep)
+    tracker.stub(:sleep)
     tracker
   end
 
@@ -111,7 +111,7 @@ describe Bosh::Cli::TaskTracker do
     tracker = make_tracker("42", { :log_type => "foobar",
                                    :use_cache => false })
 
-    tracker.stub!(:interactive?).and_return(true)
+    tracker.stub(:interactive?).and_return(true)
 
     @director.should_receive(:get_task_state).with("42").and_raise(Interrupt)
     @director.should_receive(:get_task_state).with("42").and_return("cancelled")

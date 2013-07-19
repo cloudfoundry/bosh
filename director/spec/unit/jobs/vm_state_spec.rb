@@ -7,8 +7,8 @@ describe Bosh::Director::Jobs::VmState do
   before(:each) do
     @deployment = BD::Models::Deployment.make
     @result_file = mock("result_file")
-    BD::Config.stub!(:result).and_return(@result_file)
-    BD::Config.stub!(:dns_domain_name).and_return("microbosh")    
+    BD::Config.stub(:result).and_return(@result_file)
+    BD::Config.stub(:dns_domain_name).and_return("microbosh")
   end
 
   describe 'Resque job class expectations' do
@@ -20,7 +20,7 @@ describe Bosh::Director::Jobs::VmState do
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1", :timeout => 5).and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
     agent_state = { "vm_cid" => "vm-1",
                     "networks" => {"test" => {"ip" => "1.1.1.1"}},
                     "agent_id" => "agent-1",
@@ -47,7 +47,7 @@ describe Bosh::Director::Jobs::VmState do
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1", :timeout => 5).and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
 
     agent_state = { "vm_cid" => "vm-1",
                     "networks" => {"test" => {"ip" => "1.1.1.1"}},
@@ -92,7 +92,7 @@ describe Bosh::Director::Jobs::VmState do
     BD::Models::Dns::Record.make(:domain => domain, :name => "index.job.network.deployment.microbosh",
                                  :type => "A", :content => "1.1.1.1", :ttl => 14400)
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1", :timeout => 5).and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
     agent_state = { "vm_cid" => "vm-1",
                     "networks" => {"test" => {"ip" => "1.1.1.1"}},
                     "agent_id" => "agent-1",
@@ -119,7 +119,7 @@ describe Bosh::Director::Jobs::VmState do
     BDM::Vm.make(:deployment => @deployment, :agent_id => "agent-1",
                  :cid => "vm-1")
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1", :timeout => 5).and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
     agent.should_receive(:get_state).and_raise(BD::RpcTimeout)
 
     @result_file.should_receive(:write).with do |agent_status|
@@ -139,7 +139,7 @@ describe Bosh::Director::Jobs::VmState do
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1", :timeout => 5).and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
 
     agent_state = { "vm_cid" => "vm-1",
                     "networks" => {"test" => {"ip" => "1.1.1.1"}},

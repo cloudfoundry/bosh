@@ -240,7 +240,7 @@ describe Bosh::Director::DeploymentPlan::Job do
         release = mock(BD::DeploymentPlan::Release)
         foo_template = mock(BD::DeploymentPlan::Template, :properties => foo_p)
 
-        @plan.stub!(:properties).and_return(props)
+        @plan.stub(:properties).and_return(props)
         @plan.should_receive(:release).with("appcloud").and_return(release)
 
         release.should_receive(:template).with("foo").and_return(foo_template)
@@ -268,7 +268,7 @@ describe Bosh::Director::DeploymentPlan::Job do
         @spec["properties"] = props
         @spec["property_mappings"] = {"db" => "ccdb"}
 
-        @plan.stub!(:properties).and_return(props)
+        @plan.stub(:properties).and_return(props)
 
         job = described_class.new(@plan, @spec)
         expect {

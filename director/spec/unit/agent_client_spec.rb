@@ -73,8 +73,8 @@ describe Bosh::Director::AgentClient do
     cloud = mock("cloud")
     nats_rpc = mock("nats_rpc")
 
-    Bosh::Director::Config.stub!(:cloud).and_return(cloud)
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+    Bosh::Director::Config.stub(:cloud).and_return(cloud)
+    Bosh::Director::Config.stub(:nats_rpc).and_return(nats_rpc)
     Bosh::Director::Config.encryption = true
 
     deployment = Bosh::Director::Models::Deployment.make

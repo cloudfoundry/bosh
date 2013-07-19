@@ -10,8 +10,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     @tmpdir = Dir.mktmpdir("base_dir")
 
-    Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
-    Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
+    Bosh::Director::Config.stub(:cloud).and_return(@cloud)
+    Bosh::Director::Config.stub(:base_dir).and_return(@tmpdir)
 
     stemcell_contents = create_stemcell("jeos", 5, {"ram" => "2gb"}, "image contents", "shawone")
     @stemcell_file = Tempfile.new("stemcell_contents")

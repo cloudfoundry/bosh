@@ -13,9 +13,9 @@ describe Bosh::Deployer::InstanceManager do
     @config["logging"] = {"file" => "#{@dir}/bmim.log"}
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = mock("cloud")
-    Bosh::Deployer::Config.stub!(:cloud).and_return(@cloud)
+    Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
     @agent = mock("agent")
-    @deployer.stub!(:agent).and_return(@agent)
+    @deployer.stub(:agent).and_return(@agent)
   end
 
   after(:each) do
@@ -45,11 +45,11 @@ describe Bosh::Deployer::InstanceManager do
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
     Bosh::Deployer::Config.stub(:agent_properties).and_return({})
 
-    @deployer.stub!(:run_command)
-    @deployer.stub!(:wait_until_agent_ready)
-    @deployer.stub!(:wait_until_director_ready)
-    @deployer.stub!(:load_apply_spec).and_return(spec)
-    @deployer.stub!(:load_stemcell_manifest).and_return({})
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready)
+    @deployer.stub(:wait_until_director_ready)
+    @deployer.stub(:load_apply_spec).and_return(spec)
+    @deployer.stub(:load_stemcell_manifest).and_return({})
 
     @deployer.state.uuid.should_not be_nil
 
@@ -107,11 +107,11 @@ describe Bosh::Deployer::InstanceManager do
     Bosh::Deployer::Config.stub(:agent_properties).and_return({})
 
     disk_cid = "22"
-    @deployer.stub!(:run_command)
-    @deployer.stub!(:wait_until_agent_ready)
-    @deployer.stub!(:wait_until_director_ready)
-    @deployer.stub!(:load_apply_spec).and_return(spec)
-    @deployer.stub!(:load_stemcell_manifest).and_return({})
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready)
+    @deployer.stub(:wait_until_director_ready)
+    @deployer.stub(:load_apply_spec).and_return(spec)
+    @deployer.stub(:load_stemcell_manifest).and_return({})
 
     @deployer.state.stemcell_cid = "SC-CID-UPDATE"
     @deployer.state.vm_cid = "VM-CID-UPDATE"
@@ -183,9 +183,9 @@ describe Bosh::Deployer::InstanceManager do
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
     Bosh::Deployer::Config.stub(:agent_properties).and_return({})
 
-    @deployer.stub!(:run_command)
-    @deployer.stub!(:wait_until_agent_ready).and_raise(Bosh::Deployer::DirectorGatewayError)      
-    @deployer.stub!(:load_stemcell_manifest).and_return({})
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready).and_raise(Bosh::Deployer::DirectorGatewayError)
+    @deployer.stub(:load_stemcell_manifest).and_return({})
 
     @cloud.should_receive(:create_stemcell).and_return("SC-CID-CREATE")
     @cloud.should_receive(:create_vm).and_return("VM-CID-CREATE")
@@ -200,11 +200,11 @@ describe Bosh::Deployer::InstanceManager do
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
     Bosh::Deployer::Config.stub(:agent_properties).and_return({})
 
-    @deployer.stub!(:run_command)
-    @deployer.stub!(:wait_until_agent_ready)
-    @deployer.stub!(:wait_until_director_ready).and_raise(Bosh::Deployer::DirectorGatewayError)
-    @deployer.stub!(:load_apply_spec).and_return(spec)
-    @deployer.stub!(:load_stemcell_manifest).and_return({})
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready)
+    @deployer.stub(:wait_until_director_ready).and_raise(Bosh::Deployer::DirectorGatewayError)
+    @deployer.stub(:load_apply_spec).and_return(spec)
+    @deployer.stub(:load_stemcell_manifest).and_return({})
 
     @cloud.should_receive(:create_stemcell).and_return("SC-CID-CREATE")
     @cloud.should_receive(:create_vm).and_return("VM-CID-CREATE")

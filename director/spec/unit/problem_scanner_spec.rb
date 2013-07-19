@@ -87,7 +87,7 @@ describe Bosh::Director::ProblemScanner do
 
       BDM::PersistentDisk.make(:instance_id => instance.id, :active => true)
 
-      BD::AgentClient.stub!(:new).with("agent-1", anything).and_return(unresponsive_agent)
+      BD::AgentClient.stub(:new).with("agent-1", anything).and_return(unresponsive_agent)
       unresponsive_agent.should_receive(:get_state).and_raise(BD::RpcTimeout)
 
       # for unresponsive agents pick up VM id from the DB
@@ -109,7 +109,7 @@ describe Bosh::Director::ProblemScanner do
       BDM::PersistentDisk.make(:instance_id => instance.id, :active => true)
 
       agent = mock("agent")
-      BD::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+      BD::AgentClient.stub(:new).with("agent", anything).and_return(agent)
 
       good_state = {
           "deployment" => "mycloud",
@@ -134,7 +134,7 @@ describe Bosh::Director::ProblemScanner do
                                :active => true)
 
       agent = mock("agent")
-      BD::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+      BD::AgentClient.stub(:new).with("agent", anything).and_return(agent)
 
       good_state = {
           "deployment" => "mycloud",
@@ -164,7 +164,7 @@ describe Bosh::Director::ProblemScanner do
                                :active => true)
 
       agent = mock("agent")
-      BD::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+      BD::AgentClient.stub(:new).with("agent", anything).and_return(agent)
 
       good_state = {
           "deployment" => "mycloud",
@@ -200,9 +200,9 @@ describe Bosh::Director::ProblemScanner do
       agent_1 = mock("agent-1")
       agent_2 = mock("agent-2")
 
-      BD::AgentClient.stub!(:new).with("agent-1", anything).
+      BD::AgentClient.stub(:new).with("agent-1", anything).
           and_return(agent_1)
-      BD::AgentClient.stub!(:new).with("agent-2", anything).
+      BD::AgentClient.stub(:new).with("agent-2", anything).
           and_return(agent_2)
 
       good_state_1 = {
@@ -248,9 +248,9 @@ describe Bosh::Director::ProblemScanner do
       agent_1 = mock("agent-1")
       agent_2 = mock("agent-2")
 
-      BD::AgentClient.stub!(:new).with("agent-1", anything).
+      BD::AgentClient.stub(:new).with("agent-1", anything).
           and_return(agent_1)
-      BD::AgentClient.stub!(:new).with("agent-2", anything).
+      BD::AgentClient.stub(:new).with("agent-2", anything).
           and_return(agent_2)
 
       good_state_1 = {
@@ -308,9 +308,9 @@ describe Bosh::Director::ProblemScanner do
         unresponsive_agent2 = mock(BD::AgentClient)
         responsive_agent = mock(BD::AgentClient)
 
-        BD::AgentClient.stub!(:new).with("agent-0", anything).and_return(unresponsive_agent1)
-        BD::AgentClient.stub!(:new).with("agent-1", anything).and_return(unresponsive_agent2)
-        BD::AgentClient.stub!(:new).with("agent-2", anything).and_return(responsive_agent)
+        BD::AgentClient.stub(:new).with("agent-0", anything).and_return(unresponsive_agent1)
+        BD::AgentClient.stub(:new).with("agent-1", anything).and_return(unresponsive_agent2)
+        BD::AgentClient.stub(:new).with("agent-2", anything).and_return(responsive_agent)
 
         # Unresponsive agent
         unresponsive_agent1.stub(:get_state).and_raise(BD::RpcTimeout)
@@ -403,11 +403,11 @@ describe Bosh::Director::ProblemScanner do
       agent_1 = mock("agent-1")
       agent_2 = mock("agent-2")
       agent_3 = mock("agent-3")
-      BD::AgentClient.stub!(:new).with("agent-1", anything).
+      BD::AgentClient.stub(:new).with("agent-1", anything).
           and_return(agent_1)
-      BD::AgentClient.stub!(:new).with("agent-2", anything).
+      BD::AgentClient.stub(:new).with("agent-2", anything).
           and_return(agent_2)
-      BD::AgentClient.stub!(:new).with("agent-3", anything).
+      BD::AgentClient.stub(:new).with("agent-3", anything).
           and_return(agent_3)
 
       # valid idle resource pool VM
@@ -454,7 +454,7 @@ describe Bosh::Director::ProblemScanner do
 
       out_of_sync_agent = mock("out_of_sync_agent-id")
 
-      BD::AgentClient.stub!(:new).with("out-of-sync-agent-id", anything).and_return(out_of_sync_agent)
+      BD::AgentClient.stub(:new).with("out-of-sync-agent-id", anything).and_return(out_of_sync_agent)
 
       out_of_sync_state = {
           "deployment" => "mycloud",

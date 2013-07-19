@@ -13,7 +13,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
     before(:each) do
       @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
@@ -131,7 +131,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
     before(:each) do
       @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
@@ -150,7 +150,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
     before(:each) do
       @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
@@ -176,9 +176,9 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       disk = BDM::PersistentDisk.
         make(:instance => instance, :disk_cid => "disk-cid")
 
-      @cloud.stub!(:delete_vm)
-      @cloud.stub!(:delete_disk)
-      @cloud.stub!(:detach_disk)
+      @cloud.stub(:delete_vm)
+      @cloud.stub(:delete_disk)
+      @cloud.stub(:detach_disk)
 
       agent.should_receive(:stop)
       agent.should_receive(:unmount_disk).with("disk-cid")

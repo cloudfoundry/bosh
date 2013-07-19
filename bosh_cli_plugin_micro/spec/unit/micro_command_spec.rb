@@ -34,11 +34,11 @@ describe Bosh::Cli::Command::Base do
       mock_stemcell.should_receive(:validate)
       mock_stemcell.should_receive(:valid?).and_return(true)
 
-      @cmd.stub!(:deployment).and_return(@manifest_path)
-      @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
-      @cmd.stub!(:target_name).and_return("micro-test")
+      @cmd.stub(:deployment).and_return(@manifest_path)
+      @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
+      @cmd.stub(:target_name).and_return("micro-test")
       Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
-      @cmd.stub!(:deployer).and_return(mock_deployer)
+      @cmd.stub(:deployer).and_return(mock_deployer)
       @cmd.perform("stemcell.tgz")
     end
 
@@ -49,19 +49,19 @@ describe Bosh::Cli::Command::Base do
       mock_deployer.should_receive(:check_dependencies)
       mock_deployer.should_receive(:create_deployment).with("sc-id")
 
-      @cmd.stub!(:deployment).and_return(@manifest_path)
-      @cmd.stub!(:target_name).and_return("micro-test")
-      @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
+      @cmd.stub(:deployment).and_return(@manifest_path)
+      @cmd.stub(:target_name).and_return("micro-test")
+      @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
       @manifest_yaml["resources"]["cloud_properties"]["image_id"] = "sc-id"
-      @cmd.stub!(:deployer).and_return(mock_deployer)
+      @cmd.stub(:deployer).and_return(mock_deployer)
       @cmd.perform()
     end
 
     it "should not allow deploying a micro BOSH instance if no stemcell is provided" do
       expect {
-        @cmd.stub!(:deployment).and_return(@manifest_path)
+        @cmd.stub(:deployment).and_return(@manifest_path)
         @manifest_yaml = { "name" => "foo" }
-        @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
+        @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
         @cmd.perform()
       }.to raise_error(Bosh::Cli::CliError, "No stemcell provided")
     end
@@ -74,12 +74,12 @@ describe Bosh::Cli::Command::Base do
         mock_deployer.should_receive(:check_dependencies)
         mock_deployer.should_receive(:exists?).exactly(1).times
 
-        @cmd.stub!(:deployment).and_return(@manifest_path)
-        @cmd.stub!(:target_name).and_return("micro-test")
-        @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
+        @cmd.stub(:deployment).and_return(@manifest_path)
+        @cmd.stub(:target_name).and_return("micro-test")
+        @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
         @manifest_yaml["resources"]["cloud_properties"]["image_id"] = "sc-id"
         @manifest_yaml["resources"]["persistent_disk"] = nil
-        @cmd.stub!(:deployer).and_return(mock_deployer)
+        @cmd.stub(:deployer).and_return(mock_deployer)
         @cmd.perform()
       }.to raise_error(Bosh::Cli::CliExit, error_message)
     end

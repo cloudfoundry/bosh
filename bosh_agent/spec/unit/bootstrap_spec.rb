@@ -31,7 +31,7 @@ describe Bosh::Agent::Bootstrap do
     new_settings["env"]["bosh"] ||= {}
     new_settings["env"]["bosh"]["credentials"] = {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
 
-    Bosh::Agent::Config.infrastructure.stub!(:load_settings).and_return(new_settings)
+    Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(new_settings)
 
     @processor.load_settings
     @processor.update_credentials
@@ -40,7 +40,7 @@ describe Bosh::Agent::Bootstrap do
 
   it "should not setup iptables without settings" do
     @processor.load_settings
-    @processor.stub!(:iptables).and_raise(Bosh::Agent::Error)
+    @processor.stub(:iptables).and_raise(Bosh::Agent::Error)
     @processor.update_iptables
   end
 

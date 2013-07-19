@@ -5,14 +5,14 @@ describe Bosh::Agent::HTTPClient do
   before(:each) do
     @httpclient = mock('httpclient')
     @httpclient.stub(:ssl_config).and_return(mock('sslconfig').as_null_object)
-    HTTPClient.stub!(:new).and_return(@httpclient)
+    HTTPClient.stub(:new).and_return(@httpclient)
   end
 
   describe 'options' do
     it 'should set up authentication when present' do
       response = mock('response')
-      response.stub!(:code).and_return(200)
-      response.stub!(:body).and_return('{"value": "pong"}')
+      response.stub(:code).and_return(200)
+      response.stub(:body).and_return('{"value": "pong"}')
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)
@@ -29,8 +29,8 @@ describe Bosh::Agent::HTTPClient do
 
     it 'should encode arguments' do
       response = mock('response')
-      response.stub!(:code).and_return(200)
-      response.stub!(:body).and_return('{"value": "iam"}')
+      response.stub(:code).and_return(200)
+      response.stub(:body).and_return('{"value": "iam"}')
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)
@@ -49,8 +49,8 @@ describe Bosh::Agent::HTTPClient do
 
     it 'should receive a message value' do
       response = mock('response')
-      response.stub!(:code).and_return(200)
-      response.stub!(:body).and_return('{"value": "pong"}')
+      response.stub(:code).and_return(200)
+      response.stub(:body).and_return('{"value": "pong"}')
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)
@@ -69,8 +69,8 @@ describe Bosh::Agent::HTTPClient do
 
     it 'should run_task' do
       response = mock('response')
-      response.stub!(:code).and_return(200)
-      response.stub!(:body).and_return('{"value": {"state": "running", "agent_task_id": "task_id_foo"}}')
+      response.stub(:code).and_return(200)
+      response.stub(:body).and_return('{"value": {"state": "running", "agent_task_id": "task_id_foo"}}')
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)
@@ -83,8 +83,8 @@ describe Bosh::Agent::HTTPClient do
                                                 body: payload, header: headers).and_return(response)
 
       response2 = mock('response2')
-      response2.stub!(:code).and_return(200)
-      response2.stub!(:body).and_return('{"value": {"state": "done"}')
+      response2.stub(:code).and_return(200)
+      response2.stub(:body).and_return('{"value": {"state": "done"}')
 
       payload = '{"method":"get_task","arguments":["task_id_foo"],"reply_to":"bugs"}'
 
@@ -102,8 +102,8 @@ describe Bosh::Agent::HTTPClient do
 
     it 'should raise handler exception when method is invalid' do
       response = mock('response')
-      response.stub!(:code).and_return(200)
-      response.stub!(:body).and_return('{"exception": "no such method"}')
+      response.stub(:code).and_return(200)
+      response.stub(:body).and_return('{"exception": "no such method"}')
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)
@@ -119,7 +119,7 @@ describe Bosh::Agent::HTTPClient do
 
     it 'should raise authentication exception when 401 is returned' do
       response = mock('response')
-      response.stub!(:code).and_return(401)
+      response.stub(:code).and_return(401)
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)

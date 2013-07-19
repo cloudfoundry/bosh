@@ -13,7 +13,7 @@ describe Bosh::Agent::Message::State do
 
     Bosh::Agent::Monit.enabled = true
     @monit_mock = mock('monit_api_client')
-    Bosh::Agent::Monit.stub!(:monit_api_client).and_return(@monit_mock)
+    Bosh::Agent::Monit.stub(:monit_api_client).and_return(@monit_mock)
   end
 
   it 'should have initial empty state' do
@@ -28,7 +28,7 @@ describe Bosh::Agent::Message::State do
       "bosh_protocol" => Bosh::Agent::BOSH_PROTOCOL,
       "ntp"           => { "message" => Bosh::Agent::NTP::FILE_MISSING }
     }
-    handler.stub!(:job_state).and_return([])
+    handler.stub(:job_state).and_return([])
     handler.state.should == initial_state
   end
 

@@ -27,7 +27,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       network = mock(BD::DeploymentPlan::Network)
 
       plan = mock(BD::DeploymentPlan)
-      plan.stub!(:network).with("test").and_return(network)
+      plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec)
       rp.name.should == "small"
@@ -55,7 +55,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     it "requires referencing an existing network" do
       spec = valid_spec.merge("network" => "foobar")
       plan = mock(BD::DeploymentPlan)
-      plan.stub!(:network).with("foobar").and_return(nil)
+      plan.stub(:network).with("foobar").and_return(nil)
 
       expect {
         make(plan, spec)
@@ -67,7 +67,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       spec.delete("env")
       network = mock(BD::DeploymentPlan::Network)
       plan = mock(BD::DeploymentPlan)
-      plan.stub!(:network).with("test").and_return(network)
+      plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, spec)
       rp.env.should == {}
@@ -77,7 +77,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   it "returns resource pool spec as Hash" do
     network = mock(BD::DeploymentPlan::Network)
     plan = mock(BD::DeploymentPlan)
-    plan.stub!(:network).with("test").and_return(network)
+    plan.stub(:network).with("test").and_return(network)
 
     rp = make(plan, valid_spec)
     rp.spec.should == {
@@ -90,7 +90,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   it "reserves capacity up to size" do
     network = mock(BD::DeploymentPlan::Network)
     plan = mock(BD::DeploymentPlan)
-    plan.stub!(:network).with("test").and_return(network)
+    plan.stub(:network).with("test").and_return(network)
 
     rp = make(plan, valid_spec)
     rp.reserve_capacity(1)
@@ -104,10 +104,10 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   describe "processing idle VMs" do
     it "creates idle vm objects for missing idle VMs" do
       network = mock(BD::DeploymentPlan::Network)
-      network.stub!(:reserve!)
+      network.stub(:reserve!)
 
       plan = mock(BD::DeploymentPlan)
-      plan.stub!(:network).with("test").and_return(network)
+      plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec)
       rp.add_idle_vm
@@ -122,7 +122,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     it "reserves dynamic networks for idle VMs that don't have reservations" do
       network = mock(BD::DeploymentPlan::Network)
       plan = mock(BD::DeploymentPlan)
-      plan.stub!(:network).with("test").and_return(network)
+      plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec.merge("size" => 3))
 

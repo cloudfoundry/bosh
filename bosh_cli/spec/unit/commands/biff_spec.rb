@@ -18,7 +18,7 @@ describe Bosh::Cli::Command::Biff do
     context "with a good simple template" do
       it "throws an error when there is an IP out of range" do
         config_file = spec_asset("biff/ip_out_of_range.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         lambda {
           biff.biff(template_file)
         }.should raise_error(
@@ -30,7 +30,7 @@ describe Bosh::Cli::Command::Biff do
       it "correctly generates a file and reports when there are no differences" do
         config_file = spec_asset("biff/good_simple_config.yml")
         golden_file = spec_asset("biff/good_simple_golden_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         biff.should_receive(:say).with("No differences.").once
 
         biff.biff(template_file)
@@ -43,7 +43,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "asks whether you would like to keep the new file" do
         config_file = spec_asset("biff/ok_network_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         biff.should_receive(:agree).with(
             "Would you like to keep the new version? [yn]").once.and_return(false)
 
@@ -52,7 +52,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "deletes temporary files" do
         config_file = spec_asset("biff/ok_network_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         biff.should_receive(:agree).and_return(false)
         # Twice because of after :each
         biff.should_receive(:delete_temp_diff_files).twice
@@ -61,7 +61,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "throws an error when there is more than one subnet for default" do
         config_file = spec_asset("biff/multiple_subnets_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         lambda {
           biff.biff(template_file)
         }.should raise_error(Bosh::Cli::CliError, "Biff doesn't know how to deal " +
@@ -70,7 +70,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "throws an error when the gateway is anything other than the first ip" do
         config_file = spec_asset("biff/bad_gateway_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         lambda {
           biff.biff(template_file)
         }.should raise_error(Bosh::Cli::CliError, "Biff only supports " +
@@ -79,7 +79,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "throws an error when the range is not specified in the config" do
         config_file = spec_asset("biff/no_range_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         lambda {
           biff.biff(template_file)
         }.should raise_error(Bosh::Cli::CliError, "Biff requires each network to " +
@@ -88,7 +88,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "throws an error if there are no subnets" do
         config_file = spec_asset("biff/no_subnet_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         lambda {
           biff.biff(template_file)
         }.should raise_error(Bosh::Cli::CliError, "You must have subnets in default")
@@ -100,7 +100,7 @@ describe Bosh::Cli::Command::Biff do
 
       it "outputs the required yaml when the input does not contain it" do
         config_file = spec_asset("biff/no_cc_config.yml")
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
 
         biff.should_receive(:say).with(
             "Could not find properties.cc.srv_api_uri.").once
@@ -123,7 +123,7 @@ describe Bosh::Cli::Command::Biff do
       let(:config_file) { spec_asset("biff/random_string.yml") }
 
       before {
-        biff.stub!(:deployment).and_return(config_file)
+        biff.stub(:deployment).and_return(config_file)
         biff.should_receive(:agree).with(
           "Would you like to keep the new version? [yn]").once.and_return(false)
       }
@@ -160,7 +160,7 @@ describe Bosh::Cli::Command::Biff do
 
     before do
       config_file = spec_asset("biff/good_simple_config.yml")
-      biff.stub!(:deployment).and_return(config_file)
+      biff.stub(:deployment).and_return(config_file)
       biff.setup(template_file)
     end
 

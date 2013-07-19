@@ -16,8 +16,8 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
     @handler = make_handler(@vm.id, "job" => "mysql_node", "index" => 0)
 
-    @handler.stub!(:cloud).and_return(@cloud)
-    @handler.stub!(:agent_client).with(@vm).and_return(@agent)
+    @handler.stub(:cloud).and_return(@cloud)
+    @handler.stub(:agent_client).with(@vm).and_return(@agent)
   end
 
   it "registers under unbound_instance_vm type" do

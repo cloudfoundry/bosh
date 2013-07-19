@@ -27,7 +27,7 @@ describe Bosh::Director::Jobs::FetchLogs do
     job = make_job(instance.id)
 
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1").and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
     agent.should_receive(:fetch_logs).
         and_return("blobstore_id" => "blobstore-id")
 
@@ -54,7 +54,7 @@ describe Bosh::Director::Jobs::FetchLogs do
     job = make_job(instance.id)
 
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1").and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
     agent.should_receive(:fetch_logs).and_return("blobstore_id" => "deadbeef")
 
     job.should_receive(:with_deployment_lock).with(@deployment).and_yield
@@ -74,7 +74,7 @@ describe Bosh::Director::Jobs::FetchLogs do
     job.bundle_lifetime = 0.01
 
     agent = mock("agent")
-    BD::AgentClient.stub!(:new).with("agent-1").and_return(agent)
+    BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
     agent.should_receive(:fetch_logs).once.
         and_return("blobstore_id" => "deadbeef1")
 

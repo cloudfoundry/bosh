@@ -6,7 +6,7 @@ describe Bosh::Director::ProblemResolver do
     @other_deployment = BDM::Deployment.make(:name => "othercloud")
 
     @cloud = mock("cloud")
-    BD::Config.stub!(:cloud).and_return(@cloud)
+    BD::Config.stub(:cloud).and_return(@cloud)
   end
 
   def make_job(deployment)
@@ -31,7 +31,7 @@ describe Bosh::Director::ProblemResolver do
     @cloud.should_receive(:detach_disk).exactly(1).times
     @cloud.should_receive(:delete_disk).exactly(1).times
 
-    BD::AgentClient.stub!(:new).and_return(agent)
+    BD::AgentClient.stub(:new).and_return(agent)
 
     2.times do
       disk = BDM::PersistentDisk.make(:active => false)

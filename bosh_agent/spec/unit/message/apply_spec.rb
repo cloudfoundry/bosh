@@ -20,12 +20,12 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     FileUtils.mkdir_p(File.join(system_root, 'etc', 'logrotate.d'))
 
     @httpclient = mock("httpclient")
-    HTTPClient.stub!(:new).and_return(@httpclient)
+    HTTPClient.stub(:new).and_return(@httpclient)
   end
 
   it "should raise a useful error when it fails to write an ERB template" do
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
 
@@ -40,7 +40,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_job_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
-    handler.stub!(:apply_packages)
+    handler.stub(:apply_packages)
     lambda {
       handler.apply
     }.should raise_error Bosh::Agent::MessageHandlerError,
@@ -49,7 +49,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   it 'should set deployment in agents state if blank' do
     state = Bosh::Agent::Message::State.new
-    state.stub!(:job_state).and_return("running")
+    state.stub(:job_state).and_return("running")
 
     handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
     handler.apply
@@ -76,7 +76,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(http_200_response_mock)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
-    handler.stub!(:apply_job)
+    handler.stub(:apply_job)
 
     job_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'packages')
     FileUtils.mkdir_p(job_dir)
@@ -111,7 +111,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
       },
     }
     handler1 = Bosh::Agent::Message::Apply.new([apply_data1])
-    handler1.stub!(:apply_job)
+    handler1.stub(:apply_job)
     handler1.apply
 
     pkg_paths = spec_package_paths(pkg_base, apply_data1)
@@ -125,7 +125,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
          "bubba4" => { "name" => "bubba4", "version" => "2", "blobstore_id" => "some_blobstore_id", "sha1" => package_sha1 }
       }
     handler2 = Bosh::Agent::Message::Apply.new([apply_data2])
-    handler2.stub!(:apply_job)
+    handler2.stub(:apply_job)
     handler2.apply
 
     pkg_paths2 = spec_package_paths(pkg_base, apply_data2)
@@ -140,7 +140,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
          "bubba4" => { "name" => "bubba3", "version" => "2", "blobstore_id" => "some_blobstore_id", "sha1" => package_sha1 }
       }
     handler3 = Bosh::Agent::Message::Apply.new([apply_data3])
-    handler3.stub!(:apply_job)
+    handler3.stub(:apply_job)
     handler3.apply
 
     pkg_paths3 = spec_package_paths(pkg_base, apply_data3)
@@ -151,7 +151,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   it 'should install a job' do
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
 
@@ -167,7 +167,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_job_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
-    handler.stub!(:apply_packages)
+    handler.stub(:apply_packages)
     handler.apply
 
     bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'bin')
@@ -179,7 +179,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   it 'should install a job with a .monit file' do
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
 
@@ -196,7 +196,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     @httpclient.should_receive(:get).with(*get_args).and_yield(job_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
-    handler.stub!(:apply_packages)
+    handler.stub(:apply_packages)
     handler.apply
 
     monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0000_hubba.hubba_hubba.monitrc')
@@ -205,7 +205,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   it 'should install two jobs with two .monit files' do
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
 
@@ -232,7 +232,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
         job2_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
-    handler.stub!(:apply_packages)
+    handler.stub(:apply_packages)
     handler.apply
 
     monitrc1 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0001_hubba.hubba_hubba.monitrc')
@@ -244,7 +244,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   it "shouldn't modify the spec when a plan is created" do
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
 
@@ -264,14 +264,14 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
         job_data).and_return(response)
     expected_apply = apply_data.to_s
     handler = Bosh::Agent::Message::Apply.new([apply_data])
-    handler.stub!(:apply_packages)
+    handler.stub(:apply_packages)
     handler.apply
     expected_apply.should == handler.instance_variable_get(:@new_spec).to_s
   end
 
   def http_200_response_mock
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
     response
   end
 

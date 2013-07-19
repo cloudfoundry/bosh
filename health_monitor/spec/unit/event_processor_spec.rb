@@ -19,8 +19,8 @@ describe Bhm::EventProcessor do
     @logger_plugin = Bhm::Plugins::Logger.new
     @email_plugin = Bhm::Plugins::Email.new(email_options)
 
-    @logger_plugin.stub!(:deliver)
-    @email_plugin.stub!(:deliver)
+    @logger_plugin.stub(:deliver)
+    @email_plugin.stub(:deliver)
   end
 
   it "registers plugin handlers for different event kinds" do
@@ -98,7 +98,7 @@ describe Bhm::EventProcessor do
     @processor.process(:alert, alert_payload(:id => 2))
     @processor.events_count.should == 2
 
-    Time.stub!(:now).and_return(ts + 6)
+    Time.stub(:now).and_return(ts + 6)
     @processor.prune_events(5)
 
     @processor.events_count.should == 0

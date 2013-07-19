@@ -13,23 +13,23 @@ describe Bosh::Cli::DirectorTask do
   it "tracks partial output responses from director" do
     @task = Bosh::Cli::DirectorTask.new(@director, 10)
 
-    @director.stub!(:get).
+    @director.stub(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=0-").
       and_return([206, "test\nout", { :content_range => "bytes 0-7/100" }])
 
-    @director.stub!(:get).
+    @director.stub(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=8-").
       and_return([206, "put", { :content_range => "bytes 8-10/100" }])
 
-    @director.stub!(:get).
+    @director.stub(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=11-").
       and_return([206, " success\n", { :content_range => "bytes 11-19/100" }])
 
-    @director.stub!(:get).
+    @director.stub(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=20-").
       and_return([416, "Byte range unsatisfiable", { :content_range => "bytes */100" }])
 
-    @director.stub!(:get).
+    @director.stub(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=20-").
       and_return([206, "done", {}])
 
@@ -42,7 +42,7 @@ describe Bosh::Cli::DirectorTask do
   it "supports explicit output flush" do
     @task = Bosh::Cli::DirectorTask.new(@director, 10)
 
-    @director.stub!(:get).
+    @director.stub(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=0-").
       and_return([206, "test\nout", { :content_range => "bytes 0-7/100" }])
 

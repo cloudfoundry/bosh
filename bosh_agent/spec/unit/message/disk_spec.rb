@@ -13,10 +13,10 @@ describe Bosh::Agent::Message::UnmountDisk do
     platform = mock(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
-    Bosh::Agent::Message::DiskUtil.stub!(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
+    Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
 
     handler = Bosh::Agent::Message::UnmountDisk.new
-    Bosh::Agent::Message::DiskUtil.stub!(:umount_guard)
+    Bosh::Agent::Message::DiskUtil.stub(:umount_guard)
 
     handler.unmount(["4"]).should == { :message => "Unmounted /dev/sdy1 on /foomount"}
   end
@@ -25,10 +25,10 @@ describe Bosh::Agent::Message::UnmountDisk do
     platform = mock(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdx")
-    Bosh::Agent::Message::DiskUtil.stub!(:mount_entry).and_return(nil)
+    Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return(nil)
 
     handler = Bosh::Agent::Message::UnmountDisk.new
-    handler.stub!(:umount_guard)
+    handler.stub(:umount_guard)
 
     handler.unmount(["4"]).should == { :message => "Unknown mount for partition: /dev/sdx1" }
   end
@@ -46,7 +46,7 @@ describe Bosh::Agent::Message::ListDisk do
     platform = mock(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
-    Bosh::Agent::Message::DiskUtil.stub!(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
+    Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
 
     settings = { "disks" => { "persistent" => { 199 => 2 }}}
     Bosh::Agent::Config.settings = settings

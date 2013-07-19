@@ -6,14 +6,14 @@ describe Bosh::Director::PackageCompiler do
 
   before(:each) do
     @cloud = mock(:cpi)
-    BD::Config.stub!(:cloud).and_return(@cloud)
+    BD::Config.stub(:cloud).and_return(@cloud)
 
     @blobstore = mock(:blobstore)
-    BD::Config.stub!(:blobstore).and_return(@blobstore)
+    BD::Config.stub(:blobstore).and_return(@blobstore)
 
     @director_job = mock(BD::Jobs::BaseJob)
-    BD::Config.stub!(:current_job).and_return(@director_job)
-    @director_job.stub!(:task_cancelled?).and_return(false)
+    BD::Config.stub(:current_job).and_return(@director_job)
+    @director_job.stub(:task_cancelled?).and_return(false)
 
     @deployment = BD::Models::Deployment.make(:name => "mycloud")
     @config = mock(BD::DeploymentPlan::CompilationConfig)
@@ -22,7 +22,7 @@ describe Bosh::Director::PackageCompiler do
     @network = mock(BD::DeploymentPlan::Network, :name => "default")
 
     @n_workers = 3
-    @config.stub!(:deployment => @plan, :network => @network,
+    @config.stub(:deployment => @plan, :network => @network,
                   :env => {}, :cloud_properties => {}, :workers => @n_workers,
                   :reuse_compilation_vms => false)
 
@@ -249,7 +249,7 @@ describe Bosh::Director::PackageCompiler do
       prepare_samples
       @plan.stub(:jobs).and_return([@j_dea])
 
-      @config.stub!(:reuse_compilation_vms => true)
+      @config.stub(:reuse_compilation_vms => true)
 
       @network.should_receive(:reserve).at_most(@n_workers).times do |reservation|
         reservation.should be_an_instance_of(BD::NetworkReservation)
@@ -319,8 +319,8 @@ describe Bosh::Director::PackageCompiler do
       prepare_samples
       @plan.stub(:jobs).and_return([@j_dea])
 
-      @config.stub!(:reuse_compilation_vms => true)
-      @config.stub!(:workers => 1)
+      @config.stub(:reuse_compilation_vms => true)
+      @config.stub(:workers => 1)
 
       @network.should_receive(:reserve) do |reservation|
         reservation.should be_an_instance_of(BD::NetworkReservation)

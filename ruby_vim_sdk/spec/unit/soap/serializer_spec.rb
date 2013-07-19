@@ -16,8 +16,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -40,8 +40,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -61,8 +61,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -83,8 +83,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -105,8 +105,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -131,8 +131,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -167,8 +167,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -208,8 +208,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -242,9 +242,9 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class2.finalize
 
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub!(:compatible_type).with(test_class2, 'test_version').and_return(test_class2)
-    VimSdk::VmomiSupport.stub!(:wsdl_namespace).with('test_version').and_return('urn:test')
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class2, 'test_version').and_return(test_class2)
+    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)

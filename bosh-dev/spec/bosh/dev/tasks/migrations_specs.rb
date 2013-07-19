@@ -24,8 +24,8 @@ describe 'migrations:aws:new' do
     Time.stub(:new).and_return(timestamp)
 
     @tempdir= Dir.mktmpdir
-    Bosh::Aws::MigrationHelper.stub!(:aws_migration_directory).and_return(@tempdir)
-    Bosh::Aws::MigrationHelper.stub!(:aws_spec_migration_directory).and_return(@tempdir)
+    Bosh::Aws::MigrationHelper.stub(:aws_migration_directory).and_return(@tempdir)
+    Bosh::Aws::MigrationHelper.stub(:aws_spec_migration_directory).and_return(@tempdir)
   end
 
   after do

@@ -9,7 +9,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
     before(:each) do
       @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      BD::Config.stub(:cloud).and_return(@cloud)
     end
 
     describe 'Resque job class expectations' do

@@ -6,15 +6,15 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
   def make_handler(vm, cloud, agent, data = {})
     handler = Bosh::Director::ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
-    handler.stub!(:cloud).and_return(cloud)
-    Bosh::Director::AgentClient.stub!(:new).with(vm.agent_id, anything).and_return(agent)
+    handler.stub(:cloud).and_return(cloud)
+    Bosh::Director::AgentClient.stub(:new).with(vm.agent_id, anything).and_return(agent)
     handler
   end
 
   before(:each) do
     @cloud = mock("cloud")
     @agent = mock("agent")
-    Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
+    Bosh::Director::Config.stub(:cloud).and_return(@cloud)
 
     @vm = Bosh::Director::Models::Vm.make(cid: "vm-cid", agent_id: "agent-007")
     @instance =

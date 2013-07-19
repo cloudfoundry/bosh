@@ -9,7 +9,7 @@ describe VSphereCloud::Resources::Cluster do
     VSphereCloud::Config.mem_overcommit = 1.0
     @dc = mock(:datacenter)
     @dc_config = mock(:datacenter_config)
-    @dc.stub!(:config).and_return(@dc_config)
+    @dc.stub(:config).and_return(@dc_config)
   end
 
   describe :initialize do
@@ -25,8 +25,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           :obj => cluster_mob,
           "datastore" => []
@@ -41,10 +41,10 @@ describe VSphereCloud::Resources::Cluster do
 
     it "should create a cluster with dedicated datastores" do
       datastore_config = mock(:datastore_config)
-      datastore_config.stub!(:ephemeral_pattern).and_return(/a/)
-      datastore_config.stub!(:persistent_pattern).and_return(/b/)
-      datastore_config.stub!(:allow_mixed).and_return(false)
-      @dc_config.stub!(:datastores).and_return(datastore_config)
+      datastore_config.stub(:ephemeral_pattern).and_return(/a/)
+      datastore_config.stub(:persistent_pattern).and_return(/b/)
+      datastore_config.stub(:allow_mixed).and_return(false)
+      @dc_config.stub(:datastores).and_return(datastore_config)
 
       datastore_a = mock(:datastore_a)
       datastore_a.stub(:name).and_return("a")
@@ -54,7 +54,7 @@ describe VSphereCloud::Resources::Cluster do
           "summary.capacity" => 128 * 1024 * 1024 * 1024,
           "summary.freeSpace" => 32 * 1024 * 1024 * 1024
       }
-      VSphereCloud::Resources::Datastore.stub!(:new).
+      VSphereCloud::Resources::Datastore.stub(:new).
           with(datastore_a_properties).and_return(datastore_a)
 
       datastore_b = mock(:datastore_b)
@@ -65,7 +65,7 @@ describe VSphereCloud::Resources::Cluster do
           "summary.capacity" => 64 * 1024 * 1024 * 1024,
           "summary.freeSpace" => 8 * 1024 * 1024 * 1024
       }
-      VSphereCloud::Resources::Datastore.stub!(:new).
+      VSphereCloud::Resources::Datastore.stub(:new).
           with(datastore_b_properties).and_return(datastore_b)
 
       @client.should_receive(:get_properties).with(
@@ -77,8 +77,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => [datastore_a_mob, datastore_b_mob]
       })
@@ -90,10 +90,10 @@ describe VSphereCloud::Resources::Cluster do
 
     it "should fail to create a cluster with overlapped dedicated datastores" do
       datastore_config = mock(:datastore_config)
-      datastore_config.stub!(:ephemeral_pattern).and_return(/[ab]/)
-      datastore_config.stub!(:persistent_pattern).and_return(/b/)
-      datastore_config.stub!(:allow_mixed).and_return(false)
-      @dc_config.stub!(:datastores).and_return(datastore_config)
+      datastore_config.stub(:ephemeral_pattern).and_return(/[ab]/)
+      datastore_config.stub(:persistent_pattern).and_return(/b/)
+      datastore_config.stub(:allow_mixed).and_return(false)
+      @dc_config.stub(:datastores).and_return(datastore_config)
 
       datastore_a = mock(:datastore_a)
       datastore_a.stub(:name).and_return("a")
@@ -101,7 +101,7 @@ describe VSphereCloud::Resources::Cluster do
       datastore_a_properties = {
           "name" => "a"
       }
-      VSphereCloud::Resources::Datastore.stub!(:new).
+      VSphereCloud::Resources::Datastore.stub(:new).
           with(datastore_a_properties).and_return(datastore_a)
 
       datastore_b = mock(:datastore_b)
@@ -110,7 +110,7 @@ describe VSphereCloud::Resources::Cluster do
       datastore_b_properties = {
           "name" => "b"
       }
-      VSphereCloud::Resources::Datastore.stub!(:new).
+      VSphereCloud::Resources::Datastore.stub(:new).
           with(datastore_b_properties).and_return(datastore_b)
 
       @client.should_receive(:get_properties).with(
@@ -122,8 +122,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       expect {
         VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
             "datastore" => [datastore_a_mob, datastore_b_mob]
@@ -133,10 +133,10 @@ describe VSphereCloud::Resources::Cluster do
 
     it "should create a cluster with shared datastores" do
       datastore_config = mock(:datastore_config)
-      datastore_config.stub!(:ephemeral_pattern).and_return(/a/)
-      datastore_config.stub!(:persistent_pattern).and_return(/a/)
-      datastore_config.stub!(:allow_mixed).and_return(true)
-      @dc_config.stub!(:datastores).and_return(datastore_config)
+      datastore_config.stub(:ephemeral_pattern).and_return(/a/)
+      datastore_config.stub(:persistent_pattern).and_return(/a/)
+      datastore_config.stub(:allow_mixed).and_return(true)
+      @dc_config.stub(:datastores).and_return(datastore_config)
 
       datastore_a = mock(:datastore_a)
       datastore_a.stub(:name).and_return("a")
@@ -146,7 +146,7 @@ describe VSphereCloud::Resources::Cluster do
           "summary.capacity" => 128 * 1024 * 1024 * 1024,
           "summary.freeSpace" => 32 * 1024 * 1024 * 1024
       }
-      VSphereCloud::Resources::Datastore.stub!(:new).
+      VSphereCloud::Resources::Datastore.stub(:new).
           with(datastore_a_properties).and_return(datastore_a)
 
       @client.should_receive(:get_properties).with(
@@ -158,8 +158,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => [datastore_a_mob]
       })
@@ -193,8 +193,8 @@ describe VSphereCloud::Resources::Cluster do
           [host], %w(cpu.usage.average mem.usage.average), {:max_sample => 5}).
           and_return({"foo" => host_counters})
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => [],
           "host" => [host]
@@ -209,7 +209,7 @@ describe VSphereCloud::Resources::Cluster do
       resource_pool = mock(:resource_pool)
       resource_pool_mob = mock(:resource_pool_mob)
       resource_pool.stub(:mob).and_return(resource_pool_mob)
-      VSphereCloud::Resources::ResourcePool.stub!(:new).
+      VSphereCloud::Resources::ResourcePool.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Cluster), nil).
           and_return(resource_pool)
 
@@ -234,8 +234,8 @@ describe VSphereCloud::Resources::Cluster do
           resource_pool_mob,  VimSdk::Vim::ResourcePool, %w(summary)).
           and_return({"summary" => summary})
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return("baz")
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return("baz")
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => []
       })
@@ -249,7 +249,7 @@ describe VSphereCloud::Resources::Cluster do
       resource_pool = mock(:resource_pool)
       resource_pool_mob = mock(:resource_pool_mob)
       resource_pool.stub(:mob).and_return(resource_pool_mob)
-      VSphereCloud::Resources::ResourcePool.stub!(:new).
+      VSphereCloud::Resources::ResourcePool.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Cluster), nil).
           and_return(resource_pool)
 
@@ -266,8 +266,8 @@ describe VSphereCloud::Resources::Cluster do
           resource_pool_mob,  VimSdk::Vim::ResourcePool, %w(summary)).
           and_return({"summary" => summary})
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return("baz")
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return("baz")
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => []
       })
@@ -289,8 +289,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => []
       })
@@ -311,8 +311,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       @cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => []
       })
@@ -361,8 +361,8 @@ describe VSphereCloud::Resources::Cluster do
           :fetch_cluster_utilization)
 
       cluster_config = mock(:cluster_config)
-      cluster_config.stub!(:name).and_return("foo")
-      cluster_config.stub!(:resource_pool).and_return(nil)
+      cluster_config.stub(:name).and_return("foo")
+      cluster_config.stub(:resource_pool).and_return(nil)
       @cluster = VSphereCloud::Resources::Cluster.new(@dc, cluster_config, {
           "datastore" => []
       })

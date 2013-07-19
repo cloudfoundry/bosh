@@ -92,9 +92,9 @@ describe Object do
 
   it "can tell if object is blank" do
     o = Object.new
-    o.stub!(:to_s).and_return("  ")
+    o.stub(:to_s).and_return("  ")
     o.should be_blank
-    o.stub!(:to_s).and_return("Object 1")
+    o.stub(:to_s).and_return("Object 1")
     o.should_not be_blank
   end
 

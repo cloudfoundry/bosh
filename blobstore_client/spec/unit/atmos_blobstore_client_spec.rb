@@ -4,17 +4,17 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   before(:each) do
     @atmos = mock("atmos")
-    Atmos::Store.stub!(:new).and_return(@atmos)
+    Atmos::Store.stub(:new).and_return(@atmos)
     atmos_opt = {:url => "http://localhost",
                  :uid => "uid",
                  :secret => "secret"}
 
     @http_client = mock("http-client")
     ssl_opt = mock("ssl-opt")
-    ssl_opt.stub!(:verify_mode=)
-    @http_client.stub!(:ssl_config).and_return(ssl_opt)
+    ssl_opt.stub(:verify_mode=)
+    @http_client.stub(:ssl_config).and_return(ssl_opt)
 
-    HTTPClient.stub!(:new).and_return(@http_client)
+    HTTPClient.stub(:new).and_return(@http_client)
     @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
   end
 
@@ -27,8 +27,8 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
                    :secret => "secret"}
       @http_client = double("http-client")
       ssl_opt = double("ssl-opt")
-      ssl_opt.stub!(:verify_mode=)
-      @http_client.stub!(:ssl_config).and_return(ssl_opt)
+      ssl_opt.stub(:verify_mode=)
+      @http_client.stub(:ssl_config).and_return(ssl_opt)
 
       HTTPClient.should_receive(:new).with(:proxy => ENV['http_proxy']).and_return(@http_client)
       @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
@@ -42,8 +42,8 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
                    :secret => "secret"}
       @http_client = double("http-client")
       ssl_opt = double("ssl-opt")
-      ssl_opt.stub!(:verify_mode=)
-      @http_client.stub!(:ssl_config).and_return(ssl_opt)
+      ssl_opt.stub(:verify_mode=)
+      @http_client.stub(:ssl_config).and_return(ssl_opt)
 
       HTTPClient.should_receive(:new).with(:proxy => ENV['https_proxy']).and_return(@http_client)
       @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
@@ -57,8 +57,8 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
                    :secret => "secret"}
       @http_client = double("http-client")
       ssl_opt = double("ssl-opt")
-      ssl_opt.stub!(:verify_mode=)
-      @http_client.stub!(:ssl_config).and_return(ssl_opt)
+      ssl_opt.stub(:verify_mode=)
+      @http_client.stub(:ssl_config).and_return(ssl_opt)
 
       HTTPClient.should_receive(:new).and_return(@http_client)
       @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
@@ -120,7 +120,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
   it "should fetch an object" do
     url = "http://localhost/rest/objects/test-key?uid=uid&expires=1893484800&signature=sig"
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
     @http_client.should_receive(:get).with(url).and_yield("some-content").and_return(response)
     id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
     @client.get(id).should eql("some-content")
@@ -138,7 +138,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
     url = "http://localhost/rest/objects/test-key?uid=uid&expires=1893484800&signature=sig"
     response = mock("response")
-    response.stub!(:status).and_return(200)
+    response.stub(:status).and_return(200)
     @http_client.should_receive(:get).with(url).and_yield("some-content").and_return(response)
     id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
     no_pass_client.get(id).should eql("some-content")

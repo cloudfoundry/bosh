@@ -93,8 +93,8 @@ describe Bosh::Agent::Message::Drain do
 
     handler = Bosh::Agent::Message::Drain.new(['update', job_update_spec])
 
-    handler.stub!(:drain_script_exists?).and_return(true)
-    handler.stub!(:run_drain_script).and_return(10)
+    handler.stub(:drain_script_exists?).and_return(true)
+    handler.stub(:run_drain_script).and_return(10)
     handler.should_receive(:run_drain_script).with('job_changed', 'hash_unchanged', ['mysqlclient'])
     handler.drain.should == 10
   end
@@ -107,8 +107,8 @@ describe Bosh::Agent::Message::Drain do
 
     handler = Bosh::Agent::Message::Drain.new(['update', pkg_update_spec])
 
-    handler.stub!(:drain_script_exists?).and_return(true)
-    handler.stub!(:run_drain_script).and_return(121)
+    handler.stub(:drain_script_exists?).and_return(true)
+    handler.stub(:run_drain_script).and_return(121)
     handler.should_receive(:run_drain_script).with('job_unchanged', 'hash_unchanged', ['mysqlclient', 'ruby'])
     handler.drain.should == 121
   end

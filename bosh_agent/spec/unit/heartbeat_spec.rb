@@ -69,10 +69,10 @@ describe Bosh::Agent::Heartbeat do
     }
 
     client = mock("monit_client")
-    client.stub!(:status).with(:group => "vcap").and_return(processes_status)
-    client.stub!(:status).with(:type => :system).and_return(system_status)
+    client.stub(:status).with(:group => "vcap").and_return(processes_status)
+    client.stub(:status).with(:type => :system).and_return(system_status)
 
-    Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
+    Bosh::Agent::Monit.stub(:retry_monit_request).and_yield(client)
     Bosh::Agent::Monit.enabled = true
 
     fake_disk_usage = {

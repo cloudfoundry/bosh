@@ -6,7 +6,7 @@ describe Bosh::Director::Client do
 
   before(:each) do
     @nats_rpc = mock(BD::NatsRpc)
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(@nats_rpc)
+    Bosh::Director::Config.stub(:nats_rpc).and_return(@nats_rpc)
   end
 
   let(:test_args) do

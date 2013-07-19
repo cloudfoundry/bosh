@@ -149,7 +149,7 @@ describe VimSdk::Soap::SoapDeserializer do
       ])
     end
     test_class2.finalize
-    VimSdk::VmomiSupport.stub!(:loaded_wsdl_type).with('urn:test', 'Test2').and_return(test_class2)
+    VimSdk::VmomiSupport.stub(:loaded_wsdl_type).with('urn:test', 'Test2').and_return(test_class2)
 
     stub = mock('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')

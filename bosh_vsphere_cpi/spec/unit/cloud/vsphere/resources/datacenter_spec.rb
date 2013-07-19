@@ -40,20 +40,20 @@ describe VSphereCloud::Resources::Datacenter do
       dc_config.stub(:datastores).and_return(datastore_config)
 
       vm_folder = mock(:vm_folder)
-      VSphereCloud::Resources::Folder.stub!(:new).
+      VSphereCloud::Resources::Folder.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Datacenter),
                "vms", false).
           and_return(vm_folder)
 
       template_folder = mock(:template_folder)
-      VSphereCloud::Resources::Folder.stub!(:new).
+      VSphereCloud::Resources::Folder.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Datacenter),
                "templates", false).
           and_return(template_folder)
 
       cluster = mock(:cluster)
       cluster.stub(:name).and_return("foo")
-      VSphereCloud::Resources::Cluster.stub!(:new).
+      VSphereCloud::Resources::Cluster.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Datacenter),
                cluster_config, {:foo => :bar}).
           and_return(cluster)

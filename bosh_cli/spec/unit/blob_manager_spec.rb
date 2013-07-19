@@ -27,7 +27,7 @@ describe Bosh::Cli::BlobManager do
     end
 
     it "fails if blobstore is not configured" do
-      @release.stub!(:blobstore).and_return(nil)
+      @release.stub(:blobstore).and_return(nil)
       expect {
         make_manager(@release)
       }.to raise_error("Blobstore is not configured")
@@ -224,7 +224,7 @@ describe Bosh::Cli::BlobManager do
 
     it "processes blobs directory" do
       @manager = make_manager(@release)
-      @blobstore.stub!(:create).and_return("new-object-id")
+      @blobstore.stub(:create).and_return("new-object-id")
 
       new_blob = Tempfile.new("new-blob")
       new_blob.write("test")

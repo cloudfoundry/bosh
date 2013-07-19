@@ -23,7 +23,7 @@ describe Bosh::Director::Api::ResourceManager do
   end
 
   it "raises an error when something went wrong with blobstore" do
-    blobstore.stub!(:get).and_raise(
+    blobstore.stub(:get).and_raise(
         Bosh::Blobstore::BlobstoreError.new("bad stuff"))
 
     expect {

@@ -18,7 +18,7 @@ describe Bosh::Agent::Handler do
     Bosh::Agent::Config.smtp_user = 'user'
     Bosh::Agent::Config.smtp_password = 'pass'
 
-    EM.stub!(:next_tick).and_yield
+    EM.stub(:next_tick).and_yield
   end
 
   it 'should result in a value payload' do
@@ -125,7 +125,7 @@ describe Bosh::Agent::Handler do
     retries = Bosh::Agent::Handler::MAX_NATS_RETRIES
     NATS.stub(:connect).and_raise(NATS::ConnectError)
     handler = Bosh::Agent::Handler.new
-    handler.stub!(:sleep)
+    handler.stub(:sleep)
     handler.should_receive(:sleep).exactly(retries).times
     handler.start
   end
@@ -191,7 +191,7 @@ describe Bosh::Agent::Handler do
     it 'should handle decrypt failure' do
       @encryption_handler.encrypt('random' => 'stuff')
 
-      @handler.stub!(:log_encryption_error)
+      @handler.stub(:log_encryption_error)
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
@@ -240,7 +240,7 @@ describe Bosh::Agent::Handler do
 
       encrypted_bad_data = @cipher.encrypt(@encryption_handler.encode(message))
 
-      @handler.stub!(:log_encryption_error)
+      @handler.stub(:log_encryption_error)
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
@@ -267,7 +267,7 @@ describe Bosh::Agent::Handler do
 
       encrypted_bad_data = @cipher.encrypt(@encryption_handler.encode(message))
 
-      @handler.stub!(:log_encryption_error)
+      @handler.stub(:log_encryption_error)
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
@@ -298,7 +298,7 @@ describe Bosh::Agent::Handler do
           )
       )
 
-      @handler.stub!(:log_encryption_error)
+      @handler.stub(:log_encryption_error)
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]

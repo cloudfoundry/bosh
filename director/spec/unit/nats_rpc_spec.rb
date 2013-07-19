@@ -8,7 +8,7 @@ describe Bosh::Director::NatsRpc do
     @nats = mock("nats")
     Bosh::Director::Config.stub(:nats).and_return(@nats)
     Bosh::Director::Config.stub(:process_uuid).and_return(123)
-    EM.stub!(:next_tick).and_yield
+    EM.stub(:next_tick).and_yield
   end
 
   describe "send_request" do
@@ -23,7 +23,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       nats_rpc = Bosh::Director::NatsRpc.new
-      nats_rpc.stub!(:generate_request_id).and_return("req1")
+      nats_rpc.stub(:generate_request_id).and_return("req1")
       nats_rpc.send_request("test_client",
                             {"method" => "a", "arguments" => [5]}).
           should eql("req1")
@@ -40,7 +40,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       nats_rpc = Bosh::Director::NatsRpc.new
-      nats_rpc.stub!(:generate_request_id).and_return("req1")
+      nats_rpc.stub(:generate_request_id).and_return("req1")
 
       called = false
       nats_rpc.send_request("test_client",
@@ -63,7 +63,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       nats_rpc = Bosh::Director::NatsRpc.new
-      nats_rpc.stub!(:generate_request_id).and_return("req1")
+      nats_rpc.stub(:generate_request_id).and_return("req1")
 
       called_times = 0
       nats_rpc.send_request("test_client",
@@ -86,7 +86,7 @@ describe Bosh::Director::NatsRpc do
       @nats.should_receive(:publish)
 
       nats_rpc = Bosh::Director::NatsRpc.new
-      nats_rpc.stub!(:generate_request_id).and_return("req1")
+      nats_rpc.stub(:generate_request_id).and_return("req1")
 
       called = false
       request_id = nats_rpc.send_request("test_client",

@@ -310,7 +310,7 @@ describe Bosh::Cli::Director do
     it "know how to find time difference with director" do
       now = Time.now
       server_time = now - 100
-      Time.stub!(:now).and_return(now)
+      Time.stub(:now).and_return(now)
 
       @director.should_receive(:get).with("/info").
           and_return([200, JSON.generate("version" => 1),
@@ -490,7 +490,7 @@ describe Bosh::Cli::Director do
       file = spec_asset("valid_release.tgz")
       f = Bosh::Cli::FileWithProgressBar.open(file, "r")
 
-      Bosh::Cli::FileWithProgressBar.stub!(:open).with(file, "r").and_return(f)
+      Bosh::Cli::FileWithProgressBar.stub(:open).with(file, "r").and_return(f)
       @director.should_receive(:request_and_track).
           with(:put, "/stuff", {:content_type => "application/x-compressed",
                                 :payload => f})
@@ -520,7 +520,7 @@ describe Bosh::Cli::Director do
       client.should_receive(:connect_timeout=).
           with(Bosh::Cli::Director::CONNECT_TIMEOUT)
 
-      HTTPClient.stub!(:new).and_return(client)
+      HTTPClient.stub(:new).and_return(client)
 
       client.should_receive(:request).
           with(:get, "http:///127.0.0.1:8080/stuff", :body => "payload",

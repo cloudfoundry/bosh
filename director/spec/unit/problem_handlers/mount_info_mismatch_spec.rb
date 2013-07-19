@@ -22,8 +22,8 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
            :size => 300, :active => false)
 
     @handler = make_handler(@disk.id, "owner_vms" => []) # Not mounted
-    @handler.stub!(:cloud).and_return(@cloud)
-    @handler.stub!(:agent_client).with(@instance.vm).and_return(@agent)
+    @handler.stub(:cloud).and_return(@cloud)
+    @handler.stub(:agent_client).with(@instance.vm).and_return(@agent)
   end
 
   it "registers under inactive_disk type" do

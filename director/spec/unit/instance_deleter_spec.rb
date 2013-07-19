@@ -5,7 +5,7 @@ require 'spec_helper'
 describe BD::InstanceDeleter do
   before(:each) do
     @cloud = mock("cloud")
-    BD::Config.stub!(:cloud).and_return(@cloud)
+    BD::Config.stub(:cloud).and_return(@cloud)
 
     @deployment_plan = mock("deployment_plan")
     @deleter = BD::InstanceDeleter.new(@deployment_plan)
@@ -16,11 +16,11 @@ describe BD::InstanceDeleter do
       instances = []
       5.times { instances << mock("instance") }
 
-      BD::Config.stub!(:max_threads).and_return(5)
+      BD::Config.stub(:max_threads).and_return(5)
       pool = mock("pool")
-      BD::ThreadPool.stub!(:new).with(:max_threads => 5).and_return(pool)
-      pool.stub!(:wrap).and_yield(pool)
-      pool.stub!(:process).and_yield
+      BD::ThreadPool.stub(:new).with(:max_threads => 5).and_return(pool)
+      pool.stub(:wrap).and_yield(pool)
+      pool.stub(:process).and_yield
 
       5.times do |index|
         @deleter.should_receive(:delete_instance).with(instances[index])
@@ -34,9 +34,9 @@ describe BD::InstanceDeleter do
       5.times { instances << mock("instance") }
 
       pool = mock("pool")
-      BD::ThreadPool.stub!(:new).with(:max_threads => 2).and_return(pool)
-      pool.stub!(:wrap).and_yield(pool)
-      pool.stub!(:process).and_yield
+      BD::ThreadPool.stub(:new).with(:max_threads => 2).and_return(pool)
+      pool.stub(:wrap).and_yield(pool)
+      pool.stub(:process).and_yield
 
       5.times do |index|
         @deleter.should_receive(:delete_instance).with(instances[index])
@@ -59,7 +59,7 @@ describe BD::InstanceDeleter do
       @deleter.should_receive(:drain).with(vm.agent_id)
       @deleter.should_receive(:delete_snapshots).with(instance)
       @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
-      BD::Config.stub!(:dns_domain_name).and_return("bosh")
+      BD::Config.stub(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with("5.test.%.foo.bosh", 0)
       @deployment_plan.should_receive(:canonical_name).and_return("foo")
       domain = stub('domain', :id => 0)
@@ -78,7 +78,7 @@ describe BD::InstanceDeleter do
 
     it "should drain the VM" do
       agent = mock("agent")
-      BD::AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
+      BD::AgentClient.stub(:new).with("some_agent_id").and_return(agent)
 
       agent.should_receive(:drain).with("shutdown").and_return(2)
       agent.should_receive(:stop)
@@ -89,8 +89,8 @@ describe BD::InstanceDeleter do
 
     it "should dynamically drain the VM" do
       agent = mock("agent")
-      BD::AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
-      BD::Config.stub!(:job_cancelled?).and_return(nil)
+      BD::AgentClient.stub(:new).with("some_agent_id").and_return(agent)
+      BD::Config.stub(:job_cancelled?).and_return(nil)
 
       agent.should_receive(:drain).with("shutdown").and_return(-2)
       agent.should_receive(:drain).with("status").and_return(1, 0)
@@ -104,8 +104,8 @@ describe BD::InstanceDeleter do
 
     it "should stop vm-drain if task is cancelled" do
       agent = mock("agent")
-      BD::AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
-      BD::Config.stub!(:job_cancelled?).and_raise(BD::TaskCancelled.new(1))
+      BD::AgentClient.stub(:new).with("some_agent_id").and_return(agent)
+      BD::Config.stub(:job_cancelled?).and_raise(BD::TaskCancelled.new(1))
       agent.should_receive(:drain).with("shutdown").and_return(-2)
       lambda {@deleter.drain("some_agent_id")}.should raise_error(BD::TaskCancelled)
     end
@@ -146,10 +146,10 @@ describe BD::InstanceDeleter do
   describe :delete_dns do
     it "should generate a correct SQL query string" do
       domain = BDM::Dns::Domain.make
-      @deployment_plan.stub!(:canonical_name).and_return("dep")
-      @deployment_plan.stub!(:dns_domain).and_return(domain)
+      @deployment_plan.stub(:canonical_name).and_return("dep")
+      @deployment_plan.stub(:dns_domain).and_return(domain)
       pattern = "0.foo.%.dep.bosh"
-      BD::Config.stub!(:dns_domain_name).and_return("bosh")
+      BD::Config.stub(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with(pattern, domain.id)
       @deleter.delete_dns("foo", 0)
     end

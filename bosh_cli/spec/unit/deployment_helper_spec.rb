@@ -211,8 +211,8 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file.close
       director = mock(Bosh::Cli::Director)
 
-      cmd.stub!(:deployment).and_return(manifest_file.path)
-      cmd.stub!(:director).and_return(director)
+      cmd.stub(:deployment).and_return(manifest_file.path)
+      cmd.stub(:director).and_return(director)
 
       director.should_receive(:uuid).and_return('deadcafe')
 
@@ -239,8 +239,8 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file.close
       director = mock(Bosh::Cli::Director, :uuid => 'deadbeef')
 
-      cmd.stub!(:deployment).and_return(manifest_file.path)
-      cmd.stub!(:director).and_return(director)
+      cmd.stub(:deployment).and_return(manifest_file.path)
+      cmd.stub(:director).and_return(director)
 
       stemcells = [
           {'name' => 'foo', 'version' => '22.6.4'},

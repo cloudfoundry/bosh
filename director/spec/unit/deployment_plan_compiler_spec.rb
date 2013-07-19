@@ -527,7 +527,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :delete_unneeded_vms do
     it "should delete unneeded VMs" do
       vm = BD::Models::Vm.make(:cid => "vm-cid")
-      @deployment_plan.stub!(:unneeded_vms).and_return([vm])
+      @deployment_plan.stub(:unneeded_vms).and_return([vm])
 
       @cloud.should_receive(:delete_vm).with("vm-cid")
       @deployment_plan_compiler.delete_unneeded_vms
@@ -545,9 +545,9 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :delete_unneeded_instances do
     it "should delete unneeded instances" do
       instance = BD::Models::Instance.make
-      @deployment_plan.stub!(:unneeded_instances).and_return([instance])
+      @deployment_plan.stub(:unneeded_instances).and_return([instance])
       instance_deleter = mock("instance_deleter")
-      BD::InstanceDeleter.stub!(:new).and_return(instance_deleter)
+      BD::InstanceDeleter.stub(:new).and_return(instance_deleter)
 
       instance_deleter.should_receive(:delete_instances).with([instance])
       @deployment_plan_compiler.delete_unneeded_instances

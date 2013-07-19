@@ -48,7 +48,7 @@ end
 
 def mock_registry(endpoint = 'http://registry:3333')
   registry = mock('registry', :endpoint => endpoint)
-  Bosh::Registry::Client.stub!(:new).and_return(registry)
+  Bosh::Registry::Client.stub(:new).and_return(registry)
   registry
 end
 

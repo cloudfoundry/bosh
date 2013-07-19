@@ -38,9 +38,9 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
 
   before(:each) do
     @swift = mock("swift")
-    Fog::Storage.stub!(:new).and_return(@swift)
+    Fog::Storage.stub(:new).and_return(@swift)
     @http_client = mock("http-client")
-    HTTPClient.stub!(:new).and_return(@http_client)
+    HTTPClient.stub(:new).and_return(@http_client)
   end
 
   describe "on HP Cloud Storage" do
@@ -89,7 +89,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           response = mock("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
-          response.stub!(:status).and_return(200)
+          response.stub(:status).and_return(200)
 
           oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
           @client.get(oid).should eql(data)
@@ -158,7 +158,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           response = mock("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
-          response.stub!(:status).and_return(200)
+          response.stub(:status).and_return(200)
 
           oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
           @client.get(oid).should eql(data)
@@ -233,7 +233,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           response = mock("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
-          response.stub!(:status).and_return(200)
+          response.stub(:status).and_return(200)
 
           oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
           @client.get(oid).should eql(data)
@@ -302,7 +302,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           response = mock("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
-          response.stub!(:status).and_return(200)
+          response.stub(:status).and_return(200)
 
           oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
           @client.get(oid).should eql(data)
@@ -377,7 +377,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           response = mock("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
-          response.stub!(:status).and_return(200)
+          response.stub(:status).and_return(200)
 
           oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
           @client.get(oid).should eql(data)
@@ -446,7 +446,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
           response = mock("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
-          response.stub!(:status).and_return(200)
+          response.stub(:status).and_return(200)
 
           oid = URI::escape(Base64.encode64(MultiJson.encode({:oid => "object_id", :purl => "public-url"})))
           @client.get(oid).should eql(data)

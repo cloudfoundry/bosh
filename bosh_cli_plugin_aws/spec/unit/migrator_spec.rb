@@ -22,7 +22,7 @@ describe Bosh::Aws::Migrator do
     @time = Time.now
     Time.stub(:new) { @time }
 
-    Bosh::Aws::MigrationHelper.stub!(:aws_migration_directory).and_return(@tempdir)
+    Bosh::Aws::MigrationHelper.stub(:aws_migration_directory).and_return(@tempdir)
 
     Bosh::Aws::S3.stub(:new).and_return(mock_s3)
     mock_s3.stub(:fetch_object_contents).and_return(nil)

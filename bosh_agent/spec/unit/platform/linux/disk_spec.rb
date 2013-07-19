@@ -50,7 +50,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     it 'mounts persistent disk to store_dir if not already mounted' do
       Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
       File.should_receive(:blockdev?).with('/dev/sdy1').and_return(true)
-      disk_wrapper.stub!(:mount_exists?).and_return false
+      disk_wrapper.stub(:mount_exists?).and_return false
       disk_wrapper.should_receive(:sh).with("mount /dev/sdy1 #{store_path}")
 
       disk_wrapper.mount_persistent_disk(2)

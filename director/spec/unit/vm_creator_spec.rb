@@ -4,26 +4,26 @@ describe Bosh::Director::VmCreator do
 
   before(:each) do
     @cloud = mock("cloud")
-    Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
+    Bosh::Director::Config.stub(:cloud).and_return(@cloud)
 
     @deployment = Bosh::Director::Models::Deployment.make
 
     @deployment_plan = mock("deployment_plan")
-    @deployment_plan.stub!(:deployment).and_return(@deployment)
-    @deployment_plan.stub!(:name).and_return("deployment_name")
+    @deployment_plan.stub(:deployment).and_return(@deployment)
+    @deployment_plan.stub(:name).and_return("deployment_name")
 
     @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
 
     @stemcell_spec = mock("stemcell_spec")
-    @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
+    @stemcell_spec.stub(:stemcell).and_return(@stemcell)
 
     @resource_pool_spec = mock("resource_pool_spec")
-    @resource_pool_spec.stub!(:deployment).and_return(@deployment_plan)
-    @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-    @resource_pool_spec.stub!(:name).and_return("test")
-    @resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
-    @resource_pool_spec.stub!(:env).and_return({})
-    @resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
+    @resource_pool_spec.stub(:deployment).and_return(@deployment_plan)
+    @resource_pool_spec.stub(:stemcell).and_return(@stemcell_spec)
+    @resource_pool_spec.stub(:name).and_return("test")
+    @resource_pool_spec.stub(:cloud_properties).and_return({"ram" => "2gb"})
+    @resource_pool_spec.stub(:env).and_return({})
+    @resource_pool_spec.stub(:spec).and_return({"name" => "foo"})
 
     @network_settings = {"network_a" => {"ip" => "1.2.3.4"}}
   end

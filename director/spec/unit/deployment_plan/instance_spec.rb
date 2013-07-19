@@ -26,7 +26,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
       "cloud_properties" => {"foo" => "bar"}
     })
 
-    plan.stub!(:network).with("net_a").and_return(network)
+    plan.stub(:network).with("net_a").and_return(network)
 
     job = mock(BD::DeploymentPlan::Job, :deployment => plan, :canonical_name => 'job')
 
@@ -68,15 +68,15 @@ describe Bosh::Director::DeploymentPlan::Instance do
       @deployment = make_deployment("mycloud")
       @plan = mock(BD::DeploymentPlan, :model => @deployment)
       @job = mock(BD::DeploymentPlan::Job, :deployment => @plan)
-      @job.stub!(:name).and_return("dea")
-      @job.stub!(:instance_state).with(2).and_return("started")
+      @job.stub(:name).and_return("dea")
+      @job.stub(:instance_state).with(2).and_return("started")
       @instance = make(@job, 2)
     end
 
     it "binds a VM from job resource pool (real VM exists)" do
       net = mock(BD::DeploymentPlan::Network, :name => "net_a")
       rp = mock(BD::DeploymentPlan::ResourcePool, :network => net)
-      @job.stub!(:resource_pool).and_return(rp)
+      @job.stub(:resource_pool).and_return(rp)
 
       old_ip = NetAddr::CIDR.create("10.0.0.5").to_i
       idle_vm_ip = NetAddr::CIDR.create("10.0.0.3").to_i
@@ -102,7 +102,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     it "binds a VM from job resource pool (real VM doesn't exist)" do
       net = mock(BD::DeploymentPlan::Network, :name => "net_a")
       rp = mock(BD::DeploymentPlan::ResourcePool, :network => net)
-      @job.stub!(:resource_pool).and_return(rp)
+      @job.stub(:resource_pool).and_return(rp)
 
       old_ip = NetAddr::CIDR.create("10.0.0.5").to_i
       idle_vm_ip = NetAddr::CIDR.create("10.0.0.3").to_i
@@ -132,11 +132,11 @@ describe Bosh::Director::DeploymentPlan::Instance do
       @deployment = make_deployment("mycloud")
       @plan = mock(BD::DeploymentPlan, :model => @deployment)
       @job = mock(BD::DeploymentPlan::Job, :deployment => @plan)
-      @job.stub!(:name).and_return("dea")
+      @job.stub(:name).and_return("dea")
     end
 
     it "deployment plan -> DB" do
-      @job.stub!(:instance_state).with(3).and_return("stopped")
+      @job.stub(:instance_state).with(3).and_return("stopped")
       instance = make(@job, 3)
 
       expect {
@@ -151,7 +151,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
 
     it "DB -> deployment plan" do
-      @job.stub!(:instance_state).with(3).and_return(nil)
+      @job.stub(:instance_state).with(3).and_return(nil)
       instance = make(@job, 3)
 
       instance.bind_model
@@ -163,7 +163,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
 
     it "needs to find state in order to sync it" do
-      @job.stub!(:instance_state).with(3).and_return(nil)
+      @job.stub(:instance_state).with(3).and_return(nil)
       instance = make(@job, 3)
 
       instance.bind_model
@@ -197,7 +197,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
       @job.templates = [mock_template]
       @job.should_receive(:instance_state).and_return("some_state")
       instance = make(@job, 0)
-      @job.stub!(:name).and_return("dea")
+      @job.stub(:name).and_return("dea")
       instance.current_state = {
         "job" => {
           "name" => "hbase_slave",
@@ -222,11 +222,11 @@ describe Bosh::Director::DeploymentPlan::Instance do
         resource_pool.stub(:env).and_return("key" => "value")
 
         plan = mock(BD::DeploymentPlan, :model => deployment)
-        plan.stub!(:recreate).and_return(false)
+        plan.stub(:recreate).and_return(false)
 
         job = BD::DeploymentPlan::Job.new(plan, {})
-        job.stub!(:instance_state).with(0).and_return("started")
-        job.stub!(:resource_pool).and_return(resource_pool)
+        job.stub(:instance_state).with(0).and_return("started")
+        job.stub(:resource_pool).and_return(resource_pool)
 
         instance_model = BD::Models::Instance.make
         instance_model.vm.update(:env => {"key" => "value"})

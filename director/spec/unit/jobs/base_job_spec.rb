@@ -5,16 +5,16 @@ require 'spec_helper'
 describe Bosh::Director::Jobs::BaseJob do
 
   before(:each) do
-    BD::Config.stub!(:cloud_options).and_return({})
+    BD::Config.stub(:cloud_options).and_return({})
     @task_dir = Dir.mktmpdir
     @event_log = Bosh::Director::EventLog.new(StringIO.new)
     @logger = Logger.new(StringIO.new)
 
-    Logger.stub!(:new).with("#{@task_dir}/debug").and_return(@logger)
-    Bosh::Director::EventLog.stub!(:new).with("#{@task_dir}/event").
+    Logger.stub(:new).with("#{@task_dir}/debug").and_return(@logger)
+    Bosh::Director::EventLog.stub(:new).with("#{@task_dir}/event").
       and_return(@event_log)
     @result_file = mock("result-file")
-    Bosh::Director::TaskResultFile.stub!(:new).with("#{@task_dir}/result").
+    Bosh::Director::TaskResultFile.stub(:new).with("#{@task_dir}/result").
       and_return(@result_file)
   end
 

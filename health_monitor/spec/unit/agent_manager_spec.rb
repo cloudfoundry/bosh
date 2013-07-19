@@ -148,7 +148,7 @@ describe Bhm::AgentManager do
       manager.analyze_agents.should == 5
 
       ts = Time.now
-      Time.stub!(:now).and_return(ts + [Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert].max + 10)
+      Time.stub(:now).and_return(ts + [Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert].max + 10)
 
       manager.process_event(:heartbeat, "512", nil)
       # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
