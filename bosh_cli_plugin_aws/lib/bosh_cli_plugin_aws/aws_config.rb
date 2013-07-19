@@ -130,7 +130,12 @@ module Bosh
       def load_configuration(yaml)
         renderer = ERB.new(yaml, 0, '<>%-')
 
-        YAML.load(renderer.result(binding))
+        aws_config = YAML.load(renderer.result(binding))
+        aws_config['aws']['ec2_endpoint'] ||= ['ec2', aws_config['aws']['region'], 'amazonaws.com'].compact.join('.')
+        aws_config['aws']['elb_endpoint'] ||= ['elasticloadbalancing', aws_config['aws']['region'], 'amazonaws.com'].compact.join('.')
+        aws_config['rds_endpoint'] ||= ['rds', aws_config['aws']['region'], 'amazonaws.com'].compact.join('.')
+
+        aws_config
       end
     end
   end

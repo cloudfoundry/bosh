@@ -8,6 +8,11 @@ module Bosh
         @config = config
         @receipt_bucket_name = receipt_bucket_name
         aws_config = config['aws']
+
+        aws_config['ec2_endpoint'] ||= ['ec2', aws_config['region'], 'amazonaws.com'].compact.join('.')
+        aws_config['elb_endpoint'] ||= ['elasticloadbalancing', aws_config['region'], 'amazonaws.com'].compact.join('.')
+        aws_config['rds_endpoint'] ||= ['rds', aws_config['region'], 'amazonaws.com'].compact.join('.')
+
         @s3 = S3.new(aws_config)
         @elb = ELB.new(aws_config)
         @ec2 = EC2.new(aws_config)
