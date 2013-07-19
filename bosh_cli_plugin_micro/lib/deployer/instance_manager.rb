@@ -6,10 +6,13 @@ module Bosh::Deployer
 
   class InstanceManager
     
-    CONNECTION_EXCEPTIONS = [Bosh::Agent::Error,
-                             Errno::ECONNREFUSED,
-                             Errno::ETIMEDOUT,
-                             Bosh::Deployer::DirectorGatewayError]
+    CONNECTION_EXCEPTIONS = [
+      Bosh::Agent::Error,
+      Errno::ECONNREFUSED,
+      Errno::ETIMEDOUT,
+      Bosh::Deployer::DirectorGatewayError,
+      HTTPClient::ConnectTimeoutError
+    ]
 
     include Helpers
 

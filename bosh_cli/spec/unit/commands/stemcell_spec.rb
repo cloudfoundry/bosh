@@ -12,7 +12,6 @@ describe Bosh::Cli::Command::Stemcell do
 
   before do
     command.stub(:director).and_return(director)
-    Bosh::Cli::Stemcell.stub(:new).and_return(stemcell)
     Bosh::Cli::Config.cache = cache
   end
   
@@ -28,35 +27,83 @@ describe Bosh::Cli::Command::Stemcell do
       end
 
       context 'local stemcell' do
-        it 'should upload the stemcell' do         
-          stemcell.should_receive(:validate)
-          stemcell.should_receive(:valid?).and_return(true)
-          director.should_receive(:list_stemcells).and_return([])
-          stemcell.should_receive(:stemcell_file).and_return(stemcell_archive)
-          director.should_receive(:upload_stemcell).with(stemcell_archive)
+        describe 'uploading stemcell' do
+          before { Bosh::Cli::Stemcell.stub(:new).and_return(stemcell) }
 
-          command.upload(stemcell_archive)
-        end        
+          it 'should upload the stemcell' do
+            stemcell.should_receive(:validate)
+            stemcell.should_receive(:valid?).and_return(true)
+            director.should_receive(:list_stemcells).and_return([])
+            stemcell.should_receive(:stemcell_file).and_return(stemcell_archive)
+            director.should_receive(:upload_stemcell).with(stemcell_archive)
 
-        it 'should not upload the stemcell if is invalid' do
-          stemcell.should_receive(:validate)
-          stemcell.should_receive(:valid?).and_return(false)         
-          director.should_not_receive(:upload_stemcell)
-
-          expect {
             command.upload(stemcell_archive)
-          }.to raise_error(Bosh::Cli::CliError, /Stemcell is invalid/)
+          end
+
+          it 'should not upload the stemcell if is invalid' do
+            stemcell.should_receive(:validate)
+            stemcell.should_receive(:valid?).and_return(false)
+            director.should_not_receive(:upload_stemcell)
+
+            expect {
+              command.upload(stemcell_archive)
+            }.to raise_error(Bosh::Cli::CliError, /Stemcell is invalid/)
+          end
+
+          it 'should not upload the stemcell if already exist' do
+            stemcell.should_receive(:validate)
+            stemcell.should_receive(:valid?).and_return(true)
+            director.should_receive(:list_stemcells).and_return([stemcell_manifest])
+            director.should_not_receive(:upload_stemcell)
+
+            expect {
+              command.upload(stemcell_archive)
+            }.to raise_error(Bosh::Cli::CliError, /already exists/)
+          end
         end
-        
-        it 'should not upload the stemcell if already exist' do
-          stemcell.should_receive(:validate)
-          stemcell.should_receive(:valid?).and_return(true)
-          director.should_receive(:list_stemcells).and_return([stemcell_manifest])          
-          director.should_not_receive(:upload_stemcell)
 
-          expect {
-            command.upload(stemcell_archive)
-          }.to raise_error(Bosh::Cli::CliError, /already exists/)
+        context 'when stemcell does not exist' do
+          before { director.stub(list_stemcells: []) }
+          let(:tarball_path) { spec_asset('valid_stemcell.tgz') }
+
+          it 'uploads stemcell and returns successfully' do
+            director.should_receive(:upload_stemcell).with(tarball_path)
+            command.upload(tarball_path)
+          end
+        end
+
+        context 'when stemcell already exists' do
+          before { director.stub(list_stemcells:
+            [{'name' => 'ubuntu-stemcell', 'version' => 1}]) }
+          let(:tarball_path) { spec_asset('valid_stemcell.tgz') }
+
+          context 'when --skip-if-exists flag is given' do
+            before { command.add_option(:skip_if_exists, true) }
+
+            it 'does not upload stemcell' do
+              director.should_not_receive(:upload_stemcell)
+              command.upload(tarball_path)
+            end
+
+            it 'returns successfully' do
+              expect {
+                command.upload(tarball_path)
+              }.to_not raise_error
+            end
+          end
+
+          context 'when --skip-if-exists flag is not given' do
+            it 'does not upload stemcell' do
+              director.should_not_receive(:upload_stemcell)
+              command.upload(tarball_path) rescue nil
+            end
+
+            it 'raises an error' do
+              expect {
+                command.upload(tarball_path)
+              }.to raise_error(Bosh::Cli::CliError, /already exists/)
+            end
+          end
         end
       end
       
