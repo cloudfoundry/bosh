@@ -5,22 +5,34 @@ describe Bosh::WardenCloud::Cloud do
   DEFAULT_STEMCELL_ID = "stemcell-abcd"
   DEFAULT_AGENT_ID = "agent-abcd"
 
-  let(:cloud) do
-    Bosh::Clouds::Provider.create(:warden,
-      "stemcell" => {"root" => @stemcell_root},
-      "agent" => agent_options,
-    )
-  end
-
-  before :all do
-    @stemcell_root = cloud_options["stemcell"]["root"]
-    @stemcell_path = File.join(@stemcell_root, DEFAULT_STEMCELL_ID)
-    FileUtils.mkdir_p(@stemcell_path)
-  end
-
-  after(:all) { FileUtils.rm_rf(@stemcell_root) }
 
   before :each do
+    @logger = Bosh::Clouds::Config.logger
+    @disk_root = Dir.mktmpdir("warden-cpi-disk")
+    @stemcell_path =  Dir.mktmpdir("stemcell-disk")
+    @stemcell_root = File.join(@stemcell_path, DEFAULT_STEMCELL_ID)
+
+    Dir.mkdir(@stemcell_root)
+
+    cloud_options = {
+        "disk" => {
+            "root" => @disk_root,
+            "fs" => "ext4",
+        },
+        "stemcell" => {
+            "root" => @stemcell_path,
+        },
+        "agent" => {
+            "mbus" => "nats://nats:nats@192.168.50.4:21084",
+            "blobstore" => {
+                "provider" => "simple",
+                "options" => "option"
+            }                          ,
+            "ntp" => []
+        }
+    }
+    Bosh::WardenCloud::Cloud.any_instance.stub(:setup_pool) {}
+
     @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
 
     [:connect, :disconnect].each do |op|
@@ -35,6 +47,11 @@ describe Bosh::WardenCloud::Cloud do
     Bosh::WardenCloud::Models::VM.dataset.delete
   end
 
+  after(:each) {
+    FileUtils.rm_rf @stemcell_path
+    FileUtils.rm_rf @disk_root
+  }
+
   context "create_vm" do
     before :each do
       Warden::Client.any_instance.stub(:call) do |req|
@@ -43,7 +60,7 @@ describe Bosh::WardenCloud::Cloud do
         case req
         when Warden::Protocol::CreateRequest
           req.network.should == "1.1.1.1"
-          req.rootfs.should == @stemcell_path
+          req.rootfs.should == @stemcell_root
 
           res.handle = DEFAULT_HANDLE
 
@@ -80,12 +97,12 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "can create vm" do
-      cloud.delegate.should_receive(:sudo).once
+      @cloud.delegate.should_receive(:sudo).once
 
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
       }
-      id = cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
+      id = @cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
 
       # DB Verification
       Bosh::WardenCloud::Models::VM.dataset.all.size.should == 1
@@ -95,7 +112,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it "should raise error for invalid stemcell" do
       expect {
-        cloud.create_vm("agent_id", "invalid_stemcell_id", nil, {})
+        @cloud.create_vm("agent_id", "invalid_stemcell_id", nil, {})
       }.to raise_error Bosh::Clouds::CloudError
     end
 
@@ -105,7 +122,7 @@ describe Bosh::WardenCloud::Cloud do
           "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
           "nic2" => { "type" => "dynamic" },
         }
-        cloud.create_vm("agent_id", "invalid_stemcell_id", nil, network_spec)
+        @cloud.create_vm("agent_id", "invalid_stemcell_id", nil, network_spec)
       }.to raise_error ArgumentError
     end
 
@@ -153,14 +170,14 @@ describe Bosh::WardenCloud::Cloud do
         res
       end
 
-      cloud.delete_vm(vm.id.to_s)
+      @cloud.delete_vm(vm.id.to_s)
 
       Bosh::WardenCloud::Models::VM.dataset.all.size.should == 0
     end
 
     it "should raise error when trying to delete a vm which doesn't exist" do
       expect {
-        cloud.delete_vm(11) # vm id 11 doesn't exist
+        @cloud.delete_vm(11) # vm id 11 doesn't exist
       }.to raise_error Bosh::Clouds::CloudError
     end
 
@@ -175,7 +192,7 @@ describe Bosh::WardenCloud::Cloud do
       disk.save
 
       expect {
-        cloud.delete_vm(vm.id.to_s)
+        @cloud.delete_vm(vm.id.to_s)
       }.to raise_error Bosh::Clouds::CloudError, /with disks attached/
     end
   end

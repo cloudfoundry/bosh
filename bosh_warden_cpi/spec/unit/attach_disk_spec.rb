@@ -17,7 +17,7 @@ describe Bosh::WardenCloud::Cloud do
         "root" => @disk_root,
       },
     }
-
+    Bosh::WardenCloud::Cloud.any_instance.stub(:setup_pool) {}
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
 
     [:connect, :disconnect].each do |op|
@@ -148,6 +148,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "should provide the right device path" do
+      pending "mknod operation should be done outside of unit test"
       script = attach_script(10, @device_prefix)
       device_file = sh("sudo bash -c '#{script}'").output.strip
 

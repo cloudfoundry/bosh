@@ -1,17 +1,27 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
-  let!(:disk_root) { Dir.mktmpdir("warden-cpi-disk") }
-  let(:logger) { Bosh::Clouds::Config.logger }
-  let(:cloud_options) { {"disk" => {"root" => disk_root, "fs" => "ext4" }}}
-  let(:cloud) { Bosh::Clouds::Provider.create(:warden, cloud_options) }
-
   before do
     [:connect, :disconnect].each do |op|
       Warden::Client.any_instance.stub(op) do
         # no-op
       end
     end
+    @logger = Bosh::Clouds::Config.logger
+    @disk_root = Dir.mktmpdir("warden-cpi-disk")
+    @stemcell_root = Dir.mktmpdir("warden-cpi-stemcell")
+    options = {
+        "disk" => {
+            "root" => @disk_root,
+            "fs" => "ext4",
+        },
+        "stemcell" => {
+            "root" => @stemcell_root,
+        },
+    }
+    Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
+    @cloud = Bosh::Clouds::Provider.create(:warden, options)
+
   end
 
   after { Bosh::WardenCloud::Models::Disk.dataset.delete }
@@ -19,7 +29,6 @@ describe Bosh::WardenCloud::Cloud do
   def mock_create_disk
     zero_exit_status = mock("Process::Status", :exit_status => 0)
     Bosh::Exec.should_receive(:sh).with(%r!\bmkfs -t ext4\b!).ordered.and_return(zero_exit_status)
-    Bosh::Exec.should_receive(:sh).with(%r!\bsudo .* losetup /dev/loop\d+\b!).ordered.and_return(zero_exit_status)
   end
 
   def attach_disk(disk_id)
@@ -32,9 +41,9 @@ describe Bosh::WardenCloud::Cloud do
     it "can create disk" do
       mock_create_disk
 
-      disk_id  = cloud.create_disk(1, nil)
+      disk_id  = @cloud.create_disk(1, nil)
 
-      Dir.chdir(disk_root) do
+      Dir.chdir(@disk_root) do
         image = image_file(disk_id)
 
         Dir.glob("*").should have(1).items
@@ -46,25 +55,25 @@ describe Bosh::WardenCloud::Cloud do
 
     it "should raise error if size is 0" do
       expect {
-        cloud.create_disk(0, nil)
+        @cloud.create_disk(0, nil)
       }.to raise_error ArgumentError
     end
 
     it "should raise error if size is smaller than 0" do
       expect {
-        cloud.create_disk(-1, nil)
+        @cloud.create_disk(-1, nil)
       }.to raise_error ArgumentError
     end
 
     it "should clean up when create disk failed" do
-      cloud.delegate.stub(:image_path) { "/path/not/exist" }
+      @cloud.delegate.stub(:image_path) { "/path/not/exist" }
 
       expect {
-        cloud.create_disk(1, nil)
+        @cloud.create_disk(1, nil)
       }.to raise_error
 
       Bosh::WardenCloud::Models::Disk.dataset.all.size.should == 0
-      Dir.chdir(disk_root) do
+      Dir.chdir(@disk_root) do
         Dir.glob("*").should be_empty
       end
     end
@@ -74,16 +83,16 @@ describe Bosh::WardenCloud::Cloud do
     before :each do
       mock_create_disk
 
-      @disk_id = cloud.create_disk(1, nil)
+      @disk_id = @cloud.create_disk(1, nil)
     end
 
     it "can delete disk" do
-      Dir.chdir(disk_root) do
+      Dir.chdir(@disk_root) do
         Dir.glob("*").should have(1).items
         Dir.glob("*").should include(image_file(@disk_id))
 
-        cloud.delegate.should_receive(:sudo).with("losetup -d /dev/loop10")
-        ret = cloud.delete_disk(@disk_id)
+        @cloud.delegate.should_receive(:sudo).with("losetup -d /dev/loop10")
+        ret = @cloud.delete_disk(@disk_id)
 
         Dir.glob("*").should be_empty
         ret.should be_nil
@@ -92,7 +101,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it "should raise error when trying to delete non-existed disk" do
       expect {
-        cloud.delete_disk("12345")
+        @cloud.delete_disk("12345")
       }.to raise_error Bosh::Clouds::CloudError
     end
 
@@ -100,7 +109,7 @@ describe Bosh::WardenCloud::Cloud do
       attach_disk(@disk_id)
 
       expect {
-        cloud.delete_disk(@disk_id)
+        @cloud.delete_disk(@disk_id)
       }.to raise_error Bosh::Clouds::CloudError
     end
   end

@@ -55,6 +55,7 @@ module Bosh::WardenCloud
 
         # This command needs priviledge because the stemcell contains device files,
         # which cannot be untared without priviledge
+        raise "#{image_path} not exist for creating stemcell" unless File.exist?(image_path)
         sudo "tar -C #{stemcell_dir} -xzf #{image_path} 2>&1"
 
         stemcell_id
