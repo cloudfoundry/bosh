@@ -14,17 +14,18 @@ module Bosh::Dev
         }
         Fog::Storage.new(fog_options)
       end
-      @logger = options.fetch(:logger) { Logger.new(STDOUT) }
+      @build_id =  options.fetch(:build_id) { Build.candidate.number.to_s }
+      @logger = options.fetch(:logger) { Logger.new($stdout) }
       @bucket = 'bosh-ci-pipeline'
     end
 
     def create(options)
       uploaded_file = base_directory.files.create(
-          key: options.fetch(:key),
+          key: File.join(build_id, options.fetch(:key)),
           body: options.fetch(:body),
           public: options.fetch(:public)
       )
-      logger.info("uploaded to #{uploaded_file.public_url}")
+      logger.info("uploaded to #{uploaded_file.public_url || File.join(s3_url, options.fetch(:key))}")
     end
 
     def publish_stemcell(stemcell)
@@ -37,13 +38,11 @@ module Bosh::Dev
     end
 
     def gems_dir_url
-      "https://s3.amazonaws.com/#{bucket}/gems/"
+      "https://s3.amazonaws.com/#{bucket}/#{build_id}/gems/"
     end
 
     def s3_upload(file, remote_path)
-      directory = fog_storage.directories.get(bucket)
-      directory.files.create(key: remote_path, body: File.open(file))
-      logger.info("uploaded '#{file}' -> s3://#{bucket}/#{remote_path}")
+      create(key: remote_path, body: File.open(file), public: false)
     end
 
     def download_stemcell(version, options={})
@@ -54,13 +53,16 @@ module Bosh::Dev
       filename = stemcell_filename(version, infrastructure, name, light)
       bucket_files = fog_storage.directories.get(bucket).files
 
+      remote_path = File.join(build_id, name, infrastructure, filename)
+      raise "remote stemcell '#{filename}' not found" unless  bucket_files.head(remote_path)
+
       File.open(filename, 'w') do |file|
-        bucket_files.get(File.join(name, infrastructure, filename)) do |chunk|
+        bucket_files.get(remote_path) do |chunk|
           file.write(chunk)
         end
       end
 
-      logger.info("downloaded 's3://#{bucket}/#{File.join(name, infrastructure, filename)}' -> '#{filename}'")
+      logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
     end
 
     def download_latest_stemcell(options={})
@@ -76,12 +78,12 @@ module Bosh::Dev
     end
 
     def s3_url
-      "s3://#{bucket}/"
+      "s3://#{bucket}/#{build_id}/"
     end
 
     private
 
-    attr_reader :logger, :bucket
+    attr_reader :logger, :bucket, :build_id
 
     def base_directory
       fog_storage.directories.get(bucket) or raise "bucket '#{bucket}' not found"

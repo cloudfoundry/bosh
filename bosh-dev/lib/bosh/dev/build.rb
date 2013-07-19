@@ -15,7 +15,7 @@ module Bosh::Dev
     def initialize(number)
       @number = number
       @job_name = ENV.fetch('JOB_NAME')
-      @pipeline = Pipeline.new
+      @pipeline = Pipeline.new(build_id: number.to_s)
     end
 
     def upload(release)
