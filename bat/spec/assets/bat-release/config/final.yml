@@ -1,7 +1,7 @@
---- 
+---
 final_name: bat
 min_cli_version: 1.5.0.pre.3
-blobstore: 
+blobstore:
   provider: s3
-  options: 
+  options:
     bucket_name: blob.cfblob.com
