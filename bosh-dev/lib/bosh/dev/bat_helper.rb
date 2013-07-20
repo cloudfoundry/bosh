@@ -3,13 +3,12 @@ require 'bosh/dev/pipeline'
 
 module Bosh::Dev
   class BatHelper
-    attr_reader :workspace_dir
     attr_reader :infrastructure
 
-    def initialize(workspace_dir, infrastructure)
+    def initialize(infrastructure)
       raise ArgumentError.new("invalid infrastructure: #{infrastructure}") unless Infrastructure::ALL.include?(infrastructure)
 
-      @workspace_dir = workspace_dir
+      @workspace_dir = ENV.to_hash.fetch('WORKSPACE')
       @infrastructure = Infrastructure.new(infrastructure)
       @pipeline = Pipeline.new
     end
@@ -56,5 +55,8 @@ module Bosh::Dev
     def cleanup_stemcells
       FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
     end
+
+    private
+    attr_reader :workspace_dir
   end
 end

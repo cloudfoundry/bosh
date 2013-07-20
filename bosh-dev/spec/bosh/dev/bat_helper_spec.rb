@@ -5,15 +5,14 @@ describe Bosh::Dev::BatHelper do
   let(:infrastructure) { 'aws' }
   let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', download_latest_stemcell: nil, latest_stemcell_filename: 'a latest stemcell version from pipeline') }
 
-  subject { Bosh::Dev::BatHelper.new('/FAKE/WORKSPACE/DIR', infrastructure) }
+  subject { Bosh::Dev::BatHelper.new(infrastructure) }
 
   before do
+    ENV.stub(:to_hash).and_return({'WORKSPACE' => '/FAKE/WORKSPACE/DIR'})
     Bosh::Dev::Pipeline.stub(new: fake_pipeline)
   end
 
   describe '#initialize' do
-    its(:workspace_dir) { should eq('/FAKE/WORKSPACE/DIR') }
-
     it 'sets infrastrucutre' do
       expect(subject.infrastructure.name).to eq('aws')
     end
@@ -21,7 +20,7 @@ describe Bosh::Dev::BatHelper do
     context 'with an invalid infrastructure' do
       it 'raises an ArgumentError' do
         expect {
-          Bosh::Dev::BatHelper.new('/FAKE/WORKSPACE/DIR', 'BAD_INFRASTRUCTURE')
+          Bosh::Dev::BatHelper.new('BAD_INFRASTRUCTURE')
         }.to raise_error(ArgumentError, /invalid infrastructure: BAD_INFRASTRUCTURE/)
       end
     end
@@ -56,7 +55,7 @@ describe Bosh::Dev::BatHelper do
     end
 
     it 'changes to the workspace directory' do
-      Dir.should_receive(:chdir).with(subject.workspace_dir)
+      Dir.should_receive(:chdir).with('/FAKE/WORKSPACE/DIR')
 
       subject.run_rake
     end
@@ -133,7 +132,7 @@ describe Bosh::Dev::BatHelper do
   describe '#cleanup_stemcells' do
     it 'correctly creates the glob used to delete the stemcells' do
       FileUtils.stub(:rm_f)
-      Dir.should_receive(:glob).with(File.join(subject.workspace_dir, '*bosh-stemcell-*.tgz'))
+      Dir.should_receive(:glob).with(File.join('/FAKE/WORKSPACE/DIR', '*bosh-stemcell-*.tgz'))
 
       subject.cleanup_stemcells
     end
