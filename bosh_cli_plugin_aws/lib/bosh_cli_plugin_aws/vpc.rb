@@ -100,7 +100,6 @@ module Bosh
           yield "Making subnet #{name} #{subnet_spec['cidr']}:" if block_given?
           options = {}
           options[:availability_zone] = subnet_spec["availability_zone"] if subnet_spec["availability_zone"]
-
           subnet = @aws_vpc.subnets.create(subnet_spec["cidr"], options)
           Bosh::AwsCloud::ResourceWait.for_subnet(subnet: subnet, state: :available)
 

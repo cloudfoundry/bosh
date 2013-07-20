@@ -1,8 +1,8 @@
 module Bosh
   module Aws
     class S3
-      def initialize(credentials)
-        @credentials = credentials
+      def initialize(provider)
+        @provider = provider
       end
 
       def create_bucket(bucket_name)
@@ -84,7 +84,7 @@ module Bosh
       end
 
       def aws_s3
-        @aws_s3 ||= ::AWS::S3.new(@credentials)
+        @provider.s3
       end
     end
   end
