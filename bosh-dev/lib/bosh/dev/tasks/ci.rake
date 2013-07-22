@@ -1,23 +1,23 @@
-require 'bosh/dev/build'
-require 'bosh/dev/bulk_uploader'
-
 namespace :ci do
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
     require 'bosh/dev/gems_generator'
+
     GemsGenerator.new.generate_and_upload
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
   task :publish_microbosh_release => [:publish_pipeline_gems] do
+    require 'bosh/dev/build'
     require 'bosh/dev/micro_bosh_release'
 
-    release = Bosh::Dev::MicroBoshRelease.new
-    Bosh::Dev::Build.candidate.upload(release)
+    Bosh::Dev::Build.candidate.upload(Bosh::Dev::MicroBoshRelease.new)
   end
 
   desc 'Promote from pipeline to artifacts bucket'
   task :promote_artifacts do
+    require 'bosh/dev/build'
+
     Bosh::Dev::Build.candidate.
         promote_artifacts(access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
                           secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT'])
