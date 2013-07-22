@@ -13,7 +13,7 @@ module Bosh
         Dir.chdir('pkg') do
           Bundler.with_clean_env do
             # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
-            system('gem', 'generate_index', '.')
+            Rake::FileUtilsExt.sh('gem', 'generate_index', '.')
           end
           BulkUploader.new.upload_r('.', 'gems')
         end

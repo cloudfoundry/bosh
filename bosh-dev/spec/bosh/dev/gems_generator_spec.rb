@@ -17,7 +17,7 @@ module Bosh::Dev
         Rake::Task.stub(:[] => rake_task)
         Dir.stub(:chdir).and_yield
 
-        subject.stub(:system)
+        Rake::FileUtilsExt.stub(:sh)
       end
 
       it 'updates BOSH_VERSION' do
@@ -36,7 +36,7 @@ module Bosh::Dev
         Dir.should_receive(:chdir).with('pkg').and_yield
         Bundler.should_receive(:with_clean_env).and_yield
 
-        subject.should_receive(:system).with('gem', 'generate_index', '.')
+        Rake::FileUtilsExt.should_receive(:sh).with('gem', 'generate_index', '.')
 
         subject.generate_and_upload
       end
