@@ -23,8 +23,6 @@ describe Bosh::WardenCloud::Cloud do
         },
     }
 
-
-    Bosh::WardenCloud::Cloud.any_instance.stub(:setup_pool) {}
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
 
   end

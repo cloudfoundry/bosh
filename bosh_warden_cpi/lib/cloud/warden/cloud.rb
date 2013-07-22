@@ -10,7 +10,7 @@ module Bosh::WardenCloud
     DEFAULT_POOL_SIZE = 128
     DEFAULT_POOL_START_NUMBER = 10
     DEFAULT_DEVICE_PREFIX = "/dev/sd"
-
+    DEFAULT_WARDEN_DEV_ROOT = "/warden-cpi-dev"
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
 
     attr_accessor :logger
@@ -31,7 +31,6 @@ module Bosh::WardenCloud
       setup_stemcell
       setup_disk
 
-      setup_pool
     end
 
     ##
@@ -113,6 +112,14 @@ module Bosh::WardenCloud
 
         vm = Models::VM.create
 
+        vm_bind_mount = File.join(@bind_mount_points, vm.id.to_s)
+        FileUtils.mkdir_p(vm_bind_mount)
+
+        # Make the bind mount point shareable
+        sudo "mount --bind #{vm_bind_mount} #{vm_bind_mount}"
+        sudo "mount --make-unbindable #{vm_bind_mount}"
+        sudo "mount --make-shared #{vm_bind_mount}"
+
         # Create Container
         handle = with_warden do |client|
           request = Warden::Protocol::CreateRequest.new
@@ -120,6 +127,13 @@ module Bosh::WardenCloud
           if networks.first[1]["type"] != "dynamic"
             request.network = networks.first[1]["ip"]
           end
+
+          bind_mount = Warden::Protocol::CreateRequest::BindMount.new
+          bind_mount.src_path = vm_bind_mount
+          bind_mount.dst_path = @warden_dev_root
+          bind_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
+
+          request.bind_mounts = bind_mount
 
           response = client.call(request)
           response.handle
@@ -191,6 +205,9 @@ module Bosh::WardenCloud
           client.call(request)
         end
 
+        vm_bind_mount = File.join(@bind_mount_points, vm_id)
+        sudo "umount #{vm_bind_mount}"
+
         nil
       end
 
@@ -240,7 +257,6 @@ module Bosh::WardenCloud
       not_used(vm_locality)
 
       disk = nil
-      number = nil
       image_file = nil
 
       raise ArgumentError, "disk size <= 0" unless size > 0
@@ -254,25 +270,13 @@ module Bosh::WardenCloud
         File.truncate(image_file, size << 20) # 1 MB == 1<<20 Byte
         sh "/sbin/mkfs -t #{@fs_type} -F #{image_file} 2>&1"
 
-        # Get a device number from the pool
-        number = @pool.acquire
-        cloud_error("Failed to fetch device number") unless number
-
-        # Attach image file to the device
-        sudo "losetup /dev/loop#{number} #{image_file}"
-
         disk.image_path = image_file
-        disk.device_num = number
         disk.attached = false
         disk.save
 
         disk.id.to_s
       end
     rescue => e
-      if number
-        sudo "losetup -d /dev/loop#{number}"
-        @pool.release(number)
-      end
       FileUtils.rm_f image_file if image_file
       disk.destroy if disk
 
@@ -290,12 +294,6 @@ module Bosh::WardenCloud
 
         cloud_error("Cannot find disk #{disk_id}") unless disk
         cloud_error("Cannot delete attached disk") if disk.attached
-
-        # Detach image file from loop device
-        sudo "losetup -d /dev/loop#{disk.device_num}"
-
-        # Release the device number back to pool
-        @pool.release(disk.device_num)
 
         # Delete DB entry
         disk.destroy
@@ -323,27 +321,20 @@ module Bosh::WardenCloud
         cloud_error("Disk #{disk_id} already attached") if disk.attached
 
         # Create a device file inside warden container
-        script = attach_script(disk.device_num, @device_path_prefix)
+        vm_bind_mount = File.join(@bind_mount_points, vm_id)
+        disk_dir = File.join(vm_bind_mount, disk_id)
+        FileUtils.mkdir_p(disk_dir)
 
-        device_path = with_warden do |client|
-          request = Warden::Protocol::RunRequest.new
-          request.handle = vm.container_id
-          request.script = script
-          request.privileged = true
-
-          response = client.call(request)
-
-          stdout = response.stdout || ""
-          stdout.strip
-        end
+        disk_img = disk.image_path
+        sudo "mount #{disk_img} #{disk_dir} -o loop"
 
         # Save device path into agent env settings
         env = get_agent_env(vm.container_id)
-        env["disks"]["persistent"][disk_id] = device_path
+        env["disks"]["persistent"][disk_id] = File.join(@warden_dev_root, disk_id)
         set_agent_env(vm.container_id, env)
 
         # Save DB entry
-        disk.device_path = device_path
+        disk.device_path = "#{disk_dir}"
         disk.attached = true
         disk.vm = vm
         disk.save
@@ -367,8 +358,10 @@ module Bosh::WardenCloud
         cloud_error("Cannot find disk #{disk_id}") unless disk
         cloud_error("Disk #{disk_id} not attached") unless disk.attached
 
-        device_num = disk.device_num
         device_path = disk.device_path
+
+        # umount the image file
+        sudo "umount #{device_path}"
 
         # Save device path into agent env settings
         env = get_agent_env(vm.container_id)
@@ -380,18 +373,6 @@ module Bosh::WardenCloud
         disk.device_path = nil
         disk.vm = nil
         disk.save
-
-        # Remove the device file and partition file inside warden container
-        script = "rm #{partition_path(device_path)} #{device_path}"
-
-        with_warden do |client|
-          request = Warden::Protocol::RunRequest.new
-          request.handle = vm.container_id
-          request.script = script
-          request.privileged = true
-
-          client.call(request)
-        end
 
         nil
       end
@@ -432,22 +413,9 @@ module Bosh::WardenCloud
       @pool_start_number = @disk_properties["pool_start_number"] || DEFAULT_POOL_START_NUMBER
       @device_path_prefix = @disk_properties["device_path_prefix"] || DEFAULT_DEVICE_PREFIX
 
+      @warden_dev_root = @disk_properties["warden_dev_root"] || DEFAULT_WARDEN_DEV_ROOT
+      @bind_mount_points = File.join(@disk_root, "bind_mount_points")
       FileUtils.mkdir_p(@disk_root)
-    end
-
-    def setup_pool
-      @pool = DevicePool.new(@pool_size) { |i| i + @pool_start_number }
-
-      occupied_numbers = Models::Disk.collect { |disk| disk.device_num }
-      @pool.delete_if do |i|
-        occupied_numbers.include? i
-      end
-
-      # Initialize the loop devices
-      last = @pool_start_number + @pool_size - 1
-      @pool_start_number.upto(last) do |i|
-        sudo "mknod /dev/loop#{i} b 7 #{i}" unless File.exists? "/dev/loop#{i}"
-      end
     end
 
     def with_warden

@@ -17,7 +17,6 @@ describe Bosh::WardenCloud::Cloud do
         "root" => @disk_root,
       },
     }
-    Bosh::WardenCloud::Cloud.any_instance.stub(:setup_pool) {}
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
 
     [:connect, :disconnect].each do |op|
@@ -51,6 +50,11 @@ describe Bosh::WardenCloud::Cloud do
     Bosh::WardenCloud::Models::Disk.dataset.delete
   end
 
+  def mock_attach_sudos (cmd)
+    zero_exit_status = mock("Process::Status", :exit_status => 0)
+    Bosh::Exec.should_receive(:sh).with(%r!sudo -n #{cmd}.*!).ordered.and_return(zero_exit_status)
+  end
+
   context "attach_disk" do
     before :each do
       Warden::Client.any_instance.stub(:call) do |request|
@@ -69,13 +73,14 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "can attach disk" do
+      mock_attach_sudos("mount")
       @cloud.attach_disk(@vm_id, @disk_id)
 
       disk = Bosh::WardenCloud::Models::Disk[@disk_id.to_i]
       vm = Bosh::WardenCloud::Models::VM[@vm_id.to_i]
 
       disk.attached.should == true
-      disk.device_path.should == "/dev/sda1"
+      disk.device_path.should == File.join(@disk_root, 'bind_mount_points', @vm_id, @disk_id )
       disk.device_num.should_not == 0
       disk.vm.should == vm
     end
@@ -110,6 +115,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "can detach disk" do
+      mock_attach_sudos("umount")
       @cloud.detach_disk(@vm_id, @attached_disk_id)
 
       disk = Bosh::WardenCloud::Models::Disk[@attached_disk_id.to_i]

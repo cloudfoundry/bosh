@@ -31,8 +31,6 @@ describe Bosh::WardenCloud::Cloud do
             "ntp" => []
         }
     }
-    Bosh::WardenCloud::Cloud.any_instance.stub(:setup_pool) {}
-
     @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
 
     [:connect, :disconnect].each do |op|
@@ -97,7 +95,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "can create vm" do
-      @cloud.delegate.should_receive(:sudo).once
+      @cloud.delegate.should_receive(:sudo).exactly(4)
 
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
@@ -129,7 +127,8 @@ describe Bosh::WardenCloud::Cloud do
     it "should clean up DB and warden when an error raised" do
       class FakeError < StandardError; end
 
-      @cloud.delegate.stub(:sudo) { raise FakeError.new }
+      Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
+      @cloud.delegate.stub(:set_agent_env) { raise FakeError.new }
 
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },

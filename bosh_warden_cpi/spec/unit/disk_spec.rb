@@ -19,7 +19,6 @@ describe Bosh::WardenCloud::Cloud do
             "root" => @stemcell_root,
         },
     }
-    Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
 
   end
@@ -91,7 +90,6 @@ describe Bosh::WardenCloud::Cloud do
         Dir.glob("*").should have(1).items
         Dir.glob("*").should include(image_file(@disk_id))
 
-        @cloud.delegate.should_receive(:sudo).with("losetup -d /dev/loop10")
         ret = @cloud.delete_disk(@disk_id)
 
         Dir.glob("*").should be_empty
