@@ -4,17 +4,8 @@ require 'bosh/dev/bulk_uploader'
 namespace :ci do
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
-    require 'bosh/dev/version_file'
-    version_file = Bosh::Dev::VersionFile.new(Bosh::Dev::Build.candidate.number)
-    version_file.write
-    Rake::Task['all:finalize_release_directory'].invoke
-    cd('pkg') do
-      Bundler.with_clean_env do
-        # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
-        sh('gem', 'generate_index', '.')
-      end
-      Bosh::Dev::BulkUploader.new.upload_r('.', 'gems')
-    end
+    require 'bosh/dev/gems_generator'
+    GemsGenerator.new.generate_and_upload
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
