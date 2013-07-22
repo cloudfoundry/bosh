@@ -123,15 +123,33 @@ describe Bosh::Director::Client do
       }.should raise_exception(RuntimeError, "foo")
     end
 
-    it "should let you wait for the server to be ready" do
-      @client = make("foo", "bar", :timeout => 0.1)
+    describe :wait_until_ready do
+      let(:client) { make('foo', 'bar', :timeout => 0.1) }
 
-      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
-      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
-      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
-      @client.should_receive(:ping).and_return(true)
+      it 'should wait for the agent to be ready' do
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_return(true)
 
-      @client.wait_until_ready
+        client.wait_until_ready
+      end
+
+      it 'should wait for the agent if it is restarting' do
+        client.should_receive(:ping).and_raise(BD::RpcRemoteException, 'restarting agent')
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_return(true)
+
+        client.wait_until_ready
+      end
+
+      it 'should raise an exception if there is a remote exception' do
+        client.should_receive(:ping).and_raise(BD::RpcRemoteException, 'remote exception')
+
+        expect do
+          client.wait_until_ready
+        end.to raise_error(Bosh::Director::RpcRemoteException)
+      end
     end
   end
 

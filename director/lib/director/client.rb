@@ -42,12 +42,11 @@ module Bosh::Director
       begin
         ping
       rescue RpcTimeout
-        if @deadline - Time.now.to_i > 0
-          retry
-        else
-          raise RpcTimeout,
-                "Timed out pinging to #{@client_id} after #{deadline} seconds"
-        end
+        retry if @deadline - Time.now.to_i > 0
+        raise RpcTimeout, "Timed out pinging to #{@client_id} after #{deadline} seconds"
+      rescue RpcRemoteException => e
+        retry if e.message =~ /^restarting agent/ && @deadline - Time.now.to_i > 0
+        raise e
       ensure
         @timeout = old_timeout
       end

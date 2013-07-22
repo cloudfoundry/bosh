@@ -425,7 +425,6 @@ module Bosh::Director
       return unless @instance.networks_changed?
 
       network_settings = @instance.network_settings
-      agent.prepare_network_change(network_settings)
 
       begin
         # If configure_networks can't configure the network as
@@ -440,7 +439,12 @@ module Bosh::Director
         return
       end
 
-      # Give some time to the agent to restart before pinging if it's ready
+      # Once CPI has configured the vm and stored the new network settings at the registry,
+      # we restart the agent via a 'prepare_network_change' message in order for the agent
+      # to pick up the new network settings.
+      agent.prepare_network_change(network_settings)
+
+      # Give some time to the agent to restart before pinging if it's ready (race condition)
       sleep(5)
 
       agent.wait_until_ready
