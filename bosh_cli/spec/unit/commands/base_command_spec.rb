@@ -5,7 +5,7 @@ require "spec_helper"
 describe Bosh::Cli::Command::Base do
 
   before :each do
-    @runner = mock(Bosh::Cli::Runner)
+    @runner = double(Bosh::Cli::Runner)
     @config_file = File.join(Dir.mktmpdir, "bosh_config")
     @cache_dir = Dir.mktmpdir
   end

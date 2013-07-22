@@ -5,7 +5,7 @@ require "spec_helper"
 describe Bosh::Cli::JobPropertyCollection do
 
   def make_job(properties)
-    mock(Bosh::Cli::JobBuilder, :properties => properties)
+    double(Bosh::Cli::JobBuilder, :properties => properties)
   end
 
   def make(job_builder, global_properties, job_properties = {}, mappings = {})

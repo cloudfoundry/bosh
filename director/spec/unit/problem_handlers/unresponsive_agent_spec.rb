@@ -12,8 +12,8 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
   end
 
   before(:each) do
-    @cloud = mock("cloud")
-    @agent = mock("agent")
+    @cloud = double("cloud")
+    @agent = double("agent")
     Bosh::Director::Config.stub(:cloud).and_return(@cloud)
 
     @vm = Bosh::Director::Models::Vm.make(cid: "vm-cid", agent_id: "agent-007")

@@ -70,8 +70,8 @@ describe Bosh::Director::AgentClient do
   end
 
   it "should use vm credentials" do
-    cloud = mock("cloud")
-    nats_rpc = mock("nats_rpc")
+    cloud = double("cloud")
+    nats_rpc = double("nats_rpc")
 
     Bosh::Director::Config.stub(:cloud).and_return(cloud)
     Bosh::Director::Config.stub(:nats_rpc).and_return(nats_rpc)

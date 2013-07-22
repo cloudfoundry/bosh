@@ -9,7 +9,7 @@ describe Bosh::Agent::Alert do
     state_file.close
 
     @logger   = Logger.new(StringIO.new)
-    @nats     = mock()
+    @nats     = double
     @agent_id = "zb-agent"
     @state    = Bosh::Agent::State.new(state_file.path)
 

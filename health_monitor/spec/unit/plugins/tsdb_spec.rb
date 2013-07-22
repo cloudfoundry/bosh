@@ -32,7 +32,7 @@ describe Bhm::Plugins::Tsdb do
   end
 
   it "sends event metrics to TSDB" do
-    tsdb = mock("tsdb connection")
+    tsdb = double("tsdb connection")
 
     alert = Bhm::Events::Base.create!(:alert, alert_payload)
     heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)

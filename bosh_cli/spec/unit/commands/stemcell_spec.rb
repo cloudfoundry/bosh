@@ -7,8 +7,8 @@ describe Bosh::Cli::Command::Stemcell do
   let(:director) { double(Bosh::Cli::Director) }
   let(:stemcell_archive) { spec_asset("valid_stemcell.tgz") }
   let(:stemcell_manifest) { {'name' => 'ubuntu-stemcell', 'version' => 1} }
-  let(:stemcell) { mock('stemcell', :manifest => stemcell_manifest) }
-  let(:cache) { mock('cache') }
+  let(:stemcell) { double('stemcell', :manifest => stemcell_manifest) }
+  let(:cache) { double('cache') }
 
   before do
     command.stub(:director).and_return(director)

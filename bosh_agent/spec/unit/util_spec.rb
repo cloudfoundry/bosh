@@ -9,12 +9,12 @@ describe Bosh::Agent::Util do
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
 
-    @httpclient = mock("httpclient")
+    @httpclient = double("httpclient")
     HTTPClient.stub(:new).and_return(@httpclient)
   end
 
   it "should unpack a blob" do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
@@ -28,7 +28,7 @@ describe Bosh::Agent::Util do
   end
 
   it "should raise an exception when sha1 is doesn't match blob data" do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     get_args = [ "/resources/some_blobstore_id", {}, {} ]

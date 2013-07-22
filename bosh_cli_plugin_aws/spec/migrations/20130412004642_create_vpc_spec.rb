@@ -7,8 +7,8 @@ describe CreateVpc do
   subject { described_class.new(config, '')}
 
   def make_fake_vpc!(overrides = {})
-    fake_vpc = mock("vpc")
-    fake_igw = mock(AWS::EC2::InternetGateway, id: "id2")
+    fake_vpc = double("vpc")
+    fake_igw = double(AWS::EC2::InternetGateway, id: "id2")
 
     Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
 
@@ -24,7 +24,7 @@ describe CreateVpc do
     ec2.stub(:force_add_key_pair)
     ec2.stub(:create_internet_gateway).and_return(fake_igw)
     ec2.stub(:elastic_ips).and_return(["1.2.3.4", "5.6.7.8"])
-    elb.stub(:create).with("external-elb-1", fake_vpc, anything, hash_including('my_cert_1' => anything)).and_return(mock("new elb", dns_name: 'elb-123.example.com'))
+    elb.stub(:create).with("external-elb-1", fake_vpc, anything, hash_including('my_cert_1' => anything)).and_return(double("new elb", dns_name: 'elb-123.example.com'))
     route53.stub(:create_zone)
     route53.stub(:add_record)
     fake_vpc

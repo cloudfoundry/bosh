@@ -193,7 +193,7 @@ describe Bosh::Blobstore::S3BlobstoreClient do
       }
     }
     let(:client) { s3_blobstore(options) }
-    let(:blob) { mock(AWS::S3::S3Object) }
+    let(:blob) { double(AWS::S3::S3Object) }
 
     it 'should return true if the object already exists' do
       blob.should_receive(:exists?).and_return(true)
@@ -222,7 +222,7 @@ describe Bosh::Blobstore::S3BlobstoreClient do
         }
       }
       let(:client) { s3_blobstore(options) }
-      let(:blob) { mock(AWS::S3::S3Object) }
+      let(:blob) { double(AWS::S3::S3Object) }
 
       it 'should delete an object' do
         blob.stub(exists?: true)
@@ -252,7 +252,7 @@ describe Bosh::Blobstore::S3BlobstoreClient do
         }
       }
       let(:client) { s3_blobstore(options) }
-      let(:blob) { mock(AWS::S3::S3Object) }
+      let(:blob) { double(AWS::S3::S3Object) }
 
       it 'should delete an object' do
         blob.stub(exists?: true)

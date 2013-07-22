@@ -5,7 +5,7 @@ require 'spec_helper'
 describe Bosh::Director::DownloadHelper do
   include Bosh::Director::DownloadHelper
   
-  let(:http) { mock('http') }
+  let(:http) { double('http') }
   let(:http_200) { Net::HTTPSuccess.new('1.1', '200', 'OK') }
   let(:http_404) { Net::HTTPNotFound.new('1.1', 404, 'Not Found') }
   let(:http_500) { Net::HTTPInternalServerError.new('1.1', '500', 'Internal Server Error') }  

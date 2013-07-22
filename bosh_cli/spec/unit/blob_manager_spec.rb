@@ -9,13 +9,13 @@ describe Bosh::Cli::BlobManager do
   end
 
   before(:each) do
-    @blobstore = mock("blobstore")
+    @blobstore = double("blobstore")
     @dir = Dir.mktmpdir
     @src_dir = FileUtils.mkdir(File.join(@dir, "src"))
     @config_dir = File.join(@dir, "config")
     FileUtils.mkdir(@config_dir)
     @blobs_dir = File.join(@dir, "blobs")
-    @release = mock("release", :dir => @dir, :blobstore => @blobstore)
+    @release = double("release", :dir => @dir, :blobstore => @blobstore)
   end
 
   describe "initialization" do

@@ -3,21 +3,21 @@ require 'spec_helper'
 describe Bosh::Director::VmCreator do
 
   before(:each) do
-    @cloud = mock("cloud")
+    @cloud = double("cloud")
     Bosh::Director::Config.stub(:cloud).and_return(@cloud)
 
     @deployment = Bosh::Director::Models::Deployment.make
 
-    @deployment_plan = mock("deployment_plan")
+    @deployment_plan = double("deployment_plan")
     @deployment_plan.stub(:deployment).and_return(@deployment)
     @deployment_plan.stub(:name).and_return("deployment_name")
 
     @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
 
-    @stemcell_spec = mock("stemcell_spec")
+    @stemcell_spec = double("stemcell_spec")
     @stemcell_spec.stub(:stemcell).and_return(@stemcell)
 
-    @resource_pool_spec = mock("resource_pool_spec")
+    @resource_pool_spec = double("resource_pool_spec")
     @resource_pool_spec.stub(:deployment).and_return(@deployment_plan)
     @resource_pool_spec.stub(:stemcell).and_return(@stemcell_spec)
     @resource_pool_spec.stub(:name).and_return("test")

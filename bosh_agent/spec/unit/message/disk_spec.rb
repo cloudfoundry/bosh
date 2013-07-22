@@ -10,7 +10,7 @@ end
 
 describe Bosh::Agent::Message::UnmountDisk do
   it 'should unmount disk' do
-    platform = mock(:platform)
+    platform = double(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
     Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
@@ -22,7 +22,7 @@ describe Bosh::Agent::Message::UnmountDisk do
   end
 
   it "should fall through if mount is not present" do
-    platform = mock(:platform)
+    platform = double(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdx")
     Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return(nil)
@@ -43,7 +43,7 @@ describe Bosh::Agent::Message::ListDisk do
   end
 
   it "should list persistent disks" do
-    platform = mock(:platform)
+    platform = double(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
     Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')

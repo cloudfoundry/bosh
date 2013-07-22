@@ -4,15 +4,15 @@ require File.expand_path("../../../../../spec_helper", __FILE__)
 
 describe VSphereCloud::Resources::Datacenter do
   before(:each) do
-    @client = mock(:client)
+    @client = double(:client)
     VSphereCloud::Config.client = @client
     VSphereCloud::Config.mem_overcommit = 1.0
   end
 
   describe :initialize do
     it "should create a datacenter" do
-      dc_mob = mock(:dc_mob)
-      cluster_mob = mock(:cluster_mob)
+      dc_mob = double(:dc_mob)
+      cluster_mob = double(:cluster_mob)
 
       @client.should_receive(:find_by_inventory_path).with("TEST_DC").
           and_return(dc_mob)
@@ -33,25 +33,25 @@ describe VSphereCloud::Resources::Datacenter do
       datastore_config = VSphereCloud::Config::DatastoreConfig.new
       datastore_config.disk_path = "bosh_disks"
 
-      dc_config = mock(:dc_config)
+      dc_config = double(:dc_config)
       dc_config.stub(:name).and_return("TEST_DC")
       dc_config.stub(:folders).and_return(folder_config)
       dc_config.stub(:clusters).and_return({"foo" => cluster_config})
       dc_config.stub(:datastores).and_return(datastore_config)
 
-      vm_folder = mock(:vm_folder)
+      vm_folder = double(:vm_folder)
       VSphereCloud::Resources::Folder.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Datacenter),
                "vms", false).
           and_return(vm_folder)
 
-      template_folder = mock(:template_folder)
+      template_folder = double(:template_folder)
       VSphereCloud::Resources::Folder.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Datacenter),
                "templates", false).
           and_return(template_folder)
 
-      cluster = mock(:cluster)
+      cluster = double(:cluster)
       cluster.stub(:name).and_return("foo")
       VSphereCloud::Resources::Cluster.stub(:new).
           with(an_instance_of(VSphereCloud::Resources::Datacenter),

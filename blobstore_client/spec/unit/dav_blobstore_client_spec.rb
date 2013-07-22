@@ -2,8 +2,8 @@ require 'spec_helper'
 
 describe Bosh::Blobstore::DavBlobstoreClient do
 
-  let(:response) { mock(HTTP::Message) }
-  let(:httpclient) { mock(HTTPClient) }
+  let(:response) { double(HTTP::Message) }
+  let(:httpclient) { double(HTTPClient) }
 
   before(:each) do
     HTTPClient.stub(:new).and_return(httpclient)

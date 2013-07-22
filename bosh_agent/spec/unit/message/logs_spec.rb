@@ -121,7 +121,7 @@ describe Bosh::Agent::Message::FetchLogs do
     log_dir = File.join(@base_dir, "bosh", "log")
     FileUtils.mkdir_p(log_dir)
 
-    bad_client = mock(Bosh::Blobstore::Client)
+    bad_client = double(Bosh::Blobstore::Client)
     Bosh::Blobstore::Client.stub(:create).and_return(bad_client)
 
     bad_client.stub(:create).and_raise(Bosh::Blobstore::BlobstoreError.new("no mood to upload today"))

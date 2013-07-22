@@ -30,8 +30,8 @@ describe Bosh::Registry::InstanceManager do
   end
 
   def actual_ip_is(private_ip, floating_ip)
-    servers = mock("servers")
-    instance = mock("instance")
+    servers = double("servers")
+    instance = double("instance")
 
     @compute.should_receive(:servers).and_return(servers)
     servers.should_receive(:find).and_return(instance)

@@ -19,7 +19,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
   end
 
   it "trusts current state to have current IP for dynamic network" do
-    plan = mock(BD::DeploymentPlan, :canonical_name => 'mycloud')
+    plan = double(BD::DeploymentPlan, :canonical_name => 'mycloud')
 
     network = BD::DeploymentPlan::DynamicNetwork.new(plan, {
       "name" => "net_a",
@@ -28,7 +28,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
 
     plan.stub(:network).with("net_a").and_return(network)
 
-    job = mock(BD::DeploymentPlan::Job, :deployment => plan, :canonical_name => 'job')
+    job = double(BD::DeploymentPlan::Job, :deployment => plan, :canonical_name => 'job')
 
     job.stub(:instance_state).with(0).and_return("started")
     job.stub(:default_network).and_return({})
@@ -66,16 +66,16 @@ describe Bosh::Director::DeploymentPlan::Instance do
   describe "binding unallocated VM" do
     before(:each) do
       @deployment = make_deployment("mycloud")
-      @plan = mock(BD::DeploymentPlan, :model => @deployment)
-      @job = mock(BD::DeploymentPlan::Job, :deployment => @plan)
+      @plan = double(BD::DeploymentPlan, :model => @deployment)
+      @job = double(BD::DeploymentPlan::Job, :deployment => @plan)
       @job.stub(:name).and_return("dea")
       @job.stub(:instance_state).with(2).and_return("started")
       @instance = make(@job, 2)
     end
 
     it "binds a VM from job resource pool (real VM exists)" do
-      net = mock(BD::DeploymentPlan::Network, :name => "net_a")
-      rp = mock(BD::DeploymentPlan::ResourcePool, :network => net)
+      net = double(BD::DeploymentPlan::Network, :name => "net_a")
+      rp = double(BD::DeploymentPlan::ResourcePool, :network => net)
       @job.stub(:resource_pool).and_return(rp)
 
       old_ip = NetAddr::CIDR.create("10.0.0.5").to_i
@@ -100,8 +100,8 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
 
     it "binds a VM from job resource pool (real VM doesn't exist)" do
-      net = mock(BD::DeploymentPlan::Network, :name => "net_a")
-      rp = mock(BD::DeploymentPlan::ResourcePool, :network => net)
+      net = double(BD::DeploymentPlan::Network, :name => "net_a")
+      rp = double(BD::DeploymentPlan::ResourcePool, :network => net)
       @job.stub(:resource_pool).and_return(rp)
 
       old_ip = NetAddr::CIDR.create("10.0.0.5").to_i
@@ -130,8 +130,8 @@ describe Bosh::Director::DeploymentPlan::Instance do
   describe "syncing state" do
     before(:each) do
       @deployment = make_deployment("mycloud")
-      @plan = mock(BD::DeploymentPlan, :model => @deployment)
-      @job = mock(BD::DeploymentPlan::Job, :deployment => @plan)
+      @plan = double(BD::DeploymentPlan, :model => @deployment)
+      @job = double(BD::DeploymentPlan::Job, :deployment => @plan)
       @job.stub(:name).and_return("dea")
     end
 
@@ -178,13 +178,13 @@ describe Bosh::Director::DeploymentPlan::Instance do
   describe "updating deployment" do
     it "needs to smartly compare specs before deciding to update a job" do
       @deployment = make_deployment("mycloud")
-      @plan = mock(BD::DeploymentPlan, :model => @deployment)
+      @plan = double(BD::DeploymentPlan, :model => @deployment)
       @job = BD::DeploymentPlan::Job.new(@plan, {})
 
-      @job.release = mock(BD::DeploymentPlan::Release)
+      @job.release = double(BD::DeploymentPlan::Release)
       @job.release.should_receive(:name).twice.and_return("hbase-release")
 
-      mock_template = mock(BD::DeploymentPlan::Template)
+      mock_template = double(BD::DeploymentPlan::Template)
       mock_template.should_receive(:name).exactly(4).times.and_return(
         "hbase_slave")
       mock_template.should_receive(:version).exactly(4).times.and_return("2")
@@ -217,11 +217,11 @@ describe Bosh::Director::DeploymentPlan::Instance do
       it "detects resource pool change when instance VM env changes" do
         deployment = make_deployment("mycloud")
 
-        resource_pool = mock(BD::DeploymentPlan::ResourcePool)
+        resource_pool = double(BD::DeploymentPlan::ResourcePool)
         resource_pool.stub(:spec).and_return("foo" => "bar")
         resource_pool.stub(:env).and_return("key" => "value")
 
-        plan = mock(BD::DeploymentPlan, :model => deployment)
+        plan = double(BD::DeploymentPlan, :model => deployment)
         plan.stub(:recreate).and_return(false)
 
         job = BD::DeploymentPlan::Job.new(plan, {})
@@ -255,11 +255,11 @@ describe Bosh::Director::DeploymentPlan::Instance do
       
       it 'returns instance spec' do
         deployment = make_deployment('mycloud')
-        plan = mock(BD::DeploymentPlan, :model => deployment, :name => deployment_name, :canonical_name => deployment_name)
-        job = mock(BD::DeploymentPlan::Job, :deployment => plan, :spec => job_spec, 
+        plan = double(BD::DeploymentPlan, :model => deployment, :name => deployment_name, :canonical_name => deployment_name)
+        job = double(BD::DeploymentPlan::Job, :deployment => plan, :spec => job_spec,
                    :canonical_name => 'job', :instances => ['instance0'])
-        release = mock(BD::DeploymentPlan::Release, :spec => release_spec)
-        resource_pool = mock(BD::DeploymentPlan::ResourcePool, :spec => resource_pool_spec)
+        release = double(BD::DeploymentPlan::Release, :spec => release_spec)
+        resource_pool = double(BD::DeploymentPlan::ResourcePool, :spec => resource_pool_spec)
 
         network = BD::DeploymentPlan::DynamicNetwork.new(plan, network_spec)
         network.reserve(reservation)

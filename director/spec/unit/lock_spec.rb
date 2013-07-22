@@ -5,7 +5,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::Lock do
 
   it "should acquire a lock" do
-    redis = mock("redis")
+    redis = double("redis")
     BD::Config.stub(:redis).and_return(redis)
 
     started = Time.now.to_f
@@ -44,7 +44,7 @@ describe Bosh::Director::Lock do
   end
 
   it "should not let two clients to acquire the same lock at the same time" do
-    redis = mock("redis")
+    redis = double("redis")
     BD::Config.stub(:redis).and_return(redis)
 
     stored_value = nil
@@ -89,7 +89,7 @@ describe Bosh::Director::Lock do
   end
 
   it "should return immediately with lock busy if try lock fails to get lock" do
-    redis = mock("redis")
+    redis = double("redis")
     BD::Config.stub(:redis).and_return(redis)
 
     stored_value = nil

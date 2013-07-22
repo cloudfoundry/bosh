@@ -63,7 +63,7 @@ describe Bosh::Registry::Runner do
       Bosh::Registry.http_port = 25777
 
       runner = make_runner(@config_file)
-      mock_thin = mock("thin")
+      mock_thin = double("thin")
 
       Thin::Server.should_receive(:new).
         with("0.0.0.0", 25777, :signals => false).

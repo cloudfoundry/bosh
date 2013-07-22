@@ -398,7 +398,7 @@ describe Bosh::Cli::Director do
           with(:get, "/stuff", "text/plain", "abc").
           and_return([302, "body", {:location => "/tasks/502"}])
 
-      tracker = mock("tracker", :track => "polling result", :output => "foo")
+      tracker = double("tracker", :track => "polling result", :output => "foo")
 
       Bosh::Cli::TaskTracker.should_receive(:new).
           with(@director, "502", options).
@@ -419,7 +419,7 @@ describe Bosh::Cli::Director do
           with(:get, "/stuff", "text/plain", "abc").
           and_return([303, "body", {:location => "/tasks/502"}])
 
-      tracker = mock("tracker", :track => "polling result", :output => "foo")
+      tracker = double("tracker", :track => "polling result", :output => "foo")
 
       Bosh::Cli::TaskTracker.should_receive(:new).
           with(@director, "502", options).
@@ -445,7 +445,7 @@ describe Bosh::Cli::Director do
             with(:get, "/stuff", "text/plain", "abc").
             and_return([302, "body", {:location => "/tasks/502"}])
 
-        tracker = mock("tracker", :track => "polling result", :output => "foo")
+        tracker = double("tracker", :track => "polling result", :output => "foo")
 
         Bosh::Cli::TaskTracker.should_receive(:new).
             with(@director, "502", options).
@@ -512,7 +512,7 @@ describe Bosh::Cli::Director do
           with(OpenSSL::SSL::VERIFY_NONE)
       ssl_config.should_receive(:verify_callback=)
 
-      client = mock("httpclient", :ssl_config => ssl_config)
+      client = double("httpclient", :ssl_config => ssl_config)
       client.should_receive(:send_timeout=).
           with(Bosh::Cli::Director::API_TIMEOUT)
       client.should_receive(:receive_timeout=).
@@ -532,7 +532,7 @@ describe Bosh::Cli::Director do
 
   describe "talking to REST API" do
     it "performs HTTP request" do
-      mock_response = mock("response", :code => 200,
+      mock_response = double("response", :code => 200,
                            :body => "test", :headers => {})
 
       @director.should_receive(:perform_http_request).
@@ -552,7 +552,7 @@ describe Bosh::Cli::Director do
           body = JSON.generate("code" => "40422",
                                "description" => "Weird stuff happened")
 
-          mock_response = mock("response",
+          mock_response = double("response",
                                :code => code,
                                :body => body,
                                :headers => {})
@@ -566,7 +566,7 @@ describe Bosh::Cli::Director do
 
         lambda {
           # Not JSON
-          mock_response = mock("response", :code => code,
+          mock_response = double("response", :code => code,
                                :body => "error message goes here",
                                :headers => {})
           @director.should_receive(:perform_http_request).
@@ -579,7 +579,7 @@ describe Bosh::Cli::Director do
 
         lambda {
           # JSON but weird
-          mock_response = mock("response", :code => code,
+          mock_response = double("response", :code => code,
                                :body => '{"c":"d","a":"b"}',
                                :headers => {})
           @director.should_receive(:perform_http_request).
@@ -620,7 +620,7 @@ describe Bosh::Cli::Director do
     end
 
     it "streams file" do
-      mock_response = mock("response", :code => 200,
+      mock_response = double("response", :code => 200,
                            :body => "test body", :headers => {})
       @director.should_receive(:perform_http_request).
           and_yield("test body").and_return(mock_response)

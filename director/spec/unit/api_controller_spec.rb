@@ -29,7 +29,7 @@ describe Bosh::Director::ApiController do
   end
 
   def app
-    @manager = mock(BD::Api::ResourceManager)
+    @manager = double(BD::Api::ResourceManager)
     BD::Api::ResourceManager.stub(:new).and_return(@manager)
     Bosh::Director::ApiController.new
   end

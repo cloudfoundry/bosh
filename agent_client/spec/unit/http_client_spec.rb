@@ -3,14 +3,14 @@ require 'spec_helper'
 
 describe Bosh::Agent::HTTPClient do
   before(:each) do
-    @httpclient = mock('httpclient')
-    @httpclient.stub(:ssl_config).and_return(mock('sslconfig').as_null_object)
+    @httpclient = double('httpclient')
+    @httpclient.stub(:ssl_config).and_return(double('sslconfig').as_null_object)
     HTTPClient.stub(:new).and_return(@httpclient)
   end
 
   describe 'options' do
     it 'should set up authentication when present' do
-      response = mock('response')
+      response = double('response')
       response.stub(:code).and_return(200)
       response.stub(:body).and_return('{"value": "pong"}')
 
@@ -28,7 +28,7 @@ describe Bosh::Agent::HTTPClient do
     end
 
     it 'should encode arguments' do
-      response = mock('response')
+      response = double('response')
       response.stub(:code).and_return(200)
       response.stub(:body).and_return('{"value": "iam"}')
 
@@ -48,7 +48,7 @@ describe Bosh::Agent::HTTPClient do
     end
 
     it 'should receive a message value' do
-      response = mock('response')
+      response = double('response')
       response.stub(:code).and_return(200)
       response.stub(:body).and_return('{"value": "pong"}')
 
@@ -68,7 +68,7 @@ describe Bosh::Agent::HTTPClient do
     end
 
     it 'should run_task' do
-      response = mock('response')
+      response = double('response')
       response.stub(:code).and_return(200)
       response.stub(:body).and_return('{"value": {"state": "running", "agent_task_id": "task_id_foo"}}')
 
@@ -82,7 +82,7 @@ describe Bosh::Agent::HTTPClient do
       @httpclient.should_receive(:request).with(:post, 'https://localhost/agent',
                                                 body: payload, header: headers).and_return(response)
 
-      response2 = mock('response2')
+      response2 = double('response2')
       response2.stub(:code).and_return(200)
       response2.stub(:body).and_return('{"value": {"state": "done"}')
 
@@ -101,7 +101,7 @@ describe Bosh::Agent::HTTPClient do
     end
 
     it 'should raise handler exception when method is invalid' do
-      response = mock('response')
+      response = double('response')
       response.stub(:code).and_return(200)
       response.stub(:body).and_return('{"exception": "no such method"}')
 
@@ -118,7 +118,7 @@ describe Bosh::Agent::HTTPClient do
     end
 
     it 'should raise authentication exception when 401 is returned' do
-      response = mock('response')
+      response = double('response')
       response.stub(:code).and_return(401)
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|

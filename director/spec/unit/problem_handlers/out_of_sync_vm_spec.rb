@@ -12,8 +12,8 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
   end
 
   before(:each) do
-    @cloud = mock("cloud")
-    @agent = mock("agent")
+    @cloud = double("cloud")
+    @agent = double("agent")
 
     @deployment = Bosh::Director::Models::Deployment.make(:name => "mycloud")
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :deployment => @deployment)

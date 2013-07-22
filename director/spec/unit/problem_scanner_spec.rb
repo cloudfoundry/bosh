@@ -108,7 +108,7 @@ describe Bosh::Director::ProblemScanner do
       instance = BDM::Instance.make(:vm => vm, :deployment => deployment, :job => "job", :index => 1)
       BDM::PersistentDisk.make(:instance_id => instance.id, :active => true)
 
-      agent = mock("agent")
+      agent = double("agent")
       BD::AgentClient.stub(:new).with("agent", anything).and_return(agent)
 
       good_state = {
@@ -133,7 +133,7 @@ describe Bosh::Director::ProblemScanner do
       BDM::PersistentDisk.make(:instance_id => instance.id,
                                :active => true)
 
-      agent = mock("agent")
+      agent = double("agent")
       BD::AgentClient.stub(:new).with("agent", anything).and_return(agent)
 
       good_state = {
@@ -163,7 +163,7 @@ describe Bosh::Director::ProblemScanner do
       BDM::PersistentDisk.make(:instance_id => instance.id,
                                :active => true)
 
-      agent = mock("agent")
+      agent = double("agent")
       BD::AgentClient.stub(:new).with("agent", anything).and_return(agent)
 
       good_state = {
@@ -197,8 +197,8 @@ describe Bosh::Director::ProblemScanner do
       BDM::PersistentDisk.make(:instance_id => 1, :active => true,
                                :disk_cid => "disk-cid-1")
 
-      agent_1 = mock("agent-1")
-      agent_2 = mock("agent-2")
+      agent_1 = double("agent-1")
+      agent_2 = double("agent-2")
 
       BD::AgentClient.stub(:new).with("agent-1", anything).
           and_return(agent_1)
@@ -245,8 +245,8 @@ describe Bosh::Director::ProblemScanner do
                                  :disk_cid => "disk-cid-#{i}")
       end
 
-      agent_1 = mock("agent-1")
-      agent_2 = mock("agent-2")
+      agent_1 = double("agent-1")
+      agent_2 = double("agent-2")
 
       BD::AgentClient.stub(:new).with("agent-1", anything).
           and_return(agent_1)
@@ -304,9 +304,9 @@ describe Bosh::Director::ProblemScanner do
           vm = BDM::Vm.make(cid: 'vm-cid', agent_id: "agent-#{i}", deployment: deployment)
           BDM::Instance.make(vm: vm, deployment: deployment, job: "job-#{i}", index: i)
         end
-        unresponsive_agent1 = mock(BD::AgentClient)
-        unresponsive_agent2 = mock(BD::AgentClient)
-        responsive_agent = mock(BD::AgentClient)
+        unresponsive_agent1 = double(BD::AgentClient)
+        unresponsive_agent2 = double(BD::AgentClient)
+        responsive_agent = double(BD::AgentClient)
 
         BD::AgentClient.stub(:new).with("agent-0", anything).and_return(unresponsive_agent1)
         BD::AgentClient.stub(:new).with("agent-1", anything).and_return(unresponsive_agent2)
@@ -400,9 +400,9 @@ describe Bosh::Director::ProblemScanner do
       BDM::Instance.make(:vm => vms[1], :deployment => deployment,
                          :job => "mysql_node", :index => 3)
 
-      agent_1 = mock("agent-1")
-      agent_2 = mock("agent-2")
-      agent_3 = mock("agent-3")
+      agent_1 = double("agent-1")
+      agent_2 = double("agent-2")
+      agent_3 = double("agent-3")
       BD::AgentClient.stub(:new).with("agent-1", anything).
           and_return(agent_1)
       BD::AgentClient.stub(:new).with("agent-2", anything).
@@ -452,7 +452,7 @@ describe Bosh::Director::ProblemScanner do
       vm = BDM::Vm.make(agent_id: "out-of-sync-agent-id", deployment: deployment)
       BDM::Instance.make(vm: vm, deployment: deployment, job: "mysql_node", index: 3)
 
-      out_of_sync_agent = mock("out_of_sync_agent-id")
+      out_of_sync_agent = double("out_of_sync_agent-id")
 
       BD::AgentClient.stub(:new).with("out-of-sync-agent-id", anything).and_return(out_of_sync_agent)
 

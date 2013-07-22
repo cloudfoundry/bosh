@@ -4,14 +4,14 @@ require File.expand_path("../../../../../spec_helper", __FILE__)
 
 describe VSphereCloud::Resources::Datastore do
   before(:each) do
-    @client = mock(:client)
+    @client = double(:client)
     VSphereCloud::Config.client = @client
     VSphereCloud::Config.mem_overcommit = 1.0
   end
 
   describe :initialize do
     it "should create a datastore" do
-      ds_mob = mock(:ds_mob)
+      ds_mob = double(:ds_mob)
       datastore = VSphereCloud::Resources::Datastore.new({
           :obj => ds_mob,
           "name" => "foo_lun",
@@ -29,7 +29,7 @@ describe VSphereCloud::Resources::Datastore do
 
   describe :allocate do
     it "should allocate space" do
-      ds_mob = mock(:ds_mob)
+      ds_mob = double(:ds_mob)
       datastore = VSphereCloud::Resources::Datastore.new({
          :obj => ds_mob,
          "name" => "foo_lun",

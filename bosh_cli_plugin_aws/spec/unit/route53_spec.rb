@@ -26,7 +26,7 @@ describe Bosh::Aws::Route53 do
   it "can create a new hosted zone" do
     unique_name = "xxx-yyy-zzz-111"
     r53.should_receive(:generate_unique_name).and_return(unique_name)
-    aws_r53 = mock("aws_r53")
+    aws_r53 = double("aws_r53")
     r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
     aws_r53.should_receive(:create_hosted_zone).with(name: "example.com.", caller_reference: unique_name)
 
@@ -37,7 +37,7 @@ describe Bosh::Aws::Route53 do
     zone_id = "???"
     r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
 
-    aws_r53 = mock("aws_r53")
+    aws_r53 = double("aws_r53")
     r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
     aws_r53.should_receive(:change_resource_record_sets).with(resource_set("CREATE", "\\052", "example.com.", "10.0.22.5"))
 
@@ -48,9 +48,9 @@ describe Bosh::Aws::Route53 do
     it "can delete an A record from a zone" do
       zone_id = "???"
       r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
-      fake_aws_response = mock("aws_response")
+      fake_aws_response = double("aws_response")
 
-      aws_r53 = mock("aws_r53")
+      aws_r53 = double("aws_r53")
       r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
       aws_r53.should_receive(:change_resource_record_sets).
           with(resource_set("DELETE", "\\052", "example.com.", "10.0.22.5"))
@@ -73,9 +73,9 @@ describe Bosh::Aws::Route53 do
     it "throws an error when it can't find the record to delete" do
       zone_id = "???"
       r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
-      fake_aws_response = mock("aws_response")
+      fake_aws_response = double("aws_response")
 
-      aws_r53 = mock("aws_r53")
+      aws_r53 = double("aws_r53")
       r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
       aws_r53.stub(:list_resource_record_sets).
           with(:hosted_zone_id => "???").and_return(fake_aws_response)
@@ -131,7 +131,7 @@ describe Bosh::Aws::Route53 do
     zone_id = "???"
     r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
 
-    aws_r53 = mock("aws_r53")
+    aws_r53 = double("aws_r53")
     r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
     aws_r53.should_receive(:delete_hosted_zone).with(id: zone_id)
 

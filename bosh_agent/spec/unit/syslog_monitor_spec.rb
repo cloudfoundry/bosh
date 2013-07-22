@@ -4,7 +4,7 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Agent::SyslogMonitor do
 
-  let(:nats) { mock("nats") }
+  let(:nats) { double("nats") }
   let(:agent_id) { "agent_id" }
 
   # first param to new() is eaten by EM

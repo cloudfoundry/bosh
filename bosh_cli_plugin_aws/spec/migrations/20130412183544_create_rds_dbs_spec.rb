@@ -32,8 +32,8 @@ describe CreateRdsDbs do
         :master_username => "uaa_user",
         :master_user_password => "uaa_password")
 
-    fake_ccdb_rds = mock("ccdb", db_name: "ccdb", endpoint_port: 1234, db_instance_status: :irrelevant)
-    fake_uaadb_rds = mock("uaadb", db_name: "uaadb", endpoint_port: 5678, db_instance_status: :irrelevant)
+    fake_ccdb_rds = double("ccdb", db_name: "ccdb", endpoint_port: 1234, db_instance_status: :irrelevant)
+    fake_uaadb_rds = double("uaadb", db_name: "uaadb", endpoint_port: 5678, db_instance_status: :irrelevant)
     rds.should_receive(:databases).at_least(:once).and_return([fake_ccdb_rds, fake_uaadb_rds])
 
     ccdb_endpoint_address_response = ([nil] * retries_needed) << "1.2.3.4"

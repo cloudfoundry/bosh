@@ -9,8 +9,8 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
   end
 
   before(:each) do
-    @cloud = mock("cloud")
-    @agent = mock("agent")
+    @cloud = double("cloud")
+    @agent = double("agent")
 
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
 

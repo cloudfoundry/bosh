@@ -19,12 +19,12 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     system_root = Bosh::Agent::Config.system_root
     FileUtils.mkdir_p(File.join(system_root, 'etc', 'logrotate.d'))
 
-    @httpclient = mock("httpclient")
+    @httpclient = double("httpclient")
     HTTPClient.stub(:new).and_return(@httpclient)
   end
 
   it "should raise a useful error when it fails to write an ERB template" do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
@@ -150,7 +150,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
   end
 
   it 'should install a job' do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
@@ -178,7 +178,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
   end
 
   it 'should install a job with a .monit file' do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
@@ -204,7 +204,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
   end
 
   it 'should install two jobs with two .monit files' do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
@@ -243,7 +243,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
   end
 
   it "shouldn't modify the spec when a plan is created" do
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
 
     state = Bosh::Agent::Message::State.new
@@ -270,7 +270,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
   end
 
   def http_200_response_mock
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
     response
   end

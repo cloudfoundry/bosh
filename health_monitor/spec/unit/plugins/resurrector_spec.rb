@@ -41,7 +41,7 @@ describe Bhm::Plugins::Resurrector do
 
       before do
         Bhm.event_processor = event_processor
-        @don = mock(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
+        @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
         Bhm::Plugins::ResurrectorHelper::AlertTracker.should_receive(:new).and_return(@don)
       end
 

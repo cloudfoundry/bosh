@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe "AWS Bootstrap commands" do
   let(:aws) { Bosh::Cli::Command::AWS.new }
-  let(:mock_s3) { mock(Bosh::Aws::S3) }
+  let(:mock_s3) { double(Bosh::Aws::S3) }
   let(:bosh_config)  { File.expand_path(File.join(File.dirname(__FILE__), "..", "assets", "bosh_config.yml")) }
 
   before do

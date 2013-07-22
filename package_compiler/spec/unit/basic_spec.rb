@@ -33,7 +33,7 @@ describe Bosh::PackageCompiler::Compiler do
     let(:compiler) { Bosh::PackageCompiler::Compiler.new(options) }
 
     let(:test_agent) do
-      agent = mock(:agent)
+      agent = double(:agent)
       agent.stub(:ping)
       agent.stub(:run_task).and_return(result)
       agent
@@ -93,7 +93,7 @@ describe Bosh::PackageCompiler::Compiler do
   it 'should compile packages for a specified job' do
     options[:job] = 'micro_aws'
     @compiler = Bosh::PackageCompiler::Compiler.new(options)
-    test_agent = mock(:agent)
+    test_agent = double(:agent)
     test_agent.stub(:ping)
     result = {'result' => {'blobstore_id' => 'blah', 'sha1' => 'blah'}}
     test_agent.stub(:run_task).with(:compile_package, kind_of(String), 'sha1',

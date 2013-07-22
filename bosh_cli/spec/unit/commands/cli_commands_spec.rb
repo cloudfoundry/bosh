@@ -8,7 +8,7 @@ describe Bosh::Cli::Command::Base do
     tmpdir = Dir.mktmpdir
     @config = File.join(tmpdir, 'bosh_config')
     @cache = File.join(tmpdir, 'bosh_cache')
-    @director = mock(Bosh::Cli::Director)
+    @director = double(Bosh::Cli::Director)
     Bosh::Cli::Director.stub(:new).and_return(@director)
     @director.stub(:get_status).and_return('name' => 'ZB')
   end
@@ -115,7 +115,7 @@ describe Bosh::Cli::Command::Base do
 
   describe Bosh::Cli::Command::Stemcell do
     before :each do
-      @director = mock(Bosh::Cli::Director)
+      @director = double(Bosh::Cli::Director)
       @director.stub(:list_stemcells).
           and_return([{'name' => 'foo', 'version' => '123'}])
       @director.should_receive(:list_stemcells)
@@ -161,7 +161,7 @@ describe Bosh::Cli::Command::Base do
 
   describe Bosh::Cli::Command::Release do
     before :each do
-      @director = mock(Bosh::Cli::Director)
+      @director = double(Bosh::Cli::Director)
 
       @cmd = Bosh::Cli::Command::Release.new
       @cmd.add_option(:non_interactive, true)
@@ -315,8 +315,8 @@ describe Bosh::Cli::Command::Base do
       @cmd = Bosh::Cli::Command::BlobManagement.new
       @cmd.add_option(:non_interactive, true)
 
-      @blob_manager = mock('blob manager')
-      @release = mock('release')
+      @blob_manager = double('blob manager')
+      @release = double('release')
 
       @cmd.should_receive(:check_if_release_dir)
       Bosh::Cli::Release.stub(:new).and_return(@release)

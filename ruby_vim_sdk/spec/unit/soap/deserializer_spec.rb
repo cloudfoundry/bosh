@@ -16,7 +16,7 @@ describe VimSdk::Soap::SoapDeserializer do
     end
     test_class.finalize
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new, test_class, false)
     parser = Nokogiri::XML::SAX::Parser.new(deserializer)
@@ -48,7 +48,7 @@ describe VimSdk::Soap::SoapDeserializer do
     end
     test_class.finalize
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new, test_class, false)
     parser = Nokogiri::XML::SAX::Parser.new(deserializer)
@@ -71,7 +71,7 @@ describe VimSdk::Soap::SoapDeserializer do
     end
     test_class.finalize
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new, test_class, false)
     parser = Nokogiri::XML::SAX::Parser.new(deserializer)
@@ -94,7 +94,7 @@ describe VimSdk::Soap::SoapDeserializer do
     end
     test_class.finalize
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new, test_class, false)
     parser = Nokogiri::XML::SAX::Parser.new(deserializer)
@@ -118,7 +118,7 @@ describe VimSdk::Soap::SoapDeserializer do
     end
     test_class.finalize
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new, test_class, false)
     parser = Nokogiri::XML::SAX::Parser.new(deserializer)
@@ -151,7 +151,7 @@ describe VimSdk::Soap::SoapDeserializer do
     test_class2.finalize
     VimSdk::VmomiSupport.stub(:loaded_wsdl_type).with('urn:test', 'Test2').and_return(test_class2)
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new, test_class, false)
     parser = Nokogiri::XML::SAX::Parser.new(deserializer)
@@ -179,7 +179,7 @@ describe VimSdk::Soap::SoapDeserializer do
       </propSet>
 RESPONSE
 
-    stub = mock('stub')
+    stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'vim.version.version6')
     deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new,
                              VimSdk::Vmodl::DynamicProperty, false)

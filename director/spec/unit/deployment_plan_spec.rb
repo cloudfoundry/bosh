@@ -123,7 +123,7 @@ describe Bosh::Director::DeploymentPlan do
 
   describe :parse_networks do
     it 'should create manual network by default' do
-      network_spec = mock(:network_spec)
+      network_spec = double(:network_spec)
       network_spec.stub(:name).and_return('Bar')
       network_spec.stub(:canonical_name).and_return('bar')
       network_spec
@@ -143,7 +143,7 @@ describe Bosh::Director::DeploymentPlan do
     it 'should enforce canonical name uniqueness' do
       BD::DeploymentPlan::ManualNetwork.stub(:new).
           and_return do |deployment_plan, spec|
-        network_spec = mock(:network_spec)
+        network_spec = double(:network_spec)
         network_spec.stub(:name).and_return(spec['name'])
         network_spec.stub(:canonical_name).and_return(spec['cname'])
         network_spec
@@ -213,7 +213,7 @@ describe Bosh::Director::DeploymentPlan do
 
   describe :parse_resource_pools do
     it 'should delegate to ResourcePool' do
-      resource_pool_spec = mock(:resource_pool)
+      resource_pool_spec = double(:resource_pool)
       resource_pool_spec.stub(:name).and_return('foo')
 
       received_plan = nil
@@ -234,7 +234,7 @@ describe Bosh::Director::DeploymentPlan do
     it 'should enforce name uniqueness' do
       BD::DeploymentPlan::ResourcePool.stub(:new).
           and_return do |_, spec|
-        resource_pool_spec = mock(:resource_pool_spec)
+        resource_pool_spec = double(:resource_pool_spec)
         resource_pool_spec.stub(:name).and_return(spec['name'])
         resource_pool_spec
       end
@@ -250,7 +250,7 @@ describe Bosh::Director::DeploymentPlan do
 
   describe :parse_jobs do
     it 'should delegate to Job' do
-      job_spec = mock(BD::DeploymentPlan::Job)
+      job_spec = double(BD::DeploymentPlan::Job)
       job_spec.stub(:name).and_return('Foo')
       job_spec.stub(:canonical_name).and_return('foo')
       job_spec
@@ -270,7 +270,7 @@ describe Bosh::Director::DeploymentPlan do
     it 'should enforce canonical name uniqueness' do
       BD::DeploymentPlan::Job.stub(:parse).
           and_return do |_, spec|
-        job_spec = mock(:job_spec)
+        job_spec = double(:job_spec)
         job_spec.stub(:name).and_return(spec['name'])
         job_spec.stub(:canonical_name).and_return(spec['cname'])
         job_spec

@@ -5,7 +5,7 @@ require 'spec_helper'
 describe Bosh::Agent::Handler do
 
   before(:each) do
-    @nats = mock('nats')
+    @nats = double('nats')
     EM.stub(:run).and_yield
     NATS.stub(:connect).and_return(@nats)
 

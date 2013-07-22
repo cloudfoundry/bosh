@@ -13,9 +13,9 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
   let(:agent_id) { "agent_id" }
   let(:stemcell_id) { "stemcell_id" }
-  let(:resource_pool) { mock("resource_pool") }
-  let(:networks_spec) { mock("network_spec") }
-  let(:disk_locality) { mock("disk locality") }
+  let(:resource_pool) { double("resource_pool") }
+  let(:networks_spec) { double("network_spec") }
+  let(:disk_locality) { double("disk locality") }
   let(:environment) { "environment" }
 
   let(:options) {

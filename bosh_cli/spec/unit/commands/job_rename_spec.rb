@@ -5,7 +5,7 @@ require "spec_helper"
 describe Bosh::Cli::Command::Base do
   describe Bosh::Cli::Command::JobRename do
     it "should rename the job" do
-      mock_director = mock(Object)
+      mock_director = double(Object)
       mock_director.should_receive(:rename_job).and_return([:done, ""])
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
 
@@ -18,7 +18,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception on additional changes to manifest" do
-      mock_director = mock(Object)
+      mock_director = double(Object)
       mock_director.stub(:get_deployment) { { "manifest" => old_manifest_yaml } }
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
 
@@ -31,7 +31,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if new manifest removed some properties" do
-      mock_director = mock(Object)
+      mock_director = double(Object)
       mock_director.stub(:get_deployment) { { "manifest" => old_manifest_yaml } }
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
 
@@ -51,7 +51,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if old job name does not exist in manifest" do
-      mock_director = mock(Object)
+      mock_director = double(Object)
       mock_director.stub(:get_deployment) { { "manifest" => old_manifest_yaml } }
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
 
@@ -63,7 +63,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if 2 jobs are changed in manifest" do
-      mock_director = mock(Object)
+      mock_director = double(Object)
       mock_director.stub(:get_deployment) { { "manifest" => old_manifest_yaml } }
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
 

@@ -4,10 +4,10 @@ describe Bosh::Aws::ELB do
   let(:creds) { {'my' => 'creds'} }
   let(:elb) { described_class.new(creds) }
   let(:ec2) { Bosh::Aws::EC2.new({}) }
-  let(:fake_aws_security_group) { mock('security_group', id: 'sg_id', name: 'security_group_name') }
-  let(:fake_aws_vpc) { mock('vpc', security_groups: [fake_aws_security_group]) }
+  let(:fake_aws_security_group) { double('security_group', id: 'sg_id', name: 'security_group_name') }
+  let(:fake_aws_vpc) { double('vpc', security_groups: [fake_aws_security_group]) }
   let(:vpc) { Bosh::Aws::VPC.new(ec2, fake_aws_vpc) }
-  let(:fake_aws_elb) { double(AWS::ELB, load_balancers: double()) }
+  let(:fake_aws_elb) { double(AWS::ELB, load_balancers: double) }
   let(:certificates) { [] }
   let(:fake_aws_iam) { double(AWS::IAM, server_certificates: certificates) }
 
@@ -17,7 +17,7 @@ describe Bosh::Aws::ELB do
   end
 
   describe 'creation' do
-    let(:new_elb) { mock('a new elb') }
+    let(:new_elb) { double('a new elb') }
     let(:cert) { {'certificate_path' => asset('ca/ca.pem'), 'private_key_path' => asset('ca/ca.key'), 'certificate_chain_path' => asset('ca/chain.pem')} }
     let(:cert_name) { 'my-cert-name' }
     let(:http_listener) { {port: 80, protocol: :http, instance_port: 80, instance_protocol: :http} }
@@ -178,12 +178,12 @@ describe Bosh::Aws::ELB do
         fake_aws_elb.should_receive(:load_balancers).and_return(load_balancers)
       end
 
-      let(:elb1) { mock('elb1') }
-      let(:elb2) { mock('elb2') }
+      let(:elb1) { double('elb1') }
+      let(:elb2) { double('elb2') }
       let(:load_balancers) { [elb1, elb2] }
 
-      let(:cert1) { mock('cert1') }
-      let(:cert2) { mock('cert2') }
+      let(:cert1) { double('cert1') }
+      let(:cert2) { double('cert2') }
       let(:server_certificates) { [cert1, cert2] }
 
       it 'should call delete on each ELB and each certificate' do
@@ -198,8 +198,8 @@ describe Bosh::Aws::ELB do
     end
 
     describe 'deleting the server certificates' do
-      let(:cert1) { mock('cert1') }
-      let(:cert2) { mock('cert2') }
+      let(:cert1) { double('cert1') }
+      let(:cert2) { double('cert2') }
       let(:server_certificates) { [cert1, cert2] }
 
       it 'deletes all of the uploaded server certificates' do
@@ -217,8 +217,8 @@ describe Bosh::Aws::ELB do
     end
 
     it 'returns the names of the running ELBs' do
-      elb1 = mock('elb1', name: 'one')
-      elb2 = mock('elb2', name: 'two')
+      elb1 = double('elb1', name: 'one')
+      elb2 = double('elb2', name: 'two')
       fake_aws_elb.should_receive(:load_balancers).and_return([elb1, elb2])
       elb.names.should == %w[one two]
     end
@@ -230,8 +230,8 @@ describe Bosh::Aws::ELB do
     end
 
     it 'returns the names of the uploaded server certificates' do
-      cert1 = mock('cert1', name: 'one')
-      cert2 = mock('cert2', name: 'two')
+      cert1 = double('cert1', name: 'one')
+      cert2 = double('cert2', name: 'two')
       fake_aws_iam.should_receive(:server_certificates).and_return([cert1, cert2])
       elb.server_certificate_names.should == %w[one two]
     end

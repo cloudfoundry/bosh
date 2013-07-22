@@ -6,7 +6,7 @@ describe Bosh::Director::Jobs::VmState do
 
   before(:each) do
     @deployment = BD::Models::Deployment.make
-    @result_file = mock("result_file")
+    @result_file = double("result_file")
     BD::Config.stub(:result).and_return(@result_file)
     BD::Config.stub(:dns_domain_name).and_return("microbosh")
   end
@@ -19,7 +19,7 @@ describe Bosh::Director::Jobs::VmState do
   it "parses agent info into vm_state" do
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
-    agent = mock("agent")
+    agent = double("agent")
     BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
     agent_state = { "vm_cid" => "vm-1",
                     "networks" => {"test" => {"ip" => "1.1.1.1"}},
@@ -46,7 +46,7 @@ describe Bosh::Director::Jobs::VmState do
   it "parses agent info into vm_state with vitals" do
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
-    agent = mock("agent")
+    agent = double("agent")
     BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
 
     agent_state = { "vm_cid" => "vm-1",
@@ -91,7 +91,7 @@ describe Bosh::Director::Jobs::VmState do
     domain = BD::Models::Dns::Domain.make(:name => "microbosh", :type => "NATIVE")
     BD::Models::Dns::Record.make(:domain => domain, :name => "index.job.network.deployment.microbosh",
                                  :type => "A", :content => "1.1.1.1", :ttl => 14400)
-    agent = mock("agent")
+    agent = double("agent")
     BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
     agent_state = { "vm_cid" => "vm-1",
                     "networks" => {"test" => {"ip" => "1.1.1.1"}},
@@ -118,7 +118,7 @@ describe Bosh::Director::Jobs::VmState do
   it "should handle unresponsive agents" do
     BDM::Vm.make(:deployment => @deployment, :agent_id => "agent-1",
                  :cid => "vm-1")
-    agent = mock("agent")
+    agent = double("agent")
     BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
     agent.should_receive(:get_state).and_raise(BD::RpcTimeout)
 
@@ -138,7 +138,7 @@ describe Bosh::Director::Jobs::VmState do
     BD::Models::Instance.create(deployment: @deployment, job: "dea", index: "0", state: 'started', resurrection_paused: true)
     BDM::Vm.make(:deployment => @deployment,
                  :agent_id => "agent-1", :cid => "vm-1")
-    agent = mock("agent")
+    agent = double("agent")
     BD::AgentClient.stub(:new).with("agent-1", :timeout => 5).and_return(agent)
 
     agent_state = { "vm_cid" => "vm-1",

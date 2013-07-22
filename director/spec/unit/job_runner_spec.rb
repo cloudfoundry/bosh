@@ -51,9 +51,9 @@ describe Bosh::Director::JobRunner do
   end
 
   it "sets up task logs: debug, event, result" do
-    event_log = mock("event log")
+    event_log = double("event log")
     debug_log = Logger.new(StringIO.new)
-    result_file = mock("result file")
+    result_file = double("result file")
 
     Bosh::Director::EventLog.stub(:new).with(File.join(@task_dir, "event")).
       and_return(event_log)

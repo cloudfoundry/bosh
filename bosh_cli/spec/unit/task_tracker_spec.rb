@@ -5,8 +5,8 @@ require "spec_helper"
 describe Bosh::Cli::TaskTracker do
 
   before(:each) do
-    @cache = mock("cache")
-    @director = mock("director", :uuid => "deadbeef",
+    @cache = double("cache")
+    @director = double("director", :uuid => "deadbeef",
                      :get_time_difference => 0.5)
     Bosh::Cli::Config.cache = @cache
   end
@@ -55,7 +55,7 @@ describe Bosh::Cli::TaskTracker do
   end
 
   it "uses appropriate renderer" do
-    renderer = mock("renderer", :duration_known? => false)
+    renderer = double("renderer", :duration_known? => false)
     Bosh::Cli::TaskLogRenderer.should_receive(:create_for_log_type).
       with("foobar").and_return(renderer)
 

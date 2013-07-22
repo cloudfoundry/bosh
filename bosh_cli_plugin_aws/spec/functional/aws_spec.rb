@@ -130,7 +130,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws delete_all security_groups" do
       let(:config_file) { asset "config.yml" }
-      let(:fake_ec2) { mock('EC2') }
+      let(:fake_ec2) { double('EC2') }
 
       before do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
@@ -165,10 +165,10 @@ describe Bosh::Cli::Command::AWS do
       let(:output_file) { asset "test-output.yml" }
 
       it "should delete the vpc and all its dependencies, and release the elastic ips" do
-      fake_ec2 = mock("ec2")
-      fake_vpc = mock("vpc")
-      fake_dhcp_options = mock("dhcp options")
-      fake_route53 = mock("route53")
+      fake_ec2 = double("ec2")
+      fake_vpc = double("vpc")
+      fake_dhcp_options = double("dhcp options")
+      fake_route53 = double("route53")
 
       Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
       Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-13724979").and_return(fake_vpc)
@@ -197,10 +197,10 @@ describe Bosh::Cli::Command::AWS do
     end
 
       it "should retry on AWS errors" do
-      fake_ec2 = mock("ec2")
-      fake_vpc = mock("vpc")
-      fake_route_53 = mock("route53")
-      fake_dhcp_options = mock("dhcp_options")
+      fake_ec2 = double("ec2")
+      fake_vpc = double("vpc")
+      fake_route_53 = double("route53")
+      fake_dhcp_options = double("dhcp_options")
 
       Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
       Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
@@ -230,7 +230,7 @@ describe Bosh::Cli::Command::AWS do
 
       context "when there are instances running" do
       it "throws a nice error message and doesn't delete any resources" do
-        fake_vpc = mock("vpc")
+        fake_vpc = double("vpc")
 
         Bosh::Aws::EC2.stub(:new)
         Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
@@ -248,7 +248,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws destroy key pairs" do
       let(:config_file) { asset "config.yml" }
-      let(:fake_ec2) { mock('EC2') }
+      let(:fake_ec2) { double('EC2') }
 
       before do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
@@ -279,7 +279,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws destroy server certificates" do
       let(:config_file) { asset "config.yml" }
-      let(:fake_elb) { mock('ELB', server_certificate_names: ['cf_router']) }
+      let(:fake_elb) { double('ELB', server_certificate_names: ['cf_router']) }
 
       before do
         Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
@@ -310,7 +310,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws destroy elastic ips" do
       let(:config_file) { asset "config.yml" }
-      let(:fake_ec2) { mock('EC2') }
+      let(:fake_ec2) { double('EC2') }
 
       before do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
@@ -340,8 +340,8 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe "aws delete all vpcs" do
-      let(:fake_ec2) { mock('EC2') }
-      let(:fake_vpc) { mock('VPC', id: 'vpc-1234') }
+      let(:fake_ec2) { double('EC2') }
+      let(:fake_vpc) { double('VPC', id: 'vpc-1234') }
 
       before do
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
@@ -363,10 +363,10 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list the buckets" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(20)
-        fake_s3 = mock("s3")
+        fake_s3 = double("s3")
 
         Bosh::Aws::S3.stub(:new).and_return(fake_s3)
         fake_s3.stub(:bucket_names).and_return(["buckets of fun", "barrel of monkeys"])
@@ -379,7 +379,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should not empty S3 if more than 20 insances are running" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(21)
 
@@ -391,10 +391,10 @@ describe Bosh::Cli::Command::AWS do
       context "interactive mode (default)" do
         context "when the users agrees to nuke the buckets" do
           it "should empty and delete all S3 buckets associated with an account" do
-            fake_ec2 = mock("ec2")
+            fake_ec2 = double("ec2")
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             fake_ec2.stub(:instances_count).and_return(20)
-            fake_s3 = mock("s3")
+            fake_s3 = double("s3")
             fake_bucket_names = %w[foo bar]
 
             Bosh::Aws::S3.stub(:new).and_return(fake_s3)
@@ -411,10 +411,10 @@ describe Bosh::Cli::Command::AWS do
 
         context "when the user wants to bail out" do
           it "should not destroy the buckets" do
-            fake_ec2 = mock("ec2")
+            fake_ec2 = double("ec2")
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             fake_ec2.stub(:instances_count).and_return(20)
-            fake_s3 = mock("s3")
+            fake_s3 = double("s3")
 
             Bosh::Aws::S3.stub(:new).and_return(fake_s3)
             fake_s3.stub(:bucket_names).and_return(double.as_null_object)
@@ -430,10 +430,10 @@ describe Bosh::Cli::Command::AWS do
 
       context "non-interactive mode" do
         it "should empty and delete all S3 buckets associated with an account" do
-          fake_ec2 = mock("ec2")
+          fake_ec2 = double("ec2")
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           fake_ec2.stub(:instances_count).and_return(20)
-          fake_s3 = mock("s3")
+          fake_s3 = double("s3")
 
           Bosh::Aws::S3.stub(:new).and_return(fake_s3)
           fake_s3.stub(:bucket_names).and_return(%w[foo bar])
@@ -451,7 +451,7 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list the instances" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(2)
@@ -467,7 +467,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should error if more than 20 instances are running" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(21)
 
@@ -479,7 +479,7 @@ describe Bosh::Cli::Command::AWS do
       context "interactive mode (default)" do
         context 'when the user agrees to terminate all the instances' do
           it 'should terminate all instances' do
-            fake_ec2 = mock("ec2")
+            fake_ec2 = double("ec2")
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
@@ -495,7 +495,7 @@ describe Bosh::Cli::Command::AWS do
 
         context 'when the user wants to bail out of ec2 termination' do
           it 'should not terminate any instances' do
-            fake_ec2 = mock("ec2")
+            fake_ec2 = double("ec2")
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say).twice
@@ -512,7 +512,7 @@ describe Bosh::Cli::Command::AWS do
 
       context "non-interactive mode" do
         it 'should terminate all instances' do
-          fake_ec2 = mock("ec2")
+          fake_ec2 = double("ec2")
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           aws.stub(:say)
@@ -531,7 +531,7 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list number of volumes to be deleted" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:volume_count).and_return(2)
@@ -546,7 +546,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should error if more than 20 volumes are present" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:volume_count).and_return(21)
 
@@ -558,7 +558,7 @@ describe Bosh::Cli::Command::AWS do
       context "interactive mode (default)" do
         context 'when the user agrees to terminate all the instances' do
           it 'should terminate all instances' do
-            fake_ec2 = mock("ec2")
+            fake_ec2 = double("ec2")
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
@@ -573,7 +573,7 @@ describe Bosh::Cli::Command::AWS do
 
         context 'when the user wants to bail out of ec2 termination' do
           it 'should not terminate any instances' do
-            fake_ec2 = mock("ec2")
+            fake_ec2 = double("ec2")
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
@@ -589,7 +589,7 @@ describe Bosh::Cli::Command::AWS do
 
       context "non-interactive mode" do
         it 'should terminate all instances' do
-          fake_ec2 = mock("ec2")
+          fake_ec2 = double("ec2")
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           aws.stub(:say)
@@ -607,10 +607,10 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list the instances" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(20)
-        fake_rds = mock("rds")
+        fake_rds = double("rds")
         fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
         fake_rds.stub(:databases).and_return([])
 
@@ -626,7 +626,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should not delete_all rds databases if more than 20 insances are running" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(21)
 
@@ -642,11 +642,11 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should delete db_subnets when dbs don't exist" do
-        fake_ec2 = mock("ec2")
+        fake_ec2 = double("ec2")
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         fake_ec2.stub(:instances_count).and_return(20)
 
-        fake_rds = mock("rds")
+        fake_rds = double("rds")
         fake_rds.should_receive(:database_names).and_return([])
         fake_rds.should_receive(:databases).and_return([])
 
@@ -663,14 +663,14 @@ describe Bosh::Cli::Command::AWS do
 
       context "interactive mode (default)" do
         before do
-          fake_ec2 = mock("ec2")
+          fake_ec2 = double("ec2")
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           fake_ec2.stub(:instances_count).and_return(20)
         end
 
         context "when the user agrees to delete all the databases" do
           it "should delete all databases" do
-            fake_rds = mock("rds")
+            fake_rds = double("rds")
 
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             aws.stub(:say).twice
@@ -688,7 +688,7 @@ describe Bosh::Cli::Command::AWS do
 
         context "when the user wants to bail out of rds database deletion" do
           it "should not terminate any databases" do
-            fake_rds = mock("rds")
+            fake_rds = double("rds")
 
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             aws.stub(:say).twice
@@ -703,10 +703,10 @@ describe Bosh::Cli::Command::AWS do
 
         context "when not all instances could be deleted" do
           it "throws a nice error message" do
-            fake_rds = mock("rds")
+            fake_rds = double("rds")
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
-            fake_bosh_rds = mock("instance1", db_name: "bosh_db", endpoint_port: 1234, db_instance_status: :irrelevant)
+            fake_bosh_rds = double("instance1", db_name: "bosh_db", endpoint_port: 1234, db_instance_status: :irrelevant)
             fake_rds.stub(:databases).and_return([fake_bosh_rds])
 
             ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
@@ -720,10 +720,10 @@ describe Bosh::Cli::Command::AWS do
 
           context "when a database goes away while printing status" do
             it "should delete all databases" do
-              fake_rds = mock("rds")
+              fake_rds = double("rds")
               Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
               fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
-              fake_bosh_rds = mock("instance1", db_name: "bosh_db", endpoint_port: 1234, db_instance_status: :irrelevant)
+              fake_bosh_rds = double("instance1", db_name: "bosh_db", endpoint_port: 1234, db_instance_status: :irrelevant)
               fake_bosh_rds.should_receive(:db_name).and_raise(::AWS::RDS::Errors::DBInstanceNotFound)
 
               fake_rds.should_receive(:databases).and_return([fake_bosh_rds], [fake_bosh_rds], [])
@@ -742,10 +742,10 @@ describe Bosh::Cli::Command::AWS do
 
       context "non-interactive mode" do
         it "should delete all databases" do
-          fake_ec2 = mock("ec2")
+          fake_ec2 = double("ec2")
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           fake_ec2.stub(:instances_count).and_return(20)
-          fake_rds = mock("rds")
+          fake_rds = double("rds")
 
           Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
           aws.stub(:say).twice
@@ -767,7 +767,7 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should remove all RDS subnet grops" do
-        fake_rds = mock("rds")
+        fake_rds = double("rds")
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
         fake_rds.should_receive :delete_subnet_groups
         aws.send(:delete_all_rds_subnet_groups, config_file)
@@ -778,7 +778,7 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should remove all RDS subnet grops" do
-        fake_rds = mock("rds")
+        fake_rds = double("rds")
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
         fake_rds.should_receive :delete_security_groups
         aws.send(:delete_all_rds_security_groups, config_file)
@@ -789,7 +789,7 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should remove all ELBs" do
-        fake_elb = mock("elb")
+        fake_elb = double("elb")
         Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
         fake_elb.should_receive(:delete_elbs)
         fake_elb.should_receive(:names).and_return(%w(one two))

@@ -11,16 +11,16 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
   describe 'instance methods' do
     before(:each) do
-      @manifest = mock("manifest")
-      @deployment_plan = mock("deployment_plan")
+      @manifest = double("manifest")
+      @deployment_plan = double("deployment_plan")
 
       @deployment_plan.stub(:name).and_return("test_deployment")
       @deployment_plan.should_receive(:parse).once
 
-      pool1 = mock("resource_pool")
-      pool2 = mock("resource_pool")
-      updater1 = mock("resource_pool_updater")
-      updater2 = mock("resource_pool_updater")
+      pool1 = double("resource_pool")
+      pool2 = double("resource_pool")
+      updater1 = double("resource_pool_updater")
+      updater2 = double("resource_pool_updater")
 
       Bosh::Director::ResourcePoolUpdater.stub(:new).with(pool1).and_return(updater1)
       Bosh::Director::ResourcePoolUpdater.stub(:new).with(pool2).and_return(updater2)
@@ -49,8 +49,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       it "should prepare the deployment plan" do
         deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-        deployment_plan_compiler = mock("deployment_plan_compiler")
-        package_compiler = mock("package_compiler")
+        deployment_plan_compiler = double("deployment_plan_compiler")
+        package_compiler = double("package_compiler")
 
         Bosh::Director::DeploymentPlanCompiler.stub(:new).with(@deployment_plan).and_return(deployment_plan_compiler)
         update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
@@ -80,11 +80,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     describe "update" do
 
       it "should update the deployment" do
-        deployment_plan_compiler = mock("deployment_plan_compiler")
-        resource_pool = mock("resource_pool")
-        resource_pool_updater = mock("resource_pool_updater")
-        job = mock("job")
-        job_updater = mock("job_updater")
+        deployment_plan_compiler = double("deployment_plan_compiler")
+        resource_pool = double("resource_pool")
+        resource_pool_updater = double("resource_pool_updater")
+        job = double("job")
+        job_updater = double("job_updater")
 
         resource_pool_updater.stub(:extra_vm_count).and_return(2)
         resource_pool_updater.stub(:outdated_idle_vm_count).and_return(3)
@@ -148,7 +148,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         @deployment_plan.stub(:model).and_return(deployment)
         @deployment_plan.stub(:resource_pools).and_return([resource_pool_spec])
 
-        Bosh::Director::ResourcePoolUpdater.stub(:new).with(resource_pool_spec).and_return(mock("updater"))
+        Bosh::Director::ResourcePoolUpdater.stub(:new).with(resource_pool_spec).and_return(double("updater"))
 
         resource_pool_spec.stub(:stemcell).and_return(stemcell_spec)
         stemcell_spec.stub(:model).and_return(new_stemcell)
@@ -175,11 +175,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         bar_release_version = Bosh::Director::Models::ReleaseVersion.
             make(:release => bar_release, :version => 42)
 
-        foo_release_spec = mock("release_spec",
+        foo_release_spec = double("release_spec",
                                 :name => "foo",
                                 :model => foo_release_version)
 
-        bar_release_spec = mock("release_spec",
+        bar_release_spec = double("release_spec",
                                 :name => "bar",
                                 :model => bar_release_version)
 

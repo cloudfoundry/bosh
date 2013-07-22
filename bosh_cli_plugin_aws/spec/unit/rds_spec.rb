@@ -11,7 +11,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "subnet_group_exists?" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -35,7 +35,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "create_database_subnet_group" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -52,7 +52,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "subnet_group_names" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -61,7 +61,7 @@ describe Bosh::Aws::RDS do
     it "should return the subnet group names" do
       ccdb_subnet_info = {:db_subnet_group_name => "ccdb"}
       uaadb_subnet_info = {:db_subnet_group_name => "uaadb"}
-      aws_response = mock(:aws_response, :data => {:db_subnet_groups => [ccdb_subnet_info, uaadb_subnet_info]})
+      aws_response = double(:aws_response, :data => {:db_subnet_groups => [ccdb_subnet_info, uaadb_subnet_info]})
 
       fake_aws_rds_client.should_receive(:describe_db_subnet_groups).and_return(aws_response)
       rds.subnet_group_names.should == ["ccdb", "uaadb"]
@@ -69,7 +69,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_subnet_group" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -82,7 +82,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_subnet_groups" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -117,7 +117,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "security_group_names" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -127,7 +127,7 @@ describe Bosh::Aws::RDS do
       default_security_group_info = {:db_security_group_name => "default"}
       ccdb_security_group_info = {:db_security_group_name => "ccdb"}
       uaadb_security_group_info = {:db_security_group_name => "uaadb"}
-      aws_response = mock(:aws_response, :data => {:db_security_groups => [
+      aws_response = double(:aws_response, :data => {:db_security_groups => [
           default_security_group_info, ccdb_security_group_info, uaadb_security_group_info]})
 
       fake_aws_rds_client.should_receive(:describe_db_security_groups).and_return(aws_response)
@@ -136,7 +136,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_security_group" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -149,7 +149,7 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_security_groups" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
 
     before(:each) do
       rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
@@ -165,8 +165,8 @@ describe Bosh::Aws::RDS do
   end
 
   describe "creation" do
-    let(:fake_aws_rds_client) { mock("aws_rds_client") }
-    let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }
+    let(:fake_aws_rds_client) { double("aws_rds_client") }
+    let(:fake_response) { double("response", data: {:aws_key => "test_val"}) }
     let(:fake_aws_security_group) { double(AWS::EC2::SecurityGroup, id: "sg-5678", name: "mydb") }
     let(:fake_aws_vpc) { double(AWS::EC2::VPC, security_groups: [fake_aws_security_group], cidr_block: "1.2.3.4/0") }
     let(:fake_ec2) { double(Bosh::Aws::EC2) }

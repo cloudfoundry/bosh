@@ -17,7 +17,7 @@ describe Bhm::Plugins::ResurrectorHelper::AlertTracker do
     }
 
     before do
-      mock_agent_manager = mock(Bhm::AgentManager)
+      mock_agent_manager = double(Bhm::AgentManager)
       mock_agent_manager.stub(:get_agents_for_deployment).with('deployment').and_return(agents)
       Bhm.stub(agent_manager: mock_agent_manager)
     end

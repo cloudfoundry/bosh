@@ -18,7 +18,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   def make_plan(deployment)
-    mock(BD::DeploymentPlan, :model => deployment)
+    double(BD::DeploymentPlan, :model => deployment)
   end
 
   describe "parsing job spec" do
@@ -37,7 +37,7 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     it "parses release" do
       job = described_class.new(@plan, @spec)
-      release = mock(BD::DeploymentPlan::Release)
+      release = double(BD::DeploymentPlan::Release)
       @plan.should_receive(:release).with("appcloud").and_return(release)
       job.parse_release
       job.release.should == release
@@ -53,8 +53,8 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     it "parses a single template" do
       job = described_class.new(@plan, @spec)
-      release = mock(BD::DeploymentPlan::Release)
-      template = mock(BD::DeploymentPlan::Template)
+      release = double(BD::DeploymentPlan::Release)
+      template = double(BD::DeploymentPlan::Template)
 
       @plan.should_receive(:release).with("appcloud").and_return(release)
       release.should_receive(:use_template_named).with("foo")
@@ -68,9 +68,9 @@ describe Bosh::Director::DeploymentPlan::Job do
     it "parses multiple templates" do
       @spec["template"] = %w(foo bar)
       job = described_class.new(@plan, @spec)
-      release = mock(BD::DeploymentPlan::Release)
-      foo_template = mock(BD::DeploymentPlan::Template)
-      bar_template = mock(BD::DeploymentPlan::Template)
+      release = double(BD::DeploymentPlan::Release)
+      foo_template = double(BD::DeploymentPlan::Template)
+      bar_template = double(BD::DeploymentPlan::Template)
 
       @plan.should_receive(:release).with("appcloud").and_return(release)
 
@@ -101,7 +101,7 @@ describe Bosh::Director::DeploymentPlan::Job do
     it "parses resource pool" do
       job = described_class.new(@plan, @spec)
 
-      resource_pool = mock(BD::DeploymentPlan::ResourcePool)
+      resource_pool = double(BD::DeploymentPlan::ResourcePool)
       @plan.should_receive(:resource_pool).with("dea").and_return(resource_pool)
 
       job.parse_resource_pool
@@ -145,7 +145,7 @@ describe Bosh::Director::DeploymentPlan::Job do
         @spec["properties"] = props
         @spec["template"] = %w(foo bar)
 
-        release = mock(BD::DeploymentPlan::Release)
+        release = double(BD::DeploymentPlan::Release)
 
         @plan.stub(:properties).and_return(props)
         @plan.should_receive(:release).with("appcloud").and_return(release)
@@ -163,8 +163,8 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
 
       context "when all the job specs (aka templates) specify properties" do
-        let(:foo_template) { mock(BD::DeploymentPlan::Template, :properties => foo_properties) }
-        let(:bar_template) { mock(BD::DeploymentPlan::Template, :properties => bar_properties) }
+        let(:foo_template) { double(BD::DeploymentPlan::Template, :properties => foo_properties) }
+        let(:bar_template) { double(BD::DeploymentPlan::Template, :properties => bar_properties) }
 
         before do
           job.bind_properties
@@ -187,8 +187,8 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
 
       context "when none of the job specs (aka templates) specify properties" do
-        let(:foo_template) { mock(BD::DeploymentPlan::Template, :properties => nil) }
-        let(:bar_template) { mock(BD::DeploymentPlan::Template, :properties => nil) }
+        let(:foo_template) { double(BD::DeploymentPlan::Template, :properties => nil) }
+        let(:bar_template) { double(BD::DeploymentPlan::Template, :properties => nil) }
 
         before do
           job.bind_properties
@@ -200,8 +200,8 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
 
       context "when some job specs (aka templates) specify properties and some don't" do
-        let(:foo_template) { mock(BD::DeploymentPlan::Template, :properties => nil) }
-        let(:bar_template) { mock(BD::DeploymentPlan::Template, :properties => bar_properties) }
+        let(:foo_template) { double(BD::DeploymentPlan::Template, :properties => nil) }
+        let(:bar_template) { double(BD::DeploymentPlan::Template, :properties => bar_properties) }
 
         it "should raise an error" do
           expect {
@@ -237,8 +237,8 @@ describe Bosh::Director::DeploymentPlan::Job do
             "mem" => {"default" => 256}
         }
 
-        release = mock(BD::DeploymentPlan::Release)
-        foo_template = mock(BD::DeploymentPlan::Template, :properties => foo_p)
+        release = double(BD::DeploymentPlan::Release)
+        foo_template = double(BD::DeploymentPlan::Template, :properties => foo_p)
 
         @plan.stub(:properties).and_return(props)
         @plan.should_receive(:release).with("appcloud").and_return(release)

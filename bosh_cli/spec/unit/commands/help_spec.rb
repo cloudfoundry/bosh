@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Command::Help do
-  let(:runner) { mock(Bosh::Cli::Runner) }
+  let(:runner) { double(Bosh::Cli::Runner) }
   let(:command) { described_class.new }
 
   before(:each) do

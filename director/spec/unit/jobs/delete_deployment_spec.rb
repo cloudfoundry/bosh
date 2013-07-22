@@ -12,7 +12,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
   describe "delete_instance" do
 
     before(:each) do
-      @cloud = mock("cloud")
+      @cloud = double("cloud")
       BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
@@ -30,7 +30,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
     end
 
     it "should detach and delete disk if there is a disk" do
-      agent = mock("agent")
+      agent = double("agent")
 
       BD::AgentClient.stub(:new).with("agent-1").
         and_return(agent)
@@ -57,7 +57,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
     end
 
     it "should only delete the VM if there is no disk" do
-      agent = mock("agent")
+      agent = double("agent")
 
       BD::AgentClient.stub(:new).with("agent-1").
         and_return(agent)
@@ -130,7 +130,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
   describe "delete_vm" do
 
     before(:each) do
-      @cloud = mock("cloud")
+      @cloud = double("cloud")
       BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
@@ -149,13 +149,13 @@ describe Bosh::Director::Jobs::DeleteDeployment do
   describe "perform" do
 
     before(:each) do
-      @cloud = mock("cloud")
+      @cloud = double("cloud")
       BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
     it "should delete all the associated instances, VMs, disks and problems" do
-      agent = mock("agent")
+      agent = double("agent")
 
       BD::AgentClient.stub(:new).with("agent-1").
         and_return(agent)

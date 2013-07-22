@@ -21,7 +21,7 @@ describe Bhm::Plugins::Nats do
   it "publishes events to NATS" do
     alert = Bhm::Events::Base.create!(:alert, alert_payload)
     heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
-    nats = mock("nats")
+    nats = double("nats")
 
     EM.run do
       NATS.should_receive(:connect).and_return(nats)
@@ -42,7 +42,7 @@ describe Bhm::Plugins::Nats do
     @plugin = Bhm::Plugins::Nats.new(@nats_options)
     alert = Bhm::Events::Base.create!(:alert, alert_payload)
     heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
-    nats = mock("nats")
+    nats = double("nats")
 
     EM.run do
       NATS.should_receive(:connect).and_return(nats)

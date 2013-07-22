@@ -4,20 +4,20 @@ require 'spec_helper'
 
 describe BD::InstanceDeleter do
   before(:each) do
-    @cloud = mock("cloud")
+    @cloud = double("cloud")
     BD::Config.stub(:cloud).and_return(@cloud)
 
-    @deployment_plan = mock("deployment_plan")
+    @deployment_plan = double("deployment_plan")
     @deleter = BD::InstanceDeleter.new(@deployment_plan)
   end
 
   describe :delete_instances do
     it "should delete the instances with the config max threads option" do
       instances = []
-      5.times { instances << mock("instance") }
+      5.times { instances << double("instance") }
 
       BD::Config.stub(:max_threads).and_return(5)
-      pool = mock("pool")
+      pool = double("pool")
       BD::ThreadPool.stub(:new).with(:max_threads => 5).and_return(pool)
       pool.stub(:wrap).and_yield(pool)
       pool.stub(:process).and_yield
@@ -31,9 +31,9 @@ describe BD::InstanceDeleter do
 
     it "should delete the instances with the respected max threads option" do
       instances = []
-      5.times { instances << mock("instance") }
+      5.times { instances << double("instance") }
 
-      pool = mock("pool")
+      pool = double("pool")
       BD::ThreadPool.stub(:new).with(:max_threads => 2).and_return(pool)
       pool.stub(:wrap).and_yield(pool)
       pool.stub(:process).and_yield
@@ -77,7 +77,7 @@ describe BD::InstanceDeleter do
   describe :drain do
 
     it "should drain the VM" do
-      agent = mock("agent")
+      agent = double("agent")
       BD::AgentClient.stub(:new).with("some_agent_id").and_return(agent)
 
       agent.should_receive(:drain).with("shutdown").and_return(2)
@@ -88,7 +88,7 @@ describe BD::InstanceDeleter do
     end
 
     it "should dynamically drain the VM" do
-      agent = mock("agent")
+      agent = double("agent")
       BD::AgentClient.stub(:new).with("some_agent_id").and_return(agent)
       BD::Config.stub(:job_cancelled?).and_return(nil)
 
@@ -103,7 +103,7 @@ describe BD::InstanceDeleter do
     end
 
     it "should stop vm-drain if task is cancelled" do
-      agent = mock("agent")
+      agent = double("agent")
       BD::AgentClient.stub(:new).with("some_agent_id").and_return(agent)
       BD::Config.stub(:job_cancelled?).and_raise(BD::TaskCancelled.new(1))
       agent.should_receive(:drain).with("shutdown").and_return(-2)

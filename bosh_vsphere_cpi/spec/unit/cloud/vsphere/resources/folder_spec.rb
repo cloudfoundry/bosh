@@ -4,17 +4,17 @@ require File.expand_path("../../../../../spec_helper", __FILE__)
 
 describe VSphereCloud::Resources::Folder do
   before(:each) do
-    @client = mock(:client)
+    @client = double(:client)
     VSphereCloud::Config.client = @client
     VSphereCloud::Config.mem_overcommit = 1.0
   end
 
   describe :initialize do
     it "should create a folder" do
-      datacenter = mock(:datacenter)
+      datacenter = double(:datacenter)
       datacenter.stub(:name).and_return("TEST_DC")
 
-      folder_mob = mock(:folder_mob)
+      folder_mob = double(:folder_mob)
 
       @client.should_receive(:find_by_inventory_path).with(%w(TEST_DC vm foo)).
           and_return(folder_mob)
@@ -25,14 +25,14 @@ describe VSphereCloud::Resources::Folder do
     end
 
     it "should create a namespaced folder" do
-      datacenter = mock(:datacenter)
+      datacenter = double(:datacenter)
       datacenter.stub(:name).and_return("TEST_DC")
 
-      folder_mob = mock(:folder_mob)
+      folder_mob = double(:folder_mob)
       @client.should_receive(:find_by_inventory_path).with(%w(TEST_DC vm foo)).
           and_return(folder_mob)
 
-      ns_folder_mob = mock(:ns_folder_mob)
+      ns_folder_mob = double(:ns_folder_mob)
       @client.should_receive(:find_by_inventory_path).
           with(["TEST_DC", "vm", %w(foo 123)]).and_return(ns_folder_mob)
 
@@ -42,16 +42,16 @@ describe VSphereCloud::Resources::Folder do
     end
 
     it "should create a namespaced folder and create it in vSphere" do
-      datacenter = mock(:datacenter)
+      datacenter = double(:datacenter)
       datacenter.stub(:name).and_return("TEST_DC")
 
-      folder_mob = mock(:folder_mob)
+      folder_mob = double(:folder_mob)
       @client.should_receive(:find_by_inventory_path).with(%w(TEST_DC vm foo)).
           and_return(folder_mob)
       @client.should_receive(:find_by_inventory_path).
           with(["TEST_DC", "vm", %w(foo 123)]).and_return(nil)
 
-      ns_folder_mob = mock(:ns_folder_mob)
+      ns_folder_mob = double(:ns_folder_mob)
       folder_mob.should_receive(:create_folder).with("123").
           and_return(ns_folder_mob)
 

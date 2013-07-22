@@ -5,7 +5,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::NatsRpc do
 
   before(:each) do
-    @nats = mock("nats")
+    @nats = double("nats")
     Bosh::Director::Config.stub(:nats).and_return(@nats)
     Bosh::Director::Config.stub(:process_uuid).and_return(123)
     EM.stub(:next_tick).and_yield

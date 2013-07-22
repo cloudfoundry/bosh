@@ -13,7 +13,7 @@ describe Bosh::Director::Jobs::BaseJob do
     Logger.stub(:new).with("#{@task_dir}/debug").and_return(@logger)
     Bosh::Director::EventLog.stub(:new).with("#{@task_dir}/event").
       and_return(@event_log)
-    @result_file = mock("result-file")
+    @result_file = double("result-file")
     Bosh::Director::TaskResultFile.stub(:new).with("#{@task_dir}/result").
       and_return(@result_file)
   end

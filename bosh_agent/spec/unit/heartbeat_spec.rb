@@ -10,7 +10,7 @@ describe Bosh::Agent::Heartbeat do
     state_file.close
 
     @state = Bosh::Agent::State.new(state_file.path)
-    @nats = mock()
+    @nats = double()
 
     @heartbeat          = Bosh::Agent::Heartbeat.new
     @heartbeat.logger   = Logger.new(StringIO.new)
@@ -68,7 +68,7 @@ describe Bosh::Agent::Heartbeat do
       }
     }
 
-    client = mock("monit_client")
+    client = double("monit_client")
     client.stub(:status).with(:group => "vcap").and_return(processes_status)
     client.stub(:status).with(:type => :system).and_return(system_status)
 

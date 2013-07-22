@@ -24,12 +24,12 @@ describe CreateBoshRdsDb do
         :master_user_password => "bosh_password"
     )
 
-    fake_bosh_rds = mock("uaadb",
+    fake_bosh_rds = double("uaadb",
                          db_name: "uaadb",
                          endpoint_address: '1.2.3.4',
                          endpoint_port: 1234,
                          db_instance_status: :irrelevant)
-    fake_uaadb_rds = mock("bosh",
+    fake_uaadb_rds = double("bosh",
                           db_name: "bosh",
                           endpoint_address: '5.6.7.8',
                           endpoint_port: 5678,
@@ -47,12 +47,12 @@ describe CreateBoshRdsDb do
     create_database_params = ["bosh", ["subnet-xxxxxxx5", "subnet-xxxxxxx6"], "vpc-13724979"]
     rds.should_not_receive(:create_database).with(*create_database_params)
 
-    fake_bosh_rds = mock("uaadb",
+    fake_bosh_rds = double("uaadb",
                          db_name: "uaadb",
                          endpoint_address: '1.2.3.4',
                          endpoint_port: 1234,
                          db_instance_status: :irrelevant)
-    fake_uaadb_rds = mock("bosh",
+    fake_uaadb_rds = double("bosh",
                           db_name: "bosh",
                           endpoint_address: '5.6.7.8',
                           endpoint_port: 5678,

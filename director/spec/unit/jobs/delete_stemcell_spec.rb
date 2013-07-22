@@ -8,7 +8,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
     let(:blobstore) { double('Blobstore') }
 
     before(:each) do
-      @cloud = mock("cloud")
+      @cloud = double("cloud")
       BD::Config.stub(:cloud).and_return(@cloud)
     end
 

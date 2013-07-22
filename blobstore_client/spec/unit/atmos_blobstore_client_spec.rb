@@ -3,14 +3,14 @@ require 'spec_helper'
 describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   before(:each) do
-    @atmos = mock("atmos")
+    @atmos = double("atmos")
     Atmos::Store.stub(:new).and_return(@atmos)
     atmos_opt = {:url => "http://localhost",
                  :uid => "uid",
                  :secret => "secret"}
 
-    @http_client = mock("http-client")
-    ssl_opt = mock("ssl-opt")
+    @http_client = double("http-client")
+    ssl_opt = double("ssl-opt")
     ssl_opt.stub(:verify_mode=)
     @http_client.stub(:ssl_config).and_return(ssl_opt)
 
@@ -68,7 +68,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   describe '#exists?' do
     it 'should return true if the object already exists' do
-      object = mock(Atmos::Object)
+      object = double(Atmos::Object)
       @atmos.stub(:get).with(:id => 'id').and_return(object)
 
       object.should_receive(:exists?).and_return(true)
@@ -77,7 +77,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     end
 
     it 'should return false if the object does not exist' do
-      object = mock(Atmos::Object)
+      object = double(Atmos::Object)
       @atmos.stub(:get).with(:id => 'id').and_return(object)
 
       object.should_receive(:exists?).and_return(false)
@@ -88,7 +88,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   it "should create an object" do
     data = "some content"
-    object = mock("object")
+    object = double("object")
 
     @atmos.should_receive(:create).with {|opt|
       opt[:data].read.should eql data
@@ -110,7 +110,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
   end
 
   it "should delete an object" do
-    object = mock("object")
+    object = double("object")
     @atmos.should_receive(:get).with(:id => "test-key").and_return(object)
     object.should_receive(:delete)
     id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
@@ -119,7 +119,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   it "should fetch an object" do
     url = "http://localhost/rest/objects/test-key?uid=uid&expires=1893484800&signature=sig"
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
     @http_client.should_receive(:get).with(url).and_yield("some-content").and_return(response)
     id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
@@ -137,7 +137,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     no_pass_client = Bosh::Blobstore::AtmosBlobstoreClient.new(:url => "http://localhost", :uid => "uid")
 
     url = "http://localhost/rest/objects/test-key?uid=uid&expires=1893484800&signature=sig"
-    response = mock("response")
+    response = double("response")
     response.stub(:status).and_return(200)
     @http_client.should_receive(:get).with(url).and_yield("some-content").and_return(response)
     id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))

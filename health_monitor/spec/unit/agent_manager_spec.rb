@@ -165,7 +165,7 @@ describe Bhm::AgentManager do
   end
 
   context "real config" do
-    let(:mock_nats) { mock('nats') }
+    let(:mock_nats) { double('nats') }
 
     before do
       Bhm::config=Psych.load_file(sample_config)

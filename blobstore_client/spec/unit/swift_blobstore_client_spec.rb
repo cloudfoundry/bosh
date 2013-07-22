@@ -37,9 +37,9 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
   end
 
   before(:each) do
-    @swift = mock("swift")
+    @swift = double("swift")
     Fog::Storage.stub(:new).and_return(@swift)
-    @http_client = mock("http-client")
+    @http_client = double("http-client")
     HTTPClient.stub(:new).and_return(@http_client)
   end
 
@@ -86,7 +86,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         end
 
         it "should fetch an object with a public url" do
-          response = mock("response")
+          response = double("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
           response.stub(:status).and_return(200)
@@ -155,7 +155,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         end
 
         it "should fetch an object with a public url" do
-          response = mock("response")
+          response = double("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
           response.stub(:status).and_return(200)
@@ -230,7 +230,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         end
 
         it "should fetch an object with a public url" do
-          response = mock("response")
+          response = double("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
           response.stub(:status).and_return(200)
@@ -299,7 +299,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         end
 
         it "should fetch an object with a public url" do
-          response = mock("response")
+          response = double("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
           response.stub(:status).and_return(200)
@@ -374,7 +374,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         end
 
         it "should fetch an object with a public url" do
-          response = mock("response")
+          response = double("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
           response.stub(:status).and_return(200)
@@ -443,7 +443,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         end
 
         it "should fetch an object with a public url" do
-          response = mock("response")
+          response = double("response")
 
           @http_client.should_receive(:get).with("public-url").and_yield(data).and_return(response)
           response.stub(:status).and_return(200)

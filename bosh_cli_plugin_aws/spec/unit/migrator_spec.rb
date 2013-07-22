@@ -10,7 +10,7 @@ describe Bosh::Aws::Migrator do
 
   let(:config) { {'aws' => {}, 'name' => 'deployment-name', 'vpc' => {'domain' => 'deployment-name.foo.com'}} }
   let(:subject) { described_class.new(config) }
-  let(:mock_s3) { mock("Bosh::Aws::S3").as_null_object }
+  let(:mock_s3) { double("Bosh::Aws::S3").as_null_object }
 
   after do
     FileUtils.rm_rf(@tempdir)

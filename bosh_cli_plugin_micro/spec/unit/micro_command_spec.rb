@@ -25,12 +25,12 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "allows deploying a micro BOSH instance passing stemcell as argument" do
-      mock_deployer = mock(Bosh::Deployer::InstanceManager)
+      mock_deployer = double(Bosh::Deployer::InstanceManager)
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
       mock_deployer.should_receive(:create_deployment).with("stemcell.tgz")
-      mock_stemcell = mock(Bosh::Cli::Stemcell)
+      mock_stemcell = double(Bosh::Cli::Stemcell)
       mock_stemcell.should_receive(:validate)
       mock_stemcell.should_receive(:valid?).and_return(true)
 
@@ -43,7 +43,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "allows deploying a micro BOSH instance passing stemcell in manifest file" do
-      mock_deployer = mock(Bosh::Deployer::InstanceManager)
+      mock_deployer = double(Bosh::Deployer::InstanceManager)
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
@@ -70,7 +70,7 @@ describe Bosh::Cli::Command::Base do
       file = Bosh::Cli::Command::Micro::MICRO_BOSH_YAML
       error_message = "No persistent disk configured in #{file}"
       expect {
-        mock_deployer = mock(Bosh::Deployer::InstanceManager)
+        mock_deployer = double(Bosh::Deployer::InstanceManager)
         mock_deployer.should_receive(:check_dependencies)
         mock_deployer.should_receive(:exists?).exactly(1).times
 

@@ -11,11 +11,11 @@ describe Bosh::Deployer::InstanceManager do
     @config['name'] = "spec-#{SecureRandom.uuid}"
     @config['logging'] = { 'file' => "#{@dir}/bmim.log" }
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
-    @cloud = mock('cloud')
-    @openstack = mock('openstack')
+    @cloud = double('cloud')
+    @openstack = double('openstack')
     @cloud.stub(:openstack).and_return(@openstack)
     Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
-    @agent = mock('agent')
+    @agent = double('agent')
     @deployer.stub(:agent).and_return(@agent)
   end
 
@@ -29,8 +29,8 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   def discover_bosh_ip(ip, id)
-    server = mock('server')
-    servers = mock('servers')
+    server = double('server')
+    servers = double('servers')
     @openstack.should_receive(:servers).and_return(servers)
     servers.should_receive(:get).with(id).and_return(server)
     server.should_receive(:floating_ip_address).and_return(ip)

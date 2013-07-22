@@ -5,12 +5,12 @@ describe Bosh::Director::BlobUtil do
   let(:package_fingerprint) {'fingerprint'}
   let(:stemcell_sha1) {'sha1'}
   let(:blob_id) {'blob_id'}
-  let(:stemcell) { mock(BDM::Stemcell, sha1: stemcell_sha1) }
-  let(:package) { mock(BDM::Package, name: package_name, fingerprint: package_fingerprint) }
-  let(:compiled_package) { mock(BDM::CompiledPackage, package: package, stemcell: stemcell, blobstore_id: blob_id) }
-  let(:dep_pkg2) { mock(BDM::Package, fingerprint: "dp_fingerprint2", version: "9.2-dev") }
-  let(:dep_pkg1) { mock(BDM::Package, fingerprint: "dp_fingerprint1", version: "10.1-dev") }
-  let(:compiled_package_cache_blobstore) { mock(Bosh::Blobstore::BaseClient) }
+  let(:stemcell) { double(BDM::Stemcell, sha1: stemcell_sha1) }
+  let(:package) { double(BDM::Package, name: package_name, fingerprint: package_fingerprint) }
+  let(:compiled_package) { double(BDM::CompiledPackage, package: package, stemcell: stemcell, blobstore_id: blob_id) }
+  let(:dep_pkg2) { double(BDM::Package, fingerprint: "dp_fingerprint2", version: "9.2-dev") }
+  let(:dep_pkg1) { double(BDM::Package, fingerprint: "dp_fingerprint1", version: "10.1-dev") }
+  let(:compiled_package_cache_blobstore) { double(Bosh::Blobstore::BaseClient) }
   let(:cache_key) { "cache_sha1" }
   let(:dep_key) { "[]" }
 
@@ -20,7 +20,7 @@ describe Bosh::Director::BlobUtil do
 
   describe 'save_to_global_cache' do
     it 'copies from the local blobstore to the compiled package cache' do
-      fake_local_blobstore = mock(Bosh::Blobstore::LocalClient)
+      fake_local_blobstore = double(Bosh::Blobstore::LocalClient)
       BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
 
       fake_local_blobstore.should_receive(:get).with('blob_id', an_instance_of(File))
@@ -54,9 +54,9 @@ describe Bosh::Director::BlobUtil do
     end
 
     it 'returns the compiled package model if the compiled package was in the global cache' do
-      mock_compiled_package = mock(BDM::CompiledPackage)
+      mock_compiled_package = double(BDM::CompiledPackage)
       BDM::CompiledPackage.should_receive(:create) do |&block|
-        cp = mock()
+        cp = double
         cp.should_receive(:package=).with(package)
         cp.should_receive(:stemcell=).with(stemcell)
         cp.should_receive(:sha1=).with("cp sha1")
@@ -67,7 +67,7 @@ describe Bosh::Director::BlobUtil do
         mock_compiled_package
       end
 
-      BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(mock(Bosh::Blobstore::Client, create: blob_id))
+      BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(double(Bosh::Blobstore::Client, create: blob_id))
 
       Digest::SHA1.stub_chain(:file, :hexdigest).and_return("cp sha1")
       BDM::CompiledPackage.stub(:generate_build_number)

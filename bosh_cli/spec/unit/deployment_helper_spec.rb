@@ -209,7 +209,7 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
       manifest_file.close
-      director = mock(Bosh::Cli::Director)
+      director = double(Bosh::Cli::Director)
 
       cmd.stub(:deployment).and_return(manifest_file.path)
       cmd.stub(:director).and_return(director)
@@ -237,7 +237,7 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
       manifest_file.close
-      director = mock(Bosh::Cli::Director, :uuid => 'deadbeef')
+      director = double(Bosh::Cli::Director, :uuid => 'deadbeef')
 
       cmd.stub(:deployment).and_return(manifest_file.path)
       cmd.stub(:director).and_return(director)

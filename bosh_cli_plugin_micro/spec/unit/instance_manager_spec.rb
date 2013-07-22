@@ -12,9 +12,9 @@ describe Bosh::Deployer::InstanceManager do
     @config["name"] = "spec-#{SecureRandom.uuid}"
     @config["logging"] = {"file" => "#{@dir}/bmim.log"}
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
-    @cloud = mock("cloud")
+    @cloud = double("cloud")
     Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
-    @agent = mock("agent")
+    @agent = double("agent")
     @deployer.stub(:agent).and_return(@agent)
   end
 

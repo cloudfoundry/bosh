@@ -5,7 +5,7 @@ describe Bosh::Director::ProblemResolver do
     @deployment = BDM::Deployment.make(:name => "mycloud")
     @other_deployment = BDM::Deployment.make(:name => "othercloud")
 
-    @cloud = mock("cloud")
+    @cloud = double("cloud")
     BD::Config.stub(:cloud).and_return(@cloud)
   end
 
@@ -25,7 +25,7 @@ describe Bosh::Director::ProblemResolver do
     disks = []
     problems = []
 
-    agent = mock("agent")
+    agent = double("agent")
     agent.should_receive(:list_disk).and_return([])
 
     @cloud.should_receive(:detach_disk).exactly(1).times

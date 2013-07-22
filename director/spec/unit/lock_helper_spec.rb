@@ -14,10 +14,10 @@ describe Bosh::Director::LockHelper do
 
   describe :with_deployment_lock do
     it "should support a deployment model or plan" do
-      deployment = mock(:deployment)
+      deployment = double(:deployment)
       deployment.stub(:name).and_return("foo")
 
-      lock = mock(:lock)
+      lock = double(:lock)
       BD::Lock.stub(:new).with("lock:deployment:foo", {:timeout=>10}).
           and_return(lock)
       lock.should_receive(:lock).and_yield
@@ -30,7 +30,7 @@ describe Bosh::Director::LockHelper do
     end
 
     it "should support a deployment name" do
-      lock = mock(:lock)
+      lock = double(:lock)
       BD::Lock.stub(:new).with("lock:deployment:bar", {:timeout=>5}).
           and_return(lock)
       lock.should_receive(:lock).and_yield
@@ -50,7 +50,7 @@ describe Bosh::Director::LockHelper do
 
   describe :with_release_lock do
     it "should support a release name" do
-      lock = mock(:lock)
+      lock = double(:lock)
       BD::Lock.stub(:new).with("lock:release:bar", {:timeout=>5}).
           and_return(lock)
       lock.should_receive(:lock).and_yield
@@ -65,18 +65,18 @@ describe Bosh::Director::LockHelper do
 
   describe :with_release_locks do
     it "should support a deployment plan" do
-      deployment_plan = mock(:deployment_plan)
-      release_a = mock(:release_a)
+      deployment_plan = double(:deployment_plan)
+      release_a = double(:release_a)
       release_a.stub(:name).and_return("a")
-      release_b = mock(:release_b)
+      release_b = double(:release_b)
       release_b.stub(:name).and_return("b")
       deployment_plan.stub(:releases).and_return([release_a, release_b])
 
-      lock_a = mock(:lock_a)
+      lock_a = double(:lock_a)
       BD::Lock.stub(:new).with("lock:release:a", {:timeout=>5}).
           and_return(lock_a)
 
-      lock_b = mock(:lock_b)
+      lock_b = double(:lock_b)
       BD::Lock.stub(:new).with("lock:release:b", {:timeout=>5}).
           and_return(lock_b)
 
@@ -95,7 +95,7 @@ describe Bosh::Director::LockHelper do
 
   describe :with_stemcell_lock do
     it "should support a stemcell name and version" do
-      lock = mock(:lock)
+      lock = double(:lock)
       BD::Lock.stub(:new).with("lock:stemcells:foo:1.0", {:timeout=>5}).
           and_return(lock)
       lock.should_receive(:lock).and_yield
@@ -110,7 +110,7 @@ describe Bosh::Director::LockHelper do
 
   describe :with_compile_lock do
     it "should support a package and stemcell id" do
-      lock = mock(:lock)
+      lock = double(:lock)
       BD::Lock.stub(:new).with("lock:compile:3:4", {:timeout=>900}).
           and_return(lock)
       lock.should_receive(:lock).and_yield

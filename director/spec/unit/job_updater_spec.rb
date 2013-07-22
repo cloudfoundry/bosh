@@ -5,9 +5,9 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::JobUpdater do
 
   before(:each) do
-    @deployment_plan = mock("deployment_plan")
-    @job_spec = mock("job_spec")
-    @update_spec = mock("update_spec")
+    @deployment_plan = double("deployment_plan")
+    @job_spec = double("job_spec")
+    @update_spec = double("update_spec")
     @job_spec.stub(:update).and_return(@update_spec)
     @job_spec.stub(:name).and_return("job_name")
     @update_spec.stub(:max_in_flight).and_return(5)
@@ -16,9 +16,9 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should do nothing when the job is up to date" do
-    instance_1 = mock("instance-1")
+    instance_1 = double("instance-1")
     instance_1.stub(:index).and_return(1)
-    instance_2 = mock("instance-1")
+    instance_2 = double("instance-1")
     instance_2.stub(:index).and_return(2)
 
     instances = [instance_1, instance_2]
@@ -33,14 +33,14 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should update the job with canaries" do
-    instance_1 = mock("instance-1")
+    instance_1 = double("instance-1")
     instance_1.stub(:index).and_return(1)
-    instance_2 = mock("instance-1")
+    instance_2 = double("instance-1")
     instance_2.stub(:index).and_return(2)
     instances = [instance_1, instance_2]
 
-    instance_updater_1 = mock("instance_updater_1")
-    instance_updater_2 = mock("instance_updater_2")
+    instance_updater_1 = double("instance_updater_1")
+    instance_updater_2 = double("instance_updater_2")
 
     @job_spec.should_receive(:instances).and_return(instances)
     @job_spec.should_receive(:unneeded_instances).and_return([])
@@ -76,14 +76,14 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should rollback the job if the canaries failed" do
-    instance_1 = mock("instance-1")
+    instance_1 = double("instance-1")
     instance_1.stub(:index).and_return(1)
-    instance_2 = mock("instance-1")
+    instance_2 = double("instance-1")
     instance_2.stub(:index).and_return(2)
     instances = [instance_1, instance_2]
 
-    instance_updater_1 = mock("instance_updater_1")
-    instance_updater_2 = mock("instance_updater_2")
+    instance_updater_1 = double("instance_updater_1")
+    instance_updater_2 = double("instance_updater_2")
 
     @job_spec.stub(:should_halt?).and_return(false, true)
     @job_spec.should_receive(:instances).and_return(instances)
@@ -114,14 +114,14 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should rollback the job if it exceeded max number of errors" do
-    instance_1 = mock("instance-1")
+    instance_1 = double("instance-1")
     instance_1.stub(:index).and_return(1)
-    instance_2 = mock("instance-1")
+    instance_2 = double("instance-1")
     instance_2.stub(:index).and_return(2)
     instances = [instance_1, instance_2]
 
-    instance_updater_1 = mock("instance_updater_1")
-    instance_updater_2 = mock("instance_updater_2")
+    instance_updater_1 = double("instance_updater_1")
+    instance_updater_2 = double("instance_updater_2")
 
     @job_spec.stub(:should_halt?).and_return(false, false, false, true)
     @job_spec.should_receive(:unneeded_instances).and_return([])
@@ -152,11 +152,11 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should delete the unneeded instances" do
-    instance = mock("instance")
+    instance = double("instance")
     @job_spec.stub(:instances).and_return([])
     @job_spec.stub(:unneeded_instances).and_return([instance])
 
-    instance_deleter = mock("instance_deleter")
+    instance_deleter = double("instance_deleter")
     instance_deleter.should_receive(:delete_instances).with([instance], {:max_threads => 5})
     Bosh::Director::InstanceDeleter.stub(:new).and_return(instance_deleter)
 

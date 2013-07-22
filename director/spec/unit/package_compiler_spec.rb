@@ -5,21 +5,21 @@ require 'spec_helper'
 describe Bosh::Director::PackageCompiler do
 
   before(:each) do
-    @cloud = mock(:cpi)
+    @cloud = double(:cpi)
     BD::Config.stub(:cloud).and_return(@cloud)
 
-    @blobstore = mock(:blobstore)
+    @blobstore = double(:blobstore)
     BD::Config.stub(:blobstore).and_return(@blobstore)
 
-    @director_job = mock(BD::Jobs::BaseJob)
+    @director_job = double(BD::Jobs::BaseJob)
     BD::Config.stub(:current_job).and_return(@director_job)
     @director_job.stub(:task_cancelled?).and_return(false)
 
     @deployment = BD::Models::Deployment.make(:name => "mycloud")
-    @config = mock(BD::DeploymentPlan::CompilationConfig)
-    @plan = mock(BD::DeploymentPlan, :compilation => @config,
+    @config = double(BD::DeploymentPlan::CompilationConfig)
+    @plan = double(BD::DeploymentPlan, :compilation => @config,
                  :model => @deployment, :name => "mycloud")
-    @network = mock(BD::DeploymentPlan::Network, :name => "default")
+    @network = double(BD::DeploymentPlan::Network, :name => "default")
 
     @n_workers = 3
     @config.stub(:deployment => @plan, :network => @network,
@@ -60,11 +60,11 @@ describe Bosh::Director::PackageCompiler do
   end
 
   def prepare_samples
-    @release = mock(BD::DeploymentPlan::Release, :name => "cf-release",
+    @release = double(BD::DeploymentPlan::Release, :name => "cf-release",
                     :model => BD::Models::ReleaseVersion.make)
-    @stemcell_a = mock(BD::DeploymentPlan::Stemcell,
+    @stemcell_a = double(BD::DeploymentPlan::Stemcell,
                        :model => BD::Models::Stemcell.make)
-    @stemcell_b = mock(BD::DeploymentPlan::Stemcell,
+    @stemcell_b = double(BD::DeploymentPlan::Stemcell,
                        :model => BD::Models::Stemcell.make)
 
     @p_common = make_package("common")
@@ -75,30 +75,30 @@ describe Bosh::Director::PackageCompiler do
     @p_nginx = make_package("nginx", %w(common))
     @p_router = make_package("p_router", %w(ruby common))
 
-    rp_large = mock(BD::DeploymentPlan::ResourcePool,
+    rp_large = double(BD::DeploymentPlan::ResourcePool,
                     :name => "large", :stemcell => @stemcell_a)
 
-    rp_small = mock(BD::DeploymentPlan::ResourcePool,
+    rp_small = double(BD::DeploymentPlan::ResourcePool,
                     :name => "small", :stemcell => @stemcell_b)
 
-    @t_dea = mock(BD::DeploymentPlan::Template,
+    @t_dea = double(BD::DeploymentPlan::Template,
                  :package_models => [@p_dea, @p_nginx, @p_syslog])
 
-    @t_warden = mock(BD::DeploymentPlan::Template,
+    @t_warden = double(BD::DeploymentPlan::Template,
                     :package_models => [@p_warden])
 
-    @t_nginx = mock(BD::DeploymentPlan::Template,
+    @t_nginx = double(BD::DeploymentPlan::Template,
                    :package_models => [@p_nginx])
 
-    @t_router = mock(BD::DeploymentPlan::Template,
+    @t_router = double(BD::DeploymentPlan::Template,
                     :package_models => [@p_router])
 
-    @j_dea = mock(BD::DeploymentPlan::Job,
+    @j_dea = double(BD::DeploymentPlan::Job,
                   :name => "dea",
                   :release => @release,
                   :templates => [@t_dea, @t_warden],
                   :resource_pool => rp_large)
-    @j_router = mock(BD::DeploymentPlan::Job,
+    @j_router = double(BD::DeploymentPlan::Job,
                      :name => "router",
                      :release => @release,
                      :templates => [@t_nginx, @t_router, @t_warden],
@@ -163,7 +163,7 @@ describe Bosh::Director::PackageCompiler do
 
     net = {"default" => "network settings"}
     vm_cids = (0..10).map { |i| "vm-cid-#{i}" }
-    agents = (0..10).map { mock(BD::AgentClient) }
+    agents = (0..10).map { double(BD::AgentClient) }
 
     @cloud.should_receive(:create_vm).exactly(6).times.
       with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
@@ -260,7 +260,7 @@ describe Bosh::Director::PackageCompiler do
         at_most(3).times.and_return("network settings")
 
       vm_cids = (0..2).map { |i| "vm-cid-#{i}" }
-      agents = (0..2).map { mock(BD::AgentClient) }
+      agents = (0..2).map { double(BD::AgentClient) }
 
       @cloud.should_receive(:create_vm).at_most(3).times.
         with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
@@ -330,7 +330,7 @@ describe Bosh::Director::PackageCompiler do
       @network.should_receive(:network_settings).and_return("network settings")
 
       vm_cid = "vm-cid-1"
-      agent = mock(BD::AgentClient)
+      agent = double(BD::AgentClient)
 
       @cloud.should_receive(:create_vm).
         with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
@@ -419,7 +419,7 @@ describe Bosh::Director::PackageCompiler do
       end
 
       it "returns the compiled package from the global blobstore if not found locally" do
-        compiled_package = mock("compiled package",
+        compiled_package = double("compiled package",
           package: package,
           stemcell: stemcell,
           dependency_key: "[]"
@@ -456,7 +456,7 @@ describe Bosh::Director::PackageCompiler do
       end
 
       compiler.stub(:find_compiled_package)
-      compiled_package = mock("compiled package", package: package, stemcell: stemcell, blobstore_id: "some blobstore id")
+      compiled_package = double("compiled package", package: package, stemcell: stemcell, blobstore_id: "some blobstore id")
       BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
       BD::BlobUtil.should_receive(:save_to_global_cache).with(compiled_package, cache_key)
       compiler.stub(:prepare_vm)

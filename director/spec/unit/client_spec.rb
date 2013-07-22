@@ -5,7 +5,7 @@ require "spec_helper"
 describe Bosh::Director::Client do
 
   before(:each) do
-    @nats_rpc = mock(BD::NatsRpc)
+    @nats_rpc = double(BD::NatsRpc)
     Bosh::Director::Config.stub(:nats_rpc).and_return(@nats_rpc)
   end
 
@@ -43,7 +43,7 @@ describe Bosh::Director::Client do
     @nats_rpc.should_receive(:send_request).
       with("foo.bar", test_rpc_args).and_yield(response)
 
-    rm = mock(Bosh::Director::Api::ResourceManager)
+    rm = double(Bosh::Director::Api::ResourceManager)
     rm.should_receive(:get_resource).with("deadbeef").and_return("an exception")
     rm.should_receive(:delete_resource).with("deadbeef")
     Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
@@ -200,7 +200,7 @@ describe Bosh::Director::Client do
         "blobstore_id" => "deadbeef"
       }
 
-      rm = mock(BD::Api::ResourceManager)
+      rm = double(BD::Api::ResourceManager)
       BD::Api::ResourceManager.stub(:new).and_return(rm)
       rm.should_receive(:get_resource).with("deadbeef").
         and_return("Failed to compile: no such file 'zbb'")
