@@ -30,7 +30,7 @@ module Bosh
                      :configure_networks,
                      :create_disk, :delete_disk,
                      :attach_disk, :detach_disk,
-                     :validate_deployment
+                     :validate_deployment, :has_vm?
 
       def initialize(options)
         @delegate = WardenCloud::Cloud.new(options)
