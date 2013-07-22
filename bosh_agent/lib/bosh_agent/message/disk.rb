@@ -16,11 +16,14 @@ module Bosh::Agent
 
       def migrate(args)
         logger.info("MigrateDisk:" + args.inspect)
+        @config  = Bosh::Agent::Config
+        @infra = @config.infrastructure_name
+
         @old_cid, @new_cid = args
 
         DiskUtil.umount_guard(store_path)
 
-        mount_store(@old_cid, "-o ro") #read-only
+        mount_store(@infra, @old_cid, "-o ro") #read-only
 
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
@@ -30,18 +33,23 @@ module Bosh::Agent
         DiskUtil.umount_guard(store_path)
         DiskUtil.umount_guard(store_migration_target)
 
-        mount_store(@new_cid)
+        mount_store(@infra, @new_cid)
       end
 
       def check_mountpoints
         Pathname.new(store_path).mountpoint? && Pathname.new(store_migration_target).mountpoint?
       end
 
-      def mount_store(cid, options="")
+      def mount_store(infrastructure, cid, options="")
         disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
         partition = "#{disk}1"
         logger.info("Mounting: #{partition} #{store_path}")
-        `mount #{options} #{partition} #{store_path}`
+        case infrastructure
+          when "warden"
+            `mount --bind #{disk} #{store_path}`
+          else
+            `mount #{options} #{partition} #{store_path}`
+        end
         unless $?.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path} (exit code #{$?.exitstatus})"
         end
@@ -77,14 +85,14 @@ module Bosh::Agent
 
       def initialize(args)
         @cid = args.first
+        @config  = Bosh::Agent::Config
       end
 
       def mount
         if Bosh::Agent::Config.configure
           update_settings
           logger.info("MountDisk: #{@cid} - #{settings['disks'].inspect}")
-
-          setup_disk
+          setup_disk (@config.infrastructure_name)
         end
       end
 
@@ -92,60 +100,66 @@ module Bosh::Agent
         Bosh::Agent::Config.settings = Bosh::Agent::Settings.load
       end
 
-      def setup_disk
+      def setup_disk (infrastructure)
         disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(@cid)
-        partition = "#{disk}1"
 
-        logger.info("setup disk settings: #{settings.inspect}")
+        case infrastructure
+          when "warden"
+            partition = "#{disk}"
+          else
+            partition = "#{disk}1"
 
-        read_disk_attempts = 300
-        read_disk_attempts.downto(0) do |n|
-          begin
-            # Parition table is blank
-            disk_data = File.read(disk, 512)
+            logger.info("setup disk settings: #{settings.inspect}")
 
-            if disk_data == "\x00"*512
-              logger.info("Found blank disk #{disk}")
-            else
-              logger.info("Disk has partition table")
-              logger.info(`sfdisk -Llq #{disk} 2> /dev/null`)
+            read_disk_attempts = 300
+            read_disk_attempts.downto(0) do |n|
+              begin
+                # Parition table is blank
+                disk_data = File.read(disk, 512)
+
+                if disk_data == "\x00"*512
+                  logger.info("Found blank disk #{disk}")
+                else
+                  logger.info("Disk has partition table")
+                  logger.info(`sfdisk -Llq #{disk} 2> /dev/null`)
+                end
+                break
+              rescue => e
+                # Do nothing - we'll retry
+                logger.info("Re-trying reading from #{disk}")
+              end
+
+              if n == 0
+                raise Bosh::Agent::MessageHandlerError, "Unable to read from new disk"
+              end
+              sleep 1
             end
-            break
-          rescue => e
-            # Do nothing - we'll retry
-            logger.info("Re-trying reading from #{disk}")
-          end
 
-          if n == 0
-            raise Bosh::Agent::MessageHandlerError, "Unable to read from new disk"
-          end
-          sleep 1
+            if File.blockdev?(disk) && DiskUtil.ensure_no_partition?(disk, partition)
+              full_disk = ",,L\n"
+              logger.info("Partitioning #{disk}")
+
+              Bosh::Agent::Util.partition_disk(disk, full_disk)
+
+              mke2fs_options = ["-t ext4", "-j"]
+              mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
+              `/sbin/mke2fs #{mke2fs_options.join(" ")} #{partition}`
+              unless $?.exitstatus == 0
+                raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
+              end
+            elsif File.blockdev?(partition)
+              logger.info("Found existing partition on #{disk}")
+              # Do nothing
+            else
+              raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
+            end
         end
 
-        if File.blockdev?(disk) && DiskUtil.ensure_no_partition?(disk, partition)
-          full_disk = ",,L\n"
-          logger.info("Partitioning #{disk}")
-
-          Bosh::Agent::Util.partition_disk(disk, full_disk)
-
-          mke2fs_options = ["-t ext4", "-j"]
-          mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
-          `/sbin/mke2fs #{mke2fs_options.join(" ")} #{partition}`
-          unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
-          end
-        elsif File.blockdev?(partition)
-          logger.info("Found existing partition on #{disk}")
-          # Do nothing
-        else
-          raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
-        end
-
-        mount_persistent_disk(partition)
+        mount_persistent_disk(partition, infrastructure)
         {}
       end
 
-      def mount_persistent_disk(partition)
+      def mount_persistent_disk(partition, infrastructure)
         store_mountpoint = File.join(base_dir, 'store')
 
         if Pathname.new(store_mountpoint).mountpoint?
@@ -160,7 +174,13 @@ module Bosh::Agent
         FileUtils.chmod(0700, mountpoint)
 
         logger.info("Mount #{partition} #{mountpoint}")
-        `mount #{partition} #{mountpoint}`
+        case infrastructure
+          when "warden"
+            `mount --bind #{partition} #{mountpoint}`
+          else
+            `mount #{partition} #{mountpoint}`
+        end
+
         unless $?.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError, "Failed mount #{partition} on #{mountpoint} #{$?.exitstatus}"
         end
@@ -180,7 +200,14 @@ module Bosh::Agent
       def unmount(args)
         cid = args.first
         disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-        partition = "#{disk}1"
+        config  = Bosh::Agent::Config
+        infra = config.infrastructure_name
+        case infra
+          when "warden"
+            partition = "#{disk}"
+          else
+            partition = "#{disk}1"
+        end
 
         if DiskUtil.mount_entry(partition)
           @block, @mountpoint = DiskUtil.mount_entry(partition).split
