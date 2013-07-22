@@ -164,48 +164,56 @@ describe Bosh::Director::InstanceUpdater do
       end
     end
 
-    context 'when a vm needs to be recreated' do
+    context 'when there is a network change' do
       let(:networks_changed) { true }
 
-      context 'without persistent disk' do
-        let(:persistent_disk_changed) { false }
+      before do
+        subject.stub(:sleep)
+        subject.stub(:stop)
+        subject.stub(:update_resource_pool)
+        subject.stub(:start!)
+        subject.stub(:apply_state)
+        subject.stub(:wait_until_running)
+        subject.stub(current_state: {'job_state' => 'running'})
+      end
 
-        it 'should recreate vm' do
+      context 'when a vm does not need to be recreated' do
+        it 'should prepare network change' do
+          cloud.should_receive(:configure_networks)
           agent_client.should_receive(:prepare_network_change)
-          cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
-          instance.should_receive(:recreate=)
-
-          subject.stub(:stop)
-          subject.stub(:update_resource_pool)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+          agent_client.should_receive(:wait_until_ready)
 
           subject.update
         end
       end
 
-      context 'without persistent disk' do
-        let(:persistent_disk_changed) { true }
+      context 'when a vm needs to be recreated' do
+        context 'without persistent disk' do
+          let(:persistent_disk_changed) { false }
 
-        it 'should recreate vm and attach disk' do
-          agent_client.should_receive(:prepare_network_change)
-          cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
-          instance.should_receive(:recreate=)
-          job.should_receive(:persistent_disk).exactly(3).times.and_return(1024)
-          cloud.should_receive(:create_disk).and_return('disk-cid')
-          cloud.should_receive(:attach_disk)
-          agent_client.should_receive(:mount_disk)
+          it 'should recreate vm' do
+            agent_client.should_not_receive(:prepare_network_change)
+            cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
+            instance.should_receive(:recreate=)
 
-          subject.stub(:stop)
-          subject.stub(:update_resource_pool)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+            subject.update
+          end
+        end
 
-          subject.update
+        context 'without persistent disk' do
+          let(:persistent_disk_changed) { true }
+
+          it 'should recreate vm and attach disk' do
+            agent_client.should_not_receive(:prepare_network_change)
+            cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
+            instance.should_receive(:recreate=)
+            job.should_receive(:persistent_disk).exactly(3).times.and_return(1024)
+            cloud.should_receive(:create_disk).and_return('disk-cid')
+            cloud.should_receive(:attach_disk)
+            agent_client.should_receive(:mount_disk)
+
+            subject.update
+          end
         end
       end
     end
