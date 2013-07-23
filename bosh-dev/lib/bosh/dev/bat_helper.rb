@@ -8,21 +8,16 @@ module Bosh::Dev
     def initialize(infrastructure)
       raise ArgumentError.new("invalid infrastructure: #{infrastructure}") unless Infrastructure::ALL.include?(infrastructure)
 
-      @workspace_dir = ENV.to_hash.fetch('WORKSPACE')
       @infrastructure = Infrastructure.new(infrastructure)
       @pipeline = Pipeline.new
     end
 
-    def light?
-      infrastructure.light?
-    end
-
     def bosh_stemcell_path
-      File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure.name, 'bosh-stemcell', light?))
+      pipeline.bosh_stemcell_path(infrastructure)
     end
 
     def micro_bosh_stemcell_path
-      File.join(workspace_dir, @pipeline.latest_stemcell_filename(infrastructure.name, 'micro-bosh-stemcell', light?))
+      pipeline.micro_bosh_stemcell_path(infrastructure)
     end
 
     def artifacts_dir
@@ -41,20 +36,16 @@ module Bosh::Dev
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
 
       begin
-        @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: light?)
-        @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'bosh-stemcell', light: light?)
+        pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: infrastructure.light?)
+        pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'bosh-stemcell', light: infrastructure.light?)
 
-        @infrastructure.run_system_micro_tests
+        infrastructure.run_system_micro_tests
       ensure
-        cleanup_stemcells
+        pipeline.cleanup_stemcells
       end
     end
 
-    def cleanup_stemcells
-      FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
-    end
-
     private
-    attr_reader :workspace_dir
+    attr_reader :pipeline
   end
 end

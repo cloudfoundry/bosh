@@ -17,6 +17,7 @@ module Bosh::Dev
       @build_id =  options.fetch(:build_id) { Build.candidate.number.to_s }
       @logger = options.fetch(:logger) { Logger.new($stdout) }
       @bucket = 'bosh-ci-pipeline'
+      @workspace_dir = ENV.to_hash.fetch('WORKSPACE')
     end
 
     def create(options)
@@ -81,9 +82,21 @@ module Bosh::Dev
       "s3://#{bucket}/#{build_id}/"
     end
 
+    def bosh_stemcell_path(infrastructure)
+      File.join(workspace_dir, latest_stemcell_filename(infrastructure.name, 'bosh-stemcell', infrastructure.light?))
+    end
+
+    def micro_bosh_stemcell_path(infrastructure)
+      File.join(workspace_dir, latest_stemcell_filename(infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
+    end
+
+    def cleanup_stemcells
+      FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
+    end
+
     private
 
-    attr_reader :logger, :bucket, :build_id
+    attr_reader :logger, :bucket, :build_id, :workspace_dir
 
     def base_directory
       fog_storage.directories.get(bucket) or raise "bucket '#{bucket}' not found"
