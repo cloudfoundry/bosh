@@ -4,7 +4,7 @@ require 'bosh/dev/bat_helper'
 module Bosh::Dev
   describe BatHelper do
     let(:infrastructure_name) { 'aws' }
-    let(:fake_pipeline) { instance_double('Pipeline', download_latest_stemcell: nil, latest_stemcell_filename: 'a latest stemcell version from pipeline', cleanup_stemcells: nil) }
+    let(:fake_pipeline) { instance_double('Pipeline', download_stemcell: nil, stemcell_filename: 'a stemcell filename', cleanup_stemcells: nil) }
 
     subject { BatHelper.new(infrastructure_name) }
 
@@ -71,10 +71,10 @@ module Bosh::Dev
           end
 
           it 'downloads a micro-bosh-stemcell and a bosh-stemcell' do
-            fake_pipeline.should_receive(:download_latest_stemcell).
-              with(infrastructure: infrastructure_name, name: 'micro-bosh-stemcell', light: subject.infrastructure.light?)
-            fake_pipeline.should_receive(:download_latest_stemcell).
-              with(infrastructure: infrastructure_name, name: 'bosh-stemcell', light: subject.infrastructure.light?)
+            fake_pipeline.should_receive(:download_stemcell).
+              with('latest', infrastructure: infrastructure_name, name: 'micro-bosh-stemcell', light: subject.infrastructure.light?)
+            fake_pipeline.should_receive(:download_stemcell).
+              with('latest', infrastructure: infrastructure_name, name: 'bosh-stemcell', light: subject.infrastructure.light?)
 
             subject.run_rake
           end

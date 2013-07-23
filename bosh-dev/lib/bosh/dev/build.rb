@@ -40,9 +40,9 @@ module Bosh::Dev
     end
 
     def update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
-      pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
+      pipeline.download_stemcell('latest', infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
 
-      stemcell = Bosh::Dev::Stemcell.new(pipeline.latest_stemcell_filename('aws', 'micro-bosh-stemcell', true))
+      stemcell = Bosh::Dev::Stemcell.new(pipeline.stemcell_filename('latest', 'aws', 'micro-bosh-stemcell', true))
 
       connection = fog_storage(access_key_id, secret_access_key)
       directory = connection.directories.create(key: 'bosh-jenkins-artifacts')

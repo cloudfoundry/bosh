@@ -181,38 +181,6 @@ module Bosh::Dev
       end
     end
 
-    describe '#download_latest_stemcell' do
-      before do
-        bucket_files.create(key: '456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz', body: 'this is a thinga-ma-jiggy')
-        bucket_files.create(key: '456/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz', body: 'this a completely different thingy')
-      end
-
-      it 'downloads the latest stemcell from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz' -> 'latest-bosh-stemcell-aws.tgz'")
-
-        pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'bosh-stemcell', light: false)
-        expect(File.read('latest-bosh-stemcell-aws.tgz')).to eq 'this is a thinga-ma-jiggy'
-      end
-
-      it 'downloads the latest light stemcell from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz' -> 'latest-light-bosh-stemcell-aws.tgz'")
-
-
-        pipeline.download_latest_stemcell(infrastructure: 'aws', name: 'bosh-stemcell', light: true)
-        expect(File.read('latest-light-bosh-stemcell-aws.tgz')).to eq 'this a completely different thingy'
-      end
-    end
-
-    describe '#latest_stemcell_filename' do
-      it 'generates the latest stemcell filename' do
-        expect(pipeline.latest_stemcell_filename('aws', 'bosh-stemcell', false)).to eq('latest-bosh-stemcell-aws.tgz')
-      end
-
-      it 'generates the latest light stemcell filename' do
-        expect(pipeline.latest_stemcell_filename('aws', 'bosh-stemcell', true)).to eq('latest-light-bosh-stemcell-aws.tgz')
-      end
-    end
-
     describe '#bosh_stemcell_path' do
       let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'aws', light?: true) }
 

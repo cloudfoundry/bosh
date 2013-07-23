@@ -30,7 +30,7 @@ module Bosh::Dev
     end
 
     def publish_stemcell(stemcell)
-      latest_filename = latest_stemcell_filename(stemcell.infrastructure, stemcell.name, stemcell.light?)
+      latest_filename = stemcell_filename('latest', stemcell.infrastructure, stemcell.name, stemcell.light?)
       s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
 
       s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
@@ -66,16 +66,15 @@ module Bosh::Dev
       logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
     end
 
-    def download_latest_stemcell(options={})
-      infrastructure = options.fetch(:infrastructure)
-      name = options.fetch(:name)
-      light = options.fetch(:light, false)
+    def stemcell_filename(version, infrastructure, name, light)
+      stemcell_filename_parts = []
+      stemcell_filename_parts << version if version == 'latest'
+      stemcell_filename_parts << 'light' if light
+      stemcell_filename_parts << name
+      stemcell_filename_parts << infrastructure
+      stemcell_filename_parts << version unless version == 'latest'
 
-      download_stemcell('latest', infrastructure: infrastructure, name: name, light: light)
-    end
-
-    def latest_stemcell_filename(infrastructure, name, light)
-      stemcell_filename('latest', infrastructure, name, light)
+      "#{stemcell_filename_parts.join('-')}.tgz"
     end
 
     def s3_url
@@ -83,11 +82,11 @@ module Bosh::Dev
     end
 
     def bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, latest_stemcell_filename(infrastructure.name, 'bosh-stemcell', infrastructure.light?))
+      File.join(workspace_dir, stemcell_filename('latest', infrastructure.name, 'bosh-stemcell', infrastructure.light?))
     end
 
     def micro_bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, latest_stemcell_filename(infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
+      File.join(workspace_dir, stemcell_filename('latest', infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
     end
 
     def cleanup_stemcells
@@ -100,17 +99,6 @@ module Bosh::Dev
 
     def base_directory
       fog_storage.directories.get(bucket) or raise "bucket '#{bucket}' not found"
-    end
-
-    def stemcell_filename(version, infrastructure, name, light)
-      stemcell_filename_parts = []
-      stemcell_filename_parts << version if version == 'latest'
-      stemcell_filename_parts << 'light' if light
-      stemcell_filename_parts << name
-      stemcell_filename_parts << infrastructure
-      stemcell_filename_parts << version unless version == 'latest'
-
-      "#{stemcell_filename_parts.join('-')}.tgz"
     end
   end
 end

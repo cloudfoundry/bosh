@@ -126,8 +126,8 @@ module Bosh::Dev
       before do
         Fog::Mock.reset
 
-        fake_pipeline.stub(:download_latest_stemcell)
-        fake_pipeline.stub(:latest_stemcell_filename)
+        fake_pipeline.stub(:download_stemcell)
+        fake_pipeline.stub(:stemcell_filename)
 
         fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
         Bosh::Dev::Stemcell.stub(new: fake_stemcell)
@@ -138,15 +138,15 @@ module Bosh::Dev
       end
 
       it 'downloads the latest-micro-bosh-stemcell-aws' do
-        fake_pipeline.should_receive(:download_latest_stemcell).
-            with(infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
+        fake_pipeline.should_receive(:download_stemcell).
+            with('latest', infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end
 
       it 'initializes a Stemcell with the downloaded stemcell filename' do
-        fake_pipeline.should_receive(:latest_stemcell_filename).
-            with('aws', 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
+        fake_pipeline.should_receive(:stemcell_filename).
+            with('latest', 'aws', 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
 
         Bosh::Dev::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
