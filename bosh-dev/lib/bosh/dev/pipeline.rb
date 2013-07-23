@@ -66,12 +66,12 @@ module Bosh::Dev
       logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
     end
 
-    def stemcell_filename(version, infrastructure, name, light)
+    def stemcell_filename(version, infrastructure_name, name, light)
       stemcell_filename_parts = []
       stemcell_filename_parts << version if version == 'latest'
       stemcell_filename_parts << 'light' if light
       stemcell_filename_parts << name
-      stemcell_filename_parts << infrastructure
+      stemcell_filename_parts << infrastructure_name
       stemcell_filename_parts << version unless version == 'latest'
 
       "#{stemcell_filename_parts.join('-')}.tgz"
