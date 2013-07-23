@@ -50,9 +50,10 @@ describe Bosh::WardenCloud::Cloud do
     Bosh::WardenCloud::Models::Disk.dataset.delete
   end
 
-  def mock_attach_sudos (cmd)
+  def mock_attach_sudos (cmd, success = true, times = 1)
     zero_exit_status = mock("Process::Status", :exit_status => 0)
-    Bosh::Exec.should_receive(:sh).with(%r!sudo -n #{cmd}.*!).ordered.and_return(zero_exit_status)
+    result = mock("Result", :success? => success)
+    Bosh::Exec.should_receive(:sh).exactly(times).times.with(%r!sudo -n #{cmd}.*!, :yield => :on_false).and_yield(result).and_return(zero_exit_status)
   end
 
   context "attach_disk" do
@@ -122,6 +123,13 @@ describe Bosh::WardenCloud::Cloud do
       disk.attached.should == false
       disk.device_path.should be_nil
       disk.vm.should be_nil
+    end
+
+    it 'will retry umount for detach disk' do
+      mock_attach_sudos("umount", false, Bosh::WardenCloud::Cloud::UMOUNT_GUARD_RETRIES + 1)
+      expect {
+        @cloud.detach_disk(@vm_id, @attached_disk_id)
+      }. to raise_error
     end
 
     it "raise error when trying to detach a disk that is not attached" do

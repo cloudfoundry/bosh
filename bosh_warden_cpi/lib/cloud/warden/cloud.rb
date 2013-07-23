@@ -12,6 +12,8 @@ module Bosh::WardenCloud
     DEFAULT_DEVICE_PREFIX = "/dev/sd"
     DEFAULT_WARDEN_DEV_ROOT = "/warden-cpi-dev"
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
+    UMOUNT_GUARD_RETRIES = 3
+    UMOUNT_GUARD_SLEEP = 1
 
     attr_accessor :logger
 
@@ -361,8 +363,7 @@ module Bosh::WardenCloud
         device_path = disk.device_path
 
         # umount the image file
-        sudo "umount #{device_path}"
-
+        umount_guard device_path
         # Save device path into agent env settings
         env = get_agent_env(vm.container_id)
         env["disks"]["persistent"][disk_id] = nil
@@ -383,6 +384,25 @@ module Bosh::WardenCloud
     end
 
     private
+
+
+    # Retry the umount for GUARD_RETRIES +1  times
+    def umount_guard(mountpoint)
+      umount_attempts = UMOUNT_GUARD_RETRIES
+
+      loop do
+        sudo "umount #{mountpoint}" do |result|
+          if result.success?
+            return
+          elsif umount_attempts != 0
+            sleep UMOUNT_GUARD_SLEEP
+            umount_attempts -= 1
+          else
+            raise "Failed to umount #{mountpoint}: #{result.output}}"
+          end
+        end
+      end
+    end
 
     def not_used(*arg)
       # no-op

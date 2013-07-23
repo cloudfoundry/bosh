@@ -50,6 +50,11 @@ describe Bosh::WardenCloud::Cloud do
     FileUtils.rm_rf @disk_root
   }
 
+  def mock_umount_sudos (cmd)
+    zero_exit_status = mock("Process::Status", :exit_status => 0)
+    Bosh::Exec.should_receive(:sh).with(%r!sudo -n #{cmd}.*!, :yield => :on_false).ordered.and_return(zero_exit_status)
+  end
+
   context "create_vm" do
     before :each do
       Warden::Client.any_instance.stub(:call) do |req|
@@ -169,6 +174,7 @@ describe Bosh::WardenCloud::Cloud do
         res
       end
 
+      mock_umount_sudos "umount"
       @cloud.delete_vm(vm.id.to_s)
 
       Bosh::WardenCloud::Models::VM.dataset.all.size.should == 0
