@@ -143,7 +143,7 @@ namespace :spec do
 
       task :bat do
         bat_helper = Bosh::Dev::BatHelper.new('aws')
-        director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
+        director = "micro.#{ENV['BOSH_VPC_SUBDOMAIN']}.cf-app.com"
 
         ENV['BAT_DIRECTOR'] = director
         ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
@@ -193,6 +193,9 @@ namespace :spec do
       end
 
       task :deploy_micro, [:net_type] do |t, net_type|
+        require 'bosh/dev/openstack/micro_bosh_deployment_manifest'
+        require 'bosh/dev/openstack/bat_deployment_manifest'
+
         bat_helper = Bosh::Dev::BatHelper.new('openstack')
 
         rm_rf(bat_helper.artifacts_dir)
@@ -200,7 +203,9 @@ namespace :spec do
 
         chdir(bat_helper.artifacts_dir) do
           chdir(bat_helper.micro_bosh_deployment_dir) do
-            generate_openstack_micro_bosh(net_type)
+
+            micro_deployment_manifest = Bosh::Dev::Openstack::MicroBoshDeploymentManifest.new(net_type)
+            micro_deployment_manifest.write('micro_bosh.yml')
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
@@ -210,7 +215,9 @@ namespace :spec do
           status = run_bosh 'status'
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
           st_version = stemcell_version(bat_helper.bosh_stemcell_path)
-          generate_openstack_bat_manifest(net_type, director_uuid, st_version)
+
+          bat_deployment_manifest = Bosh::Dev::Openstack::BatDeploymentManifest.new(net_type, director_uuid, st_version)
+          bat_deployment_manifest.write('bat.yml')
         end
       end
 
@@ -251,6 +258,9 @@ namespace :spec do
       end
 
       task :deploy_micro do
+        require 'bosh/dev/vsphere/micro_bosh_deployment_manifest'
+        require 'bosh/dev/vsphere/bat_deployment_manifest'
+
         bat_helper = Bosh::Dev::BatHelper.new('vsphere')
 
         rm_rf(bat_helper.artifacts_dir)
@@ -258,7 +268,8 @@ namespace :spec do
 
         cd(bat_helper.artifacts_dir) do
           cd(bat_helper.micro_bosh_deployment_dir) do
-            generate_vsphere_micro_bosh
+            micro_deployment_manifest = Bosh::Dev::VSphere::MicroBoshDeploymentManifest.new
+            micro_deployment_manifest.write('micro_bosh.yml')
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
@@ -268,7 +279,9 @@ namespace :spec do
           status = run_bosh 'status'
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
           st_version = stemcell_version(bat_helper.bosh_stemcell_path)
-          generate_vsphere_bat_manifest(director_uuid, st_version)
+
+          bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, st_version)
+          bat_deployment_manifest.write('bat.yml')
         end
       end
 
@@ -319,77 +332,6 @@ namespace :spec do
       File.join(mnt, 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_route53_receipt.yml')
     end
 
-    def generate_openstack_micro_bosh(net_type)
-      name = net_type
-      vip = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
-      ip = ENV['BOSH_OPENSTACK_MANUAL_IP']
-      net_id = ENV['BOSH_OPENSTACK_NET_ID']
-      auth_url = ENV['BOSH_OPENSTACK_AUTH_URL']
-      username = ENV['BOSH_OPENSTACK_USERNAME']
-      api_key = ENV['BOSH_OPENSTACK_API_KEY']
-      tenant = ENV['BOSH_OPENSTACK_TENANT']
-      region = ENV['BOSH_OPENSTACK_REGION']
-      private_key_path = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'micro_bosh_openstack.yml.erb'))
-      micro_bosh_manifest = ERB.new(File.read(template_path)).result(binding)
-      File.open("micro_bosh.yml", "w+") do |f|
-        f.write(micro_bosh_manifest)
-      end
-    end
-
-    def generate_openstack_bat_manifest(net_type, director_uuid, st_version)
-      vip = ENV['BOSH_OPENSTACK_VIP_BAT_IP']
-      net_id = ENV['BOSH_OPENSTACK_NET_ID']
-      stemcell_version = st_version
-      net_cidr = ENV['BOSH_OPENSTACK_NETWORK_CIDR']
-      net_reserved = ENV['BOSH_OPENSTACK_NETWORK_RESERVED']
-      net_static = ENV['BOSH_OPENSTACK_NETWORK_STATIC']
-      net_gateway = ENV['BOSH_OPENSTACK_NETWORK_GATEWAY']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'bat_openstack.yml.erb'))
-      bat_manifest = ERB.new(File.read(template_path)).result(binding)
-      File.open('bat.yml', 'w+') do |f|
-        f.write(bat_manifest)
-      end
-    end
-
-    def generate_vsphere_micro_bosh
-      ip = ENV['BOSH_VSPHERE_MICROBOSH_IP']
-      netmask = ENV['BOSH_VSPHERE_NETMASK']
-      gateway = ENV['BOSH_VSPHERE_GATEWAY']
-      dns = ENV['BOSH_VSPHERE_DNS']
-      net_id = ENV['BOSH_VSPHERE_NET_ID']
-      ntp_server = ENV['BOSH_VSPHERE_NTP_SERVER']
-      vcenter = ENV['BOSH_VSPHERE_VCENTER']
-      vcenter_user = ENV['BOSH_VSPHERE_VCENTER_USER']
-      vcenter_pwd = ENV['BOSH_VSPHERE_VCENTER_PASSWORD']
-      vcenter_dc = ENV['BOSH_VSPHERE_VCENTER_DC']
-      vcenter_cluster = ENV['BOSH_VSPHERE_VCENTER_CLUSTER']
-      vcenter_rp = ENV['BOSH_VSPHERE_VCENTER_RESOURCE_POOL']
-      vcenter_folder_prefix = ENV['BOSH_VSPHERE_VCENTER_FOLDER_PREFIX']
-      vcenter_ubosh_folder_prefix = ENV['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']
-      vcenter_datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN']
-      vcenter_ubosh_datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'micro_bosh_vsphere.yml.erb'))
-      micro_bosh_manifest = ERB.new(File.read(template_path)).result(binding)
-      File.open("micro_bosh.yml", "w+") do |f|
-        f.write(micro_bosh_manifest)
-      end
-    end
-
-    def generate_vsphere_bat_manifest(director_uuid, st_version)
-      ip = ENV['BOSH_VSPHERE_BAT_IP']
-      net_id = ENV['BOSH_VSPHERE_NET_ID']
-      stemcell_version = st_version
-      net_cidr = ENV['BOSH_VSPHERE_NETWORK_CIDR']
-      net_reserved = ENV['BOSH_VSPHERE_NETWORK_RESERVED'].split(/[|,]/).map(&:strip)
-      net_static = ENV['BOSH_VSPHERE_NETWORK_STATIC']
-      net_gateway = ENV['BOSH_VSPHERE_NETWORK_GATEWAY']
-      template_path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'bat_vsphere.yml.erb'))
-      bat_manifest = ERB.new(File.read(template_path)).result(binding)
-      File.open('bat.yml', 'w+') do |f|
-        f.write(bat_manifest)
-      end
-    end
 
     def bosh_config_path
       # We should keep a reference to the tempfile, otherwise,
