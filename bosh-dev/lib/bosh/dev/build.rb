@@ -32,11 +32,11 @@ module Bosh::Dev
     end
 
     def sync_buckets
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'gems')} s3://bosh-jenkins-gems")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'gems')} s3://bosh-jenkins-gems")
 
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'release')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd sync #{File.join(pipeline.s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'release')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
     end
 
     def update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)

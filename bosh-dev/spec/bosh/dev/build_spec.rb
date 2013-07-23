@@ -80,28 +80,28 @@ module Bosh::Dev
 
       it 'syncs the pipeline gems' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/gems s3://bosh-jenkins-gems')
+            with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/gems s3://bosh-jenkins-gems')
 
         subject.sync_buckets
       end
 
       it 'syncs the releases' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/release s3://bosh-jenkins-artifacts')
+            with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/release s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
 
       it 'syncs the bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/bosh-stemcell s3://bosh-jenkins-artifacts')
+            with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
 
       it 'syncs the micro bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+            with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
