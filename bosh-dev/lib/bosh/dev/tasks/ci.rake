@@ -3,7 +3,7 @@ namespace :ci do
   task :publish_pipeline_gems do
     require 'bosh/dev/gems_generator'
 
-    GemsGenerator.new.generate_and_upload
+    Bosh::Dev::GemsGenerator.new.generate_and_upload
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
