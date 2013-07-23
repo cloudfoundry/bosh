@@ -6,6 +6,8 @@ module Bosh::Dev
     attr_reader :name
 
     def initialize(name)
+      raise ArgumentError.new("invalid infrastructure: #{name}") unless ALL.include?(name)
+
       @name = name
     end
 

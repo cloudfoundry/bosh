@@ -6,8 +6,6 @@ module Bosh::Dev
     attr_reader :infrastructure
 
     def initialize(infrastructure)
-      raise ArgumentError.new("invalid infrastructure: #{infrastructure}") unless Infrastructure::ALL.include?(infrastructure)
-
       @infrastructure = Infrastructure.new(infrastructure)
       @pipeline = Pipeline.new
     end

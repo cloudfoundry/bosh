@@ -13,16 +13,8 @@ module Bosh::Dev
     end
 
     describe '#initialize' do
-      it 'sets infrastrucutre' do
+      it 'sets infrastructre' do
         expect(subject.infrastructure.name).to eq('aws')
-      end
-
-      context 'with an invalid infrastructure_name' do
-        it 'raises an ArgumentError' do
-          expect {
-            BatHelper.new('BAD_INFRASTRUCTURE')
-          }.to raise_error(ArgumentError, /invalid infrastructure: BAD_INFRASTRUCTURE/)
-        end
       end
     end
 
