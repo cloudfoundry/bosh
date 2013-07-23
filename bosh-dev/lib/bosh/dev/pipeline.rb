@@ -82,16 +82,16 @@ module Bosh::Dev
     end
 
     def bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, stemcell_filename('latest', infrastructure.name, 'bosh-stemcell', infrastructure.light?))
+      File.join(workspace_dir, stemcell_filename(build_id, infrastructure.name, 'bosh-stemcell', infrastructure.light?))
     end
 
     def micro_bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, stemcell_filename('latest', infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
+      File.join(workspace_dir, stemcell_filename(build_id, infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
     end
 
     def fetch_stemcells(infrastructure)
-      download_stemcell('latest', infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: infrastructure.light?)
-      download_stemcell('latest', infrastructure: infrastructure.name, name: 'bosh-stemcell', light: infrastructure.light?)
+      download_stemcell(build_id, infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: infrastructure.light?)
+      download_stemcell(build_id, infrastructure: infrastructure.name, name: 'bosh-stemcell', light: infrastructure.light?)
     end
 
     def cleanup_stemcells

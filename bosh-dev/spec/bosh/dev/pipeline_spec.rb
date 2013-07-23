@@ -151,7 +151,6 @@ module Bosh::Dev
     end
 
     describe '#download_stemcell' do
-
       before do
         bucket_files.create(key: '456/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz', body: 'this is a thinga-ma-jiggy')
         bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz', body: 'this a completely different thingy')
@@ -185,7 +184,7 @@ module Bosh::Dev
       let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'aws', light?: true) }
 
       it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/latest-light-bosh-stemcell-aws.tgz')
+        expect(subject.bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/light-bosh-stemcell-aws-456.tgz')
       end
     end
 
@@ -193,7 +192,7 @@ module Bosh::Dev
       let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'openstack', light?: false) }
 
       it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/latest-micro-bosh-stemcell-openstack.tgz')
+        expect(subject.micro_bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/micro-bosh-stemcell-openstack-456.tgz')
       end
     end
 
@@ -202,15 +201,15 @@ module Bosh::Dev
 
       context 'when micro and bosh stemcells exist for infrastructure' do
         before do
-          bucket_files.create(key: '456/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz', body: 'this is the light-bosh-stemcell')
-          bucket_files.create(key: '456/micro-bosh-stemcell/aws/latest-light-micro-bosh-stemcell-aws.tgz', body: 'this is the micro-bosh-stemcell')
+          bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-456.tgz', body: 'this is the light-bosh-stemcell')
+          bucket_files.create(key: '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-456.tgz', body: 'this is the micro-bosh-stemcell')
         end
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
           pipeline.fetch_stemcells(infrastructure)
 
-          expect(File.read('latest-light-bosh-stemcell-aws.tgz')).to eq('this is the light-bosh-stemcell')
-          expect(File.read('latest-light-micro-bosh-stemcell-aws.tgz')).to eq('this is the micro-bosh-stemcell')
+          expect(File.read('light-bosh-stemcell-aws-456.tgz')).to eq('this is the light-bosh-stemcell')
+          expect(File.read('light-micro-bosh-stemcell-aws-456.tgz')).to eq('this is the micro-bosh-stemcell')
         end
       end
 
@@ -218,7 +217,7 @@ module Bosh::Dev
         it 'raises' do
           expect {
             pipeline.fetch_stemcells(infrastructure)
-          }.to raise_error("remote stemcell 'latest-light-micro-bosh-stemcell-aws.tgz' not found")
+          }.to raise_error("remote stemcell 'light-micro-bosh-stemcell-aws-456.tgz' not found")
         end
       end
     end
