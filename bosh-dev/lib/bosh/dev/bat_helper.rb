@@ -38,17 +38,15 @@ module Bosh::Dev
     end
 
     def run_rake
-      Dir.chdir(workspace_dir) do
-        ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
+      ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
 
-        begin
-          @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: light?)
-          @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'bosh-stemcell', light: light?)
+      begin
+        @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: light?)
+        @pipeline.download_latest_stemcell(infrastructure: infrastructure.name, name: 'bosh-stemcell', light: light?)
 
-          @infrastructure.run_system_micro_tests
-        ensure
-          cleanup_stemcells
-        end
+        @infrastructure.run_system_micro_tests
+      ensure
+        cleanup_stemcells
       end
     end
 

@@ -54,12 +54,6 @@ describe Bosh::Dev::BatHelper do
       ENV.delete('BAT_INFRASTRUCTURE')
     end
 
-    it 'changes to the workspace directory' do
-      Dir.should_receive(:chdir).with('/FAKE/WORKSPACE/DIR')
-
-      subject.run_rake
-    end
-
     it 'calls #cleanup' do
       subject.should_receive(:cleanup_stemcells)
 
