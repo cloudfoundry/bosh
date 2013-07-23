@@ -89,6 +89,11 @@ module Bosh::Dev
       File.join(workspace_dir, stemcell_filename('latest', infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
     end
 
+    def fetch_stemcells(infrastructure)
+      download_stemcell('latest', infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: infrastructure.light?)
+      download_stemcell('latest', infrastructure: infrastructure.name, name: 'bosh-stemcell', light: infrastructure.light?)
+    end
+
     def cleanup_stemcells
       FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
     end

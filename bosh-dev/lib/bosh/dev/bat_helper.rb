@@ -34,8 +34,7 @@ module Bosh::Dev
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
 
       begin
-        pipeline.download_stemcell('latest', infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: infrastructure.light?)
-        pipeline.download_stemcell('latest', infrastructure: infrastructure.name, name: 'bosh-stemcell', light: infrastructure.light?)
+        pipeline.fetch_stemcells(infrastructure)
 
         infrastructure.run_system_micro_tests
       ensure

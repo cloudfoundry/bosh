@@ -197,6 +197,32 @@ module Bosh::Dev
       end
     end
 
+    describe '#fetch_stemcells' do
+      let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'aws', light?: true) }
+
+      context 'when micro and bosh stemcells exist for infrastructure' do
+        before do
+          bucket_files.create(key: '456/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz', body: 'this is the light-bosh-stemcell')
+          bucket_files.create(key: '456/micro-bosh-stemcell/aws/latest-light-micro-bosh-stemcell-aws.tgz', body: 'this is the micro-bosh-stemcell')
+        end
+
+        it 'downloads the specified stemcell version from the pipeline bucket' do
+          pipeline.fetch_stemcells(infrastructure)
+
+          expect(File.read('latest-light-bosh-stemcell-aws.tgz')).to eq('this is the light-bosh-stemcell')
+          expect(File.read('latest-light-micro-bosh-stemcell-aws.tgz')).to eq('this is the micro-bosh-stemcell')
+        end
+      end
+
+      context 'when remote file does not exist' do
+        it 'raises' do
+          expect {
+            pipeline.fetch_stemcells(infrastructure)
+          }.to raise_error("remote stemcell 'latest-light-micro-bosh-stemcell-aws.tgz' not found")
+        end
+      end
+    end
+
     describe '#cleanup_stemcells' do
       it 'removes stemcells created during the build' do
         FileUtils.mkdir_p('/FAKE/WORKSPACE/DIR')
