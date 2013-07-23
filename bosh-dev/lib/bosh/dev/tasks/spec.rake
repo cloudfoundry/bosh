@@ -155,13 +155,13 @@ namespace :spec do
       end
 
       task :get_deployments_aws do
-        Dir.chdir('/mnt') do
+        Dir.chdir(mnt) do
           if Dir.exists?('deployments')
             Dir.chdir('deployments') do
               run('git pull')
             end
           else
-            run("git clone #{ENV['BOSH_JENKINS_DEPLOYMENTS_REPO']} deployments")
+            run("git clone #{ENV.to_hash.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} deployments")
           end
         end
       end
@@ -296,6 +296,10 @@ namespace :spec do
       end
     end
 
+    def mnt
+      @mnt ||= ENV.fetch('FAKE_MNT', '/mnt')
+    end
+
     def stemcell_version(stemcell_tgz)
       stemcell_manifest(stemcell_tgz)['version']
     end
@@ -308,11 +312,11 @@ namespace :spec do
     end
 
     def vpc_outfile_path
-      File.join('/mnt', 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_vpc_receipt.yml')
+      File.join(mnt, 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_vpc_receipt.yml')
     end
 
     def route53_outfile_path
-      File.join('/mnt', 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_route53_receipt.yml')
+      File.join(mnt, 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_route53_receipt.yml')
     end
 
     def generate_openstack_micro_bosh(net_type)

@@ -7,7 +7,8 @@ module Bosh::Dev
     DEFAULT_AWS_AMI_REGION ='us-east-1'
 
     def self.from_jenkins_build(infrastructure, type, build)
-      new(Dir.glob("/mnt/stemcells/#{infrastructure}-#{type}/work/work/*-stemcell-*-#{build.number}.tgz").first)
+      mnt = ENV.fetch('FAKE_MNT', '/mnt') # Temporarily duplicates #mnt in spec.rake
+      new(Dir.glob("#{mnt}/stemcells/#{infrastructure}-#{type}/work/work/*-stemcell-*-#{build.number}.tgz").first)
     end
 
     attr_reader :path
