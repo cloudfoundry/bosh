@@ -41,6 +41,6 @@ if [ "$files" != "0" ]; then
     cp $stemcell $WORKSPACE/$stemcell_base.tgz
 
     if [ $infrastructure == 'aws' ]; then
-        bundle exec rake artifacts:candidates:publish[$WORKSPACE/$stemcell_base.tgz]
+        bundle exec rake --trace artifacts:candidates:publish[$WORKSPACE/$stemcell_base.tgz]
     fi
 fi
