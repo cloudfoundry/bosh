@@ -80,7 +80,7 @@ module Bosh::Dev
 
       it 'syncs the pipeline gems' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/gems s3://bosh-jenkins-gems')
+            with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/gems/ s3://bosh-jenkins-gems')
 
         subject.sync_buckets
       end
