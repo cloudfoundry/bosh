@@ -3,6 +3,7 @@ require 'bosh/dev/pipeline'
 require 'bosh/dev/stemcell'
 require 'bosh/dev/build'
 require 'fakefs/spec_helpers'
+require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
   describe Pipeline do
@@ -181,7 +182,7 @@ module Bosh::Dev
     end
 
     describe '#bosh_stemcell_path' do
-      let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'aws', light?: true) }
+      let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
 
       it 'works' do
         expect(subject.bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/light-bosh-stemcell-aws-456.tgz')
@@ -189,7 +190,7 @@ module Bosh::Dev
     end
 
     describe '#micro_bosh_stemcell_path' do
-      let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'openstack', light?: false) }
+      let(:infrastructure) { Bosh::Dev::Infrastructure::OpenStack.new }
 
       it 'works' do
         expect(subject.micro_bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/micro-bosh-stemcell-openstack-456.tgz')
@@ -197,7 +198,7 @@ module Bosh::Dev
     end
 
     describe '#fetch_stemcells' do
-      let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure', name: 'aws', light?: true) }
+      let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
 
       context 'when micro and bosh stemcells exist for infrastructure' do
         before do

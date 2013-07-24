@@ -6,7 +6,7 @@ module Bosh::Dev
     attr_reader :infrastructure
 
     def initialize(infrastructure)
-      @infrastructure = Infrastructure.new(infrastructure)
+      @infrastructure = Infrastructure.for(infrastructure)
       @pipeline = Pipeline.new
     end
 
