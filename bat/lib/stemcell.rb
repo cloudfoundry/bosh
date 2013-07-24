@@ -16,7 +16,7 @@ class Stemcell
     end
   end
 
-  def initialize(name, version, cpi=nil, path=nil)
+  def initialize(name, version, cpi = nil, path = nil)
     @name = name
     @version = version
     @cpi = cpi
@@ -24,15 +24,14 @@ class Stemcell
   end
 
   def to_s
-    "#@name-#@version"
+    "#{name}-#{version}"
   end
 
   def to_path
-    @path
+    path
   end
 
   def ==(other)
     to_s == other.to_s
   end
-
 end

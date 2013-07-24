@@ -4,7 +4,6 @@ AllCops:
     - Rakefile
   Excludes:
    - bin/**
-   - bat/**
    - blobstore_client/**
    - bosh_agent/**
    - bosh_aws_cpi/**

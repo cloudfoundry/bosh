@@ -1,8 +1,8 @@
-require "erb"
-require "tempfile"
+require 'erb'
+require 'tempfile'
 
-module Bosh; end
-require "common/properties"
+module Bosh; end # Ugly hack
+require 'common/properties'
 
 class Deployment
 
@@ -12,15 +12,15 @@ class Deployment
   end
 
   def name
-    @yaml["name"]
+    yaml['name']
   end
 
   def to_path
-    @path
+    path
   end
 
   def delete
-    puts "<-- rm #@path" if debug?
+    puts "<-- rm #{path}" if debug?
     FileUtils.rm_rf(File.dirname(to_path)) unless keep?
   end
 
@@ -29,12 +29,12 @@ class Deployment
     erb = ERB.new(load_template(@context.spec.cpi))
     result = erb.result(@context.get_binding)
     puts result if debug?
-    @yaml = Psych::load(result)
+    @yaml = Psych.load(result)
     store_manifest(result)
   end
 
   def store_manifest(content)
-    manifest = tempfile("deployment")
+    manifest = tempfile('deployment')
     manifest.write(content)
     manifest.close
     @path = manifest.path
@@ -46,15 +46,18 @@ class Deployment
   end
 
   def tempfile(name)
-    File.open(File.join(Dir.mktmpdir, name), "w")
+    File.open(File.join(Dir.mktmpdir, name), 'w')
   end
 
   private
+
+  attr_reader :path, :yaml
+
   def debug?
-    ENV['BAT_DEBUG'] == "verbose"
+    ENV['BAT_DEBUG'] == 'verbose'
   end
 
   def keep?
-    ENV['BAT_MANIFEST'] == "keep"
+    ENV['BAT_MANIFEST'] == 'keep'
   end
 end
