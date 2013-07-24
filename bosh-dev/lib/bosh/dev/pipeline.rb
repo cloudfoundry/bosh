@@ -72,9 +72,10 @@ module Bosh::Dev
       stemcell_filename_parts << 'light' if light
       stemcell_filename_parts << name
       stemcell_filename_parts << infrastructure.name
+      stemcell_filename_parts << infrastructure.hypervisor unless version == 'latest'
       stemcell_filename_parts << version unless version == 'latest'
 
-      "#{stemcell_filename_parts.join('-')}.tgz"
+      "#{stemcell_filename_parts.compact.join('-')}.tgz"
     end
 
     def s3_url
