@@ -50,7 +50,7 @@ module Bosh::Dev
         end
       end
 
-      Infrastructure::ALL.each do |i|
+      %w[openstack vsphere aws].each do |i|
         context "when infrastructure_name is '#{i}'" do
           let(:infrastructure_name) { i }
 
@@ -79,7 +79,7 @@ module Bosh::Dev
     end
 
     describe '#artifacts_dir' do
-      Infrastructure::ALL.each do |i|
+      %w[openstack vsphere aws].each do |i|
         let(:infrastructure_name) { i }
 
         its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure.name, 'deployments')) }
@@ -87,11 +87,7 @@ module Bosh::Dev
     end
 
     describe '#micro_bosh_deployment_dir' do
-      Infrastructure::ALL.each do |i|
-        let(:infrastructure_name) { i }
-
-        its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, subject.micro_bosh_deployment_name)) }
-      end
+      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, subject.micro_bosh_deployment_name)) }
     end
 
     describe '#micro_bosh_deployment_name' do

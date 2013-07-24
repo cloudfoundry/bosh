@@ -1,8 +1,5 @@
 module Bosh::Dev
   module Infrastructure
-    AWS = 'aws'
-    ALL = %w[openstack vsphere] << AWS
-
     def self.for(name)
       case name
         when 'openstack'
