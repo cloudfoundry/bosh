@@ -1,12 +1,11 @@
 # Copyright (c) 2012 VMware, Inc.
+require 'rspec'
 
-require "rspec"
-
-require "yaml"
-require "stemcell"
-require "release"
-require "deployment"
-require "vm"
+require 'yaml'
+require 'stemcell'
+require 'release'
+require 'deployment'
+require 'vm'
 require 'fileutils'
 
 require 'tempfile'
@@ -14,16 +13,12 @@ require 'common/exec'
 require 'resolv'
 
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
-ASSETS_DIR = File.join(SPEC_ROOT, "assets")
-BAT_RELEASE_DIR = File.join(ASSETS_DIR, "bat-release")
+ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
+BAT_RELEASE_DIR = File.join(ASSETS_DIR, 'bat-release')
 
-helper_regex = File.join(File.expand_path(File.dirname(__FILE__)),"helpers", "*_helper.rb")
-helpers = Dir.glob(helper_regex)
-helpers.each do |helper|
+Dir.glob(File.join(File.expand_path(File.dirname(__FILE__)), 'helpers', '*_helper.rb')).each do |helper|
   require File.expand_path(helper)
 end
-
-BH = BoshHelper
 
 RSpec.configure do |config|
   config.include(BoshHelper)
@@ -35,17 +30,16 @@ RSpec.configure do |config|
 
   # bosh helper isn't available, so it has to be rolled by hand
   config.before(:suite) do
-    director = BH::read_environment('BAT_DIRECTOR')
+    director = BoshHelper.read_environment('BAT_DIRECTOR')
     director.should_not be_nil
-    cmd = "bosh --config #{BH::bosh_cli_config_path} --user admin " +
-      "--password admin target #{director} 2>&1"
-    output = %x{#{cmd}}
+
+    output = %x{bosh --config #{BoshHelper.bosh_cli_config_path} --user admin --password admin target #{director} 2>&1}
     output.should match /Target \w*\s*set/
     $?.exitstatus.should == 0
   end
 
   config.after(:suite) do
-    BH::delete_bosh_cli_config
+    BoshHelper.delete_bosh_cli_config
   end
 
   config.before(:each) do
@@ -73,10 +67,10 @@ RSpec::Matchers.define :succeed_with do |expected|
   end
   failure_message_for_should do |actual|
     if expected.instance_of?(Regexp)
-      what = "match"
+      what = 'match'
       exp = "/#{expected.source}/"
     else
-      what = "be"
+      what = 'be'
       exp = expected
     end
     "expected\n#{actual.output}to #{what}\n#{exp}"

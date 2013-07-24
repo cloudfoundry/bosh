@@ -1,24 +1,24 @@
 # Copyright (c) 2012 VMware, Inc.
 
-require "httpclient"
-require "json"
-require "net/ssh"
-require "zlib"
-require "archive/tar/minitar"
+require 'httpclient'
+require 'json'
+require 'net/ssh'
+require 'zlib'
+require 'archive/tar/minitar'
 
-require "common/exec"
+require 'common/exec'
 
 module BoshHelper
   include Archive::Tar
 
   DEFAULT_POLL_INTERVAL = 1
 
-  def bosh(arguments, options={})
+  def bosh(arguments, options = {})
     poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
     command = "#{bosh_bin} --non-interactive " +
       "-P #{poll_interval} " +
-      "--config #{BH::bosh_cli_config_path} " +
-      "--user admin --password admin " +
+      "--config #{BoshHelper.bosh_cli_config_path} " +
+      '--user admin --password admin ' +
       "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
     begin
@@ -33,7 +33,7 @@ module BoshHelper
   end
 
   def get_vms
-    output = bosh("vms --details").output
+    output = bosh('vms --details').output
     table = output.lines.grep(/\|/)
 
     table = table.map { |line| line.split('|').map(&:strip).reject(&:empty?) }
@@ -50,14 +50,14 @@ module BoshHelper
 
   def wait_for_vm(name)
     5.times do
-      vm = get_vms.detect { |v| v[:job_index] == name }
+      vm = get_vms.find { |v| v[:job_index] == name }
       return vm if vm
     end
     nil
   end
 
   def self.bosh_cli_config_path
-    @bosh_cli_config_tempfile ||= Tempfile.new("bosh_config")
+    @bosh_cli_config_tempfile ||= Tempfile.new('bosh_config')
     @bosh_cli_config_tempfile.path
   end
 
@@ -66,15 +66,15 @@ module BoshHelper
   end
 
   def bosh_bin
-    BH.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
+    BoshHelper.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
   end
 
   def bosh_director
-    BH.read_environment('BAT_DIRECTOR')
+    BoshHelper.read_environment('BAT_DIRECTOR')
   end
 
   def password
-    BH.read_environment('BAT_VCAP_PASSWORD')
+    BoshHelper.read_environment('BAT_VCAP_PASSWORD')
   end
 
   def private_key
@@ -83,8 +83,8 @@ module BoshHelper
 
   def ssh_options
     {
-        private_key: private_key,
-        password: password
+      private_key: private_key,
+      password: password
     }
   end
 
@@ -97,7 +97,7 @@ module BoshHelper
   end
 
   def verbose?
-    ENV["BAT_DEBUG"] == "verbose"
+    ENV['BAT_DEBUG'] == 'verbose'
   end
 
   def fast?
@@ -108,12 +108,12 @@ module BoshHelper
     return @bosh if @bosh
     @bosh = HTTPClient.new
     @bosh.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    @bosh.set_auth(director_url, "admin", "admin")
+    @bosh.set_auth(director_url, 'admin', 'admin')
     @bosh
   end
 
   def jbosh(path)
-    body = http_client.get([director_url, path].join, "application/json").body
+    body = http_client.get([director_url, path].join, 'application/json').body
     JSON.parse(body)
   end
 
@@ -122,39 +122,39 @@ module BoshHelper
   end
 
   def info
-    jbosh("/info")
+    jbosh('/info')
   end
 
   def aws?
-    info["cpi"] == "aws"
+    info['cpi'] == 'aws'
   end
 
   def openstack?
-    info["cpi"] == "openstack"
+    info['cpi'] == 'openstack'
   end
 
   def vsphere?
-    info["cpi"] == "vsphere"
+    info['cpi'] == 'vsphere'
   end
 
   def compiled_package_cache?
-    info["features"] && info["features"]["compiled_package_cache"]
+    info['features'] && info['features']['compiled_package_cache']
   end
 
   def dns?
-    info["features"] && info["features"]["dns"]
+    info['features'] && info['features']['dns']
   end
 
   def bosh_tld
-    info["features"]["dns"]["extras"]["domain_name"] if dns?
+    info['features']['dns']['extras']['domain_name'] if dns?
   end
 
   def tasks_processing?
     # `bosh tasks` exit code is 1 if no tasks running
-    bosh("tasks", :on_error => :return).output =~ /\| processing \|/
+    bosh('tasks', on_error: :return).output =~ /\| processing \|/
   end
 
-  def self.read_environment(variable, default=nil)
+  def self.read_environment(variable, default = nil)
     ENV.fetch(variable) do |v|
       return default if default
       raise "#{v} not set"
@@ -165,8 +165,8 @@ module BoshHelper
     disks = get_json("http://#{host}:4567/disks")
     disks.each do |disk|
       values = disk.last
-      if disk.last["mountpoint"] == "/var/vcap/store"
-        return values["blocks"]
+      if disk.last['mountpoint'] == '/var/vcap/store'
+        return values['blocks']
       end
     end
   end
@@ -174,11 +174,11 @@ module BoshHelper
   # this method will retry a bunch of times, as when it is used to
   # get json from a new batarang job, it may not have started when
   # it we call it
-  def get_json(url, max_times=120)
+  def get_json(url, max_times = 120)
     client = HTTPClient.new
     tries = 0
     begin
-      body = client.get(url, "application/json").body
+      body = client.get(url, 'application/json').body
     rescue Errno::ECONNREFUSED => e
       raise e if tries == max_times
       sleep(1)
@@ -199,7 +199,7 @@ module BoshHelper
     options[:keys] = [private_key] unless private_key.nil?
 
     if options[:keys].nil? && options[:password].nil?
-      raise "need to set ssh :password, :keys, or :private_key"
+      raise 'need to set ssh :password, :keys, or :private_key'
     end
 
     Net::SSH.start(host, user, options) do |ssh|
@@ -211,10 +211,10 @@ module BoshHelper
   end
 
   def tarfile
-    Dir.glob("*.tgz").first
+    Dir.glob('*.tgz').first
   end
 
-  def tar_contents(tgz, entries=false)
+  def tar_contents(tgz, entries = false)
     list = []
     tar = Zlib::GzipReader.open(tgz)
     Minitar.open(tar).each do |entry|

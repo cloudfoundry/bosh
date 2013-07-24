@@ -18,7 +18,7 @@ describe 'initialization', :skip_task_check do
 
     describe 'requirements' do
       it 'should have bosh cli installed' do
-        %x{#{bosh_bin} --version}.should match %r{BOSH \d+\.\d+}
+        %x{#{bosh_bin} --version}.should match /BOSH \d+\.\d+/
       end
 
       it 'should have a readable stemcell' do
