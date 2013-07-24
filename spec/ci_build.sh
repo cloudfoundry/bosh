@@ -14,4 +14,4 @@ fi
 
 bundle install --without development --local --path tmp/ruby
 
-bundle exec rake --trace $@
+bundle exec rake --trace ci:setup:rspec $@

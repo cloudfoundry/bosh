@@ -1,10 +1,10 @@
 namespace :ci do
   namespace :run do
     desc 'Meta task to run spec:unit and rubocop'
-    task unit: %w(ci:setup:rspec spec:unit rubocop)
+    task unit: %w(rubocop spec:unit)
 
     desc 'Meta task to run spec:integration'
-    task integration: %w(ci:setup:rspec spec:integration)
+    task integration: %w(spec:integration)
   end
 
   desc 'Publish CI pipeline gems to S3'
