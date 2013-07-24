@@ -4,8 +4,8 @@ rvm:
   - ruby-1.9.3
   - ruby-2.0.0
 env:
-  - TASKS="rubocop spec:parallel_unit"
-  - TASKS="spec:integration"
+  - TASKS="ci:run:unit"
+  - TASKS="ci:run:integration"
 matrix:
   allow_failures:
     - rvm: ruby-2.0.0
