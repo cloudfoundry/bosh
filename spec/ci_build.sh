@@ -1,6 +1,8 @@
 #!/bin/bash -l
 set -e
 
+env | sort                      # so we know what variables are present.
+
 git clean -df && git checkout . # ensure that any modifications or stray files are removed
 rm -rf .bundle tmp              # Cleanup any left over gems and bundler config
 
