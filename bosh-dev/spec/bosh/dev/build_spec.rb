@@ -118,6 +118,7 @@ module Bosh::Dev
       end
       let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
       let(:fake_stemcell) { instance_double('Bosh::Dev::Stemcell') }
+      let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure')}
 
       before(:all) do
         Fog.mock!
@@ -125,6 +126,8 @@ module Bosh::Dev
 
       before do
         Fog::Mock.reset
+
+        Infrastructure.stub(:for).with('aws').and_return(infrastructure)
 
         fake_pipeline.stub(:download_stemcell)
         fake_pipeline.stub(:stemcell_filename)
@@ -139,14 +142,14 @@ module Bosh::Dev
 
       it 'downloads the aws micro-bosh-stemcell for the current build' do
         fake_pipeline.should_receive(:download_stemcell).
-            with('123', infrastructure: 'aws', name: 'micro-bosh-stemcell', light: true)
+            with('123', infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end
 
       it 'initializes a Stemcell with the downloaded stemcell filename' do
         fake_pipeline.should_receive(:stemcell_filename).
-            with('123', 'aws', 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
+            with('123',  infrastructure, 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
 
         Bosh::Dev::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 

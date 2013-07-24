@@ -30,7 +30,7 @@ module Bosh::Dev
     end
 
     def publish_stemcell(stemcell)
-      latest_filename = stemcell_filename('latest', stemcell.infrastructure, stemcell.name, stemcell.light?)
+      latest_filename = stemcell_filename('latest', Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
       s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
 
       s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
@@ -54,7 +54,7 @@ module Bosh::Dev
       filename = stemcell_filename(version, infrastructure, name, light)
       bucket_files = fog_storage.directories.get(bucket).files
 
-      remote_path = File.join(build_id, name, infrastructure, filename)
+      remote_path = File.join(build_id, name, infrastructure.name, filename)
       raise "remote stemcell '#{filename}' not found" unless  bucket_files.head(remote_path)
 
       File.open(filename, 'w') do |file|
@@ -66,12 +66,12 @@ module Bosh::Dev
       logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
     end
 
-    def stemcell_filename(version, infrastructure_name, name, light)
+    def stemcell_filename(version, infrastructure, name, light)
       stemcell_filename_parts = []
       stemcell_filename_parts << version if version == 'latest'
       stemcell_filename_parts << 'light' if light
       stemcell_filename_parts << name
-      stemcell_filename_parts << infrastructure_name
+      stemcell_filename_parts << infrastructure.name
       stemcell_filename_parts << version unless version == 'latest'
 
       "#{stemcell_filename_parts.join('-')}.tgz"
@@ -82,16 +82,16 @@ module Bosh::Dev
     end
 
     def bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, stemcell_filename(build_id, infrastructure.name, 'bosh-stemcell', infrastructure.light?))
+      File.join(workspace_dir, stemcell_filename(build_id, infrastructure, 'bosh-stemcell', infrastructure.light?))
     end
 
     def micro_bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, stemcell_filename(build_id, infrastructure.name, 'micro-bosh-stemcell', infrastructure.light?))
+      File.join(workspace_dir, stemcell_filename(build_id, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
     end
 
     def fetch_stemcells(infrastructure)
-      download_stemcell(build_id, infrastructure: infrastructure.name, name: 'micro-bosh-stemcell', light: infrastructure.light?)
-      download_stemcell(build_id, infrastructure: infrastructure.name, name: 'bosh-stemcell', light: infrastructure.light?)
+      download_stemcell(build_id, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?)
+      download_stemcell(build_id, infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?)
     end
 
     def cleanup_stemcells
