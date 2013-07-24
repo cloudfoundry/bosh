@@ -1,6 +1,7 @@
 #!/bin/bash --login
-
 set -e
+
+env | sort                      # so we know what variables are present.
 
 rm -f *.tgz
 
