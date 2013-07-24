@@ -19,15 +19,18 @@ module Bosh::Dev
   describe Infrastructure::OpenStack do
     its(:name) { should eq('openstack') }
     it { should_not be_light }
+    its(:hypervisor) { should eq('kvm') }
   end
 
   describe Infrastructure::Aws do
     its(:name) { should eq('aws') }
     it { should be_light }
+    its(:hypervisor) { should be_nil }
   end
 
   describe Infrastructure::Vsphere do
     its(:name) { should eq('vsphere') }
     it { should_not be_light }
+    its(:hypervisor) { should be_nil }
   end
 end

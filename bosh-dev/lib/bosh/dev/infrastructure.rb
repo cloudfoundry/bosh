@@ -16,9 +16,10 @@ module Bosh::Dev
     class Base
       attr_reader :name
 
-      def initialize(name, supports_light_stemcell=false)
-        @name = name
-        @supports_light_stemcell = supports_light_stemcell
+      def initialize(options={})
+        @name = options.fetch(:name)
+        @supports_light_stemcell = options.fetch(:supports_light_stemcell, false)
+        @hypervisor = options.fetch(:hypervisor, nil)
       end
 
       def run_system_micro_tests
@@ -28,23 +29,27 @@ module Bosh::Dev
       def light?
         @supports_light_stemcell
       end
+
+      def hypervisor
+        @hypervisor
+      end
     end
 
     class OpenStack < Base
       def initialize
-        super('openstack')
+        super(name: 'openstack', hypervisor: 'kvm')
       end
     end
 
     class Vsphere < Base
       def initialize
-        super('vsphere')
+        super(name: 'vsphere')
       end
     end
 
     class Aws < Base
       def initialize
-        super('aws', true)
+        super(name: 'aws', supports_light_stemcell: true)
       end
     end
   end
