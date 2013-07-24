@@ -23,7 +23,7 @@ fog.loop(REGIONS) do |region, server|
 end
 
 begin
-  File.open(config_file, "w") do |file|
+  File.open(config_file, 'w') do |file|
     Psych.dump(config, file)
   end
 rescue => e

@@ -4,7 +4,6 @@ AllCops:
     - Rakefile
   Excludes:
    - bin/**
-   - aws/**
    - bat/**
    - blobstore_client/**
    - bosh_agent/**
@@ -29,6 +28,9 @@ AllCops:
    - spec/**
    - stemcell_builder/**
    - vendor/**
+
+Encoding:
+  Enabled: false
 
 LineLength:
   Max: 119

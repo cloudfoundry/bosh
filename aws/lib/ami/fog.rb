@@ -5,16 +5,16 @@ module Bosh::Ami
   class Fog
 
     BOOTSTRAP_OPTIONS = {
-        :flavor_id => 'm1.small', # 64 bit, normal medium
-        :bits => 64,
-        :username => 'ubuntu'
+      flavor_id: 'm1.small', # 64 bit, normal medium
+      bits: 64,
+      username: 'ubuntu'
     }
 
-    BOSH_SG = "bosh"
-    ANY = {:cidr_ip => '0.0.0.0/0'}
+    BOSH_SG = 'bosh'
+    ANY = { cidr_ip: '0.0.0.0/0' }
 
     AWS_OPTIONS = {
-        :provider => "AWS"
+      provider: 'AWS'
     }
 
     def initialize(config)
@@ -53,7 +53,7 @@ module Bosh::Ami
 
     # adds a new security group called "bosh"
     def add_bosh_sg
-      sg = @fog.security_groups.new(:name => BOSH_SG, :description => BOSH_SG)
+      sg = @fog.security_groups.new(name: BOSH_SG, description: BOSH_SG)
       sg.save
       sg.authorize_port_range(22..22, ANY)
       sg.authorize_port_range(6868..6868, ANY) # agent http interface
@@ -71,16 +71,16 @@ module Bosh::Ami
         end
       end
 
-      printf("  creating instance ")
+      printf('  creating instance ')
       # until https://github.com/fog/fog/pull/1095 is in a released version
       # we need to monkey patch the default ami selection
-      @bootstrap[:image_id] = "ami-d0429ccd" if region == "sa-east-1"
+      @bootstrap[:image_id] = 'ami-d0429ccd' if region == 'sa-east-1'
       @bootstrap[:groups] = [BOSH_SG]
 
       server = @fog.servers.bootstrap(@bootstrap)
       @hosts[region] = {
-          :id => server.id,
-          :name => server.dns_name
+        id: server.id,
+        name: server.dns_name
       }
 
       puts server.id
