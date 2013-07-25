@@ -65,7 +65,7 @@ module Bosh::Cli
         @cache.write(cache_key, manifest_yaml)
       end
 
-      manifest = YAML.load(manifest_yaml)
+      manifest = Psych.load(manifest_yaml)
 
       step("Stemcell properties",
            "Manifest should contain valid name, " +
@@ -90,8 +90,8 @@ module Bosh::Cli
       say("\nStemcell info")
       say("-------------")
 
-      say("Name:    %s" % [manifest["name"] || "missing".red])
-      say("Version: %s" % [manifest["version"] || "missing".red])
+      say("Name:    %s" % [manifest["name"] || "missing".make_red])
+      say("Version: %s" % [manifest["version"] || "missing".make_red])
     end
   end
 end

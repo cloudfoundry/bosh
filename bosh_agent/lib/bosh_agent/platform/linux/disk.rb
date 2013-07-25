@@ -1,7 +1,4 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'bosh_agent/platform/linux'
-
-require 'retryable'
 
 module Bosh::Agent
   class Platform::Linux::Disk
@@ -34,18 +31,13 @@ module Bosh::Agent
       case @config.infrastructure_name
         when "vsphere"
           VSPHERE_DATA_DISK
-        when "aws"
+        when "aws", "openstack"
           settings = @config.settings
           dev_path = settings['disks']['ephemeral']
           unless dev_path
-            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
-          end
-          get_available_path(dev_path)
-        when "openstack"
-          settings = @config.settings
-          dev_path = settings['disks']['ephemeral']
-          unless dev_path
-            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk" if @config.infrastructure_name == "aws"
+            @logger.warn("No ephemeral disk set, using root device for BOSH agent data!!!")
+            return nil
           end
           get_available_path(dev_path)
         when "warden"
@@ -66,11 +58,8 @@ module Bosh::Agent
         when "vsphere"
           # VSphere passes in scsi disk id
           get_available_scsi_path(disk_id)
-        when "aws"
-          # AWS passes in the device name
-          get_available_path(disk_id)
-        when "openstack"
-          # OpenStack passes in the device name
+        when "aws", "openstack"
+          # AWS & OpenStack pass in the device name
           get_available_path(disk_id)
         when "warden"
           # Warden directly stores the device path
@@ -120,7 +109,7 @@ module Bosh::Agent
     def get_available_scsi_path(disk_id)
       rescan_scsi_bus
       blockdev = nil
-      Retryable.retryable(:tries=> @disk_retry_timeout, :on => Bosh::Agent::DiskNotFoundError, :sleep => lambda{|n| [2**(n-1), 10].min }) do
+      Bosh::Common.retryable(tries: @disk_retry_timeout, on: Bosh::Agent::DiskNotFoundError) do
         blockdev = detect_block_device(disk_id)
       end
       File.join('/dev', blockdev)

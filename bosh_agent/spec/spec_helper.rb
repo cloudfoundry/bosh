@@ -11,6 +11,7 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 require "httpclient"
+require 'timecop'
 
 tmpdir = Dir.mktmpdir
 ENV["TMPDIR"] = tmpdir
@@ -49,6 +50,7 @@ def setup_directories
   sys_root = File.join(tmpdir, "system_root")
 
   FileUtils.mkdir_p(base_dir)
+  FileUtils.mkdir_p(File.join(base_dir, "packages"))
   FileUtils.mkdir_p(sys_root)
 
   Bosh::Agent::Config.system_root = sys_root

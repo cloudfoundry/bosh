@@ -21,7 +21,6 @@ module Bosh::HealthMonitor
           raise InvalidEvent, "Cannot create event from #{attributes.class}"
         end
 
-        # TODO: add dynamic register/lookup?
         case kind.to_s
         when "heartbeat"
           klass = Bhm::Events::Heartbeat

@@ -4,7 +4,7 @@ describe Bosh::HealthMonitor::TsdbConnection do
   describe "exponential back off" do
     context "when the initial connection fails" do
       let(:tsdb_connection) { Bosh::HealthMonitor::TsdbConnection.new("signature", "127.0.0.1", 80) }
-      let(:fake_logger) { mock("fake_logger").as_null_object }
+      let(:fake_logger) { double("fake_logger").as_null_object }
 
       before do
         Bhm.should_receive(:logger).and_return(fake_logger)

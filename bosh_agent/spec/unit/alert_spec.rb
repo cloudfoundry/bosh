@@ -9,7 +9,7 @@ describe Bosh::Agent::Alert do
     state_file.close
 
     @logger   = Logger.new(StringIO.new)
-    @nats     = mock()
+    @nats     = double
     @agent_id = "zb-agent"
     @state    = Bosh::Agent::State.new(state_file.path)
 
@@ -108,14 +108,14 @@ describe Bosh::Agent::Alert do
     alert = make_alert
 
     3.times do |i|
-      alert.stub!(:severity).and_return(5 + i)
+      alert.stub(:severity).and_return(5 + i)
 
       EM.should_not_receive(:add_timer)
       alert.should_not_receive(:send_via_mbus)
       alert.register
     end
 
-    alert.stub!(:severity).and_return(-1)
+    alert.stub(:severity).and_return(-1)
 
   end
 

@@ -13,12 +13,13 @@ describe Bosh::Director::ApiController do
     FileUtils.mkdir_p(@blobstore_dir)
     FileUtils.mkdir_p(@temp_dir)
 
-    test_config = YAML.load(spec_asset('test-director-config.yml'))
+    test_config = Psych.load(spec_asset('test-director-config.yml'))
     test_config['dir'] = @temp_dir
     test_config['blobstore'] = {
         'provider' => 'local',
         'options' => {'blobstore_path' => @blobstore_dir}
     }
+    test_config["snapshots"]["enabled"] = true
     BD::Config.configure(test_config)
     basic_authorize 'admin', 'admin'
   end
@@ -28,8 +29,8 @@ describe Bosh::Director::ApiController do
   end
 
   def app
-    @manager = mock(BD::Api::ResourceManager)
-    BD::Api::ResourceManager.stub!(:new).and_return(@manager)
+    @manager = double(BD::Api::ResourceManager)
+    BD::Api::ResourceManager.stub(:new).and_return(@manager)
     Bosh::Director::ApiController.new
   end
 
@@ -67,8 +68,30 @@ describe Bosh::Director::ApiController do
         },
         'compiled_package_cache' => {
           'status' => true,
+          'extras' => {
+            'provider' => 'local'
+          }
+        },
+        'snapshots' => {
+          'status' => true
         }
       }
     }
   end
+
+  #context 'backup' do
+  #  it 'triggers the backup job' do
+  #    task = BD::Models::Task.make
+  #    backup_manager = double(BD::Api::BackupManager, task: task)
+  #    BD::Api::BackupManager.should_receive(:run!).and_return(backup_manager)
+  #
+  #    post '/backup'
+  #  end
+  #
+  #  it 'redirects to the related task' do
+  #    post '/backup'
+  #
+  #    expect(last_response).to be_redirect
+  #  end
+  #end
 end

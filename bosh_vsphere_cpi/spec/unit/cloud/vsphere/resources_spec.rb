@@ -6,12 +6,12 @@ describe VSphereCloud::Resources do
 
   describe :datacenters do
     it "should fetch the datacenters the first time" do
-      vcenter_config = mock(:vcenter_config)
+      vcenter_config = double(:vcenter_config)
       VSphereCloud::Config.vcenter = vcenter_config
-      dc_config = mock(:dc_config)
+      dc_config = double(:dc_config)
       dc_config.stub(:name).and_return("foo")
       vcenter_config.stub(:datacenters).and_return({"foo" => dc_config})
-      dc = mock(:dc)
+      dc = double(:dc)
       VSphereCloud::Resources::Datacenter.should_receive(:new).with(dc_config).
           once.and_return(dc)
 
@@ -20,12 +20,12 @@ describe VSphereCloud::Resources do
     end
 
     it "should use cached datacenters" do
-      vcenter_config = mock(:vcenter_config)
+      vcenter_config = double(:vcenter_config)
       VSphereCloud::Config.vcenter = vcenter_config
-      dc_config = mock(:dc_config)
+      dc_config = double(:dc_config)
       dc_config.stub(:name).and_return("foo")
       vcenter_config.stub(:datacenters).and_return({"foo" => dc_config})
-      dc = mock(:dc)
+      dc = double(:dc)
       VSphereCloud::Resources::Datacenter.should_receive(:new).with(dc_config).
           once.and_return(dc)
 
@@ -35,12 +35,12 @@ describe VSphereCloud::Resources do
     end
 
     it "should flush stale cached datacenters" do
-      vcenter_config = mock(:vcenter_config)
+      vcenter_config = double(:vcenter_config)
       VSphereCloud::Config.vcenter = vcenter_config
-      dc_config = mock(:dc_config)
+      dc_config = double(:dc_config)
       dc_config.stub(:name).and_return("foo")
       vcenter_config.stub(:datacenters).and_return({"foo" => dc_config})
-      dc = mock(:dc)
+      dc = double(:dc)
       VSphereCloud::Resources::Datacenter.should_receive(:new).with(dc_config).
           twice.and_return(dc)
 
@@ -55,10 +55,10 @@ describe VSphereCloud::Resources do
 
   describe :persistent_datastore do
     it "should return the persistent datastore" do
-      dc = mock(:dc)
-      cluster = mock(:cluster)
+      dc = double(:dc)
+      cluster = double(:cluster)
       dc.stub(:clusters).and_return({"bar" => cluster})
-      datastore = mock(:datastore)
+      datastore = double(:datastore)
       cluster.stub(:persistent).with("baz").and_return(datastore)
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
@@ -69,10 +69,10 @@ describe VSphereCloud::Resources do
 
   describe :validate_persistent_datastore do
     it "should return true if the provided datastore is still persistent" do
-      dc = mock(:dc)
-      cluster = mock(:cluster)
+      dc = double(:dc)
+      cluster = double(:cluster)
       dc.stub(:clusters).and_return({"bar" => cluster})
-      datastore = mock(:datastore)
+      datastore = double(:datastore)
       cluster.stub(:persistent).with("baz").and_return(datastore)
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
@@ -80,8 +80,8 @@ describe VSphereCloud::Resources do
     end
 
     it "should return false if the provided datastore is not persistent" do
-      dc = mock(:dc)
-      cluster = mock(:cluster)
+      dc = double(:dc)
+      cluster = double(:cluster)
       dc.stub(:clusters).and_return({"bar" => cluster})
       cluster.stub(:persistent).with("baz").and_return(nil)
       resources = VSphereCloud::Resources.new
@@ -92,10 +92,10 @@ describe VSphereCloud::Resources do
 
   describe :place_persistent_datastore do
     it "should return the datastore when it was placed successfully" do
-      dc = mock(:dc)
-      cluster = mock(:cluster)
+      dc = double(:dc)
+      cluster = double(:cluster)
       dc.stub(:clusters).and_return({"bar" => cluster})
-      datastore = mock(:datastore)
+      datastore = double(:datastore)
       datastore.should_receive(:allocate).with(1024)
       cluster.should_receive(:pick_persistent).with(1024).and_return(datastore)
       resources = VSphereCloud::Resources.new
@@ -105,8 +105,8 @@ describe VSphereCloud::Resources do
     end
 
     it "should return nil when it wasn't placed successfully" do
-      dc = mock(:dc)
-      cluster = mock(:cluster)
+      dc = double(:dc)
+      cluster = double(:cluster)
       dc.stub(:clusters).and_return({"bar" => cluster})
       cluster.should_receive(:pick_persistent).with(1024).and_return(nil)
       resources = VSphereCloud::Resources.new
@@ -118,16 +118,16 @@ describe VSphereCloud::Resources do
 
   describe :place do
     it "should allocate memory and ephemeral disk space" do
-      dc = mock(:dc)
-      cluster = mock(:cluster)
+      dc = double(:dc)
+      cluster = double(:cluster)
       dc.stub(:clusters).and_return({"bar" => cluster})
-      datastore = mock(:datastore)
+      datastore = double(:datastore)
       cluster.stub(:name).and_return("bar")
       cluster.stub(:persistent).with("baz").and_return(datastore)
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
 
-      scorer = mock(:scorer)
+      scorer = double(:scorer)
       scorer.should_receive(:score).and_return(4)
       VSphereCloud::Resources::Scorer.should_receive(:new).
           with(cluster, 512, 1024, []).and_return(scorer)
@@ -140,17 +140,17 @@ describe VSphereCloud::Resources do
     end
 
     it "should prioritize persistent locality" do
-      dc = mock(:dc)
-      cluster_a = mock(:cluster_a)
-      cluster_b = mock(:cluster_b)
+      dc = double(:dc)
+      cluster_a = double(:cluster_a)
+      cluster_b = double(:cluster_b)
       dc.stub(:clusters).and_return({"a" => cluster_a, "b" => cluster_b})
 
-      datastore_a = mock(:datastore_a)
+      datastore_a = double(:datastore_a)
       cluster_a.stub(:name).and_return("ds_a")
       cluster_a.stub(:persistent).with("ds_a").and_return(datastore_a)
       cluster_a.stub(:persistent).with("ds_b").and_return(nil)
 
-      datastore_b = mock(:datastore_b)
+      datastore_b = double(:datastore_b)
       cluster_b.stub(:name).and_return("ds_b")
       cluster_b.stub(:persistent).with("ds_a").and_return(nil)
       cluster_b.stub(:persistent).with("ds_b").and_return(datastore_b)
@@ -158,7 +158,7 @@ describe VSphereCloud::Resources do
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
 
-      scorer_b = mock(:scorer_a)
+      scorer_b = double(:scorer_a)
       scorer_b.should_receive(:score).and_return(4)
       VSphereCloud::Resources::Scorer.should_receive(:new).
           with(cluster_b, 512, 1024, [2048]).and_return(scorer_b)
@@ -175,17 +175,17 @@ describe VSphereCloud::Resources do
     end
 
     it "should ignore locality when there is no space" do
-      dc = mock(:dc)
-      cluster_a = mock(:cluster_a)
-      cluster_b = mock(:cluster_b)
+      dc = double(:dc)
+      cluster_a = double(:cluster_a)
+      cluster_b = double(:cluster_b)
       dc.stub(:clusters).and_return({"a" => cluster_a, "b" => cluster_b})
 
-      datastore_a = mock(:datastore_a)
+      datastore_a = double(:datastore_a)
       cluster_a.stub(:name).and_return("ds_a")
       cluster_a.stub(:persistent).with("ds_a").and_return(datastore_a)
       cluster_a.stub(:persistent).with("ds_b").and_return(nil)
 
-      datastore_b = mock(:datastore_b)
+      datastore_b = double(:datastore_b)
       cluster_b.stub(:name).and_return("ds_b")
       cluster_b.stub(:persistent).with("ds_a").and_return(nil)
       cluster_b.stub(:persistent).with("ds_b").and_return(datastore_b)
@@ -193,12 +193,12 @@ describe VSphereCloud::Resources do
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
 
-      scorer_a = mock(:scorer_a)
+      scorer_a = double(:scorer_a)
       scorer_a.should_receive(:score).twice.and_return(0)
       VSphereCloud::Resources::Scorer.should_receive(:new).
           with(cluster_a, 512, 1024, []).twice.and_return(scorer_a)
 
-      scorer_b = mock(:scorer_b)
+      scorer_b = double(:scorer_b)
       scorer_b.should_receive(:score).and_return(4)
       VSphereCloud::Resources::Scorer.should_receive(:new).
           with(cluster_b, 512, 1024, [2048]).and_return(scorer_b)

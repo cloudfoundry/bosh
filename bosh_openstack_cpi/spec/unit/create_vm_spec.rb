@@ -5,7 +5,7 @@ require "spec_helper"
 
 describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
-  def agent_settings(unique_name, network_spec = dynamic_network_spec)
+  def agent_settings(unique_name, network_spec = dynamic_network_spec, ephemeral = "/dev/sdb")
     {
       "vm" => {
         "name" => "vm-#{unique_name}"
@@ -13,8 +13,8 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       "agent_id" => "agent-id",
       "networks" => { "network_a" => network_spec },
       "disks" => {
-        "system" => "/dev/vda",
-        "ephemeral" => "/dev/vdb",
+        "system" => "/dev/sda",
+        "ephemeral" => ephemeral,
         "persistent" => {}
       },
       "env" => {
@@ -25,7 +25,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }
   end
 
-  def openstack_params(unique_name, user_data, security_groups=[], nics=[])
+  def openstack_params(unique_name, security_groups = [], nics = [], nameserver = nil)
     {
       :name => "vm-#{unique_name}",
       :image_ref => "sc-id",
@@ -33,37 +33,49 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       :key_name => "test_key",
       :security_groups => security_groups,
       :nics => nics,
-      :user_data => Yajl::Encoder.encode(user_data),
+      :user_data => Yajl::Encoder.encode(user_data(unique_name, nameserver, false)),
+      :personality => [ { "path" => "/var/vcap/bosh/user_data.json",
+                          "contents" => Yajl::Encoder.encode(user_data(unique_name, nameserver, true))} ],
       :availability_zone => "foobar-1a"
     }
   end
 
+  def user_data(unique_name, nameserver = nil, openssh = false)
+    user_data = {
+      "registry" => {
+          "endpoint" => "http://registry:3333"
+      },
+      "server" => {
+          "name" => "vm-#{unique_name}"
+      }
+    }
+    user_data["openssh"] = { "public_key" => "public openssh key" } if openssh
+    user_data["dns"] = { "nameserver" => [nameserver] } if nameserver
+    user_data
+  end
+
+  let(:unique_name) { SecureRandom.uuid }
+  let(:server) { double("server", :id => "i-test", :name => "i-test") }
+  let(:image) { double("image", :id => "sc-id", :name => "sc-id") }
+  let(:flavor) { double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :ephemeral => 2) }
+  let(:key_pair) { double("key_pair", :id => "k-test", :name => "test_key",
+                   :fingerprint => "00:01:02:03:04", :public_key => "public openssh key") }
+  
   before(:each) do
     @registry = mock_registry
   end
 
   it "creates an OpenStack server and polls until it's ready" do
-    unique_name = SecureRandom.uuid
-    user_data = {
-      "registry" => {
-        "endpoint" => "http://registry:3333"
-      },
-      "server" => {
-        "name" => "vm-#{unique_name}"
-      }
-    }
-    server = double("server", :id => "i-test", :name => "i-test")
-    image = double("image", :id => "sc-id", :name => "sc-id")
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => "i-test")
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, %w[default], [])).
-          and_return(server)
+          with(openstack_params(unique_name, %w[default], [])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:each).and_yield(address)
     end
 
@@ -82,33 +94,18 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "passes dns servers in server user data when present" do
-    unique_name = SecureRandom.uuid
-
-    user_data = {
-        "registry" => {
-          "endpoint" => "http://registry:3333"
-        },
-        "server" => {
-          "name" => "vm-#{unique_name}"
-        },
-        "dns" => {
-          "nameserver" => ["1.2.3.4"]
-        }
-    }
     network_spec = dynamic_network_spec
     network_spec["dns"] = ["1.2.3.4"]
-    server = double("server", :id => "i-test", :name => "i-test")
-    image = double("image", :id => "sc-id", :name => "sc-id")
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => "i-test")
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, %w[default], [])).
-          and_return(server)
+          with(openstack_params(unique_name, %w[default], [], "1.2.3.4")).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:each).and_yield(address)
     end
 
@@ -127,31 +124,20 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server with security groups" do
-    unique_name = SecureRandom.uuid
-    user_data = {
-      "registry" => {
-        "endpoint" => "http://registry:3333"
-      },
-      "server" => {
-        "name" => "vm-#{unique_name}"
-      }
-    }
     security_groups = %w[bar foo]
     network_spec = dynamic_network_spec
     network_spec["cloud_properties"] ||= {}
     network_spec["cloud_properties"]["security_groups"] = security_groups
-    server = double("server", :id => "i-test", :name => "i-test")
-    image = double("image", :id => "sc-id", :name => "sc-id")
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => nil)
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, security_groups, [])).
-          and_return(server)
+          with(openstack_params(unique_name, security_groups, [])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(security_groups)
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:each).and_yield(address)
     end
 
@@ -169,18 +155,6 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server with nic for dynamic network" do
-    unique_name = SecureRandom.uuid
-    user_data = {
-      "registry" => {
-        "endpoint" => "http://registry:3333"
-      },
-      "server" => {
-        "name" => "vm-#{unique_name}"
-      }
-    }
-    server = double("server", :id => "i-test", :name => "i-test")
-    image = double("image", :id => "sc-id", :name => "sc-id")
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => nil)
     nic = { "net_id" => "foo" }
@@ -190,10 +164,11 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, %w[default], [nic])).
-          and_return(server)
+          with(openstack_params(unique_name, %w[default], [nic])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:each).and_yield(address)
     end
 
@@ -211,18 +186,6 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server with nic for manual network" do
-    unique_name = SecureRandom.uuid
-    user_data = {
-      "registry" => {
-        "endpoint" => "http://registry:3333"
-      },
-      "server" => {
-        "name" => "vm-#{unique_name}"
-      }
-    }
-    server = double("server", :id => "i-test", :name => "i-test")
-    image = double("image", :id => "sc-id", :name => "sc-id")
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => nil)
     nic = { "net_id" => "foo", "v4_fixed_ip" => "10.0.0.5" }
@@ -233,10 +196,11 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, %w[default], [nic])).
-          and_return(server)
+          with(openstack_params(unique_name, %w[default], [nic])).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:each).and_yield(address)
     end
 
@@ -254,16 +218,15 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "associates server with floating ip if vip network is provided" do
-    server = double("server", :id => "i-test", :name => "i-test")
-    image = double("image", :id => "sc-id", :name => "sc-id")
-    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => "i-test")
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:find).and_return(address)
     end
 
@@ -276,6 +239,50 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     vm_id = cloud.create_vm("agent-id", "sc-id",
                             resource_pool_spec,
                             combined_network_spec)
+  end
+
+  it "raises a Retryable Error when cannot create an OpenStack server" do
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:create).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
+      openstack.images.should_receive(:find).and_return(image)
+      openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
+    end
+
+    cloud.should_receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
+
+    expect {
+      vm_id = cloud.create_vm("agent-id", "sc-id",
+                              resource_pool_spec,
+                              { "network_a" => dynamic_network_spec },
+                              nil, { "test_env" => "value" })
+    }.to raise_error(Bosh::Clouds::VMCreationFailed)
+  end
+
+  it "raises an error when a security group doesn't exist" do
+    cloud = mock_cloud do |openstack|
+      openstack.security_groups.should_receive(:collect).and_return(%w[foo])
+    end
+
+    expect {
+      cloud.create_vm("agent-id", "sc-id", resource_pool_spec, { "network_a" => dynamic_network_spec },
+                      nil, { "test_env" => "value" })
+    }.to raise_error(Bosh::Clouds::CloudError, "Security group `default' not found")
+  end
+
+  it "raises an error when flavor doesn't have enough ephemeral disk capacity" do
+    flavor = double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :ephemeral => 1)
+    cloud = mock_cloud do |openstack|
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
+      openstack.images.should_receive(:find).and_return(image)
+      openstack.flavors.should_receive(:find).and_return(flavor)
+    end
+
+    expect {
+      cloud.create_vm("agent-id", "sc-id", resource_pool_spec, { "network_a" => dynamic_network_spec },
+                      nil, { "test_env" => "value" })
+    }.to raise_error(Bosh::Clouds::CloudError, "Flavor `m1.tiny' should have at least 2Gb of ephemeral disk")
   end
 
   def volume(zone)

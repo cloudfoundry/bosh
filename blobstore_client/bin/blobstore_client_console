@@ -19,6 +19,7 @@ require "irb"
 require "irb/completion"
 require "ostruct"
 require "optparse"
+require "psych"
 
 @provider = nil
 config_file = nil
@@ -31,10 +32,19 @@ opts_parser.parse!
 
 unless @provider && config_file
   puts opts_parser
+  puts "\nExample config file:"
+  puts <<-YAML
+---
+endpoint: http://1.2.3.4:25250
+user: agent
+password: agent
+bucket: resources
+
+  YAML
   exit(1)
 end
 
-@config = YAML.load_file(config_file)
+@config = Psych.load_file(config_file)
 
 module ConsoleHelpers
   def bsc

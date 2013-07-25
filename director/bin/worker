@@ -26,6 +26,7 @@ opts.parse!(ARGV.dup)
 config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
 config = nil
 
+# Is this code even used anymore?
 if erb
   class ConfigBindingHelper
     attr_reader :index
@@ -41,20 +42,26 @@ if erb
 
   template = ERB.new(File.read(config_file), 0, "%<>-")
   contents = template.result(ConfigBindingHelper.new(index).get_binding)
-  config = YAML.load(contents)
+  config_hash = Psych.load(contents)
+  config = Bosh::Director::Config.load_hash(config_hash)
 else
-  config = YAML.load_file(config_file)
+  config = Bosh::Director::Config.load_file(config_file)
 end
 
-Bosh::Director::Config.configure(config)
+Bosh::Director::App.new(config)
+
+resque_logging = config.hash.fetch('resque', {}).fetch('logging', {})
+resque_log_device = Logger::LogDevice.new(resque_logging.fetch('file', STDOUT))
+resque_logger_level = resque_logging.fetch('level', 'info').upcase
+Resque.logger = Logger.new(resque_log_device)
+Resque.logger.level = Logger.const_get(resque_logger_level)
 
 worker = nil
 queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
 
 begin
   worker = Resque::Worker.new(*queues)
-  worker.verbose = ENV['LOGGING'] || ENV['VERBOSE']
-  worker.very_verbose = ENV['VVERBOSE']
+  worker.term_child = true
 rescue Resque::NoQueueError
   abort "set QUEUE env var, e.g. $ QUEUE=critical,high rake resque:work"
 end

@@ -7,6 +7,8 @@ module Bosh::HealthMonitor
     attr_accessor :intervals
     attr_accessor :mbus
     attr_accessor :event_mbus
+    attr_accessor :agent_manager
+    attr_accessor :event_processor
 
     attr_accessor :http_port, :http_user, :http_password
     attr_accessor :plugins
@@ -17,12 +19,15 @@ module Bosh::HealthMonitor
     def config=(config)
       validate_config(config)
 
-      @logger     = Logging.logger(config["logfile"] || STDOUT)
-      @intervals  = OpenStruct.new(config["intervals"])
-      @director   = Director.new(config["director"])
-      @mbus       = OpenStruct.new(config["mbus"])
+      @logger = Logging.logger(config["logfile"] || STDOUT)
+      @intervals = OpenStruct.new(config["intervals"])
+      @director = Director.new(config["director"])
+      @mbus = OpenStruct.new(config["mbus"])
 
-      @varz = { }
+      @event_processor = EventProcessor.new
+      @agent_manager = AgentManager.new(event_processor)
+
+      @varz = {}
 
       # Interval defaults
       @intervals.prune_events ||= 30
@@ -34,9 +39,9 @@ module Bosh::HealthMonitor
       @intervals.rogue_agent_alert ||= 120
 
       if config["http"].is_a?(Hash)
-        @http_port      = config["http"]["port"]
-        @http_user      = config["http"]["user"]
-        @http_password  = config["http"]["password"]
+        @http_port = config["http"]["port"]
+        @http_user = config["http"]["user"]
+        @http_password = config["http"]["password"]
       end
 
       if config["event_mbus"]
@@ -58,11 +63,9 @@ module Bosh::HealthMonitor
     end
 
     def validate_config(config)
-      if !config.is_a?(Hash)
-        raise ConfigError, "Invalid config format, Hash epxpected, #{config.class} given"
+      unless config.is_a?(Hash)
+        raise ConfigError, "Invalid config format, Hash expected, #{config.class} given"
       end
     end
-
   end
-
 end

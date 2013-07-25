@@ -70,7 +70,6 @@ module Bosh
 
       data = Yajl::Parser.new.parse(decrypted_data)
 
-      # TODO: check if we should verify client_id?
       verify_signature(data)
       decoded_data = decode(data["json_data"])
       verify_session(decoded_data)

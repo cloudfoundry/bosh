@@ -12,6 +12,14 @@ describe Bosh::AwsCloud::TagManager do
     Bosh::AwsCloud::TagManager.tag(instance, 'x'*128, 'y'*256)
   end
 
+  it 'casts key and value to strings' do
+    instance.should_receive(:add_tag).with('key', value: 'value')
+    Bosh::AwsCloud::TagManager.tag(instance, :key, :value)
+
+    instance.should_receive(:add_tag).with('key', value: '8')
+    Bosh::AwsCloud::TagManager.tag(instance, :key, 8)
+  end
+
   it 'should retry tagging when the tagged object is not found' do
     Bosh::AwsCloud::TagManager.stub(:sleep)
 
@@ -24,5 +32,15 @@ describe Bosh::AwsCloud::TagManager do
     end
 
     Bosh::AwsCloud::TagManager.tag(instance, 'key', 'value')
+  end
+
+  it 'should do nothing if key is nil' do
+    instance.should_not_receive(:add_tag)
+    Bosh::AwsCloud::TagManager.tag(instance, nil, 'value')
+  end
+
+  it 'should do nothing if value is nil' do
+    instance.should_not_receive(:add_tag)
+    Bosh::AwsCloud::TagManager.tag(instance, 'key', nil)
   end
 end

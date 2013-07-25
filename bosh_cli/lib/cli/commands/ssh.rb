@@ -2,67 +2,68 @@
 
 module Bosh::Cli::Command
   class Ssh < Base
-    include Bosh::Cli::DeploymentHelper
-
-    SSH_USER_PREFIX = "bosh_"
-    SSH_DSA_PUB = File.expand_path("~/.ssh/id_dsa.pub")
-    SSH_RSA_PUB = File.expand_path("~/.ssh/id_rsa.pub")
+    SSH_USER_PREFIX = 'bosh_'
+    SSH_DSA_PUB = File.expand_path('~/.ssh/id_dsa.pub')
+    SSH_RSA_PUB = File.expand_path('~/.ssh/id_rsa.pub')
 
     # bosh ssh
-    usage "ssh"
-    desc "Execute command or start an interactive session"
-    option "--public_key FILE", "Public key"
-    option "--gateway_host HOST", "Gateway host"
-    option "--gateway_user USER", "Gateway user"
-    option "--default_password PASSWORD",
-           "Use default ssh password (NOT RECOMMENDED)"
+    usage 'ssh'
+    desc 'Execute command or start an interactive session'
+    option '--public_key FILE', 'Public key'
+    option '--gateway_host HOST', 'Gateway host'
+    option '--gateway_user USER', 'Gateway user'
+    option '--default_password PASSWORD',
+           'Use default ssh password (NOT RECOMMENDED)'
     def shell(*args)
       job, index, command = parse_args(args)
+      job_must_exist_in_deployment(job)
+      index = valid_index_for(job, index, integer_index: true)
 
       if command.empty?
-        if index.nil?
-          err("Can't run interactive shell on more than one instance")
-        end
         setup_interactive_shell(job, index)
       else
-        say("Executing `#{command.join(" ")}' on #{job}/#{index}")
+        say("Executing `#{command.join(' ')}' on #{job}/#{index}")
         perform_operation(:exec, job, index, command)
       end
     end
 
     # bosh scp
-    usage "scp"
-    desc "upload/download the source file to the given job. " +
-         "Note: for download /path/to/destination is a directory"
-    option "--download", "Download file"
-    option "--upload", "Upload file"
-    option "--public_key FILE", "Public key"
-    option "--gateway_host HOST", "Gateway host"
-    option "--gateway_user USER", "Gateway user"
+    usage 'scp'
+    desc 'upload/download the source file to the given job. ' +
+             'Note: for download /path/to/destination is a directory'
+    option '--download', 'Download file'
+    option '--upload', 'Upload file'
+    option '--public_key FILE', 'Public key'
+    option '--gateway_host HOST', 'Gateway host'
+    option '--gateway_user USER', 'Gateway user'
     def scp(*args)
       job, index, args = parse_args(args)
       upload = options[:upload]
       download = options[:download]
       if (upload && download) || (upload.nil? && download.nil?)
-        err("Please specify either --upload or --download")
+        err('Please specify either --upload or --download')
       end
 
+      job_must_exist_in_deployment(job)
+
       if args.size != 2
-        err("Please enter valid source and destination paths")
+        err('Please enter valid source and destination paths')
       end
       say("Executing file operations on job #{job}")
       perform_operation(upload ? :upload : :download, job, index, args)
     end
 
-    usage "cleanup ssh"
-    desc "Cleanup SSH artifacts"
+    usage 'cleanup ssh'
+    desc 'Cleanup SSH artifacts'
     def cleanup(*args)
       job, index, args = parse_args(args)
       if args.size > 0
         err("SSH cleanup doesn't accept any extra args")
       end
+      
+      job_must_exist_in_deployment(job)
 
-      manifest_name = prepare_deployment_manifest["name"]
+      manifest_name = prepare_deployment_manifest['name']
 
       say("Cleaning up ssh artifacts from #{job}/#{index}")
       director.cleanup_ssh(manifest_name, job, "^#{SSH_USER_PREFIX}", [index])
@@ -72,18 +73,18 @@ module Bosh::Cli::Command
 
     def get_salt_charset
       charset = []
-      charset.concat(("a".."z").to_a)
-      charset.concat(("A".."Z").to_a)
-      charset.concat(("0".."9").to_a)
-      charset << "."
-      charset << "/"
+      charset.concat(('a'..'z').to_a)
+      charset.concat(('A'..'Z').to_a)
+      charset.concat(('0'..'9').to_a)
+      charset << '.'
+      charset << '/'
       charset
     end
 
     def encrypt_password(plain_text)
       return unless plain_text
       @salt_charset ||= get_salt_charset
-      salt = ""
+      salt = ''
       8.times do
         salt << @salt_charset[rand(@salt_charset.size)]
       end
@@ -94,11 +95,12 @@ module Bosh::Cli::Command
     # @param [Integer] index
     # @param [optional,String] password
     def setup_ssh(job, index, password = nil)
-      public_key = get_public_key
-      user = SSH_USER_PREFIX + rand(36**9).to_s(36)
-      deployment_name = prepare_deployment_manifest["name"]
+      user = random_ssh_username
+      deployment_name = prepare_deployment_manifest['name']
 
       say("Target deployment is `#{deployment_name}'")
+      nl
+      say('Setting up ssh artifacts')
       status, task_id = director.setup_ssh(
         deployment_name, job, index, user,
         public_key, encrypt_password(password))
@@ -120,24 +122,32 @@ module Bosh::Cli::Command
         end
       end
 
-      if options[:gateway_host]
-        require "net/ssh/gateway"
-        gw_host = options[:gateway_host]
-        gw_user = options[:gateway_user] || ENV["USER"]
-        gateway = Net::SSH::Gateway.new(gw_host, gw_user)
-      else
-        gateway = nil
-      end
-
       begin
+        if options[:gateway_host]
+          require 'net/ssh/gateway'
+          gw_host = options[:gateway_host]
+          gw_user = options[:gateway_user] || ENV['USER']
+          begin
+            gateway = Net::SSH::Gateway.new(gw_host, gw_user)
+          rescue Net::SSH::AuthenticationFailed
+            err("Authentication failed with gateway #{gw_host} and user #{gw_user}.")
+          end
+        else
+          gateway = nil
+        end
+
         yield sessions, user, gateway
       ensure
         nl
-        say("Cleaning up ssh artifacts")
-        indices = sessions.map { |session| session["index"] }
+        say('Cleaning up ssh artifacts')
+        indices = sessions.map { |session| session['index'] }
         director.cleanup_ssh(deployment_name, job, "^#{user}$", indices)
         gateway.shutdown! if gateway
       end
+    end
+
+    def random_ssh_username
+      SSH_USER_PREFIX + rand(36**9).to_s(36)
     end
 
     # @param [String] job Job name
@@ -148,32 +158,28 @@ module Bosh::Cli::Command
 
       if password.nil?
         password = ask(
-          "Enter password (use it to " +
-          "sudo on remote host): ") { |q| q.echo = "*" }
+          'Enter password (use it to ' +
+              'sudo on remote host): ') { |q| q.echo = '*' }
 
-        err("Please provide ssh password") if password.blank?
+        err('Please provide ssh password') if password.blank?
       end
 
       setup_ssh(job, index, password) do |sessions, user, gateway|
         session = sessions.first
 
-        unless session["status"] == "success" && session["ip"]
+        unless session['status'] == 'success' && session['ip']
           err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
         end
 
         say("Starting interactive shell on job #{job}/#{index}")
 
         if gateway
-          port = gateway.open(session["ip"], 22)
-          ssh_session = fork do
-            exec("ssh #{user}@localhost -p #{port}")
-          end
+          port = gateway.open(session['ip'], 22)
+          ssh_session = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s)
           Process.waitpid(ssh_session)
           gateway.close(port)
         else
-          ssh_session = fork do
-            exec("ssh #{user}@#{session["ip"]}")
-          end
+          ssh_session = Process.spawn('ssh', "#{user}@#{session['ip']}")
           Process.waitpid(ssh_session)
         end
       end
@@ -182,23 +188,23 @@ module Bosh::Cli::Command
     def perform_operation(operation, job, index, args)
       setup_ssh(job, index, nil) do |sessions, user, gateway|
         sessions.each do |session|
-          unless session["status"] == "success" && session["ip"]
+          unless session['status'] == 'success' && session['ip']
             err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
           end
 
-          with_ssh(user, session["ip"], gateway) do |ssh|
+          with_ssh(user, session['ip'], gateway) do |ssh|
             case operation
             when :exec
               nl
-              say("#{job}/#{session["index"]}")
-              say(ssh.exec!(args.join(" ")))
+              say("#{job}/#{session['index']}")
+              say(ssh.exec!(args.join(' ')))
             when :upload
               ssh.scp.upload!(args[0], args[1])
             when :download
               file = File.basename(args[0])
-              path = "#{args[1]}/#{file}.#{job}.#{session["index"]}"
+              path = "#{args[1]}/#{file}.#{job}.#{session['index']}"
               ssh.scp.download!(args[0], path)
-              say("Downloaded file to #{path}".green)
+              say("Downloaded file to #{path}".make_green)
             else
               err("Unknown operation #{operation}")
             end
@@ -207,28 +213,8 @@ module Bosh::Cli::Command
       end
     end
 
-    # @param [Array] args
-    # @return [Array] job, index, command
-    def parse_args(args)
-      job = args.shift
-      err("Please provide job name") if job.nil?
-      job, index = job.split("/", 2)
-
-      if index
-        if index =~ /^\d+$/
-          index = index.to_i
-        else
-          err("Invalid job index, integer number expected")
-        end
-      elsif args[0] =~ /^\d+$/
-        index = args.shift.to_i
-      end
-
-      [job, index, args]
-    end
-
     # @return [String] Public key
-    def get_public_key
+    def public_key
       public_key_path = options[:public_key]
 
       if public_key_path
@@ -247,7 +233,7 @@ module Bosh::Cli::Command
         end
       end
 
-      err("Please specify a public key file")
+      err('Please specify a public key file')
     end
 
     # @param [String] user
@@ -255,11 +241,11 @@ module Bosh::Cli::Command
     # @param [optional, Net::SSH::Gateway] gateway
     # @yield [Net::SSH]
     def with_ssh(user, ip, gateway = nil)
+      require 'net/scp'
       if gateway
         gateway.ssh(ip, user) { |ssh| yield ssh }
       else
-        require "net/ssh"
-        require "net/scp"
+        require 'net/ssh'
         Net::SSH.start(ip, user) { |ssh| yield ssh }
       end
     end

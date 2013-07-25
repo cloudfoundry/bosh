@@ -14,7 +14,7 @@ end
 opts.parse!(ARGV.dup)
 
 config_file ||= ::File.expand_path("../../config/simple_blobstore_server.yml", __FILE__)
-config = YAML.load_file(config_file)
+config = Psych.load_file(config_file)
 
 port = config["port"]
 raise "Invalid port" unless port.kind_of?(Integer)

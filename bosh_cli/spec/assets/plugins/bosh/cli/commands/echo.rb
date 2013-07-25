@@ -35,7 +35,7 @@ module Bosh::Cli::Command
       string = args.shift
       options = parse_options(args)
       if color = options["color"]
-        string = string.send(:colorize, color.to_sym)
+        string = string.send(:make_color, color.to_sym)
       end
       say(string)
     end

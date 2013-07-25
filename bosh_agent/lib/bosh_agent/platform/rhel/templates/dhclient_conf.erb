@@ -21,10 +21,8 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
-<% if @dns -%>
-<% @dns.reverse.each do |server| -%>
+<% dns.reverse.each do |server| -%>
 prepend domain-name-servers <%= server %>;
-<% end -%>
 <% end -%>
 
 #require subnet-mask, domain-name-servers;

@@ -1,25 +1,31 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::Jobs::BaseJob do
 
   before(:each) do
-    BD::Config.stub!(:cloud_options).and_return({})
+    BD::Config.stub(:cloud_options).and_return({})
     @task_dir = Dir.mktmpdir
     @event_log = Bosh::Director::EventLog.new(StringIO.new)
     @logger = Logger.new(StringIO.new)
 
-    Logger.stub!(:new).with("#{@task_dir}/debug").and_return(@logger)
-    Bosh::Director::EventLog.stub!(:new).with("#{@task_dir}/event").
+    Logger.stub(:new).with("#{@task_dir}/debug").and_return(@logger)
+    Bosh::Director::EventLog.stub(:new).with("#{@task_dir}/event").
       and_return(@event_log)
-    @result_file = mock("result-file")
-    Bosh::Director::TaskResultFile.stub!(:new).with("#{@task_dir}/result").
+    @result_file = double("result-file")
+    Bosh::Director::TaskResultFile.stub(:new).with("#{@task_dir}/result").
       and_return(@result_file)
   end
 
+  describe 'described_class.job_type' do
+    it 'should complain that the method is not implemented' do
+      expect { described_class.job_type }.to raise_error(NotImplementedError)
+    end
+  end
+
   it "should set up the task" do
-    test = Class.new(Bosh::Director::Jobs::BaseJob) do
+    testjob_class = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do
         5
       end
@@ -27,7 +33,7 @@ describe Bosh::Director::Jobs::BaseJob do
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir)
 
-    test.perform(1)
+    testjob_class.perform(1)
 
     task.refresh
     task.state.should == "done"
@@ -37,9 +43,8 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should pass on the rest of the arguments to the actual job" do
-    test = Class.new(Bosh::Director::Jobs::BaseJob) do
+    testjob_class = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :initialize do |*args|
-        super(*args)
         @args = args
       end
 
@@ -50,7 +55,7 @@ describe Bosh::Director::Jobs::BaseJob do
 
     task = Bosh::Director::Models::Task.make(:output => @task_dir)
 
-    test.perform(1, "a", [:b], {:c => 5})
+    testjob_class.perform(1, "a", [:b], {:c => 5})
 
     task.refresh
     task.state.should == "done"
@@ -58,7 +63,7 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should record the error when there is an exception" do
-    test = Class.new(Bosh::Director::Jobs::BaseJob) do
+    testjob_class = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do
         raise "test"
       end
@@ -66,7 +71,7 @@ describe Bosh::Director::Jobs::BaseJob do
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir)
 
-    test.perform(1)
+    testjob_class.perform(1)
 
     task.refresh
     task.state.should == "error"
@@ -74,32 +79,30 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should raise an exception when the task was not found" do
-    test = Class.new(Bosh::Director::Jobs::BaseJob) do
+    testjob_class = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do
         fail
       end
     end
 
-    lambda { test.perform(1) }.should raise_exception(Bosh::Director::TaskNotFound)
+    expect { testjob_class.perform(1) }.to raise_exception(Bosh::Director::TaskNotFound)
   end
 
   it "should cancel task" do
-    test = Class.new(Bosh::Director::Jobs::BaseJob)
     task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir,
                                              :state => "cancelling")
 
-    test.perform(1)
+    described_class.perform(1)
     task.refresh
     task.state.should == "cancelled"
     Bosh::Director::Config.logger.should eql(@logger)
   end
 
   it "should cancel timeout-task" do
-    test = Class.new(Bosh::Director::Jobs::BaseJob)
     task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir,
                                              :state => "timeout")
 
-    test.perform(1)
+    described_class.perform(1)
     task.refresh
     task.state.should == "cancelled"
     Bosh::Director::Config.logger.should eql(@logger)

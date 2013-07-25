@@ -4,6 +4,7 @@ module Bosh::Cli
   module Command
     class Base
       extend Bosh::Cli::CommandDiscovery
+      include Bosh::Cli::DeploymentHelper
 
       attr_accessor :options
       attr_reader :work_dir
@@ -17,8 +18,9 @@ module Bosh::Cli
       DEFAULT_DIRECTOR_PORT = 25555
 
       # @param [Bosh::Cli::Runner] runner
-      def initialize(runner = nil)
+      def initialize(runner = nil, director = nil)
         @runner = runner
+        @director = director
         @options = {}
         @work_dir = Dir.pwd
         @exit_code = 0
@@ -34,7 +36,9 @@ module Bosh::Cli
       # @return [Bosh::Cli::Config] Current configuration
       def config
         @config ||= begin
-          config_file = options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
+          # Handle the environment variable being set to the empty string.
+          env_bosh_config = ENV['BOSH_CONFIG'].to_s.empty? ? nil : ENV['BOSH_CONFIG']
+          config_file = options[:config] || env_bosh_config || Bosh::Cli::DEFAULT_CONFIG_PATH
           Bosh::Cli::Config.new(config_file)
         end
       end
@@ -86,9 +90,9 @@ module Bosh::Cli
         Bosh::Cli::Runner.new(args, @options).run
       end
 
-      def confirmed?(question = "Are you sure?")
+      def confirmed?(question = 'Are you sure?')
         return true if non_interactive?
-        ask("#{question} (type 'yes' to continue): ") == "yes"
+        ask("#{question} (type 'yes' to continue): ") == 'yes'
       end
 
       # @return [String] Target director URL
@@ -106,16 +110,16 @@ module Bosh::Cli
 
       # @return [String] Director username
       def username
-        options[:username] || ENV["BOSH_USER"] || config.username(target)
+        options[:username] || ENV['BOSH_USER'] || config.username(target)
       end
 
       # @return [String] Director password
       def password
-        options[:password] || ENV["BOSH_PASSWORD"] || config.password(target)
+        options[:password] || ENV['BOSH_PASSWORD'] || config.password(target)
       end
 
       def target_name
-        config.target_name || target_url
+        options[:target] || config.target_name || target_url
       end
 
       # Sets or returns command exit code
@@ -137,11 +141,11 @@ module Bosh::Cli
       def task_report(status, task_id, success_msg = nil, error_msg = nil)
         case status
           when :non_trackable
-            report = "Can't track director task".red
+            report = "Can't track director task".make_red
           when :track_timeout
-            report = "Task tracking timeout".red
+            report = 'Task tracking timeout'.make_red
           when :running
-            report = "Task #{task_id.yellow} running"
+            report = "Task #{task_id.make_yellow} running"
           when :error
             report = error_msg
           when :done
@@ -155,30 +159,51 @@ module Bosh::Cli
         end
 
         say("\n#{report}") if report
+        say("\nFor a more detailed error report, run: bosh task #{task_id} --debug") if status == :error
       end
 
       protected
 
+      # @param [Array] args
+      # @return [Array] job, index, command
+      def parse_args(args)
+        job = args.shift
+        err('Please provide job name') if job.nil?
+        job, index = job.split('/', 2)
+
+        if index
+          if index =~ /^\d+$/
+            index = index.to_i
+          else
+            err('Invalid job index, integer number expected')
+          end
+        elsif args[0] =~ /^\d+$/
+          index = args.shift.to_i
+        end
+
+        [job, index, args]
+      end
+
       def auth_required
         target_required
-        err("Please log in first") unless logged_in?
+        err('Please log in first') unless logged_in?
       end
 
       def target_required
-        err("Please choose target first") if target.nil?
+        err('Please choose target first') if target.nil?
       end
 
       def deployment_required
-        err("Please choose deployment first") if deployment.nil?
+        err('Please choose deployment first') if deployment.nil?
       end
 
       def show_deployment
-        say("Current deployment is #{deployment.green}")
+        say("Current deployment is #{deployment.make_green}")
       end
 
       def no_track_unsupported
         if @options.delete(:no_track)
-          say("Ignoring `" + "--no-track".yellow + "' option")
+          say('Ignoring `' + '--no-track'.make_yellow + "' option")
         end
       end
 
@@ -190,31 +215,43 @@ module Bosh::Cli
 
       def raise_dirty_state_error
         say("\n%s\n" % [`git status`])
-        err("Your current directory has some local modifications, " +
+        err('Your current directory has some local modifications, ' +
                 "please discard or commit them first.\n\n" +
-                "Use the --force option to skip this check.")
+                'Use the --force option to skip this check.')
       end
 
       def in_release_dir?
-        File.directory?("packages") &&
-            File.directory?("jobs") &&
-            File.directory?("src")
+        File.directory?('packages') &&
+            File.directory?('jobs') &&
+            File.directory?('src')
       end
 
       def dirty_state?
-        `which git`
-        return false unless $? == 0
-        File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
+        git_status = `git status 2>&1`
+        case $?.exitstatus
+          when 128 # Not in a git repo
+            false
+          when 127 # git command not found
+            false
+          else
+            !git_status.lines.to_a.last.include?('nothing to commit')
+        end
+      end
+
+      def valid_index_for(job, index, options = {})
+        index = '0' if job_unique_in_deployment?(job)
+        err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
+        index = index.to_i if options[:integer_index]
+        index
       end
 
       def normalize_url(url)
         had_port = url.to_s =~ /:\d+$/
-        url = "http://#{url}" unless url.match(/^https?/)
+        url = "https://#{url}" unless url.match(/^http:?/)
         uri = URI.parse(url)
         uri.port = DEFAULT_DIRECTOR_PORT unless had_port
-        uri.to_s.strip.gsub(/\/$/, "")
+        uri.to_s.strip.gsub(/\/$/, '')
       end
-
     end
   end
 end

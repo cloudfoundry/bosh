@@ -62,7 +62,6 @@ module Bosh::Agent
         disk_info = []
         settings = Bosh::Agent::Config.settings
 
-        # TODO abstraction for settings
         if settings["disks"].kind_of?(Hash) && settings["disks"]["persistent"].kind_of?(Hash)
           cids = settings["disks"]["persistent"]
         else
@@ -215,7 +214,6 @@ module Bosh::Agent
           logger.info("Unmounted #{@block} on #{@mountpoint}")
           return {:message => "Unmounted #{@block} on #{@mountpoint}" }
         else
-          # TODO: should we raise MessageHandlerError here?
           return {:message => "Unknown mount for partition: #{partition}"}
         end
       end
@@ -289,9 +287,10 @@ module Bosh::Agent
 
         def get_usage
           usage = {
-              :system =>      {:percent => fs_usage_safe('/')},
-              :ephemeral =>   {:percent => fs_usage_safe(File.join(base_dir, 'data'))}
+              :system => {:percent => fs_usage_safe('/')}
           }
+          ephemeral_percent = fs_usage_safe(File.join(base_dir, 'data'))
+          usage[:ephemeral] = {:percent => ephemeral_percent} if ephemeral_percent
           persistent_percent = fs_usage_safe(File.join(base_dir, 'store'))
           usage[:persistent] = {:percent => persistent_percent} if persistent_percent
 
@@ -301,7 +300,7 @@ module Bosh::Agent
         private
         # Calculate file_system_usage
         def fs_usage_safe(path)
-          sigar = Sigar.new
+          sigar = SigarBox.create_sigar
           fs_list = sigar.file_system_list
 
           fs = fs_list.find {|fs| fs.dir_name == path}

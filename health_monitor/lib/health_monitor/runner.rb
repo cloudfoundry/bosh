@@ -9,12 +9,11 @@ module Bosh::HealthMonitor
     def initialize(config_file)
       Bhm.config = load_yaml_file(config_file)
 
-      @logger    = Bhm.logger
-      @director  = Bhm.director
-      @intervals = Bhm.intervals
-      @mbus      = Bhm.mbus
-
-      @agent_manager = AgentManager.new
+      @logger        = Bhm.logger
+      @director      = Bhm.director
+      @intervals     = Bhm.intervals
+      @mbus          = Bhm.mbus
+      @agent_manager = Bhm.agent_manager
     end
 
     def run
@@ -26,6 +25,8 @@ module Bosh::HealthMonitor
 
       EM.run do
         connect_to_mbus
+        @director_monitor = DirectorMonitor.new(Bhm)
+        @director_monitor.subscribe
         @agent_manager.setup_events
         setup_timers
         start_http_server
@@ -33,11 +34,11 @@ module Bosh::HealthMonitor
       end
     end
 
-    def stop
+    def stop(soft=false)
       @logger.info("HealthMonitor shutting down...")
       @http_server.stop! if @http_server
       EM.stop
-      exit(1)
+      exit(0) unless soft
     end
 
     def setup_timers

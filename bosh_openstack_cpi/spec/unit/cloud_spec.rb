@@ -8,7 +8,8 @@ describe Bosh::OpenStackCloud::Cloud do
   describe "creating via provider" do
 
     it "can be created using Bosh::Cloud::Provider" do
-      Bosh::OpenStackCloud::Connection.stub(:new)
+      Fog::Compute.stub(:new)
+      Fog::Image.stub(:new)
       cloud = Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
       cloud.should be_an_instance_of(Bosh::OpenStackCloud::Cloud)
     end
@@ -26,6 +27,24 @@ describe Bosh::OpenStackCloud::Cloud do
     		Bosh::OpenStackCloud::Cloud.new(options)
     	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
     end
+    
+    it "raises a CloudError exception if cannot connect to the OpenStack Compute API" do
+      Fog::Compute.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
+      Fog::Image.stub(:new)
+      expect {
+        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+      }.to raise_error(Bosh::Clouds::CloudError,
+                       "Unable to connect to the OpenStack Compute API. Check task debug log for details.")
+    end
 
+    it "raises a CloudError exception if cannot connect to the OpenStack Image Service API" do
+      Fog::Compute.stub(:new)
+      Fog::Image.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
+      expect {
+        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+      }.to raise_error(Bosh::Clouds::CloudError,
+                       "Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
+    end
+    
   end
 end

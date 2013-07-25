@@ -3,8 +3,6 @@
 module Bosh::Director
   class DeploymentPlan
     class UpdateConfig
-      # TODO: it would be nice if update config was aware of which job
-      # it related to to properly format error messages
       include ValidationHelper
 
       attr_accessor :canaries
@@ -26,7 +24,7 @@ module Bosh::Director
 
         @max_in_flight = safe_property(update_config, "max_in_flight",
                                        :class => Integer, :optional => optional,
-                                       :min => 1, :max => 32)
+                                       :min => 1)
 
         canary_watch_times = safe_property(update_config, "canary_watch_time",
                                            :class => String,

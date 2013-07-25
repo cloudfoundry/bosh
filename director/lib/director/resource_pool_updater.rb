@@ -54,7 +54,6 @@ module Bosh::Director
       vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                 idle_vm.network_settings, nil, @resource_pool.env)
 
-      # TODO: delete the VM if it wasn't saved
       agent = AgentClient.new(vm.agent_id)
       agent.wait_until_ready
 

@@ -2,8 +2,6 @@
 
 module Bosh::Cli::Command
   class JobRename < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh rename
     usage "rename job"
     desc "Renames a job. NOTE, your deployment manifest must also be " +
@@ -12,14 +10,14 @@ module Bosh::Cli::Command
     def rename(old_name, new_name)
       auth_required
       manifest_yaml = prepare_deployment_manifest(:yaml => true)
-      manifest = YAML.load(manifest_yaml)
+      manifest = Psych.load(manifest_yaml)
 
       force = options[:force]
-      say("You are about to rename `#{old_name.green}' to `#{new_name.green}'")
+      say("You are about to rename `#{old_name.make_green}' to `#{new_name.make_green}'")
 
       unless confirmed?
         nl
-        say("Job rename canceled".green)
+        say("Job rename canceled".make_green)
         exit(0)
       end
 
@@ -33,7 +31,7 @@ module Bosh::Cli::Command
 
     def sanity_check_job_rename(manifest_yaml, old_name, new_name)
       # Makes sure the new deployment manifest contains the renamed job
-      manifest = YAML.load(manifest_yaml)
+      manifest = Psych.load(manifest_yaml)
       new_jobs = manifest["jobs"].map { |job| job["name"] }
       unless new_jobs.include?(new_name)
         err("Please update your deployment manifest to include the " +
@@ -52,7 +50,7 @@ module Bosh::Cli::Command
             "`#{manifest["name"]}'")
       end
 
-      current_manifest = YAML.load(current_deployment["manifest"])
+      current_manifest = Psych.load(current_deployment["manifest"])
       jobs = current_manifest["jobs"].map { |job| job["name"] }
       unless jobs.include?(old_name)
         err("Trying to rename a non existent job `#{old_name}'")
@@ -99,7 +97,7 @@ module Bosh::Cli::Command
       end
 
       # Now the manifests should be the same
-      manifest = YAML.load(manifest_yaml)
+      manifest = Psych.load(manifest_yaml)
       if deployment_changed?(current_manifest.dup, manifest.dup)
         err("You cannot have any other changes to your manifest during " +
             "rename. Please revert the above changes and retry.")

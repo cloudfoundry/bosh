@@ -19,7 +19,6 @@ module Bosh::Agent
 
       def initialize(args)
         @logger     = Bosh::Agent::Config.logger
-        @base_dir   = Bosh::Agent::Config.base_dir
         @nats       = Bosh::Agent::Config.nats
         @agent_id   = Bosh::Agent::Config.agent_id
         @old_spec   = Bosh::Agent::Config.state.to_hash
@@ -27,6 +26,7 @@ module Bosh::Agent
 
         @drain_type = args[0]
         @spec       = args[1]
+        @drain_script = DrainScript.new
       end
 
       def job_change
@@ -114,31 +114,7 @@ module Bosh::Agent
       end
 
       def run_drain_script(job_updated, hash_updated, updated_packages)
-        env = {
-          'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
-          'BOSH_CURRENT_STATE' => Yajl::Encoder.encode(@old_spec),
-          'BOSH_APPLY_SPEC' => Yajl::Encoder.encode(@spec)
-        }
-
-        # Drain contract: on success the drain script should return a number exit(0)
-        options = { :unsetenv_others => options }
-
-        stdout_rd, stdout_wr = IO.pipe
-
-        args = [  env, drain_script, job_updated, hash_updated, *updated_packages ]
-        args += [ :out => stdout_wr, :unsetenv_others => true ]
-        Process.spawn(*args)
-        Process.wait
-        stdout_wr.close
-
-        exit_status = $?.exitstatus
-        output = stdout_rd.read
-
-        unless output.match(/\A-{0,1}\d+\Z/) && exit_status == 0
-          raise Bosh::Agent::MessageHandlerError,
-            "Drain script exit #{exit_status}: #{result}"
-        end
-        return output.to_i
+        @drain_script.run(job_updated, hash_updated, updated_packages)
       end
 
       def updated_packages
@@ -165,15 +141,55 @@ module Bosh::Agent
         end.collect { |package_name, pkg| package_name }
       end
 
-      def drain_script
-         job_template = @old_spec['job']['template']
-        "#{@base_dir}/jobs/#{job_template}/bin/drain"
-      end
-
       def drain_script_exists?
-        File.exists?(drain_script)
+        @drain_script.exists?
       end
 
+    end
+
+    class DrainScript
+      attr_reader :base_dir, :job_template
+
+      def initialize(base_dir=Bosh::Agent::Config.base_dir, job_template=nil)
+        @base_dir = base_dir
+        @job_template = job_template || Bosh::Agent::Config.state.to_hash.fetch('job', {}).fetch('template', 'job')
+      end
+
+      def exists?
+        File.exists?(script_file)
+      end
+
+      def run(job_updated, hash_updated, updated_packages)
+        env = {
+            'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
+            'BOSH_CURRENT_STATE' => Yajl::Encoder.encode(@old_spec),
+            'BOSH_APPLY_SPEC' => Yajl::Encoder.encode(@spec)
+        }
+
+        # Drain contract: on success the drain script should return a number exit(0)
+        stdout_rd, stdout_wr = IO.pipe
+
+        args = [  env, script_file, job_updated, hash_updated, *updated_packages ]
+        args += [ :out => stdout_wr, :unsetenv_others => true ]
+        Process.spawn(*args)
+        Process.wait
+        stdout_wr.close
+
+        exit_status = $?.exitstatus
+        output = stdout_rd.read
+
+        unless output.match(/\A-{0,1}\d+\Z/) && exit_status == 0
+          raise Bosh::Agent::MessageHandlerError,
+                "Drain script exit #{exit_status}: #{output}"
+        end
+
+        output.to_i
+      end
+
+      private
+      def script_file
+        "#{base_dir}/jobs/#{job_template}/bin/drain"
+      end
     end
   end
 end

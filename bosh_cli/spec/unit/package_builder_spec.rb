@@ -34,7 +34,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
   end
 
   def make_builder(name, files, dependencies = [], sources_dir = nil)
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     spec = {
       "name" => name,
       "files" => files,
@@ -333,7 +333,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     lambda {
       Bosh::Cli::PackageBuilder.new(spec, @release_dir,
-                                    true, mock("blobstore"))
+                                    true, double("blobstore"))
     }.should raise_error(/Please remove `src_alt' first/)
   end
 
@@ -347,7 +347,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     builder.version.should == "0.1-dev"
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     blobstore.should_receive(:create).and_return("object_id")
     final_builder = Bosh::Cli::PackageBuilder.new({ "name" => "bar",
                                                     "files" => globs },
@@ -409,7 +409,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     add_files("src", %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
     globs = %w(foo/**/* baz)
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     blobstore.should_receive(:create).and_return("object_id")
 
     final_builder = Bosh::Cli::PackageBuilder.new(
@@ -475,7 +475,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
         should be_true
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     blobstore.should_not_receive(:create)
     final_builder = Bosh::Cli::PackageBuilder.new(
       { "name" => "bar", "files" => globs }, @release_dir, true, blobstore)

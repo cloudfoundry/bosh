@@ -1,6 +1,8 @@
 module Bosh::Cli::Command
   class Biff < Base
 
+    attr_reader :errors
+
     # Takes your current deployment configuration and uses some of its
     # configuration to populate the template file.  The Network information is
     # used and then IPs for each job are automatically set.  Once the template
@@ -86,9 +88,9 @@ module Bosh::Cli::Command
         removed = line[0..0] == "-"
 
         if added
-          say(line.chomp.green)
+          say(line.chomp.make_green)
         elsif removed
-          say(line.chomp.red)
+          say(line.chomp.make_red)
         else
           say(line)
         end
@@ -122,22 +124,11 @@ module Bosh::Cli::Command
       path_split = path.split(".")
       found_so_far = []
       path_split.each do |path_part|
-        found = false
-        if obj.is_a?(Array)
-          obj.each do |data_val|
-            if data_val["name"] == path_part
-              obj = data_val
-              found = true
-            end
-          end
-        elsif !obj[path_part].nil?
-          obj = obj[path_part]
-          found = true
-        end
+        obj = lookup(path_part, obj)
 
-        unless found
+        unless obj
           @errors += 1
-          say("Could not find #{path.red}.")
+          say("Could not find #{path.make_red}.")
           say("'#{@template_file}' has it but '#{@deployment_file}' does not.")
           #say("\nIt should exist in \n#{obj.to_yaml}\n")
           if starting_obj == @deployment_obj
@@ -154,6 +145,15 @@ module Bosh::Cli::Command
         found_so_far << path_part
       end
       obj
+    end
+
+    def lookup(path, obj)
+      case obj
+        when Array
+          obj.find { |value| path == value['name'] }
+        when Hash
+          obj[path] if obj.has_key?(path)
+      end
     end
 
     # Used by print_the_template_path so that it can prettily print just the
@@ -199,7 +199,7 @@ module Bosh::Cli::Command
       path = users_farthest_found_path.join('.')
       what_we_need = find(path, @template_obj)
       what_we_need = delete_all_except(what_we_need, delete_all_except_name)
-      say("Add this to '#{path}':".red + "\n#{what_we_need.to_yaml}\n\n")
+      say("Add this to '#{path}':".make_red + "\n#{what_we_need.to_yaml}\n\n")
     end
 
     # Loads the template file as YAML.  First, it replaces all of the ruby
@@ -210,7 +210,7 @@ module Bosh::Cli::Command
       temp_data = File.read(@template_file)
       temp_data.gsub!(/<%=.*%>/, "INSERT_DATA_HERE")
       temp_data.gsub!(/[ ]*<%.*%>[ ]*\n/, "")
-      YAML::load(temp_data)
+      Psych::load(temp_data)
     end
 
     # Gets the network's network/mask for configuring things such as the
@@ -372,16 +372,31 @@ module Bosh::Cli::Command
     # @param [String] template The string path to the template that should be
     #     used.
     def setup(template)
+      @errors = 0
       @template_file = template
       @deployment_file = deployment
       err("Deployment not set.") if @deployment_file.nil?
-      @deployment_obj = load_yaml_file(@deployment_file)
+      @deployment_obj = load_yaml_file(deployment)
       @template_obj = load_template_as_yaml
       @ip_helper = create_ip_helper
-      @errors = 0
       @dir_name = Dir.mktmpdir
       @temp_file_path_1 = "#{@dir_name}/bosh_biff_1"
       @temp_file_path_2 = "#{@dir_name}/bosh_biff_2"
+    end
+
+    # Generate a random string for passwords and tokens.
+    # Length is the length of the string.
+    # name is an optional name of a previously generated string. This is used
+    # to allow setting the same password for different components.
+    def random_string(length, name=nil)
+      random_string = SecureRandom.hex(length)[0...length]
+
+      @random_cache ||= {}
+      if name
+        @random_cache[name] ||= random_string
+      else
+        random_string
+      end
     end
 
   end

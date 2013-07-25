@@ -10,7 +10,6 @@ module Bosh::Agent
         self.new(args).apply
       end
 
-      # TODO: adapt for job collocation
       def initialize(args)
         @platform = Bosh::Agent::Config.platform
 

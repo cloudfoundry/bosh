@@ -8,11 +8,14 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(deployment_name, options = {})
-        super
+      def self.job_type
+        :delete_deployment
+      end
 
+      def initialize(deployment_name, options = {})
         @deployment_name = deployment_name
         @force = options["force"]
+        @keep_snapshots = options["keep_snapshots"]
         @cloud = Config.cloud
         @deployment_manager = Api::DeploymentManager.new
       end
@@ -133,6 +136,7 @@ module Bosh::Director
 
             if disk.disk_cid
               ignoring_errors_when_forced do
+                delete_snapshots(disk)
                 @cloud.delete_disk(disk.disk_cid)
               end
             end
@@ -144,6 +148,10 @@ module Bosh::Director
 
           delete_vm(vm) if vm
         end
+      end
+
+      def delete_snapshots(disk)
+        @keep_snapshots ? disk.snapshots.each(&:delete) : Api::SnapshotManager.delete_snapshots(disk.snapshots)
       end
 
       def delete_vm(vm)

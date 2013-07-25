@@ -15,7 +15,7 @@ export GEM_HOME=/var/vcap/packages/director/gem_home
 export TMPDIR=/var/vcap/data/tmp/director
 
 export C_INCLUDE_PATH=/var/vcap/packages/sqlite/include:/var/vcap/packages/libpq/include:$C_INCLUDE_PATH
-export LIBRARY_PATH=/var/vcap/packages/sqlite/lib:/var/vcap/packages/libpq/lib:$LIBRARY_PATH
+export LIBRARY_PATH=/var/vcap/packages/sqlite/lib:/var/vcap/packages/libpq/lib:/var/vcap/packages/mysqlclient/lib:$LIBRARY_PATH
 
 case $1 in
 
@@ -66,7 +66,11 @@ case $1 in
     rm -f $PIDFILE
     ;;
 
+  console)
+    /var/vcap/packages/director/bin/director_console -c /var/vcap/jobs/director/config/director.yml
+    ;;
+
   *)
-  echo "Usage: director_ctl {start|stop}" ;;
+  echo "Usage: director_ctl {start|stop|console}" ;;
 esac
 exit 0

@@ -6,14 +6,14 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
 
   def make_handler(vm, cloud, agent, data = {})
     handler = Bosh::Director::ProblemHandlers::OutOfSyncVm.new(vm.id, data)
-    handler.stub!(:cloud).and_return(cloud)
-    Bosh::Director::AgentClient.stub!(:new).with(vm.agent_id, anything).and_return(agent)
+    handler.stub(:cloud).and_return(cloud)
+    Bosh::Director::AgentClient.stub(:new).with(vm.agent_id, anything).and_return(agent)
     handler
   end
 
   before(:each) do
-    @cloud = mock("cloud")
-    @agent = mock("agent")
+    @cloud = double("cloud")
+    @agent = double("agent")
 
     @deployment = Bosh::Director::Models::Deployment.make(:name => "mycloud")
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :deployment => @deployment)

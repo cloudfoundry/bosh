@@ -4,7 +4,6 @@ module Bosh::Director
   module Api
     class DeploymentManager
       include ApiHelper
-      include TaskHelper
 
       # Finds deployment by name
       # @param [String] name
@@ -20,21 +19,20 @@ module Bosh::Director
 
       def create_deployment(user, deployment_manifest, options = {})
         random_name = "deployment-#{SecureRandom.uuid}"
-        deployment_manifest_file = File.join(Dir::tmpdir, random_name)
+        deployment_manifest_dir = Dir::tmpdir
+        deployment_manifest_file = File.join(deployment_manifest_dir, random_name)
+        unless check_available_disk_space(deployment_manifest_dir, deployment_manifest.size)
+          raise NotEnoughDiskSpace, "Uploading deployment manifest failed. " +
+            "Insufficient space on BOSH director in #{deployment_manifest_dir}"
+        end
 
         write_file(deployment_manifest_file, deployment_manifest)
-        task = create_task(user, :update_deployment, "create deployment")
-        Resque.enqueue(Jobs::UpdateDeployment, task.id,
-                       deployment_manifest_file, options)
-        task
+
+        JobQueue.new.enqueue(user, Jobs::UpdateDeployment, 'create deployment', [deployment_manifest_file, options])
       end
 
       def delete_deployment(user, deployment, options = {})
-        task = create_task(user, :delete_deployment,
-                           "delete deployment: #{deployment.name}")
-        Resque.enqueue(Jobs::DeleteDeployment, task.id,
-                       deployment.name, options)
-        task
+        JobQueue.new.enqueue(user, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options])
       end
 
       def deployment_to_json(deployment)

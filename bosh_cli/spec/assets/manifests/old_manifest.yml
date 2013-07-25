@@ -1,0 +1,15 @@
+---
+name: test
+resource_pools:
+- name: rp
+networks:
+- name: default
+jobs:
+- name: job1
+  template: xyz
+  networks:
+  - name: default
+- name: old_job
+  template: xyz
+  networks:
+  - name: default

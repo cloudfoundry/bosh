@@ -1,18 +1,20 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'bosh_agent/platform/linux'
-
 module Bosh::Agent
-  class Platform::Rhel < Platform::Linux
 
-    require 'bosh_agent/platform/rhel/disk'
-    require 'bosh_agent/platform/rhel/logrotate'
-    require 'bosh_agent/platform/rhel/password'
+  class Platform::Rhel < Platform::Linux
+    require 'bosh_agent/platform/linux/disk'
+    require 'bosh_agent/platform/linux/logrotate'
     require 'bosh_agent/platform/rhel/network'
+    require 'bosh_agent/platform/linux/password'
 
     def initialize
-      super(Disk.new, Logrotate.new, Password.new, Network.new)
+      template_dir = File.expand_path('rhel/templates', File.dirname(__FILE__))
+      super(Platform::Linux::Disk.new,
+            Platform::Linux::Logrotate.new(template_dir),
+            Platform::Linux::Password.new,
+            Network.new(template_dir))
     end
-
   end
+
 end

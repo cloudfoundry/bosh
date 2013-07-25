@@ -9,11 +9,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   end
 
   def make_resource_pool(plan)
-    mock(BD::DeploymentPlan::ResourcePool, :deployment_plan => plan)
+    double(BD::DeploymentPlan::ResourcePool, :deployment_plan => plan)
   end
 
   def make_plan(deployment = nil)
-    mock(BD::DeploymentPlan, :model => deployment)
+    double(BD::DeploymentPlan, :model => deployment)
   end
 
   def make_deployment(name)

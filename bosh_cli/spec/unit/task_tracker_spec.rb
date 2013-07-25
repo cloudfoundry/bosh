@@ -5,15 +5,15 @@ require "spec_helper"
 describe Bosh::Cli::TaskTracker do
 
   before(:each) do
-    @cache = mock("cache")
-    @director = mock("director", :uuid => "deadbeef",
+    @cache = double("cache")
+    @director = double("director", :uuid => "deadbeef",
                      :get_time_difference => 0.5)
     Bosh::Cli::Config.cache = @cache
   end
 
   def make_tracker(task_id, options)
     tracker = Bosh::Cli::TaskTracker.new(@director, task_id, options)
-    tracker.stub!(:sleep)
+    tracker.stub(:sleep)
     tracker
   end
 
@@ -55,7 +55,7 @@ describe Bosh::Cli::TaskTracker do
   end
 
   it "uses appropriate renderer" do
-    renderer = mock("renderer", :duration_known? => false)
+    renderer = double("renderer", :duration_known? => false)
     Bosh::Cli::TaskLogRenderer.should_receive(:create_for_log_type).
       with("foobar").and_return(renderer)
 
@@ -111,7 +111,7 @@ describe Bosh::Cli::TaskTracker do
     tracker = make_tracker("42", { :log_type => "foobar",
                                    :use_cache => false })
 
-    tracker.stub!(:interactive?).and_return(true)
+    tracker.stub(:interactive?).and_return(true)
 
     @director.should_receive(:get_task_state).with("42").and_raise(Interrupt)
     @director.should_receive(:get_task_state).with("42").and_return("cancelled")

@@ -66,6 +66,7 @@ module Bosh::Cli
         has_blobstore_secrets?(bs, "simple", "user", "password") ||
         has_blobstore_secrets?(bs, "swift", "rackspace") ||
         has_blobstore_secrets?(bs, "swift", "hp") ||
+        has_blobstore_secrets?(bs, "swift", "openstack") ||
         has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key")
     end
 
@@ -111,14 +112,8 @@ module Bosh::Cli
     end
 
     def save_config
-      # TODO: introduce write_yaml helper
-      File.open(@dev_config_file, "w") do |f|
-        YAML.dump(@dev_config, f)
-      end
-
-      File.open(@final_config_file, "w") do |f|
-        YAML.dump(@final_config, f)
-      end
+      write_yaml(@dev_config_file, @dev_config)
+      write_yaml(@final_config_file, @final_config)
     end
 
     private
@@ -146,7 +141,7 @@ module Bosh::Cli
 
     # stores blobstore_secret as blobstore.atmos.secret
     def deprecate_blobstore_secret
-      say("WARNING:".red + " use of blobstore_secret is deprecated")
+      say("WARNING:".make_red + " use of blobstore_secret is deprecated")
 
       @private_config["blobstore"] ||= {}
       bs = @private_config["blobstore"]
@@ -168,7 +163,7 @@ module Bosh::Cli
       # to migrate while the old one tells you to upgrade.
       if @dev_config.has_key?("blobstore_options") &&
           @dev_config["blobstore_options"] != "deprecated"
-        say("Found legacy dev config file `#{@dev_config_file}'".yellow)
+        say("Found legacy dev config file `#{@dev_config_file}'".make_yellow)
 
         new_dev_config = {
           "dev_name" => @dev_config["name"],
@@ -184,14 +179,14 @@ module Bosh::Cli
         @dev_config = new_dev_config
 
         File.open(@dev_config_file, "w") do |f|
-          YAML.dump(@dev_config, f)
+          Psych.dump(@dev_config, f)
         end
-        say("Migrated dev config file format".green)
+        say("Migrated dev config file format".make_green)
       end
 
       if @final_config.has_key?("blobstore_options") &&
           @final_config["blobstore_options"] != "deprecated"
-        say("Found legacy config file `#{@final_config_file}'".yellow)
+        say("Found legacy config file `#{@final_config_file}'".make_yellow)
 
         unless @final_config["blobstore_options"]["provider"] == "atmos" &&
             @final_config["blobstore_options"].has_key?("atmos_options")
@@ -211,8 +206,8 @@ module Bosh::Cli
 
         @final_config = new_final_config
 
-        File.open(@final_config_file, "w") { |f| YAML.dump(@final_config, f) }
-        say("Migrated final config file format".green)
+        File.open(@final_config_file, "w") { |f| Psych.dump(@final_config, f) }
+        say("Migrated final config file format".make_green)
       end
     end
 
@@ -221,6 +216,14 @@ module Bosh::Cli
         load_yaml_file(file)
       else
         {}
+      end
+    end
+
+    def write_yaml(file, hash)
+      unless hash == load_config(file)
+        File.open(file, "w+") do |f|
+          Psych.dump(hash, f)
+        end
       end
     end
 

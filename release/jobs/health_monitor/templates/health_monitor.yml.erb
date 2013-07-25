@@ -9,8 +9,8 @@ mbus:
   user: <%= p("nats.user") %>
   password: <%= p("nats.password") %>
 
-director:
-  endpoint: http://<%= p("director.address") %>:<%= p("director.port") %>
+director: &director
+  endpoint: https://<%= p("director.address") %>:<%= p("director.port") %>
   user: <%= p("hm.director_account.user") %>
   password: <%= p("hm.director_account.password") %>
 
@@ -91,6 +91,17 @@ plugins:
       secret_access_key: <%= p("aws.secret_access_key") %>
   <% end %>
 
+  <% if p("hm.resurrector_enabled") %>
+  - name: resurrector
+    events:
+      - alert
+    options:
+      director: *director
+      minimum_down_jobs: <%= p("hm.resurrector.minimum_down_jobs") %>
+      percent_threshold: <%= p("hm.resurrector.percent_threshold") %>
+      time_threshold: <%= p("hm.resurrector.time_threshold") %>
+  <% end %>
+
   <% if p("hm.pagerduty_enabled") %>
   - name: pagerduty
     events:
@@ -107,4 +118,18 @@ plugins:
     events:
       - alert
       - heartbeat
+  <% end %>
+
+  <% if p("hm.datadog_enabled") %>
+  - name: data_dog
+    events:
+      - alert
+      - heartbeat
+    options:
+      api_key: <%= p('hm.datadog.api_key') %>
+      application_key: <%= p('hm.datadog.application_key') %>
+      <% if_p("hm.datadog.pagerduty_service_name") do |pagerduty_service_name| %>
+      pagerduty_service_name: <%= pagerduty_service_name %>
+      <% end %>
+
   <% end %>

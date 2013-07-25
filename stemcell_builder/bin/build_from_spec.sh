@@ -95,14 +95,8 @@ function stage_direct() {
 }
 
 # Find out which staging function to use
-mnt_type=unknown
-if mountpoint -q $mnt
-then
-  if [ "$(grep $mnt /proc/mounts | cut -d" " -f3)" == "btrfs" ]
-  then
-   mnt_type=btrfs
-  fi
-fi
+mnt_type=$(df -T "$mnt" | awk '/dev/{print $2}')
+mnt_type=${mnt_type:-unknown}
 
 # Generate settings for every stage in the spec
 function stage() {
@@ -120,6 +114,7 @@ previous_stage=
 
 function stage() {
   echo "=== Applying '$1' stage ==="
+  echo "== Started $(date) =="
   if [ "$mnt_type" == "btrfs" ]
   then
     stage_with_btrfs $1

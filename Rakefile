@@ -1,5 +1,5 @@
-task :default => :spec
+# encoding: UTF-8
 
-Dir.glob('rake/**/*.rake').each { |r| import r }
-require 'ci/reporter/rake/rspec'     # use this if you're using RSpec
+require 'bosh/dev/tasks'
 
+task default: :spec

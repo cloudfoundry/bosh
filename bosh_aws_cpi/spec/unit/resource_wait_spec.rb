@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::AwsCloud::ResourceWait do
 
   before do
-    Bosh::Common.stub(:sleep)
+    Kernel.stub(:sleep)
     described_class.stub(:task_checkpoint, :logger)
   end
 
@@ -216,7 +216,7 @@ describe Bosh::AwsCloud::ResourceWait do
 
       expect {
         subject.for_resource(resource_arguments) { |_| false }
-      }.to raise_error(Bosh::Common::RetryCountExceeded)
+      }.to raise_error(Bosh::Clouds::CloudError, /Timed out waiting/)
     end
   end
 end

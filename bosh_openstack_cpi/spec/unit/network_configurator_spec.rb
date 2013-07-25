@@ -71,6 +71,37 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
     end
   end
 
+  describe "private_ip" do
+    it "should extract private ip address for manual network" do
+      spec = {}
+      spec["network_a"] = manual_network_spec
+      spec["network_a"]["ip"] = "10.0.0.1"
+
+      nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
+      nc.private_ip.should == "10.0.0.1"
+    end
+
+    it "should extract private ip address from manual network when there's also vip network" do
+      spec = {}
+      spec["network_a"] = vip_network_spec
+      spec["network_a"]["ip"] = "10.0.0.1"
+      spec["network_b"] = manual_network_spec
+      spec["network_b"]["ip"] = "10.0.0.2"      
+
+      nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
+      nc.private_ip.should == "10.0.0.2"
+    end     
+    
+    it "should not extract private ip address for dynamic network" do
+      spec = {}
+      spec["network_a"] = dynamic_network_spec
+      spec["network_a"]["ip"] = "10.0.0.1"
+
+      nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
+      nc.private_ip.should be_nil
+    end     
+  end
+
   describe "nics" do
     it "should extract net_id from dynamic network" do
       spec = {}

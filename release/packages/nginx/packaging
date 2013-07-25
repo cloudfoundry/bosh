@@ -1,40 +1,15 @@
 set -e
 
 echo "Extracting pcre..."
-tar xzvf nginx/pcre-8.12.tar.gz
+tar xzvf nginx/pcre-8.32.tar.gz
 
 if [[ $? != 0 ]] ; then
   echo "Failed extracting pcre"
   exit 1
 fi
 
-echo "Extracting headers-more module..."
-tar xzvf nginx/headers-more-v0.15rc1.tgz
-
-if [[ $? != 0 ]] ; then
-  echo "Failed extracting headers-more module"
-  exit 1
-fi
-
-echo "Extracting nginx_upload module..."
-tar xzvf nginx/nginx_upload_module-2.2.0.tar.gz
-
-echo "Patching upload module"
-cd nginx_upload_module-2.2.0
-patch < ../nginx/upload_module_put_support.patch
-if [[ $? != 0 ]] ; then
-  echo "Failed to patch nginx_upload module"
-  exit 1
-fi
-cd ..
-
-if [[ $? != 0 ]] ; then
-  echo "Failed extracting nginx_upload module"
-  exit 1
-fi
-
 echo "Extracting nginx..."
-tar xzvf nginx/nginx-0.8.54.tar.gz
+tar xzvf nginx/nginx-1.4.1.tar.gz
 
 if [[ $? != 0 ]] ; then
   echo "Failed extracting nginx"
@@ -42,12 +17,11 @@ if [[ $? != 0 ]] ; then
 fi
 
 echo "Building nginx..."
-cd nginx-0.8.54
+cd nginx-1.4.1
 ./configure \
   --prefix=${BOSH_INSTALL_TARGET} \
-  --with-pcre=../pcre-8.12 \
+  --with-pcre=../pcre-8.32 \
   --with-http_ssl_module \
-  --add-module=../headers-more-v0.15rc1 \
-  --add-module=../nginx_upload_module-2.2.0
+  --with-http_dav_module
 make
 make install

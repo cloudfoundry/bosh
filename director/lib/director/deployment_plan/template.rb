@@ -40,15 +40,11 @@ module Bosh::Director
         uuid = SecureRandom.uuid
         path = File.join(Dir.tmpdir, "template-#{uuid}")
 
-        if Config.blobstore.nil?
-          raise DirectorError, "Blobstore is not initialized"
-        end
-
         @logger.debug("Downloading template `#{@name}' (#{blobstore_id})...")
         t1 = Time.now
 
         File.open(path, "w") do |f|
-          Config.blobstore.get(blobstore_id, f)
+          App.instance.blobstores.blobstore.get(blobstore_id, f)
         end
 
         @logger.debug("Template `#{@name}' downloaded to #{path} " +

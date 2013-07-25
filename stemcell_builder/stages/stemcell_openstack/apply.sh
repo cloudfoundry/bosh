@@ -43,13 +43,14 @@ manifest = {
         "disk_format" => disk_format,
         "container_format" => container_format,
         "os_type" => "linux",
+        "os_distro" => "ubuntu",
         "architecture" => "x86_64",
         "auto_disk_config" => "true"
     }
 }
 
 File.open("stemcell.MF", "w") do |f|
-  f.write(YAML.dump(manifest))
+  f.write(Psych.dump(manifest))
 end
 EOS
 

@@ -9,18 +9,46 @@ templates:
   stemcell-copy.sh: bin/stemcell-copy
   task_logrotate.sh: bin/task_logrotate
   task_logrotate.cron: config/task_logrotate.cron
+  director.pem.erb: config/ssl/director.pem
+  director.key.erb: config/ssl/director.key
+  nginx.conf.erb: config/nginx.conf
+  nginx_ctl: bin/nginx_ctl
+  mime.types: config/mime.types
+  scheduler_ctl: bin/scheduler_ctl
 packages:
 - director
+- nginx
 - genisoimage
 - libpq
+- postgres
+- mysql
 - ruby
 
 properties:
   director.name:
     description: Name of the director
   director.port:
-    description: Port that the dirctor listens on
+    description: Port that the director nginx listens on
     default: 25555
+  director.backend_port:
+    description: Port that the director listens on
+    default: 25556
+  director.nginx.workers:
+    default: 2
+    description: Number of nginx workers for director
+  director.timeout:
+    default: 7200
+    description: Timeout for connection from bosh CLI to nginx
+  director.proxy_timeout:
+    default: 900
+    description: Timeout for proxy connection from nginx to director
+  director.max_upload_size:
+    default: 5000m
+    description: Max allowed file size for upload
+  director.ssl.cert:
+    description: SSL Certificate for director (PEM encoded)
+  director.ssl.key:
+    description: SSL private key for director (PEM encoded)
   director.encryption:
     description: Enable/Disable agent-director encryption (true|false)
     default: false
@@ -30,6 +58,21 @@ properties:
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
+  director.enable_snapshots:
+    description: Enable/Disable snapshots for persistent disks (true|false)
+    default: false
+  director.snapshot_schedule:
+    description: RufusScheduler cron formatted schedule for snapshots
+    default: '0 0 7 * * * UTC'
+  director.self_snapshot_schedule:
+    description: RufusScheduler cron formatted schedule for self snapshots
+    default: '0 0 6 * * * UTC'
+  director.backup_schedule:
+    description: RufusScheduler cron formatted schedule for backups
+  director.auto_fix_stateful_nodes:
+    description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
+    default: true
+
   redis.address:
     description: Address of the redis server
   redis.port:
@@ -37,6 +80,10 @@ properties:
     default: 25255
   redis.password:
     description: Password of the redis server
+  redis.loglevel:
+    description: Level of log messages for Redis connections (fatal, error, warn, info, debug)
+    default: info
+
   nats.user:
     description: Username to connect to nats with
     default: nats
@@ -47,33 +94,62 @@ properties:
   nats.port:
     description: Port that the nats server listens on
     default: 4222
-  postgres.user:
-    description: Username used for the director database (postgres)
-  postgres.password:
-    description: Password used for the director database (postgres)
-  postgres.address:
-    description: Address of the director database (postges)
-  postgres.port:
-    description: Port of the director database (postgres)
+
+  # Director Database
+  director.db.adapter:
+    description: The type of database used
+    default: postgres
+  director.db.user:
+    description: Username used for the director database
+    default: bosh
+  director.db.password:
+    description: Password used for the director database
+  director.db.host:
+    description: Address of the director database
+  director.db.port:
+    description: Port of the director database
     default: 5432
-  postgres.database:
-    description: Name of the director database (postgres)
+  director.db.database:
+    description: Name of the director database
+    default: bosh
+  director.db.connection_options:
+    description: Additional options for the database
+    default:
+      max_connections: 32
+      pool_timeout: 10
+
+  # DNS
   dns.address:
     description: Address of the powerdns server
   dns.domain_name:
     description: TLD of the dns zone used by bosh
-  dns.user:
-    description: DNS Database user (postgres in powerdns job)
-  dns.password:
-    description: DNS Database password (postgres in powerdns job)
-  dns.database.port:
-    description: Port that the powerdns database listens on (postgres in powerdns job)
+    default: bosh
+  dns.db.adapter:
+    description: DNS Database adapter
+    default: postgres
+  dns.db.user:
+    description: DNS Database user
+    default: bosh
+  dns.db.password:
+    description: DNS Database password
+  dns.db.host:
+    description: DNS Database host
+  dns.db.port:
+    description: Port that the powerdns database listens on
     default: 5432
-  dns.database.name:
-    description: Name of the powerdns database (postgres in powerdns job)
+  dns.db.database:
+    description: Name of the powerdns database
+    default: bosh
+  dns.db.connection_options:
+    description: Additional options for the powerdns database
+    default:
+      max_connections: 32
+      pool_timeout: 10
+
+  # Blobstore
   blobstore.provider:
-    description: Provider of the blobstore used by director and agent (simple|s3)
-    default: 'simple'
+    description: Provider of the blobstore used by director and agent (dav|simple|s3)
+    default: 'dav'
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
   blobstore.access_key_id:
@@ -93,18 +169,62 @@ properties:
     description: Username agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
-  compiled_package_cache.plugin:
-      description: Plugin of the blobstore used for the compiled package cache
-  default: 's3'
-  compiled_package_cache.bucket_name:
-      description: AWS S3 Bucket used for the compiled package cache
-  compiled_package_cache.access_key_id:
-      description: AWS access_key_id used for the compiled package cache
-  compiled_package_cache.secret_access_key:
-      description: AWS secret_access_key used for the compiled package cache
+
+  # Blobstore destination for backups
+  #   ex:
+  #     backup_destination
+  #       provider: s3
+  #       options:
+  #         bucket_name: some-bucket-name
+  #         access_key_id: ...
+  #         secret_access_key: ...
+  #
+  director.backup_destination:
+    description: Configuration of the blobstore used by director for backups (dav|simple|s3)
+
+  # Compiled Package Cache
+  compiled_package_cache.provider:
+    description: Provider of the blobstore used for the compiled package cache
+    default: 's3'
+  compiled_package_cache.options.bucket_name:
+    description: AWS S3 Bucket used for the compiled package cache
+  compiled_package_cache.options.access_key_id:
+    description: AWS access_key_id used for the compiled package cache
+  compiled_package_cache.options.secret_access_key:
+    description: AWS secret_access_key used for the compiled package cache
+  compiled_package_cache.options.swift_provider:
+    description:  OpenStack Swift provider (supported providers are hp, openstack and rackspace)
+  compiled_package_cache.options.container_name:
+    description: Name of the container
+  compiled_package_cache.options.hp_access_key:
+    description: HP Object Storage Access Key
+  compiled_package_cache.options.hp_secret_key:
+    description: HP Object Storage Secret Key
+  compiled_package_cache.options.hp_tenant_id:
+    description: HP Object Storage Project ID
+  compiled_package_cache.options.hp_avl_zone:
+    description: HP Object Storage Availability Zone (region-a.geo-1 or region-b.geo-1)
+  compiled_package_cache.options.openstack_auth_url:
+    description: URL of the OpenStack Identity endpoint to connect to
+  compiled_package_cache.options.openstack_username:
+    description: OpenStack user name
+  compiled_package_cache.options.openstack_api_key:
+    description: OpenStack API key
+  compiled_package_cache.options.openstack_tenant:
+    description: OpenStack tenant name
+  compiled_package_cache.options.openstack_region:
+    description: OpenStack region (optional)
+  compiled_package_cache.options.rackspace_username:
+    description: Rackspace Cloud Files Username
+  compiled_package_cache.options.rackspace_api_key:
+    description: Rackspace Cloud Files API Key
+  compiled_package_cache.options.rackspace_region:
+    description: Rackspace Cloud Files Region (optional, dfw or ord)
+
   ntp:
     description: List of ntp server IPs
     default: []
+
   agent.blobstore.access_key_id:
     description: AWS access_key_id for agent used by s3 blobstore plugin
   agent.blobstore.secret_access_key:
@@ -149,6 +269,12 @@ properties:
   openstack.endpoint_type:
     description: OpenStack endpoint type (optional, by default publicURL)
     default: publicURL
+  openstack.state_timeout:
+    description: Timeout (in seconds) for OpenStack resources desired state (optional, by default 300)
+    default: 300
+  openstack.stemcell_public_visibility:
+    description: Set public visibility for stemcells (optional, false by default)
+    default: false
   openstack.default_key_name:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:

@@ -7,18 +7,18 @@ require "optparse"
 
 # Defaults
 options = {
-  "configure"          => false,
-  "logging"            => { "level" => "DEBUG" },
-  "mbus"               => "nats://localhost:4222",
-  "agent_id"           => "not_configured",
-  "blobstore_options"  => {},
-  "blobstore_provider" => "simple",
-  "infrastructure_name"      => "vsphere",
-  "platform_name"      => "ubuntu",
-  "base_dir"           => "/var/vcap",
-  "smtp_port"          => 2825,
-  "process_alerts"     => true,
-  "heartbeat_interval" => 60
+    "configure" => false,
+    "logging" => {"level" => "DEBUG"},
+    "mbus" => "nats://localhost:4222",
+    "agent_id" => "not_configured",
+    "blobstore_options" => {},
+    "blobstore_provider" => "simple",
+    "infrastructure_name" => "vsphere",
+    "platform_name" => "ubuntu",
+    "base_dir" => "/var/vcap",
+    "smtp_port" => 2825,
+    "process_alerts" => true,
+    "heartbeat_interval" => 60
 }
 
 opts = OptionParser.new do |opts|
@@ -35,7 +35,7 @@ opts = OptionParser.new do |opts|
   end
 
   opts.on("-l", "--log_level String", "Log level") do |opt|
-    options["logging"] = { "level" => opt }
+    options["logging"] = {"level" => opt}
   end
 
   opts.on("-n", "--nats String", "Nats/mbus (nats://user:pass@host:port)") do |opt|
@@ -62,7 +62,7 @@ opts = OptionParser.new do |opts|
     options["smtp_port"] = opt
   end
 
-  opts.on("--no-alerts", "Don't process alerts from Monit") do |opt|
+  opts.on("--no-alerts", "Don't process alerts from Monit or sshd") do |opt|
     options["process_alerts"] = false
   end
 
@@ -71,18 +71,24 @@ opts = OptionParser.new do |opts|
   end
 
   opts.on("-s", "--blobstore String", "Blobstore options") do |opt|
-    if opt =~ /@/
-      credentials, endpoint = opt.split("@", 2)
-      user, password = credentials.split(":", 2)
-      options["blobstore_options"].merge!("user" => user, "password" => password)
-    else
-      endpoint = opt
+    uri = URI(opt)
+    bs_opts = options['blobstore_options']
+
+    if uri.user
+      bs_opts.merge!('user' => uri.user)
+      uri.user = nil
     end
-    # check if endpoint seems like a local path
-    if endpoint =~ /^\//
-      options["blobstore_options"]["blobstore_path"] = endpoint
+
+    if uri.password
+      bs_opts.merge!('password' => uri.password)
+      uri.password = nil
+    end
+
+    # handle both 'file://foo/bar' and '/foo/bar'
+    if uri.scheme == 'file' || uri.scheme.nil?
+      bs_opts['blobstore_path'] = uri.path
     else
-      options["blobstore_options"]["endpoint"] = endpoint
+      bs_opts['endpoint'] = uri.to_s
     end
   end
 

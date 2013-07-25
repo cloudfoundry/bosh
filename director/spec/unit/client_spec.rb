@@ -5,8 +5,8 @@ require "spec_helper"
 describe Bosh::Director::Client do
 
   before(:each) do
-    @nats_rpc = mock(BD::NatsRpc)
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(@nats_rpc)
+    @nats_rpc = double(BD::NatsRpc)
+    Bosh::Director::Config.stub(:nats_rpc).and_return(@nats_rpc)
   end
 
   let(:test_args) do
@@ -43,7 +43,7 @@ describe Bosh::Director::Client do
     @nats_rpc.should_receive(:send_request).
       with("foo.bar", test_rpc_args).and_yield(response)
 
-    rm = mock(Bosh::Director::Api::ResourceManager)
+    rm = double(Bosh::Director::Api::ResourceManager)
     rm.should_receive(:get_resource).with("deadbeef").and_return("an exception")
     rm.should_receive(:delete_resource).with("deadbeef")
     Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
@@ -123,15 +123,33 @@ describe Bosh::Director::Client do
       }.should raise_exception(RuntimeError, "foo")
     end
 
-    it "should let you wait for the server to be ready" do
-      @client = make("foo", "bar", :timeout => 0.1)
+    describe :wait_until_ready do
+      let(:client) { make('foo', 'bar', :timeout => 0.1) }
 
-      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
-      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
-      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
-      @client.should_receive(:ping).and_return(true)
+      it 'should wait for the agent to be ready' do
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_return(true)
 
-      @client.wait_until_ready
+        client.wait_until_ready
+      end
+
+      it 'should wait for the agent if it is restarting' do
+        client.should_receive(:ping).and_raise(BD::RpcRemoteException, 'restarting agent')
+        client.should_receive(:ping).and_raise(BD::RpcTimeout)
+        client.should_receive(:ping).and_return(true)
+
+        client.wait_until_ready
+      end
+
+      it 'should raise an exception if there is a remote exception' do
+        client.should_receive(:ping).and_raise(BD::RpcRemoteException, 'remote exception')
+
+        expect do
+          client.wait_until_ready
+        end.to raise_error(Bosh::Director::RpcRemoteException)
+      end
     end
   end
 
@@ -155,8 +173,6 @@ describe Bosh::Director::Client do
         message["sequence_number"].to_i.should > Time.now.to_i
         message["client_id"].should == "bar"
 
-        # TODO accessor for session_id
-        # message["session_id"].should == handler.session_id
         blk.call("encrypted_data" => handler.encrypt(response))
       }
 
@@ -202,7 +218,7 @@ describe Bosh::Director::Client do
         "blobstore_id" => "deadbeef"
       }
 
-      rm = mock(BD::Api::ResourceManager)
+      rm = double(BD::Api::ResourceManager)
       BD::Api::ResourceManager.stub(:new).and_return(rm)
       rm.should_receive(:get_resource).with("deadbeef").
         and_return("Failed to compile: no such file 'zbb'")

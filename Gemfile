@@ -1,71 +1,78 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+# encoding: UTF-8
 
 source 'https://rubygems.org'
 
-gem "agent_client", :path => "agent_client"
-gem "blobstore_client", :path => "blobstore_client"
-gem "bosh_agent", :path => "bosh_agent"
-gem "bosh_aws_bootstrap", :path => "bosh_aws_bootstrap"
-gem "bosh_aws_cpi", :path => "bosh_aws_cpi"
-gem "bosh_common", :path => "bosh_common"
-gem "bosh_cpi", :path => "bosh_cpi"
-gem "bosh_cli", :path => "bosh_cli"
-gem "bosh_deployer", :path => "bosh_deployer"
-gem "bosh_encryption", :path => "bosh_encryption"
-gem "bosh_openstack_cpi", :path => "bosh_openstack_cpi"
-gem "bosh_registry", :path => "bosh_registry"
-gem "bosh_vcloud_cpi", :path => "bosh_vcloud_cpi"
-gem "bosh_vsphere_cpi", :path => "bosh_vsphere_cpi"
-gem "bosh_warden_cpi", :path => "bosh_warden_cpi"
-gem "director", :path => "director"
-gem "health_monitor", :path => "health_monitor"
-gem "monit_api", :path => "monit_api"
-gem "package_compiler", :path => "package_compiler"
-gem "ruby_vcloud_sdk", :path => "ruby_vcloud_sdk"
-gem "ruby_vim_sdk", :path => "ruby_vim_sdk"
-gem "simple_blobstore_server", :path => "simple_blobstore_server"
+ruby '1.9.3'
 
-gem "rake", "~>10.0"
+gemspec path: 'agent_client'
+gemspec path: 'blobstore_client'
+gemspec path: 'bosh_agent'
+gemspec path: 'bosh_aws_cpi'
+gemspec path: 'bosh_common'
+gemspec path: 'bosh_cpi'
+gemspec path: 'bosh_cli'
+gemspec path: 'bosh_cli_plugin_aws'
+gemspec path: 'bosh_cli_plugin_micro'
+gemspec path: 'bosh_encryption'
+gemspec path: 'bosh_openstack_cpi'
+gemspec path: 'bosh_registry'
+gemspec path: 'bosh_vsphere_cpi'
+gemspec path: 'bosh_warden_cpi'
+gemspec path: 'director'
+gemspec path: 'health_monitor'
+gemspec path: 'monit_api'
+gemspec path: 'package_compiler'
+gemspec path: 'ruby_vim_sdk'
+gemspec path: 'simple_blobstore_server'
+
+gem 'rake', '~>10.0'
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
-  gem "pg"
+  gem 'pg'
+  gem 'mysql2'
 end
 
 group :development do
-  gem "ruby_gntp"
-  gem "debugger" if RUBY_VERSION < "2.0.0"
+  gem 'ruby_gntp'
+  gem 'debugger' if RUBY_VERSION < '2.0.0'
 end
 
 group :bat do
-  gem "httpclient"
-  gem "json"
-  gem "minitar"
-  gem "net-ssh"
+  gem 'httpclient'
+  gem 'json'
+  gem 'minitar'
+  gem 'net-ssh'
 end
 
 group :development, :test do
-  gem "rack-test"
-  gem "guard"
-  gem "guard-bundler"
-  gem "guard-rspec"
-  gem "ci_reporter"
-  gem "rspec"
+  gemspec path: 'bosh-dev'
 
-  gem "simplecov"
-  gem "simplecov-rcov"
+  gem 'rubocop', require: false
+  gem 'parallel_tests'
+  gem 'rack-test'
+  gem 'guard'
+  gem 'guard-bundler'
+  gem 'guard-rspec'
+  gem 'ci_reporter'
+  gem 'rspec'
+  gem 'rspec-fire'
+  gem 'webmock'
+  gem 'fakefs'
+  gem 'simplecov'
+  gem 'simplecov-rcov'
 
   # for director
-  gem "machinist", "~>1.0"
+  gem 'machinist', '~>1.0'
 
   # for root level specs
-  gem "rest-client"
-  gem "redis"
-  gem "nats"
+  gem 'rest-client'
+  gem 'redis'
+  gem 'nats'
+  gem 'rugged'
 
-  # from ruby_vcloud_sdk
-  gem "nokogiri-diff"
-
-  gem "sqlite3"
+  gem 'sqlite3'
+  gem 'timecop'
+  gem 'jenkins_api_client'
 end

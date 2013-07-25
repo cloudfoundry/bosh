@@ -4,8 +4,9 @@ module Bosh::Director
   module Api
     class ResourceManager
 
-      def initialize
+      def initialize(blobstore_client=App.instance.blobstores.blobstore)
         @logger = Config.logger
+        @blobstore_client = blobstore_client
       end
 
       # Retrieves the resource `id` from the blobstore and stores it
@@ -57,8 +58,7 @@ module Bosh::Director
       private
 
       def blobstore_resource(id)
-        blobstore = Bosh::Director::Config.blobstore
-        yield blobstore
+        yield @blobstore_client
       rescue Bosh::Blobstore::NotFound
         raise ResourceNotFound, "Resource `#{id}' not found in the blobstore"
       rescue Bosh::Blobstore::BlobstoreError => e

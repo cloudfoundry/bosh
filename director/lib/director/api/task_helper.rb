@@ -27,7 +27,7 @@ module Bosh::Director
             task_file = File.basename(file_path)
             task_id = Integer(task_file)
 
-            if task_id < min_task_id && task_id >= 0
+            if task_id <= min_task_id && task_id >= 0
               logger.info("Delete #{task_file}")
               FileUtils.rm_rf file_path
               Models::Task[task_id].destroy

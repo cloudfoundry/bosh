@@ -3,16 +3,14 @@ name: blobstore
 
 templates:
   nginx_ctl:          bin/nginx_ctl
-  blobstore_ctl:      bin/blobstore_ctl
-  blobstore.yml.erb:  config/blobstore.yml
   nginx.conf.erb:     config/nginx.conf
   blobstore.conf.erb: config/sites/blobstore.conf
   mime.types:         config/mime.types
+  read_users.erb:     config/read_users
+  write_users.erb:    config/write_users
 
 packages:
-  - blobstore
   - nginx
-  - ruby
 
 properties:
   blobstore.port:

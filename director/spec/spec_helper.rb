@@ -1,15 +1,23 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+$: << File.expand_path('..', __FILE__)
 
-require "digest/sha1"
-require "fileutils"
-require "logger"
-require "tmpdir"
-require "zlib"
+require 'digest/sha1'
+require 'fileutils'
+require 'logger'
+require 'tmpdir'
+require 'zlib'
+require 'tempfile'
 
-require "archive/tar/minitar"
-require "rspec"
-require "machinist/sequel"
-require "sham"
+require 'archive/tar/minitar'
+require 'rspec'
+require 'machinist/sequel'
+require 'sham'
+require 'rspec/fire'
+require 'support/job_example_group'
+
+RSpec.configure do |config|
+  config.include(RSpec::Fire)
+end
 
 module SpecHelper
   class << self
@@ -138,6 +146,12 @@ module SpecHelper
       Bosh::Director::Config.logger = @logger
     end
   end
+
+  RSpec::Matchers.define :json_match do |matcher|
+    match do |actual|
+      matcher.matches? JSON.parse(actual)
+    end
+  end
 end
 
 SpecHelper.init
@@ -149,7 +163,9 @@ BDM = BD::Models
 RSpec.configure do |rspec|
   rspec.before(:each) do
     unless $redis_63790_started
-      redis_pid = fork { exec("redis-server  --port 63790") }
+      redis_config = Tempfile.new('redis_config')
+      File.write(redis_config.path, 'port 63790')
+      redis_pid = Process.spawn('redis-server', redis_config.path)
       $redis_63790_started = true
 
       at_exit do
@@ -159,6 +175,7 @@ RSpec.configure do |rspec|
           else
             status = 0
           end
+          redis_config.delete
           Process.kill("KILL", redis_pid)
         ensure
           exit status
@@ -195,10 +212,6 @@ RSpec::Matchers.define :have_flag_set do |method_name|
   description do
     "have '#{method_name}' flag set"
   end
-end
-
-class Object
-  include Bosh::Director::DeepCopy
 end
 
 def asset(filename)
@@ -336,8 +349,6 @@ module ReleaseHelper
     tmp_dir = Dir.mktmpdir
     release_dir = Dir.mktmpdir
 
-    # TODO: use membrane to validate this release manifest
-
     jobs_dir = File.join(tmp_dir, "jobs")
     packages_dir = File.join(tmp_dir, "packages")
 
@@ -353,7 +364,7 @@ module ReleaseHelper
         "packages" => job["packages"]
       }
       File.open(File.join(job_dir, "job.MF"), "w") do |f|
-        YAML.dump(spec, f)
+        Psych.dump(spec, f)
       end
 
       templates_dir = File.join(job_dir, "templates")
@@ -402,7 +413,7 @@ module ReleaseHelper
     end
 
     File.open(File.join(tmp_dir, "release.MF"), "w") do |f|
-      YAML.dump(manifest, f)
+      Psych.dump(manifest, f)
     end
 
     Dir.chdir(release_dir) do

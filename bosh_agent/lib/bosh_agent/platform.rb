@@ -7,7 +7,6 @@ module Bosh::Agent
 
     def initialize(platform_name)
       @name = platform_name
-      # TODO: add to loadpath?
       platform = File.join(File.dirname(__FILE__), 'platform', "#{platform_name}.rb")
 
       if File.exist?(platform)

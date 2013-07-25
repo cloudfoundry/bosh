@@ -30,7 +30,6 @@ module Bosh::AwsCloud
     rescue AWS::EC2::Errors::AuthFailure => e
       # If we get an auth failure from the deregister call, it means we don't own the AMI
       # and we were just faking it, so we can just return pretending that we deleted it.
-      # TODO we could use iam.client.get_user[:user][:user_id] to see if it is owned by us.
       logger.info("deleted fake stemcell '#{id}")
     end
 

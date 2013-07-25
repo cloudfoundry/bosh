@@ -1,7 +1,10 @@
+require_relative 'helpers'
+
 module Bosh::AwsCloud
   class ResourceWait
+    include Helpers
 
-    DEFAULT_TRIES = 100 # this is an INSANE amount of retries, but AWS doesn't give us choice
+    DEFAULT_TRIES = 12 # a sane amount of retries on AWS (~25 minutes), as things can take anywhere between a minute and forevah
     MAX_SLEEP_EXPONENT = 8
 
     def self.for_instance(args)
@@ -86,7 +89,7 @@ module Bosh::AwsCloud
       valid_states = [:completed]
       validate_states(valid_states, target_state)
 
-      new.for_resource(resource: snapshot, target_state: target_state) do |current_state|
+      new.for_resource(resource: snapshot, target_state: target_state, tries: 18) do |current_state|
         current_state == target_state
       end
     end
@@ -100,6 +103,17 @@ module Bosh::AwsCloud
       ignored_errors = [AWS::EC2::Errors::InvalidSubnetID::NotFound]
 
       new.for_resource(resource: subnet, target_state: target_state, errors: ignored_errors, state_method: :state) do |current_state|
+        current_state == target_state
+      end
+    end
+
+    def self.for_sgroup(args)
+      sgroup = args.fetch(:sgroup) { raise ArgumentError, 'sgroup object required' }
+      target_state = args.fetch(:state) { raise ArgumentError, 'state symbol required' }
+      valid_states = [true, false]
+      validate_states(valid_states, target_state)
+
+      new.for_resource(resource: sgroup, target_state: true, state_method: :exists?) do |current_state|
         current_state == target_state
       end
     end

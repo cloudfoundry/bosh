@@ -8,7 +8,7 @@ release:
 
 compilation:
   workers: 1
-  network: default
+  network: static
   reuse_compilation_vms: true
   cloud_properties:
     ram: 1024
@@ -23,7 +23,7 @@ update:
   max_errors: 1
 
 networks:
-- name: default
+- name: static
   subnets:
   - range: <%= properties.network.cidr %>
     reserved:
@@ -47,7 +47,7 @@ networks:
 
 resource_pools:
   - name: common
-    network: default
+    network: static
     size: <%= properties.pool_size %>
     stemcell:
       name: <%= properties.stemcell.name %>
@@ -71,7 +71,7 @@ jobs:
     persistent_disk: <%= properties.persistent_disk %>
     <% end %>
     networks:
-      - name: default
+      - name: static
       <% if properties.use_static_ip %>
         static_ips:
           - <%= properties.static_ip %>

@@ -3,6 +3,7 @@
 require "thin"
 require "sinatra"
 require "monitor"
+require "common/ssl"
 
 module Bosh::Agent
 
@@ -15,25 +16,31 @@ module Bosh::Agent
     def start
       handler = self
 
-      EM.run do
-        uri = URI.parse(Config.mbus)
+      uri = URI.parse(Config.mbus)
 
-        @server = Thin::Server.new(uri.host, uri.port) do
-          use Rack::CommonLogger
+      @server = Thin::Server.new(uri.host, uri.port) do
+        use Rack::CommonLogger
 
-          if uri.userinfo
-            use Rack::Auth::Basic do |user, password|
-              "#{user}:#{password}" == uri.userinfo
-            end
-          end
-
-          map "/" do
-            run AgentController.new(handler)
+        if uri.userinfo
+          use Rack::Auth::Basic do |user, password|
+            "#{user}:#{password}" == uri.userinfo
           end
         end
 
-        @server.start!
+        map "/" do
+          run AgentController.new(handler)
+        end
       end
+
+      certificate = Bosh::Ssl::Certificate.new('agent.key',
+                                               'agent.cert',
+                                               uri.host
+      ).load_or_create
+
+      @server.ssl = true
+      @server.ssl_options = {:ssl_verify => false, :ssl_key_file => certificate.key_path, :ssl_cert_file => certificate.certificate_path }
+
+      @server.start!
     end
 
     def shutdown
@@ -90,7 +97,7 @@ module Bosh::Agent
       end
 
       def apply_spec
-        YAML.load_file(release_apply_spec)
+        Psych.load_file(release_apply_spec)
       end
     end
   end

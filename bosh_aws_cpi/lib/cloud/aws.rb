@@ -16,10 +16,11 @@ require "common/exec"
 require "common/thread_pool"
 require "common/thread_formatter"
 
+require "bosh_registry/client"
+
 require "cloud"
 require "cloud/aws/helpers"
 require "cloud/aws/cloud"
-require "cloud/aws/registry_client"
 require "cloud/aws/version"
 
 require "cloud/aws/aki_picker"

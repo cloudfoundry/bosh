@@ -6,11 +6,11 @@ describe Bosh::Agent::Heartbeat do
 
   before(:each) do
     state_file = Tempfile.new("state")
-    state_file.write(YAML.dump({ "job" => {"name" => "mutator" }, "index" => 3, "configuration_hash" => "deadbeef" }))
+    state_file.write(Psych.dump({ "job" => {"name" => "mutator" }, "index" => 3, "configuration_hash" => "deadbeef" }))
     state_file.close
 
     @state = Bosh::Agent::State.new(state_file.path)
-    @nats = mock()
+    @nats = double()
 
     @heartbeat          = Bosh::Agent::Heartbeat.new
     @heartbeat.logger   = Logger.new(StringIO.new)
@@ -68,11 +68,11 @@ describe Bosh::Agent::Heartbeat do
       }
     }
 
-    client = mock("monit_client")
-    client.stub!(:status).with(:group => "vcap").and_return(processes_status)
-    client.stub!(:status).with(:type => :system).and_return(system_status)
+    client = double("monit_client")
+    client.stub(:status).with(:group => "vcap").and_return(processes_status)
+    client.stub(:status).with(:type => :system).and_return(system_status)
 
-    Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
+    Bosh::Agent::Monit.stub(:retry_monit_request).and_yield(client)
     Bosh::Agent::Monit.enabled = true
 
     fake_disk_usage = {

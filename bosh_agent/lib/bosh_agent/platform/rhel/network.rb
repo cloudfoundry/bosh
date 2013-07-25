@@ -1,18 +1,16 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'bosh_agent/platform/linux/network'
-require 'bosh_agent/platform/rhel'
 
 module Bosh::Agent
   class Platform::Rhel::Network < Platform::Linux::Network
     include Bosh::Exec
 
-    def initialize
-      super(File.join File.dirname(__FILE__), 'templates')
+    def initialize(template_dir)
+      super
     end
 
     def write_network_interfaces
       template = ERB.new(load_erb("rhel-ifcfg.erb"), 0, '%<>-')
-      @networks.each do |name, network|
+      networks.each do |name, network|
         result = template.result(binding)
         Bosh::Agent::Util::update_file(result, "/etc/sysconfig/network-scripts/ifcfg-#{name}")
       end

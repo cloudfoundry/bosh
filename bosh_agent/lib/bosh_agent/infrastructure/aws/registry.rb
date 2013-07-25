@@ -6,7 +6,7 @@ module Bosh::Agent
 
       API_TIMEOUT           = 86400 * 3
       CONNECT_TIMEOUT       = 30
-      INSTANCE_DATA_URI = "http://169.254.169.254/1.0"
+        INSTANCE_DATA_URI = "http://169.254.169.254/latest"
 
       def get_uri(uri)
         client = HTTPClient.new
@@ -122,20 +122,31 @@ module Bosh::Agent
       end
 
       def bosh_lookup(hostname, nameservers)
-        resolver = Resolv::DNS.new(:nameserver => nameservers)
-        resolver.getaddress(hostname)
+        resolver = Resolv.new([Resolv::Hosts.new, Resolv::DNS.new(nameserver: nameservers)])
+        resolver.each_address(hostname) do |address|
+          begin
+            return address if IPAddr.new(address).ipv4?
+          rescue ArgumentError
+          end
+        end
+        raise Resolv::ResolvError, "Could not resolve #{hostname}"
       end
 
       def extract_registry_hostname(endpoint)
-        match = endpoint.match(%r{https*://([^:]+):})
-        unless match.size == 2
+        uri = URI.parse(endpoint)
+        hostname = uri.hostname
+
+        if hostname.nil?
           raise LoadSettingsError, "Could not extract registry hostname"
         end
-        match[1]
+
+        hostname
       end
 
       def inject_registry_ip(ip, endpoint)
-        endpoint.sub(%r{//[^:]+:}, "//#{ip}:")
+        uri = URI.parse(endpoint)
+        uri.hostname = ip
+        uri.to_s
       end
 
       def get_openssh_key

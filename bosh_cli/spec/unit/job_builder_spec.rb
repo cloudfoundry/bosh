@@ -9,7 +9,7 @@ describe Bosh::Cli::JobBuilder do
   end
 
   def new_builder(name, packages = [], templates = { }, built_packages = [],
-      create_spec = true, final = false, blobstore = mock("blobstore"))
+      create_spec = true, final = false, blobstore = double("blobstore"))
     # Workaround for Hash requirement
     if templates.is_a?(Array)
       templates = templates.inject({ }) { |h, e| h[e] = e; h }
@@ -211,7 +211,7 @@ describe Bosh::Cli::JobBuilder do
       "packages"   => ["bar", "baz"],
       "templates"  => ["a.conf", "b.yml"]
     }
-    spec_yaml = YAML.dump(spec)
+    spec_yaml = Psych.dump(spec)
 
     script = <<-SCRIPT.gsub(/^\s*/, "")
     #!/bin/sh
@@ -351,7 +351,7 @@ describe Bosh::Cli::JobBuilder do
 
     builder.version.should == "0.1-dev"
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     blobstore.should_receive(:create).and_return("object_id")
     final_builder = new_builder("foo", [], ["bar", "baz"], [],
                                 true, true, blobstore)
@@ -370,7 +370,7 @@ describe Bosh::Cli::JobBuilder do
     add_templates("foo", "bar", "baz")
     add_monit("foo")
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
 
     final_builder = new_builder("foo", [], ["bar", "baz"],
                                 [], true, true, blobstore)
@@ -400,7 +400,7 @@ describe Bosh::Cli::JobBuilder do
     add_templates("foo", "foo/bar", "bar/baz")
     add_monit("foo")
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     builder = new_builder("foo", [], ["foo/bar", "bar/baz"],
                           [], true, false, blobstore)
     builder.build
@@ -430,7 +430,7 @@ describe Bosh::Cli::JobBuilder do
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
         should be_true
 
-    blobstore = mock("blobstore")
+    blobstore = double("blobstore")
     blobstore.should_not_receive(:create)
     final_builder = new_builder("foo", [], ["bar", "baz"], [],
                                 true, true, blobstore)

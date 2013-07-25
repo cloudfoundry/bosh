@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'common/deep_copy'
+
 module Bosh::Cli
   class JobPropertyCollection
     include Enumerable
@@ -12,8 +14,8 @@ module Bosh::Cli
     def initialize(job_builder, global_properties, job_properties, mappings)
       @job_builder = job_builder
 
-      @job_properties = deep_copy(job_properties || {})
-      merge(@job_properties, deep_copy(global_properties))
+      @job_properties = Bosh::Common::DeepCopy.copy(job_properties || {})
+      merge(@job_properties, Bosh::Common::DeepCopy.copy(global_properties))
 
       @mappings = mappings || {}
       @properties = []
@@ -64,11 +66,6 @@ module Bosh::Cli
       end
     end
 
-    # @param [Object] object Serializable object
-    # @return [Object] Deep copy of the object
-    def deep_copy(object)
-      Marshal.load(Marshal.dump(object))
-    end
 
     # @param [Hash] base
     # @param [Hash] extras

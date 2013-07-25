@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-require 'bosh_agent/platform/linux/password'
 
 describe Bosh::Agent::Platform::Linux::Password do
   let(:password) { subject }

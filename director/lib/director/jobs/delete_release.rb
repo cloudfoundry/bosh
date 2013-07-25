@@ -7,11 +7,13 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(name, options = {})
-        super
+      def self.job_type
+        :delete_release
+      end
 
+      def initialize(name, options = {})
         @name = name
-        @blobstore = Config.blobstore
+        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @errors = []
         @force = !!options["force"]
         @version = options["version"]

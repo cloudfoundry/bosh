@@ -73,12 +73,14 @@ module Bosh::OpenStackCloud
       else
         # If there is no vip network we should disassociate any floating IP
         # currently held by server (as it might have had floating IP before)
-        addresses = openstack.addresses
-        addresses.each do |address|
-          if address.instance_id == server.id
-            @logger.info("Disassociating floating IP `#{address.ip}' " \
-                         "from server `#{server.id}'")
-            address.server = nil
+        with_openstack do
+          addresses = openstack.addresses
+          addresses.each do |address|
+            if address.instance_id == server.id
+              @logger.info("Disassociating floating IP `#{address.ip}' " \
+                           "from server `#{server.id}'")
+              address.server = nil
+            end
           end
         end
       end
@@ -97,6 +99,14 @@ module Bosh::OpenStackCloud
       else
         @security_groups.sort
       end
+    end
+
+    ##
+    # Returns the private IP address for this network configuration
+    #
+    # @return [String] private ip address
+    def private_ip
+      @network.is_a?(ManualNetwork) ? @network.private_ip : nil   
     end
 
     ##

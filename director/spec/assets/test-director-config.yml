@@ -12,9 +12,11 @@ redis:
 
 dir: /tmp/boshdir
 db:
-  database: "sqlite:///:memory:"
-  max_connections: 32
-  pool_timeout: 10
+  adapter: sqlite
+  database: '/:memory:'
+  connection_options:
+    max_connections: 32
+    pool_timeout: 10
 blobstore:
   provider: simple
   options:
@@ -25,7 +27,18 @@ compiled_package_cache:
   provider: local
   options:
     blobstore_path: /path/to/some/bucket
-
+snapshots:
+  enabled: false
+scan_and_fix:
+  auto_fix_stateful_nodes: false
 cloud:
   plugin: dummy
-  # to be added
+  properties:
+    dir: ...
+     # to be added
+backup_destination:
+  provider: s3
+  options:
+    bucket_name: foo
+    access_key_id: asdf
+    secret_access_key: zxcv

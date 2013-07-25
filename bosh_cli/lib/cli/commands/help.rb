@@ -78,6 +78,8 @@ module Bosh::Cli::Command
         end
       end
 
+      err("No help found for command `#{keywords.join(' ')}'. Run 'bosh help --all' to see all available BOSH commands.") if good_matches.empty?
+
       self.class.list_commands(good_matches)
     end
 
@@ -87,8 +89,7 @@ module Bosh::Cli::Command
 
       commands.each_with_index do |command, i|
         nl if i > 0
-        margin = command.usage.size + 1
-        say("#{command.usage_with_params.columnize(70, margin).green}")
+        say("#{command.usage_with_params.columnize(70).make_green}")
         say(command.desc.columnize(help_column_width).indent(help_indent))
         if command.has_options?
           say(command.options_summary.indent(help_indent))

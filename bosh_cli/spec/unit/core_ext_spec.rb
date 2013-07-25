@@ -26,20 +26,34 @@ describe String do
 
   it "has colorization helpers (but only if tty)" do
     Bosh::Cli::Config.colorize = false
-    "string".red.should == "string"
-    "string".green.should == "string"
-    "string".colorize("a").should == "string"
-    "string".colorize(:green).should == "string"
+    "string".make_red.should == "string"
+    "string".make_green.should == "string"
+    "string".make_color("a").should == "string"
+    "string".make_color(:green).should == "string"
 
     Bosh::Cli::Config.colorize = true
     Bosh::Cli::Config.output.stub(:tty?).and_return(true)
-    "string".red.should == "\e[0m\e[31mstring\e[0m"
-    "string".green.should == "\e[0m\e[32mstring\e[0m"
-    "string".colorize("a").should == "string"
-    "string".colorize(:green).should == "\e[0m\e[32mstring\e[0m"
+    "string".make_red.should == "\e[0m\e[31mstring\e[0m"
+    "string".make_green.should == "\e[0m\e[32mstring\e[0m"
+    "string".make_color("a").should == "string"
+    "string".make_color(:green).should == "\e[0m\e[32mstring\e[0m"
 
     Bosh::Cli::Config.output.stub(:tty?).and_return(false)
-    "string".green.should == "string"
+    "string".make_green.should == "string"
+  end
+
+  describe 'columnize' do
+    it 'wraps long lines' do
+      message = 'hello this is a line that has quite a lot of words'
+      formatted_message = "hello this is a line\nthat has quite a lot\nof words"
+
+      line_wrap = double(Bosh::Cli::LineWrap)
+      line_wrap.should_receive(:wrap)
+        .with(message)
+        .and_return(formatted_message)
+      Bosh::Cli::LineWrap.should_receive(:new).with(20, 0).and_return(line_wrap)
+      expect(message.columnize(20)).to eq formatted_message
+    end
   end
 end
 
@@ -65,7 +79,7 @@ describe Object do
   end
 
   it 'has a warn helper' do
-    should_receive(:warn).with("[WARNING] Could not find keypair".yellow)
+    should_receive(:warn).with("[WARNING] Could not find keypair".make_yellow)
 
     warning("Could not find keypair")
   end
@@ -78,27 +92,33 @@ describe Object do
 
   it "can tell if object is blank" do
     o = Object.new
-    o.stub!(:to_s).and_return("  ")
+    o.stub(:to_s).and_return("  ")
     o.should be_blank
-    o.stub!(:to_s).and_return("Object 1")
+    o.stub(:to_s).and_return("Object 1")
     o.should_not be_blank
   end
 
-  describe "loading YAML files" do
+  describe "#load_yaml_file" do
     it "can load YAML files with ERB" do
       load_yaml_file(spec_asset("dummy.yml.erb")).should == {"four" => 4}
     end
 
     it "gives a nice error when the file cannot be found" do
-      expect { load_yaml_file("non-existent.yml") }.to raise_error(Bosh::Cli::CliError, "Cannot find file `non-existent.yml'")
+      expect {
+        load_yaml_file("non-existent.yml")
+      }.to raise_error(Bosh::Cli::CliError, "Cannot find file `non-existent.yml'")
     end
 
     it "gives a nice error when the parsed YAML is not a Hash" do
-      expect { load_yaml_file(spec_asset("not_a_hash.yml")) }.to raise_error(Bosh::Cli::CliError, /Incorrect file format in/)
+      expect {
+        load_yaml_file(spec_asset("not_a_hash.yml"))
+      }.to raise_error(Bosh::Cli::CliError, /Incorrect YAML structure .* expected Hash/)
     end
 
     it "gives a nice error when the parsed YAML produces a hash with repeated keys" do
-      expect { load_yaml_file(spec_asset("duplicate_keys.yml")) }.to raise_error(RuntimeError, /Bad yaml file/)
+      expect {
+        load_yaml_file(spec_asset("duplicate_keys.yml"))
+      }.to raise_error(Bosh::Cli::CliError, /Incorrect YAML structure .* duplicate key 'unique_key'/)
     end
   end
 end

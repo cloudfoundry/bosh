@@ -16,8 +16,8 @@ Before you can run BAT, you need to set the following environment variables:
 * **BAT_VCAP_PASSWORD**: password used to ssh to the stemcells
 * **BAT_DNS_HOST**: DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
 * **BAT_FAIL_FAST**: Stop running tests after the first failure
-* **BAT_SKIP_SSH**: Skip tests that log in with SSH
 
+The 'dns' property MUST NOT be specified in the bat deployment spec properties. At all.
   
 ## Optional Environment Variables
 
@@ -72,6 +72,49 @@ properties:
     security_groups:
     - bat
 ```
+
+On OpenStack with DHCP:
+```yaml
+---
+cpi: openstack
+properties:
+  static_ip: 54.235.115.62 # floating IP to use for the bat-release jobs
+  uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: latest
+  instances: 1
+  key_name: bosh # OpenStack key name
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
+```
+
+On OpenStack with manual networking (requires Quantum):
+```yaml
+---
+cpi: openstack
+properties:
+  static_ip: 54.235.115.62 # floating IP to use for the bat-release jobs
+  uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: latest
+  instances: 1
+  key_name: bosh # OpenStack key name
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
+  network:
+    cidr: 10.0.1.0/24
+    reserved:
+    - 10.0.1.2 - 10.0.1.9
+    static:
+    - 10.0.1.10 - 10.0.1.30
+    gateway: 10.0.1.1
+    net_id: 4ef0b0ec-58c9-4478-8382-2099da773fdd #
+    security_groups:
+    - default
+```
+
 ## EC2 Networking Config
 
 ### On EC2 with AWS-provided DHCP networking
@@ -81,10 +124,11 @@ Add TCP port `4567` to the **default** security group.
 Create a **bat** security group in the same VPC the BAT_DIRECTOR is running in. Allow inbound access to TCP ports
  `22` and `4567` to the bat security group.
 
+## OpenStack Networking Config
+
+Add TCP ports `22` and `4567` to the **default** security group.
+
 ## Running BAT
 
 When all of the above is ready, running `bundle exec rake bat:env` will verify environment variables are set correctly.
 To run the whole test suite, run `bundle exec rake bat`.
-
-## TODO
-* add rake task to download stemcell (for full automation)

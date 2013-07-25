@@ -7,7 +7,6 @@ module Bosh::Agent
 
     def initialize(infrastructure_name)
       @name = infrastructure_name
-      # TODO: add to loadpath?
       infrastructure = File.join(File.dirname(__FILE__), 'infrastructure', "#{infrastructure_name}.rb")
 
       if File.exist?(infrastructure)

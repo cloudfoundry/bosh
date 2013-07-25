@@ -6,55 +6,47 @@ module Bosh::Cli
       private
       def process_object(o)
         case o
-        when @syck_class::Map
-          process_map(o)
-        when @syck_class::Seq
-          process_seq(o)
-        when @syck_class::Scalar
-        else
-          err("Unhandled class #{o.class}, fix yaml duplicate check")
+          when Psych::Nodes::Mapping
+            process_mapping(o)
+          when Psych::Nodes::Sequence
+            process_sequence(o)
+          when Psych::Nodes::Scalar
+            # noop
+          when Psych::Nodes::Alias
+            # noop
+          else
+            err("Unhandled class #{o.class}, fix yaml duplicate check")
         end
       end
 
-      def process_seq(s)
-        s.value.each do |v|
+      def process_sequence(s)
+        s.children.each do |v|
           process_object(v)
         end
       end
 
-      def process_map(m)
-        return if m.class != @syck_class::Map
+      def process_mapping(m)
+        return unless m.children
         s = Set.new
-        m.value.each_key do  |k|
-          raise "Found dup key #{k.value}" if s.include?(k.value)
-          s.add(k.value)
+
+        m.children.each_with_index do |key_or_value, index|
+          next if index.odd? # skip the values
+          key = key_or_value.value # Sorry this is confusing, Psych mappings don't behave nicely like maps
+          raise "Found duplicate key '#{key}'" if s.include?(key)
+          s.add(key)
         end
 
-        m.value.each_value do |v|
-          process_object(v)
+        m.children.each_with_index do |key_or_value, index|
+          next if index.even? # skip the keys
+          process_object(key_or_value)
         end
       end
 
       public
-      def check_duplicate_keys(path)
-        # Some Ruby builds on Ubuntu seem to expose a bug
-        # with the opposite order of Syck check, so we first
-        # check for Syck and then for YAML::Syck
-        if defined?(Syck)
-          @syck_class = Syck
-        elsif defined?(YAML::Syck)
-          @syck_class = YAML::Syck
-        else
-          raise "Cannot find Syck parser for YAML, " +
-                    "please check your Ruby installation"
-        end
 
-        begin
-          yaml = ERB.new(File.read(path)).result
-          process_map(YAML.parse(yaml))
-        rescue => e
-          raise "Bad yaml file #{path}, " + e.message
-        end
+      def check_duplicate_keys(yaml_str)
+        document = Psych.parse(yaml_str)
+        process_mapping(document.root) if document
       end
     end
   end

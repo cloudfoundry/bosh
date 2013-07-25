@@ -1,28 +1,87 @@
 module IntegrationExampleGroup
   def start_sandbox
     puts "Starting sandboxed environment for BOSH tests..."
-    Bosh::Spec::Sandbox.start
+    current_sandbox.start
   end
 
   def stop_sandbox
-    puts "\nStopping sandboxed environment for BOSH tests..."
-    Bosh::Spec::Sandbox.stop
+    puts "\n  Stopping sandboxed environment for BOSH tests..."
+    current_sandbox.stop
     cleanup_bosh
   end
 
   def reset_sandbox(example)
     desc = example ? example.example.metadata[:description] : ""
-    Bosh::Spec::Sandbox.reset(desc)
+    current_sandbox.reset(desc)
   end
 
-  def run_bosh(cmd, work_dir = nil)
+  def run_bosh(cmd, work_dir = nil, options = {})
+    failure_expected = options.fetch(:failure_expected, false)
     Dir.chdir(work_dir || BOSH_WORK_DIR) do
-      output = `bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
-      if $?.exitstatus != 0
+      command = "bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}"
+      output = `#{command} 2>&1`
+      if $?.exitstatus != 0 && !failure_expected
+        puts command
         puts output
       end
       output
     end
+  end
+
+  def run_bosh_cck_ignore_errors(num_errors)
+    resolution_selections = "1\n"*num_errors + "yes"
+    output = `echo "#{resolution_selections}" | bosh -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} cloudcheck`
+    if $?.exitstatus != 0
+      puts output
+    end
+    output
+  end
+
+  def current_sandbox
+    @current_sandbox = Thread.current[:sandbox] || Bosh::Spec::Sandbox.new
+    Thread.current[:sandbox] = @current_sandbox
+  end
+
+  def regexp(string)
+    Regexp.compile(Regexp.escape(string))
+  end
+
+  def format_output(out)
+    out.gsub(/^\s*/, '').gsub(/\s*$/, '')
+  end
+
+  def expect_output(cmd, expected_output)
+    format_output(run_bosh(cmd)).should == format_output(expected_output)
+  end
+
+  def get_vms
+    output = run_bosh("vms --details")
+    table = output.lines.grep(/\|/)
+
+    table = table.map { |line| line.split('|').map(&:strip).reject(&:empty?) }
+    headers = table.shift || []
+    headers.map! do |header|
+      header.downcase.tr('/ ', '_').to_sym
+    end
+    output = []
+    table.each do |row|
+      output << Hash[headers.zip(row)]
+    end
+    output
+  end
+
+  def wait_for_vm(name)
+    5.times do
+      vm = get_vms.detect { |v| v[:job_index] == name }
+      return vm if vm
+    end
+    nil
+  end
+
+  def kill_job_agent(name)
+    vm = get_vms.detect { |v| v[:job_index] == name }
+    Process.kill('INT', vm[:cid].to_i)
+    vm[:cid]
   end
 
   def self.included(base)
@@ -43,7 +102,14 @@ module IntegrationExampleGroup
           end
         end
       end
-      reset_sandbox(example)
+
+      reset_sandbox(example) unless example.example.metadata[:no_reset]
+    end
+
+    base.after(:each) do |example|
+      desc = example ? example.example.metadata[:description] : ""
+      current_sandbox.save_task_logs(desc)
+      FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
     end
   end
 end

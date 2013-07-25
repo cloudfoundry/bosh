@@ -63,7 +63,6 @@ module Bosh::Agent
         !@packages.empty?
       end
 
-      # TODO: figure out why it has to be an apply marker
       def configured?
         @spec.key?("configuration_hash")
       end

@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'common/deep_copy'
+
 module Bosh::Director
   class DeploymentPlan
     class Job
@@ -23,7 +25,7 @@ module Bosh::Director
       attr_accessor :canonical_name
 
       # @return [Integer] Persistent disk size (no disk if zero)
-      attr_accessor :persistent_disk # TODO: rename to 'disk_size' (?)
+      attr_accessor :persistent_disk
 
       # @return [DeploymentPlan] Current deployment plan
       attr_accessor :deployment
@@ -49,14 +51,14 @@ module Bosh::Director
       attr_accessor :packages
 
       # @return [DeploymentPlan::UpdateConfig] Job update settings
-      attr_accessor :update # TODO rename to update_config or update_settings
+      attr_accessor :update
 
       # @return [Array<Models::Instance>] List of excess instance models that
       #   are not needed for current deployment
       attr_accessor :unneeded_instances
 
       # @return [String] Expected job state
-      attr_accessor :state # TODO rename to avoid confusion
+      attr_accessor :state
 
       # @return [Hash<Integer, String>] Individual instance expected states
       attr_accessor :instance_states
@@ -129,8 +131,6 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
-        # TODO(lisbakke): Remove Legacy code when the agent has been updated
-        # to accept templates as an array.
         first_template = @templates[0]
         result = {
           "name" => @name,
@@ -171,7 +171,8 @@ module Bosh::Director
         @packages.each do |name, package|
           result[name] = package.spec
         end
-        result
+
+        result.select { |name, _| run_time_dependencies.include? name }
       end
 
       # Returns all instances of this job
@@ -227,8 +228,7 @@ module Bosh::Director
             @release = @deployment.releases.first
           else
             raise JobMissingRelease,
-                  "Cannot tell what release job `#{@name}' " +
-                  "supposed to use, please reference an existing release"
+                  "Cannot tell what release job `#{@name}' supposed to use, please reference an existing release"
           end
         else
           @release = @deployment.release(release_name)
@@ -236,8 +236,7 @@ module Bosh::Director
 
         if @release.nil?
           raise JobUnknownRelease,
-                "Job `#{@name}' references " +
-                "an unknown release `#{release_name}'"
+                "Job `#{@name}' references an unknown release `#{release_name}'"
         end
       end
 
@@ -246,7 +245,6 @@ module Bosh::Director
           raise DirectorError, "Cannot parse template before parsing release"
         end
 
-        # TODO support plural "templates" syntax as well
         template_names = safe_property(@job_spec, "template")
 
         if template_names.is_a?(String)
@@ -254,7 +252,7 @@ module Bosh::Director
         end
 
         unless template_names.is_a?(Array)
-          invalid_type("template", "String or Array")
+          invalid_type("template", "String or Array", template_names)
         end
 
         template_names.each do |template_name|
@@ -264,31 +262,27 @@ module Bosh::Director
       end
 
       def parse_disk
-        @persistent_disk = safe_property(@job_spec, "persistent_disk",
-                                         :class => Integer, :default => 0)
+        @persistent_disk = safe_property(@job_spec, "persistent_disk", :class => Integer, :default => 0)
       end
 
       def parse_properties
         # Manifest can contain global and per-job properties section
-        job_properties = safe_property(
-          @job_spec, "properties", :class => Hash, :optional => true)
+        job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true)
 
-        @all_properties = deployment.properties._deep_copy
+        @all_properties = Bosh::Common::DeepCopy.copy(deployment.properties)
 
         if job_properties
           @all_properties.recursive_merge!(job_properties)
         end
 
-        mappings = safe_property(
-          @job_spec, "property_mappings", :class => Hash, :default => {})
+        mappings = safe_property(@job_spec, "property_mappings", :class => Hash, :default => {})
 
         mappings.each_pair do |to, from|
           resolved = lookup_property(@all_properties, from)
 
           if resolved.nil?
             raise JobInvalidPropertyMapping,
-                  "Cannot satisfy property mapping `#{to}: #{from}', " +
-                  "as `#{from}' is not in deployment properties"
+                  "Cannot satisfy property mapping `#{to}: #{from}', as `#{from}' is not in deployment properties"
           end
 
           @all_properties[to] = resolved
@@ -301,8 +295,7 @@ module Bosh::Director
         @resource_pool = deployment.resource_pool(resource_pool_name)
         if @resource_pool.nil?
           raise JobUnknownResourcePool,
-                "Job `#{@name}' references " +
-                "an unknown resource pool `#{resource_pool_name}'"
+                "Job `#{@name}' references an unknown resource pool `#{resource_pool_name}'"
         end
       end
 
@@ -337,16 +330,14 @@ module Bosh::Director
           end
           unless VALID_JOB_STATES.include?(state)
             raise JobInvalidInstanceState,
-                  "Invalid state `#{state}' for `#{@name}/#{index}', " +
-                  "valid states are: #{VALID_JOB_STATES.join(", ")}"
+                  "Invalid state `#{state}' for `#{@name}/#{index}', valid states are: #{VALID_JOB_STATES.join(", ")}"
           end
           @instance_states[index] = state
         end
 
         if @state && !VALID_JOB_STATES.include?(@state)
           raise JobInvalidJobState,
-                "Invalid state `#{@state}' for `#{@name}', " +
-                "valid states are: #{VALID_JOB_STATES.join(", ")}"
+                "Invalid state `#{@state}' for `#{@name}', valid states are: #{VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times do |index|
@@ -356,7 +347,6 @@ module Bosh::Director
       end
 
       def parse_networks
-        # TODO: refactor to make more readable
         @default_network = {}
 
         network_specs = safe_property(@job_spec, "networks", :class => Array)
@@ -370,8 +360,7 @@ module Bosh::Director
           network = @deployment.network(network_name)
           if network.nil?
             raise JobUnknownNetwork,
-                  "Job `#{@name}' references " +
-                  "an unknown network `#{network_name}'"
+                  "Job `#{@name}' references an unknown network `#{network_name}'"
           end
 
           static_ips = nil
@@ -382,8 +371,7 @@ module Bosh::Director
             end
             if static_ips.size != @instances.size
               raise JobNetworkInstanceIpMismatch,
-                    "Job `#{@name}' has #{@instances.size} " +
-                    "instances but was allocated #{static_ips.size} static IPs"
+                    "Job `#{@name}' has #{@instances.size} instances but was allocated #{static_ips.size} static IPs"
             end
           end
 
@@ -393,16 +381,13 @@ module Bosh::Director
             default_network.each do |property|
               unless Network::VALID_DEFAULTS.include?(property)
                 raise JobNetworkInvalidDefault,
-                      "Job `#{@name}' specified " +
-                      "an invalid default network property `#{property}', " +
-                      "valid properties are: " +
-                      Network::VALID_DEFAULTS.join(", ")
+                      "Job `#{@name}' specified an invalid default network property `#{property}', " +
+                      "valid properties are: " + Network::VALID_DEFAULTS.join(", ")
               end
 
               if @default_network[property]
                 raise JobNetworkMultipleDefaults,
-                      "Job `#{@name}' specified more than one " +
-                      "network to contain default #{property}"
+                      "Job `#{@name}' specified more than one network to contain default #{property}"
               else
                 @default_network[property] = network_name
               end
@@ -429,8 +414,7 @@ module Bosh::Director
           unless missing_default_properties.empty?
             raise JobNetworkMissingDefault,
                   "Job `#{@name}' must specify which network is default for " +
-                  missing_default_properties.sort.join(", ") +
-                  ", since it has more than one network configured"
+                  missing_default_properties.sort.join(", ") + ", since it has more than one network configured"
           end
         else
           # Set the default network to the one and only available network
@@ -456,17 +440,17 @@ module Bosh::Director
       # @return [Hash] Properties required by templates included in this job
       def filter_properties(collection)
         if @templates.empty?
-          raise DirectorError,
-                "Can't extract job properties before " +
-                "parsing job templates"
+          raise DirectorError, "Can't extract job properties before parsing job templates"
         end
 
-        @templates.each do |template|
-          # If at least one template doesn't have properties defined, we
-          # need all properties to be available to job (backward-compatibility)
-          return collection if template.properties.nil?
-        end
+        return collection if @templates.none? { |template| template.properties }
+        return extract_template_properties(collection) if @templates.all? { |template| template.properties }
+        raise JobIncompatibleSpecs, "Job `#{name}' has specs with conflicting property definition styles between" +
+            " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
+            " `properties' and one which doesn't."
+      end
 
+      def extract_template_properties(collection)
         result = {}
 
         @templates.each do |template|
@@ -478,6 +462,9 @@ module Bosh::Director
         result
       end
 
+      def run_time_dependencies
+        templates.flat_map { |template| template.package_models }.uniq.map(&:name)
+      end
     end
   end
 end

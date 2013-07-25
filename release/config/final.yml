@@ -2,8 +2,6 @@
 final_name: bosh
 min_cli_version: 1.5.0.pre.3
 blobstore: 
-  provider: atmos
+  provider: s3
   options: 
-    tag: BOSH
-    uid: 92b8944a45f24e94b4ad254d98ab1f25/bosh-release-uid
-    url: http://blob.cfblob.com
+    bucket_name: blob.cfblob.com

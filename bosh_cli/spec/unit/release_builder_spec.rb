@@ -35,7 +35,7 @@ describe Bosh::Cli::ReleaseBuilder do
     builder = Bosh::Cli::ReleaseBuilder.new(@release, [], [], options)
     builder.build
 
-    manifest = YAML.load_file(builder.manifest_path)
+    manifest = Psych.load_file(builder.manifest_path)
     manifest['commit_hash'].should == '12345678'
     manifest['uncommitted_changes'].should be_true
   end
@@ -54,19 +54,19 @@ describe Bosh::Cli::ReleaseBuilder do
   end
 
   it "has a list of jobs affected by building this release" do
-    job1 = mock(:job, :new_version? => true,
+    job1 = double(:job, :new_version? => true,
                 :packages => %w(bar baz), :name => "job1")
-    job2 = mock(:job, :new_version? => false,
+    job2 = double(:job, :new_version? => false,
                 :packages => %w(foo baz), :name => "job2")
-    job3 = mock(:job, :new_version? => false,
+    job3 = double(:job, :new_version? => false,
                 :packages => %w(baz zb), :name => "job3")
-    job4 = mock(:job, :new_version? => false,
+    job4 = double(:job, :new_version? => false,
                 :packages => %w(bar baz), :name => "job4")
 
-    package1 = mock(:package, :name => "foo", :new_version? => true)
-    package2 = mock(:package, :name => "bar", :new_version? => false)
-    package3 = mock(:package, :name => "baz", :new_version? => false)
-    package4 = mock(:package, :name => "zb", :new_version? => true)
+    package1 = double(:package, :name => "foo", :new_version? => true)
+    package2 = double(:package, :name => "bar", :new_version? => false)
+    package3 = double(:package, :name => "baz", :new_version? => false)
+    package4 = double(:package, :name => "zb", :new_version? => true)
 
     builder = Bosh::Cli::ReleaseBuilder.new(@release,
                                             [package1, package2,
@@ -95,7 +95,7 @@ describe Bosh::Cli::ReleaseBuilder do
   end
 
   it "has packages and jobs fingerprints in spec" do
-    job = mock(
+    job = double(
       Bosh::Cli::JobBuilder,
       :name => "job1",
       :version => "1.1",
@@ -105,7 +105,7 @@ describe Bosh::Cli::ReleaseBuilder do
       :checksum => "cafebad"
     )
 
-    package = mock(
+    package = double(
       Bosh::Cli::PackageBuilder,
       :name => "foo",
       :version => "42",
@@ -121,7 +121,7 @@ describe Bosh::Cli::ReleaseBuilder do
 
     builder.build
 
-    manifest = YAML.load_file(builder.manifest_path)
+    manifest = Psych.load_file(builder.manifest_path)
 
     manifest["jobs"][0]["fingerprint"].should == "deadbeef"
     manifest["packages"][0]["fingerprint"].should == "deadcafe"

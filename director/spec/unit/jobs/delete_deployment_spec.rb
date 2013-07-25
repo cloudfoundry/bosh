@@ -1,14 +1,19 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::Jobs::DeleteDeployment do
+
+  describe 'Resque job class expectations' do
+    let(:job_type) { :delete_deployment }
+    it_behaves_like 'a Resque job'
+  end
 
   describe "delete_instance" do
 
     before(:each) do
-      @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      @cloud = double("cloud")
+      BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
@@ -25,7 +30,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
     end
 
     it "should detach and delete disk if there is a disk" do
-      agent = mock("agent")
+      agent = double("agent")
 
       BD::AgentClient.stub(:new).with("agent-1").
         and_return(agent)
@@ -52,7 +57,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
     end
 
     it "should only delete the VM if there is no disk" do
-      agent = mock("agent")
+      agent = double("agent")
 
       BD::AgentClient.stub(:new).with("agent-1").
         and_return(agent)
@@ -94,13 +99,39 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       BDM::Instance[instance.id].should be_nil
     end
 
+    it "should delete the snapshots" do
+      instance = BDM::Instance.make(:vm => nil)
+      disk = BDM::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
+      BDM::Snapshot.make(snapshot_cid: "snap1a", :persistent_disk_id => disk.id)
+
+      @cloud.should_receive(:delete_snapshot).with("snap1a")
+      @cloud.should_receive(:delete_disk).with("disk-cid")
+
+      @job.delete_instance(instance)
+
+      BDM::Instance[instance.id].should be_nil
+    end
+
+    it "should not delete the snapshots if keep_snapshots is set" do
+      instance = BDM::Instance.make(:vm => nil)
+      disk = BDM::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
+      BDM::Snapshot.make(snapshot_cid: "snap1a", :persistent_disk_id => disk.id)
+
+      @cloud.should_not_receive(:delete_snapshot)
+      @cloud.should_receive(:delete_disk).with("disk-cid")
+
+      job = BD::Jobs::DeleteDeployment.new("test_deployment", "keep_snapshots" => true)
+      job.delete_instance(instance)
+
+      BDM::Instance[instance.id].should be_nil
+    end
   end
 
   describe "delete_vm" do
 
     before(:each) do
-      @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      @cloud = double("cloud")
+      BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
@@ -118,13 +149,13 @@ describe Bosh::Director::Jobs::DeleteDeployment do
   describe "perform" do
 
     before(:each) do
-      @cloud = mock("cloud")
-      BD::Config.stub!(:cloud).and_return(@cloud)
+      @cloud = double("cloud")
+      BD::Config.stub(:cloud).and_return(@cloud)
       @job = BD::Jobs::DeleteDeployment.new("test_deployment")
     end
 
     it "should delete all the associated instances, VMs, disks and problems" do
-      agent = mock("agent")
+      agent = double("agent")
 
       BD::AgentClient.stub(:new).with("agent-1").
         and_return(agent)
@@ -145,9 +176,9 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       disk = BDM::PersistentDisk.
         make(:instance => instance, :disk_cid => "disk-cid")
 
-      @cloud.stub!(:delete_vm)
-      @cloud.stub!(:delete_disk)
-      @cloud.stub!(:detach_disk)
+      @cloud.stub(:delete_vm)
+      @cloud.stub(:delete_disk)
+      @cloud.stub(:detach_disk)
 
       agent.should_receive(:stop)
       agent.should_receive(:unmount_disk).with("disk-cid")

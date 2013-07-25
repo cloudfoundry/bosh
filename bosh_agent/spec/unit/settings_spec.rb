@@ -36,7 +36,7 @@ describe Bosh::Agent::Settings do
         file = File.join(dir, "settings.yml")
         settings = Bosh::Agent::Settings.new(file)
 
-        i = mock("infrastructure", :load_settings => {"foo" => "bar"})
+        i = double("infrastructure", :load_settings => {"foo" => "bar"})
         Bosh::Agent::Config.should_receive(:infrastructure).and_return(i)
 
         settings.load

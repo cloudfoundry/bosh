@@ -9,8 +9,8 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   end
 
   before(:each) do
-    @cloud = mock("cloud")
-    @agent = mock("agent")
+    @cloud = double("cloud")
+    @agent = double("agent")
 
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
 
@@ -22,8 +22,8 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
            :size => 300, :active => false)
 
     @handler = make_handler(@disk.id, "owner_vms" => []) # Not mounted
-    @handler.stub!(:cloud).and_return(@cloud)
-    @handler.stub!(:agent_client).with(@instance.vm).and_return(@agent)
+    @handler.stub(:cloud).and_return(@cloud)
+    @handler.stub(:agent_client).with(@instance.vm).and_return(@agent)
   end
 
   it "registers under inactive_disk type" do
@@ -54,8 +54,17 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     describe "reattach_disk" do
       it "attaches disk" do
         @cloud.should_receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
+        @cloud.should_not_receive(:reboot_vm)        
         @agent.should_receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
+      end
+
+      it "attaches disk and reboots the vm" do
+        @cloud.should_receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
+        @cloud.should_receive(:reboot_vm).with(@vm.cid)
+        @agent.should_receive(:wait_until_ready)
+        @agent.should_not_receive(:mount_disk)
+        @handler.apply_resolution(:reattach_disk_and_reboot)
       end
     end
   end

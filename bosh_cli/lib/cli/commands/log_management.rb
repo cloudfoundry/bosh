@@ -2,83 +2,101 @@
 
 module Bosh::Cli::Command
   class LogManagement < Base
-    include Bosh::Cli::DeploymentHelper
-
     # bosh logs
-    usage "logs"
-    desc "Fetch job or agent logs from a BOSH-managed VM"
-    option "--agent", "fetch agent logs"
-    option "--job", "fetch job logs"
-    option "--only filter1,filter2,...", Array,
-           "only fetch logs that satisfy",
-           "given filters (defined in job spec)"
-    option "--all", "fetch all files in the job or agent log directory"
-    option "--dir destination_directory", String, "download directory"
-    def fetch_logs(job, index)
-      auth_required
-      target_required
-      no_track_unsupported
+    usage 'logs'
+    desc 'Fetch job or agent logs from a BOSH-managed VM'
+    option '--agent', 'fetch agent logs'
+    option '--job', 'fetch job logs'
+    option '--only filter1,filter2,...', Array,
+           'only fetch logs that satisfy',
+           'given filters (defined in job spec)'
+    option '--all', 'fetch all files in the job or agent log directory'
+    option '--dir destination_directory', String, 'download directory'
+    def fetch_logs(job, index = nil)
+      index = valid_index_for(job, index)
+      check_arguments(index)
 
-      if index !~ /^\d+$/
-        err("Job index is expected to be a positive integer")
-      end
+      resource_id = fetch_log_resource_id(index, job)
+      log_file_path = log_file_destination(index, job)
+      download_logs(log_file_path, resource_id)
+    end
 
-      if options[:agent]
-        if options[:job]
-          err("You can't use --job and --agent together")
-        end
-        log_type = "agent"
-      else
-        log_type = "job"
-      end
+    def fetch_log_resource_id(index, job)
+      resource_id = director.fetch_logs(deployment_name, job, index, log_type, filters)
+      err('Error retrieving logs') if resource_id.nil?
 
-      if options[:only]
-        if options[:all]
-          err("You can't use --only and --all together")
-        end
-        filters = options[:only].join(",")
-      elsif options[:all]
-        filters = "all"
-      else
-        filters = nil
-      end
+      resource_id
+    end
 
-      if options[:agent] && filters && filters != "all"
-        err("Custom filtering is not supported for agent logs")
-      end
+    private
 
-      manifest = prepare_deployment_manifest
+    def agent_logs_wanted?
+      options[:agent]
+    end
 
-      resource_id = director.fetch_logs(
-        manifest["name"], job, index, log_type, filters)
+    def job_logs_wanted?
+      options[:job]
+    end
 
-      if resource_id.nil?
-        err("Error retrieving logs")
-      end
-
-      nl
-      say("Downloading log bundle (#{resource_id.to_s.green})...")
+    def download_logs(log_file_path, resource_id)
+      say("Downloading log bundle (#{resource_id.to_s.make_green})...")
 
       begin
-        time = Time.now.strftime("%Y-%m-%d@%H-%M-%S")
-        log_file = File.join(log_directory, "#{job}.#{index}.#{time}.tgz")
-
         tmp_file = director.download_resource(resource_id)
-
-        FileUtils.mv(tmp_file, log_file)
-        say("Logs saved in `#{log_file.green}'")
+        FileUtils.mv(tmp_file, log_file_path)
+        say("Logs saved in `#{log_file_path.make_green}'")
       rescue Bosh::Cli::DirectorError => e
         err("Unable to download logs from director: #{e}")
       ensure
-        FileUtils.rm_rf(tmp_file) if File.exists?(tmp_file)
+        FileUtils.rm_rf(tmp_file) if tmp_file && File.exists?(tmp_file)
       end
+    end
 
+    def check_arguments(index)
+      auth_required
+      no_track_unsupported
+
+      err('Job index is expected to be a positive integer') if index !~ /^\d+$/
+
+      if agent_logs_wanted? && options[:only]
+        err('Custom filtering is not supported for agent logs')
+      end
+    end
+
+    def log_type
+      err("You can't use --job and --agent together") if job_logs_wanted? && agent_logs_wanted?
+
+      if agent_logs_wanted?
+        'agent'
+      else
+        'job'
+      end
+    end
+
+    def filters
+      if options[:only]
+        err("You can't use --only and --all together") if options[:all]
+        filter = options[:only].join(',')
+      elsif options[:all]
+        filter = 'all'
+      else
+        filter = nil
+      end
+      filter
+    end
+
+    def log_file_destination(index, job)
+      time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+      File.join(log_directory, "#{job}.#{index}.#{time}.tgz")
     end
 
     def log_directory
       options[:dir] || Dir.pwd
     end
 
+    def deployment_name
+      prepare_deployment_manifest['name']
+    end
   end
 end
 

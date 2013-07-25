@@ -13,9 +13,9 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
   let(:agent_id) { "agent_id" }
   let(:stemcell_id) { "stemcell_id" }
-  let(:resource_pool) { mock("resource_pool") }
-  let(:networks_spec) { mock("network_spec") }
-  let(:disk_locality) { mock("disk locality") }
+  let(:resource_pool) { double("resource_pool") }
+  let(:networks_spec) { double("network_spec") }
+  let(:disk_locality) { double("disk locality") }
   let(:environment) { "environment" }
 
   let(:options) {
@@ -41,7 +41,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:cloud) { described_class.new(options) }
 
   before do
-    Bosh::AwsCloud::RegistryClient.
+    Bosh::Registry::Client.
         stub(:new).
         and_return(registry)
     AWS::EC2.
@@ -100,7 +100,6 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         },
         "agent_id" => agent_id,
         "networks" => networks_spec,
-        "preformatted" => false,
         "disks" => {
             "system" => "root name",
             "ephemeral" => "/dev/sdb",

@@ -37,7 +37,7 @@ module Bosh::AwsCloud
     def fake
       id = stemcell_properties['ami'][region.name]
 
-      raise Bosh::Clouds::CloudError, 'Stemcell does not contain an AMI for this region' unless id
+      raise Bosh::Clouds::CloudError, "Stemcell does not contain an AMI for this region (#{region.name})" unless id
 
       Stemcell.find(region, id)
     end
@@ -50,11 +50,6 @@ module Bosh::AwsCloud
     # the director, and needs sudo privileges to execute without
     # password.
     #
-    # TODO we require sudo to write to the EBS volume device.
-    #  Luckly on aws ubuntu we have passwordless sudo for everything
-    #  We should really fix this so we either don't need sudo or give
-    #   the user more warning / explanation for the
-    #   possible sudo password prompt
     def copy_root_image
       stemcell_copy = find_in_path("stemcell-copy")
 

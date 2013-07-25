@@ -1,9 +1,21 @@
 require "spec_helper"
 require "cli"
-require "bosh_aws_bootstrap"
+require "bosh_cli_plugin_aws"
 
-describe 'bosh_aws_bootstrap_external' do
+describe 'bosh_cli_plugin_aws_external' do
   include Bosh::Spec::CommandHelper
+
+  def ec2
+    @ec2 ||= AWS::EC2.new
+  end
+
+  def s3
+    @s3 ||= AWS::S3.new
+  end
+
+  def aws_configuration_template
+    File.join(File.dirname(__FILE__), '..', '..', 'bosh_cli_plugin_aws', 'templates', 'aws_configuration_template.yml.erb')
+  end
 
   before(:all) do
     AWS.config(
@@ -14,85 +26,88 @@ describe 'bosh_aws_bootstrap_external' do
             :max_retries => 2
         }
     )
+    FileUtils.mkdir_p(BOSH_WORK_DIR)
+    run_bosh "aws destroy"
+    Bosh::Common.retryable(tries: 15) do
+      ec2.vpcs.count == 0 &&
+          ec2.key_pairs.map(&:name).empty? &&
+          s3.buckets.to_a.empty?
+    end
+
+    # creating key pairs here because VPC creation involves creating a NAT instance
+    # and instance creation requires an existing key pair.
+    run_bosh "aws create key_pairs #{aws_configuration_template}"
+    run_bosh "aws create vpc #{aws_configuration_template}"
   end
 
-  let(:ec2) { AWS::EC2.new }
-  let(:elb) { AWS::ELB.new }
-  let(:route53) { AWS::Route53.new }
-
-  let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..', '..', 'bosh_aws_bootstrap', 'templates', 'aws_configuration_template.yml.erb') }
+  after(:all) do
+    ec2.key_pairs.map(&:name).should == ['bosh']
+    run_bosh "aws destroy"
+    Bosh::Common.retryable(tries: 15) do
+      ec2.vpcs.count == 0 &&
+          ec2.key_pairs.map(&:name).empty? &&
+          s3.buckets.to_a.empty?
+    end
+  end
 
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
-    let(:bosh_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
-    let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/23" } }
-    let(:services_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.4.0/23" } }
-    let(:rds_subnet_1) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/28" } }
-    let(:rds_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.16/28" } }
-
-    before(:all) do
-      ec2.vpcs.count.should == 0
-
-      # creating key pairs here because VPC creation involves creating a NAT instance
-      # and instance creation requires an existing key pair.
-      run_bosh "aws create key_pairs #{aws_configuration_template}"
-      run_bosh "aws create vpc #{aws_configuration_template}"
-    end
-
-    after(:all) do
-      run_bosh "aws destroy"
-
-      ec2.vpcs.count.should == 0
-    end
+    let(:elb) { AWS::ELB.new }
+    let(:route53) { AWS::Route53.new }
+    let(:bosh1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
+    let(:bosh_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
+    let(:bosh_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.65.0/24" } }
+    let(:cf1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.16.0/20" } }
+    let(:services1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.32.0/20" } }
+    let(:cf_elb1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
+    let(:cf_elb2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.66.0/24" } }
+    let(:cf_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.3.0/24" } }
+    let(:cf_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.67.0/24" } }
+    let(:services_rds1_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.8.0/21" } }
+    let(:services_rds2_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.72.0/21" } }
 
     it "builds the VPC" do
       vpc.should_not be_nil
     end
 
     it "builds the VPC subnets" do
-      bosh_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      bosh_subnet.instances.first.tags["Name"].should == "cf_nat_box"
+      bosh1_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+      bosh1_subnet.instances.first.tags["Name"].should == "cf_nat_box1"
 
-      cf_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      cf_subnet.instances.count.should == 0
+      [cf1_subnet, services1_subnet].each do |subnet|
+        subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+        subnet.instances.count.should == 0
 
-      cf_subnet.route_table.routes.any? do |route|
-        route.instance && route.instance.private_ip_address == "10.10.0.10"
-      end.should be_true
+        subnet.route_table.routes.any? do |route|
+          route.instance && route.instance.private_ip_address == "10.10.0.10"
+        end.should be_true
+      end
 
-      services_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      services_subnet.instances.count.should == 0
+      [bosh_rds1_subnet, cf_rds1_subnet, cf_elb1_subnet, services_rds1_subnet].each do |subnet|
+        subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+        subnet.instances.count.should == 0
+      end
 
-      services_subnet.route_table.routes.any? do |route|
-        route.instance && route.instance.private_ip_address == "10.10.0.10"
-      end.should be_true
-
-      rds_subnet_1.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
-      rds_subnet_1.instances.count.should == 0
-
-      rds_subnet_2.availability_zone.name.should == ENV["BOSH_VPC_SECONDARY_AZ"]
-      rds_subnet_2.instances.count.should == 0
+      [bosh_rds2_subnet, cf_rds2_subnet, cf_elb2_subnet, services_rds2_subnet].each do |subnet|
+        subnet.availability_zone.name.should == ENV["BOSH_VPC_SECONDARY_AZ"]
+        subnet.instances.count.should == 0
+      end
     end
 
     it "associates route tables with subnets" do
-      bosh_routes = bosh_subnet.route_table.routes
+      bosh_routes = bosh1_subnet.route_table.routes
       bosh_default_route = bosh_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
-      bosh_default_route.target.id.should match /igw/
+      bosh_default_route.target.id.should match(/igw/)
       bosh_local_route = bosh_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
       bosh_local_route.target.id.should == "local"
 
-      cf_routes = cf_subnet.route_table.routes
-      cf_default_route = cf_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
-      cf_default_route.target.should == bosh_subnet.instances.first
-      cf_local_route = cf_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
-      cf_local_route.target.id.should == "local"
-
-      services_routes = services_subnet.route_table.routes
-      services_default_route = services_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
-      services_default_route.target.should == bosh_subnet.instances.first
-
-      services_local_route = services_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
-      services_local_route.target.id.should == "local"
+      [cf1_subnet, services1_subnet].each do |subnet|
+        routes = subnet.route_table.routes
+        default_route = routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
+        default_route.target.should == bosh1_subnet.instances.first
+        local_route = routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
+        local_route.target.id.should == "local"
+      end
     end
 
     it "assigns DHCP options" do
@@ -164,52 +179,15 @@ describe 'bosh_aws_bootstrap_external' do
     it "configures ELBs" do
       load_balancer = elb.load_balancers.detect { |lb| lb.name == "cfrouter" }
       load_balancer.should_not be_nil
-      load_balancer.subnets.should == [bosh_subnet]
+      load_balancer.subnets.sort {|s1, s2| s1.id <=> s2.id }.should == [cf_elb1_subnet, cf_elb2_subnet].sort {|s1, s2| s1.id <=> s2.id }
       load_balancer.security_groups.map(&:name).should == ["web"]
 
-      hosted_zone = route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com." }
-      record_set = hosted_zone.resource_record_sets["\\052.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com.", 'CNAME'] # E.g. "*.midway.cf-app.com."
+      config = Bosh::Aws::AwsConfig.new(aws_configuration_template)
+      hosted_zone = route53.hosted_zones.detect { |zone| zone.name == "#{config.vpc_generated_domain}." }
+      record_set = hosted_zone.resource_record_sets["\\052.#{config.vpc_generated_domain}.", 'CNAME'] # E.g. "*.midway.cf-app.com."
       record_set.should_not be_nil
       record_set.resource_records.first[:value] == load_balancer.dns_name
       record_set.ttl.should == 60
-    end
-  end
-
-  describe "key pairs" do
-    before do
-      ec2.key_pairs.map(&:name).should == []
-
-      run_bosh "aws create key_pairs #{aws_configuration_template}"
-    end
-
-    it "creates and deletes key pairs" do
-      ec2.key_pairs.map(&:name).should == [ENV["BOSH_KEY_PAIR_NAME"] || "bosh"]
-    end
-
-    after do
-      run_bosh "aws destroy"
-
-      ec2.key_pairs.map(&:name).should == []
-    end
-  end
-
-  describe "S3" do
-    let(:s3) { AWS::S3.new }
-
-    before do
-      s3.buckets.count.should == 0
-
-      run_bosh "aws create s3 #{aws_configuration_template}"
-    end
-
-    it "creates s3 buckets and deletes them" do
-      s3.buckets.map(&:name).should == ["#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"]
-    end
-
-    after do
-      run_bosh "aws destroy"
-
-      s3.buckets.count.should == 0
     end
   end
 
@@ -220,13 +198,9 @@ describe 'bosh_aws_bootstrap_external' do
     end
     let(:resource_record_sets) { hosted_zone.resource_record_sets }
 
-    before do
-      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
-
-      run_bosh "aws create route53 records #{aws_configuration_template}"
-    end
-
     it "creates A records, allocates IPs, and deletes A records" do
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
+      run_bosh "aws create route53 records #{aws_configuration_template}"
       a_records = resource_record_sets.select { |record_set| record_set.type == "A" }
       a_records.map { |record| record.name.split(".")[0] }.should =~ ["bosh", "bat", "micro"]
       a_records.map(&:ttl).uniq.should == [60]
@@ -235,10 +209,5 @@ describe 'bosh_aws_bootstrap_external' do
       end
     end
 
-    after do
-      run_bosh "aws destroy"
-
-      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
-    end
   end
 end

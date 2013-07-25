@@ -26,7 +26,6 @@ module Bosh::Director
       attr_accessor :network_reservations
 
       # @return [String] job state
-      # @todo rename since it's confusing with current_state and can be a verb
       attr_accessor :state
 
       # @return [Hash] current state as provided by the BOSH Agent
@@ -73,11 +72,6 @@ module Bosh::Director
         "#{@job.name}/#{@index}"
       end
 
-      # TODO: this method will probably go away after some further
-      # DeploymentPlanCompiler refactoring, as it's not 100% consistent
-      # with other deployment plan parts. Ideally most of the model lookup
-      # logic should be in this class, but this particular method allows caller
-      # to explicitly set which model to use.
       # @param [Models::Instance] model Instance DB model
       # @return [void]
       def use_model(model)
@@ -180,6 +174,8 @@ module Bosh::Director
               network_settings[name]["type"] == "dynamic"
             network_settings[name] = @current_state["networks"][name]
           end
+
+          network_settings[name]['dns_record_name'] = dns_record_name(name)
         end
         network_settings
       end
@@ -201,11 +197,16 @@ module Bosh::Director
       def dns_record_info
         dns_record_info = {}
         network_settings.each do |network_name, network|
-          name = [index, job.canonical_name, canonical(network_name),
-                  job.deployment.canonical_name, dns_domain_name].join(".")
+          name = dns_record_name(network_name)
           dns_record_info[name] = network["ip"]
         end
         dns_record_info
+      end
+
+      ##
+      # @return [String] dns record name
+      def dns_record_name(network_name)
+        [index, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join(".")  
       end
 
       ##
@@ -353,7 +354,8 @@ module Bosh::Director
           "packages" => job.package_spec,
           "persistent_disk" => job.persistent_disk,
           "configuration_hash" => configuration_hash,
-          "properties" => job.properties
+          "properties" => job.properties,
+          "dns_domain_name" => dns_domain_name
         }
 
         if template_hashes
@@ -402,7 +404,6 @@ module Bosh::Director
           idle_vm.bound_instance = self
           # this also means we no longer need previous VM network reservation
           # (instance has its own)
-          # TODO: should we check that instance has its own reservation?
           idle_vm.release_reservation
         end
 

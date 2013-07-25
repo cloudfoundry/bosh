@@ -18,6 +18,12 @@ Sequel.migration do
       self[:deployments_releases].insert(attrs)
     end
 
+    # Needed for mysql in order to drop column (doesn't work with other adapters)
+    # newer versions of sequel support drop_foreign_key but the version breaks tests
+    if [:mysql2, :mysql].include?(adapter_scheme)
+      run("alter table deployments drop FOREIGN KEY deployments_ibfk_1")
+    end
+
     alter_table :deployments do
       drop_column :release_id
     end

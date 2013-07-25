@@ -1,14 +1,14 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + "/../../spec_helper"
+require "spec_helper"
 
 describe Bosh::Agent::Message::CompilePackage do
 
   before(:each) do
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
-    @httpclient = mock("httpclient")
-    HTTPClient.stub!(:new).and_return(@httpclient)
+    @httpclient = double("httpclient")
+    HTTPClient.stub(:new).and_return(@httpclient)
 
     Bosh::Agent::Config.agent_id = Time.now.to_i
 
@@ -27,9 +27,6 @@ describe Bosh::Agent::Message::CompilePackage do
         should be_an_instance_of(Bosh::Blobstore::SimpleBlobstoreClient)
   end
 
-
-  # TODO: this is essentially re-testing the blobstore client,
-  # but I didnt know the API well enough
   it "should unpack a package" do
     dummy_compile_data
 
@@ -141,8 +138,8 @@ describe Bosh::Agent::Message::CompilePackage do
 
   def dummy_compile_setup(data)
     FileUtils.rm_rf @handler.compile_base
-    response = mock("response")
-    response.stub!(:status).and_return(200)
+    response = double("response")
+    response.stub(:status).and_return(200)
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(data).
         and_return(response)

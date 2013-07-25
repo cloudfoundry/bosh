@@ -165,7 +165,7 @@ describe Bosh::AwsCloud::InstanceManager do
     end
 
     describe "#set_vpc_parameters" do
-      let(:fake_aws_subnet) { mock("aws_subnet") }
+      let(:fake_aws_subnet) { double("aws_subnet") }
 
       before do
         region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})

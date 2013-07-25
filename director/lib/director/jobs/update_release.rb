@@ -1,22 +1,25 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'common/version_number'
+
 module Bosh::Director
   module Jobs
     class UpdateRelease < BaseJob
       include LockHelper
-      include VersionCalc
+      include DownloadHelper
 
       @queue = :normal
 
-      # TODO: remove these, only being used in tests, better to refactor tests
       attr_accessor :release_model
       attr_accessor :tmp_release_dir
+
+      def self.job_type
+        :update_release
+      end
 
       # @param [String] tmp_release_dir Directory containing release bundle
       # @param [Hash] options Release update options
       def initialize(tmp_release_dir, options = {})
-        super
-
         @tmp_release_dir = tmp_release_dir
         @release_model = nil
         @release_version_model = nil
@@ -31,6 +34,9 @@ module Bosh::Director
 
         @packages_unchanged = false
         @jobs_unchanged = false
+        
+        @remote_release = options['remote'] || false
+        @remote_release_location = options['location'] if @remote_release 
       end
 
       # Extracts release tarball, verifies release manifest and saves release
@@ -42,6 +48,7 @@ module Bosh::Director
           logger.info("Release rebase will be performed")
         end
 
+        single_step_stage("Downloading remote release") { download_remote_release } if @remote_release
         single_step_stage("Extracting release") { extract_release }
         single_step_stage("Verifying manifest") { verify_manifest }
 
@@ -60,7 +67,11 @@ module Bosh::Director
         if @tmp_release_dir && File.exists?(@tmp_release_dir)
           FileUtils.rm_rf(@tmp_release_dir)
         end
-        # TODO: delete task status file or cleanup later?
+      end
+
+      def download_remote_release         
+        release_file = File.join(@tmp_release_dir, Api::ReleaseManager::RELEASE_TGZ)
+        download_remote_file('release', @remote_release_location, release_file)
       end
 
       # Extracts release tarball
@@ -69,12 +80,12 @@ module Bosh::Director
         release_tgz = File.join(@tmp_release_dir,
                                 Api::ReleaseManager::RELEASE_TGZ)
 
-        tar_output = `tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1`
-
-        if $?.exitstatus != 0
-          raise ReleaseInvalidArchive,
-                "Invalid release archive, tar returned #{$?.exitstatus}, " +
-                "tar output: #{tar_output}"
+        result = Bosh::Exec.sh("tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1", :on_error => :return)
+        if result.failed?
+          logger.error("Extracting release archive failed in dir #{@tmp_release_dir}, " +
+                       "tar returned #{result.exit_status}, " +
+                       "output: #{result.output}")
+          raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
       ensure
         if release_tgz && File.exists?(release_tgz)
@@ -89,19 +100,13 @@ module Bosh::Director
           raise ReleaseManifestNotFound, "Release manifest not found"
         end
 
-        @manifest = YAML.load_file(manifest_file)
+        @manifest = Psych.load_file(manifest_file)
         normalize_manifest
 
         @name = @manifest["name"]
         @version = @manifest["version"]
         @commit_hash = @manifest.fetch("commit_hash", nil)
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
-
-        # TODO: make sure all jobs are there
-        # TODO: make sure there are no extra jobs
-
-        # TODO: make sure all packages are there
-        # TODO: make sure there are no extra packages
       end
 
       # Processes uploaded release, creates jobs and packages in DB if needed
@@ -159,26 +164,14 @@ module Bosh::Director
       # are Strings.
       # @return [void]
       def normalize_manifest
-        %w(name version).each do |property|
-          @manifest[property] = @manifest[property].to_s
-        end
+        Bosh::Director.hash_string_vals(@manifest, 'name', 'version')
 
-        @manifest["packages"].each do |package_meta|
-          %w(name version sha1).each do |property|
-            package_meta[property] = package_meta[property].to_s
-          end
-        end
-
-        @manifest["jobs"].each do |job_meta|
-          %w(name version sha1).each do |property|
-            job_meta[property] = job_meta[property].to_s
-          end
-        end
+        @manifest['packages'].each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
+        @manifest['jobs'].each { |j| Bosh::Director.hash_string_vals(j, 'name', 'version', 'sha1') }
       end
 
       # Resolves package dependencies, makes sure there are no cycles
       # and all dependencies are present
-      # TODO: cleanup exceptions raised by CycleHelper
       # @return [void]
       def resolve_package_dependencies(packages)
         packages_by_name = {}
@@ -288,7 +281,6 @@ module Bosh::Director
 
         event_log.begin_stage("Creating new packages", packages.size)
         packages.each do |package_meta|
-          # TODO: don't expose version to event log if rebase?
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           event_log.track(package_desc) do
             logger.info("Creating new package `#{package_desc}'")
@@ -313,7 +305,6 @@ module Bosh::Director
             logger.info("Package `#{package_desc}' already exists, " +
                         "verifying checksum")
 
-            # TODO: make sure package dependencies have not changed
             expected = package.sha1
             received = package_meta["sha1"]
 
@@ -366,14 +357,14 @@ module Bosh::Director
           logger.info("Creating #{desc} from provided bits")
 
           package_tgz = File.join(@tmp_release_dir, "packages", "#{name}.tgz")
-          output = `tar -tzf #{package_tgz} 2>&1`
-          if $?.exitstatus != 0
-            raise PackageInvalidArchive,
-                  "Invalid package archive, tar returned #{$?.exitstatus} " +
-                  "tar output: #{output}"
+          result = Bosh::Exec.sh("tar -tzf #{package_tgz} 2>&1", :on_error => :return)
+          if result.failed?
+            logger.error("Extracting #{desc} archive failed, " +
+                         "tar returned #{result.exit_status}, " +
+                         "output: #{result.output}")
+            raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
           end
 
-          # TODO: verify sha1
           package.blobstore_id = BlobUtil.create_blob(package_tgz)
         end
 
@@ -493,13 +484,13 @@ module Bosh::Director
 
         FileUtils.mkdir_p(job_dir)
 
-        output = `tar -C #{job_dir} -xzf #{job_tgz} 2>&1`
-
-        if $?.exitstatus != 0
-          raise JobInvalidArchive,
-                "Invalid job archive for `#{template.name}', " +
-                "tar returned #{$?.exitstatus}, " +
-                "tar output: #{output}"
+        desc = "job `#{name}/#{version}'"
+        result = Bosh::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
+        if result.failed?
+          logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
+                       "tar returned #{result.exit_status}, " +
+                       "output: #{result.output}")
+          raise JobInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
         end
 
         manifest_file = File.join(job_dir, "job.MF")
@@ -508,7 +499,7 @@ module Bosh::Director
                 "Missing job manifest for `#{template.name}'"
         end
 
-        job_manifest = YAML.load_file(manifest_file)
+        job_manifest = Psych.load_file(manifest_file)
 
         if job_manifest["templates"]
           job_manifest["templates"].each_key do |relative_path|
@@ -528,7 +519,6 @@ module Bosh::Director
           raise JobMissingMonit, "Job `#{template.name}' is missing monit file"
         end
 
-        # TODO: verify sha1
         template.blobstore_id = BlobUtil.create_blob(job_tgz)
 
         package_names = []
@@ -603,8 +593,6 @@ module Bosh::Director
       end
 
       private
-      # TODO: can make most of other methods private as well but first need to
-      # refactor tests for that
 
       # Returns the next release version (to be used for rebased release)
       # @return [String]
@@ -647,26 +635,7 @@ module Bosh::Director
       # @param [String] version Current version of item
       # @return [String] Next version to be used
       def next_version(collection, version)
-        return version if final_version?(version)
-        major = major_version(version)
-
-        latest = collection.select { |item|
-          major_version(item.version) == major
-        }.sort { |a, b|
-          version_cmp(b.version, a.version)
-        }.first
-
-        if latest
-          version = bump_minor_version(latest.version)
-          # Keeping '-dev' suffix for rebased versions is not a requirement
-          # and mostly done for versioning consistency
-          version += "-dev" unless version =~ /-dev$/
-          version
-        else
-          # The very initial rebase would still discard original versions and
-          # start versioning at '#{major}.1-dev' (for consistency)
-          "#{major}.1-dev"
-        end
+        Bosh::Director::NextRebaseVersion.new(collection).calculate(version)
       end
 
       # Removes release version model, along with all packages and templates.
@@ -689,7 +658,7 @@ module Bosh::Director
         collection.sort_by { |item|
           if item.version == original_version
             1
-          elsif final_version?(item.version)
+          elsif Bosh::Common::VersionNumber.new(item.version).final?
             2
           elsif item.is_a?(Bosh::Director::Models::Package)
             3000 - [item.compiled_packages.size, 900].min
@@ -697,10 +666,6 @@ module Bosh::Director
             3000
           end
         }.first
-      end
-
-      def final_version?(version)
-        version !~ /-dev$/
       end
     end
   end

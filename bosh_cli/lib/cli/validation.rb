@@ -29,9 +29,11 @@ module Bosh::Cli
     private
 
     def step(name, error_message, kind = :non_fatal, &block)
+      say("%-60s " % [name], "")
+
       passed = yield
 
-      say("%-60s %s" % [name, passed ? "OK".green : "FAILED".red])
+      say("%s" % [passed ? "OK".make_green : "FAILED".make_red])
 
       unless passed
         errors << error_message

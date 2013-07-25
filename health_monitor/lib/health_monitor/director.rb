@@ -48,6 +48,10 @@ module Bosh::HealthMonitor
       raise DirectorError, "Cannot parse director response: #{e.message}"
     end
 
+    # JMS and GO: This effectively turns async requests into synchronous requests.
+    # This is a very bad thing to do on eventmachine because it will block the single
+    # event loop. This code should be removed and all requests converted
+    # to "the eventmachine way".
     def perform_request(method, uri)
       f = Fiber.current
 

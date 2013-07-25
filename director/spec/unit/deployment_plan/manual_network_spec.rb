@@ -1,6 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   before(:each) do
@@ -8,34 +7,25 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   end
 
   describe :initialize do
-    it "should parse subnets" do
+    it 'should parse subnets' do
       received_network = nil
       BD::DeploymentPlan::NetworkSubnet.stub(:new).with do |network, spec|
         received_network = network
-        spec.should == {"foz" => "baz"}
+        spec.should == {'foz' => 'baz'}
       end
 
       network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-          "name" => "foo",
-          "subnets" => [
+          'name' => 'foo',
+          'subnets' => [
             {
-                "foz" => "baz"
+                'foz' => 'baz'
             }
           ]
       })
       received_network.should == network
     end
 
-    pending "should require at least one subnet" do
-      lambda {
-        BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-            "name" => "foo",
-            "subnets" => []
-        })
-      }.should raise_error(/at least one subnet/)
-    end
-
-    it "should not allow overlapping subnets" do
+    it 'should not allow overlapping subnets' do
       subnet_a = stub(BD::DeploymentPlan::NetworkSubnet)
       subnet_b = stub(BD::DeploymentPlan::NetworkSubnet)
       BD::DeploymentPlan::NetworkSubnet.stub(:new).
@@ -45,13 +35,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
       lambda {
         BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-            "name" => "foo",
-            "subnets" => [
+            'name' => 'foo',
+            'subnets' => [
                 {
-                    "foz" => "baz"
+                    'foz' => 'baz'
                 },
                 {
-                    "foz2" => "baz2"
+                    'foz2' => 'baz2'
                 }
             ]
         })
@@ -62,22 +52,22 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   describe :reserve do
     before(:each) do
       @subnet = stub(BD::DeploymentPlan::NetworkSubnet)
-      @subnet.stub(:range).and_return(NetAddr::CIDR.create("0.0.0.1/24"))
+      @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
       BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
       @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-          "name" => "foo",
-          "subnets" => [
+          'name' => 'foo',
+          'subnets' => [
               {
-                  "foz" => "baz"
+                  'foz' => 'baz'
               }
           ]
       })
     end
 
-    it "should reserve an existing IP" do
+    it 'should reserve an existing IP' do
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
       reservation.reserved = true
 
       @subnet.should_receive(:reserve_ip).with(1).and_return(:dynamic)
@@ -86,7 +76,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation.reserved.should == true
     end
 
-    it "should allocated dynamic IP" do
+    it 'should allocated dynamic IP' do
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
@@ -97,9 +87,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation.ip.should == 2
     end
 
-    it "should not let you reserve a used IP" do
+    it 'should not let you reserve a used IP' do
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
       reservation.reserved = true
 
       @subnet.should_receive(:reserve_ip).with(1).and_return(nil)
@@ -109,9 +99,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation.error.should == BD::NetworkReservation::USED
     end
 
-    it "should not let you reserve an IP in the wrong pool" do
+    it 'should not let you reserve an IP in the wrong pool' do
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
       reservation.reserved = true
 
       @subnet.should_receive(:reserve_ip).with(1).and_return(:static)
@@ -136,28 +126,28 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   describe :release do
     before(:each) do
       @subnet = stub(BD::DeploymentPlan::NetworkSubnet)
-      @subnet.stub(:range).and_return(NetAddr::CIDR.create("0.0.0.1/24"))
+      @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
       BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
       @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-          "name" => "foo",
-          "subnets" => [
+          'name' => 'foo',
+          'subnets' => [
               {
-                  "foz" => "baz"
+                  'foz' => 'baz'
               }
           ]
       })
     end
 
-    it "should release the IP from the subnet" do
+    it 'should release the IP from the subnet' do
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
       @subnet.should_receive(:release_ip).with(1)
       @network.release(reservation)
     end
 
-    it "should fail when there is no IP" do
+    it 'should fail when there is no IP' do
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
@@ -170,77 +160,77 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   describe :network_settings do
     before(:each) do
       @subnet = stub(BD::DeploymentPlan::NetworkSubnet)
-      @subnet.stub(:range).and_return(NetAddr::CIDR.create("0.0.0.1/24"))
-      @subnet.stub(:netmask).and_return("255.255.255.0")
-      @subnet.stub(:cloud_properties).and_return({"VLAN" => "a"})
+      @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
+      @subnet.stub(:netmask).and_return('255.255.255.0')
+      @subnet.stub(:cloud_properties).and_return({'VLAN' => 'a'})
       @subnet.stub(:dns).and_return(nil)
       @subnet.stub(:gateway).and_return(nil)
       BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
       @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
-          "name" => "foo",
-          "subnets" => [
+          'name' => 'foo',
+          'subnets' => [
               {
-                  "foz" => "baz"
+                  'foz' => 'baz'
               }
           ]
       })
     end
 
-    it "should provide the network settings from the subnet" do
+    it 'should provide the network settings from the subnet' do
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
       @network.network_settings(reservation, []).should == {
-          "ip" => "0.0.0.1",
-          "netmask" => "255.255.255.0",
-          "cloud_properties" => {"VLAN" => "a"},
-          "default" => []
+          'ip' => '0.0.0.1',
+          'netmask' => '255.255.255.0',
+          'cloud_properties' => {'VLAN' => 'a'},
+          'default' => []
       }
     end
 
-    it "should set the defaults" do
+    it 'should set the defaults' do
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
       @network.network_settings(reservation).should == {
-          "ip" => "0.0.0.1",
-          "netmask" => "255.255.255.0",
-          "cloud_properties" => {"VLAN" => "a"},
-          "default" => ["dns", "gateway"]
+          'ip' => '0.0.0.1',
+          'netmask' => '255.255.255.0',
+          'cloud_properties' => {'VLAN' => 'a'},
+          'default' => ['dns', 'gateway']
       }
     end
 
-    it "should provide the DNS if available" do
-      @subnet.stub(:dns).and_return(["1.2.3.4", "5.6.7.8"])
+    it 'should provide the DNS if available' do
+      @subnet.stub(:dns).and_return(['1.2.3.4', '5.6.7.8'])
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
       @network.network_settings(reservation, []).should == {
-          "ip" => "0.0.0.1",
-          "netmask" => "255.255.255.0",
-          "cloud_properties" => {"VLAN" => "a"},
-          "dns" => ["1.2.3.4", "5.6.7.8"],
-          "default" => []
+          'ip' => '0.0.0.1',
+          'netmask' => '255.255.255.0',
+          'cloud_properties' => {'VLAN' => 'a'},
+          'dns' => ['1.2.3.4', '5.6.7.8'],
+          'default' => []
       }
     end
 
-    it "should provide the gateway if available" do
-      @subnet.stub(:gateway).and_return(NetAddr::CIDR.create("0.0.0.254"))
+    it 'should provide the gateway if available' do
+      @subnet.stub(:gateway).and_return(NetAddr::CIDR.create('0.0.0.254'))
       reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
+          :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
       @network.network_settings(reservation, []).should == {
-          "ip" => "0.0.0.1",
-          "netmask" => "255.255.255.0",
-          "cloud_properties" => {"VLAN" => "a"},
-          "gateway" => "0.0.0.254",
-          "default" => []
+          'ip' => '0.0.0.1',
+          'netmask' => '255.255.255.0',
+          'cloud_properties' => {'VLAN' => 'a'},
+          'gateway' => '0.0.0.254',
+          'default' => []
       }
     end
 
-    it "should fail when there is no IP" do
-      @subnet.stub(:dns).and_return(["1.2.3.4", "5.6.7.8"])
+    it 'should fail when there is no IP' do
+      @subnet.stub(:dns).and_return(['1.2.3.4', '5.6.7.8'])
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 

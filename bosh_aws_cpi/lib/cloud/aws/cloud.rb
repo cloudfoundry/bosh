@@ -7,13 +7,12 @@ module Bosh::AwsCloud
 
     # default maximum number of times to retry an AWS API call
     DEFAULT_MAX_RETRIES = 2
-    DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
-    METADATA_TIMEOUT = 5 # in seconds
+    METADATA_TIMEOUT    = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
 
-    attr_reader :ec2
-    attr_reader :registry
-    attr_reader :options
+    attr_reader   :ec2
+    attr_reader   :registry
+    attr_reader   :options
     attr_accessor :logger
 
     ##
@@ -23,53 +22,43 @@ module Bosh::AwsCloud
     # @option options [Hash] agent agent options
     # @option options [Hash] registry agent options
     def initialize(options)
-      @options = options.dup
-
+      @options = options.dup.freeze
       validate_options
 
       @logger = Bosh::Clouds::Config.logger
 
-      @aws_logger = @logger # TODO make configurable
+      initialize_aws
+      initialize_registry
 
-      @agent_properties = @options["agent"] || {}
-      @aws_properties = @options["aws"]
-      @aws_region = @aws_properties["region"]
-      @registry_properties = @options["registry"]
-
-      @default_key_name = @aws_properties["default_key_name"]
-      @fast_path_delete = @aws_properties["fast_path_delete"]
-
-      aws_params = {
-          :access_key_id => @aws_properties["access_key_id"],
-          :secret_access_key => @aws_properties["secret_access_key"],
-          :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
-          :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
-          :logger => @aws_logger
-      }
-
-      aws_params[:proxy_uri] = @aws_properties["proxy_uri"] if @aws_properties["proxy_uri"]
-
-      registry_endpoint = @registry_properties["endpoint"]
-      registry_user = @registry_properties["user"]
-      registry_password = @registry_properties["password"]
-
-      # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
-      # so we need to trigger eager autoload while constructing CPI
-      AWS.eager_autoload!
-
-      AWS.config(aws_params)
-      @ec2 = AWS::EC2.new
-
-      # Registry updates are not really atomic in relation to
-      # EC2 API calls, so they might get out of sync. Cloudcheck
-      # is supposed to fix that.
-      @registry = RegistryClient.new(registry_endpoint,
-                                     registry_user,
-                                     registry_password)
-
-      @region = @ec2.regions[@aws_region]
-      @az_selector = AvailabilityZoneSelector.new(@region, @aws_properties["default_availability_zone"])
       @metadata_lock = Mutex.new
+    end
+
+    ##
+    # Reads current instance id from EC2 metadata. We are assuming
+    # instance id cannot change while current process is running
+    # and thus memoizing it.
+    def current_vm_id
+      @metadata_lock.synchronize do
+        return @current_vm_id if @current_vm_id
+
+        client = HTTPClient.new
+        client.connect_timeout = METADATA_TIMEOUT
+        # Using 169.254.169.254 is an EC2 convention for getting
+        # instance metadata
+        uri = "http://169.254.169.254/latest/meta-data/instance-id/"
+
+        response = client.get(uri)
+        unless response.status == 200
+          cloud_error("Instance metadata endpoint returned " \
+                      "HTTP #{response.status}")
+        end
+
+        @current_vm_id = response.body
+      end
+
+    rescue HTTPClient::TimeoutError
+      cloud_error("Timed out reading instance metadata, " \
+                  "please make sure CPI is running on EC2 instance")
     end
 
     ##
@@ -91,38 +80,40 @@ module Bosh::AwsCloud
     def create_vm(agent_id, stemcell_id, resource_pool, network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         # do this early to fail fast
-        stemcell = Stemcell.find(@region, stemcell_id)
+        stemcell = Stemcell.find(region, stemcell_id)
 
         begin
-          instance_manager = InstanceManager.new(@region, registry, az_selector)
+          instance_manager = InstanceManager.new(region, registry, az_selector)
           instance = instance_manager.
-              create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
+              create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, options)
 
-          @logger.info("Creating new instance '#{instance.id}'")
+          logger.info("Creating new instance '#{instance.id}'")
 
-          NetworkConfigurator.new(network_spec).configure(@region, instance)
+          NetworkConfigurator.new(network_spec).configure(region, instance)
 
           registry_settings = initial_agent_settings(
               agent_id,
               network_spec,
               environment,
-              preformatted?(resource_pool),
               stemcell.root_device_name,
-              @options['agent'] || {}
           )
           registry.update_settings(instance.id, registry_settings)
 
           instance.id
         rescue => e # is this rescuing too much?
-          @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
-          instance_manager.terminate(instance.id, @fast_path_delete) if instance
+          logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
+          instance_manager.terminate(instance.id, fast_path_delete?) if instance
           raise e
         end
       end
     end
 
-    def preformatted?(resource_pool)
-      resource_pool["preformatted"]
+    def default_ec2_endpoint
+      ['ec2', aws_region, 'amazonaws.com'].compact.join('.')
+    end
+
+    def default_elb_endpoint
+      ['elasticloadbalancing', aws_region, 'amazonaws.com'].compact.join('.')
     end
 
     ##
@@ -131,8 +122,8 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
-        @logger.info("Deleting instance '#{instance_id}'")
-        InstanceManager.new(@region, registry).terminate(instance_id, @fast_path_delete)
+        logger.info("Deleting instance '#{instance_id}'")
+        InstanceManager.new(region, registry).terminate(instance_id, fast_path_delete?)
       end
     end
 
@@ -141,7 +132,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
-        InstanceManager.new(@region, registry).reboot(instance_id)
+        InstanceManager.new(region, registry).reboot(instance_id)
       end
     end
 
@@ -150,7 +141,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def has_vm?(instance_id)
       with_thread_name("has_vm?(#{instance_id})") do
-        InstanceManager.new(@region, registry).has_instance?(instance_id)
+        InstanceManager.new(region, registry).has_instance?(instance_id)
       end
     end
 
@@ -162,37 +153,24 @@ module Bosh::AwsCloud
     # @return [String] created EBS volume id
     def create_disk(size, instance_id = nil)
       with_thread_name("create_disk(#{size}, #{instance_id})") do
-        unless size.kind_of?(Integer)
-          raise ArgumentError, "disk size needs to be an integer"
-        end
+        validate_disk_size(size)
 
-        if size < 1024
-          cloud_error("AWS CPI minimum disk size is 1 GiB")
-        end
+        # if the disk is created for an instance, use the same availability zone as they must match
+        volume = @ec2.volumes.create(:size => (size / 1024.0).ceil,
+                                     :availability_zone => @az_selector.select_availability_zone(instance_id))
 
-        if size > 1024 * 1000
-          cloud_error("AWS CPI maximum disk size is 1 TiB")
-        end
-
-        if instance_id
-          az = @az_selector.select_from_instance_id(instance_id)
-        else
-          az = @az_selector.random_availability_zone
-        end
-
-        # if the disk is created for an instance, use the same availability
-        # zone as they must match
-        volume_params = {
-            :size => (size / 1024.0).ceil,
-            :availability_zone => az
-        }
-
-        volume = @ec2.volumes.create(volume_params)
-        @logger.info("Creating volume `#{volume.id}'")
+        logger.info("Creating volume '#{volume.id}'")
         ResourceWait.for_volume(volume: volume, state: :available)
 
         volume.id
       end
+    end
+
+    def validate_disk_size(size)
+      raise ArgumentError, "disk size needs to be an integer" unless size.kind_of?(Integer)
+
+      cloud_error("AWS CPI minimum disk size is 1 GiB") if size < 1024
+      cloud_error("AWS CPI maximum disk size is 1 TiB") if size > 1024 * 1000
     end
 
     ##
@@ -203,12 +181,12 @@ module Bosh::AwsCloud
       with_thread_name("delete_disk(#{disk_id})") do
         volume = @ec2.volumes[disk_id]
 
-        @logger.info("Deleting volume `#{volume.id}'")
+        logger.info("Deleting volume `#{volume.id}'")
 
         tries = 10
         sleep_cb = ResourceWait.sleep_callback("Waiting for volume `#{volume.id}' to be deleted", tries)
         ensure_cb = Proc.new do |retries|
-          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries+1 == tries
+          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
         end
         error = AWS::EC2::Errors::Client::VolumeInUse
 
@@ -217,15 +195,20 @@ module Bosh::AwsCloud
           true # return true to only retry on Exceptions
         end
 
-        if @fast_path_delete
-          TagManager.tag(volume, "Name", "to be deleted")
-          @logger.info("Volume `#{disk_id}' has been marked for deletion")
+        if fast_path_delete?
+          begin
+            TagManager.tag(volume, "Name", "to be deleted")
+            logger.info("Volume `#{disk_id}' has been marked for deletion")
+          rescue AWS::EC2::Errors::InvalidVolume::NotFound
+            # Once in a blue moon AWS if actually fast enough that the volume is already gone
+            # when we get here, and if it is, our work here is done!
+          end
           return
         end
 
         ResourceWait.for_volume(volume: volume, state: :deleted)
 
-        @logger.info("Volume `#{disk_id}' has been deleted")
+        logger.info("Volume `#{disk_id}' has been deleted")
       end
     end
 
@@ -244,7 +227,7 @@ module Bosh::AwsCloud
           settings["disks"]["persistent"] ||= {}
           settings["disks"]["persistent"][disk_id] = device_name
         end
-        @logger.info("Attached `#{disk_id}' to `#{instance_id}'")
+        logger.info("Attached `#{disk_id}' to `#{instance_id}'")
       end
     end
 
@@ -264,39 +247,119 @@ module Bosh::AwsCloud
 
         detach_ebs_volume(instance, volume)
 
-        @logger.info("Detached `#{disk_id}' from `#{instance_id}'")
+        logger.info("Detached `#{disk_id}' from `#{instance_id}'")
+      end
+    end
+
+    def get_disks(vm_id)
+      disks = []
+      @ec2.instances[vm_id].block_devices.each do |block_device|
+        if block_device[:ebs]
+          disks << block_device[:ebs][:volume_id]
+        end
+      end
+      disks
+    end
+
+    # Take snapshot of disk
+    # @param [String] disk_id disk id of the disk to take the snapshot of
+    # @return [String] snapshot id
+    def snapshot_disk(disk_id, metadata)
+      with_thread_name("snapshot_disk(#{disk_id})") do
+        volume = @ec2.volumes[disk_id]
+        devices = []
+        volume.attachments.each {|attachment| devices << attachment.device}
+
+        name = [:deployment, :job, :index].collect { |key| metadata[key] }
+        name << devices.first.split('/').last unless devices.empty?
+
+        snapshot = volume.create_snapshot(name.join('/'))
+        logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
+
+        [:agent_id, :instance_id, :director_name, :director_uuid].each do |key|
+          TagManager.tag(snapshot, key, metadata[key])
+        end
+        TagManager.tag(snapshot, :device, devices.first) unless devices.empty?
+        TagManager.tag(snapshot, 'Name', name.join('/'))
+
+        ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
+        snapshot.id
+      end
+    end
+
+    # Delete a disk snapshot
+    # @param [String] snapshot_id snapshot id to delete
+    def delete_snapshot(snapshot_id)
+      with_thread_name("delete_snapshot(#{snapshot_id})") do
+        snapshot = @ec2.snapshots[snapshot_id]
+
+        if snapshot.status == :in_use
+          raise Bosh::Clouds::CloudError, "snapshot '#{snapshot.id}' can not be deleted as it is in use"
+        end
+
+        snapshot.delete
+        logger.info("snapshot '#{snapshot_id}' deleted")
       end
     end
 
     # Configure network for an EC2 instance
     # @param [String] instance_id EC2 instance id
     # @param [Hash] network_spec network properties
-    # @raise [Bosh::Clouds:NotSupported] if the security groups change
+    # @raise [Bosh::Clouds:NotSupported] if there's a network change that requires the recreation of the VM
     def configure_networks(instance_id, network_spec)
       with_thread_name("configure_networks(#{instance_id}, ...)") do
-        @logger.info("Configuring `#{instance_id}' to use the following " \
-                     "network settings: #{network_spec.pretty_inspect}")
+        logger.info("Configuring '#{instance_id}' to use new network settings: #{network_spec.pretty_inspect}")
 
         instance = @ec2.instances[instance_id]
 
-        actual_group_names = instance.security_groups.collect { |sg| sg.name }
-        specified_group_names = extract_security_group_names(network_spec)
-        new_group_names = specified_group_names.empty? ? Array(@aws_properties["default_security_groups"]) : specified_group_names
+        network_configurator = NetworkConfigurator.new(network_spec)
+        
+        compare_security_groups(instance, network_spec)
+        
+        compare_private_ip_addresses(instance, network_configurator.private_ip)
 
-        # If the security groups change, we need to recreate the VM
-        # as you can't change the security group of a running instance,
-        # we need to send the InstanceUpdater a request to do it for us
-        unless actual_group_names.sort == new_group_names.sort
-          raise Bosh::Clouds::NotSupported,
-                "security groups change requires VM recreation: %s to %s" %
-                    [actual_group_names.join(", "), new_group_names.join(", ")]
-        end
-
-        NetworkConfigurator.new(network_spec).configure(@ec2, instance)
+        network_configurator.configure(@ec2, instance)
 
         update_agent_settings(instance) do |settings|
           settings["networks"] = network_spec
         end
+      end
+    end
+
+    # If the security groups change, we need to recreate the VM
+    # as you can't change the security group of a running instance,
+    # we need to send the InstanceUpdater a request to do it for us
+    def compare_security_groups(instance, network_spec)
+      actual_group_names = instance.security_groups.collect { |sg| sg.name }
+      specified_group_names = extract_security_group_names(network_spec)
+      if specified_group_names.empty?
+        new_group_names = Array(aws_properties["default_security_groups"])
+      else
+        new_group_names = specified_group_names
+      end
+
+      unless actual_group_names.sort == new_group_names.sort
+        raise Bosh::Clouds::NotSupported,
+              "security groups change requires VM recreation: %s to %s" %
+                  [actual_group_names.join(", "), new_group_names.join(", ")]
+      end
+    end
+
+    ##
+    # Compares actual instance private IP addresses with the IP address specified at the network spec
+    #
+    # @param [AWS::EC2::Instance] instance EC2 instance
+    # @param [String] specified_ip_address IP address specified at the network spec (if Manual Network)
+    # @return [void]
+    # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't 
+    # change the IP address of a running server, so we need to send the InstanceUpdater a request to do it for us
+    def compare_private_ip_addresses(instance, specified_ip_address)
+      actual_ip_address = instance.private_ip_address
+
+      unless specified_ip_address.nil? || actual_ip_address == specified_ip_address
+        raise Bosh::Clouds::NotSupported,
+              "IP address change requires VM recreation: %s to %s" %
+              [actual_ip_address, specified_ip_address]
       end
     end
 
@@ -317,9 +380,8 @@ module Bosh::AwsCloud
     #   root disk size
     # @return [String] EC2 AMI name of the stemcell
     def create_stemcell(image_path, stemcell_properties)
-      # TODO: refactor into several smaller methods
       with_thread_name("create_stemcell(#{image_path}...)") do
-        creator = StemcellCreator.new(@region, stemcell_properties)
+        creator = StemcellCreator.new(region, stemcell_properties)
 
         return creator.fake.id if creator.fake?
 
@@ -330,17 +392,17 @@ module Bosh::AwsCloud
 
           # 1. Create and mount new EBS volume (2GB default)
           disk_size = stemcell_properties["disk"] || 2048
-          volume_id = create_disk(disk_size, current_instance_id)
+          volume_id = create_disk(disk_size, current_vm_id)
           volume = @ec2.volumes[volume_id]
-          instance = @ec2.instances[current_instance_id]
+          instance = @ec2.instances[current_vm_id]
 
           sd_name = attach_ebs_volume(instance, volume)
           ebs_volume = find_ebs_device(sd_name)
 
-          @logger.info("Creating stemcell with: '#{volume.id}' and '#{stemcell_properties.inspect}'")
+          logger.info("Creating stemcell with: '#{volume.id}' and '#{stemcell_properties.inspect}'")
           creator.create(volume, ebs_volume, image_path).id
         rescue => e
-          @logger.error(e)
+          logger.error(e)
           raise e
         ensure
           if instance && volume
@@ -355,7 +417,7 @@ module Bosh::AwsCloud
     # @param [String] stemcell_id EC2 AMI name of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
-        stemcell = Stemcell.find(@region, stemcell_id)
+        stemcell = Stemcell.find(region, stemcell_id)
         stemcell.delete
       end
     end
@@ -368,7 +430,6 @@ module Bosh::AwsCloud
     def set_vm_metadata(vm, metadata)
       instance = @ec2.instances[vm]
 
-      # TODO should we clear existing tags that don't exist in metadata?
       metadata.each_pair do |key, value|
         TagManager.tag(instance, key, value)
       end
@@ -383,7 +444,7 @@ module Bosh::AwsCloud
       end
       TagManager.tag(instance, "Name", name) if name
     rescue AWS::EC2::Errors::TagLimitExceeded => e
-      @logger.error("could not tag #{instance.id}: #{e.message}")
+      logger.error("could not tag #{instance.id}: #{e.message}")
     end
 
     # @note Not implemented in the AWS CPI
@@ -407,9 +468,65 @@ module Bosh::AwsCloud
       cloud_error("Cannot find EBS volume on current instance")
     end
 
+
     private
 
     attr_reader :az_selector
+    attr_reader :region
+
+    def agent_properties
+      @agent_properties ||= options.fetch('agent', {})
+    end
+
+    def aws_properties
+      @aws_properties ||= options.fetch('aws')
+    end
+
+    def aws_region
+      @aws_region ||= aws_properties.fetch('region', nil)
+    end
+
+    def fast_path_delete?
+      aws_properties.fetch('fast_path_delete', false)
+    end
+
+    def initialize_aws
+      aws_logger = logger
+      aws_params = {
+          access_key_id:     aws_properties['access_key_id'],
+          secret_access_key: aws_properties['secret_access_key'],
+          ec2_endpoint:      aws_properties['ec2_endpoint'] || default_ec2_endpoint,
+          elb_endpoint:      aws_properties['elb_endpoint'] || default_elb_endpoint,
+          max_retries:       aws_properties['max_retries']  || DEFAULT_MAX_RETRIES ,
+          logger:            aws_logger
+      }
+
+      aws_params[:proxy_uri] = aws_properties['proxy_uri'] if aws_properties['proxy_uri']
+
+      # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
+      # so we need to trigger eager autoload while constructing CPI
+      AWS.eager_autoload!
+
+      AWS.config(aws_params)
+
+      @ec2 = AWS::EC2.new
+      @region = @ec2.regions[aws_region]
+      @az_selector = AvailabilityZoneSelector.new(@region, aws_properties['default_availability_zone'])
+    end
+
+    def initialize_registry
+      registry_properties = options.fetch('registry')
+      registry_endpoint   = registry_properties.fetch('endpoint')
+      registry_user       = registry_properties.fetch('user')
+      registry_password   = registry_properties.fetch('password')
+
+      # Registry updates are not really atomic in relation to
+      # EC2 API calls, so they might get out of sync. Cloudcheck
+      # is supposed to fix that.
+      @registry = Bosh::Registry::Client.new(registry_endpoint,
+                                             registry_user,
+                                             registry_password)
+    end
 
     def update_agent_settings(instance)
       unless block_given?
@@ -421,67 +538,40 @@ module Bosh::AwsCloud
       registry.update_settings(instance.id, settings)
     end
 
-    ##
-    # Reads current instance id from EC2 metadata. We are assuming
-    # instance id cannot change while current process is running
-    # and thus memoizing it.
-    def current_instance_id
-      @metadata_lock.synchronize do
-        return @current_instance_id if @current_instance_id
-
-        client = HTTPClient.new
-        client.connect_timeout = METADATA_TIMEOUT
-        # Using 169.254.169.254 is an EC2 convention for getting
-        # instance metadata
-        uri = "http://169.254.169.254/1.0/meta-data/instance-id/"
-
-        response = client.get(uri)
-        unless response.status == 200
-          cloud_error("Instance metadata endpoint returned " \
-                      "HTTP #{response.status}")
-        end
-
-        @current_instance_id = response.body
-      end
-
-    rescue HTTPClient::TimeoutError
-      cloud_error("Timed out reading instance metadata, " \
-                  "please make sure CPI is running on EC2 instance")
-    end
-
     def attach_ebs_volume(instance, volume)
-      device_names = Set.new(instance.block_device_mappings.to_hash.keys)
-      new_attachment = nil
+      device_name = select_device_name(instance)
+      cloud_error('Instance has too many disks attached') unless device_name
 
-      ("f".."p").each do |char| # f..p is what console suggests
-                                # Some kernels will remap sdX to xvdX, so agent needs
-                                # to lookup both (sd, then xvd)
-        dev_name = "/dev/sd#{char}"
-        if device_names.include?(dev_name)
-          @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
-          next
-        end
-        # work around AWS eventual (in)consistency
-        Bosh::Common.retryable(tries: 10, on: AWS::EC2::Errors::IncorrectState) do
-          new_attachment = volume.attach_to(instance, dev_name)
-        end
-        break
+      # Work around AWS eventual (in)consistency:
+      # even tough we don't call attach_disk until the disk is ready,
+      # AWS might still lie and say that the disk isn't ready yet, so
+      # we try again just to be really sure it is telling the truth
+      attachment = nil
+      Bosh::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
+        attachment = volume.attach_to(instance, device_name)
       end
 
-      if new_attachment.nil?
-        # TODO: better messaging?
-        cloud_error("Instance has too many disks attached")
-      end
+      logger.info("Attaching '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
+      ResourceWait.for_attachment(attachment: attachment, state: :attached)
 
-      @logger.info("Attaching `#{volume.id}' to `#{instance.id}'")
-      ResourceWait.for_attachment(attachment: new_attachment, state: :attached)
-
-      device_name = new_attachment.device
-
-      @logger.info("Attached `#{volume.id}' to `#{instance.id}', " \
-                   "device name is `#{device_name}'")
+      device_name = attachment.device
+      logger.info("Attached '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
 
       device_name
+    end
+
+    def select_device_name(instance)
+      device_names = Set.new(instance.block_device_mappings.to_hash.keys)
+
+      ('f'..'p').each do |char| # f..p is what console suggests
+                                # Some kernels will remap sdX to xvdX, so agent needs
+                                # to lookup both (sd, then xvd)
+        device_name = "/dev/sd#{char}"
+        return device_name unless device_names.include?(device_name)
+        logger.warn("'#{device_name}' on '#{instance.id}' is taken")
+      end
+
+      nil
     end
 
     def detach_ebs_volume(instance, volume, force=false)
@@ -493,12 +583,12 @@ module Bosh::AwsCloud
       end
 
       if device_map[volume.id].nil?
-        cloud_error("Disk `#{volume.id}' is not attached " \
-                    "to instance `#{instance.id}'")
+        raise Bosh::Clouds::DiskNotAttached.new(true),
+              "Disk `#{volume.id}' is not attached to instance `#{instance.id}'"
       end
 
       attachment = volume.detach_from(instance, device_map[volume.id], force: force)
-      @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
+      logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
       ResourceWait.for_attachment(attachment: attachment, state: :detached)
     end
@@ -517,21 +607,13 @@ module Bosh::AwsCloud
 
       required_keys.each_pair do |key, values|
         values.each do |value|
-          if (!@options.has_key?(key) || !@options[key].has_key?(value))
+          if (!options.has_key?(key) || !options[key].has_key?(value))
             missing_keys << "#{key}:#{value}"
           end
         end
       end
 
       raise ArgumentError, "missing configuration parameters > #{missing_keys.join(', ')}" unless missing_keys.empty?
-    end
-
-    def default_ec2_endpoint
-      if @aws_region
-        "ec2.#{@aws_region}.amazonaws.com"
-      else
-        DEFAULT_EC2_ENDPOINT
-      end
     end
 
     # Generates initial agent settings. These settings will be read by agent
@@ -548,14 +630,13 @@ module Bosh::AwsCloud
     # @param [Hash] environment
     # @param [String] root_device_name root device, e.g. /dev/sda1
     # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
+    def initial_agent_settings(agent_id, network_spec, environment, root_device_name)
       settings = {
           "vm" => {
               "name" => "vm-#{SecureRandom.uuid}"
           },
           "agent_id" => agent_id,
           "networks" => network_spec,
-          "preformatted" => preformatted,
           "disks" => {
               "system" => root_device_name,
               "ephemeral" => "/dev/sdb",

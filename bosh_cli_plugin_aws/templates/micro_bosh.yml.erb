@@ -1,0 +1,82 @@
+---
+name: micro-<%= name %>
+
+logging:
+  level: DEBUG
+
+network:
+  type: manual
+  vip:  <%= vip %>
+  ip: 10.10.0.6
+  dns:
+  - 10.10.0.2
+  cloud_properties:
+    subnet: <%= subnet %>
+
+resources:
+  persistent_disk: 20000
+  cloud_properties:
+    instance_type: m1.small
+    availability_zone: <%= availability_zone %>
+
+cloud:
+  plugin: aws
+  properties:
+    aws:
+      access_key_id: <%= access_key_id %>
+      secret_access_key: <%= secret_access_key %>
+      default_key_name: <%= key_pair_name %>
+      default_security_groups: ["bosh"]
+      region: <%= region %>
+      ec2_private_key: <%= private_key_path %>
+    agent:
+      ntp:
+      - 0.north-america.pool.ntp.org
+      - 1.north-america.pool.ntp.org
+      - 2.north-america.pool.ntp.org
+      - 3.north-america.pool.ntp.org
+
+apply_spec:
+  agent:
+    blobstore:
+      address: 10.10.0.6
+    nats:
+      address: 10.10.0.6
+  properties:
+    ntp:
+    - 0.north-america.pool.ntp.org
+    - 1.north-america.pool.ntp.org
+    - 2.north-america.pool.ntp.org
+    - 3.north-america.pool.ntp.org
+    registry:
+      address: 10.10.0.6
+    dns:
+      recursor: 208.67.220.220
+    hm:
+      resurrector_enabled: true
+      director_account:
+        user: <%= hm_director_user %>
+        password: <%= hm_director_password %>
+    aws:
+      access_key_id: <%= access_key_id %>
+      secret_access_key: <%= secret_access_key %>
+      default_key_name: <%= key_pair_name %>
+      default_security_groups: ["bosh"]
+      ec2_endpoint: ec2.<%= region %>.amazonaws.com
+      region: <%= region %>
+    <% if compiled_package_cache? %>
+    compiled_package_cache:
+      provider: s3
+      options:
+        access_key_id: <%= cache_access_key_id %>
+        secret_access_key: <%= cache_secret_access_key %>
+        bucket_name: <%= cache_bucket_name %>
+    <% end %>
+    director:
+      enable_snapshots: true
+      ssl:
+        key: |
+          <%= director_ssl_key %>
+        cert: |
+          <%= director_ssl_cert %>
+

@@ -1,38 +1,36 @@
 #!/usr/bin/env ruby
 
-require "director"
-require "thin"
+require 'director'
+require 'thin'
 
 config_file = nil
 
 opts = OptionParser.new do |opts|
-  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+  opts.on('-c', '--config [ARG]', 'Configuration File') do |opt|
     config_file = opt
   end
 end
 
 opts.parse!(ARGV.dup)
 
-config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
-config = YAML.load_file(config_file)
+config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
+config = Bosh::Director::Config.load_file(config_file)
 
-Bosh::Director::Config.configure(config)
+Bosh::Director::App.new(config)
 
-event_thread = Thread.new { EM.run }
-
-thin_server = Thin::Server.new("0.0.0.0", config["port"], :signals => false) do
+thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], :signals => false) do
   use Rack::CommonLogger
   map "/" do
     run Bosh::Director::ApiController.new
   end
 end
 
-["TERM", "INT", "QUIT"].each do |signal|
+%w(TERM INT QUIT).each do |signal|
   trap(signal) do
+    Bosh::Director::Config.logger.info('Shutting down Director')
     thin_server.stop!
-    EM.stop
   end
 end
 
+Bosh::Director::Config.logger.info("Listening on port #{config.hash['port']}")
 thin_server.start!
-event_thread.join

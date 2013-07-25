@@ -3,6 +3,16 @@ deployment: micro
 release:
   name: micro
   version: 9
+jobs:
+  - name: micro_vsphere
+    template:
+      - nats
+      - redis
+      - postgres
+      - powerdns
+      - blobstore
+      - director
+      - health_monitor
 configuration_hash: {}
 properties:
   micro: true
@@ -11,21 +21,17 @@ properties:
     password: nats
     auth_timeout: 3
     address: 127.0.0.1
-    port: 4222
   redis:
     address: 127.0.0.1
-    port: 25255
     password: redis
-  postgres:
+  postgres: &bosh_db
     user: postgres
-    password: postgres
-    address: 127.0.0.1
-    port: 5432
+    password: postges
+    host: 127.0.0.1
+    listen_address: 127.0.0.1
     database: bosh
   blobstore:
     address: 127.0.0.1
-    backend_port: 25251
-    port: 25250
     director:
       user: director
       password: director
@@ -36,31 +42,19 @@ properties:
     address: 127.0.0.1
     name: micro
     port: 25555
+    db: *bosh_db
   hm:
     http:
-      port: 25923
       user: hm
       password: hm
-    loglevel: info
     director_account:
       user: admin
       password: admin
     intervals:
-      poll_director: 60
-      poll_grace_period: 30
       log_stats: 300
-      analyze_agents: 60
       agent_timeout: 180
       rogue_agent_alert: 180
   dns:
-    user: powerdns
-    password: powerdns
     address: 127.0.0.1
     domain_name: microbosh
-    replication:
-      basic_auth: rick:QRoqsenPsNGX6
-      user: rick
-      password: deckard
-    database:
-      name: powerdns
-      port: 5445
+    db: *bosh_db

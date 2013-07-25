@@ -7,16 +7,18 @@ module Bosh::Director
 
       @queue = :normal
 
+      def self.job_type
+        :delete_stemcell
+      end
+
       # @param [String] name Stemcell name
       # @param [String] version Stemcell version
-      def initialize(name, version, options)
-        super
-
+      def initialize(name, version, options = {})
         @name = name
         @version = version
         @options = options
         @cloud = Config.cloud
-        @blobstore = Config.blobstore
+        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @stemcell_manager = Api::StemcellManager.new
       end
 

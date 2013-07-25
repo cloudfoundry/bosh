@@ -24,6 +24,6 @@ Gem::Specification.new do |s|
   s.add_dependency "sequel"
   s.add_dependency "yajl-ruby"
 
-  s.add_development_dependency "vagrant", "~> 1.0.7"
+  # s.add_development_dependency "vagrant", "~> 1.0.7" # Abhi/Kai: Disabled to merge master into warden-cpi branch
   s.add_development_dependency "librarian"
 end

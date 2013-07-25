@@ -18,7 +18,6 @@ module Bosh::AwsCloud
     # Creates new network spec
     #
     # @param [Hash] spec raw network spec passed by director
-    # TODO Add network configuration examples
     def initialize(spec)
       unless spec.is_a?(Hash)
         raise ArgumentError, "Invalid spec, Hash expected, " \
@@ -61,8 +60,7 @@ module Bosh::AwsCloud
     end
 
     def private_ip
-      cloud_error "private IP only exist for manual network" unless vpc?
-      @network.private_ip
+      vpc? ? @network.private_ip : nil
     end
 
     def vpc?

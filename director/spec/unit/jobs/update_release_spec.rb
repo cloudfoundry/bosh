@@ -1,12 +1,13 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::Jobs::UpdateRelease do
+  let(:blobstore) { double('Blobstore') }
 
   before(:each) do
-    @blobstore = mock(Bosh::Blobstore::Client)
-    BD::Config.stub!(:blobstore).and_return(@blobstore)
+    # Stubbing the blobstore used in BlobUtil :( needs refactoring
+    BD::App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     @release_dir = Dir.mktmpdir("release_dir")
   end
 
@@ -14,19 +15,46 @@ describe Bosh::Director::Jobs::UpdateRelease do
     FileUtils.remove_entry_secure(@release_dir) if File.exist?(@release_dir)
   end
 
+  describe 'Resque job class expectations' do
+    let(:job_type) { :update_release }
+    it_behaves_like 'a Resque job'
+  end
+
   describe "updating a release" do
-    context "commit_hash and uncommitted changes flag" do
-      let(:manifest) do
-        {
-            "name" => "appcloud",
-            "version" => "42.6-dev",
-            "commit_hash" => "12345678",
-            "uncommitted_changes" => "true",
-            "jobs" => [],
-            "packages" => []
-        }
+    let(:manifest) do
+      {
+          "name" => "appcloud",
+          "version" => "42.6-dev",
+          "commit_hash" => "12345678",
+          "uncommitted_changes" => "true",
+          "jobs" => [],
+          "packages" => []
+      }
+    end
+
+    context 'processing update release' do
+      it 'with a local release' do
+        job = BD::Jobs::UpdateRelease.new(@release_dir)
+        job.should_not_receive(:download_remote_release)
+        job.should_receive(:extract_release)
+        job.should_receive(:verify_manifest)
+        job.should_receive(:process_release)
+        
+        job.perform
       end
 
+      it 'with a remote release' do
+        job = BD::Jobs::UpdateRelease.new(@release_dir, {'remote' => true, 'location' => 'release_location'})
+        job.should_receive(:download_remote_release)
+        job.should_receive(:extract_release)
+        job.should_receive(:verify_manifest)
+        job.should_receive(:process_release)
+        
+        job.perform
+      end
+    end
+    
+    context "commit_hash and uncommitted changes flag" do
       it "sets commit_hash and uncommitted changes flag on release_version" do
         release_dir = ReleaseHelper.create_release_tarball(manifest)
         job = BD::Jobs::UpdateRelease.new(release_dir)
@@ -55,6 +83,20 @@ describe Bosh::Director::Jobs::UpdateRelease do
         rv.should_not be_nil
         rv.commit_hash.should == "unknown"
         rv.uncommitted_changes.should be_false
+      end
+    end
+
+    context "extracting a release" do
+      it "should fail if cannot extract release archive" do
+        result = Bosh::Exec::Result.new("cmd", "output", 1)
+        Bosh::Exec.should_receive(:sh).and_return(result)
+
+        release_dir = ReleaseHelper.create_release_tarball(manifest)
+        job = BD::Jobs::UpdateRelease.new(release_dir)
+
+        expect {
+          job.extract_release
+        }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
       end
     end
   end
@@ -137,7 +179,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "rebases original versions saving the major version" do
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(4).times.and_return("b1", "b2", "b3", "b4")
       @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
@@ -179,7 +221,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "uses major.1-dev version for initial rebase if no version exists" do
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(6).times.and_return("b1", "b2", "b3", "b4", "b5", "b6")
 
       @rv.destroy
@@ -218,7 +260,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
       dup_release_dir = Dir.mktmpdir
       FileUtils.cp(File.join(@release_dir, "release.tgz"), dup_release_dir)
 
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(4).times.and_return("b1", "b2", "b3", "b4")
       @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
@@ -266,7 +308,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         :release => @release, :name => "baz",
         :version => "333", :fingerprint => "deadbeef")
 
-      @blobstore.should_receive(:create).
+      blobstore.should_receive(:create).
         exactly(3).times.and_return("b1", "b2", "b3")
       @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
@@ -301,7 +343,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         f.write(create_package({"test" => "test contents"}))
       end
 
-      @blobstore.should_receive(:create).with(
+      blobstore.should_receive(:create).with(
         have_a_path_of(package_path)).and_return("blob_id")
 
       @job.create_package(
@@ -342,6 +384,20 @@ describe Bosh::Director::Jobs::UpdateRelease do
       package.release.should == @release
       package.sha1.should == "some-sha"
       package.blobstore_id.should == "blob_id"
+    end
+
+    it "should fail if cannot extract package archive" do
+      result = Bosh::Exec::Result.new("cmd", "output", 1)
+      Bosh::Exec.should_receive(:sh).and_return(result)
+
+      expect {
+        @job.create_package(
+          {
+            "name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
+            "dependencies" => %w(foo_package bar_package)
+          }
+        )
+      }.to raise_exception(Bosh::Director::PackageInvalidArchive)
     end
 
   end
@@ -414,7 +470,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     it "should create a proper template and upload job bits to blobstore" do
       File.open(@tarball, "w") { |f| f.write(@job_bits) }
 
-      @blobstore.should_receive(:create).and_return do |f|
+      blobstore.should_receive(:create).and_return do |f|
         f.rewind
         Digest::SHA1.hexdigest(f.read).should ==
           Digest::SHA1.hexdigest(@job_bits)
@@ -432,12 +488,13 @@ describe Bosh::Director::Jobs::UpdateRelease do
       template.sha1.should == "deadbeef"
     end
 
-    it "whines on invalid archive" do
-      File.open(@tarball, "w") { |f| f.write("deadcafe") }
+    it "should fail if cannot extract job archive" do
+      result = Bosh::Exec::Result.new("cmd", "output", 1)
+      Bosh::Exec.should_receive(:sh).and_return(result)
 
-      lambda {
+      expect {
         @job.create_job(@job_attrs)
-      }.should raise_error(BD::JobInvalidArchive)
+      }.to raise_error(BD::JobInvalidArchive)
     end
 
     it "whines on missing manifest" do

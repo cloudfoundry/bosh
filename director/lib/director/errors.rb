@@ -92,6 +92,7 @@ module Bosh::Director
   VmCloudIdMissing = err(70006)
   VmInstanceOutOfSync = err(70006)
   InstanceTargetStateUndefined = err(70007)
+  SnapshotNotFound = err(70008)
 
   JobInvalidArchive = err(80000)
   JobMissingManifest = err(80001)
@@ -103,6 +104,7 @@ module Bosh::Director
   JobTemplateUnpackFailed = err(80007)
   JobInvalidPropertySpec = err(80008)
   JobInvalidPropertyMapping = err(80009)
+  JobIncompatibleSpecs = err(80010)
 
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)
@@ -190,4 +192,7 @@ module Bosh::Director
 
   RpcRemoteException = err(450001)
   RpcTimeout = err(450002)
+
+  SystemError = err(500000, INTERNAL_SERVER_ERROR)
+  NotEnoughDiskSpace = err(500001, INTERNAL_SERVER_ERROR)
 end

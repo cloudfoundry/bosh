@@ -75,6 +75,8 @@ These are the credentials to connect to OpenStack services:
   OpenStack tenant name
 * `region` (optional)
   OpenStack region
+* `endpoint_type` (optional)
+  OpenStack endpoint type (publicURL (default), adminURL, internalURL)
 
 ## Example
 
@@ -96,7 +98,7 @@ This is a sample of an Bosh Registry configuration file:
     cloud:
       plugin: openstack
       openstack:
-        auth_url: "http://127.0.0.1:5000/v2.0/tokens"
+        auth_url: "http://127.0.0.1:5000/v2.0"
         username: foo
         api_key: bar
         tenant: foo

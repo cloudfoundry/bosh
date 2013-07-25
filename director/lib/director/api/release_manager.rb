@@ -4,7 +4,6 @@ module Bosh::Director
   module Api
     class ReleaseManager
       include ApiHelper
-      include TaskHelper
 
       RELEASE_TGZ = "release.tgz"
 
@@ -37,19 +36,23 @@ module Bosh::Director
 
       def create_release(user, release_bundle, options = {})
         release_dir = Dir.mktmpdir("release")
-        release_tgz = File.join(release_dir, RELEASE_TGZ)
 
-        write_file(release_tgz, release_bundle)
-        task = create_task(user, :update_release, "create release")
-        Resque.enqueue(Jobs::UpdateRelease, task.id, release_dir, options)
-        task
+        if options['remote']
+          options['location'] = release_bundle
+        else
+          unless check_available_disk_space(release_dir, release_bundle.size)
+            raise NotEnoughDiskSpace, "Uploading release archive failed. " +
+              "Insufficient space on BOSH director in #{release_dir}"
+          end
+  
+          write_file(File.join(release_dir, RELEASE_TGZ), release_bundle)
+        end
+
+        JobQueue.new.enqueue(user, Jobs::UpdateRelease, 'create release', [release_dir, options])
       end
 
       def delete_release(user, release, options = {})
-        task = create_task(user, :delete_release,
-                           "delete release: #{release.name}")
-        Resque.enqueue(Jobs::DeleteRelease, task.id, release.name, options)
-        task
+        JobQueue.new.enqueue(user, Jobs::DeleteRelease, "delete release: #{release.name}", [release.name, options])
       end
     end
   end

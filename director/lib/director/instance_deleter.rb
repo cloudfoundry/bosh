@@ -35,6 +35,7 @@ module Bosh::Director
 
         drain(vm.agent_id)
         @cloud.delete_vm(vm.cid)
+        delete_snapshots(instance)
         delete_persistent_disks(instance.persistent_disks)
         delete_dns(instance.job, instance.index)
 
@@ -60,7 +61,6 @@ module Bosh::Director
           sleep(drain_time)
           drain_time = agent.drain("status")
         rescue => e
-          # TODO: refactor error handling?
           @logger.warn("Failed to check drain-status: #{e.inspect}")
           raise if e.kind_of?(Bosh::Director::TaskCancelled)
           break
@@ -69,6 +69,11 @@ module Bosh::Director
         sleep(drain_time)
       end
       agent.stop
+    end
+
+    def delete_snapshots(instance)
+      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
+      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
     end
 
     # Delete persistent disks
@@ -82,7 +87,6 @@ module Bosh::Director
           @cloud.delete_disk(disk.disk_cid)
         rescue Bosh::Clouds::DiskNotFound => e
           @logger.warn("Disk not found: #{disk.disk_cid}")
-          # TODO: investigate if we really want to swallow the error
           raise if disk.active
         end
         disk.destroy

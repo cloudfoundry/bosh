@@ -89,7 +89,7 @@ describe Bhm::Plugins::Email do
   end
 
   it "processes queue asynchronously when running" do
-    @plugin.stub!(:send_email_async)
+    @plugin.stub(:send_email_async)
 
     20.times do |i|
       @plugin.process(Bhm::Events::Base.create!(:heartbeat, heartbeat_payload))

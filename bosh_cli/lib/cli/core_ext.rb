@@ -66,24 +66,32 @@ module BoshExtensions
   end
 
   def load_yaml_file(path, expected_type = Hash)
-    err("Cannot find file `#{path}'".red) unless File.exist?(path)
-    yaml = YAML::load(ERB.new(File.read(path)).result)
+    err("Cannot find file `#{path}'".make_red) unless File.exist?(path)
 
-    if expected_type && !yaml.is_a?(expected_type)
-      err("Incorrect file format in `#{path}', #{expected_type} expected")
+    begin
+      yaml_str = ERB.new(File.read(path)).result
+    rescue SystemCallError => e
+      err("Cannot load YAML file at `#{path}': #{e}".make_red)
     end
 
-    Bosh::Cli::YamlHelper.check_duplicate_keys(path)
+    begin
+      Bosh::Cli::YamlHelper.check_duplicate_keys(yaml_str)
+    rescue => e
+      err("Incorrect YAML structure in `#{path}': #{e}".make_red)
+    end
+
+    yaml = Psych::load(yaml_str)
+    if expected_type && !yaml.is_a?(expected_type)
+      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".make_red)
+    end
 
     yaml
-  rescue SystemCallError => e
-    err("Cannot load YAML file at `#{path}': #{e}".red)
   end
 
-  def dump_yaml_to_file(obj, file)
-    yaml = YAML.dump(obj)
-    file.write(yaml.gsub(" \n", "\n"))
-    file.flush
+  def write_yaml(manifest, path)
+    File.open(path, "w+") do |f|
+      f.write(manifest.to_yaml)
+    end
   end
 
   # @return [Fixnum]
@@ -92,7 +100,7 @@ module BoshExtensions
   end
 
   def warning(message)
-    warn("[WARNING] #{message}".yellow)
+    warn("[WARNING] #{message}".make_yellow)
   end
 end
 
@@ -104,19 +112,19 @@ module BoshStringExtensions
     :yellow => "\e[0m\e[33m"
   }
 
-  def red
-    colorize(:red)
+  def make_red
+    make_color(:red)
   end
 
-  def green
-    colorize(:green)
+  def make_green
+    make_color(:green)
   end
 
-  def yellow
-    colorize(:yellow)
+  def make_yellow
+    make_color(:yellow)
   end
 
-  def colorize(color_code)
+  def make_color(color_code)
     if Bosh::Cli::Config.output &&
        Bosh::Cli::Config.output.tty? &&
        Bosh::Cli::Config.colorize &&
@@ -148,18 +156,7 @@ module BoshStringExtensions
   end
 
   def columnize(width = 80, left_margin = 0)
-    result = ""
-    buf = ""
-    self.split(/\s+/).each do |word|
-      if buf.size + word.size > width
-        result << buf << "\n" << " " * left_margin
-        buf = word + " "
-      else
-        buf << word << " "
-      end
-
-    end
-    result + buf
+    Bosh::Cli::LineWrap.new(width, left_margin).wrap(self)
   end
 
   def indent(margin = 2)

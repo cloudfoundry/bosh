@@ -7,6 +7,7 @@ module Bosh::Clouds
       rescue LoadError => error
         raise CloudError, "Could not load Cloud Provider Plugin: #{plugin}"
       end
+
       Bosh::Clouds.const_get(plugin.capitalize).new(options)
     end
 

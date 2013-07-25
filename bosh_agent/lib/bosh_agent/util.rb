@@ -4,8 +4,6 @@ module Bosh::Agent
   class Util
     include Bosh::Exec
 
-    # TODO: convert to module?
-    # TODO: don't use MessageHandlerError here?
     class << self
       def base_dir
         Bosh::Agent::Config.base_dir
@@ -40,7 +38,8 @@ module Bosh::Agent
           logger.info("hexdigest of #{blob_data_file}")
 
           unless blob_sha1 == sha1
-            raise Bosh::Agent::MessageHandlerError, "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}"
+            raise Bosh::Agent::MessageHandlerError,
+                  "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}, Blobstore ID: #{blobstore_id}, Install Path: #{install_path}"
           end
 
           logger.info("Installing to: #{install_path}")
@@ -172,6 +171,21 @@ module Bosh::Agent
            if_tmp_file.close
            FileUtils.rm_rf(if_tmp_file.path)
         end
+      end
+
+      def get_network_info
+        sigar = SigarBox.create_sigar
+        net_info = sigar.net_info
+        ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
+
+        properties = {}
+        properties["ip"] = ifconfig.address
+        properties["netmask"] = ifconfig.netmask
+        properties["dns"] = []
+        properties["dns"] << net_info.primary_dns if net_info.primary_dns && !net_info.primary_dns.empty?
+        properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
+        properties["gateway"] = net_info.default_gateway
+        properties
       end
 
     end

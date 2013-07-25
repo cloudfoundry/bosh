@@ -3,7 +3,7 @@
 JOB=batarang
 BASE=/var/vcap
 
-export PATH=$BASE/packages/ruby/bin:$PATH
+export PATH=$BASE/bosh/bin:$PATH
 export BUNDLE_GEMFILE=$BASE/packages/$JOB/Gemfile
 
 RUN_DIR=$BASE/sys/run/$JOB
@@ -12,7 +12,7 @@ BIN_DIR=$BASE/packages/$JOB/bin
 STORE_DIR=$BASE/store/$JOB
 PIDFILE=$RUN_DIR/$JOB.pid
 
-RUNAS=vcap
+RUNAS=root
 
 case $1 in
 

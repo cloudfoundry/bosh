@@ -49,23 +49,10 @@ module Bosh::Agent
                   [type, SUPPORTED_NETWORK_TYPES.join(', ')]
       end
 
-      # Nothing to do for "vip" networks
-      return nil if properties["type"] == VIP_NETWORK_TYPE
+      # Nothing to do for "vip" and "manual" networks
+      return nil if [VIP_NETWORK_TYPE, MANUAL_NETWORK_TYPE].include? type
 
-      sigar = Sigar.new
-      net_info = sigar.net_info
-      ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
-
-      properties = {}
-      properties["ip"] = ifconfig.address
-      properties["netmask"] = ifconfig.netmask
-      properties["dns"] = []
-      properties["dns"] << net_info.primary_dns if net_info.primary_dns &&
-                                                   !net_info.primary_dns.empty?
-      properties["dns"] << net_info.secondary_dns if net_info.secondary_dns &&
-                                                     !net_info.secondary_dns.empty?
-      properties["gateway"] = net_info.default_gateway
-      properties
+      Bosh::Agent::Util.get_network_info
     end
 
   end

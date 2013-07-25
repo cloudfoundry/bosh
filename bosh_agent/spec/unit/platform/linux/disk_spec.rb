@@ -1,11 +1,10 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-require 'bosh_agent/platform/linux/disk'
 
 describe Bosh::Agent::Platform::Linux::Disk do
 
-  context "vSphere" do
+  context 'vSphere' do
 
     let(:config)        { Bosh::Agent::Config }
     let(:store_path)    { File.join(Bosh::Agent::Config.base_dir, 'store') }
@@ -18,7 +17,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
 
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'persistent' => { 2 => '333'} } }
-      Bosh::Agent::Config.infrastructure_name = "vsphere"
+      Bosh::Agent::Config.infrastructure_name = 'vsphere'
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
     end
 
@@ -51,7 +50,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     it 'mounts persistent disk to store_dir if not already mounted' do
       Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
       File.should_receive(:blockdev?).with('/dev/sdy1').and_return(true)
-      disk_wrapper.stub!(:mount_exists?).and_return false
+      disk_wrapper.stub(:mount_exists?).and_return false
       disk_wrapper.should_receive(:sh).with("mount /dev/sdy1 #{store_path}")
 
       disk_wrapper.mount_persistent_disk(2)
@@ -68,6 +67,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       disk_wrapper.should_receive(:mount_exists?).and_return true
       disk_wrapper.mount_persistent_disk(2)
     end
+
     it 'mounts only block devices' do
       Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
       File.should_receive(:blockdev?).with('/dev/sdy1').and_return(false)
@@ -78,53 +78,70 @@ describe Bosh::Agent::Platform::Linux::Disk do
     end
   end
 
-  context "AWS" do
+  context 'AWS' do
     before(:each) do
-      Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
+      Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => '/dev/sdq',
                                                     'persistent' => { 2 => '/dev/sdf'} } }
-      Bosh::Agent::Config.infrastructure_name = "aws"
+      Bosh::Agent::Config.infrastructure_name = 'aws'
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
+
     end
 
     it 'should get data disk device name' do
       disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
-      lambda {
-        disk_wrapper.get_data_disk_device_name.should == '/dev/sdq'
-      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdq", "\/dev\/vdq", "\/dev\/xvdq"/)
+
+      Dir.should_receive(:glob).with(%w(/dev/sdq /dev/vdq /dev/xvdq)).twice.and_return(%w(/dev/xvdq))
+      disk_wrapper.get_data_disk_device_name.should == '/dev/xvdq'
+    end
+
+    it 'should raise an error when data disk device name is not present at settings' do
+      Bosh::Agent::Config.settings = { 'disks' => {  } }
+      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+
+      expect {
+        disk_wrapper.get_data_disk_device_name
+      }.to raise_error(Bosh::Agent::FatalError)
     end
 
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
-      lambda {
-        disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdf'
-      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdf", "\/dev\/vdf", "\/dev\/xvdf"/)
+
+      Dir.should_receive(:glob).with(%w(/dev/sdf /dev/vdf /dev/xvdf)).twice.and_return(%w(/dev/xvdf))
+      disk_wrapper.lookup_disk_by_cid(2).should == '/dev/xvdf'
     end
   end
 
-  context "OpenStack" do
+  context 'OpenStack' do
     before(:each) do
-      Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
+      Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => '/dev/sdq',
                                                     'persistent' => { 2 => '/dev/sdf'} } }
-      Bosh::Agent::Config.infrastructure_name = "openstack"
+      Bosh::Agent::Config.infrastructure_name = 'openstack'
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
     end
 
     it 'should get data disk device name' do
       disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
-      lambda {
-        disk_wrapper.get_data_disk_device_name.should == '/dev/vdq'
-      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdq", "\/dev\/vdq", "\/dev\/xvdq"/)
+
+      Dir.should_receive(:glob).with(%w(/dev/sdq /dev/vdq /dev/xvdq)).twice.and_return(%w(/dev/vdq))
+      disk_wrapper.get_data_disk_device_name.should == '/dev/vdq'
+    end
+
+    it 'should not get data disk device name when not present at settings' do
+      Bosh::Agent::Config.settings = { 'disks' => {  } }
+      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+
+      expect(disk_wrapper.get_data_disk_device_name).to be_nil
     end
 
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
-      lambda {
-        disk_wrapper.lookup_disk_by_cid(2).should == '/dev/vdf'
-      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdf", "\/dev\/vdf", "\/dev\/xvdf"/)
+
+      Dir.should_receive(:glob).with(%w(/dev/sdf /dev/vdf /dev/xvdf)).twice.and_return(%w(/dev/vdf))
+      disk_wrapper.lookup_disk_by_cid(2).should == '/dev/vdf'
     end
   end
 

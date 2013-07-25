@@ -1,8 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-
+require 'net/https'
 require 'yajl'
+require 'tempfile'
 
 describe "http messages" do
 
@@ -15,7 +16,11 @@ describe "http messages" do
     hash['arguments'] = args if args
     req.body = Yajl::Encoder.encode(hash)
 
-    Net::HTTP.start(uri.host, uri.port) do |http|
+    http_connection = Net::HTTP.new(uri.host, uri.port)
+    http_connection.use_ssl = true
+    http_connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    http_connection.start do |http|
       response = http.request(req)
       msg = Yajl::Parser.parse(response.body)
       if msg.has_key?('value')
@@ -31,7 +36,11 @@ describe "http messages" do
     req = Net::HTTP::Post.new(uri.request_uri)
     req.basic_auth(@user, @pass)
 
-    Net::HTTP.start(uri.host, uri.port) do |http|
+    http_connection = Net::HTTP.new(uri.host, uri.port)
+    http_connection.use_ssl = true
+    http_connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    http_connection.start do |http|
       response = http.request(req)
       return response.is_a?(Net::HTTPSuccess)
     end
@@ -43,21 +52,26 @@ describe "http messages" do
     @user = "http"
     @pass = @user.reverse
     @port = get_free_port
-    @http_uri = "http://#{@user}:#{@pass}@localhost:#{@port}/agent"
+    smtp_port = get_free_port
+    @http_uri = "https://#{@user}:#{@pass}@localhost:#{@port}/agent"
     @agent_id = "rspec_agent"
+    agent_out = Tempfile.new('agent_out')
 
     puts "starting http agent"
     agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
-    command = "ruby #{agent} -n #{@http_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
-    @agent_pid = Process.spawn(command)
+    command = "ruby #{agent} -n #{@http_uri} -t #{smtp_port} -a #{@agent_id} -h 1 -b #{@basedir}"
+    @agent_pid = Process.spawn(command, out: agent_out.path, err: agent_out.path)
 
     counter = 0
     while !http_up?
       counter += 1
       # wait max 10 seconds for the agent to start
-      raise "unable to connect to agent" if counter > 100
+      if counter > 100
+        puts File.read(agent_out)
+        raise "unable to connect to agent"
+      end
       sleep 0.1
     end
   end

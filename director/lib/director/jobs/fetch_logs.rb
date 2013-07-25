@@ -11,10 +11,12 @@ module Bosh::Director
 
       attr_accessor :bundle_lifetime
 
-      def initialize(instance_id, options = {})
-        super
+      def self.job_type
+        :fetch_logs
+      end
 
-        @blobstore = Config.blobstore
+      def initialize(instance_id, options = {})
+        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @instance_id = instance_id
         @log_type = options["type"] || "job"
         @filters = options["filters"]
@@ -46,7 +48,6 @@ module Bosh::Director
                          "log_type='#{@log_type}', filters='#{@filters}'")
 
             task = agent.fetch_logs(@log_type, @filters)
-            # TODO: should be using result?
             blobstore_id = task["blobstore_id"]
           end
 

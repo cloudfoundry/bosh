@@ -15,10 +15,10 @@ describe Bhm::Agent do
     agent = make_agent("007")
     agent.timed_out?.should be_false
 
-    Time.stub!(:now).and_return(now + 344)
+    Time.stub(:now).and_return(now + 344)
     agent.timed_out?.should be_false
 
-    Time.stub!(:now).and_return(now + 345)
+    Time.stub(:now).and_return(now + 345)
     agent.timed_out?.should be_true
   end
 
@@ -27,10 +27,10 @@ describe Bhm::Agent do
     agent = make_agent("007")
     agent.rogue?.should be_false
 
-    Time.stub!(:now).and_return(now + 124)
+    Time.stub(:now).and_return(now + 124)
     agent.rogue?.should be_false
 
-    Time.stub!(:now).and_return(now + 125)
+    Time.stub(:now).and_return(now + 125)
     agent.rogue?.should be_true
 
     agent.deployment = "mycloud"

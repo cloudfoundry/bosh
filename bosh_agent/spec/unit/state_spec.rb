@@ -36,17 +36,17 @@ describe Bosh::Agent::State do
 
   it "returns the current state" do
     ts = Time.now
-    Time.stub!(:now).and_return(ts)
+    Time.stub(:now).and_return(ts)
 
     File.open(@state_file, "w") do |f|
-      f.write(YAML.dump({ "a" => 1, "b" => 2}))
+      f.write(Psych.dump({ "a" => 1, "b" => 2}))
     end
 
     state = make_state(@state_file)
     state.to_hash.should == { "a" => 1, "b" => 2 }
 
     File.open(@state_file, "w") do |f|
-      f.write(YAML.dump({ "a" => 2, "b" => 3}))
+      f.write(Psych.dump({ "a" => 2, "b" => 3}))
     end
 
     # Someone else re-wrote the file, we don't know about that
@@ -62,12 +62,12 @@ describe Bosh::Agent::State do
 
     ts  = Time.now
     ts2 = Time.now
-    Time.stub!(:now).and_return(ts)
+    Time.stub(:now).and_return(ts)
 
     state.write({ "a" => 1, "b" => 2})
     state.to_hash.should == { "a" => 1, "b" => 2 }
 
-    Time.stub!(:now).and_return(ts2)
+    Time.stub(:now).and_return(ts2)
 
     state.write({ "a" => 1, "b" => 2})
     state.to_hash.should == { "a" => 1, "b" => 2 }

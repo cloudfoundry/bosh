@@ -16,6 +16,11 @@ then
   persist_value system_parameters_infrastructure
 fi
 
-cp -rvH $bosh_release_src_dir/package_compiler $assets_dir/gems
+if [ -z "${agent_gem_src_url:-}" ]; then
+  mkdir -p $assets_dir/gems
+  cp -rvH $bosh_release_src_dir/package_compiler/* $assets_dir/gems
+else
+  persist_value agent_gem_src_url
+fi
 
 persist_value mcf_enabled

@@ -22,15 +22,15 @@ module Bosh::AwsCloud
 
     def fetch_akis(architecture)
       filter = aki_filter(architecture)
-      @region.client.describe_images(:filters => filter).images_set
+      @region.client.describe_images(filters: filter).images_set
     end
 
     # @return [Hash] search filter
     def aki_filter(architecture)
       [
-          {:name => "architecture", :values => [architecture]},
-          {:name => "image-type", :values => %w[kernel]},
-          {:name => "owner-alias", :values => %w[amazon]}
+          {name: "architecture", values: [architecture]},
+          {name: "image-type", values: %w[kernel]},
+          {name: "owner-alias", values: %w[amazon]}
       ]
     end
 

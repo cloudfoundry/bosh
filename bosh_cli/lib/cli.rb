@@ -47,12 +47,16 @@ require "cli/errors"
 require "cli/yaml_helper"
 require "cli/version_calc"
 require "cli/dependency_helper"
+require "cli/deployment_manifest"
 require "cli/deployment_helper"
 require "cli/validation"
 require "cli/cache"
 require "cli/stemcell"
 require "cli/director"
 require "cli/director_task"
+
+require 'cli/line_wrap'
+require 'cli/backup_destination_path'
 
 require "cli/versions_index"
 require "cli/packaging_helper"
@@ -80,10 +84,6 @@ require "cli/command_discovery"
 require "cli/command_handler"
 require "cli/runner"
 require "cli/base_command"
-
-if defined?(YAML::ENGINE.yamler)
-  YAML::ENGINE.yamler = RUBY_VERSION >= "2.0.0" ? "psych" : "syck"
-end
 
 tmpdir = Dir.mktmpdir
 at_exit { FileUtils.rm_rf(tmpdir) }

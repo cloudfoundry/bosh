@@ -153,17 +153,16 @@ module Bosh::Agent
     end
 
     def setup_data_disk
+      data_mount = File.join(base_dir, "data")
+      FileUtils.mkdir_p(data_mount)
+
       data_disk = Bosh::Agent::Config.platform.get_data_disk_device_name
+      if data_disk
+        unless File.blockdev?(data_disk)
+          logger.warn("Data disk is not a block device: #{data_disk}")
+          return
+        end
 
-      unless File.blockdev?(data_disk)
-        logger.warn("Data disk is not a block device: #{data_disk}")
-        return
-      end
-
-      if preformatted?
-        data_partition = data_disk
-        logger.info("Using pre-formatted disk #{data_disk} - skipping partitioning & formatting")
-      else
         swap_partition = "#{data_disk}1"
         data_partition = "#{data_disk}2"
 
@@ -182,30 +181,21 @@ module Bosh::Agent
           mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
           sh "/sbin/mke2fs #{mke2fs_options.join(" ")} #{data_partition}"
         end
-      end
 
-      unless swap_turned_on
-        logger.info("Swapon partition #{swap_partition}")
-        sh "swapon #{swap_partition}"
-      end
-
-      unless data_partition_mounted
-        data_mount = File.join(base_dir, "data")
-        FileUtils.mkdir_p(data_mount)
-
-        unless Pathname.new(data_mount).mountpoint?
-          logger.info("Mount data partition #{data_partition} to #{data_mount}")
-          sh "mount #{data_partition} #{data_mount}"
+        unless swap_turned_on
+          logger.info("Swapon partition #{swap_partition}")
+          sh "swapon #{swap_partition}"
         end
 
-        setup_data_sys
+        unless data_partition_mounted
+          unless Pathname.new(data_mount).mountpoint?
+            logger.info("Mount data partition #{data_partition} to #{data_mount}")
+            sh "mount #{data_partition} #{data_mount}"
+          end
+        end
       end
-    end
 
-    # for AWS we have a special setting to allow you to skip partitioning
-    # the ephemeral disk, as it comes pre-formatted from EC2
-    def preformatted?
-      Bosh::Agent::Config.settings["preformatted"]
+      setup_data_sys
     end
 
     def data_sfdisk_input

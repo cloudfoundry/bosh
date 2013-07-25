@@ -30,7 +30,7 @@ module Bosh::Director
     # @param [DeploymentPlan::Template]
     def process_template(job_template)
       template_dir = extract_template(job_template)
-      manifest = YAML.load_file(File.join(template_dir, "job.MF"))
+      manifest = Psych.load_file(File.join(template_dir, "job.MF"))
 
       monit_template = erb(File.join(template_dir, "monit"))
       monit_template.filename = File.join(job_template.name, "monit")
@@ -91,10 +91,11 @@ module Bosh::Director
     def bind_template(template, binding_helper, index)
       template.result(binding_helper.get_binding)
     rescue Exception => e
+      @logger.debug(e.inspect)
       job_desc = "#{@job.name}/#{index}"
       line_index = e.backtrace.index{ |l| l.include?(template.filename) }
-      line = e.backtrace[line_index]
-      template_name, line = line[0..line.rindex(":") - 1].split(":")
+      line = line_index ? e.backtrace[line_index] : '(unknown):(unknown)'
+      template_name, line = line.split(':')
 
       message = "Error filling in template `#{File.basename(template_name)}' " +
                 "for `#{job_desc}' (line #{line}: #{e})"

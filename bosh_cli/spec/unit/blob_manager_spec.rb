@@ -9,13 +9,13 @@ describe Bosh::Cli::BlobManager do
   end
 
   before(:each) do
-    @blobstore = mock("blobstore")
+    @blobstore = double("blobstore")
     @dir = Dir.mktmpdir
     @src_dir = FileUtils.mkdir(File.join(@dir, "src"))
     @config_dir = File.join(@dir, "config")
     FileUtils.mkdir(@config_dir)
     @blobs_dir = File.join(@dir, "blobs")
-    @release = mock("release", :dir => @dir, :blobstore => @blobstore)
+    @release = double("release", :dir => @dir, :blobstore => @blobstore)
   end
 
   describe "initialization" do
@@ -27,7 +27,7 @@ describe Bosh::Cli::BlobManager do
     end
 
     it "fails if blobstore is not configured" do
-      @release.stub!(:blobstore).and_return(nil)
+      @release.stub(:blobstore).and_return(nil)
       expect {
         make_manager(@release)
       }.to raise_error("Blobstore is not configured")
@@ -47,11 +47,12 @@ describe Bosh::Cli::BlobManager do
 
     it "doesn't like bad index file'" do
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
-        YAML.dump("string", f)
+        Psych.dump("string", f)
       end
+
       expect {
         make_manager(@release)
-      }.to raise_error(/Incorrect file format/)
+      }.to raise_error(/Incorrect YAML structure/)
     end
 
     it "migrates legacy index file" do
@@ -59,12 +60,12 @@ describe Bosh::Cli::BlobManager do
       test_hash = { "foo" => "bar" }
 
       File.open(legacy_file, "w") do |f|
-        YAML.dump({ "foo" => "bar" }, f)
+        Psych.dump({ "foo" => "bar" }, f)
       end
 
       make_manager(@release)
       File.exists?(legacy_file).should be_false
-      YAML.load_file(File.join(@config_dir, "blobs.yml")).should == test_hash
+      Psych.load_file(File.join(@config_dir, "blobs.yml")).should == test_hash
     end
   end
 
@@ -163,7 +164,7 @@ describe Bosh::Cli::BlobManager do
       }
 
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
-        YAML.dump(index, f)
+        Psych.dump(index, f)
       end
 
       @manager = make_manager(@release)
@@ -223,7 +224,7 @@ describe Bosh::Cli::BlobManager do
 
     it "processes blobs directory" do
       @manager = make_manager(@release)
-      @blobstore.stub!(:create).and_return("new-object-id")
+      @blobstore.stub(:create).and_return("new-object-id")
 
       new_blob = Tempfile.new("new-blob")
       new_blob.write("test")
@@ -264,7 +265,7 @@ describe Bosh::Cli::BlobManager do
       }
 
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
-        YAML.dump(index, f)
+        Psych.dump(index, f)
       end
 
       foo = Tempfile.new("foo")

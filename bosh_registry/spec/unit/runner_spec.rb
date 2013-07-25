@@ -10,7 +10,7 @@ describe Bosh::Registry::Runner do
 
   def write_config(file, config)
     File.open(file, "w") do |f|
-      YAML.dump(config, f)
+      Psych.dump(config, f)
     end
   end
 
@@ -44,7 +44,7 @@ describe Bosh::Registry::Runner do
       config_file = Tempfile.new("config")
       write_config(config_file.path, { "foo" => "bar" })
 
-      YAML.stub!(:load_file).and_raise(SystemCallError.new("baz"))
+      Psych.stub(:load_file).and_raise(SystemCallError.new("baz"))
 
       expect {
         make_runner(config_file.path)
@@ -63,9 +63,7 @@ describe Bosh::Registry::Runner do
       Bosh::Registry.http_port = 25777
 
       runner = make_runner(@config_file)
-      mock_thin = mock("thin")
-
-      EM.should_receive(:run).and_yield
+      mock_thin = double("thin")
 
       Thin::Server.should_receive(:new).
         with("0.0.0.0", 25777, :signals => false).
@@ -76,7 +74,6 @@ describe Bosh::Registry::Runner do
       runner.run
 
       mock_thin.should_receive(:stop!)
-      EM.should_receive(:stop)
 
       runner.stop
     end

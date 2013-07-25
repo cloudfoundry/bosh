@@ -1,7 +1,0 @@
----
-path: /var/vcap/store/blobstore/store
-port: <%= p("blobstore.backend_port") %>
-nginx_path: /protected
-users:
-  <%= p("blobstore.director.user") %>: <%= p("blobstore.director.password") %>
-  <%= p("blobstore.agent.user") %>: <%= p("blobstore.agent.password") %>

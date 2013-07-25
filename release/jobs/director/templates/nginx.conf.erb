@@ -1,0 +1,54 @@
+user vcap;
+worker_processes  <%= p('director.nginx.workers') %>;
+daemon off;
+
+error_log  /var/vcap/sys/log/director/error.log;
+pid        /var/vcap/sys/run/director/nginx.pid;
+
+events {
+  worker_connections  8192;
+}
+
+http {
+  include       /var/vcap/jobs/director/config/mime.types;
+  default_type  text/html;
+  server_tokens off;
+
+  server {
+    listen <%= p('director.port') %>;
+
+    location / {
+      proxy_pass         http://127.0.0.1:<%= p('director.backend_port') %>;
+      proxy_read_timeout <%= p('director.proxy_timeout') %>;
+
+      proxy_set_header   Host             $host;
+      proxy_set_header   X-Real-IP        $remote_addr;
+      proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+      proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    ssl on;
+    ssl_certificate           /var/vcap/store/director/nginx/director.pem;
+    ssl_certificate_key       /var/vcap/store/director/nginx/director.key;
+    ssl_session_timeout       <%= p('director.timeout') %>;
+  }
+
+  access_log           /var/vcap/sys/log/director/access.log;
+
+  sendfile             on;
+  tcp_nopush           on;
+  tcp_nodelay          on;
+
+  keepalive_timeout    <%= p('director.timeout') %>;
+  client_max_body_size <%= p('director.max_upload_size') %>;
+
+  gzip                 on;
+  gzip_min_length      1250;
+  gzip_buffers         16 8k;
+  gzip_comp_level      2;
+  gzip_proxied         any;
+  gzip_types           text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  gzip_vary            on;
+  gzip_disable         "MSIE [1-6]\.(?!.*SV1)";
+
+}

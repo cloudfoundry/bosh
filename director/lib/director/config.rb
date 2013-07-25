@@ -1,8 +1,15 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-module Bosh::Director
-  class Config
+require 'fileutils'
 
+module Bosh::Director
+
+  # We are in the slow painful process of extracting all of this class-level
+  # behavior into instance behavior, much of it on the App class. When this
+  # process is complete, the Config will be responsible only for maintaining
+  # configuration information - not holding the state of the world.
+
+  class Config
     class << self
       include DnsHelper
 
@@ -19,18 +26,21 @@ module Bosh::Director
         :max_threads,
         :name,
         :process_uuid,
-        :redis_options,
         :result,
         :revision,
         :task_checkpoint_interval,
         :uuid,
         :current_job,
-        :encryption
+        :encryption,
+        :fix_stateful_nodes,
+        :enable_snapshots
       ]
 
       CONFIG_OPTIONS.each do |option|
         attr_accessor option
       end
+
+      attr_reader :db_config
 
       def clear
         CONFIG_OPTIONS.each do |option|
@@ -49,15 +59,24 @@ module Bosh::Director
       end
 
       def configure(config)
+
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
 
         # checkpoint task progress every 30 secs
         @task_checkpoint_interval = 30
 
-        @logger = Logger.new(config["logging"]["file"] || STDOUT)
-        @logger.level = Logger.const_get(config["logging"]["level"].upcase)
+        logging = config.fetch('logging', {})
+        @log_device = Logger::LogDevice.new(logging.fetch('file', STDOUT))
+        @logger = Logger.new(@log_device)
+        @logger.level = Logger.const_get(logging.fetch('level', 'debug').upcase)
         @logger.formatter = ThreadFormatter.new
+
+        # use a separate logger for redis to make it stfu
+        redis_logger = Logger.new(@log_device)
+        logging = config.fetch('redis', {}).fetch('logging', {})
+        redis_logger_level = logging.fetch('level', 'info').upcase
+        redis_logger.level = Logger.const_get(redis_logger_level)
 
         # Event logger supposed to be overridden per task,
         # the default one does nothing
@@ -72,19 +91,8 @@ module Bosh::Director
           :host     => config["redis"]["host"],
           :port     => config["redis"]["port"],
           :password => config["redis"]["password"],
-          :logger   => @logger
+          :logger   => redis_logger
         }
-
-        state_json = File.join(@base_dir, "state.json")
-        File.open(state_json, File::RDWR|File::CREAT, 0644) do |file|
-          file.flock(File::LOCK_EX)
-          state = Yajl::Parser.parse(file.read) || {}
-          @uuid = state["uuid"] ||= SecureRandom.uuid
-          file.rewind
-          file.write(Yajl::Encoder.encode(state))
-          file.flush
-          file.truncate(file.pos)
-        end
 
         @revision = get_revision
 
@@ -94,14 +102,12 @@ module Bosh::Director
         @nats_uri = config["mbus"]
 
         @cloud_options = config["cloud"]
-        @blobstore_options = config["blobstore"]
-
         @compiled_package_cache_options = config["compiled_package_cache"]
         @name = config["name"] || ""
 
-        @blobstore = nil
         @compiled_package_cache = nil
 
+        @db_config = config['db']
         @db = configure_db(config["db"])
         @dns = config["dns"]
         @dns_domain_name = "bosh"
@@ -110,11 +116,21 @@ module Bosh::Director
           @dns_domain_name = canonical(@dns["domain_name"]) if @dns["domain_name"]
         end
 
+        @uuid = override_uuid || retrieve_uuid
+        @logger.info("Director UUID: #{@uuid}")
+
         @encryption = config["encryption"]
+        @fix_stateful_nodes = config.fetch("scan_and_fix", {})
+          .fetch("auto_fix_stateful_nodes", false)
+        @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
 
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+      end
+
+      def log_dir
+        File.dirname(@log_device.filename) if @log_device.filename
       end
 
       def use_compiled_package_cache?
@@ -130,28 +146,19 @@ module Bosh::Director
       end
 
       def configure_db(db_config)
-        patch_sqlite if db_config["database"].index("sqlite://") == 0
+        patch_sqlite if db_config["adapter"] == "sqlite"
 
-        connection_options = {}
-        [:max_connections, :pool_timeout].each do |key|
-          connection_options[key] = db_config[key.to_s]
+        connection_options = db_config.delete('connection_options') {{}}
+        db_config.delete_if { |_, v| v.to_s.empty? }
+        db_config = db_config.merge(connection_options)
+
+        db = Sequel.connect(db_config)
+        if logger
+          db.logger = logger
+          db.sql_log_level = :debug
         end
 
-        db = Sequel.connect(db_config["database"], connection_options)
-        db.logger = @logger
-        db.sql_log_level = :debug
         db
-      end
-
-      def blobstore
-        @lock.synchronize do
-          if @blobstore.nil?
-            provider = @blobstore_options["provider"]
-            options = @blobstore_options["options"]
-            @blobstore = Bosh::Blobstore::Client.create(provider, options)
-          end
-        end
-        @blobstore
       end
 
       def compiled_package_cache_blobstore
@@ -163,6 +170,10 @@ module Bosh::Director
           end
         end
         @compiled_package_cache_blobstore
+      end
+
+      def compiled_package_cache_provider
+        use_compiled_package_cache? ? @compiled_package_cache_options["provider"] : nil
       end
 
       def cloud_type
@@ -184,9 +195,7 @@ module Bosh::Director
 
       def logger=(logger)
         @logger = logger
-        if @redis_options
-          @redis_options[:logger] = @logger
-        end
+        redis_options[:logger] = @logger
         if redis?
           redis.client.logger = @logger
         end
@@ -196,6 +205,11 @@ module Bosh::Director
         @current_job.task_checkpoint if @current_job
       end
       alias_method :task_checkpoint, :job_cancelled?
+
+
+      def redis_options
+        @redis_options ||= {}
+      end
 
       def redis_options=(options)
         @redis_options = options
@@ -227,7 +241,7 @@ module Bosh::Director
       end
 
       def redis
-        threaded[:redis] ||= Redis.new(@redis_options)
+        threaded[:redis] ||= Redis.new(redis_options)
       end
 
       def redis?
@@ -276,6 +290,80 @@ module Bosh::Director
         end
       end
 
+      def retrieve_uuid
+        directors = Bosh::Director::Models::DirectorAttribute.all
+        director = directors.first
+
+        if directors.size > 1
+          @logger.warn("More than one UUID stored in director table, using #{director.uuid}")
+        end
+
+        unless director
+          director = Bosh::Director::Models::DirectorAttribute.new
+          director.uuid = gen_uuid
+          director.save
+          @logger.info("Generated director UUID #{director.uuid}")
+        end
+
+        director.uuid
+      end
+
+      def override_uuid
+        new_uuid = nil
+
+        if File.exists?(state_file)
+          open(state_file, 'r+') do |file|
+
+            # lock before read to avoid director/worker race condition
+            file.flock(File::LOCK_EX)
+            state = Yajl::Parser.parse(file) || {}
+            # empty state file to prevent blocked processes from attempting to set UUID
+            file.truncate(0)
+
+            if state["uuid"]
+              Bosh::Director::Models::DirectorAttribute.delete
+              director = Bosh::Director::Models::DirectorAttribute.new
+              director.uuid = state["uuid"]
+              director.save
+              @logger.info("Using director UUID #{state["uuid"]} from #{state_file}")
+              new_uuid = state["uuid"]
+            end
+
+            # unlock after storing UUID
+            file.flock(File::LOCK_UN)
+          end
+
+          FileUtils.rm_f(state_file)
+        end
+
+        new_uuid
+      end
+
+      def state_file
+        File.join(base_dir, "state.json")
+      end
+
+      def gen_uuid
+        SecureRandom.uuid
+      end
+
+    end
+
+    class << self
+      def load_file(path)
+        Config.new(Psych.load_file(path))
+      end
+      def load_hash(hash)
+        Config.new(hash)
+      end
+    end
+
+    attr_reader :hash
+
+    private
+
+    def initialize(hash)
+      @hash = hash
     end
 
   end

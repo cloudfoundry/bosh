@@ -5,110 +5,165 @@ module Bosh
   end
 end
 
-require "digest/sha1"
-require "erb"
-require "fileutils"
-require "forwardable"
-require "logger"
-require "monitor"
-require "optparse"
-require "ostruct"
-require "pp"
-require "thread"
-require "tmpdir"
-require "yaml"
-require "time"
-require "zlib"
+require 'digest/sha1'
+require 'erb'
+require 'fileutils'
+require 'forwardable'
+require 'logger'
+require 'monitor'
+require 'optparse'
+require 'ostruct'
+require 'pathname'
+require 'pp'
+require 'thread'
+require 'tmpdir'
+require 'yaml'
+require 'time'
+require 'zlib'
 
-require "common/properties"
+require 'common/runs_commands'
+require 'common/exec'
+require 'common/properties'
 
-require "bcrypt"
-require "blobstore_client"
-require "eventmachine"
-require "netaddr"
-require "resque"
-require "sequel"
-require "sinatra/base"
-require "securerandom"
-require "yajl"
-require "nats/client"
-require "securerandom"
+require 'bcrypt'
+require 'blobstore_client'
+require 'eventmachine'
+require 'netaddr'
+require 'resque'
+require 'sequel'
+require 'sinatra/base'
+require 'securerandom'
+require 'yajl'
+require 'nats/client'
+require 'securerandom'
 
-require "common/thread_formatter"
-require "encryption/encryption_handler"
-require "director/api"
-require "director/deep_copy"
-require "director/dns_helper"
-require "director/errors"
-require "director/ext"
-require "director/ip_util"
-require "director/lock_helper"
-require "director/metadata_helper"
-require "director/validation_helper"
+require 'common/thread_formatter'
+require 'encryption/encryption_handler'
+require 'director/api'
+require 'director/dns_helper'
+require 'director/errors'
+require 'director/ext'
+require 'director/ip_util'
+require 'director/lock_helper'
+require 'director/metadata_helper'
+require 'director/validation_helper'
+require 'director/download_helper'
 
-require "director/version"
-require "director/config"
-require "director/event_log"
-require "director/task_result_file"
-require "director/version_calc"
-require "director/blob_util"
+require 'director/version'
+require 'director/next_rebase_version'
+require 'director/config'
+require 'director/event_log'
+require 'director/task_result_file'
+require 'director/blob_util'
 
-require "director/client"
-require "director/agent_client"
-require "cloud"
-require "director/compile_task"
-require "director/configuration_hasher"
-require "director/cycle_helper"
-require "director/encryption_helper"
-require "director/vm_creator"
-require "director/vm_data"
-require "director/vm_reuser"
-require "director/deployment_plan"
-require "director/deployment_plan_compiler"
-require "director/duration"
-require "director/instance_deleter"
-require "director/instance_updater"
-require "director/job_runner"
-require "director/job_updater"
-require "director/lock"
-require "director/nats_rpc"
-require "director/network_reservation"
-require "director/package_compiler"
-require "director/resource_pool_updater"
-require "director/sequel"
-require "common/thread_pool"
+require 'director/client'
+require 'director/agent_client'
+require 'cloud'
+require 'director/compile_task'
+require 'director/configuration_hasher'
+require 'director/cycle_helper'
+require 'director/encryption_helper'
+require 'director/vm_creator'
+require 'director/vm_data'
+require 'director/vm_reuser'
+require 'director/deployment_plan'
+require 'director/deployment_plan_compiler'
+require 'director/duration'
+require 'director/hash_string_vals'
+require 'director/instance_deleter'
+require 'director/instance_updater'
+require 'director/job_runner'
+require 'director/job_updater'
+require 'director/job_queue'
+require 'director/tar_gzipper'
+require 'director/lock'
+require 'director/nats_rpc'
+require 'director/network_reservation'
+require 'director/package_compiler'
+require 'director/problem_scanner'
+require 'director/problem_resolver'
+require 'director/resource_pool_updater'
+require 'director/sequel'
+require 'common/thread_pool'
 
-require "director/cloudcheck_helper"
-require "director/problem_handlers/base"
-require "director/problem_handlers/invalid_problem"
-require "director/problem_handlers/inactive_disk"
-require "director/problem_handlers/out_of_sync_vm"
-require "director/problem_handlers/unresponsive_agent"
-require "director/problem_handlers/unbound_instance_vm"
-require "director/problem_handlers/mount_info_mismatch"
+require 'director/cloudcheck_helper'
+require 'director/problem_handlers/base'
+require 'director/problem_handlers/invalid_problem'
+require 'director/problem_handlers/inactive_disk'
+require 'director/problem_handlers/out_of_sync_vm'
+require 'director/problem_handlers/unresponsive_agent'
+require 'director/problem_handlers/unbound_instance_vm'
+require 'director/problem_handlers/mount_info_mismatch'
+require 'director/problem_handlers/missing_vm'
 
-require "director/jobs/base_job"
-require "director/jobs/delete_deployment"
-require "director/jobs/delete_release"
-require "director/jobs/delete_stemcell"
-require "director/jobs/update_deployment"
-require "director/jobs/update_release"
-require "director/jobs/update_stemcell"
-require "director/jobs/fetch_logs"
-require "director/jobs/vm_state"
-require "director/jobs/cloud_check/scan"
-require "director/jobs/cloud_check/apply_resolutions"
-require "director/jobs/ssh"
+require 'director/jobs/base_job'
+require 'director/jobs/backup'
+require 'director/jobs/scheduled_backup'
+require 'director/jobs/create_snapshot'
+require 'director/jobs/snapshot_deployment'
+require 'director/jobs/snapshot_deployments'
+require 'director/jobs/snapshot_self'
+require 'director/jobs/delete_deployment'
+require 'director/jobs/delete_deployment_snapshots'
+require 'director/jobs/delete_release'
+require 'director/jobs/delete_snapshots'
+require 'director/jobs/delete_stemcell'
+require 'director/jobs/update_deployment'
+require 'director/jobs/update_release'
+require 'director/jobs/update_stemcell'
+require 'director/jobs/fetch_logs'
+require 'director/jobs/vm_state'
+require 'director/jobs/cloud_check/scan'
+require 'director/jobs/cloud_check/scan_and_fix'
+require 'director/jobs/cloud_check/apply_resolutions'
+require 'director/jobs/ssh'
 
-require "director/models/helpers/model_helper"
+require 'director/models/helpers/model_helper'
+
+require 'director/db_backup'
+require 'director/blobstores'
+require 'director/app'
 
 module Bosh::Director
-  autoload :Models, "director/models"
+  autoload :Models, 'director/models'
 
   class ThreadPool < Bosh::ThreadPool
     def initialize(options)
       options[:logger] ||= Config.logger
       super(options)
+    end
+  end
+
+  module ApiControllerHelpers
+    def task_timeout?(task)
+      # Some of the old task entries might not have the checkpoint_time
+      unless task.checkpoint_time
+        task.checkpoint_time = Time.now
+        task.save
+      end
+
+      # If no checkpoint update in 3 cycles --> timeout
+      (task.state == "processing" || task.state == "cancelling") &&
+          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
+    end
+
+    def protected!
+      unless authorized?
+        response['WWW-Authenticate'] = %(Basic realm="BOSH Director")
+        throw(:halt, [401, "Not authorized\n"])
+      end
+    end
+
+    def authorized?
+      @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+      @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
+    end
+
+    def convert_job_instance_hash(hash)
+      hash.reduce([]) do |jobs, kv|
+        job, indicies = kv
+        jobs + indicies.map { |index| [job, index] }
+      end
     end
   end
 
@@ -122,11 +177,13 @@ module Bosh::Director
     def initialize
       super
       @deployment_manager = Api::DeploymentManager.new
+      @backup_manager = Api::BackupManager.new
       @instance_manager = Api::InstanceManager.new
       @problem_manager = Api::ProblemManager.new
       @property_manager = Api::PropertyManager.new
       @resource_manager = Api::ResourceManager.new
       @release_manager = Api::ReleaseManager.new
+      @snapshot_manager = Api::SnapshotManager.new
       @stemcell_manager = Api::StemcellManager.new
       @task_manager = Api::TaskManager.new
       @user_manager = Api::UserManager.new
@@ -154,31 +211,7 @@ module Bosh::Director
       end
     end
 
-    helpers do
-      def task_timeout?(task)
-        # Some of the old task entries might not have the checkpoint_time
-        unless task.checkpoint_time
-          task.checkpoint_time = Time.now
-          task.save
-        end
-
-        # If no checkpoint update in 3 cycles --> timeout
-        (task.state == "processing" || task.state == "cancelling") &&
-          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
-      end
-
-      def protected!
-        unless authorized?
-          response['WWW-Authenticate'] = %(Basic realm="BOSH Director")
-          throw(:halt, [401, "Not authorized\n"])
-        end
-      end
-
-      def authorized?
-        @auth ||=  Rack::Auth::Basic::Request.new(request.env)
-        @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
-      end
-    end
+    helpers ApiControllerHelpers
 
     before do
       auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
@@ -242,9 +275,20 @@ module Bosh::Director
 
     post "/releases", :consumes => :tgz do
       options = {}
+      options["remote"] = false
       options["rebase"] = true if params["rebase"] == "true"
 
       task = @release_manager.create_release(@user, request.body, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    post "/releases", :consumes => :json do
+      options = {}
+      options["remote"] = true
+      options["rebase"] = true if params["rebase"] == "true"
+      payload = json_decode(request.body)
+
+      task = @release_manager.create_release(@user, payload["location"], options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -254,7 +298,8 @@ module Bosh::Director
           Hash["version", rv.version.to_s,
                "commit_hash", rv.commit_hash,
                "uncommitted_changes", rv.uncommitted_changes,
-               "currently_deployed", !rv.deployments.empty?]
+               "currently_deployed", !rv.deployments.empty?,
+               "job_names", rv.templates.map(&:name)]
         end
 
         Hash["name", release.name,
@@ -283,8 +328,20 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}
-    #                             or
+    get "/deployments/:deployment/jobs/:job/:index" do
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+
+      response = {
+          deployment: params[:deployment],
+          job: instance.job,
+          index: instance.index,
+          state: instance.state,
+          disks: instance.persistent_disks.map {|d| d.disk_cid}
+      }
+
+      json_encode(response)
+    end
+
     # PUT /deployments/foo/jobs/dea?new_name=dea_new
     put "/deployments/:deployment/jobs/:job", :consumes => :yaml do
       if params["state"]
@@ -308,13 +365,15 @@ module Bosh::Director
         options["job_rename"]["force"] = true if params["force"] == "true"
       end
 
-      deployment = @deployment_manager.find_by_name(params[:deployment])
+      # we get the deployment here even though it isn't used here, to make sure
+      # the call returns a 404 if the deployment doesn't exist
+      @deployment_manager.find_by_name(params[:deployment])
       task = @deployment_manager.create_deployment(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
 
     # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}
-    put "/deployments/:deployment/jobs/:job/:index", :consumes => :yaml do
+    put '/deployments/:deployment/jobs/:job/:index', :consumes => :yaml do
       begin
         index = Integer(params[:index])
       rescue ArgumentError
@@ -322,17 +381,18 @@ module Bosh::Director
       end
 
       options = {
-        "job_states" => {
+        'job_states' => {
           params[:job] => {
-            "instance_states" => {
-              index => params["state"]
+            'instance_states' => {
+              index => params['state']
             }
           }
         }
       }
 
       deployment = @deployment_manager.find_by_name(params[:deployment])
-      task = @deployment_manager.create_deployment(@user, request.body, options)
+      manifest = request.content_length.nil? ? StringIO.new(deployment.manifest) : request.body
+      task = @deployment_manager.create_deployment(@user, manifest, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -348,6 +408,57 @@ module Bosh::Director
       }
 
       task = @instance_manager.fetch_logs(@user, deployment, job, index, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    get '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      json_encode(@snapshot_manager.snapshots(deployment))
+    end
+
+    get '/deployments/:deployment/jobs/:job/:index/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      json_encode(@snapshot_manager.snapshots(deployment, params[:job], params[:index]))
+    end
+
+    post '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      # until we can tell the agent to flush and wait, all snapshots are considered dirty
+      options = {clean: false}
+
+      task = @snapshot_manager.create_deployment_snapshot_task(@user, deployment, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    put '/deployments/:deployment/jobs/:job/:index/resurrection', consumes: :json do
+      payload = json_decode(request.body)
+
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      instance.resurrection_paused = payload['resurrection_paused']
+      instance.save
+    end
+
+    post '/deployments/:deployment/jobs/:job/:index/snapshots' do
+      instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      # until we can tell the agent to flush and wait, all snapshots are considered dirty
+      options = {clean: false}
+
+      task = @snapshot_manager.create_snapshot_task(@user, instance, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    delete '/deployments/:deployment/snapshots' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+
+      task = @snapshot_manager.delete_deployment_snapshots_task(@user, deployment)
+      redirect "/tasks/#{task.id}"
+    end
+
+    delete '/deployments/:deployment/snapshots/:cid' do
+      deployment = @deployment_manager.find_by_name(params[:deployment])
+      snapshot = @snapshot_manager.find_by_cid(deployment, params[:cid])
+
+      task = @snapshot_manager.delete_snapshots_task(@user, [params[:cid]])
       redirect "/tasks/#{task.id}"
     end
 
@@ -391,15 +502,20 @@ module Bosh::Director
 
       options = {}
       options["force"] = true if params["force"] == "true"
-      task = @deployment_manager.delete_deployment(@task, deployment, options)
+      options["keep_snapshots"] = true if params["keep_snapshots"] == "true"
+      task = @deployment_manager.delete_deployment(@user, deployment, options)
       redirect "/tasks/#{task.id}"
     end
 
-    # TODO: stop, start, restart jobs/instances
-
     post "/stemcells", :consumes => :tgz do
-      task = @stemcell_manager.create_stemcell(@task, request.body)
+      task = @stemcell_manager.create_stemcell(@user, request.body, :remote => false)
       redirect "/tasks/#{task.id}"
+    end
+
+    post "/stemcells", :consumes => :json do
+      payload = json_decode(request.body)
+      task = @stemcell_manager.create_stemcell(@user, payload["location"], :remote => true)
+      redirect "/tasks/#{task.id}"      
     end
 
     get "/stemcells" do
@@ -455,7 +571,7 @@ module Bosh::Director
     end
 
     post "/packages/matches", :consumes => :yaml do
-      manifest = YAML.load(request.body)
+      manifest = Psych.load(request.body)
       unless manifest.is_a?(Hash) && manifest["packages"].is_a?(Array)
         raise BadManifest, "Manifest doesn't have a usable packages section"
       end
@@ -494,9 +610,17 @@ module Bosh::Director
 
       verbose = params["verbose"] || "1"
       if verbose == "1"
-        dataset = dataset.filter(:type => [
-            "update_deployment", "delete_deployment", "update_release",
-            "delete_release", "update_stemcell", "delete_stemcell"])
+        dataset = dataset.filter(type: %w[
+          update_deployment
+          delete_deployment
+          update_release
+          delete_release
+          update_stemcell
+          delete_stemcell
+          create_snapshot
+          delete_snapshot
+          snapshot_deployment
+        ])
       end
 
       tasks = dataset.order_by(:timestamp.desc).map do |task|
@@ -557,8 +681,12 @@ module Bosh::Director
       end
     end
 
+    # JMS and MB: We don't know why this code exists. According to JP it shouldn't. We want to remove it.
+    # To get comforable with that idea, we log something we can look for in production.
+    #
     # GET /resources/deadbeef
     get "/resources/:id" do
+      @logger.warn('Something is proxying a blob through the director. Find out why before we remove this method. ZAUGYZ')
       tmp_file = @resource_manager.get_resource_path(params[:id])
       send_disposable_file(tmp_file, :type => "application/x-gzip")
     end
@@ -627,6 +755,22 @@ module Bosh::Director
       start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload["resolutions"]) }
     end
 
+    put "/deployments/:deployment/scan_and_fix", :consumes => :json do
+      jobs_json = json_decode(request.body)["jobs"]
+      # payload: [['j1', 'i1'], ['j1', 'i2'], ['j2', 'i1'], ...]
+      payload = convert_job_instance_hash(jobs_json)
+
+      start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
+    end
+
+    post "/backups" do
+      start_task { @backup_manager.create_backup(@user) }
+    end
+
+    get '/backups' do
+      send_file @backup_manager.destination_path
+    end
+
     get "/info" do
       status = {
         "name"     => Config.name,
@@ -640,7 +784,11 @@ module Bosh::Director
             "extras" => { "domain_name" => dns_domain_name }
           },
           "compiled_package_cache" => {
-            "status" => Config.use_compiled_package_cache?
+            "status" => Config.use_compiled_package_cache?,
+            "extras" => { "provider" => Config.compiled_package_cache_provider }
+          },
+          "snapshots" => {
+            "status" => Config.enable_snapshots
           }
         }
       }

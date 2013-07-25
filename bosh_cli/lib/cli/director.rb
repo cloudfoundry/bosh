@@ -33,6 +33,8 @@ module Bosh
         @user = user
         @password = password
         @track_tasks = !options.delete(:no_track)
+        @num_retries = options.fetch(:num_retries, 5)
+        @retry_wait_interval = options.fetch(:retry_wait_interval, 5)
       end
 
       def uuid
@@ -46,6 +48,13 @@ module Bosh
         true # For compatibility with directors that return 401 for /info
       rescue DirectorError
         false
+      end
+
+      def wait_until_ready
+        num_retries.times do
+          return if exists?
+          sleep retry_wait_interval
+        end
       end
 
       def authenticated?
@@ -64,6 +73,11 @@ module Bosh
         response_code == 204
       end
 
+      def delete_user(username)
+        response_code, _ = delete("/users/#{username}")
+        response_code == 204
+      end
+
       def upload_stemcell(filename, options = {})
         options = options.dup
         options[:content_type] = "application/x-compressed"
@@ -71,6 +85,15 @@ module Bosh
         upload_and_track(:post, "/stemcells", filename, options)
       end
 
+      def upload_remote_stemcell(stemcell_location, options = {})
+        options = options.dup               
+        payload = { 'location' => stemcell_location }  
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = 'application/json'          
+
+        request_and_track(:post, '/stemcells', options)
+      end      
+      
       def get_version
         get_status["version"]
       end
@@ -120,12 +143,12 @@ module Bosh
       end
 
       def get_deployment(name)
-        status, body = get_json_with_status("/deployments/#{name}")
+        _, body = get_json_with_status("/deployments/#{name}")
         body
       end
 
       def list_vms(name)
-        status, body = get_json_with_status("/deployments/#{name}/vms")
+        _, body = get_json_with_status("/deployments/#{name}/vms")
         body
       end
 
@@ -142,6 +165,24 @@ module Bosh
         upload_and_track(:post, "/releases?rebase=true", filename, options)
       end
 
+      def upload_remote_release(release_location, options = {})
+        options = options.dup
+        payload = { 'location' => release_location }  
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = 'application/json'          
+
+        request_and_track(:post, '/releases', options)
+      end           
+
+      def rebase_remote_release(release_location, options = {})
+        options = options.dup
+        payload = { 'location' => release_location }  
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = 'application/json'          
+
+        request_and_track(:post, '/releases?rebase=true', options)
+      end
+      
       def delete_stemcell(name, version, options = {})
         options = options.dup
         force = options.delete(:force)
@@ -256,7 +297,12 @@ module Bosh
         request_and_track(:put, url, options)
       end
 
-      # TODO: should pass 'force' with options, not as a separate argument
+      def change_vm_resurrection(deployment_name, job_name, index, value)
+        url = "/deployments/#{deployment_name}/jobs/#{job_name}/#{index}/resurrection"
+        payload = JSON.generate("resurrection_paused" => value)
+        put(url, "application/json", payload)
+      end
+
       def rename_job(deployment_name, manifest_yaml, old_name, new_name,
                      force = false, options = {})
         options = options.dup
@@ -282,7 +328,6 @@ module Bosh
 
         status, task_id = request_and_track(:get, url, options)
 
-        # TODO: this should be done in command handler, not in director.rb
         return nil if status != :done
         get_task_result(task_id)
       end
@@ -294,7 +339,6 @@ module Bosh
 
         status, task_id = request_and_track(:get, url, options)
 
-        # TODO: this should be done in command handler, not in director.rb
         if status != :done
           raise DirectorError, "Failed to fetch VMs information from director"
         end
@@ -343,6 +387,43 @@ module Bosh
       def list_properties(deployment_name)
         url = "/deployments/#{deployment_name}/properties"
         get_json(url)
+      end
+
+      def take_snapshot(deployment_name, job = nil, index = nil, options = {})
+        options = options.dup
+
+        if job && index
+          url = "/deployments/#{deployment_name}/jobs/#{job}/#{index}/snapshots"
+        else
+          url = "/deployments/#{deployment_name}/snapshots"
+        end
+
+        request_and_track(:post, url, options)
+      end
+
+      def list_snapshots(deployment_name, job = nil, index = nil)
+        if job && index
+          url = "/deployments/#{deployment_name}/jobs/#{job}/#{index}/snapshots"
+        else
+          url = "/deployments/#{deployment_name}/snapshots"
+        end
+        get_json(url)
+      end
+
+      def delete_all_snapshots(deployment_name, options = {})
+        options = options.dup
+
+        url = "/deployments/#{deployment_name}/snapshots"
+
+        request_and_track(:delete, url, options)
+      end
+
+      def delete_snapshot(deployment_name, snapshot_cid, options = {})
+        options = options.dup
+
+        url = "/deployments/#{deployment_name}/snapshots/#{snapshot_cid}"
+
+        request_and_track(:delete, url, options)
       end
 
       def perform_cloud_scan(deployment_name, options = {})
@@ -419,6 +500,8 @@ module Bosh
           new_offset = $1.to_i + 1
         else
           new_offset = nil
+          # Delete the "Byte range unsatisfiable" message
+          body = nil if response_code == 416
         end
 
         # backward compatible with renaming soap log to cpi log
@@ -434,6 +517,15 @@ module Bosh
         raise AuthError if response_code == 401
         raise MissingTask, "No task##{task_id} found" if response_code == 404
         [body, response_code]
+      end
+
+      def create_backup
+        request_and_track(:post, "/backups", {})
+      end
+
+      def fetch_backup
+        _, path, _ = get("/backups", nil, nil, {}, :file => true)
+        path
       end
 
       [:post, :put, :get, :delete].each do |method_name|
@@ -456,7 +548,7 @@ module Bosh
 
         http_status, _, headers = request(method, uri, content_type, payload)
         location = headers[:location]
-        redirected = http_status == 302
+        redirected = [302, 303].include? http_status
         task_id = nil
 
         if redirected
@@ -552,9 +644,11 @@ module Bosh
         http_client.receive_timeout = API_TIMEOUT
         http_client.connect_timeout = CONNECT_TIMEOUT
 
+        http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        http_client.ssl_config.verify_callback = Proc.new {}
+
         # HTTPClient#set_auth doesn't seem to work properly,
         # injecting header manually instead.
-        # TODO: consider using vanilla Net::HTTP
         if @user && @password
           headers["Authorization"] = "Basic " +
               Base64.encode64("#{@user}:#{@password}").strip
@@ -569,6 +663,7 @@ module Bosh
         raise # We handle these upstream
       rescue => e
         # httpclient (sadly) doesn't have a generic exception
+        puts "Perform request #{method}, #{uri}, #{headers.inspect}, #{payload.inspect}"
         err("REST API call exception: #{e}")
       end
 
@@ -607,19 +702,21 @@ module Bosh
         end
       end
 
-      def num_retries; 5; end
-
-      def retry_wait_interval; 5; end
+      attr_reader :num_retries, :retry_wait_interval
     end
 
     class FileWithProgressBar < ::File
+
       def progress_bar
         return @progress_bar if @progress_bar
         out = Bosh::Cli::Config.output || StringIO.new
-        @progress_bar = ProgressBar.new(File.basename(self.path),
-                                        File.size(self.path), out)
+        @progress_bar = ProgressBar.new(file_name, size, out)
         @progress_bar.file_transfer_mode
         @progress_bar
+      end
+
+      def file_name
+        File.basename(self.path)
       end
 
       def stop_progress_bar
@@ -627,7 +724,11 @@ module Bosh
       end
 
       def size
-        File.size(self.path)
+        @size || File.size(self.path)
+      end
+
+      def size=(size)
+        @size=size
       end
 
       def read(*args)
@@ -640,6 +741,16 @@ module Bosh
         end
 
         result
+      end
+
+      def write(*args)
+        count = super(*args)
+        if count
+          progress_bar.inc(count)
+        else
+          progress_bar.finish
+        end
+        count
       end
     end
 

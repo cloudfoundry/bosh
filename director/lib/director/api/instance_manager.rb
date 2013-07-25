@@ -3,8 +3,6 @@
 module Bosh::Director
   module Api
     class InstanceManager
-      include TaskHelper
-
       def initialize
         @deployment_manager = DeploymentManager.new
       end
@@ -76,21 +74,14 @@ module Bosh::Director
 
         instance = find_by_name(deployment_name, job, index)
 
-        task = create_task(user, :fetch_logs, "fetch logs")
-        Resque.enqueue(Jobs::FetchLogs, task.id, instance.id, options)
-        task
+        JobQueue.new.enqueue(user, Jobs::FetchLogs, 'fetch logs', [instance.id, options])
       end
 
       def ssh(user, options)
-        name = options["deployment_name"]
-        command = options["command"]
-        target = options["target"]
+        description = "ssh: #{options['command']}:#{options['target']}"
+        deployment = @deployment_manager.find_by_name(options['deployment_name'])
 
-        deployment = @deployment_manager.find_by_name(name)
-        task = create_task(user, :ssh, "ssh: #{command}:#{target}")
-
-        Resque.enqueue(Jobs::Ssh, task.id, deployment.id, options)
-        task
+        JobQueue.new.enqueue(user, Jobs::Ssh, description, [deployment.id, options])
       end
     end
   end

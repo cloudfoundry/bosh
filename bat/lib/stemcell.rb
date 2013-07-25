@@ -11,12 +11,12 @@ class Stemcell
     Dir.mktmpdir do |dir|
       sh("tar xzf #{path} --directory=#{dir} stemcell.MF")
       stemcell_manifest = "#{dir}/stemcell.MF"
-      st = YAML.load_file(stemcell_manifest)
+      st = Psych.load_file(stemcell_manifest)
       Stemcell.new(st['name'], st['version'], st['cloud_properties']['infrastructure'], path)
     end
   end
 
-  def initialize(name, version, cpi=nil, path=nil)
+  def initialize(name, version, cpi = nil, path = nil)
     @name = name
     @version = version
     @cpi = cpi
@@ -24,15 +24,14 @@ class Stemcell
   end
 
   def to_s
-    "#@name-#@version"
+    "#{name}-#{version}"
   end
 
   def to_path
-    @path
+    path
   end
 
   def ==(other)
     to_s == other.to_s
   end
-
 end

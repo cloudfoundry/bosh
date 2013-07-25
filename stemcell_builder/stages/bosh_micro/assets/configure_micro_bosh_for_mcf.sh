@@ -4,31 +4,35 @@
 
 set -e
 
-if [ $# -ne 1 ]
+if [ $# -lt 1 ]
 then
-  echo "Usage: env `basename $0` [infrastructure]"
+  echo "Usage: env `basename $0` [infrastructure] [agent_gem_src_url]"
   exit 1
 fi
 
 infrastructure=$1
+agent_gem_src_url=$2
 
 bosh_src_dir=/var/vcap/bosh/src/micro_bosh
 bosh_app_dir=/var/vcap
-blobstore_path=${bosh_app_dir}/micro_bosh/data/cache
+blobstore_path=file://${bosh_app_dir}/micro_bosh/data/cache
 agent_host=localhost
 agent_port=6969
-agent_uri=http://vcap:vcap@${agent_host}:${agent_port}
+agent_uri=https://vcap:vcap@${agent_host}:${agent_port}
 
 export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
 
+if [ -z "${agent_gem_src_url:-}" ]; then
 (
   cd ${bosh_src_dir}/package_compiler/gems
-  gem install package_compiler --no-rdoc --no-ri -l -w #-i ${bosh_src_dir}/bosh/gems
+  gem install package_compiler --no-rdoc --no-ri -l -w
 )
+else
+  gem install package_compiler --no-rdoc --no-ri -r -w --pre --source ${agent_gem_src_url}
+fi
 
 mkdir -p ${bosh_app_dir}/bosh/blob
-mkdir -p ${blobstore_path}
 
 echo "Starting micro bosh compilation"
 

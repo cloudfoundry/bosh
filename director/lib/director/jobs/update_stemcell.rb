@@ -4,36 +4,48 @@ module Bosh::Director
   module Jobs
     class UpdateStemcell < BaseJob
       include ValidationHelper
+      include DownloadHelper
 
+      UPDATE_STEPS = 5
+      
       @queue = :normal
 
-      # @param [String] stemcell_file Stemcell tarball path
-      def initialize(stemcell_file)
-        super
+      def self.job_type
+        :update_stemcell
+      end
 
+      # @param [String] stemcell_file Stemcell tarball path
+      def initialize(stemcell_file, options = {})
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
+        @remote_stemcell = options['remote'] || false
       end
 
       def perform
         logger.info("Processing update stemcell")
-        event_log.begin_stage("Update stemcell", 5)
+        event_log.begin_stage("Update stemcell", update_steps)
 
+        if @remote_stemcell
+          downloaded_stemcell_dir = Dir.mktmpdir("downloaded-stemcell")        
+          download_remote_stemcell(downloaded_stemcell_dir)
+        end
+        
         stemcell_dir = Dir.mktmpdir("stemcell")
 
         track_and_log("Extracting stemcell archive") do
-          output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1`
-          if $?.exitstatus != 0
-            raise StemcellInvalidArchive,
-                  "Invalid stemcell archive, tar returned #{$?.exitstatus}, " +
-                  "output: #{output}"
+          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1", :on_error => :return)
+          if result.failed?
+            logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " +
+                         "tar returned #{result.exit_status}, " +
+                         "output: #{result.output}")
+            raise StemcellInvalidArchive, "Extracting stemcell archive failed. Check task debug log for details."
           end
         end
 
         track_and_log("Verifying stemcell manifest") do
           stemcell_manifest_file = File.join(stemcell_dir, "stemcell.MF")
-          stemcell_manifest = YAML.load_file(stemcell_manifest_file)
+          stemcell_manifest = Psych.load_file(stemcell_manifest_file)
 
           @name = safe_property(stemcell_manifest, "name", :class => String)
           @version = safe_property(stemcell_manifest, "version", :class => String)
@@ -75,7 +87,22 @@ module Bosh::Director
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
+        FileUtils.rm_rf(downloaded_stemcell_dir) if downloaded_stemcell_dir
         FileUtils.rm_rf(@stemcell_file) if @stemcell_file
+      end
+      
+      def download_remote_stemcell(downloaded_stemcell_dir)
+        track_and_log("Downloading remote stemcell") do
+          downloaded_stemcell_file = File.join(downloaded_stemcell_dir, "stemcell-#{SecureRandom.uuid}")
+          download_remote_file('stemcell', @stemcell_file, downloaded_stemcell_file)
+          @stemcell_file = downloaded_stemcell_file          
+        end
+      end
+      
+      private
+      
+      def update_steps
+        @remote_stemcell ? UPDATE_STEPS + 1 : UPDATE_STEPS
       end
     end
   end

@@ -7,14 +7,16 @@ module Bosh::Director
       SSH_TAG = "ssh"
       @queue = :normal
 
-      def initialize(deployment_id, options)
-        super
+      def self.job_type
+        :ssh
+      end
 
+      def initialize(deployment_id, options = {})
         @deployment_id = deployment_id
         @target = options["target"]
         @command = options["command"]
         @params = options["params"]
-        @blobstore = Config.blobstore
+        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @instance_manager = Api::InstanceManager.new
       end
 

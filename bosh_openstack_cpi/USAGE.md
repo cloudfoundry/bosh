@@ -24,6 +24,10 @@ The registry options are passed to the Openstack CPI by the BOSH director based 
   OpenStack region
 * `endpoint_type` (optional)
   OpenStack endpoint type (publicURL (default), adminURL, internalURL)
+* `state_timeout` (optional)
+  Timeout (in seconds) for OpenStack resources desired state (by default 300)
+* `stemcell_public_visibility` (optional)
+  Set public visibility for stemcells (true or false (default))
 * `default_key_name` (required)
   default OpenStack ssh key name to assign to created virtual machines
 * `default_security_group` (required)
@@ -119,7 +123,7 @@ This is a sample of how OpenStack specific properties are used in a BOSH deploym
 
     properties:
       openstack:
-        auth_url: http://pistoncloud.com/:5000/v2.0/tokens
+        auth_url: http://pistoncloud.com/:5000/v2.0
         username: christopher
         api_key: QRoqsenPsNGX6
         tenant: Bosh

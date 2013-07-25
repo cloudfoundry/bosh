@@ -5,7 +5,7 @@ require "spec_helper"
 describe Bosh::Registry::InstanceManager do
 
   before(:each) do
-    @ec2 = mock("ec2")
+    @ec2 = double("ec2")
     AWS::EC2.stub(:new).and_return(@ec2)
   end
 
@@ -29,10 +29,10 @@ describe Bosh::Registry::InstanceManager do
   end
 
   def actual_ip_is(public_ip, private_ip, eip=nil)
-    instances = mock("instances")
-    instance = mock("instance")
+    instances = double("instances")
+    instance = double("instance")
     if eip
-      elastic_ip = mock("elastic_ip", :public_ip => eip)
+      elastic_ip = double("elastic_ip", :public_ip => eip)
       instance.should_receive(:has_elastic_ip?).and_return(true)
       instance.should_receive(:elastic_ip).and_return(elastic_ip)
     else

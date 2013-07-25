@@ -1,5 +1,0 @@
----
-path: /tmp/bosh_test_blobstore
-port: 9590
-users:
-  bs_admin: bs_pass

@@ -3,12 +3,8 @@
 module Bosh::Director
   module Api
     class VmStateManager
-      include TaskHelper
-
       def fetch_vm_state(user, deployment, format)
-        task = create_task(user, :vms, "retrieve vm-stats")
-        Resque.enqueue(Jobs::VmState, task.id, deployment.id, format)
-        task
+        JobQueue.new.enqueue(user, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format])
       end
     end
   end

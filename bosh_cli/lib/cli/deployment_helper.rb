@@ -5,7 +5,6 @@ module Bosh::Cli
     include VersionCalc
 
     def prepare_deployment_manifest(options = {})
-      # TODO: extract to helper class
       deployment_required
       manifest_filename = deployment
 
@@ -42,7 +41,7 @@ module Bosh::Cli
           hash
         end
 
-        manifest = YAML.load(compiler.result)
+        manifest = Psych.load(compiler.result)
       end
 
       if manifest["name"].blank? || manifest["director_uuid"].blank?
@@ -62,7 +61,7 @@ module Bosh::Cli
       resolve_release_aliases(manifest)
       resolve_stemcell_aliases(manifest)
 
-      options[:yaml] ? YAML.dump(manifest) : manifest
+      options[:yaml] ? Psych.dump(manifest) : manifest
     end
 
     # Check if the 2 deployments are different.
@@ -106,20 +105,19 @@ module Bosh::Cli
       # but it turned out to be confusing to many users and thus has
       # been removed.
       return if current_deployment["manifest"].nil?
-      current_manifest = YAML.load(current_deployment["manifest"])
+      current_manifest = Psych.load(current_deployment["manifest"])
 
       unless current_manifest.is_a?(Hash)
         err("Current deployment manifest format is invalid, " +
                 "check if director works properly")
       end
 
-      # TODO: validate new deployment manifest
       diff = Bosh::Cli::HashChangeset.new
       diff.add_hash(normalize_deployment_manifest(manifest), :new)
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
       @_diff_key_visited = { "name" => 1, "director_uuid" => 1 }
 
-      say("Detecting changes in deployment...".green)
+      say("Detecting changes in deployment...".make_green)
       nl
 
       if !diff.changed? && !show_empty_changeset
@@ -170,8 +168,8 @@ module Bosh::Cli
       end
 
       if old_stemcells.size != new_stemcells.size
-        say("Stemcell update seems to be inconsistent with current ".red +
-            "deployment. Please carefully review changes above.".red)
+        say("Stemcell update seems to be inconsistent with current ".make_red +
+            "deployment. Please carefully review changes above.".make_red)
         unless confirmed?("Are you sure this configuration is correct?")
           cancel_deployment
         end
@@ -195,7 +193,7 @@ module Bosh::Cli
       diff.changed?
     rescue Bosh::Cli::ResourceNotFound
       say("Cannot get current deployment information from director, " +
-          "possibly a new deployment".red)
+          "possibly a new deployment".make_red)
       true
     end
 
@@ -204,8 +202,8 @@ module Bosh::Cli
         director.list_releases.inject({}) do |hash, release|
           name = release["name"]
           versions = release["versions"] || release["release_versions"].map { |release_version| release_version["version"] }
-          latest_version = versions.sort { |v1, v2| version_cmp(v1, v2) }.last
-          hash[name] = latest_version
+          latest_version = versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max
+          hash[name] = latest_version.to_s
           hash
         end
       end
@@ -218,17 +216,42 @@ module Bosh::Cli
 
       releases.each do |release|
         if release["version"] == "latest"
-          release["version"] = latest_release_versions[release["name"]]
+          latest_release_version = latest_release_versions[release["name"]]
+          unless latest_release_version
+            err("Release '#{release['name']}' not found on director. Unable to resolve 'latest' alias in manifest.")
+          end
+          release["version"] = latest_release_version
         end
 
-        # TODO: why do we care about casting to Integer when possible?
         if release["version"].to_i.to_s == release["version"]
           release["version"] = release["version"].to_i
         end
       end
     end
 
+    def job_unique_in_deployment?(job_name)
+      job = find_job(job_name)
+      job.fetch('instances') == 1 if job
+    end
+
+    def job_exists_in_deployment?(job_name)
+      !!find_job(job_name)
+    end
+
+    def job_must_exist_in_deployment(job)
+      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
+    end
+
+    def cancel_deployment
+      quit("Deployment canceled".make_red)
+    end
+
     private
+
+    def find_job(job_name)
+      jobs = prepare_deployment_manifest.fetch('jobs')
+      jobs.find { |job| job.fetch('name') == job_name }
+    end
 
     def find_deployment(name)
       if File.exists?(name)
@@ -236,14 +259,6 @@ module Bosh::Cli
       else
         File.expand_path(File.join(work_dir, "deployments", "#{name}.yml"))
       end
-    end
-
-    def cancel_deployment
-      quit("Deployment canceled".red)
-    end
-
-    def manifest_error(err)
-      err("Deployment manifest error: #{err}")
     end
 
     def manifest_target_upgrade_notice
@@ -258,7 +273,7 @@ module Bosh::Cli
     def print_summary(diff, key, title = nil)
       title ||= key.to_s.gsub(/[-_]/, " ").capitalize
 
-      say(title.green)
+      say(title.make_green)
       summary = diff[key].summary
       if summary.empty?
         say("No changes")
@@ -268,66 +283,20 @@ module Bosh::Cli
       @_diff_key_visited[key.to_s] = 1
     end
 
-    def normalize_deployment_manifest(manifest)
-      normalized = manifest.dup
-
-      %w(releases networks jobs resource_pools).each do |section|
-        normalized[section] ||= []
-
-        unless normalized[section].kind_of?(Array)
-          manifest_error("#{section} is expected to be an array")
-        end
-
-        normalized[section] = normalized[section].inject({}) do |acc, e|
-          if e["name"].blank?
-            manifest_error("missing name for one of entries in '#{section}'")
-          end
-          if acc.has_key?(e["name"])
-            manifest_error("duplicate entry '#{e['name']}' in '#{section}'")
-          end
-          acc[e["name"]] = e
-          acc
-        end
-      end
-
-      normalized["networks"].each do |network_name, network|
-        # VIP and dynamic networks do not require subnet,
-        # but if it's there we can run some sanity checks
-        next unless network.has_key?("subnets")
-
-        unless network["subnets"].kind_of?(Array)
-          manifest_error("network subnets is expected to be an array")
-        end
-
-        subnets = network["subnets"].inject({}) do |acc, e|
-          if e["range"].blank?
-            manifest_error("missing range for one of subnets " +
-                               "in '#{network_name}'")
-          end
-          if acc.has_key?(e["range"])
-            manifest_error("duplicate network range '#{e['range']}' " +
-                               "in '#{network}'")
-          end
-          acc[e["range"]] = e
-          acc
-        end
-
-        normalized["networks"][network_name]["subnets"] = subnets
-      end
-
-      normalized
+    def normalize_deployment_manifest(manifest_hash)
+      DeploymentManifest.new(manifest_hash).normalize
     end
 
     def warn_about_release_changes(release_diff)
       if release_diff[:name].changed?
-        say("Release name has changed: %s -> %s".red % [
+        say("Release name has changed: %s -> %s".make_red % [
           release_diff[:name].old, release_diff[:name].new])
         unless confirmed?("This is very serious and potentially destructive " +
                             "change. ARE YOU SURE YOU WANT TO DO IT?")
           cancel_deployment
         end
       elsif release_diff[:version].changed?
-        say("Release version has changed: %s -> %s".yellow % [
+        say("Release version has changed: %s -> %s".make_yellow % [
           release_diff[:version].old, release_diff[:version].new])
         unless confirmed?("Are you sure you want to deploy this version?")
           cancel_deployment

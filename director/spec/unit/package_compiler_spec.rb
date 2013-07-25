@@ -1,30 +1,28 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::PackageCompiler do
 
-  # TODO: add tests for build numbers and some error conditions
-
   before(:each) do
-    @cloud = mock(:cpi)
-    BD::Config.stub!(:cloud).and_return(@cloud)
+    @cloud = double(:cpi)
+    BD::Config.stub(:cloud).and_return(@cloud)
 
-    @blobstore = mock(:blobstore)
-    BD::Config.stub!(:blobstore).and_return(@blobstore)
+    @blobstore = double(:blobstore)
+    BD::Config.stub(:blobstore).and_return(@blobstore)
 
-    @director_job = mock(BD::Jobs::BaseJob)
-    BD::Config.stub!(:current_job).and_return(@director_job)
-    @director_job.stub!(:task_cancelled?).and_return(false)
+    @director_job = double(BD::Jobs::BaseJob)
+    BD::Config.stub(:current_job).and_return(@director_job)
+    @director_job.stub(:task_cancelled?).and_return(false)
 
     @deployment = BD::Models::Deployment.make(:name => "mycloud")
-    @config = mock(BD::DeploymentPlan::CompilationConfig)
-    @plan = mock(BD::DeploymentPlan, :compilation => @config,
+    @config = double(BD::DeploymentPlan::CompilationConfig)
+    @plan = double(BD::DeploymentPlan, :compilation => @config,
                  :model => @deployment, :name => "mycloud")
-    @network = mock(BD::DeploymentPlan::Network, :name => "default")
+    @network = double(BD::DeploymentPlan::Network, :name => "default")
 
     @n_workers = 3
-    @config.stub!(:deployment => @plan, :network => @network,
+    @config.stub(:deployment => @plan, :network => @network,
                   :env => {}, :cloud_properties => {}, :workers => @n_workers,
                   :reuse_compilation_vms => false)
 
@@ -47,7 +45,6 @@ describe Bosh::Director::PackageCompiler do
   def make_compiled(package, stemcell, sha1 = "deadbeef",
                     blobstore_id = "deadcafe")
     # A little bit of prep to satisfy dependency keys
-    # TODO: make less manual to set up
     deps = package.dependency_set.map do |dep_name|
       BD::Models::Package.find(:name => dep_name)
     end
@@ -63,11 +60,11 @@ describe Bosh::Director::PackageCompiler do
   end
 
   def prepare_samples
-    @release = mock(BD::DeploymentPlan::Release, :name => "cf-release",
+    @release = double(BD::DeploymentPlan::Release, :name => "cf-release",
                     :model => BD::Models::ReleaseVersion.make)
-    @stemcell_a = mock(BD::DeploymentPlan::Stemcell,
+    @stemcell_a = double(BD::DeploymentPlan::Stemcell,
                        :model => BD::Models::Stemcell.make)
-    @stemcell_b = mock(BD::DeploymentPlan::Stemcell,
+    @stemcell_b = double(BD::DeploymentPlan::Stemcell,
                        :model => BD::Models::Stemcell.make)
 
     @p_common = make_package("common")
@@ -78,30 +75,30 @@ describe Bosh::Director::PackageCompiler do
     @p_nginx = make_package("nginx", %w(common))
     @p_router = make_package("p_router", %w(ruby common))
 
-    rp_large = mock(BD::DeploymentPlan::ResourcePool,
+    rp_large = double(BD::DeploymentPlan::ResourcePool,
                     :name => "large", :stemcell => @stemcell_a)
 
-    rp_small = mock(BD::DeploymentPlan::ResourcePool,
+    rp_small = double(BD::DeploymentPlan::ResourcePool,
                     :name => "small", :stemcell => @stemcell_b)
 
-    @t_dea = mock(BD::DeploymentPlan::Template,
+    @t_dea = double(BD::DeploymentPlan::Template,
                  :package_models => [@p_dea, @p_nginx, @p_syslog])
 
-    @t_warden = mock(BD::DeploymentPlan::Template,
+    @t_warden = double(BD::DeploymentPlan::Template,
                     :package_models => [@p_warden])
 
-    @t_nginx = mock(BD::DeploymentPlan::Template,
+    @t_nginx = double(BD::DeploymentPlan::Template,
                    :package_models => [@p_nginx])
 
-    @t_router = mock(BD::DeploymentPlan::Template,
+    @t_router = double(BD::DeploymentPlan::Template,
                     :package_models => [@p_router])
 
-    @j_dea = mock(BD::DeploymentPlan::Job,
+    @j_dea = double(BD::DeploymentPlan::Job,
                   :name => "dea",
                   :release => @release,
                   :templates => [@t_dea, @t_warden],
                   :resource_pool => rp_large)
-    @j_router = mock(BD::DeploymentPlan::Job,
+    @j_router = double(BD::DeploymentPlan::Job,
                      :name => "router",
                      :release => @release,
                      :templates => [@t_nginx, @t_router, @t_warden],
@@ -166,7 +163,7 @@ describe Bosh::Director::PackageCompiler do
 
     net = {"default" => "network settings"}
     vm_cids = (0..10).map { |i| "vm-cid-#{i}" }
-    agents = (0..10).map { mock(BD::AgentClient) }
+    agents = (0..10).map { double(BD::AgentClient) }
 
     @cloud.should_receive(:create_vm).exactly(6).times.
       with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
@@ -239,85 +236,121 @@ describe Bosh::Director::PackageCompiler do
     end
   end
 
-  it "reuses compilation VMs if this option is set" do
-    # TODO add fair stemcell scheduling for compilation reuse:
-    # right now it seems there's a race and same stemcell can hijack
-    # all num_workers VMs, thus we test with one stemcell
-    # NOTE: test compilations are so fast that we're not guaranteed that
-    # all 3 VMs will actually be created, hence using fuzzy expectations
-    prepare_samples
-    @plan.stub(:jobs).and_return([@j_dea])
-
-    @config.stub!(:reuse_compilation_vms => true)
-
-    @network.should_receive(:reserve).at_most(@n_workers).times do |reservation|
-      reservation.should be_an_instance_of(BD::NetworkReservation)
-      reservation.reserved = true
-    end
-
-    @network.should_receive(:network_settings).
-      at_most(3).times.and_return("network settings")
-
-    net = {"default" => "network settings"}
-    vm_cids = (0..2).map { |i| "vm-cid-#{i}" }
-    agents = (0..2).map { mock(BD::AgentClient) }
-
-    @cloud.should_receive(:create_vm).at_most(3).times.
-      with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
-      and_return(*vm_cids)
-
-    BD::AgentClient.should_receive(:new).at_most(3).times.and_return(*agents)
-
-    agents.each do |agent|
-      initial_state = {
+  describe "with reuse_compilation_vms option set" do
+    let(:net) { {"default" => "network settings"} }
+    let(:initial_state) {
+      {
         "deployment" => "mycloud",
         "resource_pool" => "package_compiler",
         "networks" => net
       }
+    }
+    it "reuses compilation VMs" do
+      prepare_samples
+      @plan.stub(:jobs).and_return([@j_dea])
 
-      agent.should_receive(:wait_until_ready).at_most(6).times
-      agent.should_receive(:apply).with(initial_state).at_most(6).times
-      agent.should_receive(:compile_package).at_most(6).times do |*args|
-        name = args[2]
-        dot = args[3].rindex(".")
-        version, build = args[3][0..dot-1], args[3][dot+1..-1]
+      @config.stub(:reuse_compilation_vms => true)
 
-        package = BD::Models::Package.find(:name => name, :version => version)
-        args[0].should == package.blobstore_id
-        args[1].should == package.sha1
+      @network.should_receive(:reserve).at_most(@n_workers).times do |reservation|
+        reservation.should be_an_instance_of(BD::NetworkReservation)
+        reservation.reserved = true
+      end
 
-        args[4].should be_a(Hash)
+      @network.should_receive(:network_settings).
+        at_most(3).times.and_return("network settings")
 
-        {
-          "result" => {
-            "sha1" => "compiled #{package.id}",
-            "blobstore_id" => "blob #{package.id}"
+      vm_cids = (0..2).map { |i| "vm-cid-#{i}" }
+      agents = (0..2).map { double(BD::AgentClient) }
+
+      @cloud.should_receive(:create_vm).at_most(3).times.
+        with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
+        and_return(*vm_cids)
+
+      BD::AgentClient.should_receive(:new).at_most(3).times.and_return(*agents)
+
+      agents.each do |agent|
+        agent.should_receive(:wait_until_ready).at_most(6).times
+        agent.should_receive(:apply).with(initial_state).at_most(6).times
+        agent.should_receive(:compile_package).at_most(6).times do |*args|
+          name = args[2]
+          dot = args[3].rindex(".")
+          version, build = args[3][0..dot-1], args[3][dot+1..-1]
+
+          package = BD::Models::Package.find(:name => name, :version => version)
+          args[0].should == package.blobstore_id
+          args[1].should == package.sha1
+
+          args[4].should be_a(Hash)
+
+          {
+            "result" => {
+              "sha1" => "compiled #{package.id}",
+              "blobstore_id" => "blob #{package.id}"
+            }
           }
-        }
+        end
+      end
+
+      @j_dea.should_receive(:use_compiled_package).exactly(6).times
+
+      vm_cids.each do |vm_cid|
+        @cloud.should_receive(:delete_vm).at_most(1).times.with(vm_cid)
+      end
+
+      @network.should_receive(:release).at_most(@n_workers).times
+      @director_job.should_receive(:task_checkpoint).once
+
+      compiler = make(@plan)
+
+      @package_set_a.each do |package|
+        compiler.should_receive(:with_compile_lock).
+            with(package.id, @stemcell_a.model.id).and_yield
+      end
+
+      compiler.compile
+      compiler.compilations_performed.should == 6
+
+      @package_set_a.each do |package|
+        package.compiled_packages.size.should >= 1
       end
     end
 
-    @j_dea.should_receive(:use_compiled_package).exactly(6).times
+    it "clean ups compilation vms if there's a failing compilation" do
+      prepare_samples
+      @plan.stub(:jobs).and_return([@j_dea])
 
-    vm_cids.each do |vm_cid|
-      @cloud.should_receive(:delete_vm).at_most(1).times.with(vm_cid)
-    end
+      @config.stub(:reuse_compilation_vms => true)
+      @config.stub(:workers => 1)
 
-    @network.should_receive(:release).at_most(@n_workers).times
-    @director_job.should_receive(:task_checkpoint).once
+      @network.should_receive(:reserve) do |reservation|
+        reservation.should be_an_instance_of(BD::NetworkReservation)
+        reservation.reserved = true
+      end
 
-    compiler = make(@plan)
+      @network.should_receive(:network_settings).and_return("network settings")
 
-    @package_set_a.each do |package|
-      compiler.should_receive(:with_compile_lock).
-          with(package.id, @stemcell_a.model.id).and_yield
-    end
+      vm_cid = "vm-cid-1"
+      agent = double(BD::AgentClient)
 
-    compiler.compile
-    compiler.compilations_performed.should == 6
+      @cloud.should_receive(:create_vm).
+        with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
+        and_return(vm_cid)
 
-    @package_set_a.each do |package|
-      package.compiled_packages.size.should >= 1
+      BD::AgentClient.should_receive(:new).and_return(agent)
+
+      agent.should_receive(:wait_until_ready)
+      agent.should_receive(:apply).with(initial_state)
+      agent.should_receive(:compile_package).and_raise(RuntimeError)
+
+      @cloud.should_receive(:delete_vm).with(vm_cid)
+
+      @network.should_receive(:release)
+
+      compiler = make(@plan)
+
+      expect {
+        compiler.compile
+      }.to raise_error(RuntimeError)
     end
   end
 
@@ -386,7 +419,7 @@ describe Bosh::Director::PackageCompiler do
       end
 
       it "returns the compiled package from the global blobstore if not found locally" do
-        compiled_package = mock("compiled package",
+        compiled_package = double("compiled package",
           package: package,
           stemcell: stemcell,
           dependency_key: "[]"
@@ -423,7 +456,7 @@ describe Bosh::Director::PackageCompiler do
       end
 
       compiler.stub(:find_compiled_package)
-      compiled_package = mock("compiled package", package: package, stemcell: stemcell, blobstore_id: "some blobstore id")
+      compiled_package = double("compiled package", package: package, stemcell: stemcell, blobstore_id: "some blobstore id")
       BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
       BD::BlobUtil.should_receive(:save_to_global_cache).with(compiled_package, cache_key)
       compiler.stub(:prepare_vm)
@@ -449,6 +482,55 @@ describe Bosh::Director::PackageCompiler do
 
       compiler.compile_package(task)
       callback.call
+    end
+  end
+
+  describe '#prepare_vm' do
+    let(:network) { double('network', name: 'name', network_settings: nil) }
+    let(:compilation) do
+      config = double('compilation_config')
+      config.stub(network: network)
+      config.stub(cloud_properties: double('cloud_properties'))
+      config.stub(env: double('env'))
+      config.stub(workers: 2)
+      config
+    end
+    let(:deployment_plan) { double(BD::DeploymentPlan, compilation: compilation, model: 'model')}
+    let(:stemcell) { BDM::Stemcell.make }
+    let(:vm) { BDM::Vm.make }
+    let(:vm_data) { double(BD::VmData, vm: vm) }
+    let(:reuser) { double(BD::VmReuser) }
+
+    context 'with reuse_compilation_vms' do
+      before do
+        compilation.stub(reuse_compilation_vms: true)
+        BD::VmCreator.stub(create: vm)
+        BD::VmReuser.stub(new: reuser)
+      end
+
+      it 'should clean up the compilation vm if it failed' do
+        compiler = described_class.new(deployment_plan)
+
+        compiler.stub(reserve_network: double('network_reservation'))
+        client = double(BD::AgentClient)
+        client.stub(:wait_until_ready).and_raise(BD::RpcTimeout)
+        BD::AgentClient.stub(new: client)
+
+        reuser.stub(get_vm: nil)
+        reuser.stub(get_num_vms: 0)
+        reuser.stub(add_vm: vm_data)
+
+        reuser.should_receive(:remove_vm).with(vm_data)
+        vm_data.should_receive(:release)
+
+        compiler.should_receive(:tear_down_vm).with(vm_data)
+
+        expect {
+          compiler.prepare_vm(stemcell) do
+            # nothing
+          end
+        }.to raise_error BD::RpcTimeout
+      end
     end
   end
 end

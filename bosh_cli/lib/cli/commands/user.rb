@@ -10,9 +10,12 @@ module Bosh::Cli::Command
       auth_required
 
       if interactive?
-        username = ask("Enter username: ") if username.blank?
+        username = ask("Enter new username: ") if username.blank?
         if password.blank?
-          password = ask("Enter password: ") { |q| q.echo = "*" }
+          password = ask("Enter new password: ") { |q| q.echo = "*" }
+          password_confirmation = ask("Verify new password: ") { |q| q.echo = "*" }
+
+          err("Passwords do not match") if password != password_confirmation
         end
       end
 
@@ -21,11 +24,32 @@ module Bosh::Cli::Command
       end
 
       if director.create_user(username, password)
-        say("User `#{username}' has been created".green)
+        say("User `#{username}' has been created".make_green)
       else
         err("Error creating user")
       end
     end
 
+    usage "delete user"
+    desc "Deletes the user from the director"
+    def delete(username = nil)
+      auth_required
+
+      if interactive?
+        username ||= ask("Username to delete: ")
+      end
+
+      if username.blank?
+        err("Please provide a username to delete")
+      end
+
+      if confirmed?("Are you sure you would like to delete the user `#{username}'?")
+        if director.delete_user(username)
+          say("User `#{username}' has been deleted".make_green)
+        else
+          err("Unable to delete user")
+        end
+      end
+    end
   end
 end

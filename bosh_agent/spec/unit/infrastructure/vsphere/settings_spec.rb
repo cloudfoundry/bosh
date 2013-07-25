@@ -35,11 +35,11 @@ eos
     @settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
     @settings.cdrom_retry_wait = 0.1
 
-    @settings.stub!(:mount_cdrom)
-    @settings.stub!(:umount_cdrom)
-    @settings.stub!(:eject_cdrom)
-    @settings.stub!(:udevadm_settle)
-    @settings.stub!(:read_cdrom_byte)
+    @settings.stub(:mount_cdrom)
+    @settings.stub(:umount_cdrom)
+    @settings.stub(:eject_cdrom)
+    @settings.stub(:udevadm_settle)
+    @settings.stub(:read_cdrom_byte)
   end
 
   it "should parse the /proc/sys/dev/cdrom/info with newline correctly" do
@@ -64,7 +64,7 @@ eos
   end
 
   it "should fail when there is no cdrom" do
-    @settings.stub!(:read_cdrom_byte).and_raise(Errno::ENOMEDIUM)
+    @settings.stub(:read_cdrom_byte).and_raise(Errno::ENOMEDIUM)
     lambda {
       File.should_receive(:read).with('/proc/sys/dev/cdrom/info').and_return(@proc_contents)
       @settings.check_cdrom
@@ -72,7 +72,7 @@ eos
   end
 
   it "should fail when cdrom is busy" do
-    @settings.stub!(:read_cdrom_byte).and_raise(Errno::EBUSY)
+    @settings.stub(:read_cdrom_byte).and_raise(Errno::EBUSY)
     lambda {
       File.should_receive(:read).with('/proc/sys/dev/cdrom/info').and_return(@proc_contents)
       @settings.check_cdrom

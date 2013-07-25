@@ -1,18 +1,19 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::Jobs::DeleteRelease do
+  let(:blobstore) { double('Blobstore') }
 
-  before(:each) do
-    @blobstore = mock("blobstore")
-    BD::Config.stub!(:blobstore).and_return(@blobstore)
+  describe 'Resque job class expectations' do
+    let(:job_type) { :delete_release }
+    it_behaves_like 'a Resque job'
   end
 
   describe "perform" do
 
     it "should fail for unknown releases" do
-      job = BD::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release", blobstore: blobstore)
       job.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield
       expect { job.perform }.to raise_exception(BD::ReleaseNotFound)
@@ -26,7 +27,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
       deployment.add_release_version(version)
 
-      job = BD::Jobs::DeleteRelease.new("test")
+      job = BD::Jobs::DeleteRelease.new("test", blobstore: blobstore)
       job.should_receive(:with_release_lock).
           with("test", :timeout => 10).and_yield
       expect { job.perform }.to raise_exception(BD::ReleaseInUse)
@@ -36,7 +37,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
            "compiled packages and their metadata" do
       release = BDM::Release.make(:name => "test_release")
 
-      job = BD::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release", blobstore: blobstore)
       job.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield
       job.should_receive(:delete_release).with(release)
@@ -46,7 +47,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
     it "should fail if the delete was not successful" do
       release = BDM::Release.make(:name => "test_release")
 
-      job = BD::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release", blobstore: blobstore)
       job.should_receive(:delete_release).with(release)
       job.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield
@@ -60,7 +61,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
       BDM::ReleaseVersion.make(:release => release, :version => "2")
 
       job = BD::Jobs::DeleteRelease.new("test_release",
-                                        "version" => rv1.version)
+                                        "version" => rv1.version, blobstore: blobstore)
       job.should_receive(:delete_release_version).with(rv1)
       job.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield
@@ -73,20 +74,20 @@ describe Bosh::Director::Jobs::DeleteRelease do
       rv1 = BDM::ReleaseVersion.make(:release => release, :version => "1")
       rv2 = BDM::ReleaseVersion.make(:release => release, :version => "2")
 
-      manifest = YAML.dump(
+      manifest = Psych.dump(
           "release" => {"name" => "test_release", "version" => "2"})
 
       deployment = BDM::Deployment.make(:name => "test_deployment",
                                         :manifest => manifest)
       deployment.add_release_version(rv2)
 
-      job1 = BD::Jobs::DeleteRelease.new("test_release", "version" => "2")
+      job1 = BD::Jobs::DeleteRelease.new("test_release", "version" => "2", blobstore: blobstore)
       job1.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield
 
       expect { job1.perform }.to raise_exception(BD::ReleaseVersionInUse)
 
-      job2 = BD::Jobs::DeleteRelease.new("test_release", "version" => "1")
+      job2 = BD::Jobs::DeleteRelease.new("test_release", "version" => "1", blobstore: blobstore)
       job2.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield
       job2.should_receive(:delete_release_version).with(rv1)
@@ -113,11 +114,11 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should delete release and associated objects/meta" do
-      @blobstore.should_receive(:delete).with("template-blb")
-      @blobstore.should_receive(:delete).with("package-blb")
-      @blobstore.should_receive(:delete).with("compiled-package-blb")
+      blobstore.should_receive(:delete).with("template-blb")
+      blobstore.should_receive(:delete).with("package-blb")
+      blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      job = BD::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release", blobstore: blobstore)
       job.delete_release(@release)
 
       job.instance_eval {@errors}.should be_empty
@@ -130,11 +131,11 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should fail to delete the release if there is a blobstore error" do
-      @blobstore.should_receive(:delete).with("template-blb").and_raise("bad")
-      @blobstore.should_receive(:delete).with("package-blb")
-      @blobstore.should_receive(:delete).with("compiled-package-blb")
+      blobstore.should_receive(:delete).with("template-blb").and_raise("bad")
+      blobstore.should_receive(:delete).with("package-blb")
+      blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      job = BD::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release", blobstore: blobstore)
       job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
@@ -149,11 +150,11 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should forcefully delete the release when requested even if there is a blobstore error" do
-      @blobstore.should_receive(:delete).with("template-blb").and_raise("bad")
-      @blobstore.should_receive(:delete).with("package-blb")
-      @blobstore.should_receive(:delete).with("compiled-package-blb")
+      blobstore.should_receive(:delete).with("template-blb").and_raise("bad")
+      blobstore.should_receive(:delete).with("package-blb")
+      blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      job = BD::Jobs::DeleteRelease.new("test_release", "force" => true)
+      job = BD::Jobs::DeleteRelease.new("test_release", "force" => true, blobstore: blobstore)
       job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
@@ -206,11 +207,11 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should delete release version without touching any shared packages/templates" do
-      job = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version)
+      job = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version, blobstore: blobstore)
 
-      @blobstore.should_receive(:delete).with("pkg3")
-      @blobstore.should_receive(:delete).with("template3")
-      @blobstore.should_receive(:delete).with("feeddead")
+      blobstore.should_receive(:delete).with("pkg3")
+      blobstore.should_receive(:delete).with("template3")
+      blobstore.should_receive(:delete).with("feeddead")
 
       job.delete_release_version(@rv1)
 
@@ -232,10 +233,10 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
     it "should not leave any release/package/templates artifacts after all " +
            "release versions have been deleted" do
-      job1 = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version)
-      job2 = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv2.version)
+      job1 = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version, blobstore: blobstore)
+      job2 = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv2.version, blobstore: blobstore)
 
-      @blobstore.stub!(:delete)
+      blobstore.stub(:delete)
 
       job1.should_receive(:with_release_lock).
           with("test_release", :timeout => 10).and_yield

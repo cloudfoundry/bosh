@@ -8,7 +8,7 @@ module Bosh::Director::Cpi
     class << self
       def start
         run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
-        test_config = YAML.load(spec_asset("test-cpi-config.yml"))
+        test_config = Psych.load(spec_asset("test-cpi-config.yml"))
         test_config["cloud"]["properties"]["mbus"] = "nats://localhost:#{NATS_PORT}"
         test_config["mbus"] = "nats://localhost:#{NATS_PORT}"
         test_config

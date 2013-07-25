@@ -1,13 +1,11 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'bosh_agent/platform/ubuntu'
-require 'bosh_agent/platform/linux/network'
 
 module Bosh::Agent
   class Platform::Ubuntu::Network < Platform::Linux::Network
     include Bosh::Exec
 
-    def initialize
-      super(File.join File.dirname(__FILE__), 'templates')
+    def initialize(template_dir)
+      super
     end
 
     def write_network_interfaces
@@ -22,7 +20,7 @@ module Bosh::Agent
 
     def restart_networking_service
       # ubuntu 10.04 networking startup/upstart stuff is quite borked
-      @networks.each do |k, v|
+      networks.each do |k, v|
         interface = v['interface']
         @logger.info("Restarting #{interface}")
         output = sh("service network-interface stop INTERFACE=#{interface}").output

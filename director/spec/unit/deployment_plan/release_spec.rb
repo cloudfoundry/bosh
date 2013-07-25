@@ -9,7 +9,7 @@ describe Bosh::Director::DeploymentPlan::Release do
   end
 
   def make_plan(deployment)
-    mock(BD::DeploymentPlan, :model => deployment)
+    double(BD::DeploymentPlan, :model => deployment)
   end
 
   def find_release(name)

@@ -19,10 +19,10 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     mappings = {
-      "/dev/sdf" => mock("attachment",
-                         :volume => mock("volume", :id => "v-foobar")),
-      "/dev/sdg" => mock("attachment",
-                         :volume => mock("volume", :id => "v-deadbeef")),
+      "/dev/sdf" => double("attachment",
+                         :volume => double("volume", :id => "v-foobar")),
+      "/dev/sdg" => double("attachment",
+                         :volume => double("volume", :id => "v-deadbeef")),
     }
 
     instance.should_receive(:block_device_mappings).and_return(mappings)

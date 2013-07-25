@@ -8,7 +8,7 @@ describe Bosh::Registry::ApiController do
     Bosh::Registry.http_user = "admin"
     Bosh::Registry.http_password = "admin"
 
-    @instance_manager = mock("instance manager")
+    @instance_manager = double("instance manager")
     Bosh::Registry.instance_manager = @instance_manager
 
     rack_mock = Rack::MockSession.new(Bosh::Registry::ApiController.new)

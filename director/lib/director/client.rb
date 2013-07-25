@@ -9,7 +9,7 @@ module Bosh::Director
       @service_name = service_name
       @client_id = client_id
       @nats_rpc = Config.nats_rpc
-      @timeout = options[:timeout] || 30
+      @timeout = options[:timeout] || 45
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
 
@@ -42,12 +42,11 @@ module Bosh::Director
       begin
         ping
       rescue RpcTimeout
-        if @deadline - Time.now.to_i > 0
-          retry
-        else
-          raise RpcTimeout,
-                "Timed out pinging to #{@client_id} after #{deadline} seconds"
-        end
+        retry if @deadline - Time.now.to_i > 0
+        raise RpcTimeout, "Timed out pinging to #{@client_id} after #{deadline} seconds"
+      rescue RpcRemoteException => e
+        retry if e.message =~ /^restarting agent/ && @deadline - Time.now.to_i > 0
+        raise e
       ensure
         @timeout = old_timeout
       end
@@ -75,7 +74,6 @@ module Bosh::Director
           begin
             response = @encryption_handler.decrypt(response["encrypted_data"])
           rescue Bosh::EncryptionHandler::CryptError => e
-            # TODO: that's not really a remote exception, should we just raise?
             response["exception"] = "CryptError: #{e.inspect} #{e.backtrace}"
           end
           @logger.info("Response: #{response}")
@@ -148,8 +146,6 @@ module Bosh::Director
     # @param [String] blob_id Blob id
     # @return [String] Blob contents
     def download_and_delete_blob(blob_id)
-      # TODO: handle exceptions
-      # (no reason to fail completely if blobstore doesn't work)
       blob = @resource_manager.get_resource(blob_id)
       blob
     ensure

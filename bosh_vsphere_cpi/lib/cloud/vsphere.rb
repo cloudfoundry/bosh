@@ -12,12 +12,14 @@ module Bosh
 
       def_delegators :@delegate,
                      :create_stemcell, :delete_stemcell,
-                     :create_vm, :delete_vm, :reboot_vm,
+                     :create_vm, :delete_vm, :reboot_vm, :has_vm?,
                      :set_vm_metadata,
                      :configure_networks,
                      :create_disk, :delete_disk,
                      :attach_disk, :detach_disk,
-                     :validate_deployment
+                     :validate_deployment,
+                     :snapshot_disk, :delete_snapshot,
+                     :current_vm_id, :get_disks
 
       def initialize(options)
         @delegate = VSphereCloud::Cloud.new(options)

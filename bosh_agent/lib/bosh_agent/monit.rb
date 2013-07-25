@@ -63,7 +63,7 @@ module Bosh::Agent
         end
 
         user, cred = monit_credentials
-        MonitApi::Client.new("http://#{user}:#{cred}@127.0.0.1:2822", :logger => logger)
+        MonitApi::Client.new("https://#{user}:#{cred}@127.0.0.1:2822", :logger => logger)
       end
 
       def random_credential
@@ -305,7 +305,6 @@ module Bosh::Agent
 
       status = Process.waitpid(pid) rescue nil
     rescue => e
-      # TODO: send alert to HM
       @logger.error("Failed to run Monit: #{e.inspect} #{e.backtrace}")
 
       [stdin, stdout, stderr].each { |fd| fd.close rescue nil }

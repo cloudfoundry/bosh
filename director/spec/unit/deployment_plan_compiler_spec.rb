@@ -10,7 +10,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   let(:plan) do
-    mock(BD::DeploymentPlan)
+    double(BD::DeploymentPlan)
   end
 
   let(:compiler) do
@@ -48,8 +48,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   it "should bind resource pools" do
-    rp1 = mock(BD::DeploymentPlan::ResourcePool)
-    rp2 = mock(BD::DeploymentPlan::ResourcePool)
+    rp1 = double(BD::DeploymentPlan::ResourcePool)
+    rp2 = double(BD::DeploymentPlan::ResourcePool)
 
     plan.should_receive(:resource_pools).and_return([rp1, rp2])
 
@@ -60,11 +60,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   it "should bind stemcells" do
-    sc1 = mock(BD::DeploymentPlan::Stemcell)
-    sc2 = mock(BD::DeploymentPlan::Stemcell)
+    sc1 = double(BD::DeploymentPlan::Stemcell)
+    sc2 = double(BD::DeploymentPlan::Stemcell)
 
-    rp1 = mock(BD::DeploymentPlan::ResourcePool, :stemcell => sc1)
-    rp2 = mock(BD::DeploymentPlan::ResourcePool, :stemcell => sc2)
+    rp1 = double(BD::DeploymentPlan::ResourcePool, :stemcell => sc1)
+    rp2 = double(BD::DeploymentPlan::ResourcePool, :stemcell => sc2)
 
     plan.should_receive(:resource_pools).and_return([rp1, rp2])
 
@@ -75,8 +75,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   it "should bind templates" do
-    r1 = mock(BD::DeploymentPlan::Release)
-    r2 = mock(BD::DeploymentPlan::Release)
+    r1 = double(BD::DeploymentPlan::Release)
+    r2 = double(BD::DeploymentPlan::Release)
 
     plan.should_receive(:releases).and_return([r1, r2])
 
@@ -87,10 +87,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   it "should bind unallocated VMs" do
-    instances = (1..4).map { |i| mock(BD::DeploymentPlan::Instance) }
+    instances = (1..4).map { |i| double(BD::DeploymentPlan::Instance) }
 
-    j1 = mock(BD::DeploymentPlan::Job, :instances => instances[0..1])
-    j2 = mock(BD::DeploymentPlan::Job, :instances => instances[2..3])
+    j1 = double(BD::DeploymentPlan::Job, :instances => instances[0..1])
+    j2 = double(BD::DeploymentPlan::Job, :instances => instances[2..3])
 
     plan.should_receive(:jobs).and_return([j1, j2])
 
@@ -527,7 +527,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :delete_unneeded_vms do
     it "should delete unneeded VMs" do
       vm = BD::Models::Vm.make(:cid => "vm-cid")
-      @deployment_plan.stub!(:unneeded_vms).and_return([vm])
+      @deployment_plan.stub(:unneeded_vms).and_return([vm])
 
       @cloud.should_receive(:delete_vm).with("vm-cid")
       @deployment_plan_compiler.delete_unneeded_vms
@@ -545,9 +545,9 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :delete_unneeded_instances do
     it "should delete unneeded instances" do
       instance = BD::Models::Instance.make
-      @deployment_plan.stub!(:unneeded_instances).and_return([instance])
-      instance_deleter = mock("instance_deleter")
-      BD::InstanceDeleter.stub!(:new).and_return(instance_deleter)
+      @deployment_plan.stub(:unneeded_instances).and_return([instance])
+      instance_deleter = double("instance_deleter")
+      BD::InstanceDeleter.stub(:new).and_return(instance_deleter)
 
       instance_deleter.should_receive(:delete_instances).with([instance])
       @deployment_plan_compiler.delete_unneeded_instances

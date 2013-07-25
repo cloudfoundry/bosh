@@ -1,6 +1,5 @@
 module Bosh::Ami
   class Configurator
-
     def initialize(config, server)
       @config = config
       @server = server
@@ -21,7 +20,7 @@ module Bosh::Ami
         puts "  #{ami}"
         @config[:regions][region][:ami] = ami
       else
-        puts "could detect an AMI!"
+        puts 'could detect an AMI!'
         @config[:regions][region][:ami] = nil
       end
     end
@@ -30,7 +29,7 @@ module Bosh::Ami
       puts("  running #{command}")
       result = @server.ssh(command).first
       unless result.status == 0
-        puts "  command failed:"
+        puts '  command failed:'
         puts result.stdout
         exit(1)
       end
@@ -38,14 +37,13 @@ module Bosh::Ami
     end
 
     def copy_files
-      puts("  copying files...")
-      @server.scp("scripts/prepare.sh", "prepare.sh")
-      @server.scp("scripts/rbenv.sh", "rbenv.sh")
-      @server.scp("scripts/gems.sh", "gems.sh")
-      @server.scp("scripts/stemcell-copy.sh", "stemcell-copy")
-      @server.scp("scripts/stemcell.sh", "stemcell.sh")
-      @server.scp("scripts/ami.rb", "ami.rb")
+      puts('  copying files...')
+      @server.scp('scripts/prepare.sh', 'prepare.sh')
+      @server.scp('scripts/rbenv.sh', 'rbenv.sh')
+      @server.scp('scripts/gems.sh', 'gems.sh')
+      @server.scp('scripts/stemcell-copy.sh', 'stemcell-copy')
+      @server.scp('scripts/stemcell.sh', 'stemcell.sh')
+      @server.scp('scripts/ami.rb', 'ami.rb')
     end
-
   end
 end

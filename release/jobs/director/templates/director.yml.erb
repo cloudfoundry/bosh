@@ -1,50 +1,79 @@
+<%
+  def blobstore_options(name, options)
+    YAML.dump(name => options).sub(/\A---\n/, '')
+  end
+%>
 ---
 name: <%= p('director.name') %>
-port: <%= p('director.port') %>
+port: <%= p('director.backend_port') %>
 encryption: <%= p('director.encryption') %>
-<% if_p("director.max_tasks") do |max_tasks| %>
-max_tasks: <%= max_tasks %>
-<% end %>
-<% if_p("director.max_threads") do |max_threads| %>
-max_threads: <%= max_threads %>
- <% end %>
+max_tasks: <%= p('director.max_tasks') %>
+max_threads: <%= p('director.max_threads') %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
+<% if_p("resque.loglevel") do |resque_loglevel| %>
+resque:
+  logging:
+    level: <%= resque_loglevel %>
+<% end %>    
 redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
   password: <%= p('redis.password') %>
+  logging:
+    level: <%= p('redis.loglevel') %>
 mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
 dir: /var/vcap/store/director
 db:
-  <% has_postgres = false %>
-  <% if_p('postgres.user', 'postgres.password', 'postgres.address', 'postgres.port',
-          'postgres.database') do |user, password, address, port, database| %>
-    <% has_postgres = true %>
-  database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= port %>/<%= database %>
-  max_connections: 32
-  pool_timeout: 10
+  adapter: <%= p('director.db.adapter') %>
+  user: <%= p('director.db.user') %>
+  password: <%= p('director.db.password') %>
+  host: <%= p('director.db.host') %>
+  port: <%= p('director.db.port') %>
+  database: <%= p('director.db.database') %>
+  connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
+snapshots:
+  enabled: <%= p('director.enable_snapshots') %>
+
+scheduled_jobs:
+  <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
+  - command: SnapshotDeployments
+    schedule: <%= snapshot_schedule %>
   <% end %>
-  <% unless has_postgres %>
-  database: sqlite:///var/vcap/store/director/director.db
+  <% if_p('director.self_snapshot_schedule') do |self_snapshot_schedule| %>
+  - command: SnapshotSelf
+    schedule: <%= self_snapshot_schedule %>
+  <% end %>
+  <% if_p('director.backup_schedule') do |backup_schedule| %>
+  - command: ScheduledBackup
+    schedule: <%= backup_schedule %>
   <% end %>
 
-<% if_p('dns.address', 'dns.user', 'dns.password', 'dns.database.port', 'dns.database.name') do |address, user, password, db_port, db_name| %>
+scan_and_fix:
+  auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
+<% if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
+        'dns.db.port', 'dns.db.database', 'dns.db.connection_options', 'dns.address') do |
+                        adapter, user, password, db_host, port, database, connection_options, address| %>
 dns:
   server: <%= address %>
   <% if_p('dns.domain_name') do |domain_name| %>
   domain_name: <%= domain_name %>
   <% end %>
   db:
-    database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= db_port %>/<%= db_name %>
-    max_connections: 32
-    pool_timeout: 10
+    adapter: <%= adapter %>
+    user: <%= user %>
+    password: <%= password %>
+    host: <%= db_host %>
+    port: <%= port %>
+    database: <%= database %>
+    connection_options: <%= JSON.generate(connection_options) %>
 <% end %>
+
 blobstore:
   provider: <%= p('blobstore.provider') %>
   options:
-<% if p('blobstore.provider') == "s3" %>
+<% if p('blobstore.provider') == 's3' %>
     bucket_name: <%= p('blobstore.bucket_name') %>
     access_key_id: <%= p('blobstore.access_key_id') %>
     secret_access_key: <%= p('blobstore.secret_access_key') %>
@@ -53,6 +82,7 @@ blobstore:
     user: <%= p('blobstore.director.user') %>
     password: <%= p('blobstore.director.password') %>
 <% end %>
+
 <% if_p('compiled_package_cache.options.bucket_name',
         'compiled_package_cache.options.access_key_id',
         'compiled_package_cache.options.secret_access_key') do |bucket_name, access_key_id, secret_access_key| %>
@@ -63,6 +93,51 @@ compiled_package_cache:
     access_key_id: <%= access_key_id %>
     secret_access_key: <%= secret_access_key %>
 <% end %>
+<% if_p('compiled_package_cache.options.swift_provider',
+        'compiled_package_cache.options.container_name') do |swift_provider, container_name| %>
+compiled_package_cache:
+  provider: swift
+  options:
+    swift_provider: <%= swift_provider %>
+    container_name: <%= container_name %>
+    <% if_p('compiled_package_cache.options.hp_access_key',
+            'compiled_package_cache.options.hp_secret_key',
+            'compiled_package_cache.options.hp_tenant_id',
+            'compiled_package_cache.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
+    hp:
+      hp_access_key: <%= hp_access_key %>
+      hp_secret_key: <%= hp_secret_key %>
+      hp_tenant_id: <%= hp_tenant_id %>
+      hp_avl_zone: <%= hp_avl_zone %>
+    <% end %>
+    <% if_p('compiled_package_cache.options.openstack_auth_url',
+            'compiled_package_cache.options.openstack_username',
+            'compiled_package_cache.options.openstack_api_key',
+            'compiled_package_cache.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
+    openstack:
+      openstack_auth_url: <%= openstack_auth_url %>
+      openstack_username: <%= openstack_username %>
+      openstack_api_key: <%= openstack_api_key %>
+      openstack_tenant: <%= openstack_tenant %>
+      <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
+      openstack_region: <%= openstack_region %>
+      <% end %>
+    <% end %>
+    <% if_p('compiled_package_cache.options.rackspace_username',
+            'compiled_package_cache.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
+    rackspace:
+      rackspace_username: <%= rackspace_username %>
+      rackspace_api_key: <%= rackspace_api_key %>
+      <% if_p('compiled_package_cache.options.rackspace_region') do |rackspace_region| %>
+      rackspace_region: <%= rackspace_region %>
+      <% end %>
+    <% end %>
+<% end %>
+
+<% if_p('director.backup_destination') do |backup_destination| %>
+<%= blobstore_options('backup_destination', backup_destination) %>
+<% end %>
+
 cloud:
 <% plugin = nil %>
 <% if_p('aws.access_key_id', 'aws.secret_access_key',
@@ -113,6 +188,12 @@ cloud:
       <% if_p("openstack.endpoint_type") do |endpoint_type| %>
       endpoint_type: <%= endpoint_type %>
       <% end %>
+      <% if_p("openstack.state_timeout") do |state_timeout| %>
+      state_timeout: <%= state_timeout %>
+      <% end %>
+      <% if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
+      stemcell_public_visibility: <%= stemcell_public_visibility %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
     registry:
@@ -137,7 +218,7 @@ cloud:
             disk_path: <%= dc['disk_path'] || "BOSH_Disks" %>
             datastore_pattern: <%= dc['datastore_pattern'] %>
             persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
-            allow_mixed_datastores: <%= dc['allow_mixed_datastores'] || true %>
+            allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
             clusters:
               <% dc['clusters'].each do |cluster| %>
                 <% case cluster

@@ -226,7 +226,7 @@ SECTION 1: BSD-STYLE, MIT-STYLE, OR SIMILAR
    >>> diff-lcs-1.1.3
    >>> erubis-2.6.6
    >>> extlib-0.9.15
-   >>> fog-1.10.0
+   >>> fog-1.12.1
    >>> gibberish-1.2.0
    >>> headers-more-nginx-module-0.1.6
    >>> httparty-0.7
@@ -322,7 +322,7 @@ SECTION 7: Mozilla Public License, V1.1
 
 SECTION 8: Ruby Clause-6
 
-   >>> archive-tar-minitar-0.5.2
+   >>> minitar-0.5.4
    >>> eventmachine-0.12.10
    >>> mime-types-1.16
    >>> netaddr-1.5.0
@@ -695,7 +695,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
->>> fog-1.10.0
+>>> fog-1.12.1
 
 Copyright (c) 2010 {geemus (Wesley Beary)}[http://github.com/geemus]
 
@@ -4469,7 +4469,7 @@ info@rabbitmq.com.
 Ruby Clause-6 is applicable to the following component(s).
 
 
->>> archive-tar-minitar-0.5.2
+>>> minitar-0.5.4
 
 [PLEASE NOTE:  VMWARE, INC. ELECTS TO USE AND DISTRIBUTE THIS COMPONENT UNDER THE TERMS OF THE RUBY LICENSE.  PLEASE SEE THE APPENDIX TO REVIEW THE FULL TEXT OF RUBY LICENSE. THE ORIGINAL LICENSE TERMS ARE REPRODUCED BELOW ONLY AS A REFERENCE.] 
 

@@ -56,7 +56,7 @@ describe Bosh::AwsCloud::StemcellCreator do
 
       expect {
         creator.fake
-      }.to raise_error Bosh::Clouds::CloudError, "Stemcell does not contain an AMI for this region"
+      }.to raise_error Bosh::Clouds::CloudError, "Stemcell does not contain an AMI for this region (us-west-1)"
 
     end
   end

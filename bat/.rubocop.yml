@@ -1,0 +1,18 @@
+inherit_from: ../.rubocop.yml
+
+AllCops:
+  Excludes:
+  - spec/assets/**
+
+AvoidPerlisms:
+  Enabled: false
+
+CaseIndentation:
+  Enabled: false
+
+LineLength:
+  Max: 132
+
+MethodLength:
+  CountComments: false
+  Max: 31

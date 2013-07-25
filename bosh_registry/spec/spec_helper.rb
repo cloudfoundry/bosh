@@ -96,9 +96,12 @@ def valid_config
       "port" => 25777
     },
     "db" => {
-      "max_connections" => 433,
-      "pool_timeout" => 227,
-      "database" => "sqlite:///:memory:"
+      "connection_options" => {
+        "max_connections" => 433,
+        "pool_timeout" => 227,
+      },
+      "database" => "/:memory:",
+      "adapter" => "sqlite"
     },
     "cloud" => {
       "plugin" => "dummy"

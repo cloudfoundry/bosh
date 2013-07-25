@@ -26,10 +26,10 @@ module Bosh::Cli::Command
 
       # Initialize an empty blobs index
       File.open(File.join("config", "blobs.yml"), "w") do |f|
-        YAML.dump({}, f)
+        Psych.dump({}, f)
       end
 
-      say("Release directory initialized".green)
+      say("Release directory initialized".make_green)
     end
 
     # bosh create release
@@ -66,18 +66,18 @@ module Bosh::Cli::Command
       nl
 
       if tarball.valid?
-        say("`#{tarball_path}' is a valid release".green)
+        say("`#{tarball_path}' is a valid release".make_green)
       else
-        say("Validation errors:".red)
+        say("Validation errors:".make_red)
         tarball.errors.each do |error|
           say("- #{error}")
         end
-        err("`#{tarball_path}' is not a valid release".red)
+        err("`#{tarball_path}' is not a valid release".make_red)
       end
     end
 
     usage "upload release"
-    desc "Upload release"
+    desc "Upload release (release_file can be a local file or a remote URI)"
     option "--rebase",
            "Rebases this release onto the latest version",
            "known by director (discards local job/package",
@@ -96,21 +96,25 @@ module Bosh::Cli::Command
         if release_file.nil?
           err("The information about latest generated release is missing, please provide release filename")
         end
-        unless confirmed?("Upload release `#{File.basename(release_file).green}' to `#{target_name.green}'")
+        unless confirmed?("Upload release `#{File.basename(release_file).make_green}' to `#{target_name.make_green}'")
           err("Canceled upload")
         end
       end
 
-      unless File.exist?(release_file)
-        err("Release file doesn't exist")
-      end
-
-      file_type = `file --mime-type -b '#{release_file}'`
-
-      if file_type =~ /text\/(plain|yaml)/
-        upload_manifest(release_file, upload_options)
+      if release_file =~ /^#{URI::regexp}$/
+        upload_remote_release(release_file, upload_options)
       else
-        upload_tarball(release_file, upload_options)
+        unless File.exist?(release_file)
+          err("Release file doesn't exist")
+        end
+
+        file_type = `file --mime-type -b '#{release_file}'`
+
+        if file_type =~ /text\/(plain|yaml)/
+          upload_manifest(release_file, upload_options)
+        else
+          upload_tarball(release_file, upload_options)
+        end
       end
     end
 
@@ -119,7 +123,7 @@ module Bosh::Cli::Command
     def reset
       check_if_release_dir
 
-      say("Your dev release environment will be completely reset".red)
+      say("Your dev release environment will be completely reset".make_red)
       if confirmed?
         say("Removing dev_builds index...")
         FileUtils.rm_rf(".dev_builds")
@@ -129,7 +133,7 @@ module Bosh::Cli::Command
         say("Removing dev tarballs...")
         FileUtils.rm_rf("dev_releases")
 
-        say("Release has been reset".green)
+        say("Release has been reset".make_green)
       else
         say("Canceled")
       end
@@ -137,6 +141,7 @@ module Bosh::Cli::Command
 
     usage "releases"
     desc "Show the list of available releases"
+    option "--jobs", "include job templates"
     def list
       auth_required
       releases = director.list_releases.sort do |r1, r2|
@@ -146,7 +151,7 @@ module Bosh::Cli::Command
       err("No releases") if releases.empty?
 
       if releases.first.has_key? "release_versions"
-        releases_table = build_releases_table(releases)
+        releases_table = build_releases_table(releases, options)
       elsif releases.first.has_key? "versions"
         releases_table = build_releases_table_for_old_director(releases)
       end
@@ -170,16 +175,16 @@ module Bosh::Cli::Command
       desc << "/#{version}" if version
 
       if force
-        say("Deleting `#{desc}' (FORCED DELETE, WILL IGNORE ERRORS)".red)
+        say("Deleting `#{desc}' (FORCED DELETE, WILL IGNORE ERRORS)".make_red)
       else
-        say("Deleting `#{desc}'".red)
+        say("Deleting `#{desc}'".make_red)
       end
 
       if confirmed?
         status, task_id = director.delete_release(name, force: force, version: version)
         task_report(status, task_id, "Deleted `#{desc}'")
       else
-        say("Canceled deleting release".green)
+        say("Canceled deleting release".make_green)
       end
     end
 
@@ -235,9 +240,9 @@ module Bosh::Cli::Command
           say("Checking if can repack release for faster upload...")
           repacked_path = tarball.repack(package_matches)
           if repacked_path.nil?
-            say("Uploading the whole release".green)
+            say("Uploading the whole release".make_green)
           else
-            say("Release repacked (new size is #{pretty_size(repacked_path)})".green)
+            say("Release repacked (new size is #{pretty_size(repacked_path)})".make_green)
             tarball_path = repacked_path
           end
         end
@@ -247,7 +252,7 @@ module Bosh::Cli::Command
       end
 
       if rebase
-        say("Uploading release (#{"will be rebased".yellow})")
+        say("Uploading release (#{"will be rebased".make_yellow})")
         status, task_id = director.rebase_release(tarball_path)
         task_report(status, task_id, "Release rebased")
       else
@@ -257,6 +262,19 @@ module Bosh::Cli::Command
       end
     end
 
+    def upload_remote_release(release_location, upload_options = {})
+      nl
+      if upload_options[:rebase]
+        say("Using remote release `#{release_location}' (#{"will be rebased".make_yellow})")
+        status, task_id = director.rebase_remote_release(release_location)
+        task_report(status, task_id, "Release rebased")
+      else
+        say("Using remote release `#{release_location}'")
+        status, task_id = director.upload_remote_release(release_location)
+        task_report(status, task_id, "Release uploaded")                
+      end
+    end
+    
     def create_from_manifest(manifest_file)
       say("Recreating release from the manifest")
       Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
@@ -278,10 +296,10 @@ module Bosh::Cli::Command
       if final
         confirm_final_release(dry_run)
         save_final_release_name if release.final_name.blank?
-        header("Building FINAL release".green)
+        header("Building FINAL release".make_green)
       else
         save_dev_release_name if release.dev_name.blank?
-        header("Building DEV release".green)
+        header("Building DEV release".make_green)
       end
 
       if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
@@ -303,12 +321,12 @@ module Bosh::Cli::Command
 
       return nil if dry_run
 
-      say("Release version: #{release_builder.version.to_s.green}")
-      say("Release manifest: #{release_builder.manifest_path.green}")
+      say("Release version: #{release_builder.version.to_s.make_green}")
+      say("Release manifest: #{release_builder.manifest_path.make_green}")
 
       unless manifest_only
         say("Release tarball (#{pretty_size(release_builder.tarball_path)}): " +
-                release_builder.tarball_path.green)
+                release_builder.tarball_path.make_green)
       end
 
       release.min_cli_version = Bosh::Cli::VERSION
@@ -318,9 +336,9 @@ module Bosh::Cli::Command
     end
 
     def confirm_final_release(dry_run)
-      confirmed = non_interactive? || agree("Are you sure you want to generate #{'final'.red} version? ")
+      confirmed = non_interactive? || agree("Are you sure you want to generate #{'final'.make_red} version? ")
       if !dry_run && !confirmed
-        say("Canceled release generation".green)
+        say("Canceled release generation".make_green)
         exit(1)
       end
     end
@@ -330,7 +348,7 @@ module Bosh::Cli::Command
       if blob_manager.dirty?
         blob_manager.print_status
         if force
-          say("Proceeding with dirty blobs as '--force' is given".red)
+          say("Proceeding with dirty blobs as '--force' is given".make_red)
         else
           err("Please use '--force' or upload new blobs")
         end
@@ -346,7 +364,7 @@ module Bosh::Cli::Command
       )
 
       packages.each do |package|
-        say("Building #{package.name.green}...")
+        say("Building #{package.name.make_green}...")
         package.build
         nl
       end
@@ -393,7 +411,7 @@ module Bosh::Cli::Command
       )
 
       jobs.each do |job|
-        say("Building #{job.name.green}...")
+        say("Building #{job.name.make_green}...")
         job.build
         nl
       end
@@ -445,7 +463,7 @@ module Bosh::Cli::Command
         end
       end
     rescue Errno::ENOENT
-      say("Unable to run 'git init'".red)
+      say("Unable to run 'git init'".make_red)
     end
 
 
@@ -531,7 +549,7 @@ module Bosh::Cli::Command
           "and jobs to your director.\nIt is recommended to update your " +
           "director or downgrade your CLI to 0.19.6"
 
-      say(msg.yellow)
+      say(msg.make_yellow)
       exit(1) unless confirmed?
     end
 
@@ -548,12 +566,22 @@ module Bosh::Cli::Command
       end
     end
 
-    def build_releases_table(releases)
+    # Builds table of release information
+    # Default headings: "Name", "Versions", "Commit Hash"
+    # Extra headings: options[:job] => "Jobs"
+    def build_releases_table(releases, options = {})
+      show_jobs = options[:jobs]
       table do |t|
         t.headings = "Name", "Versions", "Commit Hash"
+        t.headings << "Jobs" if show_jobs
         releases.each do |release|
           versions, commit_hashes = formatted_versions(release).transpose
-          t << [release["name"], versions.join("\n"), commit_hashes.join("\n")]
+          row = [release["name"], versions.join("\n"), commit_hashes.join("\n")]
+          if show_jobs
+            jobs = formatted_jobs(release).transpose
+            row << jobs.join("\n")
+          end
+          t << row
         end
       end
     end
@@ -570,6 +598,16 @@ module Bosh::Cli::Command
       version_number = version["version"] + (version["currently_deployed"] ? "*" : "")
       commit_hash = version["commit_hash"] + (version["uncommitted_changes"] ? "+" : "")
       [version_number, commit_hash]
+    end
+
+    def formatted_jobs(release)
+      sort_versions(release["release_versions"]).map do |v|
+        if job_names = v["job_names"]
+          [job_names.join(", ")]
+        else
+          ["n/a  "] # with enough whitespace to match "Jobs" header
+        end
+      end
     end
 
     def commit_hash

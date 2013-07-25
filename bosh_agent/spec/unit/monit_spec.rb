@@ -6,7 +6,7 @@ describe Bosh::Agent::Monit do
 
   before(:each) do
     Bosh::Agent::Config.smtp_port = 55231
-    Bosh::Agent::Monit.stub!(:monit_reload_cmd)
+    Bosh::Agent::Monit.stub(:monit_reload_cmd)
 
     monit_dir = File.join(base_dir, 'monit')
     FileUtils.mkdir_p(monit_dir)
@@ -64,37 +64,37 @@ describe Bosh::Agent::Monit do
   end
 
   it "should pass monit reload when incarnation is not changing" do
-    Bosh::Agent::Monit.stub!(:reload_incarnation_sleep).and_return(0.1)
-    Bosh::Agent::Monit.stub!(:incarnation).and_return(99,99,100)
+    Bosh::Agent::Monit.stub(:reload_incarnation_sleep).and_return(0.1)
+    Bosh::Agent::Monit.stub(:incarnation).and_return(99,99,100)
     Bosh::Agent::Monit.reload
   end
 
   it "should fail when NUM_RETRY_MONIT_WAIT_INCARNATION is exceeded" do
-    Bosh::Agent::Monit.stub!(:reload_incarnation_sleep).and_return(0.1)
-    Bosh::Agent::Monit.stub!(:reload_timeout).and_return(1)
+    Bosh::Agent::Monit.stub(:reload_incarnation_sleep).and_return(0.1)
+    Bosh::Agent::Monit.stub(:reload_timeout).and_return(1)
 
     old_incarnations = Array.new(Bosh::Agent::Monit::NUM_RETRY_MONIT_WAIT_INCARNATION, 99)
-    Bosh::Agent::Monit.stub!(:incarnation).and_return(*old_incarnations)
+    Bosh::Agent::Monit.stub(:incarnation).and_return(*old_incarnations)
     lambda {
       Bosh::Agent::Monit.reload
     }.should raise_error(Bosh::Agent::StateError)
   end
 
   it "should fail monit reload when incarnation is not changing" do
-    Bosh::Agent::Monit.stub!(:monit_reload_sleep).and_return(0.1)
-    Bosh::Agent::Monit.stub!(:reload_timeout).and_return(1)
+    Bosh::Agent::Monit.stub(:monit_reload_sleep).and_return(0.1)
+    Bosh::Agent::Monit.stub(:reload_timeout).and_return(1)
 
-    Bosh::Agent::Monit.stub!(:incarnation).and_return(99)
+    Bosh::Agent::Monit.stub(:incarnation).and_return(99)
     lambda {
       Bosh::Agent::Monit.reload
     }.should raise_error(Bosh::Agent::StateError)
   end
 
   it "should provide monit api client" do
-    http_client = mock("http_client")
+    http_client = double("http_client")
     Net::HTTP.should_receive(:new).with("127.0.0.1", 2822).and_return(http_client)
 
-    Bosh::Agent::Monit.stub!(:random_credential).and_return('foobar')
+    Bosh::Agent::Monit.stub(:random_credential).and_return('foobar')
 
     user_file = Bosh::Agent::Monit.monit_user_file
     if File.exist?(user_file)
@@ -102,8 +102,8 @@ describe Bosh::Agent::Monit do
     end
     Bosh::Agent::Monit.setup_monit_user
 
-    response = mock("response")
-    response.stub!(:code).and_return("200")
+    response = double("response")
+    response.stub(:code).and_return("200")
 
     http_client.should_receive(:request).with { |request|
       request["authorization"].should == "Basic dmNhcDpmb29iYXI="

@@ -1,101 +1,115 @@
 ---
 genisoimage/genisoimage:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNGZiZDRm%0AMTExMTY3NyIsInNpZyI6IlNURWFDUXAzc2tndVBRVGVzU3haQmhxeVByVT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f1111677
   sha: 51b6b62e34161b4ac295d15b48c128ecbb52186d
   size: 605096
 nats/vendor/cache/daemons-1.1.4.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjIyMDRlNGU5ODY0M2Q5YWUwNGZiZDRm%0AMTJjMGMwMyIsInNpZyI6ImtqaWgzT1FaT1k0U205QmZZTlBGNzNVbjZQdz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca61e122204e4e98643d9ae04fbd4f12c0c03
   sha: 6603f661cc3b9f591db66b5fbb18d648288651a0
   size: 33792
 nats/vendor/cache/eventmachine-0.12.10.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjEwMDRlNGU3ZDUxOTA2Y2QwNGZiZDRm%0AMTQwYzJiNyIsInNpZyI6Iks4KzNVWE0yWmQ1UFdMYmptemY0L0FqK0xOVT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca51e121004e4e7d51906cd04fbd4f140c2b7
   sha: d9b3ec65e3e94e461ed2d53c01a2b9ab62fe6a07
   size: 220672
 nats/vendor/cache/json_pure-1.6.2.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjEyMDRlNGU4NmVlMTUyOTQwNGZiZDRm%0AMTU4NWM4MyIsInNpZyI6ImhzdUg0UlJKbE1UeFdYendGdXFqMVFJQVBUcz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca11e121204e4e86ee1529404fbd4f1585c83
   sha: d0f2fdad9414f0ec17ac4730d12a3c87134517e8
   size: 659968
 nats/vendor/cache/nats-0.4.22.beta.1.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjIwMDRlNGU4ZWM2ODQwNzcwNGZiZDRm%0AMTZlZjYwNCIsInNpZyI6IjY0eFJCTGVoNFpiR01lUWRCMTl4Q3NCMUZSZz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca51e122004e4e8ec68407704fbd4f16ef604
   sha: a35bfbbd3b2513c7bfde53b68f750d9789c94ff4
   size: 23040
 nats/vendor/cache/rack-1.3.5.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjIyMDRlNGU5ODYzYjFiNzQwNGZiZDRm%0AMTg5MDk3ZiIsInNpZyI6InFiZWN1SmMrZGRTeWdLYWV0MTl5c2kwaE5yND0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca31e122204e4e9863b1b7404fbd4f189097f
   sha: 8ceed89e9a1d0039002eca26e579de8ad5883516
   size: 155648
 nats/vendor/cache/thin-1.3.1.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEwMDRlNGU3ZDUxMWY1NTMwNGZiZDRm%0AMTlkNDE5YiIsInNpZyI6IllHT2VMNzZRZmpycTd6NllVdjlrUHN1amYwZz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca21e121004e4e7d511f55304fbd4f19d419b
   sha: e009f5ce3ba092299cd0810652e67c080ffaef14
   size: 141824
 nats/vendor/cache/yajl-ruby-0.7.8.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjEyMDRlNGU4NmVlYmU1OTEwNGZiZDRm%0AMWI0YWU4OCIsInNpZyI6IjB4TWQ2M2VRRUxFclFJTWR4R1FXMTdvWWpQTT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca61e121204e4e86eebe59104fbd4f1b4ae88
   sha: d9a29e4321fd26dfa15cc17befccdb9442e42310
   size: 555008
 nginx/headers-more-v0.15rc1.tgz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNGZiZDRm%0AMWNkNGJmMyIsInNpZyI6IlljT05CYm5NR1RYaEdUVzZHajd5MjhGYkV2UT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f1cd4bf3
   sha: ba7bf757be8004d9dbffbe583396620cfcbed788
   size: 25490
 nginx/nginx-0.8.54.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjIyMDRlNGU5ODYzOTI2YjEwNGZiZDRm%0AMWUxZjZmYSIsInNpZyI6Ikt6dGpDcXZWaG9LQVMzaTZib3hZMEVPK2lkZz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca21e122204e4e9863926b104fbd4f1e1f6fa
   sha: 4d63c35b8974dba42cc62dd5046ae89df3528e34
   size: 650001
 nginx/nginx_upload_module-2.2.0.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjEwMDRlNGU3ZDUxMWY4MjEwNGZiZDRm%0AMWY0MGEzMCIsInNpZyI6IkhLS2FSNC9KNUNEYVhyV0k0ckwvOXN3MFpRbz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca11e121004e4e7d511f82104fbd4f1f40a30
   sha: 93d6e83e613a0ce2ed057a434b344fa1b6609b47
   size: 25796
 nginx/pcre-8.12.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjEyMDRlNGU4NmVlOGUyYzkwNGZiZDRm%0AMjAzYzhlNyIsInNpZyI6IkRuMWhrdkdnM1RxNjJ1dTVmY0tzM3RSV1NVZz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca51e121204e4e86ee8e2c904fbd4f203c8e7
   sha: b3ab606864606c9f980045653554bf4a12cadde2
   size: 1316863
 postgres/postgres-9.0.3-1.amd64.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjIwMDRlNGU4ZWM2NDg0MzEwNGZiZDRm%0AMjE5ZjRiNyIsInNpZyI6InpwZjZqUGRaYWdtcHovUmEwd2ZNdkY0NXpNUT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca11e122004e4e8ec64843104fbd4f219f4b7
   sha: e47ee9c841ecde4df121f44df282aeb3c50a48d2
   size: 16203511
 postgres/postgres-9.0.3-1.i386.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjIyMDRlNGU5ODYzOGI3NjMwNGZiZDRm%0AMjY5ZDM3NyIsInNpZyI6InROQUhGc3B2aE91THVkQUJSSW9NM3NodEhHTT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca11e122204e4e98638b76304fbd4f269d377
   sha: b2bde31e720eb219bfdc9f1b784f985ecca2cbfb
   size: 15111387
 postgres/postgresql-9.0.3.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjEwMDRlNGU3ZDUxZDk1MGUwNGZiZDRm%0AMmNhMmQ4OSIsInNpZyI6Ik4yckpBMDVXSEVRTWRPMXBJUGRneXBaQWZuVT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca61e121004e4e7d51d950e04fbd4f2ca2d89
   sha: c8fb5d1d7930e78211e554bb5751183a8148d0ee
   size: 18335858
 powerdns/pdns-static_3.0.1-1_amd64.deb:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEyMDRlNGU4NmVlNTM5MjEwNGZiZDRm%0AMzM4ODdmMCIsInNpZyI6Ik0vbVV0UHN0Rkljc2ZPaGdDTllNVXA0eVZZRT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca41e121204e4e86ee5392104fbd4f33887f0
   sha: 5f6cc7572479ea1ab21b517e6f79ad921623b489
   size: 11180332
 redis/redis-2.2.4.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNGZiZDRm%0AMzg4Nzg2ZSIsInNpZyI6IkNUNUoxYnJBd3pVRnVKZnByZGNiQlpIenZncz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f388786e
   sha: 063e6e9f615ceda664d0691a6ea59befb22ebc40
   size: 447499
 ruby/bundler-1.0.12.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjIyMDRlNGU5ODY0M2Q5YWUwNGZiZDRm%0AMzlkMTQzMSIsInNpZyI6IjdKS3dtUUlqMGVQMUlRenV2ejB1U1FBWHp0UT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca61e122204e4e98643d9ae04fbd4f39d1431
   sha: 4acd470b77d0d8f66440f137c918464b3e967a42
   size: 160768
 ruby/rake-0.8.7.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjEwMDRlNGU3ZDUxNDc0NWYwNGZiZDRm%0AM2FlNTE5YSIsInNpZyI6InJHQ0NDb3BVT05JOXJKaUwyMFY3bjdDMTBBQT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fbd4f3ae519a
   sha: 91daad079d404b68a7dd179716b9fdd0c195144c
   size: 104960
 ruby/ruby-1.8.7-p302.tar.bz2:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjEyMDRlNGU4NmVlMzk2OTIwNGZiZDRm%0AM2MxMzQzNCIsInNpZyI6InBsM0o1d0h1QXJ5dDVlUWdSS2xKOXE0ZjdGbz0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca31e121204e4e86ee3969204fbd4f3c13434
   sha: d93bd2f1099f3473b496cda2422b27a8da2beb00
   size: 4184764
 ruby/ruby-1.9.2-p180.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjIwMDRlNGU4ZWM2ODQwNzcwNGZiZDRm%0AM2U4OGQ2ZiIsInNpZyI6IkNYamxJUWxKcGd6cktncThyOEc0Nk9RSWVJRT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca51e122004e4e8ec68407704fbd4f3e88d6f
   sha: 6a482bc07239b37bcadf68dda63c65d20dc19ebe
   size: 11158935
 ruby/rubygems-1.7.2.tgz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjIyMDRlNGU5ODYzOGI3NjMwNGZiZDRm%0ANDNlN2EyNyIsInNpZyI6IjlsMkRFTWJ5cnhNTTNlcWM0ZWhuRGxYRC9MST0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca11e122204e4e98638b76304fbd4f43e7a27
   sha: d878ae52f40eb71e59708afc57303172f0327fad
   size: 245606
 ruby/bundler-1.2.1.gem:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjIyMDRlNGU5ODYzZjI4ZjMwNTBhYTZh%0AYWI1NTQ4ZCIsInNpZyI6Ik1MQXpTSlJoaHhMMGVwRDUyMUppQ0ZCVnY4QT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca51e122204e4e9863f28f3050aa6aab5548d
   sha: 0cbe6ad7a41f064d6c11c1058465fffb1bd58069
   size: 226816
 ruby/rubygems-1.8.24.tgz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEwMDRlNGU3ZDUxMWY1NTMwNTBhYTZh%0AYWQ3NGVjOCIsInNpZyI6ImFXZzVLRGhMdTZPS2dRZ2xsL3p1TGNOaDRsQT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca21e121004e4e7d511f553050aa6aad74ec8
   sha: 30f27047e74f7943117736a0d3e224994fee0905
   size: 380101
 golang/go1.0.3.src.tar.gz:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjIyMDRlNGU5ODYzOTI2YjEwNTBiNTEx%0AZjhkOWZlMCIsInNpZyI6IlhuS2l4dVhYN3dYSm5JcjdpSGc0b1F6SDhrVT0i%0AfQ==%0A
+  object_id: rest/objects/4e4e78bca21e122204e4e9863926b1050b511f8d9fe0
   sha: 1a67293c10d6c06c633c078a7ca67e98c8b58471
   size: 7404849
+nginx/nginx-1.4.1.tar.gz:
+  object_id: 963ead7f-fb2f-4a6b-83be-5d3d25afafd9
+  sha: !binary |-
+    OWM3MjgzODk3MzU3MjMyMzUzNWRhZTEwZjRlNDEyZDY3MWIyN2E3ZQ==
+  size: 767107
+nginx/pcre-8.32.tar.gz:
+  object_id: 9af63f91-2ad7-4894-a8ca-cb036211ce3f
+  sha: !binary |-
+    OTIyNmE1MzM2ZTA0YmJkY2FiMWQ5NGY3NDEzMTUzYWZiZjRhYmY2YQ==
+  size: 1790055
+mysql/server-5.1.62-rel13.3-435-Linux-x86_64.tar.gz:
+  object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fb68b2898dd0
+  sha: 2bfd575545fe78729c56bb832aa69d8d9fc8630d
+  size: 34179263

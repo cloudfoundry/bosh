@@ -10,10 +10,10 @@ describe Bosh::Director::CompileTask do
     let(:package_name) { 'package_name'}
     let(:package_fingerprint) {'fingerprint'}
     let(:stemcell_sha1) {'sha1'}
-    let(:stemcell) { mock("stemcell", sha1: stemcell_sha1)}
-    let(:package) { mock("package", name: package_name, fingerprint: package_fingerprint)}
-    let(:dep_pkg2) { mock("dependent package 2", fingerprint: "dp_fingerprint2", version: "9.2-dev", name: "zyx")}
-    let(:dep_pkg1) { mock("dependent package 1", fingerprint: "dp_fingerprint1", version: "10.1-dev", name: "abc")}
+    let(:stemcell) { double("stemcell", sha1: stemcell_sha1)}
+    let(:package) { double("package", name: package_name, fingerprint: package_fingerprint)}
+    let(:dep_pkg2) { double("dependent package 2", fingerprint: "dp_fingerprint2", version: "9.2-dev", name: "zyx")}
+    let(:dep_pkg1) { double("dependent package 1", fingerprint: "dp_fingerprint1", version: "10.1-dev", name: "abc")}
 
     it 'can create without an initial job' do
       task = BD::CompileTask.new(package, stemcell, [])
@@ -21,7 +21,7 @@ describe Bosh::Director::CompileTask do
     end
 
     it 'can create with an initial job' do
-      job = mock("job")
+      job = double("job")
       task = BD::CompileTask.new(package, stemcell, [], job)
       task.jobs.should == [job]
     end
@@ -137,8 +137,8 @@ describe Bosh::Director::CompileTask do
 
       task = make(package, stemcell)
 
-      job_a = mock(BD::DeploymentPlan::Job)
-      job_b = mock(BD::DeploymentPlan::Job)
+      job_a = double(BD::DeploymentPlan::Job)
+      job_b = double(BD::DeploymentPlan::Job)
 
       job_a.should_receive(:use_compiled_package).with(cp)
       job_b.should_receive(:use_compiled_package).with(cp)

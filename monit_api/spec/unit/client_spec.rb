@@ -6,12 +6,12 @@ describe MonitApi::Client do
   describe "get_status" do
 
     it "should connect to the monit HTTP interface with auth" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
-      response.stub!(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+      response = double("response")
+      response.stub(:code).and_return("200")
+      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request["authorization"].should be_nil
@@ -22,12 +22,12 @@ describe MonitApi::Client do
     end
 
     it "should connect to the monit HTTP interface protected by basic auth" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
-      response.stub!(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+      response = double("response")
+      response.stub(:code).and_return("200")
+      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request["authorization"].should == "Basic dXNlcjpwYXNzd29yZA=="
@@ -38,12 +38,12 @@ describe MonitApi::Client do
     end
 
     it "should request the status xml" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
-      response.stub!(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+      response = double("response")
+      response.stub(:code).and_return("200")
+      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request.method.should == "GET"
@@ -58,12 +58,12 @@ describe MonitApi::Client do
     end
 
     it "should not fail on empty servicegroups" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
-      response.stub!(:body).and_return(File.read(File.expand_path("../../assets/status_without_servicegroups.xml", __FILE__)))
+      response = double("response")
+      response.stub(:code).and_return("200")
+      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status_without_servicegroups.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request.method.should == "GET"
@@ -76,12 +76,12 @@ describe MonitApi::Client do
     end
 
     it "should fail when monit returns an error" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("404")
-      response.stub!(:message).and_return("Not Found")
+      response = double("response")
+      response.stub(:code).and_return("404")
+      response.stub(:message).and_return("Not Found")
 
       http_client.should_receive(:request).and_return(response)
 
@@ -93,7 +93,7 @@ describe MonitApi::Client do
   describe "monit_info" do
     it "should return id, incarnation, and version" do
       client = MonitApi::Client.new("http://localhost:123")
-      client.stub!(:get_status).and_return(STATUS)
+      client.stub(:get_status).and_return(STATUS)
       client.monit_info.should ==  {
         :id=>"946bd13e5c851e91698f1160754ef1a0",
         :incarnation=>"1299869457",
@@ -142,11 +142,11 @@ describe MonitApi::Client do
 
   describe "service_action" do
     it "should connect to the monit HTTP interface" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
+      response = double("response")
+      response.stub(:code).and_return("200")
 
       http_client.should_receive(:request).with { |request|
         request["authorization"].should be_nil
@@ -157,11 +157,11 @@ describe MonitApi::Client do
     end
 
     it "should connect to the monit HTTP interface protected by basic auth" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
+      response = double("response")
+      response.stub(:code).and_return("200")
 
       http_client.should_receive(:request).with { |request|
         request["authorization"].should == "Basic dXNlcjpwYXNzd29yZA=="
@@ -172,11 +172,11 @@ describe MonitApi::Client do
     end
 
     it "should send action to the right endpoint" do
-      http_client = mock("http_client")
+      http_client = double("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
 
-      response = mock("response")
-      response.stub!(:code).and_return("200")
+      response = double("response")
+      response.stub(:code).and_return("200")
 
       http_client.should_receive(:request).with { |request|
         request.method.should == "POST"
@@ -195,7 +195,7 @@ describe MonitApi::Client do
 
     it "should return basic status" do
       client = MonitApi::Client.new("http://localhost:123")
-      client.stub!(:get_status).and_return(STATUS)
+      client.stub(:get_status).and_return(STATUS)
       status = client.status(:group => "www")
 
       status["apache"][:status].should == {:message => "running", :code => 0}
@@ -219,7 +219,7 @@ describe MonitApi::Client do
 
       it "should support #{action}" do
         client = MonitApi::Client.new("http://localhost:123")
-        client.stub!(:get_status).and_return(STATUS)
+        client.stub(:get_status).and_return(STATUS)
         client.should_receive(:service_action).with("apache", action.to_s)
         client.send(action, "apache")
       end

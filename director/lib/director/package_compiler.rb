@@ -5,10 +5,6 @@ module Bosh::Director
     include LockHelper
     include MetadataHelper
 
-    # TODO Support nested dependencies
-    # TODO Decouple tsort from the actual compilation
-    # TODO (optimization) Compile packages with the most dependents first
-
     attr_reader :compilations_performed
 
     # @param [DeploymentPlan] deployment_plan Deployment plan
@@ -162,8 +158,8 @@ module Bosh::Director
       @event_log.begin_stage("Compiling packages", compilation_count)
       number_of_workers = @deployment_plan.compilation.workers
 
-      ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-        begin
+      begin
+        ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
           loop do
             # process as many tasks without waiting
             loop do
@@ -177,15 +173,18 @@ module Bosh::Director
             break if !pool.working? && @ready_tasks.empty?
             sleep(0.1)
           end
-        ensure
-          # Delete all of the VMs if we were reusing compilation VMs. This can't
-          # happen until everything was done compiling.
-          if @deployment_plan.compilation.reuse_compilation_vms
+        end
+      ensure
+        # Delete all of the VMs if we were reusing compilation VMs. This can't
+        # happen until everything was done compiling.
+        if @deployment_plan.compilation.reuse_compilation_vms
+          # Using a new ThreadPool instead of reusing the previous one,
+          # as if there's a failed compilation, the thread pool will stop
+          # processing any new thread.
+          ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
             @vm_reuser.each do |vm_data|
               pool.process { tear_down_vm(vm_data) }
             end
-
-            pool.wait
           end
         end
       end
@@ -324,6 +323,12 @@ module Bosh::Director
         configure_vm(vm, agent, network_settings)
         vm_data.agent = agent
         yield vm_data
+      rescue RpcTimeout => e
+        # if we time out waiting for the agent, we should clean up the the VM
+        # as it will leave us in an unrecoverable state otherwise
+        @vm_reuser.remove_vm(vm_data)
+        tear_down_vm(vm_data)
+        raise e
       ensure
         vm_data.release
         unless @deployment_plan.compilation.reuse_compilation_vms
@@ -364,6 +369,7 @@ module Bosh::Director
         if Config.use_compiled_package_cache?
           if BlobUtil.exists_in_global_cache?(package, task.cache_key)
             @event_log.track("Downloading '#{package.desc}' from global cache") do
+              # has side effect of putting CompiledPackage model in db
               compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
             end
           end

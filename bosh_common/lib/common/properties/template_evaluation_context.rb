@@ -76,7 +76,7 @@ module Bosh::Common
       names = Array(args[0])
 
       names.each do |name|
-        result = extract_value(name)
+        result = lookup_property(@raw_properties, name)
         return result unless result.nil?
       end
 
@@ -111,11 +111,6 @@ module Bosh::Common
         else
           object
       end
-    end
-
-    def extract_value(name)
-      spec_property = lookup_property(@raw_properties, name)
-      spec_property.is_a?(Hash) ? spec_property["default"] : spec_property
     end
 
     private

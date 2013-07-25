@@ -7,7 +7,7 @@ describe VSphereCloud::Resources::Scorer do
   def create_datastores(sizes)
     datastores = {}
     sizes.each_with_index do |size, i|
-      datastore = mock(:datastore)
+      datastore = double(:datastore)
       datastore.stub(:free_space).and_return(size)
       datastores["ds_#{i}"] = datastore
     end
@@ -15,7 +15,7 @@ describe VSphereCloud::Resources::Scorer do
   end
 
   def create_cluster(memory, ephemeral, persistent, shared)
-    cluster = mock(:cluster)
+    cluster = double(:cluster)
     cluster.stub(:name).and_return("foo")
     cluster.stub(:free_memory).and_return(memory)
     cluster.stub(:ephemeral_datastores).
