@@ -6,7 +6,7 @@ module Bosh::Dev
   describe Ami do
     let(:stemcell) do
       stemcell = double(Stemcell)
-      stemcell_manifest = {'cloud_properties' => {'ami' => ''}}
+      stemcell_manifest = { 'cloud_properties' => { 'ami' => '' } }
       stemcell.stub(:extract).and_yield('/foo/bar', stemcell_manifest)
       stemcell
     end

@@ -69,6 +69,7 @@ module Bosh::Dev
       end
 
       private
+
       attr_reader :env, :net_type
     end
   end

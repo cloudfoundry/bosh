@@ -22,9 +22,7 @@ module Bosh
 
       describe '#initialize' do
         it 'errors if path does not exist' do
-          expect {
-            Stemcell.new('/not/found/stemcell.tgz')
-          }.to raise_error "Cannot find file `/not/found/stemcell.tgz'"
+          expect { Stemcell.new('/not/found/stemcell.tgz') }.to raise_error "Cannot find file `/not/found/stemcell.tgz'"
         end
       end
 
@@ -148,7 +146,7 @@ module Bosh
 
         it 'adds the ami to the stemcell manifest' do
           Psych.should_receive(:dump).and_return do |stemcell_properties, out|
-            expect(stemcell_properties['cloud_properties']['ami']).to eq({'fake-region' => 'fake-ami-id'})
+            expect(stemcell_properties['cloud_properties']['ami']).to eq({ 'fake-region' => 'fake-ami-id' })
           end
 
           subject.create_light_stemcell

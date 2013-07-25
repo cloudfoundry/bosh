@@ -78,9 +78,7 @@ module Bosh::Dev
         let(:bucket_name) { false }
 
         it 'raises an error' do
-          expect {
-            pipeline.create({})
-          }.to raise_error("bucket 'bosh-ci-pipeline' not found")
+          expect { pipeline.create({}) }.to raise_error("bucket 'bosh-ci-pipeline' not found")
         end
       end
     end
@@ -91,7 +89,7 @@ module Bosh::Dev
       end
 
       it 'uploads the file to the specific path on the pipeline bucket' do
-        logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/456/foo-bar.tgz")
+        logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/foo-bar.tgz')
 
         pipeline.s3_upload('foobar-path', 'foo-bar.tgz')
         expect(bucket_files.map(&:key)).to include '456/foo-bar.tgz'
@@ -113,7 +111,7 @@ module Bosh::Dev
         let(:stemcell) { instance_double('Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a stemcell to an S3 bucket' do
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws.tgz")
+          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws.tgz')
 
           pipeline.publish_stemcell(stemcell)
 
@@ -122,7 +120,7 @@ module Bosh::Dev
         end
 
         it 'updates the latest stemcell in the S3 bucket' do
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz")
+          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz')
 
           pipeline.publish_stemcell(stemcell)
 
@@ -188,7 +186,6 @@ module Bosh::Dev
         expect(subject.bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/light-bosh-stemcell-aws-456.tgz')
       end
     end
-
 
     describe '#micro_bosh_stemcell_path' do
       let(:infrastructure) { Bosh::Dev::Infrastructure::Vsphere.new }

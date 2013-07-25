@@ -4,7 +4,7 @@ require 'bosh/dev/pipeline'
 
 module Bosh::Dev
   class BulkUploader
-    def initialize(pipeline=Pipeline.new)
+    def initialize(pipeline = Pipeline.new)
       @pipeline = pipeline
     end
 
@@ -13,9 +13,9 @@ module Bosh::Dev
         Dir['**/*'].each do |file|
           unless File.directory?(file)
             pipeline.create(
-                key: File.join(dest_dir, file),
-                body: File.open(file),
-                public: true
+              key: File.join(dest_dir, file),
+              body: File.open(file),
+              public: true
             )
           end
         end
@@ -23,6 +23,7 @@ module Bosh::Dev
     end
 
     private
+
     attr_reader :pipeline
   end
 end

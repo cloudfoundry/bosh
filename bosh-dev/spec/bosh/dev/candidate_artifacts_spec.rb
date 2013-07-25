@@ -7,6 +7,7 @@ module Bosh
       let(:light_stemcell) do
         double(Stemcell, path: light_stemcell_path)
       end
+
       let(:pipeline) { instance_double('Pipeline') }
 
       let(:light_stemcell_path) { 'light-fake-stemcell.tgz' }
@@ -23,7 +24,6 @@ module Bosh
         Pipeline.stub(new: pipeline)
         Stemcell.stub(:new).with(stemcell_path).and_return(stemcell)
       end
-
 
       it 'publishes the light stemcell to the pipeline' do
         stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)

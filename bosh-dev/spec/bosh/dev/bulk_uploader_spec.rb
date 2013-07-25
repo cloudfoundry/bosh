@@ -39,8 +39,8 @@ describe Bosh::Dev::BulkUploader do
     end
 
     ENV.stub(:to_hash).and_return({
-                                      'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'access key',
-                                      'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'secret key'
+                                    'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'access key',
+                                    'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'secret key'
                                   })
   end
 

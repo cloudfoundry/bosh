@@ -9,7 +9,7 @@ module Bosh
         double(RSpec::Core::Example, metadata:
           {
             full_description: 'Some context should, r3sult in:some_behavior.',
-            execution_result: {run_time: run_time}
+            execution_result: { run_time: run_time }
           })
       end
 

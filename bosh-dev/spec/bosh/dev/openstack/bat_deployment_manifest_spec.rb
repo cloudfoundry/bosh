@@ -79,7 +79,6 @@ properties:
 YAML
           end
 
-
           it 'generates the correct YAML' do
             expect(subject.to_h).to eq(Psych.load(expected_yml))
           end

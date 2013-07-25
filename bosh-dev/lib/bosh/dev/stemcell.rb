@@ -4,7 +4,7 @@ require 'bosh/dev/ami'
 
 module Bosh::Dev
   class Stemcell
-    DEFAULT_AWS_AMI_REGION ='us-east-1'
+    DEFAULT_AWS_AMI_REGION = 'us-east-1'
 
     def self.from_jenkins_build(infrastructure, type, build)
       mnt = ENV.fetch('FAKE_MNT', '/mnt') # Temporarily duplicates #mnt in spec.rake
@@ -13,13 +13,13 @@ module Bosh::Dev
 
     attr_reader :path
 
-    def initialize(path='')
+    def initialize(path = '')
       @path = path
       validate_stemcell
     end
 
     def create_light_stemcell
-      raise "Stemcell is already a light-stemcell" if light?
+      raise 'Stemcell is already a light-stemcell' if light?
       Stemcell.new(create_light_aws_stemcell) if infrastructure == 'aws'
     end
 
@@ -47,7 +47,7 @@ module Bosh::Dev
       cloud_properties.fetch('ami', {}).fetch(region, nil)
     end
 
-    def extract(tar_options={}, &block)
+    def extract(tar_options = {}, &block)
       Dir.mktmpdir do |tmp_dir|
         tar_cmd = "tar xzf #{path} --directory #{tmp_dir}"
         tar_cmd << " --exclude=#{tar_options[:exclude]}" if tar_options.has_key?(:exclude)
@@ -69,7 +69,7 @@ module Bosh::Dev
       ami_id = ami.publish
       extract(exclude: 'image') do |extracted_stemcell_dir, stemcell_manifest|
         Dir.chdir(extracted_stemcell_dir) do
-          stemcell_manifest['cloud_properties']['ami'] = {ami.region => ami_id}
+          stemcell_manifest['cloud_properties']['ami'] = { ami.region => ami_id }
 
           FileUtils.touch('image')
 

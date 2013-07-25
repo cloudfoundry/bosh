@@ -8,7 +8,7 @@ module Bosh::Dev
 
     context 'when mixed into a manifest that implements #to_h' do
       let(:manifest) do
-        double('FakeManifest', to_h: {'foo' => 'bar'})
+        double('FakeManifest', to_h: { 'foo' => 'bar' })
       end
 
       before do
@@ -16,9 +16,7 @@ module Bosh::Dev
       end
 
       it 'writes it to disk as yaml' do
-        expect {
-          manifest.write('foo.yml')
-        }.to change { File.exist?('foo.yml') }.to(true)
+        expect { manifest.write('foo.yml') }.to change { File.exist?('foo.yml') }.to(true)
 
         File.read('foo.yml').should eq("---\nfoo: bar\n")
       end

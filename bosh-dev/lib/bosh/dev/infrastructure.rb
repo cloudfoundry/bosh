@@ -14,9 +14,9 @@ module Bosh::Dev
     end
 
     class Base
-      attr_reader :name
+      attr_reader :name, :hypervisor
 
-      def initialize(options={})
+      def initialize(options = {})
         @name = options.fetch(:name)
         @supports_light_stemcell = options.fetch(:supports_light_stemcell, false)
         @hypervisor = options.fetch(:hypervisor, nil)
@@ -28,10 +28,6 @@ module Bosh::Dev
 
       def light?
         @supports_light_stemcell
-      end
-
-      def hypervisor
-        @hypervisor
       end
     end
 

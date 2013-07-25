@@ -12,7 +12,7 @@ module Bosh::Dev
       before do
         BulkUploader.stub(:new).and_return(bulk_uploader)
         VersionFile.stub(:new).with(456).and_return(version_file)
-        Build.stub(:candidate => candidate_build)
+        Build.stub(candidate: candidate_build)
 
         Rake::Task.stub(:[] => rake_task)
         Dir.stub(:chdir).and_yield

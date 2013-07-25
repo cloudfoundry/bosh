@@ -21,7 +21,6 @@ module Bosh
             FileUtils.touch('dev_releases/bosh-just-created.tgz')
           end
 
-
           expect(subject.tarball).to include('bosh-dev/lib/bosh/dev/../../../../release/dev_releases/bosh-just-created.tgz')
         end
       end
