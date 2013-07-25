@@ -11,22 +11,22 @@ module Bosh
         super(options)
         @client = HTTPClient.new
         @endpoint = @options[:endpoint]
-        @bucket = @options[:bucket] || "resources"
+        @bucket = @options[:bucket] || 'resources'
         @headers = {}
         user = @options[:user]
         password = @options[:password]
         if user && password
-          @headers["Authorization"] = "Basic " +
-              Base64.encode64("#{user}:#{password}").strip
+          @headers['Authorization'] = 'Basic ' +
+            Base64.encode64("#{user}:#{password}").strip
         end
       end
 
-      def url(id=nil)
-        ["#{@endpoint}/#{@bucket}", id].compact.join("/")
+      def url(id = nil)
+        ["#{@endpoint}/#{@bucket}", id].compact.join('/')
       end
 
       def create_file(id, file)
-        response = @client.post(url(id), {:content => file}, @headers)
+        response = @client.post(url(id), { content: file }, @headers)
         if response.status != 200
           raise BlobstoreError,
                 "Could not create object, #{response.status}/#{response.content}"
@@ -54,7 +54,7 @@ module Bosh
       end
 
       def object_exists?(id)
-        response = @client.head(url(id), :header => @headers)
+        response = @client.head(url(id), header: @headers)
         if response.status == 200
           true
         elsif response.status == 404

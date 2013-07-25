@@ -14,19 +14,19 @@
 # irb(main):003:0> bsc.delete(oid)
 # => true
 
-require "blobstore_client"
-require "irb"
-require "irb/completion"
-require "ostruct"
-require "optparse"
-require "psych"
+require 'blobstore_client'
+require 'irb'
+require 'irb/completion'
+require 'ostruct'
+require 'optparse'
+require 'psych'
 
 @provider = nil
 config_file = nil
 
 opts_parser = OptionParser.new do |opts|
-  opts.on("-p", "--provider PROVIDER") { |p| @provider = p }
-  opts.on("-c", "--config FILE") { |file| config_file = file }
+  opts.on('-p', '--provider PROVIDER') { |p| @provider = p }
+  opts.on('-c', '--config FILE') { |file| config_file = file }
 end
 opts_parser.parse!
 
@@ -56,12 +56,12 @@ include ConsoleHelpers
 
 begin
   require 'ruby-debug'
-  puts "=> Debugger enabled"
+  puts '=> Debugger enabled'
 rescue LoadError
-  puts "=> ruby-debug not found, debugger disabled"
+  puts '=> ruby-debug not found, debugger disabled'
 end
 
-puts "=> Welcome to BOSH blobstore client console"
+puts '=> Welcome to BOSH blobstore client console'
 puts "You can use 'bsc' to access blobstore client methods"
 
 IRB.start

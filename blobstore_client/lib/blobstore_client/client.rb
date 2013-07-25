@@ -16,7 +16,7 @@ module Bosh
       private
 
       def self.blobstore_client_constantize(base_string)
-        class_string = base_string.capitalize + (base_string == "local" ? "" : "Blobstore") + "Client"
+        class_string = base_string.capitalize + (base_string == 'local' ? '' : 'Blobstore') + 'Client'
         Bosh::Blobstore.const_get class_string
       end
     end

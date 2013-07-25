@@ -22,23 +22,22 @@ module Bosh
       #   @param [File] file file to upload
       #   @param [String] id suggested object id, if nil a uuid is generated
       # @return [String] object id of the created blobstore object
-      def create(contents, id=nil)
+      def create(contents, id = nil)
         if contents.kind_of?(File)
           create_file(id, contents)
         else
           temp_path do |path|
-            File.open(path, "w") do |file|
+            File.open(path, 'w') do |file|
               file.write(contents)
             end
-            return create_file(id, File.open(path, "r"))
+            return create_file(id, File.open(path, 'r'))
           end
         end
       rescue BlobstoreError => e
         raise e
       rescue Exception => e
         raise BlobstoreError,
-          "Failed to create object, underlying error: %s %s" %
-          [e.message, e.backtrace.join("\n")]
+              sprintf('Failed to create object, underlying error: %s %s', e.message, e.backtrace.join("\n"))
       end
 
       # Get an object from the blobstore.
@@ -52,8 +51,8 @@ module Bosh
         else
           result = nil
           temp_path do |path|
-              File.open(path, "w") { |file| get_file(id, file) }
-              result = File.open(path, "r") { |file| file.read }
+            File.open(path, 'w') { |f| get_file(id, f) }
+            result = File.open(path, 'r') { |f| f.read }
           end
           result
         end
@@ -61,8 +60,7 @@ module Bosh
         raise e
       rescue Exception => e
         raise BlobstoreError,
-              "Failed to create object, underlying error: %s %s" %
-              [e.message, e.backtrace.join("\n")]
+              sprintf('Failed to create object, underlying error: %s %s', e.message, e.backtrace.join("\n"))
       end
 
       # @return [void]
@@ -103,7 +101,7 @@ module Bosh
       end
 
       def temp_path
-        path = File.join(Dir::tmpdir, "temp-path-#{SecureRandom.uuid}")
+        path = File.join(Dir.tmpdir, "temp-path-#{SecureRandom.uuid}")
         begin
           yield path if block_given?
           path
@@ -115,7 +113,7 @@ module Bosh
       private
 
       def not_supported
-        raise NotImplemented, "not supported by this blobstore"
+        raise NotImplemented, 'not supported by this blobstore'
       end
     end
   end

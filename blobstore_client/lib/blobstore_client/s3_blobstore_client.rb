@@ -1,18 +1,18 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "openssl"
-require "digest/sha1"
-require "base64"
-require "aws"
-require "securerandom"
+require 'openssl'
+require 'digest/sha1'
+require 'base64'
+require 'aws'
+require 'securerandom'
 
 module Bosh
   module Blobstore
 
     class S3BlobstoreClient < BaseClient
 
-      ENDPOINT = "https://s3.amazonaws.com"
-      DEFAULT_CIPHER_NAME = "aes-128-cbc"
+      ENDPOINT = 'https://s3.amazonaws.com'
+      DEFAULT_CIPHER_NAME = 'aes-128-cbc'
 
       attr_reader :bucket_name, :encryption_key, :simple
 
@@ -32,11 +32,11 @@ module Bosh
         @encryption_key = @options[:encryption_key]
 
         aws_options = {
-          :access_key_id     => @options[:access_key_id],
-          :secret_access_key => @options[:secret_access_key],
-          :use_ssl           => true,
-          :port              => 443,
-          :s3_endpoint       => URI.parse(@options[:endpoint] || S3BlobstoreClient::ENDPOINT).host,
+          access_key_id: @options[:access_key_id],
+          secret_access_key: @options[:secret_access_key],
+          use_ssl: true,
+          port: 443,
+          s3_endpoint: URI.parse(@options[:endpoint] || S3BlobstoreClient::ENDPOINT).host,
         }
 
         # using S3 without credentials is a special case:
@@ -47,7 +47,7 @@ module Bosh
           end
 
           unless @options[:bucket_name] || @options[:bucket]
-            raise BlobstoreError, "bucket name required"
+            raise BlobstoreError, 'bucket name required'
           end
 
           @options[:bucket] ||= @options[:bucket_name]
@@ -63,7 +63,7 @@ module Bosh
 
       # @param [File] file file to store in S3
       def create_file(object_id, file)
-        raise BlobstoreError, "unsupported action" if @simple
+        raise BlobstoreError, 'unsupported action' if @simple
 
         object_id ||= generate_object_id
 
@@ -71,12 +71,11 @@ module Bosh
 
         # in Ruby 1.8 File doesn't respond to :path
         path = file.respond_to?(:path) ? file.path : file
-        store_in_s3(path, full_oid_path(object_id) )
+        store_in_s3(path, full_oid_path(object_id))
 
         object_id
       rescue AWS::Errors::Base => e
-        raise BlobstoreError,
-          "Failed to create object, S3 response error: #{e.message}"
+        raise BlobstoreError, "Failed to create object, S3 response error: #{e.message}"
       ensure
         FileUtils.rm(file) if @encryption_key
       end
@@ -91,7 +90,7 @@ module Bosh
         if @encryption_key
           cipher = OpenSSL::Cipher::Cipher.new(DEFAULT_CIPHER_NAME)
           cipher.decrypt
-          cipher.key = Digest::SHA1.digest(encryption_key)[0..cipher.key_len-1]
+          cipher.key = Digest::SHA1.digest(encryption_key)[0..(cipher.key_len - 1)]
         end
 
         object = get_object_from_s3(object_id)
@@ -107,14 +106,12 @@ module Bosh
       rescue AWS::S3::Errors::NoSuchKey => e
         raise NotFound, "S3 object '#{object_id}' not found"
       rescue AWS::Errors::Base => e
-        raise BlobstoreError,
-          "Failed to find object '#{object_id}', " +
-              "S3 response error: #{e.message}"
+        raise BlobstoreError, "Failed to find object '#{object_id}', S3 response error: #{e.message}"
       end
 
       # @param [String] object_id object id to delete
       def delete_object(object_id)
-        raise BlobstoreError, "unsupported action" if @simple
+        raise BlobstoreError, 'unsupported action' if @simple
         object_id = full_oid_path(object_id)
         object = get_object_from_s3(object_id)
         unless object.exists?
@@ -122,9 +119,7 @@ module Bosh
         end
         object.delete
       rescue AWS::Errors::Base => e
-        raise BlobstoreError,
-          "Failed to delete object '#{object_id}', " +
-              "S3 response error: #{e.message}"
+        raise BlobstoreError, "Failed to delete object '#{object_id}', S3 response error: #{e.message}"
       end
 
       def object_exists?(object_id)
@@ -148,7 +143,7 @@ module Bosh
       def store_in_s3(path, oid)
         s3_object = get_object_from_s3(oid)
         raise BlobstoreError, "object id #{oid} is already in use" if s3_object.exists?
-        File.open(path, "r") do |temp_file|
+        File.open(path, 'r') do |temp_file|
           s3_object.write(temp_file)
         end
       end
@@ -156,11 +151,11 @@ module Bosh
       def encrypt_file(file)
         cipher = OpenSSL::Cipher::Cipher.new(DEFAULT_CIPHER_NAME)
         cipher.encrypt
-        cipher.key = Digest::SHA1.digest(encryption_key)[0..cipher.key_len-1]
+        cipher.key = Digest::SHA1.digest(encryption_key)[0..(cipher.key_len - 1)]
 
         path = temp_path
-        File.open(path, "w") do |temp_file|
-          while block = file.read(32768)
+        File.open(path, 'w') do |temp_file|
+          while (block = file.read(32768))
             temp_file.write(cipher.update(block))
           end
           temp_file.write(cipher.final)
@@ -174,7 +169,7 @@ module Bosh
       end
 
       def full_oid_path(object_id)
-         @options[:folder] ?  @options[:folder] + "/" + object_id : object_id
+         @options[:folder] ?  @options[:folder] + '/' + object_id : object_id
       end
     end
   end
