@@ -61,6 +61,8 @@ module Bosh::Director
         bar_package_file = double(File, path: 'bar')
         foo_compiled_package_file = double(File, path: 'foo_compiled')
         bar_compiled_package_file = double(File, path: 'bar_compiled')
+        foo_template_file = double(File, path: 'template1')
+        bar_template_file = double(File, path: 'template2')
 
         tmp_blobs_output_dir = tmp_output_dir
 
@@ -68,16 +70,22 @@ module Bosh::Director
         File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'bar_package_blob_id'), 'w').and_yield(bar_package_file)
         File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'foo_compiled_package_blob_id'), 'w').and_yield(foo_compiled_package_file)
         File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'bar_compiled_package_blob_id'), 'w').and_yield(bar_compiled_package_file)
+        File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'foo_template_id'), 'w').and_yield(foo_template_file)
+        File.stub(:open).with(File.join(tmp_blobs_output_dir, 'blobs', 'bar_template_id'), 'w').and_yield(bar_template_file)
 
         foo_pkg = Models::Package.make(name: 'foo_package', blobstore_id: 'foo_package_blob_id')
         bar_pkg = Models::Package.make(name: 'bar_package', blobstore_id: 'bar_package_blob_id')
         Models::CompiledPackage.make(package: foo_pkg, blobstore_id: 'foo_compiled_package_blob_id')
         Models::CompiledPackage.make(package: bar_pkg, blobstore_id: 'bar_compiled_package_blob_id')
+        Models::Template.make(blobstore_id: 'foo_template_id')
+        Models::Template.make(blobstore_id: 'bar_template_id')
 
         blobstore_client.should_receive(:get).with('foo_package_blob_id', foo_package_file) # get *writes* the file
         blobstore_client.should_receive(:get).with('bar_package_blob_id', bar_package_file)
         blobstore_client.should_receive(:get).with('foo_compiled_package_blob_id', foo_compiled_package_file)
         blobstore_client.should_receive(:get).with('bar_compiled_package_blob_id', bar_compiled_package_file)
+        blobstore_client.should_receive(:get).with('foo_template_id', foo_template_file)
+        blobstore_client.should_receive(:get).with('bar_template_id', bar_template_file)
 
         tar_gzipper.should_receive(:compress).with(tmp_blobs_output_dir, 'blobs', File.join(tmp_output_dir, 'blobs.tgz'))
 
