@@ -61,8 +61,8 @@ module Bosh::Director
         bar_package_file = double(File, path: 'bar')
         foo_compiled_package_file = double(File, path: 'foo_compiled')
         bar_compiled_package_file = double(File, path: 'bar_compiled')
-        foo_template_file = double(File, path: 'template1')
-        bar_template_file = double(File, path: 'template2')
+        foo_template_file = double(File, path: 'foo_template')
+        bar_template_file = double(File, path: 'bar_template')
 
         File.stub(:open).with(File.join(tmp_output_dir, 'blobs', 'foo_package_blob_id'), 'w').and_yield(foo_package_file)
         File.stub(:open).with(File.join(tmp_output_dir, 'blobs', 'bar_package_blob_id'), 'w').and_yield(bar_package_file)
