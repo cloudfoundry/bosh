@@ -35,3 +35,9 @@ LineLength:
 
 Documentation:
   Enabled: false
+
+CaseIndentation:
+  Enabled: false
+
+DotPosition:
+  Enabled: false

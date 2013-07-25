@@ -1,11 +1,5 @@
 inherit_from: ../.rubocop.yml
 
-CaseIndentation:
-  Enabled: false
-
-DotPosition:
-  Enabled: false
-
 LineLength:
   Max: 135
 
