@@ -17,5 +17,9 @@ mkdir -p $chroot/var/vcap
 mv $tmpfile $chroot/var/vcap/stemcell_base.tar.gz
 chmod 0700 $chroot/var/vcap/stemcell_base.tar.gz
 
+# Explicit make the mount point for bind-mount
+# Otherwise using none ubuntu host will fail creating vm
+mkdir -p $chroot/warden-cpi-dev
+
 # Install lucid kernel patch for Warden in Warden
 apt_get install linux-image-generic-lts-backport-natty
