@@ -15,7 +15,7 @@ namespace :ci do
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
-  task :publish_microbosh_release => [:publish_pipeline_gems] do
+  task publish_microbosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
     require 'bosh/dev/micro_bosh_release'
 
