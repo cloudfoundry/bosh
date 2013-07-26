@@ -6,25 +6,39 @@ namespace :ci do
   namespace :stemcell do
     desc 'Build micro bosh stemcell from CI pipeline'
     task :micro, [:infrastructure] do |t, args|
+      require 'bosh/dev/stemcell_environment'
+      stemcell_environment = Bosh::Dev::StemcellEnvironment.new('micro', args[:infrastructure])
+      stemcell_environment.sanitize
+
       tarball_path = "release/bosh-#{Bosh::Dev::Build.candidate.number}.tgz"
 
       sh("s3cmd -f get #{Bosh::Dev::Build.candidate.s3_release_url} #{tarball_path}")
 
-      Rake::Task['stemcell:micro'].invoke(args[:infrastructure], tarball_path, Bosh::Dev::Build.candidate.number)
+      Rake::Task['stemcell:micro'].invoke(stemcell_environment.infrastructure, tarball_path, Bosh::Dev::Build.candidate.number)
 
-      publish_stemcell(args[:infrastructure], 'micro')
+      publish_stemcell(stemcell_environment)
+
+      stemcell_environment.publish
     end
 
     desc 'Build stemcell from CI pipeline'
     task :basic, [:infrastructure] do |t, args|
-      Rake::Task['stemcell:basic'].invoke(args[:infrastructure], Bosh::Dev::Build.candidate.number)
+      require 'bosh/dev/stemcell_environment'
+      stemcell_environment = Bosh::Dev::StemcellEnvironment.new('basic', args[:infrastructure])
+      stemcell_environment.sanitize
 
-      publish_stemcell(args[:infrastructure], 'basic')
+      Rake::Task['stemcell:basic'].invoke(stemcell_environment.infrastructure, Bosh::Dev::Build.candidate.number)
+
+      publish_stemcell(stemcell_environment)
+
+      stemcell_environment.publish
     end
   end
 
-  def publish_stemcell(infrastructure, type)
-    stemcell = Bosh::Dev::Stemcell.from_jenkins_build(infrastructure, type, Bosh::Dev::Build.candidate)
+  def publish_stemcell(stemcell_environment)
+    stemcell = Bosh::Dev::Stemcell.from_jenkins_build(stemcell_environment.infrastructure,
+                                                      stemcell_environment.stemcell_type,
+                                                      Bosh::Dev::Build.candidate)
 
     Bosh::Dev::Pipeline.new.publish_stemcell(stemcell)
   end
