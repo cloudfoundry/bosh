@@ -132,8 +132,8 @@ describe Bosh::Agent::Monit do
     context 'no services' do
       let(:status) { {} }
 
-      it 'returns failing if there are no services' do
-        expect(Bosh::Agent::Monit.service_group_state).to eq 'failing'
+      it 'returns running if there are no services' do
+        expect(Bosh::Agent::Monit.service_group_state).to eq 'running'
       end
     end
   end
