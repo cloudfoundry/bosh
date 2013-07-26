@@ -265,6 +265,7 @@ module Bosh::Agent
         # (at least in integration tests)
         return "running" unless @enabled
         status = get_status(num_retries)
+        return "failing" if status.empty?
 
         return "starting" if status.any? { |_, job_status| starting?(job_status) }
 

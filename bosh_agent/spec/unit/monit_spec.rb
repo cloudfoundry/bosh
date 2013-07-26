@@ -116,10 +116,25 @@ describe Bosh::Agent::Monit do
 
   describe '#service_group_state' do
 
-    it 'returns starting if any services are init state' do
-      Bosh::Agent::Monit.stub(:get_status).and_return({'name' => {status: {message: 'running'}, monitor: :init}})
+    before do
+      Bosh::Agent::Monit.stub(get_status: status)
       Bosh::Agent::Monit.enable
-      expect(Bosh::Agent::Monit.service_group_state).to eq 'starting'
+    end
+
+    context 'some services in init state' do
+      let(:status) { {'name' => {status: {message: 'running'}, monitor: :init}} }
+
+      it 'returns starting if any services are init state' do
+        expect(Bosh::Agent::Monit.service_group_state).to eq 'starting'
+      end
+    end
+
+    context 'no services' do
+      let(:status) { {} }
+
+      it 'returns failing if there are no services' do
+        expect(Bosh::Agent::Monit.service_group_state).to eq 'failing'
+      end
     end
   end
 end
