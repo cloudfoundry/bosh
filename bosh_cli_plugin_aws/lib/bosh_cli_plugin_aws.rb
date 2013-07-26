@@ -5,7 +5,7 @@ require 'logger'
 # task_checkpoint & logger is available when ResourceWait.for_resource is called
 require "cloud"
 Config = Struct.new(:task_checkpoint, :logger)
-Bosh::Clouds::Config.configure(Config.new(true, Logger.new('/dev/null')))
+Bosh::Clouds::Config.configure(Config.new(true, Logger.new(File::NULL)))
 
 require "cloud/aws/resource_wait"
 require "common/ssl"
