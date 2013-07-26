@@ -113,4 +113,13 @@ describe Bosh::Agent::Monit do
     client.send('service_action', 'test', 'start')
   end
 
+
+  describe '#service_group_state' do
+
+    it 'returns starting if any services are init state' do
+      Bosh::Agent::Monit.stub(:get_status).and_return({'name' => {status: {message: 'running'}, monitor: :init}})
+      Bosh::Agent::Monit.enable
+      expect(Bosh::Agent::Monit.service_group_state).to eq 'starting'
+    end
+  end
 end

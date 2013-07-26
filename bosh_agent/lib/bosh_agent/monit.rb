@@ -266,9 +266,10 @@ module Bosh::Agent
         return "running" unless @enabled
         status = get_status(num_retries)
 
+        return "starting" if status.any? { |_, job_status| starting?(job_status) }
+
         not_running = status.reject do |name, data|
           # break early if any service is initializing
-          return "starting" if data[:monitor] == :init
           # at least with monit_api a stopped services is still running
           (data[:monitor] == :yes && data[:status][:message] == "running")
         end
@@ -277,6 +278,10 @@ module Bosh::Agent
       rescue => e
         logger.info("Unable to determine job state: #{e}")
         "unknown"
+      end
+
+      def starting?(status)
+        status[:monitor] == :init
       end
 
     end
