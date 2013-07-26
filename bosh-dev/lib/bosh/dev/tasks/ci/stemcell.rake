@@ -9,6 +9,9 @@ namespace :ci do
       require 'bosh/dev/stemcell_environment'
       stemcell_environment = Bosh::Dev::StemcellEnvironment.new('micro', args[:infrastructure])
       stemcell_environment.sanitize
+      ENV['BUILD_PATH'] = stemcell_environment.build_path
+      ENV['WORK_PATH'] = stemcell_environment.work_path
+      ENV['STEMCELL_VERSION'] = stemcell_environment.stemcell_version
 
       tarball_path = "release/bosh-#{Bosh::Dev::Build.candidate.number}.tgz"
 
@@ -26,6 +29,9 @@ namespace :ci do
       require 'bosh/dev/stemcell_environment'
       stemcell_environment = Bosh::Dev::StemcellEnvironment.new('basic', args[:infrastructure])
       stemcell_environment.sanitize
+      ENV['BUILD_PATH'] = stemcell_environment.build_path
+      ENV['WORK_PATH'] = stemcell_environment.work_path
+      ENV['STEMCELL_VERSION'] = stemcell_environment.stemcell_version
 
       Rake::Task['stemcell:basic'].invoke(stemcell_environment.infrastructure, Bosh::Dev::Build.candidate.number)
 

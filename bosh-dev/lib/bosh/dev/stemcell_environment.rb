@@ -5,12 +5,18 @@ module Bosh::Dev
   class StemcellEnvironment
     attr_reader :stemcell_type,
                 :infrastructure,
-                :directory
+                :directory,
+                :build_path,
+                :work_path,
+                :stemcell_version
 
     def initialize(stemcell_type, infrastructure = 'aws')
       @stemcell_type = stemcell_type
       @infrastructure = infrastructure
       @directory = File.join('/mnt/stemcells', "#{infrastructure}-#{stemcell_type}")
+      @work_path = File.join(directory, 'work')
+      @build_path = File.join(directory, 'build')
+      @stemcell_version = ENV.to_hash.fetch('BUILD_ID')
     end
 
     def sanitize
