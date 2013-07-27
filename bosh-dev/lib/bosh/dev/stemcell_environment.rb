@@ -1,5 +1,8 @@
 require 'fileutils'
 require 'bosh/dev/candidate_artifacts'
+require 'bosh/dev/stemcell'
+require 'bosh/dev/pipeline'
+require 'bosh/dev/build'
 
 module Bosh::Dev
   class StemcellEnvironment
@@ -48,6 +51,9 @@ module Bosh::Dev
           candidate_artifacts.publish
         end
       end
+
+      stemcell = Bosh::Dev::Stemcell.from_jenkins_build(infrastructure, stemcell_type, Bosh::Dev::Build.candidate)
+      Bosh::Dev::Pipeline.new.publish_stemcell(stemcell)
     end
   end
 end

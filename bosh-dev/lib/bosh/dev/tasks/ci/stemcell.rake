@@ -19,8 +19,6 @@ namespace :ci do
 
       Rake::Task['stemcell:micro'].invoke(stemcell_environment.infrastructure, tarball_path, Bosh::Dev::Build.candidate.number)
 
-      publish_stemcell(stemcell_environment)
-
       stemcell_environment.publish
     end
 
@@ -35,17 +33,7 @@ namespace :ci do
 
       Rake::Task['stemcell:basic'].invoke(stemcell_environment.infrastructure, Bosh::Dev::Build.candidate.number)
 
-      publish_stemcell(stemcell_environment)
-
       stemcell_environment.publish
     end
-  end
-
-  def publish_stemcell(stemcell_environment)
-    stemcell = Bosh::Dev::Stemcell.from_jenkins_build(stemcell_environment.infrastructure,
-                                                      stemcell_environment.stemcell_type,
-                                                      Bosh::Dev::Build.candidate)
-
-    Bosh::Dev::Pipeline.new.publish_stemcell(stemcell)
   end
 end

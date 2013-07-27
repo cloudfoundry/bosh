@@ -65,10 +65,21 @@ module Bosh::Dev
     end
 
     describe '#publish' do
+      let(:candidate) { instance_double('Bosh::Dev::Build') }
+      let(:stemcell) { instance_double('Bosh::Dev::Stemcell') }
+      let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
+
+      before do
+        Bosh::Dev::Build.stub(:candidate).and_return(candidate)
+
+        Bosh::Dev::Stemcell.stub(:from_jenkins_build).
+          with(subject.infrastructure, subject.stemcell_type, candidate).and_return(stemcell)
+
+        Bosh::Dev::Pipeline.stub(:new).and_return(pipeline)
+      end
+
       context 'when a stemcell has been built' do
-        let(:candidate_artifacts) do
-          instance_double('Bosh::Dev::CandidateArtifacts', publish: true)
-        end
+        let(:candidate_artifacts) { instance_double('Bosh::Dev::CandidateArtifacts', publish: true) }
 
         before do
           FileUtils.mkdir_p(File.join(subject.directory, 'work', 'work'))
@@ -81,6 +92,11 @@ module Bosh::Dev
           expect {
             subject.publish
           }.to change { File.exists?('/fake_WORKSPACE/fake-stemcell.tgz') }.to(true)
+        end
+
+        it 'publishes the generated stemcell' do
+          pipeline.should_receive(:publish_stemcell).with(stemcell)
+          subject.publish
         end
 
         context 'and the infrastrcture is aws' do
