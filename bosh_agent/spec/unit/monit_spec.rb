@@ -116,8 +116,11 @@ describe Bosh::Agent::Monit do
 
   describe '#service_group_state' do
 
+    let(:monit_api_client) { double(MonitApi::Client) }
+
     before do
-      Bosh::Agent::Monit.stub(get_status: status)
+      monit_api_client.should_receive(:status).with(group: 'vcap').and_return status
+      MonitApi::Client.stub(new: monit_api_client)
       Bosh::Agent::Monit.enable
     end
 
