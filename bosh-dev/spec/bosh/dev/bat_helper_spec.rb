@@ -3,33 +3,53 @@ require 'bosh/dev/bat_helper'
 
 module Bosh::Dev
   describe BatHelper do
-    let(:infrastructure_name) { 'aws' }
+    let(:infrastructure_name) { 'FAKE_INFRASTRUCTURE_NAME' }
+    let(:fake_infrastructure) { instance_double('Bosh::Dev::Infrastructure::Base', name: infrastructure_name) }
     let(:fake_pipeline) { instance_double('Pipeline', fetch_stemcells: nil, cleanup_stemcells: nil) }
 
     subject { BatHelper.new(infrastructure_name) }
 
     before do
+      Infrastructure.should_receive(:for).and_return(fake_infrastructure)
+
       Pipeline.stub(new: fake_pipeline)
     end
 
     describe '#initialize' do
       it 'sets infrastructre' do
-        expect(subject.infrastructure.name).to eq('aws')
+        expect(subject.infrastructure).to eq(fake_infrastructure)
       end
     end
 
     describe '#run_rake' do
-      let(:fake_rake_task) { double('a Rake Task', invoke: nil) }
-
       before do
         ENV.delete('BAT_INFRASTRUCTURE')
 
-        Rake::Task.stub(:[] => fake_rake_task)
-        Dir.stub(:chdir).and_yield
+        fake_infrastructure.stub(run_system_micro_tests: nil)
       end
 
       after do
         ENV.delete('BAT_INFRASTRUCTURE')
+      end
+
+      it 'sets ENV["BAT_INFRASTRUCTURE"]' do
+        expect(ENV['BAT_INFRASTRUCTURE']).to be_nil
+
+        subject.run_rake
+
+        expect(ENV['BAT_INFRASTRUCTURE']).to eq(infrastructure_name)
+      end
+
+      it 'fetches stemcells for the specified infrastructure' do
+        fake_pipeline.should_receive(:fetch_stemcells).with(subject.infrastructure, subject.artifacts_dir)
+
+        subject.run_rake
+      end
+
+      it 'calls #run_system_micro_tests on the infrastructure' do
+        fake_infrastructure.should_receive(:run_system_micro_tests)
+
+        subject.run_rake
       end
 
       it 'cleans up stemcells' do
@@ -40,40 +60,13 @@ module Bosh::Dev
 
       context 'when there is an exception thrown' do
         before do
-          fake_rake_task.should_receive(:invoke).and_raise
+          fake_infrastructure.should_receive(:run_system_micro_tests).and_raise
         end
 
         it 'cleans up stemcells' do
           fake_pipeline.should_receive(:cleanup_stemcells)
 
           expect { subject.run_rake }.to raise_error
-        end
-      end
-
-      %w[openstack vsphere aws].each do |i|
-        context "when infrastructure_name is '#{i}'" do
-          let(:infrastructure_name) { i }
-
-          it 'sets ENV["BAT_INFRASTRUCTURE"]' do
-            expect(ENV['BAT_INFRASTRUCTURE']).to be_nil
-
-            subject.run_rake
-
-            expect(ENV['BAT_INFRASTRUCTURE']).to eq(infrastructure_name)
-          end
-
-          it 'fetches stemcells for the specified infrastructure' do
-            fake_pipeline.should_receive(:fetch_stemcells).with(subject.infrastructure, subject.artifacts_dir)
-
-            subject.run_rake
-          end
-
-          it "invokes the rake task'spec:system:#{i}:micro'" do
-            fake_rake_task.should_receive(:invoke)
-            Rake::Task.should_receive(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(fake_rake_task)
-
-            subject.run_rake
-          end
         end
       end
     end
