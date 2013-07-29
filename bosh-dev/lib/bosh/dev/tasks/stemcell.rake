@@ -44,8 +44,8 @@ namespace :stemcell do
     gem = Gem::Specification.load(File.join(gem_name, "#{gem_name}.gemspec"))
 
     components = %w(Gemfile Gemfile.lock) +
-        [gem_name] +
-        gem.runtime_dependencies.map {|d| d.name }.select {|d| Dir.exists?(d)}
+      [gem_name] +
+      gem.runtime_dependencies.map { |d| d.name }.select { |d| Dir.exists?(d) }
 
     components.inject(false) do |changes, component|
       changes || component_changed?(component)
@@ -54,7 +54,7 @@ namespace :stemcell do
 
 
   desc 'Build stemcell'
-  task :basic, [:infrastructure, :version, :disk_size]  do |t, args|
+  task :basic, [:infrastructure, :version, :disk_size] do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= 'bosh-stemcell'
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -73,7 +73,7 @@ namespace :stemcell do
     require 'bosh/dev/micro_bosh_release'
 
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), '..', '..', '..', '..', '..',
-                         'release', 'micro',"#{args[:infrastructure]}.yml")
+                         'release', 'micro', "#{args[:infrastructure]}.yml")
 
 
     options = default_options(args)
@@ -106,8 +106,8 @@ namespace :stemcell do
       Time.now.strftime('%Y%m%d.%H%M%S')
     options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
     options[:bosh_users_password] = 'micr0cloud'
-    
-    options = options.merge(bosh_micro_options(args[:manifest],args[:tarball]))
+
+    options = options.merge(bosh_micro_options(args[:manifest], args[:tarball]))
     options[:mcf_enabled] = 'yes'
     options[:micro_src] = args[:micro_src]
 
@@ -193,7 +193,7 @@ namespace :stemcell do
 
   # Format a hash as an env command.
   def format_env(h)
-    'env ' + h.map { |k,v| "#{k}='#{v}'" }.join(' ')
+    'env ' + h.map { |k, v| "#{k}='#{v}'" }.join(' ')
   end
 
   def build(spec, options)
@@ -250,7 +250,7 @@ namespace :stemcell do
           exit(0)
         end
         if agree('Stemcell already uploaded.  Do you want to overwrite it? ' +
-                     '[yn]')
+                   '[yn]')
           return true
         else
           exit(0)
@@ -309,7 +309,7 @@ namespace :stemcell do
 
       stemcell_index.update(yaml_dump)
       puts("***Commit #{INDEX_FILE_DIR}/#{INDEX_FILE_NAME} to git repository " +
-               'immediately.***')
+             'immediately.***')
     end
 
     # A helper function to get the shareable URL for an entry in the blobstore.
@@ -321,7 +321,7 @@ namespace :stemcell do
     # @return [String] The shareable URL.
     def get_shareable_url(oid, sig, url, exp, uid)
       return url + "/rest/objects/#{oid}?uid=#{uid}&expires=#{exp}&signature=" +
-          "#{URI::escape(sig)}"
+        "#{URI::escape(sig)}"
     end
 
     # Decodes the object ID.
@@ -335,7 +335,7 @@ namespace :stemcell do
       end
 
       if !object_info.kind_of?(Hash) || object_info['oid'].nil? ||
-          object_info['sig'].nil?
+        object_info['sig'].nil?
         raise "Failed to parse object_id '#{object_id}'"
       end
       object_info
@@ -394,7 +394,7 @@ namespace :stemcell do
     end
 
     desc 'Uploads <stemcell_path> to the public repository with optional '+
-             'space-separated tags.'
+           'space-separated tags.'
     task 'upload', :stemcell_path, :tags do |t, args|
       stemcell_path = args[:stemcell_path]
       tags = args[:tags]
@@ -424,11 +424,11 @@ namespace :stemcell do
         sig = object_info['sig']
 
         index_yaml[File.basename(stemcell_path)] = {
-            'object_id' => encoded_id,
-            'url' => get_shareable_url(oid, sig, url, expiration, uid),
-            'sha' => Digest::SHA1.file(stemcell_path).hexdigest,
-            'size' => File.size(stemcell_path),
-            'tags' => tags
+          'object_id' => encoded_id,
+          'url' => get_shareable_url(oid, sig, url, expiration, uid),
+          'sha' => Digest::SHA1.file(stemcell_path).hexdigest,
+          'size' => File.size(stemcell_path),
+          'tags' => tags
         }
         update_index_file(index_file, index_yaml, url)
       ensure
@@ -451,7 +451,7 @@ namespace :stemcell do
     end
 
     desc 'Uploads a new index file so dev can be done without modifying the ' +
-             'public stemcell index file.'
+           'public stemcell index file.'
     task 'upload_dev_index', :index_path do |t, args|
       index_path = args[:index_path]
       unless File.exists?(index_path)
@@ -466,7 +466,7 @@ namespace :stemcell do
       encoded_id = encode_object_id(output.aoid, expiration, uid, secret)
       object_info = decode_object_id(encoded_id)
       puts("Put '#{encoded_id}' in '#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}' as " +
-               'stemcells_index_id.')
+             'stemcells_index_id.')
 
       oid = object_info['oid']
       sig = object_info['sig']
@@ -475,7 +475,7 @@ namespace :stemcell do
     end
 
     desc "Updates all stemcell's base URL with whatever is in " +
-             'public_stemcell_config.yml.'
+           'public_stemcell_config.yml.'
     task 'update_urls' do
       stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
 
@@ -504,7 +504,7 @@ namespace :stemcell do
     desc 'Uploads your local index file in case of emergency.'
     task 'upload_index_file' do
       if agree('Are you sure you want to upload your ' +
-                   'public_stemcell_config.yml over the existing one?')
+                 'public_stemcell_config.yml over the existing one?')
         yaml = Psych.load_file("#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}")
         stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
         store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
