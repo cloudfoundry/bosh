@@ -111,9 +111,6 @@ namespace :spec do
       task :deploy_micro => :get_deployments_aws do
         bat_helper = Bosh::Dev::BatHelper.new('aws')
 
-        rm_rf(bat_helper.artifacts_dir)
-        mkdir_p(bat_helper.micro_bosh_deployment_dir)
-
         chdir(bat_helper.artifacts_dir) do
           chdir(bat_helper.micro_bosh_deployment_dir) do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
@@ -132,12 +129,9 @@ namespace :spec do
       task :teardown_microbosh do
         bat_helper = Bosh::Dev::BatHelper.new('aws')
 
-        if Dir.exists?(bat_helper.artifacts_dir)
-          chdir(bat_helper.artifacts_dir) do
-            run_bosh 'delete deployment bat', :ignore_failures => true
-            run_bosh 'micro delete', :ignore_failures => true
-          end
-          rm_rf(bat_helper.artifacts_dir)
+        chdir(bat_helper.artifacts_dir) do
+          run_bosh 'delete deployment bat', :ignore_failures => true
+          run_bosh 'micro delete', :ignore_failures => true
         end
       end
 
@@ -198,9 +192,6 @@ namespace :spec do
 
         bat_helper = Bosh::Dev::BatHelper.new('openstack')
 
-        rm_rf(bat_helper.artifacts_dir)
-        mkdir_p(bat_helper.micro_bosh_deployment_dir)
-
         chdir(bat_helper.artifacts_dir) do
           chdir(bat_helper.micro_bosh_deployment_dir) do
 
@@ -229,7 +220,6 @@ namespace :spec do
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
           run_bosh 'micro delete', :ignore_failures => true
         end
-        rm_rf(bat_helper.artifacts_dir)
       end
 
       task :bat do
@@ -263,9 +253,6 @@ namespace :spec do
 
         bat_helper = Bosh::Dev::BatHelper.new('vsphere')
 
-        rm_rf(bat_helper.artifacts_dir)
-        mkdir_p(bat_helper.micro_bosh_deployment_dir)
-
         cd(bat_helper.artifacts_dir) do
           cd(bat_helper.micro_bosh_deployment_dir) do
             micro_deployment_manifest = Bosh::Dev::VSphere::MicroBoshDeploymentManifest.new
@@ -293,7 +280,6 @@ namespace :spec do
           run_bosh "delete stemcell bosh-stemcell #{stemcell_version(bat_helper.bosh_stemcell_path)}", :ignore_failures => true
           run_bosh 'micro delete', :ignore_failures => true
         end
-        rm_rf(bat_helper.artifacts_dir)
       end
 
       task :bat do

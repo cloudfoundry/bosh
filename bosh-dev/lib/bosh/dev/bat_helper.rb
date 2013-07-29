@@ -33,17 +33,25 @@ module Bosh::Dev
     def run_rake
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
 
-      begin
-        pipeline.fetch_stemcells(infrastructure, artifacts_dir)
+      sanitize_directories
 
-        infrastructure.run_system_micro_tests
-      ensure
-        pipeline.cleanup_stemcells(artifacts_dir)
-      end
+      prepare_directories
+
+      pipeline.fetch_stemcells(infrastructure, artifacts_dir)
+
+      infrastructure.run_system_micro_tests
     end
 
     private
 
     attr_reader :pipeline
+
+    def sanitize_directories
+      FileUtils.rm_rf(artifacts_dir)
+    end
+
+    def prepare_directories
+      FileUtils.mkdir_p(micro_bosh_deployment_dir)
+    end
   end
 end

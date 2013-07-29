@@ -1,11 +1,15 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
+
 require 'bosh/dev/bat_helper'
 
 module Bosh::Dev
   describe BatHelper do
+    include FakeFS::SpecHelpers
+
     let(:infrastructure_name) { 'FAKE_INFRASTRUCTURE_NAME' }
     let(:fake_infrastructure) { instance_double('Bosh::Dev::Infrastructure::Base', name: infrastructure_name) }
-    let(:fake_pipeline) { instance_double('Pipeline', fetch_stemcells: nil, cleanup_stemcells: nil) }
+    let(:fake_pipeline) { instance_double('Pipeline', fetch_stemcells: nil) }
 
     subject { BatHelper.new(infrastructure_name) }
 
@@ -25,11 +29,25 @@ module Bosh::Dev
       before do
         ENV.delete('BAT_INFRASTRUCTURE')
 
+        FileUtils.stub(rm_rf: nil, mkdir_p: nil)
+
         fake_infrastructure.stub(run_system_micro_tests: nil)
       end
 
       after do
         ENV.delete('BAT_INFRASTRUCTURE')
+      end
+
+      it 'removes the artifacts dir' do
+        FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir)
+
+        subject.run_rake
+      end
+
+      it 'creates the microbosh depolyments dir (which is contained within artifacts dir)' do
+        FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
+
+        subject.run_rake
       end
 
       it 'sets ENV["BAT_INFRASTRUCTURE"]' do
@@ -50,24 +68,6 @@ module Bosh::Dev
         fake_infrastructure.should_receive(:run_system_micro_tests)
 
         subject.run_rake
-      end
-
-      it 'cleans up stemcells' do
-        fake_pipeline.should_receive(:cleanup_stemcells).with(subject.artifacts_dir)
-
-        subject.run_rake
-      end
-
-      context 'when there is an exception thrown' do
-        before do
-          fake_infrastructure.should_receive(:run_system_micro_tests).and_raise
-        end
-
-        it 'cleans up stemcells' do
-          fake_pipeline.should_receive(:cleanup_stemcells)
-
-          expect { subject.run_rake }.to raise_error
-        end
       end
     end
 
