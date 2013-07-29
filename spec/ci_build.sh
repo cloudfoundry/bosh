@@ -12,6 +12,6 @@ if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
 fi
 
-bundle install --without development --local --path "/tmp/${BUILD_TAG}"
+bundle install --without development --local --path tmp/
 
-bundle exec rake --trace ci:setup:rspec $@
+bundle exec rake --trace ci:setup:rspec "$@"

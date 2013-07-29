@@ -25,6 +25,7 @@ AllCops:
    - spec/**
    - stemcell_builder/**
    - vendor/**
+   - tmp/**
 
 Encoding:
   Enabled: false
