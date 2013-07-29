@@ -358,7 +358,7 @@ namespace :stemcell do
     INDEX_FILE_DIR = 'stemcell_builder/.stemcell_builds'
 
     desc 'Deletes <stemcell_name> from the public repository.'
-    task 'delete', :stemcell_name do |t, args|
+    task :delete, :stemcell_name do |t, args|
       stemcell_name = args[:stemcell_name]
       stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
 
@@ -394,7 +394,7 @@ namespace :stemcell do
     end
 
     desc 'Uploads <stemcell_path> to the public repository with optional space-separated tags.'
-    task 'upload', :stemcell_path, :tags do |t, args|
+    task :upload, :stemcell_path, :tags do |t, args|
       stemcell_path = args[:stemcell_path]
       tags = args[:tags]
       tags = tags ? tags.downcase.split(' ') : []
@@ -434,7 +434,7 @@ namespace :stemcell do
     end
 
     desc 'Sets the tags (space-separated) for a stemcell.'
-    task 'set_stemcell_tags', :stemcell_name, :tags do |t, args|
+    task :set_stemcell_tags, :stemcell_name, :tags do |t, args|
       stemcell_name = args[:stemcell_name]
       tags = args[:tags]
       tags = tags ? tags.downcase.split(' ') : []
@@ -448,7 +448,7 @@ namespace :stemcell do
     end
 
     desc 'Uploads a new index file so dev can be done without modifying the public stemcell index file.'
-    task 'upload_dev_index', :index_path do |t, args|
+    task :upload_dev_index, :index_path do |t, args|
       index_path = args[:index_path]
       unless File.exists?(index_path)
         raise "Index file at '#{index_path}' not found."
@@ -471,7 +471,7 @@ namespace :stemcell do
     end
 
     desc "Updates all stemcell's base URL with whatever is in public_stemcell_config.yml."
-    task 'update_urls' do
+    task :update_urls do
       stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
 
       store = Atmos::Store.new(url: url, uid: uid, secret: secret)
@@ -482,7 +482,7 @@ namespace :stemcell do
     end
 
     desc 'Downloads the index file for debugging.'
-    task 'download_index_file' do
+    task :download_index_file do
       stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
 
       store = Atmos::Store.new(url: url, uid: uid, secret: secret)
@@ -497,7 +497,7 @@ namespace :stemcell do
     end
 
     desc 'Uploads your local index file in case of emergency.'
-    task 'upload_index_file' do
+    task :upload_index_file do
       if agree('Are you sure you want to upload your public_stemcell_config.yml over the existing one?')
         yaml = Psych.load_file("#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}")
 
