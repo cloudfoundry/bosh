@@ -31,7 +31,7 @@ module Bosh::Dev
     end
 
     def run_rake
-      ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
+      infrastructure_for_emitable_example
 
       sanitize_directories
 
@@ -45,6 +45,10 @@ module Bosh::Dev
     private
 
     attr_reader :pipeline
+
+    def infrastructure_for_emitable_example
+      ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
+    end
 
     def sanitize_directories
       FileUtils.rm_rf(artifacts_dir)
