@@ -22,6 +22,7 @@ module Bosh::Dev::Bat
     before do
       FileUtils.mkdir('/mnt')
       FileUtils.mkdir(bat_helper.artifacts_dir)
+      FileUtils.mkdir(bat_helper.micro_bosh_deployment_dir)
 
       Bosh::Dev::BatHelper.stub(:new).with('aws').and_return(bat_helper)
       Bosh::Dev::Bat::BoshCli.stub(:new).and_return(bosh_cli)
@@ -75,12 +76,6 @@ module Bosh::Dev::Bat
       it 'deletes the micro' do
         bosh_cli.should_receive(:run_bosh).with('micro delete', ignore_failures: true)
         subject.teardown_micro
-      end
-
-      it 'deletes the artifacts_dir' do
-        expect {
-          subject.teardown_micro
-        }.to change { File.exists?(bat_helper.artifacts_dir) }.to(false)
       end
     end
   end

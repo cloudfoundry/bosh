@@ -37,6 +37,10 @@ module Bosh::Dev
 
       prepare_directories
 
+      sanitize_directories
+
+      prepare_directories
+
       pipeline.fetch_stemcells(infrastructure, artifacts_dir)
 
       infrastructure.run_system_micro_tests
@@ -51,11 +55,11 @@ module Bosh::Dev
     end
 
     def sanitize_directories
-      FileUtils.rm_rf(artifacts_dir, verbose: true)
+      FileUtils.rm_rf(artifacts_dir)
     end
 
     def prepare_directories
-      FileUtils.mkdir_p(micro_bosh_deployment_dir, verbose: true)
+      FileUtils.mkdir_p(micro_bosh_deployment_dir)
     end
   end
 end

@@ -20,9 +20,6 @@ module Bosh::Dev::Bat
     def deploy_micro
       get_deployments_aws
 
-      FileUtils.rm_rf(bat_helper.artifacts_dir)
-      FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
-
       Dir.chdir(bat_helper.artifacts_dir) do
         Dir.chdir(bat_helper.micro_bosh_deployment_dir) do
           micro_deployment_manifest = Bosh::Dev::Aws::MicroBoshDeploymentManifest.new
@@ -53,12 +50,9 @@ module Bosh::Dev::Bat
     end
 
     def teardown_micro
-      if Dir.exists?(bat_helper.artifacts_dir)
-        Dir.chdir(bat_helper.artifacts_dir) do
-          bosh_cli.run_bosh 'delete deployment bat', :ignore_failures => true
-          bosh_cli.run_bosh 'micro delete', :ignore_failures => true
-        end
-        FileUtils.rm_rf(bat_helper.artifacts_dir)
+      Dir.chdir(bat_helper.artifacts_dir) do
+        bosh_cli.run_bosh 'delete deployment bat', :ignore_failures => true
+        bosh_cli.run_bosh 'micro delete', :ignore_failures => true
       end
     end
 
