@@ -33,7 +33,7 @@ module Bosh::Dev
       end
 
       it 'cleans up stemcells' do
-        fake_pipeline.should_receive(:cleanup_stemcells)
+        fake_pipeline.should_receive(:cleanup_stemcells).with(subject.artifacts_dir)
 
         subject.run_rake
       end
@@ -63,7 +63,7 @@ module Bosh::Dev
           end
 
           it 'fetches stemcells for the specified infrastructure' do
-            fake_pipeline.should_receive(:fetch_stemcells).with(subject.infrastructure)
+            fake_pipeline.should_receive(:fetch_stemcells).with(subject.infrastructure, subject.artifacts_dir)
 
             subject.run_rake
           end
@@ -96,8 +96,9 @@ module Bosh::Dev
 
     describe '#bosh_stemcell_path' do
       before do
-        fake_pipeline.stub(:bosh_stemcell_path) do |infrastructure|
+        fake_pipeline.stub(:bosh_stemcell_path) do |infrastructure, artifacts_dir|
           expect(infrastructure.name).to eq(infrastructure_name)
+          expect(artifacts_dir).to eq(subject.artifacts_dir)
           'fake bosh stemcell path'
         end
       end
@@ -109,8 +110,9 @@ module Bosh::Dev
 
     describe '#micro_bosh_stemcell_path' do
       before do
-        fake_pipeline.stub(:micro_bosh_stemcell_path) do |infrastructure|
+        fake_pipeline.stub(:micro_bosh_stemcell_path) do |infrastructure, artifacts_dir|
           expect(infrastructure.name).to eq(infrastructure_name)
+          expect(artifacts_dir).to eq(subject.artifacts_dir)
           'fake micro bosh stemcell path'
         end
       end

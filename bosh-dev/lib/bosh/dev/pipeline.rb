@@ -17,7 +17,6 @@ module Bosh::Dev
       @build_id = options.fetch(:build_id) { Build.candidate.number.to_s }
       @logger = options.fetch(:logger) { Logger.new($stdout) }
       @bucket = 'bosh-ci-pipeline'
-      @workspace_dir = ENV.to_hash.fetch('WORKSPACE')
     end
 
     def create(options)
@@ -82,26 +81,28 @@ module Bosh::Dev
       "s3://#{bucket}/#{build_id}/"
     end
 
-    def bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, stemcell_filename(build_id, infrastructure, 'bosh-stemcell', infrastructure.light?))
+    def bosh_stemcell_path(infrastructure, download_dir)
+      File.join(download_dir, stemcell_filename(build_id, infrastructure, 'bosh-stemcell', infrastructure.light?))
     end
 
-    def micro_bosh_stemcell_path(infrastructure)
-      File.join(workspace_dir, stemcell_filename(build_id, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
+    def micro_bosh_stemcell_path(infrastructure, download_dir)
+      File.join(download_dir, stemcell_filename(build_id, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
     end
 
-    def fetch_stemcells(infrastructure)
-      download_stemcell(build_id, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?)
-      download_stemcell(build_id, infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?)
+    def fetch_stemcells(infrastructure, download_dir)
+      Dir.chdir(download_dir) do
+        download_stemcell(build_id, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?)
+        download_stemcell(build_id, infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?)
+      end
     end
 
-    def cleanup_stemcells
-      FileUtils.rm_f(Dir.glob(File.join(workspace_dir, '*bosh-stemcell-*.tgz')))
+    def cleanup_stemcells(download_dir)
+      FileUtils.rm_f(Dir.glob(File.join(download_dir, '*bosh-stemcell-*.tgz')))
     end
 
     private
 
-    attr_reader :logger, :bucket, :build_id, :workspace_dir
+    attr_reader :logger, :bucket, :build_id
 
     def base_directory
       fog_storage.directories.get(bucket) || raise("bucket '#{bucket}' not found")

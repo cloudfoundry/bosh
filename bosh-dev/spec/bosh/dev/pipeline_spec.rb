@@ -1,8 +1,10 @@
 require 'spec_helper'
+require 'fileutils'
+require 'fakefs/spec_helpers'
+
 require 'bosh/dev/pipeline'
 require 'bosh/dev/stemcell'
 require 'bosh/dev/build'
-require 'fakefs/spec_helpers'
 require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
@@ -14,6 +16,8 @@ module Bosh::Dev
     let(:bucket_name) { 'bosh-ci-pipeline' }
     let(:logger) { instance_double('Logger').as_null_object }
     let(:build_id) { '456' }
+    let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
+
     subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger, build_id: build_id) }
 
     before do
@@ -21,7 +25,6 @@ module Bosh::Dev
       Fog::Mock.reset
       fog_storage.directories.create(key: bucket_name) if bucket_name
       ENV.stub(to_hash: {
-        'WORKSPACE' => '/FAKE/WORKSPACE/DIR',
         'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake access key',
         'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake secret key',
       })
@@ -183,7 +186,7 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
 
       it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/light-bosh-stemcell-aws-456.tgz')
+        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))
       end
     end
 
@@ -191,12 +194,16 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Dev::Infrastructure::Vsphere.new }
 
       it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure)).to eq('/FAKE/WORKSPACE/DIR/micro-bosh-stemcell-vsphere-456.tgz')
+        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-vsphere-456.tgz'))
       end
     end
 
     describe '#fetch_stemcells' do
       let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
+
+      before do
+        FileUtils.mkdir_p(download_directory)
+      end
 
       context 'when micro and bosh stemcells exist for infrastructure' do
         before do
@@ -205,17 +212,17 @@ module Bosh::Dev
         end
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
-          pipeline.fetch_stemcells(infrastructure)
+          pipeline.fetch_stemcells(infrastructure, download_directory)
 
-          expect(File.read('light-bosh-stemcell-aws-456.tgz')).to eq('this is the light-bosh-stemcell')
-          expect(File.read('light-micro-bosh-stemcell-aws-456.tgz')).to eq('this is the micro-bosh-stemcell')
+          expect(File.read(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))).to eq('this is the light-bosh-stemcell')
+          expect(File.read(File.join(download_directory, 'light-micro-bosh-stemcell-aws-456.tgz'))).to eq('this is the micro-bosh-stemcell')
         end
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
           expect {
-            pipeline.fetch_stemcells(infrastructure)
+            pipeline.fetch_stemcells(infrastructure, download_directory)
           }.to raise_error("remote stemcell 'light-micro-bosh-stemcell-aws-456.tgz' not found")
         end
       end
@@ -267,13 +274,13 @@ module Bosh::Dev
 
     describe '#cleanup_stemcells' do
       it 'removes stemcells created during the build' do
-        FileUtils.mkdir_p('/FAKE/WORKSPACE/DIR')
-        FileUtils.touch('/FAKE/WORKSPACE/DIR/foo-bosh-stemcell-bar.tgz')
-        FileUtils.touch('/FAKE/WORKSPACE/DIR/foo-micro-bosh-stemcell-bar.tgz')
+        FileUtils.mkdir_p(download_directory)
+        FileUtils.touch(File.join(download_directory, 'foo-bosh-stemcell-bar.tgz'))
+        FileUtils.touch(File.join(download_directory, 'foo-micro-bosh-stemcell-bar.tgz'))
 
         expect {
-          subject.cleanup_stemcells
-        }.to change { Dir.glob('/FAKE/WORKSPACE/DIR/*') }.to([])
+          subject.cleanup_stemcells(download_directory)
+        }.to change { Dir.glob(File.join(download_directory, '*')) }.to([])
       end
     end
   end

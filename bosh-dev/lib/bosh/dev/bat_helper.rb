@@ -11,11 +11,11 @@ module Bosh::Dev
     end
 
     def bosh_stemcell_path
-      pipeline.bosh_stemcell_path(infrastructure)
+      pipeline.bosh_stemcell_path(infrastructure, artifacts_dir)
     end
 
     def micro_bosh_stemcell_path
-      pipeline.micro_bosh_stemcell_path(infrastructure)
+      pipeline.micro_bosh_stemcell_path(infrastructure, artifacts_dir)
     end
 
     def artifacts_dir
@@ -34,11 +34,11 @@ module Bosh::Dev
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
 
       begin
-        pipeline.fetch_stemcells(infrastructure)
+        pipeline.fetch_stemcells(infrastructure, artifacts_dir)
 
         infrastructure.run_system_micro_tests
       ensure
-        pipeline.cleanup_stemcells
+        pipeline.cleanup_stemcells(artifacts_dir)
       end
     end
 
