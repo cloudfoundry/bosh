@@ -6,12 +6,13 @@ require 'atmos'
 require 'json'
 require 'rugged'
 
-# microBOSH version should reflect the version of all the BOSH components, not just the agent.
-def micro_version
-  @micro_version ||= File.read("#{File.expand_path('../../../../../../', __FILE__)}/BOSH_VERSION").strip
-end
 
 namespace :stemcell do
+
+  # microBOSH version should reflect the version of all the BOSH components, not just the agent.
+  def micro_version
+    @micro_version ||= File.read("#{File.expand_path('../../../../../../', __FILE__)}/BOSH_VERSION").strip
+  end
 
   def changes_in_bosh_agent?
     gem_components_changed?('bosh_agent') || component_changed?('stemcell_builder')
