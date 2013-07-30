@@ -75,7 +75,7 @@ describe VSphereCloud::Cloud do
   end
 
   after(:all) do
-    cpi.delete_stemcell(@stemcell_id)
+    cpi.delete_stemcell(@stemcell_id) if @stemcell_id
   end
 
   let(:cpi) { @cpi }
