@@ -64,6 +64,12 @@ describe Bosh::WardenCloud::Cloud do
         when Warden::Protocol::CreateRequest
           req.network.should == "1.1.1.1"
           req.rootfs.should == @stemcell_root
+          req.bind_mounts[0].src_path.should =~ /#{@disk_root}\/bind_mount_points/
+          req.bind_mounts[1].src_path.should =~ /#{@disk_root}\/ephemeral_mount_point/
+          req.bind_mounts[0].dst_path.should == "/warden-cpi-dev"
+          req.bind_mounts[1].dst_path.should == "/var/vcap/data"
+          req.bind_mounts[0].mode.should == Warden::Protocol::CreateRequest::BindMount::Mode::RW
+          req.bind_mounts[1].mode.should == Warden::Protocol::CreateRequest::BindMount::Mode::RW
 
           res.handle = DEFAULT_HANDLE
 
@@ -175,6 +181,7 @@ describe Bosh::WardenCloud::Cloud do
       end
 
       mock_umount_sudos "umount"
+      mock_umount_sudos "rm -rf"
       @cloud.delete_vm(vm.id.to_s)
 
       Bosh::WardenCloud::Models::VM.dataset.all.size.should == 0

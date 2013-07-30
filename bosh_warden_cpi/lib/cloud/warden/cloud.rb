@@ -114,6 +114,9 @@ module Bosh::WardenCloud
         vm_bind_mount = File.join(@bind_mount_points, vm.id.to_s)
         FileUtils.mkdir_p(vm_bind_mount)
 
+        vm_ephemeral_mount = File.join(@ephemeral_mount_points, vm.id.to_s)
+        FileUtils.mkdir_p(vm_ephemeral_mount)
+
         # Make the bind mount point shareable
         sudo "mount --bind #{vm_bind_mount} #{vm_bind_mount}"
         sudo "mount --make-unbindable #{vm_bind_mount}"
@@ -132,7 +135,12 @@ module Bosh::WardenCloud
           bind_mount.dst_path = @warden_dev_root
           bind_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
 
-          request.bind_mounts = bind_mount
+          ephemeral_mount = Warden::Protocol::CreateRequest::BindMount.new
+          ephemeral_mount.src_path = vm_ephemeral_mount
+          ephemeral_mount.dst_path = "/var/vcap/data"
+          ephemeral_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
+
+          request.bind_mounts = [bind_mount, ephemeral_mount]
 
           response = client.call(request)
           response.handle
@@ -207,6 +215,8 @@ module Bosh::WardenCloud
         vm_bind_mount = File.join(@bind_mount_points, vm_id)
         sudo "umount #{vm_bind_mount}"
 
+        ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
+        sudo "rm -rf #{ephemeral_mount}"
         nil
       end
 
@@ -429,6 +439,7 @@ module Bosh::WardenCloud
 
       @warden_dev_root = @disk_properties["warden_dev_root"] || DEFAULT_WARDEN_DEV_ROOT
       @bind_mount_points = File.join(@disk_root, "bind_mount_points")
+      @ephemeral_mount_points = File.join(@disk_root, "ephemeral_mount_point")
       FileUtils.mkdir_p(@disk_root)
     end
 
