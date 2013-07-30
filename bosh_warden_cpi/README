@@ -2,15 +2,7 @@
 
 # Running with Vagrant up
 
-First things first: if you find that the "chef/cookbooks" directory is not present, do
+Now we use bosh-lite to bootstrap the local vm with warden cpi enabled:
+here is howto: 
 
-  cd chef
-  librarian-chef install
-
-
-Later on, after the vagrant box is set up and the director + Warden is successfully running,
-you'll probably have to download a stemcell from s3 and then upload it to the director.
-
-we need a warden-friendly stemcell that includes the director. micro_bosh stemcell did not work. Let's try vsphere next
-
-No worries, we'll soon work this into the vagrantfile
+https://github.com/cloudfoundry/bosh-lite/blob/master/README.md
