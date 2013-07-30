@@ -8,6 +8,8 @@ module Bosh::Dev
           Aws.new
         when 'vsphere'
           Vsphere.new
+        when 'warden'
+          Warden.new
         else
           raise ArgumentError.new("invalid infrastructure: #{name}")
       end
@@ -50,6 +52,12 @@ module Bosh::Dev
     class Aws < Base
       def initialize
         super(name: 'aws', supports_light_stemcell: true)
+      end
+    end
+
+    class Warden < Base
+      def initialize
+        super(name: 'warden')
       end
     end
   end
