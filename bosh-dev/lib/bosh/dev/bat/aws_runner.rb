@@ -2,6 +2,7 @@ require 'bosh/dev/bat'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/bosh_cli'
 require 'bosh/dev/bat/shell'
+require 'bosh/dev/bat/stemcell_archive'
 
 module Bosh::Dev::Bat
   class AwsRunner
@@ -12,6 +13,7 @@ module Bosh::Dev::Bat
       @mnt = ENV.fetch('FAKE_MNT', '/mnt')
       @shell = Shell.new
       @bosh_cli = BoshCli.new
+      @stemcell_archive = StemcellArchive.new(bat_helper.bosh_stemcell_path)
     end
 
     def deploy_micro
@@ -30,8 +32,7 @@ module Bosh::Dev::Bat
 
         bosh_cli.run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
 
-        st_version = stemcell_version(bat_helper.bosh_stemcell_path)
-        bosh_cli.run_bosh "aws generate bat '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{st_version}'"
+        bosh_cli.run_bosh "aws generate bat '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{stemcell_archive.version}'"
       end
     end
 
@@ -60,7 +61,7 @@ module Bosh::Dev::Bat
 
     private
 
-    attr_reader :bat_helper, :mnt, :shell, :bosh_cli
+    attr_reader :bat_helper, :mnt, :bosh_cli, :shell, :stemcell_archive
 
     def vpc_outfile_path
       File.join(mnt, 'deployments', ENV.to_hash.fetch('BOSH_VPC_SUBDOMAIN'), 'aws_vpc_receipt.yml')
@@ -79,17 +80,6 @@ module Bosh::Dev::Bat
         else
           shell.run("git clone #{ENV.to_hash.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} deployments")
         end
-      end
-    end
-
-    def stemcell_version(stemcell_tgz)
-      stemcell_manifest(stemcell_tgz)['version']
-    end
-
-    def stemcell_manifest(stemcell_tgz)
-      Dir.mktmpdir do |dir|
-        shell.run('tar', 'xzf', stemcell_tgz, '--directory', dir, 'stemcell.MF')
-        Psych.load_file(File.join(dir, 'stemcell.MF'))
       end
     end
   end

@@ -8,6 +8,7 @@ module Bosh::Dev::Bat
 
     let(:bosh_cli) { instance_double('Bosh::Dev::Bat::BoshCli', run_bosh: true) }
     let(:shell) { instance_double('Bosh::Dev::Bat::Shell', run: true) }
+    let(:stemcell_archive) { instance_double('Bosh::Dev::Bat::StemcellArchive', version: '6') }
 
     let(:bat_helper) do
       instance_double('Bosh::Dev::BatHelper',
@@ -25,13 +26,12 @@ module Bosh::Dev::Bat
       Bosh::Dev::BatHelper.stub(:new).with('aws').and_return(bat_helper)
       Bosh::Dev::Bat::BoshCli.stub(:new).and_return(bosh_cli)
       Bosh::Dev::Bat::Shell.stub(:new).and_return(shell)
+      Bosh::Dev::Bat::StemcellArchive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
 
       ENV.stub(:to_hash).and_return({
                                       'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO',
                                       'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN',
                                     })
-
-      subject.stub(stemcell_manifest: { 'version' => '6' }) # FIXME: Should be a collaborator!
     end
 
     describe '#deploy_micro' do
