@@ -128,8 +128,9 @@ module Bosh
         end
 
         it 'replaces the raw image with a blank placeholder' do
-          FileUtils.should_receive(:touch).and_return do |file|
+          FileUtils.should_receive(:touch).and_return do |file, options|
             expect(file).to match('image')
+            expect(options).to eq(verbose: true)
           end
           subject.create_light_stemcell
         end

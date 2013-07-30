@@ -66,7 +66,7 @@ module Bosh::Dev
         Dir.chdir(extracted_stemcell_dir) do
           stemcell_manifest['cloud_properties']['ami'] = { ami.region => ami_id }
 
-          FileUtils.touch('image')
+          FileUtils.touch('image', verbose: true)
 
           File.open('stemcell.MF', 'w') do |out|
             Psych.dump(stemcell_manifest, out)
