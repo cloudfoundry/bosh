@@ -8,19 +8,12 @@ module Bosh::Dev::Bat
     end
 
     def run_bosh(cmd, options = {})
-      debug_on_fail = options.fetch(:debug_on_fail, false)
-      options.delete(:debug_on_fail)
-      @run_bosh_failures ||= 0
+      debug_on_fail = !!options.delete(:debug_on_fail)
+
       puts "bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}"
       shell.run "bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
     rescue
-      @run_bosh_failures += 1
-      if @run_bosh_failures == 1 && debug_on_fail
-        # get the debug log, but only for the first failure, in case "bosh task last"
-        # fails - or we'll end up in an endless loop
-        run_bosh 'task last --debug', last_number: 100
-        @run_bosh_failures = 0
-      end
+      run_bosh 'task last --debug', last_number: 100, debug_on_fail: false if debug_on_fail
       raise
     end
 
