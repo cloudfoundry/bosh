@@ -56,8 +56,6 @@ module Bosh
       end
 
       def micro_ami
-#        puts manifest.to_yaml
-#        exit 1
         ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] ||
             Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell-aws_ami_us-east-1").strip
       end
