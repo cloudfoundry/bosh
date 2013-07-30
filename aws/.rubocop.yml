@@ -1,5 +1,0 @@
-inherit_from: ../.rubocop.yml
-
-MethodLength:
-  CountComments: false
-  Max: 21
