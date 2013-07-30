@@ -51,11 +51,11 @@ module Bosh::Dev
     end
 
     def sanitize_directories
-      FileUtils.rm_rf(artifacts_dir)
+      FileUtils.rm_rf(artifacts_dir, verbose: true)
     end
 
     def prepare_directories
-      FileUtils.mkdir_p(micro_bosh_deployment_dir)
+      FileUtils.mkdir_p(micro_bosh_deployment_dir, verbose: true)
     end
   end
 end

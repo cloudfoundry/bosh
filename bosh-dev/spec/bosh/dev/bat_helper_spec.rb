@@ -39,13 +39,13 @@ module Bosh::Dev
       end
 
       it 'removes the artifacts dir' do
-        FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir)
+        FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir, verbose: true)
 
         subject.run_rake
       end
 
       it 'creates the microbosh depolyments dir (which is contained within artifacts dir)' do
-        FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
+        FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir, verbose: true)
 
         subject.run_rake
       end
