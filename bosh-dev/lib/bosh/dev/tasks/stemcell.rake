@@ -24,7 +24,7 @@ namespace :stemcell do
   end
 
   desc 'Build micro bosh stemcell'
-  task :micro, [:infrastructure, :tarball, :version, :disk_size] do |t, args|
+  task :micro, [:tarball, :infrastructure, :version, :disk_size] do |t, args|
     require 'bosh/dev/micro_bosh_release'
 
     manifest =
