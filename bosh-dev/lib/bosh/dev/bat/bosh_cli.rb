@@ -18,7 +18,7 @@ module Bosh::Dev::Bat
       if @run_bosh_failures == 1 && debug_on_fail
         # get the debug log, but only for the first failure, in case "bosh task last"
         # fails - or we'll end up in an endless loop
-        run_bosh 'task last --debug', {:last_number => 100}
+        run_bosh 'task last --debug', last_number: 100
         @run_bosh_failures = 0
       end
       raise
