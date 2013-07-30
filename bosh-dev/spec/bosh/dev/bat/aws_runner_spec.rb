@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
-require 'bosh/dev/aws_runner'
+require 'bosh/dev/bat/aws_runner'
 
 module Bosh::Dev::Bat
   describe AwsRunner do
