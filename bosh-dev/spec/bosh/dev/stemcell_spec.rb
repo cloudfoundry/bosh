@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 require 'bosh/dev/stemcell'
 
@@ -106,6 +105,7 @@ module Bosh
         before do
           Ami.stub(new: ami)
           Rake::FileUtilsExt.stub(:sh)
+          FileUtils.stub(:touch)
         end
 
         it 'creates an ami from the stemcell' do
@@ -144,7 +144,6 @@ module Bosh
         end
 
         it 'names the stemcell manifest correctly' do
-          FileUtils.stub(:touch)
           # Example fails on linux without File.stub
           File.stub(:open).and_call_original
           File.should_receive(:open).with('stemcell.MF', 'w')
