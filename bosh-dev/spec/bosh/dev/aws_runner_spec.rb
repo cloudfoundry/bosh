@@ -6,8 +6,8 @@ module Bosh::Dev::Bat
   describe AwsRunner do
     include FakeFS::SpecHelpers
 
-    let(:bosh_cli) { subject } # FIXME: Should be a collaborator!
-    let(:shell) { subject }  # FIXME: Should be a collaborator!
+    let(:bosh_cli) { instance_double('Bosh::Dev::Bat::BoshCli', run_bosh: true) }
+    let(:shell) { instance_double('Bosh::Dev::Bat::Shell', run: true) }
 
     let(:bat_helper) do
       instance_double('Bosh::Dev::BatHelper',
@@ -23,15 +23,15 @@ module Bosh::Dev::Bat
       FileUtils.mkdir(bat_helper.artifacts_dir)
 
       Bosh::Dev::BatHelper.stub(:new).with('aws').and_return(bat_helper)
+      Bosh::Dev::Bat::BoshCli.stub(:new).and_return(bosh_cli)
+      Bosh::Dev::Bat::Shell.stub(:new).and_return(shell)
+
       ENV.stub(:to_hash).and_return({
                                       'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO',
                                       'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN',
                                     })
 
       subject.stub(stemcell_manifest: { 'version' => '6' }) # FIXME: Should be a collaborator!
-      shell.stub(system: true)
-      shell.stub(:run)
-      bosh_cli.stub(:run_bosh)
     end
 
     describe '#deploy_micro' do
