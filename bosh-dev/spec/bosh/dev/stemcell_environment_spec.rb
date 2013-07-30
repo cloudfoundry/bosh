@@ -15,7 +15,6 @@ module Bosh::Dev
 
     before do
       ENV.stub(:to_hash).and_return({
-                                      'WORKSPACE' => '/fake_WORKSPACE',
                                       'BUILD_ID' => 'fake-jenkins-BUILD_ID',
                                     })
     end
@@ -65,62 +64,44 @@ module Bosh::Dev
     end
 
     describe '#publish' do
-      let(:candidate) { instance_double('Bosh::Dev::Build') }
-      let(:stemcell) { instance_double('Bosh::Dev::Stemcell') }
+      let(:stemcell) { instance_double('Bosh::Dev::Stemcell', create_light_stemcell: nil) }
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
       before do
-        Bosh::Dev::Build.stub(:candidate).and_return(candidate)
+        Stemcell.stub(:new).and_return(stemcell)
+        Pipeline.stub(:new).and_return(pipeline)
 
-        Bosh::Dev::Stemcell.stub(:from_jenkins_build).
-          with(subject.infrastructure, subject.stemcell_type, candidate).and_return(stemcell)
+        stemcell_output_dir = File.join(subject.work_path, 'work')
+        stemcell_path = File.join(stemcell_output_dir, 'fake-stemcell.tgz')
 
-        Bosh::Dev::Pipeline.stub(:new).and_return(pipeline)
+        FileUtils.mkdir_p(stemcell_output_dir)
+        FileUtils.touch(stemcell_path)
       end
 
-      context 'when a stemcell has been built' do
-        let(:candidate_artifacts) { instance_double('Bosh::Dev::CandidateArtifacts', publish: true) }
+      it 'publishes the generated stemcell' do
+        pipeline.should_receive(:publish_stemcell).with(stemcell)
 
-        before do
-          FileUtils.mkdir_p(File.join(subject.directory, 'work', 'work'))
-          FileUtils.touch(File.join(subject.directory, 'work', 'work', 'fake-stemcell.tgz'))
+        subject.publish
+      end
 
-          Bosh::Dev::CandidateArtifacts.stub(:new).with('/fake_WORKSPACE/fake-stemcell.tgz').and_return(candidate_artifacts)
-        end
+      context 'when infrastrcture is aws' do
+        let(:light_stemcell) { instance_double('Bosh::Dev::Stemcell') }
 
-        it 'copies the stemcell into the workspace' do
-          expect {
-            subject.publish
-          }.to change { File.exists?('/fake_WORKSPACE/fake-stemcell.tgz') }.to(true)
-        end
+        it 'publishes an aws light stemcell' do
+          stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)
 
-        it 'publishes the generated stemcell' do
-          pipeline.should_receive(:publish_stemcell).with(stemcell)
+          pipeline.should_receive(:publish_stemcell).with(light_stemcell)
+
           subject.publish
         end
-
-        context 'and the infrastrcture is aws' do
-          it 'publishes an aws light stemcell' do
-            candidate_artifacts.should_receive(:publish)
-
-            subject.publish
-          end
-        end
-
-        context 'and the infrastrcture is not aws' do
-          let(:infrastructure) { 'vsphere' }
-
-          it 'does nothing since other infrastructures do not have light stemcells' do
-            candidate_artifacts.should_not_receive(:publish)
-
-            subject.publish
-          end
-        end
       end
 
-      context 'when a stemcell has not been built' do
-        it 'does nothing' do
-          FileUtils.should_not_receive(:cp)
+      context 'when infrastrcture is not aws' do
+        let(:infrastructure) { 'vsphere' }
+
+        it 'does nothing since other infrastructures do not have light stemcells' do
+          stemcell.should_not_receive(:create_light_stemcell)
+
           subject.publish
         end
       end

@@ -1,8 +1,6 @@
 require 'fileutils'
-require 'bosh/dev/candidate_artifacts'
 require 'bosh/dev/stemcell'
 require 'bosh/dev/pipeline'
-require 'bosh/dev/build'
 
 module Bosh::Dev
   class StemcellEnvironment
@@ -37,23 +35,18 @@ module Bosh::Dev
     end
 
     def publish
-      files = Dir.glob("#{directory}/work/work/*.tgz")
+      stemcell = Stemcell.new(stemcell_filename)
 
-      unless files.empty?
-        stemcell = files.first
-        stemcell_base = File.basename(stemcell, '.tgz')
+      Pipeline.new.publish_stemcell(stemcell.create_light_stemcell) if infrastructure == 'aws'
 
-        stemcell_file = File.join(ENV.to_hash.fetch('WORKSPACE'), "#{stemcell_base}.tgz")
-        FileUtils.cp(stemcell, stemcell_file)
+      Pipeline.new.publish_stemcell(stemcell)
+    end
 
-        if infrastructure == 'aws'
-          candidate_artifacts = Bosh::Dev::CandidateArtifacts.new(stemcell_file)
-          candidate_artifacts.publish
-        end
-      end
+    private
 
-      stemcell = Bosh::Dev::Stemcell.from_jenkins_build(infrastructure, stemcell_type, Bosh::Dev::Build.candidate)
-      Bosh::Dev::Pipeline.new.publish_stemcell(stemcell)
+    def stemcell_filename
+      @stemcell_filename ||=
+        Dir.glob("#{directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
     end
   end
 end

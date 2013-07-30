@@ -1,8 +1,7 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
+
 require 'bosh/dev/stemcell'
-require 'bosh/dev/ami'
-require 'bosh/dev/build'
 
 module Bosh
   module Dev
@@ -10,15 +9,6 @@ module Bosh
       let(:stemcell_path) { spec_asset('micro-bosh-stemcell-aws.tgz') }
 
       subject { Stemcell.new(stemcell_path) }
-
-      describe '.from_jenkins_build' do
-        it 'constructs correct jenkins path' do
-          Stemcell.stub(:new)
-          Dir.should_receive(:glob).with('/mnt/stemcells/aws-micro/work/work/*-stemcell-*-123.tgz').and_return([])
-
-          Stemcell.from_jenkins_build('aws', 'micro', double(Build, number: 123))
-        end
-      end
 
       describe '#initialize' do
         it 'errors if path does not exist' do
