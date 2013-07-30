@@ -72,7 +72,7 @@ module Bosh::Dev
             Psych.dump(stemcell_manifest, out)
           end
 
-          Rake::FileUtilsExt.sh("tar cvzf #{light_stemcell_path} *")
+          Rake::FileUtilsExt.sh("sudo tar cvzf #{light_stemcell_path} *")
         end
       end
       light_stemcell_path

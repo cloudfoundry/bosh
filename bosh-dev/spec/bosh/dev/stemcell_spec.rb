@@ -120,8 +120,9 @@ module Bosh
           end
 
           expected_tarfile = File.join(File.dirname(subject.path), 'light-micro-bosh-stemcell-aws.tgz')
+
           Rake::FileUtilsExt.should_receive(:sh) do |command|
-            command.should match(/tar cvzf #{expected_tarfile} \*/)
+            command.should match(/sudo tar cvzf #{expected_tarfile} \*/)
           end
 
           subject.create_light_stemcell
