@@ -100,63 +100,15 @@ namespace :spec do
     namespace :aws do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
+        require 'bosh/dev/aws_runner'
+
+        system_tests = Bosh::Dev::Bat::AwsRunner.new
+
         begin
-          Rake::Task['spec:system:aws:deploy_micro'].invoke
-          Rake::Task['spec:system:aws:bat'].invoke
+          system_tests.deploy_micro
+          system_tests.run_bats
         ensure
-          Rake::Task['spec:system:aws:teardown_microbosh'].invoke
-        end
-      end
-
-      task :deploy_micro => :get_deployments_aws do
-        bat_helper = Bosh::Dev::BatHelper.new('aws')
-
-        chdir(bat_helper.artifacts_dir) do
-          chdir(bat_helper.micro_bosh_deployment_dir) do
-            run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
-          end
-          run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
-          run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
-          run_bosh 'login admin admin'
-
-          run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
-
-          st_version = stemcell_version(bat_helper.bosh_stemcell_path)
-          run_bosh "aws generate bat '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{st_version}'"
-        end
-      end
-
-      task :teardown_microbosh do
-        bat_helper = Bosh::Dev::BatHelper.new('aws')
-
-        chdir(bat_helper.artifacts_dir) do
-          run_bosh 'delete deployment bat', :ignore_failures => true
-          run_bosh 'micro delete', :ignore_failures => true
-        end
-      end
-
-      task :bat do
-        bat_helper = Bosh::Dev::BatHelper.new('aws')
-        director = "micro.#{ENV['BOSH_VPC_SUBDOMAIN']}.cf-app.com"
-
-        ENV['BAT_DIRECTOR'] = director
-        ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-        ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-        ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-        ENV['BAT_FAST'] = 'true'
-        ENV['BAT_DNS_HOST'] = Resolv.getaddress(director)
-        Rake::Task['bat'].invoke
-      end
-
-      task :get_deployments_aws do
-        Dir.chdir(mnt) do
-          if Dir.exists?('deployments')
-            Dir.chdir('deployments') do
-              run('git pull')
-            end
-          else
-            run("git clone #{ENV.to_hash.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} deployments")
-          end
+          system_tests.teardown_micro
         end
       end
     end
@@ -309,15 +261,6 @@ namespace :spec do
         Psych.load_file(File.join(dir, 'stemcell.MF'))
       end
     end
-
-    def vpc_outfile_path
-      File.join(mnt, 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_vpc_receipt.yml')
-    end
-
-    def route53_outfile_path
-      File.join(mnt, 'deployments', ENV['BOSH_VPC_SUBDOMAIN'], 'aws_route53_receipt.yml')
-    end
-
 
     def bosh_config_path
       # We should keep a reference to the tempfile, otherwise,
