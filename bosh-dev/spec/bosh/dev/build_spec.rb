@@ -62,6 +62,34 @@ module Bosh::Dev
       end
     end
 
+    describe '#download_release' do
+      before do
+        Rake::FileUtilsExt.stub(sh: true)
+      end
+
+      it 'downloads the release' do
+        Rake::FileUtilsExt.should_receive(:sh).
+          with("s3cmd --verbose -f get #{subject.s3_release_url} release/bosh-#{subject.number}.tgz").and_return(true)
+
+        subject.download_release
+      end
+
+      it 'returns the path of the downloaded release' do
+        expect(subject.download_release).to eq("release/bosh-#{subject.number}.tgz")
+      end
+
+      context 'when download fails' do
+        it 'raises an error' do
+          Rake::FileUtilsExt.stub(sh: false)
+
+          expect {
+            subject.download_release
+          }.to raise_error(RuntimeError, "Command failed: s3cmd --verbose -f get #{subject.s3_release_url} release/bosh-#{subject.number}.tgz")
+        end
+      end
+
+    end
+
     describe '#promote_artifacts' do
       it 'syncs buckets and updates AWS aim text reference' do
         subject.should_receive(:sync_buckets)

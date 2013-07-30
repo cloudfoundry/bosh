@@ -13,11 +13,8 @@ namespace :ci do
       ENV['WORK_PATH'] = stemcell_environment.work_path
       ENV['STEMCELL_VERSION'] = stemcell_environment.stemcell_version
 
-      tarball_path = "release/bosh-#{Bosh::Dev::Build.candidate.number}.tgz"
-
-      sh("s3cmd -f get #{Bosh::Dev::Build.candidate.s3_release_url} #{tarball_path}")
-
-      Rake::Task['stemcell:micro'].invoke(stemcell_environment.infrastructure, tarball_path, Bosh::Dev::Build.candidate.number)
+      bosh_release_path = Bosh::Dev::Build.candidate.download_release
+      Rake::Task['stemcell:micro'].invoke(stemcell_environment.infrastructure, bosh_release_path, Bosh::Dev::Build.candidate.number)
 
       stemcell_environment.publish
     end

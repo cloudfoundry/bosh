@@ -20,11 +20,18 @@ module Bosh::Dev
     end
 
     def upload(release)
-      pipeline.s3_upload(release.tarball, "release/bosh-#{number}.tgz")
+      pipeline.s3_upload(release.tarball, release_path)
+    end
+
+    def download_release
+      command = "s3cmd --verbose -f get #{s3_release_url} #{release_path}"
+      Rake::FileUtilsExt.sh(command) || raise("Command failed: #{command}")
+
+      release_path
     end
 
     def s3_release_url
-      File.join(pipeline.s3_url, "release/bosh-#{number}.tgz")
+      File.join(pipeline.s3_url, release_path)
     end
 
     def promote_artifacts(aws_credentials)
@@ -62,5 +69,9 @@ module Bosh::Dev
     private
 
     attr_reader :pipeline, :job_name
+
+    def release_path
+      "release/bosh-#{number}.tgz"
+    end
   end
 end
