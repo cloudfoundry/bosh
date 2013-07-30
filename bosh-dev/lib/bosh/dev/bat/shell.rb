@@ -2,12 +2,18 @@ require 'bosh/dev/bat'
 
 module Bosh::Dev::Bat
   class Shell
+    def initialize(stdout = $stdout)
+      @stdout = stdout
+    end
+
     def run(cmd, options = {})
       lines = []
+
       IO.popen(cmd).each do |line|
-        puts line.chomp
+        stdout.puts line.chomp
         lines << line.chomp
       end.close # force the process to close so that $? is set
+
       if options[:last_number]
         line_number = options[:last_number]
         line_number = lines.size if lines.size < options[:last_number]
@@ -21,12 +27,15 @@ module Bosh::Dev::Bat
         err_msg = "Failed: '#{cmd}' from #{pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
 
         if options[:ignore_failures]
-          puts("#{err_msg}, continuing anyway")
+          stdout.puts("#{err_msg}, continuing anyway")
         else
           raise(err_msg)
         end
       end
       cmd_out
     end
+
+    private
+    attr_reader :stdout
   end
 end
