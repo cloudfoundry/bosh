@@ -7,9 +7,6 @@ module Bosh::WardenCloud
     DEFAULT_STEMCELL_ROOT = "/var/vcap/stemcell"
     DEFAULT_DISK_ROOT = "/var/vcap/store/disk"
     DEFAULT_FS_TYPE = "ext4"
-    DEFAULT_POOL_SIZE = 128
-    DEFAULT_POOL_START_NUMBER = 10
-    DEFAULT_DEVICE_PREFIX = "/dev/sd"
     DEFAULT_WARDEN_DEV_ROOT = "/warden-cpi-dev"
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
     UMOUNT_GUARD_RETRIES = 3
@@ -429,9 +426,6 @@ module Bosh::WardenCloud
     def setup_disk
       @disk_root = @disk_properties["root"] || DEFAULT_DISK_ROOT
       @fs_type = @disk_properties["fs"] || DEFAULT_FS_TYPE
-      @pool_size = @disk_properties["pool_count"] || DEFAULT_POOL_SIZE
-      @pool_start_number = @disk_properties["pool_start_number"] || DEFAULT_POOL_START_NUMBER
-      @device_path_prefix = @disk_properties["device_path_prefix"] || DEFAULT_DEVICE_PREFIX
 
       @warden_dev_root = @disk_properties["warden_dev_root"] || DEFAULT_WARDEN_DEV_ROOT
       @bind_mount_points = File.join(@disk_root, "bind_mount_points")
