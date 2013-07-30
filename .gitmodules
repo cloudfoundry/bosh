@@ -1,4 +1,1 @@
-[submodule "bosh_warden_cpi/warden"]
-	path = bosh_warden_cpi/warden
-	url = git@github.com:cloudfoundry/warden.git
 
