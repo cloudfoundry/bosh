@@ -86,19 +86,23 @@ describe Bosh::Agent::Handler do
       end
     end
 
-    agent_task_id = nil
-    @nats.should_receive(:publish) do |reply_to, payload|
-      reply_to.should == 'bogus_reply_to'
-      msg = Yajl::Parser.new.parse(payload)
-      agent_task_id = msg['value']['agent_task_id']
-    end
+    SecureRandom.stub(uuid: 'my_task_id')
+
+    @nats.should_receive(:publish).with('bogus_reply_to', JSON.generate(value: {state: 'running', agent_task_id: 'my_task_id'}))
     handler.process_long_running('bogus_reply_to', klazz, nil)
 
-    @nats.should_receive(:publish) do |reply_to, payload|
-      msg = Yajl::Parser.new.parse(payload)
-      msg.should == {'value' => 'result'}
+    @nats.should_receive(:publish).with('another_bogus_reply_to', JSON.generate(value: 'result'))
+    handler.handle_get_task('another_bogus_reply_to', 'my_task_id')
+  end
+
+  context 'when agent does not have task_id' do
+    it 'returns exception' do
+      handler = Bosh::Agent::Handler.new
+      handler.start
+
+      @nats.should_receive(:publish).with('bogus_reply_to', JSON.generate(exception: 'unknown agent_task_id'))
+      handler.handle_get_task('bogus_reply_to', 'my_task_id')
     end
-    handler.handle_get_task('another_bogus_id', agent_task_id)
   end
 
   it 'should support CamelCase message handler class names' do
