@@ -302,9 +302,6 @@ GEM
       thor (>= 0.16.0)
     json (1.8.0)
     json_pure (1.8.0)
-    librarian (0.1.0)
-      highline
-      thor (~> 0.15)
     listen (1.2.2)
       rb-fsevent (>= 0.9.3)
       rb-inotify (>= 0.9)
@@ -466,7 +463,6 @@ DEPENDENCIES
   httpclient
   jenkins_api_client
   json
-  librarian
   machinist (~> 1.0)
   minitar
   monit_api!
