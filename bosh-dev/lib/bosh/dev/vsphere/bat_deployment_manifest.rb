@@ -6,10 +6,13 @@ module Bosh::Dev
     class BatDeploymentManifest
       include WritableManifest
 
+      attr_reader :filename
+
       def initialize(director_uuid, stemcell_version)
         @env = ENV.to_hash
         @director_uuid = director_uuid
         @stemcell_version = stemcell_version
+        @filename = 'bat.yml'
       end
 
       def to_h

@@ -6,9 +6,12 @@ module Bosh::Dev
     class MicroBoshDeploymentManifest
       include WritableManifest
 
+      attr_reader :filename
+
       def initialize(net_type)
         @env = ENV.to_hash
         @net_type = net_type
+        @filename = 'micro_bosh.yml'
       end
 
       def to_h

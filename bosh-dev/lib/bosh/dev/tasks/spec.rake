@@ -148,7 +148,7 @@ namespace :spec do
           chdir(bat_helper.micro_bosh_deployment_dir) do
 
             micro_deployment_manifest = Bosh::Dev::Openstack::MicroBoshDeploymentManifest.new(net_type)
-            micro_deployment_manifest.write('micro_bosh.yml')
+            micro_deployment_manifest.write
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
@@ -160,7 +160,7 @@ namespace :spec do
           st_version = stemcell_version(bat_helper.bosh_stemcell_path)
 
           bat_deployment_manifest = Bosh::Dev::Openstack::BatDeploymentManifest.new(net_type, director_uuid, st_version)
-          bat_deployment_manifest.write('bat.yml')
+          bat_deployment_manifest.write
         end
       end
 
@@ -208,7 +208,7 @@ namespace :spec do
         cd(bat_helper.artifacts_dir) do
           cd(bat_helper.micro_bosh_deployment_dir) do
             micro_deployment_manifest = Bosh::Dev::VSphere::MicroBoshDeploymentManifest.new
-            micro_deployment_manifest.write('micro_bosh.yml')
+            micro_deployment_manifest.write
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
           run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
@@ -220,7 +220,7 @@ namespace :spec do
           st_version = stemcell_version(bat_helper.bosh_stemcell_path)
 
           bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, st_version)
-          bat_deployment_manifest.write('bat.yml')
+          bat_deployment_manifest.write
         end
       end
 

@@ -9,6 +9,8 @@ module Bosh::Dev
         expect(subject).to be_a(WritableManifest)
       end
 
+      its(:filename) { should eq('micro_bosh.yml') }
+
       describe '#to_h' do
         let(:expected_yml) do
           <<YAML

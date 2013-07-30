@@ -9,6 +9,8 @@ module Bosh::Dev
 
       subject { BatDeploymentManifest.new(net_type, 'fake director_uuid', 'fake stemcell_version') }
 
+      its(:filename) { should eq ('bat.yml') }
+
       it 'is writable' do
         expect(subject).to be_a(WritableManifest)
       end

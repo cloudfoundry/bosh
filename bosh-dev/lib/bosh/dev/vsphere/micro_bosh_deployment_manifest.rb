@@ -6,8 +6,11 @@ module Bosh::Dev
     class MicroBoshDeploymentManifest
       include WritableManifest
 
+      attr_reader :filename
+
       def initialize
         @env = ENV.to_hash
+        @filename = 'micro_bosh.yml'
       end
 
       def to_h
