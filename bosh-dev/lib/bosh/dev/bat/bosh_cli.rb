@@ -24,15 +24,15 @@ module Bosh::Dev::Bat
       raise
     end
 
+    private
+
+    attr_reader :shell
+
     def bosh_config_path
       # We should keep a reference to the tempfile, otherwise,
       # when the object gets GC'd, the tempfile is deleted.
       @bosh_config_tempfile ||= Tempfile.new('bosh_config')
       @bosh_config_tempfile.path
     end
-
-    private
-
-    attr_reader :shell
   end
 end
