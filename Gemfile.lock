@@ -22,6 +22,11 @@ PATH
     bosh-dev (0.0.1.unpublished)
 
 PATH
+  remote: bosh-stemcell
+  specs:
+    bosh-stemcell (0.0.1.unpublished)
+
+PATH
   remote: bosh_agent
   specs:
     bosh_agent (1.5.0.pre.3)
@@ -423,6 +428,7 @@ DEPENDENCIES
   agent_client!
   blobstore_client!
   bosh-dev!
+  bosh-stemcell!
   bosh_agent!
   bosh_aws_cpi!
   bosh_cli!
