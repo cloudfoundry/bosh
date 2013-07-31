@@ -12,7 +12,7 @@
       "ref": "f2b53292e810dd2b43f6121f9958f5f29979dcb1"
     },
     "stemcell_builder": {
-      "path": "../cookbooks/stemcell_builder"
+      "path": "./site-cookbooks/stemcell_builder"
     },
     "java": {
       "locked_version": "1.12.0"

@@ -23,5 +23,5 @@ Vagrant.configure('2') do |config|
 
   config.berkshelf.enabled = true
 
-  config.vm.synced_folder '../../..', '/bosh'
+  config.vm.synced_folder '../', '/bosh'
 end
