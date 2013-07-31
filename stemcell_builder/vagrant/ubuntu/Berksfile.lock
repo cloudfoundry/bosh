@@ -4,9 +4,7 @@
       "locked_version": "2.0.0"
     },
     "ruby_build": {
-      "locked_version": "0.7.2",
-      "git": "git://github.com/fnichol/chef-ruby_build.git",
-      "ref": "c940b5e9cd40eaba10d6285de6648f4d25fe959d"
+      "locked_version": "0.8.0"
     },
     "rbenv": {
       "locked_version": "0.7.2",
