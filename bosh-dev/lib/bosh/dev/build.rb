@@ -6,16 +6,18 @@ module Bosh::Dev
     attr_reader :number
 
     def self.candidate
-      if ENV.fetch('JOB_NAME') == 'publish_candidate_gems'
-        new(ENV.fetch('BUILD_NUMBER'))
+      env_hash = ENV.to_hash
+
+      if env_hash.fetch('JOB_NAME') == 'publish_candidate_gems'
+        new(env_hash.fetch('BUILD_NUMBER'))
       else
-        new(ENV.fetch('CANDIDATE_BUILD_NUMBER'))
+        new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
       end
     end
 
     def initialize(number)
       @number = number
-      @job_name = ENV.fetch('JOB_NAME')
+      @job_name = ENV.to_hash.fetch('JOB_NAME')
       @pipeline = Pipeline.new(build_id: number.to_s)
     end
 

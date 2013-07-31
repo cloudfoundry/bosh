@@ -13,13 +13,16 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', s3_url: 's3://FAKE_BOSH_CI_PIPELINE_BUCKET/') }
+    let(:job_name) { 'current_job' }
 
     subject { Build.new(123) }
 
     before do
-      ENV.stub(:fetch).with('BUILD_NUMBER').and_return('current')
-      ENV.stub(:fetch).with('CANDIDATE_BUILD_NUMBER').and_return('candidate')
-      ENV.stub(:fetch).with('JOB_NAME').and_return('current_job')
+      ENV.stub(:to_hash).and_return(
+        'BUILD_NUMBER' => 'current',
+        'CANDIDATE_BUILD_NUMBER' => 'candidate',
+        'JOB_NAME' => job_name
+      )
 
       Bosh::Dev::Pipeline.stub(new: fake_pipeline)
     end
@@ -30,14 +33,12 @@ module Bosh::Dev
       end
 
       context 'when running the "publish_candidate_gems" job' do
-        before do
-          ENV.stub(:fetch).with('JOB_NAME').and_return('publish_candidate_gems')
-        end
+        let(:job_name) { 'publish_candidate_gems' }
 
         its(:number) { should eq 'current' }
       end
 
-      context 'when running the jobs downstream to publish_candidate_gems' do
+      context 'when running the jobs downstream to "publish_candidate_gems"' do
         before do
           ENV.stub(:fetch).with('JOB_NAME').and_return('something_that_needs_candidates')
         end
