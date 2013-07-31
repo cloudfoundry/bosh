@@ -23,7 +23,6 @@ module Bosh::Dev::Bat
       end
 
       unless $?.success?
-        pwd = Dir.pwd rescue 'a deleted directory'
         err_msg = "Failed: '#{cmd}' from #{pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
 
         if options[:ignore_failures]
@@ -36,6 +35,13 @@ module Bosh::Dev::Bat
     end
 
     private
+
     attr_reader :stdout
+
+    def pwd
+      Dir.pwd
+    rescue Errno::ENOENT
+      'a deleted directory'
+    end
   end
 end

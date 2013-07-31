@@ -5,10 +5,13 @@ MethodLength:
   Max: 55
 
 LineLength:
-  Max: 170
+  Max: 240
 
 Blocks:
   Enabled: false # {} for multi-line blocks in RSpec expectations is very common
 
 TrivialAccessors:
   Enabled: false # Bosh::Dev::Infrastructure#light? was a false positive
+
+AvoidPerlisms:
+  Enabled: false

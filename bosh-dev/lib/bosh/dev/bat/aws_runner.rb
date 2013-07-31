@@ -51,8 +51,8 @@ module Bosh::Dev::Bat
 
     def teardown_micro
       Dir.chdir(bat_helper.artifacts_dir) do
-        bosh_cli_session.run_bosh 'delete deployment bat', :ignore_failures => true
-        bosh_cli_session.run_bosh 'micro delete', :ignore_failures => true
+        bosh_cli_session.run_bosh 'delete deployment bat', ignore_failures: true
+        bosh_cli_session.run_bosh 'micro delete', ignore_failures: true
       end
     end
 

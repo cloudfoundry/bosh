@@ -14,9 +14,9 @@ module Bosh::Dev::Bat
 
     describe '#run_bosh' do
       it 'runs the specified bosh command' do
-        shell.should_receive(:run).with("bosh -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd", {fake: 'options'})
+        shell.should_receive(:run).with("bosh -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd", { fake: 'options' })
 
-        subject.run_bosh('fake-cmd', {fake: 'options'})
+        subject.run_bosh('fake-cmd', { fake: 'options' })
       end
 
       context 'when bosh fails and debugging failures' do
@@ -27,7 +27,7 @@ module Bosh::Dev::Bat
         end
 
         it 'debugs the last task' do
-          shell.should_receive(:run).with("bosh -v -n -P 10 --config 'fake-tmp/bosh_config' task last --debug", {last_number: 100})
+          shell.should_receive(:run).with("bosh -v -n -P 10 --config 'fake-tmp/bosh_config' task last --debug", { last_number: 100 })
 
           expect {
             subject.run_bosh('fake-cmd', debug_on_fail: true)
