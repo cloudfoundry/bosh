@@ -27,10 +27,10 @@ network:
     name: net_id
 
 resources:
-   persistent_disk: 16384
+   persistent_disk: 2048
    cloud_properties:
-      ram: 8192
-      disk: 16384
+      ram: 2048
+      disk: 4096
       cpu: 4
 
 cloud:
@@ -75,24 +75,24 @@ YAML
         end
 
         before do
-          ENV.stub(:to_hash).and_return({
-                                          'BOSH_VSPHERE_MICROBOSH_IP' => 'ip',
-                                          'BOSH_VSPHERE_NETMASK' => 'netmask',
-                                          'BOSH_VSPHERE_GATEWAY' => 'gateway',
-                                          'BOSH_VSPHERE_DNS' => 'dns',
-                                          'BOSH_VSPHERE_NET_ID' => 'net_id',
-                                          'BOSH_VSPHERE_NTP_SERVER' => 'ntp_server',
-                                          'BOSH_VSPHERE_VCENTER' => 'vcenter',
-                                          'BOSH_VSPHERE_VCENTER_USER' => 'vcenter_user',
-                                          'BOSH_VSPHERE_VCENTER_PASSWORD' => 'vcenter_pwd',
-                                          'BOSH_VSPHERE_VCENTER_DC' => 'vcenter_dc',
-                                          'BOSH_VSPHERE_VCENTER_CLUSTER' => 'vcenter_cluster',
-                                          'BOSH_VSPHERE_VCENTER_RESOURCE_POOL' => 'vcenter_rp',
-                                          'BOSH_VSPHERE_VCENTER_FOLDER_PREFIX' => 'vcenter_folder_prefix',
-                                          'BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX' => 'vcenter_ubosh_folder_prefix',
-                                          'BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN' => 'vcenter_datastore_pattern',
-                                          'BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN' => 'vcenter_ubosh_datastore_pattern',
-                                        })
+          ENV.stub(:to_hash).and_return(
+            'BOSH_VSPHERE_MICROBOSH_IP' => 'ip',
+            'BOSH_VSPHERE_NETMASK' => 'netmask',
+            'BOSH_VSPHERE_GATEWAY' => 'gateway',
+            'BOSH_VSPHERE_DNS' => 'dns',
+            'BOSH_VSPHERE_NET_ID' => 'net_id',
+            'BOSH_VSPHERE_NTP_SERVER' => 'ntp_server',
+            'BOSH_VSPHERE_VCENTER' => 'vcenter',
+            'BOSH_VSPHERE_VCENTER_USER' => 'vcenter_user',
+            'BOSH_VSPHERE_VCENTER_PASSWORD' => 'vcenter_pwd',
+            'BOSH_VSPHERE_VCENTER_DC' => 'vcenter_dc',
+            'BOSH_VSPHERE_VCENTER_CLUSTER' => 'vcenter_cluster',
+            'BOSH_VSPHERE_VCENTER_RESOURCE_POOL' => 'vcenter_rp',
+            'BOSH_VSPHERE_VCENTER_FOLDER_PREFIX' => 'vcenter_folder_prefix',
+            'BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX' => 'vcenter_ubosh_folder_prefix',
+            'BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN' => 'vcenter_datastore_pattern',
+            'BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN' => 'vcenter_ubosh_datastore_pattern',
+          )
         end
 
         it 'generates the correct YAML' do
