@@ -10,7 +10,12 @@ Vagrant.configure('2') do |config|
     chef.json = {
       rbenv: {
         rubies: %w[1.9.3-p448],
-        global: '1.9.3-p448'
+        global: '1.9.3-p448',
+        gems: {
+          '1.9.3-p448' => [
+            { 'name' => 'bundler' },
+          ]
+        },
       }
     }
   end
