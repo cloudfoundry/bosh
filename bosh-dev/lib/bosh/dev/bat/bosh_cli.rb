@@ -1,5 +1,6 @@
 require 'bosh/dev/bat'
 require 'bosh/dev/bat/shell'
+require 'tempfile'
 
 module Bosh::Dev::Bat
   class BoshCli
