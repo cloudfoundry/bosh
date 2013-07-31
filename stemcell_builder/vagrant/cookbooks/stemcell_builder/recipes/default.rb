@@ -16,6 +16,3 @@ package 'libpq-dev'
 package 'libsqlite3-dev'
 package 'libxml2-dev'
 package 'libxslt-dev'
-
-package 'ruby1.9.3'
-gem 'bundler'

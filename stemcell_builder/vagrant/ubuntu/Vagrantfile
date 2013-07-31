@@ -6,7 +6,13 @@ Vagrant.configure('2') do |config|
   config.vm.provision :chef_solo do |chef|
     chef.add_recipe 'apt'
     chef.add_recipe 'ruby_build'
-    chef.add_recipe 'rbenv'
+    chef.add_recipe 'rbenv::system'
+    chef.json = {
+      rbenv: {
+        rubies: %w[1.9.3-p448],
+        global: '1.9.3-p448'
+      }
+    }
   end
 
   config.berkshelf.enabled = true
