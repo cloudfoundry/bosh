@@ -37,10 +37,6 @@ module Bosh::Dev
 
       prepare_directories
 
-      sanitize_directories
-
-      prepare_directories
-
       pipeline.fetch_stemcells(infrastructure, artifacts_dir)
 
       infrastructure.run_system_micro_tests
