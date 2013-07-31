@@ -61,14 +61,16 @@ module Bosh::Dev::Bat
     attr_reader :bat_helper, :bosh_cli_session, :shell, :stemcell_archive
 
     def get_deployments_aws
-      mnt = ENV.fetch('FAKE_MNT', '/mnt')
+      env_hash = ENV.to_hash
+
+      mnt = env_hash.fetch('FAKE_MNT', '/mnt')
       Dir.chdir(mnt) do
         if Dir.exists?('deployments')
           Dir.chdir('deployments') do
             shell.run('git pull')
           end
         else
-          shell.run("git clone #{ENV.to_hash.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} deployments")
+          shell.run("git clone #{env_hash.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} deployments")
         end
       end
     end
