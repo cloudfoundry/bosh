@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'bosh/dev/bat/bosh_cli'
+require 'bosh/dev/bat/bosh_cli_session'
 
 module Bosh::Dev::Bat
-  describe BoshCli do
+  describe BoshCliSession do
     let(:shell) { instance_double('Bosh::Dev::Bat::Shell') }
     let(:tempfile) { instance_double('Tempfile', path: 'fake-tmp/bosh_config') }
 
