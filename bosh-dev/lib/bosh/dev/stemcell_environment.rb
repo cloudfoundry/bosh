@@ -14,7 +14,8 @@ module Bosh::Dev
     def initialize(stemcell_type, infrastructure = 'aws')
       @stemcell_type = stemcell_type
       @infrastructure = infrastructure
-      @directory = File.join('/mnt/stemcells', "#{infrastructure}-#{stemcell_type}")
+      mnt = ENV.fetch('FAKE_MNT', '/mnt')
+      @directory = File.join(mnt, 'stemcells', "#{infrastructure}-#{stemcell_type}")
       @work_path = File.join(directory, 'work')
       @build_path = File.join(directory, 'build')
       @stemcell_version = ENV.to_hash.fetch('BUILD_ID')
