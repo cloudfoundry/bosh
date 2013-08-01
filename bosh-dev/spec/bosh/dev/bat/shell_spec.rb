@@ -21,6 +21,12 @@ module Bosh::Dev::Bat
           expect(subject.run(cmd, last_number: 3)).to eq("3\n4\n5")
           expect(stdout.string).to eq("1\n2\n3\n4\n5\n")
         end
+
+        it 'outputs the entire output if more lines are requested than generated' do
+          cmd = 'echo 1;echo 2;echo 3;echo 4;echo 5'
+          expect(subject.run(cmd, last_number: 6)).to eq("1\n2\n3\n4\n5")
+          expect(stdout.string).to eq("1\n2\n3\n4\n5\n")
+        end
       end
 
       context 'when the command fails' do
