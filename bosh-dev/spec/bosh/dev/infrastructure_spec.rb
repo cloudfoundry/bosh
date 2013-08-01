@@ -19,7 +19,7 @@ module Bosh::Dev
   describe Infrastructure::Aws do
     its(:name) { should eq('aws') }
     it { should be_light }
-    its(:hypervisor) { should be_nil }
+    its(:hypervisor) { should eq('xen') }
 
     describe '#run_system_micro_tests' do
       let(:fake_rake_task) { double('a Rake Task') }
@@ -53,7 +53,7 @@ module Bosh::Dev
   describe Infrastructure::Vsphere do
     its(:name) { should eq('vsphere') }
     it { should_not be_light }
-    its(:hypervisor) { should be_nil }
+    its(:hypervisor) { should eq('esxi') }
 
     describe '#run_system_micro_tests' do
       let(:fake_rake_task) { double('a Rake Task') }

@@ -39,13 +39,13 @@ module Bosh::Dev
 
     class Vsphere < Base
       def initialize
-        super(name: 'vsphere')
+        super(name: 'vsphere', hypervisor: 'esxi')
       end
     end
 
     class Aws < Base
       def initialize
-        super(name: 'aws', supports_light_stemcell: true)
+        super(name: 'aws', hypervisor: 'xen', supports_light_stemcell: true)
       end
     end
   end

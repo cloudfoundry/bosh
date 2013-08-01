@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
 
+require 'bosh/dev'
 require 'bosh/dev/build'
 require 'bosh/dev/micro_bosh_release'
 require 'bosh/dev/pipeline'
@@ -168,16 +169,22 @@ module Bosh::Dev
         Fog.unmock!
       end
 
-      it 'downloads the aws micro-bosh-stemcell for the current build' do
+      it 'updates the last successful pointer' do
         fake_pipeline.should_receive(:download_stemcell).
-          with('123', infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+            with('123', infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end
 
       it 'initializes a Stemcell with the downloaded stemcell filename' do
         fake_pipeline.should_receive(:stemcell_filename).
-          with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
+            with(
+            name: 'micro_stemcell',
+            version: '123',
+            infrastructure: infrastructure,
+            format: 'ami',
+            hypervisor: 'xen'
+        ).and_return(fake_stemcell_filename)
 
         Bosh::Dev::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 

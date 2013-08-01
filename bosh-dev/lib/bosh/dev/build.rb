@@ -53,7 +53,15 @@ module Bosh::Dev
       infrastructure = Infrastructure.for('aws')
       pipeline.download_stemcell(number.to_s, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
-      stemcell = Bosh::Dev::Stemcell.new(pipeline.stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true))
+      stemcell = Bosh::Dev::Stemcell.new(
+          pipeline.stemcell_filename(
+              name: 'micro_stemcell',
+              version: number.to_s,
+              infrastructure: infrastructure,
+              format: 'ami',
+              hypervisor: 'xen'
+          )
+      )
 
       connection = fog_storage(access_key_id, secret_access_key)
       directory = connection.directories.create(key: 'bosh-jenkins-artifacts')

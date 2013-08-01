@@ -17,6 +17,7 @@ module Bosh::Dev
     let(:logger) { instance_double('Logger').as_null_object }
     let(:build_id) { '456' }
     let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
+    let(:distro) { 'ubuntu_lucid' }
 
     subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger, build_id: build_id) }
 
@@ -25,8 +26,8 @@ module Bosh::Dev
       Fog::Mock.reset
       fog_storage.directories.create(key: bucket_name) if bucket_name
       ENV.stub(to_hash: {
-        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake access key',
-        'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake secret key',
+          'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake access key',
+          'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake secret key',
       })
     end
 
@@ -123,12 +124,14 @@ module Bosh::Dev
         end
 
         it 'updates the latest stemcell in the S3 bucket' do
-          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz')
+          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/stemcell-latest-aws-image-xen-amd64-#{distro}.tgz")
 
           pipeline.publish_stemcell(stemcell)
 
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/latest-bosh-stemcell-aws.tgz').body).to eq 'contents of the stemcells'
+          filename = "456/bosh-stemcell/aws/stemcell-latest-aws-image-xen-amd64-#{distro}.tgz"
+
+          expect(bucket_files.map(&:key)).to include filename
+          expect(bucket_files.get(filename).body).to eq 'contents of the stemcells'
         end
       end
 
@@ -146,39 +149,43 @@ module Bosh::Dev
         it 'updates the latest light stemcell in the s3 bucket' do
           pipeline.publish_stemcell(stemcell)
 
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz').body).to eq 'this file is a light stemcell'
+          filename = "456/bosh-stemcell/aws/stemcell-latest-aws-ami-xen-amd64-#{distro}.tgz"
+
+          expect(bucket_files.map(&:key)).to include filename
+          expect(bucket_files.get(filename).body).to eq 'this file is a light stemcell'
         end
       end
     end
 
     describe '#download_stemcell' do
       before do
-        bucket_files.create(key: '456/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz', body: 'this is a thinga-ma-jiggy')
-        bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz', body: 'this a completely different thingy')
+        bucket_files.create(key: "456/stemcell/aws/stemcell-456-aws-image-xen-amd64-#{distro}.tgz", body: 'this is a thinga-ma-jiggy')
+        bucket_files.create(key: "456/stemcell/aws/stemcell-456-aws-ami-xen-amd64-#{distro}.tgz", body: 'this a completely different thingy')
       end
 
       it 'downloads the specified stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz' -> 'bosh-stemcell-aws-123.tgz'")
+        logger.should_receive(:info).with(
+            "downloaded 's3://bosh-ci-pipeline/456/stemcell/aws/stemcell-456-aws-image-xen-amd64-#{distro}.tgz' -> 'stemcell-456-aws-image-xen-amd64-#{distro}.tgz'")
 
-        pipeline.download_stemcell('123', infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
-        expect(File.read('bosh-stemcell-aws-123.tgz')).to eq 'this is a thinga-ma-jiggy'
+        pipeline.download_stemcell('456', infrastructure: Infrastructure.for('aws'), name: 'stemcell', light: false)
+        expect(File.read("stemcell-456-aws-image-xen-amd64-#{distro}.tgz")).to eq 'this is a thinga-ma-jiggy'
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
           expect {
             pipeline.download_stemcell('888', infrastructure: Infrastructure.for('vsphere'), name: 'fooey', light: false)
-          }.to raise_error("remote stemcell 'fooey-vsphere-888.tgz' not found")
+          }.to raise_error("remote stemcell 'fooey-888-vsphere-image-esxi-amd64-#{distro}.tgz' not found")
         end
 
       end
 
       it 'downloads the specified light stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz' -> 'light-bosh-stemcell-aws-123.tgz'")
+        logger.should_receive(:info).with(
+            "downloaded 's3://bosh-ci-pipeline/456/stemcell/aws/stemcell-456-aws-ami-xen-amd64-#{distro}.tgz' -> 'stemcell-456-aws-ami-xen-amd64-#{distro}.tgz'")
 
-        pipeline.download_stemcell('123', infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
-        expect(File.read('light-bosh-stemcell-aws-123.tgz')).to eq 'this a completely different thingy'
+        pipeline.download_stemcell('456', infrastructure: Infrastructure.for('aws'), name: 'stemcell', light: true)
+        expect(File.read("stemcell-456-aws-ami-xen-amd64-#{distro}.tgz")).to eq 'this a completely different thingy'
       end
     end
 
@@ -186,7 +193,7 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
 
       it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))
+        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, "stemcell-456-aws-ami-xen-amd64-#{distro}.tgz"))
       end
     end
 
@@ -194,7 +201,8 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Dev::Infrastructure::Vsphere.new }
 
       it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-vsphere-456.tgz'))
+        expect(subject.micro_bosh_stemcell_path(
+                   infrastructure, download_directory)).to eq(File.join(download_directory, "micro_stemcell-456-vsphere-image-esxi-amd64-#{distro}.tgz"))
       end
     end
 
@@ -207,69 +215,58 @@ module Bosh::Dev
 
       context 'when micro and bosh stemcells exist for infrastructure' do
         before do
-          bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-456.tgz', body: 'this is the light-bosh-stemcell')
-          bucket_files.create(key: '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-456.tgz', body: 'this is the micro-bosh-stemcell')
+          bucket_files.create(key: "456/stemcell/aws/stemcell-456-aws-ami-xen-amd64-#{distro}.tgz", body: 'this is the light-bosh-stemcell')
+          bucket_files.create(key: "456/micro_stemcell/aws/micro_stemcell-456-aws-ami-xen-amd64-#{distro}.tgz", body: 'this is the micro-bosh-stemcell')
         end
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
           pipeline.fetch_stemcells(infrastructure, download_directory)
 
-          expect(File.read(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))).to eq('this is the light-bosh-stemcell')
-          expect(File.read(File.join(download_directory, 'light-micro-bosh-stemcell-aws-456.tgz'))).to eq('this is the micro-bosh-stemcell')
+          expect(File.read(File.join(download_directory, "stemcell-456-aws-ami-xen-amd64-#{distro}.tgz"))).to eq('this is the light-bosh-stemcell')
+          expect(File.read(File.join(download_directory, "micro_stemcell-456-aws-ami-xen-amd64-#{distro}.tgz"))).to eq('this is the micro-bosh-stemcell')
         end
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
           expect {
+
             pipeline.fetch_stemcells(infrastructure, download_directory)
-          }.to raise_error("remote stemcell 'light-micro-bosh-stemcell-aws-456.tgz' not found")
+          }.to raise_error("remote stemcell 'micro_stemcell-456-aws-ami-xen-amd64-#{distro}.tgz' not found")
         end
       end
     end
 
     describe '#stemcell_filename' do
-      subject(:stemcell_filename) { pipeline.stemcell_filename(version, infrastructure, 'bosh-stemcell', false) }
 
-      context 'when the infrastructure has a hypervisor' do
-        let(:infrastructure) { Infrastructure::OpenStack.new }
+      context 'when all parts are provided' do
+        it 'builds the stemcell filename' do
+          options = {
+              version: 123,
+              infrastructure: 'aws',
+              format: 'image',
+              hypervisor: 'xen',
+              arch: 'amd64',
+              distro: distro,
+          }
 
-        context 'and the version is a build number' do
-          let(:version) { 123 }
-
-          it 'ends with the infrastructure, hypervisor and build number' do
-            expect(stemcell_filename).to eq('bosh-stemcell-openstack-kvm-123.tgz')
-          end
-        end
-
-        context 'and the version is latest' do
-          let(:version) { 'latest' }
-
-          it 'begins with latest and ends with the infrastructure' do
-            expect(stemcell_filename).to eq('latest-bosh-stemcell-openstack.tgz')
-          end
+          expect(pipeline.stemcell_filename(options)).to eq "stemcell-123-aws-image-xen-amd64-#{distro}.tgz"
         end
       end
 
-      context 'when the infrastructure does not have a hypervisor' do
-        let(:infrastructure) { Infrastructure::Aws.new }
-
-        context 'and the version is a build number' do
-          let(:version) { 123 }
-
-          it 'ends with the infrastructure and build number' do
-            expect(stemcell_filename).to eq('bosh-stemcell-aws-123.tgz')
-          end
-        end
-
-        context 'and the version is latest' do
-          let(:version) { 'latest' }
-
-          it 'begins with latest and ends with the infrastructure' do
-            expect(stemcell_filename).to eq('latest-bosh-stemcell-aws.tgz')
-          end
+      context 'when one of the parts is missing' do
+        it 'foo' do
+          expect {
+            pipeline.stemcell_filename(
+                infrastructure: 'aws',
+                format: 'image',
+                hypervisor: 'xen',
+                arch: 'amd64',
+                distro: distro)
+          }.to raise_error(KeyError, 'key not found: :version')
         end
       end
+
     end
 
     describe '#cleanup_stemcells' do
