@@ -101,62 +101,6 @@ module Bosh::Dev
       end
     end
 
-    describe '#publish_stemcell' do
-      let(:stemcell) { double(Stemcell, light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
-
-      before do
-        FileUtils.mkdir('/tmp')
-        File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
-        logger.stub(:info)
-      end
-
-      describe 'when publishing a full stemcell' do
-        let(:stemcell_contents) { 'contents of the stemcells' }
-        let(:stemcell) { instance_double('Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
-
-        it 'publishes a stemcell to an S3 bucket' do
-          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws.tgz')
-
-          pipeline.publish_stemcell(stemcell)
-
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/bosh-stemcell-aws.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/bosh-stemcell-aws.tgz').body).to eq 'contents of the stemcells'
-        end
-
-        it 'updates the latest stemcell in the S3 bucket' do
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/stemcell-latest-aws-image-xen-amd64-#{distro}.tgz")
-
-          pipeline.publish_stemcell(stemcell)
-
-          filename = "456/bosh-stemcell/aws/stemcell-latest-aws-image-xen-amd64-#{distro}.tgz"
-
-          expect(bucket_files.map(&:key)).to include filename
-          expect(bucket_files.get(filename).body).to eq 'contents of the stemcells'
-        end
-      end
-
-      describe 'when publishing a light stemcell' do
-        let(:stemcell_contents) { 'this file is a light stemcell' }
-        let(:stemcell) { instance_double('Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
-
-        it 'publishes a light stemcell to S3 bucket' do
-          pipeline.publish_stemcell(stemcell)
-
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz').body).to eq 'this file is a light stemcell'
-        end
-
-        it 'updates the latest light stemcell in the s3 bucket' do
-          pipeline.publish_stemcell(stemcell)
-
-          filename = "456/bosh-stemcell/aws/stemcell-latest-aws-ami-xen-amd64-#{distro}.tgz"
-
-          expect(bucket_files.map(&:key)).to include filename
-          expect(bucket_files.get(filename).body).to eq 'this file is a light stemcell'
-        end
-      end
-    end
-
     describe '#download_stemcell' do
       before do
         bucket_files.create(key: "456/stemcell/aws/stemcell-456-aws-image-xen-amd64-#{distro}.tgz", body: 'this is a thinga-ma-jiggy')
