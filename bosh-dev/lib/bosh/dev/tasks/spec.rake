@@ -105,15 +105,7 @@ namespace :spec do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         require 'bosh/dev/bat/aws_runner'
-
-        system_tests = Bosh::Dev::Bat::AwsRunner.new
-
-        begin
-          system_tests.deploy_micro
-          system_tests.run_bats
-        ensure
-          system_tests.teardown_micro
-        end
+        Bosh::Dev::Bat::AwsRunner.new.run_bats
       end
     end
 
@@ -196,15 +188,7 @@ namespace :spec do
       desc 'Run vSphere MicroBOSH deployment suite'
       task :micro do
         require 'bosh/dev/bat/vsphere_runner'
-
-        system_tests = Bosh::Dev::Bat::VsphereRunner.new
-
-        begin
-          system_tests.deploy_micro
-          system_tests.run_bats
-        ensure
-          system_tests.teardown_micro
-        end
+        Bosh::Dev::Bat::VsphereRunner.new.run_bats
       end
     end
 

@@ -2,8 +2,8 @@ require 'bosh/dev/bat'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/bosh_cli_session'
 require 'bosh/dev/bat/stemcell_archive'
-require 'bosh/dev/vsphere/bat_deployment_manifest'
 require 'bosh/dev/vsphere/micro_bosh_deployment_manifest'
+require 'bosh/dev/vsphere/bat_deployment_manifest'
 
 module Bosh::Dev::Bat
   class VsphereRunner
@@ -14,26 +14,14 @@ module Bosh::Dev::Bat
       @stemcell_archive = StemcellArchive.new(bat_helper.bosh_stemcell_path)
     end
 
-    def deploy_micro
-      create_microbosh_manifest
-
+    def run_bats
       prepare_microbosh
 
-      create_bat_manifest
-    end
-
-    def run_bats
-      setup_bat_env
+      prepare_bat_deployment
 
       Rake::Task['bat'].invoke
-    end
-
-    def teardown_micro
-      Dir.chdir(bat_helper.artifacts_dir) do
-        bosh_cli_session.run_bosh 'delete deployment bat', ignore_failures: true
-        bosh_cli_session.run_bosh "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true
-        bosh_cli_session.run_bosh 'micro delete', ignore_failures: true
-      end
+    ensure
+      teardown_micro
     end
 
     private
@@ -47,6 +35,8 @@ module Bosh::Dev::Bat
     end
 
     def prepare_microbosh
+      create_microbosh_manifest
+
       Dir.chdir(bat_helper.artifacts_dir) do
         bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
         bosh_cli_session.run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
@@ -63,13 +53,23 @@ module Bosh::Dev::Bat
       end
     end
 
-    def setup_bat_env
+    def prepare_bat_deployment
+      create_bat_manifest
+
       ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
       ENV['BAT_DIRECTOR'] = director_hostname
       ENV['BAT_DNS_HOST'] = director_ip
       ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
       ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
       ENV['BAT_FAST'] = 'true'
+    end
+
+    def teardown_micro
+      Dir.chdir(bat_helper.artifacts_dir) do
+        bosh_cli_session.run_bosh 'delete deployment bat', ignore_failures: true
+        bosh_cli_session.run_bosh "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true
+        bosh_cli_session.run_bosh 'micro delete', ignore_failures: true
+      end
     end
 
     def director_hostname
