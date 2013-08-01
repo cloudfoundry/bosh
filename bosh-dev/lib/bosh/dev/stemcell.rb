@@ -1,8 +1,6 @@
 require 'rake/file_utils'
 require 'yaml'
-
 require 'bosh/dev/ami'
-require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
   class Stemcell
@@ -17,7 +15,7 @@ module Bosh::Dev
 
     def create_light_stemcell
       raise 'Stemcell is already a light-stemcell' if light?
-      Stemcell.new(create_light_aws_stemcell) if infrastructure.name == 'aws'
+      Stemcell.new(create_light_aws_stemcell) if infrastructure == 'aws'
     end
 
     def manifest
@@ -29,7 +27,7 @@ module Bosh::Dev
     end
 
     def infrastructure
-      Infrastructure.for(cloud_properties.fetch('infrastructure'))
+      cloud_properties.fetch('infrastructure')
     end
 
     def version
@@ -37,7 +35,7 @@ module Bosh::Dev
     end
 
     def light?
-      infrastructure.name == 'aws' && ami_id
+      infrastructure == 'aws' && ami_id
     end
 
     def ami_id(region = DEFAULT_AWS_AMI_REGION)
@@ -55,34 +53,7 @@ module Bosh::Dev
       end
     end
 
-    def publish_for_pipeline(pipeline)
-      pipeline.s3_upload(path, File.join(name, infrastructure.name, filename.filename))
-      pipeline.s3_upload(path, File.join(name, infrastructure.name, latest_filename.filename))
-    end
-
     private
-
-    def latest_filename
-      StemcellFilename.new(
-          version: 'latest',
-          infrastructure: infrastructure.name,
-          format: format,
-          hypervisor: infrastructure.hypervisor
-      )
-    end
-
-    def filename
-      StemcellFilename.new(
-          version: version,
-          infrastructure: infrastructure.name,
-          format: format,
-          hypervisor: infrastructure.hypervisor
-      )
-    end
-
-    def format
-      light? ? 'ami' : 'image'
-    end
 
     def cloud_properties
       manifest.fetch('cloud_properties')
@@ -107,17 +78,12 @@ module Bosh::Dev
       light_stemcell_path
     end
 
-    def light_stemcell_filename
-      StemcellFilename.new(
-          version: version,
-          infrastructure: infrastructure.name,
-          format: 'ami',
-          hypervisor: infrastructure.hypervisor
-      )
+    def light_stemcell_name
+      "light-#{File.basename(path)}"
     end
 
     def light_stemcell_path
-      File.join(File.dirname(path), light_stemcell_filename.filename)
+      File.join(File.dirname(path), light_stemcell_name)
     end
 
     def validate_stemcell

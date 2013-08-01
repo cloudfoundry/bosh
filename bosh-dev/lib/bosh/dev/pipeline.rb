@@ -31,7 +31,21 @@ module Bosh::Dev
     end
 
     def publish_stemcell(stemcell)
-      stemcell.publish_for_pipeline(self)
+      format = stemcell.light? ? 'ami' : 'image'
+      infrastructure = Infrastructure.for(stemcell.infrastructure)
+
+      latest_filename = stemcell_filename(
+          version: 'latest',
+          infrastructure: infrastructure.name,
+          format: format,
+          hypervisor: infrastructure.hypervisor,
+      )
+
+      s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
+
+      s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
+      s3_upload(stemcell.path, s3_path)
+      s3_upload(stemcell.path, s3_latest_path)
     end
 
     def gems_dir_url
