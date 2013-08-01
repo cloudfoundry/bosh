@@ -20,6 +20,7 @@ PATH
   remote: bosh-dev
   specs:
     bosh-dev (0.0.1.unpublished)
+      bosh-stemcell
 
 PATH
   remote: bosh-stemcell

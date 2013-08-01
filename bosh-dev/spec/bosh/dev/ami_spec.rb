@@ -5,14 +5,14 @@ require 'bosh/dev/stemcell'
 module Bosh::Dev
   describe Ami do
     let(:stemcell) do
-      stemcell = double(Stemcell)
+      stemcell = instance_double('Bosh::Dev::Stemcell')
       stemcell_manifest = { 'cloud_properties' => { 'ami' => '' } }
       stemcell.stub(:extract).and_yield('/foo/bar', stemcell_manifest)
       stemcell
     end
 
     subject(:ami) do
-      Ami.new(stemcell, double(AwsRegistry, region: 'fake-region'))
+      Ami.new(stemcell, instance_double('Bosh::Stemcell::AwsRegistry', region: 'fake-region'))
     end
 
     before do
