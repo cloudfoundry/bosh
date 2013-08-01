@@ -1,12 +1,5 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
-
 require 'bosh/dev/build'
-require 'bosh/dev/micro_bosh_release'
-require 'bosh/dev/pipeline'
-require 'bosh/dev/stemcell'
-
-require 'fog'
 
 module Bosh::Dev
   describe Build do
@@ -54,7 +47,7 @@ module Bosh::Dev
     end
 
     describe '#upload' do
-      let(:release) { double(MicroBoshRelease, tarball: 'release-tarball.tgz') }
+      let(:release) { double(tarball: 'release-tarball.tgz') }
 
       it 'uploads the release to the pipeline bucket with its build number' do
         fake_pipeline.should_receive(:s3_upload).with('release-tarball.tgz', 'release/bosh-123.tgz')
@@ -161,7 +154,7 @@ module Bosh::Dev
         fake_pipeline.stub(:stemcell_filename)
 
         fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
-        Bosh::Dev::Stemcell.stub(new: fake_stemcell)
+        Stemcell.stub(new: fake_stemcell)
       end
 
       after(:all) do
@@ -179,7 +172,7 @@ module Bosh::Dev
         fake_pipeline.should_receive(:stemcell_filename).
           with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
 
-        Bosh::Dev::Stemcell.should_receive(:new).with(fake_stemcell_filename)
+        Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end

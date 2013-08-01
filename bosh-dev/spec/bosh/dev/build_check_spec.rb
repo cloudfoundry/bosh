@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bosh/dev/build_check'
 
 module Bosh::Dev

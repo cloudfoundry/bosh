@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/ami'
-require 'bosh/dev/stemcell'
 
 module Bosh::Dev
   describe Ami do

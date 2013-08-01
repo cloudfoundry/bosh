@@ -1,5 +1,7 @@
 require 'fog'
 require 'logger'
+require 'bosh/dev/build'
+require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
   class Pipeline

@@ -1,11 +1,5 @@
 require 'spec_helper'
-require 'fileutils'
-require 'fakefs/spec_helpers'
-
 require 'bosh/dev/pipeline'
-require 'bosh/dev/stemcell'
-require 'bosh/dev/build'
-require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
   describe Pipeline do

@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/writable_manifest'
-require 'fakefs/spec_helpers'
 
 module Bosh::Dev
   describe WritableManifest do

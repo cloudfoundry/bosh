@@ -1,4 +1,5 @@
 require 'bosh/dev/pipeline'
+require 'bosh/dev/stemcell'
 require 'bosh/dev/infrastructure'
 
 module Bosh::Dev

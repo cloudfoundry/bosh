@@ -1,4 +1,5 @@
 require 'psych'
+require 'tmpdir'
 require 'bosh/dev/bat'
 require 'bosh/dev/bat/shell'
 

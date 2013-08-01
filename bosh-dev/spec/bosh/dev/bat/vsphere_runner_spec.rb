@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 require 'bosh/dev/bat/vsphere_runner'
 
 module Bosh::Dev::Bat

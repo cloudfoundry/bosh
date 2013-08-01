@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/bulk_uploader'
-require 'fakefs/spec_helpers'
 
 describe Bosh::Dev::BulkUploader do
   include FakeFS::SpecHelpers
