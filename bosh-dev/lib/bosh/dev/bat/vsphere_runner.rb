@@ -10,34 +10,20 @@ module Bosh::Dev::Bat
     def initialize
       @env = ENV.to_hash
       @bat_helper = Bosh::Dev::BatHelper.new('vsphere')
-      @bosh_cli_session = Bosh::Dev::Bat::BoshCliSession.new
+      @bosh_cli_session = BoshCliSession.new
       @stemcell_archive = StemcellArchive.new(bat_helper.bosh_stemcell_path)
     end
 
     def deploy_micro
-      Dir.chdir(bat_helper.micro_bosh_deployment_dir) do
-        Bosh::Dev::VSphere::MicroBoshDeploymentManifest.new.write
-      end
+      create_microbosh_manifest
 
-      Dir.chdir(bat_helper.artifacts_dir) do
-        bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
-        bosh_cli_session.run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
-        bosh_cli_session.run_bosh 'login admin admin'
+      prepare_microbosh
 
-        bosh_cli_session.run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
-
-        bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, stemcell_archive.version)
-        bat_deployment_manifest.write
-      end
+      create_bat_manifest
     end
 
     def run_bats
-      ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-      ENV['BAT_DIRECTOR'] = director_ip
-      ENV['BAT_DNS_HOST'] = director_ip
-      ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-      ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-      ENV['BAT_FAST'] = 'true'
+      setup_bat_env
 
       Rake::Task['bat'].invoke
     end
@@ -53,6 +39,42 @@ module Bosh::Dev::Bat
     private
 
     attr_reader :env, :bat_helper, :bosh_cli_session, :stemcell_archive
+
+    def create_microbosh_manifest
+      Dir.chdir(bat_helper.micro_bosh_deployment_dir) do
+        Bosh::Dev::VSphere::MicroBoshDeploymentManifest.new.write
+      end
+    end
+
+    def prepare_microbosh
+      Dir.chdir(bat_helper.artifacts_dir) do
+        bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
+        bosh_cli_session.run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
+        bosh_cli_session.run_bosh 'login admin admin'
+
+        bosh_cli_session.run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
+      end
+    end
+
+    def create_bat_manifest
+      Dir.chdir(bat_helper.artifacts_dir) do
+        bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, stemcell_archive.version)
+        bat_deployment_manifest.write
+      end
+    end
+
+    def setup_bat_env
+      ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
+      ENV['BAT_DIRECTOR'] = director_hostname
+      ENV['BAT_DNS_HOST'] = director_ip
+      ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
+      ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
+      ENV['BAT_FAST'] = 'true'
+    end
+
+    def director_hostname
+      director_ip
+    end
 
     def director_ip
       env.fetch('BOSH_VSPHERE_MICROBOSH_IP')

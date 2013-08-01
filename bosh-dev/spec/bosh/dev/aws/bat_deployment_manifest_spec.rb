@@ -4,7 +4,6 @@ require 'bosh/dev/aws/bat_deployment_manifest'
 module Bosh::Dev::Aws
   describe BatDeploymentManifest do
     let(:bosh_cli_session) { instance_double('Bosh::Dev::Bat::BoshCliSession') }
-    let(:archive) { instance_double('Bosh::Dev::Bat::StemcellArchive', version: 'fake-version') }
     let(:receipts) do
       instance_double('Bosh::Dev::Bat::Receipts',
                       vpc_outfile_path: 'fake_vpc_outfile_path',
@@ -12,7 +11,7 @@ module Bosh::Dev::Aws
       )
     end
 
-    subject(:manifest) { described_class.new(bosh_cli_session, archive) }
+    subject(:manifest) { described_class.new(bosh_cli_session, 'STEMCELL_VERSION') }
 
     before do
       Bosh::Dev::Aws::Receipts.stub(:new).and_return(receipts)
@@ -21,7 +20,7 @@ module Bosh::Dev::Aws
 
     describe '#write' do
       it 'uses the command line tool to generate the manifest' do
-        bosh_cli_session.should_receive(:run_bosh).with("aws generate bat 'fake_vpc_outfile_path' 'fake_route53_outfile_path' 'fake-version'")
+        bosh_cli_session.should_receive(:run_bosh).with("aws generate bat 'fake_vpc_outfile_path' 'fake_route53_outfile_path' 'STEMCELL_VERSION'")
         manifest.write
       end
     end

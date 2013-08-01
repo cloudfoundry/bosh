@@ -89,7 +89,7 @@ module Bosh::Dev::Bat
         end
 
         Bosh::Dev::Aws::BatDeploymentManifest.should_receive(:new).
-          with(bosh_cli_session, stemcell_archive).and_return(bat_deployment_manifest)
+          with(bosh_cli_session, stemcell_archive.version).and_return(bat_deployment_manifest)
 
         subject.deploy_micro
 
