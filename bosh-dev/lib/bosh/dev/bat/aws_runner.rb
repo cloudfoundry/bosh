@@ -30,8 +30,6 @@ module Bosh::Dev::Bat
     attr_reader :env, :bat_helper, :bosh_cli_session, :stemcell_archive
 
     def create_microbosh_manifest
-      get_deployments_aws
-
       Dir.chdir(bat_helper.micro_bosh_deployment_dir) do
         Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(bosh_cli_session).write
       end
@@ -81,21 +79,6 @@ module Bosh::Dev::Bat
 
     def director_ip
       Resolv.getaddress(director_hostname)
-    end
-
-    def get_deployments_aws
-      shell = Shell.new
-      mnt = env.fetch('FAKE_MNT', '/mnt')
-
-      Dir.chdir(mnt) do
-        if Dir.exists?('deployments')
-          Dir.chdir('deployments') do
-            shell.run('git pull')
-          end
-        else
-          shell.run("git clone #{env.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} deployments")
-        end
-      end
     end
   end
 end

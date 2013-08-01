@@ -14,7 +14,7 @@ module Bosh::Dev::Aws
     subject { described_class.new(bosh_cli_session) }
 
     before do
-      Bosh::Dev::Aws::Receipts.stub(:new).and_return(receipts)
+      Receipts.stub(:new).and_return(receipts)
       Bosh::Dev::Bat::BoshCliSession.stub(:new).and_return(bosh_cli_session)
     end
 

@@ -1,10 +1,11 @@
 require 'bosh/dev/aws'
+require 'bosh/dev/bat/aws_deployments_repository'
 
 module Bosh::Dev::Aws
   class Receipts
     def initialize
       @env = ENV.to_hash
-      @mnt = env.fetch('FAKE_MNT', '/mnt')
+      @deployments_repository = Bosh::Dev::Bat::AwsDeploymentsRepository.new
     end
 
     def vpc_outfile_path
@@ -17,10 +18,16 @@ module Bosh::Dev::Aws
 
     private
 
-    attr_reader :mnt, :env
+    attr_reader :env, :deployments_repository
 
     def path(filename)
-      File.join(mnt, 'deployments', env.fetch('BOSH_VPC_SUBDOMAIN'), filename)
+      ensure_repository_exists
+
+      File.join(deployments_repository.path, env.fetch('BOSH_VPC_SUBDOMAIN'), filename)
+    end
+
+    def ensure_repository_exists
+      deployments_repository.clone_or_update!
     end
   end
 end

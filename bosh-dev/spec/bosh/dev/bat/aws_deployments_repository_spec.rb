@@ -12,7 +12,7 @@ module Bosh::Dev::Bat
 
     before do
       Bosh::Dev::Bat::Shell.stub(new: shell)
-      
+
       ENV.stub(to_hash: {
         'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO'
       })

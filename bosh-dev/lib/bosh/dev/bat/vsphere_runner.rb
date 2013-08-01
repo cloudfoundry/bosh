@@ -91,6 +91,8 @@ module Bosh::Dev::Bat
 
       if matches
         matches[:uuid]
+      else
+        nil
       end
     end
   end

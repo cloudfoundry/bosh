@@ -20,20 +20,16 @@ module Bosh::Dev::Bat
     let(:microbosh_deployment_manifest) { instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest', write: nil) }
     let(:bat_deployment_manifest) { instance_double('Bosh::Dev::Aws::BatDeploymentManifest', write: nil) }
 
-    let(:shell) { instance_double('Bosh::Dev::Bat::Shell', run: true) }
-
     before do
       FileUtils.mkdir('/mnt')
       FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
       Bosh::Dev::BatHelper.stub(:new).with('aws').and_return(bat_helper)
-      Bosh::Dev::Bat::BoshCliSession.stub(new: bosh_cli_session)
-      Bosh::Dev::Bat::StemcellArchive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
+      BoshCliSession.stub(new: bosh_cli_session)
+      StemcellArchive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
 
       Bosh::Dev::Aws::MicroBoshDeploymentManifest.stub(new: microbosh_deployment_manifest)
       Bosh::Dev::Aws::BatDeploymentManifest.stub(new: bat_deployment_manifest)
-
-      Bosh::Dev::Bat::Shell.stub(:new).and_return(shell)
 
       ENV.stub(:to_hash).and_return(
         'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN',
