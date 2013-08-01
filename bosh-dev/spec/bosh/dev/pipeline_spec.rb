@@ -180,6 +180,16 @@ module Bosh::Dev
         pipeline.download_stemcell('123', infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
         expect(File.read('light-bosh-stemcell-aws-123.tgz')).to eq 'this a completely different thingy'
       end
+
+      it 'returns the name of the downloaded file' do
+        options = {
+            infrastructure: Infrastructure.for('aws'),
+            name: 'bosh-stemcell',
+            light: true
+        }
+        expect(pipeline.download_stemcell('123', options)).to eq 'light-bosh-stemcell-aws-123.tgz'
+      end
+
     end
 
     describe '#bosh_stemcell_path' do

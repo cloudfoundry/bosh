@@ -63,6 +63,7 @@ module Bosh::Dev
       end
 
       logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
+      filename
     end
 
     def stemcell_filename(version, infrastructure, name, light)
