@@ -1,11 +1,8 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
-require 'fileutils'
+require 'bosh/dev/aws/deployments_repository'
 
-require 'bosh/dev/bat/aws_deployments_repository'
-
-module Bosh::Dev::Bat
-  describe AwsDeploymentsRepository do
+module Bosh::Dev::Aws
+  describe DeploymentsRepository do
     include FakeFS::SpecHelpers
 
     let(:shell) { instance_double('Bosh::Dev::Bat::Shell', run: 'FAKE_SHELL_OUTPUT') }

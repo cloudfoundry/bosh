@@ -4,13 +4,13 @@ require 'bosh/dev/aws/receipts'
 module Bosh::Dev::Aws
   describe Receipts do
     let(:aws_deployments_repository) do
-      instance_double('Bosh::Dev::Bat::AwsDeploymentsRepository',
+      instance_double('Bosh::Dev::Aws::DeploymentsRepository',
                       clone_or_update!: true,
                       path: '/fake/deployments/path')
     end
 
     before do
-      Bosh::Dev::Bat::AwsDeploymentsRepository.stub(new: aws_deployments_repository)
+      DeploymentsRepository.stub(new: aws_deployments_repository)
 
       ENV.stub(to_hash: {
         'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN',
