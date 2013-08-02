@@ -1,6 +1,5 @@
 require 'rake/file_utils'
 require 'yaml'
-require 'bosh/stemcell/ami'
 
 module Bosh::Stemcell
   class Stemcell
@@ -11,10 +10,6 @@ module Bosh::Stemcell
     def initialize(path = '')
       @path = path
       validate_stemcell
-    end
-
-    def create_light_stemcell
-      Stemcell.new(create_light_aws_stemcell) if infrastructure == 'aws'
     end
 
     def manifest
@@ -56,36 +51,6 @@ module Bosh::Stemcell
 
     def cloud_properties
       manifest.fetch('cloud_properties')
-    end
-
-    def create_light_aws_stemcell
-      extract(exclude: 'image') do |extracted_stemcell_dir|
-        Dir.chdir(extracted_stemcell_dir) do
-          FileUtils.touch('image', verbose: true)
-
-          File.open('stemcell.MF', 'w') do |out|
-            Psych.dump(new_manifest, out)
-          end
-
-          Rake::FileUtilsExt.sh("sudo tar cvzf #{light_stemcell_path} *")
-        end
-      end
-      light_stemcell_path
-    end
-
-    def new_manifest
-      ami = Bosh::Stemcell::Ami.new(self)
-      ami_id = ami.publish
-      manifest['cloud_properties']['ami'] = { ami.region => ami_id }
-      manifest
-    end
-
-    def light_stemcell_name
-      "light-#{File.basename(path)}"
-    end
-
-    def light_stemcell_path
-      File.join(File.dirname(path), light_stemcell_name)
     end
 
     def validate_stemcell

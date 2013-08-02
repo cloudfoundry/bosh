@@ -62,10 +62,11 @@ module Bosh::Dev
     end
 
     describe '#publish' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', create_light_stemcell: nil) }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
       before do
+        Bosh::Stemcell::LightStemcellCreator.stub(:create)
         Bosh::Stemcell::Stemcell.stub(:new).and_return(stemcell)
         Pipeline.stub(:new).and_return(pipeline)
 
@@ -86,7 +87,7 @@ module Bosh::Dev
         let(:light_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
 
         it 'publishes an aws light stemcell' do
-          stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)
+          Bosh::Stemcell::LightStemcellCreator.should_receive(:create).with(stemcell).and_return(light_stemcell)
 
           pipeline.should_receive(:publish_stemcell).with(light_stemcell)
 
@@ -98,7 +99,7 @@ module Bosh::Dev
         let(:infrastructure) { 'vsphere' }
 
         it 'does nothing since other infrastructures do not have light stemcells' do
-          stemcell.should_not_receive(:create_light_stemcell)
+          Bosh::Stemcell::LightStemcellCreator.should_not_receive(:create)
 
           subject.publish
         end

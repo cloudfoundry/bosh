@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/light_stemcell_creator'
 require 'bosh/dev/pipeline'
 
 module Bosh::Dev
@@ -38,7 +39,10 @@ module Bosh::Dev
     def publish
       stemcell = Bosh::Stemcell::Stemcell.new(stemcell_filename)
 
-      Pipeline.new.publish_stemcell(stemcell.create_light_stemcell) if infrastructure == 'aws'
+      if infrastructure == 'aws'
+        light_stemcell = Bosh::Stemcell::LightStemcellCreator.create(stemcell)
+        Pipeline.new.publish_stemcell(light_stemcell)
+      end
 
       Pipeline.new.publish_stemcell(stemcell)
     end
