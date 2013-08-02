@@ -64,8 +64,8 @@ describe 'deployment integrations' do
       drain_output = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"].detect {|f| File.basename(f) == 'drain-test.log' }
       drain_times = File.read(drain_output).split.map { |time| time.to_i }
       drain_times.size.should == 3
-      (drain_times[1] - drain_times[0]).should be > 3
-      (drain_times[2] - drain_times[1]).should be > 2
+      (drain_times[1] - drain_times[0]).should be >= 3
+      (drain_times[2] - drain_times[1]).should be >= 2
     end
   end
 
