@@ -36,7 +36,7 @@ module Bosh::Common
 
       @index = spec["index"]
       @spec = openstruct(spec)
-      @raw_properties = spec["properties"] || {}
+      @raw_properties = compact_hash(spec["properties"]) || {}
       @properties = openstruct(@raw_properties)
     end
 
@@ -108,6 +108,17 @@ module Bosh::Common
           OpenStruct.new(mapped)
         when Array
           object.map { |item| openstruct(item) }
+        else
+          object
+      end
+    end
+
+    def compact_hash(object)
+      case object
+        when Hash
+          mapped = object.inject({}) { |h, (k,v)| h[k] =compact_hash(v); h }
+          return nil if mapped.inject(true) { |b, (k,v)| b &&= v.nil? }
+          mapped
         else
           object
       end
