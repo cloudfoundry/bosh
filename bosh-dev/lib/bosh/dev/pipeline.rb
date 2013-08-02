@@ -62,10 +62,6 @@ module Bosh::Dev
       filename
     end
 
-    def stemcell_filename(version, infrastructure, name, light)
-      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
-    end
-
     def s3_url
       "s3://#{bucket}/#{build_id}/"
     end
@@ -92,6 +88,10 @@ module Bosh::Dev
     private
 
     attr_reader :logger, :bucket, :build_id
+
+    def stemcell_filename(version, infrastructure, name, light)
+      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
+    end
 
     def download(remote_dir, filename)
       remote_path = File.join(remote_dir, filename)

@@ -231,50 +231,6 @@ module Bosh::Dev
       end
     end
 
-    describe '#stemcell_filename' do
-      subject(:stemcell_filename) { pipeline.stemcell_filename(version, infrastructure, 'bosh-stemcell', false) }
-
-      context 'when the infrastructure has a hypervisor' do
-        let(:infrastructure) { Infrastructure::OpenStack.new }
-
-        context 'and the version is a build number' do
-          let(:version) { 123 }
-
-          it 'ends with the infrastructure, hypervisor and build number' do
-            expect(stemcell_filename).to eq('bosh-stemcell-openstack-kvm-123.tgz')
-          end
-        end
-
-        context 'and the version is latest' do
-          let(:version) { 'latest' }
-
-          it 'begins with latest and ends with the infrastructure' do
-            expect(stemcell_filename).to eq('latest-bosh-stemcell-openstack.tgz')
-          end
-        end
-      end
-
-      context 'when the infrastructure does not have a hypervisor' do
-        let(:infrastructure) { Infrastructure::Aws.new }
-
-        context 'and the version is a build number' do
-          let(:version) { 123 }
-
-          it 'ends with the infrastructure and build number' do
-            expect(stemcell_filename).to eq('bosh-stemcell-aws-123.tgz')
-          end
-        end
-
-        context 'and the version is latest' do
-          let(:version) { 'latest' }
-
-          it 'begins with latest and ends with the infrastructure' do
-            expect(stemcell_filename).to eq('latest-bosh-stemcell-aws.tgz')
-          end
-        end
-      end
-    end
-
     describe '#cleanup_stemcells' do
       it 'removes stemcells created during the build' do
         FileUtils.mkdir_p(download_directory)
