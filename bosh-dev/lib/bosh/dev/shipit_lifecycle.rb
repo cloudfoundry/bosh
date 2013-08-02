@@ -4,7 +4,6 @@ require 'bosh/dev/shell'
 
 module Bosh::Dev
   class ShipitLifecycle
-
     def initialize
       @shell = Bosh::Dev::Shell.new
     end
