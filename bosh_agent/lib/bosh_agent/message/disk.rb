@@ -68,9 +68,17 @@ module Bosh::Agent
           cids = {}
         end
 
+        infra = config.infrastructure_name
+
         cids.each_key do |cid|
           disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-          partition = "#{disk}1"
+          case infra
+            when "warden"
+              partition = "#{disk}"
+            else
+              partition = "#{disk}1"
+          end
+
           disk_info << cid unless DiskUtil.mount_entry(partition).nil?
         end
         disk_info
