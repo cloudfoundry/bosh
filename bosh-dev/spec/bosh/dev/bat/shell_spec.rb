@@ -15,6 +15,15 @@ module Bosh::Dev
         expect(stdout.string).to eq("hello\nworld\n")
       end
 
+      context 'when "output_command" is specified' do
+        it 'outputs the command' do
+          cmd = 'echo 1;echo 2;echo 3;echo 4;echo 5'
+          subject.run(cmd, output_command: true)
+
+          expect(stdout.string).to include("echo 1;echo 2;echo 3;echo 4;echo 5")
+        end
+      end
+
       context 'when "last_number" is specified' do
         it 'tails "last_number" lines of output' do
           cmd = 'echo 1;echo 2;echo 3;echo 4;echo 5'
@@ -30,7 +39,7 @@ module Bosh::Dev
       end
 
       context 'when the command fails' do
-        it 'raises an error'do
+        it 'raises an error' do
           expect {
             subject.run('false')
           }.to raise_error /Failed: 'false' from /
@@ -46,7 +55,7 @@ module Bosh::Dev
         end
 
         context 'and ignoring failures' do
-          it 'raises an error'do
+          it 'raises an error' do
             subject.run('false', ignore_failures: true)
             expect(stdout.string).to match(/continuing anyway/)
           end

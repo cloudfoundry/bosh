@@ -7,7 +7,7 @@ module Bosh::Dev
     end
 
     def run(command, options = {})
-      output_lines = run_command(command)
+      output_lines = run_command(command, options)
       output_lines = tail(output_lines, options)
 
       command_output = output_lines.join("\n")
@@ -19,7 +19,8 @@ module Bosh::Dev
 
     attr_reader :stdout
 
-    def run_command(command)
+    def run_command(command, options)
+      stdout.puts command if options[:output_command]
       lines = []
 
       IO.popen(command).each do |line|
