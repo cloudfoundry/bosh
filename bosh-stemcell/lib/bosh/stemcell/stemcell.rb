@@ -14,7 +14,6 @@ module Bosh::Stemcell
     end
 
     def create_light_stemcell
-      raise 'Stemcell is already a light-stemcell' if light?
       Stemcell.new(create_light_aws_stemcell) if infrastructure == 'aws'
     end
 
