@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'bosh/dev/stemcell'
+require 'bosh/stemcell/stemcell'
 
-module Bosh::Dev
+module Bosh::Stemcell
   describe Stemcell do
     let(:stemcell_path) { spec_asset('micro-bosh-stemcell-aws.tgz') }
 

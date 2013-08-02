@@ -1,5 +1,5 @@
 require 'bosh/dev/pipeline'
-require 'bosh/dev/stemcell'
+require 'bosh/stemcell/stemcell'
 require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
@@ -54,7 +54,7 @@ module Bosh::Dev
       infrastructure = Infrastructure.for('aws')
       pipeline.download_stemcell(number.to_s, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
-      stemcell = Bosh::Dev::Stemcell.new(pipeline.stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true))
+      stemcell = Bosh::Stemcell::Stemcell.new(pipeline.stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true))
 
       connection = fog_storage(access_key_id, secret_access_key)
       directory = connection.directories.create(key: 'bosh-jenkins-artifacts')

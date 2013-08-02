@@ -62,11 +62,11 @@ module Bosh::Dev
     end
 
     describe '#publish' do
-      let(:stemcell) { instance_double('Bosh::Dev::Stemcell', create_light_stemcell: nil) }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', create_light_stemcell: nil) }
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
       before do
-        Stemcell.stub(:new).and_return(stemcell)
+        Bosh::Stemcell::Stemcell.stub(:new).and_return(stemcell)
         Pipeline.stub(:new).and_return(pipeline)
 
         stemcell_output_dir = File.join(subject.work_path, 'work')
@@ -83,7 +83,7 @@ module Bosh::Dev
       end
 
       context 'when infrastrcture is aws' do
-        let(:light_stemcell) { instance_double('Bosh::Dev::Stemcell') }
+        let(:light_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
 
         it 'publishes an aws light stemcell' do
           stemcell.should_receive(:create_light_stemcell).and_return(light_stemcell)

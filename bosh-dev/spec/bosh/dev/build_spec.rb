@@ -138,7 +138,7 @@ module Bosh::Dev
                          aws_secret_access_key: secret_access_key)
       end
       let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
-      let(:fake_stemcell) { instance_double('Bosh::Dev::Stemcell') }
+      let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
       let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure') }
 
       before(:all) do
@@ -154,7 +154,7 @@ module Bosh::Dev
         fake_pipeline.stub(:stemcell_filename)
 
         fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
-        Stemcell.stub(new: fake_stemcell)
+        Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
       end
 
       after(:all) do
@@ -172,7 +172,7 @@ module Bosh::Dev
         fake_pipeline.should_receive(:stemcell_filename).
           with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(fake_stemcell_filename)
 
-        Stemcell.should_receive(:new).with(fake_stemcell_filename)
+        Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
       end

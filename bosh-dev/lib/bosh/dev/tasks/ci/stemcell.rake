@@ -1,6 +1,6 @@
 require 'bosh/dev/build'
 require 'bosh/dev/pipeline'
-require 'bosh/dev/stemcell'
+require 'bosh/stemcell/stemcell'
 
 namespace :ci do
   namespace :stemcell do

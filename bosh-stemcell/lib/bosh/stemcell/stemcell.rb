@@ -2,7 +2,7 @@ require 'rake/file_utils'
 require 'yaml'
 require 'bosh/stemcell/ami'
 
-module Bosh::Dev
+module Bosh::Stemcell
   class Stemcell
     DEFAULT_AWS_AMI_REGION = 'us-east-1'
 
@@ -60,22 +60,25 @@ module Bosh::Dev
     end
 
     def create_light_aws_stemcell
-      ami = Bosh::Stemcell::Ami.new(self)
-      ami_id = ami.publish
-      extract(exclude: 'image') do |extracted_stemcell_dir, stemcell_manifest|
+      extract(exclude: 'image') do |extracted_stemcell_dir|
         Dir.chdir(extracted_stemcell_dir) do
-          stemcell_manifest['cloud_properties']['ami'] = { ami.region => ami_id }
-
           FileUtils.touch('image', verbose: true)
 
           File.open('stemcell.MF', 'w') do |out|
-            Psych.dump(stemcell_manifest, out)
+            Psych.dump(new_manifest, out)
           end
 
           Rake::FileUtilsExt.sh("sudo tar cvzf #{light_stemcell_path} *")
         end
       end
       light_stemcell_path
+    end
+
+    def new_manifest
+      ami = Bosh::Stemcell::Ami.new(self)
+      ami_id = ami.publish
+      manifest['cloud_properties']['ami'] = { ami.region => ami_id }
+      manifest
     end
 
     def light_stemcell_name

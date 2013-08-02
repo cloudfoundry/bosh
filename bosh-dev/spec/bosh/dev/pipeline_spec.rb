@@ -95,7 +95,7 @@ module Bosh::Dev
     end
 
     describe '#publish_stemcell' do
-      let(:stemcell) { double(Stemcell, light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
       before do
         FileUtils.mkdir('/tmp')
@@ -105,7 +105,7 @@ module Bosh::Dev
 
       describe 'when publishing a full stemcell' do
         let(:stemcell_contents) { 'contents of the stemcells' }
-        let(:stemcell) { instance_double('Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a stemcell to an S3 bucket' do
           logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws.tgz')
@@ -128,7 +128,7 @@ module Bosh::Dev
 
       describe 'when publishing a light stemcell' do
         let(:stemcell_contents) { 'this file is a light stemcell' }
-        let(:stemcell) { instance_double('Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a light stemcell to S3 bucket' do
           pipeline.publish_stemcell(stemcell)
