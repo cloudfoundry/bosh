@@ -136,7 +136,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
         exactly(2).times
 
       rp.process_idle_vms
-      rp.idle_vms.select { |vm| vm.has_network_reservation? }.size.should == 3
+      rp.idle_vms.select { |vm| vm.has_network_reservation? }.size.should == 1
     end
   end
 
