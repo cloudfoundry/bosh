@@ -163,9 +163,8 @@ module Bosh::Dev
         it 'raises' do
           expect {
             pipeline.download_stemcell('888', infrastructure: Infrastructure.for('vsphere'), name: 'fooey', light: false)
-          }.to raise_error("remote stemcell 'fooey-vsphere-888.tgz' not found")
+          }.to raise_error("remote file '456/fooey/vsphere/fooey-vsphere-888.tgz' not found")
         end
-
       end
 
       it 'downloads the specified light stemcell version from the pipeline bucket' do
@@ -227,7 +226,7 @@ module Bosh::Dev
         it 'raises' do
           expect {
             pipeline.fetch_stemcells(infrastructure, download_directory)
-          }.to raise_error("remote stemcell 'light-micro-bosh-stemcell-aws-456.tgz' not found")
+          }.to raise_error("remote file '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-456.tgz' not found")
         end
       end
     end

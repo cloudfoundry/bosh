@@ -54,18 +54,11 @@ module Bosh::Dev
       light = options.fetch(:light)
 
       filename = stemcell_filename(version, infrastructure, name, light)
-      bucket_files = fog_storage.directories.get(bucket).files
 
-      remote_path = File.join(build_id, name, infrastructure.name, filename)
-      raise "remote stemcell '#{filename}' not found" unless  bucket_files.head(remote_path)
+      remote_dir = File.join(build_id, name, infrastructure.name)
 
-      File.open(filename, 'w') do |file|
-        bucket_files.get(remote_path) do |chunk|
-          file.write(chunk)
-        end
-      end
+      download(remote_dir, filename)
 
-      logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
       filename
     end
 
@@ -99,6 +92,20 @@ module Bosh::Dev
     private
 
     attr_reader :logger, :bucket, :build_id
+
+    def download(remote_dir, filename)
+      remote_path = File.join(remote_dir, filename)
+      bucket_files = fog_storage.directories.get(bucket).files
+      raise "remote file '#{remote_path}' not found" unless  bucket_files.head(remote_path)
+
+      File.open(filename, 'w') do |file|
+        bucket_files.get(remote_path) do |chunk|
+          file.write(chunk)
+        end
+      end
+
+      logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
+    end
 
     def base_directory
       fog_storage.directories.get(bucket) || raise("bucket '#{bucket}' not found")
