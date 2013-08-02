@@ -17,14 +17,14 @@ module Bosh::Dev
 
     describe '.pull' do
       it 'pulls the current branch from origin' do
-        shell.should_receive(:run).with('git pull --rebase origin this-branch')
+        shell.should_receive(:run).with('git pull --rebase origin this-branch', output_command: true)
         ShipitLifecycle.new.pull
       end
     end
 
     describe '.push' do
       it 'pushes the current branch to origin' do
-        shell.should_receive(:run).with('git push origin this-branch')
+        shell.should_receive(:run).with('git push origin this-branch', output_command: true)
         ShipitLifecycle.new.push
       end
     end

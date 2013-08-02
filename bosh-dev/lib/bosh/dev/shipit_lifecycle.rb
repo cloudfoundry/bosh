@@ -10,11 +10,11 @@ module Bosh::Dev
     end
 
     def pull
-      @shell.run("git pull --rebase origin #{current_branch}")
+      @shell.run("git pull --rebase origin #{current_branch}", output_command: true)
     end
 
     def push
-      @shell.run("git push origin #{current_branch}")
+      @shell.run("git push origin #{current_branch}", output_command: true)
     end
 
     private
