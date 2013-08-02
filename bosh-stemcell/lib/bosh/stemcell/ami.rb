@@ -5,7 +5,7 @@ require 'yaml'
 require 'rake'
 require 'bosh/stemcell/aws_registry'
 
-module Bosh::Dev
+module Bosh::Stemcell
   class Ami
     attr_reader :stemcell
 
@@ -15,26 +15,6 @@ module Bosh::Dev
     end
 
     def publish
-      access_key_id = ENV['BOSH_AWS_ACCESS_KEY_ID']
-      secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY']
-
-      aws = {
-        'default_key_name' => 'fake',
-        'region' => region,
-        'access_key_id' => access_key_id,
-        'secret_access_key' => secret_access_key
-      }
-
-      # just fake the registry struct, as we don't use it
-      options = {
-        'aws' => aws,
-        'registry' => {
-          'endpoint' => 'http://fake.registry',
-          'user' => 'fake',
-          'password' => 'fake'
-        }
-      }
-
       cloud_config = OpenStruct.new(logger: Logger.new('ami.log'), task_checkpoint: nil)
       Bosh::Clouds::Config.configure(cloud_config)
 
@@ -55,5 +35,29 @@ module Bosh::Dev
     private
 
     attr_reader :aws_registry
+
+    def options
+      # just fake the registry struct, as we don't use it
+      {
+        'aws' => aws,
+        'registry' => {
+          'endpoint' => 'http://fake.registry',
+          'user' => 'fake',
+          'password' => 'fake'
+        }
+      }
+    end
+
+    def aws
+      access_key_id = ENV['BOSH_AWS_ACCESS_KEY_ID']
+      secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY']
+
+      {
+        'default_key_name' => 'fake',
+        'region' => region,
+        'access_key_id' => access_key_id,
+        'secret_access_key' => secret_access_key
+      }
+    end
   end
 end

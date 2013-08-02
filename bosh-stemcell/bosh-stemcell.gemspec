@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
+  spec.add_dependency 'bosh_aws_cpi'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'rspec-fire'

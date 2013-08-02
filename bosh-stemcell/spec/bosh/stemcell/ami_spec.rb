@@ -1,10 +1,10 @@
 require 'spec_helper'
-require 'bosh/dev/ami'
+require 'bosh/stemcell/ami'
 
-module Bosh::Dev
+module Bosh::Stemcell
   describe Ami do
     let(:stemcell) do
-      stemcell = instance_double('Bosh::Dev::Stemcell')
+      stemcell = double('Bosh::Dev::Stemcell')
       stemcell_manifest = { 'cloud_properties' => { 'ami' => '' } }
       stemcell.stub(:extract).and_yield('/foo/bar', stemcell_manifest)
       stemcell
@@ -20,7 +20,7 @@ module Bosh::Dev
 
     describe 'publish' do
       it 'creates a new ami' do
-        provider = double(Bosh::Clouds::Provider, create_stemcell: 'fake-ami-id').as_null_object
+        provider = instance_double('Bosh::AwsCloud::Cloud', create_stemcell: 'fake-ami-id').as_null_object
         Bosh::Clouds::Provider.stub(create: provider)
 
         expect(ami.publish).to eq('fake-ami-id')

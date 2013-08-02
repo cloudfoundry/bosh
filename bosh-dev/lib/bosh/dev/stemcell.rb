@@ -1,6 +1,6 @@
 require 'rake/file_utils'
 require 'yaml'
-require 'bosh/dev/ami'
+require 'bosh/stemcell/ami'
 
 module Bosh::Dev
   class Stemcell
@@ -60,7 +60,7 @@ module Bosh::Dev
     end
 
     def create_light_aws_stemcell
-      ami = Ami.new(self)
+      ami = Bosh::Stemcell::Ami.new(self)
       ami_id = ami.publish
       extract(exclude: 'image') do |extracted_stemcell_dir, stemcell_manifest|
         Dir.chdir(extracted_stemcell_dir) do

@@ -97,11 +97,11 @@ module Bosh::Dev
 
     describe '#create_light_stemcell' do
       let(:ami) do
-        double(Ami, publish: 'fake-ami-id', region: 'fake-region')
+        instance_double('Bosh::Stemcell::Ami', publish: 'fake-ami-id', region: 'fake-region')
       end
 
       before do
-        Ami.stub(new: ami)
+        Bosh::Stemcell::Ami.stub(new: ami)
         Rake::FileUtilsExt.stub(:sh)
         FileUtils.stub(:touch)
       end

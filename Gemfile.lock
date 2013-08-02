@@ -26,6 +26,7 @@ PATH
   remote: bosh-stemcell
   specs:
     bosh-stemcell (0.0.1.unpublished)
+      bosh_aws_cpi
 
 PATH
   remote: bosh_agent
