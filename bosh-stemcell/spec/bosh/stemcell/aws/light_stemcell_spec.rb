@@ -1,5 +1,6 @@
 require 'spec_helper'
-require 'bosh/stemcell/light_stemcell_creator'
+require 'bosh/stemcell/aws/light_stemcell'
+require 'bosh/stemcell/stemcell'
 
 module Bosh::Stemcell
   module Aws

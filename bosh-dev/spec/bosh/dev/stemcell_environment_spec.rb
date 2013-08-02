@@ -63,11 +63,12 @@ module Bosh::Dev
 
     describe '#publish' do
       let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+      let(:light_stemcell) { instance_double('Bosh::Stemcell::Aws::LightStemcell', write_archive: nil, path: 'fake light stemcell path') }
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
       before do
-        Bosh::Stemcell::LightStemcellCreator.stub(:create)
         Bosh::Stemcell::Stemcell.stub(:new).and_return(stemcell)
+        Bosh::Stemcell::Aws::LightStemcell.stub(:new).with(stemcell).and_return(light_stemcell)
         Pipeline.stub(:new).and_return(pipeline)
 
         stemcell_output_dir = File.join(subject.work_path, 'work')
@@ -84,12 +85,12 @@ module Bosh::Dev
       end
 
       context 'when infrastrcture is aws' do
-        let(:light_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+        let(:light_stemcell_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
 
         it 'publishes an aws light stemcell' do
-          Bosh::Stemcell::LightStemcellCreator.should_receive(:create).with(stemcell).and_return(light_stemcell)
-
-          pipeline.should_receive(:publish_stemcell).with(light_stemcell)
+          Bosh::Stemcell::Stemcell.should_receive(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell)
+          light_stemcell.should_receive(:write_archive)
+          pipeline.should_receive(:publish_stemcell).with(light_stemcell_stemcell)
 
           subject.publish
         end
@@ -99,7 +100,7 @@ module Bosh::Dev
         let(:infrastructure) { 'vsphere' }
 
         it 'does nothing since other infrastructures do not have light stemcells' do
-          Bosh::Stemcell::LightStemcellCreator.should_not_receive(:create)
+          light_stemcell.should_not_receive(:write_archive)
 
           subject.publish
         end
