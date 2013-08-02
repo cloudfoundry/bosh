@@ -20,7 +20,7 @@ module Bosh::Dev
           cmd = 'echo 1;echo 2;echo 3;echo 4;echo 5'
           subject.run(cmd, output_command: true)
 
-          expect(stdout.string).to include("echo 1;echo 2;echo 3;echo 4;echo 5")
+          expect(stdout.string).to include('echo 1;echo 2;echo 3;echo 4;echo 5')
         end
       end
 
