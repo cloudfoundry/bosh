@@ -2,6 +2,7 @@ require 'fog'
 require 'logger'
 require 'bosh/dev/build'
 require 'bosh/dev/infrastructure'
+require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class Pipeline
@@ -69,15 +70,7 @@ module Bosh::Dev
     end
 
     def stemcell_filename(version, infrastructure, name, light)
-      stemcell_filename_parts = []
-      stemcell_filename_parts << version if version == 'latest'
-      stemcell_filename_parts << 'light' if light
-      stemcell_filename_parts << name
-      stemcell_filename_parts << infrastructure.name
-      stemcell_filename_parts << infrastructure.hypervisor unless version == 'latest'
-      stemcell_filename_parts << version unless version == 'latest'
-
-      "#{stemcell_filename_parts.compact.join('-')}.tgz"
+      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
     end
 
     def s3_url
