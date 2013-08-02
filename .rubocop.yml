@@ -41,3 +41,6 @@ CaseIndentation:
 
 DotPosition:
   Enabled: false
+
+Blocks:
+  Enabled: false # {} for multi-line blocks in RSpec expectations is very common
