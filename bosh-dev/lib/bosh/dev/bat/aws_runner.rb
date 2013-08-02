@@ -1,3 +1,4 @@
+require 'resolv'
 require 'bosh/dev/bat'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/bosh_cli_session'
