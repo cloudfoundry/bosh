@@ -1,5 +1,6 @@
 require 'bosh/dev/pipeline'
 require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/archive_filename'
 require 'bosh/dev/infrastructure'
 
 module Bosh::Dev
@@ -39,7 +40,7 @@ module Bosh::Dev
 
     def promote_artifacts(aws_credentials)
       sync_buckets
-      update_light_micro_bosh_ami_pointer_file(aws_credentials[:access_key_id], aws_credentials[:secret_access_key])
+      update_light_micro_bosh_ami_pointer_file(aws_credentials)
     end
 
     def sync_buckets
@@ -50,16 +51,11 @@ module Bosh::Dev
       Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
     end
 
-    def update_light_micro_bosh_ami_pointer_file(access_key_id, secret_access_key)
-      infrastructure = Infrastructure.for('aws')
-      pipeline.download_stemcell(number.to_s, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
-
-      stemcell = Bosh::Stemcell::Stemcell.new(pipeline.stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true))
-
-      connection = fog_storage(access_key_id, secret_access_key)
+    def update_light_micro_bosh_ami_pointer_file(aws_credentials)
+      connection = fog_storage(aws_credentials[:access_key_id], aws_credentials[:secret_access_key])
       directory = connection.directories.create(key: 'bosh-jenkins-artifacts')
       directory.files.create(key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
-                             body: stemcell.ami_id,
+                             body: light_stemcell.ami_id,
                              acl: 'public-read')
     end
 
@@ -72,6 +68,14 @@ module Bosh::Dev
     private
 
     attr_reader :pipeline, :job_name
+
+    def light_stemcell
+      infrastructure = Infrastructure.for('aws')
+      pipeline.download_stemcell(number.to_s, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+
+      filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, 'micro-bosh-stemcell', true).to_s
+      Bosh::Stemcell::Stemcell.new(filename)
+    end
 
     def release_path
       "release/bosh-#{number}.tgz"
