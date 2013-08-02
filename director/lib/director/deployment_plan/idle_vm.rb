@@ -54,7 +54,7 @@ module Bosh::Director
       # @return [void]
       def release_reservation
         if has_network_reservation?
-          @resource_pool.network.release(@network_reservation)
+          @resource_pool.network.release(@network_reservation) unless @network_reservation.ip.nil?
           @network_reservation = nil
         end
       end
