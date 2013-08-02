@@ -77,6 +77,12 @@ module Bosh::Stemcell
 
           light_stemcell.write_archive
         end
+
+        it 'does not mutate original stemcell manifest' do
+          expect {
+            light_stemcell.write_archive
+          }.not_to change { stemcell.manifest['cloud_properties'] }
+        end
       end
     end
   end

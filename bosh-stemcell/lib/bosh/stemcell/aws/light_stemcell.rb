@@ -1,5 +1,6 @@
 require 'rake/file_utils'
 require 'yaml'
+require 'common/deep_copy'
 require 'bosh/stemcell/ami'
 
 module Bosh::Stemcell::Aws
@@ -14,7 +15,7 @@ module Bosh::Stemcell::Aws
           FileUtils.touch('image', verbose: true)
 
           File.open('stemcell.MF', 'w') do |out|
-            Psych.dump(new_manifest, out)
+            Psych.dump(manifest, out)
           end
 
           Rake::FileUtilsExt.sh("sudo tar cvzf #{path} *")
@@ -30,11 +31,12 @@ module Bosh::Stemcell::Aws
 
     attr_reader :stemcell
 
-    def new_manifest
+    def manifest
       ami = Bosh::Stemcell::Ami.new(stemcell)
       ami_id = ami.publish
-      stemcell.manifest['cloud_properties']['ami'] = { ami.region => ami_id }
-      stemcell.manifest
+      manifest = Bosh::Common::DeepCopy.copy(stemcell.manifest)
+      manifest['cloud_properties']['ami'] = { ami.region => ami_id }
+      manifest
     end
   end
 end
