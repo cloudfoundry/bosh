@@ -5,7 +5,6 @@ require 'bosh/dev/bat/bosh_cli_session'
 require 'bosh/dev/bat/stemcell_archive'
 require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 require 'bosh/dev/aws/bat_deployment_manifest'
-require 'bosh/dev/bat/shell'
 
 module Bosh::Dev::Bat
   class AwsRunner
