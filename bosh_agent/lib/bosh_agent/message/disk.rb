@@ -68,7 +68,7 @@ module Bosh::Agent
           cids = {}
         end
 
-        infra = config.infrastructure_name
+        infra = Bosh::Agent::Config.infrastructure_name
 
         cids.each_key do |cid|
           disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
