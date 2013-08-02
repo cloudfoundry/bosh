@@ -131,12 +131,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       idle_vm.use_reservation(r1)
 
       rp.idle_vms.select { |vm| vm.has_network_reservation? }.size.should == 1
-      network.should_receive(:reserve!).
-        with(an_instance_of(BD::NetworkReservation), "Resource pool `small'").
-        exactly(2).times
-
-      rp.process_idle_vms
-      rp.idle_vms.select { |vm| vm.has_network_reservation? }.size.should == 1
     end
   end
 
