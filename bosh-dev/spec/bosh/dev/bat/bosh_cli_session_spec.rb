@@ -3,11 +3,11 @@ require 'bosh/dev/bat/bosh_cli_session'
 
 module Bosh::Dev::Bat
   describe BoshCliSession do
-    let(:shell) { instance_double('Bosh::Dev::Bat::Shell') }
+    let(:shell) { instance_double('Bosh::Dev::Shell') }
     let(:tempfile) { instance_double('Tempfile', path: 'fake-tmp/bosh_config') }
 
     before do
-      Bosh::Dev::Bat::Shell.stub(:new).and_return(shell)
+      Bosh::Dev::Shell.stub(:new).and_return(shell)
       subject.stub(:puts)
       Tempfile.stub(:new).with('bosh_config').and_return(tempfile)
     end

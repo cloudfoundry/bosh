@@ -5,10 +5,10 @@ module Bosh::Dev::Aws
   describe DeploymentsRepository do
     include FakeFS::SpecHelpers
 
-    let(:shell) { instance_double('Bosh::Dev::Bat::Shell', run: 'FAKE_SHELL_OUTPUT') }
+    let(:shell) { instance_double('Bosh::Dev::Shell', run: 'FAKE_SHELL_OUTPUT') }
 
     before do
-      Bosh::Dev::Bat::Shell.stub(new: shell)
+      Bosh::Dev::Shell.stub(new: shell)
 
       ENV.stub(to_hash: {
         'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO'

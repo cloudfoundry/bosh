@@ -1,12 +1,12 @@
 require 'fileutils'
 require 'bosh/dev/aws'
-require 'bosh/dev/bat/shell'
+require 'bosh/dev/shell'
 
 module Bosh::Dev::Aws
   class DeploymentsRepository
     def initialize
       @env = ENV.to_hash
-      @shell = Bosh::Dev::Bat::Shell.new
+      @shell = Bosh::Dev::Shell.new
     end
 
     def path
