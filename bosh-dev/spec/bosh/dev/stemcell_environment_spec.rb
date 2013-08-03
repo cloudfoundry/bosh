@@ -106,5 +106,51 @@ module Bosh::Dev
         end
       end
     end
+
+    describe '#create_micro_stemcell' do
+      let(:stemcell_micro_task) { instance_double('Rake::Task', invoke: nil) }
+      let(:build_candidate) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: 1234) }
+
+      before do
+        Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
+        Bosh::Dev::Build.stub(:candidate).and_return(build_candidate)
+      end
+
+      it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
+        ENV.should_receive(:[]=).with('BUILD_PATH', '/mnt/stemcells/aws-basic/build')
+        ENV.should_receive(:[]=).with('WORK_PATH', '/mnt/stemcells/aws-basic/work')
+        ENV.should_receive(:[]=).with('STEMCELL_VERSION', 'fake-jenkins-BUILD_ID')
+
+        subject.create_micro_stemcell
+      end
+
+      it 'creates a micro stemcell' do
+        stemcell_micro_task.should_receive(:invoke).with('fake release path', 'aws', 1234)
+        subject.create_micro_stemcell
+      end
+    end
+
+    describe '#create_basic_stemcell' do
+      let(:stemcell_basic_task) { instance_double('Rake::Task', invoke: nil) }
+      let(:build_candidate) { instance_double('Bosh::Dev::Build', number: 1234) }
+
+      before do
+        Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
+        Bosh::Dev::Build.stub(:candidate).and_return(build_candidate)
+      end
+
+      it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
+        ENV.should_receive(:[]=).with('BUILD_PATH', '/mnt/stemcells/aws-basic/build')
+        ENV.should_receive(:[]=).with('WORK_PATH', '/mnt/stemcells/aws-basic/work')
+        ENV.should_receive(:[]=).with('STEMCELL_VERSION', 'fake-jenkins-BUILD_ID')
+
+        subject.create_basic_stemcell
+      end
+
+      it 'creates a basic stemcell' do
+        stemcell_basic_task.should_receive(:invoke).with('aws', 1234)
+        subject.create_basic_stemcell
+      end
+    end
   end
 end

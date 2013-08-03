@@ -36,6 +36,23 @@ module Bosh::Dev
       end
     end
 
+    def create_micro_stemcell
+      ENV['BUILD_PATH'] = build_path
+      ENV['WORK_PATH'] = work_path
+      ENV['STEMCELL_VERSION'] = stemcell_version
+
+      bosh_release_path = Bosh::Dev::Build.candidate.download_release
+      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure, Bosh::Dev::Build.candidate.number)
+    end
+
+    def create_basic_stemcell
+      ENV['BUILD_PATH'] = build_path
+      ENV['WORK_PATH'] = work_path
+      ENV['STEMCELL_VERSION'] = stemcell_version
+
+      Rake::Task['stemcell:basic'].invoke(infrastructure, Bosh::Dev::Build.candidate.number)
+    end
+
     def publish
       stemcell = Bosh::Stemcell::Stemcell.new(stemcell_filename)
 
