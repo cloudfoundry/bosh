@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_aws_cpi', "~>#{version}"
   s.add_dependency 'bosh_vsphere_cpi', "~>#{version}"
   s.add_dependency 'eventmachine', '~>0.12.9'
-  s.add_dependency 'fog', '~> 1.12.1'
+  s.add_dependency 'fog', '~>1.14.0'
   s.add_dependency 'httpclient', '=2.2.4'
   s.add_dependency 'nats', '~> 0.4.28'
   s.add_dependency 'netaddr', '~>1.5.0'
