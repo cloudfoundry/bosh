@@ -6,13 +6,15 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: 'fake access key', aws_secret_access_key: 'fake secret key') }
+    let(:storage_wrapper) { Bosh::Dev::Storage::FogStorage.new(fog_storage) }
+
     let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
     let(:bucket_name) { 'bosh-ci-pipeline' }
     let(:logger) { instance_double('Logger').as_null_object }
     let(:build_id) { '456' }
     let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
 
-    subject(:pipeline) { Pipeline.new(fog_storage: fog_storage, logger: logger, build_id: build_id) }
+    subject(:pipeline) { Pipeline.new(storage: storage_wrapper, logger: logger, build_id: build_id) }
 
     before do
       Fog.mock!
@@ -43,12 +45,6 @@ module Bosh::Dev
           Logger.should_receive(:new).with($stdout)
           pipeline
         end
-
-        it "defaults to the environment's s3 aws credentials" do
-          expect(pipeline.fog_storage).not_to be_nil
-          expect(pipeline.fog_storage.instance_variable_get(:@aws_access_key_id)).to eq('fake access key')
-          expect(pipeline.fog_storage.instance_variable_get(:@aws_secret_access_key)).to eq('fake secret key')
-        end
       end
     end
 
@@ -75,7 +71,9 @@ module Bosh::Dev
         let(:bucket_name) { false }
 
         it 'raises an error' do
-          expect { pipeline.create({}) }.to raise_error("bucket 'bosh-ci-pipeline' not found")
+          expect {
+            pipeline.create(key: 'dest_dir/foo/bar/baz.txt', body: 'contents of baz', public: false)
+          }.to raise_error("bucket 'bosh-ci-pipeline' not found")
         end
       end
     end

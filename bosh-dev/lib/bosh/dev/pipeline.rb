@@ -1,32 +1,28 @@
 require 'fog'
 require 'logger'
+
+require 'bosh/dev/storage/fog_storage'
 require 'bosh/dev/build'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class Pipeline
-    attr_reader :fog_storage
+    attr_reader :storage
 
     def initialize(options = {})
-      @fog_storage = options.fetch(:fog_storage) do
-        fog_options = {
-          provider: 'AWS',
-          aws_access_key_id: ENV.to_hash.fetch('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'),
-          aws_secret_access_key: ENV.to_hash.fetch('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT')
-        }
-        Fog::Storage.new(fog_options)
-      end
+      @storage = options.fetch(:storage) { default_storage }
       @build_id = options.fetch(:build_id) { Build.candidate.number.to_s }
       @logger = options.fetch(:logger) { Logger.new($stdout) }
       @bucket = 'bosh-ci-pipeline'
     end
 
     def create(options)
-      uploaded_file = base_directory.files.create(
-        key: File.join(build_id, options.fetch(:key)),
-        body: options.fetch(:body),
-        public: options.fetch(:public)
+      uploaded_file = storage.upload(
+        bucket,
+        File.join(build_id, options.fetch(:key)),
+        options.fetch(:body),
+        options.fetch(:public)
       )
       logger.info("uploaded to #{uploaded_file.public_url || File.join(s3_url, options.fetch(:key))}")
     end
@@ -94,21 +90,14 @@ module Bosh::Dev
     end
 
     def download(remote_dir, filename)
+      storage.download(bucket, remote_dir, filename)
+
       remote_path = File.join(remote_dir, filename)
-      bucket_files = fog_storage.directories.get(bucket).files
-      raise "remote file '#{remote_path}' not found" unless  bucket_files.head(remote_path)
-
-      File.open(filename, 'w') do |file|
-        bucket_files.get(remote_path) do |chunk|
-          file.write(chunk)
-        end
-      end
-
       logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
     end
 
-    def base_directory
-      fog_storage.directories.get(bucket) || raise("bucket '#{bucket}' not found")
+    def default_storage
+      Bosh::Dev::Storage::FogStorage.new
     end
   end
 end

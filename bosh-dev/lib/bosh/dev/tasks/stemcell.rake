@@ -29,7 +29,6 @@ namespace :stemcell do
         ), '..', '..', '..', '..', '..', 'release', 'micro', "#{args[:infrastructure]}.yml"
       )
 
-
     options = default_options(args)
     options[:stemcell_version] = args.with_defaults({}).fetch(:version)
     if args[:tarball]
