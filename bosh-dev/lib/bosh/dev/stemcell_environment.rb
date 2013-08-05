@@ -1,5 +1,4 @@
 require 'fileutils'
-require 'bosh/dev/stemcell_publisher'
 
 module Bosh::Dev
   class StemcellEnvironment
@@ -32,15 +31,6 @@ module Bosh::Dev
       if mnt_type != 'btrfs'
         system("sudo rm -rf #{directory}")
       end
-    end
-
-    def publish
-      publisher = StemcellPublisher.new
-      publisher.publish(stemcell_filename)
-    end
-
-    def stemcell_filename # FIXME: Should be returned by StemcellBuilder#micro or StemcellBuilder#basic
-      @stemcell_filename ||= Dir.glob("#{directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
     end
   end
 end
