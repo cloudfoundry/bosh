@@ -1,7 +1,3 @@
-require 'bosh/dev/build'
-require 'bosh/dev/pipeline'
-require 'bosh/stemcell/stemcell'
-
 namespace :ci do
   namespace :stemcell do
     desc 'Build micro bosh stemcell from CI pipeline'
