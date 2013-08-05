@@ -6,12 +6,15 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:infrastructure) { 'aws' }
+    let(:build_candidate) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: 1234) }
 
     subject do
       StemcellEnvironment.new('basic', infrastructure)
     end
 
     before do
+      Bosh::Dev::Build.stub(:candidate).and_return(build_candidate)
+
       ENV.stub(:to_hash).and_return({
                                       'BUILD_ID' => 'fake-jenkins-BUILD_ID',
                                     })
@@ -109,11 +112,9 @@ module Bosh::Dev
 
     describe '#create_micro_stemcell' do
       let(:stemcell_micro_task) { instance_double('Rake::Task', invoke: nil) }
-      let(:build_candidate) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: 1234) }
 
       before do
         Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
-        Bosh::Dev::Build.stub(:candidate).and_return(build_candidate)
       end
 
       it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
@@ -132,11 +133,9 @@ module Bosh::Dev
 
     describe '#create_basic_stemcell' do
       let(:stemcell_basic_task) { instance_double('Rake::Task', invoke: nil) }
-      let(:build_candidate) { instance_double('Bosh::Dev::Build', number: 1234) }
 
       before do
         Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
-        Bosh::Dev::Build.stub(:candidate).and_return(build_candidate)
       end
 
       it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do

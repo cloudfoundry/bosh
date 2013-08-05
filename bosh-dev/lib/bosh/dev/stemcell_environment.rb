@@ -2,6 +2,7 @@ require 'fileutils'
 require 'bosh/stemcell/stemcell'
 require 'bosh/stemcell/aws/light_stemcell'
 require 'bosh/dev/pipeline'
+require 'bosh/dev/stemcell_builder'
 
 module Bosh::Dev
   class StemcellEnvironment
@@ -20,6 +21,7 @@ module Bosh::Dev
       @work_path = File.join(directory, 'work')
       @build_path = File.join(directory, 'build')
       @stemcell_version = ENV.to_hash.fetch('BUILD_ID')
+      @creator = StemcellBuilder.new(self)
     end
 
     def sanitize
@@ -37,20 +39,11 @@ module Bosh::Dev
     end
 
     def create_micro_stemcell
-      ENV['BUILD_PATH'] = build_path
-      ENV['WORK_PATH'] = work_path
-      ENV['STEMCELL_VERSION'] = stemcell_version
-
-      bosh_release_path = Bosh::Dev::Build.candidate.download_release
-      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure, Bosh::Dev::Build.candidate.number)
+      creator.micro
     end
 
     def create_basic_stemcell
-      ENV['BUILD_PATH'] = build_path
-      ENV['WORK_PATH'] = work_path
-      ENV['STEMCELL_VERSION'] = stemcell_version
-
-      Rake::Task['stemcell:basic'].invoke(infrastructure, Bosh::Dev::Build.candidate.number)
+      creator.basic
     end
 
     def publish
@@ -68,6 +61,8 @@ module Bosh::Dev
     end
 
     private
+
+    attr_reader :creator
 
     def stemcell_filename
       @stemcell_filename ||=
