@@ -6,6 +6,7 @@ module Bosh::Dev
   class StemcellPublisher
     def initialize(environment)
       @environment = environment
+      @pipeline = Pipeline.new
     end
 
     def publish
@@ -13,19 +14,19 @@ module Bosh::Dev
 
       publish_light_stemcell(stemcell) if environment.infrastructure == 'aws'
 
-      Pipeline.new.publish_stemcell(stemcell)
+      pipeline.publish_stemcell(stemcell)
     end
 
     private
 
-    attr_reader :environment
+    attr_reader :environment, :pipeline
 
     def publish_light_stemcell(stemcell)
       light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell)
       light_stemcell.write_archive
       light_stemcell_stemcell = Bosh::Stemcell::Stemcell.new(light_stemcell.path)
 
-      Pipeline.new.publish_stemcell(light_stemcell_stemcell)
+      pipeline.publish_stemcell(light_stemcell_stemcell)
     end
 
     def stemcell_filename # FIXME: Should be returned by StemcellBuilder#micro or StemcellBuilder#basic
