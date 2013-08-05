@@ -21,7 +21,6 @@ module Bosh::Dev
       @work_path = File.join(directory, 'work')
       @build_path = File.join(directory, 'build')
       @stemcell_version = ENV.to_hash.fetch('BUILD_ID')
-      @creator = StemcellBuilder.new(self)
     end
 
     def sanitize
@@ -36,14 +35,6 @@ module Bosh::Dev
       if mnt_type != 'btrfs'
         system("sudo rm -rf #{directory}")
       end
-    end
-
-    def create_micro_stemcell
-      creator.micro
-    end
-
-    def create_basic_stemcell
-      creator.basic
     end
 
     def publish
@@ -61,8 +52,6 @@ module Bosh::Dev
     end
 
     private
-
-    attr_reader :creator
 
     def stemcell_filename
       @stemcell_filename ||=
