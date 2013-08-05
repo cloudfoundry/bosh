@@ -1,7 +1,7 @@
 namespace :ci do
   namespace :run do
     desc 'Meta task to run spec:unit and rubocop'
-    task unit: %w(rubocop spec:unit)
+    task unit: %w(spec:unit)
 
     desc 'Meta task to run spec:integration'
     task integration: %w(spec:integration)

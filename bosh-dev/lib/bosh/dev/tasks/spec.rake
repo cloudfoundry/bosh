@@ -47,7 +47,7 @@ namespace :spec do
   end
 
   desc 'Run unit and functional tests linearly'
-  task :unit do
+  task unit: %w(rubocop) do
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
 
