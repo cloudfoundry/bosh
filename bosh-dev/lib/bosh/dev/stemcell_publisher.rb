@@ -4,13 +4,12 @@ require 'bosh/stemcell/aws/light_stemcell'
 
 module Bosh::Dev
   class StemcellPublisher
-    def initialize(environment)
-      @environment = environment
+    def initialize
       @pipeline = Pipeline.new
     end
 
-    def publish
-      stemcell = Bosh::Stemcell::Stemcell.new(environment.stemcell_filename)
+    def publish(stemcell_filename)
+      stemcell = Bosh::Stemcell::Stemcell.new(stemcell_filename)
 
       publish_light_stemcell(stemcell) if stemcell.infrastructure == 'aws'
 
@@ -19,7 +18,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :environment, :pipeline
+    attr_reader :pipeline
 
     def publish_light_stemcell(stemcell)
       light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell)

@@ -35,8 +35,8 @@ module Bosh::Dev
     end
 
     def publish
-      publisher = StemcellPublisher.new(self)
-      publisher.publish
+      publisher = StemcellPublisher.new
+      publisher.publish(stemcell_filename)
     end
 
     def stemcell_filename # FIXME: Should be returned by StemcellBuilder#micro or StemcellBuilder#basic

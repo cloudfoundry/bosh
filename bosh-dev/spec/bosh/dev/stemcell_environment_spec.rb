@@ -117,7 +117,7 @@ module Bosh::Dev
         subject.publish
       end
 
-      context 'when infrastrcture is aws' do
+      context 'when infrastructure is aws' do
         let(:light_stemcell_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
 
         it 'publishes an aws light stemcell' do
@@ -129,7 +129,7 @@ module Bosh::Dev
         end
       end
 
-      context 'when infrastrcture is not aws' do
+      context 'when infrastructure is not aws' do
         let(:infrastructure) { 'vsphere' }
 
         it 'does nothing since other infrastructures do not have light stemcells' do
