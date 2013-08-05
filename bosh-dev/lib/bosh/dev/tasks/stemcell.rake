@@ -27,6 +27,14 @@ namespace :stemcell do
   task :micro, [:tarball, :infrastructure, :version, :disk_size] do |t, args|
     require 'bosh/dev/micro_bosh_release'
 
+    defaults = {
+      tarball: ENV['tarball'],
+      infrastructure: ENV['infrastructure'],
+      version: ENV['version'],
+      disk_size: ENV['disk_size']
+    }
+    args.with_defaults(defaults)
+
     manifest =
       File.join(
         File.expand_path(
