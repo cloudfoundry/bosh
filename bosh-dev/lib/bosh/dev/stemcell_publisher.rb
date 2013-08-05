@@ -10,7 +10,7 @@ module Bosh::Dev
     end
 
     def publish
-      stemcell = Bosh::Stemcell::Stemcell.new(stemcell_filename)
+      stemcell = Bosh::Stemcell::Stemcell.new(environment.stemcell_filename)
 
       publish_light_stemcell(stemcell) if environment.infrastructure == 'aws'
 
@@ -27,10 +27,6 @@ module Bosh::Dev
       light_stemcell_stemcell = Bosh::Stemcell::Stemcell.new(light_stemcell.path)
 
       pipeline.publish_stemcell(light_stemcell_stemcell)
-    end
-
-    def stemcell_filename # FIXME: Should be returned by StemcellBuilder#micro or StemcellBuilder#basic
-      @stemcell_filename ||= Dir.glob("#{environment.directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
     end
   end
 end

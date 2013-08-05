@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_publisher'
+require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
   describe StemcellPublisher do
@@ -7,6 +8,7 @@ module Bosh::Dev
 
     let(:environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
+                      stemcell_filename: 'fake-stemcell_filename',
                       infrastructure: 'aws',
                       directory: '/stemcell_environment',
                       work_path: '/stemcell_environment/work')
@@ -19,11 +21,15 @@ module Bosh::Dev
     describe '#publish' do
       let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
       let(:light_stemcell) { instance_double('Bosh::Stemcell::Aws::LightStemcell', write_archive: nil, path: 'fake light stemcell path') }
+      let(:light_stemcell_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
       before do
-        Bosh::Stemcell::Stemcell.stub(:new).and_return(stemcell)
+        Bosh::Stemcell::Stemcell.stub(:new).with('fake-stemcell_filename').and_return(stemcell)
         Bosh::Stemcell::Aws::LightStemcell.stub(:new).with(stemcell).and_return(light_stemcell)
+        Bosh::Stemcell::Stemcell.stub(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell)
+
         Pipeline.stub(:new).and_return(pipeline)
 
         stemcell_output_dir = File.join(environment.work_path, 'work')
@@ -40,10 +46,7 @@ module Bosh::Dev
       end
 
       context 'when infrastructure is aws' do
-        let(:light_stemcell_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
-
         it 'publishes an aws light stemcell' do
-          Bosh::Stemcell::Stemcell.should_receive(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell)
           light_stemcell.should_receive(:write_archive)
           pipeline.should_receive(:publish_stemcell).with(light_stemcell_stemcell)
 

@@ -7,7 +7,7 @@ module Bosh::Dev
 
     let(:infrastructure) { 'aws' }
 
-    subject do
+    subject(:environment) do
       StemcellEnvironment.new('basic', infrastructure)
     end
 
@@ -20,6 +20,38 @@ module Bosh::Dev
     its(:work_path) { should eq('/mnt/stemcells/aws-basic/work') }
     its(:build_path) { should eq('/mnt/stemcells/aws-basic/build') }
     its(:stemcell_version) { should eq('fake-jenkins-BUILD_ID') }
+
+    describe '#stemcell_filename' do
+      before do
+        FileUtils.mkdir_p(File.join(environment.work_path, 'work'))
+      end
+
+      context 'when a stemcell has not yet been created' do
+        it 'is a blank foo bar' do
+          expect(environment.stemcell_filename).to be_nil
+        end
+      end
+
+      context 'once a stemcell has been created' do
+        before do
+          FileUtils.touch(File.join(environment.work_path, 'work', 'xyz.tgz'))
+        end
+
+        it 'is the full path to the stemcell' do
+          expect(environment.stemcell_filename).to eq('/mnt/stemcells/aws-basic/work/work/xyz.tgz')
+        end
+
+        context 'and more than one stemcell has been created' do
+          before do
+            FileUtils.touch(File.join(environment.work_path, 'work', 'abc.tgz'))
+          end
+
+          it 'coincidentally returns the full path to the first alphabetically sorted stemcell' do
+            expect(environment.stemcell_filename).to eq('/mnt/stemcells/aws-basic/work/work/abc.tgz')
+          end
+        end
+      end
+    end
 
     describe '#sanitize' do
       let(:mnt_type) { 'ext4' }

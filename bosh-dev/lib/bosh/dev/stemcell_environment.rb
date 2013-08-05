@@ -38,5 +38,9 @@ module Bosh::Dev
       publisher = StemcellPublisher.new(self)
       publisher.publish
     end
+
+    def stemcell_filename # FIXME: Should be returned by StemcellBuilder#micro or StemcellBuilder#basic
+      @stemcell_filename ||= Dir.glob("#{directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
+    end
   end
 end
