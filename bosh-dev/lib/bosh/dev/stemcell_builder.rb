@@ -11,11 +11,13 @@ module Bosh::Dev
     end
 
     def micro
+      environment.sanitize
       bosh_release_path = build.download_release
       Rake::Task['stemcell:micro'].invoke(bosh_release_path, environment.infrastructure, build.number)
     end
 
     def basic
+      environment.sanitize
       Rake::Task['stemcell:basic'].invoke(environment.infrastructure, build.number)
     end
 

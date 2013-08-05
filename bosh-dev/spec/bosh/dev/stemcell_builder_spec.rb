@@ -6,6 +6,7 @@ module Bosh::Dev
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: 'fake build number') }
     let(:environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
+                      sanitize: nil,
                       build_path: 'fake build_path',
                       work_path: 'fake work_path',
                       stemcell_version: 'fake stemcell_version',
@@ -21,6 +22,11 @@ module Bosh::Dev
 
       before do
         Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
+      end
+
+      it 'sanitizes the stemcell environment' do
+        environment.should_receive(:sanitize)
+        builder.micro
       end
 
       it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
@@ -42,6 +48,11 @@ module Bosh::Dev
 
       before do
         Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
+      end
+
+      it 'sanitizes the stemcell environment' do
+        environment.should_receive(:sanitize)
+        builder.basic
       end
 
       it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do

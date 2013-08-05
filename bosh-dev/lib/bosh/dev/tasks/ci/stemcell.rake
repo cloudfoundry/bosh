@@ -12,7 +12,6 @@ namespace :ci do
       stemcell_environment = Bosh::Dev::StemcellEnvironment.new('micro', args[:infrastructure])
       stemcell_builder = Bosh::Dev::StemcellBuilder.new(stemcell_environment)
 
-      stemcell_environment.sanitize
       stemcell_builder.micro
       stemcell_environment.publish
     end
@@ -25,7 +24,6 @@ namespace :ci do
       stemcell_environment = Bosh::Dev::StemcellEnvironment.new('basic', args[:infrastructure])
       stemcell_builder = Bosh::Dev::StemcellBuilder.new(stemcell_environment)
 
-      stemcell_environment.sanitize
       stemcell_builder.basic
       stemcell_environment.publish
     end
