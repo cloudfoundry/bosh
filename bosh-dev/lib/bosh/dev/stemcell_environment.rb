@@ -1,8 +1,5 @@
 require 'fileutils'
-require 'bosh/stemcell/stemcell'
-require 'bosh/stemcell/aws/light_stemcell'
-require 'bosh/dev/pipeline'
-require 'bosh/dev/stemcell_builder'
+require 'bosh/dev/stemcell_publisher'
 
 module Bosh::Dev
   class StemcellEnvironment
@@ -38,24 +35,8 @@ module Bosh::Dev
     end
 
     def publish
-      stemcell = Bosh::Stemcell::Stemcell.new(stemcell_filename)
-
-      if infrastructure == 'aws'
-        light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell)
-        light_stemcell.write_archive
-        light_stemcell_stemcell = Bosh::Stemcell::Stemcell.new(light_stemcell.path)
-
-        Pipeline.new.publish_stemcell(light_stemcell_stemcell)
-      end
-
-      Pipeline.new.publish_stemcell(stemcell)
-    end
-
-    private
-
-    def stemcell_filename
-      @stemcell_filename ||=
-        Dir.glob("#{directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
+      publisher = StemcellPublisher.new(self)
+      publisher.publish
     end
   end
 end
