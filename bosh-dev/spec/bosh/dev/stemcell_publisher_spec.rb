@@ -9,7 +9,6 @@ module Bosh::Dev
     let(:environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
                       stemcell_filename: 'fake-stemcell_filename',
-                      infrastructure: 'aws',
                       directory: '/stemcell_environment',
                       work_path: '/stemcell_environment/work')
     end
@@ -19,9 +18,17 @@ module Bosh::Dev
     end
 
     describe '#publish' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
-      let(:light_stemcell) { instance_double('Bosh::Stemcell::Aws::LightStemcell', write_archive: nil, path: 'fake light stemcell path') }
-      let(:light_stemcell_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+      let(:stemcell) do
+        instance_double('Bosh::Stemcell::Stemcell', infrastructure: 'aws')
+      end
+
+      let(:light_stemcell) do
+        instance_double('Bosh::Stemcell::Aws::LightStemcell', write_archive: nil, path: 'fake light stemcell path')
+      end
+
+      let(:light_stemcell_stemcell) do
+        instance_double('Bosh::Stemcell::Stemcell')
+      end
 
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
@@ -56,7 +63,7 @@ module Bosh::Dev
 
       context 'when infrastructure is not aws' do
         before do
-          environment.stub(:infrastructure).and_return('vsphere')
+          stemcell.stub(:infrastructure).and_return('vsphere')
         end
 
         it 'does nothing since other infrastructures do not have light stemcells' do

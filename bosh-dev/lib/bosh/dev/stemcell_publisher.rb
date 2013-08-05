@@ -12,7 +12,7 @@ module Bosh::Dev
     def publish
       stemcell = Bosh::Stemcell::Stemcell.new(environment.stemcell_filename)
 
-      publish_light_stemcell(stemcell) if environment.infrastructure == 'aws'
+      publish_light_stemcell(stemcell) if stemcell.infrastructure == 'aws'
 
       pipeline.publish_stemcell(stemcell)
     end

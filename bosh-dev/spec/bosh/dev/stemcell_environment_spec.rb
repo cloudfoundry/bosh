@@ -94,7 +94,7 @@ module Bosh::Dev
     end
 
     describe '#publish' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', infrastructure: infrastructure) }
       let(:light_stemcell) { instance_double('Bosh::Stemcell::Aws::LightStemcell', write_archive: nil, path: 'fake light stemcell path') }
       let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
 
