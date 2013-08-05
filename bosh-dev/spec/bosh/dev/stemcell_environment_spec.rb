@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
 require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
