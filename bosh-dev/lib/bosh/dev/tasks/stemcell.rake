@@ -6,17 +6,12 @@ require 'atmos'
 require 'json'
 require 'rugged'
 
-
 namespace :stemcell do
   desc 'Build stemcell'
   task :basic, [:infrastructure, :version, :disk_size] do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= 'bosh-stemcell'
-    options[:stemcell_version] ||= Bosh::Agent::VERSION
-
-    if args[:version]
-      options[:stemcell_version] = args[:version]
-    end
+    options[:stemcell_version] = args.with_defaults({}).fetch(:version)
 
     Rake::Task['all:finalize_release_directory'].invoke
 
@@ -36,7 +31,7 @@ namespace :stemcell do
 
 
     options = default_options(args)
-    options[:stemcell_version] = args[:version] || micro_version
+    options[:stemcell_version] = args.with_defaults({}).fetch(:version)
     if args[:tarball]
       release_tarball = args[:tarball]
       pipeline = Bosh::Dev::Pipeline.new
@@ -403,7 +398,6 @@ namespace :stemcell do
     options = {
       system_parameters_infrastructure: infrastructure,
       stemcell_name: ENV['STEMCELL_NAME'],
-      stemcell_version: ENV['STEMCELL_VERSION'],
       stemcell_infrastructure: infrastructure,
       stemcell_hypervisor: get_hypervisor(infrastructure),
       bosh_protocol_version: Bosh::Agent::BOSH_PROTOCOL,

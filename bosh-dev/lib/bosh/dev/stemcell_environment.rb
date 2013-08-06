@@ -6,8 +6,7 @@ module Bosh::Dev
                 :infrastructure,
                 :directory,
                 :build_path,
-                :work_path,
-                :stemcell_version
+                :work_path
 
     def initialize(stemcell_type, infrastructure = 'aws')
       @stemcell_type = stemcell_type
@@ -16,7 +15,6 @@ module Bosh::Dev
       @directory = File.join(mnt, 'stemcells', "#{infrastructure}-#{stemcell_type}")
       @work_path = File.join(directory, 'work')
       @build_path = File.join(directory, 'build')
-      @stemcell_version = ENV.to_hash.fetch('BUILD_ID')
     end
 
     def sanitize

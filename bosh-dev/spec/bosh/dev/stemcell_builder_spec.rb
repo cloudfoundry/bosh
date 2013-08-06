@@ -17,7 +17,6 @@ module Bosh::Dev
                       directory: "/mnt/stemcells/#{infrastructure}-#{stemcell_type}",
                       build_path: "/mnt/stemcells/#{infrastructure}-#{stemcell_type}/build",
                       work_path: "/mnt/stemcells/#{infrastructure}-#{stemcell_type}/work",
-                      stemcell_version: build_number,
                       infrastructure: infrastructure)
     end
 
@@ -44,10 +43,9 @@ module Bosh::Dev
           builder.build
         end
 
-        it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
+        it 'sets BUILD_PATH, WORK_PATH as expected by the "stemcell:micro" task' do
           ENV.should_receive(:[]=).with('BUILD_PATH', '/mnt/stemcells/vsphere-micro/build')
           ENV.should_receive(:[]=).with('WORK_PATH', '/mnt/stemcells/vsphere-micro/work')
-          ENV.should_receive(:[]=).with('STEMCELL_VERSION', build_number)
 
           builder.build
         end
@@ -87,10 +85,9 @@ module Bosh::Dev
           builder.build
         end
 
-        it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
+        it 'sets BUILD_PATH, WORK_PATH as expected by the "stemcell:micro" task' do
           ENV.should_receive(:[]=).with('BUILD_PATH', '/mnt/stemcells/vsphere-basic/build')
           ENV.should_receive(:[]=).with('WORK_PATH', '/mnt/stemcells/vsphere-basic/work')
-          ENV.should_receive(:[]=).with('STEMCELL_VERSION', build_number)
 
           builder.build
         end

@@ -12,15 +12,8 @@ module Bosh::Dev
       StemcellEnvironment.new('basic', infrastructure)
     end
 
-    before do
-      ENV.stub(:to_hash).and_return({
-                                      'BUILD_ID' => 'fake-jenkins-BUILD_ID',
-                                    })
-    end
-
     its(:work_path) { should eq('/mnt/stemcells/aws-basic/work') }
     its(:build_path) { should eq('/mnt/stemcells/aws-basic/build') }
-    its(:stemcell_version) { should eq('fake-jenkins-BUILD_ID') }
 
     describe '#sanitize' do
       let(:mnt_type) { 'ext4' }

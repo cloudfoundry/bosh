@@ -7,7 +7,6 @@ module Bosh::Dev
       @environment = environment
       ENV['BUILD_PATH'] = environment.build_path
       ENV['WORK_PATH'] = environment.work_path
-      ENV['STEMCELL_VERSION'] = environment.stemcell_version
     end
 
     def build
