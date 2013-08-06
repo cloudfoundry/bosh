@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'webmock'
 require 'vcr'
 
 VCR.configure do |c|
@@ -10,11 +11,11 @@ end
 
 describe Bosh::Blobstore::AzureBlobstoreClient do
   def azure_storage_account_name
-    v = ENV['STORAGE_ACCOUNT_NAME'] || "asdfuhuru"
+    v = ENV['STORAGE_ACCOUNT_NAME'] || 'asdfuhuru'
   end
 
   def azure_storage_access_key
-    v = ENV['STORAGE_ACCESS_KEY'] || "5lb+5ZXxyN5zEcSGFUrVhTeBJYhKx2UwxbhmeFv+6usmNuxq0Tj0IgvIQEqcSJ0roHllg4xOQF+9ZMehldiznA=="
+    v = ENV['STORAGE_ACCESS_KEY'] || '5lb+5ZXxyN5zEcSGFUrVhTeBJYhKx2UwxbhmeFv+6usmNuxq0Tj0IgvIQEqcSJ0roHllg4xOQF+9ZMehldiznA=='
   end
 
   def azure_storage_blob_host
@@ -32,6 +33,11 @@ describe Bosh::Blobstore::AzureBlobstoreClient do
     @azure_blob_service = Azure::BlobService.new
     @container_name = "test-container"
 
+    # :net_http is used in read/write context
+    # :httpclient is used in read-only context
+    WebMock.disable!(:except => [:net_http, :httpclient])
+    VCR.turn_on!
+
     VCR.use_cassette('Create container') do
       container = @azure_blob_service.create_container(@container_name, :public_access_level => "blob")
     end
@@ -41,9 +47,13 @@ describe Bosh::Blobstore::AzureBlobstoreClient do
     VCR.use_cassette('Delete container') do
       @azure_blob_service.delete_container(@container_name)
     end
+
+    # disable webmock to prevent interference with dav or other functional test
+    VCR.turn_off!
+    WebMock.disable!
   end
 
-  let (:content) { "foobar" }
+  let (:content) { 'foobar' }
 
   let(:azure_options) do
     {
@@ -55,7 +65,7 @@ describe Bosh::Blobstore::AzureBlobstoreClient do
   end
 
   let(:azure) do
-    Bosh::Blobstore::Client.create("azure", azure_options)
+    Bosh::Blobstore::Client.create('azure', azure_options)
   end
 
   after(:each) do
@@ -234,19 +244,19 @@ describe Bosh::Blobstore::AzureBlobstoreClient do
     end
 
     describe "Check object", :vcr => true do
-      it "should check if the object exists" do
-        @oid = azure.create(content, "idD")
+      it 'should check if the object exists' do
+        @oid = azure.create(content, 'idD')
         azure_public.exists?(@oid).should be_true
       end
 
-      it "should check if the object does not exist", :vcr => true do
-        azure_public.exists?("invalid-content-id").should be_false
+      it 'should check if the object does not exist', vcr: true do
+        azure_public.exists?('invalid-content-id').should be_false
       end
     end
 
-    describe "Delete object", :vcr => true do
-      it "should raise an exception" do
-        @oid = azure.create(content, "idE")
+    describe 'Delete object', vcr: true do
+      it 'should raise an exception' do
+        @oid = azure.create(content, 'idE')
         expect {
           azure_public.delete(@oid)
         }.to raise_error Bosh::Blobstore::BlobstoreError
