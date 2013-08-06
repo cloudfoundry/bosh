@@ -1,15 +1,17 @@
 require 'spec_helper'
 require 'bosh/dev/bat_helper'
+require 'bosh/dev/pipeline'
 
 module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
     let(:infrastructure_name) { 'FAKE_INFRASTRUCTURE_NAME' }
-    let(:fake_infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name) }
-    let(:fake_pipeline) { instance_double('Pipeline', fetch_stemcells: nil) }
+    let(:fake_infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name, light?: light) }
+    let(:light) { false }
+    let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
 
-    subject { BatHelper.new(infrastructure_name) }
+    subject { BatHelper.new(infrastructure_name, build) }
 
     before do
       Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
@@ -57,8 +59,9 @@ module Bosh::Dev
         expect(ENV['BAT_INFRASTRUCTURE']).to eq(infrastructure_name)
       end
 
-      it 'fetches stemcells for the specified infrastructure' do
-        fake_pipeline.should_receive(:fetch_stemcells).with(subject.infrastructure, subject.artifacts_dir)
+      it 'downloads stemcells for the specified infrastructure' do
+        build.should_receive(:download_stemcell).with(infrastructure: subject.infrastructure, name: 'micro-bosh-stemcell', light: light, output_directory: '/tmp/ci-artifacts/FAKE_INFRASTRUCTURE_NAME/deployments')
+        build.should_receive(:download_stemcell).with(infrastructure: subject.infrastructure, name: 'bosh-stemcell', light: light, output_directory: '/tmp/ci-artifacts/FAKE_INFRASTRUCTURE_NAME/deployments')
 
         subject.run_rake
       end

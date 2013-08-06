@@ -2,6 +2,7 @@ require 'bosh/dev/pipeline'
 require 'bosh/stemcell/stemcell'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
+require 'bosh/dev/download_adapter'
 
 module Bosh::Dev
   class Build
@@ -32,6 +33,21 @@ module Bosh::Dev
       Rake::FileUtilsExt.sh(command) || raise("Command failed: #{command}")
 
       release_path
+    end
+
+    def download_stemcell(options = {})
+      infrastructure = options.fetch(:infrastructure)
+      name = options.fetch(:name)
+      light = options.fetch(:light)
+      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
+      output_directory = options.fetch(:output_directory) { '' }
+
+      filename = stemcell_filename(number.to_s, infrastructure, name, light)
+      remote_dir = File.join(number.to_s, name, infrastructure.name)
+
+      download_adapter.download(uri(remote_dir, filename), "#{output_directory}#{filename}")
+
+      filename
     end
 
     def s3_release_url
@@ -73,12 +89,21 @@ module Bosh::Dev
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
       pipeline.download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
-      filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, 'micro-bosh-stemcell', true).to_s
+      filename = stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true)
       Bosh::Stemcell::Stemcell.new(filename)
     end
 
     def release_path
       "release/bosh-#{number}.tgz"
+    end
+
+    def stemcell_filename(version, infrastructure, name, light)
+      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
+    end
+
+    def uri(remote_directory_path, file_name)
+      remote_file_path = File.join(remote_directory_path, file_name)
+      URI.parse("http://bosh-ci-pipeline.s3.amazonaws.com/#{remote_file_path}")
     end
   end
 end

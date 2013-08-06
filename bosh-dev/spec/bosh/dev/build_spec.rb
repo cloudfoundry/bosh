@@ -8,7 +8,7 @@ module Bosh::Dev
     let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', s3_url: 's3://FAKE_BOSH_CI_PIPELINE_BUCKET/') }
     let(:job_name) { 'current_job' }
 
-    subject { Build.new(123) }
+    subject(:build) { Build.new(123) }
 
     before do
       ENV.stub(:to_hash).and_return(
@@ -205,6 +205,43 @@ module Bosh::Dev
 
         subject.fog_storage('FAKE_ACCESS_KEY_ID', 'FAKE_SECRET_ACCESS_KEY')
       end
+    end
+
+    describe '#download_stemcell' do
+      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+
+      it 'downloads the specified stemcell version from the pipeline bucket' do
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz'), 'bosh-stemcell-aws-123.tgz')
+        build.download_stemcell(infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: false, download_adapter: download_adapter)
+      end
+
+      context 'when remote file does not exist' do
+        it 'raises' do
+          download_adapter.stub(:download).and_raise 'hell'
+
+          expect {
+            build.download_stemcell(infrastructure: Infrastructure.for('vsphere'), name: 'fooey', light: false, download_adapter: download_adapter)
+          }.to raise_error 'hell'
+        end
+      end
+
+      it 'downloads the specified light stemcell version from the pipeline bucket' do
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz'), 'light-bosh-stemcell-aws-123.tgz')
+        build.download_stemcell(infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: true, download_adapter: download_adapter)
+      end
+
+      it 'returns the name of the downloaded file' do
+        options = {
+          infrastructure: Infrastructure.for('aws'),
+          name: 'bosh-stemcell',
+          light: true,
+          download_adapter: download_adapter
+        }
+
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz'), 'light-bosh-stemcell-aws-123.tgz')
+        expect(build.download_stemcell(options)).to eq 'light-bosh-stemcell-aws-123.tgz'
+      end
+
     end
   end
 end

@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 require 'bosh/dev/download_adapter'
-require 'webmock/rspec'
 
 module Bosh::Dev
   describe DownloadAdapter do

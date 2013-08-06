@@ -1,12 +1,14 @@
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/pipeline'
+require 'bosh/dev/build'
 
 module Bosh::Dev
   class BatHelper
     attr_reader :infrastructure
 
-    def initialize(infrastructure)
+    def initialize(infrastructure, build = Build.new)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure)
+      @build = build
       @pipeline = Pipeline.new
     end
 
@@ -37,14 +39,14 @@ module Bosh::Dev
 
       prepare_directories
 
-      pipeline.fetch_stemcells(infrastructure, artifacts_dir)
+      fetch_stemcells
 
       Rake::Task["spec:system:#{infrastructure.name}:micro"].invoke
     end
 
     private
 
-    attr_reader :pipeline
+    attr_reader :build, :pipeline
 
     def infrastructure_for_emitable_example
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name
@@ -57,5 +59,12 @@ module Bosh::Dev
     def prepare_directories
       FileUtils.mkdir_p(micro_bosh_deployment_dir)
     end
+
+    def fetch_stemcells
+      build.download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?, output_directory: artifacts_dir)
+      build.download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?, output_directory: artifacts_dir)
+    end
+
   end
 end
+

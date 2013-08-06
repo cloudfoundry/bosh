@@ -1,9 +1,9 @@
 require 'fog'
 require 'logger'
 
-require 'bosh/dev/storage/fog_storage'
 require 'bosh/dev/build'
 require 'bosh/stemcell/infrastructure'
+require 'bosh/dev/pipeline_storage'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
@@ -70,13 +70,6 @@ module Bosh::Dev
       File.join(download_dir, stemcell_filename(build_id, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
     end
 
-    def fetch_stemcells(infrastructure, download_dir)
-      Dir.chdir(download_dir) do
-        download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?)
-        download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?)
-      end
-    end
-
     def cleanup_stemcells(download_dir)
       FileUtils.rm_f(Dir.glob(File.join(download_dir, '*bosh-stemcell-*.tgz')))
     end
@@ -97,7 +90,7 @@ module Bosh::Dev
     end
 
     def default_storage
-      Bosh::Dev::Storage::FogStorage.new
+      Bosh::Dev::PipelineStorage.new
     end
   end
 end
