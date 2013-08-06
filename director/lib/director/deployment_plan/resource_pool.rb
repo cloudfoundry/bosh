@@ -76,19 +76,12 @@ module Bosh::Director
         }
       end
 
-      # Creates IdleVm objects for any missing resource pool VMs and reserves
-      # dynamic networks for all idle VMs.
+      # Creates IdleVm objects for any missing resource pool VMs 
+      # not reserves dynamic networks for all idle VMs since the work 
+      # will be done when instance allocate idle vm.
       # @return [void]
       def process_idle_vms
-        # First, see if we need any data structures to balance the pool size
         missing_vm_count.times { add_idle_vm }
-
-        # Second, see if some of idle VMs still need network reservations
-        idle_vms.each do |idle_vm|
-          unless idle_vm.has_network_reservation?
-            idle_vm.use_reservation(reserve_dynamic_network)
-          end
-        end
       end
 
       # Tries to obtain one dynamic reservation in its own network
