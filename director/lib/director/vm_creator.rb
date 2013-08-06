@@ -66,7 +66,7 @@ module Bosh::Director
     def delete_vm(vm_cid)
       @cloud.delete_vm(vm_cid)
     rescue => e
-      logger.err("error cleaning up #{vm_cid}: #{e.message}\n#{e.backtrace.join("\n")}")
+      logger.error("error cleaning up #{vm_cid}: #{e.message}\n#{e.backtrace.join("\n")}")
     end
 
     def self.generate_agent_id
