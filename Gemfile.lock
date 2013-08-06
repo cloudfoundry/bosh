@@ -490,5 +490,5 @@ DEPENDENCIES
   simplecov-rcov
   sqlite3
   timecop
-  vcr
+  vcr (~> 2.5.0)
   webmock
