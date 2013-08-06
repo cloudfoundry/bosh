@@ -26,7 +26,10 @@ module Bosh::Dev
     end
 
     def stemcell_path
-      Dir.glob("#{environment.directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
+      name = environment.stemcell_type == 'micro' ? 'micro-bosh-stemcell' : 'bosh-stemcell'
+      infrastructure = environment.infrastructure == 'openstack' ? 'openstack-kvm' : environment.infrastructure
+
+      File.join(environment.work_path, 'work', "#{name}-#{infrastructure}-#{build.number}.tgz")
     end
 
     private
