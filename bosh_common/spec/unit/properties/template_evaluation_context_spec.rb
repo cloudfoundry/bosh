@@ -21,6 +21,7 @@ describe Bosh::Common::TemplateEvaluationContext do
       "properties" => {
         "foo" => "bar",
         "router" => {"token" => "zbb"},
+        "syslog_aggregator" => {"port" => nil, "address" => nil},
         "vtrue" => true,
         "vfalse" => false
       },
@@ -32,6 +33,10 @@ describe Bosh::Common::TemplateEvaluationContext do
 
   it "unrolls properties into OpenStruct" do
     eval_template("<%= properties.foo %>", @context).should == "bar"
+  end
+
+  it "simplifies OpenStuct if a job's properties have only nil values" do
+    eval_template("<% if properties.syslog_aggregator %> setup_syslog.sh <% end %>", @context).should == ""
   end
 
   it "retains raw_properties" do
@@ -119,6 +124,17 @@ describe Bosh::Common::TemplateEvaluationContext do
 
       eval_template(template, @context).strip.should == ""
     end
+
+    it "does not call the block if a job's properties have only nil values" do
+      template = <<-TMPL
+        <% if_p("syslog_aggregator") do |s| %>
+        test output
+        <% end %>
+      TMPL
+
+      eval_template(template, @context).strip.should == ""
+    end
+
 
     describe '.else' do
       it "does not call the else block if all properties are found" do
