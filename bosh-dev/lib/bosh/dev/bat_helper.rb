@@ -39,7 +39,7 @@ module Bosh::Dev
 
       pipeline.fetch_stemcells(infrastructure, artifacts_dir)
 
-      infrastructure.run_system_micro_tests
+      Rake::Task["spec:system:#{infrastructure.name}:micro"].invoke
     end
 
     private

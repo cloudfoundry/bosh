@@ -28,8 +28,6 @@ module Bosh::Dev
         ENV.delete('BAT_INFRASTRUCTURE')
 
         FileUtils.stub(rm_rf: nil, mkdir_p: nil)
-
-        fake_infrastructure.stub(run_system_micro_tests: nil)
       end
 
       after do
@@ -62,8 +60,10 @@ module Bosh::Dev
         subject.run_rake
       end
 
-      it 'calls #run_system_micro_tests on the infrastructure' do
-        fake_infrastructure.should_receive(:run_system_micro_tests)
+      it 'invokes the spec:system:<infrastructure>:micro rake task' do
+        rake_task = instance_double('Rake::Task')
+        Rake::Task.stub(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(rake_task)
+        rake_task.should_receive(:invoke)
 
         subject.run_rake
       end

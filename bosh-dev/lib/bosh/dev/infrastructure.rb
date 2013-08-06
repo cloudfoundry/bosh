@@ -22,10 +22,6 @@ module Bosh::Dev
         @hypervisor = options.fetch(:hypervisor, nil)
       end
 
-      def run_system_micro_tests
-        Rake::Task["spec:system:#{name}:micro"].invoke
-      end
-
       def light?
         @supports_light_stemcell
       end
