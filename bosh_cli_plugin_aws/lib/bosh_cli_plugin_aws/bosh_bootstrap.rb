@@ -1,4 +1,4 @@
-require_relative "bootstrap"
+require_relative 'bootstrap'
 require 'net/https'
 
 module Bosh
@@ -20,7 +20,7 @@ module Bosh
         release_exist = director.list_releases.detect { |r| r['name'] == 'bosh' }
         stemcell_exist = director.list_stemcells.detect { |r| r['name'] == 'bosh-stemcell' }
 
-        existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }
+        existing_deployments = director.list_deployments.map { |deployment| deployment['name'] }
 
         if existing_deployments.include? manifest.bosh_deployment_name
           raise BootstrapError, <<-MSG
@@ -49,9 +49,9 @@ This command should be used for bootstrapping bosh from scratch.
 
       def manifest
         unless @manifest
-          vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
-          route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
-          bosh_rds_receipt_filename = File.expand_path("aws_rds_bosh_receipt.yml")
+          vpc_receipt_filename = File.expand_path('aws_vpc_receipt.yml')
+          route53_receipt_filename = File.expand_path('aws_route53_receipt.yml')
+          bosh_rds_receipt_filename = File.expand_path('aws_rds_bosh_receipt.yml')
 
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
@@ -63,7 +63,7 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def generate_manifest
-        deployment_folder = File.join("deployments", manifest.deployment_name)
+        deployment_folder = File.join('deployments', manifest.deployment_name)
 
         FileUtils.mkdir_p deployment_folder
         Dir.chdir(deployment_folder) do
@@ -86,7 +86,7 @@ This command should be used for bootstrapping bosh from scratch.
         misc_command.options = self.options
         misc_command.set_target(manifest.vip)
         misc_command.options[:target] = manifest.vip
-        misc_command.login("admin", "admin")
+        misc_command.login('admin', 'admin')
 
         self.options[:target] = misc_command.config.target
       end
@@ -112,7 +112,7 @@ This command should be used for bootstrapping bosh from scratch.
           say("Using stemcell #{bosh_stemcell_override}")
           return bosh_stemcell_override
         end
-        s3.copy_remote_file(AWS_JENKINS_BUCKET, "bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz", "bosh_stemcell.tgz")
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, 'bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz', 'bosh_stemcell.tgz')
       end
 
       def bosh_release
@@ -120,19 +120,19 @@ This command should be used for bootstrapping bosh from scratch.
           say("Using release #{bosh_release_override}")
           return bosh_release_override
         end
-        s3.copy_remote_file(AWS_JENKINS_BUCKET, "release/bosh-#{bosh_version}.tgz", "bosh_release.tgz")
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, "release/bosh-#{bosh_version}.tgz", 'bosh_release.tgz')
       end
 
       def bosh_stemcell_override
-        ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"]
+        ENV['BOSH_OVERRIDE_LIGHT_STEMCELL_URL']
       end
 
       def bosh_release_override
-        ENV["BOSH_OVERRIDE_RELEASE_TGZ"]
+        ENV['BOSH_OVERRIDE_RELEASE_TGZ']
       end
 
       def bosh_version
-        ENV["BOSH_VERSION_OVERRIDE"] ||
+        ENV['BOSH_VERSION_OVERRIDE'] ||
             Bosh::Aws::VERSION.split('.').last
       end
     end
