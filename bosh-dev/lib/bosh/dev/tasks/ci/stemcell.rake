@@ -10,7 +10,7 @@ namespace :ci do
       stemcell_builder = Bosh::Dev::StemcellBuilder.new(stemcell_environment)
 
       publisher = Bosh::Dev::StemcellPublisher.new
-      publisher.publish(stemcell_builder.micro)
+      publisher.publish(stemcell_builder.build)
     end
 
     desc 'Build stemcell from CI pipeline'
@@ -23,7 +23,7 @@ namespace :ci do
       stemcell_builder = Bosh::Dev::StemcellBuilder.new(stemcell_environment)
 
       publisher = Bosh::Dev::StemcellPublisher.new
-      publisher.publish(stemcell_builder.basic)
+      publisher.publish(stemcell_builder.build)
     end
   end
 end

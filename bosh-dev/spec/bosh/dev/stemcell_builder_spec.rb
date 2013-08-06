@@ -13,62 +13,12 @@ module Bosh::Dev
       StemcellBuilder.new(environment, build)
     end
 
-    describe '#micro' do
-      let(:environment) do
-        instance_double('Bosh::Dev::StemcellEnvironment',
-                        stemcell_type: 'micro',
-                        sanitize: nil,
-                        directory: '/environment',
-                        build_path: '/environment/build',
-                        work_path: '/environment/work',
-                        stemcell_version: build_number,
-                        infrastructure: 'vsphere')
-      end
-
+    describe '#build' do
       let(:stemcell_micro_task) { instance_double('Rake::Task', invoke: nil) }
 
-      before do
-        Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
-        stemcell_micro_task.stub(:invoke).with('fake release path', 'vsphere', build_number) do
-          FileUtils.mkdir_p('/environment/work/work')
-          FileUtils.touch('/environment/work/work/micro-bosh-stemcell-vsphere-869.tgz')
-        end
-      end
-
-      it 'sanitizes the stemcell environment' do
-        environment.should_receive(:sanitize)
-        builder.micro
-      end
-
-      it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
-        ENV.should_receive(:[]=).with('BUILD_PATH', '/environment/build')
-        ENV.should_receive(:[]=).with('WORK_PATH', '/environment/work')
-        ENV.should_receive(:[]=).with('STEMCELL_VERSION', build_number)
-
-        builder.micro
-      end
-
-      it 'creates a micro stemcell and returns its absolute path' do
-        expect(builder.micro).to eq('/environment/work/work/micro-bosh-stemcell-vsphere-869.tgz')
-      end
-
-      context 'when the micro stemcell is not created' do
-        before do
-          stemcell_micro_task.stub(:invoke)
-        end
-
-        it 'fails early and loud' do
-          expect {
-            builder.micro
-          }.to raise_error(/micro-bosh-stemcell-vsphere-869\.tgz does not exist/)
-        end
-      end
-    end
-
-    describe '#basic' do
       let(:environment) do
         instance_double('Bosh::Dev::StemcellEnvironment',
-                        stemcell_type: 'basic',
+                        stemcell_type: stemcell_type,
                         sanitize: nil,
                         directory: '/environment',
                         build_path: '/environment/build',
@@ -77,42 +27,87 @@ module Bosh::Dev
                         infrastructure: 'vsphere')
       end
 
-      let(:stemcell_basic_task) { instance_double('Rake::Task', invoke: nil) }
+      context 'when building a micro stemcell' do
+        let(:stemcell_type) { 'micro' }
 
-      before do
-        Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
-        stemcell_basic_task.stub(:invoke).with('vsphere', build_number) do
-          FileUtils.mkdir_p('/environment/work/work')
-          FileUtils.touch('/environment/work/work/bosh-stemcell-vsphere-869.tgz')
-        end
-      end
-
-      it 'sanitizes the stemcell environment' do
-        environment.should_receive(:sanitize)
-        builder.basic
-      end
-
-      it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
-        ENV.should_receive(:[]=).with('BUILD_PATH', '/environment/build')
-        ENV.should_receive(:[]=).with('WORK_PATH', '/environment/work')
-        ENV.should_receive(:[]=).with('STEMCELL_VERSION', build_number)
-
-        builder.basic
-      end
-
-      it 'creates a basic stemcell and returns its absolute path' do
-        expect(builder.basic).to eq('/environment/work/work/bosh-stemcell-vsphere-869.tgz')
-      end
-
-      context 'when the micro stemcell is not created' do
         before do
-          stemcell_basic_task.stub(:invoke)
+          Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
+          stemcell_micro_task.stub(:invoke).with('fake release path', 'vsphere', build_number) do
+            FileUtils.mkdir_p('/environment/work/work')
+            FileUtils.touch('/environment/work/work/micro-bosh-stemcell-vsphere-869.tgz')
+          end
         end
 
-        it 'fails early and loud' do
-          expect {
-            builder.basic
-          }.to raise_error(/\/bosh-stemcell-vsphere-869\.tgz does not exist/)
+        it 'sanitizes the stemcell environment' do
+          environment.should_receive(:sanitize)
+          builder.build
+        end
+
+        it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
+          ENV.should_receive(:[]=).with('BUILD_PATH', '/environment/build')
+          ENV.should_receive(:[]=).with('WORK_PATH', '/environment/work')
+          ENV.should_receive(:[]=).with('STEMCELL_VERSION', build_number)
+
+          builder.build
+        end
+
+        it 'creates a micro stemcell and returns its absolute path' do
+          expect(builder.build).to eq('/environment/work/work/micro-bosh-stemcell-vsphere-869.tgz')
+        end
+
+        context 'when the micro stemcell is not created' do
+          before do
+            stemcell_micro_task.stub(:invoke)
+          end
+
+          it 'fails early and loud' do
+            expect {
+              builder.build
+            }.to raise_error(/micro-bosh-stemcell-vsphere-869\.tgz does not exist/)
+          end
+        end
+      end
+
+      context 'when building a basic stemcell' do
+        let(:stemcell_type) { 'basic' }
+
+        let(:stemcell_basic_task) { instance_double('Rake::Task', invoke: nil) }
+
+        before do
+          Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
+          stemcell_basic_task.stub(:invoke).with('vsphere', build_number) do
+            FileUtils.mkdir_p('/environment/work/work')
+            FileUtils.touch('/environment/work/work/bosh-stemcell-vsphere-869.tgz')
+          end
+        end
+
+        it 'sanitizes the stemcell environment' do
+          environment.should_receive(:sanitize)
+          builder.build
+        end
+
+        it 'sets BUILD_PATH, WORK_PATH & STEMCELL_VERSION as expected by the "stemcell:micro" task' do
+          ENV.should_receive(:[]=).with('BUILD_PATH', '/environment/build')
+          ENV.should_receive(:[]=).with('WORK_PATH', '/environment/work')
+          ENV.should_receive(:[]=).with('STEMCELL_VERSION', build_number)
+
+          builder.build
+        end
+
+        it 'creates a basic stemcell and returns its absolute path' do
+          expect(builder.build).to eq('/environment/work/work/bosh-stemcell-vsphere-869.tgz')
+        end
+
+        context 'when the micro stemcell is not created' do
+          before do
+            stemcell_basic_task.stub(:invoke)
+          end
+
+          it 'fails early and loud' do
+            expect {
+              builder.build
+            }.to raise_error(/\/bosh-stemcell-vsphere-869\.tgz does not exist/)
+          end
         end
       end
     end
@@ -122,7 +117,7 @@ module Bosh::Dev
         FileUtils.mkdir_p(File.join(environment.work_path, 'work'))
       end
 
-      context 'when build a non-openstack stemcell' do
+      context 'when build a micro non-openstack stemcell' do
         let(:environment) do
           instance_double('Bosh::Dev::StemcellEnvironment',
                           stemcell_type: 'micro',
@@ -138,7 +133,7 @@ module Bosh::Dev
         end
       end
 
-      context 'when building an openstack stemcell' do
+      context 'when building a basic openstack stemcell' do
         let(:environment) do
           instance_double('Bosh::Dev::StemcellEnvironment',
                           stemcell_type: 'basic',
