@@ -10,18 +10,14 @@ module Bosh::Dev
     let(:infrastructure) { 'vsphere' }
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
-    let(:environment) do
-      instance_double('Bosh::Dev::StemcellEnvironment',
-                      stemcell_type: stemcell_type,
-                      sanitize: nil,
-                      directory: "/mnt/stemcells/#{infrastructure}-#{stemcell_type}",
-                      build_path: "/mnt/stemcells/#{infrastructure}-#{stemcell_type}/build",
-                      work_path: "/mnt/stemcells/#{infrastructure}-#{stemcell_type}/work",
-                      infrastructure: infrastructure)
-    end
+    let(:environment) { instance_double('Bosh::Dev::StemcellEnvironment', sanitize: nil) }
 
     subject(:builder) do
-      StemcellBuilder.new(environment, build)
+      StemcellBuilder.new(stemcell_type, infrastructure, build)
+    end
+
+    before do
+      StemcellEnvironment.stub(:new).with(builder).and_return(environment)
     end
 
     describe '#build' do
@@ -111,10 +107,6 @@ module Bosh::Dev
     end
 
     describe '#stemcell_path' do
-      before do
-        FileUtils.mkdir_p(File.join(environment.work_path, 'work'))
-      end
-
       context 'when build a micro non-openstack stemcell' do
         let(:stemcell_type) { 'micro' }
         let(:infrastructure) { 'aws' }

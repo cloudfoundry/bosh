@@ -1,19 +1,21 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
 require 'bosh/dev/stemcell_environment'
+require 'bosh/dev/stemcell_builder'
 
 module Bosh::Dev
   describe StemcellEnvironment do
     include FakeFS::SpecHelpers
 
-    let(:infrastructure) { 'aws' }
-
-    subject(:environment) do
-      StemcellEnvironment.new('basic', infrastructure)
+    let(:stemcell_builder) do
+      instance_double('Bosh::Dev::StemcellBuilder',
+                      directory: '/mnt/stemcells/aws-basic',
+                      work_path: '/mnt/stemcells/aws-basic/work')
     end
 
-    its(:work_path) { should eq('/mnt/stemcells/aws-basic/work') }
-    its(:build_path) { should eq('/mnt/stemcells/aws-basic/build') }
+    subject(:environment) do
+      StemcellEnvironment.new(stemcell_builder)
+    end
 
     describe '#sanitize' do
       let(:mnt_type) { 'ext4' }
