@@ -1,28 +1,23 @@
 # Copyright (c) 2013 Uhuru Software, Inc.
 
-require "azure"
+require 'azure'
 
 module Bosh
   module Blobstore
     class AzureBlobstoreClient < BaseClient
 
       CHUNK_SIZE = 1024 * 1024
-      DEFAULT_ENDPOINT = "http://%s.blob.core.windows.net"
+      DEFAULT_ENDPOINT = 'http://%s.blob.core.windows.net'
 
       # Blobstore client for Azure Block Blobs
       def initialize(options)
         super(options)
- 
+
         @storage_account_name = @options[:storage_account_name]
         @container_name = @options[:container_name]
 
-        unless @storage_account_name
-          raise BlobstoreError, "storage_account_name required"
-        end
-
-        unless @container_name
-          raise BlobstoreError, "container_name required"
-        end
+        raise BlobstoreError, 'storage_account_name required' unless @storage_account_name
+        raise BlobstoreError, 'container_name required' unless @container_name
 
         @storage_access_key = @options[:storage_access_key]
         @storage_blob_host = @options[:storage_blob_host]
@@ -44,7 +39,7 @@ module Bosh
 
       # Create a Azure block blob from a file
       def create_file(object_id, file)
-        raise BlobstoreError, "unsupported action for read-only access" if @simple
+        raise BlobstoreError, 'unsupported action for read-only access' if @simple
 
         object_id ||= generate_object_id
 
@@ -53,12 +48,11 @@ module Bosh
         blocks = []
         block_index = 0
 
-        while true
-          break if file.eof?
+        until file.eof?
           chunk = file.read(CHUNK_SIZE)
 
           # "...all block IDs must be the same length." http://msdn.microsoft.com/en-us/library/windowsazure/dd135726.aspx
-          block_id = "%010d" % block_index
+          block_id = sprintf '%010d', block_index
 
           @azure_blob_client.create_blob_block(@container_name, object_id, block_id, chunk)
           blocks << [block_id, :uncommited]
@@ -67,13 +61,13 @@ module Bosh
         end
 
         # Create the blob from the previous uploaded chunked blocks
-        blob = @azure_blob_client.commit_blob_blocks(@container_name, object_id, blocks)
+        @azure_blob_client.commit_blob_blocks(@container_name, object_id, blocks)
 
         object_id
       rescue Azure::Core::Error => e
         raise BlobstoreError, "Failed to create object '#{object_id}': #{e.inspect}"
       end
-      
+
       # Download an Azure block blob to a file
       def get_file(object_id, file)
         return @simple.get_file(object_id, file) if @simple
@@ -87,7 +81,7 @@ module Bosh
             blob, content = @azure_blob_client.get_blob(
               @container_name,
               object_id,
-              {:start_range => cur_len, :end_range => (cur_len + CHUNK_SIZE - 1)} )
+              { start_range: cur_len, end_range: (cur_len + CHUNK_SIZE - 1) })
             cur_len += content.length
             file.write(content)
           end
@@ -95,10 +89,10 @@ module Bosh
           raise BlobstoreError, "Failed to get object '#{object_id}': #{e.inspect}"
         end
       end
-      
+
       # Delete an Azure block blob
       def delete_object(object_id)
-        raise BlobstoreError, "unsupported action for read-only access" if @simple
+        raise BlobstoreError, 'unsupported action for read-only access' if @simple
 
         begin
           @azure_blob_client.delete_blob(@container_name, object_id)
@@ -106,7 +100,7 @@ module Bosh
           raise BlobstoreError, "Failed to delete object '#{object_id}: #{e.message}'"
         end
       end
-     
+
       # Check if the Azure block blob exists
       def object_exists?(object_id)
         return @simple.exists?(object_id) if @simple
@@ -114,7 +108,7 @@ module Bosh
         begin
           @azure_blob_client.get_blob_properties(@container_name, object_id)
           true
-        rescue Azure::Core::Error => e
+        rescue Azure::Core::Error
           false
         end
       end
