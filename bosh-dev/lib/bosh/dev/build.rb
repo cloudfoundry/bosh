@@ -71,7 +71,7 @@ module Bosh::Dev
 
     def light_stemcell
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
-      pipeline.download_stemcell(number.to_s, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+      pipeline.download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
       filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, 'micro-bosh-stemcell', true).to_s
       Bosh::Stemcell::Stemcell.new(filename)

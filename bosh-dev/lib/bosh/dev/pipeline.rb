@@ -44,12 +44,12 @@ module Bosh::Dev
       create(key: remote_path, body: File.open(file), public: false)
     end
 
-    def download_stemcell(version, options = {})
+    def download_stemcell(options = {})
       infrastructure = options.fetch(:infrastructure)
       name = options.fetch(:name)
       light = options.fetch(:light)
 
-      filename = stemcell_filename(version, infrastructure, name, light)
+      filename = stemcell_filename(build_id, infrastructure, name, light)
 
       remote_dir = File.join(build_id, name, infrastructure.name)
 
@@ -72,8 +72,8 @@ module Bosh::Dev
 
     def fetch_stemcells(infrastructure, download_dir)
       Dir.chdir(download_dir) do
-        download_stemcell(build_id, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?)
-        download_stemcell(build_id, infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?)
+        download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?)
+        download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?)
       end
     end
 

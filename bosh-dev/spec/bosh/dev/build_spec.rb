@@ -164,7 +164,7 @@ module Bosh::Dev
 
       it 'downloads the aws micro-bosh-stemcell for the current build' do
         fake_pipeline.should_receive(:download_stemcell).
-          with('123', infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+          with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
       end
