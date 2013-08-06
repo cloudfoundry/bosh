@@ -15,15 +15,16 @@ module Bosh::Dev
       bosh_release_path = build.download_release
       Rake::Task['stemcell:micro'].invoke(bosh_release_path, environment.infrastructure, build.number)
 
-      stemcell_path
+      stemcell_path!
     end
 
     def basic
       environment.sanitize
       Rake::Task['stemcell:basic'].invoke(environment.infrastructure, build.number)
 
-      stemcell_path
+      stemcell_path!
     end
+
 
     def stemcell_path
       name = environment.stemcell_type == 'micro' ? 'micro-bosh-stemcell' : 'bosh-stemcell'
@@ -35,5 +36,11 @@ module Bosh::Dev
     private
 
     attr_reader :build, :environment
+
+    def stemcell_path!
+      File.exist?(stemcell_path) or raise "#{stemcell_path} does not exist"
+
+      stemcell_path
+    end
   end
 end
