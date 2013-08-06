@@ -8,12 +8,10 @@ Follow these steps to make a contribution to any of our open source repositories
    [individuals](http://www.cloudfoundry.org/individualcontribution.pdf) or
    [corporations](http://www.cloudfoundry.org/corpcontribution.pdf).
 
-1. Set your name and email
+1. Set your name and email (these should match the information on your submitted CLA)
 
-		git config --global user.name "Firstname Lastname"
-		git config --global user.email "your_email@example.com"
-
-	* These should match the information on your submitted CLA
+        git config --global user.name "Firstname Lastname"
+        git config --global user.email "your_email@example.com"
 
 ## General Workflow
 
@@ -22,7 +20,7 @@ Follow these steps to make a contribution to any of our open source repositories
 1. Fork the repository
 
 1. Create a feature branch (`git checkout -b better_bosh`)
-    * Run the tests to ensure that your local environment is 
+    * Run the tests to ensure that your local environment is
   	  working `bundle && bundle exec rake` (this may take a while)
 1. Make changes on the branch:
     * Adding a feature
@@ -52,7 +50,7 @@ Your pull request is much more likely to be accepted if:
 As part of the `spec:unit` task we run [RuboCop](http://batsov.com/rubocop/),
 which generally enforces the [Ruby Style Guide](https://github.com/bbatsov/ruby-style-guide).
 
-We have a number of exceptions (see the various `.rubocop.yml` files), 
+We have a number of exceptions (see the various `.rubocop.yml` files),
 and our style is still evolving, however `rake rubocop` is run by Travis
-so making these pass will improve the chances that the Pull Request will 
+so making these pass will improve the chances that the pull request will
 be accepted.
