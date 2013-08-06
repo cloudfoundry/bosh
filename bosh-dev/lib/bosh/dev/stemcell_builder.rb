@@ -15,18 +15,18 @@ module Bosh::Dev
       bosh_release_path = build.download_release
       Rake::Task['stemcell:micro'].invoke(bosh_release_path, environment.infrastructure, build.number)
 
-      stemcell_filename
+      stemcell_path
     end
 
     def basic
       environment.sanitize
       Rake::Task['stemcell:basic'].invoke(environment.infrastructure, build.number)
 
-      stemcell_filename
+      stemcell_path
     end
 
-    def stemcell_filename
-      @stemcell_filename ||= Dir.glob("#{environment.directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
+    def stemcell_path
+      Dir.glob("#{environment.directory}/work/work/*.tgz").first # see: stemcell_builder/stages/stemcell/apply.sh:48
     end
 
     private

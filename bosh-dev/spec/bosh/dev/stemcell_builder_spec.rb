@@ -101,8 +101,7 @@ module Bosh::Dev
       end
     end
 
-    describe '#stemcell_filename' do
-
+    describe '#stemcell_path' do
       before do
         FileUtils.mkdir_p(File.join(environment.work_path, 'work'))
       end
@@ -113,7 +112,7 @@ module Bosh::Dev
 
       context 'when a stemcell has not yet been created' do
         it 'is blank' do
-          expect(builder.stemcell_filename).to be_nil
+          expect(builder.stemcell_path).to be_nil
         end
       end
 
@@ -123,7 +122,7 @@ module Bosh::Dev
         end
 
         it 'is the full path to the stemcell' do
-          expect(builder.stemcell_filename).to eq('/environment/work/work/xyz.tgz')
+          expect(builder.stemcell_path).to eq('/environment/work/work/xyz.tgz')
         end
 
         context 'and more than one stemcell has been created' do
@@ -132,7 +131,7 @@ module Bosh::Dev
           end
 
           it 'coincidentally returns the full path to the first alphabetically sorted stemcell' do
-            expect(builder.stemcell_filename).to eq('/environment/work/work/abc.tgz')
+            expect(builder.stemcell_path).to eq('/environment/work/work/abc.tgz')
           end
         end
       end
