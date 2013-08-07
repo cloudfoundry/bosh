@@ -139,7 +139,7 @@ module Bosh::Dev
       end
       let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
       let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
-      let(:infrastructure) { instance_double('Bosh::Dev::Infrastructure') }
+      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure') }
       let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
 
       before(:all) do
@@ -149,7 +149,7 @@ module Bosh::Dev
       before do
         Fog::Mock.reset
 
-        Infrastructure.stub(:for).with('aws').and_return(infrastructure)
+        Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
 
         fake_pipeline.stub(:download_stemcell)
         Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)

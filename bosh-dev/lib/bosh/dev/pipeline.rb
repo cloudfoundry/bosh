@@ -1,7 +1,7 @@
 require 'fog'
 require 'logger'
 require 'bosh/dev/build'
-require 'bosh/dev/infrastructure'
+require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
@@ -32,7 +32,7 @@ module Bosh::Dev
     end
 
     def publish_stemcell(stemcell)
-      latest_filename = stemcell_filename('latest', Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
+      latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
       s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
 
       s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))

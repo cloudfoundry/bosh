@@ -1,4 +1,4 @@
-module Bosh::Dev
+module Bosh::Stemcell
   module Infrastructure
     def self.for(name)
       case name

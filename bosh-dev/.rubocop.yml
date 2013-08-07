@@ -7,8 +7,5 @@ MethodLength:
 LineLength:
   Max: 240
 
-TrivialAccessors:
-  Enabled: false # Bosh::Dev::Infrastructure#light? was a false positive
-
 AvoidPerlisms:
   Enabled: false

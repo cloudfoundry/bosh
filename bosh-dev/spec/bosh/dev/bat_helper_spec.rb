@@ -6,13 +6,13 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:infrastructure_name) { 'FAKE_INFRASTRUCTURE_NAME' }
-    let(:fake_infrastructure) { instance_double('Bosh::Dev::Infrastructure::Base', name: infrastructure_name) }
+    let(:fake_infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name) }
     let(:fake_pipeline) { instance_double('Pipeline', fetch_stemcells: nil) }
 
     subject { BatHelper.new(infrastructure_name) }
 
     before do
-      Infrastructure.should_receive(:for).and_return(fake_infrastructure)
+      Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
 
       Pipeline.stub(new: fake_pipeline)
     end
@@ -24,8 +24,11 @@ module Bosh::Dev
     end
 
     describe '#run_rake' do
+      let(:spec_system_micro_task) { instance_double('Rake::Task', invoke: nil) }
+
       before do
         ENV.delete('BAT_INFRASTRUCTURE')
+        Rake::Task.stub(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(spec_system_micro_task)
 
         FileUtils.stub(rm_rf: nil, mkdir_p: nil)
       end
@@ -61,9 +64,7 @@ module Bosh::Dev
       end
 
       it 'invokes the spec:system:<infrastructure>:micro rake task' do
-        rake_task = instance_double('Rake::Task')
-        Rake::Task.stub(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(rake_task)
-        rake_task.should_receive(:invoke)
+        spec_system_micro_task.should_receive(:invoke)
 
         subject.run_rake
       end

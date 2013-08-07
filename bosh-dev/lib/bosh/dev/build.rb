@@ -1,7 +1,7 @@
 require 'bosh/dev/pipeline'
 require 'bosh/stemcell/stemcell'
 require 'bosh/stemcell/archive_filename'
-require 'bosh/dev/infrastructure'
+require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   class Build
@@ -70,7 +70,7 @@ module Bosh::Dev
     attr_reader :pipeline, :job_name
 
     def light_stemcell
-      infrastructure = Infrastructure.for('aws')
+      infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
       pipeline.download_stemcell(number.to_s, infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
       filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, 'micro-bosh-stemcell', true).to_s

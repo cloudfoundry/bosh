@@ -155,14 +155,14 @@ module Bosh::Dev
       it 'downloads the specified stemcell version from the pipeline bucket' do
         logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz' -> 'bosh-stemcell-aws-123.tgz'")
 
-        pipeline.download_stemcell('123', infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
+        pipeline.download_stemcell('123', infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
         expect(File.read('bosh-stemcell-aws-123.tgz')).to eq 'this is a thinga-ma-jiggy'
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
           expect {
-            pipeline.download_stemcell('888', infrastructure: Infrastructure.for('vsphere'), name: 'fooey', light: false)
+            pipeline.download_stemcell('888', infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false)
           }.to raise_error("remote file '456/fooey/vsphere/fooey-vsphere-888.tgz' not found")
         end
       end
@@ -170,13 +170,13 @@ module Bosh::Dev
       it 'downloads the specified light stemcell version from the pipeline bucket' do
         logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz' -> 'light-bosh-stemcell-aws-123.tgz'")
 
-        pipeline.download_stemcell('123', infrastructure: Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
+        pipeline.download_stemcell('123', infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
         expect(File.read('light-bosh-stemcell-aws-123.tgz')).to eq 'this a completely different thingy'
       end
 
       it 'returns the name of the downloaded file' do
         options = {
-            infrastructure: Infrastructure.for('aws'),
+            infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
             name: 'bosh-stemcell',
             light: true
         }
@@ -186,7 +186,7 @@ module Bosh::Dev
     end
 
     describe '#bosh_stemcell_path' do
-      let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
+      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Aws.new }
 
       it 'works' do
         expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))
@@ -194,7 +194,7 @@ module Bosh::Dev
     end
 
     describe '#micro_bosh_stemcell_path' do
-      let(:infrastructure) { Bosh::Dev::Infrastructure::Vsphere.new }
+      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Vsphere.new }
 
       it 'works' do
         expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-vsphere-456.tgz'))
@@ -202,7 +202,7 @@ module Bosh::Dev
     end
 
     describe '#fetch_stemcells' do
-      let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
+      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Aws.new }
 
       before do
         FileUtils.mkdir_p(download_directory)

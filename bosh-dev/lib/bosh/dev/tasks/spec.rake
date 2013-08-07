@@ -17,7 +17,7 @@ namespace :spec do
     trap('INT') do
       exit
     end
-    
+
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
 
@@ -91,8 +91,8 @@ namespace :spec do
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/pipeline'
-      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Pipeline.new.download_stemcell(Bosh::Dev::Build.candidate.number.to_s,
-                                                                               infrastructure: Bosh::Dev::Infrastructure::Vsphere.new,
+      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Stemcell::Pipeline.new.download_stemcell(Bosh::Dev::Build.candidate.number.to_s,
+                                                                               infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
                                                                                name: 'bosh-stemcell',
                                                                                light: false)
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'

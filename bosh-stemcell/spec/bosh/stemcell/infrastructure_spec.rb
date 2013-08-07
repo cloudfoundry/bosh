@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'bosh/dev/infrastructure'
+require 'bosh/stemcell/infrastructure'
 
-module Bosh::Dev
+module Bosh::Stemcell
   describe Infrastructure do
     describe '.for' do
       it 'returns the correct infrastrcture' do
@@ -11,7 +11,9 @@ module Bosh::Dev
       end
 
       it 'raises for unknown instructures' do
-        expect { Infrastructure.for('BAD_INFRASTRUCTURE') }.to raise_error(ArgumentError, /invalid infrastructure: BAD_INFRASTRUCTURE/)
+        expect {
+          Infrastructure.for('BAD_INFRASTRUCTURE')
+        }.to raise_error(ArgumentError, /invalid infrastructure: BAD_INFRASTRUCTURE/)
       end
     end
   end

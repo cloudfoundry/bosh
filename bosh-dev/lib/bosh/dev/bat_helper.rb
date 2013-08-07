@@ -1,4 +1,4 @@
-require 'bosh/dev/infrastructure'
+require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/pipeline'
 
 module Bosh::Dev
@@ -6,7 +6,7 @@ module Bosh::Dev
     attr_reader :infrastructure
 
     def initialize(infrastructure)
-      @infrastructure = Infrastructure.for(infrastructure)
+      @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure)
       @pipeline = Pipeline.new
     end
 
