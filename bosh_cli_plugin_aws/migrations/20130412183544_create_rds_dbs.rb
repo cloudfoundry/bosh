@@ -8,7 +8,7 @@ class CreateRdsDbs < Bosh::Aws::Migration
     end
 
     vpc_receipt = load_receipt("aws_vpc_receipt")
-    db_names   = %w(ccdb uaadb)
+    db_names   = %w(ccdb uaadb mysql-service-public)
     db_configs = config['rds'].select {|c| db_names.include?(c['instance']) }
     RdsDb.aws_rds = rds
     dbs = []
