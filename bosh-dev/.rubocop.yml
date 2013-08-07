@@ -9,3 +9,6 @@ LineLength:
 
 AvoidPerlisms:
   Enabled: false
+
+AccessControl:
+  Enabled: false

@@ -7,7 +7,7 @@ module Bosh::Dev
     describe '#download' do
       include FakeFS::SpecHelpers
 
-      let(:adapter) {DownloadAdapter.new}
+      let(:adapter) { DownloadAdapter.new }
 
       before(:each) do
         FileUtils.mkdir('/tmp')

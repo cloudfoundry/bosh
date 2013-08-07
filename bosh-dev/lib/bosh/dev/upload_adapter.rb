@@ -3,7 +3,7 @@ require 'fog'
 module Bosh::Dev
   class UploadAdapter
 
-    def upload(options={})
+    def upload(options = {})
       @bucket_name = options.fetch(:bucket_name)
       @key = options.fetch(:key)
       @body = options.fetch(:body)
