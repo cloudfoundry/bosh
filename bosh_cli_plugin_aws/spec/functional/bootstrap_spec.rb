@@ -245,7 +245,7 @@ describe 'AWS Bootstrap commands' do
 
       before do
         Bosh::Cli::PackageBuilder.any_instance.stub(:resolve_globs).and_return([])
-        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
+        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
         mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','release/bosh-3.tgz','bosh_release.tgz').and_return('bosh_release.tgz')
 
         aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
