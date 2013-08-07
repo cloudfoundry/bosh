@@ -5,7 +5,7 @@ module Bosh::Dev
   class BatHelper
     attr_reader :infrastructure
 
-    def initialize(infrastructure, build = Build.new)
+    def initialize(infrastructure, build = Build.candidate)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure)
       @build = build
     end
