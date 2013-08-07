@@ -51,7 +51,7 @@ module Bosh::Dev
     end
 
     def s3_release_url
-      File.join(pipeline.s3_url, release_path)
+      File.join(s3_url, release_path)
     end
 
     def promote_artifacts(aws_credentials)
@@ -60,11 +60,11 @@ module Bosh::Dev
     end
 
     def sync_buckets
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'gems/')} s3://bosh-jenkins-gems")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems")
 
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'release')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(pipeline.s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'release')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
     end
 
     def update_light_micro_bosh_ami_pointer_file(aws_credentials)
@@ -87,14 +87,17 @@ module Bosh::Dev
 
     def light_stemcell
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
-      pipeline.download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
-
+      download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
       filename = stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true)
       Bosh::Stemcell::Stemcell.new(filename)
     end
 
     def release_path
       "release/bosh-#{number}.tgz"
+    end
+
+    def s3_url
+      "s3://bosh-ci-pipeline/#{number}/"
     end
 
     def stemcell_filename(version, infrastructure, name, light)

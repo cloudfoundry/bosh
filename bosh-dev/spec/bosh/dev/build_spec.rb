@@ -40,7 +40,7 @@ module Bosh::Dev
       end
     end
 
-    its(:s3_release_url) { should eq(File.join(fake_pipeline.s3_url, 'release/bosh-123.tgz')) }
+    its(:s3_release_url) { should eq(File.join('s3://bosh-ci-pipeline/123/release/bosh-123.tgz')) }
 
     describe '#job_name' do
       its(:job_name) { should eq('current_job') }
@@ -101,28 +101,28 @@ module Bosh::Dev
 
       it 'syncs the pipeline gems' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/gems/ s3://bosh-jenkins-gems')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
 
         subject.sync_buckets
       end
 
       it 'syncs the releases' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/release s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
 
       it 'syncs the bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/bosh-stemcell s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
 
       it 'syncs the micro bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://FAKE_BOSH_CI_PIPELINE_BUCKET/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
@@ -139,7 +139,7 @@ module Bosh::Dev
       end
       let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
       let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
-      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure') }
+      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure', name: 'aws') }
       let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
 
       before(:all) do
@@ -151,11 +151,12 @@ module Bosh::Dev
 
         Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
 
-        fake_pipeline.stub(:download_stemcell)
         Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
 
         fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
         Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
+
+        stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/micro-bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
       end
 
       after(:all) do
@@ -163,7 +164,7 @@ module Bosh::Dev
       end
 
       it 'downloads the aws micro-bosh-stemcell for the current build' do
-        fake_pipeline.should_receive(:download_stemcell).
+        subject.should_receive(:download_stemcell).
           with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
