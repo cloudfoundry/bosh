@@ -16,7 +16,7 @@ module Bosh
           context 'and the version is a build number' do
             let(:version) { 123 }
             it 'prepends light before name' do
-              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-123-vsphere-esxi.tgz')
+              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz')
             end
           end
 
@@ -24,7 +24,7 @@ module Bosh
             let(:version) { 'latest' }
 
             it 'appends light after latest' do
-              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-latest-vsphere-esxi.tgz')
+              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz')
             end
           end
         end
@@ -38,7 +38,7 @@ module Bosh
               let(:version) { 123 }
 
               it 'ends with the infrastructure, hypervisor and build number' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-123-openstack-kvm.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-123-openstack-kvm-ubuntu.tgz')
               end
             end
 
@@ -46,7 +46,7 @@ module Bosh
               let(:version) { 'latest' }
 
               it 'begins with latest and ends with the infrastructure' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-latest-openstack-kvm.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-latest-openstack-kvm-ubuntu.tgz')
               end
             end
           end
@@ -58,7 +58,7 @@ module Bosh
               let(:version) { 123 }
 
               it 'ends with the infrastructure and build number' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-123-aws-xen.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-123-aws-xen-ubuntu.tgz')
               end
             end
 
@@ -66,7 +66,7 @@ module Bosh
               let(:version) { 'latest' }
 
               it 'begins with latest and ends with the infrastructure' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-latest-aws-xen.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-latest-aws-xen-ubuntu.tgz')
               end
             end
           end

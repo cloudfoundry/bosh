@@ -86,16 +86,16 @@ module Bosh::Dev
       end
 
       it 'uploads the file to the specific path on the pipeline bucket' do
-        logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/foo-bar.tgz')
+        logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/foo-bar-ubuntu.tgz')
 
-        pipeline.s3_upload('foobar-path', 'foo-bar.tgz')
-        expect(bucket_files.map(&:key)).to include '456/foo-bar.tgz'
-        expect(bucket_files.get('456/foo-bar.tgz').body).to eq 'test data'
+        pipeline.s3_upload('foobar-path', 'foo-bar-ubuntu.tgz')
+        expect(bucket_files.map(&:key)).to include '456/foo-bar-ubuntu.tgz'
+        expect(bucket_files.get('456/foo-bar-ubuntu.tgz').body).to eq 'test data'
       end
     end
 
     describe '#publish_stemcell' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
       before do
         FileUtils.mkdir('/tmp')
@@ -105,73 +105,73 @@ module Bosh::Dev
 
       describe 'when publishing a full stemcell' do
         let(:stemcell_contents) { 'contents of the stemcells' }
-        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a stemcell to an S3 bucket' do
-          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws.tgz')
+          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz')
 
           pipeline.publish_stemcell(stemcell)
 
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/bosh-stemcell-aws.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/bosh-stemcell-aws.tgz').body).to eq 'contents of the stemcells'
+          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz'
+          expect(bucket_files.get('456/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz').body).to eq 'contents of the stemcells'
         end
 
         it 'updates the latest stemcell in the S3 bucket' do
-          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen.tgz')
+          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz')
 
           pipeline.publish_stemcell(stemcell)
 
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen.tgz').body).to eq 'contents of the stemcells'
+          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz'
+          expect(bucket_files.get('456/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'contents of the stemcells'
         end
       end
 
       describe 'when publishing a light stemcell' do
         let(:stemcell_contents) { 'this file is a light stemcell' }
-        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a light stemcell to S3 bucket' do
           pipeline.publish_stemcell(stemcell)
 
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/light-bosh-stemcell-aws.tgz').body).to eq 'this file is a light stemcell'
+          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/light-bosh-stemcell-aws-ubuntu.tgz'
+          expect(bucket_files.get('456/bosh-stemcell/aws/light-bosh-stemcell-aws-ubuntu.tgz').body).to eq 'this file is a light stemcell'
         end
 
         it 'updates the latest light stemcell in the s3 bucket' do
           pipeline.publish_stemcell(stemcell)
 
-          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen.tgz'
-          expect(bucket_files.get('456/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen.tgz').body).to eq 'this file is a light stemcell'
+          expect(bucket_files.map(&:key)).to include '456/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz'
+          expect(bucket_files.get('456/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'this file is a light stemcell'
         end
       end
     end
 
     describe '#download_stemcell' do
       before do
-        bucket_files.create(key: '456/bosh-stemcell/aws/bosh-stemcell-123-aws-xen.tgz', body: 'this is a thinga-ma-jiggy')
-        bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen.tgz', body: 'this a completely different thingy')
+        bucket_files.create(key: '456/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz', body: 'this is a thinga-ma-jiggy')
+        bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz', body: 'this a completely different thingy')
       end
 
       it 'downloads the specified stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-123-aws-xen.tgz' -> 'bosh-stemcell-123-aws-xen.tgz'")
+        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz' -> 'bosh-stemcell-123-aws-xen-ubuntu.tgz'")
 
         pipeline.download_stemcell('123', infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
-        expect(File.read('bosh-stemcell-123-aws-xen.tgz')).to eq 'this is a thinga-ma-jiggy'
+        expect(File.read('bosh-stemcell-123-aws-xen-ubuntu.tgz')).to eq 'this is a thinga-ma-jiggy'
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
           expect {
             pipeline.download_stemcell('888', infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false)
-          }.to raise_error("remote file '456/fooey/vsphere/fooey-888-vsphere-esxi.tgz' not found")
+          }.to raise_error("remote file '456/fooey/vsphere/fooey-888-vsphere-esxi-ubuntu.tgz' not found")
         end
       end
 
       it 'downloads the specified light stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen.tgz' -> 'light-bosh-stemcell-123-aws-xen.tgz'")
+        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz' -> 'light-bosh-stemcell-123-aws-xen-ubuntu.tgz'")
 
         pipeline.download_stemcell('123', infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
-        expect(File.read('light-bosh-stemcell-123-aws-xen.tgz')).to eq 'this a completely different thingy'
+        expect(File.read('light-bosh-stemcell-123-aws-xen-ubuntu.tgz')).to eq 'this a completely different thingy'
       end
 
       it 'returns the name of the downloaded file' do
@@ -180,7 +180,7 @@ module Bosh::Dev
             name: 'bosh-stemcell',
             light: true
         }
-        expect(pipeline.download_stemcell('123', options)).to eq 'light-bosh-stemcell-123-aws-xen.tgz'
+        expect(pipeline.download_stemcell('123', options)).to eq 'light-bosh-stemcell-123-aws-xen-ubuntu.tgz'
       end
 
     end
@@ -189,7 +189,7 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Stemcell::Infrastructure::Aws.new }
 
       it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-456-aws-xen.tgz'))
+        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz'))
       end
     end
 
@@ -197,7 +197,7 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Stemcell::Infrastructure::Vsphere.new }
 
       it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-456-vsphere-esxi.tgz'))
+        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-456-vsphere-esxi-ubuntu.tgz'))
       end
     end
 
@@ -210,15 +210,15 @@ module Bosh::Dev
 
       context 'when micro and bosh stemcells exist for infrastructure' do
         before do
-          bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-456-aws-xen.tgz', body: 'this is the light-bosh-stemcell')
-          bucket_files.create(key: '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-456-aws-xen.tgz', body: 'this is the micro-bosh-stemcell')
+          bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-456-aws-xen-ubuntu.tgz', body: 'this is the light-bosh-stemcell')
+          bucket_files.create(key: '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-456-aws-xen-ubuntu.tgz', body: 'this is the micro-bosh-stemcell')
         end
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
           pipeline.fetch_stemcells(infrastructure, download_directory)
 
-          expect(File.read(File.join(download_directory, 'light-bosh-stemcell-456-aws-xen.tgz'))).to eq('this is the light-bosh-stemcell')
-          expect(File.read(File.join(download_directory, 'light-micro-bosh-stemcell-456-aws-xen.tgz'))).to eq('this is the micro-bosh-stemcell')
+          expect(File.read(File.join(download_directory, 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz'))).to eq('this is the light-bosh-stemcell')
+          expect(File.read(File.join(download_directory, 'light-micro-bosh-stemcell-456-aws-xen-ubuntu.tgz'))).to eq('this is the micro-bosh-stemcell')
         end
       end
 
@@ -226,7 +226,7 @@ module Bosh::Dev
         it 'raises' do
           expect {
             pipeline.fetch_stemcells(infrastructure, download_directory)
-          }.to raise_error("remote file '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-456-aws-xen.tgz' not found")
+          }.to raise_error("remote file '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-456-aws-xen-ubuntu.tgz' not found")
         end
       end
     end
@@ -234,8 +234,8 @@ module Bosh::Dev
     describe '#cleanup_stemcells' do
       it 'removes stemcells created during the build' do
         FileUtils.mkdir_p(download_directory)
-        FileUtils.touch(File.join(download_directory, 'foo-bosh-stemcell-bar.tgz'))
-        FileUtils.touch(File.join(download_directory, 'foo-micro-bosh-stemcell-bar.tgz'))
+        FileUtils.touch(File.join(download_directory, 'foo-bosh-stemcell-bar-ubuntu.tgz'))
+        FileUtils.touch(File.join(download_directory, 'foo-micro-bosh-stemcell-bar-ubuntu.tgz'))
 
         expect {
           subject.cleanup_stemcells(download_directory)

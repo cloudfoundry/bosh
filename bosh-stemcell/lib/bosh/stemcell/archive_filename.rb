@@ -7,7 +7,7 @@ module Bosh::Stemcell
     end
 
     def to_s
-      stemcell_filename_parts = [name, version, infrastructure.name, infrastructure.hypervisor]
+      stemcell_filename_parts = [name, version, infrastructure.name, infrastructure.hypervisor, 'ubuntu']
 
       "#{stemcell_filename_parts.join('-')}.tgz"
     end
