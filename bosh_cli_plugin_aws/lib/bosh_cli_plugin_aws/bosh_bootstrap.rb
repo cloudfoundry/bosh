@@ -1,5 +1,7 @@
 require_relative 'bootstrap'
 require 'net/https'
+require 'bosh/stemcell/archive_filename'
+require 'bosh/stemcell/infrastructure'
 
 module Bosh
   module Aws
@@ -112,7 +114,9 @@ This command should be used for bootstrapping bosh from scratch.
           say("Using stemcell #{bosh_stemcell_override}")
           return bosh_stemcell_override
         end
-        s3.copy_remote_file(AWS_JENKINS_BUCKET, 'bosh-stemcell/aws/latest-light-bosh-stemcell-aws.tgz', 'bosh_stemcell.tgz')
+        aws = Bosh::Stemcell::Infrastructure.for('aws')
+        filename = Bosh::Stemcell::ArchiveFilename.new('latest', aws, 'bosh-stemcell', true)
+        s3.copy_remote_file(AWS_JENKINS_BUCKET, "bosh-stemcell/aws/#{filename}", 'bosh_stemcell.tgz')
       end
 
       def bosh_release
