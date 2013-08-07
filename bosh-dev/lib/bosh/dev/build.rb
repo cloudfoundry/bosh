@@ -40,12 +40,12 @@ module Bosh::Dev
       name = options.fetch(:name)
       light = options.fetch(:light)
       download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
-      output_directory = options.fetch(:output_directory) { '' }
+      output_directory = options.fetch(:output_directory) { Dir.pwd }
 
       filename = stemcell_filename(number.to_s, infrastructure, name, light)
       remote_dir = File.join(number.to_s, name, infrastructure.name)
 
-      download_adapter.download(uri(remote_dir, filename), "#{output_directory}#{filename}")
+      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
 
       filename
     end
