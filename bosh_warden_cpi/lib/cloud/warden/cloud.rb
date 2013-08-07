@@ -392,12 +392,16 @@ module Bosh::WardenCloud
 
     private
 
+    def mount_entry(partition)
+      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+    end
 
     # Retry the umount for GUARD_RETRIES +1  times
     def umount_guard(mountpoint)
       umount_attempts = UMOUNT_GUARD_RETRIES
 
       loop do
+        return if mount_entry(mountpoint).nil?
         sudo "umount #{mountpoint}" do |result|
           if result.success?
             return
@@ -405,7 +409,7 @@ module Bosh::WardenCloud
             sleep UMOUNT_GUARD_SLEEP
             umount_attempts -= 1
           else
-            raise "Failed to umount #{mountpoint}: #{result.output}}"
+            raise "Failed to umount #{mountpoint}: #{result.output}"
           end
         end
       end

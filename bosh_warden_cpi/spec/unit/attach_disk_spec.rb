@@ -117,6 +117,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it 'can detach disk' do
       mock_attach_sudos('umount')
+      Bosh::WardenCloud::Cloud.any_instance.stub(:mount_entry).and_return("nop")
       @cloud.detach_disk(@vm_id, @attached_disk_id)
 
       disk = Bosh::WardenCloud::Models::Disk[@attached_disk_id.to_i]
@@ -127,6 +128,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it 'will retry umount for detach disk' do
       mock_attach_sudos('umount', false, Bosh::WardenCloud::Cloud::UMOUNT_GUARD_RETRIES + 1)
+      Bosh::WardenCloud::Cloud.any_instance.stub(:mount_entry).and_return("nop")
       expect {
         @cloud.detach_disk(@vm_id, @attached_disk_id)
       }. to raise_error
