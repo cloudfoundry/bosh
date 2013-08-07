@@ -17,7 +17,7 @@ module Bosh
           context 'and the version is a build number' do
             let(:version) { 123 }
             it 'prepends light before name' do
-              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-vsphere-123.tgz')
+              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-vsphere-esxi-123.tgz')
             end
           end
 
@@ -59,7 +59,7 @@ module Bosh
               let(:version) { 123 }
 
               it 'ends with the infrastructure and build number' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-aws-123.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-aws-xen-123.tgz')
               end
             end
 

@@ -18,10 +18,30 @@ module Bosh::Stemcell
     end
   end
 
+
+  describe Infrastructure::Base do
+    it 'requires a name to be specified' do
+      expect {
+        Infrastructure::Base.new
+      }.to raise_error /key not found: :name/
+    end
+
+    it 'requires a hypervisor' do
+      expect {
+        Infrastructure::Base.new(name: 'foo')
+      }.to raise_error /key not found: :hypervisor/
+    end
+
+    it 'defaults to not supporting light stemcells' do
+      infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'bar')
+      expect(infrastructure).not_to be_light
+    end
+  end
+
   describe Infrastructure::Aws do
     its(:name) { should eq('aws') }
     it { should be_light }
-    its(:hypervisor) { should be_nil }
+    its(:hypervisor) { should eq('xen') }
   end
 
   describe Infrastructure::OpenStack do
@@ -33,6 +53,6 @@ module Bosh::Stemcell
   describe Infrastructure::Vsphere do
     its(:name) { should eq('vsphere') }
     it { should_not be_light }
-    its(:hypervisor) { should be_nil }
+    its(:hypervisor) { should eq('esxi') }
   end
 end

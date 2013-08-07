@@ -148,30 +148,30 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       before do
-        bucket_files.create(key: '456/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz', body: 'this is a thinga-ma-jiggy')
-        bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz', body: 'this a completely different thingy')
+        bucket_files.create(key: '456/bosh-stemcell/aws/bosh-stemcell-aws-xen-123.tgz', body: 'this is a thinga-ma-jiggy')
+        bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-xen-123.tgz', body: 'this a completely different thingy')
       end
 
       it 'downloads the specified stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws-123.tgz' -> 'bosh-stemcell-aws-123.tgz'")
+        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/bosh-stemcell-aws-xen-123.tgz' -> 'bosh-stemcell-aws-xen-123.tgz'")
 
         pipeline.download_stemcell('123', infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
-        expect(File.read('bosh-stemcell-aws-123.tgz')).to eq 'this is a thinga-ma-jiggy'
+        expect(File.read('bosh-stemcell-aws-xen-123.tgz')).to eq 'this is a thinga-ma-jiggy'
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
           expect {
             pipeline.download_stemcell('888', infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false)
-          }.to raise_error("remote file '456/fooey/vsphere/fooey-vsphere-888.tgz' not found")
+          }.to raise_error("remote file '456/fooey/vsphere/fooey-vsphere-esxi-888.tgz' not found")
         end
       end
 
       it 'downloads the specified light stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-aws-123.tgz' -> 'light-bosh-stemcell-aws-123.tgz'")
+        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-aws-xen-123.tgz' -> 'light-bosh-stemcell-aws-xen-123.tgz'")
 
         pipeline.download_stemcell('123', infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
-        expect(File.read('light-bosh-stemcell-aws-123.tgz')).to eq 'this a completely different thingy'
+        expect(File.read('light-bosh-stemcell-aws-xen-123.tgz')).to eq 'this a completely different thingy'
       end
 
       it 'returns the name of the downloaded file' do
@@ -180,7 +180,7 @@ module Bosh::Dev
             name: 'bosh-stemcell',
             light: true
         }
-        expect(pipeline.download_stemcell('123', options)).to eq 'light-bosh-stemcell-aws-123.tgz'
+        expect(pipeline.download_stemcell('123', options)).to eq 'light-bosh-stemcell-aws-xen-123.tgz'
       end
 
     end
@@ -189,7 +189,7 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Stemcell::Infrastructure::Aws.new }
 
       it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))
+        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-aws-xen-456.tgz'))
       end
     end
 
@@ -197,7 +197,7 @@ module Bosh::Dev
       let(:infrastructure) { Bosh::Stemcell::Infrastructure::Vsphere.new }
 
       it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-vsphere-456.tgz'))
+        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-vsphere-esxi-456.tgz'))
       end
     end
 
@@ -210,15 +210,15 @@ module Bosh::Dev
 
       context 'when micro and bosh stemcells exist for infrastructure' do
         before do
-          bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-456.tgz', body: 'this is the light-bosh-stemcell')
-          bucket_files.create(key: '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-456.tgz', body: 'this is the micro-bosh-stemcell')
+          bucket_files.create(key: '456/bosh-stemcell/aws/light-bosh-stemcell-aws-xen-456.tgz', body: 'this is the light-bosh-stemcell')
+          bucket_files.create(key: '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-xen-456.tgz', body: 'this is the micro-bosh-stemcell')
         end
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
           pipeline.fetch_stemcells(infrastructure, download_directory)
 
-          expect(File.read(File.join(download_directory, 'light-bosh-stemcell-aws-456.tgz'))).to eq('this is the light-bosh-stemcell')
-          expect(File.read(File.join(download_directory, 'light-micro-bosh-stemcell-aws-456.tgz'))).to eq('this is the micro-bosh-stemcell')
+          expect(File.read(File.join(download_directory, 'light-bosh-stemcell-aws-xen-456.tgz'))).to eq('this is the light-bosh-stemcell')
+          expect(File.read(File.join(download_directory, 'light-micro-bosh-stemcell-aws-xen-456.tgz'))).to eq('this is the micro-bosh-stemcell')
         end
       end
 
@@ -226,7 +226,7 @@ module Bosh::Dev
         it 'raises' do
           expect {
             pipeline.fetch_stemcells(infrastructure, download_directory)
-          }.to raise_error("remote file '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-456.tgz' not found")
+          }.to raise_error("remote file '456/micro-bosh-stemcell/aws/light-micro-bosh-stemcell-aws-xen-456.tgz' not found")
         end
       end
     end

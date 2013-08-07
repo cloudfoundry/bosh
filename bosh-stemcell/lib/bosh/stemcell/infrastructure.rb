@@ -19,7 +19,7 @@ module Bosh::Stemcell
       def initialize(options = {})
         @name = options.fetch(:name)
         @supports_light_stemcell = options.fetch(:supports_light_stemcell, false)
-        @hypervisor = options.fetch(:hypervisor, nil)
+        @hypervisor = options.fetch(:hypervisor)
       end
 
       def light?
@@ -35,13 +35,13 @@ module Bosh::Stemcell
 
     class Vsphere < Base
       def initialize
-        super(name: 'vsphere')
+        super(name: 'vsphere', hypervisor: 'esxi')
       end
     end
 
     class Aws < Base
       def initialize
-        super(name: 'aws', supports_light_stemcell: true)
+        super(name: 'aws', hypervisor: 'xen', supports_light_stemcell: true)
       end
     end
   end
