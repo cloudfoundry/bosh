@@ -1,5 +1,4 @@
 require 'bosh/stemcell/infrastructure'
-require 'bosh/dev/pipeline'
 require 'bosh/dev/build'
 
 module Bosh::Dev
@@ -9,15 +8,14 @@ module Bosh::Dev
     def initialize(infrastructure, build = Build.new)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure)
       @build = build
-      @pipeline = Pipeline.new
     end
 
     def bosh_stemcell_path
-      pipeline.bosh_stemcell_path(infrastructure, artifacts_dir)
+      build.bosh_stemcell_path(infrastructure, artifacts_dir)
     end
 
     def micro_bosh_stemcell_path
-      pipeline.micro_bosh_stemcell_path(infrastructure, artifacts_dir)
+      build.micro_bosh_stemcell_path(infrastructure, artifacts_dir)
     end
 
     def artifacts_dir
@@ -46,7 +44,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :build, :pipeline
+    attr_reader :build
 
     def infrastructure_for_emitable_example
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name

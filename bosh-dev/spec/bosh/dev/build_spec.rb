@@ -7,6 +7,7 @@ module Bosh::Dev
 
     let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', s3_url: 's3://FAKE_BOSH_CI_PIPELINE_BUCKET/') }
     let(:job_name) { 'current_job' }
+    let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
 
     subject(:build) { Build.new(123) }
 
@@ -243,6 +244,22 @@ module Bosh::Dev
         expect(build.download_stemcell(options)).to eq 'light-bosh-stemcell-aws-123.tgz'
       end
 
+    end
+
+    describe '#bosh_stemcell_path' do
+      let(:infrastructure) { Bosh::Dev::Infrastructure::Aws.new }
+
+      it 'works' do
+        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-aws-123.tgz'))
+      end
+    end
+
+    describe '#micro_bosh_stemcell_path' do
+      let(:infrastructure) { Bosh::Dev::Infrastructure::Vsphere.new }
+
+      it 'works' do
+        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-vsphere-123.tgz'))
+      end
     end
   end
 end

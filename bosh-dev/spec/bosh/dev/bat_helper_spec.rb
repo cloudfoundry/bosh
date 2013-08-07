@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/bat_helper'
-require 'bosh/dev/pipeline'
 
 module Bosh::Dev
   describe BatHelper do
@@ -15,8 +14,6 @@ module Bosh::Dev
 
     before do
       Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
-
-      Pipeline.stub(new: fake_pipeline)
     end
 
     describe '#initialize' do
@@ -91,28 +88,28 @@ module Bosh::Dev
 
     describe '#bosh_stemcell_path' do
       before do
-        fake_pipeline.stub(:bosh_stemcell_path) do |infrastructure, artifacts_dir|
+        build.stub(:bosh_stemcell_path) do |infrastructure, artifacts_dir|
           expect(infrastructure.name).to eq(infrastructure_name)
           expect(artifacts_dir).to eq(subject.artifacts_dir)
           'fake bosh stemcell path'
         end
       end
 
-      it 'delegates to the pipeline' do
+      it 'delegates to the build' do
         expect(subject.bosh_stemcell_path).to eq('fake bosh stemcell path')
       end
     end
 
     describe '#micro_bosh_stemcell_path' do
       before do
-        fake_pipeline.stub(:micro_bosh_stemcell_path) do |infrastructure, artifacts_dir|
+        build.stub(:micro_bosh_stemcell_path) do |infrastructure, artifacts_dir|
           expect(infrastructure.name).to eq(infrastructure_name)
           expect(artifacts_dir).to eq(subject.artifacts_dir)
           'fake micro bosh stemcell path'
         end
       end
 
-      it 'delegates to the pipeline' do
+      it 'delegates to the build' do
         expect(subject.micro_bosh_stemcell_path).to eq('fake micro bosh stemcell path')
       end
     end

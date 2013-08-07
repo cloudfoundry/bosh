@@ -81,6 +81,14 @@ module Bosh::Dev
                        aws_secret_access_key: secret_access_key)
     end
 
+    def bosh_stemcell_path(infrastructure, download_dir)
+      File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', infrastructure.light?))
+    end
+
+    def micro_bosh_stemcell_path(infrastructure, download_dir)
+      File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
+    end
+
     private
 
     attr_reader :pipeline, :job_name
