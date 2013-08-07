@@ -9,7 +9,6 @@ module Bosh
       end
 
       describe '#to_s' do
-
         context 'when stemcell is light' do
           let(:light) { true }
           let(:infrastructure) { Infrastructure::Vsphere.new }
@@ -17,7 +16,7 @@ module Bosh
           context 'and the version is a build number' do
             let(:version) { 123 }
             it 'prepends light before name' do
-              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-vsphere-esxi-123.tgz')
+              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-123-vsphere-esxi.tgz')
             end
           end
 
@@ -25,7 +24,7 @@ module Bosh
             let(:version) { 'latest' }
 
             it 'appends light after latest' do
-              expect(archive_filename.to_s).to eq ('latest-light-bosh-stemcell-vsphere.tgz')
+              expect(archive_filename.to_s).to eq ('light-bosh-stemcell-latest-vsphere-esxi.tgz')
             end
           end
         end
@@ -39,7 +38,7 @@ module Bosh
               let(:version) { 123 }
 
               it 'ends with the infrastructure, hypervisor and build number' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-openstack-kvm-123.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-123-openstack-kvm.tgz')
               end
             end
 
@@ -47,7 +46,7 @@ module Bosh
               let(:version) { 'latest' }
 
               it 'begins with latest and ends with the infrastructure' do
-                expect(archive_filename.to_s).to eq('latest-bosh-stemcell-openstack.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-latest-openstack-kvm.tgz')
               end
             end
           end
@@ -59,7 +58,7 @@ module Bosh
               let(:version) { 123 }
 
               it 'ends with the infrastructure and build number' do
-                expect(archive_filename.to_s).to eq('bosh-stemcell-aws-xen-123.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-123-aws-xen.tgz')
               end
             end
 
@@ -67,7 +66,7 @@ module Bosh
               let(:version) { 'latest' }
 
               it 'begins with latest and ends with the infrastructure' do
-                expect(archive_filename.to_s).to eq('latest-bosh-stemcell-aws.tgz')
+                expect(archive_filename.to_s).to eq('bosh-stemcell-latest-aws-xen.tgz')
               end
             end
           end
