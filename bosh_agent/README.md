@@ -31,7 +31,7 @@ If the settings cannot be found as above, then it looks for a file `/var/vcap/bo
 Alternately, you can run `bosh_agent` without loading settings (without the `-c` flag).
 
 * `bosh_agent` => uses the purely [default settings](https://github.com/cloudfoundry/bosh/blob/master/bosh_agent/bosh_agent#L9-22) from bosh_agent (defaults to NATS for communication & vsphere platform)
-* `bosh_agent -n https://vcap:vcap@0.0.0.0:6868` => overrides default settings to tell `bosh_agent` to use https (as used by "bosh micro deploy" and mcf)
+* `bosh_agent -n https://vcap:vcap@0.0.0.0:6868` => overrides default settings to tell `bosh_agent` to use https (as used by "bosh micro deploy")
 
 Run `bosh_agent --help` to see all the CLI option overrides.
 

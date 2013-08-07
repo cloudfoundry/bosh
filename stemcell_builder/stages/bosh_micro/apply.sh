@@ -15,11 +15,7 @@ fi
 
 cp -rH $bosh_micro_manifest_yml_path $chroot/$bosh_dir/src/micro_bosh/release.yml
 cp -rH $bosh_micro_release_tgz_path $chroot/$bosh_dir/src/micro_bosh/release.tgz
-if [ ${mcf_enabled:-no} == "yes" ]; then
-  cp $dir/assets/configure_micro_bosh_for_mcf.sh $chroot/$bosh_dir/src/micro_bosh/configure_micro_bosh.sh
-else
-  cp $dir/assets/configure_micro_bosh.sh $chroot/$bosh_dir/src/micro_bosh/configure_micro_bosh.sh
-fi
+cp $dir/assets/configure_micro_bosh.sh $chroot/$bosh_dir/src/micro_bosh/configure_micro_bosh.sh
 
 apt_get install libpq-dev genisoimage
 run_in_bosh_chroot $chroot "$bosh_dir/src/micro_bosh/configure_micro_bosh.sh ${system_parameters_infrastructure} ${agent_gem_src_url:-}"

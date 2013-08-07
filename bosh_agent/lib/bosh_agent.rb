@@ -46,7 +46,6 @@ require "bosh_agent/platform/linux"
 require "bosh_agent/platform/ubuntu"
 require "bosh_agent/platform/rhel"
 require "bosh_agent/platform/centos"
-require "bosh_agent/platform/microcloud"
 
 require "bosh_agent/bootstrap"
 

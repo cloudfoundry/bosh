@@ -49,23 +49,6 @@ namespace :stemcell do
     build("stemcell-#{args[:infrastructure]}", options)
   end
 
-  desc 'Build Micro Cloud Foundry'
-  task :mcf, [:infrastructure, :manifest, :tarball, :micro_src] => 'all:finalize_release_directory' do |t, args|
-    options = default_options(args)
-    options[:stemcell_name] ||= 'mcf-stemcell'
-    options[:stemcell_version] ||= Bosh::Agent::VERSION
-    options[:image_create_disk_size] = 16384
-    options[:build_time] = ENV['BUILD_TIME'] || Time.now.strftime('%Y%m%d.%H%M%S')
-    options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
-    options[:bosh_users_password] = 'micr0cloud'
-
-    options = options.merge(bosh_micro_options(args[:manifest], args[:tarball]))
-    options[:mcf_enabled] = 'yes'
-    options[:micro_src] = args[:micro_src]
-
-    build('stemcell-mcf', options)
-  end
-
   namespace :public do
 
     # If the user is trying to upload a new file to the public repository then
@@ -407,7 +390,6 @@ namespace :stemcell do
       ruby_bin: ENV['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
       bosh_release_src_dir: File.expand_path('../../../../../../release/src/bosh', __FILE__),
       bosh_agent_src_dir: File.expand_path('../../../../../../bosh_agent', __FILE__),
-      mcf_enabled: 'no',
       image_create_disk_size: (args[:disk_size] || 2048).to_i
     }
 

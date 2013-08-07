@@ -25,7 +25,7 @@ pong
 
 A bosh agent can compile a package from a bosh release (such as [cf-release](github.com/cloudfoundry/cf-release) or [bosh-sample-release](https://github.com/cloudfoundry/bosh-sample-release)) and upload/store the compiled blob to a [blobstore](https://github.com/cloudfoundry/bosh/tree/master/blobstore_client#readme) (remote service or local filesystem).
 
-This feature of a bosh agent is used to create the microbosh and micro cloudfoundry (mcf) stemcells (via the [package_compiled](https://github.com/cloudfoundry/bosh/tree/master/package_compiler) command).
+This feature of a bosh agent is also used to create the microbosh stemcells (via the [package_compiler](https://github.com/cloudfoundry/bosh/tree/master/package_compiler) command).
 
 ### Apply a deployment spec
 

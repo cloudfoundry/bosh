@@ -19,16 +19,9 @@ then
   bosh_release_src_dir=$(readlink -nf $base_dir/../release/src/bosh)
 fi
 
-if [ -z "${mcf_enabled:-}" ]
-then
-  mcf_enabled=no
-fi
-
 if [ -z "${agent_gem_src_url:-}" ]; then
   mkdir -p $assets_dir/gems
   cp -aL $bosh_release_src_dir/bosh_agent/* $assets_dir/gems
 else
   persist_value agent_gem_src_url
 fi
-
-persist_value mcf_enabled

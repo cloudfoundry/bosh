@@ -22,5 +22,3 @@ if [ -z "${agent_gem_src_url:-}" ]; then
 else
   persist_value agent_gem_src_url
 fi
-
-persist_value mcf_enabled
