@@ -18,7 +18,6 @@ module Bosh::Stemcell
     end
   end
 
-
   describe Infrastructure::Base do
     it 'requires a name to be specified' do
       expect {
