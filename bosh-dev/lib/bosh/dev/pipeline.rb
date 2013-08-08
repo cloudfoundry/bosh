@@ -39,10 +39,6 @@ module Bosh::Dev
       "https://s3.amazonaws.com/#{bucket}/#{build_id}/gems/"
     end
 
-    def cleanup_stemcells(download_dir)
-      FileUtils.rm_f(Dir.glob(File.join(download_dir, '*bosh-stemcell-*.tgz')))
-    end
-
     private
 
     attr_reader :logger, :bucket, :build_id

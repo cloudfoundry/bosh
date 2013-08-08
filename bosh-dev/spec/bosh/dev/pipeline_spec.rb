@@ -130,17 +130,5 @@ module Bosh::Dev
         end
       end
     end
-
-    describe '#cleanup_stemcells' do
-      it 'removes stemcells created during the build' do
-        FileUtils.mkdir_p(download_directory)
-        FileUtils.touch(File.join(download_directory, 'foo-bosh-stemcell-bar-ubuntu.tgz'))
-        FileUtils.touch(File.join(download_directory, 'foo-micro-bosh-stemcell-bar-ubuntu.tgz'))
-
-        expect {
-          subject.cleanup_stemcells(download_directory)
-        }.to change { Dir.glob(File.join(download_directory, '*')) }.to([])
-      end
-    end
   end
 end
