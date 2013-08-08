@@ -44,6 +44,39 @@ module Bosh::Dev
       end
     end
 
+    describe '#upload_r' do
+      let(:src) { 'source_dir' }
+      let(:dst) { 'dest_dir' }
+      let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
+
+      before do
+        FileUtils.mkdir_p(src)
+        Dir.chdir(src) do
+          files.each do |path|
+            FileUtils.mkdir_p(File.dirname(path))
+            File.open(path, 'w') { |f| f.write("Contents of #{path}") }
+          end
+        end
+      end
+
+      it 'recursively uploads a directory into base_dir' do
+        pipeline.should_receive(:create).with do |options|
+          expect(options[:public]).to eq(true)
+
+          case options[:key]
+            when 'dest_dir/foo/bar.txt'
+              expect(options[:body].read).to eq('Contents of foo/bar.txt')
+            when 'dest_dir/foo/bar/baz.txt'
+              expect(options[:body].read).to eq('Contents of foo/bar/baz.txt')
+            else
+              raise "unexpected key: #{options[:key]}"
+          end
+        end.exactly(2).times
+
+        subject.upload_r(src, dst)
+      end
+    end
+
     describe '#create' do
       let(:bucket) { fog_storage.directories.get(bucket_name) }
 

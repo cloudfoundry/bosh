@@ -5,7 +5,7 @@ describe Bosh::Dev::BulkUploader do
   include FakeFS::SpecHelpers
 
   let(:bucket_name) { 'fake-bucket' }
-  let(:pipeline) { double(Bosh::Dev::Pipeline, bucket: bucket_name, fog_storage: fog_storage) }
+  let(:pipeline) { Bosh::Dev::Pipeline.new(build_id: '45') }
   let(:src) { 'source_dir' }
   let(:dst) { 'dest_dir' }
 

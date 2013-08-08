@@ -17,6 +17,20 @@ module Bosh::Dev
       @bucket = 'bosh-ci-pipeline'
     end
 
+    def upload_r(source_dir, dest_dir)
+      Dir.chdir(source_dir) do
+        Dir['**/*'].each do |file|
+          unless File.directory?(file)
+            create(
+              key: File.join(dest_dir, file),
+              body: File.open(file),
+              public: true
+            )
+          end
+        end
+      end
+    end
+
     def create(options)
       uploaded_file = storage.upload(
         bucket,

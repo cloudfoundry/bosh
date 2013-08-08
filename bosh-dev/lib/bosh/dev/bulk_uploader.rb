@@ -9,17 +9,7 @@ module Bosh::Dev
     end
 
     def upload_r(source_dir, dest_dir)
-      Dir.chdir(source_dir) do
-        Dir['**/*'].each do |file|
-          unless File.directory?(file)
-            pipeline.create(
-              key: File.join(dest_dir, file),
-              body: File.open(file),
-              public: true
-            )
-          end
-        end
-      end
+      pipeline.upload_r(source_dir, dest_dir)
     end
 
     private
