@@ -3,6 +3,7 @@ require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
+require 'bosh/dev/pipeline_storage'
 
 module Bosh::Dev
   class Build
@@ -21,6 +22,7 @@ module Bosh::Dev
     def initialize(number)
       @number = number
       @job_name = ENV.to_hash.fetch('JOB_NAME')
+      @logger = Logger.new($stdout)
     end
 
     def upload(release, options = {})
@@ -50,6 +52,15 @@ module Bosh::Dev
       download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
 
       filename
+    end
+
+    def upload_stemcell(stemcell)
+      latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
+      s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
+      s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
+
+      create(key: s3_path, body: File.open(stemcell.path), public: false)
+      create(key: s3_latest_path, body: File.open(stemcell.path), public: false)
     end
 
     def s3_release_url
@@ -93,7 +104,18 @@ module Bosh::Dev
 
     private
 
-    attr_reader :job_name
+    attr_reader :job_name, :logger
+
+    def create(options)
+      bucket = 'bosh-ci-pipeline'
+      uploaded_file = Bosh::Dev::PipelineStorage.new.upload(
+        bucket,
+        File.join(number.to_s, options.fetch(:key)),
+        options.fetch(:body),
+        options.fetch(:public)
+      )
+      logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{options.fetch(:key)}"}")
+    end
 
     def light_stemcell
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')

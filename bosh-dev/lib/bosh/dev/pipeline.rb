@@ -32,13 +32,7 @@ module Bosh::Dev
     end
 
     def publish_stemcell(stemcell)
-      latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
-      s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
-
-      s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
-
-      create(key: s3_path, body: File.open(stemcell.path), public: false)
-      create(key: s3_latest_path, body: File.open(stemcell.path), public: false)
+      Build.candidate.upload_stemcell(stemcell)
     end
 
     def gems_dir_url

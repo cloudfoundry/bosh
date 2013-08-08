@@ -7,15 +7,35 @@ module Bosh::Dev
 
     let(:job_name) { 'current_job' }
     let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
+    let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
+    let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
+    let(:fog_storage) do
+      Fog::Storage.new(provider: 'AWS',
+                       aws_access_key_id: access_key_id,
+                       aws_secret_access_key: secret_access_key)
+    end
 
     subject(:build) { Build.new(123) }
 
+    before(:all) do
+      Fog.mock!
+    end
+
     before do
+      Fog::Mock.reset
+      fog_storage.directories.create(key: 'bosh-ci-pipeline')
+
       ENV.stub(:to_hash).and_return(
         'BUILD_NUMBER' => 'current',
         'CANDIDATE_BUILD_NUMBER' => 'candidate',
+        'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
+        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id,
         'JOB_NAME' => job_name
       )
+    end
+
+    after(:all) do
+      Fog.unmock!
     end
 
     describe '.candidate' do
@@ -138,26 +158,12 @@ module Bosh::Dev
     end
 
     describe '#update_light_micro_bosh_ami_pointer_file' do
-      let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
-      let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
-
-      let(:fog_storage) do
-        Fog::Storage.new(provider: 'AWS',
-                         aws_access_key_id: access_key_id,
-                         aws_secret_access_key: secret_access_key)
-      end
       let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
       let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
       let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
       let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
 
-      before(:all) do
-        Fog.mock!
-      end
-
       before do
-        Fog::Mock.reset
-
         Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
 
         Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
@@ -166,10 +172,6 @@ module Bosh::Dev
         Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
 
         stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/micro-bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
-      end
-
-      after(:all) do
-        Fog.unmock!
       end
 
       it 'downloads the aws micro-bosh-stemcell for the current build' do
@@ -214,6 +216,60 @@ module Bosh::Dev
                                                aws_secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
 
         subject.fog_storage('FAKE_ACCESS_KEY_ID', 'FAKE_SECRET_ACCESS_KEY')
+      end
+    end
+
+    describe '#upload_stemcell' do
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+      let(:logger) { instance_double('Logger').as_null_object }
+      let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
+
+      before do
+        FileUtils.mkdir('/tmp')
+        File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
+        Logger.stub(new: logger)
+      end
+
+      describe 'when publishing a full stemcell' do
+        let(:stemcell_contents) { 'contents of the stemcells' }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+
+        it 'publishes a stemcell to an S3 bucket' do
+          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz')
+
+          build.upload_stemcell(stemcell)
+
+          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz'
+          expect(bucket_files.get('123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz').body).to eq 'contents of the stemcells'
+        end
+
+        it 'updates the latest stemcell in the S3 bucket' do
+          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz')
+
+          build.upload_stemcell(stemcell)
+
+          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz'
+          expect(bucket_files.get('123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'contents of the stemcells'
+        end
+      end
+
+      describe 'when publishing a light stemcell' do
+        let(:stemcell_contents) { 'this file is a light stemcell' }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+
+        it 'publishes a light stemcell to S3 bucket' do
+          build.upload_stemcell(stemcell)
+
+          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/light-bosh-stemcell-aws-ubuntu.tgz'
+          expect(bucket_files.get('123/bosh-stemcell/aws/light-bosh-stemcell-aws-ubuntu.tgz').body).to eq 'this file is a light stemcell'
+        end
+
+        it 'updates the latest light stemcell in the s3 bucket' do
+          build.upload_stemcell(stemcell)
+
+          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz'
+          expect(bucket_files.get('123/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'this file is a light stemcell'
+        end
       end
     end
 

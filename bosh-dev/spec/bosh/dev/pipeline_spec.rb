@@ -20,7 +20,10 @@ module Bosh::Dev
       Fog.mock!
       Fog::Mock.reset
       fog_storage.directories.create(key: bucket_name) if bucket_name
+      Logger.stub(new: logger)
       ENV.stub(to_hash: {
+        'JOB_NAME' => 'foobar',
+        'CANDIDATE_BUILD_NUMBER' => '456',
         'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake access key',
         'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => 'fake secret key',
       })
