@@ -1,8 +1,8 @@
-require 'bosh/dev/pipeline'
 require 'bosh/stemcell/stemcell'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
+require 'bosh/dev/upload_adapter'
 
 module Bosh::Dev
   class Build
@@ -21,11 +21,13 @@ module Bosh::Dev
     def initialize(number)
       @number = number
       @job_name = ENV.to_hash.fetch('JOB_NAME')
-      @pipeline = Pipeline.new(build_id: number.to_s)
     end
 
-    def upload(release)
-      pipeline.s3_upload(release.tarball, release_path)
+    def upload(release, options = {})
+      bucket = 'bosh-ci-pipeline'
+      key = File.join(number.to_s, release_path)
+      upload_adapter = options.fetch(:upload_adapter) { UploadAdapter.new }
+      upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
     end
 
     def download_release
@@ -91,7 +93,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :pipeline, :job_name
+    attr_reader :job_name
 
     def light_stemcell
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')

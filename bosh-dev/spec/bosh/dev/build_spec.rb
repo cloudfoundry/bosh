@@ -5,7 +5,6 @@ module Bosh::Dev
   describe Build do
     include FakeFS::SpecHelpers
 
-    let(:fake_pipeline) { instance_double('Bosh::Dev::Pipeline', s3_url: 's3://FAKE_BOSH_CI_PIPELINE_BUCKET/') }
     let(:job_name) { 'current_job' }
     let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
 
@@ -17,8 +16,6 @@ module Bosh::Dev
         'CANDIDATE_BUILD_NUMBER' => 'candidate',
         'JOB_NAME' => job_name
       )
-
-      Bosh::Dev::Pipeline.stub(new: fake_pipeline)
     end
 
     describe '.candidate' do
@@ -49,11 +46,22 @@ module Bosh::Dev
 
     describe '#upload' do
       let(:release) { double(tarball: 'release-tarball.tgz') }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
+      let(:io) { double }
 
-      it 'uploads the release to the pipeline bucket with its build number' do
-        fake_pipeline.should_receive(:s3_upload).with('release-tarball.tgz', 'release/bosh-123.tgz')
+      it 'uploads the release with its build number' do
+        File.stub(:open).with(release.tarball) { io }
+        upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
 
-        subject.upload(release)
+        subject.upload(release, upload_adapter: upload_adapter)
+      end
+
+      context 'when the file does not exist' do
+
+        it 'raises an error' do
+          expect { subject.upload(release, upload_adapter: upload_adapter) }.to raise_error(Errno::ENOENT)
+        end
+
       end
     end
 
