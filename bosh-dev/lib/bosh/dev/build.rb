@@ -67,6 +67,10 @@ module Bosh::Dev
       File.join(s3_url, release_path)
     end
 
+    def gems_dir_url
+      "https://s3.amazonaws.com/bosh-ci-pipeline/#{number}/gems/"
+    end
+
     def promote_artifacts(aws_credentials)
       sync_buckets
       update_light_micro_bosh_ami_pointer_file(aws_credentials)

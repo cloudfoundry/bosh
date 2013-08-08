@@ -36,7 +36,7 @@ module Bosh::Dev
     end
 
     def gems_dir_url
-      "https://s3.amazonaws.com/#{bucket}/#{build_id}/gems/"
+      Build.candidate.gems_dir_url
     end
 
     private

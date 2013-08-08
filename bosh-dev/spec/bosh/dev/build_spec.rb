@@ -113,6 +113,8 @@ module Bosh::Dev
 
     end
 
+    its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/123/gems/') }
+
     describe '#promote_artifacts' do
       it 'syncs buckets and updates AWS aim text reference' do
         subject.should_receive(:sync_buckets)
