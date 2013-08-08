@@ -91,9 +91,9 @@ namespace :spec do
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/pipeline'
-      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Pipeline.new.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
-                                                                               name: 'bosh-stemcell',
-                                                                               light: false)
+      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
+                                                                                  name: 'bosh-stemcell',
+                                                                                  light: false)
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
