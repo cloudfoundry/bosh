@@ -77,36 +77,6 @@ module Bosh::Dev
       end
     end
 
-    describe '#create' do
-      let(:bucket) { fog_storage.directories.get(bucket_name) }
-
-      it 'creates the specified file on the pipeline bucket' do
-        pipeline.create(key: 'dest_dir/foo/bar/baz.txt', body: 'contents of baz', public: true)
-
-        expect(bucket.files.map(&:key)).to include '456/dest_dir/foo/bar/baz.txt'
-        expect(bucket.files.get('456/dest_dir/foo/bar/baz.txt').body).to eq('contents of baz')
-        expect(bucket.files.get('456/dest_dir/foo/bar/baz.txt').public_url).not_to be_nil
-      end
-
-      it 'publicizes the bucket only when asked to' do
-        logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/dest_dir/foo/bar/baz.txt')
-        pipeline.create(key: 'dest_dir/foo/bar/baz.txt', body: 'contents of baz', public: false)
-
-        expect(bucket.files.map(&:key)).to include '456/dest_dir/foo/bar/baz.txt'
-        expect(bucket.files.get('456/dest_dir/foo/bar/baz.txt').public_url).to be_nil
-      end
-
-      context 'when the bucket does not exist' do
-        let(:bucket_name) { false }
-
-        it 'raises an error' do
-          expect {
-            pipeline.create(key: 'dest_dir/foo/bar/baz.txt', body: 'contents of baz', public: false)
-          }.to raise_error("bucket 'bosh-ci-pipeline' not found")
-        end
-      end
-    end
-
     describe '#publish_stemcell' do
       let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 

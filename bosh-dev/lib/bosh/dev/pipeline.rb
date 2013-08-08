@@ -31,16 +31,6 @@ module Bosh::Dev
       end
     end
 
-    def create(options)
-      uploaded_file = storage.upload(
-        bucket,
-        File.join(build_id, options.fetch(:key)),
-        options.fetch(:body),
-        options.fetch(:public)
-      )
-      logger.info("uploaded to #{uploaded_file.public_url || File.join(s3_url, options.fetch(:key))}")
-    end
-
     def publish_stemcell(stemcell)
       latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
       s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
@@ -84,6 +74,16 @@ module Bosh::Dev
     private
 
     attr_reader :logger, :bucket, :build_id
+
+    def create(options)
+      uploaded_file = storage.upload(
+        bucket,
+        File.join(build_id, options.fetch(:key)),
+        options.fetch(:body),
+        options.fetch(:public)
+      )
+      logger.info("uploaded to #{uploaded_file.public_url || File.join(s3_url, options.fetch(:key))}")
+    end
 
     def s3_url
       "s3://#{bucket}/#{build_id}/"
