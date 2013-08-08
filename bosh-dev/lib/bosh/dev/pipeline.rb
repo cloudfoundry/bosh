@@ -32,16 +32,13 @@ module Bosh::Dev
       s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
 
       s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
-      s3_upload(stemcell.path, s3_path)
-      s3_upload(stemcell.path, s3_latest_path)
+
+      create(key: s3_path, body: File.open(stemcell.path), public: false)
+      create(key: s3_latest_path, body: File.open(stemcell.path), public: false)
     end
 
     def gems_dir_url
       "https://s3.amazonaws.com/#{bucket}/#{build_id}/gems/"
-    end
-
-    def s3_upload(file, remote_path)
-      create(key: remote_path, body: File.open(file), public: false)
     end
 
     def download_stemcell(options = {})

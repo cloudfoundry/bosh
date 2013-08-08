@@ -74,20 +74,6 @@ module Bosh::Dev
       end
     end
 
-    describe '#s3_upload' do
-      before do
-        File.open('foobar-path', 'w') { |f| f.write('test data') }
-      end
-
-      it 'uploads the file to the specific path on the pipeline bucket' do
-        logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/456/foo-bar-ubuntu.tgz')
-
-        pipeline.s3_upload('foobar-path', 'foo-bar-ubuntu.tgz')
-        expect(bucket_files.map(&:key)).to include '456/foo-bar-ubuntu.tgz'
-        expect(bucket_files.get('456/foo-bar-ubuntu.tgz').body).to eq 'test data'
-      end
-    end
-
     describe '#publish_stemcell' do
       let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
