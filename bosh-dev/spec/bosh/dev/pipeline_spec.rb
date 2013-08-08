@@ -37,10 +37,6 @@ module Bosh::Dev
           Build.stub(candidate: instance_double('Build', number: '102948923'))
         end
 
-        it 'defaults to the current candidate build_id' do
-          expect(pipeline.s3_url).to eq 's3://bosh-ci-pipeline/102948923/'
-        end
-
         it 'uses a default logger to stdout' do
           Logger.should_receive(:new).with($stdout)
           pipeline
