@@ -45,20 +45,6 @@ module Bosh::Dev
       "https://s3.amazonaws.com/#{bucket}/#{build_id}/gems/"
     end
 
-    def download_stemcell(options = {})
-      infrastructure = options.fetch(:infrastructure)
-      name = options.fetch(:name)
-      light = options.fetch(:light)
-
-      filename = stemcell_filename(build_id, infrastructure, name, light)
-
-      remote_dir = File.join(build_id, name, infrastructure.name)
-
-      download(remote_dir, filename)
-
-      filename
-    end
-
     def cleanup_stemcells(download_dir)
       FileUtils.rm_f(Dir.glob(File.join(download_dir, '*bosh-stemcell-*.tgz')))
     end
@@ -74,22 +60,11 @@ module Bosh::Dev
         options.fetch(:body),
         options.fetch(:public)
       )
-      logger.info("uploaded to #{uploaded_file.public_url || File.join(s3_url, options.fetch(:key))}")
-    end
-
-    def s3_url
-      "s3://#{bucket}/#{build_id}/"
+      logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{build_id}/#{options.fetch(:key)}"}")
     end
 
     def stemcell_filename(version, infrastructure, name, light)
       Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
-    end
-
-    def download(remote_dir, filename)
-      storage.download(bucket, remote_dir, filename)
-
-      remote_path = File.join(remote_dir, filename)
-      logger.info("downloaded 's3://#{bucket}/#{remote_path}' -> '#{filename}'")
     end
 
     def default_storage

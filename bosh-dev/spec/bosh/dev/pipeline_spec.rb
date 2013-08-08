@@ -26,7 +26,6 @@ module Bosh::Dev
       })
     end
 
-    its(:s3_url) { should eq('s3://bosh-ci-pipeline/456/') }
     its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/456/gems/') }
 
     describe '#initialize' do
@@ -127,43 +126,6 @@ module Bosh::Dev
           expect(bucket_files.get('456/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'this file is a light stemcell'
         end
       end
-    end
-
-    describe '#download_stemcell' do
-
-      it 'downloads the specified stemcell version from the pipeline bucket' do
-        pipeline_storage.should_receive(:download).with('bosh-ci-pipeline', '456/bosh-stemcell/aws', 'bosh-stemcell-456-aws-xen-ubuntu.tgz')
-        pipeline.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
-      end
-
-      context 'when remote file does not exist' do
-        it 'raises' do
-          stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/456/fooey/vsphere/fooey-456-vsphere-esxi-ubuntu.tgz').to_return(status: 404)
-
-          expect {
-            pipeline.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false)
-          }.to raise_error("remote file '456/fooey/vsphere/fooey-456-vsphere-esxi-ubuntu.tgz' not found")
-        end
-      end
-
-      it 'downloads the specified light stemcell version from the pipeline bucket' do
-        logger.should_receive(:info).with("downloaded 's3://bosh-ci-pipeline/456/bosh-stemcell/aws/light-bosh-stemcell-456-aws-xen-ubuntu.tgz' -> 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz'")
-
-        pipeline_storage.should_receive(:download).with('bosh-ci-pipeline', '456/bosh-stemcell/aws', 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz')
-        pipeline.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
-      end
-
-      it 'returns the name of the downloaded file' do
-        options = {
-          infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
-          name: 'bosh-stemcell',
-          light: true
-        }
-
-        pipeline_storage.should_receive(:download).with('bosh-ci-pipeline', '456/bosh-stemcell/aws', 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz')
-        expect(pipeline.download_stemcell(options)).to eq 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz'
-      end
-
     end
 
     describe '#cleanup_stemcells' do
