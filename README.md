@@ -48,4 +48,4 @@ Bugs can be filed using Github Issues within the various repositories of the
 
 ## Contributing
 
-Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md)
+Please read the [contributors' guide](CONTRIBUTING.md)
