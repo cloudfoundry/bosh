@@ -59,14 +59,6 @@ module Bosh::Dev
       filename
     end
 
-    def bosh_stemcell_path(infrastructure, download_dir)
-      File.join(download_dir, stemcell_filename(build_id, infrastructure, 'bosh-stemcell', infrastructure.light?))
-    end
-
-    def micro_bosh_stemcell_path(infrastructure, download_dir)
-      File.join(download_dir, stemcell_filename(build_id, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
-    end
-
     def cleanup_stemcells(download_dir)
       FileUtils.rm_f(Dir.glob(File.join(download_dir, '*bosh-stemcell-*.tgz')))
     end

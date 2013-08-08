@@ -166,22 +166,6 @@ module Bosh::Dev
 
     end
 
-    describe '#bosh_stemcell_path' do
-      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Aws.new }
-
-      it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-456-aws-xen-ubuntu.tgz'))
-      end
-    end
-
-    describe '#micro_bosh_stemcell_path' do
-      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Vsphere.new }
-
-      it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-456-vsphere-esxi-ubuntu.tgz'))
-      end
-    end
-
     describe '#cleanup_stemcells' do
       it 'removes stemcells created during the build' do
         FileUtils.mkdir_p(download_directory)
