@@ -1,17 +1,18 @@
 require 'bosh/dev/build'
 require 'bosh/dev/stemcell_environment'
+require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class StemcellBuilder
     attr_reader :directory, :work_path
 
-    def initialize(stemcell_type, infrastructure, candidate = Bosh::Dev::Build.candidate)
+    def initialize(stemcell_type, infrastructure_name, candidate = Bosh::Dev::Build.candidate)
       @candidate = candidate
       @stemcell_type = stemcell_type
-      @infrastructure = infrastructure
+      @infrastructure_name = infrastructure_name
 
       mnt = ENV.fetch('FAKE_MNT', '/mnt')
-      @directory = File.join(mnt, 'stemcells', "#{infrastructure}-#{stemcell_type}")
+      @directory = File.join(mnt, 'stemcells', "#{infrastructure_name}-#{stemcell_type}")
       @work_path = File.join(directory, 'work')
       @build_path = File.join(directory, 'build')
     end
@@ -31,41 +32,56 @@ module Bosh::Dev
       end
 
       stemcell_path!
+
+      FileUtils.mv(old_style_path, new_style_path)
+
+      new_style_path
     end
 
-    def stemcell_path
-      name = case stemcell_type
-               when 'micro'
-                 'micro-bosh-stemcell'
-               when 'basic'
-                 'bosh-stemcell'
-             end
-
-      infrastructure_name = infrastructure == 'openstack' ? 'openstack-kvm' : infrastructure
-
-      File.join(work_path, 'work', "#{name}-#{infrastructure_name}-#{candidate.number}.tgz")
+    def old_style_path
+      File.join(work_path, 'work', old_style_name)
     end
 
     private
 
     attr_reader :candidate,
                 :stemcell_type,
-                :infrastructure,
+                :infrastructure_name,
                 :build_path
+
+    def old_style_name
+      infrastructure = infrastructure_name == 'openstack' ? 'openstack-kvm' : infrastructure_name
+      "#{name}-#{infrastructure}-#{candidate.number}.tgz"
+    end
+
+    def new_style_path
+      infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
+      new_style_name = Bosh::Stemcell::ArchiveFilename.new(candidate.number, infrastructure, name, false).to_s
+      File.join(work_path, 'work', new_style_name)
+    end
+
+    def name
+      case stemcell_type
+        when 'micro'
+          'micro-bosh-stemcell'
+        when 'basic'
+          'bosh-stemcell'
+      end
+    end
 
     def micro_task
       bosh_release_path = candidate.download_release
-      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure, candidate.number)
+      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure_name, candidate.number)
     end
 
     def basic_task
-      Rake::Task['stemcell:basic'].invoke(infrastructure, candidate.number)
+      Rake::Task['stemcell:basic'].invoke(infrastructure_name, candidate.number)
     end
 
     def stemcell_path!
-      File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
+      File.exist?(old_style_path) || raise("#{old_style_path} does not exist")
 
-      stemcell_path
+      old_style_path
     end
   end
 end

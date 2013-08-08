@@ -47,7 +47,13 @@ module Bosh::Dev
         end
 
         it 'creates a micro stemcell and returns its absolute path' do
-          expect(builder.build).to eq('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-vsphere-869.tgz')
+          expect(builder.build).to eq('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+        end
+
+        it 'creates a micro stemcell' do
+          expect {
+            builder.build
+          }.to change { File.exist?('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
         end
 
         context 'when the micro stemcell is not created' do
@@ -89,7 +95,13 @@ module Bosh::Dev
         end
 
         it 'creates a basic stemcell and returns its absolute path' do
-          expect(builder.build).to eq('/mnt/stemcells/vsphere-basic/work/work/bosh-stemcell-vsphere-869.tgz')
+          expect(builder.build).to eq('/mnt/stemcells/vsphere-basic/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+        end
+
+        it 'creates a basic stemcell' do
+          expect {
+            builder.build
+          }.to change { File.exist?('/mnt/stemcells/vsphere-basic/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
         end
 
         context 'when the micro stemcell is not created' do
@@ -106,13 +118,13 @@ module Bosh::Dev
       end
     end
 
-    describe '#stemcell_path' do
+    describe '#old_style_path' do
       context 'when build a micro non-openstack stemcell' do
         let(:stemcell_type) { 'micro' }
         let(:infrastructure) { 'aws' }
 
         it 'corresponds to $stemcell_tgz in stemcell_builder/stages/stemcell/apply.sh:48' do
-          expect(builder.stemcell_path).to eq('/mnt/stemcells/aws-micro/work/work/micro-bosh-stemcell-aws-869.tgz')
+          expect(builder.old_style_path).to eq('/mnt/stemcells/aws-micro/work/work/micro-bosh-stemcell-aws-869.tgz')
         end
       end
 
@@ -121,7 +133,7 @@ module Bosh::Dev
         let(:infrastructure) { 'openstack' }
 
         it 'corresponds to $stemcell_tgz in stemcell_builder/stages/stemcell_openstack/apply.sh:57' do
-          expect(builder.stemcell_path).to eq('/mnt/stemcells/openstack-basic/work/work/bosh-stemcell-openstack-kvm-869.tgz')
+          expect(builder.old_style_path).to eq('/mnt/stemcells/openstack-basic/work/work/bosh-stemcell-openstack-kvm-869.tgz')
         end
       end
     end
