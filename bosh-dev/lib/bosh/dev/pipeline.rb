@@ -53,10 +53,6 @@ module Bosh::Dev
       logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{build_id}/#{options.fetch(:key)}"}")
     end
 
-    def stemcell_filename(version, infrastructure, name, light)
-      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
-    end
-
     def default_storage
       Bosh::Dev::PipelineStorage.new
     end
