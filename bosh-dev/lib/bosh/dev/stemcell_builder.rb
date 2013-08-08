@@ -34,21 +34,12 @@ module Bosh::Dev
       stemcell_path!
     end
 
-    def old_style_path
-      File.join(work_path, 'work', old_style_name)
-    end
-
     private
 
     attr_reader :candidate,
                 :stemcell_type,
                 :infrastructure_name,
                 :build_path
-
-    def old_style_name
-      infrastructure = infrastructure_name == 'openstack' ? 'openstack-kvm' : infrastructure_name
-      "#{name}-#{infrastructure}-#{candidate.number}.tgz"
-    end
 
     def new_style_path
       File.join(work_path, 'work', new_style_name)

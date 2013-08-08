@@ -116,25 +116,5 @@ module Bosh::Dev
         end
       end
     end
-
-    describe '#old_style_path' do
-      context 'when build a micro non-openstack stemcell' do
-        let(:stemcell_type) { 'micro' }
-        let(:infrastructure) { 'aws' }
-
-        it 'corresponds to $stemcell_tgz in stemcell_builder/stages/stemcell/apply.sh:48' do
-          expect(builder.old_style_path).to eq('/mnt/stemcells/aws-micro/work/work/micro-bosh-stemcell-aws-869.tgz')
-        end
-      end
-
-      context 'when building a basic openstack stemcell' do
-        let(:stemcell_type) { 'basic' }
-        let(:infrastructure) { 'openstack' }
-
-        it 'corresponds to $stemcell_tgz in stemcell_builder/stages/stemcell_openstack/apply.sh:57' do
-          expect(builder.old_style_path).to eq('/mnt/stemcells/openstack-basic/work/work/bosh-stemcell-openstack-kvm-869.tgz')
-        end
-      end
-    end
   end
 end
