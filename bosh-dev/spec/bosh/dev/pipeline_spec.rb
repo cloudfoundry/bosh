@@ -62,18 +62,18 @@ module Bosh::Dev
       end
 
       it 'recursively uploads a directory into base_dir' do
-        pipeline.should_receive(:create).with do |options|
-          expect(options[:public]).to eq(true)
+        pipeline_storage.should_receive(:upload).with do |bucket, key, body, public|
+          expect(public).to eq(true)
 
-          case options[:key]
-            when 'dest_dir/foo/bar.txt'
-              expect(options[:body].read).to eq('Contents of foo/bar.txt')
-            when 'dest_dir/foo/bar/baz.txt'
-              expect(options[:body].read).to eq('Contents of foo/bar/baz.txt')
+          case key
+            when '456/dest_dir/foo/bar.txt'
+              expect(body.read).to eq('Contents of foo/bar.txt')
+            when '456/dest_dir/foo/bar/baz.txt'
+              expect(body.read).to eq('Contents of foo/bar/baz.txt')
             else
-              raise "unexpected key: #{options[:key]}"
+              raise "unexpected key: #{key}"
           end
-        end.exactly(2).times
+        end.exactly(2).times.and_return(double('uploaded file', public_url: nil))
 
         subject.upload_r(src, dst)
       end

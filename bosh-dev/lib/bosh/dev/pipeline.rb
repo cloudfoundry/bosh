@@ -11,7 +11,7 @@ module Bosh::Dev
     attr_reader :storage
 
     def initialize(options = {})
-      @storage = options.fetch(:storage) { default_storage }
+      @storage = options.fetch(:storage) { Bosh::Dev::PipelineStorage.new }
       @build_id = options.fetch(:build_id) { Build.candidate.number.to_s }
       @logger = options.fetch(:logger) { Logger.new($stdout) }
       @bucket = 'bosh-ci-pipeline'
@@ -21,11 +21,14 @@ module Bosh::Dev
       Dir.chdir(source_dir) do
         Dir['**/*'].each do |file|
           unless File.directory?(file)
-            create(
-              key: File.join(dest_dir, file),
-              body: File.open(file),
-              public: true
+            key = File.join(build_id, dest_dir, file)
+            uploaded_file = storage.upload(
+              bucket,
+              key,
+              File.open(file),
+              true
             )
+            logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{build_id}/#{key}"}")
           end
         end
       end
@@ -42,19 +45,5 @@ module Bosh::Dev
     private
 
     attr_reader :logger, :bucket, :build_id
-
-    def create(options)
-      uploaded_file = storage.upload(
-        bucket,
-        File.join(build_id, options.fetch(:key)),
-        options.fetch(:body),
-        options.fetch(:public)
-      )
-      logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{build_id}/#{options.fetch(:key)}"}")
-    end
-
-    def default_storage
-      Bosh::Dev::PipelineStorage.new
-    end
   end
 end
