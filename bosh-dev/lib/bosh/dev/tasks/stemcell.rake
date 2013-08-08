@@ -8,9 +8,10 @@ require 'rugged'
 
 namespace :stemcell do
   desc 'Build stemcell'
-  task :basic, [:infrastructure, :version, :disk_size] do |t, args|
+  task :basic, [:infrastructure, :version, :stemcell_tgz, :disk_size] do |_, args|
     options = default_options(args)
     options[:stemcell_name] ||= 'bosh-stemcell'
+    options[:stemcell_tgz] = args[:stemcell_tgz]
     options[:stemcell_version] = args.with_defaults({}).fetch(:version)
 
     Rake::Task['all:finalize_release_directory'].invoke
@@ -19,7 +20,7 @@ namespace :stemcell do
   end
 
   desc 'Build micro bosh stemcell'
-  task :micro, [:tarball, :infrastructure, :version, :disk_size] do |t, args|
+  task :micro, [:tarball, :infrastructure, :version, :stemcell_tgz, :disk_size] do |t, args|
     require 'bosh/dev/micro_bosh_release'
 
     manifest =
@@ -42,6 +43,7 @@ namespace :stemcell do
     end
 
     options[:stemcell_name] ||= 'micro-bosh-stemcell'
+    options[:stemcell_tgz] = args[:stemcell_tgz]
 
     options = options.merge(bosh_micro_options(manifest, release_tarball))
     options[:non_interactive] = true

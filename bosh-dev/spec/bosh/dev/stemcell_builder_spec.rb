@@ -28,9 +28,10 @@ module Bosh::Dev
 
         before do
           Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
-          stemcell_micro_task.stub(:invoke).with('fake release path', 'vsphere', build_number) do
+          stemcell_micro_task.stub(:invoke).with('fake release path', 'vsphere', build_number,
+                                                 'micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') do
             FileUtils.mkdir_p('/mnt/stemcells/vsphere-micro/work/work')
-            FileUtils.touch('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-vsphere-869.tgz')
+            FileUtils.touch('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
           end
         end
 
@@ -53,7 +54,9 @@ module Bosh::Dev
         it 'creates a micro stemcell' do
           expect {
             builder.build
-          }.to change { File.exist?('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
+          }.to change {
+            File.exist?('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+          }.to(true)
         end
 
         context 'when the micro stemcell is not created' do
@@ -64,7 +67,7 @@ module Bosh::Dev
           it 'fails early and loud' do
             expect {
               builder.build
-            }.to raise_error(/micro-bosh-stemcell-vsphere-869\.tgz does not exist/)
+            }.to raise_error(/micro-bosh-stemcell-869-vsphere-esxi-ubuntu\.tgz does not exist/)
           end
         end
       end
@@ -76,9 +79,9 @@ module Bosh::Dev
 
         before do
           Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
-          stemcell_basic_task.stub(:invoke).with('vsphere', build_number) do
+          stemcell_basic_task.stub(:invoke).with('vsphere', build_number, 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') do
             FileUtils.mkdir_p('/mnt/stemcells/vsphere-basic/work/work')
-            FileUtils.touch('/mnt/stemcells/vsphere-basic/work/work/bosh-stemcell-vsphere-869.tgz')
+            FileUtils.touch('/mnt/stemcells/vsphere-basic/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
           end
         end
 
@@ -112,7 +115,7 @@ module Bosh::Dev
           it 'fails early and loud' do
             expect {
               builder.build
-            }.to raise_error(/\/bosh-stemcell-vsphere-869\.tgz does not exist/)
+            }.to raise_error(/\/bosh-stemcell-869-vsphere-esxi-ubuntu\.tgz does not exist/)
           end
         end
       end

@@ -32,10 +32,6 @@ module Bosh::Dev
       end
 
       stemcell_path!
-
-      FileUtils.mv(old_style_path, new_style_path)
-
-      new_style_path
     end
 
     def old_style_path
@@ -55,9 +51,12 @@ module Bosh::Dev
     end
 
     def new_style_path
-      infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
-      new_style_name = Bosh::Stemcell::ArchiveFilename.new(candidate.number, infrastructure, name, false).to_s
       File.join(work_path, 'work', new_style_name)
+    end
+
+    def new_style_name
+      infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
+      Bosh::Stemcell::ArchiveFilename.new(candidate.number, infrastructure, name, false).to_s
     end
 
     def name
@@ -71,17 +70,17 @@ module Bosh::Dev
 
     def micro_task
       bosh_release_path = candidate.download_release
-      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure_name, candidate.number)
+      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure_name, candidate.number, new_style_name)
     end
 
     def basic_task
-      Rake::Task['stemcell:basic'].invoke(infrastructure_name, candidate.number)
+      Rake::Task['stemcell:basic'].invoke(infrastructure_name, candidate.number, new_style_name)
     end
 
     def stemcell_path!
-      File.exist?(old_style_path) || raise("#{old_style_path} does not exist")
+      File.exist?(new_style_path) || raise("#{new_style_path} does not exist")
 
-      old_style_path
+      new_style_path
     end
   end
 end
