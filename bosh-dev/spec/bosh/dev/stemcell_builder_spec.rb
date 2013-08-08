@@ -52,11 +52,7 @@ module Bosh::Dev
         end
 
         it 'creates a micro stemcell' do
-          expect {
-            builder.build
-          }.to change {
-            File.exist?('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
-          }.to(true)
+          expect { builder.build }.to change { File.exist?('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
         end
 
         context 'when the micro stemcell is not created' do
