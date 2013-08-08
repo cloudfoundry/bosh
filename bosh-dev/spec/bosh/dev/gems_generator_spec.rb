@@ -7,10 +7,10 @@ module Bosh::Dev
       let(:version_file) { instance_double('VersionFile', write: nil) }
       let(:candidate_build) { instance_double('Build', number: 456) }
       let(:rake_task) { double('Rake::Task', invoke: nil) }
-      let(:bulk_uploader) { instance_double('BulkUploader', upload_r: nil) }
+      let(:pipeline) { instance_double('Pipeline', upload_r: nil) }
 
       before do
-        BulkUploader.stub(:new).and_return(bulk_uploader)
+        Pipeline.stub(:new).and_return(pipeline)
         VersionFile.stub(:new).with(456).and_return(version_file)
         Build.stub(candidate: candidate_build)
 
@@ -42,7 +42,7 @@ module Bosh::Dev
       end
 
       it 'uploads all bosh gems' do
-        bulk_uploader.should_receive(:upload_r).with('.', 'gems')
+        pipeline.should_receive(:upload_r).with('.', 'gems')
 
         subject.generate_and_upload
       end
