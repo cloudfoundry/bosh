@@ -1,7 +1,7 @@
 namespace :ci do
   namespace :stemcell do
     desc 'Build micro bosh stemcell from CI pipeline'
-    task :micro, [:infrastructure] do |t, args|
+    task :micro, [:infrastructure] do |_, args|
       require 'bosh/dev/stemcell_builder'
       require 'bosh/dev/stemcell_publisher'
 
@@ -11,7 +11,7 @@ namespace :ci do
     end
 
     desc 'Build stemcell from CI pipeline'
-    task :basic, [:infrastructure] do |t, args|
+    task :basic, [:infrastructure] do |_, args|
       require 'bosh/dev/stemcell_builder'
       require 'bosh/dev/stemcell_publisher'
 
