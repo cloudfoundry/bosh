@@ -5,6 +5,12 @@ module Bosh::Deployer
 
     class Vcloud < InstanceManager
 
+
+      def remote_tunnel(port)
+        # VCloud / vsphere does not use bosh_registry so no remote_tunnel
+        # to bosh_registry is required
+      end
+
       def update_spec(spec)
         properties = spec.properties
 
