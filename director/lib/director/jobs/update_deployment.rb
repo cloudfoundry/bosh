@@ -40,44 +40,11 @@ module Bosh::Director
       end
 
       def prepare
-        @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        event_log.begin_stage('Preparing deployment', 9)
+        compiler = DeploymentPlanCompiler.new(@deployment_plan)
+        preparer = DeploymentPlan::Preparer.new(self, compiler)
 
-        track_and_log('Binding deployment') do
-          @deployment_plan_compiler.bind_deployment
-        end
-
-        track_and_log('Binding releases') do
-          @deployment_plan_compiler.bind_releases
-        end
-
-        track_and_log('Binding existing deployment') do
-          @deployment_plan_compiler.bind_existing_deployment
-        end
-
-        track_and_log('Binding resource pools') do
-          @deployment_plan_compiler.bind_resource_pools
-        end
-
-        track_and_log('Binding stemcells') do
-          @deployment_plan_compiler.bind_stemcells
-        end
-
-        track_and_log('Binding templates') do
-          @deployment_plan_compiler.bind_templates
-        end
-
-        track_and_log('Binding properties') do
-          @deployment_plan_compiler.bind_properties
-        end
-
-        track_and_log('Binding unallocated VMs') do
-          @deployment_plan_compiler.bind_unallocated_vms
-        end
-
-        track_and_log('Binding instance networks') do
-          @deployment_plan_compiler.bind_instance_networks
-        end
+        begin_stage('Preparing deployment', 9)
+        preparer.prepare
 
         logger.info('Compiling and binding packages')
         PackageCompiler.new(@deployment_plan).compile
@@ -95,8 +62,7 @@ module Bosh::Director
 
           # Delete outdated idle vms across resource pools, outdated allocated
           # VMs are handled by instance updater
-          event_log.begin_stage('Deleting outdated idle VMs',
-                                sum_across_pools(:outdated_idle_vm_count))
+          event_log.begin_stage('Deleting outdated idle VMs', sum_across_pools(:outdated_idle_vm_count))
 
           @resource_pool_updaters.each do |updater|
             updater.delete_outdated_idle_vms(thread_pool)
@@ -107,8 +73,7 @@ module Bosh::Director
           # only creates VMs that have been bound to instances
           # to avoid refilling the resource pool before instances
           # that are no longer needed have been deleted.
-          event_log.begin_stage('Creating bound missing VMs',
-                                sum_across_pools(:bound_missing_vm_count))
+          event_log.begin_stage('Creating bound missing VMs', sum_across_pools(:bound_missing_vm_count))
           @resource_pool_updaters.each do |updater|
             updater.create_bound_missing_vms(thread_pool)
           end
