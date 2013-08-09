@@ -23,7 +23,7 @@ module Bosh::Dev
         instance_double('Bosh::Stemcell::Stemcell')
       end
 
-      let(:pipeline) { instance_double('Bosh::Dev::Pipeline', publish_stemcell: nil) }
+      let(:candidate_build) { instance_double('Bosh::Dev::Build', upload_stemcell: nil) }
 
       let(:stemcell_path) { '/path/to/fake-stemcell.tgz' }
 
@@ -32,11 +32,11 @@ module Bosh::Dev
         Bosh::Stemcell::Aws::LightStemcell.stub(:new).with(stemcell).and_return(light_stemcell)
         Bosh::Stemcell::Stemcell.stub(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell)
 
-        Pipeline.stub(:new).and_return(pipeline)
+        Build.stub(candidate: candidate_build)
       end
 
       it 'publishes the generated stemcell' do
-        pipeline.should_receive(:publish_stemcell).with(stemcell)
+        candidate_build.should_receive(:upload_stemcell).with(stemcell)
 
         publisher.publish(stemcell_path)
       end
@@ -44,7 +44,7 @@ module Bosh::Dev
       context 'when infrastructure is aws' do
         it 'publishes an aws light stemcell' do
           light_stemcell.should_receive(:write_archive)
-          pipeline.should_receive(:publish_stemcell).with(light_stemcell_stemcell)
+          candidate_build.should_receive(:upload_stemcell).with(light_stemcell_stemcell)
 
           publisher.publish(stemcell_path)
         end

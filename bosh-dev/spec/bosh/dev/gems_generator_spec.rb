@@ -5,12 +5,10 @@ module Bosh::Dev
   describe GemsGenerator do
     describe '#generate_and_upload' do
       let(:version_file) { instance_double('VersionFile', write: nil) }
-      let(:candidate_build) { instance_double('Build', number: 456) }
+      let(:candidate_build) { instance_double('Build', number: 456, upload_gems: nil) }
       let(:rake_task) { double('Rake::Task', invoke: nil) }
-      let(:pipeline) { instance_double('Pipeline', upload_r: nil) }
 
       before do
-        Pipeline.stub(:new).and_return(pipeline)
         VersionFile.stub(:new).with(456).and_return(version_file)
         Build.stub(candidate: candidate_build)
 
@@ -42,7 +40,7 @@ module Bosh::Dev
       end
 
       it 'uploads all bosh gems' do
-        pipeline.should_receive(:upload_r).with('.', 'gems')
+        candidate_build.should_receive(:upload_gems).with('.', 'gems')
 
         subject.generate_and_upload
       end

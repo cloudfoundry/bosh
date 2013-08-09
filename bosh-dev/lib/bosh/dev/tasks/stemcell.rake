@@ -22,6 +22,7 @@ namespace :stemcell do
   desc 'Build micro bosh stemcell'
   task :micro, [:tarball, :infrastructure, :version, :stemcell_tgz, :disk_size] do |t, args|
     require 'bosh/dev/micro_bosh_release'
+    require 'bosh/dev/build'
 
     manifest =
       File.join(
@@ -34,8 +35,7 @@ namespace :stemcell do
     options[:stemcell_version] = args.with_defaults({}).fetch(:version)
     if args[:tarball]
       release_tarball = args[:tarball]
-      pipeline = Bosh::Dev::Pipeline.new
-      options[:agent_gem_src_url] = pipeline.gems_dir_url
+      options[:agent_gem_src_url] = Bosh::Dev::Build.candidate.gems_dir_url
     else
       Rake::Task['all:finalize_release_directory'].invoke
       release = Bosh::Dev::MicroBoshRelease.new

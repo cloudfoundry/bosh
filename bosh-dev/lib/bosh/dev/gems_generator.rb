@@ -1,5 +1,4 @@
 require 'bosh/dev/build'
-require 'bosh/dev/pipeline'
 require 'bosh/dev/version_file'
 
 module Bosh
@@ -15,7 +14,7 @@ module Bosh
             # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
             Rake::FileUtilsExt.sh('gem', 'generate_index', '.')
           end
-          Pipeline.new.upload_r('.', 'gems')
+          Build.candidate.upload_gems('.', 'gems')
         end
       end
     end
