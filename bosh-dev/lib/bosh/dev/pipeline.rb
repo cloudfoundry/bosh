@@ -8,30 +8,13 @@ require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class Pipeline
-    attr_reader :storage
-
     def initialize(options = {})
-      @storage = options.fetch(:storage) { Bosh::Dev::PipelineStorage.new }
       @build_id = options.fetch(:build_id) { Build.candidate.number.to_s }
       @logger = options.fetch(:logger) { Logger.new($stdout) }
-      @bucket = 'bosh-ci-pipeline'
     end
 
     def upload_r(source_dir, dest_dir)
-      Dir.chdir(source_dir) do
-        Dir['**/*'].each do |file|
-          unless File.directory?(file)
-            key = File.join(build_id, dest_dir, file)
-            uploaded_file = storage.upload(
-              bucket,
-              key,
-              File.open(file),
-              true
-            )
-            logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{build_id}/#{key}"}")
-          end
-        end
-      end
+      Build.candidate.upload_gems(source_dir, dest_dir)
     end
 
     def publish_stemcell(stemcell)
@@ -44,6 +27,6 @@ module Bosh::Dev
 
     private
 
-    attr_reader :logger, :bucket, :build_id
+    attr_reader :logger, :build_id
   end
 end

@@ -85,6 +85,43 @@ module Bosh::Dev
       end
     end
 
+    describe '#upload_gems' do
+      let(:src) { 'source_dir' }
+      let(:dst) { 'dest_dir' }
+      let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
+      let(:pipeline_storage) { instance_double('Bosh::Dev::PipelineStorage') }
+      let(:logger) { instance_double('Logger').as_null_object }
+
+      before do
+        FileUtils.mkdir_p(src)
+        Dir.chdir(src) do
+          files.each do |path|
+            FileUtils.mkdir_p(File.dirname(path))
+            File.open(path, 'w') { |f| f.write("Contents of #{path}") }
+          end
+        end
+        Logger.stub(new: logger)
+        PipelineStorage.stub(new: pipeline_storage)
+      end
+
+      it 'recursively uploads a directory into base_dir' do
+        pipeline_storage.should_receive(:upload).with do |bucket, key, body, public|
+          expect(public).to eq(true)
+
+          case key
+            when '123/dest_dir/foo/bar.txt'
+              expect(body.read).to eq('Contents of foo/bar.txt')
+            when '123/dest_dir/foo/bar/baz.txt'
+              expect(body.read).to eq('Contents of foo/bar/baz.txt')
+            else
+              raise "unexpected key: #{key}"
+          end
+        end.exactly(2).times.and_return(double('uploaded file', public_url: nil))
+
+        subject.upload_gems(src, dst)
+      end
+    end
+
     describe '#download_release' do
       before do
         Rake::FileUtilsExt.stub(sh: true)

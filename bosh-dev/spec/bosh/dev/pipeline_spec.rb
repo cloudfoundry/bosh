@@ -6,15 +6,13 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:fog_storage) { Fog::Storage.new(provider: 'AWS', aws_access_key_id: 'fake access key', aws_secret_access_key: 'fake secret key') }
-    let(:pipeline_storage) { Bosh::Dev::PipelineStorage.new }
-
     let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
     let(:bucket_name) { 'bosh-ci-pipeline' }
     let(:logger) { instance_double('Logger').as_null_object }
     let(:build_id) { '456' }
     let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
 
-    subject(:pipeline) { Pipeline.new(storage: pipeline_storage, logger: logger, build_id: build_id) }
+    subject(:pipeline) { Pipeline.new(logger: logger, build_id: build_id) }
 
     before do
       Fog.mock!
@@ -50,6 +48,7 @@ module Bosh::Dev
       let(:src) { 'source_dir' }
       let(:dst) { 'dest_dir' }
       let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
+      let(:pipeline_storage) { instance_double('Bosh::Dev::PipelineStorage') }
 
       before do
         FileUtils.mkdir_p(src)
@@ -59,6 +58,8 @@ module Bosh::Dev
             File.open(path, 'w') { |f| f.write("Contents of #{path}") }
           end
         end
+
+        PipelineStorage.stub(new: pipeline_storage)
       end
 
       it 'recursively uploads a directory into base_dir' do

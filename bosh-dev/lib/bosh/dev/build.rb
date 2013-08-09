@@ -32,6 +32,25 @@ module Bosh::Dev
       upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
     end
 
+    def upload_gems(source_dir, dest_dir)
+      bucket = 'bosh-ci-pipeline'
+      storage = Bosh::Dev::PipelineStorage.new
+      Dir.chdir(source_dir) do
+        Dir['**/*'].each do |file|
+          unless File.directory?(file)
+            key = File.join(number.to_s, dest_dir, file)
+            uploaded_file = storage.upload(
+              bucket,
+              key,
+              File.open(file),
+              true
+            )
+            logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{key}"}")
+          end
+        end
+      end
+    end
+
     def download_release
       command = "s3cmd --verbose -f get #{s3_release_url} #{release_path}"
       Rake::FileUtilsExt.sh(command) || raise("Command failed: #{command}")
