@@ -40,8 +40,8 @@ module Bosh::Director
       end
 
       def prepare
-        compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        preparer = DeploymentPlan::Preparer.new(self, compiler)
+        @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
+        preparer = DeploymentPlan::Preparer.new(self, @deployment_plan_compiler)
 
         begin_stage('Preparing deployment', 9)
         preparer.prepare
@@ -50,91 +50,11 @@ module Bosh::Director
         PackageCompiler.new(@deployment_plan).compile
       end
 
-      def update_resource_pools
-        ThreadPool.new(:max_threads => Config.max_threads).wrap do |thread_pool|
-          # Delete extra VMs across resource pools
-          event_log.begin_stage('Deleting extra VMs',
-                                sum_across_pools(:extra_vm_count))
-          @resource_pool_updaters.each do |updater|
-            updater.delete_extra_vms(thread_pool)
-          end
-          thread_pool.wait
-
-          # Delete outdated idle vms across resource pools, outdated allocated
-          # VMs are handled by instance updater
-          event_log.begin_stage('Deleting outdated idle VMs', sum_across_pools(:outdated_idle_vm_count))
-
-          @resource_pool_updaters.each do |updater|
-            updater.delete_outdated_idle_vms(thread_pool)
-          end
-          thread_pool.wait
-
-          # Create missing VMs across resource pools phase 1:
-          # only creates VMs that have been bound to instances
-          # to avoid refilling the resource pool before instances
-          # that are no longer needed have been deleted.
-          event_log.begin_stage('Creating bound missing VMs', sum_across_pools(:bound_missing_vm_count))
-          @resource_pool_updaters.each do |updater|
-            updater.create_bound_missing_vms(thread_pool)
-          end
-        end
-      end
-
-      def refill_resource_pools
-        # Instance updaters might have added some idle vms
-        # so they can be returned to resource pool. In that case
-        # we need to pre-allocate network settings for all of them.
-        @resource_pool_updaters.each do |resource_pool_updater|
-          resource_pool_updater.reserve_networks
-        end
-
-        event_log.begin_stage('Refilling resource pools',
-                              sum_across_pools(:missing_vm_count))
-        ThreadPool.new(:max_threads => Config.max_threads).wrap do |thread_pool|
-          # Create missing VMs across resource pools phase 2:
-          # should be called after all instance updaters are finished to
-          # create additional VMs in order to balance resource pools
-          @resource_pool_updaters.each do |resource_pool_updater|
-            resource_pool_updater.create_missing_vms(thread_pool)
-          end
-        end
-      end
-
       def update
-        event_log.begin_stage('Preparing DNS', 1)
-        track_and_log('Binding DNS') do
-          if Config.dns_enabled?
-            @deployment_plan_compiler.bind_dns
-          end
-        end
+        resource_pools = DeploymentPlan::ResourcePools.new(event_log, @resource_pool_updaters)
 
-        logger.info('Updating resource pools')
-        update_resource_pools
-        task_checkpoint
-
-        logger.info('Binding instance VMs')
-        @deployment_plan_compiler.bind_instance_vms
-
-        event_log.begin_stage('Preparing configuration', 1)
-        track_and_log('Binding configuration') do
-          @deployment_plan_compiler.bind_configuration
-        end
-
-        logger.info('Deleting no longer needed VMs')
-        @deployment_plan_compiler.delete_unneeded_vms
-
-        logger.info('Deleting no longer needed instances')
-        @deployment_plan_compiler.delete_unneeded_instances
-
-        logger.info('Updating jobs')
-        @deployment_plan.jobs.each do |job|
-          task_checkpoint
-          logger.info("Updating job: #{job.name}")
-          JobUpdater.new(@deployment_plan, job).update
-        end
-
-        logger.info('Refilling resource pools')
-        refill_resource_pools
+        updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @deployment_plan_compiler, @deployment_plan)
+        updater.update
       end
 
       def update_stemcell_references
@@ -185,15 +105,6 @@ module Bosh::Director
       ensure
         FileUtils.rm_rf(@manifest_file)
       end
-
-      private
-
-      def sum_across_pools(counting_method)
-        @resource_pool_updaters.inject(0) do |sum, updater|
-          sum + updater.send(counting_method.to_sym)
-        end
-      end
-
     end
   end
 end
