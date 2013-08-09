@@ -27,12 +27,18 @@ module Bosh::Stemcell
 
     it 'requires a hypervisor' do
       expect {
-        Infrastructure::Base.new(name: 'foo')
+        Infrastructure::Base.new(name: 'foo', default_disk_size: 1024)
       }.to raise_error /key not found: :hypervisor/
     end
 
+    it 'requires a default_disk_size' do
+      expect {
+        Infrastructure::Base.new(name: 'foo', hypervisor: 'xen')
+      }.to raise_error /key not found: :default_disk_size/
+    end
+
     it 'defaults to not supporting light stemcells' do
-      infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'bar')
+      infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'bar', default_disk_size: 1024)
       expect(infrastructure).not_to be_light
     end
   end
@@ -41,17 +47,20 @@ module Bosh::Stemcell
     its(:name) { should eq('aws') }
     it { should be_light }
     its(:hypervisor) { should eq('xen') }
+    its(:default_disk_size) { should eq(2048) }
   end
 
   describe Infrastructure::OpenStack do
     its(:name) { should eq('openstack') }
     it { should_not be_light }
     its(:hypervisor) { should eq('kvm') }
+    its(:default_disk_size) { should eq(10240) }
   end
 
   describe Infrastructure::Vsphere do
     its(:name) { should eq('vsphere') }
     it { should_not be_light }
     its(:hypervisor) { should eq('esxi') }
+    its(:default_disk_size) { should eq(2048) }
   end
 end
