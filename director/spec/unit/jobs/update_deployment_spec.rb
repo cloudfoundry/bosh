@@ -48,7 +48,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     describe 'prepare' do
 
       it 'should prepare the deployment plan' do
-        deployment = Bosh::Director::Models::Deployment.make(:name => 'test_deployment')
+        Bosh::Director::Models::Deployment.make(name: 'test_deployment')
         deployment_plan_compiler = double('deployment_plan_compiler')
         package_compiler = double('package_compiler')
 
@@ -165,23 +165,23 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       it 'should do a basic update' do
         deployment = Bosh::Director::Models::Deployment.
-            make(:name => 'test_deployment')
+            make(name: 'test_deployment')
 
-        foo_release = Bosh::Director::Models::Release.make(:name => 'foo_release')
+        foo_release = Bosh::Director::Models::Release.make(name: 'foo_release')
         foo_release_version = Bosh::Director::Models::ReleaseVersion.
-            make(:release => foo_release, :version => 17)
+            make(release: foo_release, version: 17)
 
-        bar_release = Bosh::Director::Models::Release.make(:name => 'bar_release')
+        bar_release = Bosh::Director::Models::Release.make(name: 'bar_release')
         bar_release_version = Bosh::Director::Models::ReleaseVersion.
-            make(:release => bar_release, :version => 42)
+            make(release: bar_release, version: 42)
 
         foo_release_spec = double('release_spec',
-                                :name => 'foo',
-                                :model => foo_release_version)
+                                name: 'foo',
+                                model: foo_release_version)
 
         bar_release_spec = double('release_spec',
-                                :name => 'bar',
-                                :model => bar_release_version)
+                                name: 'bar',
+                                model: bar_release_version)
 
         release_specs = [foo_release_spec, bar_release_spec]
 
