@@ -9,7 +9,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   end
 
   describe 'instance methods' do
-    before(:each) do
+    before do
       @manifest = double('manifest')
       @deployment_plan = double('deployment_plan')
 
@@ -35,12 +35,12 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       Psych.stub(:load).with('manifest').and_return(@manifest)
 
-      Bosh::Director::DeploymentPlan.stub(:new).with(@manifest, 'recreate' => false, 'job_states' => { },
+      Bosh::Director::DeploymentPlan::Planner.stub(:new).with(@manifest, 'recreate' => false, 'job_states' => { },
                                                       'job_rename' => { }).and_return(@deployment_plan)
       Bosh::Director::Config.stub(:base_dir).and_return(@tmpdir)
     end
 
-    after(:each) do
+    after do
       FileUtils.rm_rf(@tmpdir)
     end
 

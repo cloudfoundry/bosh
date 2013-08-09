@@ -3,7 +3,7 @@
 require 'common/deep_copy'
 
 module Bosh::Director
-  class DeploymentPlan
+  module DeploymentPlan
     class Job
       include Bosh::Common::PropertyHelper
 

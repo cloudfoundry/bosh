@@ -1,5 +1,5 @@
 module Bosh::Director
-  class DeploymentPlan
+  module DeploymentPlan
     class ResourcePools
       def initialize(event_log, resource_pool_updaters)
         @event_log = event_log

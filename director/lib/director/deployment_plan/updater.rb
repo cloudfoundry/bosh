@@ -1,5 +1,5 @@
 module Bosh::Director
-  class DeploymentPlan
+  module DeploymentPlan
     class Updater
       def initialize(job, event_log, resource_pools, deployment_plan_compiler, deployment_plan)
         @job = job

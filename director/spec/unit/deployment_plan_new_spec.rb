@@ -5,7 +5,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::DeploymentPlan do
 
   def make_plan(manifest)
-    BD::DeploymentPlan.new(manifest)
+    BD::DeploymentPlan::Planner.new(manifest)
   end
 
   def find_deployment(name)
