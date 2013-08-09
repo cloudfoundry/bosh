@@ -5,25 +5,25 @@ module Bosh::Director
   end
 end
 
-require "director/deployment_plan/compilation_config"
-require "director/deployment_plan/idle_vm"
-require "director/deployment_plan/instance"
-require "director/deployment_plan/job"
-require "director/deployment_plan/network"
-require "director/deployment_plan/network_subnet"
-require "director/deployment_plan/compiled_package"
-require "director/deployment_plan/preparer"
-require "director/deployment_plan/resource_pools"
-require "director/deployment_plan/updater"
-require "director/deployment_plan/release"
-require "director/deployment_plan/resource_pool"
-require "director/deployment_plan/stemcell"
-require "director/deployment_plan/template"
-require "director/deployment_plan/update_config"
+require 'director/deployment_plan/compilation_config'
+require 'director/deployment_plan/idle_vm'
+require 'director/deployment_plan/instance'
+require 'director/deployment_plan/job'
+require 'director/deployment_plan/network'
+require 'director/deployment_plan/network_subnet'
+require 'director/deployment_plan/compiled_package'
+require 'director/deployment_plan/preparer'
+require 'director/deployment_plan/resource_pools'
+require 'director/deployment_plan/updater'
+require 'director/deployment_plan/release'
+require 'director/deployment_plan/resource_pool'
+require 'director/deployment_plan/stemcell'
+require 'director/deployment_plan/template'
+require 'director/deployment_plan/update_config'
 
-require "director/deployment_plan/dynamic_network"
-require "director/deployment_plan/manual_network"
-require "director/deployment_plan/vip_network"
+require 'director/deployment_plan/dynamic_network'
+require 'director/deployment_plan/manual_network'
+require 'director/deployment_plan/vip_network'
 
 module Bosh::Director
   # DeploymentPlan encapsulates essential director data structures retrieved
@@ -52,11 +52,11 @@ module Bosh::Director
 
     def initialize(manifest, options = {})
       @manifest = manifest
-      @recreate = !!options["recreate"]
-      @job_states = safe_property(options, "job_states",
+      @recreate = !!options['recreate']
+      @job_states = safe_property(options, 'job_states',
                                   :class => Hash, :default => {})
 
-      @job_rename = safe_property(options, "job_rename",
+      @job_rename = safe_property(options, 'job_rename',
                                   :class => Hash, :default => {})
       @unneeded_vms = []
       @unneeded_instances = []
@@ -83,7 +83,7 @@ module Bosh::Director
     def bind_model
       if @name.nil? || @canonical_name.nil?
         raise DirectorError,
-              "Unable to bind model, name and/or canonical name unknown"
+              'Unable to bind model, name and/or canonical name unknown'
       end
 
       attrs = {:name => @name}
@@ -96,7 +96,7 @@ module Bosh::Director
             if canonical(other.name) == @canonical_name
               raise DeploymentCanonicalNameTaken,
                     "Invalid deployment name `#{@name}', " +
-                    "canonical name already taken"
+                      'canonical name already taken'
             end
           end
           deployment = Models::Deployment.create(attrs)
@@ -177,31 +177,31 @@ module Bosh::Director
     end
 
     def rename_in_progress?
-      @job_rename["old_name"] && @job_rename["new_name"]
+      @job_rename['old_name'] && @job_rename['new_name']
     end
 
     def parse_name
-      @name = safe_property(@manifest, "name", :class => String)
+      @name = safe_property(@manifest, 'name', :class => String)
       @canonical_name = canonical(@name)
     end
 
     def parse_properties
-      @properties = safe_property(@manifest, "properties",
+      @properties = safe_property(@manifest, 'properties',
                                   :class => Hash, :default => {})
     end
 
     def parse_releases
       release_specs = []
 
-      if @manifest.has_key?("release")
-        if @manifest.has_key?("releases")
+      if @manifest.has_key?('release')
+        if @manifest.has_key?('releases')
           raise DeploymentAmbiguousReleaseSpec,
                 "Deployment manifest contains both 'release' and 'releases' " +
-                "sections, please use one of the two."
+                  'sections, please use one of the two.'
         end
-        release_specs << @manifest["release"]
+        release_specs << @manifest['release']
       else
-        safe_property(@manifest, "releases", :class => Array).each do |release|
+        safe_property(@manifest, 'releases', :class => Array).each do |release|
           release_specs << release
         end
       end
@@ -219,7 +219,7 @@ module Bosh::Director
 
     def parse_resource_pools
       @resource_pools = {}
-      resource_pools = safe_property(@manifest, "resource_pools",
+      resource_pools = safe_property(@manifest, 'resource_pools',
                                      :class => Array)
       resource_pools.each do |spec|
         resource_pool = ResourcePool.new(self, spec)
@@ -239,19 +239,19 @@ module Bosh::Director
       @jobs_name_index = {}
       @jobs_canonical_name_index = Set.new
 
-      jobs = safe_property(@manifest, "jobs", :class => Array, :default => [])
+      jobs = safe_property(@manifest, 'jobs', :class => Array, :default => [])
 
       jobs.each do |job|
-        state_overrides = @job_states[job["name"]]
+        state_overrides = @job_states[job['name']]
 
         if state_overrides
           job.recursive_merge!(state_overrides)
         end
 
-        if rename_in_progress? && @job_rename["old_name"] == job["name"]
+        if rename_in_progress? && @job_rename['old_name'] == job['name']
           raise DeploymentRenamedJobNameStillUsed,
-                "Renamed job `#{job["name"]}' is still referenced in " +
-                "deployment manifest"
+                "Renamed job `#{job['name']}' is still referenced in " +
+                  'deployment manifest'
         end
 
         job = Job.parse(self, job)
@@ -270,16 +270,16 @@ module Bosh::Director
     def parse_networks
       @networks = {}
       @networks_canonical_name_index = Set.new
-      networks = safe_property(@manifest, "networks", :class => Array)
+      networks = safe_property(@manifest, 'networks', :class => Array)
       networks.each do |network_spec|
-        type = safe_property(network_spec, "type", :class => String,
-                             :default => "manual")
+        type = safe_property(network_spec, 'type', :class => String,
+                             :default => 'manual')
         case type
-          when "manual"
+          when 'manual'
             network = ManualNetwork.new(self, network_spec)
-          when "dynamic"
+          when 'dynamic'
             network = DynamicNetwork.new(self, network_spec)
-          when "vip"
+          when 'vip'
             network = VipNetwork.new(self, network_spec)
           else
             raise DeploymentInvalidNetworkType,
@@ -289,25 +289,25 @@ module Bosh::Director
         if @networks_canonical_name_index.include?(network.canonical_name)
           raise DeploymentCanonicalNetworkNameTaken,
                 "Invalid network name `#{network.name}', " +
-                "canonical name already taken"
+                  'canonical name already taken'
         end
         @networks[network.name] = network
         @networks_canonical_name_index << network.canonical_name
       end
 
       if @networks.empty?
-        raise DeploymentNoNetworks, "No networks specified"
+        raise DeploymentNoNetworks, 'No networks specified'
       end
     end
 
     def parse_update
       @update = UpdateConfig.new(
-          safe_property(@manifest, "update", :class => Hash))
+          safe_property(@manifest, 'update', :class => Hash))
     end
 
     def parse_compilation
       @compilation = CompilationConfig.new(self, safe_property(
-          @manifest, "compilation", :class => Hash))
+          @manifest, 'compilation', :class => Hash))
     end
   end
 end
