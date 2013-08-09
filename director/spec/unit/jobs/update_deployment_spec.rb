@@ -3,7 +3,6 @@
 require 'spec_helper'
 
 describe Bosh::Director::Jobs::UpdateDeployment do
-
   describe 'Resque job class expectations' do
     let(:job_type) { :update_deployment }
     it_behaves_like 'a Resque job'
@@ -46,7 +45,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     end
 
     describe 'prepare' do
-
       it 'should prepare the deployment plan' do
         Bosh::Director::Models::Deployment.make(name: 'test_deployment')
         deployment_plan_compiler = double('deployment_plan_compiler')
@@ -74,11 +72,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
           events.select { |e| e['stage'] == 'Preparing deployment' }.size.should == 18
         end
       end
-
     end
 
     describe 'update' do
-
       it 'should update the deployment' do
         deployment_plan_compiler = double('deployment_plan_compiler')
         resource_pool = double('resource_pool')
@@ -129,11 +125,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
           events.select { |e| e['task'] == 'Binding configuration' }.size.should == 2
         end
       end
-
     end
 
     describe 'update_stemcell_references' do
-
       it 'should delete references to no longer used stemcells' do
         deployment = Bosh::Director::Models::Deployment.make
 
@@ -158,11 +152,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
         old_stemcell.deployments.should be_empty
       end
-
     end
 
     describe 'perform' do
-
       it 'should do a basic update' do
         deployment = Bosh::Director::Models::Deployment.
             make(name: 'test_deployment')
