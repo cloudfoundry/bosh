@@ -97,19 +97,19 @@ module Bosh::Dev
         it 'sets default values for options based in hash' do
           result = environment.default_options(infrastructure: infrastructure)
 
-          expect(result[:system_parameters_infrastructure]).to eq(infrastructure)
-          expect(result[:stemcell_name]).to eq('fake_stemcell_name')
-          expect(result[:stemcell_infrastructure]).to eq(infrastructure)
-          expect(result[:stemcell_hypervisor]).to eq('fake_stemcell_hypervisor')
-          expect(result[:bosh_protocol_version]).to eq('1')
-          expect(result[:UBUNTU_ISO]).to eq('fake_ubuntu_iso')
-          expect(result[:UBUNTU_MIRROR]).to eq('fake_ubuntu_mirror')
-          expect(result[:TW_LOCAL_PASSPHRASE]).to eq('fake_tripwire_local_passphrase')
-          expect(result[:TW_SITE_PASSPHRASE]).to eq('fake_tripwire_site_passphrase')
-          expect(result[:ruby_bin]).to eq('fake_ruby_bin')
-          expect(result[:bosh_release_src_dir]).to match(/\/bosh\/release\/src\/bosh/)
-          expect(result[:bosh_agent_src_dir]).to match(/\/bosh\/bosh_agent/)
-          expect(result[:image_create_disk_size]).to eq(default_disk_size)
+          expect(result['system_parameters_infrastructure']).to eq(infrastructure)
+          expect(result['stemcell_name']).to eq('fake_stemcell_name')
+          expect(result['stemcell_infrastructure']).to eq(infrastructure)
+          expect(result['stemcell_hypervisor']).to eq('fake_stemcell_hypervisor')
+          expect(result['bosh_protocol_version']).to eq('1')
+          expect(result['UBUNTU_ISO']).to eq('fake_ubuntu_iso')
+          expect(result['UBUNTU_MIRROR']).to eq('fake_ubuntu_mirror')
+          expect(result['TW_LOCAL_PASSPHRASE']).to eq('fake_tripwire_local_passphrase')
+          expect(result['TW_SITE_PASSPHRASE']).to eq('fake_tripwire_site_passphrase')
+          expect(result['ruby_bin']).to eq('fake_ruby_bin')
+          expect(result['bosh_release_src_dir']).to match(%r{/bosh/release/src/bosh})
+          expect(result['bosh_agent_src_dir']).to match(%r{/bosh/bosh_agent})
+          expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
         context 'when RUBY_BIN is not set' do
@@ -132,20 +132,20 @@ module Bosh::Dev
 
           it 'uses the RbConfig values' do
             result = environment.default_options(infrastructure: infrastructure)
-            expect(result[:ruby_bin]).to eq('/a/path/to/ruby')
+            expect(result['ruby_bin']).to eq('/a/path/to/ruby')
           end
         end
 
         it 'sets the disk_size to 2048MB unless the user requests otherwise' do
           result = environment.default_options(infrastructure: infrastructure)
 
-          expect(result[:image_create_disk_size]).to eq(default_disk_size)
+          expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
         it 'allows user to override default disk_size' do
           result = environment.default_options(infrastructure: infrastructure, disk_size: 1234)
 
-          expect(result[:image_create_disk_size]).to eq(1234)
+          expect(result['image_create_disk_size']).to eq(1234)
         end
       end
 
@@ -158,7 +158,7 @@ module Bosh::Dev
           context 'when STEMCELL_HYPERVISOR is not set' do
             it 'uses "xen"' do
               result = environment.default_options(infrastructure: infrastructure)
-              expect(result[:stemcell_hypervisor]).to eq('xen')
+              expect(result['stemcell_hypervisor']).to eq('xen')
             end
           end
         end
@@ -173,7 +173,7 @@ module Bosh::Dev
 
             it 'uses "esxi"' do
               result = environment.default_options(infrastructure: infrastructure)
-              expect(result[:stemcell_hypervisor]).to eq('esxi')
+              expect(result['stemcell_hypervisor']).to eq('esxi')
             end
           end
 
@@ -182,7 +182,7 @@ module Bosh::Dev
 
             it 'sets image_vsphere_ovf_ovftool_path' do
               result = environment.default_options(infrastructure: 'vsphere')
-              expect(result[:image_vsphere_ovf_ovftool_path]).to eq('fake_ovf_tool_path')
+              expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
 
@@ -204,20 +204,20 @@ module Bosh::Dev
           context 'when STEMCELL_HYPERVISOR is not set' do
             it 'uses "kvm"' do
               result = environment.default_options(infrastructure: infrastructure)
-              expect(result[:stemcell_hypervisor]).to eq('kvm')
+              expect(result['stemcell_hypervisor']).to eq('kvm')
             end
           end
 
           it 'increases default disk_size from 2048 to 10240' do
             result = environment.default_options(infrastructure: 'openstack')
 
-            expect(result[:image_create_disk_size]).to eq(10240)
+            expect(result['image_create_disk_size']).to eq(10240)
           end
 
           it 'still allows user to force a specific disk_size' do
             result = environment.default_options(infrastructure: 'openstack', disk_size: 1234)
 
-            expect(result[:image_create_disk_size]).to eq(1234)
+            expect(result['image_create_disk_size']).to eq(1234)
           end
         end
       end

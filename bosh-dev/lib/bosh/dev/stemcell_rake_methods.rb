@@ -19,7 +19,7 @@ module Bosh::Dev
 
     def changes_in_microbosh?
       microbosh_components = COMPONENTS - %w(bosh_cli bosh_cli_plugin_aws bosh_cli_plugin_micro)
-      components_changed = microbosh_components.inject(false) do |changes, component|
+      components_changed = microbosh_components.reduce(false) do |changes, component|
         changes || gem_components_changed?(component)
       end
       components_changed || component_changed?('stemcell_builder')
@@ -29,7 +29,7 @@ module Bosh::Dev
       @diff ||= changed_components
     end
 
-    def changed_components(new_commit_sha=ENV['GIT_COMMIT'], old_commit_sha=ENV['GIT_PREVIOUS_COMMIT'])
+    def changed_components(new_commit_sha = ENV['GIT_COMMIT'], old_commit_sha = ENV['GIT_PREVIOUS_COMMIT'])
       repo = Rugged::Repository.new('.')
       old_trees = old_commit_sha ? repo.lookup(old_commit_sha).tree.to_a : []
       new_trees = repo.lookup(new_commit_sha || repo.head.target).tree.to_a
@@ -46,7 +46,7 @@ module Bosh::Dev
       components =
         %w(Gemfile Gemfile.lock) + [gem_name] + gem.runtime_dependencies.map { |d| d.name }.select { |d| Dir.exists?(d) }
 
-      components.inject(false) do |changes, component|
+      components.reduce(false) do |changes, component|
         changes || component_changed?(component)
       end
     end
@@ -61,19 +61,19 @@ module Bosh::Dev
       end
 
       options = {
-        system_parameters_infrastructure: infrastructure,
-        stemcell_name: ENV['STEMCELL_NAME'],
-        stemcell_infrastructure: infrastructure,
-        stemcell_hypervisor: get_hypervisor(infrastructure),
-        bosh_protocol_version: Bosh::Agent::BOSH_PROTOCOL,
-        UBUNTU_ISO: ENV['UBUNTU_ISO'],
-        UBUNTU_MIRROR: ENV['UBUNTU_MIRROR'],
-        TW_LOCAL_PASSPHRASE: ENV['TW_LOCAL_PASSPHRASE'],
-        TW_SITE_PASSPHRASE: ENV['TW_SITE_PASSPHRASE'],
-        ruby_bin: ENV['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-        bosh_release_src_dir: File.expand_path('../../../../../release/src/bosh', __FILE__),
-        bosh_agent_src_dir: File.expand_path('../../../../../bosh_agent', __FILE__),
-        image_create_disk_size: (args[:disk_size] || 2048).to_i
+        'system_parameters_infrastructure' => infrastructure,
+        'stemcell_name' => ENV['STEMCELL_NAME'],
+        'stemcell_infrastructure' => infrastructure,
+        'stemcell_hypervisor' => get_hypervisor(infrastructure),
+        'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
+        'UBUNTU_ISO' => ENV['UBUNTU_ISO'],
+        'UBUNTU_MIRROR' => ENV['UBUNTU_MIRROR'],
+        'TW_LOCAL_PASSPHRASE' => ENV['TW_LOCAL_PASSPHRASE'],
+        'TW_SITE_PASSPHRASE' => ENV['TW_SITE_PASSPHRASE'],
+        'ruby_bin' => ENV['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
+        'bosh_release_src_dir' => File.expand_path('../../../../../release/src/bosh', __FILE__),
+        'bosh_agent_src_dir' => File.expand_path('../../../../../bosh_agent', __FILE__),
+        'image_create_disk_size' => (args[:disk_size] || 2048).to_i
       }
 
       p options
@@ -148,7 +148,7 @@ module Bosh::Dev
       settings_dir = File.join(build_path, 'etc')
       settings_path = File.join(settings_dir, 'settings.bash')
       File.open(settings_path, 'a') do |f|
-        f.print "\n# %s\n\n" % ['=' * 20]
+        f.printf("\n# %s\n\n", '=' * 20)
         options.each do |k, v|
           f.print "#{k}=#{v}\n"
         end

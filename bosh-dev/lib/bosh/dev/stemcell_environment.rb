@@ -30,23 +30,23 @@ module Bosh::Dev
       end
 
       options = {
-        system_parameters_infrastructure: infrastructure,
-        stemcell_name: env['STEMCELL_NAME'],
-        stemcell_infrastructure: infrastructure,
-        stemcell_hypervisor: hypervisor_for(infrastructure),
-        bosh_protocol_version: Bosh::Agent::BOSH_PROTOCOL,
-        UBUNTU_ISO: env['UBUNTU_ISO'],
-        UBUNTU_MIRROR: env['UBUNTU_MIRROR'],
-        TW_LOCAL_PASSPHRASE: env['TW_LOCAL_PASSPHRASE'],
-        TW_SITE_PASSPHRASE: env['TW_SITE_PASSPHRASE'],
-        ruby_bin: env['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-        bosh_release_src_dir: File.expand_path('../../../../../release/src/bosh', __FILE__),
-        bosh_agent_src_dir: File.expand_path('../../../../../bosh_agent', __FILE__),
+        'system_parameters_infrastructure' => infrastructure,
+        'stemcell_name' => env['STEMCELL_NAME'],
+        'stemcell_infrastructure' => infrastructure,
+        'stemcell_hypervisor' => hypervisor_for(infrastructure),
+        'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
+        'UBUNTU_ISO' => env['UBUNTU_ISO'],
+        'UBUNTU_MIRROR' => env['UBUNTU_MIRROR'],
+        'TW_LOCAL_PASSPHRASE' => env['TW_LOCAL_PASSPHRASE'],
+        'TW_SITE_PASSPHRASE' => env['TW_SITE_PASSPHRASE'],
+        'ruby_bin' => env['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
+        'bosh_release_src_dir' => File.expand_path('../../../../../release/src/bosh', __FILE__),
+        'bosh_agent_src_dir' => File.expand_path('../../../../../bosh_agent', __FILE__),
       }
 
       options = check_for_ovftool!(options) if infrastructure == 'vsphere'
 
-      options.merge(image_create_disk_size: default_disk_size_for(infrastructure, args))
+      options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
     end
 
     private
@@ -55,7 +55,7 @@ module Bosh::Dev
       ovftool_path = env.fetch('OVFTOOL') do
         raise 'Please set OVFTOOL to the path of `ovftool`.'
       end
-      options.merge(image_vsphere_ovf_ovftool_path: ovftool_path)
+      options.merge('image_vsphere_ovf_ovftool_path' => ovftool_path)
     end
 
     def default_disk_size_for(infrastructure, args)
