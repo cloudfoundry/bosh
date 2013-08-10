@@ -11,7 +11,7 @@ namespace :stemcell do
   task :basic, [:infrastructure, :version, :stemcell_tgz, :disk_size] do |_, args|
     require 'bosh/dev/stemcell_rake_methods'
 
-    options = Bosh::Dev::StemcellRakeMethods.new.default_options(args)
+    options = Bosh::Dev::StemcellRakeMethods.new.default_options(args.to_hash)
     options[:stemcell_name] ||= 'bosh-stemcell'
     options[:stemcell_tgz] = args[:stemcell_tgz]
     options[:stemcell_version] = args.with_defaults({}).fetch(:version)
@@ -34,7 +34,7 @@ namespace :stemcell do
         ), '..', '..', '..', '..', '..', 'release', 'micro', "#{args[:infrastructure]}.yml"
       )
 
-    options = Bosh::Dev::StemcellRakeMethods.new.default_options(args)
+    options = Bosh::Dev::StemcellRakeMethods.new.default_options(args.to_hash)
     options[:stemcell_version] = args.with_defaults({}).fetch(:version)
     if args[:tarball]
       release_tarball = args[:tarball]
