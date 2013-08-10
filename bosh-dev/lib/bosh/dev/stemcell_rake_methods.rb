@@ -1,7 +1,13 @@
 require 'fileutils'
 
+require 'bosh/stemcell/infrastructure'
+
 module Bosh::Dev
   class StemcellRakeMethods
+    def initialize(environment = ENV.to_hash)
+      @environment = environment
+    end
+
     def bosh_micro_options(manifest, tarball)
       {
         bosh_micro_enabled: 'yes',
@@ -54,56 +60,29 @@ module Bosh::Dev
     # DEFAULT OPTIONS (DONE)
 
     def default_options(args)
-      infrastructure = args[:infrastructure]
-      unless infrastructure
+      infrastructure = args.fetch(:infrastructure) do
         STDERR.puts 'Please specify target infrastructure (vsphere, aws, openstack)'
         exit 1
       end
 
       options = {
         'system_parameters_infrastructure' => infrastructure,
-        'stemcell_name' => ENV['STEMCELL_NAME'],
+        'stemcell_name' => environment['STEMCELL_NAME'],
         'stemcell_infrastructure' => infrastructure,
-        'stemcell_hypervisor' => get_hypervisor(infrastructure),
+        'stemcell_hypervisor' => hypervisor_for(infrastructure),
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
-        'UBUNTU_ISO' => ENV['UBUNTU_ISO'],
-        'UBUNTU_MIRROR' => ENV['UBUNTU_MIRROR'],
-        'TW_LOCAL_PASSPHRASE' => ENV['TW_LOCAL_PASSPHRASE'],
-        'TW_SITE_PASSPHRASE' => ENV['TW_SITE_PASSPHRASE'],
-        'ruby_bin' => ENV['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
+        'UBUNTU_ISO' => environment['UBUNTU_ISO'],
+        'UBUNTU_MIRROR' => environment['UBUNTU_MIRROR'],
+        'TW_LOCAL_PASSPHRASE' => environment['TW_LOCAL_PASSPHRASE'],
+        'TW_SITE_PASSPHRASE' => environment['TW_SITE_PASSPHRASE'],
+        'ruby_bin' => environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
         'bosh_release_src_dir' => File.expand_path('../../../../../release/src/bosh', __FILE__),
         'bosh_agent_src_dir' => File.expand_path('../../../../../bosh_agent', __FILE__),
-        'image_create_disk_size' => (args[:disk_size] || 2048).to_i
       }
 
-      p options
+      options = check_for_ovftool!(options) if infrastructure == 'vsphere'
 
-      case infrastructure
-        when 'vsphere'
-          # Pass OVFTOOL environment variable when targeting vsphere
-          options[:image_vsphere_ovf_ovftool_path] = ENV['OVFTOOL']
-        when 'openstack'
-          # Increase the disk size to 10Gb to deal with flavors that doesn't have ephemeral disk
-          options[:image_create_disk_size] = 10240 unless args[:disk_size]
-      end
-
-      options
-    end
-
-    def get_hypervisor(infrastructure)
-      return ENV['STEMCELL_HYPERVISOR'] if ENV['STEMCELL_HYPERVISOR']
-
-      case infrastructure
-        when 'vsphere'
-          hypervisor = 'esxi'
-        when 'aws'
-          hypervisor = 'xen'
-        when 'openstack'
-          hypervisor = 'kvm'
-        else
-          raise "Unknown infrastructure: #{infrastructure}"
-      end
-      hypervisor
+      options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
     end
 
     # BUILDING
@@ -163,6 +142,33 @@ module Bosh::Dev
 
       puts cmd
       system cmd
+    end
+
+    private
+
+    attr_reader :environment
+
+    def check_for_ovftool!(options)
+      ovftool_path = environment.fetch('OVFTOOL') do
+        raise 'Please set OVFTOOL to the path of `ovftool`.'
+      end
+      options.merge('image_vsphere_ovf_ovftool_path' => ovftool_path)
+    end
+
+    def default_disk_size_for(infrastructure, args)
+      return args[:disk_size] if args[:disk_size]
+
+      Bosh::Stemcell::Infrastructure.for(infrastructure).default_disk_size
+    end
+
+    def hypervisor_for(infrastructure)
+      return environment['STEMCELL_HYPERVISOR'] if environment['STEMCELL_HYPERVISOR']
+
+      begin
+        Bosh::Stemcell::Infrastructure.for(infrastructure).hypervisor
+      rescue ArgumentError
+        raise "Unknown infrastructure: #{infrastructure}"
+      end
     end
   end
 end
