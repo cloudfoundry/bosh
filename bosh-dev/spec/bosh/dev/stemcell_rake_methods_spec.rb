@@ -57,8 +57,8 @@ module Bosh::Dev
           expect(result['TW_LOCAL_PASSPHRASE']).to eq('fake_tripwire_local_passphrase')
           expect(result['TW_SITE_PASSPHRASE']).to eq('fake_tripwire_site_passphrase')
           expect(result['ruby_bin']).to eq('fake_ruby_bin')
-          expect(result['bosh_release_src_dir']).to match(%r{/bosh/release/src/bosh})
-          expect(result['bosh_agent_src_dir']).to match(%r{/bosh/bosh_agent})
+          expect(result['bosh_release_src_dir']).to match(%r{/release/src/bosh})
+          expect(result['bosh_agent_src_dir']).to match(%r{/bosh_agent})
           expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
@@ -180,7 +180,7 @@ module Bosh::Dev
 
       it 'returns a valid hash' do
         expect(bosh_micro_options[:bosh_micro_enabled]).to eq('yes')
-        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to match(/bosh\/package_compiler/)
+        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to match(/\bpackage_compiler\b/)
         expect(bosh_micro_options[:bosh_micro_manifest_yml_path]).to eq('fake_manifest')
         expect(bosh_micro_options[:bosh_micro_release_tgz_path]).to eq('fake_tarball')
       end
