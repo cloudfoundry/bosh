@@ -1,11 +1,13 @@
 require 'fileutils'
 
+require 'bosh/dev/shell'
 require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   class StemcellRakeMethods
-    def initialize(environment = ENV.to_hash)
+    def initialize(environment = ENV.to_hash, shell = Shell.new)
       @environment = environment
+      @shell = shell
     end
 
     def bosh_micro_options(manifest, tarball)
@@ -16,8 +18,6 @@ module Bosh::Dev
         bosh_micro_release_tgz_path: tarball,
       }
     end
-
-    # DEFAULT OPTIONS (DONE)
 
     def default_options(args)
       infrastructure = args.fetch(:infrastructure) do
@@ -45,28 +45,6 @@ module Bosh::Dev
       options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
     end
 
-    # BUILDING
-
-    def get_working_dir
-      ENV['BUILD_PATH'] || "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{$$}"
-    end
-
-    def env
-      keep = %w{
-      HTTP_PROXY
-      http_proxy
-      NO_PROXY
-      no_proxy
-      }
-
-      format_env(ENV.select { |k| keep.include?(k) })
-    end
-
-    # Format a hash as an env command.
-    def format_env(h)
-      'env ' + h.map { |k, v| "#{k}='#{v}'" }.join(' ')
-    end
-
     def build(spec, options)
       root = get_working_dir
       FileUtils.mkdir_p root
@@ -74,8 +52,7 @@ module Bosh::Dev
       puts "PWD: #{Dir.pwd}"
 
       build_path = File.join(root, 'build')
-
-      FileUtils.rm_rf build_path
+      FileUtils.rm_rf build_path if Dir.exists?(build_path)
       FileUtils.mkdir_p build_path
       stemcell_build_dir = File.expand_path('../../../../../stemcell_builder', __FILE__)
       FileUtils.cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, preserve: true
@@ -96,17 +73,30 @@ module Bosh::Dev
       builder_path = File.join(build_path, 'bin', 'build_from_spec.sh')
       spec_path = File.join(build_path, 'spec', "#{spec}.spec")
 
-      # Run builder
-      STDOUT.puts "building in #{work_path}..."
+      puts "Building in #{work_path}..."
       cmd = "sudo #{env} #{builder_path} #{work_path} #{spec_path} #{settings_path}"
 
-      puts cmd
-      system cmd
+      shell.run cmd
     end
 
     private
 
-    attr_reader :environment
+    attr_reader :environment, :shell
+
+    def get_working_dir
+      environment['BUILD_PATH'] || "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{Process.pid}"
+    end
+
+    def env
+      keep = %w(HTTP_PROXY NO_PROXY)
+
+      format_env(environment.select { |k| keep.include?(k.upcase) })
+    end
+
+    # Format a hash as an env command.
+    def format_env(h)
+      'env ' + h.map { |k, v| "#{k}='#{v}'" }.join(' ')
+    end
 
     def check_for_ovftool!(options)
       ovftool_path = environment.fetch('OVFTOOL') do
