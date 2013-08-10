@@ -58,7 +58,7 @@ module Bosh::Dev
           expect(result['TW_SITE_PASSPHRASE']).to eq('fake_tripwire_site_passphrase')
           expect(result['ruby_bin']).to eq('fake_ruby_bin')
           expect(result['bosh_release_src_dir']).to match(%r{/release/src/bosh})
-          expect(result['bosh_agent_src_dir']).to match(%r{/bosh_agent})
+          expect(result['bosh_agent_src_dir']).to match(/bosh_agent/)
           expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
