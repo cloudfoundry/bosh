@@ -57,7 +57,7 @@ module Bosh::Dev
       stemcell_build_dir = File.expand_path('../../../../../stemcell_builder', __FILE__)
       FileUtils.cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, preserve: true
 
-      work_path = ENV['WORK_PATH'] || File.join(root, 'work')
+      work_path = environment['WORK_PATH'] || File.join(root, 'work')
       FileUtils.mkdir_p work_path
 
       # Apply options

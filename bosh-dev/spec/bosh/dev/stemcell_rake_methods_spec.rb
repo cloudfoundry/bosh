@@ -4,7 +4,7 @@ require 'bosh/dev/stemcell_rake_methods'
 
 module Bosh::Dev
   describe StemcellRakeMethods do
-    let(:env) { ENV.to_hash }
+    let(:env) { {} }
     let(:shell) { instance_double('Bosh::Dev::Shell') }
     let(:stemcell_rake_methods) { StemcellRakeMethods.new(env, shell) }
 
@@ -180,7 +180,7 @@ module Bosh::Dev
 
       it 'returns a valid hash' do
         expect(bosh_micro_options[:bosh_micro_enabled]).to eq('yes')
-        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to match(%r{bosh/package_compiler})
+        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to match(/bosh\/package_compiler/)
         expect(bosh_micro_options[:bosh_micro_manifest_yml_path]).to eq('fake_manifest')
         expect(bosh_micro_options[:bosh_micro_release_tgz_path]).to eq('fake_tarball')
       end
@@ -235,6 +235,16 @@ module Bosh::Dev
         expect {
           stemcell_rake_methods.build(spec, options)
         }.to change { Dir.exists?(work_dir) }.from(false).to(true)
+      end
+
+      context 'when the user sets their own WORK_PATH' do
+        let(:env) { { 'WORK_PATH' => '/aight' } }
+
+        it 'creates a work directory for stemcell creation chroot' do
+          expect {
+            stemcell_rake_methods.build(spec, options)
+          }.to change { Dir.exists?('/aight') }.from(false).to(true)
+        end
       end
 
       it 'writes a settings file into the build directory' do
