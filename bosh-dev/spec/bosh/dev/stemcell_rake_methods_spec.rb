@@ -158,7 +158,7 @@ module Bosh::Dev
             end
           end
 
-          it 'increases default disk_size from 2048 to 10240' do
+          it 'increases default disk_size from 2048 to 10240 because of the lack of ephemeral disk' do
             result = stemcell_rake_methods.default_options(infrastructure: 'openstack')
 
             expect(result['image_create_disk_size']).to eq(10240)
