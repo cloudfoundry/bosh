@@ -9,6 +9,8 @@ require 'rugged'
 namespace :stemcell do
   desc 'Build stemcell'
   task :basic, [:infrastructure, :version, :stemcell_tgz, :disk_size] do |_, args|
+    require 'bosh/dev/stemcell_rake_methods'
+
     options = Bosh::Dev::StemcellRakeMethods.new.default_options(args)
     options[:stemcell_name] ||= 'bosh-stemcell'
     options[:stemcell_tgz] = args[:stemcell_tgz]
@@ -23,6 +25,7 @@ namespace :stemcell do
   task :micro, [:tarball, :infrastructure, :version, :stemcell_tgz, :disk_size] do |t, args|
     require 'bosh/dev/micro_bosh_release'
     require 'bosh/dev/build'
+    require 'bosh/dev/stemcell_rake_methods'
 
     manifest =
       File.join(
