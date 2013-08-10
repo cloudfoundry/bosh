@@ -1,12 +1,12 @@
 module Bosh::Director
   module DeploymentPlan
     class Updater
-      def initialize(job, event_log, resource_pools, deployment_plan_compiler, deployment_plan)
+      def initialize(job, event_log, resource_pools, assembler, deployment_plan)
         @job = job
         @logger = job.logger
         @event_log = event_log
         @resource_pools = resource_pools
-        @deployment_plan_compiler = deployment_plan_compiler
+        @assembler = assembler
         @deployment_plan = deployment_plan
       end
 
@@ -14,7 +14,7 @@ module Bosh::Director
         event_log.begin_stage('Preparing DNS', 1)
         job.track_and_log('Binding DNS') do
           if Config.dns_enabled?
-            deployment_plan_compiler.bind_dns
+            assembler.bind_dns
           end
         end
 
@@ -23,18 +23,18 @@ module Bosh::Director
         job.task_checkpoint
 
         logger.info('Binding instance VMs')
-        deployment_plan_compiler.bind_instance_vms
+        assembler.bind_instance_vms
 
         event_log.begin_stage('Preparing configuration', 1)
         job.track_and_log('Binding configuration') do
-          deployment_plan_compiler.bind_configuration
+          assembler.bind_configuration
         end
 
         logger.info('Deleting no longer needed VMs')
-        deployment_plan_compiler.delete_unneeded_vms
+        assembler.delete_unneeded_vms
 
         logger.info('Deleting no longer needed instances')
-        deployment_plan_compiler.delete_unneeded_instances
+        assembler.delete_unneeded_instances
 
         logger.info('Updating jobs')
         deployment_plan.jobs.each do |bosh_job|
@@ -49,7 +49,7 @@ module Bosh::Director
 
       private
 
-      attr_reader :job, :event_log, :resource_pools, :logger, :deployment_plan_compiler, :deployment_plan
+      attr_reader :job, :event_log, :resource_pools, :logger, :assembler, :deployment_plan
     end
   end
 end

@@ -1,9 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Director
-  # DeploymentPlanCompiler is used to populate deployment plan with information
+  # DeploymentPlan::Assembler is used to populate deployment plan with information
   # about existing deployment and information from director DB
-  class DeploymentPlanCompiler
+  class DeploymentPlan::Assembler
     include DnsHelper
     include LockHelper
     include IpUtil

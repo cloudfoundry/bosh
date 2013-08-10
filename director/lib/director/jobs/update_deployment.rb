@@ -40,8 +40,8 @@ module Bosh::Director
       end
 
       def prepare
-        @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        preparer = DeploymentPlan::Preparer.new(self, @deployment_plan_compiler)
+        @assembler = DeploymentPlan::Assembler.new(@deployment_plan)
+        preparer = DeploymentPlan::Preparer.new(self, @assembler)
 
         begin_stage('Preparing deployment', 9)
         preparer.prepare
@@ -53,7 +53,7 @@ module Bosh::Director
       def update
         resource_pools = DeploymentPlan::ResourcePools.new(event_log, @resource_pool_updaters)
 
-        updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @deployment_plan_compiler, @deployment_plan)
+        updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @assembler, @deployment_plan)
         updater.update
       end
 

@@ -47,22 +47,22 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     describe 'prepare' do
       it 'should prepare the deployment plan' do
         Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-        deployment_plan_compiler = double('deployment_plan_compiler')
+        assembler = double('assembler')
         package_compiler = double('package_compiler')
 
-        Bosh::Director::DeploymentPlanCompiler.stub(:new).with(@deployment_plan).and_return(deployment_plan_compiler)
+        Bosh::Director::DeploymentPlan::Assembler.stub(:new).with(@deployment_plan).and_return(assembler)
         update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
         Bosh::Director::PackageCompiler.stub(:new).with(@deployment_plan).and_return(package_compiler)
 
-        deployment_plan_compiler.should_receive(:bind_deployment).ordered
-        deployment_plan_compiler.should_receive(:bind_releases).ordered
-        deployment_plan_compiler.should_receive(:bind_existing_deployment).ordered
-        deployment_plan_compiler.should_receive(:bind_resource_pools).ordered
-        deployment_plan_compiler.should_receive(:bind_stemcells).ordered
-        deployment_plan_compiler.should_receive(:bind_templates).ordered
-        deployment_plan_compiler.should_receive(:bind_properties).ordered
-        deployment_plan_compiler.should_receive(:bind_unallocated_vms).ordered
-        deployment_plan_compiler.should_receive(:bind_instance_networks).ordered
+        assembler.should_receive(:bind_deployment).ordered
+        assembler.should_receive(:bind_releases).ordered
+        assembler.should_receive(:bind_existing_deployment).ordered
+        assembler.should_receive(:bind_resource_pools).ordered
+        assembler.should_receive(:bind_stemcells).ordered
+        assembler.should_receive(:bind_templates).ordered
+        assembler.should_receive(:bind_properties).ordered
+        assembler.should_receive(:bind_unallocated_vms).ordered
+        assembler.should_receive(:bind_instance_networks).ordered
         package_compiler.should_receive(:compile)
 
         update_deployment_job.prepare
@@ -76,7 +76,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     describe 'update' do
       it 'should update the deployment' do
-        deployment_plan_compiler = double('deployment_plan_compiler')
+        assembler = double('assembler')
         resource_pool = double('resource_pool')
         resource_pool_updater = double('resource_pool_updater')
         job = double('job')
@@ -97,16 +97,16 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         @deployment_plan.stub(:resource_pools).and_return([resource_pool])
         @deployment_plan.stub(:jobs).and_return([job])
 
-        deployment_plan_compiler.should_receive(:bind_dns).ordered
+        assembler.should_receive(:bind_dns).ordered
 
         resource_pool_updater.should_receive(:delete_extra_vms).ordered
         resource_pool_updater.should_receive(:delete_outdated_idle_vms).ordered
         resource_pool_updater.should_receive(:create_bound_missing_vms).ordered
 
-        deployment_plan_compiler.should_receive(:bind_instance_vms).ordered
-        deployment_plan_compiler.should_receive(:bind_configuration).ordered
-        deployment_plan_compiler.should_receive(:delete_unneeded_vms).ordered
-        deployment_plan_compiler.should_receive(:delete_unneeded_instances).ordered
+        assembler.should_receive(:bind_instance_vms).ordered
+        assembler.should_receive(:bind_configuration).ordered
+        assembler.should_receive(:delete_unneeded_vms).ordered
+        assembler.should_receive(:delete_unneeded_instances).ordered
 
         job_updater.should_receive(:update)
 
@@ -116,7 +116,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
 
         update_deployment_job.instance_eval do
-          @deployment_plan_compiler = deployment_plan_compiler
+          @assembler = assembler
         end
 
         update_deployment_job.update
