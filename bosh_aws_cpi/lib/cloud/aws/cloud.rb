@@ -381,7 +381,7 @@ module Bosh::AwsCloud
     # @return [String] EC2 AMI name of the stemcell
     def create_stemcell(image_path, stemcell_properties)
       with_thread_name("create_stemcell(#{image_path}...)") do
-        creator = StemcellCreator.new(region, stemcell_properties)
+        creator = StemcellRakeMethods.new(region, stemcell_properties)
 
         return creator.fake.id if creator.fake?
 
