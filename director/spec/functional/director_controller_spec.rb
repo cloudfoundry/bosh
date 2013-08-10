@@ -4,7 +4,7 @@ require 'spec_helper'
 
 require 'rack/test'
 
-describe Bosh::Director::ApiController do
+describe Bosh::Director::Api::Controller do
   include Rack::Test::Methods
 
   before(:each) do
@@ -29,7 +29,7 @@ describe Bosh::Director::ApiController do
   end
 
   def app
-    @rack_app ||= Bosh::Director::ApiController.new
+    @rack_app ||= Bosh::Director::Api::Controller.new
   end
 
   def login_as_admin
