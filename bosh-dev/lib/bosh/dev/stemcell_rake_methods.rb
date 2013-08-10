@@ -17,46 +17,6 @@ module Bosh::Dev
       }
     end
 
-    # GIT CHANGES
-
-    def changes_in_bosh_agent?
-      gem_components_changed?('bosh_agent') || component_changed?('stemcell_builder')
-    end
-
-    def changes_in_microbosh?
-      microbosh_components = COMPONENTS - %w(bosh_cli bosh_cli_plugin_aws bosh_cli_plugin_micro)
-      components_changed = microbosh_components.reduce(false) do |changes, component|
-        changes || gem_components_changed?(component)
-      end
-      components_changed || component_changed?('stemcell_builder')
-    end
-
-    def diff
-      @diff ||= changed_components
-    end
-
-    def changed_components(new_commit_sha = ENV['GIT_COMMIT'], old_commit_sha = ENV['GIT_PREVIOUS_COMMIT'])
-      repo = Rugged::Repository.new('.')
-      old_trees = old_commit_sha ? repo.lookup(old_commit_sha).tree.to_a : []
-      new_trees = repo.lookup(new_commit_sha || repo.head.target).tree.to_a
-      (new_trees - old_trees).map { |entry| entry[:name] }
-    end
-
-    def component_changed?(path)
-      diff.include?(path)
-    end
-
-    def gem_components_changed?(gem_name)
-      gem = Gem::Specification.load(File.join(gem_name, "#{gem_name}.gemspec"))
-
-      components =
-        %w(Gemfile Gemfile.lock) + [gem_name] + gem.runtime_dependencies.map { |d| d.name }.select { |d| Dir.exists?(d) }
-
-      components.reduce(false) do |changes, component|
-        changes || component_changed?(component)
-      end
-    end
-
     # DEFAULT OPTIONS (DONE)
 
     def default_options(args)
