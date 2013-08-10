@@ -40,7 +40,7 @@ module Bosh::Dev
         'bosh_agent_src_dir' => File.expand_path('../../../../../bosh_agent', __FILE__),
       }
 
-      options = check_for_ovftool!(options) if infrastructure == 'vsphere'
+      options = check_for_ovftool(options) if infrastructure == 'vsphere'
 
       options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
     end
@@ -98,10 +98,8 @@ module Bosh::Dev
       'env ' + h.map { |k, v| "#{k}='#{v}'" }.join(' ')
     end
 
-    def check_for_ovftool!(options)
-      ovftool_path = environment.fetch('OVFTOOL') do
-        raise 'Please set OVFTOOL to the path of `ovftool`.'
-      end
+    def check_for_ovftool(options)
+      ovftool_path = environment['OVFTOOL']
       options.merge('image_vsphere_ovf_ovftool_path' => ovftool_path)
     end
 

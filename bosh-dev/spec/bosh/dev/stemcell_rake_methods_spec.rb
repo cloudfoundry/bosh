@@ -135,14 +135,6 @@ module Bosh::Dev
               expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
-
-          context 'if you do not have OVFTOOL set in the environment' do
-            it 'errors' do
-              expect {
-                stemcell_rake_methods.default_options(infrastructure: 'vsphere')
-              }.to raise_error(RuntimeError, /Please set OVFTOOL to the path of `ovftool`./)
-            end
-          end
         end
 
         context 'when infrastructure is openstack' do
