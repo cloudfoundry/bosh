@@ -22,7 +22,7 @@ module Bosh::Dev
         end
       end
 
-      context 'it is not given an unknown infrastructure' do
+      context 'it is given an unknown infrastructure' do
         it 'dies' do
           expect {
             stemcell_rake_methods.default_options(infrastructure: 'fake')
