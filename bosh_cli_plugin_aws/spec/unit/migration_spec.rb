@@ -10,6 +10,8 @@ describe Bosh::Aws::Migration do
     {"hello" => "world"}
   end
 
+  let(:provider) { double("Provider") }
+
   before do
     Bosh::Aws::S3.stub(new: s3)
   end
@@ -25,7 +27,7 @@ describe Bosh::Aws::Migration do
   it "saves receipts in s3" do
     s3.should_receive(:upload_to_bucket).with("bucket", "receipts/aws_dummy_receipt.yml", YAML.dump(receipt))
 
-    migration = described_class.new(config, 'bucket')
+    migration = described_class.new(config, provider, 'bucket')
     migration.save_receipt("aws_dummy_receipt", receipt)
   end
 
@@ -34,7 +36,7 @@ describe Bosh::Aws::Migration do
 
     Dir.mktmpdir do |dir|
       Dir.chdir(dir) do
-        migration = described_class.new(config, 'bucket')
+        migration = described_class.new(config, provider, 'bucket')
         migration.save_receipt("aws_dummy_receipt", receipt)
 
         receipt_contents = YAML.load_file("aws_dummy_receipt.yml")
@@ -46,7 +48,7 @@ describe Bosh::Aws::Migration do
   it "loads the receipt from S3" do
     s3.should_receive(:fetch_object_contents).with("bucket", "receipts/aws_dummy_receipt.yml").and_return(YAML.dump(receipt))
 
-    migration = described_class.new(config, 'bucket')
+    migration = described_class.new(config, provider, 'bucket')
     migration.load_receipt("aws_dummy_receipt").should == receipt
   end
 
@@ -55,12 +57,12 @@ describe Bosh::Aws::Migration do
     ec2 = double("EC2")
     route53 = double("Route53")
 
-    Bosh::Aws::S3.should_receive(:new).with(config["aws"]).and_return(s3)
-    Bosh::Aws::ELB.should_receive(:new).with(config["aws"]).and_return(elb)
-    Bosh::Aws::EC2.should_receive(:new).with(config["aws"]).and_return(ec2)
-    Bosh::Aws::Route53.should_receive(:new).with(config["aws"]).and_return(route53)
+    Bosh::Aws::S3.should_receive(:new).with(provider).and_return(s3)
+    Bosh::Aws::ELB.should_receive(:new).with(provider).and_return(elb)
+    Bosh::Aws::EC2.should_receive(:new).with(provider).and_return(ec2)
+    Bosh::Aws::Route53.should_receive(:new).with(provider).and_return(route53)
 
-    migration = described_class.new(config, 'bucket')
+    migration = described_class.new(config, provider, 'bucket')
     migration.ec2.should == ec2
     migration.s3.should == s3
     migration.elb.should == elb

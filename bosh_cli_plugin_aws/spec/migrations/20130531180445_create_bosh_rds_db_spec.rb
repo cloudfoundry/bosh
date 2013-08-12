@@ -4,7 +4,7 @@ require '20130531180445_create_bosh_rds_db'
 describe CreateBoshRdsDb do
   include MigrationSpecHelper
 
-  subject { described_class.new(config, '')}
+  subject { described_class.new(config, nil, '')}
 
   before do
     subject.stub(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))

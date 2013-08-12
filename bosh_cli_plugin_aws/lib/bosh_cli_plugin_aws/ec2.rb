@@ -2,12 +2,21 @@ module Bosh
   module Aws
     class EC2
 
-      NAT_AMI_ID = "ami-f619c29f"
+      NAT_AMI_ID = {
+        "us-east-1" => "ami-f619c29f",      # ami-vpc-nat-1.1.0-beta
+        "us-west-1" => "ami-3bcc9e7e",      # ami-vpc-nat-1.0.0-beta
+        "us-west-2" => "ami-52ff7262",      # ami-vpc-nat-1.0.0-beta
+        "eu-west-1" => "ami-e5e2d991",      # ami-vpc-nat-1.1.0-beta
+        "ap-southeast-1" => "ami-02eb9350", # ami-vpc-nat-1.0.0-beta
+        "ap-northeast-1" => "ami-14d86d15", # ami-vpc-nat-1.0.0-beta
+        "ap-southeast-2" => "ami-ab990e91", # ami-vpc-nat-1.0.0-beta
+        "sa-east-1" => "ami-0039e61d",      # ami-vpc-nat-1.0.0-beta
+      }
 
       attr_reader :elastic_ips
 
-      def initialize(credentials)
-        @credentials = credentials
+      def initialize(provider)
+        @provider = provider
         @elastic_ips = []
       end
 
@@ -66,9 +75,10 @@ module Bosh
         name = options["name"]
         key_pair = select_key_pair_for_instance(name, options["key_name"])
 
+        ami_id = NAT_AMI_ID[@provider.region]
 
         instance_options = {
-            image_id: NAT_AMI_ID,
+            image_id: ami_id,
             instance_type: options.fetch("instance_type", "m1.small"),
             subnet: options["subnet_id"],
             private_ip_address: options["ip"],
@@ -200,7 +210,7 @@ module Bosh
       private
 
       def aws_ec2
-        @aws_ec2 ||= ::AWS::EC2.new(@credentials)
+        @provider.ec2
       end
 
       def terminatable_instances

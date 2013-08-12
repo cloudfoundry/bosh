@@ -3,10 +3,8 @@ module Bosh::Aws
     class BadCertificateError < RuntimeError;
     end
 
-    def initialize(credentials)
-      @credentials = credentials
-      @aws_elb = AWS::ELB.new(@credentials)
-      @aws_iam = AWS::IAM.new(@credentials)
+    def initialize(provider)
+      @provider = provider
     end
 
     def create(name, vpc, settings, certs)
@@ -85,7 +83,13 @@ module Bosh::Aws
 
     private
 
-    attr_reader :aws_iam, :aws_elb
+    def aws_iam
+      @provider.iam
+    end
+
+    def aws_elb
+      @provider.elb
+    end
 
     def upload_certificate(name, cert)
       certificates = aws_iam.server_certificates

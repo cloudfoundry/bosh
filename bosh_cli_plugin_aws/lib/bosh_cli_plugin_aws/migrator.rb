@@ -4,6 +4,7 @@ module Bosh
 
       def initialize(config)
         @config = config
+        @provider = AwsProvider.new(@config['aws'])
         @migration_path = MigrationHelper.aws_migration_directory
       end
 
@@ -45,7 +46,7 @@ module Bosh
       attr_reader :migration_path
 
       def aws_s3
-        @aws_s3 ||= Bosh::Aws::S3.new(@config['aws'])
+        @aws_s3 ||= Bosh::Aws::S3.new(@provider)
       end
 
       def ensure_bucket_exists
@@ -72,7 +73,7 @@ module Bosh
 
       def run_migrations(migrations_to_run)
         migrations_to_run.each do |migration|
-          migration.load_class.new(@config, bucket_name).run
+          migration.load_class.new(@config, @provider, bucket_name).run
           record_migration(migration)
         end
       end
@@ -80,7 +81,7 @@ module Bosh
       def load_migrations
         Dir.glob(File.join(migration_path, "*.rb")).collect do |migration_file_path|
           version, name  = migration_file_path.scan(/([0-9]+)_([_a-z0-9]*).rb\z/).first
-          MigrationProxy.new(name,version.to_i)
+          MigrationProxy.new(name, version.to_i)
         end.sort
       end
 
@@ -89,7 +90,7 @@ module Bosh
         migrations = YAML.load(yaml_file) || []
 
         migrations.collect do |migration_yaml|
-          MigrationProxy.new(migration_yaml['name'],migration_yaml['version'].to_i)
+          MigrationProxy.new(migration_yaml['name'], migration_yaml['version'].to_i)
         end.sort
       end
 

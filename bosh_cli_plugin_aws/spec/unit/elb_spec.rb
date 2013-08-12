@@ -1,9 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::Aws::ELB do
-  let(:creds) { { 'my' => 'creds' } }
-  let(:elb) { described_class.new(creds) }
-  let(:ec2) { Bosh::Aws::EC2.new({}) }
+  let(:provider) { mock(:provider) }
+
+  let(:elb) { described_class.new(provider) }
+  let(:ec2) { Bosh::Aws::EC2.new(provider) }
   let(:fake_aws_security_group) { double('security_group', id: 'sg_id', name: 'security_group_name') }
   let(:fake_aws_vpc) { double('vpc', security_groups: [fake_aws_security_group]) }
   let(:vpc) { Bosh::Aws::VPC.new(ec2, fake_aws_vpc) }
@@ -11,9 +12,10 @@ describe Bosh::Aws::ELB do
   let(:certificates) { [] }
   let(:fake_aws_iam) { double(AWS::IAM, server_certificates: certificates) }
 
-  it 'creates an underlying AWS ELB object with your credentials' do
-    AWS::ELB.should_receive(:new).with(creds).and_call_original
-    elb.send(:aws_elb).should be_kind_of(AWS::ELB)
+  it 'recieves an underlying AWS ELB object from provider' do
+    aws_elb = mock(:aws_elb)
+    provider.should_receive(:elb).and_return(aws_elb)
+    elb.send(:aws_elb).should == aws_elb
   end
 
   describe 'creation' do

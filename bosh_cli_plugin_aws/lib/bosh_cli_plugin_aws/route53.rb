@@ -2,8 +2,8 @@ module Bosh
   module Aws
     class Route53
 
-      def initialize(credentials)
-        @credentials = credentials
+      def initialize(provider)
+        @provider = provider
       end
 
       def create_zone(zone)
@@ -90,7 +90,7 @@ module Bosh
       end
 
       def aws_route53
-        @aws_route53 ||= ::AWS::Route53.new(@credentials)
+        @provider.route53
       end
 
       def generate_unique_name

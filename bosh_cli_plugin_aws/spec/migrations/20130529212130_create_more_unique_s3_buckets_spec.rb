@@ -4,7 +4,7 @@ require '20130529212130_create_more_unique_s3_buckets'
 describe CreateMoreUniqueS3Buckets do
   include MigrationSpecHelper
 
-  subject { described_class.new(config, '')}
+  subject { described_class.new(config, nil, '')}
 
   before do
     s3.stub(:create_bucket)
