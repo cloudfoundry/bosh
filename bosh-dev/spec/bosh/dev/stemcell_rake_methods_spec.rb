@@ -7,25 +7,35 @@ module Bosh::Dev
     let(:env) { {} }
     let(:shell) { instance_double('Bosh::Dev::Shell') }
     let(:stemcell_rake_methods) { StemcellRakeMethods.new(env, shell) }
+    let(:infrastructure) { 'aws' }
+    let(:args) do
+      {
+        infrastructure: infrastructure
+      }
+    end
 
     describe '#default_options' do
       let(:default_disk_size) { 2048 }
 
       context 'it is not given an infrastructure' do
+        let(:args) { {} }
+
         it 'dies' do
           STDERR.should_receive(:puts).with('Please specify target infrastructure (vsphere, aws, openstack)')
           stemcell_rake_methods.should_receive(:exit).with(1).and_raise(SystemExit)
 
           expect {
-            stemcell_rake_methods.default_options({})
+            stemcell_rake_methods.default_options(args)
           }.to raise_error(SystemExit)
         end
       end
 
       context 'it is given an unknown infrastructure' do
+        let(:infrastructure) { 'fake' }
+
         it 'dies' do
           expect {
-            stemcell_rake_methods.default_options(infrastructure: 'fake')
+            stemcell_rake_methods.default_options(args)
           }.to raise_error(RuntimeError, /Unknown infrastructure: fake/)
         end
       end
@@ -45,7 +55,7 @@ module Bosh::Dev
         end
 
         it 'sets default values for options based in hash' do
-          result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+          result = stemcell_rake_methods.default_options(args)
 
           expect(result['system_parameters_infrastructure']).to eq(infrastructure)
           expect(result['stemcell_name']).to eq('fake_stemcell_name')
@@ -62,12 +72,6 @@ module Bosh::Dev
           expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
-        context 'when stemcell_tgz is passed in as an arugment' do
-          it 'includes stemcell_tgz' do
-
-          end
-        end
-
         context 'when STEMCELL_NAME is not set' do
           let(:env) do
             {
@@ -82,7 +86,7 @@ module Bosh::Dev
           end
 
           it "defaults to 'bosh-stemcell'" do
-            result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+            result = stemcell_rake_methods.default_options(args)
 
             expect(result['stemcell_name']).to eq ('bosh-stemcell')
           end
@@ -107,21 +111,32 @@ module Bosh::Dev
           end
 
           it 'uses the RbConfig values' do
-            result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+            result = stemcell_rake_methods.default_options(args)
             expect(result['ruby_bin']).to eq('/a/path/to/ruby')
           end
         end
 
-        it 'sets the disk_size to 2048MB unless the user requests otherwise' do
-          result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+        context 'when disk_size is not passed' do
+          it 'defaults to default disk size for infrastructure' do
+            result = stemcell_rake_methods.default_options(args)
 
-          expect(result['image_create_disk_size']).to eq(default_disk_size)
+            expect(result['image_create_disk_size']).to eq(default_disk_size)
+          end
         end
 
-        it 'allows user to override default disk_size' do
-          result = stemcell_rake_methods.default_options(infrastructure: infrastructure, disk_size: 1234)
+        context 'when disk_size is passed' do
+          let(:args) do
+            {
+              infrastructure: infrastructure,
+              disk_size: 1234
+            }
+          end
 
-          expect(result['image_create_disk_size']).to eq(1234)
+          it 'allows user to override default disk_size' do
+            result = stemcell_rake_methods.default_options(args)
+
+            expect(result['image_create_disk_size']).to eq(1234)
+          end
         end
       end
 
@@ -133,7 +148,7 @@ module Bosh::Dev
 
           context 'when STEMCELL_HYPERVISOR is not set' do
             it 'uses "xen"' do
-              result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+              result = stemcell_rake_methods.default_options(args)
               expect(result['stemcell_hypervisor']).to eq('xen')
             end
           end
@@ -148,7 +163,7 @@ module Bosh::Dev
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'uses "esxi"' do
-              result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+              result = stemcell_rake_methods.default_options(args)
               expect(result['stemcell_hypervisor']).to eq('esxi')
             end
           end
@@ -157,7 +172,7 @@ module Bosh::Dev
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'sets image_vsphere_ovf_ovftool_path' do
-              result = stemcell_rake_methods.default_options(infrastructure: 'vsphere')
+              result = stemcell_rake_methods.default_options(args)
               expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
@@ -171,21 +186,9 @@ module Bosh::Dev
 
           context 'when STEMCELL_HYPERVISOR is not set' do
             it 'uses "kvm"' do
-              result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+              result = stemcell_rake_methods.default_options(args)
               expect(result['stemcell_hypervisor']).to eq('kvm')
             end
-          end
-
-          it 'increases default disk_size from 2048 to 10240 because of the lack of ephemeral disk' do
-            result = stemcell_rake_methods.default_options(infrastructure: 'openstack')
-
-            expect(result['image_create_disk_size']).to eq(10240)
-          end
-
-          it 'still allows user to force a specific disk_size' do
-            result = stemcell_rake_methods.default_options(infrastructure: 'openstack', disk_size: 1234)
-
-            expect(result['image_create_disk_size']).to eq(1234)
           end
         end
       end
