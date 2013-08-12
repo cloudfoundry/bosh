@@ -7,7 +7,7 @@ module Bosh
       def generate_and_upload
         VersionFile.new(Build.candidate.number).write
 
-        Rake::Task['all:finalize_release_directory'].invoke
+        build_gems_into_release_dir
 
         Dir.chdir('pkg') do
           Bundler.with_clean_env do
@@ -16,6 +16,10 @@ module Bosh
           end
           Build.candidate.upload_gems('.', 'gems')
         end
+      end
+
+      def build_gems_into_release_dir
+        Rake::Task['all:finalize_release_directory'].invoke
       end
     end
   end

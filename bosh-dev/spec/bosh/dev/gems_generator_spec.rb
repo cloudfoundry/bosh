@@ -3,10 +3,11 @@ require 'bosh/dev/gems_generator'
 
 module Bosh::Dev
   describe GemsGenerator do
+    let(:rake_task) { double('Rake::Task', invoke: nil) }
+
     describe '#generate_and_upload' do
       let(:version_file) { instance_double('VersionFile', write: nil) }
       let(:candidate_build) { instance_double('Build', number: 456, upload_gems: nil) }
-      let(:rake_task) { double('Rake::Task', invoke: nil) }
 
       before do
         VersionFile.stub(:new).with(456).and_return(version_file)
@@ -43,6 +44,14 @@ module Bosh::Dev
         candidate_build.should_receive(:upload_gems).with('.', 'gems')
 
         subject.generate_and_upload
+      end
+    end
+
+    describe '#build_gems_into_release_dir' do
+      it 'builds all bosh gems' do
+        Rake::Task.should_receive(:[]).with('all:finalize_release_directory').and_return(rake_task)
+
+        subject.build_gems_into_release_dir
       end
     end
   end

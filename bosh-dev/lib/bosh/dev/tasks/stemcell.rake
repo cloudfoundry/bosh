@@ -10,10 +10,11 @@ namespace :stemcell do
   desc 'Build stemcell'
   task :basic, [:infrastructure, :version, :stemcell_tgz, :disk_size] do |_, args|
     require 'bosh/dev/stemcell_rake_methods'
+    require 'bosh/dev/gems_generator'
 
     options = Bosh::Dev::StemcellRakeMethods.new.default_options(args.to_hash)
 
-    Rake::Task['all:finalize_release_directory'].invoke
+    Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
     Bosh::Dev::StemcellRakeMethods.new.build("stemcell-#{args[:infrastructure]}", options)
   end
