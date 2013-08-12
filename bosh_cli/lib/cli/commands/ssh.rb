@@ -12,7 +12,7 @@ module Bosh::Cli::Command
     option '--public_key FILE', 'Public key'
     option '--gateway_host HOST', 'Gateway host'
     option '--gateway_user USER', 'Gateway user'
-    option "--gateway_identity_file FILE", "Gateway identity file"
+    option '--gateway_identity_file FILE', 'Gateway identity file'
     option '--default_password PASSWORD',
            'Use default ssh password (NOT RECOMMENDED)'
     def shell(*args)
@@ -37,7 +37,7 @@ module Bosh::Cli::Command
     option '--public_key FILE', 'Public key'
     option '--gateway_host HOST', 'Gateway host'
     option '--gateway_user USER', 'Gateway user'
-    option "--gateway_identity_file FILE", "Gateway identity file"
+    option '--gateway_identity_file FILE', 'Gateway identity file'
     def scp(*args)
       job, index, args = parse_args(args)
       upload = options[:upload]
@@ -129,7 +129,6 @@ module Bosh::Cli::Command
           require 'net/ssh/gateway'
           gw_host = options[:gateway_host]
           gw_user = options[:gateway_user] || ENV['USER']
-          gw_user = options[:gateway_user] || ENV["USER"]
           gw_options = {}
           gw_options[:keys] = [options[:gateway_identity_file]] if options[:gateway_identity_file]
           begin
