@@ -62,6 +62,32 @@ module Bosh::Dev
           expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
+        context 'when stemcell_tgz is passed in as an arugment' do
+          it 'includes stemcell_tgz' do
+
+          end
+        end
+
+        context 'when STEMCELL_NAME is not set' do
+          let(:env) do
+            {
+              'OVFTOOL' => 'fake_ovf_tool_path',
+              'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
+              'UBUNTU_ISO' => 'fake_ubuntu_iso',
+              'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
+              'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
+              'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
+              'RUBY_BIN' => 'fake_ruby_bin',
+            }
+          end
+
+          it "defaults to 'bosh-stemcell'" do
+            result = stemcell_rake_methods.default_options(infrastructure: infrastructure)
+
+            expect(result['stemcell_name']).to eq ('bosh-stemcell')
+          end
+        end
+
         context 'when RUBY_BIN is not set' do
           let(:env) do
             {

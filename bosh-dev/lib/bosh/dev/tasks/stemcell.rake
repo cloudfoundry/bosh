@@ -12,7 +12,6 @@ namespace :stemcell do
     require 'bosh/dev/stemcell_rake_methods'
 
     options = Bosh::Dev::StemcellRakeMethods.new.default_options(args.to_hash)
-    options[:stemcell_name] ||= 'bosh-stemcell'
     options[:stemcell_tgz] = args[:stemcell_tgz]
     options[:stemcell_version] = args.with_defaults({}).fetch(:version)
 

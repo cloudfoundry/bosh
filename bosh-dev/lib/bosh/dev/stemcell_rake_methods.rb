@@ -27,7 +27,7 @@ module Bosh::Dev
 
       options = {
         'system_parameters_infrastructure' => infrastructure,
-        'stemcell_name' => environment['STEMCELL_NAME'],
+        'stemcell_name' => environment.fetch('STEMCELL_NAME', 'bosh-stemcell'),
         'stemcell_infrastructure' => infrastructure,
         'stemcell_hypervisor' => hypervisor_for(infrastructure),
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
