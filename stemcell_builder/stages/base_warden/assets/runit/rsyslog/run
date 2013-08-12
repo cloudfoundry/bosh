@@ -5,4 +5,4 @@
 set -e
 
 . /etc/default/rsyslog
-exec /usr/sbin/rsyslogd $RSYSLOGD_OPTIONS
+exec /usr/sbin/rsyslogd -n $RSYSLOGD_OPTIONS
