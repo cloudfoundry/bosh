@@ -1,0 +1,36 @@
+---
+http_interactions:
+- request:
+    method: head
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/invalid-content-id
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 404
+      message: !binary |-
+        VGhlIHNwZWNpZmllZCBibG9iIGRvZXMgbm90IGV4aXN0Lg==
+    headers:
+      !binary "VHJhbnNmZXItRW5jb2Rpbmc=":
+      - !binary |-
+        Y2h1bmtlZA==
+      !binary "U2VydmVy":
+      - !binary |-
+        V2luZG93cy1BenVyZS1CbG9iLzEuMCBNaWNyb3NvZnQtSFRUUEFQSS8yLjA=
+      !binary "WC1Ncy1SZXF1ZXN0LUlk":
+      - !binary |-
+        NTk0MTQ4NGEtNjUyZS00ZjY3LWIwOWEtMzBkN2E2MjZiODU4
+      !binary "WC1Ncy1WZXJzaW9u":
+      - !binary |-
+        MjAwOS0wOS0xOQ==
+      !binary "RGF0ZQ==":
+      - !binary |-
+        V2VkLCAwMyBKdWwgMjAxMyAxNDoxMzo0NCBHTVQ=
+    body:
+      encoding: US-ASCII
+      string: ''
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:43 GMT
+recorded_with: VCR 2.5.0

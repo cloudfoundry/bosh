@@ -125,3 +125,25 @@ These are the options for the Blobstore client when `swift_provider` is `rackspa
   Rackspace Cloud Files API Key
 * `rackspace_region` (optional)
   Rackspace Cloud Files Region (`dfw` or `ord`)
+
+
+#### Azure Block Blobs
+
+These are the options for the 'azure' blobstore provider:
+
+* `storage_account_name` (required)
+  The blob storage account name created from the Azure web interface, not the username.
+* `container_name` (required
+  The container_name used for sotrage. It has be created by the user.
+* `storage_access_key` (optional)
+  The secret key used for authentication.
+* `storage_blob_host` (optional)
+  The storage_blob_host is the endpoint the host for the Blob service.
+  Only set this if you want something custom (like, for example,
+  to point this to a LocalStorage emulator)
+
+To run Azure funtinal test set the following env variables:
+ export STORAGE_ACCOUNT_NAME="asdfuhuru"
+ export STORAGE_ACCESS_KEY="**************************"
+ export STORAGE_BLOB_HOST="http://127.0.0.1:10000/devstoreaccount1/"
+

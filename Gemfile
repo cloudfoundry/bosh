@@ -72,6 +72,9 @@ group :development, :test do
   gem 'nats'
   gem 'rugged'
 
+  # for azure blobstore_client
+  gem 'vcr'
+
   gem 'sqlite3'
   gem 'timecop'
   gem 'jenkins_api_client'

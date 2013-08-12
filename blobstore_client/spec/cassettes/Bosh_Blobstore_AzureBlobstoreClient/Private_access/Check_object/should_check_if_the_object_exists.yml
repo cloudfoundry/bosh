@@ -1,0 +1,232 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/id7
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:34 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Length:
+      - '0'
+      Content-Type:
+      - ''
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:/30QXQvyz9l1SONpni3ri9Ido/mqZSbncUl6Q5Cy66k=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 404
+      message: !binary |-
+        VGhlIHNwZWNpZmllZCBibG9iIGRvZXMgbm90IGV4aXN0Lg==
+    headers:
+      !binary "Q29udGVudC1MZW5ndGg=":
+      - !binary |-
+        MjE1
+      !binary "Q29udGVudC1UeXBl":
+      - !binary |-
+        YXBwbGljYXRpb24veG1s
+      !binary "U2VydmVy":
+      - !binary |-
+        V2luZG93cy1BenVyZS1CbG9iLzEuMCBNaWNyb3NvZnQtSFRUUEFQSS8yLjA=
+      !binary "WC1Ncy1SZXF1ZXN0LUlk":
+      - !binary |-
+        ZDkwYzY3ZTEtMTdiMC00ZjgwLWFkMmYtMjZlZjAwYzAyMDdh
+      !binary "WC1Ncy1WZXJzaW9u":
+      - !binary |-
+        MjAxMi0wMi0xMg==
+      !binary "RGF0ZQ==":
+      - !binary |-
+        V2VkLCAwMyBKdWwgMjAxMyAxNDoxMzozMyBHTVQ=
+    body:
+      encoding: ASCII-8BIT
+      string: !binary |-
+        77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48RXJy
+        b3I+PENvZGU+QmxvYk5vdEZvdW5kPC9Db2RlPjxNZXNzYWdlPlRoZSBzcGVj
+        aWZpZWQgYmxvYiBkb2VzIG5vdCBleGlzdC4KUmVxdWVzdElkOmQ5MGM2N2Ux
+        LTE3YjAtNGY4MC1hZDJmLTI2ZWYwMGMwMjA3YQpUaW1lOjIwMTMtMDctMDNU
+        MTQ6MTM6MzQuNjg3MzE2Mlo8L01lc3NhZ2U+PC9FcnJvcj4=
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:35 GMT
+- request:
+    method: put
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/id7?blockid=MDAwMDAwMDAwMA==&comp=block
+    body:
+      encoding: ASCII-8BIT
+      string: !binary |-
+        Zm9vYmFy
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:35 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Type:
+      - application/atom+xml; charset=utf-8
+      Content-Length:
+      - '6'
+      Content-Md5:
+      - OFj2IjCsPJFfMAxmQxLGPw==
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:hnOq3I3cATLKx/9qMIhhvdbz2DnY7k1umI5rNeSKJ6A=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Transfer-Encoding:
+      - chunked
+      Content-Md5:
+      - OFj2IjCsPJFfMAxmQxLGPw==
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      X-Ms-Request-Id:
+      - 920883be-335e-4de3-b67c-38bfd887dda1
+      X-Ms-Version:
+      - '2012-02-12'
+      Date:
+      - Wed, 03 Jul 2013 14:13:35 GMT
+    body:
+      encoding: US-ASCII
+      string: ''
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:36 GMT
+- request:
+    method: put
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/id7?comp=blocklist
+    body:
+      encoding: US-ASCII
+      string: ! "<?xml version=\"1.0\"?>\n<BlockList>\n  <Latest>MDAwMDAwMDAwMA==</Latest>\n</BlockList>\n"
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:36 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Type:
+      - application/atom+xml; charset=utf-8
+      Content-Length:
+      - '83'
+      Content-Md5:
+      - AX3CvXszSC6nGkoiQXDD0A==
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:/Biv+sKjqcgDV1aVNlcd0Gn1WMMvPMQ3QJWDuCEEIX4=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Transfer-Encoding:
+      - chunked
+      Content-Md5:
+      - AX3CvXszSC6nGkoiQXDD0A==
+      Last-Modified:
+      - Wed, 03 Jul 2013 14:13:36 GMT
+      Etag:
+      - ! '"0x8D0460EA47FCFBB"'
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      X-Ms-Request-Id:
+      - 00280230-357a-47d4-911a-26a262f2b787
+      X-Ms-Version:
+      - '2012-02-12'
+      Date:
+      - Wed, 03 Jul 2013 14:13:35 GMT
+    body:
+      encoding: US-ASCII
+      string: ''
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:36 GMT
+- request:
+    method: get
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/id7
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:36 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Length:
+      - '0'
+      Content-Type:
+      - ''
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:Gb5uBocmW2AfdTtYya5RKAe7rsain97FoXAYoAyO8Kg=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Length:
+      - '6'
+      Content-Type:
+      - application/octet-stream
+      Last-Modified:
+      - Wed, 03 Jul 2013 14:13:36 GMT
+      Accept-Ranges:
+      - bytes
+      Etag:
+      - ! '"0x8D0460EA47FCFBB"'
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      X-Ms-Request-Id:
+      - 53a99dc3-6eed-4f9f-8d75-7ccf6de255e4
+      X-Ms-Version:
+      - '2012-02-12'
+      X-Ms-Lease-Status:
+      - unlocked
+      X-Ms-Lease-State:
+      - available
+      X-Ms-Blob-Type:
+      - BlockBlob
+      Date:
+      - Wed, 03 Jul 2013 14:13:36 GMT
+    body:
+      encoding: US-ASCII
+      string: foobar
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:37 GMT
+recorded_with: VCR 2.5.0

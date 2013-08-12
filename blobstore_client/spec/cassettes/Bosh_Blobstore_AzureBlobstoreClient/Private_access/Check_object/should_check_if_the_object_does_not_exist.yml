@@ -1,0 +1,64 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://asdfuhuru.blob.core.windows.net/test-container/invliad-content-id
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Azure-SDK-for-Ruby/0.5.0
+      X-Ms-Date:
+      - Wed, 03 Jul 2013 14:13:37 GMT
+      X-Ms-Version:
+      - '2012-02-12'
+      Dataserviceversion:
+      - 1.0;NetFx
+      Maxdataserviceversion:
+      - 2.0;NetFx
+      Content-Length:
+      - '0'
+      Content-Type:
+      - ''
+      Connection:
+      - keep-alive
+      Authorization:
+      - SharedKey asdfuhuru:F5EZ3Sd7nsAhJDw/5EE+HfDuHlwoZJAW7hR+1eeiP78=
+      Accept:
+      - ! '*/*'
+  response:
+    status:
+      code: 404
+      message: !binary |-
+        VGhlIHNwZWNpZmllZCBibG9iIGRvZXMgbm90IGV4aXN0Lg==
+    headers:
+      !binary "Q29udGVudC1MZW5ndGg=":
+      - !binary |-
+        MjE1
+      !binary "Q29udGVudC1UeXBl":
+      - !binary |-
+        YXBwbGljYXRpb24veG1s
+      !binary "U2VydmVy":
+      - !binary |-
+        V2luZG93cy1BenVyZS1CbG9iLzEuMCBNaWNyb3NvZnQtSFRUUEFQSS8yLjA=
+      !binary "WC1Ncy1SZXF1ZXN0LUlk":
+      - !binary |-
+        MjRmM2VjNTEtNjFmYy00NWVkLWI4ODEtY2U0M2FmYjg3Y2Y3
+      !binary "WC1Ncy1WZXJzaW9u":
+      - !binary |-
+        MjAxMi0wMi0xMg==
+      !binary "RGF0ZQ==":
+      - !binary |-
+        V2VkLCAwMyBKdWwgMjAxMyAxNDoxMzozOCBHTVQ=
+    body:
+      encoding: ASCII-8BIT
+      string: !binary |-
+        77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48RXJy
+        b3I+PENvZGU+QmxvYk5vdEZvdW5kPC9Db2RlPjxNZXNzYWdlPlRoZSBzcGVj
+        aWZpZWQgYmxvYiBkb2VzIG5vdCBleGlzdC4KUmVxdWVzdElkOjI0ZjNlYzUx
+        LTYxZmMtNDVlZC1iODgxLWNlNDNhZmI4N2NmNwpUaW1lOjIwMTMtMDctMDNU
+        MTQ6MTM6MzguNTExMjMzNFo8L01lc3NhZ2U+PC9FcnJvcj4=
+    http_version: 
+  recorded_at: Wed, 03 Jul 2013 14:13:37 GMT
+recorded_with: VCR 2.5.0
