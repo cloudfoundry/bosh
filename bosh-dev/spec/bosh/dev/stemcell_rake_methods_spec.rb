@@ -8,9 +8,12 @@ module Bosh::Dev
     let(:shell) { instance_double('Bosh::Dev::Shell') }
     let(:stemcell_rake_methods) { StemcellRakeMethods.new(env, shell) }
     let(:infrastructure) { 'aws' }
+    let(:stemcell_tgz) { 'fake-stemcell-filename.tgz' }
     let(:args) do
       {
-        infrastructure: infrastructure
+        infrastructure: infrastructure,
+        stemcell_tgz: stemcell_tgz,
+        stemcell_version: '123'
       }
     end
 
@@ -18,14 +21,12 @@ module Bosh::Dev
       let(:default_disk_size) { 2048 }
 
       context 'it is not given an infrastructure' do
-        let(:args) { {} }
-
         it 'dies' do
-          STDERR.should_receive(:puts).with('Please specify target infrastructure (vsphere, aws, openstack)')
-          stemcell_rake_methods.should_receive(:exit).with(1).and_raise(SystemExit)
+          stemcell_rake_methods.should_receive(:abort).
+            with('Please specify target infrastructure (vsphere, aws, openstack)').and_raise(SystemExit)
 
           expect {
-            stemcell_rake_methods.default_options(args)
+            stemcell_rake_methods.default_options(args.reject { |key, _| key == :infrastructure })
           }.to raise_error(SystemExit)
         end
       end
@@ -37,6 +38,42 @@ module Bosh::Dev
           expect {
             stemcell_rake_methods.default_options(args)
           }.to raise_error(RuntimeError, /Unknown infrastructure: fake/)
+        end
+      end
+
+      context 'when given a stemcell_tgz' do
+        it 'sets stemcell_tgz' do
+          result = stemcell_rake_methods.default_options(args)
+          expect(result['stemcell_tgz']).to eq 'fake-stemcell-filename.tgz'
+        end
+      end
+
+      context 'when not given a stemcell_tgz' do
+        it 'raises' do
+          stemcell_rake_methods.should_receive(:abort).
+            with('Please specify stemcell tarball output path as stemcell_tgz').and_raise(SystemExit)
+
+          expect {
+            stemcell_rake_methods.default_options(args.reject { |key, _| key == :stemcell_tgz })
+          }.to raise_error(SystemExit)
+        end
+      end
+
+      context 'when given a stemcell_version' do
+        it 'sets stemcell_version' do
+          result = stemcell_rake_methods.default_options(args)
+          expect(result['stemcell_version']).to eq '123'
+        end
+      end
+
+      context 'when not given a stemcell_version' do
+        it 'raises' do
+          stemcell_rake_methods.should_receive(:abort).
+            with('Please specify stemcell_version').and_raise(SystemExit)
+
+          expect {
+            stemcell_rake_methods.default_options(args.reject { |key, _| key == :stemcell_version })
+          }.to raise_error(SystemExit)
         end
       end
 
@@ -125,15 +162,8 @@ module Bosh::Dev
         end
 
         context 'when disk_size is passed' do
-          let(:args) do
-            {
-              infrastructure: infrastructure,
-              disk_size: 1234
-            }
-          end
-
           it 'allows user to override default disk_size' do
-            result = stemcell_rake_methods.default_options(args)
+            result = stemcell_rake_methods.default_options(args.merge(disk_size: 1234))
 
             expect(result['image_create_disk_size']).to eq(1234)
           end

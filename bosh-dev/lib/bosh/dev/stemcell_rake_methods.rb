@@ -21,14 +21,23 @@ module Bosh::Dev
 
     def default_options(args)
       infrastructure = args.fetch(:infrastructure) do
-        STDERR.puts 'Please specify target infrastructure (vsphere, aws, openstack)'
-        exit 1
+        abort 'Please specify target infrastructure (vsphere, aws, openstack)'
+      end
+
+      stemcell_tgz = args.fetch(:stemcell_tgz) do
+        abort 'Please specify stemcell tarball output path as stemcell_tgz'
+      end
+
+      stemcell_version = args.fetch(:stemcell_version) do
+        abort 'Please specify stemcell_version'
       end
 
       options = {
         'system_parameters_infrastructure' => infrastructure,
         'stemcell_name' => environment.fetch('STEMCELL_NAME', 'bosh-stemcell'),
         'stemcell_infrastructure' => infrastructure,
+        'stemcell_tgz' => stemcell_tgz,
+        'stemcell_version' => stemcell_version,
         'stemcell_hypervisor' => hypervisor_for(infrastructure),
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
         'UBUNTU_ISO' => environment['UBUNTU_ISO'],
