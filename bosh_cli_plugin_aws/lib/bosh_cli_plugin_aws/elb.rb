@@ -4,9 +4,7 @@ module Bosh::Aws
     end
 
     def initialize(credentials)
-      @credentials = credentials
-      @aws_elb = AWS::ELB.new(@credentials)
-      @aws_iam = AWS::IAM.new(@credentials)
+      @aws_provider = AwsProvider.new(credentials)
     end
 
     def create(name, vpc, settings, certs)
@@ -85,7 +83,15 @@ module Bosh::Aws
 
     private
 
-    attr_reader :aws_iam, :aws_elb
+    attr_reader :aws_provider
+
+    def aws_iam
+      aws_provider.iam
+    end
+
+    def aws_elb
+      aws_provider.elb
+    end
 
     def upload_certificate(name, cert)
       certificates = aws_iam.server_certificates

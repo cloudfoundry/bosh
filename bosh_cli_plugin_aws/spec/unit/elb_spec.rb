@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Aws::ELB do
-  let(:creds) { { 'my' => 'creds' } }
+  let(:creds) { { 'my' => 'creds', 'region' => 'FAKE_AWS_REGION' } }
   let(:elb) { described_class.new(creds) }
   let(:ec2) { Bosh::Aws::EC2.new({}) }
   let(:fake_aws_security_group) { double('security_group', id: 'sg_id', name: 'security_group_name') }
@@ -12,7 +12,8 @@ describe Bosh::Aws::ELB do
   let(:fake_aws_iam) { double(AWS::IAM, server_certificates: certificates) }
 
   it 'creates an underlying AWS ELB object with your credentials' do
-    AWS::ELB.should_receive(:new).with(creds).and_call_original
+    AWS::ELB.should_receive(:new).
+      with(creds.merge('elb_endpoint' => 'elasticloadbalancing.FAKE_AWS_REGION.amazonaws.com')).and_call_original
     elb.send(:aws_elb).should be_kind_of(AWS::ELB)
   end
 

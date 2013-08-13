@@ -21,4 +21,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_aws_cpi', "~>#{version}"
   s.add_dependency 'bosh_cli_plugin_micro', "~>#{version}"
   s.add_dependency 'bosh-stemcell', "~>#{version}"
+
+  s.add_development_dependency 'rspec-fire'
 end

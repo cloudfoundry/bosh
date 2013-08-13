@@ -20,6 +20,7 @@ require "bosh_cli_plugin_aws/elb"
 require "bosh_cli_plugin_aws/bosh_bootstrap"
 require "bosh_cli_plugin_aws/micro_bosh_bootstrap"
 require "bosh_cli_plugin_aws/aws_config"
+require 'bosh_cli_plugin_aws/aws_provider'
 require "bosh/cli/commands/aws"
 require "bosh/cli/commands/micro"
 require "bosh_cli_plugin_aws/microbosh_manifest"

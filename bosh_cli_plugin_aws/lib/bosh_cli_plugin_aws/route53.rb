@@ -3,7 +3,7 @@ module Bosh
     class Route53
 
       def initialize(credentials)
-        @credentials = credentials
+        @aws_provider = AwsProvider.new(credentials)
       end
 
       def create_zone(zone)
@@ -82,15 +82,17 @@ module Bosh
 
       private
 
+      attr_reader :aws_provider
+
+      def aws_route53
+        aws_provider.route53
+      end
+
       def get_zone_id(name)
         zones_response = aws_route53.client.list_hosted_zones
         zone = zones_response.data[:hosted_zones].find { |zone| zone[:name] == name }
         raise "Zone not found for #{name} in route53 zones response #{zones_response.inspect}" if zone.nil?
         zone.fetch(:id)
-      end
-
-      def aws_route53
-        @aws_route53 ||= ::AWS::Route53.new(@credentials)
       end
 
       def generate_unique_name

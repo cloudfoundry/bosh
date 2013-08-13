@@ -2,21 +2,17 @@ require 'spec_helper'
 
 describe Bosh::Aws::RDS do
   subject(:rds) { described_class.new({}) }
-  let(:db_instance_1) { double("database instance", name: 'bosh_db', id: "db1") }
-  let(:db_instance_2) { double("database instance", name: 'cc_db', id: "db2") }
-  let(:fake_aws_rds) { double("aws_rds", db_instances: [db_instance_1, db_instance_2]) }
+  let(:db_instance_1) { instance_double('AWS::RDS::DBInstance', name: 'bosh_db', id: "db1") }
+  let(:db_instance_2) { instance_double('AWS::RDS::DBInstance', name: 'cc_db', id: "db2") }
+  let(:fake_aws_rds) { instance_double('AWS::RDS', db_instances: [db_instance_1, db_instance_2]) }
+  let(:fake_aws_rds_client) { instance_double('AWS::RDS::Client') }
 
   before(:each) do
-    rds.stub(:aws_rds).and_return(fake_aws_rds)
+    AWS::RDS.stub(new: fake_aws_rds)
+    AWS::RDS::Client.stub(new: fake_aws_rds_client)
   end
 
   describe "subnet_group_exists?" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should return false if the db subnet group does not exist" do
       fake_aws_rds_client.should_receive(:describe_db_subnet_groups).
           with(:db_subnet_group_name => "subnetgroup").
@@ -35,12 +31,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "create_database_subnet_group" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should create the RDS subnet group" do
       fake_aws_rds_client.should_receive(:create_db_subnet_group).
           with(:db_subnet_group_name => "somedb",
@@ -52,12 +42,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "subnet_group_names" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should return the subnet group names" do
       ccdb_subnet_info = {:db_subnet_group_name => "ccdb"}
       uaadb_subnet_info = {:db_subnet_group_name => "uaadb"}
@@ -69,12 +53,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_subnet_group" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should delete the subnet group" do
       fake_aws_rds_client.should_receive(:delete_db_subnet_group).with(:db_subnet_group_name => "ccdb")
       rds.delete_subnet_group("ccdb")
@@ -82,12 +60,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_subnet_groups" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should delete all the subnet groups" do
       rds.should_receive(:subnet_group_names).and_return(["ccdb", "uaadb"])
       rds.should_receive(:delete_subnet_group).with("ccdb")
@@ -97,9 +69,11 @@ describe Bosh::Aws::RDS do
   end
 
   describe "create_vpc_db_security_group" do
-    let(:fake_vpc) { double(Bosh::Aws::VPC, cidr_block: "1.2.3.4/0") }
+    let(:fake_vpc) { instance_double('Bosh::Aws::VPC', cidr_block: '1.2.3.4/0') }
 
     it "should delegate the VPC object to create a DB-friendly security group" do
+      Bosh::Aws::VPC.stub(new: fake_vpc)
+
       expected_parameters = {
           "name" => "seeseedeebee",
           "ingress" => [
@@ -117,12 +91,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "security_group_names" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should return the subnet group names" do
       default_security_group_info = {:db_security_group_name => "default"}
       ccdb_security_group_info = {:db_security_group_name => "ccdb"}
@@ -136,12 +104,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_security_group" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should delete the security group" do
       fake_aws_rds_client.should_receive(:delete_db_security_group).with(:db_security_group_name => "ccdb")
       rds.delete_security_group("ccdb")
@@ -149,12 +111,6 @@ describe Bosh::Aws::RDS do
   end
 
   describe "delete_security_groups" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-
-    before(:each) do
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-    end
-
     it "should delete all the non-default security groups" do
       rds.should_receive(:security_group_names).and_return(["default", "ccdb", "uaadb"])
       # note: default is not included
@@ -165,22 +121,17 @@ describe Bosh::Aws::RDS do
   end
 
   describe "creation" do
-    let(:fake_aws_rds_client) { double("aws_rds_client") }
-    let(:fake_response) { double("response", data: {:aws_key => "test_val"}) }
-    let(:fake_aws_security_group) { double(AWS::EC2::SecurityGroup, id: "sg-5678", name: "mydb") }
-    let(:fake_aws_vpc) { double(AWS::EC2::VPC, security_groups: [fake_aws_security_group], cidr_block: "1.2.3.4/0") }
-    let(:fake_ec2) { double(Bosh::Aws::EC2) }
-    let(:vpc) { Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc) }
+    let(:fake_response) { instance_double('AWS::Core::Response', data: { aws_key: "test_val" }) }
+    let(:fake_aws_security_group) { instance_double('AWS::EC2::SecurityGroup', id: "sg-5678", name: "mydb") }
+    let(:fake_aws_vpc) { instance_double('AWS::EC2::VPC', security_groups: [fake_aws_security_group]) }
 
     before(:each) do
-      Bosh::Aws::EC2.stub(new: fake_ec2)
-      Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-1234").and_return(vpc)
-      rds.stub(:subnet_group_exists?).with("mydb").and_return(true)
-      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
-      fake_aws_rds_client.stub(:describe_db_parameter_groups).and_return(true)
+      AWS::EC2::VPC.stub(new: fake_aws_vpc)
+      fake_aws_rds_client.stub(:describe_db_subnet_groups).with(db_subnet_group_name: 'mydb').and_return(true)
+      fake_aws_rds_client.stub(:describe_db_parameter_groups).with(db_parameter_group_name: 'utf8').and_return(true)
     end
 
-    it "creats the utf8 db_parameter_group" do
+    it "creates the utf8 db_parameter_group" do
       fake_aws_rds_client.should_receive(:describe_db_parameter_groups).
           with(:db_parameter_group_name => 'utf8').
           and_raise(AWS::RDS::Errors::DBParameterGroupNotFound)
@@ -204,6 +155,7 @@ describe Bosh::Aws::RDS do
         options[:allocated_storage].should == 5
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
+        options[:engine_version].should == "5.5.31"
         options[:db_parameter_group_name].should == "utf8"
         options[:master_username].should be_kind_of(String)
         options[:master_username].length.should be >= 8
@@ -244,9 +196,9 @@ describe Bosh::Aws::RDS do
     end
 
     context "when the subnet group doesn't exist" do
-      before { rds.stub(:subnet_group_exists?).with("mydb").and_return(false) }
-
       it "should create the subnet group for the DB" do
+        rds.should_receive(:subnet_group_exists?).with("mydb").and_return(false)
+
         fake_aws_rds_client.should_receive(:create_db_instance) do |options|
           options[:db_instance_identifier].should == "mydb"
           options[:db_name].should == "mydb"
@@ -268,7 +220,13 @@ describe Bosh::Aws::RDS do
     end
 
     context "when the security group doesn't exist" do
-      before { fake_aws_vpc.stub(:security_groups).and_return([], [fake_aws_security_group]) }
+      let(:bosh_aws_vpc) { instance_double('Bosh::Aws::VPC', cidr_block: '1.2.3.4/0')}
+
+      before do
+        bosh_aws_vpc.should_receive(:security_group_by_name).twice.and_return(nil, fake_aws_security_group)
+
+        Bosh::Aws::VPC.stub(find: bosh_aws_vpc)
+      end
 
       it "should create the security group for the DB" do
         fake_aws_rds_client.should_receive(:create_db_instance) do |options|
@@ -286,7 +244,7 @@ describe Bosh::Aws::RDS do
           fake_response
         end
 
-        vpc.should_receive(:create_security_groups).with(
+        bosh_aws_vpc.should_receive(:create_security_groups).with(
             [
                 {
                     "name" => "mydb",
