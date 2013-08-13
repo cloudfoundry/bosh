@@ -273,37 +273,35 @@ module Bosh::Cli
 
       blob = @index[path]
       size = blob["size"].to_i
-      tmp_file_path = File.join(Dir.mktmpdir, "bosh-blob")
+      tmp_file = File.open(File.join(Dir.mktmpdir, "bosh-blob"), "w")
 
-      File.open(tmp_file_path, "w") do |tmp_file|
-        download_label = "downloading"
-        if size > 0
-          download_label += " " + pretty_size(size)
-        end
-
-        progress_bar = Thread.new do
-          loop do
-            break unless size > 0
-            if File.exists?(tmp_file.path)
-              pct = 100 * File.size(tmp_file.path).to_f / size
-              progress(path, "#{download_label} (#{pct.to_i}%)...")
-            end
-            sleep(0.2)
-          end
-        end
-
-        progress(path, "#{download_label}...")
-        @blobstore.get(blob["object_id"], tmp_file)
-
-        progress_bar.kill
+      download_label = "downloading"
+      if size > 0
+        download_label += " " + pretty_size(size)
       end
+
+      progress_bar = Thread.new do
+        loop do
+          break unless size > 0
+          if File.exists?(tmp_file.path)
+            pct = 100 * File.size(tmp_file.path).to_f / size
+            progress(path, "#{download_label} (#{pct.to_i}%)...")
+          end
+          sleep(0.2)
+        end
+      end
+
+      progress(path, "#{download_label}...")
+      @blobstore.get(blob["object_id"], tmp_file)
+      tmp_file.close
+      progress_bar.kill
       progress(path, "downloaded\n".make_green)
 
-      if file_checksum(tmp_file_path) != blob["sha"]
+      if file_checksum(tmp_file.path) != blob["sha"]
         err("Checksum mismatch for downloaded blob `#{path}'")
       end
 
-      tmp_file_path
+      tmp_file.path
     end
 
     private

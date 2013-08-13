@@ -29,10 +29,6 @@ module Bosh
         fetch_from_env("BOSH_AWS_ACCESS_KEY_ID")
       end
 
-      def aws_region
-        @env.fetch("BOSH_AWS_REGION", "us-east-1")
-      end
-
       def vpc_domain
         @env["BOSH_VPC_DOMAIN"]
       end

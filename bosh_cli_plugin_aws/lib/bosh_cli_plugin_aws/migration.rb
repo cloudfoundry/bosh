@@ -4,16 +4,15 @@ module Bosh
 
       attr_reader :s3, :elb, :ec2, :rds, :route53, :logger, :config
 
-      def initialize(config, provider, receipt_bucket_name)
+      def initialize(config, receipt_bucket_name)
         @config = config
         @receipt_bucket_name = receipt_bucket_name
         aws_config = config['aws']
-        @aws_provider = provider
-        @s3 = S3.new(@aws_provider)
-        @elb = ELB.new(@aws_provider)
-        @ec2 = EC2.new(@aws_provider)
-        @rds = RDS.new(@aws_provider)
-        @route53 = Route53.new(@aws_provider)
+        @s3 = S3.new(aws_config)
+        @elb = ELB.new(aws_config)
+        @ec2 = EC2.new(aws_config)
+        @rds = RDS.new(aws_config)
+        @route53 = Route53.new(aws_config)
         @logger = Bosh::Clouds::Config.logger
       end
 
