@@ -1,5 +1,6 @@
 require 'bosh/dev/build'
 require 'bosh/dev/stemcell_environment'
+require 'bosh/dev/stemcell_rake_methods'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
@@ -61,11 +62,25 @@ module Bosh::Dev
 
     def micro_task
       bosh_release_path = candidate.download_release
-      Rake::Task['stemcell:micro'].invoke(bosh_release_path, infrastructure_name, candidate.number, new_style_name)
+
+      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
+        tarball: bosh_release_path,
+        infrastructure: infrastructure_name,
+        version: candidate.number,
+        stemcell_tgz: new_style_name,
+      })
+
+      stemcell_rake_methods.build_micro_stemcell
     end
 
     def basic_task
-      Rake::Task['stemcell:basic'].invoke(infrastructure_name, candidate.number, new_style_name)
+      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
+        infrastructure: infrastructure_name,
+        version: candidate.number,
+        stemcell_tgz: new_style_name,
+      })
+
+      stemcell_rake_methods.build_basic_stemcell
     end
 
     def stemcell_path!

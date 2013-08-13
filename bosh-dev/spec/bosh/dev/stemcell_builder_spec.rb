@@ -11,6 +11,7 @@ module Bosh::Dev
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
     let(:environment) { instance_double('Bosh::Dev::StemcellEnvironment', sanitize: nil) }
+    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_basic_stemcell: nil, build_micro_stemcell: nil) }
 
     subject(:builder) do
       StemcellBuilder.new(stemcell_type, infrastructure, build)
@@ -21,15 +22,18 @@ module Bosh::Dev
     end
 
     describe '#build' do
-      let(:stemcell_micro_task) { instance_double('Rake::Task', invoke: nil) }
-
       context 'when building a micro stemcell' do
         let(:stemcell_type) { 'micro' }
 
         before do
-          Rake::Task.stub(:[]).with('stemcell:micro').and_return(stemcell_micro_task)
-          stemcell_micro_task.stub(:invoke).with('fake release path', 'vsphere', build_number,
-                                                 'micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') do
+          StemcellRakeMethods.stub(:new).with(args: {
+            tarball: 'fake release path',
+            infrastructure: 'vsphere',
+            version: build_number,
+            stemcell_tgz: 'micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
+          }).and_return(stemcell_rake_methods)
+
+          stemcell_rake_methods.stub(:build_micro_stemcell) do
             FileUtils.mkdir_p('/mnt/stemcells/vsphere-micro/work/work')
             FileUtils.touch('/mnt/stemcells/vsphere-micro/work/work/micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
           end
@@ -57,7 +61,7 @@ module Bosh::Dev
 
         context 'when the micro stemcell is not created' do
           before do
-            stemcell_micro_task.stub(:invoke)
+            stemcell_rake_methods.stub(:build_micro_stemcell)
           end
 
           it 'fails early and loud' do
@@ -71,11 +75,14 @@ module Bosh::Dev
       context 'when building a basic stemcell' do
         let(:stemcell_type) { 'basic' }
 
-        let(:stemcell_basic_task) { instance_double('Rake::Task', invoke: nil) }
-
         before do
-          Rake::Task.stub(:[]).with('stemcell:basic').and_return(stemcell_basic_task)
-          stemcell_basic_task.stub(:invoke).with('vsphere', build_number, 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') do
+          StemcellRakeMethods.stub(:new).with(args: {
+            infrastructure: 'vsphere',
+            version: build_number,
+            stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
+          }).and_return(stemcell_rake_methods)
+
+          stemcell_rake_methods.stub(:build_basic_stemcell) do
             FileUtils.mkdir_p('/mnt/stemcells/vsphere-basic/work/work')
             FileUtils.touch('/mnt/stemcells/vsphere-basic/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
           end
@@ -105,7 +112,7 @@ module Bosh::Dev
 
         context 'when the micro stemcell is not created' do
           before do
-            stemcell_basic_task.stub(:invoke)
+            stemcell_rake_methods.stub(:build_basic_stemcell)
           end
 
           it 'fails early and loud' do
