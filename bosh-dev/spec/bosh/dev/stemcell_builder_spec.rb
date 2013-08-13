@@ -29,7 +29,7 @@ module Bosh::Dev
           StemcellRakeMethods.stub(:new).with(args: {
             tarball: 'fake release path',
             infrastructure: 'vsphere',
-            version: build_number,
+            stemcell_version: build_number,
             stemcell_tgz: 'micro-bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
           }).and_return(stemcell_rake_methods)
 
@@ -78,7 +78,7 @@ module Bosh::Dev
         before do
           StemcellRakeMethods.stub(:new).with(args: {
             infrastructure: 'vsphere',
-            version: build_number,
+            stemcell_version: build_number,
             stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
           }).and_return(stemcell_rake_methods)
 
