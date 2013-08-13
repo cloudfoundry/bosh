@@ -41,21 +41,28 @@ module Bosh::Dev
     end
 
     describe '#build_micro_stemcell' do
+      let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
+
+      before do
+        Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
+      end
+
       context 'when a release tarball is provided (e.g. in CI)' do
-        let(:candidate) { instance_double('Bosh::Dev::Build', gems_dir_url: 'fake/gems_dir_url') }
-
         before do
-          Bosh::Dev::Build.stub(:candidate).and_return(candidate)
-
           args.merge!(tarball: 'fake/release.tgz')
           stemcell_rake_methods.stub(:default_options).and_return({ fake: 'options' })
           stemcell_rake_methods.stub(:build)
         end
 
+        it "builds bosh's gems so we have the gem for the agent" do
+          gems_generator.should_receive(:build_gems_into_release_dir)
+
+          stemcell_rake_methods.build_micro_stemcell
+        end
+
         it 'builds a micro stemcell with the appropriate name and options' do
           stemcell_rake_methods.should_receive(:build).with('stemcell-aws', {
             fake: 'options',
-            agent_gem_src_url: 'fake/gems_dir_url',
             stemcell_name: 'micro-bosh-stemcell',
             bosh_micro_enabled: 'yes',
             bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
@@ -68,11 +75,9 @@ module Bosh::Dev
       end
 
       context 'when a release tarball is not available (e.g. on developer workstation)' do
-        let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
         let(:microbosh_release) { instance_double('Bosh::Dev::MicroBoshRelease', tarball: 'fake/freshly-built-release.tgz') }
 
         before do
-          Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
           Bosh::Dev::MicroBoshRelease.stub(:new).and_return(microbosh_release)
 
           stemcell_rake_methods.stub(:default_options).and_return({ fake: 'options' })

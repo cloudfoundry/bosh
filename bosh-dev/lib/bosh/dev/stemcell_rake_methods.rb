@@ -28,11 +28,11 @@ module Bosh::Dev
     def build_micro_stemcell
       options = default_options
 
+      Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
+
       if args[:tarball]
         release_tarball = args[:tarball]
-        options[:agent_gem_src_url] = Bosh::Dev::Build.candidate.gems_dir_url
       else
-        Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
         release = Bosh::Dev::MicroBoshRelease.new
         release_tarball = release.tarball
       end
