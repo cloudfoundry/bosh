@@ -30,12 +30,7 @@ module Bosh::Dev
 
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
-      if args[:tarball]
-        release_tarball = args[:tarball]
-      else
-        release = Bosh::Dev::MicroBoshRelease.new
-        release_tarball = release.tarball
-      end
+      release_tarball = args.fetch(:tarball)
 
       options[:stemcell_name] ||= 'micro-bosh-stemcell'
 

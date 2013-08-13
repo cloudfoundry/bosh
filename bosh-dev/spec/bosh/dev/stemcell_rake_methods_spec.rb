@@ -47,7 +47,7 @@ module Bosh::Dev
         Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
       end
 
-      context 'when a release tarball is provided (e.g. in CI)' do
+      context 'when a release tarball is provided' do
         before do
           args.merge!(tarball: 'fake/release.tgz')
           stemcell_rake_methods.stub(:default_options).and_return({ fake: 'options' })
@@ -68,36 +68,6 @@ module Bosh::Dev
             bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
             bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
             bosh_micro_release_tgz_path: 'fake/release.tgz'
-          })
-
-          stemcell_rake_methods.build_micro_stemcell
-        end
-      end
-
-      context 'when a release tarball is not available (e.g. on developer workstation)' do
-        let(:microbosh_release) { instance_double('Bosh::Dev::MicroBoshRelease', tarball: 'fake/freshly-built-release.tgz') }
-
-        before do
-          Bosh::Dev::MicroBoshRelease.stub(:new).and_return(microbosh_release)
-
-          stemcell_rake_methods.stub(:default_options).and_return({ fake: 'options' })
-          stemcell_rake_methods.stub(:build)
-        end
-
-        it "builds bosh's gems so we have the gem for the agent" do
-          gems_generator.should_receive(:build_gems_into_release_dir)
-
-          stemcell_rake_methods.build_micro_stemcell
-        end
-
-        it 'builds a micro stemcell with the appropriate name and options' do
-          stemcell_rake_methods.should_receive(:build).with('stemcell-aws', {
-            fake: 'options',
-            stemcell_name: 'micro-bosh-stemcell',
-            bosh_micro_enabled: 'yes',
-            bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-            bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
-            bosh_micro_release_tgz_path: 'fake/freshly-built-release.tgz'
           })
 
           stemcell_rake_methods.build_micro_stemcell
