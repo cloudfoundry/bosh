@@ -22,6 +22,7 @@ PATH
     bosh-dev (0.0.1.unpublished)
       bosh-stemcell
       bosh_common
+      peach
 
 PATH
   remote: bosh-stemcell
@@ -333,6 +334,7 @@ GEM
     parser (2.0.0.pre2)
       ast (~> 1.1)
       slop (~> 3.4, >= 3.4.5)
+    peach (0.5.1)
     pg (0.15.1)
     powerpack (0.0.1)
     progressbar (0.9.2)

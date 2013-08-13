@@ -4,6 +4,7 @@ require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/dev/pipeline_storage'
+require 'peach'
 
 module Bosh::Dev
   class Build
@@ -96,11 +97,9 @@ module Bosh::Dev
     end
 
     def sync_buckets
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems")
-
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'release')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts")
-      Rake::FileUtilsExt.sh("s3cmd --verbose sync #{File.join(s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts")
+      bucket_sync_commands.peach do |cmd|
+        Rake::FileUtilsExt.sh(cmd)
+      end
     end
 
     def update_light_micro_bosh_ami_pointer_file(aws_credentials)
@@ -162,6 +161,15 @@ module Bosh::Dev
     def uri(remote_directory_path, file_name)
       remote_file_path = File.join(remote_directory_path, file_name)
       URI.parse("http://bosh-ci-pipeline.s3.amazonaws.com/#{remote_file_path}")
+    end
+
+    def bucket_sync_commands
+      [
+        "s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems",
+        "s3cmd --verbose sync #{File.join(s3_url, 'release')} s3://bosh-jenkins-artifacts",
+        "s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts",
+        "s3cmd --verbose sync #{File.join(s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts"
+      ]
     end
   end
 end
