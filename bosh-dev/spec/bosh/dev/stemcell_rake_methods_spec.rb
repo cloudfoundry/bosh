@@ -16,6 +16,7 @@ module Bosh::Dev
         stemcell_version: '123'
       }
     end
+    let(:source_root) { File.expand_path('../../../../..', __FILE__) }
 
     describe '#default_options' do
       let(:default_disk_size) { 2048 }
@@ -104,8 +105,8 @@ module Bosh::Dev
           expect(result['TW_LOCAL_PASSPHRASE']).to eq('fake_tripwire_local_passphrase')
           expect(result['TW_SITE_PASSPHRASE']).to eq('fake_tripwire_site_passphrase')
           expect(result['ruby_bin']).to eq('fake_ruby_bin')
-          expect(result['bosh_release_src_dir']).to match(%r{/release/src/bosh})
-          expect(result['bosh_agent_src_dir']).to match(/bosh_agent/)
+          expect(result['bosh_release_src_dir']).to eq(File.join(source_root, '/release/src/bosh'))
+          expect(result['bosh_agent_src_dir']).to eq(File.join(source_root, 'bosh_agent'))
           expect(result['image_create_disk_size']).to eq(default_disk_size)
         end
 
@@ -227,12 +228,12 @@ module Bosh::Dev
     describe '#bosh_micro_options' do
       let(:manifest) { 'fake_manifest' }
       let(:tarball) { 'fake_tarball' }
-      let(:bosh_micro_options) { stemcell_rake_methods.bosh_micro_options(manifest, tarball) }
+      let(:bosh_micro_options) { stemcell_rake_methods.bosh_micro_options('aws', tarball) }
 
       it 'returns a valid hash' do
         expect(bosh_micro_options[:bosh_micro_enabled]).to eq('yes')
-        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to match(/\bpackage_compiler\b/)
-        expect(bosh_micro_options[:bosh_micro_manifest_yml_path]).to eq('fake_manifest')
+        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to eq(File.join(source_root, '/package_compiler'))
+        expect(bosh_micro_options[:bosh_micro_manifest_yml_path]).to eq(File.join(source_root, 'release/micro/aws.yml'))
         expect(bosh_micro_options[:bosh_micro_release_tgz_path]).to eq('fake_tarball')
       end
     end

@@ -10,11 +10,11 @@ module Bosh::Dev
       @shell = shell
     end
 
-    def bosh_micro_options(manifest, tarball)
+    def bosh_micro_options(infrastructure, tarball)
       {
         bosh_micro_enabled: 'yes',
-        bosh_micro_package_compiler_path: File.expand_path('../../../../../package_compiler', __FILE__),
-        bosh_micro_manifest_yml_path: manifest,
+        bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
+        bosh_micro_manifest_yml_path: File.join(source_root, "release/micro/#{infrastructure}.yml"),
         bosh_micro_release_tgz_path: tarball,
       }
     end
@@ -45,8 +45,8 @@ module Bosh::Dev
         'TW_LOCAL_PASSPHRASE' => environment['TW_LOCAL_PASSPHRASE'],
         'TW_SITE_PASSPHRASE' => environment['TW_SITE_PASSPHRASE'],
         'ruby_bin' => environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-        'bosh_release_src_dir' => File.expand_path('../../../../../release/src/bosh', __FILE__),
-        'bosh_agent_src_dir' => File.expand_path('../../../../../bosh_agent', __FILE__),
+        'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
+        'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
       }
 
       options = check_for_ovftool(options) if infrastructure == 'vsphere'
@@ -63,7 +63,7 @@ module Bosh::Dev
       build_path = File.join(root, 'build')
       FileUtils.rm_rf build_path if Dir.exists?(build_path)
       FileUtils.mkdir_p build_path
-      stemcell_build_dir = File.expand_path('../../../../../stemcell_builder', __FILE__)
+      stemcell_build_dir = File.join(source_root, 'stemcell_builder')
       FileUtils.cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, preserve: true
 
       work_path = environment['WORK_PATH'] || File.join(root, 'work')
@@ -91,6 +91,10 @@ module Bosh::Dev
     private
 
     attr_reader :environment, :shell
+
+    def source_root
+      File.expand_path('../../../../..', __FILE__)
+    end
 
     def get_working_dir
       environment['BUILD_PATH'] || "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{Process.pid}"
