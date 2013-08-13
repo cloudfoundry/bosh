@@ -1,13 +1,47 @@
 require 'fileutils'
+require 'rbconfig'
+require 'rugged'
 
+require 'bosh_agent/version'
 require 'bosh/dev/shell'
+require 'bosh/dev/gems_generator'
+require 'bosh/dev/build'
+require 'bosh/dev/micro_bosh_release'
 require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   class StemcellRakeMethods
-    def initialize(environment = ENV.to_hash, shell = Shell.new)
-      @environment = environment
-      @shell = shell
+    def initialize(options)
+      @environment = options.fetch(:environment) { ENV.to_hash }
+      @shell = options.fetch(:shell) { Shell.new }
+      @args = options.fetch(:args)
+    end
+
+    def build_basic_stemcell
+      options = default_options
+
+      Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
+
+      build("stemcell-#{args[:infrastructure]}", options)
+    end
+
+    def build_micro_stemcell
+      options = default_options
+
+      if args[:tarball]
+        release_tarball = args[:tarball]
+        options[:agent_gem_src_url] = Bosh::Dev::Build.candidate.gems_dir_url
+      else
+        Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
+        release = Bosh::Dev::MicroBoshRelease.new
+        release_tarball = release.tarball
+      end
+
+      options[:stemcell_name] ||= 'micro-bosh-stemcell'
+
+      options = options.merge(bosh_micro_options(args[:infrastructure], release_tarball))
+
+      build("stemcell-#{args[:infrastructure]}", options)
     end
 
     def bosh_micro_options(infrastructure, tarball)
@@ -19,7 +53,7 @@ module Bosh::Dev
       }
     end
 
-    def default_options(args)
+    def default_options
       infrastructure = args.fetch(:infrastructure) do
         abort 'Please specify target infrastructure (vsphere, aws, openstack)'
       end
@@ -90,7 +124,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :environment, :shell
+    attr_reader :environment, :shell, :args
 
     def source_root
       File.expand_path('../../../../..', __FILE__)
