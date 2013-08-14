@@ -3,8 +3,7 @@ require 'bosh/dev/stemcell_rake_methods'
 
 module Bosh::Dev
   describe StemcellRakeMethods do
-    let(:env) { {} }
-    let(:shell) { instance_double('Bosh::Dev::Shell') }
+    let(:env) { { 'FAKE' => 'ENV' } }
     let(:infrastructure) { 'aws' }
     let(:stemcell_tgz) { 'fake-stemcell-filename.tgz' }
     let(:args) do
@@ -14,17 +13,23 @@ module Bosh::Dev
         stemcell_version: '123'
       }
     end
+    let(:spec) { 'stemcell-aws' }
     let(:source_root) { File.expand_path('../../../../..', __FILE__) }
+    let(:build_from_spec) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
 
-    subject(:stemcell_rake_methods) { StemcellRakeMethods.new(args: args, environment: env, shell: shell) }
+    subject(:stemcell_rake_methods) { StemcellRakeMethods.new(args: args, environment: env) }
 
     describe '#build_basic_stemcell' do
       let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
+      let(:options) do
+        { fake: 'options' }
+      end
 
       before do
+        Bosh::Dev::BuildFromSpec.stub(:new).with(env, spec, options).and_return(build_from_spec)
+
         Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
         stemcell_rake_methods.stub(:default_options).and_return({ fake: 'options' })
-        stemcell_rake_methods.stub(:build)
       end
 
       it "builds bosh's gems so we have the gem for the agent" do
@@ -34,7 +39,7 @@ module Bosh::Dev
       end
 
       it 'builds a basic stemcell with the appropriate name and options' do
-        stemcell_rake_methods.should_receive(:build).with('stemcell-aws', { fake: 'options' })
+        build_from_spec.should_receive(:build)
 
         stemcell_rake_methods.build_basic_stemcell
       end
@@ -48,10 +53,22 @@ module Bosh::Dev
       end
 
       context 'when a release tarball is provided' do
+        let(:options) do
+          {
+            fake: 'options',
+            stemcell_name: 'micro-bosh-stemcell',
+            bosh_micro_enabled: 'yes',
+            bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
+            bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
+            bosh_micro_release_tgz_path: 'fake/release.tgz'
+          }
+        end
+
         before do
+          Bosh::Dev::BuildFromSpec.stub(:new).with(env, spec, options).and_return(build_from_spec)
+
           args.merge!(tarball: 'fake/release.tgz')
           stemcell_rake_methods.stub(:default_options).and_return({ fake: 'options' })
-          stemcell_rake_methods.stub(:build)
         end
 
         it "builds bosh's gems so we have the gem for the agent" do
@@ -61,14 +78,7 @@ module Bosh::Dev
         end
 
         it 'builds a micro stemcell with the appropriate name and options' do
-          stemcell_rake_methods.should_receive(:build).with('stemcell-aws', {
-            fake: 'options',
-            stemcell_name: 'micro-bosh-stemcell',
-            bosh_micro_enabled: 'yes',
-            bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-            bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
-            bosh_micro_release_tgz_path: 'fake/release.tgz'
-          })
+          build_from_spec.should_receive(:build)
 
           stemcell_rake_methods.build_micro_stemcell
         end
@@ -309,99 +319,6 @@ module Bosh::Dev
         expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to eq(File.join(source_root, '/package_compiler'))
         expect(bosh_micro_options[:bosh_micro_manifest_yml_path]).to eq(File.join(source_root, 'release/micro/aws.yml'))
         expect(bosh_micro_options[:bosh_micro_release_tgz_path]).to eq('fake_tarball')
-      end
-    end
-
-    describe '#build' do
-      include FakeFS::SpecHelpers
-
-      let(:pid) { 99999 }
-      let(:root_dir) { "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{pid}" }
-      let(:build_dir) { File.join(root_dir, 'build') }
-      let(:work_dir) { File.join(root_dir, 'work') }
-      let(:etc_dir) { File.join(build_dir, 'etc') }
-      let(:settings_file) { File.join(etc_dir, 'settings.bash') }
-      let(:spec_file) { File.join(build_dir, 'spec', "#{spec}.spec") }
-      let(:build_script) { File.join(build_dir, 'bin', 'build_from_spec.sh') }
-
-      let(:spec) { 'dave' }
-      let(:options) { { 'hello' => 'world' } }
-
-      before do
-        shell.stub(:run)
-        stemcell_rake_methods.stub(:puts)
-        Process.stub(pid: pid)
-        FileUtils.stub(:cp_r).with([], build_dir, preserve: true) do
-          FileUtils.mkdir_p etc_dir
-          FileUtils.touch settings_file
-        end
-      end
-
-      it 'creates a base directory for stemcell creation' do
-        expect {
-          stemcell_rake_methods.build(spec, options)
-        }.to change { Dir.exists?(root_dir) }.from(false).to(true)
-      end
-
-      it 'creates a build directory for stemcell creation' do
-        expect {
-          stemcell_rake_methods.build(spec, options)
-        }.to change { Dir.exists?(build_dir) }.from(false).to(true)
-      end
-
-      it 'copies the stemcell_builder code into the build directory' do
-        FileUtils.should_receive(:cp_r).with([], build_dir, preserve: true) do
-          FileUtils.mkdir_p etc_dir
-          FileUtils.touch File.join(etc_dir, 'settings.bash')
-        end
-        stemcell_rake_methods.build(spec, options)
-      end
-
-      it 'creates a work directory for stemcell creation chroot' do
-        expect {
-          stemcell_rake_methods.build(spec, options)
-        }.to change { Dir.exists?(work_dir) }.from(false).to(true)
-      end
-
-      context 'when the user sets their own WORK_PATH' do
-        let(:env) { { 'WORK_PATH' => '/aight' } }
-
-        it 'creates a work directory for stemcell creation chroot' do
-          expect {
-            stemcell_rake_methods.build(spec, options)
-          }.to change { Dir.exists?('/aight') }.from(false).to(true)
-        end
-      end
-
-      it 'writes a settings file into the build directory' do
-        stemcell_rake_methods.build(spec, options)
-        expect(File.read(settings_file)).to match(/hello=world/)
-      end
-
-      context 'when the user does not set proxy environment variables' do
-        it 'runs the stemcell builder with no environment variables set' do
-          shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          stemcell_rake_methods.build(spec, options)
-        end
-      end
-
-      context 'when the uses sets proxy environment variables' do
-        let(:env) { { 'HTTP_PROXY' => 'nice_proxy', 'no_proxy' => 'naughty_proxy' } }
-
-        it 'maintains current user proxy env vars through the shell sudo call' do
-          shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          stemcell_rake_methods.build(spec, options)
-        end
-      end
-
-      context 'when the uses sets a BUILD_PATH environment variable' do
-        let(:root_dir) { 'TEST_ROOT_DIR' }
-        let(:env) { { 'BUILD_PATH' => root_dir } }
-
-        it 'passes through BUILD_PATH environment variables correctly' do
-          shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          stemcell_rake_methods.build(spec, options)
-        end
       end
     end
   end
