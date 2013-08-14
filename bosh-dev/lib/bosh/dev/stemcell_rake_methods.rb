@@ -1,7 +1,6 @@
 require 'bosh/dev/build_from_spec'
 require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/gems_generator'
-require 'bosh/dev/micro_bosh_release'
 
 module Bosh::Dev
   class StemcellRakeMethods
@@ -29,9 +28,5 @@ module Bosh::Dev
     private
 
     attr_reader :environment, :args, :stemcell_builder_options
-
-    def source_root
-      File.expand_path('../../../../..', __FILE__)
-    end
   end
 end
