@@ -1,3 +1,6 @@
+require 'fileutils'
+
+require 'bosh_agent/version'
 require 'bosh/dev/shell'
 
 module Bosh::Dev
