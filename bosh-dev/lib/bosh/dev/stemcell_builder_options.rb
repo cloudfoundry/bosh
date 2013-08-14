@@ -11,7 +11,7 @@ module Bosh::Dev
     end
 
     def basic
-      infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure) )
+      infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
       stemcell_tgz = args.fetch(:stemcell_tgz)
       stemcell_version = args.fetch(:stemcell_version)
 

@@ -17,7 +17,6 @@ module Bosh::Dev
       build_from_spec.build
     end
 
-
     def build_micro_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
