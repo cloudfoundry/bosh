@@ -172,7 +172,8 @@ describe Bosh::WardenCloud::Cloud do
         case req
         when Warden::Protocol::DestroyRequest
           req.handle.should == DEFAULT_HANDLE
-
+        when Warden::Protocol::ListRequest
+          res.handles = DEFAULT_HANDLE
         else
           raise "#{req} not supported"
         end
@@ -193,9 +194,9 @@ describe Bosh::WardenCloud::Cloud do
       }.to raise_error Bosh::Clouds::CloudError
     end
 
-    it "should raise error when trying to delete a vm with disk attached" do
+    it "can delete a vm with disk attached" do
       vm = Bosh::WardenCloud::Models::VM.new
-      vm.container_id = "1234"
+      vm.container_id = DEFAULT_HANDLE
       vm.save
 
       disk = Bosh::WardenCloud::Models::Disk.new
@@ -203,9 +204,27 @@ describe Bosh::WardenCloud::Cloud do
       disk.attached = true
       disk.save
 
-      expect {
-        @cloud.delete_vm(vm.id.to_s)
-      }.to raise_error Bosh::Clouds::CloudError, /with disks attached/
+      vm.disks.size.should == 1
+      Warden::Client.any_instance.stub(:call) do |req|
+        res = req.create_response
+        case req
+          when Warden::Protocol::DestroyRequest
+            req.handle.should == DEFAULT_HANDLE
+          when Warden::Protocol::ListRequest
+            res.handles = DEFAULT_HANDLE
+          else
+            raise "#{req} not supported"
+        end
+        res
+      end
+      mock_umount_sudos "umount"
+      mock_umount_sudos "rm -rf"
+      @cloud.delete_vm(vm.id.to_s)
+
+      disk.refresh
+      disk.attached.should == false
+      disk.vm.should == nil
+
     end
   end
 end

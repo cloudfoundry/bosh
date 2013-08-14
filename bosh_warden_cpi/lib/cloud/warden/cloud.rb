@@ -199,21 +199,29 @@ module Bosh::WardenCloud
         vm = Models::VM[vm_id.to_i]
 
         cloud_error("Cannot find VM #{vm}") unless vm
-        cloud_error("Cannot delete vm with disks attached") if vm.disks.size > 0
 
         container_id = vm.container_id
 
-        vm.destroy
+        if has_vm?(vm_id)
+          with_warden do |client|
+            request = Warden::Protocol::DestroyRequest.new
+            request.handle = container_id
 
-        with_warden do |client|
-          request = Warden::Protocol::DestroyRequest.new
-          request.handle = container_id
+            client.call(request)
+          end
 
-          client.call(request)
+          vm_bind_mount = File.join(@bind_mount_points, vm_id)
+          sudo "umount #{vm_bind_mount}"
         end
 
-        vm_bind_mount = File.join(@bind_mount_points, vm_id)
-        sudo "umount #{vm_bind_mount}"
+        # Detach disk in db
+        vm.disks.each do |disk|
+          disk.attached = false
+          disk.device_path = nil
+          disk.vm = nil
+          disk.save
+        end
+        vm.destroy
 
         ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
         sudo "rm -rf #{ephemeral_mount}"
