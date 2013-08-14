@@ -14,7 +14,7 @@ module Bosh::Dev
     end
 
     let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions', to_h: { fake: 'options' })
+      instance_double('Bosh::Dev::StemcellBuilderOptions', basic: { fake: 'options' })
     end
 
     let(:args) do

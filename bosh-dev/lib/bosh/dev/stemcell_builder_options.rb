@@ -10,7 +10,7 @@ module Bosh::Dev
       @args = options.fetch(:args)
     end
 
-    def to_h
+    def basic
       infrastructure = args.fetch(:infrastructure)
       stemcell_tgz = args.fetch(:stemcell_tgz)
       stemcell_version = args.fetch(:stemcell_version)

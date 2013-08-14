@@ -42,7 +42,7 @@ module Bosh::Dev
 
     def basic_stemcell_options
       stemcell_builder_options = StemcellBuilderOptions.new(args: args, environment: environment)
-      stemcell_builder_options.to_h
+      stemcell_builder_options.basic
     end
 
     def source_root

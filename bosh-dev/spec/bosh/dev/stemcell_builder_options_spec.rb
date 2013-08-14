@@ -19,7 +19,7 @@ module Bosh::Dev
 
     subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args, environment: env) }
 
-    describe '#default_options' do
+    describe '#basic' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }
 
@@ -30,7 +30,7 @@ module Bosh::Dev
 
         it 'dies' do
           expect {
-            stemcell_builder_options.to_h
+            stemcell_builder_options.basic
           }.to raise_error /key not found: :infrastructure/
         end
       end
@@ -40,14 +40,14 @@ module Bosh::Dev
 
         it 'dies' do
           expect {
-            stemcell_builder_options.to_h
+            stemcell_builder_options.basic
           }.to raise_error(RuntimeError, /Unknown infrastructure: fake/)
         end
       end
 
       context 'when given a stemcell_tgz' do
         it 'sets stemcell_tgz' do
-          result = stemcell_builder_options.to_h
+          result = stemcell_builder_options.basic
           expect(result['stemcell_tgz']).to eq 'fake-stemcell-filename.tgz'
         end
       end
@@ -59,14 +59,14 @@ module Bosh::Dev
 
         it 'raises' do
           expect {
-            stemcell_builder_options.to_h
+            stemcell_builder_options.basic
           }.to raise_error /key not found: :stemcell_tgz/
         end
       end
 
       context 'when given a stemcell_version' do
         it 'sets stemcell_version' do
-          result = stemcell_builder_options.to_h
+          result = stemcell_builder_options.basic
           expect(result['stemcell_version']).to eq '123'
         end
       end
@@ -78,7 +78,7 @@ module Bosh::Dev
 
         it 'raises' do
           expect {
-            stemcell_builder_options.to_h
+            stemcell_builder_options.basic
           }.to raise_error /key not found: :stemcell_version/
         end
       end
@@ -98,7 +98,7 @@ module Bosh::Dev
         end
 
         it 'sets default values for options based in hash' do
-          result = stemcell_builder_options.to_h
+          result = stemcell_builder_options.basic
 
           expect(result['system_parameters_infrastructure']).to eq(infrastructure)
           expect(result['stemcell_name']).to eq('fake_stemcell_name')
@@ -129,7 +129,7 @@ module Bosh::Dev
           end
 
           it "defaults to 'bosh-stemcell'" do
-            result = stemcell_builder_options.to_h
+            result = stemcell_builder_options.basic
 
             expect(result['stemcell_name']).to eq ('bosh-stemcell')
           end
@@ -154,14 +154,14 @@ module Bosh::Dev
           end
 
           it 'uses the RbConfig values' do
-            result = stemcell_builder_options.to_h
+            result = stemcell_builder_options.basic
             expect(result['ruby_bin']).to eq('/a/path/to/ruby')
           end
         end
 
         context 'when disk_size is not passed' do
           it 'defaults to default disk size for infrastructure' do
-            result = stemcell_builder_options.to_h
+            result = stemcell_builder_options.basic
 
             expect(result['image_create_disk_size']).to eq(default_disk_size)
           end
@@ -173,7 +173,7 @@ module Bosh::Dev
           end
 
           it 'allows user to override default disk_size' do
-            result = stemcell_builder_options.to_h
+            result = stemcell_builder_options.basic
 
             expect(result['image_create_disk_size']).to eq(1234)
           end
@@ -188,7 +188,7 @@ module Bosh::Dev
 
           context 'when STEMCELL_HYPERVISOR is not set' do
             it 'uses "xen"' do
-              result = stemcell_builder_options.to_h
+              result = stemcell_builder_options.basic
               expect(result['stemcell_hypervisor']).to eq('xen')
             end
           end
@@ -203,7 +203,7 @@ module Bosh::Dev
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'uses "esxi"' do
-              result = stemcell_builder_options.to_h
+              result = stemcell_builder_options.basic
               expect(result['stemcell_hypervisor']).to eq('esxi')
             end
           end
@@ -212,7 +212,7 @@ module Bosh::Dev
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'sets image_vsphere_ovf_ovftool_path' do
-              result = stemcell_builder_options.to_h
+              result = stemcell_builder_options.basic
               expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
@@ -226,7 +226,7 @@ module Bosh::Dev
 
           context 'when STEMCELL_HYPERVISOR is not set' do
             it 'uses "kvm"' do
-              result = stemcell_builder_options.to_h
+              result = stemcell_builder_options.basic
               expect(result['stemcell_hypervisor']).to eq('kvm')
             end
           end
