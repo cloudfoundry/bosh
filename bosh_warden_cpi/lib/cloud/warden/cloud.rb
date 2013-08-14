@@ -9,8 +9,8 @@ module Bosh::WardenCloud
     DEFAULT_FS_TYPE = "ext4"
     DEFAULT_WARDEN_DEV_ROOT = "/warden-cpi-dev"
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
-    UMOUNT_GUARD_RETRIES = 3
-    UMOUNT_GUARD_SLEEP = 1
+    UMOUNT_GUARD_RETRIES = 60
+    UMOUNT_GUARD_SLEEP = 3
 
     attr_accessor :logger
 
