@@ -1,12 +1,12 @@
 require 'spec_helper'
-require 'bosh/dev/build_from_spec'
+require 'bosh/dev/stemcell_builder_command'
 
 module Bosh::Dev
-  describe BuildFromSpec do
+  describe StemcellBuilderCommand do
     let(:env) { {} }
 
-    subject(:build_from_spec) do
-      BuildFromSpec.new(env, spec, options)
+    subject(:stemcell_builder_command) do
+      StemcellBuilderCommand.new(env, spec, options)
     end
 
     describe '#build' do
@@ -26,7 +26,7 @@ module Bosh::Dev
       let(:options) { { 'hello' => 'world' } }
 
       before do
-        BuildFromSpec.any_instance.stub(:puts)
+        StemcellBuilderCommand.any_instance.stub(:puts)
         Bosh::Dev::Shell.stub(:new).and_return(shell)
         Process.stub(pid: pid)
         FileUtils.stub(:cp_r).with([], build_dir, preserve: true) do
@@ -37,13 +37,13 @@ module Bosh::Dev
 
       it 'creates a base directory for stemcell creation' do
         expect {
-          build_from_spec.build
+          stemcell_builder_command.build
         }.to change { Dir.exists?(root_dir) }.from(false).to(true)
       end
 
       it 'creates a build directory for stemcell creation' do
         expect {
-          build_from_spec.build
+          stemcell_builder_command.build
         }.to change { Dir.exists?(build_dir) }.from(false).to(true)
       end
 
@@ -52,12 +52,12 @@ module Bosh::Dev
           FileUtils.mkdir_p etc_dir
           FileUtils.touch File.join(etc_dir, 'settings.bash')
         end
-        build_from_spec.build
+        stemcell_builder_command.build
       end
 
       it 'creates a work directory for stemcell creation chroot' do
         expect {
-          build_from_spec.build
+          stemcell_builder_command.build
         }.to change { Dir.exists?(work_dir) }.from(false).to(true)
       end
 
@@ -66,20 +66,20 @@ module Bosh::Dev
 
         it 'creates a work directory for stemcell creation chroot' do
           expect {
-            build_from_spec.build
+            stemcell_builder_command.build
           }.to change { Dir.exists?('/aight') }.from(false).to(true)
         end
       end
 
       it 'writes a settings file into the build directory' do
-        build_from_spec.build
+        stemcell_builder_command.build
         expect(File.read(settings_file)).to match(/hello=world/)
       end
 
       context 'when the user does not set proxy environment variables' do
         it 'runs the stemcell builder with no environment variables set' do
           shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          build_from_spec.build
+          stemcell_builder_command.build
         end
       end
 
@@ -88,7 +88,7 @@ module Bosh::Dev
 
         it 'maintains current user proxy env vars through the shell sudo call' do
           shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          build_from_spec.build
+          stemcell_builder_command.build
         end
       end
 
@@ -98,7 +98,7 @@ module Bosh::Dev
 
         it 'passes through BUILD_PATH environment variables correctly' do
           shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          build_from_spec.build
+          stemcell_builder_command.build
         end
       end
     end

@@ -4,7 +4,7 @@ require 'bosh_agent/version'
 require 'bosh/dev/shell'
 
 module Bosh::Dev
-  class BuildFromSpec
+  class StemcellBuilderCommand
     def initialize(environment, spec, options)
       @shell = Shell.new
       @environment = environment

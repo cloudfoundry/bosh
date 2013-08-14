@@ -8,7 +8,7 @@ module Bosh::Dev
 
     let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
 
-    let(:build_from_spec) do
+    let(:stemcell_builder_command) do
       instance_double('Bosh::Dev::BuildFromSpec', build: nil)
     end
 
@@ -30,7 +30,7 @@ module Bosh::Dev
     describe '#build_basic_stemcell' do
 
       before do
-        Bosh::Dev::BuildFromSpec.stub(:new).with(env, 'stemcell-aws', { basic: 'options' }).and_return(build_from_spec)
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { basic: 'options' }).and_return(stemcell_builder_command)
       end
 
       it "builds bosh's gems so we have the gem for the agent" do
@@ -40,7 +40,7 @@ module Bosh::Dev
       end
 
       it 'builds a basic stemcell with the appropriate name and options' do
-        build_from_spec.should_receive(:build)
+        stemcell_builder_command.should_receive(:build)
 
         stemcell_rake_methods.build_basic_stemcell
       end
@@ -48,7 +48,7 @@ module Bosh::Dev
 
     describe '#build_micro_stemcell' do
       before do
-        Bosh::Dev::BuildFromSpec.stub(:new).with(env, 'stemcell-aws', { micro: 'options' }).and_return(build_from_spec)
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { micro: 'options' }).and_return(stemcell_builder_command)
       end
 
       it "builds bosh's gems so we have the gem for the agent" do
@@ -58,7 +58,7 @@ module Bosh::Dev
       end
 
       it 'builds a micro stemcell with the appropriate name and options' do
-        build_from_spec.should_receive(:build)
+        stemcell_builder_command.should_receive(:build)
 
         stemcell_rake_methods.build_micro_stemcell
       end

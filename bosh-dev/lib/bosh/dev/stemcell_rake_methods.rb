@@ -1,4 +1,4 @@
-require 'bosh/dev/build_from_spec'
+require 'bosh/dev/stemcell_builder_command'
 require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/gems_generator'
 
@@ -13,15 +13,15 @@ module Bosh::Dev
     def build_basic_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
-      build_from_spec = BuildFromSpec.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.basic)
-      build_from_spec.build
+      stemcell_builder_command = StemcellBuilderCommand.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.basic)
+      stemcell_builder_command.build
     end
 
     def build_micro_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
-      build_from_spec = BuildFromSpec.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.micro)
-      build_from_spec.build
+      stemcell_builder_command = StemcellBuilderCommand.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.micro)
+      stemcell_builder_command.build
     end
 
     private

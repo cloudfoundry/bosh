@@ -27,7 +27,7 @@ module Bosh::Dev
     end
     let(:spec) { 'stemcell-aws' }
     let(:source_root) { File.expand_path('../../../../..', __FILE__) }
-    let(:build_from_spec) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
+    let(:stemcell_builder_command) { instance_double('Bosh::Dev::StemcellBuilderCommand', build: nil) }
 
     subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args, environment: env) }
 
