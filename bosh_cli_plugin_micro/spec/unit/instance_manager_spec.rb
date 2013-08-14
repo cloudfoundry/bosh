@@ -19,6 +19,7 @@ module Bosh
       subject(:deployer) { InstanceManager.create(config) }
 
       before do
+        Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
         Config.stub(cloud: cloud)
         Config.stub(agent: agent)
         Config.stub(agent_properties: {})
@@ -50,7 +51,6 @@ module Bosh
         spec = Psych.load_file(spec_asset("apply_spec.yml"))
         Specification.should_receive(:load_apply_spec).and_return(spec)
 
-        deployer.stub(:run_command)
         deployer.stub(:wait_until_agent_ready)
         deployer.stub(:wait_until_director_ready)
         deployer.stub(:load_apply_spec).and_return(spec)
@@ -111,7 +111,6 @@ module Bosh
         Specification.should_receive(:load_apply_spec).and_return(spec)
 
         disk_cid = "22"
-        deployer.stub(:run_command)
         deployer.stub(:wait_until_agent_ready)
         deployer.stub(:wait_until_director_ready)
         deployer.stub(:load_apply_spec).and_return(spec)
@@ -186,7 +185,6 @@ module Bosh
         spec = Psych.load_file(spec_asset("apply_spec.yml"))
         Specification.should_receive(:load_apply_spec).and_return(spec)
 
-        deployer.stub(:run_command)
         deployer.stub(:wait_until_agent_ready).and_raise(DirectorGatewayError)
         deployer.stub(:load_stemcell_manifest).and_return({})
 
@@ -202,7 +200,6 @@ module Bosh
         spec = Psych.load_file(spec_asset("apply_spec.yml"))
         Specification.should_receive(:load_apply_spec).and_return(spec)
 
-        deployer.stub(:run_command)
         deployer.stub(:wait_until_agent_ready)
         deployer.stub(:wait_until_director_ready).and_raise(DirectorGatewayError)
         deployer.stub(:load_apply_spec).and_return(spec)
