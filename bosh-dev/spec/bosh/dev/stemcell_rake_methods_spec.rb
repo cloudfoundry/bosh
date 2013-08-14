@@ -14,7 +14,9 @@ module Bosh::Dev
     end
 
     let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions', basic: { fake: 'options' })
+      instance_double('Bosh::Dev::StemcellBuilderOptions',
+                      basic: { basic: 'options' },
+                      micro: { micro: 'options' })
     end
 
     let(:args) do
@@ -35,12 +37,9 @@ module Bosh::Dev
 
     describe '#build_basic_stemcell' do
       let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
-      let(:options) do
-        { fake: 'options' }
-      end
 
       before do
-        Bosh::Dev::BuildFromSpec.stub(:new).with(env, spec, options).and_return(build_from_spec)
+        Bosh::Dev::BuildFromSpec.stub(:new).with(env, spec, { basic: 'options' }).and_return(build_from_spec)
         Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
       end
 
@@ -62,22 +61,11 @@ module Bosh::Dev
 
       before do
         Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
+        Bosh::Dev::BuildFromSpec.stub(:new).with(env, spec, { micro: 'options' }).and_return(build_from_spec)
       end
 
       context 'when a release tarball is provided' do
-        let(:options) do
-          {
-            fake: 'options',
-            stemcell_name: 'micro-bosh-stemcell',
-            bosh_micro_enabled: 'yes',
-            bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-            bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
-            bosh_micro_release_tgz_path: 'fake/release.tgz'
-          }
-        end
-
         before do
-          Bosh::Dev::BuildFromSpec.stub(:new).with(env, spec, options).and_return(build_from_spec)
           args.merge!(tarball: 'fake/release.tgz')
         end
 
@@ -91,33 +79,6 @@ module Bosh::Dev
           build_from_spec.should_receive(:build)
 
           stemcell_rake_methods.build_micro_stemcell
-        end
-      end
-    end
-
-    describe '#bosh_micro_options' do
-      context 'when a tarball is provided' do
-        before do
-          args[:tarball] = 'fake/release.tgz'
-        end
-
-        it 'returns a valid hash' do
-          expect(stemcell_rake_methods.micro_bosh_options).to eq({
-                                                                   fake: 'options',
-                                                                   stemcell_name: 'micro-bosh-stemcell',
-                                                                   bosh_micro_enabled: 'yes',
-                                                                   bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-                                                                   bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
-                                                                   bosh_micro_release_tgz_path: 'fake/release.tgz'
-                                                                 })
-        end
-      end
-
-      context 'when a tarball is not provided' do
-        it 'dies' do
-          expect {
-            stemcell_rake_methods.micro_bosh_options
-          }.to raise_error(/key not found: :tarball/)
         end
       end
     end

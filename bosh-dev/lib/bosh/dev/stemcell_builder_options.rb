@@ -11,14 +11,14 @@ module Bosh::Dev
     end
 
     def basic
-      infrastructure = args.fetch(:infrastructure)
+      infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure) )
       stemcell_tgz = args.fetch(:stemcell_tgz)
       stemcell_version = args.fetch(:stemcell_version)
 
       options = {
-        'system_parameters_infrastructure' => infrastructure,
+        'system_parameters_infrastructure' => infrastructure.name,
         'stemcell_name' => environment.fetch('STEMCELL_NAME', 'bosh-stemcell'),
-        'stemcell_infrastructure' => infrastructure,
+        'stemcell_infrastructure' => infrastructure.name,
         'stemcell_tgz' => stemcell_tgz,
         'stemcell_version' => stemcell_version,
         'stemcell_hypervisor' => hypervisor_for(infrastructure),
@@ -32,9 +32,20 @@ module Bosh::Dev
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
       }
 
-      options = check_for_ovftool(options) if infrastructure == 'vsphere'
+      options = check_for_ovftool(options) if infrastructure.name == 'vsphere'
 
       options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
+    end
+
+    def micro
+      options = basic
+      options[:stemcell_name] ||= 'micro-bosh-stemcell'
+      options.merge({
+                      bosh_micro_enabled: 'yes',
+                      bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
+                      bosh_micro_manifest_yml_path: File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
+                      bosh_micro_release_tgz_path: args.fetch(:tarball),
+                    })
     end
 
     private
@@ -44,11 +55,7 @@ module Bosh::Dev
     def hypervisor_for(infrastructure)
       return environment['STEMCELL_HYPERVISOR'] if environment['STEMCELL_HYPERVISOR']
 
-      begin
-        Bosh::Stemcell::Infrastructure.for(infrastructure).hypervisor
-      rescue ArgumentError
-        raise "Unknown infrastructure: #{infrastructure}"
-      end
+      infrastructure.hypervisor
     end
 
     def check_for_ovftool(options)
@@ -59,7 +66,7 @@ module Bosh::Dev
     def default_disk_size_for(infrastructure, args)
       return args[:disk_size] if args[:disk_size]
 
-      Bosh::Stemcell::Infrastructure.for(infrastructure).default_disk_size
+      infrastructure.default_disk_size
     end
 
     def source_root

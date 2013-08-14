@@ -3,7 +3,19 @@ require 'bosh/dev/stemcell_builder_options'
 
 module Bosh::Dev
   describe StemcellBuilderOptions do
-    let(:env) { { 'FAKE' => 'ENV' } }
+    let(:env) do
+      {
+        'OVFTOOL' => 'fake_ovf_tool_path',
+        'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
+        'STEMCELL_NAME' => 'fake_stemcell_name',
+        'UBUNTU_ISO' => 'fake_ubuntu_iso',
+        'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
+        'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
+        'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
+        'RUBY_BIN' => 'fake_ruby_bin',
+      }
+    end
+
     let(:infrastructure) { 'aws' }
     let(:stemcell_tgz) { 'fake-stemcell-filename.tgz' }
     let(:args) do
@@ -41,7 +53,7 @@ module Bosh::Dev
         it 'dies' do
           expect {
             stemcell_builder_options.basic
-          }.to raise_error(RuntimeError, /Unknown infrastructure: fake/)
+          }.to raise_error /invalid infrastructure: fake/
         end
       end
 
@@ -116,16 +128,8 @@ module Bosh::Dev
         end
 
         context 'when STEMCELL_NAME is not set' do
-          let(:env) do
-            {
-              'OVFTOOL' => 'fake_ovf_tool_path',
-              'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
-              'UBUNTU_ISO' => 'fake_ubuntu_iso',
-              'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
-              'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
-              'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
-              'RUBY_BIN' => 'fake_ruby_bin',
-            }
+          before do
+            env.delete('STEMCELL_NAME')
           end
 
           it "defaults to 'bosh-stemcell'" do
@@ -136,16 +140,8 @@ module Bosh::Dev
         end
 
         context 'when RUBY_BIN is not set' do
-          let(:env) do
-            {
-              'OVFTOOL' => 'fake_ovf_tool_path',
-              'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
-              'STEMCELL_NAME' => 'fake_stemcell_name',
-              'UBUNTU_ISO' => 'fake_ubuntu_iso',
-              'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
-              'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
-              'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
-            }
+          before do
+            env.delete('RUBY_BIN')
           end
 
           before do
@@ -187,6 +183,10 @@ module Bosh::Dev
           it_behaves_like 'setting default stemcells environment values'
 
           context 'when STEMCELL_HYPERVISOR is not set' do
+            before do
+              env.delete('STEMCELL_HYPERVISOR')
+            end
+
             it 'uses "xen"' do
               result = stemcell_builder_options.basic
               expect(result['stemcell_hypervisor']).to eq('xen')
@@ -225,11 +225,43 @@ module Bosh::Dev
           it_behaves_like 'setting default stemcells environment values'
 
           context 'when STEMCELL_HYPERVISOR is not set' do
+            before do
+              env.delete('STEMCELL_HYPERVISOR')
+            end
+
             it 'uses "kvm"' do
               result = stemcell_builder_options.basic
               expect(result['stemcell_hypervisor']).to eq('kvm')
             end
           end
+        end
+      end
+    end
+
+    describe '#micro' do
+      context 'when a tarball is provided' do
+        before do
+          args[:tarball] = 'fake/release.tgz'
+          stemcell_builder_options.stub(:basic).and_return({ basic: 'options' })
+        end
+
+        it 'returns a valid hash' do
+          expect(stemcell_builder_options.micro).to eq({
+                                                         basic: 'options',
+                                                         stemcell_name: 'micro-bosh-stemcell',
+                                                         bosh_micro_enabled: 'yes',
+                                                         bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
+                                                         bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
+                                                         bosh_micro_release_tgz_path: 'fake/release.tgz'
+                                                       })
+        end
+      end
+
+      context 'when a tarball is not provided' do
+        it 'dies' do
+          expect {
+            stemcell_builder_options.micro
+          }.to raise_error(/key not found: :tarball/)
         end
       end
     end
