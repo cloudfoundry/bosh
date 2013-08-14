@@ -13,36 +13,37 @@ module Bosh::Dev
     def build_basic_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
-      stemcell_builder_options = StemcellBuilderOptions.new(args: args, environment: environment)
-      options = stemcell_builder_options.to_h
-      build_from_spec = BuildFromSpec.new(environment, "stemcell-#{args[:infrastructure]}", options)
+      build_from_spec = BuildFromSpec.new(environment, "stemcell-#{args[:infrastructure]}", basic_stemcell_options)
       build_from_spec.build
     end
+
 
     def build_micro_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
-      stemcell_builder_options = StemcellBuilderOptions.new(args: args, environment: environment)
-      options = stemcell_builder_options.to_h
-      options[:stemcell_name] ||= 'micro-bosh-stemcell'
-      options = options.merge(bosh_micro_options(args[:infrastructure], args.fetch(:tarball)))
-
-      build_from_spec = BuildFromSpec.new(environment, "stemcell-#{args[:infrastructure]}", options)
+      build_from_spec = BuildFromSpec.new(environment, "stemcell-#{args[:infrastructure]}", micro_bosh_options)
       build_from_spec.build
     end
 
-    def bosh_micro_options(infrastructure, tarball)
-      {
-        bosh_micro_enabled: 'yes',
-        bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-        bosh_micro_manifest_yml_path: File.join(source_root, "release/micro/#{infrastructure}.yml"),
-        bosh_micro_release_tgz_path: tarball,
-      }
+    def micro_bosh_options
+      options = basic_stemcell_options
+      options[:stemcell_name] ||= 'micro-bosh-stemcell'
+      options.merge({
+                      bosh_micro_enabled: 'yes',
+                      bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
+                      bosh_micro_manifest_yml_path: File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
+                      bosh_micro_release_tgz_path: args.fetch(:tarball),
+                    })
     end
 
     private
 
     attr_reader :environment, :args
+
+    def basic_stemcell_options
+      stemcell_builder_options = StemcellBuilderOptions.new(args: args, environment: environment)
+      stemcell_builder_options.to_h
+    end
 
     def source_root
       File.expand_path('../../../../..', __FILE__)

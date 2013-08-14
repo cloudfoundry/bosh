@@ -96,15 +96,29 @@ module Bosh::Dev
     end
 
     describe '#bosh_micro_options' do
-      let(:manifest) { 'fake_manifest' }
-      let(:tarball) { 'fake_tarball' }
-      let(:bosh_micro_options) { stemcell_rake_methods.bosh_micro_options('aws', tarball) }
+      context 'when a tarball is provided' do
+        before do
+          args[:tarball] = 'fake/release.tgz'
+        end
 
-      it 'returns a valid hash' do
-        expect(bosh_micro_options[:bosh_micro_enabled]).to eq('yes')
-        expect(bosh_micro_options[:bosh_micro_package_compiler_path]).to eq(File.join(source_root, '/package_compiler'))
-        expect(bosh_micro_options[:bosh_micro_manifest_yml_path]).to eq(File.join(source_root, 'release/micro/aws.yml'))
-        expect(bosh_micro_options[:bosh_micro_release_tgz_path]).to eq('fake_tarball')
+        it 'returns a valid hash' do
+          expect(stemcell_rake_methods.micro_bosh_options).to eq({
+                                                                   fake: 'options',
+                                                                   stemcell_name: 'micro-bosh-stemcell',
+                                                                   bosh_micro_enabled: 'yes',
+                                                                   bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
+                                                                   bosh_micro_manifest_yml_path: File.join(source_root, 'release/micro/aws.yml'),
+                                                                   bosh_micro_release_tgz_path: 'fake/release.tgz'
+                                                                 })
+        end
+      end
+
+      context 'when a tarball is not provided' do
+        it 'dies' do
+          expect {
+            stemcell_rake_methods.micro_bosh_options
+          }.to raise_error(/key not found: :tarball/)
+        end
       end
     end
   end
