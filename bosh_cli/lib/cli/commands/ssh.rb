@@ -16,7 +16,13 @@ module Bosh::Cli::Command
     option '--default_password PASSWORD',
            'Use default ssh password (NOT RECOMMENDED)'
     def shell(*args)
-      job, index, command = parse_args(args)
+      if args.size > 0
+        job, index, command = parse_args(args)
+      else
+        job, index = user_select_job_index
+        command = ""
+      end
+
       job_must_exist_in_deployment(job)
       index = valid_index_for(job, index, integer_index: true)
 
