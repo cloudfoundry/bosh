@@ -251,5 +251,34 @@ module Bosh::Dev
         end
       end
     end
+
+    describe '#micro_with_basic_stemcell_name' do
+      context 'when a tarball is provided' do
+        before do
+          args[:tarball] = 'fake/release.tgz'
+          stemcell_builder_options.stub(:basic).and_return({ 'basic' => 'options' })
+        end
+
+        it 'returns a valid hash' do
+          expect(stemcell_builder_options.micro_with_basic_stemcell_name).to eq({
+                                                                                  'basic' => 'options',
+                                                                                  'stemcell_name' => 'bosh-stemcell',
+                                                                                  'bosh_micro_enabled' => 'yes',
+                                                                                  'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
+                                                                                  'bosh_micro_manifest_yml_path' => File.join(source_root, 'release/micro/aws.yml'),
+                                                                                  'bosh_micro_release_tgz_path' => 'fake/release.tgz'
+                                                                                })
+        end
+      end
+
+      context 'when a tarball is not provided' do
+        it 'dies' do
+          expect {
+            stemcell_builder_options.micro_with_basic_stemcell_name
+          }.to raise_error(/key not found: :tarball/)
+        end
+      end
+    end
+
   end
 end

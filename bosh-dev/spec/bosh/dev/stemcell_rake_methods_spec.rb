@@ -14,7 +14,7 @@ module Bosh::Dev
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Dev::StemcellBuilderOptions',
-                      basic: { basic: 'options' },
+                      micro_with_basic_stemcell_name: { basic: 'options' },
                       micro: { micro: 'options' })
     end
 

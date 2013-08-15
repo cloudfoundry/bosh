@@ -10,6 +10,10 @@ module Bosh::Dev
       @args = options.fetch(:args)
     end
 
+    def micro_with_basic_stemcell_name
+      micro.merge({ 'stemcell_name' => 'bosh-stemcell' })
+    end
+
     def basic
       infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
       stemcell_tgz = args.fetch(:stemcell_tgz)
