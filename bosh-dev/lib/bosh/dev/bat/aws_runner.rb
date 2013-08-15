@@ -1,7 +1,7 @@
 require 'resolv'
 require 'bosh/dev/bat'
 require 'bosh/dev/bat_helper'
-require 'bosh/dev/bat/bosh_cli_session'
+require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/bat/stemcell_archive'
 require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 require 'bosh/dev/aws/bat_deployment_manifest'
@@ -11,7 +11,7 @@ module Bosh::Dev::Bat
     def initialize
       @env = ENV.to_hash
       @bat_helper = Bosh::Dev::BatHelper.new('aws')
-      @bosh_cli_session = BoshCliSession.new
+      @bosh_cli_session = Bosh::Dev::BoshCliSession.new
       @stemcell_archive = StemcellArchive.new(bat_helper.bosh_stemcell_path)
     end
 

@@ -5,7 +5,7 @@ module Bosh::Dev::Bat
   describe AwsRunner do
     include FakeFS::SpecHelpers
 
-    let(:bosh_cli_session) { instance_double('Bosh::Dev::Bat::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
+    let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
     let(:stemcell_archive) { instance_double('Bosh::Dev::Bat::StemcellArchive', version: '6') }
 
     let(:bat_helper) do
@@ -25,7 +25,7 @@ module Bosh::Dev::Bat
       FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
       Bosh::Dev::BatHelper.stub(:new).with('aws').and_return(bat_helper)
-      BoshCliSession.stub(new: bosh_cli_session)
+      Bosh::Dev::BoshCliSession.stub(new: bosh_cli_session)
       StemcellArchive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
 
       Bosh::Dev::Aws::MicroBoshDeploymentManifest.stub(new: microbosh_deployment_manifest)
