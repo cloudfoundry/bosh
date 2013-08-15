@@ -38,14 +38,13 @@ module Bosh::Dev
     end
 
     def micro
-      options = basic
-      options[:stemcell_name] ||= 'micro-bosh-stemcell'
-      options.merge({
-                      bosh_micro_enabled: 'yes',
-                      bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-                      bosh_micro_manifest_yml_path: File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
-                      bosh_micro_release_tgz_path: args.fetch(:tarball),
-                    })
+      basic.merge({
+                    'stemcell_name' => 'micro-bosh-stemcell',
+                    'bosh_micro_enabled' => 'yes',
+                    'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
+                    'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
+                    'bosh_micro_release_tgz_path' => args.fetch(:tarball)
+                  })
     end
 
     private
