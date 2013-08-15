@@ -17,7 +17,7 @@ case $1 in
     echo $$ > $PIDFILE
 
     chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/registry/bin/migrate \
+      /var/vcap/packages/registry/bin/bosh_registry_migrate \
       -c /var/vcap/jobs/registry/config/registry.yml \
       >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
 

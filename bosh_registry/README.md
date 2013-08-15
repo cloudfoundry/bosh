@@ -5,7 +5,7 @@ For online documentation see: http://rubydoc.info/gems/bosh_registry/
 
 ## Usage
 
-    bin/migrate [<options>]
+    bin/bosh_registry_migrate [<options>]
         -c, --config FILE  Bosh Registry configuration file
 
     bin/bosh_registry [<options>]

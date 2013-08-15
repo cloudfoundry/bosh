@@ -40,7 +40,7 @@ case $1 in
     COMPONENT=director erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/director.yml
 
     chpst -u $RUNAS:$RUNAS \
-          /var/vcap/packages/director/bin/migrate \
+          /var/vcap/packages/director/bin/bosh_director_migrate \
           -c /var/vcap/jobs/director/config/director.yml \
           >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
 
