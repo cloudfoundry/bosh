@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/* db/*`.split("\n") + %w(README.md)
   s.require_path = 'lib'
   s.bindir       = 'bin'
-  s.executables  = %w(bosh_registry migrate)
+  s.executables  = %w(bosh_registry bosh_registry_migrate)
 
   s.add_dependency 'sequel', '~>3.43.0'
   s.add_dependency 'sinatra', '~>1.4.2'
