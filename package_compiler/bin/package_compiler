@@ -38,17 +38,29 @@ case options["command"]
 when "apply"
   usage "apply requires 2 arguments" unless ARGV.size == 2
   options["apply_spec"] = ARGV.shift
-  options["agent_uri"] = ARGV.shift
+  full_agent_uri = ARGV.shift
 when "compile"
   usage "compile requires 4 arguments" unless ARGV.size == 4
   options["manifest"] = ARGV.shift
   options["release"] = ARGV.shift
   options["blobstore_options"] = {"blobstore_path" => ARGV.shift}
-  options["agent_uri"] = ARGV.shift
+  full_agent_uri = ARGV.shift
 when nil
   usage "no command given"
 else
   usage "unknown command: #{options["command"]}"
 end
+
+# Extract optional user:password from URI
+mbus = URI.parse(full_agent_uri)
+if mbus.user
+  options["user"] = mbus.user
+  mbus.user = nil
+end
+if mbus.user
+  options["password"] = mbus.password
+  mbus.password = nil
+end
+options["agent_uri"] = mbus.to_s
 
 Bosh::PackageCompiler::Runner.start(options)
