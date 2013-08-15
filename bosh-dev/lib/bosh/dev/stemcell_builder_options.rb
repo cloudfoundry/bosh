@@ -17,7 +17,7 @@ module Bosh::Dev
 
       options = {
         'system_parameters_infrastructure' => infrastructure.name,
-        'stemcell_name' => environment.fetch('STEMCELL_NAME', 'bosh-stemcell'),
+        'stemcell_name' => 'bosh-stemcell',
         'stemcell_infrastructure' => infrastructure.name,
         'stemcell_tgz' => stemcell_tgz,
         'stemcell_version' => stemcell_version,
