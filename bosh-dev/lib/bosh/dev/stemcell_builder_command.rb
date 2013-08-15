@@ -1,6 +1,5 @@
 require 'fileutils'
 
-require 'bosh_agent/version'
 require 'bosh/dev/shell'
 
 module Bosh::Dev
@@ -23,7 +22,7 @@ module Bosh::Dev
       stemcell_build_dir = File.join(source_root, 'stemcell_builder')
       FileUtils.cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, preserve: true
 
-      work_path = environment['WORK_PATH'] || File.join(root, 'work')
+      work_path = environment.fetch('WORK_PATH')
       FileUtils.mkdir_p work_path
 
       # Apply options
@@ -64,7 +63,7 @@ module Bosh::Dev
     end
 
     def root
-      @root ||= environment['BUILD_PATH'] || "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{Process.pid}"
+      @root ||= environment.fetch('BUILD_PATH')
     end
   end
 end
