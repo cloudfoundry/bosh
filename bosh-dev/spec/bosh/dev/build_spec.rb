@@ -26,11 +26,10 @@ module Bosh::Dev
       fog_storage.directories.create(key: 'bosh-ci-pipeline')
 
       ENV.stub(:to_hash).and_return(
-          'BUILD_NUMBER' => 'current',
-          'CANDIDATE_BUILD_NUMBER' => 'candidate',
-          'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
-          'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id,
-          'JOB_NAME' => job_name
+        'CANDIDATE_BUILD_NUMBER' => 'candidate',
+        'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
+        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id,
+        'JOB_NAME' => job_name
       )
     end
 
@@ -43,19 +42,11 @@ module Bosh::Dev
         Build.candidate
       end
 
-      context 'when running the "publish_candidate_gems" job' do
-        let(:job_name) { 'publish_candidate_gems' }
-
-        its(:number) { should eq 'current' }
+      before do
+        ENV.stub(:fetch).with('JOB_NAME').and_return('something_that_needs_candidates')
       end
 
-      context 'when running the jobs downstream to "publish_candidate_gems"' do
-        before do
-          ENV.stub(:fetch).with('JOB_NAME').and_return('something_that_needs_candidates')
-        end
-
-        its(:number) { should eq 'candidate' }
-      end
+      its(:number) { should eq 'candidate' }
     end
 
     its(:s3_release_url) { should eq(File.join('s3://bosh-ci-pipeline/123/release/bosh-123.tgz')) }
@@ -129,7 +120,7 @@ module Bosh::Dev
 
       it 'downloads the release' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with("s3cmd --verbose -f get #{subject.s3_release_url} release/bosh-#{subject.number}.tgz").and_return(true)
+          with("s3cmd --verbose -f get #{subject.s3_release_url} release/bosh-#{subject.number}.tgz").and_return(true)
 
         subject.download_release
       end
@@ -157,7 +148,7 @@ module Bosh::Dev
         subject.should_receive(:sync_buckets)
         subject.should_receive(:mark_as_latest)
         subject.should_receive(:update_light_micro_bosh_ami_pointer_file).
-            with(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
+          with(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
 
         subject.promote_artifacts(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
       end
@@ -170,28 +161,28 @@ module Bosh::Dev
 
       it 'syncs the pipeline gems' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
 
         subject.sync_buckets
       end
 
       it 'syncs the releases' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
 
       it 'syncs the bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
 
       it 'syncs the micro bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.sync_buckets
       end
@@ -216,14 +207,14 @@ module Bosh::Dev
 
       it 'downloads the aws micro-bosh-stemcell for the current build' do
         subject.should_receive(:download_stemcell).
-            with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+          with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
       end
 
       it 'initializes a Stemcell with the downloaded stemcell filename' do
         Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-            with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(archive_filename)
+          with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(archive_filename)
 
         Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
@@ -236,16 +227,16 @@ module Bosh::Dev
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
 
         expect(fog_storage.
-                   directories.get('bosh-jenkins-artifacts').
-                   files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
+                 directories.get('bosh-jenkins-artifacts').
+                 files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
       end
 
       it 'is publicly reachable' do
         subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
 
         expect(fog_storage.
-                   directories.get('bosh-jenkins-artifacts').
-                   files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
+                 directories.get('bosh-jenkins-artifacts').
+                 files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
       end
     end
 
@@ -340,10 +331,10 @@ module Bosh::Dev
 
         it 'returns the name of the downloaded file' do
           options = {
-              infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
-              name: 'bosh-stemcell',
-              light: true,
-              download_adapter: download_adapter
+            infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
+            name: 'bosh-stemcell',
+            light: true,
+            download_adapter: download_adapter
           }
 
           download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
@@ -387,6 +378,5 @@ module Bosh::Dev
         subject.mark_as_latest(upload_adapter: upload_adapter)
       end
     end
-
   end
 end

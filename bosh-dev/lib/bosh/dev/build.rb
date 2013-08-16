@@ -12,12 +12,7 @@ module Bosh::Dev
 
     def self.candidate
       env_hash = ENV.to_hash
-
-      if env_hash.fetch('JOB_NAME') == 'publish_candidate_gems'
-        new(env_hash.fetch('BUILD_NUMBER'))
-      else
-        new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
-      end
+      new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
     end
 
     def initialize(number)
