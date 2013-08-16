@@ -99,8 +99,9 @@ module Bosh::Dev
       File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', infrastructure.light?))
     end
 
-    def micro_bosh_stemcell_path(infrastructure, download_dir)
-      File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
+    def mark_as_latest(options = {})
+      upload_adapter = options.fetch(:upload_adapter) { UploadAdapter.new }
+      upload_adapter.upload(bucket_name: 'bosh-jenkins-artifacts', key: 'latest', body: number.to_s, public: true)
     end
 
     private

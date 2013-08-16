@@ -334,11 +334,13 @@ module Bosh::Dev
       end
     end
 
-    describe '#micro_bosh_stemcell_path' do
-      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Vsphere.new }
+    describe '#mark_as_latest' do
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
 
-      it 'works' do
-        expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'))
+      it "updates the latest release file with this build's number" do
+        upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-jenkins-artifacts', key: 'latest', body: '123', public: true)
+
+        subject.mark_as_latest(upload_adapter: upload_adapter)
       end
     end
   end

@@ -57,7 +57,6 @@ module Bosh::Dev
       end
 
       it 'downloads stemcells for the specified infrastructure' do
-        build.should_receive(:download_stemcell).with(infrastructure: subject.infrastructure, name: 'micro-bosh-stemcell', light: light, output_directory: '/tmp/ci-artifacts/FAKE_INFRASTRUCTURE_NAME/deployments')
         build.should_receive(:download_stemcell).with(infrastructure: subject.infrastructure, name: 'bosh-stemcell', light: light, output_directory: '/tmp/ci-artifacts/FAKE_INFRASTRUCTURE_NAME/deployments')
 
         subject.run_rake
@@ -97,20 +96,6 @@ module Bosh::Dev
 
       it 'delegates to the build' do
         expect(subject.bosh_stemcell_path).to eq('fake bosh stemcell path')
-      end
-    end
-
-    describe '#micro_bosh_stemcell_path' do
-      before do
-        build.stub(:micro_bosh_stemcell_path) do |infrastructure, artifacts_dir|
-          expect(infrastructure.name).to eq(infrastructure_name)
-          expect(artifacts_dir).to eq(subject.artifacts_dir)
-          'fake micro bosh stemcell path'
-        end
-      end
-
-      it 'delegates to the build' do
-        expect(subject.micro_bosh_stemcell_path).to eq('fake micro bosh stemcell path')
       end
     end
   end

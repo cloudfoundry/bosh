@@ -13,7 +13,6 @@ module Bosh::Dev::Bat
                       artifacts_dir: '/AwsRunner_fake_artifacts_dir',
                       micro_bosh_deployment_dir: '/AwsRunner_fake_artifacts_dir/fake_micro_bosh_deployment_dir',
                       micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
-                      micro_bosh_stemcell_path: 'fake_micro_bosh_stemcell_path',
                       bosh_stemcell_path: 'fake_bosh_stemcell_path')
     end
 
@@ -74,7 +73,7 @@ module Bosh::Dev::Bat
       end
 
       it 'deploys the micro' do
-        bosh_cli_session.should_receive(:run_bosh).with('micro deploy fake_micro_bosh_stemcell_path')
+        bosh_cli_session.should_receive(:run_bosh).with('micro deploy fake_bosh_stemcell_path')
         subject.run_bats
       end
 

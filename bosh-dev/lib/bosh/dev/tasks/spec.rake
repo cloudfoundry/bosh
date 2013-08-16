@@ -146,7 +146,7 @@ namespace :spec do
             micro_deployment_manifest.write
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
-          run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
+          run_bosh "micro deploy #{bat_helper.bosh_stemcell_path}"
           run_bosh 'login admin admin'
 
           run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true

@@ -39,7 +39,7 @@ module Bosh::Dev::Bat
 
       Dir.chdir(bat_helper.artifacts_dir) do
         bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
-        bosh_cli_session.run_bosh "micro deploy #{bat_helper.micro_bosh_stemcell_path}"
+        bosh_cli_session.run_bosh "micro deploy #{bat_helper.bosh_stemcell_path}"
         bosh_cli_session.run_bosh 'login admin admin'
 
         bosh_cli_session.run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true

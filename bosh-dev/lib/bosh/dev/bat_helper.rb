@@ -14,10 +14,6 @@ module Bosh::Dev
       build.bosh_stemcell_path(infrastructure, artifacts_dir)
     end
 
-    def micro_bosh_stemcell_path
-      build.micro_bosh_stemcell_path(infrastructure, artifacts_dir)
-    end
-
     def artifacts_dir
       File.join('/tmp', 'ci-artifacts', infrastructure.name, 'deployments')
     end
@@ -59,7 +55,6 @@ module Bosh::Dev
     end
 
     def fetch_stemcells
-      build.download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: infrastructure.light?, output_directory: artifacts_dir)
       build.download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?, output_directory: artifacts_dir)
     end
 
