@@ -156,7 +156,6 @@ module Bosh::Dev
         "s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems",
         "s3cmd --verbose sync #{File.join(s3_url, 'release')} s3://bosh-jenkins-artifacts",
         "s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts",
-        "s3cmd --verbose sync #{File.join(s3_url, 'micro-bosh-stemcell')} s3://bosh-jenkins-artifacts"
       ]
     end
   end

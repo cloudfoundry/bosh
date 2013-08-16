@@ -166,13 +166,6 @@ module Bosh::Dev
         subject.promote_artifacts
       end
 
-      it 'syncs the micro bosh stemcells' do
-        Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
-
-        subject.promote_artifacts
-      end
-
       describe 'update light micro bosh ami pointer file' do
         let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
         let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
