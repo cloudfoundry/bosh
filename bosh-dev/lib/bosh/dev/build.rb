@@ -5,7 +5,6 @@ require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
-require 'bosh/dev/pipeline_storage'
 
 module Bosh::Dev
   class Build
@@ -125,11 +124,11 @@ module Bosh::Dev
 
     def create(options)
       bucket = 'bosh-ci-pipeline'
-      uploaded_file = Bosh::Dev::PipelineStorage.new.upload(
-        bucket,
-        File.join(number.to_s, options.fetch(:key)),
-        options.fetch(:body),
-        options.fetch(:public)
+      uploaded_file = Bosh::Dev::UploadAdapter.new.upload(
+          bucket_name: bucket,
+          key: File.join(number.to_s, options.fetch(:key)),
+          body: options.fetch(:body),
+          public: options.fetch(:public)
       )
       logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{options.fetch(:key)}"}")
     end
