@@ -114,31 +114,28 @@ module Bosh::Dev
     end
 
     describe '#download_release' do
+      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
       before do
-        Rake::FileUtilsExt.stub(sh: true)
+        Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
       end
 
-      it 'downloads the release' do
-        Rake::FileUtilsExt.should_receive(:sh).
-          with("s3cmd --verbose -f get #{subject.s3_release_url} release/bosh-#{subject.number}.tgz").and_return(true)
+      context 'when remote file does not exist' do
+        it 'raises' do
+          download_adapter.stub(:download).and_raise 'hell'
 
-        subject.download_release
-      end
-
-      it 'returns the path of the downloaded release' do
-        expect(subject.download_release).to eq("release/bosh-#{subject.number}.tgz")
-      end
-
-      context 'when download fails' do
-        it 'raises an error' do
-          Rake::FileUtilsExt.stub(sh: false)
-
-          expect {
-            subject.download_release
-          }.to raise_error(RuntimeError, "Command failed: s3cmd --verbose -f get #{subject.s3_release_url} release/bosh-#{subject.number}.tgz")
+          expect { build.download_release }.to raise_error 'hell'
         end
       end
 
+      it 'downloads the specified release from the pipeline bucket' do
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), '/release/bosh-123.tgz')
+        build.download_release
+      end
+
+      it 'returns the relative path of the downloaded release' do
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), '/release/bosh-123.tgz')
+        expect(build.download_release).to eq 'release/bosh-123.tgz'
+      end
     end
 
     its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/123/gems/') }

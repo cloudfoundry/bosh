@@ -47,9 +47,14 @@ module Bosh::Dev
       end
     end
 
-    def download_release
-      command = "s3cmd --verbose -f get #{s3_release_url} #{release_path}"
-      Rake::FileUtilsExt.sh(command) || raise("Command failed: #{command}")
+    def download_release(options = {})
+      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
+      output_directory = options.fetch(:output_directory) { Dir.pwd }
+
+      remote_dir = File.join(number.to_s, 'release')
+      filename = release_file
+
+      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, release_path))
 
       release_path
     end
@@ -148,7 +153,11 @@ module Bosh::Dev
     end
 
     def release_path
-      "release/bosh-#{number}.tgz"
+      "release/#{release_file}"
+    end
+
+    def release_file
+      "bosh-#{number}.tgz"
     end
 
     def s3_url
