@@ -24,6 +24,7 @@ module Bosh::Dev
     before do
       Fog::Mock.reset
       fog_storage.directories.create(key: 'bosh-ci-pipeline')
+      fog_storage.directories.create(key: 'bosh-jenkins-artifacts')
 
       ENV.stub(:to_hash).and_return(
         'CANDIDATE_BUILD_NUMBER' => 'candidate',
@@ -135,97 +136,90 @@ module Bosh::Dev
     its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/123/gems/') }
 
     describe '#promote_artifacts' do
-      it 'syncs buckets and updates AWS aim text reference' do
-        subject.should_receive(:sync_buckets)
-        subject.should_receive(:update_light_micro_bosh_ami_pointer_file)
+      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', ami_id: 'ami-ID') }
 
-        subject.promote_artifacts(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
-      end
-    end
-
-    describe '#sync_buckets' do
       before do
         Rake::FileUtilsExt.stub(:sh)
+        DownloadAdapter.stub(new: download_adapter)
+        Bosh::Stemcell::Stemcell.stub(new: stemcell)
       end
 
       it 'syncs the pipeline gems' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
+            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
 
-        subject.sync_buckets
+        subject.promote_artifacts
       end
 
       it 'syncs the releases' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
+            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
 
-        subject.sync_buckets
+        subject.promote_artifacts
       end
 
       it 'syncs the bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
+            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
 
-        subject.sync_buckets
+        subject.promote_artifacts
       end
 
       it 'syncs the micro bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
+            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/micro-bosh-stemcell s3://bosh-jenkins-artifacts')
 
-        subject.sync_buckets
-      end
-    end
-
-    describe '#update_light_micro_bosh_ami_pointer_file' do
-      let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
-      let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
-      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
-      let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
-
-      before do
-        Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
-
-        Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
-
-        fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
-        Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
-
-        stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/micro-bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
+        subject.promote_artifacts
       end
 
-      it 'downloads the aws micro-bosh-stemcell for the current build' do
-        subject.should_receive(:download_stemcell).
-          with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+      describe 'update light micro bosh ami pointer file' do
+        let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
+        let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+        let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
+        let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
+        let(:bucket_files) { fog_storage.directories.get('bosh-jenkins-artifacts').files }
 
-        subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
-      end
+        before do
+          Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
 
-      it 'initializes a Stemcell with the downloaded stemcell filename' do
-        Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-          with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(archive_filename)
+          Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
 
-        Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
+          fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
+          Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
 
-        subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
-      end
+          stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/micro-bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
+        end
 
-      it 'updates the S3 object with the AMI ID from the stemcell.MF' do
-        fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
+        it 'downloads the aws micro-bosh-stemcell for the current build' do
+          subject.should_receive(:download_stemcell).
+              with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
 
-        subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
+          subject.promote_artifacts
+        end
 
-        expect(fog_storage.
-                 directories.get('bosh-jenkins-artifacts').
-                 files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
-      end
+        it 'initializes a Stemcell with the downloaded stemcell filename' do
+          Bosh::Stemcell::ArchiveFilename.should_receive(:new).
+              with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(archive_filename)
 
-      it 'is publicly reachable' do
-        subject.update_light_micro_bosh_ami_pointer_file(access_key_id: access_key_id, secret_access_key: secret_access_key)
+          Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
-        expect(fog_storage.
-                 directories.get('bosh-jenkins-artifacts').
-                 files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
+          subject.promote_artifacts
+        end
+
+        it 'updates the S3 object with the AMI ID from the stemcell.MF' do
+          fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
+
+          subject.promote_artifacts
+
+          expect(bucket_files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
+        end
+
+        it 'is publicly reachable' do
+          subject.promote_artifacts
+
+          expect(bucket_files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
+        end
       end
     end
 

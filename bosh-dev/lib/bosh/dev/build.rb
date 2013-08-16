@@ -85,23 +85,9 @@ module Bosh::Dev
       "https://s3.amazonaws.com/bosh-ci-pipeline/#{number}/gems/"
     end
 
-    def promote_artifacts(aws_credentials)
+    def promote_artifacts
       sync_buckets
-      update_light_micro_bosh_ami_pointer_file(aws_credentials)
-    end
-
-    def sync_buckets
-      bucket_sync_commands.peach do |cmd|
-        Rake::FileUtilsExt.sh(cmd)
-      end
-    end
-
-    def update_light_micro_bosh_ami_pointer_file(aws_credentials)
-      connection = fog_storage(aws_credentials[:access_key_id], aws_credentials[:secret_access_key])
-      directory = connection.directories.create(key: 'bosh-jenkins-artifacts')
-      directory.files.create(key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
-                             body: light_stemcell.ami_id,
-                             acl: 'public-read')
+      update_light_micro_bosh_ami_pointer_file
     end
 
     def fog_storage(access_key_id, secret_access_key)
@@ -121,6 +107,21 @@ module Bosh::Dev
     private
 
     attr_reader :logger
+
+    def sync_buckets
+      bucket_sync_commands.peach do |cmd|
+        Rake::FileUtilsExt.sh(cmd)
+      end
+    end
+
+    def update_light_micro_bosh_ami_pointer_file
+      Bosh::Dev::UploadAdapter.new.upload(
+          bucket_name: 'bosh-jenkins-artifacts',
+          key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
+          body: light_stemcell.ami_id,
+          public: true
+      )
+    end
 
     def create(options)
       bucket = 'bosh-ci-pipeline'
