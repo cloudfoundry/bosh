@@ -95,12 +95,6 @@ module Bosh::Dev
       update_micro_bosh_ami_pointer_file
     end
 
-    def fog_storage(access_key_id, secret_access_key)
-      Fog::Storage.new(provider: 'AWS',
-                       aws_access_key_id: access_key_id,
-                       aws_secret_access_key: secret_access_key)
-    end
-
     def bosh_stemcell_path(infrastructure, download_dir)
       File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', infrastructure.light?))
     end

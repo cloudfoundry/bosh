@@ -109,7 +109,7 @@ module Bosh::Dev
 
     describe '#download_release' do
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
-      
+
       before do
         Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
       end
@@ -220,16 +220,6 @@ module Bosh::Dev
 
           expect(bucket_files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
         end
-      end
-    end
-
-    describe '#fog_storage' do
-      it 'configures Fog::Storage correctly' do
-        Fog::Storage.should_receive(:new).with(provider: 'AWS',
-                                               aws_access_key_id: 'FAKE_ACCESS_KEY_ID',
-                                               aws_secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
-
-        subject.fog_storage('FAKE_ACCESS_KEY_ID', 'FAKE_SECRET_ACCESS_KEY')
       end
     end
 
