@@ -107,7 +107,6 @@ describe Bosh::Cli::Command::Ssh do
           command.should_receive(:setup_interactive_shell).with('dea', 0)
           command.shell
         end
-
       end
 
       context 'when there are many instances with that job name in the deployment' do
@@ -132,11 +131,10 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should prompt for an instance if job name not given' do
-          command.should_receive(:choose).and_return(["dea", 3])
+          command.should_receive(:choose).and_return(['dea', 3])
           command.should_receive(:setup_interactive_shell).with('dea', 3)
           command.shell
         end
-
       end
     end
 

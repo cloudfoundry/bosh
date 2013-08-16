@@ -242,26 +242,18 @@ module Bosh::Cli
       err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
     end
 
-    # Allow user to view the list of VMs (JOB/INDEX) and choose one
-    # If deployment only has a single VM, then automatically returns it
-    #
-    # returns [job, index] of a selected VM
-    def user_select_job_index
-      jobs = prepare_deployment_manifest.fetch("jobs")
-      if jobs.size == 1 && jobs.first.fetch("instances") == 1
-        [jobs.first.fetch("name"), 0]
-      else
-        choose do |menu|
-          menu.prompt = "Choose an instance: "
-          jobs.each do |job|
-            job_name = job.fetch("name")
-            instances = job.fetch("instances")
-            1.upto(instances.to_i) do |n|
-              index = n - 1
-              menu.choice("#{job_name}/#{index}") do
-                return [ job_name, index ]
-              end
-            end
+    def prompt_for_job_and_index
+      jobs = prepare_deployment_manifest.fetch('jobs')
+
+      return [jobs.first.fetch('name'), 0] if single_job_index_option?(jobs)
+
+      choose do |menu|
+        menu.prompt = 'Choose an instance: '
+        jobs.each do |job|
+          job_name = job.fetch('name')
+
+          0.upto(job.fetch('instances').to_i) do |index|
+            menu.choice("#{job_name}/#{index}") { [job_name, index] }
           end
         end
       end
@@ -272,6 +264,10 @@ module Bosh::Cli
     end
 
     private
+
+    def single_job_index_option?(jobs)
+      jobs.size == 1 && jobs.first.fetch('instances') == 1
+    end
 
     def find_job(job_name)
       jobs = prepare_deployment_manifest.fetch('jobs')
