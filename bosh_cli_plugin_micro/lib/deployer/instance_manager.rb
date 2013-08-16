@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'open3'
-require 'deployer/logger_renderer'
 
 module Bosh::Deployer
 
@@ -21,6 +20,25 @@ module Bosh::Deployer
 
     attr_reader :state
     attr_accessor :renderer
+
+    class LoggerRenderer
+      attr_accessor :stage, :total, :index
+
+      def initialize
+        enter_stage("Deployer", 0)
+      end
+
+      def enter_stage(stage, total)
+        @stage = stage
+        @total = total
+        @index = 0
+      end
+
+      def update(state, task)
+        Config.logger.info("#{@stage} - #{state} #{task}")
+        @index += 1 if state == :finished
+      end
+    end
 
     class << self
 
@@ -74,6 +92,13 @@ module Bosh::Deployer
       state.vm_cid != nil
     end
 
+    def step(task)
+      renderer.update(:started, task)
+      result = yield
+      renderer.update(:finished, task)
+      result
+    end
+
     def start
     end
 
@@ -117,14 +142,14 @@ module Bosh::Deployer
       state.stemcell_name = File.basename(stemcell_tgz, ".tgz")
       save_state
 
-      renderer.step "Creating VM from #{state.stemcell_cid}" do
+      step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
         update_vm_metadata(state.vm_cid, {"Name" => state.name})
         discover_bosh_ip
       end
       save_state
 
-      renderer.step 'Waiting for the agent' do
+      step "Waiting for the agent" do        
         begin
           wait_until_agent_ready
         rescue *CONNECTION_EXCEPTIONS
@@ -132,19 +157,19 @@ module Bosh::Deployer
         end
       end
 
-      renderer.step 'Updating persistent disk' do
+      step "Updating persistent disk" do
         update_persistent_disk
       end
 
       unless @apply_spec
-        renderer.step 'Fetching apply spec' do
+        step "Fetching apply spec" do
           @apply_spec = Specification.new(agent.release_apply_spec)
         end
       end
 
       apply
 
-      renderer.step 'Waiting for the director' do
+      step "Waiting for the director" do
         begin
           wait_until_director_ready
         rescue *CONNECTION_EXCEPTIONS
@@ -157,7 +182,7 @@ module Bosh::Deployer
       renderer.enter_stage("Delete micro BOSH", 7)
       agent_stop
       if state.disk_cid
-        renderer.step "Deleting persistent disk `#{state.disk_cid}'" do
+        step "Deleting persistent disk `#{state.disk_cid}'" do
           delete_disk(state.disk_cid, state.vm_cid)
           state.disk_cid = nil
           save_state
@@ -182,14 +207,14 @@ module Bosh::Deployer
 
     def create_stemcell(stemcell_tgz)
       unless is_tgz?(stemcell_tgz)
-        renderer.step 'Using existing stemcell' do
+        step "Using existing stemcell" do
         end
 
         return stemcell_tgz
       end
 
-      Dir.mktmpdir('sc-') do |stemcell|
-        renderer.step 'Unpacking stemcell' do
+      Dir.mktmpdir("sc-") do |stemcell|
+        step "Unpacking stemcell" do
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
@@ -202,8 +227,8 @@ module Bosh::Deployer
         override = Config.cloud_options["properties"]["stemcell"]
         properties["cloud_properties"].merge!(override) if override
 
-        renderer.step 'Uploading stemcell' do
-          cloud.create_stemcell("#{stemcell}/image", properties['cloud_properties'])
+        step "Uploading stemcell" do
+          cloud.create_stemcell("#{stemcell}/image", properties["cloud_properties"])
         end
       end
     rescue => e
@@ -227,13 +252,13 @@ module Bosh::Deployer
     end
 
     def mount_disk(disk_cid)
-      renderer.step 'Mount disk' do
+      step "Mount disk" do
         agent.run_task(:mount_disk, disk_cid.to_s)
       end
     end
 
     def unmount_disk(disk_cid)
-      renderer.step 'Unmount disk' do
+      step "Unmount disk" do
         if disk_info.include?(disk_cid)
           agent.run_task(:unmount_disk, disk_cid.to_s)
         else
@@ -244,7 +269,7 @@ module Bosh::Deployer
     end
 
     def migrate_disk(src_disk_cid, dst_disk_cid)
-      renderer.step 'Migrate disk' do
+      step "Migrate disk" do
         agent.run_task(:migrate_disk, src_disk_cid.to_s, dst_disk_cid.to_s)
       end
     end
@@ -255,7 +280,7 @@ module Bosh::Deployer
     end
 
     def create_disk
-      renderer.step 'Create disk' do
+      step "Create disk" do
         size = Config.resources['persistent_disk']
         state.disk_cid = cloud.create_disk(size, state.vm_cid)
         save_state
@@ -267,14 +292,14 @@ module Bosh::Deployer
       unmount_disk(disk_cid)
 
       begin
-        renderer.step "Detach disk" do
+        step "Detach disk" do
           cloud.detach_disk(vm_cid, disk_cid) if vm_cid
         end
       rescue Bosh::Clouds::DiskNotAttached
       end
 
       begin
-        renderer.step "Delete disk" do
+        step "Delete disk" do
           cloud.delete_disk(disk_cid)
         end
       rescue Bosh::Clouds::DiskNotFound
@@ -295,7 +320,7 @@ module Bosh::Deployer
       end
 
       unmount_disk(disk_cid)
-      renderer.step 'Detach disk' do
+      step "Detach disk" do
         cloud.detach_disk(state.vm_cid, disk_cid)
       end
     end
@@ -351,7 +376,7 @@ module Bosh::Deployer
 
       spec ||= @apply_spec
 
-      renderer.step 'Applying micro BOSH spec' do
+      step "Applying micro BOSH spec" do
         # first update spec with infrastructure specific stuff
         update_spec(spec)
         # then update spec with generic changes
@@ -380,7 +405,7 @@ module Bosh::Deployer
     end
 
     def agent_stop
-      renderer.step 'Stopping agent services' do
+      step "Stopping agent services" do
         begin
           agent.run_task(:stop)
         rescue
@@ -389,7 +414,7 @@ module Bosh::Deployer
     end
 
     def agent_start
-      renderer.step 'Starting agent services' do
+      step "Starting agent services" do
         agent.run_task(:start)
       end
     end
@@ -437,10 +462,10 @@ module Bosh::Deployer
       err "Cannot find existing stemcell" unless state.stemcell_cid
 
       if state.stemcell_cid == state.stemcell_name
-        renderer.step 'Preserving stemcell' do
+        step "Preserving stemcell" do
         end
       else
-        renderer.step 'Delete stemcell' do
+        step "Delete stemcell" do
           cloud.delete_stemcell(state.stemcell_cid)
         end
       end
@@ -453,7 +478,7 @@ module Bosh::Deployer
     def delete_vm
       err "Cannot find existing VM" unless state.vm_cid
 
-      renderer.step 'Delete VM' do
+      step "Delete VM" do
         cloud.delete_vm(state.vm_cid)
       end
       state.vm_cid = nil
