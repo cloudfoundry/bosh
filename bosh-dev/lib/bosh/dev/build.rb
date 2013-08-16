@@ -70,11 +70,16 @@ module Bosh::Dev
 
     def upload_stemcell(stemcell)
       latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
-      s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
-      s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
+      s3_latest_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, latest_filename)
+      s3_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
 
-      create(key: s3_path, body: File.open(stemcell.path), public: false)
-      create(key: s3_latest_path, body: File.open(stemcell.path), public: false)
+      bucket = 'bosh-ci-pipeline'
+      upload_adapter = Bosh::Dev::UploadAdapter.new
+
+      upload_adapter.upload(bucket_name: bucket, key: s3_latest_path, body: File.open(stemcell.path), public: false)
+      logger.info("uploaded to s3://#{bucket}/#{s3_latest_path}")
+      upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(stemcell.path), public: false)
+      logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
     def s3_release_url
@@ -87,7 +92,7 @@ module Bosh::Dev
 
     def promote_artifacts
       sync_buckets
-      update_light_micro_bosh_ami_pointer_file
+      update_micro_bosh_ami_pointer_file
     end
 
     def fog_storage(access_key_id, secret_access_key)
@@ -114,24 +119,13 @@ module Bosh::Dev
       end
     end
 
-    def update_light_micro_bosh_ami_pointer_file
+    def update_micro_bosh_ami_pointer_file
       Bosh::Dev::UploadAdapter.new.upload(
           bucket_name: 'bosh-jenkins-artifacts',
           key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
           body: light_stemcell.ami_id,
           public: true
       )
-    end
-
-    def create(options)
-      bucket = 'bosh-ci-pipeline'
-      uploaded_file = Bosh::Dev::UploadAdapter.new.upload(
-          bucket_name: bucket,
-          key: File.join(number.to_s, options.fetch(:key)),
-          body: options.fetch(:body),
-          public: options.fetch(:public)
-      )
-      logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{options.fetch(:key)}"}")
     end
 
     def light_stemcell
