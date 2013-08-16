@@ -104,15 +104,16 @@ module Bosh::Dev
 
     describe '#download_release' do
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+      
       before do
         Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
       end
 
       context 'when remote file does not exist' do
         it 'raises' do
-          download_adapter.stub(:download).and_raise 'hell'
+          download_adapter.stub(:download).and_raise 'error'
 
-          expect { build.download_release }.to raise_error 'hell'
+          expect { build.download_release }.to raise_error 'error'
         end
       end
 
@@ -132,9 +133,7 @@ module Bosh::Dev
     describe '#promote_artifacts' do
       it 'syncs buckets and updates AWS aim text reference' do
         subject.should_receive(:sync_buckets)
-        subject.should_receive(:mark_as_latest)
-        subject.should_receive(:update_light_micro_bosh_ami_pointer_file).
-          with(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
+        subject.should_receive(:update_light_micro_bosh_ami_pointer_file)
 
         subject.promote_artifacts(access_key_id: 'FAKE_ACCESS_KEY_ID', secret_access_key: 'FAKE_SECRET_ACCESS_KEY')
       end
@@ -352,16 +351,6 @@ module Bosh::Dev
 
       it 'works' do
         expect(subject.micro_bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'micro-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'))
-      end
-    end
-
-    describe '#mark_as_latest' do
-      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
-
-      it "updates the latest release file with this build's number" do
-        upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-jenkins-artifacts', key: 'latest', body: '123', public: true)
-
-        subject.mark_as_latest(upload_adapter: upload_adapter)
       end
     end
   end

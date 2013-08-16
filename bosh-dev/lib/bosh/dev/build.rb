@@ -93,7 +93,6 @@ module Bosh::Dev
     def promote_artifacts(aws_credentials)
       sync_buckets
       update_light_micro_bosh_ami_pointer_file(aws_credentials)
-      mark_as_latest
     end
 
     def sync_buckets
@@ -122,11 +121,6 @@ module Bosh::Dev
 
     def micro_bosh_stemcell_path(infrastructure, download_dir)
       File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', infrastructure.light?))
-    end
-
-    def mark_as_latest(options = {})
-      upload_adapter = options.fetch(:upload_adapter) { UploadAdapter.new }
-      upload_adapter.upload(bucket_name: 'bosh-jenkins-artifacts', key: 'latest', body: number.to_s, public: true)
     end
 
     private
