@@ -29,6 +29,21 @@ module Bosh::Dev
           expect(File.read(write_path)).to eq(content)
         end
 
+        context 'when write path is an absolute path' do
+          it 'returns the full path of the downloaded file' do
+            actual = adapter.download(uri, write_path)
+            expect(actual).to eq(write_path)
+          end
+        end
+
+        context 'when write path is a relative path' do
+          let(:write_path) { 'test' }
+          it 'returns the full path of the downloaded file' do
+            actual = adapter.download(uri, write_path)
+            expect(actual).to eq(File.join(Dir.pwd, write_path))
+          end
+        end
+
         context 'when passed a string instead of a uri' do
           it 'still works as expected' do
             adapter.download(string_uri, write_path)
