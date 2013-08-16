@@ -74,7 +74,10 @@ module Bosh::Dev
     end
 
     def basic_task
+      bosh_release_path = candidate.download_release
+
       stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
+        tarball: bosh_release_path,
         infrastructure: infrastructure_name,
         stemcell_version: candidate.number,
         stemcell_tgz: new_style_name,

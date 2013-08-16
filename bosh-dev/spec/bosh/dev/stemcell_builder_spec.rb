@@ -77,6 +77,7 @@ module Bosh::Dev
 
         before do
           StemcellRakeMethods.stub(:new).with(args: {
+            tarball: 'fake release path',
             infrastructure: 'vsphere',
             stemcell_version: build_number,
             stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
