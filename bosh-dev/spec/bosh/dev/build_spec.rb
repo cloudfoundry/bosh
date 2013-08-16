@@ -69,7 +69,7 @@ module Bosh::Dev
       let(:src) { 'source_dir' }
       let(:dst) { 'dest_dir' }
       let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
-      let(:pipeline_storage) { instance_double('Bosh::Dev::PipelineStorage') }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
       let(:logger) { instance_double('Logger').as_null_object }
 
       before do
@@ -81,11 +81,15 @@ module Bosh::Dev
           end
         end
         Logger.stub(new: logger)
-        PipelineStorage.stub(new: pipeline_storage)
+        UploadAdapter.stub(new: upload_adapter)
       end
 
       it 'recursively uploads a directory into base_dir' do
-        pipeline_storage.should_receive(:upload).with do |bucket, key, body, public|
+        upload_adapter.should_receive(:upload).with do |options|
+          key = options.fetch(:key)
+          body = options.fetch(:body)
+          public = options.fetch(:public)
+
           expect(public).to eq(true)
 
           case key

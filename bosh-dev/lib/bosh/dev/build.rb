@@ -1,10 +1,11 @@
+require 'peach'
+
 require 'bosh/stemcell/stemcell'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/dev/pipeline_storage'
-require 'peach'
 
 module Bosh::Dev
   class Build
@@ -29,17 +30,12 @@ module Bosh::Dev
 
     def upload_gems(source_dir, dest_dir)
       bucket = 'bosh-ci-pipeline'
-      storage = Bosh::Dev::PipelineStorage.new
+      upload_adapter = Bosh::Dev::UploadAdapter.new
       Dir.chdir(source_dir) do
         Dir['**/*'].each do |file|
           unless File.directory?(file)
             key = File.join(number.to_s, dest_dir, file)
-            uploaded_file = storage.upload(
-              bucket,
-              key,
-              File.open(file),
-              true
-            )
+            uploaded_file = upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(file), public: true)
             logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{key}"}")
           end
         end
