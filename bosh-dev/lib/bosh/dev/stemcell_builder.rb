@@ -58,7 +58,7 @@ module Bosh::Dev
         stemcell_tgz: new_style_name,
       })
 
-      stemcell_rake_methods.build_basic_stemcell
+      stemcell_rake_methods.build_stemcell
     end
 
     def stemcell_path!

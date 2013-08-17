@@ -11,7 +11,7 @@ module Bosh::Dev
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
     let(:environment) { instance_double('Bosh::Dev::StemcellEnvironment', sanitize: nil) }
-    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_basic_stemcell: nil) }
+    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_stemcell: nil) }
 
     subject(:builder) do
       StemcellBuilder.new(infrastructure, build)
@@ -30,7 +30,7 @@ module Bosh::Dev
           stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
         }).and_return(stemcell_rake_methods)
 
-        stemcell_rake_methods.stub(:build_basic_stemcell) do
+        stemcell_rake_methods.stub(:build_stemcell) do
           FileUtils.mkdir_p('/mnt/stemcells/vsphere/work/work')
           FileUtils.touch('/mnt/stemcells/vsphere/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
         end
@@ -60,7 +60,7 @@ module Bosh::Dev
 
       context 'when the micro stemcell is not created' do
         before do
-          stemcell_rake_methods.stub(:build_basic_stemcell)
+          stemcell_rake_methods.stub(:build_stemcell)
         end
 
         it 'fails early and loud' do

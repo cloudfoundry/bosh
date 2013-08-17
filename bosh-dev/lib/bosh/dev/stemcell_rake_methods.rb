@@ -10,7 +10,7 @@ module Bosh::Dev
       @stemcell_builder_options = StemcellBuilderOptions.new(args: args, environment: environment)
     end
 
-    def build_basic_stemcell
+    def build_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
       stemcell_builder_command = StemcellBuilderCommand.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.default)

@@ -26,7 +26,7 @@ module Bosh::Dev
       Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
     end
 
-    describe '#build_basic_stemcell' do
+    describe '#build_stemcell' do
 
       before do
         Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { default: 'options' }).and_return(stemcell_builder_command)
@@ -35,13 +35,13 @@ module Bosh::Dev
       it "builds bosh's gems so we have the gem for the agent" do
         gems_generator.should_receive(:build_gems_into_release_dir)
 
-        stemcell_rake_methods.build_basic_stemcell
+        stemcell_rake_methods.build_stemcell
       end
 
       it 'builds a basic stemcell with the appropriate name and options' do
         stemcell_builder_command.should_receive(:build)
 
-        stemcell_rake_methods.build_basic_stemcell
+        stemcell_rake_methods.build_stemcell
       end
     end
   end
