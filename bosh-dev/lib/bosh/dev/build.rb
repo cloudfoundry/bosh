@@ -92,7 +92,7 @@ module Bosh::Dev
 
     def promote_artifacts
       sync_buckets
-      update_micro_bosh_ami_pointer_file
+      update_light_bosh_ami_pointer_file
     end
 
     def bosh_stemcell_path(infrastructure, download_dir)
@@ -114,10 +114,10 @@ module Bosh::Dev
       end
     end
 
-    def update_micro_bosh_ami_pointer_file
+    def update_light_bosh_ami_pointer_file
       Bosh::Dev::UploadAdapter.new.upload(
           bucket_name: 'bosh-jenkins-artifacts',
-          key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
+          key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
           body: light_stemcell.ami_id,
           public: true
       )
@@ -125,8 +125,8 @@ module Bosh::Dev
 
     def light_stemcell
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
-      download_stemcell(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
-      filename = stemcell_filename(number.to_s, infrastructure, 'micro-bosh-stemcell', true)
+      download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
+      filename = stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', true)
       Bosh::Stemcell::Stemcell.new(filename)
     end
 

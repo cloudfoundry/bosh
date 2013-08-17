@@ -166,7 +166,7 @@ module Bosh::Dev
         subject.promote_artifacts
       end
 
-      describe 'update light micro bosh ami pointer file' do
+      describe 'update light bosh ami pointer file' do
         let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
         let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
         let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
@@ -181,19 +181,19 @@ module Bosh::Dev
           fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
           Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
 
-          stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/micro-bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
-        end
+        stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
+      end
 
-        it 'downloads the aws micro-bosh-stemcell for the current build' do
-          subject.should_receive(:download_stemcell).
-              with(infrastructure: infrastructure, name: 'micro-bosh-stemcell', light: true)
+      it 'downloads the aws bosh-stemcell for the current build' do
+        subject.should_receive(:download_stemcell).
+          with(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
 
-          subject.promote_artifacts
-        end
+        subject.promote_artifacts
+      end
 
-        it 'initializes a Stemcell with the downloaded stemcell filename' do
-          Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-              with('123', infrastructure, 'micro-bosh-stemcell', true).and_return(archive_filename)
+      it 'initializes a Stemcell with the downloaded stemcell filename' do
+        Bosh::Stemcell::ArchiveFilename.should_receive(:new).
+          with('123', infrastructure, 'bosh-stemcell', true).and_return(archive_filename)
 
           Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
@@ -205,13 +205,13 @@ module Bosh::Dev
 
           subject.promote_artifacts
 
-          expect(bucket_files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
+          expect(bucket_files.get('last_successful-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
         end
 
         it 'is publicly reachable' do
           subject.promote_artifacts
 
-          expect(bucket_files.get('last_successful_micro-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
+          expect(bucket_files.get('last_successful-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
         end
       end
     end

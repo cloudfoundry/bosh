@@ -49,7 +49,7 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'should bootstrap microbosh' do
-        stemcell_ami_request = stub_request(:get, 'http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell-aws_ami_us-east-1').
+        stemcell_ami_request = stub_request(:get, 'http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful-bosh-stemcell-aws_ami_us-east-1').
             to_return(:status => 200, :body => 'ami-0e3da467', :headers => {})
 
         SecureRandom.should_receive(:base64).and_return('hm_password')
