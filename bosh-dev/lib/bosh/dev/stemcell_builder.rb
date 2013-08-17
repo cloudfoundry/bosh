@@ -7,13 +7,12 @@ module Bosh::Dev
   class StemcellBuilder
     attr_reader :directory, :work_path
 
-    def initialize(stemcell_type, infrastructure_name, candidate = Bosh::Dev::Build.candidate)
+    def initialize(infrastructure_name, candidate = Bosh::Dev::Build.candidate)
       @candidate = candidate
-      @stemcell_type = stemcell_type
       @infrastructure_name = infrastructure_name
 
       mnt = ENV.fetch('FAKE_MNT', '/mnt')
-      @directory = File.join(mnt, 'stemcells', "#{infrastructure_name}-#{stemcell_type}")
+      @directory = File.join(mnt, 'stemcells', "#{infrastructure_name}")
       @work_path = File.join(directory, 'work')
       @build_path = File.join(directory, 'build')
     end
@@ -25,12 +24,7 @@ module Bosh::Dev
       environment = StemcellEnvironment.new(self)
       environment.sanitize
 
-      case stemcell_type
-        when 'micro'
-          micro_task
-        when 'basic'
-          basic_task
-      end
+      build_task
 
       stemcell_path!
     end
@@ -38,7 +32,6 @@ module Bosh::Dev
     private
 
     attr_reader :candidate,
-                :stemcell_type,
                 :infrastructure_name,
                 :build_path
 
@@ -52,28 +45,10 @@ module Bosh::Dev
     end
 
     def name
-      case stemcell_type
-        when 'micro'
-          'micro-bosh-stemcell'
-        when 'basic'
-          'bosh-stemcell'
-      end
+      'bosh-stemcell'
     end
 
-    def micro_task
-      bosh_release_path = candidate.download_release
-
-      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
-        tarball: bosh_release_path,
-        infrastructure: infrastructure_name,
-        stemcell_version: candidate.number,
-        stemcell_tgz: new_style_name,
-      })
-
-      stemcell_rake_methods.build_micro_stemcell
-    end
-
-    def basic_task
+    def build_task
       bosh_release_path = candidate.download_release
 
       stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
