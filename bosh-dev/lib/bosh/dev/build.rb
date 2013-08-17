@@ -17,7 +17,6 @@ module Bosh::Dev
 
     def initialize(number)
       @number = number
-      @job_name = ENV.to_hash.fetch('JOB_NAME')
       @logger = Logger.new($stdout)
     end
 
@@ -132,7 +131,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :job_name, :logger
+    attr_reader :logger
 
     def create(options)
       bucket = 'bosh-ci-pipeline'

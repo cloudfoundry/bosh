@@ -28,8 +28,7 @@ module Bosh::Dev
       ENV.stub(:to_hash).and_return(
         'CANDIDATE_BUILD_NUMBER' => 'candidate',
         'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
-        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id,
-        'JOB_NAME' => job_name
+        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id
       )
     end
 
@@ -42,18 +41,10 @@ module Bosh::Dev
         Build.candidate
       end
 
-      before do
-        ENV.stub(:fetch).with('JOB_NAME').and_return('something_that_needs_candidates')
-      end
-
       its(:number) { should eq 'candidate' }
     end
 
     its(:s3_release_url) { should eq(File.join('s3://bosh-ci-pipeline/123/release/bosh-123.tgz')) }
-
-    describe '#job_name' do
-      its(:job_name) { should eq('current_job') }
-    end
 
     describe '#upload' do
       let(:release) { double(tarball: 'release-tarball.tgz') }
@@ -68,11 +59,9 @@ module Bosh::Dev
       end
 
       context 'when the file does not exist' do
-
         it 'raises an error' do
           expect { subject.upload(release, upload_adapter: upload_adapter) }.to raise_error(Errno::ENOENT)
         end
-
       end
     end
 
