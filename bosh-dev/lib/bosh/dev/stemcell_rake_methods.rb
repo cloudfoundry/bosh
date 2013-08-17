@@ -13,14 +13,7 @@ module Bosh::Dev
     def build_basic_stemcell
       Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
 
-      stemcell_builder_command = StemcellBuilderCommand.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.micro_with_basic_stemcell_name)
-      stemcell_builder_command.build
-    end
-
-    def build_micro_stemcell
-      Bosh::Dev::GemsGenerator.new.build_gems_into_release_dir
-
-      stemcell_builder_command = StemcellBuilderCommand.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.micro)
+      stemcell_builder_command = StemcellBuilderCommand.new(environment, "stemcell-#{args[:infrastructure]}", stemcell_builder_options.default)
       stemcell_builder_command.build
     end
 

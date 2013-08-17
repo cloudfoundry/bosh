@@ -14,8 +14,7 @@ module Bosh::Dev
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Dev::StemcellBuilderOptions',
-                      micro_with_basic_stemcell_name: { basic: 'options' },
-                      micro: { micro: 'options' })
+                      default: { default: 'options' })
     end
 
     subject(:stemcell_rake_methods) do
@@ -30,7 +29,7 @@ module Bosh::Dev
     describe '#build_basic_stemcell' do
 
       before do
-        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { basic: 'options' }).and_return(stemcell_builder_command)
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { default: 'options' }).and_return(stemcell_builder_command)
       end
 
       it "builds bosh's gems so we have the gem for the agent" do
@@ -43,24 +42,6 @@ module Bosh::Dev
         stemcell_builder_command.should_receive(:build)
 
         stemcell_rake_methods.build_basic_stemcell
-      end
-    end
-
-    describe '#build_micro_stemcell' do
-      before do
-        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { micro: 'options' }).and_return(stemcell_builder_command)
-      end
-
-      it "builds bosh's gems so we have the gem for the agent" do
-        gems_generator.should_receive(:build_gems_into_release_dir)
-
-        stemcell_rake_methods.build_micro_stemcell
-      end
-
-      it 'builds a micro stemcell with the appropriate name and options' do
-        stemcell_builder_command.should_receive(:build)
-
-        stemcell_rake_methods.build_micro_stemcell
       end
     end
   end

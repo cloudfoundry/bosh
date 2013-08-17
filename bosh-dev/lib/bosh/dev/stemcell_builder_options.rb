@@ -10,11 +10,7 @@ module Bosh::Dev
       @args = options.fetch(:args)
     end
 
-    def micro_with_basic_stemcell_name
-      micro.merge({ 'stemcell_name' => 'bosh-stemcell' })
-    end
-
-    def basic
+    def default
       infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
       stemcell_tgz = args.fetch(:stemcell_tgz)
       stemcell_version = args.fetch(:stemcell_version)
@@ -34,21 +30,15 @@ module Bosh::Dev
         'ruby_bin' => environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
+        'bosh_micro_enabled' => 'yes',
+        'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
+        'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
+        'bosh_micro_release_tgz_path' => args.fetch(:tarball)
       }
 
       options = check_for_ovftool(options) if infrastructure.name == 'vsphere'
 
       options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
-    end
-
-    def micro
-      basic.merge({
-                    'stemcell_name' => 'micro-bosh-stemcell',
-                    'bosh_micro_enabled' => 'yes',
-                    'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
-                    'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
-                    'bosh_micro_release_tgz_path' => args.fetch(:tarball)
-                  })
     end
 
     private

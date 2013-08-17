@@ -11,7 +11,7 @@ module Bosh::Dev
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
     let(:environment) { instance_double('Bosh::Dev::StemcellEnvironment', sanitize: nil) }
-    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_basic_stemcell: nil, build_micro_stemcell: nil) }
+    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_basic_stemcell: nil) }
 
     subject(:builder) do
       StemcellBuilder.new(infrastructure, build)

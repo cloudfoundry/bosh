@@ -21,7 +21,8 @@ module Bosh::Dev
       {
         infrastructure: infrastructure,
         stemcell_tgz: stemcell_tgz,
-        stemcell_version: '123'
+        stemcell_version: '123',
+        tarball: 'fake/release.tgz'
       }
     end
     let(:spec) { 'stemcell-aws' }
@@ -30,7 +31,7 @@ module Bosh::Dev
 
     subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args, environment: env) }
 
-    describe '#basic' do
+    describe '#default' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }
 
@@ -41,7 +42,7 @@ module Bosh::Dev
 
         it 'dies' do
           expect {
-            stemcell_builder_options.basic
+            stemcell_builder_options.default
           }.to raise_error /key not found: :infrastructure/
         end
       end
@@ -51,14 +52,14 @@ module Bosh::Dev
 
         it 'dies' do
           expect {
-            stemcell_builder_options.basic
+            stemcell_builder_options.default
           }.to raise_error /invalid infrastructure: fake/
         end
       end
 
       context 'when given a stemcell_tgz' do
         it 'sets stemcell_tgz' do
-          result = stemcell_builder_options.basic
+          result = stemcell_builder_options.default
           expect(result['stemcell_tgz']).to eq 'fake-stemcell-filename.tgz'
         end
       end
@@ -70,14 +71,14 @@ module Bosh::Dev
 
         it 'raises' do
           expect {
-            stemcell_builder_options.basic
+            stemcell_builder_options.default
           }.to raise_error /key not found: :stemcell_tgz/
         end
       end
 
       context 'when given a stemcell_version' do
         it 'sets stemcell_version' do
-          result = stemcell_builder_options.basic
+          result = stemcell_builder_options.default
           expect(result['stemcell_version']).to eq '123'
         end
       end
@@ -89,7 +90,7 @@ module Bosh::Dev
 
         it 'raises' do
           expect {
-            stemcell_builder_options.basic
+            stemcell_builder_options.default
           }.to raise_error /key not found: :stemcell_version/
         end
       end
@@ -108,7 +109,7 @@ module Bosh::Dev
         end
 
         it 'sets default values for options based in hash' do
-          result = stemcell_builder_options.basic
+          result = stemcell_builder_options.default
 
           expect(result['system_parameters_infrastructure']).to eq(infrastructure)
           expect(result['stemcell_name']).to eq ('bosh-stemcell')
@@ -123,6 +124,10 @@ module Bosh::Dev
           expect(result['bosh_release_src_dir']).to eq(File.join(source_root, '/release/src/bosh'))
           expect(result['bosh_agent_src_dir']).to eq(File.join(source_root, 'bosh_agent'))
           expect(result['image_create_disk_size']).to eq(default_disk_size)
+          expect(result['bosh_micro_enabled']).to eq('yes')
+          expect(result['bosh_micro_package_compiler_path']).to eq(File.join(source_root, 'package_compiler'))
+          expect(result['bosh_micro_manifest_yml_path']).to eq(File.join(source_root, "release/micro/#{infrastructure}.yml"))
+          expect(result['bosh_micro_release_tgz_path']).to eq('fake/release.tgz')
         end
 
         context 'when RUBY_BIN is not set' do
@@ -136,14 +141,14 @@ module Bosh::Dev
           end
 
           it 'uses the RbConfig values' do
-            result = stemcell_builder_options.basic
+            result = stemcell_builder_options.default
             expect(result['ruby_bin']).to eq('/a/path/to/ruby')
           end
         end
 
         context 'when disk_size is not passed' do
           it 'defaults to default disk size for infrastructure' do
-            result = stemcell_builder_options.basic
+            result = stemcell_builder_options.default
 
             expect(result['image_create_disk_size']).to eq(default_disk_size)
           end
@@ -155,7 +160,7 @@ module Bosh::Dev
           end
 
           it 'allows user to override default disk_size' do
-            result = stemcell_builder_options.basic
+            result = stemcell_builder_options.default
 
             expect(result['image_create_disk_size']).to eq(1234)
           end
@@ -174,7 +179,7 @@ module Bosh::Dev
             end
 
             it 'uses "xen"' do
-              result = stemcell_builder_options.basic
+              result = stemcell_builder_options.default
               expect(result['stemcell_hypervisor']).to eq('xen')
             end
           end
@@ -189,7 +194,7 @@ module Bosh::Dev
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'uses "esxi"' do
-              result = stemcell_builder_options.basic
+              result = stemcell_builder_options.default
               expect(result['stemcell_hypervisor']).to eq('esxi')
             end
           end
@@ -198,7 +203,7 @@ module Bosh::Dev
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'sets image_vsphere_ovf_ovftool_path' do
-              result = stemcell_builder_options.basic
+              result = stemcell_builder_options.default
               expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
@@ -216,69 +221,24 @@ module Bosh::Dev
             end
 
             it 'uses "kvm"' do
-              result = stemcell_builder_options.basic
+              result = stemcell_builder_options.default
               expect(result['stemcell_hypervisor']).to eq('kvm')
             end
           end
         end
-      end
-    end
 
-    describe '#micro' do
-      context 'when a tarball is provided' do
-        before do
-          args[:tarball] = 'fake/release.tgz'
-          stemcell_builder_options.stub(:basic).and_return({ 'basic' => 'options' })
-        end
+        context 'when a tarball is not provided' do
+          before do
+            args.delete(:tarball)
+          end
 
-        it 'returns a valid hash' do
-          expect(stemcell_builder_options.micro).to eq({
-                                                         'basic' => 'options',
-                                                         'stemcell_name' => 'micro-bosh-stemcell',
-                                                         'bosh_micro_enabled' => 'yes',
-                                                         'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
-                                                         'bosh_micro_manifest_yml_path' => File.join(source_root, 'release/micro/aws.yml'),
-                                                         'bosh_micro_release_tgz_path' => 'fake/release.tgz'
-                                                       })
-        end
-      end
-
-      context 'when a tarball is not provided' do
-        it 'dies' do
-          expect {
-            stemcell_builder_options.micro
-          }.to raise_error(/key not found: :tarball/)
+          it 'dies' do
+            expect {
+              stemcell_builder_options.default
+            }.to raise_error(/key not found: :tarball/)
+          end
         end
       end
     end
-
-    describe '#micro_with_basic_stemcell_name' do
-      context 'when a tarball is provided' do
-        before do
-          args[:tarball] = 'fake/release.tgz'
-          stemcell_builder_options.stub(:basic).and_return({ 'basic' => 'options' })
-        end
-
-        it 'returns a valid hash' do
-          expect(stemcell_builder_options.micro_with_basic_stemcell_name).to eq({
-                                                                                  'basic' => 'options',
-                                                                                  'stemcell_name' => 'bosh-stemcell',
-                                                                                  'bosh_micro_enabled' => 'yes',
-                                                                                  'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
-                                                                                  'bosh_micro_manifest_yml_path' => File.join(source_root, 'release/micro/aws.yml'),
-                                                                                  'bosh_micro_release_tgz_path' => 'fake/release.tgz'
-                                                                                })
-        end
-      end
-
-      context 'when a tarball is not provided' do
-        it 'dies' do
-          expect {
-            stemcell_builder_options.micro_with_basic_stemcell_name
-          }.to raise_error(/key not found: :tarball/)
-        end
-      end
-    end
-
   end
 end
