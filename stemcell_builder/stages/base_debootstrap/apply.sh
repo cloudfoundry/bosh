@@ -30,6 +30,8 @@ fi
 echo "Running debootstrap"
 debootstrap --arch=$base_debootstrap_arch $base_debootstrap_suite $chroot $mirror
 
+echo "proc            /proc           proc    nodev,noexec,nosuid 0       0" >> $chroot/etc/fstab
+
 # Shady work around vmbuilder in combination with ubuntu iso cache corrupting
 # the debian list caches. There is a discussion in:
 # https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
