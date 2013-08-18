@@ -51,25 +51,31 @@ module Bosh::Director
       deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.model
 
-      vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
-                                idle_vm.network_settings, nil, @resource_pool.env)
+      # create vm only when its network reservation is not nil
+      if idle_vm.network_valid?
+        begin
+          vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
+                                  idle_vm.network_settings, nil, @resource_pool.env)
+        
+          agent = AgentClient.new(vm.agent_id)
+          agent.wait_until_ready
 
-      agent = AgentClient.new(vm.agent_id)
-      agent.wait_until_ready
+          update_state(agent, vm, idle_vm)
 
-      update_state(agent, vm, idle_vm)
+          idle_vm.vm = vm
+          idle_vm.current_state = agent.get_state
 
-      idle_vm.vm = vm
-      idle_vm.current_state = agent.get_state
-    rescue Exception => e
-      @logger.info("Cleaning up the created VM due to an error: #{e}")
-      begin
-        @cloud.delete_vm(vm.cid) if vm && vm.cid
-        vm.destroy if vm && vm.id
-      rescue Exception
-        @logger.info("Could not cleanup VM: #{vm.cid}") if vm
+        rescue Exception => e
+          @logger.info("Cleaning up the created VM due to an error: #{e}")
+          begin
+            @cloud.delete_vm(vm.cid) if vm && vm.cid
+            vm.destroy if vm && vm.id
+          rescue Exception
+            @logger.info("Could not cleanup VM: #{vm.cid}") if vm
+          end
+          raise e
+        end
       end
-      raise e
     end
 
     def update_state(agent, vm, idle_vm)
@@ -153,9 +159,10 @@ module Bosh::Director
           unless reservation.reserved?
             case reservation.error
               when NetworkReservation::CAPACITY
-                raise NetworkReservationNotEnoughCapacity,
-                      "`#{name}/#{index}' asked for a dynamic IP " +
-                      "but there were no more available"
+                #if there is no more dynamic ip might because of all jobs using static ip
+                @logger.info("`#{name}/#{index}' asked for a dynamic IP " +
+                      "but there were no more available")
+                reservation.ip = nil
               else
                 raise NetworkReservationError,
                       "`#{name}/#{index}' failed to reserve " +

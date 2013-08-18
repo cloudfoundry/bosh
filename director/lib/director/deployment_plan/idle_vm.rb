@@ -54,7 +54,7 @@ module Bosh::Director
       # @return [void]
       def release_reservation
         if has_network_reservation?
-          @resource_pool.network.release(@network_reservation)
+          @resource_pool.network.release(@network_reservation) if @network_reservation.ip
           @network_reservation = nil
         end
       end
@@ -78,6 +78,23 @@ module Bosh::Director
               @network_reservation)
           network_settings
         end
+      end
+
+      def network_valid?
+        network_valid = true
+        if @bound_instance
+          @bound_instance.network_reservations.each_value do |network_reservation|
+            if network_reservation.nil? || network_reservation.ip.nil?
+              network_valid = false
+              break
+            end
+          end
+        else
+          if @network_reservation.nil? || @network_reservation.ip.nil?
+            network_valid = false
+          end
+        end
+        network_valid
       end
 
       ##
