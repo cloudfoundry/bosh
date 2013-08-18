@@ -64,16 +64,17 @@ module Bosh::Director
 
         idle_vm.vm = vm
         idle_vm.current_state = agent.get_state
+
+        rescue Exception => e
+          @logger.info("Cleaning up the created VM due to an error: #{e}")
+          begin
+            @cloud.delete_vm(vm.cid) if vm && vm.cid
+            vm.destroy if vm && vm.id
+          rescue Exception
+            @logger.info("Could not cleanup VM: #{vm.cid}") if vm
+          end
+          raise e
       end
-    rescue Exception => e
-      @logger.info("Cleaning up the created VM due to an error: #{e}")
-      begin
-        @cloud.delete_vm(vm.cid) if vm && vm.cid
-        vm.destroy if vm && vm.id
-      rescue Exception
-        @logger.info("Could not cleanup VM: #{vm.cid}") if vm
-      end
-      raise e
     end
 
     def update_state(agent, vm, idle_vm)
