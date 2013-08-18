@@ -56,7 +56,6 @@ module Bosh::Director
         vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                 idle_vm.network_settings, nil, @resource_pool.env)
       
-      
         agent = AgentClient.new(vm.agent_id)
         agent.wait_until_ready
 
@@ -74,6 +73,7 @@ module Bosh::Director
             @logger.info("Could not cleanup VM: #{vm.cid}") if vm
           end
           raise e
+        end
       end
     end
 
