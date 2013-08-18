@@ -3,7 +3,7 @@ require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 
 module Bosh::Dev::Aws
   describe MicroBoshDeploymentManifest do
-    let(:bosh_cli_session) { instance_double('Bosh::Dev::Bat::BoshCliSession') }
+    let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
     let(:receipts) do
       instance_double('Bosh::Dev::Bat::Receipts',
                       vpc_outfile_path: 'fake_vpc_outfile_path',
@@ -15,7 +15,7 @@ module Bosh::Dev::Aws
 
     before do
       Receipts.stub(:new).and_return(receipts)
-      Bosh::Dev::Bat::BoshCliSession.stub(:new).and_return(bosh_cli_session)
+      Bosh::Dev::BoshCliSession.stub(:new).and_return(bosh_cli_session)
     end
 
     describe '#write' do

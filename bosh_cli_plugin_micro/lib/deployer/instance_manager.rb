@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'open3'
+
 module Bosh::Deployer
 
   class DirectorGatewayError < RuntimeError; end
@@ -543,12 +545,11 @@ module Bosh::Deployer
     end
 
     def run_command(command)
-      output = `#{command} 2>&1`
-      if $?.exitstatus != 0
+      output, status = Open3.capture2e(command)
+      if status.exitstatus != 0
         $stderr.puts output
-        err "'#{command}' failed with exit status=#{$?.exitstatus} [#{output}]"
+        err "'#{command}' failed with exit status=#{status.exitstatus} [#{output}]"
       end
     end
-
   end
 end

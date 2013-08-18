@@ -10,6 +10,10 @@ module Bosh::Dev
       @args = options.fetch(:args)
     end
 
+    def micro_with_basic_stemcell_name
+      micro.merge({ 'stemcell_name' => 'bosh-stemcell' })
+    end
+
     def basic
       infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
       stemcell_tgz = args.fetch(:stemcell_tgz)
@@ -17,7 +21,7 @@ module Bosh::Dev
 
       options = {
         'system_parameters_infrastructure' => infrastructure.name,
-        'stemcell_name' => environment.fetch('STEMCELL_NAME', 'bosh-stemcell'),
+        'stemcell_name' => 'bosh-stemcell',
         'stemcell_infrastructure' => infrastructure.name,
         'stemcell_tgz' => stemcell_tgz,
         'stemcell_version' => stemcell_version,
@@ -38,14 +42,13 @@ module Bosh::Dev
     end
 
     def micro
-      options = basic
-      options[:stemcell_name] ||= 'micro-bosh-stemcell'
-      options.merge({
-                      bosh_micro_enabled: 'yes',
-                      bosh_micro_package_compiler_path: File.join(source_root, 'package_compiler'),
-                      bosh_micro_manifest_yml_path: File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
-                      bosh_micro_release_tgz_path: args.fetch(:tarball),
-                    })
+      basic.merge({
+                    'stemcell_name' => 'micro-bosh-stemcell',
+                    'bosh_micro_enabled' => 'yes',
+                    'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
+                    'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
+                    'bosh_micro_release_tgz_path' => args.fetch(:tarball)
+                  })
     end
 
     private

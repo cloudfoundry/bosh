@@ -3,7 +3,13 @@ require 'bosh/dev/stemcell_builder_command'
 
 module Bosh::Dev
   describe StemcellBuilderCommand do
-    let(:env) { {} }
+    let(:root_dir) { '/mnt/root' }
+    let(:env) do
+      {
+        'BUILD_PATH' => root_dir,
+        'WORK_PATH' => File.join(root_dir, 'work'),
+      }
+    end
 
     subject(:stemcell_builder_command) do
       StemcellBuilderCommand.new(env, spec, options)
@@ -14,7 +20,6 @@ module Bosh::Dev
 
       let(:shell) { instance_double('Bosh::Dev::Shell', run: nil) }
       let(:pid) { 99999 }
-      let(:root_dir) { "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{pid}" }
       let(:build_dir) { File.join(root_dir, 'build') }
       let(:work_dir) { File.join(root_dir, 'work') }
       let(:etc_dir) { File.join(build_dir, 'etc') }
@@ -61,16 +66,6 @@ module Bosh::Dev
         }.to change { Dir.exists?(work_dir) }.from(false).to(true)
       end
 
-      context 'when the user sets their own WORK_PATH' do
-        let(:env) { { 'WORK_PATH' => '/aight' } }
-
-        it 'creates a work directory for stemcell creation chroot' do
-          expect {
-            stemcell_builder_command.build
-          }.to change { Dir.exists?('/aight') }.from(false).to(true)
-        end
-      end
-
       it 'writes a settings file into the build directory' do
         stemcell_builder_command.build
         expect(File.read(settings_file)).to match(/hello=world/)
@@ -84,7 +79,14 @@ module Bosh::Dev
       end
 
       context 'when the uses sets proxy environment variables' do
-        let(:env) { { 'HTTP_PROXY' => 'nice_proxy', 'no_proxy' => 'naughty_proxy' } }
+        let(:env) do
+          {
+            'BUILD_PATH' => root_dir,
+            'WORK_PATH' => File.join(root_dir, 'work'),
+            'HTTP_PROXY' => 'nice_proxy',
+            'no_proxy' => 'naughty_proxy'
+          }
+        end
 
         it 'maintains current user proxy env vars through the shell sudo call' do
           shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_script} #{work_dir} #{spec_file} #{settings_file}")
@@ -94,7 +96,6 @@ module Bosh::Dev
 
       context 'when the uses sets a BUILD_PATH environment variable' do
         let(:root_dir) { 'TEST_ROOT_DIR' }
-        let(:env) { { 'BUILD_PATH' => root_dir } }
 
         it 'passes through BUILD_PATH environment variables correctly' do
           shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")

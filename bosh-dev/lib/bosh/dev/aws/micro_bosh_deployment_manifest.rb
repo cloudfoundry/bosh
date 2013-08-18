@@ -1,6 +1,6 @@
 require 'bosh/dev/aws'
 require 'bosh/dev/aws/receipts'
-require 'bosh/dev/bat/bosh_cli_session'
+require 'bosh/dev/bosh_cli_session'
 
 module Bosh::Dev::Aws
   class MicroBoshDeploymentManifest

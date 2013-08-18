@@ -40,9 +40,6 @@ namespace :ci do
     require 'bosh/dev/build'
 
     build = Bosh::Dev::Build.candidate
-    build.promote_artifacts(
-      access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
-      secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
-    )
+    build.promote_artifacts
   end
 end

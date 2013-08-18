@@ -242,11 +242,32 @@ module Bosh::Cli
       err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
     end
 
+    def prompt_for_job_and_index
+      jobs = prepare_deployment_manifest.fetch('jobs')
+
+      return [jobs.first.fetch('name'), 0] if single_job_index_option?(jobs)
+
+      choose do |menu|
+        menu.prompt = 'Choose an instance: '
+        jobs.each do |job|
+          job_name = job.fetch('name')
+
+          0.upto(job.fetch('instances').to_i) do |index|
+            menu.choice("#{job_name}/#{index}") { [job_name, index] }
+          end
+        end
+      end
+    end
+
     def cancel_deployment
       quit("Deployment canceled".make_red)
     end
 
     private
+
+    def single_job_index_option?(jobs)
+      jobs.size == 1 && jobs.first.fetch('instances') == 1
+    end
 
     def find_job(job_name)
       jobs = prepare_deployment_manifest.fetch('jobs')

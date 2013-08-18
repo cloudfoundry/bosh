@@ -30,12 +30,26 @@ module Bosh::Dev
       let(:body) { 'fake file body' }
       let(:public) { false }
 
-      it 'uploads the file to remote path' do
-        fog_storage.directories.create(key: bucket_name)
+      context 'when body is an IO' do
+        let(:body) { StringIO.new('body') }
 
-        adapter.upload(bucket_name: bucket_name, key: key, body: body, public: public)
+        it 'uploads the file to remote path' do
+          fog_storage.directories.create(key: bucket_name)
 
-        expect(fog_storage.directories.get(bucket_name).files.get(key).body).to eq(body)
+          adapter.upload(bucket_name: bucket_name, key: key, body: body, public: public)
+
+          expect(fog_storage.directories.get(bucket_name).files.get(key).body).to eq('body')
+        end
+      end
+
+      context 'when body is a string' do
+        it 'uploads the file to remote path' do
+          fog_storage.directories.create(key: bucket_name)
+
+          adapter.upload(bucket_name: bucket_name, key: key, body: body, public: public)
+
+          expect(fog_storage.directories.get(bucket_name).files.get(key).body).to eq(body)
+        end
       end
 
       it 'raises an error if the bucket does not exist' do

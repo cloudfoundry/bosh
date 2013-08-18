@@ -16,7 +16,13 @@ module Bosh::Cli::Command
     option '--default_password PASSWORD',
            'Use default ssh password (NOT RECOMMENDED)'
     def shell(*args)
-      job, index, command = parse_args(args)
+      if args.size > 0
+        job, index, command = parse_args(args)
+      else
+        command = ''
+        job, index = prompt_for_job_and_index
+      end
+
       job_must_exist_in_deployment(job)
       index = valid_index_for(job, index, integer_index: true)
 
@@ -62,7 +68,7 @@ module Bosh::Cli::Command
       if args.size > 0
         err("SSH cleanup doesn't accept any extra args")
       end
-      
+
       job_must_exist_in_deployment(job)
 
       manifest_name = prepare_deployment_manifest['name']

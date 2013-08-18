@@ -1,10 +1,10 @@
+require 'peach'
+
 require 'bosh/stemcell/stemcell'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
-require 'bosh/dev/pipeline_storage'
-require 'peach'
 
 module Bosh::Dev
   class Build
@@ -12,17 +12,11 @@ module Bosh::Dev
 
     def self.candidate
       env_hash = ENV.to_hash
-
-      if env_hash.fetch('JOB_NAME') == 'publish_candidate_gems'
-        new(env_hash.fetch('BUILD_NUMBER'))
-      else
-        new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
-      end
+      new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
     end
 
     def initialize(number)
       @number = number
-      @job_name = ENV.to_hash.fetch('JOB_NAME')
       @logger = Logger.new($stdout)
     end
 
@@ -35,26 +29,26 @@ module Bosh::Dev
 
     def upload_gems(source_dir, dest_dir)
       bucket = 'bosh-ci-pipeline'
-      storage = Bosh::Dev::PipelineStorage.new
+      upload_adapter = Bosh::Dev::UploadAdapter.new
       Dir.chdir(source_dir) do
         Dir['**/*'].each do |file|
           unless File.directory?(file)
             key = File.join(number.to_s, dest_dir, file)
-            uploaded_file = storage.upload(
-              bucket,
-              key,
-              File.open(file),
-              true
-            )
+            uploaded_file = upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(file), public: true)
             logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{key}"}")
           end
         end
       end
     end
 
-    def download_release
-      command = "s3cmd --verbose -f get #{s3_release_url} #{release_path}"
-      Rake::FileUtilsExt.sh(command) || raise("Command failed: #{command}")
+    def download_release(options = {})
+      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
+      output_directory = options.fetch(:output_directory) { Dir.pwd }
+
+      remote_dir = File.join(number.to_s, 'release')
+      filename = release_file
+
+      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, release_path))
 
       release_path
     end
@@ -76,11 +70,16 @@ module Bosh::Dev
 
     def upload_stemcell(stemcell)
       latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
-      s3_latest_path = File.join(stemcell.name, stemcell.infrastructure, latest_filename)
-      s3_path = File.join(stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
+      s3_latest_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, latest_filename)
+      s3_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
 
-      create(key: s3_path, body: File.open(stemcell.path), public: false)
-      create(key: s3_latest_path, body: File.open(stemcell.path), public: false)
+      bucket = 'bosh-ci-pipeline'
+      upload_adapter = Bosh::Dev::UploadAdapter.new
+
+      upload_adapter.upload(bucket_name: bucket, key: s3_latest_path, body: File.open(stemcell.path), public: false)
+      logger.info("uploaded to s3://#{bucket}/#{s3_latest_path}")
+      upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(stemcell.path), public: false)
+      logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
     def s3_release_url
@@ -91,29 +90,9 @@ module Bosh::Dev
       "https://s3.amazonaws.com/bosh-ci-pipeline/#{number}/gems/"
     end
 
-    def promote_artifacts(aws_credentials)
+    def promote_artifacts
       sync_buckets
-      update_light_micro_bosh_ami_pointer_file(aws_credentials)
-    end
-
-    def sync_buckets
-      bucket_sync_commands.peach do |cmd|
-        Rake::FileUtilsExt.sh(cmd)
-      end
-    end
-
-    def update_light_micro_bosh_ami_pointer_file(aws_credentials)
-      connection = fog_storage(aws_credentials[:access_key_id], aws_credentials[:secret_access_key])
-      directory = connection.directories.create(key: 'bosh-jenkins-artifacts')
-      directory.files.create(key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
-                             body: light_stemcell.ami_id,
-                             acl: 'public-read')
-    end
-
-    def fog_storage(access_key_id, secret_access_key)
-      Fog::Storage.new(provider: 'AWS',
-                       aws_access_key_id: access_key_id,
-                       aws_secret_access_key: secret_access_key)
+      update_micro_bosh_ami_pointer_file
     end
 
     def bosh_stemcell_path(infrastructure, download_dir)
@@ -126,17 +105,21 @@ module Bosh::Dev
 
     private
 
-    attr_reader :job_name, :logger
+    attr_reader :logger
 
-    def create(options)
-      bucket = 'bosh-ci-pipeline'
-      uploaded_file = Bosh::Dev::PipelineStorage.new.upload(
-        bucket,
-        File.join(number.to_s, options.fetch(:key)),
-        options.fetch(:body),
-        options.fetch(:public)
+    def sync_buckets
+      bucket_sync_commands.peach do |cmd|
+        Rake::FileUtilsExt.sh(cmd)
+      end
+    end
+
+    def update_micro_bosh_ami_pointer_file
+      Bosh::Dev::UploadAdapter.new.upload(
+          bucket_name: 'bosh-jenkins-artifacts',
+          key: 'last_successful_micro-bosh-stemcell-aws_ami_us-east-1',
+          body: light_stemcell.ami_id,
+          public: true
       )
-      logger.info("uploaded to #{uploaded_file.public_url || "s3://#{bucket}/#{number}/#{options.fetch(:key)}"}")
     end
 
     def light_stemcell
@@ -147,7 +130,11 @@ module Bosh::Dev
     end
 
     def release_path
-      "release/bosh-#{number}.tgz"
+      "release/#{release_file}"
+    end
+
+    def release_file
+      "bosh-#{number}.tgz"
     end
 
     def s3_url

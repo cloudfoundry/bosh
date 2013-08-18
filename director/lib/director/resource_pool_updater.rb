@@ -51,9 +51,12 @@ module Bosh::Director
       deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.model
 
-      vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
+      # create vm only when its network reservation is not nil
+      unless idle_vm.network_reservation.nil? || idle_vm.network_reservation.ip.nil?
+        vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                 idle_vm.network_settings, nil, @resource_pool.env)
-
+      end
+      
       agent = AgentClient.new(vm.agent_id)
       agent.wait_until_ready
 
@@ -153,9 +156,10 @@ module Bosh::Director
           unless reservation.reserved?
             case reservation.error
               when NetworkReservation::CAPACITY
-                raise NetworkReservationNotEnoughCapacity,
-                      "`#{name}/#{index}' asked for a dynamic IP " +
-                      "but there were no more available"
+                #if there is no more dynamic ip might because of all jobs using static ip
+                @logger.info("`#{name}/#{index}' asked for a dynamic IP " +
+                      "but there were no more available")
+                reservation.ip = nil
               else
                 raise NetworkReservationError,
                       "`#{name}/#{index}' failed to reserve " +

@@ -1,8 +1,8 @@
-require 'bosh/dev/bat'
+require 'bosh/dev'
 require 'bosh/dev/shell'
 require 'tempfile'
 
-module Bosh::Dev::Bat
+module Bosh::Dev
   class BoshCliSession
     def initialize
       @shell = Bosh::Dev::Shell.new

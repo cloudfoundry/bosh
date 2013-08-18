@@ -47,12 +47,6 @@ describe Bosh::Cli::Command::Ssh do
         }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
       end
 
-      it 'should fail to setup ssh when a job name is not given' do
-        expect {
-          command.shell
-        }.to raise_error(Bosh::Cli::CliError, 'Please provide job name')
-      end
-
       it 'should fail to setup ssh when a job index is not an Integer' do
         expect {
           command.shell('dea/dea')
@@ -104,9 +98,14 @@ describe Bosh::Cli::Command::Ssh do
           }
         end
 
-        it 'should implicitly chooses the only instance' do
+        it 'should implicitly chooses the only instance if job index not provided' do
           command.should_receive(:setup_interactive_shell).with('dea', 0)
           command.shell('dea')
+        end
+
+        it 'should implicitly chooses the only instance if job name not provided' do
+          command.should_receive(:setup_interactive_shell).with('dea', 0)
+          command.shell
         end
       end
 
@@ -129,6 +128,12 @@ describe Bosh::Cli::Command::Ssh do
             command.shell('dea')
           }.to raise_error(Bosh::Cli::CliError,
                            'You should specify the job index. There is more than one instance of this job type.')
+        end
+
+        it 'should prompt for an instance if job name not given' do
+          command.should_receive(:choose).and_return(['dea', 3])
+          command.should_receive(:setup_interactive_shell).with('dea', 3)
+          command.shell
         end
       end
     end
