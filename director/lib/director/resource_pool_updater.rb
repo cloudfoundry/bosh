@@ -55,15 +55,16 @@ module Bosh::Director
       unless idle_vm.network_reservation.nil? || idle_vm.network_reservation.ip.nil?
         vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                 idle_vm.network_settings, nil, @resource_pool.env)
-      end
       
-      agent = AgentClient.new(vm.agent_id)
-      agent.wait_until_ready
+      
+        agent = AgentClient.new(vm.agent_id)
+        agent.wait_until_ready
 
-      update_state(agent, vm, idle_vm)
+        update_state(agent, vm, idle_vm)
 
-      idle_vm.vm = vm
-      idle_vm.current_state = agent.get_state
+        idle_vm.vm = vm
+        idle_vm.current_state = agent.get_state
+      end
     rescue Exception => e
       @logger.info("Cleaning up the created VM due to an error: #{e}")
       begin
