@@ -96,7 +96,12 @@ module Bosh::Director
       # @return [NetworkReservation] Obtained reservation
       def reserve_dynamic_network
         reservation = NetworkReservation.new_dynamic
-        @network.reserve!(reservation, "Resource pool `#{@name}'")
+        begin
+          @network.reserve!(reservation, "Resource pool `#{@name}'")
+        rescue NetworkReservationNotEnoughCapacity 
+          # it doesn't matter becasue network reservation will be done when parse a job
+          reservation.ip = nil
+        end
         reservation
       end
 
