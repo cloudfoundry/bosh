@@ -66,6 +66,9 @@ describe Bosh::Director::ResourcePoolUpdater do
       @idle_vm = stub(:IdleVm)
       @network_settings = {"network" => "settings"}
       @idle_vm.stub(:network_settings).and_return(@network_settings)
+      @network_reservation = {:ip => 16909060, :type => :dynamic} #ip = NetAddr::CIDR.create("1.2.3.4").to_i
+      @network_reservation.stub(:ip).and_return(@network_reservation[:ip])
+      @idle_vm.stub(:network_reservation).and_return(@network_reservation)
       @deployment = BD::Models::Deployment.make
       @deployment_plan = stub(:DeploymentPlan)
       @deployment_plan.stub(:model).and_return(@deployment)
@@ -94,7 +97,7 @@ describe Bosh::Director::ResourcePoolUpdater do
       BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
 
       @resource_pool_updater.should_receive(:update_state).with(agent, @vm, @idle_vm)
-      @idle_vm.should_receive(:network_reservation)
+      @idle_vm.should_receive(:network_reservation).at_least(:once)
       @idle_vm.should_receive(:vm=).with(@vm)
       @idle_vm.should_receive(:current_state=).with({"state" => "foo"})
 
@@ -107,7 +110,7 @@ describe Bosh::Director::ResourcePoolUpdater do
       BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
 
       @cloud.should_receive(:delete_vm).with("vm-1")
-      @idle_vm.should_receive(:network_reservation)
+      @idle_vm.should_receive(:network_reservation).at_least(:once)
       lambda {
         @resource_pool_updater.create_missing_vm(@idle_vm)
       }.should raise_error("timeout")
