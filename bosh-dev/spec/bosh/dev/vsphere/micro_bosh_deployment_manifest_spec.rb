@@ -27,10 +27,10 @@ network:
     name: net_id
 
 resources:
-   persistent_disk: 2048
+   persistent_disk: 4096
    cloud_properties:
       ram: 2048
-      disk: 4096
+      disk: 8192
       cpu: 4
 
 cloud:
