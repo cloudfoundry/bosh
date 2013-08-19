@@ -147,21 +147,21 @@ module Bosh::Dev
 
       it 'syncs the pipeline gems' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
 
         subject.promote_artifacts
       end
 
       it 'syncs the releases' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
 
         subject.promote_artifacts
       end
 
       it 'syncs the bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-            with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
 
         subject.promote_artifacts
       end
@@ -181,19 +181,19 @@ module Bosh::Dev
           fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
           Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
 
-        stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
-      end
+          stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
+        end
 
-      it 'downloads the aws bosh-stemcell for the current build' do
-        subject.should_receive(:download_stemcell).
-          with(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
+        it 'downloads the aws bosh-stemcell for the current build' do
+          subject.should_receive(:download_stemcell).
+            with(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
 
-        subject.promote_artifacts
-      end
+          subject.promote_artifacts
+        end
 
-      it 'initializes a Stemcell with the downloaded stemcell filename' do
-        Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-          with('123', infrastructure, 'bosh-stemcell', true).and_return(archive_filename)
+        it 'initializes a Stemcell with the downloaded stemcell filename' do
+          Bosh::Stemcell::ArchiveFilename.should_receive(:new).
+            with('123', infrastructure, 'bosh-stemcell', true).and_return(archive_filename)
 
           Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
 
