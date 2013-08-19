@@ -28,6 +28,12 @@ module Bosh::Dev::Aws
 
         its(:path) { should eq('/my/private/idaho/deployments') }
       end
+
+      context 'when path is passed into initialize' do
+        subject(:deployments_repository) { DeploymentsRepository.new(path_root: '/some/fake/path') }
+
+        its(:path) { should eq('/some/fake/path/deployments') }
+      end
     end
 
     describe '#clone_or_update!' do

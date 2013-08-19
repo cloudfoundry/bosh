@@ -4,9 +4,11 @@ require 'bosh/dev/shell'
 
 module Bosh::Dev::Aws
   class DeploymentsRepository
-    def initialize
+    def initialize(options = {})
       @env = ENV.to_hash
       @shell = Bosh::Dev::Shell.new
+
+      @path_root = options.fetch(:path_root) { env.fetch('FAKE_MNT', '/mnt') }
     end
 
     def path
@@ -19,11 +21,7 @@ module Bosh::Dev::Aws
 
     private
 
-    attr_reader :env, :shell
-
-    def path_root
-      env.fetch('FAKE_MNT', '/mnt')
-    end
+    attr_reader :env, :shell, :path_root
 
     def update_repo
       Dir.chdir(path) { shell.run('git pull') }
