@@ -15,13 +15,16 @@ mkdir -p $chroot/warden-cpi-dev
 sed -i s/lucid/precise/ $chroot/etc/lsb-release
 
 
-# Run rsyslog using runit and replace /usr/sbin/service with a script which call runit
+# Run rsyslog and ssh using runit and replace /usr/sbin/service with a script which call runit
 mkdir -p $chroot/etc/sv/ $chroot/etc/service/
 cp -a $assets_dir/runit/rsyslog/ $chroot/etc/sv/rsyslog
+cp -a $assets_dir/runit/ssh/ $chroot/etc/sv/ssh
 
 run_in_chroot $chroot "
 chmod +x /etc/sv/rsyslog/run
+chmod +x /etc/sv/ssh/run
 ln -s /etc/sv/rsyslog /etc/service/rsyslog
+ln -s /etc/sv/ssh /etc/service/ssh
 "
 
 # Replace /usr/sbin/service with a script which calls runit
