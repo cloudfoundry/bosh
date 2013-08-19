@@ -22,8 +22,8 @@ module Bosh::Dev
               'dns' => [env['BOSH_VSPHERE_DNS']],
               'cloud_properties' => { 'name' => env['BOSH_VSPHERE_NET_ID'] } },
           'resources' =>
-            { 'persistent_disk' => 2048,
-              'cloud_properties' => { 'ram' => 2048, 'disk' => 4096, 'cpu' => 4 } },
+            { 'persistent_disk' => 4096,
+              'cloud_properties' => { 'ram' => 2048, 'disk' => 8192, 'cpu' => 4 } },
           'cloud' =>
             { 'plugin' => 'vsphere',
               'properties' =>
