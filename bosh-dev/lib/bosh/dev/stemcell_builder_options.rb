@@ -6,15 +6,17 @@ require 'bosh/stemcell/infrastructure'
 module Bosh::Dev
   class StemcellBuilderOptions
     def initialize(options)
+      args = options.fetch(:args)
       @environment = options.fetch(:environment)
-      @args = options.fetch(:args)
+      @infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
+
+      @stemcell_tgz = args.fetch(:stemcell_tgz)
+      @stemcell_version = args.fetch(:stemcell_version)
+      @image_create_disk_size = args.fetch(:disk_size, infrastructure.default_disk_size)
+      @bosh_micro_release_tgz_path = args.fetch(:tarball)
     end
 
     def default
-      infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
-      stemcell_tgz = args.fetch(:stemcell_tgz)
-      stemcell_version = args.fetch(:stemcell_version)
-
       options = {
         'system_parameters_infrastructure' => infrastructure.name,
         'stemcell_name' => 'bosh-stemcell',
@@ -27,39 +29,31 @@ module Bosh::Dev
         'UBUNTU_MIRROR' => environment['UBUNTU_MIRROR'],
         'TW_LOCAL_PASSPHRASE' => environment['TW_LOCAL_PASSPHRASE'],
         'TW_SITE_PASSPHRASE' => environment['TW_SITE_PASSPHRASE'],
-        'ruby_bin' => environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
+        'ruby_bin' => ruby_bin,
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
         'bosh_micro_enabled' => 'yes',
         'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
-        'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{infrastructure.name}.yml"),
-        'bosh_micro_release_tgz_path' => args.fetch(:tarball)
+        'bosh_micro_manifest_yml_path' => File.join(source_root, 'release', 'micro', "#{infrastructure.name}.yml"),
+        'bosh_micro_release_tgz_path' => bosh_micro_release_tgz_path,
+        'image_create_disk_size' => image_create_disk_size
       }
 
-      options = check_for_ovftool(options) if infrastructure.name == 'vsphere'
+      options.merge!('image_vsphere_ovf_ovftool_path' => environment['OVFTOOL']) if infrastructure.name == 'vsphere'
 
-      options.merge('image_create_disk_size' => default_disk_size_for(infrastructure, args))
+      options
     end
 
     private
 
-    attr_reader :environment, :args
+    attr_reader :environment, :infrastructure, :stemcell_tgz, :stemcell_version, :image_create_disk_size, :bosh_micro_release_tgz_path
+
+    def ruby_bin
+      environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
+    end
 
     def hypervisor_for(infrastructure)
-      return environment['STEMCELL_HYPERVISOR'] if environment['STEMCELL_HYPERVISOR']
-
-      infrastructure.hypervisor
-    end
-
-    def check_for_ovftool(options)
-      ovftool_path = environment['OVFTOOL']
-      options.merge('image_vsphere_ovf_ovftool_path' => ovftool_path)
-    end
-
-    def default_disk_size_for(infrastructure, args)
-      return args[:disk_size] if args[:disk_size]
-
-      infrastructure.default_disk_size
+      environment['STEMCELL_HYPERVISOR'] || infrastructure.hypervisor
     end
 
     def source_root
