@@ -19,13 +19,14 @@ module Bosh::Dev
     let(:build_number) { '123' }
     let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
+    let(:shell) { instance_double('Shell') }
+
     subject(:deployer) do
       AutomatedDeployer.new(micro_target: micro_target,
                             bosh_target: bosh_target,
-                            username: username,
-                            password: password,
                             build_number: build_number,
                             environment: environment,
+                            shell: shell,
                             deployments_repository: deployments_repository,
                             artifacts_downloader: artifacts_downloader,
                             cli: cli)
@@ -35,6 +36,9 @@ module Bosh::Dev
       before do
         artifacts_downloader.stub(:download_release).with(build_number).and_return(release_path)
         artifacts_downloader.stub(:download_stemcell).with(build_number).and_return(stemcell_path)
+
+        shell.stub(:run).with('. /tmp/repo/test_env/bosh_environment && echo $BOSH_USER').and_return("#{username}\n")
+        shell.stub(:run).with('. /tmp/repo/test_env/bosh_environment && echo $BOSH_PASSWORD').and_return("#{password}\n")
       end
 
       def bosh_should_be_called_with(*args)

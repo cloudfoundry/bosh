@@ -1,3 +1,4 @@
+require 'bosh/dev/shell'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployments_repository'
@@ -7,11 +8,10 @@ module Bosh::Dev
     def initialize(options = {})
       @micro_target = options.fetch(:micro_target)
       @bosh_target = options.fetch(:bosh_target)
-      @username = options.fetch(:username)
-      @password = options.fetch(:password)
       @build_number = options.fetch(:build_number)
       @environment = options.fetch(:environment)
 
+      @shell = options.fetch(:shell) { Shell.new }
       @cli = options.fetch(:cli) { BoshCliSession.new }
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
       @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
@@ -39,7 +39,18 @@ module Bosh::Dev
 
     private
 
-    attr_reader :micro_target, :bosh_target, :username, :password, :cli, :artifacts_downloader, :build_number, :environment, :deployments_repository
+    attr_reader :micro_target, :bosh_target, :cli, :artifacts_downloader, :build_number, :environment, :deployments_repository, :shell
 
+    def username
+      @username ||= shell.run(". #{bosh_environment_path} && echo $BOSH_USER").chomp
+    end
+
+    def password
+      @password ||= shell.run(". #{bosh_environment_path} && echo $BOSH_PASSWORD").chomp
+    end
+
+    def bosh_environment_path
+      File.join(deployments_repository.path, environment, 'bosh_environment')
+    end
   end
 end
