@@ -65,7 +65,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     before(:each) do
       @idle_vm = stub(:IdleVm)
       @network_settings = {"network" => "settings"}
-      @idle_vm.stub(:network_valid?) = true
+      @idle_vm.stub(:network_valid?).and_return(true)
       @deployment = BD::Models::Deployment.make
       @deployment_plan = stub(:DeploymentPlan)
       @deployment_plan.stub(:model).and_return(@deployment)
