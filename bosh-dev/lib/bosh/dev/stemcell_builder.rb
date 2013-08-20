@@ -37,12 +37,10 @@ module Bosh::Dev
                 :build_path
 
     def build_stemcell
-      bosh_release_path = candidate.download_release
-
       stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
-        tarball: bosh_release_path,
-        infrastructure: infrastructure.name,
+        tarball: candidate.download_release,
         stemcell_version: candidate.number,
+        infrastructure: infrastructure.name,
         stemcell_tgz: archive_filename.to_s,
       })
 
