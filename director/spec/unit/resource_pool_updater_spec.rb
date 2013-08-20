@@ -65,6 +65,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     before(:each) do
       @idle_vm = stub(:IdleVm)
       @network_settings = {"network" => "settings"}
+      @idle_vm.stub(:network_valid?).and_return(true)
       @idle_vm.stub(:network_settings).and_return(@network_settings)
       @deployment = BD::Models::Deployment.make
       @deployment_plan = stub(:DeploymentPlan)
@@ -94,6 +95,7 @@ describe Bosh::Director::ResourcePoolUpdater do
       BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
 
       @resource_pool_updater.should_receive(:update_state).with(agent, @vm, @idle_vm)
+      @idle_vm.should_receive(:network_valid?).once
       @idle_vm.should_receive(:vm=).with(@vm)
       @idle_vm.should_receive(:current_state=).with({"state" => "foo"})
 
@@ -106,7 +108,7 @@ describe Bosh::Director::ResourcePoolUpdater do
       BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
 
       @cloud.should_receive(:delete_vm).with("vm-1")
-
+      @idle_vm.should_receive(:network_valid?).once
       lambda {
         @resource_pool_updater.create_missing_vm(@idle_vm)
       }.should raise_error("timeout")
