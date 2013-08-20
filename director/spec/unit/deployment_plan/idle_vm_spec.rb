@@ -36,6 +36,38 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
     end
   end
 
+  describe :networks_valid? do
+    it "should return false when there is bound instance and its network without an IP" do
+      network_reservation = stub(BD::NetworkReservation)
+      network_reservation.stub(:ip).and_return(nil)
+      bound_instance = stub(BD::DeploymentPlan::Instance)
+      bound_instance.stub(:network_reservations).and_return({ "net_a" => network_reservation})
+      @vm.bound_instance = bound_instance
+      @vm.networks_valid?.should == false
+    end
+
+    it "should return true when there is bound instance and its bound instance network is valid" do
+      network_reservation = stub(BD::NetworkReservation)
+      network_reservation.stub(:ip).and_return(1)
+      bound_instance = stub(BD::DeploymentPlan::Instance)
+      bound_instance.stub(:network_reservations).and_return({ "net_a" => network_reservation})
+      @vm.bound_instance = bound_instance
+      @vm.networks_valid?.should == true
+    end
+
+    it "should return false when network settings is not valid and there is no bound instance" do
+      @reservation.stub(:ip).and_return(nil)
+      @vm.use_reservation(@reservation)
+      @vm.networks_valid?.should == false
+    end
+
+    it "should return true when network settings is valid and there is no bound instance" do
+      @reservation.stub(:ip).and_return(1)
+      @vm.use_reservation(@reservation)
+      @vm.networks_valid?.should == true
+    end
+  end
+
   describe :networks_changed? do
     before(:each) do
       @vm.use_reservation(@reservation)

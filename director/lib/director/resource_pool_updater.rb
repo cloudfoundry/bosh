@@ -52,7 +52,7 @@ module Bosh::Director
       stemcell = @resource_pool.stemcell.model
 
       # create vm only when its network reservation is not nil
-      unless idle_vm.network_reservation.nil? || idle_vm.network_reservation.ip.nil?
+      if idle_vm.network_valid?
         begin
           vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                   idle_vm.network_settings, nil, @resource_pool.env)

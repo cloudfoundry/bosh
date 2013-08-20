@@ -80,6 +80,23 @@ module Bosh::Director
         end
       end
 
+      def network_valid?
+        network_valid = true
+        if @bound_instance
+          @bound_instance.network_reservations.each_value do |network_reservation|
+            if network_reservation.nil? || network_reservation.ip.nil?
+              network_valid = false
+              break
+            end
+          end
+        else
+          if @network_reservation.nil? || @network_reservation.ip.nil?
+            network_valid = false
+          end
+        end
+        network_valid
+      end
+
       ##
       # @return [Boolean] returns true if the expected network configuration
       #   differs from the one provided by the VM
