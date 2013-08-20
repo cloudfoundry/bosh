@@ -1,20 +1,47 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
 require 'bosh/dev/stemcell_environment'
-require 'bosh/dev/stemcell_builder'
 
 module Bosh::Dev
   describe StemcellEnvironment do
     include FakeFS::SpecHelpers
 
-    let(:stemcell_builder) do
-      instance_double('Bosh::Dev::StemcellBuilder',
-                      directory: '/mnt/stemcells/aws-basic',
-                      work_path: '/mnt/stemcells/aws-basic/work')
+    let(:options) do
+      {
+        infrastructure_name: 'aws'
+      }
     end
 
-    subject(:stemcell_rake_methods) do
-      StemcellEnvironment.new(stemcell_builder)
+    subject(:stemcell_environment) do
+      StemcellEnvironment.new(options)
+    end
+
+    describe '#build_path' do
+      its(:build_path) { should eq '/mnt/stemcells/aws/build' }
+
+      context 'when FAKE_MNT is set' do
+        before do
+          ENV.stub(to_hash: {
+            'FAKE_MNT' => '/fake_mnt'
+          })
+        end
+
+        its(:build_path) { should eq '/fake_mnt/stemcells/aws/build' }
+      end
+    end
+
+    describe '#work_path' do
+      its(:work_path) { should eq '/mnt/stemcells/aws/work' }
+
+      context 'when FAKE_MNT is set' do
+        before do
+          ENV.stub(to_hash: {
+            'FAKE_MNT' => '/fake_mnt'
+          })
+        end
+
+        its(:work_path) { should eq '/fake_mnt/stemcells/aws/work' }
+      end
     end
 
     describe '#sanitize' do
@@ -33,25 +60,25 @@ module Bosh::Dev
       end
 
       it 'unmounts work/work/mnt/tmp/grub/root.img' do
-        subject.should_receive(:system).with('sudo umount /mnt/stemcells/aws-basic/work/work/mnt/tmp/grub/root.img 2> /dev/null')
+        subject.should_receive(:system).with('sudo umount /mnt/stemcells/aws/work/work/mnt/tmp/grub/root.img 2> /dev/null')
         subject.sanitize
       end
 
       it 'unmounts work/work/mnt directory' do
-        subject.should_receive(:system).with('sudo umount /mnt/stemcells/aws-basic/work/work/mnt 2> /dev/null')
+        subject.should_receive(:system).with('sudo umount /mnt/stemcells/aws/work/work/mnt 2> /dev/null')
         subject.sanitize
       end
 
-      it 'removes /mnt/stemcells/aws-basic' do
-        subject.should_receive(:system).with('sudo rm -rf /mnt/stemcells/aws-basic')
+      it 'removes /mnt/stemcells/aws' do
+        subject.should_receive(:system).with('sudo rm -rf /mnt/stemcells/aws')
         subject.sanitize
       end
 
       context 'when the mount type is btrfs' do
         let(:mnt_type) { 'btrfs' }
 
-        it 'does not remove /mnt/stemcells/aws-basic' do
-          subject.should_not_receive(:system).with(%r{rm .* /mnt/stemcells/aws-basic})
+        it 'does not remove /mnt/stemcells/aws' do
+          subject.should_not_receive(:system).with(%r{rm .* /mnt/stemcells/aws})
           subject.sanitize
         end
       end

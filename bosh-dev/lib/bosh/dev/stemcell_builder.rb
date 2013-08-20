@@ -5,24 +5,18 @@ require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class StemcellBuilder
-    attr_reader :directory, :work_path
-
     def initialize(infrastructure_name, candidate = Bosh::Dev::Build.candidate)
-      @candidate = candidate
+      @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure_name)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
+      @candidate = candidate
       @archive_filename = Bosh::Stemcell::ArchiveFilename.new(candidate.number, infrastructure, 'bosh-stemcell', false)
-      mnt = ENV.fetch('FAKE_MNT', '/mnt')
-      @directory = File.join(mnt, 'stemcells', "#{infrastructure_name}")
-      @work_path = File.join(directory, 'work')
-      @build_path = File.join(directory, 'build')
     end
 
     def build
-      ENV['BUILD_PATH'] = build_path
-      ENV['WORK_PATH'] = work_path
+      ENV['BUILD_PATH'] = stemcell_environment.build_path
+      ENV['WORK_PATH'] = stemcell_environment.work_path
 
-      environment = StemcellEnvironment.new(self)
-      environment.sanitize
+      stemcell_environment.sanitize
 
       build_stemcell
 
@@ -34,7 +28,7 @@ module Bosh::Dev
     attr_reader :candidate,
                 :archive_filename,
                 :infrastructure,
-                :build_path
+                :stemcell_environment
 
     def build_stemcell
       stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
@@ -48,7 +42,7 @@ module Bosh::Dev
     end
 
     def stemcell_path!
-      stemcell_path = File.join(work_path, 'work', archive_filename.to_s)
+      stemcell_path = File.join(stemcell_environment.work_path, 'work', archive_filename.to_s)
 
       File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
 
