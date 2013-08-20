@@ -41,7 +41,7 @@ module Bosh::Dev
         builder.build
       end
 
-      it 'sets BUILD_PATH, WORK_PATH as expected by the "stemcell:micro" task' do
+      it 'sets BUILD_PATH, WORK_PATH as expected' do
         ENV.should_receive(:[]=).with('BUILD_PATH', '/mnt/stemcells/vsphere/build')
         ENV.should_receive(:[]=).with('WORK_PATH', '/mnt/stemcells/vsphere/work')
 
@@ -58,7 +58,7 @@ module Bosh::Dev
         }.to change { File.exist?('/mnt/stemcells/vsphere/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
       end
 
-      context 'when the micro stemcell is not created' do
+      context 'when the stemcell is not created' do
         before do
           stemcell_rake_methods.stub(:build_stemcell)
         end
