@@ -105,3 +105,9 @@ def cleanup_bosh
   FileUtils.mkdir_p(SANDBOX_DIR)
 end
 
+def get_task_id(output, state = 'done')
+  match = output.match(/Task (\d+) #{state}/)
+  match.should_not be_nil
+  match[1]
+end
+
