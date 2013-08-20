@@ -16,7 +16,7 @@ module Bosh::Dev::Aws
     end
 
     def clone_or_update!
-      Dir.exists?(path) ? update_repo : clone_repo
+      git_repo?(path) ? update_repo : clone_repo
     end
 
     private
@@ -30,6 +30,10 @@ module Bosh::Dev::Aws
     def clone_repo
       FileUtils.mkdir_p(path, verbose: true)
       shell.run("git clone #{env.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} #{path}")
+    end
+
+    def git_repo?(path)
+      Dir.exists?(File.join(path, '.git'))
     end
   end
 end

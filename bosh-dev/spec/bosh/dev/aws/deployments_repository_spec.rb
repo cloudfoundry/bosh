@@ -42,10 +42,24 @@ module Bosh::Dev::Aws
           FileUtils.mkdir_p(subject.path)
         end
 
-        it 'updates the repo at "#path"' do
-          shell.should_receive(:run).with('git pull')
+        context 'when the directory contains a .git subdirectory' do
+          before do
+            FileUtils.mkdir_p(File.join(subject.path, '.git'))
+          end
 
-          subject.clone_or_update!
+          it 'updates the repo at "#path"' do
+            shell.should_receive(:run).with('git pull')
+
+            subject.clone_or_update!
+          end
+        end
+
+        context 'when the directory does not contain a .git subdirectory' do
+          it 'clones the repo into "#path"'do
+            shell.should_receive(:run).with('git clone fake_BOSH_JENKINS_DEPLOYMENTS_REPO /mnt/deployments')
+
+            subject.clone_or_update!
+          end
         end
       end
 
