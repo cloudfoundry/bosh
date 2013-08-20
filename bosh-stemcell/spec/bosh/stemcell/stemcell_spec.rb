@@ -3,7 +3,7 @@ require 'bosh/stemcell/stemcell'
 
 module Bosh::Stemcell
   describe Stemcell do
-    let(:stemcell_path) { spec_asset('micro-bosh-stemcell-aws.tgz') }
+    let(:stemcell_path) { spec_asset('fake-stemcell-aws.tgz') }
 
     subject { Stemcell.new(stemcell_path) }
 
@@ -21,7 +21,7 @@ module Bosh::Stemcell
 
     describe '#name' do
       it 'has a name' do
-        expect(subject.name).to eq 'micro-bosh-stemcell'
+        expect(subject.name).to eq 'fake-stemcell'
       end
     end
 
@@ -39,7 +39,7 @@ module Bosh::Stemcell
 
     describe '#version' do
       it 'has a version' do
-        expect(subject.version).to eq('714')
+        expect(subject.version).to eq('007')
       end
     end
 
@@ -50,14 +50,14 @@ module Bosh::Stemcell
         end
 
         context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
-          let(:stemcell_path) { spec_asset('light-micro-bosh-stemcell-aws.tgz') }
+          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws.tgz') }
 
           it { should be_light }
         end
       end
 
       context 'when infrastructure is anything but "aws"' do
-        let(:stemcell_path) { spec_asset('micro-bosh-stemcell-vsphere.tgz') }
+        let(:stemcell_path) { spec_asset('fake-stemcell-vsphere.tgz') }
 
         it { should_not be_light }
       end
@@ -70,14 +70,14 @@ module Bosh::Stemcell
         end
 
         context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
-          let(:stemcell_path) { spec_asset('light-micro-bosh-stemcell-aws.tgz') }
+          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws.tgz') }
 
           its(:ami_id) { should eq('ami-FAKE_AMI_KEY') }
         end
       end
 
       context 'when infrastructure is anything but "aws"' do
-        let(:stemcell_path) { spec_asset('micro-bosh-stemcell-vsphere.tgz') }
+        let(:stemcell_path) { spec_asset('fake-stemcell-vsphere.tgz') }
 
         its(:ami_id) { should be_nil }
       end

@@ -6,14 +6,14 @@ module Bosh::Stemcell
   module Aws
     describe LightStemcell do
       let(:stemcell) do
-        Stemcell.new(spec_asset('micro-bosh-stemcell-aws.tgz'))
+        Stemcell.new(spec_asset('fake-stemcell-aws.tgz'))
       end
 
       subject(:light_stemcell) do
         LightStemcell.new(stemcell)
       end
 
-      its(:path) { should eq(spec_asset('light-micro-bosh-stemcell-aws.tgz')) }
+      its(:path) { should eq(spec_asset('light-fake-stemcell-aws.tgz')) }
 
       describe '#write_archive' do
         let(:ami) do
@@ -21,7 +21,7 @@ module Bosh::Stemcell
         end
 
         let(:stemcell) do
-          Stemcell.new(spec_asset('micro-bosh-stemcell-aws.tgz'))
+          Stemcell.new(spec_asset('fake-stemcell-aws.tgz'))
         end
 
         subject(:light_stemcell) do
@@ -45,7 +45,7 @@ module Bosh::Stemcell
             command.should match(/tar xzf #{stemcell.path} --directory .*/)
           end
 
-          expected_tarfile = File.join(File.dirname(stemcell.path), 'light-micro-bosh-stemcell-aws.tgz')
+          expected_tarfile = File.join(File.dirname(stemcell.path), 'light-fake-stemcell-aws.tgz')
 
           Rake::FileUtilsExt.should_receive(:sh) do |command|
             command.should match(/sudo tar cvzf #{expected_tarfile} \*/)
