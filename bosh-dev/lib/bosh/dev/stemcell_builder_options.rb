@@ -32,7 +32,7 @@ module Bosh::Dev
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
         'bosh_micro_enabled' => 'yes',
         'bosh_micro_package_compiler_path' => File.join(source_root, 'package_compiler'),
-        'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{args[:infrastructure]}.yml"),
+        'bosh_micro_manifest_yml_path' => File.join(source_root, "release/micro/#{infrastructure.name}.yml"),
         'bosh_micro_release_tgz_path' => args.fetch(:tarball)
       }
 
