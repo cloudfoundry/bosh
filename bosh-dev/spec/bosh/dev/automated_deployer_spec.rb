@@ -4,7 +4,8 @@ require 'bosh/dev/automated_deployer'
 
 module Bosh::Dev
   describe AutomatedDeployer do
-    let(:target) { 'micro.target.example.com' }
+    let(:micro_target) { 'micro.target.example.com' }
+    let(:bosh_target) { 'bosh.target.example.com' }
     let(:username) { 'user' }
     let(:password) { 'password' }
 
@@ -19,7 +20,8 @@ module Bosh::Dev
     let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
     subject(:deployer) do
-      AutomatedDeployer.new(target: target,
+      AutomatedDeployer.new(micro_target: micro_target,
+                            bosh_target: bosh_target,
                             username: username,
                             password: password,
                             build_number: build_number,
@@ -46,6 +48,10 @@ module Bosh::Dev
         bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', ignore_failures: true
         bosh_should_be_called_with 'upload release /tmp/release.tgz', ignore_failures: true
         bosh_should_be_called_with 'deploy', debug_on_fail: true
+
+        bosh_should_be_called_with 'target bosh.target.example.com'
+        bosh_should_be_called_with 'login user password'
+        bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', debug_on_fail: true
 
         deployer.deploy
       end

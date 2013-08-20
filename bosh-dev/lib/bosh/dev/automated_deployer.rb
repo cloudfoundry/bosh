@@ -5,7 +5,8 @@ require 'bosh/dev/aws/deployments_repository'
 module Bosh::Dev
   class AutomatedDeployer
     def initialize(options = {})
-      @target = options.fetch(:target)
+      @micro_target = options.fetch(:micro_target)
+      @bosh_target = options.fetch(:bosh_target)
       @username = options.fetch(:username)
       @password = options.fetch(:password)
       @build_number = options.fetch(:build_number)
@@ -24,17 +25,21 @@ module Bosh::Dev
 
       deployments_repository.clone_or_update!
 
-      cli.run_bosh("target #{target}")
+      cli.run_bosh("target #{micro_target}")
       cli.run_bosh("login #{username} #{password}")
       cli.run_bosh("deployment #{manifest_path}")
       cli.run_bosh("upload stemcell #{stemcell_path}", ignore_failures: true)
       cli.run_bosh("upload release #{release_path}", ignore_failures: true)
       cli.run_bosh('deploy', debug_on_fail: true)
+
+      cli.run_bosh("target #{bosh_target}")
+      cli.run_bosh("login #{username} #{password}")
+      cli.run_bosh("upload stemcell #{stemcell_path}", debug_on_fail: true)
     end
 
     private
 
-    attr_reader :target, :username, :password, :cli, :artifacts_downloader, :build_number, :environment, :deployments_repository
+    attr_reader :micro_target, :bosh_target, :username, :password, :cli, :artifacts_downloader, :build_number, :environment, :deployments_repository
 
   end
 end
