@@ -36,6 +36,7 @@ end
 group :development do
   gem 'ruby_gntp'
   gem 'debugger' if RUBY_VERSION < '2.0.0'
+  gem 'git-duet', require: false
 end
 
 group :bat do
