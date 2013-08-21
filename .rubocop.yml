@@ -47,3 +47,6 @@ Blocks:
 
 TrivialAccessors:
   Enabled: false # Bosh::Stemcell::Infrastructure#light? was a false positive
+
+AvoidPerlisms:
+  Enabled: false # Unfortunately $CHILD_STATUS isn't always the same as $?
