@@ -1,5 +1,3 @@
-require 'bosh/dev/bat'
-
 module Bosh::Dev
   class Shell
     def initialize(stdout = $stdout)
