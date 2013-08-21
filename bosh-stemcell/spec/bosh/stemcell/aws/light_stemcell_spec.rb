@@ -29,7 +29,7 @@ module Bosh::Stemcell
         end
 
         before do
-          Ami.stub(new: ami)
+          Ami.stub(:new).with(stemcell).and_return(ami)
           Rake::FileUtilsExt.stub(:sh)
           FileUtils.stub(:touch)
         end
