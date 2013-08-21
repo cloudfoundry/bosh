@@ -4,7 +4,7 @@ require 'bosh/dev/stemcell_builder_command'
 module Bosh::Dev
   describe StemcellBuilderCommand do
     let(:root_dir) { '/mnt/root' }
-    let(:env) { {} }
+    let(:environment_hash) { {} }
     let(:stemcell_builder_options) do
       instance_double('Bosh::Dev::StemcellBuilderOptions',
                       spec_name: spec,
@@ -22,7 +22,7 @@ module Bosh::Dev
     end
 
     before do
-      ENV.stub(to_hash: env)
+      ENV.stub(to_hash: environment_hash)
     end
 
     describe '#build' do
@@ -89,7 +89,7 @@ module Bosh::Dev
       end
 
       context 'when the uses sets proxy environment variables' do
-        let(:env) do
+        let(:environment_hash) do
           {
             'HTTP_PROXY' => 'nice_proxy',
             'no_proxy' => 'naughty_proxy'
