@@ -19,10 +19,15 @@ module Bosh::Dev
                       work_path: '/fake/work_path',
                       sanitize: nil)
     end
+
     let(:stemcell_builder_options) do
       instance_double('Bosh::Dev::StemcellBuilderOptions')
     end
-    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_stemcell: nil) }
+
+    let(:stemcell_builder_command) do
+      instance_double('Bosh::Dev::BuildFromSpec', build: nil)
+    end
+
     let(:args) do
       {
         tarball: 'fake release path',
@@ -36,18 +41,15 @@ module Bosh::Dev
       StemcellBuilder.new(infrastructure_name, build)
     end
 
-    before do
-      GemsGenerator.stub(:new).and_return(gems_generator)
-      StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure_name).and_return(stemcell_environment)
-      StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
-    end
-
     describe '#build' do
       before do
-        StemcellRakeMethods.stub(:new).with(stemcell_environment: stemcell_environment,
-                                            stemcell_builder_options: stemcell_builder_options).and_return(stemcell_rake_methods)
+        GemsGenerator.stub(:new).and_return(gems_generator)
+        StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure_name).and_return(stemcell_environment)
+        StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
+        StemcellBuilderCommand.stub(:new).with(stemcell_environment,
+                                               stemcell_builder_options).and_return(stemcell_builder_command)
 
-        stemcell_rake_methods.stub(:build_stemcell) do
+        stemcell_builder_command.stub(:build) do
           FileUtils.mkdir_p('/fake/work_path/work')
           FileUtils.touch('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
         end
@@ -77,7 +79,7 @@ module Bosh::Dev
 
       context 'when the stemcell is not created' do
         before do
-          stemcell_rake_methods.stub(:build_stemcell)
+          stemcell_builder_command.stub(:build)
         end
 
         it 'fails early and loud' do

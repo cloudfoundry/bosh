@@ -1,7 +1,6 @@
 require 'bosh/dev/build'
 require 'bosh/dev/gems_generator'
 require 'bosh/dev/stemcell_environment'
-require 'bosh/dev/stemcell_rake_methods'
 require 'bosh/dev/stemcell_builder_options'
 require 'bosh/stemcell/archive_filename'
 
@@ -16,7 +15,7 @@ module Bosh::Dev
 
     def build
       generate_gems
-      
+
       stemcell_environment.sanitize
 
       build_stemcell
@@ -37,16 +36,13 @@ module Bosh::Dev
     end
 
     def build_stemcell
-      stemcell_rake_methods =
-        Bosh::Dev::StemcellRakeMethods.new(stemcell_environment: stemcell_environment,
-                                           stemcell_builder_options: StemcellBuilderOptions.new(args: {
-                                             tarball: candidate.download_release,
-                                             stemcell_version: candidate.number,
-                                             infrastructure: infrastructure.name,
-                                             stemcell_tgz: archive_filename.to_s,
-                                           }))
+      stemcell_builder_options = StemcellBuilderOptions.new(args: { tarball: candidate.download_release,
+                                                                    stemcell_version: candidate.number,
+                                                                    infrastructure: infrastructure.name,
+                                                                    stemcell_tgz: archive_filename.to_s })
 
-      stemcell_rake_methods.build_stemcell
+      stemcell_builder_command = StemcellBuilderCommand.new(stemcell_environment, stemcell_builder_options)
+      stemcell_builder_command.build
     end
 
     def stemcell_path!
