@@ -5,11 +5,6 @@ require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
   describe StemcellRakeMethods do
-    let(:env) { { 'FAKE' => 'ENV' } }
-    let(:args) { { infrastructure: 'aws' } }
-
-    let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
-
     let(:stemcell_builder_command) do
       instance_double('Bosh::Dev::BuildFromSpec', build: nil)
     end
@@ -27,20 +22,10 @@ module Bosh::Dev
                               stemcell_builder_options: stemcell_builder_options)
     end
 
-    before do
-      Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
-    end
-
     describe '#build_stemcell' do
       before do
         Bosh::Dev::StemcellBuilderCommand.stub(:new).with(stemcell_environment,
                                                           stemcell_builder_options).and_return(stemcell_builder_command)
-      end
-
-      it "builds bosh's gems so we have the gem for the agent" do
-        gems_generator.should_receive(:build_gems_into_release_dir)
-
-        stemcell_rake_methods.build_stemcell
       end
 
       it 'builds a basic stemcell with the appropriate name and options' do

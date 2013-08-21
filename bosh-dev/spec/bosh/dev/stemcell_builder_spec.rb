@@ -10,6 +10,9 @@ module Bosh::Dev
     let(:infrastructure_name) { 'vsphere' }
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
+
+    let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
+
     let(:stemcell_environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
                       build_path: '/fake/build_path',
@@ -34,6 +37,7 @@ module Bosh::Dev
     end
 
     before do
+      GemsGenerator.stub(:new).and_return(gems_generator)
       StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure_name).and_return(stemcell_environment)
       StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
     end
@@ -51,6 +55,13 @@ module Bosh::Dev
 
       it 'sanitizes the stemcell environment' do
         stemcell_environment.should_receive(:sanitize)
+
+        builder.build
+      end
+
+      it 'generates the bosh gems' do
+        gems_generator.should_receive(:build_gems_into_release_dir)
+
         builder.build
       end
 

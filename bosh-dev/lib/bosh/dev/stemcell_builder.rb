@@ -1,4 +1,5 @@
 require 'bosh/dev/build'
+require 'bosh/dev/gems_generator'
 require 'bosh/dev/stemcell_environment'
 require 'bosh/dev/stemcell_rake_methods'
 require 'bosh/dev/stemcell_builder_options'
@@ -14,6 +15,8 @@ module Bosh::Dev
     end
 
     def build
+      generate_gems
+      
       stemcell_environment.sanitize
 
       build_stemcell
@@ -27,6 +30,11 @@ module Bosh::Dev
                 :archive_filename,
                 :infrastructure,
                 :stemcell_environment
+
+    def generate_gems
+      gems_generator = GemsGenerator.new
+      gems_generator.build_gems_into_release_dir
+    end
 
     def build_stemcell
       stemcell_rake_methods =
