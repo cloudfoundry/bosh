@@ -9,7 +9,7 @@ module Bosh::Stemcell::Aws
   class Ami
     attr_reader :stemcell
 
-    def initialize(stemcell, region = Bosh::Stemcell::Aws::Region.new)
+    def initialize(stemcell, region)
       @stemcell = stemcell
       @region = region
     end
@@ -23,16 +23,13 @@ module Bosh::Stemcell::Aws
       stemcell.extract do |tmp_dir, stemcell_manifest|
         ami_id = cloud.create_stemcell("#{tmp_dir}/image", stemcell_manifest['cloud_properties'])
         cloud.ec2.images[ami_id].public = true
-
         ami_id
       end
     end
 
-    def region
-      @region.region
-    end
-
     private
+
+    attr_reader :region
 
     def options
       # just fake the registry struct, as we don't use it
@@ -52,7 +49,7 @@ module Bosh::Stemcell::Aws
 
       {
         'default_key_name' => 'fake',
-        'region' => region,
+        'region' => region.name,
         'access_key_id' => access_key_id,
         'secret_access_key' => secret_access_key
       }

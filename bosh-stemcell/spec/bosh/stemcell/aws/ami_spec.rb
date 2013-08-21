@@ -11,7 +11,7 @@ module Bosh::Stemcell::Aws
     end
 
     subject(:ami) do
-      Ami.new(stemcell, instance_double('Bosh::Stemcell::Aws::Region', region: 'fake-region'))
+      Ami.new(stemcell, instance_double('Bosh::Stemcell::Aws::Region', name: 'fake-region'))
     end
 
     before do
