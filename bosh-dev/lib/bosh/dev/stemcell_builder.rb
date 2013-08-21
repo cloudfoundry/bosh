@@ -28,13 +28,14 @@ module Bosh::Dev
                 :stemcell_environment
 
     def build_stemcell
-      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(stemcell_environment: stemcell_environment,
-                                                                 args: {
-                                                                   tarball: candidate.download_release,
-                                                                   stemcell_version: candidate.number,
-                                                                   infrastructure: infrastructure.name,
-                                                                   stemcell_tgz: archive_filename.to_s,
-                                                                 })
+      stemcell_rake_methods =
+        Bosh::Dev::StemcellRakeMethods.new(stemcell_environment: stemcell_environment,
+                                           stemcell_builder_options: StemcellBuilderOptions.new(args: {
+                                             tarball: candidate.download_release,
+                                             stemcell_version: candidate.number,
+                                             infrastructure: infrastructure.name,
+                                             stemcell_tgz: archive_filename.to_s,
+                                           }))
 
       stemcell_rake_methods.build_stemcell
     end

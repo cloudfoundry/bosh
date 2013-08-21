@@ -16,7 +16,18 @@ module Bosh::Dev
                       work_path: '/fake/work_path',
                       sanitize: nil)
     end
+    let(:stemcell_builder_options) do
+      instance_double('Bosh::Dev::StemcellBuilderOptions')
+    end
     let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_stemcell: nil) }
+    let(:args) do
+      {
+        tarball: 'fake release path',
+        infrastructure: 'vsphere',
+        stemcell_version: build_number,
+        stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
+      }
+    end
 
     subject(:builder) do
       StemcellBuilder.new(infrastructure_name, build)
@@ -24,17 +35,13 @@ module Bosh::Dev
 
     before do
       StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure_name).and_return(stemcell_environment)
+      StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
     end
 
     describe '#build' do
       before do
         StemcellRakeMethods.stub(:new).with(stemcell_environment: stemcell_environment,
-                                            args: {
-                                              tarball: 'fake release path',
-                                              infrastructure: 'vsphere',
-                                              stemcell_version: build_number,
-                                              stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
-                                            }).and_return(stemcell_rake_methods)
+                                            stemcell_builder_options: stemcell_builder_options).and_return(stemcell_rake_methods)
 
         stemcell_rake_methods.stub(:build_stemcell) do
           FileUtils.mkdir_p('/fake/work_path/work')

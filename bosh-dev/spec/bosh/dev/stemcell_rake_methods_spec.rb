@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_rake_methods'
+require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
@@ -22,11 +23,11 @@ module Bosh::Dev
     end
 
     subject(:stemcell_rake_methods) do
-      StemcellRakeMethods.new(args: args, stemcell_environment: stemcell_environment)
+      StemcellRakeMethods.new(stemcell_environment: stemcell_environment,
+                              stemcell_builder_options: stemcell_builder_options)
     end
 
     before do
-      Bosh::Dev::StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
       Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
     end
 

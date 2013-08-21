@@ -1,12 +1,11 @@
 require 'bosh/dev/stemcell_builder_command'
-require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/gems_generator'
 
 module Bosh::Dev
   class StemcellRakeMethods
     def initialize(options)
       @stemcell_environment = options.fetch(:stemcell_environment)
-      @stemcell_builder_options = StemcellBuilderOptions.new(args: options.fetch(:args))
+      @stemcell_builder_options = options.fetch(:stemcell_builder_options)
     end
 
     def build_stemcell
@@ -19,7 +18,6 @@ module Bosh::Dev
 
     private
 
-    attr_reader :stemcell_environment,
-                :stemcell_builder_options
+    attr_reader :stemcell_environment, :stemcell_builder_options
   end
 end
