@@ -1,6 +1,7 @@
 require 'bosh/dev/build'
 require 'bosh/dev/stemcell_environment'
 require 'bosh/dev/stemcell_rake_methods'
+require 'bosh/dev/stemcell_builder_options'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
