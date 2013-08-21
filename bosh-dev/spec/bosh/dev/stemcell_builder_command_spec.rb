@@ -81,14 +81,25 @@ module Bosh::Dev
         expect(File.read(settings_file)).to match(/hello=world/)
       end
 
-      context 'when the user does not set proxy environment variables' do
-        it 'runs the stemcell builder with no environment variables set' do
-          shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")
+      context 'when ENV contains variables besides HTTP_PROXY and NO_PROXY' do
+        let(:environment_hash) do
+          {
+            'NOT_HTTP_PROXY' => 'nice_proxy',
+            'no_proxy_just_kidding' => 'naughty_proxy'
+          }
+        end
+
+        it 'nothing is passed to sudo via "env"' do
+          shell.should_receive(:run) do |command|
+            expect(command).not_to match(/NOT_HTTP_PROXY=nice_proxy/)
+            expect(command).not_to match(/no_proxy_just_kidding=naughty_proxy/)
+          end
+
           stemcell_builder_command.build
         end
       end
 
-      context 'when the uses sets proxy environment variables' do
+      context 'ENV variables for HTTP_PROXY and NO_PROXY are passed to "env"' do
         let(:environment_hash) do
           {
             'HTTP_PROXY' => 'nice_proxy',
@@ -96,7 +107,7 @@ module Bosh::Dev
           }
         end
 
-        it 'maintains current user proxy env vars through the shell sudo call' do
+        it 'they are passed to sudo via "env"' do
           shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_script} #{work_dir} #{spec_file} #{settings_file}")
           stemcell_builder_command.build
         end
