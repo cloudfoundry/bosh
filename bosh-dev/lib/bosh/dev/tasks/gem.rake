@@ -1,5 +1,6 @@
 COMPONENTS = %w(agent_client
                 blobstore_client
+                bosh-core
                 bosh-stemcell
                 bosh_agent
                 bosh_aws_cpi

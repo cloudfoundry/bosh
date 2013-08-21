@@ -17,6 +17,11 @@ PATH
       ruby-atmos-pure (~> 1.0.5)
 
 PATH
+  remote: bosh-core
+  specs:
+    bosh-core (1.5.0.pre.3)
+
+PATH
   remote: bosh-dev
   specs:
     bosh-dev (0.0.1.unpublished)
@@ -434,6 +439,7 @@ PLATFORMS
 DEPENDENCIES
   agent_client!
   blobstore_client!
+  bosh-core!
   bosh-dev!
   bosh-stemcell!
   bosh_agent!
