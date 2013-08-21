@@ -16,8 +16,6 @@ module Bosh::Dev
     def build
       generate_gems
 
-      stemcell_environment.sanitize
-
       stemcell_path = build_stemcell
 
       File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")

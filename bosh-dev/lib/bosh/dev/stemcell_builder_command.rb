@@ -7,6 +7,7 @@ module Bosh::Dev
     def initialize(stemcell_environment, stemcell_builder_options)
       @shell = Bosh::Core::Shell.new
       @environment = ENV.to_hash
+      @stemcell_environment = stemcell_environment
       @build_root = stemcell_environment.build_path
       @work_path = stemcell_environment.work_path
       @spec_name = stemcell_builder_options.spec_name
@@ -14,6 +15,8 @@ module Bosh::Dev
     end
 
     def build
+      stemcell_environment.sanitize
+
       prepare_build_root
 
       prepare_build_path
@@ -36,7 +39,8 @@ module Bosh::Dev
                 :settings,
                 :environment,
                 :build_root,
-                :work_path
+                :work_path,
+                :stemcell_environment
 
     def prepare_build_root
       FileUtils.mkdir_p build_root

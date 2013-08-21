@@ -12,8 +12,7 @@ module Bosh::Dev
     let(:stemcell_environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
                       build_path: '/fake/build_path',
-                      work_path: '/fake/work_path',
-                      sanitize: nil)
+                      work_path: '/fake/work_path')
     end
     let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere') }
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
@@ -50,12 +49,6 @@ module Bosh::Dev
           FileUtils.touch(stemcell_file_path)
           stemcell_file_path
         end
-      end
-
-      it 'sanitizes the stemcell environment' do
-        stemcell_environment.should_receive(:sanitize)
-
-        builder.build
       end
 
       it 'generates the bosh gems' do

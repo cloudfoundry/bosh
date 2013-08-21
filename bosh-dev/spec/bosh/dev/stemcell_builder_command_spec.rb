@@ -13,6 +13,7 @@ module Bosh::Dev
 
     let(:stemcell_environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
+                      sanitize: nil,
                       build_path: root_dir,
                       work_path: File.join(root_dir, 'work'))
     end
@@ -48,6 +49,12 @@ module Bosh::Dev
           FileUtils.mkdir_p etc_dir
           FileUtils.touch settings_file
         end
+      end
+
+      it 'sanitizes the stemcell environment' do
+        stemcell_environment.should_receive(:sanitize)
+
+        stemcell_builder_command.build
       end
 
       it 'returns the full path of the generated stemcell archive' do
