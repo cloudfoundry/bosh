@@ -9,11 +9,6 @@ module Bosh::Dev
     let(:build_number) { '869' }
     let(:infrastructure_name) { 'vsphere' }
 
-    let(:stemcell_environment) do
-      instance_double('Bosh::Dev::StemcellEnvironment',
-                      build_path: '/fake/build_path',
-                      work_path: '/fake/work_path')
-    end
     let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
 
@@ -39,9 +34,8 @@ module Bosh::Dev
       before do
         Bosh::Stemcell::Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
         GemsGenerator.stub(:new).and_return(gems_generator)
-        StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
         StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
-        StemcellBuilderCommand.stub(:new).with(stemcell_environment,
+        StemcellBuilderCommand.stub(:new).with(infrastructure,
                                                stemcell_builder_options).and_return(stemcell_builder_command)
 
         stemcell_builder_command.stub(:build) do

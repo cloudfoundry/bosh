@@ -1,6 +1,5 @@
 require 'bosh/dev/build'
 require 'bosh/dev/gems_generator'
-require 'bosh/dev/stemcell_environment'
 require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/stemcell_builder_command'
 require 'bosh/stemcell/infrastructure'
@@ -32,13 +31,11 @@ module Bosh::Dev
     end
 
     def build_stemcell
-      stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure.name)
       stemcell_builder_options = StemcellBuilderOptions.new(args: { tarball: candidate.download_release,
                                                                     stemcell_version: candidate.number,
                                                                     infrastructure: infrastructure })
 
-      stemcell_builder_command = StemcellBuilderCommand.new(stemcell_environment,
-                                                            stemcell_builder_options)
+      stemcell_builder_command = StemcellBuilderCommand.new(infrastructure, stemcell_builder_options)
       stemcell_builder_command.build
     end
   end

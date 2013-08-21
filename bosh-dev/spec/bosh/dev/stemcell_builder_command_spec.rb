@@ -1,16 +1,11 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_builder_command'
+require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   describe StemcellBuilderCommand do
     let(:root_dir) { '/mnt/root' }
     let(:environment_hash) { {} }
-    let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions',
-                      spec_name: spec,
-                      default: options)
-    end
-
     let(:stemcell_environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
                       sanitize: nil,
@@ -18,8 +13,15 @@ module Bosh::Dev
                       work_path: File.join(root_dir, 'work'))
     end
 
+    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
+    let(:stemcell_builder_options) do
+      instance_double('Bosh::Dev::StemcellBuilderOptions',
+                      spec_name: spec,
+                      default: options)
+    end
+
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(stemcell_environment, stemcell_builder_options)
+      StemcellBuilderCommand.new(infrastructure, stemcell_builder_options)
     end
 
     before do
@@ -42,8 +44,11 @@ module Bosh::Dev
       let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
 
       before do
+        StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
         StemcellBuilderCommand.any_instance.stub(:puts)
+
         Bosh::Core::Shell.stub(:new).and_return(shell)
+
         Process.stub(pid: pid)
         FileUtils.stub(:cp_r).with([], build_dir, preserve: true) do
           FileUtils.mkdir_p etc_dir
