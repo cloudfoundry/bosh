@@ -7,7 +7,7 @@ module Bosh::Dev
   class StemcellBuilderOptions
     def initialize(options)
       args = options.fetch(:args)
-      @environment = options.fetch(:environment)
+      @environment = ENV.to_hash
       @infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
 
       @stemcell_tgz = args.fetch(:stemcell_tgz)

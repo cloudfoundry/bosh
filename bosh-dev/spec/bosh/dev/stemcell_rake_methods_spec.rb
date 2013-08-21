@@ -25,18 +25,17 @@ module Bosh::Dev
     end
 
     subject(:stemcell_rake_methods) do
-      StemcellRakeMethods.new(args: args, environment: env, stemcell_environment: stemcell_environment)
+      StemcellRakeMethods.new(args: args, stemcell_environment: stemcell_environment)
     end
 
     before do
-      Bosh::Dev::StemcellBuilderOptions.stub(:new).with(args: args, environment: env).and_return(stemcell_builder_options)
+      Bosh::Dev::StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
       Bosh::Dev::GemsGenerator.stub(:new).and_return(gems_generator)
     end
 
     describe '#build_stemcell' do
       before do
-        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env,
-                                                          'stemcell-aws',
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with('stemcell-aws',
                                                           stemcell_environment.build_path,
                                                           stemcell_environment.work_path,
                                                           { default: 'options' }).and_return(stemcell_builder_command)

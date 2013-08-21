@@ -7,7 +7,11 @@ module Bosh::Dev
     let(:env) { {} }
 
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(env, spec, root_dir, File.join(root_dir, 'work'), options)
+      StemcellBuilderCommand.new(spec, root_dir, File.join(root_dir, 'work'), options)
+    end
+
+    before do
+      ENV.stub(to_hash: env)
     end
 
     describe '#build' do

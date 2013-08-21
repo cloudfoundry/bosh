@@ -29,7 +29,11 @@ module Bosh::Dev
     let(:source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::StemcellBuilderCommand', build: nil) }
 
-    subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args, environment: env) }
+    subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args) }
+
+    before do
+      ENV.stub(to_hash: env)
+    end
 
     describe '#default' do
       let(:default_disk_size) { 2048 }
