@@ -22,7 +22,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it 'whines on inaccessible target', no_reset: true do
-    out = run_bosh('target http://localhost', nil, failure_expected: true)
+    out = run_bosh('target http://localhost', failure_expected: true)
     out.should =~ /cannot access director/i
 
     expect_output('target', <<-OUT)
@@ -43,7 +43,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it 'does not let user use deployment with target anymore (needs uuid)', no_reset: true do
-    out = run_bosh('deployment vmforce', nil, failure_expected: true)
+    out = run_bosh('deployment vmforce', failure_expected: true)
     out.should =~ regexp('Please upgrade your deployment manifest')
   end
 
@@ -87,7 +87,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it 'points to an error when verifying an invalid stemcell', no_reset: true do
     stemcell_filename = spec_asset('stemcell_invalid_mf.tgz')
     failure = regexp("`#{stemcell_filename}' is not a valid stemcell")
-    run_bosh("verify stemcell #{stemcell_filename}", nil, failure_expected: true).should =~ failure
+    run_bosh("verify stemcell #{stemcell_filename}", failure_expected: true).should =~ failure
   end
 
   it 'uses cache when verifying stemcell for the second time', no_reset: true do
@@ -102,7 +102,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it 'does not allow purging when using non-default directory', no_reset: true do
-    run_bosh('purge', nil, failure_expected: true).should =~ regexp('please remove manually')
+    run_bosh('purge', failure_expected: true).should =~ regexp('please remove manually')
   end
 
   it 'verifies a sample valid release', no_reset: true do
@@ -113,14 +113,14 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   it 'points to an error on invalid release', no_reset: true do
     release_filename = spec_asset('release_invalid_checksum.tgz')
-    out = run_bosh("verify release #{release_filename}", nil, failure_expected: true)
+    out = run_bosh("verify release #{release_filename}", failure_expected: true)
     out.should =~ regexp("`#{release_filename}' is not a valid release")
   end
 
   it 'requires login when talking to director', no_reset: true do
-    run_bosh('properties', nil, failure_expected: true).should =~ /please choose target first/i
+    run_bosh('properties', failure_expected: true).should =~ /please choose target first/i
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('properties', nil, failure_expected: true).should =~ /please log in first/i
+    run_bosh('properties', failure_expected: true).should =~ /please log in first/i
   end
 
   it 'creates a user when correct target accessed' do

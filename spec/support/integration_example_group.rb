@@ -10,8 +10,8 @@ module IntegrationExampleGroup
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')
 
-    run_bosh('create release', TEST_RELEASE_DIR)
-    run_bosh('upload release', TEST_RELEASE_DIR)
+    run_bosh('create release', work_dir: TEST_RELEASE_DIR)
+    run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
 
     run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
@@ -37,9 +37,10 @@ module IntegrationExampleGroup
     current_sandbox.reset(desc)
   end
 
-  def run_bosh(cmd, work_dir = nil, options = {})
+  def run_bosh(cmd, options = {})
     failure_expected = options.fetch(:failure_expected, false)
-    Dir.chdir(work_dir || BOSH_WORK_DIR) do
+    work_dir = options.fetch(:work_dir, BOSH_WORK_DIR)
+    Dir.chdir(work_dir) do
       command = "bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}"
       output = `#{command} 2>&1`
       if $?.exitstatus != 0 && !failure_expected
