@@ -5,7 +5,7 @@ require 'yaml'
 require 'rake'
 require 'bosh/stemcell/aws_registry'
 
-module Bosh::Stemcell
+module Bosh::Stemcell::Aws
   class Ami
     attr_reader :stemcell
 

@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'bosh/stemcell/ami'
+require 'bosh/stemcell/aws/ami'
 
-module Bosh::Stemcell
+module Bosh::Stemcell::Aws
   describe Ami do
     let(:stemcell) do
       stemcell = double('Bosh::Dev::Stemcell')

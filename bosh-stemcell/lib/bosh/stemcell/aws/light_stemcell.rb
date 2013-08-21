@@ -1,7 +1,7 @@
 require 'rake/file_utils'
 require 'yaml'
 require 'common/deep_copy'
-require 'bosh/stemcell/ami'
+require 'bosh/stemcell/aws/ami'
 
 module Bosh::Stemcell::Aws
   class LightStemcell
@@ -32,7 +32,7 @@ module Bosh::Stemcell::Aws
     attr_reader :stemcell
 
     def manifest
-      ami = Bosh::Stemcell::Ami.new(stemcell)
+      ami = Ami.new(stemcell)
       ami_id = ami.publish
       manifest = Bosh::Common::DeepCopy.copy(stemcell.manifest)
       manifest['cloud_properties']['ami'] = { ami.region => ami_id }

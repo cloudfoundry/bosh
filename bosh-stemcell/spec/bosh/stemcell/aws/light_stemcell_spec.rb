@@ -17,7 +17,7 @@ module Bosh::Stemcell
 
       describe '#write_archive' do
         let(:ami) do
-          instance_double('Bosh::Stemcell::Ami', publish: 'fake-ami-id', region: 'fake-region')
+          instance_double('Bosh::Stemcell::Aws::Ami', publish: 'fake-ami-id', region: 'fake-region')
         end
 
         let(:stemcell) do
