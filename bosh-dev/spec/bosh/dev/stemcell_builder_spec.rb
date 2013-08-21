@@ -9,33 +9,28 @@ module Bosh::Dev
     let(:build_number) { '869' }
     let(:infrastructure_name) { 'vsphere' }
 
-    let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
-
-    let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
-
     let(:stemcell_environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
                       build_path: '/fake/build_path',
                       work_path: '/fake/work_path',
                       sanitize: nil)
     end
+    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere') }
+    let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
 
-    let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions')
-    end
+    let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
 
-    let(:stemcell_builder_command) do
-      instance_double('Bosh::Dev::BuildFromSpec', build: nil)
-    end
+    let(:stemcell_builder_options) { instance_double('Bosh::Dev::StemcellBuilderOptions') }
+    let(:stemcell_builder_command) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
 
     let(:args) do
       {
         tarball: 'fake release path',
-        infrastructure: 'vsphere',
-        stemcell_version: build_number,
-        stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
+        infrastructure: infrastructure,
+        stemcell_version: build_number
       }
     end
+    let(:stemcell_file_path) { '/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz' }
 
     subject(:builder) do
       StemcellBuilder.new(infrastructure_name, build)
@@ -43,6 +38,7 @@ module Bosh::Dev
 
     describe '#build' do
       before do
+        Bosh::Stemcell::Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
         GemsGenerator.stub(:new).and_return(gems_generator)
         StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure_name).and_return(stemcell_environment)
         StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
@@ -51,7 +47,8 @@ module Bosh::Dev
 
         stemcell_builder_command.stub(:build) do
           FileUtils.mkdir_p('/fake/work_path/work')
-          FileUtils.touch('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+          FileUtils.touch(stemcell_file_path)
+          stemcell_file_path
         end
       end
 
@@ -79,13 +76,13 @@ module Bosh::Dev
 
       context 'when the stemcell is not created' do
         before do
-          stemcell_builder_command.stub(:build)
+          stemcell_builder_command.stub(build: stemcell_file_path)
         end
 
         it 'fails early and loud' do
           expect {
             builder.build
-          }.to raise_error(/\/bosh-stemcell-869-vsphere-esxi-ubuntu\.tgz does not exist/)
+          }.to raise_error("#{stemcell_file_path} does not exist")
         end
       end
     end

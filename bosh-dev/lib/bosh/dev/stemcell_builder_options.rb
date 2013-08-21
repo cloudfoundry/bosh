@@ -1,16 +1,15 @@
 require 'rbconfig'
 
 require 'bosh_agent/version'
-require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class StemcellBuilderOptions
     def initialize(options)
       args = options.fetch(:args)
       @environment = ENV.to_hash
-      @infrastructure = Bosh::Stemcell::Infrastructure.for(args.fetch(:infrastructure))
+      @infrastructure = args.fetch(:infrastructure)
 
-      @stemcell_tgz = args.fetch(:stemcell_tgz)
       @stemcell_version = args.fetch(:stemcell_version)
       @image_create_disk_size = args.fetch(:disk_size, infrastructure.default_disk_size)
       @bosh_micro_release_tgz_path = args.fetch(:tarball)
@@ -25,7 +24,7 @@ module Bosh::Dev
         'system_parameters_infrastructure' => infrastructure.name,
         'stemcell_name' => 'bosh-stemcell',
         'stemcell_infrastructure' => infrastructure.name,
-        'stemcell_tgz' => stemcell_tgz,
+        'stemcell_tgz' => archive_filename.to_s,
         'stemcell_version' => stemcell_version,
         'stemcell_hypervisor' => hypervisor_for(infrastructure),
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
@@ -50,7 +49,11 @@ module Bosh::Dev
 
     private
 
-    attr_reader :environment, :infrastructure, :stemcell_tgz, :stemcell_version, :image_create_disk_size, :bosh_micro_release_tgz_path
+    attr_reader :environment, :infrastructure, :stemcell_version, :image_create_disk_size, :bosh_micro_release_tgz_path
+
+    def archive_filename
+      Bosh::Stemcell::ArchiveFilename.new(stemcell_version, infrastructure, 'bosh-stemcell', false)
+    end
 
     def ruby_bin
       environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])

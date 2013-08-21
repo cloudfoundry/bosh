@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_builder_options'
+require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   describe StemcellBuilderOptions do
@@ -15,24 +16,52 @@ module Bosh::Dev
       }
     end
 
-    let(:infrastructure) { 'aws' }
-    let(:stemcell_tgz) { 'fake-stemcell-filename.tgz' }
+    let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
     let(:args) do
       {
-        infrastructure: infrastructure,
-        stemcell_tgz: stemcell_tgz,
-        stemcell_version: '123',
-        tarball: 'fake/release.tgz'
+        tarball: 'fake/release.tgz',
+        stemcell_version: '007',
+        infrastructure: infrastructure
       }
     end
     let(:spec) { 'stemcell-aws' }
     let(:source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::StemcellBuilderCommand', build: nil) }
+    let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
     subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args) }
 
     before do
       ENV.stub(to_hash: env)
+
+      Bosh::Stemcell::ArchiveFilename.stub(:new).
+        with('007', infrastructure, 'bosh-stemcell', false).and_return(archive_filename)
+    end
+
+    describe '#initialize' do
+      context 'when :infrastructure is not set' do
+        before { args.delete(:infrastructure) }
+
+        it 'dies' do
+          expect { StemcellBuilderOptions.new(args: args) }.to raise_error('key not found: :infrastructure')
+        end
+      end
+
+      context 'when :stemcell_version is not set' do
+        before { args.delete(:stemcell_version) }
+
+        it 'dies' do
+          expect { StemcellBuilderOptions.new(args: args) }.to raise_error('key not found: :stemcell_version')
+        end
+      end
+
+      context 'when :tarball is not set' do
+        before { args.delete(:tarball) }
+
+        it 'dies' do
+          expect { StemcellBuilderOptions.new(args: args) }.to raise_error('key not found: :tarball')
+        end
+      end
     end
 
     its(:spec_name) { should eq('stemcell-aws') }
@@ -41,63 +70,15 @@ module Bosh::Dev
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }
 
-      context 'it is not given an infrastructure' do
-        before do
-          args.delete(:infrastructure)
-        end
-
-        it 'dies' do
-          expect {
-            stemcell_builder_options.default
-          }.to raise_error /key not found: :infrastructure/
-        end
-      end
-
-      context 'it is given an unknown infrastructure' do
-        let(:infrastructure) { 'fake' }
-
-        it 'dies' do
-          expect {
-            stemcell_builder_options.default
-          }.to raise_error /invalid infrastructure: fake/
-        end
-      end
-
-      context 'when given a stemcell_tgz' do
-        it 'sets stemcell_tgz' do
-          result = stemcell_builder_options.default
-          expect(result['stemcell_tgz']).to eq 'fake-stemcell-filename.tgz'
-        end
-      end
-
-      context 'when not given a stemcell_tgz' do
-        before do
-          args.delete(:stemcell_tgz)
-        end
-
-        it 'raises' do
-          expect {
-            stemcell_builder_options.default
-          }.to raise_error /key not found: :stemcell_tgz/
-        end
+      it 'sets stemcell_tgz' do
+        result = stemcell_builder_options.default
+        expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
       end
 
       context 'when given a stemcell_version' do
         it 'sets stemcell_version' do
           result = stemcell_builder_options.default
-          expect(result['stemcell_version']).to eq '123'
-        end
-      end
-
-      context 'when not given a stemcell_version' do
-        before do
-          args.delete(:stemcell_version)
-        end
-
-        it 'raises' do
-          expect {
-            stemcell_builder_options.default
-          }.to raise_error /key not found: :stemcell_version/
+          expect(result['stemcell_version']).to eq('007')
         end
       end
 
@@ -117,9 +98,9 @@ module Bosh::Dev
         it 'sets default values for options based in hash' do
           result = stemcell_builder_options.default
 
-          expect(result['system_parameters_infrastructure']).to eq(infrastructure)
+          expect(result['system_parameters_infrastructure']).to eq(infrastructure.name)
           expect(result['stemcell_name']).to eq ('bosh-stemcell')
-          expect(result['stemcell_infrastructure']).to eq(infrastructure)
+          expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
           expect(result['stemcell_hypervisor']).to eq('fake_stemcell_hypervisor')
           expect(result['bosh_protocol_version']).to eq('1')
           expect(result['UBUNTU_ISO']).to eq('fake_ubuntu_iso')
@@ -132,7 +113,7 @@ module Bosh::Dev
           expect(result['image_create_disk_size']).to eq(default_disk_size)
           expect(result['bosh_micro_enabled']).to eq('yes')
           expect(result['bosh_micro_package_compiler_path']).to eq(File.join(source_root, 'package_compiler'))
-          expect(result['bosh_micro_manifest_yml_path']).to eq(File.join(source_root, "release/micro/#{infrastructure}.yml"))
+          expect(result['bosh_micro_manifest_yml_path']).to eq(File.join(source_root, "release/micro/#{infrastructure.name}.yml"))
           expect(result['bosh_micro_release_tgz_path']).to eq('fake/release.tgz')
         end
 
@@ -175,7 +156,7 @@ module Bosh::Dev
 
       context 'it is given an infrastructure' do
         context 'when infrastruture is aws' do
-          let(:infrastructure) { 'aws' }
+          let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
 
           it_behaves_like 'setting default stemcells environment values'
 
@@ -192,7 +173,7 @@ module Bosh::Dev
         end
 
         context 'when infrastruture is vsphere' do
-          let(:infrastructure) { 'vsphere' }
+          let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('vsphere') }
 
           it_behaves_like 'setting default stemcells environment values'
 
@@ -216,7 +197,7 @@ module Bosh::Dev
         end
 
         context 'when infrastructure is openstack' do
-          let(:infrastructure) { 'openstack' }
+          let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('openstack') }
           let(:default_disk_size) { 10240 }
 
           it_behaves_like 'setting default stemcells environment values'
@@ -230,18 +211,6 @@ module Bosh::Dev
               result = stemcell_builder_options.default
               expect(result['stemcell_hypervisor']).to eq('kvm')
             end
-          end
-        end
-
-        context 'when a tarball is not provided' do
-          before do
-            args.delete(:tarball)
-          end
-
-          it 'dies' do
-            expect {
-              stemcell_builder_options.default
-            }.to raise_error(/key not found: :tarball/)
           end
         end
       end

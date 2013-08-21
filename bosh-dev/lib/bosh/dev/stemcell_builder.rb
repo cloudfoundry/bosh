@@ -3,7 +3,7 @@ require 'bosh/dev/gems_generator'
 require 'bosh/dev/stemcell_environment'
 require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/stemcell_builder_command'
-require 'bosh/stemcell/archive_filename'
+require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   class StemcellBuilder
@@ -11,7 +11,6 @@ module Bosh::Dev
       @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure_name)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
       @candidate = candidate
-      @archive_filename = Bosh::Stemcell::ArchiveFilename.new(candidate.number, infrastructure, 'bosh-stemcell', false)
     end
 
     def build
@@ -19,15 +18,16 @@ module Bosh::Dev
 
       stemcell_environment.sanitize
 
-      build_stemcell
+      stemcell_path = build_stemcell
 
-      stemcell_path!
+      File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
+
+      stemcell_path
     end
 
     private
 
     attr_reader :candidate,
-                :archive_filename,
                 :infrastructure,
                 :stemcell_environment
 
@@ -39,19 +39,10 @@ module Bosh::Dev
     def build_stemcell
       stemcell_builder_options = StemcellBuilderOptions.new(args: { tarball: candidate.download_release,
                                                                     stemcell_version: candidate.number,
-                                                                    infrastructure: infrastructure.name,
-                                                                    stemcell_tgz: archive_filename.to_s })
+                                                                    infrastructure: infrastructure })
 
       stemcell_builder_command = StemcellBuilderCommand.new(stemcell_environment, stemcell_builder_options)
       stemcell_builder_command.build
-    end
-
-    def stemcell_path!
-      stemcell_path = File.join(stemcell_environment.work_path, 'work', archive_filename.to_s)
-
-      File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
-
-      stemcell_path
     end
   end
 end

@@ -38,7 +38,7 @@ module Bosh::Dev
       let(:build_script) { File.join(build_dir, 'bin', 'build_from_spec.sh') }
 
       let(:spec) { 'dave' }
-      let(:options) { { 'hello' => 'world' } }
+      let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
 
       before do
         StemcellBuilderCommand.any_instance.stub(:puts)
@@ -48,6 +48,10 @@ module Bosh::Dev
           FileUtils.mkdir_p etc_dir
           FileUtils.touch settings_file
         end
+      end
+
+      it 'returns the full path of the generated stemcell archive' do
+        expect(stemcell_builder_command.build).to eq(File.join(work_dir, 'work', 'fake-stemcell.tgz'))
       end
 
       it 'creates a base directory for stemcell creation' do

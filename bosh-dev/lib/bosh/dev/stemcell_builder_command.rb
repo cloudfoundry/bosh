@@ -25,6 +25,8 @@ module Bosh::Dev
       persist_settings_for_bash
 
       shell.run "sudo #{env} #{build_from_spec_shell_file} #{work_path} #{stemcell_spec_file_path} #{settings_file_path}"
+
+      File.join(work_path, 'work', settings['stemcell_tgz'])
     end
 
     private
