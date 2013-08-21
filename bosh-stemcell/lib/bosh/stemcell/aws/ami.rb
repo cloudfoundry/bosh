@@ -3,15 +3,15 @@ require 'bosh_aws_cpi'
 require 'ostruct'
 require 'yaml'
 require 'rake'
-require 'bosh/stemcell/aws_registry'
+require 'bosh/stemcell/aws/region'
 
 module Bosh::Stemcell::Aws
   class Ami
     attr_reader :stemcell
 
-    def initialize(stemcell, aws_registry = Bosh::Stemcell::AwsRegistry.new)
+    def initialize(stemcell, region = Bosh::Stemcell::Aws::Region.new)
       @stemcell = stemcell
-      @aws_registry = aws_registry
+      @region = region
     end
 
     def publish
@@ -29,12 +29,10 @@ module Bosh::Stemcell::Aws
     end
 
     def region
-      aws_registry.region
+      @region.region
     end
 
     private
-
-    attr_reader :aws_registry
 
     def options
       # just fake the registry struct, as we don't use it
