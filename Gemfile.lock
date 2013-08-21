@@ -25,6 +25,7 @@ PATH
   remote: bosh-dev
   specs:
     bosh-dev (0.0.1.unpublished)
+      bosh-core
       bosh-stemcell
       bosh_common
       peach

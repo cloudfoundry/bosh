@@ -1,11 +1,11 @@
 require 'bosh/dev'
-require 'bosh/dev/shell'
+require 'bosh/core/shell'
 require 'tempfile'
 
 module Bosh::Dev
   class BoshCliSession
     def initialize
-      @shell = Bosh::Dev::Shell.new
+      @shell = Bosh::Core::Shell.new
     end
 
     def run_bosh(cmd, options = {})

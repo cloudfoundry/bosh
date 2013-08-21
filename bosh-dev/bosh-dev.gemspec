@@ -17,6 +17,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = %w[lib]
 
   spec.add_dependency 'bosh_common'
+  spec.add_dependency 'bosh-core'
   spec.add_dependency 'bosh-stemcell'
   spec.add_dependency 'peach'
   spec.add_development_dependency 'rake'

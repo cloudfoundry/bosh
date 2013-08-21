@@ -1,11 +1,11 @@
 require 'fileutils'
 
-require 'bosh/dev/shell'
+require 'bosh/core/shell'
 
 module Bosh::Dev
   class StemcellBuilderCommand
     def initialize(stemcell_environment, stemcell_builder_options)
-      @shell = Shell.new
+      @shell = Bosh::Core::Shell.new
       @environment = ENV.to_hash
       @build_root = stemcell_environment.build_path
       @work_path = stemcell_environment.work_path

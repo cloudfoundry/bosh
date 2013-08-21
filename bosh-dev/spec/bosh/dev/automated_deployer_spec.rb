@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bosh/dev/automated_deployer'
 
 module Bosh::Dev
@@ -19,7 +18,7 @@ module Bosh::Dev
     let(:build_number) { '123' }
     let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
-    let(:shell) { instance_double('Shell') }
+    let(:shell) { instance_double('Bosh::Core::Shell') }
 
     subject(:deployer) do
       AutomatedDeployer.new(micro_target: micro_target,

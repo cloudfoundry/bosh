@@ -1,13 +1,13 @@
 require 'psych'
 require 'tmpdir'
 require 'bosh/dev/bat'
-require 'bosh/dev/shell'
+require 'bosh/core/shell'
 
 module Bosh::Dev::Bat
   class StemcellArchive
     def initialize(tgz)
       @tgz = tgz
-      @shell = Bosh::Dev::Shell.new
+      @shell = Bosh::Core::Shell.new
     end
 
     def version

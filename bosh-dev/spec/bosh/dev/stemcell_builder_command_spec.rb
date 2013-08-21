@@ -28,7 +28,7 @@ module Bosh::Dev
     describe '#build' do
       include FakeFS::SpecHelpers
 
-      let(:shell) { instance_double('Bosh::Dev::Shell', run: nil) }
+      let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
       let(:pid) { 99999 }
       let(:build_dir) { File.join(root_dir, 'build') }
       let(:work_dir) { File.join(root_dir, 'work') }
@@ -42,7 +42,7 @@ module Bosh::Dev
 
       before do
         StemcellBuilderCommand.any_instance.stub(:puts)
-        Bosh::Dev::Shell.stub(:new).and_return(shell)
+        Bosh::Core::Shell.stub(:new).and_return(shell)
         Process.stub(pid: pid)
         FileUtils.stub(:cp_r).with([], build_dir, preserve: true) do
           FileUtils.mkdir_p etc_dir

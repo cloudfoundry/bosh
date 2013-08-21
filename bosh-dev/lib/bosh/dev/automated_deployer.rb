@@ -1,4 +1,4 @@
-require 'bosh/dev/shell'
+require 'bosh/core/shell'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployments_repository'
@@ -11,7 +11,7 @@ module Bosh::Dev
       @build_number = options.fetch(:build_number)
       @environment = options.fetch(:environment)
 
-      @shell = options.fetch(:shell) { Shell.new }
+      @shell = options.fetch(:shell) { Bosh::Core::Shell.new }
       @cli = options.fetch(:cli) { BoshCliSession.new }
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
       @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
