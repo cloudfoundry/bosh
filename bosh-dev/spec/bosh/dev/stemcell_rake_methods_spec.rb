@@ -14,15 +14,11 @@ module Bosh::Dev
     end
 
     let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions',
-                      spec_name: 'fake-spec',
-                      default: { default: 'options' })
+      instance_double('Bosh::Dev::StemcellBuilderOptions')
     end
 
     let(:stemcell_environment) do
-      instance_double('Bosh::Dev::StemcellEnvironment',
-                      build_path: '/fake/build_path',
-                      work_path: '/fake/work_path')
+      instance_double('Bosh::Dev::StemcellEnvironment')
     end
 
     subject(:stemcell_rake_methods) do
@@ -36,10 +32,8 @@ module Bosh::Dev
 
     describe '#build_stemcell' do
       before do
-        Bosh::Dev::StemcellBuilderCommand.stub(:new).with('fake-spec',
-                                                          stemcell_environment.build_path,
-                                                          stemcell_environment.work_path,
-                                                          { default: 'options' }).and_return(stemcell_builder_command)
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(stemcell_environment,
+                                                          stemcell_builder_options).and_return(stemcell_builder_command)
       end
 
       it "builds bosh's gems so we have the gem for the agent" do

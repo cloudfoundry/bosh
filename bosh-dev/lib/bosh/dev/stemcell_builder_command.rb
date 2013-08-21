@@ -4,13 +4,13 @@ require 'bosh/dev/shell'
 
 module Bosh::Dev
   class StemcellBuilderCommand
-    def initialize(spec, build_path, work_path, settings)
+    def initialize(stemcell_environment, stemcell_builder_options)
       @shell = Shell.new
       @environment = ENV.to_hash
-      @spec = spec
-      @root = build_path
-      @work_path = work_path
-      @settings = settings
+      @spec = stemcell_builder_options.spec_name
+      @root = stemcell_environment.build_path
+      @work_path = stemcell_environment.work_path
+      @settings = stemcell_builder_options.default
     end
 
     def build

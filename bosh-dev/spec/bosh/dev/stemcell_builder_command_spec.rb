@@ -5,9 +5,20 @@ module Bosh::Dev
   describe StemcellBuilderCommand do
     let(:root_dir) { '/mnt/root' }
     let(:env) { {} }
+    let(:stemcell_builder_options) do
+      instance_double('Bosh::Dev::StemcellBuilderOptions',
+                      spec_name: spec,
+                      default: options)
+    end
+
+    let(:stemcell_environment) do
+      instance_double('Bosh::Dev::StemcellEnvironment',
+                      build_path: root_dir,
+                      work_path: File.join(root_dir, 'work'))
+    end
 
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(spec, root_dir, File.join(root_dir, 'work'), options)
+      StemcellBuilderCommand.new(stemcell_environment, stemcell_builder_options)
     end
 
     before do
