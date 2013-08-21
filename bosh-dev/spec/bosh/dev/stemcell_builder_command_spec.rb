@@ -101,15 +101,6 @@ module Bosh::Dev
           stemcell_builder_command.build
         end
       end
-
-      context 'when the uses sets a BUILD_PATH environment variable' do
-        let(:root_dir) { 'TEST_ROOT_DIR' }
-
-        it 'passes through BUILD_PATH environment variables correctly' do
-          shell.should_receive(:run).with("sudo env  #{build_script} #{work_dir} #{spec_file} #{settings_file}")
-          stemcell_builder_command.build
-        end
-      end
     end
   end
 end
