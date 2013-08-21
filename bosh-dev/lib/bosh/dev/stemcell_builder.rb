@@ -13,9 +13,6 @@ module Bosh::Dev
     end
 
     def build
-      ENV['BUILD_PATH'] = stemcell_environment.build_path
-      ENV['WORK_PATH'] = stemcell_environment.work_path
-
       stemcell_environment.sanitize
 
       build_stemcell
@@ -31,12 +28,13 @@ module Bosh::Dev
                 :stemcell_environment
 
     def build_stemcell
-      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
-        tarball: candidate.download_release,
-        stemcell_version: candidate.number,
-        infrastructure: infrastructure.name,
-        stemcell_tgz: archive_filename.to_s,
-      })
+      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(stemcell_environment: stemcell_environment,
+                                                                 args: {
+                                                                   tarball: candidate.download_release,
+                                                                   stemcell_version: candidate.number,
+                                                                   infrastructure: infrastructure.name,
+                                                                   stemcell_tgz: archive_filename.to_s,
+                                                                 })
 
       stemcell_rake_methods.build_stemcell
     end

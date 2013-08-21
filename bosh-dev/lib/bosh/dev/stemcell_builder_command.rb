@@ -4,11 +4,13 @@ require 'bosh/dev/shell'
 
 module Bosh::Dev
   class StemcellBuilderCommand
-    def initialize(environment, spec, options)
+    def initialize(environment, spec, build_path, work_path, settings)
       @shell = Shell.new
       @environment = environment
       @spec = spec
-      @options = options
+      @root = build_path
+      @work_path = work_path
+      @settings = settings
     end
 
     def build
@@ -22,15 +24,14 @@ module Bosh::Dev
       stemcell_build_dir = File.join(source_root, 'stemcell_builder')
       FileUtils.cp_r Dir.glob("#{stemcell_build_dir}/*"), build_path, preserve: true
 
-      work_path = environment.fetch('WORK_PATH')
       FileUtils.mkdir_p work_path
 
-      # Apply options
+      # Apply settings
       settings_dir = File.join(build_path, 'etc')
       settings_path = File.join(settings_dir, 'settings.bash')
       File.open(settings_path, 'a') do |f|
         f.printf("\n# %s\n\n", '=' * 20)
-        options.each do |k, v|
+        settings.each do |k, v|
           f.print "#{k}=#{v}\n"
         end
       end
@@ -46,7 +47,12 @@ module Bosh::Dev
 
     private
 
-    attr_reader :shell, :spec, :options, :environment
+    attr_reader :shell,
+                :spec,
+                :settings,
+                :environment,
+                :root,
+                :work_path
 
     def env
       keep = %w(HTTP_PROXY NO_PROXY)
@@ -60,10 +66,6 @@ module Bosh::Dev
 
     def source_root
       File.expand_path('../../../../..', __FILE__)
-    end
-
-    def root
-      @root ||= environment.fetch('BUILD_PATH')
     end
   end
 end

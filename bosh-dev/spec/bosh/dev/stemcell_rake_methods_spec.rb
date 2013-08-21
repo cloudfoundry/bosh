@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_rake_methods'
+require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
   describe StemcellRakeMethods do
@@ -17,8 +18,14 @@ module Bosh::Dev
                       default: { default: 'options' })
     end
 
+    let(:stemcell_environment) do
+      instance_double('Bosh::Dev::StemcellEnvironment',
+                      build_path: '/fake/build_path',
+                      work_path: '/fake/work_path')
+    end
+
     subject(:stemcell_rake_methods) do
-      StemcellRakeMethods.new(args: args, environment: env)
+      StemcellRakeMethods.new(args: args, environment: env, stemcell_environment: stemcell_environment)
     end
 
     before do
@@ -27,9 +34,12 @@ module Bosh::Dev
     end
 
     describe '#build_stemcell' do
-
       before do
-        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env, 'stemcell-aws', { default: 'options' }).and_return(stemcell_builder_command)
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with(env,
+                                                          'stemcell-aws',
+                                                          stemcell_environment.build_path,
+                                                          stemcell_environment.work_path,
+                                                          { default: 'options' }).and_return(stemcell_builder_command)
       end
 
       it "builds bosh's gems so we have the gem for the agent" do

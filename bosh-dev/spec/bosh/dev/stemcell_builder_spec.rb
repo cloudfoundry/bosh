@@ -28,12 +28,13 @@ module Bosh::Dev
 
     describe '#build' do
       before do
-        StemcellRakeMethods.stub(:new).with(args: {
-          tarball: 'fake release path',
-          infrastructure: 'vsphere',
-          stemcell_version: build_number,
-          stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
-        }).and_return(stemcell_rake_methods)
+        StemcellRakeMethods.stub(:new).with(stemcell_environment: stemcell_environment,
+                                            args: {
+                                              tarball: 'fake release path',
+                                              infrastructure: 'vsphere',
+                                              stemcell_version: build_number,
+                                              stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
+                                            }).and_return(stemcell_rake_methods)
 
         stemcell_rake_methods.stub(:build_stemcell) do
           FileUtils.mkdir_p('/fake/work_path/work')
@@ -43,13 +44,6 @@ module Bosh::Dev
 
       it 'sanitizes the stemcell environment' do
         stemcell_environment.should_receive(:sanitize)
-        builder.build
-      end
-
-      it 'sets BUILD_PATH, WORK_PATH as expected' do
-        ENV.should_receive(:[]=).with('BUILD_PATH', '/fake/build_path')
-        ENV.should_receive(:[]=).with('WORK_PATH', '/fake/work_path')
-
         builder.build
       end
 

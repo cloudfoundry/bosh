@@ -4,15 +4,10 @@ require 'bosh/dev/stemcell_builder_command'
 module Bosh::Dev
   describe StemcellBuilderCommand do
     let(:root_dir) { '/mnt/root' }
-    let(:env) do
-      {
-        'BUILD_PATH' => root_dir,
-        'WORK_PATH' => File.join(root_dir, 'work'),
-      }
-    end
+    let(:env) { {} }
 
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(env, spec, options)
+      StemcellBuilderCommand.new(env, spec, root_dir, File.join(root_dir, 'work'), options)
     end
 
     describe '#build' do
@@ -81,8 +76,6 @@ module Bosh::Dev
       context 'when the uses sets proxy environment variables' do
         let(:env) do
           {
-            'BUILD_PATH' => root_dir,
-            'WORK_PATH' => File.join(root_dir, 'work'),
             'HTTP_PROXY' => 'nice_proxy',
             'no_proxy' => 'naughty_proxy'
           }
