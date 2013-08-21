@@ -28,12 +28,6 @@ describe 'with release, stemcell and deployment' do
     end
   end
 
-  xit 'should return vms in a deployment' do
-    bat_vms = vms(deployment.name)
-    bat_vms.size.should eq(1)
-    bat_vms.first.name.should eq('batlight/0')
-  end
-
   context 'dns' do
 
     before(:all) do
