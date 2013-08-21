@@ -17,8 +17,14 @@ module Bosh::Cli::Command
         err("Missing manifest for `#{filename}'")
       end
 
-      manifest = load_yaml_file(manifest_filename)
+      update_target(load_yaml_file(manifest_filename))
 
+      say("Deployment set to `#{manifest_filename.make_green}'")
+      config.set_deployment(manifest_filename)
+      config.save
+    end
+
+    def update_target(manifest)
       unless manifest.is_a?(Hash)
         err("Invalid manifest format")
       end
@@ -40,7 +46,7 @@ module Bosh::Cli::Command
 
       new_director_uuid = manifest["director_uuid"]
 
-      if old_director_uuid != new_director_uuid
+      if old_director_uuid != new_director_uuid && new_director_uuid != "ignore"
         new_target_url = config.resolve_alias(:target, new_director_uuid)
 
         if new_target_url.blank?
@@ -62,10 +68,6 @@ module Bosh::Cli::Command
         say("#{"WARNING!".make_red} Your target has been " +
             "changed to `#{target.make_red}'!")
       end
-
-      say("Deployment set to `#{manifest_filename.make_green}'")
-      config.set_deployment(manifest_filename)
-      config.save
     end
 
     # bosh edit deployment

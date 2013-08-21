@@ -48,6 +48,7 @@ end
 
 group :development, :test do
   gemspec path: 'bosh-dev'
+  gemspec path: 'bosh-stemcell'
 
   gem 'rubocop', require: false
   gem 'parallel_tests'

@@ -1,5 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 require 'rspec'
+require 'rspec/fire'
 require 'cli'
 require 'bosh/cli/commands/micro'
 
@@ -23,4 +24,8 @@ end
 
 RSpec.configure do |c|
   c.fail_fast = true if ENV['BOSH_DEPLOYER_DIR']
+end
+
+RSpec.configure do |config|
+  config.include(RSpec::Fire)
 end

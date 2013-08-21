@@ -1,0 +1,14 @@
+inherit_from: ../.rubocop.yml
+
+MethodLength:
+  CountComments: false
+  Max: 55
+
+LineLength:
+  Max: 240
+
+AvoidPerlisms:
+  Enabled: false
+
+AccessControl:
+  Enabled: false

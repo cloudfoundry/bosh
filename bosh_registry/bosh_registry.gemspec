@@ -17,12 +17,12 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/* db/*`.split("\n") + %w(README.md)
   s.require_path = 'lib'
   s.bindir       = 'bin'
-  s.executables  = %w(bosh_registry migrate)
+  s.executables  = %w(bosh_registry bosh_registry_migrate)
 
   s.add_dependency 'sequel', '~>3.43.0'
   s.add_dependency 'sinatra', '~>1.4.2'
   s.add_dependency 'thin', '~>1.5.0'
   s.add_dependency 'yajl-ruby', '~>1.1.0'
-  s.add_dependency 'fog', '~>1.12.1'
+  s.add_dependency 'fog', '~>1.14.0'
   s.add_dependency 'aws-sdk', '1.8.5'
 end

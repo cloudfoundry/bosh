@@ -1,0 +1,14 @@
+inherit_from: ../.rubocop.yml
+
+LineLength:
+  Max: 135
+
+MethodLength:
+  CountComments: false
+  Max: 31
+
+RescueException:
+  Enabled: false
+
+WhileUntilModifier:
+  Enabled: false

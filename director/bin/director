@@ -21,7 +21,7 @@ Bosh::Director::App.new(config)
 thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], :signals => false) do
   use Rack::CommonLogger
   map "/" do
-    run Bosh::Director::ApiController.new
+    run Bosh::Director::Api::Controller.new
   end
 end
 

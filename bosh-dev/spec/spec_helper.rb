@@ -1,6 +1,8 @@
 require 'rspec'
 require 'rake'
 require 'rspec/fire'
+require 'fakefs/spec_helpers'
+require 'webmock/rspec'
 
 SPEC_ROOT = File.dirname(__FILE__)
 

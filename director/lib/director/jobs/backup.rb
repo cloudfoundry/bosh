@@ -68,7 +68,7 @@ module Bosh::Director
           Dir.mkdir(File.join(tmp_dir, 'blobs'))
 
           track_and_log('Backing up blobstore') do
-            [Models::Package.all, Models::CompiledPackage.all].each do |packages|
+            [Models::Package.all, Models::CompiledPackage.all, Models::Template.all].each do |packages|
               packages.each do |package|
                 File.open(File.join(tmp_dir, 'blobs', package.blobstore_id), 'w') do |file|
                   logger.debug("Writing file #{file.path}")

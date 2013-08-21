@@ -101,6 +101,7 @@ module Bosh::Cli::Command
     usage  "micro deploy"
     desc   "Deploy a micro BOSH instance to the currently selected deployment"
     option "--update", "update existing instance"
+    option "--update-if-exists", "create new or update existing instance"
     def perform(stemcell=nil)
       update = !!options[:update]
 
@@ -126,27 +127,22 @@ module Bosh::Cli::Command
 
       desc = "`#{rel_path.make_green}' to `#{target_name.make_green}'"
 
-      if update
-        unless deployer.exists?
-          err "No existing instance to update"
-        end
 
-        confirmation = "Updating"
-
-        method = :update_deployment
-      else
-        if deployer.exists?
+      if deployer.exists?
+        if !options[:update_if_exists] && !update
           err "Instance exists.  Did you mean to --update?"
         end
+        confirmation = "Updating"
+        method = :update_deployment
+      else
+        err "No existing instance to update" if update
+        confirmation = "Deploying new"
+        method = :create_deployment
 
         # make sure the user knows a persistent disk is required
         unless dig_hash(manifest, "resources", "persistent_disk")
           quit("No persistent disk configured in #{MICRO_BOSH_YAML}".make_red)
         end
-
-        confirmation = "Deploying new"
-
-        method = :create_deployment
       end
 
       confirm_deployment("#{confirmation} micro BOSH instance #{desc}")

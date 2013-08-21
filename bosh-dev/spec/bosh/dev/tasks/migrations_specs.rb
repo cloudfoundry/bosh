@@ -4,16 +4,16 @@ require 'tmpdir'
 describe 'migrations:aws:new' do
   let(:rake) { Rake::Application.new }
   let(:task_path) { 'rake/lib/tasks/migrations' }
-  let(:root) { File.expand_path('../../../../', File.dirname(__FILE__))}
+  let(:root) { File.expand_path('../../../../', File.dirname(__FILE__)) }
   let(:name) { 'cool_migration' }
   let(:class_name) { 'CoolMigration' }
   let(:timestamp) { Time.now }
-  let(:timestamp_string) {timestamp.getutc.strftime('%Y%m%d%H%M%S') }
+  let(:timestamp_string) { timestamp.getutc.strftime('%Y%m%d%H%M%S') }
 
   subject { rake['migrations:aws:new'] }
 
   def loaded_files_excluding_current_rake_file
-    $".reject { |file| file == File.join(root, "#{task_path}.rake").to_s }
+    $LOADED_FEATURES.reject { |file| file == File.join(root, "#{task_path}.rake").to_s }
   end
 
   before do
@@ -23,7 +23,7 @@ describe 'migrations:aws:new' do
     Rake::Task.define_task(:environment)
     Time.stub(:new).and_return(timestamp)
 
-    @tempdir= Dir.mktmpdir
+    @tempdir = Dir.mktmpdir
     Bosh::Aws::MigrationHelper.stub(:aws_migration_directory).and_return(@tempdir)
     Bosh::Aws::MigrationHelper.stub(:aws_spec_migration_directory).and_return(@tempdir)
   end

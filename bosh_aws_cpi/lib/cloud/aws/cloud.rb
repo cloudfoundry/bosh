@@ -313,9 +313,9 @@ module Bosh::AwsCloud
         instance = @ec2.instances[instance_id]
 
         network_configurator = NetworkConfigurator.new(network_spec)
-        
+
         compare_security_groups(instance, network_spec)
-        
+
         compare_private_ip_addresses(instance, network_configurator.private_ip)
 
         network_configurator.configure(@ec2, instance)
@@ -351,7 +351,7 @@ module Bosh::AwsCloud
     # @param [AWS::EC2::Instance] instance EC2 instance
     # @param [String] specified_ip_address IP address specified at the network spec (if Manual Network)
     # @return [void]
-    # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't 
+    # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't
     # change the IP address of a running server, so we need to send the InstanceUpdater a request to do it for us
     def compare_private_ip_addresses(instance, specified_ip_address)
       actual_ip_address = instance.private_ip_address

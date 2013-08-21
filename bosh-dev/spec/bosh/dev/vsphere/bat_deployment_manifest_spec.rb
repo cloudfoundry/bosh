@@ -7,6 +7,8 @@ module Bosh::Dev
     describe BatDeploymentManifest do
       subject { BatDeploymentManifest.new('fake director_uuid', 'fake stemcell_version') }
 
+      its(:filename) { should eq ('bat.yml') }
+
       it 'is writable' do
         expect(subject).to be_a(WritableManifest)
       end

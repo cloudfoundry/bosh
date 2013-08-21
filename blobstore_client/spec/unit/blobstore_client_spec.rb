@@ -1,44 +1,35 @@
 require 'spec_helper'
 
-describe Bosh::Blobstore::Client do
+module Bosh::Blobstore
+  describe Client do
+    it 'should have a local provider' do
+      Dir.mktmpdir do |tmp|
+        Client.create('local', { blobstore_path: tmp }).should be_instance_of LocalClient
+      end
+    end
 
-  it "should have a local provider" do
-    Dir.mktmpdir do |tmp|
-      bs = Bosh::Blobstore::Client.create('local', {:blobstore_path => tmp})
-      bs.should be_instance_of Bosh::Blobstore::LocalClient
+    it 'should have an simple provider' do
+      Client.create('simple', {}).should be_instance_of SimpleBlobstoreClient
+    end
+
+    it 'should have an atmos provider' do
+      Client.create('atmos', {}).should be_instance_of AtmosBlobstoreClient
+    end
+
+    it 'should have an s3 provider' do
+      Client.create('s3', { access_key_id: 'foo', secret_access_key: 'bar' }).should be_instance_of S3BlobstoreClient
+    end
+
+    it 'should pick S3 provider when S3 is used without credentials' do
+      Client.create('s3', { bucket_name: 'foo' }).should be_instance_of S3BlobstoreClient
+    end
+
+    it 'should have an swift provider' do
+      Client.create('swift', {}).should be_instance_of SwiftBlobstoreClient
+    end
+
+    it 'should raise an exception on an unknown client' do
+      expect { Client.create('foobar', {}) }.to raise_error /^Invalid client provider/
     end
   end
-
-  it "should have an simple provider" do
-    bs = Bosh::Blobstore::Client.create('simple', {})
-    bs.should be_instance_of Bosh::Blobstore::SimpleBlobstoreClient
-  end
-
-  it "should have an atmos provider" do
-    bs = Bosh::Blobstore::Client.create('atmos', {})
-    bs.should be_instance_of Bosh::Blobstore::AtmosBlobstoreClient
-  end
-
-  it "should have an s3 provider" do
-    options = {:access_key_id => "foo", :secret_access_key => "bar"}
-    bs = Bosh::Blobstore::Client.create('s3', options)
-    bs.should be_instance_of Bosh::Blobstore::S3BlobstoreClient
-  end
-
-  it "should pick S3 provider when S3 is used without credentials" do
-    bs = Bosh::Blobstore::Client.create('s3', {:bucket_name => "foo"})
-    bs.should be_instance_of Bosh::Blobstore::S3BlobstoreClient
-  end
-
-  it "should have an swift provider" do
-    bs = Bosh::Blobstore::Client.create('swift', {})
-    bs.should be_instance_of Bosh::Blobstore::SwiftBlobstoreClient
-  end
-
-  it "should raise an exception on an unknown client" do
-    lambda {
-      Bosh::Blobstore::Client.create('foobar', {})
-    }.should raise_error /^Invalid client provider/
-  end
-
 end

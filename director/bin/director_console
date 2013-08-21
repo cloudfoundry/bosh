@@ -16,7 +16,7 @@ module Bosh
       include Rack::Test::Methods
 
       def app
-        Bosh::Director::ApiController.new
+        Bosh::Director::Api::Controller.new
       end
     end
 

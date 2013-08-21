@@ -9,6 +9,8 @@ module Bosh::Dev
 
       subject { MicroBoshDeploymentManifest.new(net_type) }
 
+      its(:filename) { should eq('micro_bosh.yml') }
+
       it 'is writable' do
         expect(subject).to be_a(WritableManifest)
       end

@@ -16,6 +16,7 @@ $ruby_bin <<EOS
 require "yaml"
 
 stemcell_name = "$stemcell_name"
+stemcell_tgz = "$stemcell_tgz"
 version = "$stemcell_version"
 bosh_protocol = "$bosh_protocol_version".to_i
 stemcell_checksum = "$stemcell_checksum"
@@ -53,9 +54,6 @@ File.open("stemcell.MF", "w") do |f|
   f.write(Psych.dump(manifest))
 end
 EOS
-
-stemcell_tgz="$stemcell_name-$stemcell_infrastructure-\
-${stemcell_hypervisor:-kvm}-$stemcell_version.tgz"
 
 tar zvcf ../$stemcell_tgz *
 

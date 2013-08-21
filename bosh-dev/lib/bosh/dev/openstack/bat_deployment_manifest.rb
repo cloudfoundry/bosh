@@ -6,11 +6,14 @@ module Bosh::Dev
     class BatDeploymentManifest
       include WritableManifest
 
+      attr_reader :filename
+
       def initialize(net_type, director_uuid, stemcell_version)
         @env = ENV.to_hash
         @net_type = net_type
         @director_uuid = director_uuid
         @stemcell_version = stemcell_version
+        @filename = 'bat.yml'
       end
 
       def to_h
@@ -21,7 +24,7 @@ module Bosh::Dev
               'static_ip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
               'uuid' => director_uuid,
               'pool_size' => 1,
-              'stemcell' => {'name' => 'bosh-stemcell', 'version' => stemcell_version},
+              'stemcell' => { 'name' => 'bosh-stemcell', 'version' => stemcell_version },
               'instances' => 1,
               'key_name' => 'jenkins',
               'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
@@ -45,6 +48,7 @@ module Bosh::Dev
       end
 
       private
+
       attr_reader :env, :net_type, :stemcell_version, :director_uuid
     end
   end

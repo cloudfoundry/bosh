@@ -1,0 +1,6 @@
+site :opscode
+
+cookbook 'apt'
+cookbook 'ruby_build'
+cookbook 'rbenv', github: 'fnichol/chef-rbenv', tag: 'v0.7.2'
+cookbook 'stemcell_builder', path: 'site-cookbooks/stemcell_builder'

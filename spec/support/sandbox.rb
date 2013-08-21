@@ -135,7 +135,7 @@ module Bosh
 
         FileUtils.rm_rf(sqlite_db)
         Dir.chdir(DIRECTOR_PATH) do
-          output = `bin/migrate -c #{director_config}`
+          output = `bin/bosh_director_migrate -c #{director_config}`
           unless $?.exitstatus == 0
             puts "Failed to run migration:"
             puts output

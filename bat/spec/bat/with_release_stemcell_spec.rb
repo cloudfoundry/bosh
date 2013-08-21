@@ -16,50 +16,6 @@ describe 'with release and stemcell and two deployments' do
     cleanup stemcell
   end
 
-  context 'deployment without static ip' do
-    # before(:all) do
-    #   reload_deployment_spec
-    #   use_job_instances(3)
-    #   use_pool_size(3)
-    #   use_max_in_flight(2)
-    #   use_canaries(0)
-    #   @deployment_result = requirement deployment
-    # end
-    #
-    # after(:all) do
-    #   cleanup deployment
-    # end
-
-    # Uncomment the before and afters when fixing this test
-    xit 'should update a job with multiple instances in parallel' do
-      times = start_and_finish_times_for_job_updates(get_task_id(@deployment_result.output))
-      times['batlight/1']['started'].should be >= times['batlight/0']['started']
-      times['batlight/1']['started'].should be < times['batlight/0']['finished']
-      times['batlight/2']['started'].should be >=
-                                                [times['batlight/0']['finished'], times['batlight/1']['finished']].min
-    end
-  end
-
-  xit 'should cancel a deployment' do
-    deployment = with_deployment
-    bosh("deployment #{deployment.to_path}")
-    result = bosh('--no-track deploy')
-    task_id = get_task_id(result.output, 'running')
-
-    sleep 5 # Wait for deployment to start
-    bosh("cancel task #{task_id}").should
-    succeed_with /Task #{task_id} is getting canceled/
-
-    error_event = events(task_id).last['error']
-    error_event['code'].should eq(10001)
-    error_event['message'].should eq("Task #{task_id} cancelled")
-
-    deployment_names = jbosh('/deployments').map { |d| d['name'] }
-
-    bosh("delete deployment #{deployment.name}") if deployment_names.include? deployment.name
-    deployment.delete
-  end
-
   context 'first deployment' do
     before(:all) do
       reload_deployment_spec

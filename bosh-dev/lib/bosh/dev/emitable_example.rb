@@ -13,7 +13,7 @@ module Bosh::Dev
     end
 
     def options
-      {tags: %W[infrastructure:#{ENV.fetch('BAT_INFRASTRUCTURE')} example:#{description}]}
+      { tags: %W[infrastructure:#{ENV.fetch('BAT_INFRASTRUCTURE')} example:#{description}] }
     end
 
     def to_a

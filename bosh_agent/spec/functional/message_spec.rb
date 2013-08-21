@@ -135,14 +135,16 @@ describe "messages" do
 
   it "should respond to drain message" do
     task = nil
-    nats("drain", ["shutdown", "bar"])
+    nats("drain", ["shutdown", "bar"]) do |reply|
+      task = get_value(reply)
+    end
 
-    while task.is_a?(Hash) && task["state"] == "running"
+    while task["state"] == "running"
       sleep 0.5
       nats("get_task", [ task["agent_task_id"] ]) do |msg|
         task = msg
-        unless task.is_a?(Hash) && task["state"]
-          task.should == 0
+        unless task.has_key?("state")
+          expect(get_value(task)).to eq 0
           break
         end
       end
@@ -151,21 +153,23 @@ describe "messages" do
 
   it "should respond to stop message" do
     task = nil
-    nats("stop")
+    nats("stop") do |reply|
+      task = get_value(reply)
+    end
 
-    while task.is_a?(Hash) && task["state"] == "running"
+    while task["state"] == "running"
       sleep 0.5
       nats("get_task", [ task["agent_task_id"] ]) do |msg|
         task = msg
-        unless task.is_a?(Hash) && task["state"]
-          task.should == "stopped"
+        unless task.has_key?("state")
+          expect(get_value(task)).to eq "stopped" # stopped is the result of the Stop message not the state of the task
           break
         end
       end
     end
   end
 
-  it "should return an exception for unknow message" do
+  it "should return an exception for unknown message" do
     nats('foobar') do |msg|
       msg.should have_key('exception')
     end

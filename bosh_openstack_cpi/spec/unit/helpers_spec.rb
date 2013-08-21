@@ -226,9 +226,11 @@ describe Bosh::OpenStackCloud::Helpers do
     end
 
     context "InternalServerError" do
-      it "should raise a CloudError exception when OpenStack API returns a InternalServerError" do  
-        @openstack.should_receive(:servers).and_raise(Excon::Errors::InternalServerError.new("InternalServerError"))
-  
+      it "should retry the max number of retries before raising a CloudError exception" do
+        @openstack.should_receive(:servers).exactly(11)
+          .and_raise(Excon::Errors::InternalServerError.new("InternalServerError"))
+        @cloud.should_receive(:sleep).with(3).exactly(10)
+
         expect {
           @cloud.with_openstack do
             @openstack.servers

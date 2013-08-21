@@ -1,3 +1,6 @@
+require 'bosh/dev'
+require 'tmpdir'
+
 module Bosh::Dev
   class VersionFile
     BOSH_VERSION_FILE = 'BOSH_VERSION'

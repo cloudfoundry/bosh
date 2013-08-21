@@ -82,12 +82,14 @@ module Bosh::Cli::Command
            "Rebases this release onto the latest version",
            "known by director (discards local job/package",
            "versions in favor of versions assigned by director)"
+    option "--skip-if-exists", "skips upload if release already exists"
     def upload(release_file = nil)
       auth_required
 
       upload_options = {
-          :rebase => options[:rebase],
-          :repack => true
+        :rebase => options[:rebase],
+        :repack => true,
+        :skip_if_exists => options[:skip_if_exists],
       }
 
       if release_file.nil?
@@ -226,19 +228,25 @@ module Bosh::Cli::Command
         err("Release is invalid, please fix, verify and upload again")
       end
 
-      begin
-        remote_release = get_remote_release(tarball.release_name) rescue nil
-
-        if remote_release && !rebase &&
-            remote_release["versions"].include?(tarball.version)
-          err("This release version has already been uploaded")
+      remote_release = get_remote_release(tarball.release_name) rescue nil
+      if remote_release && !rebase
+        if remote_release["versions"].include?(tarball.version)
+          if upload_options[:skip_if_exists]
+            say("Release `#{tarball.release_name}/#{tarball.version}' already exists. Skipping upload.")
+            return
+          else
+            err("This release version has already been uploaded")
+          end
         end
+      end
 
+      begin
         if repack
           package_matches = match_remote_packages(tarball.manifest)
 
           say("Checking if can repack release for faster upload...")
           repacked_path = tarball.repack(package_matches)
+
           if repacked_path.nil?
             say("Uploading the whole release".make_green)
           else

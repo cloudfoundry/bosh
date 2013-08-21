@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Director
-  class DeploymentPlan
+  module DeploymentPlan
     class Release
       include ValidationHelper
 

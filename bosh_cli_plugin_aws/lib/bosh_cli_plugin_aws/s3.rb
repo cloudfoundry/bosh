@@ -2,7 +2,7 @@ module Bosh
   module Aws
     class S3
       def initialize(credentials)
-        @credentials = credentials
+        @aws_provider = AwsProvider.new(credentials)
       end
 
       def create_bucket(bucket_name)
@@ -79,12 +79,14 @@ module Bosh
 
       private
 
+      attr_reader :aws_provider
+
       def fetch_bucket(bucket_name)
         aws_s3.buckets[bucket_name]
       end
 
       def aws_s3
-        @aws_s3 ||= ::AWS::S3.new(@credentials)
+        aws_provider.s3
       end
     end
   end

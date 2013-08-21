@@ -113,4 +113,31 @@ describe Bosh::Agent::Monit do
     client.send('service_action', 'test', 'start')
   end
 
+
+  describe '#service_group_state' do
+
+    let(:monit_api_client) { double(MonitApi::Client) }
+
+    before do
+      monit_api_client.should_receive(:status).with(group: 'vcap').and_return status
+      MonitApi::Client.stub(new: monit_api_client)
+      Bosh::Agent::Monit.enable
+    end
+
+    context 'some services in init state' do
+      let(:status) { {'name' => {status: {message: 'running'}, monitor: :init}} }
+
+      it 'returns starting if any services are init state' do
+        expect(Bosh::Agent::Monit.service_group_state).to eq 'starting'
+      end
+    end
+
+    context 'no services' do
+      let(:status) { {} }
+
+      it 'returns running if there are no services' do
+        expect(Bosh::Agent::Monit.service_group_state).to eq 'running'
+      end
+    end
+  end
 end

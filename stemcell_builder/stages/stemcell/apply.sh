@@ -21,6 +21,7 @@ $ruby_bin <<EOS
 require "yaml"
 
 stemcell_name = "$stemcell_name"
+stemcell_tgz = "$stemcell_tgz"
 version = "$stemcell_version"
 bosh_protocol = "$bosh_protocol_version".to_i
 stemcell_infrastructure = "$stemcell_infrastructure"
@@ -45,7 +46,6 @@ File.open("stemcell.MF", "w") do |f|
 end
 EOS
 
-stemcell_tgz="$stemcell_name-$stemcell_infrastructure-$stemcell_version.tgz"
 tar zvcf ../$stemcell_tgz *
 
 echo "Generated stemcell: $work/$stemcell_tgz"

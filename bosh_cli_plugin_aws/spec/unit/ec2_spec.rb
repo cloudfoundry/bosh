@@ -1,7 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::Aws::EC2 do
-  let(:ec2) { described_class.new({}) }
+  let(:aws_region) { 'ap-southeast-1' }
+  let(:expected_nat_ami) { Bosh::Aws::EC2::NAT_AMI_ID[aws_region] }
+
+  subject(:ec2) { described_class.new({'region' => aws_region}) }
 
   describe "elastic IPs" do
     describe "allocation" do
@@ -154,7 +157,7 @@ describe Bosh::Aws::EC2 do
              private_ip_address: "10.1.0.1",
              security_groups: ["sg"],
              key_name: "bosh",
-             image_id: "ami-f619c29f",
+             image_id: expected_nat_ami,
              instance_type: "m1.large"
            }
         )
@@ -220,7 +223,7 @@ describe Bosh::Aws::EC2 do
                   private_ip_address: "10.1.0.1",
                   security_groups: ["sg"],
                   key_name: "bosh",
-                  image_id: "ami-f619c29f",
+                  image_id: expected_nat_ami,
                   instance_type: "m1.small"
               }
           )

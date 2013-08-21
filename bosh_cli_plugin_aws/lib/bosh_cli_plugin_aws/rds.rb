@@ -15,6 +15,7 @@ module Bosh
 
       def initialize(credentials)
         @credentials = credentials
+        @aws_provider = AwsProvider.new(@credentials)
       end
 
       def create_database(name, subnet_ids, vpc_id, options = {})
@@ -154,14 +155,16 @@ module Bosh
       end
 
       def aws_rds
-        @aws_rds ||= ::AWS::RDS.new(@credentials)
+        aws_provider.rds
       end
 
       def aws_rds_client
-        @aws_rds_client ||= ::AWS::RDS::Client.new(@credentials)
+        aws_provider.rds_client
       end
 
       private
+
+      attr_reader :aws_provider
 
       def generate_user
         generate_credential("u", 7)

@@ -3,78 +3,69 @@ require 'bosh/dev/bat_helper'
 
 module Bosh::Dev
   describe BatHelper do
-    let(:infrastructure_name) { 'aws' }
-    let(:fake_pipeline) { instance_double('Pipeline', fetch_stemcells: nil, cleanup_stemcells: nil) }
+    include FakeFS::SpecHelpers
 
-    subject { BatHelper.new(infrastructure_name) }
+    let(:infrastructure_name) { 'FAKE_INFRASTRUCTURE_NAME' }
+    let(:fake_infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name, light?: light) }
+    let(:light) { false }
+    let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
+
+    subject { BatHelper.new(infrastructure_name, build) }
 
     before do
-      Pipeline.stub(new: fake_pipeline)
+      Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
     end
 
     describe '#initialize' do
       it 'sets infrastructre' do
-        expect(subject.infrastructure.name).to eq('aws')
+        expect(subject.infrastructure).to eq(fake_infrastructure)
       end
     end
 
     describe '#run_rake' do
-      let(:fake_rake_task) { double('a Rake Task', invoke: nil) }
+      let(:spec_system_micro_task) { instance_double('Rake::Task', invoke: nil) }
 
       before do
         ENV.delete('BAT_INFRASTRUCTURE')
+        Rake::Task.stub(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(spec_system_micro_task)
 
-        Rake::Task.stub(:[] => fake_rake_task)
-        Dir.stub(:chdir).and_yield
+        FileUtils.stub(rm_rf: nil, mkdir_p: nil)
       end
 
       after do
         ENV.delete('BAT_INFRASTRUCTURE')
       end
 
-      it 'cleans up stemcells' do
-        fake_pipeline.should_receive(:cleanup_stemcells)
+      it 'removes the artifacts dir' do
+        FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir)
 
         subject.run_rake
       end
 
-      context 'when there is an exception thrown' do
-        before do
-          fake_rake_task.should_receive(:invoke).and_raise
-        end
+      it 'creates the microbosh depolyments dir (which is contained within artifacts dir)' do
+        FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
 
-        it 'cleans up stemcells' do
-          fake_pipeline.should_receive(:cleanup_stemcells)
-
-          expect { subject.run_rake }.to raise_error
-        end
+        subject.run_rake
       end
 
-      %w[openstack vsphere aws].each do |i|
-        context "when infrastructure_name is '#{i}'" do
-          let(:infrastructure_name) { i }
+      it 'sets ENV["BAT_INFRASTRUCTURE"]' do
+        expect(ENV['BAT_INFRASTRUCTURE']).to be_nil
 
-          it 'sets ENV["BAT_INFRASTRUCTURE"]' do
-            expect(ENV['BAT_INFRASTRUCTURE']).to be_nil
+        subject.run_rake
 
-            subject.run_rake
+        expect(ENV['BAT_INFRASTRUCTURE']).to eq(infrastructure_name)
+      end
 
-            expect(ENV['BAT_INFRASTRUCTURE']).to eq(infrastructure_name)
-          end
+      it 'downloads stemcells for the specified infrastructure' do
+        build.should_receive(:download_stemcell).with(infrastructure: subject.infrastructure, name: 'bosh-stemcell', light: light, output_directory: '/tmp/ci-artifacts/FAKE_INFRASTRUCTURE_NAME/deployments')
 
-          it 'fetches stemcells for the specified infrastructure' do
-            fake_pipeline.should_receive(:fetch_stemcells).with(subject.infrastructure)
+        subject.run_rake
+      end
 
-            subject.run_rake
-          end
+      it 'invokes the spec:system:<infrastructure>:micro rake task' do
+        spec_system_micro_task.should_receive(:invoke)
 
-          it "invokes the rake task'spec:system:#{i}:micro'" do
-            fake_rake_task.should_receive(:invoke)
-            Rake::Task.should_receive(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(fake_rake_task)
-
-            subject.run_rake
-          end
-        end
+        subject.run_rake
       end
     end
 
@@ -96,27 +87,15 @@ module Bosh::Dev
 
     describe '#bosh_stemcell_path' do
       before do
-        fake_pipeline.stub(:bosh_stemcell_path) do |infrastructure|
+        build.stub(:bosh_stemcell_path) do |infrastructure, artifacts_dir|
           expect(infrastructure.name).to eq(infrastructure_name)
+          expect(artifacts_dir).to eq(subject.artifacts_dir)
           'fake bosh stemcell path'
         end
       end
 
-      it 'delegates to the pipeline' do
+      it 'delegates to the build' do
         expect(subject.bosh_stemcell_path).to eq('fake bosh stemcell path')
-      end
-    end
-
-    describe '#micro_bosh_stemcell_path' do
-      before do
-        fake_pipeline.stub(:micro_bosh_stemcell_path) do |infrastructure|
-          expect(infrastructure.name).to eq(infrastructure_name)
-          'fake micro bosh stemcell path'
-        end
-      end
-
-      it 'delegates to the pipeline' do
-        expect(subject.micro_bosh_stemcell_path).to eq('fake micro bosh stemcell path')
       end
     end
   end

@@ -1,0 +1,27 @@
+Vagrant.configure('2') do |config|
+  config.vm.box = 'opscode_ubuntu-13.04_provisionerless'
+  config.vm.box_url = 'https://opscode-vm-bento.s3.amazonaws.com/vagrant/opscode_ubuntu-13.04_provisionerless.box'
+  config.omnibus.chef_version = '11.6.0'
+
+  config.vm.provision :chef_solo do |chef|
+    chef.add_recipe 'apt'
+    chef.add_recipe 'ruby_build'
+    chef.add_recipe 'rbenv::system'
+    chef.add_recipe 'stemcell_builder'
+    chef.json = {
+      rbenv: {
+        rubies: %w[1.9.3-p448],
+        global: '1.9.3-p448',
+        gems: {
+          '1.9.3-p448' => [
+            { 'name' => 'bundler' },
+          ]
+        },
+      }
+    }
+  end
+
+  config.berkshelf.enabled = true
+
+  config.vm.synced_folder '../', '/bosh'
+end

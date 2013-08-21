@@ -4,7 +4,6 @@ AllCops:
     - Rakefile
   Excludes:
    - bin/**
-   - blobstore_client/**
    - bosh_agent/**
    - bosh_aws_cpi/**
    - bosh_cli/**
@@ -20,13 +19,13 @@ AllCops:
    - health_monitor/**
    - monit_api/**
    - package_compiler/**
-   - bosh-dev/**
    - release/**
    - ruby_vim_sdk/**
    - simple_blobstore_server/**
    - spec/**
    - stemcell_builder/**
    - vendor/**
+   - tmp/**
 
 Encoding:
   Enabled: false
@@ -36,3 +35,12 @@ LineLength:
 
 Documentation:
   Enabled: false
+
+CaseIndentation:
+  Enabled: false
+
+DotPosition:
+  Enabled: false
+
+Blocks:
+  Enabled: false # {} for multi-line blocks in RSpec expectations is very common
