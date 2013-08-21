@@ -15,6 +15,7 @@ module Bosh::Dev
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Dev::StemcellBuilderOptions',
+                      spec_name: 'fake-spec',
                       default: { default: 'options' })
     end
 
@@ -35,7 +36,7 @@ module Bosh::Dev
 
     describe '#build_stemcell' do
       before do
-        Bosh::Dev::StemcellBuilderCommand.stub(:new).with('stemcell-aws',
+        Bosh::Dev::StemcellBuilderCommand.stub(:new).with('fake-spec',
                                                           stemcell_environment.build_path,
                                                           stemcell_environment.work_path,
                                                           { default: 'options' }).and_return(stemcell_builder_command)

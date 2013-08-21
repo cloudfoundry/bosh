@@ -35,6 +35,8 @@ module Bosh::Dev
       ENV.stub(to_hash: env)
     end
 
+    its(:spec_name) { should eq('stemcell-aws') }
+
     describe '#default' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }

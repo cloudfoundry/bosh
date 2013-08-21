@@ -16,6 +16,10 @@ module Bosh::Dev
       @bosh_micro_release_tgz_path = args.fetch(:tarball)
     end
 
+    def spec_name
+      "stemcell-#{infrastructure.name}"
+    end
+
     def default
       options = {
         'system_parameters_infrastructure' => infrastructure.name,
