@@ -1,4 +1,0 @@
-inherit_from: ../.rubocop.yml
-
-TrivialAccessors:
-  Enabled: false # Bosh::Stemcell::Infrastructure#light? was a false positive

@@ -44,3 +44,6 @@ DotPosition:
 
 Blocks:
   Enabled: false # {} for multi-line blocks in RSpec expectations is very common
+
+TrivialAccessors:
+  Enabled: false # Bosh::Stemcell::Infrastructure#light? was a false positive
