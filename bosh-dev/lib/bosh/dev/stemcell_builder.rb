@@ -6,15 +6,15 @@ require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   class StemcellBuilder
-    def initialize(infrastructure_name, candidate = Bosh::Dev::Build.candidate)
+    def initialize(infrastructure_name, build = Bosh::Dev::Build.candidate)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
-      @candidate = candidate
+      @build = build
     end
 
-    def build
+    def build_stemcell
       generate_gems
 
-      stemcell_path = build_stemcell
+      stemcell_path = run_stemcell_builder_command
 
       File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
 
@@ -23,15 +23,15 @@ module Bosh::Dev
 
     private
 
-    attr_reader :infrastructure, :candidate
+    attr_reader :infrastructure, :build
 
     def generate_gems
       gems_generator = GemsGenerator.new
       gems_generator.build_gems_into_release_dir
     end
 
-    def build_stemcell
-      stemcell_builder_command = StemcellBuilderCommand.new(candidate, infrastructure)
+    def run_stemcell_builder_command
+      stemcell_builder_command = StemcellBuilderCommand.new(build, infrastructure)
       stemcell_builder_command.build
     end
   end

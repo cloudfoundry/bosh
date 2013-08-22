@@ -39,16 +39,16 @@ module Bosh::Dev
       it 'generates the bosh gems' do
         gems_generator.should_receive(:build_gems_into_release_dir)
 
-        builder.build
+        builder.build_stemcell
       end
 
       it 'creates a basic stemcell and returns its absolute path' do
-        expect(builder.build).to eq('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+        expect(builder.build_stemcell).to eq('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
       end
 
       it 'creates a basic stemcell' do
         expect {
-          builder.build
+          builder.build_stemcell
         }.to change { File.exist?('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
       end
 
@@ -59,7 +59,7 @@ module Bosh::Dev
 
         it 'fails early and loud' do
           expect {
-            builder.build
+            builder.build_stemcell
           }.to raise_error("#{stemcell_file_path} does not exist")
         end
       end
