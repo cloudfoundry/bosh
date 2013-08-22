@@ -9,10 +9,7 @@ module Bosh::Dev
       @shell = Bosh::Core::Shell.new
       @environment = ENV.to_hash
       @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure.name)
-      @build_root = stemcell_environment.build_path
-      @work_path = stemcell_environment.work_path
-      @spec_name = stemcell_builder_options.spec_name
-      @settings = stemcell_builder_options.default
+      @stemcell_builder_options = stemcell_builder_options
     end
 
     def build
@@ -36,12 +33,25 @@ module Bosh::Dev
     private
 
     attr_reader :shell,
-                :spec_name,
-                :settings,
                 :environment,
-                :build_root,
-                :work_path,
-                :stemcell_environment
+                :stemcell_environment,
+                :stemcell_builder_options
+
+    def spec_name
+      stemcell_builder_options.spec_name
+    end
+
+    def settings
+      stemcell_builder_options.default
+    end
+
+    def build_root
+      stemcell_environment.build_path
+    end
+
+    def work_path
+      stemcell_environment.work_path
+    end
 
     def prepare_build_root
       FileUtils.mkdir_p build_root
