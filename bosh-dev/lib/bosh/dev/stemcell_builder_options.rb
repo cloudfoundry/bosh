@@ -6,13 +6,12 @@ require 'bosh/stemcell/archive_filename'
 module Bosh::Dev
   class StemcellBuilderOptions
     def initialize(options)
-      args = options.fetch(:args)
       @environment = ENV.to_hash
-      @infrastructure = args.fetch(:infrastructure)
+      @infrastructure = options.fetch(:infrastructure)
 
-      @stemcell_version = args.fetch(:stemcell_version)
-      @image_create_disk_size = args.fetch(:disk_size, infrastructure.default_disk_size)
-      @bosh_micro_release_tgz_path = args.fetch(:tarball)
+      @stemcell_version = options.fetch(:stemcell_version)
+      @image_create_disk_size = options.fetch(:disk_size, infrastructure.default_disk_size)
+      @bosh_micro_release_tgz_path = options.fetch(:tarball)
     end
 
     def spec_name

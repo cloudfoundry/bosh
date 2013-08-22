@@ -17,7 +17,7 @@ module Bosh::Dev
     end
 
     let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
-    let(:args) do
+    let(:options) do
       {
         tarball: 'fake/release.tgz',
         stemcell_version: '007',
@@ -29,7 +29,7 @@ module Bosh::Dev
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::StemcellBuilderCommand', build: nil) }
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
-    subject(:stemcell_builder_options) { StemcellBuilderOptions.new(args: args) }
+    subject(:stemcell_builder_options) { StemcellBuilderOptions.new(options) }
 
     before do
       ENV.stub(to_hash: env)
@@ -40,26 +40,26 @@ module Bosh::Dev
 
     describe '#initialize' do
       context 'when :infrastructure is not set' do
-        before { args.delete(:infrastructure) }
+        before { options.delete(:infrastructure) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(args: args) }.to raise_error('key not found: :infrastructure')
+          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :infrastructure')
         end
       end
 
       context 'when :stemcell_version is not set' do
-        before { args.delete(:stemcell_version) }
+        before { options.delete(:stemcell_version) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(args: args) }.to raise_error('key not found: :stemcell_version')
+          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :stemcell_version')
         end
       end
 
       context 'when :tarball is not set' do
-        before { args.delete(:tarball) }
+        before { options.delete(:tarball) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(args: args) }.to raise_error('key not found: :tarball')
+          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :tarball')
         end
       end
     end
@@ -147,7 +147,7 @@ module Bosh::Dev
 
         context 'when disk_size is passed' do
           before do
-            args.merge!(disk_size: 1234)
+            options.merge!(disk_size: 1234)
           end
 
           it 'allows user to override default disk_size' do

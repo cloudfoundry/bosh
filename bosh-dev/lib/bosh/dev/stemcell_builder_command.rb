@@ -7,13 +7,12 @@ require 'bosh/dev/stemcell_builder_options'
 module Bosh::Dev
   class StemcellBuilderCommand
     def initialize(build, infrastructure, operating_system)
-      @shell = Bosh::Core::Shell.new
-      @environment = ENV.to_hash
       @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure.name)
-      bosh_release_tarball_path = build.download_release
-      @stemcell_builder_options = StemcellBuilderOptions.new(args: { tarball: bosh_release_tarball_path,
-                                                                     stemcell_version: build.number,
-                                                                     infrastructure: infrastructure })
+      @stemcell_builder_options = StemcellBuilderOptions.new(tarball: build.download_release,
+                                                             stemcell_version: build.number,
+                                                             infrastructure: infrastructure)
+      @environment = ENV.to_hash
+      @shell = Bosh::Core::Shell.new
     end
 
     def build

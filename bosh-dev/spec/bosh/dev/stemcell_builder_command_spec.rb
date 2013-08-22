@@ -23,14 +23,6 @@ module Bosh::Dev
                       work_path: File.join(root_dir, 'work'))
     end
 
-    let(:args_for_stemcell_builder_options) do
-      {
-        tarball: '/fake/path/to/bosh-007.tgz',
-        stemcell_version: '007',
-        infrastructure: infrastructure
-      }
-    end
-
     let(:build) { instance_double('Bosh::Dev::Build', download_release: '/fake/path/to/bosh-007.tgz', number: '007') }
     let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
     let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
@@ -41,6 +33,13 @@ module Bosh::Dev
 
     before do
       ENV.stub(to_hash: environment_hash)
+
+      Bosh::Core::Shell.stub(:new).and_return(shell)
+
+      StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
+      StemcellBuilderOptions.stub(:new).
+        with(tarball: build.download_release, stemcell_version: build.number, infrastructure: infrastructure).
+        and_return(stemcell_builder_options)
     end
 
     describe '#build' do
@@ -59,11 +58,7 @@ module Bosh::Dev
       let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
 
       before do
-        StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
-        StemcellBuilderOptions.stub(:new).with(args: args_for_stemcell_builder_options).and_return(stemcell_builder_options)
         StemcellBuilderCommand.any_instance.stub(:puts)
-
-        Bosh::Core::Shell.stub(:new).and_return(shell)
 
         Process.stub(pid: pid)
         FileUtils.stub(:cp_r).with([], build_dir, preserve: true) do
