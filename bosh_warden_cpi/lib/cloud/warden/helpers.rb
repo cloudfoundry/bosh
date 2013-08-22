@@ -9,14 +9,11 @@ module Bosh::WardenCloud
 
     def uuid(klass=nil)
       id = SecureRandom.uuid
-
       if klass
         id = "%s-%s" % [klass, id]
       end
-
       id
     end
-
 
     def sudo(cmd)
       logger.info "run 'sudo -n #{cmd}'"
@@ -30,10 +27,6 @@ module Bosh::WardenCloud
       Bosh::Exec.sh("#{cmd}", :yield => :on_false) do |result|
         yield result if block_given?
       end
-    end
-
-    def process_user
-      Etc.getpwuid(Process.uid).name
     end
 
   end
