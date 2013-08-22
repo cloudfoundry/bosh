@@ -25,15 +25,17 @@ namespace :ci do
 
   desc 'Publish CI pipeline stemcell to S3'
   task :publish_stemcell, [:infrastructure] do |_, args|
+    require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
 
     options = args.to_hash
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(options.fetch(:infrastructure))
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(Bosh::Dev::Build.candidate,
+                                                      options.fetch(:infrastructure))
 
     stemcell_publisher = Bosh::Dev::StemcellPublisher.new
-    stemcell_publisher.publish(stemcell_builder.build)
+    stemcell_publisher.publish(stemcell_builder.build_stemcell)
   end
 
   desc 'Promote from pipeline to artifacts bucket'

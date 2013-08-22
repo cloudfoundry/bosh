@@ -19,7 +19,7 @@ module Bosh::Dev
     let(:stemcell_file_path) { '/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz' }
 
     subject(:builder) do
-      StemcellBuilder.new(infrastructure_name, build)
+      StemcellBuilder.new(build, infrastructure_name)
     end
 
     describe '#build' do

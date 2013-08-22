@@ -6,9 +6,9 @@ require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   class StemcellBuilder
-    def initialize(infrastructure_name, build = Bosh::Dev::Build.candidate)
-      @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
+    def initialize(build, infrastructure_name)
       @build = build
+      @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
     end
 
     def build_stemcell
@@ -23,7 +23,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :infrastructure, :build
+    attr_reader :build, :infrastructure
 
     def generate_gems
       gems_generator = GemsGenerator.new
