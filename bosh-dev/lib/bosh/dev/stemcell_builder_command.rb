@@ -10,7 +10,8 @@ module Bosh::Dev
       @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure.name)
       @stemcell_builder_options = StemcellBuilderOptions.new(tarball: build.download_release,
                                                              stemcell_version: build.number,
-                                                             infrastructure: infrastructure)
+                                                             infrastructure: infrastructure,
+                                                             operating_system: operating_system)
       @environment = ENV.to_hash
       @shell = Bosh::Core::Shell.new
     end

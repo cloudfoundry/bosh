@@ -37,9 +37,10 @@ module Bosh::Dev
       Bosh::Core::Shell.stub(:new).and_return(shell)
 
       StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
-      StemcellBuilderOptions.stub(:new).
-        with(tarball: build.download_release, stemcell_version: build.number, infrastructure: infrastructure).
-        and_return(stemcell_builder_options)
+      StemcellBuilderOptions.stub(:new).with(tarball: build.download_release,
+                                             stemcell_version: build.number,
+                                             infrastructure: infrastructure,
+                                             operating_system: operating_system).and_return(stemcell_builder_options)
     end
 
     describe '#build' do
