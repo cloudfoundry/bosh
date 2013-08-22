@@ -6,7 +6,7 @@ require 'bosh/stemcell/operating_system'
 
 module Bosh::Dev
   describe StemcellBuilderOptions do
-    let(:env) do
+    let(:environment_hash) do
       {
         'OVFTOOL' => 'fake_ovf_tool_path',
         'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
@@ -30,7 +30,6 @@ module Bosh::Dev
       }
     end
 
-    let(:spec) { 'stemcell-aws' }
     let(:expected_source_root) { File.expand_path('../../../../..', __FILE__) }
 
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
@@ -38,7 +37,7 @@ module Bosh::Dev
     subject(:stemcell_builder_options) { StemcellBuilderOptions.new(options) }
 
     before do
-      ENV.stub(to_hash: env)
+      ENV.stub(to_hash: environment_hash)
 
       Bosh::Stemcell::ArchiveFilename.stub(:new).
         with('007', infrastructure, 'bosh-stemcell', false).and_return(archive_filename)
@@ -101,7 +100,7 @@ module Bosh::Dev
       end
 
       shared_examples_for 'setting default stemcells environment values' do
-        let(:env) do
+        let(:environment_hash) do
           {
             'OVFTOOL' => 'fake_ovf_tool_path',
             'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
@@ -137,7 +136,7 @@ module Bosh::Dev
 
         context 'when RUBY_BIN is not set' do
           before do
-            env.delete('RUBY_BIN')
+            environment_hash.delete('RUBY_BIN')
           end
 
           before do
@@ -180,7 +179,7 @@ module Bosh::Dev
 
           context 'when STEMCELL_HYPERVISOR is not set' do
             before do
-              env.delete('STEMCELL_HYPERVISOR')
+              environment_hash.delete('STEMCELL_HYPERVISOR')
             end
 
             it 'uses "xen"' do
@@ -196,7 +195,7 @@ module Bosh::Dev
           it_behaves_like 'setting default stemcells environment values'
 
           context 'when STEMCELL_HYPERVISOR is not set' do
-            let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
+            let(:environment_hash) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'uses "esxi"' do
               result = stemcell_builder_options.default
@@ -205,7 +204,7 @@ module Bosh::Dev
           end
 
           context 'if you have OVFTOOL set in the environment' do
-            let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
+            let(:environment_hash) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'sets image_vsphere_ovf_ovftool_path' do
               result = stemcell_builder_options.default
@@ -222,7 +221,7 @@ module Bosh::Dev
 
           context 'when STEMCELL_HYPERVISOR is not set' do
             before do
-              env.delete('STEMCELL_HYPERVISOR')
+              environment_hash.delete('STEMCELL_HYPERVISOR')
             end
 
             it 'uses "kvm"' do
