@@ -64,7 +64,11 @@ module Bosh::Dev
       end
     end
 
-    its(:spec_name) { should eq('stemcell-aws') }
+    describe '#spec_name' do
+      it 'returns the spec file basename' do
+        expect(stemcell_builder_options.spec_name).to eq('stemcell-aws')
+      end
+    end
 
     describe '#default' do
       let(:default_disk_size) { 2048 }
