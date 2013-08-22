@@ -1,10 +1,9 @@
-require 'rake/file_utils'
+require 'rake/file_utils_ext'
 require 'yaml'
+require 'bosh/stemcell/aws/region'
 
 module Bosh::Stemcell
   class Stemcell
-    DEFAULT_AWS_AMI_REGION = 'us-east-1'
-
     attr_reader :path
 
     def initialize(path = '')
@@ -32,7 +31,7 @@ module Bosh::Stemcell
       infrastructure == 'aws' && ami_id
     end
 
-    def ami_id(region = DEFAULT_AWS_AMI_REGION)
+    def ami_id(region = Aws::Region::DEFAULT)
       cloud_properties.fetch('ami', {}).fetch(region, nil)
     end
 
