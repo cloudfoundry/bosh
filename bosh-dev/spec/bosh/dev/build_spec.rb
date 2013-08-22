@@ -170,11 +170,13 @@ module Bosh::Dev
         let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
         let(:fake_stemcell) { instance_double('Bosh::Stemcell::Archive') }
         let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
+        let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu') }
         let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
         let(:bucket_files) { fog_storage.directories.get('bosh-jenkins-artifacts').files }
 
         before do
           Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
+          Bosh::Stemcell::OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
 
           Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
 
@@ -193,7 +195,7 @@ module Bosh::Dev
 
         it 'initializes a Stemcell with the downloaded stemcell filename' do
           Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-            with('123', infrastructure, 'bosh-stemcell', true).and_return(archive_filename)
+            with('123', infrastructure, operating_system, 'bosh-stemcell', true).and_return(archive_filename)
 
           Bosh::Stemcell::Archive.should_receive(:new).with(fake_stemcell_filename)
 

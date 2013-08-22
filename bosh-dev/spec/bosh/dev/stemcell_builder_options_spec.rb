@@ -40,7 +40,7 @@ module Bosh::Dev
       ENV.stub(to_hash: environment_hash)
 
       Bosh::Stemcell::ArchiveFilename.stub(:new).
-        with('007', infrastructure, 'bosh-stemcell', false).and_return(archive_filename)
+        with('007', infrastructure, operating_system, 'bosh-stemcell', false).and_return(archive_filename)
     end
 
     describe '#initialize' do

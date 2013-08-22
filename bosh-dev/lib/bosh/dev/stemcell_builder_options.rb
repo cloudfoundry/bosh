@@ -52,7 +52,7 @@ module Bosh::Dev
     attr_reader :environment, :infrastructure, :operating_system, :stemcell_version, :image_create_disk_size, :bosh_micro_release_tgz_path
 
     def archive_filename
-      Bosh::Stemcell::ArchiveFilename.new(stemcell_version, infrastructure, 'bosh-stemcell', false)
+      Bosh::Stemcell::ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false)
     end
 
     def ruby_bin

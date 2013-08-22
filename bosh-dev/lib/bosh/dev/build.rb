@@ -1,10 +1,11 @@
 require 'peach'
 
+require 'bosh/dev/download_adapter'
+require 'bosh/dev/upload_adapter'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
-require 'bosh/dev/download_adapter'
-require 'bosh/dev/upload_adapter'
+require 'bosh/stemcell/operating_system'
 
 module Bosh::Dev
   class Build
@@ -138,7 +139,8 @@ module Bosh::Dev
     end
 
     def stemcell_filename(version, infrastructure, name, light)
-      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, name, light).to_s
+      operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
+      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, name, light).to_s
     end
 
     def uri(remote_directory_path, file_name)
