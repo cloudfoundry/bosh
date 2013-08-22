@@ -19,7 +19,8 @@ module Bosh::Dev
 
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
 
-    let(:stemcell_file_path) { '/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz' }
+    let(:fake_work_path) { '/fake/work/path' }
+    let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
 
     subject(:builder) do
       StemcellBuilder.new(build, infrastructure_name, operating_system_name)
@@ -28,7 +29,7 @@ module Bosh::Dev
     describe '#build_stemcell' do
       before do
         Bosh::Stemcell::Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
-        Bosh::Stemcell::OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
+        Bosh::Stemcell::OperatingSystem.stub(:for).with(operating_system_name).and_return(operating_system)
 
         GemsGenerator.stub(:new).and_return(gems_generator)
 
@@ -36,7 +37,7 @@ module Bosh::Dev
           with(build, infrastructure, operating_system).and_return(stemcell_builder_command)
 
         stemcell_builder_command.stub(:build) do
-          FileUtils.mkdir_p('/fake/work_path/work')
+          FileUtils.mkdir_p(fake_work_path)
           FileUtils.touch(stemcell_file_path)
           stemcell_file_path
         end
@@ -49,13 +50,13 @@ module Bosh::Dev
       end
 
       it 'creates a basic stemcell and returns its absolute path' do
-        expect(builder.build_stemcell).to eq('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+        expect(builder.build_stemcell).to eq('/fake/work/path/FAKE-stemcell.tgz')
       end
 
       it 'creates a basic stemcell' do
         expect {
           builder.build_stemcell
-        }.to change { File.exist?('/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
+        }.to change { File.exist?('/fake/work/path/FAKE-stemcell.tgz') }.to(true)
       end
 
       context 'when the stemcell is not created' do
