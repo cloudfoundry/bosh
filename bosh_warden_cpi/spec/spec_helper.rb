@@ -2,9 +2,6 @@ require 'rspec'
 require 'logger'
 require 'tmpdir'
 
-require 'sequel'
-require 'sequel/adapters/sqlite'
-
 module Helper
   def cloud_options
     {
@@ -57,20 +54,13 @@ module Helper
   end
 end
 
-# DB migration
-Sequel.extension :migration
-db = Sequel.sqlite(':memory:')
-migration = File.expand_path('../../db/migrations', __FILE__)
-Sequel::TimestampMigrator.new(db, migration, table: 'warden_cpi_schema').run
-
 require 'cloud'
 
 class WardenConfig
-  attr_accessor :logger, :db, :uuid
+  attr_accessor :logger, :uuid
 end
 
 config = WardenConfig.new
-config.db = db
 config.logger = Logger.new('/dev/null')
 config.uuid = '1024'
 

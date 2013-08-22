@@ -95,11 +95,11 @@ module Bosh::WardenCloud
       not_used(disk_locality)
       not_used(env)
 
-      vm = nil
-
+      vm_handle = nil
       with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
 
         stemcell_path = stemcell_path(stemcell_id)
+        vm_id = uuid("vm")
 
         if networks.size > 1
           raise ArgumentError, "Not support more than 1 nics"
@@ -109,12 +109,9 @@ module Bosh::WardenCloud
           cloud_error("Cannot find Stemcell(#{stemcell_id})")
         end
 
-        vm = Models::VM.create
-
-        vm_bind_mount = File.join(@bind_mount_points, vm.id.to_s)
+        vm_bind_mount = File.join(@bind_mount_points, vm_id)
         FileUtils.mkdir_p(vm_bind_mount)
-
-        vm_ephemeral_mount = File.join(@ephemeral_mount_points, vm.id.to_s)
+        vm_ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
         FileUtils.mkdir_p(vm_ephemeral_mount)
 
         # Make the bind mount point shareable
@@ -125,6 +122,7 @@ module Bosh::WardenCloud
         # Create Container
         handle = with_warden do |client|
           request = Warden::Protocol::CreateRequest.new
+          request.handle = vm_id
           request.rootfs = stemcell_path
           if networks.first[1]["type"] != "dynamic"
             request.network = networks.first[1]["ip"]
@@ -141,15 +139,16 @@ module Bosh::WardenCloud
           ephemeral_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
 
           request.bind_mounts = [bind_mount, ephemeral_mount]
-
           response = client.call(request)
           response.handle
         end
-        vm.container_id = handle
+
+        vm_handle = handle
+        cloud_error("Cannot create vm with given handle #{vm_id}") unless handle == vm_id
 
         # Agent settings
-        env = generate_agent_env(vm, agent_id, networks)
-        set_agent_env(vm.container_id, env)
+        env = generate_agent_env(vm_id, agent_id, networks)
+        set_agent_env(vm_id, env)
 
         # Notice: It's a little hacky, but it's the way it is now.
         #
@@ -164,27 +163,17 @@ module Bosh::WardenCloud
           request.handle = handle
           request.privileged = true
           request.script = "/usr/sbin/runsvdir-start"
-
           client.call(request)
         end
-
-        # Save to DB
-        vm.save
-
-        vm.id.to_s
+        vm_id
       end
     rescue => e
-      if vm
-        if vm.container_id
-          with_warden do |client|
-            request = Warden::Protocol::DestroyRequest.new
-            request.handle = vm.container_id
-
-            client.call(request)
-          end
+      if vm_handle
+        with_warden do |client|
+          request = Warden::Protocol::DestroyRequest.new
+          request.handle = vm_handle
+          client.call(request)
         end
-
-        vm.destroy
       end
       raise e
     end
@@ -196,38 +185,22 @@ module Bosh::WardenCloud
     # @return [void]
     def delete_vm(vm_id)
       with_thread_name("delete_vm(#{vm_id})") do
-        vm = Models::VM[vm_id.to_i]
-
-        cloud_error("Cannot find VM #{vm}") unless vm
-
-        container_id = vm.container_id
-
         if has_vm?(vm_id)
           with_warden do |client|
             request = Warden::Protocol::DestroyRequest.new
-            request.handle = container_id
-
+            request.handle = vm_id
             client.call(request)
           end
-
           vm_bind_mount = File.join(@bind_mount_points, vm_id)
           sudo "umount #{vm_bind_mount}"
         end
 
-        # Detach disk in db
-        vm.disks.each do |disk|
-          disk.attached = false
-          disk.device_path = nil
-          disk.vm = nil
-          disk.save
-        end
-        vm.destroy
-
         ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
         sudo "rm -rf #{ephemeral_mount}"
+        vm_bind_mount = File.join(@bind_mount_points, vm_id.to_s)
+        sudo "rm -rf #{vm_bind_mount}"
         nil
       end
-
     end
 
     ##
@@ -239,17 +212,13 @@ module Bosh::WardenCloud
     def has_vm?(vm_id)
       with_thread_name("has_vm(#{vm_id})") do
         result = false
-        vm = Models::VM[vm_id.to_i]
-        cloud_error("Cannot find VM #{vm}") unless vm
-        container_id = vm.container_id
-
         handles = with_warden do |client|
           request = Warden::Protocol::ListRequest.new
           response = client.call(request)
           response.handles
         end
         unless handles.nil?
-          result = handles.include?(container_id)
+          result = handles.include?(vm_id)
         end
         result
       end
@@ -272,31 +241,21 @@ module Bosh::WardenCloud
     # @return [String] disk id
     def create_disk(size, vm_locality = nil)
       not_used(vm_locality)
-
-      disk = nil
       image_file = nil
-
       raise ArgumentError, "disk size <= 0" unless size > 0
 
       with_thread_name("create_disk(#{size}, _)") do
-        disk = Models::Disk.create
-
-        image_file = image_path(disk.id)
+        disk_id = uuid("disk")
+        image_file = image_path(disk_id)
 
         FileUtils.touch(image_file)
         File.truncate(image_file, size << 20) # 1 MB == 1<<20 Byte
         sh "/sbin/mkfs -t #{@fs_type} -F #{image_file} 2>&1"
 
-        disk.image_path = image_file
-        disk.attached = false
-        disk.save
-
-        disk.id.to_s
+        disk_id
       end
     rescue => e
       FileUtils.rm_f image_file if image_file
-      disk.destroy if disk
-
       raise e
     end
 
@@ -307,13 +266,8 @@ module Bosh::WardenCloud
     # @return [void]
     def delete_disk(disk_id)
       with_thread_name("delete_disk(#{disk_id})") do
-        disk = Models::Disk[disk_id.to_i]
 
-        cloud_error("Cannot find disk #{disk_id}") unless disk
-        cloud_error("Cannot delete attached disk") if disk.attached
-
-        # Delete DB entry
-        disk.destroy
+        cloud_error("Cannot find disk #{disk_id}") unless has_disk?(disk_id)
 
         # Remove image file
         FileUtils.rm_f image_path(disk_id)
@@ -330,31 +284,22 @@ module Bosh::WardenCloud
     # @return nil
     def attach_disk(vm_id, disk_id)
       with_thread_name("attach_disk(#{vm_id}, #{disk_id})") do
-        vm = Models::VM[vm_id.to_i]
-        disk = Models::Disk[disk_id.to_i]
 
-        cloud_error("Cannot find vm #{vm_id}") unless vm
-        cloud_error("Cannot find disk #{disk_id}") unless disk
-        cloud_error("Disk #{disk_id} already attached") if disk.attached
+        cloud_error("Cannot find vm #{vm_id}") unless has_vm?(vm_id)
+        cloud_error("Cannot find disk #{disk_id}") unless has_disk?(disk_id)
 
         # Create a device file inside warden container
         vm_bind_mount = File.join(@bind_mount_points, vm_id)
         disk_dir = File.join(vm_bind_mount, disk_id)
         FileUtils.mkdir_p(disk_dir)
 
-        disk_img = disk.image_path
+        disk_img = image_path(disk_id)
         sudo "mount #{disk_img} #{disk_dir} -o loop"
 
         # Save device path into agent env settings
-        env = get_agent_env(vm.container_id)
+        env = get_agent_env(vm_id)
         env["disks"]["persistent"][disk_id] = File.join(@warden_dev_root, disk_id)
-        set_agent_env(vm.container_id, env)
-
-        # Save DB entry
-        disk.device_path = "#{disk_dir}"
-        disk.attached = true
-        disk.vm = vm
-        disk.save
+        set_agent_env(vm_id, env)
 
         nil
       end
@@ -368,27 +313,19 @@ module Bosh::WardenCloud
     # @return nil
     def detach_disk(vm_id, disk_id)
       with_thread_name("detach_disk(#{vm_id}, #{disk_id})") do
-        vm = Models::VM[vm_id.to_i]
-        disk = Models::Disk[disk_id.to_i]
 
-        cloud_error("Cannot find vm #{vm_id}") unless vm
-        cloud_error("Cannot find disk #{disk_id}") unless disk
-        cloud_error("Disk #{disk_id} not attached") unless disk.attached
+        cloud_error("Cannot find vm #{vm_id}") unless has_vm?(vm_id)
+        cloud_error("Cannot find disk #{disk_id}") unless has_disk?(disk_id)
 
-        device_path = disk.device_path
+        vm_bind_mount = File.join(@bind_mount_points, vm_id)
+        device_path = File.join(vm_bind_mount, disk_id)
 
         # umount the image file
         umount_guard device_path
         # Save device path into agent env settings
-        env = get_agent_env(vm.container_id)
+        env = get_agent_env(vm_id)
         env["disks"]["persistent"][disk_id] = nil
-        set_agent_env(vm.container_id, env)
-
-        # Save DB entry
-        disk.attached = false
-        disk.device_path = nil
-        disk.vm = nil
-        disk.save
+        set_agent_env(vm_id, env)
 
         nil
       end
@@ -399,6 +336,10 @@ module Bosh::WardenCloud
     end
 
     private
+
+    def has_disk?(disk_id)
+      File.exist?(image_path(disk_id))
+    end
 
     def mount_entry(partition)
       File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
@@ -470,10 +411,10 @@ module Bosh::WardenCloud
       DEFAULT_SETTINGS_FILE
     end
 
-    def generate_agent_env(vm, agent_id, networks)
+    def generate_agent_env(vm_id, agent_id, networks)
       vm_env = {
-        "name" => vm.container_id,
-        "id" => vm.id
+        "name" => vm_id,
+        "id" => vm_id
       }
 
       env = {

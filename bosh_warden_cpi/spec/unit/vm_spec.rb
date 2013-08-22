@@ -1,17 +1,15 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
-  DEFAULT_HANDLE = "1234"
+  DEFAULT_HANDLE = "vm-uuid-1234"
   DEFAULT_STEMCELL_ID = "stemcell-abcd"
   DEFAULT_AGENT_ID = "agent-abcd"
-
 
   before :each do
     @logger = Bosh::Clouds::Config.logger
     @disk_root = Dir.mktmpdir("warden-cpi-disk")
     @stemcell_path =  Dir.mktmpdir("stemcell-disk")
     @stemcell_root = File.join(@stemcell_path, DEFAULT_STEMCELL_ID)
-
     Dir.mkdir(@stemcell_root)
 
     cloud_options = {
@@ -40,15 +38,10 @@ describe Bosh::WardenCloud::Cloud do
     end
   end
 
-  before :each do
-    Bosh::WardenCloud::Models::Disk.dataset.delete
-    Bosh::WardenCloud::Models::VM.dataset.delete
-  end
-
-  after(:each) {
+  after :each do
     FileUtils.rm_rf @stemcell_path
     FileUtils.rm_rf @disk_root
-  }
+  end
 
   def mock_umount_sudos (cmd)
     zero_exit_status = mock("Process::Status", :exit_status => 0)
@@ -57,9 +50,9 @@ describe Bosh::WardenCloud::Cloud do
 
   context "create_vm" do
     before :each do
+      @cloud.stub(:uuid).with('vm') { DEFAULT_HANDLE }
       Warden::Client.any_instance.stub(:call) do |req|
         res = req.create_response
-
         case req
         when Warden::Protocol::CreateRequest
           req.network.should == "1.1.1.1"
@@ -70,9 +63,7 @@ describe Bosh::WardenCloud::Cloud do
           req.bind_mounts[1].dst_path.should == "/var/vcap/data"
           req.bind_mounts[0].mode.should == Warden::Protocol::CreateRequest::BindMount::Mode::RW
           req.bind_mounts[1].mode.should == Warden::Protocol::CreateRequest::BindMount::Mode::RW
-
           res.handle = DEFAULT_HANDLE
-
         when Warden::Protocol::CopyInRequest
           raise "Container not found" unless req.handle == DEFAULT_HANDLE
           env = Yajl::Parser.parse(File.read(req.src_path))
@@ -82,41 +73,28 @@ describe Bosh::WardenCloud::Cloud do
           env["mbus"].should_not == nil
           env["ntp"].should be_instance_of Array
           env["blobstore"].should be_instance_of Hash
-
           res = req.create_response
-
         when Warden::Protocol::RunRequest
           # Ignore
-
         when Warden::Protocol::SpawnRequest
           req.script.should == "/usr/sbin/runsvdir-start"
           req.privileged.should == true
-
         when Warden::Protocol::DestroyRequest
           req.handle.should == DEFAULT_HANDLE
-
           @destroy_called = true
-
         else
           raise "#{req} not supported"
         end
-
         res
       end
     end
 
     it "can create vm" do
-      @cloud.delegate.should_receive(:sudo).exactly(4)
-
+      @cloud.should_receive(:sudo).exactly(4)
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
       }
       id = @cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
-
-      # DB Verification
-      Bosh::WardenCloud::Models::VM.dataset.all.size.should == 1
-      Bosh::WardenCloud::Models::VM[id.to_i].container_id.should == DEFAULT_HANDLE
-      Bosh::WardenCloud::Models::VM[id.to_i].id.should == id.to_i
     end
 
     it "should raise error for invalid stemcell" do
@@ -135,11 +113,10 @@ describe Bosh::WardenCloud::Cloud do
       }.to raise_error ArgumentError
     end
 
-    it "should clean up DB and warden when an error raised" do
+    it "should clean up when an error raised" do
       class FakeError < StandardError; end
-
       Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
-      @cloud.delegate.stub(:set_agent_env) { raise FakeError.new }
+      @cloud.stub(:set_agent_env) { raise FakeError.new }
 
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
@@ -151,24 +128,14 @@ describe Bosh::WardenCloud::Cloud do
       else
         raise "Expected FakeError"
       end
-
-      Bosh::WardenCloud::Models::VM.dataset.all.size.should == 0
-
       @destroy_called.should be_true
     end
   end
 
   context "delete_vm" do
     it "can delete vm" do
-      vm = Bosh::WardenCloud::Models::VM.new
-      vm.container_id = DEFAULT_HANDLE
-      vm.save
-
-      Bosh::WardenCloud::Models::VM.dataset.all.size.should == 1
-
       Warden::Client.any_instance.stub(:call) do |req|
         res = req.create_response
-
         case req
         when Warden::Protocol::DestroyRequest
           req.handle.should == DEFAULT_HANDLE
@@ -177,34 +144,24 @@ describe Bosh::WardenCloud::Cloud do
         else
           raise "#{req} not supported"
         end
-
         res
       end
-
       mock_umount_sudos "umount"
       mock_umount_sudos "rm -rf"
-      @cloud.delete_vm(vm.id.to_s)
-
-      Bosh::WardenCloud::Models::VM.dataset.all.size.should == 0
+      mock_umount_sudos "rm -rf"
+      @cloud.delete_vm(DEFAULT_HANDLE)
     end
 
-    it "should raise error when trying to delete a vm which doesn't exist" do
+    it "should proceed even delete a vm which doesn't exist" do
+      @cloud.stub(:has_vm?).with('vm_not_existed').and_return(false)
+      mock_umount_sudos "rm -rf"
+      mock_umount_sudos "rm -rf"
       expect {
-        @cloud.delete_vm(11) # vm id 11 doesn't exist
-      }.to raise_error Bosh::Clouds::CloudError
+        @cloud.delete_vm('vm_not_existed')
+      }.to_not raise_error
     end
 
     it "can delete a vm with disk attached" do
-      vm = Bosh::WardenCloud::Models::VM.new
-      vm.container_id = DEFAULT_HANDLE
-      vm.save
-
-      disk = Bosh::WardenCloud::Models::Disk.new
-      disk.vm = vm
-      disk.attached = true
-      disk.save
-
-      vm.disks.size.should == 1
       Warden::Client.any_instance.stub(:call) do |req|
         res = req.create_response
         case req
@@ -219,12 +176,8 @@ describe Bosh::WardenCloud::Cloud do
       end
       mock_umount_sudos "umount"
       mock_umount_sudos "rm -rf"
-      @cloud.delete_vm(vm.id.to_s)
-
-      disk.refresh
-      disk.attached.should == false
-      disk.vm.should == nil
-
+      mock_umount_sudos "rm -rf"
+      @cloud.delete_vm(DEFAULT_HANDLE)
     end
   end
 end
