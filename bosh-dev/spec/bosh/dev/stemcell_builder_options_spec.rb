@@ -32,7 +32,7 @@ module Bosh::Dev
 
     let(:spec) { 'stemcell-aws' }
     let(:source_root) { File.expand_path('../../../../..', __FILE__) }
-    let(:stemcell_builder_command) { instance_double('Bosh::Dev::StemcellBuilderCommand', build: nil) }
+
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
     subject(:stemcell_builder_options) { StemcellBuilderOptions.new(options) }
