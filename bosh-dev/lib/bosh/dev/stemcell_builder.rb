@@ -31,11 +31,7 @@ module Bosh::Dev
     end
 
     def build_stemcell
-      stemcell_builder_options = StemcellBuilderOptions.new(args: { tarball: candidate.download_release,
-                                                                    stemcell_version: candidate.number,
-                                                                    infrastructure: infrastructure })
-
-      stemcell_builder_command = StemcellBuilderCommand.new(infrastructure, stemcell_builder_options)
+      stemcell_builder_command = StemcellBuilderCommand.new(candidate, infrastructure)
       stemcell_builder_command.build
     end
   end

@@ -2,14 +2,18 @@ require 'fileutils'
 
 require 'bosh/core/shell'
 require 'bosh/dev/stemcell_environment'
+require 'bosh/dev/stemcell_builder_options'
 
 module Bosh::Dev
   class StemcellBuilderCommand
-    def initialize(infrastructure, stemcell_builder_options)
+    def initialize(build, infrastructure)
       @shell = Bosh::Core::Shell.new
       @environment = ENV.to_hash
       @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure.name)
-      @stemcell_builder_options = stemcell_builder_options
+      bosh_release_tarball_path = build.download_release
+      @stemcell_builder_options = StemcellBuilderOptions.new(args: { tarball: bosh_release_tarball_path,
+                                                                     stemcell_version: build.number,
+                                                                     infrastructure: infrastructure })
     end
 
     def build

@@ -14,16 +14,8 @@ module Bosh::Dev
 
     let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
 
-    let(:stemcell_builder_options) { instance_double('Bosh::Dev::StemcellBuilderOptions') }
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
 
-    let(:args) do
-      {
-        tarball: 'fake release path',
-        infrastructure: infrastructure,
-        stemcell_version: build_number
-      }
-    end
     let(:stemcell_file_path) { '/fake/work_path/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz' }
 
     subject(:builder) do
@@ -34,9 +26,8 @@ module Bosh::Dev
       before do
         Bosh::Stemcell::Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
         GemsGenerator.stub(:new).and_return(gems_generator)
-        StemcellBuilderOptions.stub(:new).with(args: args).and_return(stemcell_builder_options)
-        StemcellBuilderCommand.stub(:new).with(infrastructure,
-                                               stemcell_builder_options).and_return(stemcell_builder_command)
+
+        StemcellBuilderCommand.stub(:new).with(build, infrastructure).and_return(stemcell_builder_command)
 
         stemcell_builder_command.stub(:build) do
           FileUtils.mkdir_p('/fake/work_path/work')

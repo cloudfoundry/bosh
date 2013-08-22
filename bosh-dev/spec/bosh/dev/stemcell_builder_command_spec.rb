@@ -1,11 +1,18 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_builder_command'
+require 'bosh/dev/build'
 require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
   describe StemcellBuilderCommand do
     let(:root_dir) { '/mnt/root' }
     let(:environment_hash) { {} }
+
+    let(:stemcell_builder_options) do
+      instance_double('Bosh::Dev::StemcellBuilderOptions',
+                      spec_name: spec,
+                      default: options)
+    end
     let(:stemcell_environment) do
       instance_double('Bosh::Dev::StemcellEnvironment',
                       sanitize: nil,
@@ -13,15 +20,19 @@ module Bosh::Dev
                       work_path: File.join(root_dir, 'work'))
     end
 
-    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
-    let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions',
-                      spec_name: spec,
-                      default: options)
+    let(:args_for_stemcell_builder_options) do
+      {
+        tarball: '/fake/path/to/bosh-007.tgz',
+        stemcell_version: '007',
+        infrastructure: infrastructure
+      }
     end
 
+    let(:build) { instance_double('Bosh::Dev::Build', download_release: '/fake/path/to/bosh-007.tgz', number: '007') }
+    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
+
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(infrastructure, stemcell_builder_options)
+      StemcellBuilderCommand.new(build, infrastructure)
     end
 
     before do
@@ -45,6 +56,7 @@ module Bosh::Dev
 
       before do
         StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
+        StemcellBuilderOptions.stub(:new).with(args: args_for_stemcell_builder_options).and_return(stemcell_builder_options)
         StemcellBuilderCommand.any_instance.stub(:puts)
 
         Bosh::Core::Shell.stub(:new).and_return(shell)
