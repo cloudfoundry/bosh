@@ -1,6 +1,5 @@
 require 'bosh/dev/build'
 require 'bosh/dev/gems_generator'
-require 'bosh/dev/stemcell_builder_options'
 require 'bosh/dev/stemcell_builder_command'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
