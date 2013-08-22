@@ -3,7 +3,7 @@ require 'yaml'
 require 'bosh/stemcell/aws/region'
 
 module Bosh::Stemcell
-  class Stemcell
+  class Archive
     attr_reader :path
 
     def initialize(path = '')

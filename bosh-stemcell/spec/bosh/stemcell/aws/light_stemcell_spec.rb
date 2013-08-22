@@ -1,12 +1,12 @@
 require 'spec_helper'
 require 'bosh/stemcell/aws/light_stemcell'
-require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/archive'
 
 module Bosh::Stemcell
   module Aws
     describe LightStemcell do
       let(:stemcell) do
-        Stemcell.new(spec_asset('fake-stemcell-aws.tgz'))
+        Archive.new(spec_asset('fake-stemcell-aws.tgz'))
       end
 
       subject(:light_stemcell) do
@@ -25,7 +25,7 @@ module Bosh::Stemcell
         end
 
         let(:stemcell) do
-          Stemcell.new(spec_asset('fake-stemcell-aws.tgz'))
+          Archive.new(spec_asset('fake-stemcell-aws.tgz'))
         end
 
         subject(:light_stemcell) do

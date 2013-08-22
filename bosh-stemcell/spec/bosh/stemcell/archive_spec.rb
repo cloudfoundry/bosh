@@ -1,15 +1,15 @@
 require 'spec_helper'
-require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/archive'
 
 module Bosh::Stemcell
-  describe Stemcell do
+  describe Archive do
     let(:stemcell_path) { spec_asset('fake-stemcell-aws.tgz') }
 
-    subject { Stemcell.new(stemcell_path) }
+    subject { Archive.new(stemcell_path) }
 
     describe '#initialize' do
       it 'errors if path does not exist' do
-        expect { Stemcell.new('/not/found/stemcell.tgz') }.to raise_error "Cannot find file `/not/found/stemcell.tgz'"
+        expect { Archive.new('/not/found/stemcell.tgz') }.to raise_error "Cannot find file `/not/found/stemcell.tgz'"
       end
     end
 

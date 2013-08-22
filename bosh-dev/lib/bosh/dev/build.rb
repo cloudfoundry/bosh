@@ -1,6 +1,6 @@
 require 'peach'
 
-require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/dev/download_adapter'
@@ -122,7 +122,7 @@ module Bosh::Dev
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
       download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
       filename = stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', true)
-      Bosh::Stemcell::Stemcell.new(filename)
+      Bosh::Stemcell::Archive.new(filename)
     end
 
     def release_path
