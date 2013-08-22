@@ -1,6 +1,8 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_builder_options'
+
 require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/operating_system'
 
 module Bosh::Dev
   describe StemcellBuilderOptions do
@@ -17,13 +19,17 @@ module Bosh::Dev
     end
 
     let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
+    let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('ubuntu') }
+
     let(:options) do
       {
         tarball: 'fake/release.tgz',
         stemcell_version: '007',
-        infrastructure: infrastructure
+        infrastructure: infrastructure,
+        operating_system: operating_system
       }
     end
+
     let(:spec) { 'stemcell-aws' }
     let(:source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::StemcellBuilderCommand', build: nil) }
@@ -39,11 +45,11 @@ module Bosh::Dev
     end
 
     describe '#initialize' do
-      context 'when :infrastructure is not set' do
-        before { options.delete(:infrastructure) }
+      context 'when :tarball is not set' do
+        before { options.delete(:tarball) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :infrastructure')
+          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :tarball')
         end
       end
 
@@ -55,11 +61,19 @@ module Bosh::Dev
         end
       end
 
-      context 'when :tarball is not set' do
-        before { options.delete(:tarball) }
+      context 'when :infrastructure is not set' do
+        before { options.delete(:infrastructure) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :tarball')
+          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :infrastructure')
+        end
+      end
+
+      context 'when :operating_system is not set' do
+        before { options.delete(:operating_system) }
+
+        it 'dies' do
+          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :operating_system')
         end
       end
     end

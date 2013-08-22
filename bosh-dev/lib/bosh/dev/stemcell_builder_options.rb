@@ -8,6 +8,7 @@ module Bosh::Dev
     def initialize(options)
       @environment = ENV.to_hash
       @infrastructure = options.fetch(:infrastructure)
+      @operating_system = options.fetch(:operating_system)
 
       @stemcell_version = options.fetch(:stemcell_version)
       @image_create_disk_size = options.fetch(:disk_size, infrastructure.default_disk_size)
