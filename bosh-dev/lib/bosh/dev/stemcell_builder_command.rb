@@ -107,14 +107,17 @@ module Bosh::Dev
     end
 
     def env
-      keep = %w(HTTP_PROXY NO_PROXY)
-
-      format_env(environment.select { |k| keep.include?(k.upcase) })
+      "env #{hash_as_bash_env(proxy_settings_from_environment)}"
     end
 
-    def format_env(env)
-      env_key_values = env.map { |k, v| "#{k}='#{v}'" }
-      "env #{env_key_values.join(' ')}"
+    def proxy_settings_from_environment
+      keep = %w(HTTP_PROXY NO_PROXY)
+
+      environment.select { |k| keep.include?(k.upcase) }
+    end
+
+    def hash_as_bash_env(env)
+      env.map { |k, v| "#{k}='#{v}'" }.join(' ')
     end
   end
 end
