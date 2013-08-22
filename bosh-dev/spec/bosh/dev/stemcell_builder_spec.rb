@@ -25,7 +25,7 @@ module Bosh::Dev
       StemcellBuilder.new(build, infrastructure_name, operating_system_name)
     end
 
-    describe '#build' do
+    describe '#build_stemcell' do
       before do
         Bosh::Stemcell::Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
         Bosh::Stemcell::OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
