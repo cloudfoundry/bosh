@@ -79,7 +79,15 @@ module Bosh::Dev
 
     describe '#spec_name' do
       it 'returns the spec file basename' do
-        expect(stemcell_builder_options.spec_name).to eq('stemcell-aws')
+        expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-ubuntu')
+      end
+
+      context 'when :operating_system is centos' do
+        let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos') }
+
+        it 'returns the spec file basename' do
+          expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-centos')
+        end
       end
     end
 

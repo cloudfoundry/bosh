@@ -16,7 +16,7 @@ module Bosh::Dev
     end
 
     def spec_name
-      "stemcell-#{infrastructure.name}"
+      ['stemcell', infrastructure.name, operating_system.name].join('-')
     end
 
     def default
@@ -49,7 +49,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :environment, :infrastructure, :stemcell_version, :image_create_disk_size, :bosh_micro_release_tgz_path
+    attr_reader :environment, :infrastructure, :operating_system, :stemcell_version, :image_create_disk_size, :bosh_micro_release_tgz_path
 
     def archive_filename
       Bosh::Stemcell::ArchiveFilename.new(stemcell_version, infrastructure, 'bosh-stemcell', false)
