@@ -6,7 +6,7 @@ require 'bosh/dev/stemcell_builder_options'
 
 module Bosh::Dev
   class StemcellBuilderCommand
-    def initialize(build, infrastructure)
+    def initialize(build, infrastructure, operating_system)
       @shell = Bosh::Core::Shell.new
       @environment = ENV.to_hash
       @stemcell_environment = StemcellEnvironment.new(infrastructure_name: infrastructure.name)

@@ -1,7 +1,10 @@
 require 'spec_helper'
+
 require 'bosh/dev/stemcell_builder_command'
+
 require 'bosh/dev/build'
 require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/operating_system'
 
 module Bosh::Dev
   describe StemcellBuilderCommand do
@@ -30,9 +33,10 @@ module Bosh::Dev
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: '/fake/path/to/bosh-007.tgz', number: '007') }
     let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
+    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
 
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(build, infrastructure)
+      StemcellBuilderCommand.new(build, infrastructure, operating_system)
     end
 
     before do
