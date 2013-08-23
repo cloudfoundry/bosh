@@ -446,7 +446,7 @@ module Bosh::WardenCloud
       tempfile.write(Yajl::Encoder.encode(env))
       tempfile.close
 
-      tempfile_in = "/tmp/#{rand(100000)}"
+      tempfile_in = "/tmp/#{rand(100_000)}"
 
       # Here we copy the setting file to temp file in container, then mv it to
       # /var/vcap/bosh by privileged user.
