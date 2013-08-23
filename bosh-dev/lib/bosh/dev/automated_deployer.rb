@@ -29,7 +29,7 @@ module Bosh::Dev
       cli.run_bosh("login #{username} #{password}")
       cli.run_bosh("deployment #{manifest_path}")
       cli.run_bosh("upload stemcell #{stemcell_path}", ignore_failures: true)
-      cli.run_bosh("upload release #{release_path}", ignore_failures: true)
+      cli.run_bosh("upload release #{release_path} --rebase", ignore_failures: true)
       cli.run_bosh('deploy', debug_on_fail: true)
 
       cli.run_bosh("target #{bosh_target}")
