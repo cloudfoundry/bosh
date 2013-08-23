@@ -3,12 +3,12 @@ module Bosh::WardenCloud
 
     include Helpers
 
-    DEFAULT_WARDEN_SOCK = "/tmp/warden.sock"
-    DEFAULT_STEMCELL_ROOT = "/var/vcap/stemcell"
-    DEFAULT_DISK_ROOT = "/var/vcap/store/disk"
-    DEFAULT_FS_TYPE = "ext4"
-    DEFAULT_WARDEN_DEV_ROOT = "/warden-cpi-dev"
-    DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
+    DEFAULT_WARDEN_SOCK = '/tmp/warden.sock'
+    DEFAULT_STEMCELL_ROOT = '/var/vcap/stemcell'
+    DEFAULT_DISK_ROOT = '/var/vcap/store/disk'
+    DEFAULT_FS_TYPE = 'ext4'
+    DEFAULT_WARDEN_DEV_ROOT = '/warden-cpi-dev'
+    DEFAULT_SETTINGS_FILE = '/var/vcap/bosh/settings.json'
     UMOUNT_GUARD_RETRIES = 60
     UMOUNT_GUARD_SLEEP = 3
 
@@ -21,10 +21,10 @@ module Bosh::WardenCloud
     def initialize(options)
       @logger = Bosh::Clouds::Config.logger
 
-      @agent_properties = options["agent"] || {}
-      @warden_properties = options["warden"] || {}
-      @stemcell_properties = options["stemcell"] || {}
-      @disk_properties = options["disk"] || {}
+      @agent_properties = options['agent'] || {}
+      @warden_properties = options['warden'] || {}
+      @stemcell_properties = options['stemcell'] || {}
+      @disk_properties = options['disk'] || {}
 
       setup_warden
       setup_stemcell
@@ -42,7 +42,7 @@ module Bosh::WardenCloud
     def create_stemcell(image_path, cloud_properties)
       not_used(cloud_properties)
 
-      stemcell_id = uuid("stemcell")
+      stemcell_id = uuid('stemcell')
       stemcell_dir = stemcell_path(stemcell_id)
 
       with_thread_name("create_stemcell(#{image_path}, _)") do
@@ -99,10 +99,10 @@ module Bosh::WardenCloud
       with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
 
         stemcell_path = stemcell_path(stemcell_id)
-        vm_id = uuid("vm")
+        vm_id = uuid('vm')
 
         if networks.size > 1
-          raise ArgumentError, "Not support more than 1 nics"
+          raise ArgumentError, 'Not support more than 1 nics'
         end
 
         unless Dir.exist?(stemcell_path)
@@ -124,8 +124,8 @@ module Bosh::WardenCloud
           request = Warden::Protocol::CreateRequest.new
           request.handle = vm_id
           request.rootfs = stemcell_path
-          if networks.first[1]["type"] != "dynamic"
-            request.network = networks.first[1]["ip"]
+          if networks.first[1]['type'] != 'dynamic'
+            request.network = networks.first[1]['ip']
           end
 
           bind_mount = Warden::Protocol::CreateRequest::BindMount.new
@@ -135,7 +135,7 @@ module Bosh::WardenCloud
 
           ephemeral_mount = Warden::Protocol::CreateRequest::BindMount.new
           ephemeral_mount.src_path = vm_ephemeral_mount
-          ephemeral_mount.dst_path = "/var/vcap/data"
+          ephemeral_mount.dst_path = '/var/vcap/data'
           ephemeral_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
 
           request.bind_mounts = [bind_mount, ephemeral_mount]
@@ -162,7 +162,7 @@ module Bosh::WardenCloud
           request = Warden::Protocol::SpawnRequest.new
           request.handle = handle
           request.privileged = true
-          request.script = "/usr/sbin/runsvdir-start"
+          request.script = '/usr/sbin/runsvdir-start'
           client.call(request)
         end
         vm_id
@@ -242,10 +242,10 @@ module Bosh::WardenCloud
     def create_disk(size, vm_locality = nil)
       not_used(vm_locality)
       image_file = nil
-      raise ArgumentError, "disk size <= 0" unless size > 0
+      raise ArgumentError, 'disk size <= 0' unless size > 0
 
       with_thread_name("create_disk(#{size}, _)") do
-        disk_id = uuid("disk")
+        disk_id = uuid('disk')
         image_file = image_path(disk_id)
 
         FileUtils.touch(image_file)
@@ -298,7 +298,7 @@ module Bosh::WardenCloud
 
         # Save device path into agent env settings
         env = get_agent_env(vm_id)
-        env["disks"]["persistent"][disk_id] = File.join(@warden_dev_root, disk_id)
+        env['disks']['persistent'][disk_id] = File.join(@warden_dev_root, disk_id)
         set_agent_env(vm_id, env)
 
         nil
@@ -324,7 +324,7 @@ module Bosh::WardenCloud
         umount_guard device_path
         # Save device path into agent env settings
         env = get_agent_env(vm_id)
-        env["disks"]["persistent"][disk_id] = nil
+        env['disks']['persistent'][disk_id] = nil
         set_agent_env(vm_id, env)
 
         nil
@@ -377,22 +377,22 @@ module Bosh::WardenCloud
     end
 
     def setup_warden
-      @warden_unix_path = @warden_properties["unix_domain_path"] || DEFAULT_WARDEN_SOCK
+      @warden_unix_path = @warden_properties['unix_domain_path'] || DEFAULT_WARDEN_SOCK
     end
 
     def setup_stemcell
-      @stemcell_root = @stemcell_properties["root"] || DEFAULT_STEMCELL_ROOT
+      @stemcell_root = @stemcell_properties['root'] || DEFAULT_STEMCELL_ROOT
 
       FileUtils.mkdir_p(@stemcell_root)
     end
 
     def setup_disk
-      @disk_root = @disk_properties["root"] || DEFAULT_DISK_ROOT
-      @fs_type = @disk_properties["fs"] || DEFAULT_FS_TYPE
+      @disk_root = @disk_properties['root'] || DEFAULT_DISK_ROOT
+      @fs_type = @disk_properties['fs'] || DEFAULT_FS_TYPE
 
-      @warden_dev_root = @disk_properties["warden_dev_root"] || DEFAULT_WARDEN_DEV_ROOT
-      @bind_mount_points = File.join(@disk_root, "bind_mount_points")
-      @ephemeral_mount_points = File.join(@disk_root, "ephemeral_mount_point")
+      @warden_dev_root = @disk_properties['warden_dev_root'] || DEFAULT_WARDEN_DEV_ROOT
+      @bind_mount_points = File.join(@disk_root, 'bind_mount_points')
+      @ephemeral_mount_points = File.join(@disk_root, 'ephemeral_mount_point')
       FileUtils.mkdir_p(@disk_root)
     end
 
@@ -413,15 +413,15 @@ module Bosh::WardenCloud
 
     def generate_agent_env(vm_id, agent_id, networks)
       vm_env = {
-        "name" => vm_id,
-        "id" => vm_id
+        'name' => vm_id,
+        'id' => vm_id
       }
 
       env = {
-        "vm" => vm_env,
-        "agent_id" => agent_id,
-        "networks" => networks,
-        "disks" => { "persistent" => {} },
+        'vm' => vm_env,
+        'agent_id' => agent_id,
+        'networks' => networks,
+        'disks' => { 'persistent' => {} },
       }
       env.merge!(@agent_properties)
       env
@@ -442,7 +442,7 @@ module Bosh::WardenCloud
     end
 
     def set_agent_env(handle, env)
-      tempfile = Tempfile.new("settings")
+      tempfile = Tempfile.new('settings')
       tempfile.write(Yajl::Encoder.encode(env))
       tempfile.close
 

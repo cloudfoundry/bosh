@@ -18,7 +18,7 @@ module Helper
         'plugin' => 'simple',
         'properties' => {},
       },
-      'mbus' => "nats://nats:nats@localhost:4222",
+      'mbus' => 'nats://nats:nats@localhost:4222',
       'ntp' => [],
     }
   end
@@ -74,12 +74,6 @@ end
 
 def image_file(disk_id)
   "#{disk_id}.img"
-end
-
-module Bosh::Clouds
-  class Warden
-    attr_accessor :delegate
-  end
 end
 
 RSpec.configure do |conf|
