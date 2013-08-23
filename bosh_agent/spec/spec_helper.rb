@@ -5,10 +5,6 @@ require 'rspec'
 ENV['RACK_ENV'] = 'test'
 
 require 'bosh_agent'
-require 'digest/sha1'
-require 'fileutils'
-require 'zlib'
-require 'httpclient'
 require 'timecop'
 
 Dir.glob(File.expand_path('support/**/*.rb', File.dirname(__FILE__))).each do |support|
