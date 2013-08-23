@@ -21,10 +21,10 @@ module Bosh::WardenCloud
     def initialize(options)
       @logger = Bosh::Clouds::Config.logger
 
-      @agent_properties = options['agent'] || {}
-      @warden_properties = options['warden'] || {}
-      @stemcell_properties = options['stemcell'] || {}
-      @disk_properties = options['disk'] || {}
+      @agent_properties = options.fetch('agent', {})
+      @warden_properties = options.fetch('warden', {})
+      @stemcell_properties = options.fetch('stemcell', {})
+      @disk_properties = options.fetch('disk', {})
 
       setup_warden
       setup_stemcell
