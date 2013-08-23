@@ -35,6 +35,7 @@ After loggint into the vagrant VM
 vagrant ssh # login to the vagrant VM
 # Download the ovftool from http://www.vmware.com/support/developer/ovf/ to <BOSH_REPO_LOCATION>/tmp/ovftool.txt
 sudo bash /bosh/tmp/ovftool.txt # follow installation instructions
+which ovftool # should return a location
 
 # Build the stemcell
 cd /bosh
