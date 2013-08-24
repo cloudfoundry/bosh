@@ -48,8 +48,8 @@ module Bosh::Dev
         bosh_should_be_called_with 'target micro.target.example.com'
         bosh_should_be_called_with 'login user password'
         bosh_should_be_called_with 'deployment /tmp/repo/test_env/deployments/bosh/bosh.yml'
-        bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', ignore_failures: true
-        bosh_should_be_called_with 'upload release /tmp/release.tgz --rebase', ignore_failures: true
+        bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', debug_on_fail: true
+        bosh_should_be_called_with 'upload release /tmp/release.tgz --rebase', debug_on_fail: true
         bosh_should_be_called_with 'deploy', debug_on_fail: true
 
         bosh_should_be_called_with 'target bosh.target.example.com'
