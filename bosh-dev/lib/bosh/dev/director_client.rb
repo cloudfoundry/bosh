@@ -1,6 +1,6 @@
 module Bosh::Dev
   class DirectorClient
-    def initialize(options={})
+    def initialize(options = {})
       @director_handle = options.fetch(:director_handle) {
         Bosh::Cli::Director.new(
             options.fetch(:uri),
@@ -12,6 +12,12 @@ module Bosh::Dev
 
     def stemcells
       director_handle.list_stemcells
+    end
+
+    def has_stemcell?(name, version)
+      stemcells.any? do |stemcell|
+        stemcell['name'] == name && stemcell['version'] == version
+      end
     end
 
     private
