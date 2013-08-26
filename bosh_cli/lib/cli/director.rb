@@ -1,4 +1,11 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'cli/version_calc'
+require 'cli/core_ext'
+require 'cli/errors'
+
+require 'json'
+require 'httpclient'
+require 'base64'
 
 module Bosh
   module Cli
