@@ -290,23 +290,23 @@ module Bosh
       end
 
       def nats_port
-        @nats_port ||= get_free_port
+        @nats_port ||= get_named_port(:nats)
       end
 
       def hm_port
-        @hm_port ||= get_free_port
+        @hm_port ||= get_named_port(:hm)
       end
 
       def blobstore_port
-        @blobstore_port ||= get_free_port
+        @blobstore_port ||= get_named_port(:blobstore)
       end
 
       def director_port
-        @director_port ||= get_free_port
+        @director_port ||= get_named_port(:director)
       end
 
       def redis_port
-        @redis_port ||= get_free_port
+        @redis_port ||= get_named_port(:redis)
       end
 
       def sandbox_root
@@ -399,13 +399,14 @@ module Bosh
         template.result(binding)
       end
 
-      def get_free_port
-        socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-        socket.bind(Addrinfo.tcp("127.0.0.1", 0))
-        port = socket.local_address.ip_port
-        socket.close
-        # race condition, but good enough for now
-        port
+      def get_named_port(name)
+        # I don't want to optimize for look-up speed, we only have 5 named ports anyway
+        @port_names ||= []
+        @port_names << name unless @port_names.include?(name)
+
+        offset = @port_names.index(name)
+        test_number = ENV['TEST_ENV_NUMBER'].to_i
+        return 61000 + test_number * 100 + offset
       end
     end
   end
