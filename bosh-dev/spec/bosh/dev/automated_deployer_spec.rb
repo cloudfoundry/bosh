@@ -12,9 +12,9 @@ module Bosh::Dev
     let(:environment) { 'test_env' }
     let(:stemcell_path) { '/tmp/stemcell.tgz' }
     let(:release_path) { '/tmp/release.tgz' }
-    let(:repository_path) { '/tmp/repo/' }
+    let(:repository_path) { '/tmp/repo' }
 
-    let(:cli) { instance_double('Bosh::Dev::BoshCliSession').as_null_object }
+    let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
     let(:deployments_repository) { instance_double('Bosh::Dev::Aws::DeploymentsRepository', path: repository_path, clone_or_update!: nil) }
     let(:build_number) { '123' }
     let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
@@ -41,7 +41,7 @@ module Bosh::Dev
     end
 
     describe '#deploy' do
-      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1') }
+      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
 
       before do
         artifacts_downloader.stub(:download_release).with(build_number).and_return(release_path)
@@ -60,6 +60,7 @@ module Bosh::Dev
       it 'follows the normal deploy procedure' do
         bosh_should_be_called_with 'target micro.target.example.com'
         bosh_should_be_called_with 'login user password'
+        bosh_should_be_called_with "deployment #{repository_path}/#{environment}/deployments/bosh/bosh.yml"
         Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
         micro_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').and_return false
         bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', debug_on_fail: true
@@ -75,12 +76,10 @@ module Bosh::Dev
       end
 
       context 'when the stemcell is not on the microbosh director but is on bosh director' do
-
         it 'uploads the stemcell to the microbosh director' do
-          micro_director_client.stub(:has_stemcell?).with('fake_stemcell', '1').and_return false
-          bosh_director_client.stub(:has_stemcell?).with('fake_stemcell', '1').and_return true
-
-          cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).once
+          micro_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').ordered.and_return false
+          cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).ordered.once
+          bosh_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').ordered.and_return true
 
           deployer.deploy
         end
@@ -88,14 +87,13 @@ module Bosh::Dev
 
       context 'when the stemcell is already on the microbosh director but not on the bosh director' do
         it 'does not upload the stemcell to the microbosh' do
-          micro_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').and_return true
-          bosh_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').and_return false
+          micro_director_client.should_receive(:has_stemcell?).ordered.with('fake_stemcell', '1').and_return true
+          bosh_director_client.should_receive(:has_stemcell?).ordered.with('fake_stemcell', '1').and_return false
 
-          cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).once
+          cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).ordered.once
 
           deployer.deploy
         end
-
       end
 
       context 'when the stemcell is on both the microbosh director and the bosh director' do
