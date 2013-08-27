@@ -74,15 +74,6 @@ module Bosh::Stemcell
         subject.should_receive(:system).with('sudo rm -rf /mnt/stemcells/aws')
         subject.sanitize
       end
-
-      context 'when the mount type is btrfs' do
-        let(:mnt_type) { 'btrfs' }
-
-        it 'does not remove /mnt/stemcells/aws' do
-          subject.should_not_receive(:system).with(%r{rm .* /mnt/stemcells/aws})
-          subject.sanitize
-        end
-      end
     end
   end
 end
