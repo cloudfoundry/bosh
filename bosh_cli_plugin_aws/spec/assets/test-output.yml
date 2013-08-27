@@ -79,6 +79,25 @@ original_configuration:
           - protocol: tcp
             ports: 22
             sources: 0.0.0.0/0
+      - name: web
+        ingress:
+        - protocol: tcp
+          ports: '80'
+          sources: 0.0.0.0/0
+        - protocol: tcp
+          ports: '443'
+          sources: 0.0.0.0/0
+    elbs:
+          cfrouter:
+            dns_record: ! '*'
+            ttl: 60
+            subnets:
+            - cf_elb1
+            - cf_elb2
+            security_group: web
+            https: true
+            ssl_cert: cfrouter_cert
+            domain: dev102.cf-app.com
   elastic_ips:
     router:
       instances: 2
