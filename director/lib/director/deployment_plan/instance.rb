@@ -161,21 +161,20 @@ module Bosh::Director
         network_settings = {}
         @network_reservations.each do |name, reservation|
           network = @job.deployment.network(name)
-          network_settings[name] = network.network_settings(
-              reservation, default_properties[name])
-
-          # Somewhat of a hack: for dynamic networks we might know IP address
-          # if it's featured in agent state, in that case we put it into
-          # network spec to satisfy ConfigurationHasher in both agent
-          # and director.
-          if @current_state.is_a?(Hash) &&
-              @current_state["networks"].is_a?(Hash) &&
-              @current_state["networks"][name].is_a?(Hash) &&
-              network_settings[name]["type"] == "dynamic"
-            network_settings[name] = @current_state["networks"][name]
-          end
-
+          network_settings[name] = network.network_settings(reservation, default_properties[name])
           network_settings[name]['dns_record_name'] = dns_record_name(name)
+
+          # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
+          # if they're featured in agent state, in that case we put them into network spec to satisfy
+          # ConfigurationHasher in both agent and director.
+          if @current_state.is_a?(Hash) &&
+              @current_state['networks'].is_a?(Hash) &&
+              @current_state['networks'][name].is_a?(Hash) &&
+              network_settings[name]['type'] == 'dynamic'
+            %w(ip netmask gateway).each do |key|
+              network_settings[name][key] = @current_state['networks'][name][key]
+            end
+          end
         end
         network_settings
       end

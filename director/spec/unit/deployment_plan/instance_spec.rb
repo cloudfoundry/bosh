@@ -18,49 +18,99 @@ describe Bosh::Director::DeploymentPlan::Instance do
     BD::Models::Deployment.make(:name => name)
   end
 
-  it "trusts current state to have current IP for dynamic network" do
-    plan = double(BD::DeploymentPlan, :canonical_name => 'mycloud')
-
-    network = BD::DeploymentPlan::DynamicNetwork.new(plan, {
-      "name" => "net_a",
-      "cloud_properties" => {"foo" => "bar"}
-    })
-
-    plan.stub(:network).with("net_a").and_return(network)
-
-    job = double(BD::DeploymentPlan::Job, :deployment => plan, :canonical_name => 'job')
-
-    job.stub(:instance_state).with(0).and_return("started")
-    job.stub(:default_network).and_return({})
-
-    reservation = BD::NetworkReservation.new_dynamic
-    network.reserve(reservation)
-
-    instance = make(job, 0)
-    instance.add_network_reservation("net_a", reservation)
-
-    instance.network_settings.should == {
-      "net_a" => {
-        "type" => "dynamic",
-        "cloud_properties" => {"foo" => "bar"},
-        "dns_record_name" => "0.job.net-a.mycloud.#{domain_name}"  
+  describe :network_settings do
+    let(:plan) { double(BD::DeploymentPlan, :canonical_name => 'mycloud') }
+    let(:job)  { double(BD::DeploymentPlan::Job, :deployment => plan, :canonical_name => 'job') }
+    let(:network_name) {'net_a'}
+    let(:cloud_properties) { { 'foo' => 'bar' } }
+    let(:dns) { [ '1.2.3.4' ] }
+    let(:dns_record_name) { "0.job.net-a.mycloud.#{domain_name}" }
+    let(:ipaddress) { '10.0.0.6' }
+    let(:subnet_range) { '10.0.0.1/24' }
+    let(:netmask) { '255.255.255.0' }
+    let(:gateway) { '10.0.0.1' }
+    let(:network_settings) {
+      {
+        'cloud_properties' => cloud_properties,
+        'dns' => dns,
+        'dns_record_name' => dns_record_name
       }
     }
-
-    net_a = {
-      "type" => "dynamic",
-      "ip" => "10.0.0.6",
-      "netmask" => "255.255.255.0",
-      "gateway" => "10.0.0.1",
-      "cloud_properties" => {"bar" => "baz"},
-      "dns_record_name" => "0.job.net-a.mycloud.#{domain_name}"
+    let(:network_info) {
+      {
+        'ip' => ipaddress,
+        'netmask' => netmask,
+        'gateway' => gateway,
+      }
     }
+    let(:current_state) { { 'networks' => { network_name => network_info } } }
 
-    instance.current_state = {
-      "networks" => {"net_a" => net_a},
-    }
+    before do
+      job.stub(:instance_state).with(0).and_return('started')
+      job.stub(:default_network).and_return({})
+    end
 
-    instance.network_settings.should == {"net_a" => net_a}
+    context 'dynamic network' do
+      let(:network_type) { 'dynamic' }
+      let(:dynamic_network)  {
+        BD::DeploymentPlan::DynamicNetwork.new(plan, {
+          'name' => network_name,
+          'cloud_properties' => cloud_properties,
+          'dns' => dns
+        })
+      }
+      let(:reservation) { BD::NetworkReservation.new_dynamic }
+      let(:dynamic_network_settings) {
+        { network_name => network_settings.merge('type' => network_type) }
+      }
+      let(:dynamic_network_settings_info) {
+        { network_name => network_settings.merge(network_info).merge('type' => network_type) }
+      }
+
+      it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
+        plan.stub(:network).with(network_name).and_return(dynamic_network)
+        dynamic_network.reserve(reservation)
+
+        instance = make(job, 0)
+        instance.add_network_reservation(network_name, reservation)
+        expect(instance.network_settings).to eql(dynamic_network_settings)
+
+        instance.current_state = current_state
+        expect(instance.network_settings).to eql(dynamic_network_settings_info)
+      end
+    end
+
+    context 'manual network' do
+      let(:network_type) { 'manual' }
+      let(:manual_network)  {
+        BD::DeploymentPlan::ManualNetwork.new(plan, {
+          'name' => network_name,
+          'dns' => dns,
+          'subnets' => [{
+            'range' => subnet_range,
+            'gateway' => gateway,
+            'dns' => dns,
+            'cloud_properties' => cloud_properties
+          }]
+        })
+      }
+      let(:reservation) { BD::NetworkReservation.new_static(ipaddress) }
+      let(:manual_network_settings) {
+        { network_name => network_settings.merge(network_info) }
+      }
+
+      it 'returns the network settings as set at the network spec' do
+        plan.stub(:network).with(network_name).and_return(manual_network)
+        manual_network.reserve(reservation)
+
+        instance = make(job, 0)
+        instance.add_network_reservation(network_name, reservation)
+        expect(instance.network_settings).to eql(manual_network_settings)
+
+        instance.current_state = current_state
+        expect(instance.network_settings).to eql(manual_network_settings)
+      end
+    end
   end
 
   describe "binding unallocated VM" do

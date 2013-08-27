@@ -181,9 +181,6 @@ module Bosh::Agent
         properties = {}
         properties["ip"] = ifconfig.address
         properties["netmask"] = ifconfig.netmask
-        properties["dns"] = []
-        properties["dns"] << net_info.primary_dns if net_info.primary_dns && !net_info.primary_dns.empty?
-        properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
         properties["gateway"] = net_info.default_gateway
         properties
       end

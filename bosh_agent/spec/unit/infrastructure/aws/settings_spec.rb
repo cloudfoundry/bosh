@@ -37,7 +37,7 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
 
     properties.should have_key("ip")
     properties.should have_key("netmask")
-    properties.should have_key("dns")
+    properties.should_not have_key("dns")
     properties.should have_key("gateway")
   end
 
