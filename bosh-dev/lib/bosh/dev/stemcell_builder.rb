@@ -1,15 +1,13 @@
 require 'bosh/dev/build'
 require 'bosh/dev/gems_generator'
 require 'bosh/stemcell/builder_command'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
 
 module Bosh::Dev
   class StemcellBuilder
     def initialize(build, infrastructure_name, operating_system_name)
       @build = build
-      @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
-      @operating_system = Bosh::Stemcell::OperatingSystem.for(operating_system_name)
+      @infrastructure_name = infrastructure_name
+      @operating_system_name = operating_system_name
     end
 
     def build_stemcell
@@ -24,7 +22,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :build, :infrastructure, :operating_system
+    attr_reader :build, :infrastructure_name, :operating_system_name
 
     def generate_gems
       gems_generator = GemsGenerator.new
@@ -32,7 +30,12 @@ module Bosh::Dev
     end
 
     def run_stemcell_builder_command
-      stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(build, infrastructure, operating_system)
+      stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
+        infrastructure_name: infrastructure_name,
+        operating_system_name: operating_system_name,
+        version: build.number,
+        release_tarball_path: build.download_release,
+      )
       stemcell_builder_command.build
     end
   end

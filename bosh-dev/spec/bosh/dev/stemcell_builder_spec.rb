@@ -12,9 +12,6 @@ module Bosh::Dev
     let(:operating_system_name) { 'ubuntu' }
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
-    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
-    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
-
     let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
 
     let(:stemcell_builder_command) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
@@ -28,13 +25,14 @@ module Bosh::Dev
 
     describe '#build_stemcell' do
       before do
-        Bosh::Stemcell::Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
-        Bosh::Stemcell::OperatingSystem.stub(:for).with(operating_system_name).and_return(operating_system)
-
         GemsGenerator.stub(:new).and_return(gems_generator)
 
-        Bosh::Stemcell::BuilderCommand.stub(:new).
-          with(build, infrastructure, operating_system).and_return(stemcell_builder_command)
+        Bosh::Stemcell::BuilderCommand.stub(:new).with(
+          infrastructure_name: infrastructure_name,
+          operating_system_name: operating_system_name,
+          release_tarball_path: build.download_release,
+          version: build_number,
+        ).and_return(stemcell_builder_command)
 
         stemcell_builder_command.stub(:build) do
           FileUtils.mkdir_p(fake_work_path)

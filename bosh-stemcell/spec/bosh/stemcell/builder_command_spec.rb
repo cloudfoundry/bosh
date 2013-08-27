@@ -2,10 +2,6 @@ require 'spec_helper'
 
 require 'bosh/stemcell/builder_command'
 
-require 'bosh/dev/build'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
-
 module Bosh::Stemcell
   describe BuilderCommand do
     let(:root_dir) { '/mnt/root' }
@@ -23,12 +19,16 @@ module Bosh::Stemcell
                       work_path: File.join(root_dir, 'work'))
     end
 
-    let(:build) { instance_double('Bosh::Dev::Build', download_release: '/fake/path/to/bosh-007.tgz', number: '007') }
+    let(:version) { '007' }
+    let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
     let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
     let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
 
     subject(:stemcell_builder_command) do
-      BuilderCommand.new(build, infrastructure, operating_system)
+      BuilderCommand.new(infrastructure_name: infrastructure.name,
+                         operating_system_name: operating_system.name,
+                         release_tarball_path: release_tarball_path,
+                         version: version)
     end
 
     before do
@@ -36,9 +36,12 @@ module Bosh::Stemcell
 
       Bosh::Core::Shell.stub(:new).and_return(shell)
 
+      Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
+      OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
+
       Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
-      BuilderOptions.stub(:new).with(tarball: build.download_release,
-                                     stemcell_version: build.number,
+      BuilderOptions.stub(:new).with(tarball: release_tarball_path,
+                                     stemcell_version: version,
                                      infrastructure: infrastructure,
                                      operating_system: operating_system).and_return(stemcell_builder_options)
     end
