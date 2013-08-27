@@ -23,7 +23,23 @@ namespace :ci do
     build.upload(Bosh::Dev::MicroBoshRelease.new)
   end
 
-  desc 'Publish CI pipeline stemcell to S3'
+  desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
+  task :build_stemcell, [:infrastructure, :operating_system] do |_, args|
+    require 'bosh/dev/build'
+    require 'bosh/dev/stemcell_builder'
+
+    options = args.to_hash
+
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(Bosh::Dev::Build.candidate,
+                                                      options.fetch(:infrastructure),
+                                                      options.fetch(:operating_system))
+    stemcell_file = stemcell_builder.build_stemcell
+
+    mkdir_p('tmp')
+    cp(stemcell_file, File.join('tmp', File.basename(stemcell_file)))
+  end
+
+  desc 'Build a stemcell for the given :infrastructure, and :operating_system and publish to S3'
   task :publish_stemcell, [:infrastructure, :operating_system] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
@@ -34,9 +50,10 @@ namespace :ci do
     stemcell_builder = Bosh::Dev::StemcellBuilder.new(Bosh::Dev::Build.candidate,
                                                       options.fetch(:infrastructure),
                                                       options.fetch(:operating_system))
+    stemcell_file = stemcell_builder.build_stemcell
 
     stemcell_publisher = Bosh::Dev::StemcellPublisher.new
-    stemcell_publisher.publish(stemcell_builder.build_stemcell)
+    stemcell_publisher.publish(stemcell_file)
   end
 
   desc 'Promote from pipeline to artifacts bucket'
