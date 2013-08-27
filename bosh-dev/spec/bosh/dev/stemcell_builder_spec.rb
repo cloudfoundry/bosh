@@ -33,7 +33,7 @@ module Bosh::Dev
 
         GemsGenerator.stub(:new).and_return(gems_generator)
 
-        StemcellBuilderCommand.stub(:new).
+        Bosh::Stemcell::BuilderCommand.stub(:new).
           with(build, infrastructure, operating_system).and_return(stemcell_builder_command)
 
         stemcell_builder_command.stub(:build) do
