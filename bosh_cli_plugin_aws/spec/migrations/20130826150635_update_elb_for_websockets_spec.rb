@@ -39,7 +39,7 @@ describe UpdateElbForWebsockets do
       expect { subject.execute }.to raise_error Bosh::Cli::CliError, /Unable to find `cfrouter'/
     end
 
-    it "skips configuration if elb doesn't exist" do
+    it "skips configuration if vpc isn't in the receipt" do
       receipt = YAML.load_file(asset "test-output.yml")
       receipt.delete('vpc')
       subject.stub(load_receipt: receipt)
