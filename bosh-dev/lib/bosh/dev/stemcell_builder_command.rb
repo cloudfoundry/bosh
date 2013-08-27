@@ -29,9 +29,9 @@ module Bosh::Dev
 
       persist_settings_for_bash
 
-      shell.run "sudo #{env} #{build_from_spec_shell_file} #{work_path} #{stemcell_spec_file_path} #{settings_file_path}"
+      shell.run "sudo #{environment_for_command} #{build_from_spec_shell_file} #{work_path} #{stemcell_spec_file_path} #{settings_file_path}"
 
-      File.join(work_path, 'work', settings['stemcell_tgz'])
+      stemcell_file
     end
 
     private
@@ -42,7 +42,7 @@ module Bosh::Dev
                 :stemcell_builder_options
 
     def spec_name
-      stemcell_builder_options.spec_name
+      "#{stemcell_builder_options.spec_name}.spec"
     end
 
     def settings
@@ -103,11 +103,15 @@ module Bosh::Dev
     end
 
     def stemcell_spec_file_path
-      File.join(build_path, 'spec', "#{spec_name}.spec")
+      File.join(build_path, 'spec', spec_name)
     end
 
-    def env
+    def environment_for_command
       "env #{hash_as_bash_env(proxy_settings_from_environment)}"
+    end
+
+    def stemcell_file
+      File.join(work_path, 'work', settings['stemcell_tgz'])
     end
 
     def proxy_settings_from_environment
