@@ -58,9 +58,7 @@ module Bosh::Dev
     end
 
     def prepare_build_root
-      FileUtils.mkdir_p build_root
-      puts "MADE ROOT: #{build_root}"
-      puts "PWD: #{Dir.pwd}"
+      FileUtils.mkdir_p(build_root, verbose: true)
     end
 
     def build_path
@@ -68,8 +66,8 @@ module Bosh::Dev
     end
 
     def prepare_build_path
-      FileUtils.rm_rf build_path if Dir.exists?(build_path)
-      FileUtils.mkdir_p build_path
+      FileUtils.rm_rf(build_path, verbose: true) if Dir.exists?(build_path)
+      FileUtils.mkdir_p(build_path, verbose: true)
     end
 
     def stemcell_builder_source_dir
@@ -77,12 +75,11 @@ module Bosh::Dev
     end
 
     def copy_stemcell_builder_to_build_path
-      FileUtils.cp_r(Dir.glob("#{stemcell_builder_source_dir}/*"), build_path, preserve: true)
+      FileUtils.cp_r(Dir.glob("#{stemcell_builder_source_dir}/*"), build_path, preserve: true, verbose: true)
     end
 
     def prepare_work_path
-      puts "Building in #{work_path}..."
-      FileUtils.mkdir_p work_path
+      FileUtils.mkdir_p(work_path, verbose: true)
     end
 
     def settings_file_path
