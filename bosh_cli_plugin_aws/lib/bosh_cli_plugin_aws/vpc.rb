@@ -97,7 +97,7 @@ module Bosh
 
       def create_subnets(subnets)
         subnets.each_pair do |name, subnet_spec|
-          yield "Making subnet #{name} #{subnet_spec['cidr']}:" if block_given?
+          yield "Making subnet #{name} #{subnet_spec["cidr"]}:" if block_given?
           options = {}
           options[:availability_zone] = subnet_spec["availability_zone"] if subnet_spec["availability_zone"]
 

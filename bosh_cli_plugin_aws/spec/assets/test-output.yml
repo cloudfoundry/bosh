@@ -55,6 +55,11 @@ original_configuration:
       other:
         cidr: 10.10.1.0/24
         availability_zone: us-east-1b
+      cf_elb1:
+        availability_zone: us-east-1a
+      cf_elb2:
+        availability_zone: us-east-1b
+
     dhcp_options:
       domain_name: dev102.cf.com
       domain_name_servers:
