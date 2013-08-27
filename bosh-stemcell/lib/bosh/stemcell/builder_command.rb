@@ -4,14 +4,14 @@ require 'bosh/core/shell'
 require 'bosh/stemcell/environment'
 require 'bosh/stemcell/builder_options'
 
-module Bosh::Dev
-  class StemcellBuilderCommand
+module Bosh::Stemcell
+  class BuilderCommand
     def initialize(build, infrastructure, operating_system)
-      @stemcell_environment = Bosh::Stemcell::Environment.new(infrastructure_name: infrastructure.name)
-      @stemcell_builder_options = Bosh::Stemcell::BuilderOptions.new(tarball: build.download_release,
-                                                             stemcell_version: build.number,
-                                                             infrastructure: infrastructure,
-                                                             operating_system: operating_system)
+      @stemcell_environment = Environment.new(infrastructure_name: infrastructure.name)
+      @stemcell_builder_options = BuilderOptions.new(tarball: build.download_release,
+                                                     stemcell_version: build.number,
+                                                     infrastructure: infrastructure,
+                                                     operating_system: operating_system)
       @environment = ENV.to_hash
       @shell = Bosh::Core::Shell.new
     end
@@ -29,7 +29,7 @@ module Bosh::Dev
 
       persist_settings_for_bash
 
-      shell.run "sudo #{environment_for_command} #{build_from_spec_shell_file} #{work_path} #{stemcell_spec_file_path} #{settings_file_path}"
+      shell.run "sudo #{command_env} #{build_from_spec_path} #{work_path} #{stemcell_spec_path} #{settings_path}"
 
       stemcell_file
     end
@@ -82,12 +82,12 @@ module Bosh::Dev
       FileUtils.mkdir_p(work_path, verbose: true)
     end
 
-    def settings_file_path
+    def settings_path
       File.join(build_path, 'etc', 'settings.bash')
     end
 
     def persist_settings_for_bash
-      File.open(settings_file_path, 'a') do |f|
+      File.open(settings_path, 'a') do |f|
         f.printf("\n# %s\n\n", '=' * 20)
         settings.each do |k, v|
           f.print "#{k}=#{v}\n"
@@ -95,15 +95,15 @@ module Bosh::Dev
       end
     end
 
-    def build_from_spec_shell_file
+    def build_from_spec_path
       File.join(build_path, 'bin', 'build_from_spec.sh')
     end
 
-    def stemcell_spec_file_path
+    def stemcell_spec_path
       File.join(build_path, 'spec', spec_name)
     end
 
-    def environment_for_command
+    def command_env
       "env #{hash_as_bash_env(proxy_settings_from_environment)}"
     end
 

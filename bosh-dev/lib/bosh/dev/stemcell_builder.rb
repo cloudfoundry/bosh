@@ -1,6 +1,6 @@
 require 'bosh/dev/build'
 require 'bosh/dev/gems_generator'
-require 'bosh/dev/stemcell_builder_command'
+require 'bosh/stemcell/builder_command'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
@@ -32,7 +32,7 @@ module Bosh::Dev
     end
 
     def run_stemcell_builder_command
-      stemcell_builder_command = StemcellBuilderCommand.new(build, infrastructure, operating_system)
+      stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(build, infrastructure, operating_system)
       stemcell_builder_command.build
     end
   end

@@ -1,13 +1,13 @@
 require 'spec_helper'
 
-require 'bosh/dev/stemcell_builder_command'
+require 'bosh/stemcell/builder_command'
 
 require 'bosh/dev/build'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
-module Bosh::Dev
-  describe StemcellBuilderCommand do
+module Bosh::Stemcell
+  describe BuilderCommand do
     let(:root_dir) { '/mnt/root' }
     let(:environment_hash) { {} }
 
@@ -28,7 +28,7 @@ module Bosh::Dev
     let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
 
     subject(:stemcell_builder_command) do
-      StemcellBuilderCommand.new(build, infrastructure, operating_system)
+      BuilderCommand.new(build, infrastructure, operating_system)
     end
 
     before do
@@ -36,11 +36,11 @@ module Bosh::Dev
 
       Bosh::Core::Shell.stub(:new).and_return(shell)
 
-      Bosh::Stemcell::Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
-      Bosh::Stemcell::BuilderOptions.stub(:new).with(tarball: build.download_release,
-                                             stemcell_version: build.number,
-                                             infrastructure: infrastructure,
-                                             operating_system: operating_system).and_return(stemcell_builder_options)
+      Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
+      BuilderOptions.stub(:new).with(tarball: build.download_release,
+                                     stemcell_version: build.number,
+                                     infrastructure: infrastructure,
+                                     operating_system: operating_system).and_return(stemcell_builder_options)
     end
 
     describe '#build' do
@@ -134,7 +134,8 @@ module Bosh::Dev
         end
 
         it 'they are passed to sudo via "env"' do
-          shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_script} #{work_dir} #{spec_file} #{settings_file}")
+          build_command = "#{build_script} #{work_dir} #{spec_file} #{settings_file}"
+          shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_command}")
           stemcell_builder_command.build
         end
       end
