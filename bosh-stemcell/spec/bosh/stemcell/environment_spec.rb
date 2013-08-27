@@ -1,9 +1,9 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
-require 'bosh/dev/stemcell_environment'
+require 'bosh/stemcell/environment'
 
-module Bosh::Dev
-  describe StemcellEnvironment do
+module Bosh::Stemcell
+  describe Environment do
     include FakeFS::SpecHelpers
 
     let(:options) do
@@ -13,7 +13,7 @@ module Bosh::Dev
     end
 
     subject(:stemcell_environment) do
-      StemcellEnvironment.new(options)
+      Environment.new(options)
     end
 
     describe '#build_path' do
@@ -60,7 +60,8 @@ module Bosh::Dev
       end
 
       it 'unmounts work/work/mnt/tmp/grub/root.img' do
-        subject.should_receive(:system).with('sudo umount /mnt/stemcells/aws/work/work/mnt/tmp/grub/root.img 2> /dev/null')
+        unmount_command = 'sudo umount /mnt/stemcells/aws/work/work/mnt/tmp/grub/root.img 2> /dev/null'
+        subject.should_receive(:system).with(unmount_command)
         subject.sanitize
       end
 
