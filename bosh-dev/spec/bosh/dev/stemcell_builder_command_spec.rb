@@ -12,7 +12,7 @@ module Bosh::Dev
     let(:environment_hash) { {} }
 
     let(:stemcell_builder_options) do
-      instance_double('Bosh::Dev::StemcellBuilderOptions',
+      instance_double('Bosh::Stemcell::BuilderOptions',
                       spec_name: spec,
                       default: options)
     end
@@ -37,7 +37,7 @@ module Bosh::Dev
       Bosh::Core::Shell.stub(:new).and_return(shell)
 
       Bosh::Stemcell::Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
-      StemcellBuilderOptions.stub(:new).with(tarball: build.download_release,
+      Bosh::Stemcell::BuilderOptions.stub(:new).with(tarball: build.download_release,
                                              stemcell_version: build.number,
                                              infrastructure: infrastructure,
                                              operating_system: operating_system).and_return(stemcell_builder_options)

@@ -1,11 +1,11 @@
 require 'spec_helper'
-require 'bosh/dev/stemcell_builder_options'
+require 'bosh/stemcell/builder_options'
 
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
-module Bosh::Dev
-  describe StemcellBuilderOptions do
+module Bosh::Stemcell
+  describe BuilderOptions do
     let(:environment_hash) do
       {
         'OVFTOOL' => 'fake_ovf_tool_path',
@@ -18,8 +18,8 @@ module Bosh::Dev
       }
     end
 
-    let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
-    let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('ubuntu') }
+    let(:infrastructure) { Infrastructure.for('aws') }
+    let(:operating_system) { OperatingSystem.for('ubuntu') }
 
     let(:options) do
       {
@@ -34,12 +34,12 @@ module Bosh::Dev
 
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
-    subject(:stemcell_builder_options) { StemcellBuilderOptions.new(options) }
+    subject(:stemcell_builder_options) { BuilderOptions.new(options) }
 
     before do
       ENV.stub(to_hash: environment_hash)
 
-      Bosh::Stemcell::ArchiveFilename.stub(:new).
+      ArchiveFilename.stub(:new).
         with('007', infrastructure, operating_system, 'bosh-stemcell', false).and_return(archive_filename)
     end
 
@@ -48,7 +48,7 @@ module Bosh::Dev
         before { options.delete(:tarball) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :tarball')
+          expect { stemcell_builder_options }.to raise_error('key not found: :tarball')
         end
       end
 
@@ -56,7 +56,7 @@ module Bosh::Dev
         before { options.delete(:stemcell_version) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :stemcell_version')
+          expect { stemcell_builder_options }.to raise_error('key not found: :stemcell_version')
         end
       end
 
@@ -64,7 +64,7 @@ module Bosh::Dev
         before { options.delete(:infrastructure) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :infrastructure')
+          expect { stemcell_builder_options }.to raise_error('key not found: :infrastructure')
         end
       end
 
@@ -72,7 +72,7 @@ module Bosh::Dev
         before { options.delete(:operating_system) }
 
         it 'dies' do
-          expect { StemcellBuilderOptions.new(options) }.to raise_error('key not found: :operating_system')
+          expect { stemcell_builder_options }.to raise_error('key not found: :operating_system')
         end
       end
     end
@@ -83,7 +83,7 @@ module Bosh::Dev
       end
 
       context 'when :operating_system is centos' do
-        let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos') }
+        let(:operating_system) { OperatingSystem.for('centos') }
 
         it 'returns the spec file basename' do
           expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-centos')
@@ -136,7 +136,8 @@ module Bosh::Dev
           expect(result['image_create_disk_size']).to eq(default_disk_size)
           expect(result['bosh_micro_enabled']).to eq('yes')
           expect(result['bosh_micro_package_compiler_path']).to eq(File.join(expected_source_root, 'package_compiler'))
-          expect(result['bosh_micro_manifest_yml_path']).to eq(File.join(expected_source_root, "release/micro/#{infrastructure.name}.yml"))
+          release_micro_manifest_path = File.join(expected_source_root, "release/micro/#{infrastructure.name}.yml")
+          expect(result['bosh_micro_manifest_yml_path']).to eq(release_micro_manifest_path)
           expect(result['bosh_micro_release_tgz_path']).to eq('fake/release.tgz')
         end
 
@@ -179,7 +180,7 @@ module Bosh::Dev
 
       describe 'infrastructure variation' do
         context 'when infrastruture is aws' do
-          let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
+          let(:infrastructure) { Infrastructure.for('aws') }
 
           it_behaves_like 'setting default stemcells environment values'
 
@@ -196,7 +197,7 @@ module Bosh::Dev
         end
 
         context 'when infrastruture is vsphere' do
-          let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('vsphere') }
+          let(:infrastructure) { Infrastructure.for('vsphere') }
 
           it_behaves_like 'setting default stemcells environment values'
 
@@ -220,7 +221,7 @@ module Bosh::Dev
         end
 
         context 'when infrastructure is openstack' do
-          let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('openstack') }
+          let(:infrastructure) { Infrastructure.for('openstack') }
           let(:default_disk_size) { 10240 }
 
           it_behaves_like 'setting default stemcells environment values'
