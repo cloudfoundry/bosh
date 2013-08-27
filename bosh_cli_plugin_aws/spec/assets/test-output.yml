@@ -9,7 +9,7 @@ vpc:
   subnets:
     bosh1: subnet-4bdf6c26
     cf1: subnet-xxxxxxx1
-    cf2: subnet-xxxxxxx2
+    services1: subnet-xxxxxxx2
     cf_rds1: subnet-xxxxxxx3
     cf_rds2: subnet-xxxxxxx4
     bosh_rds1: subnet-xxxxxxx5
