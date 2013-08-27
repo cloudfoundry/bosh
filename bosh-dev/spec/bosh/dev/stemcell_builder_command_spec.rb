@@ -17,7 +17,7 @@ module Bosh::Dev
                       default: options)
     end
     let(:stemcell_environment) do
-      instance_double('Bosh::Dev::StemcellEnvironment',
+      instance_double('Bosh::Stemcell::Environment',
                       sanitize: nil,
                       build_path: root_dir,
                       work_path: File.join(root_dir, 'work'))
@@ -36,7 +36,7 @@ module Bosh::Dev
 
       Bosh::Core::Shell.stub(:new).and_return(shell)
 
-      StemcellEnvironment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
+      Bosh::Stemcell::Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
       StemcellBuilderOptions.stub(:new).with(tarball: build.download_release,
                                              stemcell_version: build.number,
                                              infrastructure: infrastructure,

@@ -1,7 +1,7 @@
 require 'fileutils'
 
-module Bosh::Dev
-  class StemcellEnvironment
+module Bosh::Stemcell
+  class Environment
     attr_reader :build_path, :work_path
 
     def initialize(options)

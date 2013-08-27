@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_publisher'
-require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
   describe StemcellPublisher do
