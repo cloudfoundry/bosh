@@ -10,16 +10,6 @@ mnt=$(echo "$1" | sed -e 's#/*$##')
 spec=$2
 settings_file=$3
 
-function stage_direct() {
-  local stage=$1
-  local mnt_work=$mnt/work
-
-  mkdir -p $mnt_work
-
-  # Apply stage
-  $stages_dir/$stage/apply.sh $mnt_work
-}
-
 # Generate settings for every stage in the spec
 function stage() {
   echo "=== Configuring '$1' stage ==="
@@ -32,12 +22,18 @@ function stage() {
 source $settings_file
 source $spec
 
+#################################################
+
 previous_stage=
 
+# Apply stage for every stage in the spec
 function stage() {
   echo "=== Applying '$1' stage ==="
   echo "== Started $(date) =="
-  stage_direct $1
+
+  mkdir -p $mnt/work
+
+  $stages_dir/$1/apply.sh $mnt/work
 
   previous_stage=$1
 }
