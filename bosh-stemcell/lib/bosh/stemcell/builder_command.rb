@@ -3,13 +3,18 @@ require 'fileutils'
 require 'bosh/core/shell'
 require 'bosh/stemcell/environment'
 require 'bosh/stemcell/builder_options'
+require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/operating_system'
 
 module Bosh::Stemcell
   class BuilderCommand
-    def initialize(build, infrastructure, operating_system)
+    def initialize(options)
+      infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
+      operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
+
       @stemcell_environment = Environment.new(infrastructure_name: infrastructure.name)
-      @stemcell_builder_options = BuilderOptions.new(tarball: build.download_release,
-                                                     stemcell_version: build.number,
+      @stemcell_builder_options = BuilderOptions.new(tarball: options.fetch(:release_tarball_path),
+                                                     stemcell_version: options.fetch(:version),
                                                      infrastructure: infrastructure,
                                                      operating_system: operating_system)
       @environment = ENV.to_hash
