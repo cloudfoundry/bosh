@@ -42,6 +42,10 @@ CaseIndentation:
 DotPosition:
   Enabled: false
 
+MethodLength:
+  CountComments: false
+  Max: 20
+
 Blocks:
   Enabled: false # {} for multi-line blocks in RSpec expectations is very common
 
