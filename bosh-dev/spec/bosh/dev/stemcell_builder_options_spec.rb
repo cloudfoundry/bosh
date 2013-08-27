@@ -100,11 +100,9 @@ module Bosh::Dev
         expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
       end
 
-      context 'when given a stemcell_version' do
-        it 'sets stemcell_version' do
-          result = stemcell_builder_options.default
-          expect(result['stemcell_version']).to eq('007')
-        end
+      it 'sets stemcell_version' do
+        result = stemcell_builder_options.default
+        expect(result['stemcell_version']).to eq('007')
       end
 
       shared_examples_for 'setting default stemcells environment values' do
@@ -179,7 +177,7 @@ module Bosh::Dev
         end
       end
 
-      context 'it is given an infrastructure' do
+      describe 'infrastructure variation' do
         context 'when infrastruture is aws' do
           let(:infrastructure) { Bosh::Stemcell::Infrastructure.for('aws') }
 
