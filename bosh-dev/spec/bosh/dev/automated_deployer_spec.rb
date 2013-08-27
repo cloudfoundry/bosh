@@ -75,32 +75,42 @@ module Bosh::Dev
         deployer.deploy
       end
 
-      context 'when the stemcell is not on the microbosh director but is on bosh director' do
-        it 'uploads the stemcell to the microbosh director' do
-          micro_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').ordered.and_return false
-          cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).ordered.once
-          bosh_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').ordered.and_return true
+      # Yes yes we are stubbing private methods, horrible
+      # but this gives us better isolation in tests
+      # also the bigger context is AutomatedDeployer#deploy is called in a Rake Task
+      # and we do want a minimal amount of logic in there :-/
+      context 'uploading stemcell to the microbosh' do
+        before { deployer.stub(:upload_stemcell_to_bosh_director) }
+
+        it 'is done when it is not on the microbosh director' do
+          micro_director_client.stub(:has_stemcell?).with('fake_stemcell', '1').and_return false
+          cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).once
+
+          deployer.deploy
+        end
+
+        it 'is not done when it is on the microbosh director' do
+          micro_director_client.stub(:has_stemcell?).with('fake_stemcell', '1').and_return true
+          cli.should_not_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true)
 
           deployer.deploy
         end
       end
 
-      context 'when the stemcell is already on the microbosh director but not on the bosh director' do
-        it 'does not upload the stemcell to the microbosh' do
-          micro_director_client.should_receive(:has_stemcell?).ordered.with('fake_stemcell', '1').and_return true
-          bosh_director_client.should_receive(:has_stemcell?).ordered.with('fake_stemcell', '1').and_return false
+      context 'uploading stemcell to bosh director' do
+        before { deployer.stub(:deploy_to_micro) }
+
+        it 'is done when it is not on the bosh director' do
+          bosh_director_client.stub(:has_stemcell?).with('fake_stemcell', '1').and_return false
 
           cli.should_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true).ordered.once
 
           deployer.deploy
         end
-      end
 
-      context 'when the stemcell is on both the microbosh director and the bosh director' do
-        it 'does not upload any stemcells' do
-          micro_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').and_return(true)
+        it 'is not done when it is on the bosh director' do
+          bosh_director_client.stub(:has_stemcell?).with('fake_stemcell', '1').and_return true
 
-          bosh_director_client.should_receive(:has_stemcell?).with('fake_stemcell', '1').and_return(true)
           cli.should_not_receive(:run_bosh).with("upload stemcell #{stemcell_path}", debug_on_fail: true)
 
           deployer.deploy
@@ -120,4 +130,3 @@ module Bosh::Dev
 
   end
 end
-
