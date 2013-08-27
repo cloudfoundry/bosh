@@ -59,10 +59,8 @@ module Bosh::Dev
       let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
 
       before do
-        StemcellBuilderCommand.any_instance.stub(:puts)
-
         Process.stub(pid: pid)
-        FileUtils.stub(:cp_r).with([], build_dir, preserve: true) do
+        FileUtils.stub(:cp_r).with([], build_dir, preserve: true, verbose: true) do
           FileUtils.mkdir_p etc_dir
           FileUtils.touch settings_file
         end
@@ -91,7 +89,7 @@ module Bosh::Dev
       end
 
       it 'copies the stemcell_builder code into the build directory' do
-        FileUtils.should_receive(:cp_r).with([], build_dir, preserve: true) do
+        FileUtils.should_receive(:cp_r).with([], build_dir, preserve: true, verbose: true) do
           FileUtils.mkdir_p etc_dir
           FileUtils.touch File.join(etc_dir, 'settings.bash')
         end
