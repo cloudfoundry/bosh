@@ -24,8 +24,8 @@ describe Bosh::WardenCloud::Cloud do
   end
 
   def mock_create_disk
-    zero_exit_status = mock('Process::Status', :exit_status => 0)
-    Bosh::Exec.should_receive(:sh).with(%r!\bmkfs -t ext4\b!, :yield => :on_false).ordered.and_return(zero_exit_status)
+    zero_exit_status = mock('Process::Status', exit_status: 0)
+    Bosh::Exec.should_receive(:sh).with(%r/\bmkfs -t ext4\b/, yield: :on_false).ordered.and_return(zero_exit_status)
   end
 
   context 'create_disk' do

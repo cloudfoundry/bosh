@@ -44,8 +44,8 @@ describe Bosh::WardenCloud::Cloud do
   end
 
   def mock_umount_sudos (cmd)
-    zero_exit_status = mock('Process::Status', :exit_status => 0)
-    Bosh::Exec.should_receive(:sh).with(/sudo -n #{cmd}.*/, :yield => :on_false).ordered.and_return(zero_exit_status)
+    zero_exit_status = mock('Process::Status', exit_status: 0)
+    Bosh::Exec.should_receive(:sh).with(/sudo -n #{cmd}.*/, yield: :on_false).ordered.and_return(zero_exit_status)
   end
 
   context 'create_vm' do
