@@ -75,6 +75,18 @@ module Bosh::Dev
 
         director_client.upload_release('/path/to/fake-release.tgz')
       end
+
+      context 'when the release has previously been uploaded' do
+        it 'should ignore the associated error' do
+          cli.stub(:run_bosh).
+            with(/upload release/, debug_on_fail: true).
+            and_raise('... Error 100: Rebase is attempted without any job or package changes ...')
+
+          expect {
+            director_client.upload_release('/path/to/fake-release.tgz')
+          }.not_to raise_error
+        end
+      end
     end
 
     describe '#deploy' do

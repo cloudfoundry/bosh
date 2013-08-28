@@ -19,6 +19,8 @@ module Bosh::Dev
     def upload_release(release_path)
       target_and_login!
       cli.run_bosh("upload release #{release_path} --rebase", debug_on_fail: true)
+    rescue => e
+      raise unless /Error 100: Rebase is attempted without any job or package changes/.match(e.message)
     end
 
     def deploy(manifest_path)
