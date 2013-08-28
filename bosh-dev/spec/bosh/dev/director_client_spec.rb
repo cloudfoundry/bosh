@@ -6,7 +6,7 @@ require 'bosh/dev/director_client'
 module Bosh::Dev
 
   describe DirectorClient do
-    let (:director_handle) { instance_double 'Bosh::Cli::Director' }
+    let (:director_handle) { instance_double('Bosh::Cli::Director') }
     let (:valid_stemcell_list_1) {
       [
           { 'name' => 'bosh-MOCK-stemcell', 'version' => '007', 'cid' => 'ami-amazon_guid_1' },

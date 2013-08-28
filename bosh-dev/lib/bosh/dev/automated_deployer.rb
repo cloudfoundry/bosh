@@ -17,8 +17,8 @@ module Bosh::Dev
       @cli = options.fetch(:cli) { BoshCliSession.new }
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
       @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
-      @micro_director_client = options.fetch(:micro_director_client) { Bosh::Dev::DirectorClient.new(micro_target, username, password) }
-      @bosh_director_client = options.fetch(:bosh_director_client) { Bosh::Dev::DirectorClient.new(bosh_target, username, password) }
+      @micro_director_client = Bosh::Dev::DirectorClient.new(uri: micro_target, username: username, password: password)
+      @bosh_director_client = Bosh::Dev::DirectorClient.new(uri: bosh_target, username: username, password: password)
     end
 
     def deploy

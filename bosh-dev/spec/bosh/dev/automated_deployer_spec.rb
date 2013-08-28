@@ -32,12 +32,15 @@ module Bosh::Dev
                             deployments_repository: deployments_repository,
                             artifacts_downloader: artifacts_downloader,
                             cli: cli,
-                            micro_director_client: micro_director_client,
-                            bosh_director_client: bosh_director_client)
+      )
+
     end
 
     before do
       Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+      director_client_klass = class_double('Bosh::Dev::DirectorClient').as_stubbed_const
+      director_client_klass.stub(:new).with(uri: micro_target, username: username, password: password).and_return(micro_director_client)
+      director_client_klass.stub(:new).with(uri: bosh_target, username: username, password: password).and_return(bosh_director_client)
     end
 
     describe '#deploy' do
