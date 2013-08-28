@@ -69,9 +69,6 @@ module Bosh::Dev
       end
 
       it 'clones a deployment repository' do
-        micro_director_client.stub(has_stemcell?: false)
-        bosh_director_client.stub(has_stemcell?: false)
-
         deployments_repository.should_receive(:clone_or_update!)
 
         deployer.deploy

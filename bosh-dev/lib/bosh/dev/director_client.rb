@@ -10,16 +10,6 @@ module Bosh::Dev
         @cli = BoshCliSession.new
     end
 
-    def stemcells
-      director_handle.list_stemcells
-    end
-
-    def has_stemcell?(name, version)
-      stemcells.any? do |stemcell|
-        stemcell['name'] == name && stemcell['version'] == version
-      end
-    end
-
     def upload_stemcell(stemcell_archive)
       target_and_login!
       cli.run_bosh("upload stemcell #{stemcell_archive.path}", debug_on_fail: true)  unless has_stemcell?(stemcell_archive.name, stemcell_archive.version)
@@ -43,6 +33,12 @@ module Bosh::Dev
     def target_and_login!
       cli.run_bosh("target #{uri}")
       cli.run_bosh("login #{username} #{password}")
+    end
+
+    def has_stemcell?(name, version)
+      director_handle.list_stemcells.any? do |stemcell|
+        stemcell['name'] == name && stemcell['version'] == version
+      end
     end
 
     def director_handle
