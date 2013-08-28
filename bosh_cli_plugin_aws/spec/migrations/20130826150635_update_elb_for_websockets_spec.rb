@@ -16,7 +16,7 @@ describe UpdateElbForWebsockets do
     Bosh::Aws::VPC.stub(:find).with(ec2, receipt['vpc']['id']).and_return(mock_vpc)
     mock_vpc.stub(:security_group_by_name).with('web').and_return(mock_sg)
 
-    UpdateElbForWebsockets::WebSocketElbHelpers.should_receive(:authorize_ingress).with(mock_sg, {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"}).and_return(true)
+    UpdateElbForWebsockets::WebSocketElbHelpers.should_receive(:authorize_ingress).with(mock_sg, {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"})
     UpdateElbForWebsockets::WebSocketElbHelpers.should_receive(:record_ingress).with(receipt, 'web', {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"})
 
     mock_elb = mock(AWS::ELB::LoadBalancer)
@@ -87,12 +87,12 @@ describe UpdateElbForWebsockets do
 
       it "authorizes the ingress through the security group" do
         security_group.should_receive(:authorize_ingress).with("protocol", 4443, "sources")
-        expect(UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")).to be_true
+        UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")
       end
 
       it "does not error if ingress rule already exists" do
         security_group.should_receive(:authorize_ingress).with("protocol", 4443, "sources").and_raise(AWS::EC2::Errors::InvalidPermission::Duplicate)
-        expect(UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")).to be_false
+        UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")
       end
     end
 

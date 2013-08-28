@@ -6,10 +6,9 @@ class UpdateElbForWebsockets < Bosh::Aws::Migration
     security_group = vpc.security_group_by_name(cfrouter_security_group_name)
 
     params = {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"}
-    if WebSocketElbHelpers.authorize_ingress(security_group, params)
-      WebSocketElbHelpers.record_ingress(vpc_receipt, cfrouter_security_group_name, params)
-      save_receipt('aws_vpc_receipt', vpc_receipt)
-    end
+    WebSocketElbHelpers.authorize_ingress(security_group, params)
+    WebSocketElbHelpers.record_ingress(vpc_receipt, cfrouter_security_group_name, params)
+    save_receipt('aws_vpc_receipt', vpc_receipt)
 
     cfrouter_elb = elb.find_by_name("cfrouter")
 
@@ -70,9 +69,7 @@ class UpdateElbForWebsockets < Bosh::Aws::Migration
 
     def self.authorize_ingress(security_group, params)
       security_group.authorize_ingress(params['protocol'], params['ports'].to_i, params['sources'])
-      true
     rescue AWS::EC2::Errors::InvalidPermission::Duplicate
-      false
     end
 
     def self.record_ingress(vpc_receipt, security_group_name, params)
