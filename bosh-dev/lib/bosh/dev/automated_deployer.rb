@@ -16,22 +16,24 @@ module Bosh::Dev
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
       @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
 
-      @micro_director_client = DirectorClient.new(uri: micro_target, username: username, password: password)
-      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: username, password: password)
+      deployments_repository.clone_or_update!
+
+      @micro_director_client = DirectorClient.new(uri: micro_target, username: deployment_bosh_user, password: deployment_bosh_password)
+      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: deployment_bosh_user, password: deployment_bosh_password)
     end
 
     def deploy
-      manifest_path = File.join(deployments_repository.path, environment, 'deployments/bosh/bosh.yml')
-
       stemcell_path = artifacts_downloader.download_stemcell(build_number)
+      stemcell_archive = Bosh::Stemcell::Archive.new(stemcell_path)
+      micro_director_client.upload_stemcell(stemcell_archive)
+
       release_path = artifacts_downloader.download_release(build_number)
+      micro_director_client.upload_release(release_path)
 
-      deployments_repository.clone_or_update!
+      manifest_path = deployment_manifest_path
+      micro_director_client.deploy(manifest_path)
 
-      archive = Bosh::Stemcell::Archive.new(stemcell_path)
-      deploy_to_micro(manifest_path, release_path, archive)
-
-      upload_stemcell_to_bosh_director(archive)
+      bosh_director_client.upload_stemcell(stemcell_archive)
     end
 
     private
@@ -46,25 +48,19 @@ module Bosh::Dev
                 :micro_director_client,
                 :bosh_director_client
 
-    def upload_stemcell_to_bosh_director(archive)
-      bosh_director_client.upload_stemcell(archive)
+    def deployment_manifest_path
+      @deployment_manifest_path ||= File.join(deployments_repository.path, environment, 'deployments/bosh/bosh.yml')
     end
 
-    def deploy_to_micro(manifest_path, release_path, archive)
-      micro_director_client.upload_stemcell(archive)
-      micro_director_client.upload_release(release_path)
-      micro_director_client.deploy(manifest_path)
+    def deployment_bosh_user
+      @deployment_bosh_user ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_USER").chomp
     end
 
-    def username
-      @username ||= shell.run(". #{bosh_environment_path} && echo $BOSH_USER").chomp
+    def deployment_bosh_password
+      @deployment_bosh_password ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_PASSWORD").chomp
     end
 
-    def password
-      @password ||= shell.run(". #{bosh_environment_path} && echo $BOSH_PASSWORD").chomp
-    end
-
-    def bosh_environment_path
+    def deployment_bosh_environment_path
       File.join(deployments_repository.path, environment, 'bosh_environment')
     end
   end

@@ -68,10 +68,10 @@ module Bosh::Dev
         deployer.deploy
       end
 
-      it 'clones a deployment repository' do
+      it "clones a deployment repository for the deployment's manifest & bosh_environment" do
         deployments_repository.should_receive(:clone_or_update!)
 
-        deployer.deploy
+        deployer
       end
     end
   end
