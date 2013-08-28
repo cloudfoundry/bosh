@@ -377,20 +377,19 @@ module Bosh::WardenCloud
     end
 
     def setup_warden
-      @warden_unix_path = @warden_properties['unix_domain_path'] || DEFAULT_WARDEN_SOCK
+      @warden_unix_path = @warden_properties.fetch('unix_domain_path', DEFAULT_WARDEN_SOCK)
     end
 
     def setup_stemcell
-      @stemcell_root = @stemcell_properties['root'] || DEFAULT_STEMCELL_ROOT
-
+      @stemcell_root = @stemcell_properties.fetch('root', DEFAULT_STEMCELL_ROOT)
       FileUtils.mkdir_p(@stemcell_root)
     end
 
     def setup_disk
-      @disk_root = @disk_properties['root'] || DEFAULT_DISK_ROOT
-      @fs_type = @disk_properties['fs'] || DEFAULT_FS_TYPE
+      @disk_root = @disk_properties.fetch('root', DEFAULT_DISK_ROOT)
+      @fs_type = @disk_properties.fetch('fs', DEFAULT_FS_TYPE)
+      @warden_dev_root = @disk_properties.fetch('warden_dev_root', DEFAULT_WARDEN_DEV_ROOT)
 
-      @warden_dev_root = @disk_properties['warden_dev_root'] || DEFAULT_WARDEN_DEV_ROOT
       @bind_mount_points = File.join(@disk_root, 'bind_mount_points')
       @ephemeral_mount_points = File.join(@disk_root, 'ephemeral_mount_point')
       FileUtils.mkdir_p(@disk_root)
