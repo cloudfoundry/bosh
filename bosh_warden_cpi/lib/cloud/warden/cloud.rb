@@ -1,7 +1,7 @@
 module Bosh::WardenCloud
   class Cloud < Bosh::Cloud
 
-    include Helpers
+    include Bosh::WardenCloud::Helpers
 
     DEFAULT_WARDEN_SOCK = '/tmp/warden.sock'
     DEFAULT_STEMCELL_ROOT = '/var/vcap/stemcell'

@@ -2,7 +2,6 @@ require 'yajl'
 require 'fileutils'
 require 'tempfile'
 require 'securerandom'
-require 'etc'
 
 require 'common/exec'
 require 'common/thread_pool'
