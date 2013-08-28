@@ -21,16 +21,17 @@ module Bosh::Dev
     end
 
     def upload_stemcell(stemcell_archive)
-      cli.run_bosh("target #{uri}")
-      cli.run_bosh("login #{username} #{password}")
+      target_and_login!
       cli.run_bosh("upload stemcell #{stemcell_archive.path}", debug_on_fail: true)  unless has_stemcell?(stemcell_archive.name, stemcell_archive.version)
     end
 
     def upload_release(release_path)
+      target_and_login!
       cli.run_bosh("upload release #{release_path} --rebase", debug_on_fail: true)
     end
 
     def deploy(manifest_path)
+      target_and_login!
       cli.run_bosh("deployment #{manifest_path}")
       cli.run_bosh('deploy', debug_on_fail: true)
     end
@@ -38,6 +39,11 @@ module Bosh::Dev
     private
 
     attr_reader :uri, :username, :password, :cli
+
+    def target_and_login!
+      cli.run_bosh("target #{uri}")
+      cli.run_bosh("login #{username} #{password}")
+    end
 
     def director_handle
       @director_handle ||= Bosh::Cli::Director.new(uri, username, password)

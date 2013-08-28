@@ -71,20 +71,16 @@ module Bosh::Dev
         director_handle.stub(:list_stemcells) { [] }
       end
 
-      it 'targets its director with the cli' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com')
-
-        director_client.upload_stemcell(stemcell_archive)
-      end
-
-      it 'logs in to the director with the cli' do
-        cli.should_receive(:run_bosh).with('login fake_username fake_password')
-
-        director_client.upload_stemcell(stemcell_archive)
-      end
-
       it 'uploads the stemcell with the cli' do
         cli.should_receive(:run_bosh).with('upload stemcell /path/to/fake-stemcell-008.tgz', debug_on_fail: true)
+
+        director_client.upload_stemcell(stemcell_archive)
+      end
+
+      it 'always re-targets and logs in first' do
+        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
+        cli.should_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true).ordered
 
         director_client.upload_stemcell(stemcell_archive)
       end
@@ -108,12 +104,29 @@ module Bosh::Dev
 
         director_client.upload_release('/path/to/fake-release.tgz')
       end
+
+      it 'always re-targets and logs in first' do
+        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
+        cli.should_receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
+
+        director_client.upload_release('/path/to/fake-release.tgz')
+      end
     end
 
     describe 'deploy' do
       it 'sets the deployment and then runs a deplpy using the cli' do
         cli.should_receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
         cli.should_receive(:run_bosh).with('deploy', debug_on_fail: true).ordered
+
+        director_client.deploy('/path/to/fake-manifest.yml')
+      end
+
+      it 'always re-targets and logs in first' do
+        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
+        cli.should_receive(:run_bosh).with(/deployment/).ordered
+        cli.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
 
         director_client.deploy('/path/to/fake-manifest.yml')
       end
