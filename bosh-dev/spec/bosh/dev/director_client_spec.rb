@@ -1,6 +1,4 @@
 require 'spec_helper'
-
-require 'cli/director'
 require 'bosh/dev/director_client'
 
 module Bosh::Dev
@@ -79,7 +77,7 @@ module Bosh::Dev
       end
     end
 
-    describe 'deploy' do
+    describe '#deploy' do
       it 'sets the deployment and then runs a deplpy using the cli' do
         cli.should_receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
         cli.should_receive(:run_bosh).with('deploy', debug_on_fail: true).ordered

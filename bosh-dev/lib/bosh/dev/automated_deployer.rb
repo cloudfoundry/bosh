@@ -1,4 +1,3 @@
-require 'cli/director'
 require 'bosh/core/shell'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'

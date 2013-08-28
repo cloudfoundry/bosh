@@ -8,6 +8,7 @@ module Bosh::Dev
         @username = options.fetch(:username)
         @password = options.fetch(:password)
         @cli = BoshCliSession.new
+        @director_handle = Bosh::Cli::Director.new(uri, username, password)
     end
 
     def upload_stemcell(stemcell_archive)
@@ -28,7 +29,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :uri, :username, :password, :cli
+    attr_reader :uri, :username, :password, :cli, :director_handle
 
     def target_and_login!
       cli.run_bosh("target #{uri}")
@@ -39,10 +40,6 @@ module Bosh::Dev
       director_handle.list_stemcells.any? do |stemcell|
         stemcell['name'] == name && stemcell['version'] == version
       end
-    end
-
-    def director_handle
-      @director_handle ||= Bosh::Cli::Director.new(uri, username, password)
     end
   end
 end
