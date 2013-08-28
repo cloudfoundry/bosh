@@ -104,7 +104,10 @@ module VSphereCloud
           client.reconfig_vm(vm, config)
 
           @logger.info("Taking initial snapshot")
-          task = take_snapshot(vm, "initial")
+
+          # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
+          # (which comes from AWS). This is a vm snapshot.
+          task = vm.create_snapshot("initial", nil, false, false)
           client.wait_for_task(task)
         end
         result
@@ -704,7 +707,9 @@ module VSphereCloud
               @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to " +
                                "#{local_stemcell_name} (#{replicated_stemcell_vm})")
               @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
-              task = take_snapshot(replicated_stemcell_vm, "initial")
+              # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
+              # (which comes from AWS). This is a vm snapshot.
+              task = replicated_stemcell_vm.create_snapshot("initial", nil, false, false)
               client.wait_for_task(task)
               @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
             end
@@ -1104,14 +1109,6 @@ module VSphereCloud
           raise TimeoutException if Time.now - started > timeout
           sleep(1.0)
         end
-    end
-
-    private
-
-    # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
-    # (which comes from AWS). This is a vm snapshot.
-    def take_snapshot(vm, name)
-      vm.create_snapshot(name, nil, false, false)
     end
   end
 end
