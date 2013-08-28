@@ -76,6 +76,15 @@ def image_file(disk_id)
   "#{disk_id}.img"
 end
 
+def mock_sh (cmd, su = false, times = 1, success = true)
+  zero_exit_status = mock('Process::Status', exit_status: 0)
+  result = mock('Result', :success? => success)
+  prefix = (su == true)? 'sudo -n ' : ''
+  Bosh::Exec.should_receive(:sh).exactly(times).times.with(/#{prefix}#{cmd}.*/, yield: :on_false).and_yield(result).and_return(zero_exit_status)
+end
+
+
+
 RSpec.configure do |conf|
   conf.include(Helper)
 end
