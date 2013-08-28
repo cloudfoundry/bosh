@@ -249,7 +249,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it 'return false when container not exist' do
-      @cloud.has_vm?('vm_not_exist').should == true
+      @cloud.has_vm?('vm_not_exist').should == false
     end
   end
 end
