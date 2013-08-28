@@ -138,6 +138,10 @@ module Bosh::Dev
       "s3://bosh-ci-pipeline/#{number}/"
     end
 
+    def s3_artifacts_url
+      's3://bosh-jenkins-artifacts'
+    end
+
     def stemcell_filename(version, infrastructure, name, light)
       operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
       Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, name, light).to_s
@@ -151,8 +155,8 @@ module Bosh::Dev
     def bucket_sync_commands
       [
         "s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems",
-        "s3cmd --verbose sync #{File.join(s3_url, 'release')} s3://bosh-jenkins-artifacts",
-        "s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts",
+        "s3cmd --verbose cp #{File.join(s3_url, 'release', release_file)} #{File.join(s3_artifacts_url, 'release', release_file)}",
+        "s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} #{s3_artifacts_url}"
       ]
     end
   end

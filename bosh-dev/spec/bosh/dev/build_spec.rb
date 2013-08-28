@@ -154,7 +154,7 @@ module Bosh::Dev
 
       it 'syncs the releases' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/release s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/release/bosh-123.tgz s3://bosh-jenkins-artifacts/release/bosh-123.tgz')
 
         subject.promote_artifacts
       end
