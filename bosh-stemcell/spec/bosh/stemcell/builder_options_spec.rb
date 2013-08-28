@@ -80,14 +80,6 @@ module Bosh::Stemcell
         it 'returns the spec file basename' do
           expect(stemcell_builder_options.spec_name).to eq('stemcell-openstack-kvm-ubuntu')
         end
-
-        context 'when STEMCELL_HYPERVISOR is specified' do
-          let(:environment_hash) { { 'STEMCELL_HYPERVISOR' => 'FAKE_HYPERVISOR' } }
-
-          it 'returns the spec file basename' do
-            expect(stemcell_builder_options.spec_name).to eq('stemcell-openstack-FAKE_HYPERVISOR-ubuntu')
-          end
-        end
       end
 
       context 'when :infrastructure is vsphere' do
@@ -124,8 +116,6 @@ module Bosh::Stemcell
       shared_examples_for 'setting default stemcells environment values' do
         let(:environment_hash) do
           {
-            'OVFTOOL' => 'fake_ovf_tool_path',
-            'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
             'UBUNTU_ISO' => 'fake_ubuntu_iso',
             'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
             'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
@@ -135,12 +125,15 @@ module Bosh::Stemcell
         end
 
         it 'sets default values for options based in hash' do
+          expected_release_micro_manifest_path =
+            File.join(expected_source_root, "release/micro/#{infrastructure.name}.yml")
+
           result = stemcell_builder_options.default
 
           expect(result['system_parameters_infrastructure']).to eq(infrastructure.name)
           expect(result['stemcell_name']).to eq ('bosh-stemcell')
           expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
-          expect(result['stemcell_hypervisor']).to eq('fake_stemcell_hypervisor')
+          expect(result['stemcell_hypervisor']).to eq(infrastructure.hypervisor)
           expect(result['bosh_protocol_version']).to eq('1')
           expect(result['UBUNTU_ISO']).to eq('fake_ubuntu_iso')
           expect(result['UBUNTU_MIRROR']).to eq('fake_ubuntu_mirror')
@@ -152,8 +145,7 @@ module Bosh::Stemcell
           expect(result['image_create_disk_size']).to eq(default_disk_size)
           expect(result['bosh_micro_enabled']).to eq('yes')
           expect(result['bosh_micro_package_compiler_path']).to eq(File.join(expected_source_root, 'package_compiler'))
-          release_micro_manifest_path = File.join(expected_source_root, "release/micro/#{infrastructure.name}.yml")
-          expect(result['bosh_micro_manifest_yml_path']).to eq(release_micro_manifest_path)
+          expect(result['bosh_micro_manifest_yml_path']).to eq(expected_release_micro_manifest_path)
           expect(result['bosh_micro_release_tgz_path']).to eq('fake/release.tgz')
         end
 
@@ -169,6 +161,7 @@ module Bosh::Stemcell
 
           it 'uses the RbConfig values' do
             result = stemcell_builder_options.default
+
             expect(result['ruby_bin']).to eq('/a/path/to/ruby')
           end
         end
@@ -200,15 +193,8 @@ module Bosh::Stemcell
 
           it_behaves_like 'setting default stemcells environment values'
 
-          context 'when STEMCELL_HYPERVISOR is not set' do
-            before do
-              environment_hash.delete('STEMCELL_HYPERVISOR')
-            end
-
-            it 'uses "xen"' do
-              result = stemcell_builder_options.default
-              expect(result['stemcell_hypervisor']).to eq('xen')
-            end
+          it 'has no "image_vsphere_ovf_ovftool_path" key' do
+            expect(stemcell_builder_options.default).not_to have_key('image_vsphere_ovf_ovftool_path')
           end
         end
 
@@ -217,13 +203,10 @@ module Bosh::Stemcell
 
           it_behaves_like 'setting default stemcells environment values'
 
-          context 'when STEMCELL_HYPERVISOR is not set' do
-            let(:environment_hash) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
+          it 'has an "image_vsphere_ovf_ovftool_path" key' do
+            result = stemcell_builder_options.default
 
-            it 'uses "esxi"' do
-              result = stemcell_builder_options.default
-              expect(result['stemcell_hypervisor']).to eq('esxi')
-            end
+            expect(result['image_vsphere_ovf_ovftool_path']).to be_nil
           end
 
           context 'if you have OVFTOOL set in the environment' do
@@ -231,6 +214,7 @@ module Bosh::Stemcell
 
             it 'sets image_vsphere_ovf_ovftool_path' do
               result = stemcell_builder_options.default
+
               expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
@@ -242,15 +226,8 @@ module Bosh::Stemcell
 
           it_behaves_like 'setting default stemcells environment values'
 
-          context 'when STEMCELL_HYPERVISOR is not set' do
-            before do
-              environment_hash.delete('STEMCELL_HYPERVISOR')
-            end
-
-            it 'uses "kvm"' do
-              result = stemcell_builder_options.default
-              expect(result['stemcell_hypervisor']).to eq('kvm')
-            end
+          it 'has no "image_vsphere_ovf_ovftool_path" key' do
+            expect(stemcell_builder_options.default).not_to have_key('image_vsphere_ovf_ovftool_path')
           end
         end
       end

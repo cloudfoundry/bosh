@@ -16,7 +16,7 @@ module Bosh::Stemcell
     end
 
     def spec_name
-      ['stemcell', infrastructure.name, hypervisor_for(infrastructure), operating_system.name].join('-')
+      ['stemcell', infrastructure.name, infrastructure.hypervisor, operating_system.name].join('-')
     end
 
     def default
@@ -24,7 +24,7 @@ module Bosh::Stemcell
         'stemcell_name' => 'bosh-stemcell',
         'stemcell_tgz' => archive_filename.to_s,
         'stemcell_version' => stemcell_version,
-        'stemcell_hypervisor' => hypervisor_for(infrastructure),
+        'stemcell_hypervisor' => infrastructure.hypervisor,
         'stemcell_infrastructure' => infrastructure.name,
         'system_parameters_infrastructure' => infrastructure.name,
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
@@ -72,10 +72,6 @@ module Bosh::Stemcell
 
     def ruby_bin
       environment['RUBY_BIN'] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
-    end
-
-    def hypervisor_for(infrastructure)
-      environment['STEMCELL_HYPERVISOR'] || infrastructure.hypervisor
     end
 
     def source_root
