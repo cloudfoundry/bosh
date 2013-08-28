@@ -19,12 +19,9 @@ function stage() {
   fi
 }
 
-source $settings_file
 source $spec
 
 #################################################
-
-previous_stage=
 
 # Apply stage for every stage in the spec
 function stage() {
@@ -34,9 +31,6 @@ function stage() {
   mkdir -p $mnt/work
 
   $stages_dir/$1/apply.sh $mnt/work
-
-  previous_stage=$1
 }
 
-source $settings_file
 source $spec
