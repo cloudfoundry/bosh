@@ -22,8 +22,19 @@ module Bosh::Dev
 
     subject(:director_client) do
       DirectorClient.new(
-          director_handle: director_handle
+        uri: 'fake-uri',
+        username: 'username',
+        password: 'password',
       )
+    end
+
+    before do
+      director_klass = class_double('Bosh::Cli::Director').as_stubbed_const
+      director_klass.stub(:new).with(
+        'fake-uri',
+        'username',
+        'password',
+      ).and_return(director_handle)
     end
 
     describe '#stemcells' do

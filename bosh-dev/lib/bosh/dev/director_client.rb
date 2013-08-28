@@ -1,13 +1,11 @@
 module Bosh::Dev
   class DirectorClient
     def initialize(options = {})
-      @director_handle = options.fetch(:director_handle) {
-        Bosh::Cli::Director.new(
-            options.fetch(:uri),
-            options.fetch(:username),
-            options.fetch(:password)
-        )
-      }
+      @director_handle = Bosh::Cli::Director.new(
+        options.fetch(:uri),
+        options.fetch(:username),
+        options.fetch(:password),
+      )
     end
 
     def stemcells
