@@ -13,6 +13,10 @@ module Bosh::Stemcell
       end
     end
 
+    def self.all
+      Base.subclasses.map(&:new)
+    end
+
     class Base
       attr_reader :name, :hypervisor, :default_disk_size
 
@@ -26,6 +30,11 @@ module Bosh::Stemcell
       def light?
         @supports_light_stemcell
       end
+
+      def self.subclasses
+        ObjectSpace.each_object(Class).select { |klass| klass < self }
+      end
+
     end
 
     class OpenStack < Base
