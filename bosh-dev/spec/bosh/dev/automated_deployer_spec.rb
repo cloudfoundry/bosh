@@ -14,14 +14,18 @@ module Bosh::Dev
     let(:release_path) { '/tmp/release.tgz' }
     let(:repository_path) { '/tmp/repo' }
 
-    let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
     let(:deployments_repository) { instance_double('Bosh::Dev::Aws::DeploymentsRepository', path: repository_path, clone_or_update!: nil) }
     let(:build_number) { '123' }
     let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
     let(:shell) { instance_double('Bosh::Core::Shell') }
-    let(:micro_director_client) { instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil) }
-    let(:bosh_director_client) { instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil) }
+    let(:micro_director_client) do
+      instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
+    end
+
+    let(:bosh_director_client) do
+      instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
+    end
 
     subject(:deployer) do
       AutomatedDeployer.new(
@@ -32,14 +36,13 @@ module Bosh::Dev
         shell: shell,
         deployments_repository: deployments_repository,
         artifacts_downloader: artifacts_downloader,
-        cli: cli,
       )
     end
 
     before do
       Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
-      Bosh::Dev::DirectorClient.stub(:new).with(uri: micro_target, username: username, password: password, cli: cli).and_return(micro_director_client)
-      Bosh::Dev::DirectorClient.stub(:new).with(uri: bosh_target, username: username, password: password, cli: cli).and_return(bosh_director_client)
+      Bosh::Dev::DirectorClient.stub(:new).with(uri: micro_target, username: username, password: password).and_return(micro_director_client)
+      Bosh::Dev::DirectorClient.stub(:new).with(uri: bosh_target, username: username, password: password).and_return(bosh_director_client)
     end
 
     describe '#deploy' do
@@ -55,18 +58,11 @@ module Bosh::Dev
         Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
       end
 
-      def bosh_should_be_called_with(*args)
-        cli.should_receive(:run_bosh).with(*args).ordered
-      end
-
       it 'follows the normal deploy procedure' do
         Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
         micro_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
-
-        bosh_should_be_called_with 'upload release /tmp/release.tgz --rebase', debug_on_fail: true
-        bosh_should_be_called_with "deployment #{repository_path}/#{environment}/deployments/bosh/bosh.yml"
-        bosh_should_be_called_with 'deploy', debug_on_fail: true
-
+        micro_director_client.should_receive(:upload_release).with('/tmp/release.tgz')
+        micro_director_client.should_receive(:deploy).with("#{repository_path}/#{environment}/deployments/bosh/bosh.yml")
         bosh_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
 
         deployer.deploy

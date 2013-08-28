@@ -14,12 +14,11 @@ module Bosh::Dev
       @environment = options.fetch(:environment)
 
       @shell = options.fetch(:shell) { Bosh::Core::Shell.new }
-      @cli = options.fetch(:cli) { BoshCliSession.new }
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
       @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
 
-      @micro_director_client = DirectorClient.new(uri: micro_target, username: username, password: password, cli: cli)
-      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: username, password: password, cli: cli)
+      @micro_director_client = DirectorClient.new(uri: micro_target, username: username, password: password)
+      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: username, password: password)
     end
 
     def deploy
@@ -37,20 +36,26 @@ module Bosh::Dev
     end
 
     private
+
+    attr_reader :micro_target,
+                :bosh_target,
+                :artifacts_downloader,
+                :build_number,
+                :environment,
+                :deployments_repository,
+                :shell,
+                :micro_director_client,
+                :bosh_director_client
+
     def upload_stemcell_to_bosh_director(archive)
       bosh_director_client.upload_stemcell(archive)
     end
 
     def deploy_to_micro(manifest_path, release_path, archive)
       micro_director_client.upload_stemcell(archive)
-
-      cli.run_bosh("upload release #{release_path} --rebase", debug_on_fail: true)
-
-      cli.run_bosh("deployment #{manifest_path}")
-      cli.run_bosh('deploy', debug_on_fail: true)
+      micro_director_client.upload_release(release_path)
+      micro_director_client.deploy(manifest_path)
     end
-
-    attr_reader :micro_target, :bosh_target, :cli, :artifacts_downloader, :build_number, :environment, :deployments_repository, :shell, :micro_director_client, :bosh_director_client
 
     def username
       @username ||= shell.run(". #{bosh_environment_path} && echo $BOSH_USER").chomp

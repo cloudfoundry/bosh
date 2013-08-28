@@ -42,7 +42,7 @@ module Bosh::Dev
     end
 
     describe '#stemcells' do
-      it 'lists stemcells stored on director' do
+      it 'lists stemcells stored on director without shelling out' do
         director_handle.stub(:list_stemcells) { valid_stemcell_list_1 }
         expect(director_client.stemcells).to eq valid_stemcell_list_2
       end
@@ -99,6 +99,23 @@ module Bosh::Dev
 
           director_client.upload_stemcell(stemcell_archive)
         end
+      end
+    end
+
+    describe '#upload_release' do
+      it 'uploads the release using the cli, rebasing assuming this is a dev release' do
+        cli.should_receive(:run_bosh).with('upload release /path/to/fake-release.tgz --rebase', debug_on_fail: true)
+
+        director_client.upload_release('/path/to/fake-release.tgz')
+      end
+    end
+
+    describe 'deploy' do
+      it 'sets the deployment and then runs a deplpy using the cli' do
+        cli.should_receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
+        cli.should_receive(:run_bosh).with('deploy', debug_on_fail: true).ordered
+
+        director_client.deploy('/path/to/fake-manifest.yml')
       end
     end
   end
