@@ -17,8 +17,9 @@ module Bosh::Dev
       @cli = options.fetch(:cli) { BoshCliSession.new }
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
       @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
-      @micro_director_client = Bosh::Dev::DirectorClient.new(uri: micro_target, username: username, password: password)
-      @bosh_director_client = Bosh::Dev::DirectorClient.new(uri: bosh_target, username: username, password: password)
+
+      @micro_director_client = DirectorClient.new(uri: micro_target, username: username, password: password, cli: cli)
+      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: username, password: password, cli: cli)
     end
 
     def deploy
@@ -37,18 +38,15 @@ module Bosh::Dev
 
     private
     def upload_stemcell_to_bosh_director(archive)
-      cli.run_bosh("target #{bosh_target}")
-      cli.run_bosh("login #{username} #{password}")
-      cli.run_bosh("upload stemcell #{archive.path}", debug_on_fail: true) unless bosh_director_client.has_stemcell?(archive.name, archive.version)
+      bosh_director_client.upload_stemcell(archive)
     end
 
     def deploy_to_micro(manifest_path, release_path, archive)
-      cli.run_bosh("target #{micro_target}")
-      cli.run_bosh("login #{username} #{password}")
-      cli.run_bosh("deployment #{manifest_path}")
-      cli.run_bosh("upload stemcell #{archive.path}", debug_on_fail: true) unless micro_director_client.has_stemcell?(archive.name, archive.version)
+      micro_director_client.upload_stemcell(archive)
 
       cli.run_bosh("upload release #{release_path} --rebase", debug_on_fail: true)
+
+      cli.run_bosh("deployment #{manifest_path}")
       cli.run_bosh('deploy', debug_on_fail: true)
     end
 
@@ -65,6 +63,5 @@ module Bosh::Dev
     def bosh_environment_path
       File.join(deployments_repository.path, environment, 'bosh_environment')
     end
-
   end
 end
