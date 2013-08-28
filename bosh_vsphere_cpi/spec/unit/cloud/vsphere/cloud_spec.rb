@@ -13,6 +13,42 @@ describe VSphereCloud::Cloud do
     VSphereCloud::Client.stub(new: client)
   end
 
+  describe '#create_vm' do
+    let(:logger) { double('Logger') }
+    let(:resources) { double('Resources') }
+    let(:client) { double('Client') }
+    let(:agent_id) { '007' }
+    let(:stemcell) { 'sc-id' }
+    let(:resource_pool) { { 'ram' => 2048, 'disk' => 2048, 'cpu' => 1 } }
+    let(:networks) { { 'my-network' => nil } }
+    let(:disk_locality) { 'Disk Locality' }
+    let(:environment) { 'Environment' }
+    let(:vm_creator) { instance_double('VSphereCloud::VMCreator') }
+
+    before do
+      VSphereCloud::Resources.stub(new: resources)
+      VSphereCloud::Config.stub(logger: logger)
+      VSphereCloud::Config.stub(client: client)
+    end
+
+    it 'delegates to VMCreator' do
+      VSphereCloud::VMCreator.should_receive(:new).with(agent_id: agent_id,
+                                          stemcell: stemcell,
+                                          resource_pool: resource_pool,
+                                          networks: networks,
+                                          disk_locality: disk_locality,
+                                          environment: environment,
+                                          resources: resources,
+                                          client: client,
+                                          logger: logger,
+                                          vsphere_cloud: subject,
+      ).and_return(vm_creator)
+      vm_creator.should_receive(:perform).and_return('vm-id')
+
+      subject.create_vm(agent_id, stemcell, resource_pool, networks, disk_locality, environment)
+    end
+  end
+
   describe 'has_vm?' do
     let(:vm_id) { 'vm_id' }
 
