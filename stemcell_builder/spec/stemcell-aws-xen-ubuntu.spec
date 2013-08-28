@@ -14,10 +14,7 @@ stage bosh_ntpdate
 stage bosh_sudoers
 
 # Micro BOSH
-if [ ${bosh_micro_enabled:-no} == "yes" ]
-then
-  stage bosh_micro
-fi
+stage bosh_micro
 
 # Install GRUB/kernel/etc
 stage system_grub

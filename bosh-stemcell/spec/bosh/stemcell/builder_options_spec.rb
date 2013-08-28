@@ -6,17 +6,7 @@ require 'bosh/stemcell/operating_system'
 
 module Bosh::Stemcell
   describe BuilderOptions do
-    let(:environment_hash) do
-      {
-        'OVFTOOL' => 'fake_ovf_tool_path',
-        'STEMCELL_HYPERVISOR' => 'fake_stemcell_hypervisor',
-        'UBUNTU_ISO' => 'fake_ubuntu_iso',
-        'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
-        'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
-        'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
-        'RUBY_BIN' => 'fake_ruby_bin',
-      }
-    end
+    let(:environment_hash) { {} }
 
     let(:infrastructure) { Infrastructure.for('aws') }
     let(:operating_system) { OperatingSystem.for('ubuntu') }
@@ -78,15 +68,41 @@ module Bosh::Stemcell
     end
 
     describe '#spec_name' do
-      it 'returns the spec file basename' do
-        expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-ubuntu')
+      context 'when :infrastructure is aws' do
+        it 'returns the spec file basename' do
+          expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-xen-ubuntu')
+        end
       end
 
-      context 'when :operating_system is centos' do
-        let(:operating_system) { OperatingSystem.for('centos') }
+      context 'when :infrastructure is openstack' do
+        let(:infrastructure) { Infrastructure.for('openstack') }
 
         it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-centos')
+          expect(stemcell_builder_options.spec_name).to eq('stemcell-openstack-kvm-ubuntu')
+        end
+
+        context 'when STEMCELL_HYPERVISOR is specified' do
+          let(:environment_hash) { { 'STEMCELL_HYPERVISOR' => 'FAKE_HYPERVISOR' } }
+
+          it 'returns the spec file basename' do
+            expect(stemcell_builder_options.spec_name).to eq('stemcell-openstack-FAKE_HYPERVISOR-ubuntu')
+          end
+        end
+      end
+
+      context 'when :infrastructure is vsphere' do
+        let(:infrastructure) { Infrastructure.for('vsphere') }
+
+        it 'returns the spec file basename' do
+          expect(stemcell_builder_options.spec_name).to eq('stemcell-vsphere-esxi-ubuntu')
+        end
+
+        context 'when :operating_system is centos' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'returns the spec file basename' do
+            expect(stemcell_builder_options.spec_name).to eq('stemcell-vsphere-esxi-centos')
+          end
         end
       end
     end

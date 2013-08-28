@@ -16,7 +16,7 @@ module Bosh::Stemcell
     end
 
     def spec_name
-      ['stemcell', infrastructure.name, operating_system.name].join('-')
+      ['stemcell', infrastructure.name, hypervisor_for(infrastructure), operating_system.name].join('-')
     end
 
     def default
