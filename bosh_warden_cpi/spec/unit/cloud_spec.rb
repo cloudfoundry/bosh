@@ -47,8 +47,7 @@ describe Bosh::WardenCloud::Cloud do
 
   context 'initialize' do
     it 'can be created using Bosh::Clouds::Provider' do
-      cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
-      cloud.should be_an_instance_of(Bosh::Clouds::Warden)
+      @cloud.should be_an_instance_of(Bosh::Clouds::Warden)
     end
   end
 
