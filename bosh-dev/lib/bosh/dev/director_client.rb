@@ -23,6 +23,5 @@ module Bosh::Dev
     private
 
     attr_reader :director_handle
-
   end
 end
