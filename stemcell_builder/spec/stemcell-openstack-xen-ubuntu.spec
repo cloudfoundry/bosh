@@ -14,31 +14,30 @@ stage bosh_ntpdate
 stage bosh_sudoers
 
 # Micro BOSH
-if [ ${bosh_micro_enabled:-no} == "yes" ]
-then
-  stage bosh_micro
-fi
+stage bosh_micro
 
 # Install GRUB/kernel/etc
 stage system_grub
 stage system_kernel
-stage system_open_vm_tools
 
 # Misc
+stage system_openstack_network
+stage system_openstack_clock
+stage system_openstack_modules
 stage system_parameters
 
 # Finalisation
 stage bosh_clean
 stage bosh_harden
+stage bosh_harden_ssh
 stage bosh_tripwire
 stage bosh_dpkg_list
 
 # Image/bootloader
 stage image_create
 stage image_install_grub
-stage image_vsphere_vmx
-stage image_vsphere_ovf
-stage image_vsphere_prepare_stemcell
+stage image_openstack_update_grub
+stage image_openstack_prepare_stemcell
 
 # Final stemcell
-stage stemcell
+stage stemcell_openstack
