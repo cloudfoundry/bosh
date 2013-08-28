@@ -29,14 +29,9 @@ describe Bosh::WardenCloud::Cloud do
 
   after(:each) { FileUtils.rm_rf @stemcell_root }
 
-  def mock_stemcell_sudos (cmd)
-    zero_exit_status = mock('Process::Status', exit_status: 0)
-    Bosh::Exec.should_receive(:sh).with(%r/sudo -n #{cmd}.*/, yield: :on_false).ordered.and_return(zero_exit_status)
-  end
-
   context 'create_stemcell' do
     it 'can create stemcell' do
-      mock_stemcell_sudos ('tar -C')
+      mock_sh('tar -C', true)
       stemcell_id = @cloud.create_stemcell(image_path, nil)
       Dir.chdir(@stemcell_root) do
         Dir.glob('*').should have(1).items
@@ -59,7 +54,7 @@ describe Bosh::WardenCloud::Cloud do
 
       Dir.chdir(@stemcell_root) do
         Dir.glob('*').should be_empty
-        mock_stemcell_sudos ('rm -rf')
+        mock_sh('rm -rf', true)
         expect {
           @cloud.create_stemcell(image_path, nil)
         }.to raise_error
@@ -71,13 +66,13 @@ describe Bosh::WardenCloud::Cloud do
   context 'delete_stemcell' do
     it 'can delete stemcell' do
       Dir.chdir(@stemcell_root) do
-        mock_stemcell_sudos ('tar -C')
+        mock_sh('tar -C', true)
         stemcell_id = @cloud.create_stemcell(image_path, nil)
 
         Dir.glob('*').should have(1).items
         Dir.glob('*').should include(stemcell_id)
 
-        mock_stemcell_sudos ('rm -rf')
+        mock_sh('rm -rf', true)
         ret = @cloud.delete_stemcell(stemcell_id)
 
         ret.should be_nil

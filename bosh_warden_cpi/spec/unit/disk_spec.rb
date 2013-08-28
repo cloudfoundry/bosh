@@ -23,14 +23,9 @@ describe Bosh::WardenCloud::Cloud do
     @cloud.stub(:uuid).with('disk') { 'disk-uuid-1234' }
   end
 
-  def mock_create_disk
-    zero_exit_status = mock('Process::Status', exit_status: 0)
-    Bosh::Exec.should_receive(:sh).with(%r/\bmkfs -t ext4\b/, yield: :on_false).ordered.and_return(zero_exit_status)
-  end
-
   context 'create_disk' do
     it 'can create disk' do
-      mock_create_disk
+      mock_sh('mkfs -t ext4')
       disk_id  = @cloud.create_disk(1, nil)
       Dir.chdir(@disk_root) do
         image = image_file(disk_id)
@@ -65,7 +60,7 @@ describe Bosh::WardenCloud::Cloud do
 
   context 'delete_disk' do
     before :each do
-      mock_create_disk
+      mock_sh('mkfs -t ext4')
       @disk_id = @cloud.create_disk(1, nil)
     end
 

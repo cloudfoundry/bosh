@@ -43,11 +43,6 @@ describe Bosh::WardenCloud::Cloud do
     FileUtils.rm_rf @disk_root
   end
 
-  def mock_umount_sudos (cmd)
-    zero_exit_status = mock('Process::Status', exit_status: 0)
-    Bosh::Exec.should_receive(:sh).with(/sudo -n #{cmd}.*/, yield: :on_false).ordered.and_return(zero_exit_status)
-  end
-
   context 'create_vm' do
     before :each do
       @cloud.stub(:uuid).with('vm') { DEFAULT_HANDLE }
@@ -146,16 +141,14 @@ describe Bosh::WardenCloud::Cloud do
         end
         res
       end
-      mock_umount_sudos 'umount'
-      mock_umount_sudos 'rm -rf'
-      mock_umount_sudos 'rm -rf'
+      mock_sh('umount', true)
+      mock_sh('rm -rf', true, 2)
       @cloud.delete_vm(DEFAULT_HANDLE)
     end
 
     it 'should proceed even delete a vm which not exist' do
       @cloud.stub(:has_vm?).with('vm_not_existed').and_return(false)
-      mock_umount_sudos 'rm -rf'
-      mock_umount_sudos 'rm -rf'
+      mock_sh('rm -rf', true, 2)
       expect {
         @cloud.delete_vm('vm_not_existed')
       }.to_not raise_error
@@ -174,9 +167,8 @@ describe Bosh::WardenCloud::Cloud do
         end
         res
       end
-      mock_umount_sudos 'umount'
-      mock_umount_sudos 'rm -rf'
-      mock_umount_sudos 'rm -rf'
+      mock_sh('umount', true)
+      mock_sh('rm -rf', true, 2)
       @cloud.delete_vm(DEFAULT_HANDLE)
     end
   end

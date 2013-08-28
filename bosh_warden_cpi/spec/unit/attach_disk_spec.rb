@@ -42,15 +42,9 @@ describe Bosh::WardenCloud::Cloud do
     FileUtils.rm_rf @disk_root
   end
 
-  def mock_attach_sudos (cmd, success = true, times = 1)
-    zero_exit_status = mock('Process::Status', exit_status: 0)
-    result = mock('Result', :success? => success)
-    Bosh::Exec.should_receive(:sh).exactly(times).times.with(/sudo -n #{cmd}.*/, yield: :on_false).and_yield(result).and_return(zero_exit_status)
-  end
-
   context 'attach_disk' do
     it 'can attach disk' do
-      mock_attach_sudos('mount')
+      mock_sh('mount', true)
       @cloud.attach_disk(@vm_id, @disk_id)
     end
 
@@ -70,13 +64,13 @@ describe Bosh::WardenCloud::Cloud do
   context 'detach_disk' do
 
     it 'can detach disk' do
-      mock_attach_sudos('umount')
+      mock_sh('umount', true)
       Bosh::WardenCloud::Cloud.any_instance.stub(:mount_entry).and_return('nop')
       @cloud.detach_disk(@vm_id, @attached_disk_id)
     end
 
     it 'will retry umount for detach disk' do
-      mock_attach_sudos('umount', false, Bosh::WardenCloud::Cloud::UMOUNT_GUARD_RETRIES + 1)
+      mock_sh('umount', true, Bosh::WardenCloud::Cloud::UMOUNT_GUARD_RETRIES + 1, false)
       Bosh::WardenCloud::Cloud.any_instance.stub(:mount_entry).and_return('nop')
       expect {
         @cloud.detach_disk(@vm_id, @attached_disk_id)
