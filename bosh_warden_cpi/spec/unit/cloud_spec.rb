@@ -229,4 +229,27 @@ describe Bosh::WardenCloud::Cloud do
       @cloud.delete_vm(DEFAULT_HANDLE)
     end
   end
+
+  context 'has_vm' do
+    before :each do
+      Warden::Client.any_instance.stub(:call) do |req|
+        res = req.create_response
+        case req
+          when Warden::Protocol::ListRequest
+            res.handles = DEFAULT_HANDLE
+          else
+            raise "#{req} not supported"
+        end
+        res
+      end
+    end
+
+    it 'return true when container exist' do
+      @cloud.has_vm?(DEFAULT_HANDLE).should == true
+    end
+
+    it 'return false when container not exist' do
+      @cloud.has_vm?('vm_not_exist').should == true
+    end
+  end
 end
