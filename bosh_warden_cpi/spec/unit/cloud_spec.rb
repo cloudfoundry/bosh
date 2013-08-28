@@ -5,12 +5,14 @@ describe Bosh::WardenCloud::Cloud do
   DEFAULT_STEMCELL_ID = 'stemcell-abcd'
   DEFAULT_AGENT_ID = 'agent-abcd'
 
+  let(:image_path) { asset('stemcell-warden-test.tgz') }
+  let(:bad_image_path) { asset('stemcell-not-existed.tgz') }
+
   before :each do
     @logger = Bosh::Clouds::Config.logger
     @disk_root = Dir.mktmpdir('warden-cpi-disk')
     @stemcell_path =  Dir.mktmpdir('stemcell-disk')
     @stemcell_root = File.join(@stemcell_path, DEFAULT_STEMCELL_ID)
-    Dir.mkdir(@stemcell_root)
 
     cloud_options = {
         'disk' => {
@@ -50,9 +52,58 @@ describe Bosh::WardenCloud::Cloud do
     end
   end
 
+  context 'create_stemcell' do
+    it 'can create stemcell' do
+      mock_sh('tar -C', true)
+      stemcell_id = @cloud.create_stemcell(image_path, nil)
+      Dir.chdir(@stemcell_path) do
+        Dir.glob('*').should have(1).items
+        Dir.glob('*').should include(stemcell_id)
+      end
+    end
+
+    it 'should raise error with bad image path' do
+      Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
+      expect {
+        @cloud.create_stemcell(bad_image_path, nil)
+      }.to raise_error
+    end
+
+    it 'should clean up after an error is raised' do
+      Bosh::Exec.stub(:sh) do |cmd|
+        `#{cmd}`
+        raise 'error'
+      end
+
+      Dir.chdir(@stemcell_path) do
+        Dir.glob('*').should be_empty
+        mock_sh('rm -rf', true)
+        expect {
+          @cloud.create_stemcell(image_path, nil)
+        }.to raise_error
+
+      end
+    end
+  end
+
+  context 'delete_stemcell' do
+    it 'can delete stemcell' do
+      Dir.chdir(@stemcell_path) do
+        mock_sh('tar -C', true)
+        stemcell_id = @cloud.create_stemcell(image_path, nil)
+        Dir.glob('*').should have(1).items
+        Dir.glob('*').should include(stemcell_id)
+        mock_sh('rm -rf', true)
+        ret = @cloud.delete_stemcell(stemcell_id)
+        ret.should be_nil
+      end
+    end
+  end
+
   context 'create_vm' do
     before :each do
       @cloud.stub(:uuid).with('vm') { DEFAULT_HANDLE }
+      Dir.mkdir(@stemcell_root)
       Warden::Client.any_instance.stub(:call) do |req|
         res = req.create_response
         case req
@@ -179,5 +230,4 @@ describe Bosh::WardenCloud::Cloud do
       @cloud.delete_vm(DEFAULT_HANDLE)
     end
   end
-
 end
