@@ -4,6 +4,7 @@ require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
+require 'bosh/stemcell/pipeline_artifacts'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
@@ -112,10 +113,10 @@ module Bosh::Dev
 
     def update_light_bosh_ami_pointer_file
       Bosh::Dev::UploadAdapter.new.upload(
-          bucket_name: 'bosh-jenkins-artifacts',
-          key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
-          body: light_stemcell.ami_id,
-          public: true
+        bucket_name: 'bosh-jenkins-artifacts',
+        key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
+        body: light_stemcell.ami_id,
+        public: true
       )
     end
 
@@ -153,11 +154,37 @@ module Bosh::Dev
     end
 
     def bucket_sync_commands
-      [
+      s3cmd_list = [
         "s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems",
         "s3cmd --verbose cp #{File.join(s3_url, 'release', release_file)} #{File.join(s3_artifacts_url, 'release', release_file)}",
-        "s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} #{s3_artifacts_url}"
       ]
+
+      s3cmd_list + stemcell_object_cp_commands
     end
+
+    def stemcell_object_cp_commands
+      archive_filenames = Bosh::Stemcell::PipelineArtifacts.new(number).list
+
+      s3cmd_list = archive_filenames.map { |filename| "s3cmd --verbose cp #{File.join(s3_url, filename.to_s)} " +
+        File.join(s3_artifacts_url, filename.to_s) }
+
+      s3cmd_list
+    end
+
+    def stemcell_types(infrastructure)
+      os = Bosh::Stemcell::OperatingSystem.for('ubuntu')
+      versions = [number, 'latest']
+      types = []
+
+      versions.each do |version|
+        types << Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', false)
+        if infrastructure.light?
+          types << Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', true)
+        end
+      end
+      types
+    end
+
   end
 end
+

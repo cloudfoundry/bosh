@@ -161,7 +161,26 @@ module Bosh::Dev
 
       it 'syncs the bosh stemcells' do
         Rake::FileUtilsExt.should_receive(:sh).
-          with('s3cmd --verbose sync s3://bosh-ci-pipeline/123/bosh-stemcell s3://bosh-jenkins-artifacts')
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz')
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/openstack/bosh-stemcell-123-openstack-kvm-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/openstack/bosh-stemcell-123-openstack-kvm-ubuntu.tgz')
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz')
+
+        subject.promote_artifacts
+      end
+
+      it 'syncs the latest bosh stemcells' do
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz')
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz')
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/openstack/bosh-stemcell-latest-openstack-kvm-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/openstack/bosh-stemcell-latest-openstack-kvm-ubuntu.tgz')
+        Rake::FileUtilsExt.should_receive(:sh).
+          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz s3://bosh-jenkins-artifacts/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz')
 
         subject.promote_artifacts
       end
