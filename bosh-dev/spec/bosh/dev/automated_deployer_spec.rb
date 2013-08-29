@@ -3,8 +3,8 @@ require 'bosh/dev/automated_deployer'
 
 module Bosh::Dev
   describe AutomatedDeployer do
-    let(:micro_target) { 'micro.target.example.com' }
-    let(:bosh_target) { 'bosh.target.example.com' }
+    let(:micro_target) { 'https://micro.target.example.com:25555' }
+    let(:bosh_target) { 'https://bosh.target.example.com:25555' }
 
     let(:environment) { 'test_env' }
     let(:stemcell_path) { '/tmp/stemcell.tgz' }
