@@ -1,8 +1,8 @@
-require 'bosh/core/shell'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
 require 'bosh/dev/artifacts_downloader'
-require 'bosh/dev/aws/deployments_repository'
+require 'bosh/dev/aws/deployment_account'
+require 'bosh/stemcell/archive'
 
 module Bosh::Dev
   class AutomatedDeployer
@@ -12,14 +12,11 @@ module Bosh::Dev
       @build_number = options.fetch(:build_number)
       @environment = options.fetch(:environment)
 
-      @shell = options.fetch(:shell) { Bosh::Core::Shell.new }
       @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
-      @deployments_repository = options.fetch(:deployments_repository) { Aws::DeploymentsRepository.new(path_root: '/tmp') }
+      @deployment_account = Aws::DeploymentAccount.new(options.fetch(:environment))
 
-      deployments_repository.clone_or_update!
-
-      @micro_director_client = DirectorClient.new(uri: micro_target, username: deployment_bosh_user, password: deployment_bosh_password)
-      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: deployment_bosh_user, password: deployment_bosh_password)
+      @micro_director_client = DirectorClient.new(uri: micro_target, username: deployment_account.bosh_user, password: deployment_account.bosh_password)
+      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: deployment_account.bosh_user, password: deployment_account.bosh_password)
     end
 
     def deploy
@@ -30,7 +27,7 @@ module Bosh::Dev
       release_path = artifacts_downloader.download_release(build_number)
       micro_director_client.upload_release(release_path)
 
-      manifest_path = deployment_manifest_path
+      manifest_path = deployment_account.manifest_path
       micro_director_client.deploy(manifest_path)
 
       bosh_director_client.upload_stemcell(stemcell_archive)
@@ -43,25 +40,8 @@ module Bosh::Dev
                 :artifacts_downloader,
                 :build_number,
                 :environment,
-                :deployments_repository,
-                :shell,
+                :deployment_account,
                 :micro_director_client,
                 :bosh_director_client
-
-    def deployment_manifest_path
-      @deployment_manifest_path ||= File.join(deployments_repository.path, environment, 'deployments/bosh/bosh.yml')
-    end
-
-    def deployment_bosh_user
-      @deployment_bosh_user ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_USER").chomp
-    end
-
-    def deployment_bosh_password
-      @deployment_bosh_password ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_PASSWORD").chomp
-    end
-
-    def deployment_bosh_environment_path
-      File.join(deployments_repository.path, environment, 'bosh_environment')
-    end
   end
 end
