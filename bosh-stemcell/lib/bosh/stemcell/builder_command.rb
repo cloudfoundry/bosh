@@ -5,6 +5,8 @@ require 'bosh/stemcell/environment'
 require 'bosh/stemcell/builder_options'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
+require 'bosh/stemcell/stage_collection'
+require 'bosh/stemcell/stage_runner'
 
 module Bosh::Stemcell
   class BuilderCommand
@@ -34,7 +36,13 @@ module Bosh::Stemcell
 
       persist_settings_for_bash
 
-      shell.run "sudo #{command_env} #{build_from_spec_path} #{work_path} #{stemcell_spec_path} #{settings_path}"
+      stage_collection = StageCollection.for(stemcell_builder_options.spec_name)
+      stage_runner = StageRunner.new(stages: stage_collection.stages,
+                                     build_path: build_path,
+                                     command_env: command_env,
+                                     settings_file: settings_path,
+                                     work_path: work_path)
+      stage_runner.configure_and_apply
 
       stemcell_file
     end
@@ -98,10 +106,6 @@ module Bosh::Stemcell
           f.print "#{k}=#{v}\n"
         end
       end
-    end
-
-    def build_from_spec_path
-      File.join(build_path, 'bin', 'build_from_spec.sh')
     end
 
     def stemcell_spec_path

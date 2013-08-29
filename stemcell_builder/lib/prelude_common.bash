@@ -1,5 +1,6 @@
 set -e # errexit
 set -u # nounset
+set -x
 
 dir=$(dirname $0)
 assets_dir=$dir/assets

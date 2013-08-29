@@ -10,7 +10,8 @@ module Bosh::Stemcell
     let(:stemcell_builder_options) do
       instance_double('Bosh::Stemcell::BuilderOptions',
                       spec_name: spec,
-                      default: options)
+                      default: options,
+                      spec_name: 'FAKE_SPEC_NAME')
     end
     let(:stemcell_environment) do
       instance_double('Bosh::Stemcell::Environment',
@@ -23,6 +24,8 @@ module Bosh::Stemcell
     let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
     let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
     let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
+    let(:stage_collection) { instance_double('Bosh::Stemcell::StageCollection::Base', stages: 'FAKE_STAGES') }
+    let(:stage_runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
 
     subject(:stemcell_builder_command) do
       BuilderCommand.new(infrastructure_name: infrastructure.name,
@@ -34,10 +37,15 @@ module Bosh::Stemcell
     before do
       ENV.stub(to_hash: environment_hash)
 
-      Bosh::Core::Shell.stub(:new).and_return(shell)
-
       Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
       OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
+      StageCollection.stub(:for).with('FAKE_SPEC_NAME').and_return(stage_collection)
+
+      StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
+                                  build_path: File.join(root_dir, 'build'),
+                                  command_env: 'env ',
+                                  settings_file: settings_file,
+                                  work_path: File.join(root_dir, 'work')).and_return(stage_runner)
 
       Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
       BuilderOptions.stub(:new).with(tarball: release_tarball_path,
@@ -49,7 +57,6 @@ module Bosh::Stemcell
     describe '#build' do
       include FakeFS::SpecHelpers
 
-      let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
       let(:pid) { 99999 }
       let(:build_dir) { File.join(root_dir, 'build') }
       let(:work_dir) { File.join(root_dir, 'work') }
@@ -119,10 +126,11 @@ module Bosh::Stemcell
         end
 
         it 'nothing is passed to sudo via "env"' do
-          shell.should_receive(:run) do |command|
-            expect(command).not_to match(/NOT_HTTP_PROXY=nice_proxy/)
-            expect(command).not_to match(/no_proxy_just_kidding=naughty_proxy/)
-          end
+          StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
+                                      build_path: File.join(root_dir, 'build'),
+                                      command_env: 'env ',
+                                      settings_file: settings_file,
+                                      work_path: File.join(root_dir, 'work')).and_return(stage_runner)
 
           stemcell_builder_command.build
         end
@@ -137,8 +145,12 @@ module Bosh::Stemcell
         end
 
         it 'they are passed to sudo via "env"' do
-          build_command = "#{build_script} #{work_dir} #{spec_file} #{settings_file}"
-          shell.should_receive(:run).with("sudo env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy' #{build_command}")
+          StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
+                                      build_path: File.join(root_dir, 'build'),
+                                      command_env: "env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy'",
+                                      settings_file: settings_file,
+                                      work_path: File.join(root_dir, 'work')).and_return(stage_runner)
+
           stemcell_builder_command.build
         end
       end
