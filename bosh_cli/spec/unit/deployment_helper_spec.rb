@@ -206,8 +206,8 @@ describe Bosh::Cli::DeploymentHelper do
           'director_uuid' => 'deadbeef'
       }
 
-      manifest_file = Tempfile.new("manifest")
-      YAML.dump(manifest, manifest_file)
+      manifest_file = Tempfile.new('manifest')
+      Psych.dump(manifest, manifest_file)
       manifest_file.close
       director = double(Bosh::Cli::Director)
 
@@ -219,29 +219,6 @@ describe Bosh::Cli::DeploymentHelper do
       expect {
         cmd.prepare_deployment_manifest
       }.to raise_error(/Target director UUID doesn't match/i)
-    end
-
-    it "skips director UUID check if manifest director_uuid is set to 'ignore'" do
-      cmd = make_cmd
-      manifest = {
-        'name' => 'mycloud',
-        'director_uuid' => 'ignore',
-        'release' => 'latest'
-      }
-
-      manifest_file = Tempfile.new('manifest')
-      YAML.dump(manifest, manifest_file)
-      manifest_file.close
-      director = mock(Bosh::Cli::Director)
-
-      cmd.stub!(:deployment).and_return(manifest_file.path)
-      cmd.stub!(:director).and_return(director)
-
-      director.should_receive(:uuid).and_return('deadcafe')
-
-      expect {
-        cmd.prepare_deployment_manifest
-      }.not_to raise_error
     end
 
     it "resolves 'latest' release alias for multiple stemcells" do
