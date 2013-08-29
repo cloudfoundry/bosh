@@ -7,7 +7,7 @@ describe "Backing up BOSH" do
     Bosh::Cli::Config.output = output
   end
 
-  def bosh args
+  def bosh(args)
     Bosh::Cli::Runner.run(args.split)
   rescue SystemExit
   end
