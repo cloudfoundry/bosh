@@ -3,14 +3,11 @@ module Bosh::WardenCloud
 
     include Bosh::WardenCloud::Helpers
 
-    DEFAULT_WARDEN_SOCK = '/tmp/warden.sock'
     DEFAULT_STEMCELL_ROOT = '/var/vcap/stemcell'
     DEFAULT_DISK_ROOT = '/var/vcap/store/disk'
     DEFAULT_FS_TYPE = 'ext4'
     DEFAULT_WARDEN_DEV_ROOT = '/warden-cpi-dev'
-    DEFAULT_SETTINGS_FILE = '/var/vcap/bosh/settings.json'
-    UMOUNT_GUARD_RETRIES = 60
-    UMOUNT_GUARD_SLEEP = 3
+    DEFAULT_WARDEN_SOCK = '/tmp/warden.sock'
 
     attr_accessor :logger
 
@@ -26,10 +23,11 @@ module Bosh::WardenCloud
       @stemcell_properties = options.fetch('stemcell', {})
       @disk_properties = options.fetch('disk', {})
 
-      setup_warden
-      setup_stemcell
-      setup_disk
+      @warden_unix_path = @warden_properties.fetch('unix_domain_path', DEFAULT_WARDEN_SOCK)
+      @stemcell_root = @stemcell_properties.fetch('root', DEFAULT_STEMCELL_ROOT)
 
+      FileUtils.mkdir_p(@stemcell_root)
+      setup_disk
     end
 
     ##
@@ -72,7 +70,6 @@ module Bosh::WardenCloud
       with_thread_name("delete_stemcell(#{stemcell_id}, _)") do
         stemcell_dir = stemcell_path(stemcell_id)
         sudo "rm -rf #{stemcell_dir}"
-
         nil
       end
     end
@@ -341,29 +338,6 @@ module Bosh::WardenCloud
       File.exist?(image_path(disk_id))
     end
 
-    def mount_entry(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
-    end
-
-    # Retry the umount for GUARD_RETRIES +1  times
-    def umount_guard(mountpoint)
-      umount_attempts = UMOUNT_GUARD_RETRIES
-
-      loop do
-        return if mount_entry(mountpoint).nil?
-        sudo "umount #{mountpoint}" do |result|
-          if result.success?
-            return
-          elsif umount_attempts != 0
-            sleep UMOUNT_GUARD_SLEEP
-            umount_attempts -= 1
-          else
-            raise "Failed to umount #{mountpoint}: #{result.output}"
-          end
-        end
-      end
-    end
-
     def not_used(*arg)
       # no-op
     end
@@ -376,14 +350,6 @@ module Bosh::WardenCloud
       File.join(@disk_root, "#{disk_id}.img")
     end
 
-    def setup_warden
-      @warden_unix_path = @warden_properties.fetch('unix_domain_path', DEFAULT_WARDEN_SOCK)
-    end
-
-    def setup_stemcell
-      @stemcell_root = @stemcell_properties.fetch('root', DEFAULT_STEMCELL_ROOT)
-      FileUtils.mkdir_p(@stemcell_root)
-    end
 
     def setup_disk
       @disk_root = @disk_properties.fetch('root', DEFAULT_DISK_ROOT)
@@ -393,79 +359,6 @@ module Bosh::WardenCloud
       @bind_mount_points = File.join(@disk_root, 'bind_mount_points')
       @ephemeral_mount_points = File.join(@disk_root, 'ephemeral_mount_point')
       FileUtils.mkdir_p(@disk_root)
-    end
-
-    def with_warden
-      client = Warden::Client.new(@warden_unix_path)
-      client.connect
-
-      ret = yield client
-
-      ret
-    ensure
-      client.disconnect if client
-    end
-
-    def agent_settings_file
-      DEFAULT_SETTINGS_FILE
-    end
-
-    def generate_agent_env(vm_id, agent_id, networks)
-      vm_env = {
-        'name' => vm_id,
-        'id' => vm_id
-      }
-
-      env = {
-        'vm' => vm_env,
-        'agent_id' => agent_id,
-        'networks' => networks,
-        'disks' => { 'persistent' => {} },
-      }
-      env.merge!(@agent_properties)
-      env
-    end
-
-    def get_agent_env(handle)
-      body = with_warden do |client|
-        request = Warden::Protocol::RunRequest.new
-        request.handle = handle
-        request.privileged = true
-        request.script = "cat #{agent_settings_file}"
-
-        client.call(request).stdout
-      end
-
-      env = Yajl::Parser.parse(body)
-      env
-    end
-
-    def set_agent_env(handle, env)
-      tempfile = Tempfile.new('settings')
-      tempfile.write(Yajl::Encoder.encode(env))
-      tempfile.close
-
-      tempfile_in = "/tmp/#{rand(100_000)}"
-
-      # Here we copy the setting file to temp file in container, then mv it to
-      # /var/vcap/bosh by privileged user.
-      with_warden do |client|
-        request = Warden::Protocol::CopyInRequest.new
-        request.handle = handle
-        request.src_path = tempfile.path
-        request.dst_path = tempfile_in
-
-        client.call(request)
-
-        request = Warden::Protocol::RunRequest.new
-        request.handle = handle
-        request.privileged = true
-        request.script = "mv #{tempfile_in} #{agent_settings_file}"
-
-        client.call(request)
-      end
-
-      tempfile.unlink
     end
 
   end
