@@ -154,19 +154,5 @@ module Bosh::Dev
 
       s3cmd_list + promoter.commands
     end
-
-    def stemcell_types(infrastructure)
-      os = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-      versions = [number, 'latest']
-      types = []
-
-      versions.each do |version|
-        types << Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', false)
-        if infrastructure.light?
-          types << Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', true)
-        end
-      end
-      types
-    end
   end
 end
