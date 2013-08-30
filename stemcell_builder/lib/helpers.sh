@@ -13,8 +13,11 @@ function codename() {
 }
 
 function disable {
-  mv $1 $1.back
-  ln -s /bin/true $1
+  if [ -e $1 ]
+  then
+    mv $1 $1.back
+    ln -s /bin/true $1
+  fi
 }
 
 function enable {
