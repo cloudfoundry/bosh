@@ -9,7 +9,6 @@ module Bosh::Stemcell
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Stemcell::BuilderOptions',
-                      spec_name: spec,
                       default: options,
                       spec_name: 'FAKE_SPEC_NAME')
     end
@@ -54,25 +53,22 @@ module Bosh::Stemcell
                                      operating_system: operating_system).and_return(stemcell_builder_options)
     end
 
+    let(:build_dir) { File.join(root_dir, 'build') }
+    let(:work_dir) { File.join(root_dir, 'work') }
+    let(:etc_dir) { File.join(build_dir, 'etc') }
+    let(:settings_file) { File.join(etc_dir, 'settings.bash') }
+
+    let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
+
     describe '#build' do
       include FakeFS::SpecHelpers
 
-      let(:pid) { 99999 }
-      let(:build_dir) { File.join(root_dir, 'build') }
-      let(:work_dir) { File.join(root_dir, 'work') }
-      let(:etc_dir) { File.join(build_dir, 'etc') }
-      let(:settings_file) { File.join(etc_dir, 'settings.bash') }
-      let(:spec_file) { File.join(build_dir, 'spec', "#{spec}.spec") }
-      let(:build_script) { File.join(build_dir, 'bin', 'build_from_spec.sh') }
-
-      let(:spec) { 'dave' }
-      let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
-
       before do
-        Process.stub(pid: pid)
+        Process.stub(pid: 99999)
+
         FileUtils.stub(:cp_r).with([], build_dir, preserve: true, verbose: true) do
-          FileUtils.mkdir_p etc_dir
-          FileUtils.touch settings_file
+          FileUtils.mkdir_p(etc_dir)
+          FileUtils.touch(settings_file)
         end
       end
 
@@ -100,9 +96,10 @@ module Bosh::Stemcell
 
       it 'copies the stemcell_builder code into the build directory' do
         FileUtils.should_receive(:cp_r).with([], build_dir, preserve: true, verbose: true) do
-          FileUtils.mkdir_p etc_dir
-          FileUtils.touch File.join(etc_dir, 'settings.bash')
+          FileUtils.mkdir_p(etc_dir)
+          FileUtils.touch(settings_file)
         end
+
         stemcell_builder_command.build
       end
 
@@ -114,6 +111,7 @@ module Bosh::Stemcell
 
       it 'writes a settings file into the build directory' do
         stemcell_builder_command.build
+
         expect(File.read(settings_file)).to match(/hello=world/)
       end
 
