@@ -1,0 +1,39 @@
+require 'spec_helper'
+
+require 'bosh/dev/promote_artifacts'
+require 'bosh/dev/build'
+
+module Bosh::Dev
+  describe PromoteArtifacts do
+    let(:build) { instance_double('Bosh::Dev::Build', number: 123) }
+
+    subject(:build_artifacts) do
+      PromoteArtifacts.new(build)
+    end
+
+    its(:destination) { should eq('s3://bosh-jenkins-artifacts') }
+    its(:source) { should eq('s3://bosh-ci-pipeline/123/') }
+
+    describe '#commands' do
+      let(:pipeline_artifacts) { instance_double('Bosh::Stemcell::PipelineArtifacts', list: archive_filenames) }
+      let(:archive_filenames) do
+        [
+          instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'blue/stemcell-blue.tgz'),
+          instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'red/stemcell-red.tgz')
+        ]
+      end
+
+      before do
+        pipeline_artifacts_klass = class_double('Bosh::Stemcell::PipelineArtifacts').as_stubbed_const
+        pipeline_artifacts_klass.stub(:new).with(build.number).and_return(pipeline_artifacts)
+      end
+
+      it 'lists commands to promote stemcell pipeline artifacts' do
+        expect(build_artifacts.commands).to eq([
+                                            's3cmd --verbose cp s3://bosh-ci-pipeline/123/blue/stemcell-blue.tgz s3://bosh-jenkins-artifacts/blue/stemcell-blue.tgz',
+                                            's3cmd --verbose cp s3://bosh-ci-pipeline/123/red/stemcell-red.tgz s3://bosh-jenkins-artifacts/red/stemcell-red.tgz',
+                                          ])
+      end
+    end
+  end
+end

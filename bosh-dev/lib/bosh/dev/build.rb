@@ -1,10 +1,10 @@
 require 'peach'
 
+require 'bosh/dev/promote_artifacts'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
-require 'bosh/stemcell/pipeline_artifacts'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
@@ -20,6 +20,7 @@ module Bosh::Dev
     def initialize(number)
       @number = number
       @logger = Logger.new($stdout)
+      @promoter = PromoteArtifacts.new(self)
     end
 
     def upload(release, options = {})
@@ -85,7 +86,7 @@ module Bosh::Dev
     end
 
     def s3_release_url
-      File.join(s3_url, release_path)
+      File.join(promoter.source, release_path)
     end
 
     def gems_dir_url
@@ -103,7 +104,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :logger
+    attr_reader :logger, :promoter
 
     def sync_buckets
       bucket_sync_commands.peach do |cmd|
@@ -135,14 +136,6 @@ module Bosh::Dev
       "bosh-#{number}.tgz"
     end
 
-    def s3_url
-      "s3://bosh-ci-pipeline/#{number}/"
-    end
-
-    def s3_artifacts_url
-      's3://bosh-jenkins-artifacts'
-    end
-
     def stemcell_filename(version, infrastructure, name, light)
       operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
       Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, name, light).to_s
@@ -155,20 +148,11 @@ module Bosh::Dev
 
     def bucket_sync_commands
       s3cmd_list = [
-        "s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems",
-        "s3cmd --verbose cp #{File.join(s3_url, 'release', release_file)} #{File.join(s3_artifacts_url, 'release', release_file)}",
+        "s3cmd --verbose sync #{File.join(promoter.source, 'gems/')} s3://bosh-jenkins-gems",
+        "s3cmd --verbose cp #{File.join(promoter.source, 'release', release_file)} #{File.join(promoter.destination, 'release', release_file)}",
       ]
 
-      s3cmd_list + stemcell_object_cp_commands
-    end
-
-    def stemcell_object_cp_commands
-      archive_filenames = Bosh::Stemcell::PipelineArtifacts.new(number).list
-
-      s3cmd_list = archive_filenames.map { |filename| "s3cmd --verbose cp #{File.join(s3_url, filename.to_s)} " +
-        File.join(s3_artifacts_url, filename.to_s) }
-
-      s3cmd_list
+      s3cmd_list + promoter.commands
     end
 
     def stemcell_types(infrastructure)
@@ -184,7 +168,5 @@ module Bosh::Dev
       end
       types
     end
-
   end
 end
-
