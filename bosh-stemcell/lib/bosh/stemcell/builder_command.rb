@@ -41,7 +41,7 @@ module Bosh::Stemcell
                                      build_path: build_path,
                                      command_env: command_env,
                                      settings_file: settings_path,
-                                     work_path: work_path)
+                                     work_path: work_root)
       stage_runner.configure_and_apply
 
       stemcell_file
@@ -66,7 +66,7 @@ module Bosh::Stemcell
       stemcell_environment.build_path
     end
 
-    def work_path
+    def work_root
       stemcell_environment.work_path
     end
 
@@ -76,6 +76,10 @@ module Bosh::Stemcell
 
     def build_path
       File.join(build_root, 'build')
+    end
+
+    def work_path
+      File.join(work_root, 'work')
     end
 
     def prepare_build_path
@@ -92,7 +96,7 @@ module Bosh::Stemcell
     end
 
     def prepare_work_path
-      FileUtils.mkdir_p(work_path, verbose: true)
+      FileUtils.mkdir_p(work_root, verbose: true)
     end
 
     def settings_path
@@ -117,7 +121,7 @@ module Bosh::Stemcell
     end
 
     def stemcell_file
-      File.join(work_path, 'work', settings['stemcell_tgz'])
+      File.join(work_path, settings['stemcell_tgz'])
     end
 
     def proxy_settings_from_environment
