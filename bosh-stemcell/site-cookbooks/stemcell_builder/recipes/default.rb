@@ -22,3 +22,6 @@ package 'open-vm-dkms'
 
 # OpenStack requirement
 package 'qemu-utils'
+
+# CentOS building requirements
+package 'yum'
