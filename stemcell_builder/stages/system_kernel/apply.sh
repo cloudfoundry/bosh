@@ -13,7 +13,7 @@ then
   variant="lts-backport-oneiric"
 
   # Headers are needed for open-vm-tools
-  apt_get install linux-image-virtual-${variant} linux-headers-virtual-${variant}
+  pkg_mgr install linux-image-virtual-${variant} linux-headers-virtual-${variant}
 else
-  apt_get install linux-image-virtual
+  pkg_mgr install linux-image-virtual
 fi

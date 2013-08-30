@@ -46,10 +46,12 @@ deb http://security.ubuntu.com/ubuntu $DISTRIB_CODENAME-security main universe m
 EOS
 
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
-apt_get install upstart
+pkg_mgr install upstart
 
 # Upgrade
-apt_get dist-upgrade
+run_in_chroot $chroot "apt-get update"
+run_in_chroot $chroot "apt-get -f -y --force-yes --no-install-recommends dist-upgrade"
+run_in_chroot $chroot "apt-get clean"
 
 # Install base debs needed by both the warden and bosh
-apt_get install $debs
+pkg_mgr install $debs

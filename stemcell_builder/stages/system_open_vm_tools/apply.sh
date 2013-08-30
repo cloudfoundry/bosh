@@ -19,7 +19,7 @@ cp $assets_dir/open-vm-*.deb $chroot/tmp
 run_in_chroot $chroot "dpkg -i /tmp/open-vm-*.deb || true"
 
 # Fix missing dependencies for the open-vm debs
-apt_get install
+pkg_mgr install
 
 # Remove debs
 run_in_chroot $chroot "rm -f /tmp/*.deb"

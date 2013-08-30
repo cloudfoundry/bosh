@@ -8,7 +8,7 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
 # Install grub
-apt_get install grub
+pkg_mgr install grub
 rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
 
 # When a kernel is installed, update-grub is run per /etc/kernel-img.conf.

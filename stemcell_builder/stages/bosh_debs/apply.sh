@@ -10,7 +10,7 @@ source $base_dir/lib/prelude_bosh.bash
 
 debs="scsitools mg htop module-assistant debhelper runit"
 
-apt_get install $debs
+pkg_mgr install $debs
 
 # `rescan-scsi-bus` doesn't have the `.sh` suffix on Ubuntu Precise
 pushd $chroot/sbin
