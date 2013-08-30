@@ -19,3 +19,6 @@ package 'libxslt-dev'
 
 # vSphere requirements
 package 'open-vm-dkms'
+
+# OpenStack requirement
+package 'qemu-utils'
