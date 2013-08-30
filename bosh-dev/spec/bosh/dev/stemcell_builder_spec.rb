@@ -14,7 +14,9 @@ module Bosh::Dev
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
     let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
 
-    let(:stemcell_builder_command) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
+    let(:stemcell_builder_command) do
+      instance_double('Bosh::Dev::BuilderCommand', build: nil, chroot_dir: '/fake/chroot/dir')
+    end
 
     let(:fake_work_path) { '/fake/work/path' }
     let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
@@ -23,16 +25,20 @@ module Bosh::Dev
       StemcellBuilder.new(build, infrastructure_name, operating_system_name)
     end
 
+    before do
+      Bosh::Stemcell::BuilderCommand.stub(:new).with(
+        infrastructure_name: infrastructure_name,
+        operating_system_name: operating_system_name,
+        release_tarball_path: build.download_release,
+        version: build_number,
+      ).and_return(stemcell_builder_command)
+    end
+
+    its(:stemcell_chroot_dir) { should eq('/fake/chroot/dir') }
+
     describe '#build_stemcell' do
       before do
         GemsGenerator.stub(:new).and_return(gems_generator)
-
-        Bosh::Stemcell::BuilderCommand.stub(:new).with(
-          infrastructure_name: infrastructure_name,
-          operating_system_name: operating_system_name,
-          release_tarball_path: build.download_release,
-          version: build_number,
-        ).and_return(stemcell_builder_command)
 
         stemcell_builder_command.stub(:build) do
           FileUtils.mkdir_p(fake_work_path)
