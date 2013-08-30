@@ -18,9 +18,6 @@ def asset(file)
   File.join(File.dirname(__FILE__), 'assets', file)
 end
 
-def image_file(disk_id)
-  "#{disk_id}.img"
-end
 
 def mock_sh (cmd, su = false, times = 1, success = true)
   zero_exit_status = mock('Process::Status', exit_status: 0)

@@ -10,6 +10,7 @@ require 'common/thread_formatter'
 require 'cloud'
 require 'cloud/warden/helpers'
 require 'cloud/warden/cloud'
+require 'cloud/warden/diskutils'
 require 'cloud/warden/version'
 
 require 'warden/client'

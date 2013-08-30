@@ -1,18 +1,19 @@
 require 'spec_helper'
 
 describe Bosh::WardenCloud::Cloud do
-  DEFAULT_HANDLE = 'vm-uuid-1234'
-  DEFAULT_STEMCELL_ID = 'stemcell-abcd'
-  DEFAULT_AGENT_ID = 'agent-abcd'
 
-  let(:image_path) { asset('stemcell-warden-test.tgz') }
-  let(:bad_image_path) { asset('stemcell-not-existed.tgz') }
+  DEFAULT_HANDLE = 'vm-uuid-1234'
+  DEFAULT_AGENT_ID = 'agent-abcd'
+  DEFAULT_STEMCELL_ID = 'stemcell-uuid'
 
   before :each do
     @logger = Bosh::Clouds::Config.logger
     @disk_root = Dir.mktmpdir('warden-cpi-disk')
     @stemcell_path =  Dir.mktmpdir('stemcell-disk')
     @stemcell_root = File.join(@stemcell_path, DEFAULT_STEMCELL_ID)
+    @disk_util = double('DiskUtils')
+    @disk_util.stub(:stemcell_path).and_return(@stemcell_root)
+    Bosh::WardenCloud::DiskUtils.stub(:new).with(@disk_root, @stemcell_path, 'ext4').and_return(@disk_util)
 
     cloud_options = {
         'disk' => {
@@ -48,54 +49,6 @@ describe Bosh::WardenCloud::Cloud do
   context 'initialize' do
     it 'can be created using Bosh::Clouds::Provider' do
       @cloud.should be_an_instance_of(Bosh::Clouds::Warden)
-    end
-  end
-
-  context 'create_stemcell' do
-    it 'can create stemcell' do
-      mock_sh('tar -C', true)
-      stemcell_id = @cloud.create_stemcell(image_path, nil)
-      Dir.chdir(@stemcell_path) do
-        Dir.glob('*').should have(1).items
-        Dir.glob('*').should include(stemcell_id)
-      end
-    end
-
-    it 'should raise error with bad image path' do
-      Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
-      expect {
-        @cloud.create_stemcell(bad_image_path, nil)
-      }.to raise_error
-    end
-
-    it 'should clean up after an error is raised' do
-      Bosh::Exec.stub(:sh) do |cmd|
-        `#{cmd}`
-        raise 'error'
-      end
-
-      Dir.chdir(@stemcell_path) do
-        Dir.glob('*').should be_empty
-        mock_sh('rm -rf', true)
-        expect {
-          @cloud.create_stemcell(image_path, nil)
-        }.to raise_error
-
-      end
-    end
-  end
-
-  context 'delete_stemcell' do
-    it 'can delete stemcell' do
-      Dir.chdir(@stemcell_path) do
-        mock_sh('tar -C', true)
-        stemcell_id = @cloud.create_stemcell(image_path, nil)
-        Dir.glob('*').should have(1).items
-        Dir.glob('*').should include(stemcell_id)
-        mock_sh('rm -rf', true)
-        ret = @cloud.delete_stemcell(stemcell_id)
-        ret.should be_nil
-      end
     end
   end
 
@@ -142,7 +95,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it 'can create vm' do
-      @cloud.should_receive(:sudo).exactly(4)
+      @cloud.should_receive(:sudo).exactly(3)
       network_spec = {
           'nic1' => { 'ip' => '1.1.1.1', 'type' => 'static' },
       }
@@ -150,6 +103,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it 'should raise error for invalid stemcell' do
+      @disk_util.stub(:stemcell_path).and_return('invalid_dir')
       expect {
         @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, {})
       }.to raise_error Bosh::Clouds::CloudError
@@ -252,4 +206,60 @@ describe Bosh::WardenCloud::Cloud do
       @cloud.has_vm?('vm_not_exist').should == false
     end
   end
+
+  context 'stemcells' do
+    before :each do
+      @cloud.stub(:uuid).with('stemcell') { DEFAULT_STEMCELL_ID }
+    end
+
+    it 'invoke disk_utils to create stemcell with uuid' do
+      @disk_util.should_receive(:stemcell_unpack).with('imgpath', DEFAULT_STEMCELL_ID)
+      @cloud.create_stemcell('imgpath', nil)
+    end
+
+    it 'invoke disk_utils to delete stemcell with uuid' do
+      @disk_util.should_receive(:stemcell_delete).with(DEFAULT_STEMCELL_ID)
+      @cloud.delete_stemcell(DEFAULT_STEMCELL_ID)
+    end
+  end
+
+  context 'disk create/delete/attach/detach' do
+    before :each do
+      @cloud.stub(:uuid).with('disk') { 'disk-uuid-1234' }
+    end
+
+    it 'invoke disk_utils to create disk with uuid' do
+      @disk_util.should_receive(:create_disk).with('disk-uuid-1234', 1024)
+      @cloud.create_disk(1024, nil)
+    end
+
+    it 'invoke disk_utils to delete disk with uuid' do
+      @disk_util.should_receive(:disk_exist?).with('disk-uuid-1234').and_return(true)
+      @disk_util.should_receive(:delete_disk).with('disk-uuid-1234')
+      @cloud.delete_disk('disk-uuid-1234')
+    end
+
+    it 'invoke disk_utils to mount disk and setup agent env when attach disk' do
+      @cloud.stub(:get_agent_env) { { 'disks' => { 'persistent' => {} } } }
+      expected_env = { 'disks' => { 'persistent' => { 'disk-uuid-1234' => '/warden-cpi-dev/disk-uuid-1234' } } }
+      expected_mountpoint = File.join(@disk_root, 'bind_mount_points', 'vm-uuid-1234', 'disk-uuid-1234')
+      @disk_util.should_receive(:disk_exist?).with('disk-uuid-1234').and_return(true)
+      @disk_util.should_receive(:mount_disk).with(expected_mountpoint, 'disk-uuid-1234')
+      @cloud.should_receive(:set_agent_env).with('vm-uuid-1234', expected_env)
+      @cloud.should_receive(:has_vm?).with('vm-uuid-1234').and_return(true)
+      @cloud.attach_disk('vm-uuid-1234', 'disk-uuid-1234')
+    end
+
+    it 'invoke disk_utils to umount disk and remove agent env when detach disk' do
+      @cloud.stub(:get_agent_env) { { 'disks' => { 'persistent' => { 'disk-uuid-1234' => '/warden-cpi-dev/disk-uuid-1234' } } } }
+      expected_env = { 'disks' => { 'persistent' => { 'disk-uuid-1234' => nil } } }
+      expected_mountpoint = File.join(@disk_root, 'bind_mount_points', 'vm-uuid-1234', 'disk-uuid-1234')
+      @disk_util.should_receive(:disk_exist?).with('disk-uuid-1234').and_return(true)
+      @disk_util.should_receive(:umount_disk).with(expected_mountpoint)
+      @cloud.should_receive(:set_agent_env).with('vm-uuid-1234', expected_env)
+      @cloud.should_receive(:has_vm?).with('vm-uuid-1234').and_return(true)
+      @cloud.detach_disk('vm-uuid-1234', 'disk-uuid-1234')
+    end
+  end
+
 end

@@ -3,8 +3,6 @@ module Bosh::WardenCloud
   module Helpers
 
     DEFAULT_SETTINGS_FILE = '/var/vcap/bosh/settings.json'
-    UMOUNT_GUARD_RETRIES = 60
-    UMOUNT_GUARD_SLEEP = 3
 
     def cloud_error(message)
       @logger.error(message) if @logger
@@ -97,29 +95,5 @@ module Bosh::WardenCloud
       tempfile.unlink
     end
 
-    def mount_entry(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
-    end
-
-    # Retry the umount for GUARD_RETRIES +1  times
-    def umount_guard(mountpoint)
-      umount_attempts = UMOUNT_GUARD_RETRIES
-
-      loop do
-        return if mount_entry(mountpoint).nil?
-        sudo "umount #{mountpoint}" do |result|
-          if result.success?
-            return
-          elsif umount_attempts != 0
-            sleep UMOUNT_GUARD_SLEEP
-            umount_attempts -= 1
-          else
-            raise "Failed to umount #{mountpoint}: #{result.output}"
-          end
-        end
-      end
-    end
-
   end
-
 end

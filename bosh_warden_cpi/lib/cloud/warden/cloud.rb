@@ -23,43 +23,23 @@ module Bosh::WardenCloud
       @stemcell_properties = options.fetch('stemcell', {})
       @disk_properties = options.fetch('disk', {})
 
-      @warden_unix_path = @warden_properties.fetch('unix_domain_path', DEFAULT_WARDEN_SOCK)
-      @stemcell_root = @stemcell_properties.fetch('root', DEFAULT_STEMCELL_ROOT)
-
-      FileUtils.mkdir_p(@stemcell_root)
-      setup_disk
+      setup_path
+      @disk_utils = DiskUtils.new(@disk_root, @stemcell_root, @fs_type)
     end
 
     ##
     # Create a stemcell using stemcell image
-    # This method simply untar the stemcell image to a local directory. Warden
-    # can use the rootfs within the image as a base fs.
     # @param [String] image_path local path to a stemcell image
     # @param [Hash] cloud_properties not used
     # return [String] stemcell id
     def create_stemcell(image_path, cloud_properties)
       not_used(cloud_properties)
-
       stemcell_id = uuid('stemcell')
-      stemcell_dir = stemcell_path(stemcell_id)
-
       with_thread_name("create_stemcell(#{image_path}, _)") do
-
-        # Extract to tarball
-        @logger.info("Extracting stemcell from #{image_path} to #{stemcell_dir}")
-        FileUtils.mkdir_p(stemcell_dir)
-
-        # This command needs priviledge because the stemcell contains device files,
-        # which cannot be untared without priviledge
-        raise "#{image_path} not exist for creating stemcell" unless File.exist?(image_path)
-        sudo "tar -C #{stemcell_dir} -xzf #{image_path} 2>&1"
-
+        @logger.info("Extracting stemcell from #{image_path} for #{stemcell_id}")
+        @disk_utils.stemcell_unpack(image_path, stemcell_id)
         stemcell_id
       end
-    rescue => e
-      sudo "rm -rf #{stemcell_dir}"
-
-      raise e
     end
 
     ##
@@ -68,8 +48,7 @@ module Bosh::WardenCloud
     # @return [void]
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id}, _)") do
-        stemcell_dir = stemcell_path(stemcell_id)
-        sudo "rm -rf #{stemcell_dir}"
+        @disk_utils.stemcell_delete(stemcell_id)
         nil
       end
     end
@@ -95,7 +74,7 @@ module Bosh::WardenCloud
       vm_handle = nil
       with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
 
-        stemcell_path = stemcell_path(stemcell_id)
+        stemcell_path = @disk_utils.stemcell_path(stemcell_id)
         vm_id = uuid('vm')
 
         if networks.size > 1
@@ -187,7 +166,7 @@ module Bosh::WardenCloud
 
         ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
         sudo "rm -rf #{ephemeral_mount}"
-        vm_bind_mount = File.join(@bind_mount_points, vm_id.to_s)
+        vm_bind_mount = File.join(@bind_mount_points, vm_id)
         sudo "rm -rf #{vm_bind_mount}"
         nil
       end
@@ -231,22 +210,11 @@ module Bosh::WardenCloud
     # @return [String] disk id
     def create_disk(size, vm_locality = nil)
       not_used(vm_locality)
-      image_file = nil
-      raise ArgumentError, 'disk size <= 0' unless size > 0
-
       with_thread_name("create_disk(#{size}, _)") do
         disk_id = uuid('disk')
-        image_file = image_path(disk_id)
-
-        FileUtils.touch(image_file)
-        File.truncate(image_file, size << 20) # 1 MB == 1<<20 Byte
-        sh "/sbin/mkfs -t #{@fs_type} -F #{image_file} 2>&1"
-
+        @disk_utils.create_disk(disk_id, size)
         disk_id
       end
-    rescue => e
-      FileUtils.rm_f image_file if image_file
-      raise e
     end
 
     ##
@@ -256,12 +224,8 @@ module Bosh::WardenCloud
     # @return [void]
     def delete_disk(disk_id)
       with_thread_name("delete_disk(#{disk_id})") do
-
         cloud_error("Cannot find disk #{disk_id}") unless has_disk?(disk_id)
-
-        # Remove image file
-        FileUtils.rm_f image_path(disk_id)
-
+        @disk_utils.delete_disk(disk_id)
         nil
       end
     end
@@ -274,18 +238,13 @@ module Bosh::WardenCloud
     # @return nil
     def attach_disk(vm_id, disk_id)
       with_thread_name("attach_disk(#{vm_id}, #{disk_id})") do
-
         cloud_error("Cannot find vm #{vm_id}") unless has_vm?(vm_id)
         cloud_error("Cannot find disk #{disk_id}") unless has_disk?(disk_id)
 
-        # Create a device file inside warden container
         vm_bind_mount = File.join(@bind_mount_points, vm_id)
         disk_dir = File.join(vm_bind_mount, disk_id)
-        FileUtils.mkdir_p(disk_dir)
 
-        disk_img = image_path(disk_id)
-        sudo "mount #{disk_img} #{disk_dir} -o loop"
-
+        @disk_utils.mount_disk(disk_dir, disk_id)
         # Save device path into agent env settings
         env = get_agent_env(vm_id)
         env['disks']['persistent'][disk_id] = File.join(@warden_dev_root, disk_id)
@@ -311,7 +270,7 @@ module Bosh::WardenCloud
         device_path = File.join(vm_bind_mount, disk_id)
 
         # umount the image file
-        umount_guard device_path
+        @disk_utils.umount_disk(device_path)
         # Save device path into agent env settings
         env = get_agent_env(vm_id)
         env['disks']['persistent'][disk_id] = nil
@@ -328,30 +287,23 @@ module Bosh::WardenCloud
     private
 
     def has_disk?(disk_id)
-      File.exist?(image_path(disk_id))
+      @disk_utils.disk_exist?(disk_id)
     end
 
     def not_used(*arg)
       # no-op
     end
 
-    def stemcell_path(stemcell_id)
-      File.join(@stemcell_root, stemcell_id)
-    end
+    def setup_path
+      @warden_unix_path = @warden_properties.fetch('unix_domain_path', DEFAULT_WARDEN_SOCK)
+      @warden_dev_root = @disk_properties.fetch('warden_dev_root', DEFAULT_WARDEN_DEV_ROOT)
+      @stemcell_root = @stemcell_properties.fetch('root', DEFAULT_STEMCELL_ROOT)
 
-    def image_path(disk_id)
-      File.join(@disk_root, "#{disk_id}.img")
-    end
-
-
-    def setup_disk
       @disk_root = @disk_properties.fetch('root', DEFAULT_DISK_ROOT)
       @fs_type = @disk_properties.fetch('fs', DEFAULT_FS_TYPE)
-      @warden_dev_root = @disk_properties.fetch('warden_dev_root', DEFAULT_WARDEN_DEV_ROOT)
 
       @bind_mount_points = File.join(@disk_root, 'bind_mount_points')
       @ephemeral_mount_points = File.join(@disk_root, 'ephemeral_mount_point')
-      FileUtils.mkdir_p(@disk_root)
     end
 
   end
