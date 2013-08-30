@@ -147,13 +147,6 @@ module Bosh::WardenCloud
         env = generate_agent_env(vm_id, agent_id, networks)
         set_agent_env(vm_id, env)
 
-        # Notice: It's a little hacky, but it's the way it is now.
-        #
-        # Warden has a default white list for devices. By default, all the loop
-        # devices cannot be read/written/mknod. We don't want to change the
-        # warden behavior, so we just manipulate the container cgroup directly.
-        sudo "bash -c 'echo \"b 7:* rwm\" > /tmp/warden/cgroup/devices/instance-#{handle}/devices.allow'"
-
         # Start bosh agent
         with_warden do |client|
           request = Warden::Protocol::SpawnRequest.new
