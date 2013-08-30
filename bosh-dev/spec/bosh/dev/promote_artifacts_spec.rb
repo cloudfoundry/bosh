@@ -13,6 +13,7 @@ module Bosh::Dev
 
     its(:destination) { should eq('s3://bosh-jenkins-artifacts') }
     its(:source) { should eq('s3://bosh-ci-pipeline/123/') }
+    its(:release_file) { should eq('bosh-123.tgz') }
 
     describe '#commands' do
       let(:pipeline_artifacts) { instance_double('Bosh::Stemcell::PipelineArtifacts', list: archive_filenames) }
@@ -28,11 +29,19 @@ module Bosh::Dev
         pipeline_artifacts_klass.stub(:new).with(build.number).and_return(pipeline_artifacts)
       end
 
+      it 'lists a command to promote the release' do
+        expect(build_artifacts.commands).to include('s3cmd --verbose cp s3://bosh-ci-pipeline/123/release/bosh-123.tgz s3://bosh-jenkins-artifacts/release/bosh-123.tgz')
+      end
+
+      it 'lists commands to promote gems' do
+        expect(build_artifacts.commands).to include('s3cmd --verbose sync s3://bosh-ci-pipeline/123/gems/ s3://bosh-jenkins-gems')
+      end
+
       it 'lists commands to promote stemcell pipeline artifacts' do
-        expect(build_artifacts.commands).to eq([
-                                            's3cmd --verbose cp s3://bosh-ci-pipeline/123/blue/stemcell-blue.tgz s3://bosh-jenkins-artifacts/blue/stemcell-blue.tgz',
-                                            's3cmd --verbose cp s3://bosh-ci-pipeline/123/red/stemcell-red.tgz s3://bosh-jenkins-artifacts/red/stemcell-red.tgz',
-                                          ])
+        expect(build_artifacts.commands).to include(
+                                              's3cmd --verbose cp s3://bosh-ci-pipeline/123/blue/stemcell-blue.tgz s3://bosh-jenkins-artifacts/blue/stemcell-blue.tgz',
+                                              's3cmd --verbose cp s3://bosh-ci-pipeline/123/red/stemcell-red.tgz s3://bosh-jenkins-artifacts/red/stemcell-red.tgz',
+                                            )
       end
     end
   end

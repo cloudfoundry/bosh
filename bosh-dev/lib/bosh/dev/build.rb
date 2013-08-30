@@ -49,7 +49,7 @@ module Bosh::Dev
       output_directory = options.fetch(:output_directory) { Dir.pwd }
 
       remote_dir = File.join(number.to_s, 'release')
-      filename = release_file
+      filename = promoter.release_file
 
       download_adapter.download(uri(remote_dir, filename), File.join(output_directory, release_path))
 
@@ -103,7 +103,7 @@ module Bosh::Dev
     attr_reader :logger, :promoter
 
     def sync_buckets
-      bucket_sync_commands.peach do |cmd|
+      promoter.commands.peach do |cmd|
         Rake::FileUtilsExt.sh(cmd)
       end
     end
@@ -125,11 +125,7 @@ module Bosh::Dev
     end
 
     def release_path
-      "release/#{release_file}"
-    end
-
-    def release_file
-      "bosh-#{number}.tgz"
+      "release/#{promoter.release_file}"
     end
 
     def stemcell_filename(version, infrastructure, name, light)
@@ -140,15 +136,6 @@ module Bosh::Dev
     def uri(remote_directory_path, file_name)
       remote_file_path = File.join(remote_directory_path, file_name)
       URI.parse("http://bosh-ci-pipeline.s3.amazonaws.com/#{remote_file_path}")
-    end
-
-    def bucket_sync_commands
-      s3cmd_list = [
-        "s3cmd --verbose sync #{File.join(promoter.source, 'gems/')} s3://bosh-jenkins-gems",
-        "s3cmd --verbose cp #{File.join(promoter.source, 'release', release_file)} #{File.join(promoter.destination, 'release', release_file)}",
-      ]
-
-      s3cmd_list + promoter.commands
     end
   end
 end
