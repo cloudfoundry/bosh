@@ -17,11 +17,12 @@ module Bosh
 
         Bosh::Stemcell::Infrastructure.all.each do |infrastructure|
           versions.each do |version|
-            filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', false).to_s
-            artifact_names << archive_path(filename, infrastructure)
+            filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', false)
+            artifact_names << archive_path(filename.to_s, infrastructure)
+
             if infrastructure.light?
-              light_filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', true).to_s
-              artifact_names << archive_path(light_filename, infrastructure)
+              light_filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', true)
+              artifact_names << archive_path(light_filename.to_s, infrastructure)
             end
           end
         end
