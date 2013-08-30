@@ -85,10 +85,6 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
-    def s3_release_url
-      File.join(promoter.source, release_path)
-    end
-
     def gems_dir_url
       "https://s3.amazonaws.com/bosh-ci-pipeline/#{number}/gems/"
     end

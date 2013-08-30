@@ -45,8 +45,6 @@ module Bosh::Dev
       its(:number) { should eq 'candidate' }
     end
 
-    its(:s3_release_url) { should eq(File.join('s3://bosh-ci-pipeline/123/release/bosh-123.tgz')) }
-
     describe '#upload' do
       let(:release) { double(tarball: 'release-tarball.tgz') }
       let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
