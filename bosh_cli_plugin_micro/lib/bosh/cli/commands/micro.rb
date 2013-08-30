@@ -2,7 +2,7 @@
 
 require 'pp'
 
-require "deployer"
+require 'deployer'
 
 module Bosh::Cli::Command
   class Micro < Base
@@ -96,6 +96,17 @@ module Bosh::Cli::Command
 
       target_name = target ? target.make_green : "not set".make_red
       say("Target".ljust(15) + target_name)
+    end
+
+    usage "micro ssh"
+    desc "Open SSH terminal or run a command via SSH upon micro BOSH instance"
+    def micro_ssh(*args)
+      username = "vcap"
+      host = URI.parse(target).host
+      target_name = config.target_name ? config.target_name.make_green : "not set".make_red
+      say("Starting interactive shell on micro BOSH #{target_name} #{host}")
+      result = system Shellwords.shelljoin(["ssh", "#{username}@#{host}", args].flatten.compact)
+      exit result
     end
 
     usage  "micro deploy"

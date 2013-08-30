@@ -125,6 +125,24 @@ describe Bosh::Cli::Command::Base do
       end
     end
 
+    describe 'ssh command' do
+      before do
+        @cmd.stub(:target).and_return("https://1.2.3.4:25555")
+      end
+
+      it 'opens interactive shell' do
+        @cmd.should_receive(:system).with("ssh vcap@1.2.3.4").and_return(123)
+        @cmd.should_receive(:exit).with(123)
+        @cmd.micro_ssh
+      end
+
+      it 'runs a shell command via ssh' do
+        @cmd.should_receive(:system).with("ssh vcap@1.2.3.4 command to run").and_return(0)
+        @cmd.should_receive(:exit).with(0)
+        @cmd.micro_ssh("command", "to", "run")
+      end
+    end
+
     describe "deploying/updating with --update-if-exists flag" do
       let(:deployer) do
         mock(Bosh::Deployer::InstanceManager, {
