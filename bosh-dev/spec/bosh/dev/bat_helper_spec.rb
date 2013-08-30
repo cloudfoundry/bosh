@@ -10,9 +10,10 @@ module Bosh::Dev
     let(:light) { false }
     let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
 
-    subject { BatHelper.new(infrastructure_name, build) }
+    subject { BatHelper.new(infrastructure_name) }
 
     before do
+      Build.stub(:candidate => build)
       Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
     end
 
