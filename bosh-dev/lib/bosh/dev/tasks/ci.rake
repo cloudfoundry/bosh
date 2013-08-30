@@ -39,6 +39,19 @@ namespace :ci do
     cp(stemcell_file, File.join('tmp', File.basename(stemcell_file)))
   end
 
+  desc 'Run serverspec against a stemcell chroot'
+  task :test_stemcell, [:infrastructure, :operating_system] do |_, args|
+    require 'bosh/dev/build'
+    require 'bosh/dev/stemcell_builder'
+
+    options = args.to_hash
+
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(Bosh::Dev::Build.candidate,
+                                                      options.fetch(:infrastructure),
+                                                      options.fetch(:operating_system))
+    system("cd bosh-stemcell && SERVERSPEC_CHROOT=#{stemcell_builder.stemcell_chroot_dir} rspec spec/stemcells") || raise('Failure in spec/stemcells')
+  end
+
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and publish to S3'
   task :publish_stemcell, [:infrastructure, :operating_system] do |_, args|
     require 'bosh/dev/build'
