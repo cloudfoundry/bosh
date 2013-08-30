@@ -54,10 +54,6 @@ module Bosh::Stemcell
                 :stemcell_environment,
                 :stemcell_builder_options
 
-    def spec_name
-      "#{stemcell_builder_options.spec_name}.spec"
-    end
-
     def settings
       stemcell_builder_options.default
     end
@@ -110,10 +106,6 @@ module Bosh::Stemcell
           f.print "#{k}=#{v}\n"
         end
       end
-    end
-
-    def stemcell_spec_path
-      File.join(build_path, 'spec', spec_name)
     end
 
     def command_env
