@@ -47,6 +47,10 @@ module Bosh::Stemcell
       stemcell_file
     end
 
+    def chroot_dir
+      File.join(work_path, 'chroot') # also defined in bash stages
+    end
+
     private
 
     attr_reader :shell,

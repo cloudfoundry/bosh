@@ -60,6 +60,8 @@ module Bosh::Stemcell
 
     let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
 
+    its(:chroot_dir) { should eq(File.join(root_dir, 'work', 'work', 'chroot'))}
+
     describe '#build' do
       include FakeFS::SpecHelpers
 
