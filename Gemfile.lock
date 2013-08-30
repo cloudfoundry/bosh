@@ -400,6 +400,10 @@ GEM
       tzinfo (>= 0.3.23)
     rugged (0.16.0)
     sequel (3.43.0)
+    serverspec (0.7.10)
+      highline
+      net-ssh
+      rspec (>= 2.13.0)
     sigar (0.7.2)
     simplecov (0.7.1)
       multi_json (~> 1.0)
@@ -485,6 +489,7 @@ DEPENDENCIES
   ruby_gntp
   ruby_vim_sdk!
   rugged
+  serverspec
   simple_blobstore_server!
   simplecov
   simplecov-rcov
