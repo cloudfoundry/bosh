@@ -32,7 +32,7 @@ module Bosh::Stemcell
 
       copy_stemcell_builder_to_build_path
 
-      prepare_work_path
+      prepare_work_root
 
       persist_settings_for_bash
 
@@ -70,6 +70,10 @@ module Bosh::Stemcell
       FileUtils.mkdir_p(build_root, verbose: true)
     end
 
+    def prepare_work_root
+      FileUtils.mkdir_p(work_root, verbose: true)
+    end
+
     def build_path
       File.join(build_root, 'build')
     end
@@ -89,10 +93,6 @@ module Bosh::Stemcell
 
     def copy_stemcell_builder_to_build_path
       FileUtils.cp_r(Dir.glob("#{stemcell_builder_source_dir}/*"), build_path, preserve: true, verbose: true)
-    end
-
-    def prepare_work_path
-      FileUtils.mkdir_p(work_root, verbose: true)
     end
 
     def settings_path
