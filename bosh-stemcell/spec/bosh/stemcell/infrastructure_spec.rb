@@ -43,21 +43,23 @@ module Bosh::Stemcell
     end
 
     describe '.all' do
-
       it 'returns all the infrastructure subclasses' do
         expected_classes = [
-          Bosh::Stemcell::Infrastructure::Vsphere,
-          Bosh::Stemcell::Infrastructure::Aws,
-          Bosh::Stemcell::Infrastructure::OpenStack
+          Infrastructure::Vsphere,
+          Infrastructure::Aws,
+          Infrastructure::OpenStack
         ].to_set
 
         classes = Infrastructure.all.map(&:class).to_set
         expect(expected_classes).to eq(classes)
       end
-
     end
 
     describe Infrastructure::Aws do
+      subject do
+        Infrastructure::Aws.new
+      end
+
       its(:name) { should eq('aws') }
       it { should be_light }
       its(:hypervisor) { should eq('xen') }
@@ -65,6 +67,10 @@ module Bosh::Stemcell
     end
 
     describe Infrastructure::OpenStack do
+      subject do
+        Infrastructure::OpenStack.new
+      end
+
       its(:name) { should eq('openstack') }
       it { should_not be_light }
       its(:hypervisor) { should eq('kvm') }
@@ -72,6 +78,10 @@ module Bosh::Stemcell
     end
 
     describe Infrastructure::Vsphere do
+      subject do
+        Infrastructure::Vsphere.new
+      end
+
       its(:name) { should eq('vsphere') }
       it { should_not be_light }
       its(:hypervisor) { should eq('esxi') }
