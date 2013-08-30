@@ -21,7 +21,7 @@ module Bosh::Dev::Bat
     before do
       FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
-      Bosh::Dev::BatHelper.stub(:new).with('vsphere').and_return(bat_helper)
+      Bosh::Dev::BatHelper.stub(:new).with('vsphere', anything).and_return(bat_helper)
       Bosh::Dev::BoshCliSession.stub(new: bosh_cli_session)
       Bosh::Stemcell::Archive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
 

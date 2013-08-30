@@ -10,10 +10,10 @@ module Bosh::Dev
     let(:light) { false }
     let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
 
-    subject { BatHelper.new(infrastructure_name) }
+    subject { BatHelper.new(infrastructure_name, 'manual') }
 
     before do
-      Build.stub(:candidate => build)
+      Build.stub(candidate: build)
       Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
     end
 
@@ -63,8 +63,8 @@ module Bosh::Dev
         subject.run_rake
       end
 
-      it 'invokes the spec:system:<infrastructure>:micro rake task' do
-        spec_system_micro_task.should_receive(:invoke)
+      it 'invokes the spec:system:<infrastructure>:micro rake task with the network type as argument' do
+        spec_system_micro_task.should_receive(:invoke).with('manual')
 
         subject.run_rake
       end

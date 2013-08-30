@@ -23,7 +23,7 @@ module Bosh::Dev::Bat
       FileUtils.mkdir('/mnt')
       FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
-      Bosh::Dev::BatHelper.stub(:new).with('aws').and_return(bat_helper)
+      Bosh::Dev::BatHelper.stub(:new).with('aws', anything).and_return(bat_helper)
       Bosh::Dev::BoshCliSession.stub(new: bosh_cli_session)
       Bosh::Stemcell::Archive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
 

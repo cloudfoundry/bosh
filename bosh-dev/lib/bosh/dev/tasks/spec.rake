@@ -110,23 +110,9 @@ namespace :spec do
 
     namespace :openstack do
       desc 'Run OpenStack MicroBOSH deployment suite'
-      task :micro do
-        Rake::Task['spec:system:openstack:deploy_micro_dynamic_net'].invoke
-        Rake::Task['spec:system:openstack:deploy_micro_manual_net'].invoke
-      end
-
-      task :deploy_micro_dynamic_net do
+      task :micro, [:net_type] do |_, net_type|
         begin
-          Rake::Task['spec:system:openstack:deploy_micro'].execute('dynamic')
-          Rake::Task['spec:system:openstack:bat'].execute
-        ensure
-          Rake::Task['spec:system:openstack:teardown_microbosh'].execute
-        end
-      end
-
-      task :deploy_micro_manual_net do
-        begin
-          Rake::Task['spec:system:openstack:deploy_micro'].execute('manual')
+          Rake::Task['spec:system:openstack:deploy_micro'].execute(net_type)
           Rake::Task['spec:system:openstack:bat'].execute
         ensure
           Rake::Task['spec:system:openstack:teardown_microbosh'].execute
@@ -137,7 +123,7 @@ namespace :spec do
         require 'bosh/dev/openstack/micro_bosh_deployment_manifest'
         require 'bosh/dev/openstack/bat_deployment_manifest'
 
-        bat_helper = Bosh::Dev::BatHelper.new('openstack')
+        bat_helper = Bosh::Dev::BatHelper.new('openstack', :dont_care)
 
         chdir(bat_helper.artifacts_dir) do
           chdir(bat_helper.micro_bosh_deployment_dir) do
@@ -160,7 +146,7 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        bat_helper = Bosh::Dev::BatHelper.new('openstack')
+        bat_helper = Bosh::Dev::BatHelper.new('openstack', :dont_care)
 
         chdir(bat_helper.artifacts_dir) do
           run_bosh 'delete deployment bat', :ignore_failures => true
@@ -170,7 +156,7 @@ namespace :spec do
       end
 
       task :bat do
-        bat_helper = Bosh::Dev::BatHelper.new('openstack')
+        bat_helper = Bosh::Dev::BatHelper.new('openstack', :dont_care)
 
         ENV['BAT_DIRECTOR'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
         ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
