@@ -11,13 +11,15 @@ module Bosh::Dev
     end
 
     def build_stemcell
-      generate_gems
+      unless @stemcell_path
+        generate_gems
 
-      stemcell_path = run_stemcell_builder_command
+        @stemcell_path = run_stemcell_builder_command
+      end
 
-      File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
+      File.exist?(@stemcell_path) || raise("#{@stemcell_path} does not exist")
 
-      stemcell_path
+      @stemcell_path
     end
 
     private
