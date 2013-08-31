@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'pp'
-
+require 'shellwords'
 require 'deployer'
 
 module Bosh::Cli::Command
@@ -101,11 +101,14 @@ module Bosh::Cli::Command
     usage "micro ssh"
     desc "Open SSH terminal or run a command via SSH upon micro BOSH instance"
     def micro_ssh(*args)
-      username = "vcap"
+      err "No deployment set" unless deployment
+
       host = URI.parse(target).host
       target_name = config.target_name ? config.target_name.make_green : "not set".make_red
+
       say("Starting interactive shell on micro BOSH #{target_name} #{host}")
-      result = system Shellwords.shelljoin(["ssh", "#{username}@#{host}", args].flatten.compact)
+
+      result = system Shellwords.shelljoin(["ssh", "#{ssh_user}@#{host}", args].flatten.compact)
       exit result
     end
 
@@ -299,19 +302,27 @@ AGENT_HELP
 
     private
 
+    def manifest
+      @manifest ||= begin
+        unless File.exists?(deployment)
+          err("Cannot find deployment manifest in `#{deployment}'")
+        end
+
+        load_yaml_file(deployment)
+      end
+    end
+
+    def ssh_user
+      cloud = cloud_plugin(manifest)
+      cloud_properties = manifest["cloud"]["properties"][cloud]
+      cloud_properties["ssh_user"] || "vcap"
+    end
+
     def deployer(manifest_filename=nil)
       check_if_deployments_dir
       deployment_required unless manifest_filename
 
       if @deployer.nil?
-        manifest_filename ||= deployment
-
-        if !File.exists?(manifest_filename)
-          err("Cannot find deployment manifest in `#{manifest_filename}'")
-        end
-
-        manifest = load_yaml_file(manifest_filename)
-
         manifest["dir"] ||= work_dir
         manifest["logging"] ||= {}
         unless manifest["logging"]["file"]
