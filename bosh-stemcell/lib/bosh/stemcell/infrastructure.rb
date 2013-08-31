@@ -14,7 +14,11 @@ module Bosh::Stemcell
     end
 
     def self.all
-      Base.subclasses.map(&:new)
+      [
+        Infrastructure::Vsphere,
+        Infrastructure::Aws,
+        Infrastructure::OpenStack
+      ].map(&:new)
     end
 
     class Base
@@ -30,11 +34,6 @@ module Bosh::Stemcell
       def light?
         @supports_light_stemcell
       end
-
-      def self.subclasses
-        ObjectSpace.each_object(Class).select { |klass| klass < self }
-      end
-
     end
 
     class OpenStack < Base

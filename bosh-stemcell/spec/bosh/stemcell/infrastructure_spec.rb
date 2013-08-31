@@ -44,14 +44,9 @@ module Bosh::Stemcell
 
     describe '.all' do
       it 'returns all the infrastructure subclasses' do
-        expected_classes = [
-          Infrastructure::Vsphere,
-          Infrastructure::Aws,
-          Infrastructure::OpenStack
-        ].to_set
+        known_infrastructures = ObjectSpace.each_object(Class).select { |klass| klass < Infrastructure::Base }
 
-        classes = Infrastructure.all.map(&:class).to_set
-        expect(expected_classes).to eq(classes)
+        expect(Infrastructure.all.map(&:class)).to include(*known_infrastructures)
       end
     end
 
