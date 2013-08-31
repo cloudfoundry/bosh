@@ -83,7 +83,7 @@ module Bosh::Cli::Command
       stemcell_name = deployer_state(:stemcell_name)
       vm_cid = deployer_state(:vm_cid)
       disk_cid = deployer_state(:disk_cid)
-      deployment = config.deployment ? config.deployment.make_green : "not set".make_red
+      deployment = color_value(config.deployment)
 
       say("Stemcell CID".ljust(15) + stemcell_cid)
       say("Stemcell name".ljust(15) + stemcell_name)
@@ -94,7 +94,7 @@ module Bosh::Cli::Command
 
       update_target
 
-      target_name = target ? target.make_green : "not set".make_red
+      target_name = color_value(target)
       say("Target".ljust(15) + target_name)
     end
 
@@ -104,7 +104,7 @@ module Bosh::Cli::Command
       err "No deployment set" unless deployment
 
       host = URI.parse(target).host
-      target_name = config.target_name ? config.target_name.make_green : "not set".make_red
+      target_name = color_value(config.target_name)
 
       say("Starting interactive shell on micro BOSH #{target_name} #{host}")
 
@@ -351,6 +351,10 @@ AGENT_HELP
 
     def deployment_name
       File.basename(File.dirname(deployment))
+    end
+
+    def color_value(value, value_if_nil = "not set")
+      value ? value.make_green : value_if_nil.make_red
     end
 
     # set new target and clear out cached values
