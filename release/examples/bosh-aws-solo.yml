@@ -27,7 +27,6 @@ update:
   canary_watch_time: 3000-120000
   update_watch_time: 3000-120000
   max_in_flight: 4
-  max_errors: 1
 
 networks:
   - name: elastic
