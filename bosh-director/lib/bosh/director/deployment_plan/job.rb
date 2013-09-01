@@ -66,10 +66,6 @@ module Bosh::Director
       # @return [Hash<Integer, String>] Individual instance expected states
       attr_accessor :instance_states
 
-      # @return [Exception] Exception that requires job update process to be
-      #   interrupted
-      attr_accessor :halt_exception
-
       attr_accessor :all_properties
 
       # @param [Bosh::Director::DeploymentPlan::Planner]
@@ -94,9 +90,7 @@ module Bosh::Director
         @unneeded_instances = []
         @instance_states = {}
 
-        @error_mutex = Mutex.new
         @packages = {}
-        @halt = false
       end
 
       def self.is_legacy_spec?(job_spec)
@@ -188,17 +182,6 @@ module Bosh::Director
       def use_compiled_package(compiled_package_model)
         compiled_package = CompiledPackage.new(compiled_package_model)
         @packages[compiled_package.name] = compiled_package
-      end
-
-      def should_halt?
-        @halt
-      end
-
-      def record_update_error(error, options = {})
-        @error_mutex.synchronize do
-          @halt = true
-          @halt_exception = error
-        end
       end
 
       # Extracts only the properties needed by this job. This is decoupled from
