@@ -4,20 +4,9 @@ require 'tmpdir'
 require 'cloud'
 require 'cloud/warden'
 
-class WardenConfig
-  attr_accessor :logger, :uuid
-end
-
-config = WardenConfig.new
-config.logger = Logger.new('/dev/null')
-config.uuid = '1024'
-
-Bosh::Clouds::Config.configure(config)
-
 def asset(file)
   File.join(File.dirname(__FILE__), 'assets', file)
 end
-
 
 def mock_sh (cmd, su = false, times = 1, success = true)
   zero_exit_status = mock('Process::Status', exit_status: 0)
@@ -27,5 +16,5 @@ def mock_sh (cmd, su = false, times = 1, success = true)
 end
 
 RSpec.configure do |conf|
-
+  conf.before(:each) { Bosh::Clouds::Config.stub(:logger).and_return(double.as_null_object)  }
 end
