@@ -1,66 +1,37 @@
-COMPONENTS = %w(agent_client
-                blobstore_client
-                bosh-core
-                bosh-stemcell
-                bosh_agent
-                bosh_aws_cpi
-                bosh_cli
-                bosh_cli_plugin_aws
-                bosh_cli_plugin_micro
-                bosh_common
-                bosh_cpi
-                bosh_encryption
-                bosh_openstack_cpi
-                bosh_registry
-                bosh_vsphere_cpi
-                director
-                health_monitor
-                monit_api
-                package_compiler
-                ruby_vim_sdk
-                simple_blobstore_server)
+require 'bosh/dev/gem_components'
 
-COMPONENTS_WITH_DB = %w(director bosh_registry)
-
-def root
-  @root ||= File.expand_path('../../../../../../', __FILE__)
-end
-
-def version
-  File.read("#{root}/BOSH_VERSION").strip
-end
-
+COMPONENTS = Bosh::Dev::GemComponents.new
 COMPONENTS.each do |component|
   namespace component do
-    gem     = "pkg/gems/#{component}-#{version}.gem"
+    gem     = "pkg/gems/#{component}-#{COMPONENTS.version}.gem"
     gemspec = "#{component}.gemspec"
 
     task :update_version_rb do
-      glob = File.join(root, component, "lib", "**", "version.rb")
+      glob = File.join(COMPONENTS.root, component, "lib", "**", "version.rb")
 
       version_file_path = Dir[glob].first
       file_contents = File.read(version_file_path)
 
-      file_contents.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{version}'")
+      file_contents.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{COMPONENTS.version}'")
       read_version = $2.gsub(/\A['"]|['"]\Z/, '') # remove only leading and trailing single or double quote
 
-      File.open(version_file_path, 'w') { |f| f.write file_contents } unless read_version == version
+      File.open(version_file_path, 'w') { |f| f.write file_contents } unless read_version == COMPONENTS.version
     end
 
     task :pre_stage_latest => [:update_version_rb, :pkg] do
-      if component_needs_update(component, root, version)
-        sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/gems/"
+      if COMPONENTS.component_needs_update(component, COMPONENTS.root, COMPONENTS.version)
+        sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{COMPONENTS.version}.gem #{COMPONENTS.root}/pkg/gems/"
       else
-        sh "cp '#{last_released_component(component, root, version)}' #{root}/pkg/gems/"
+        sh "cp '#{COMPONENTS.last_released_component(component, COMPONENTS.root, COMPONENTS.version)}' #{COMPONENTS.root}/pkg/gems/"
       end
     end
 
     task :finalize_release_directory => 'all:stage_with_dependencies' do
-      dirname = "#{root}/release/src/bosh/#{component}"
+      dirname = "#{COMPONENTS.root}/release/src/bosh/#{component}"
 
       rm_rf dirname
       mkdir_p dirname
-      gemfile_lock_path = File.join(root, 'Gemfile.lock')
+      gemfile_lock_path = File.join(COMPONENTS.root, 'Gemfile.lock')
       lockfile = Bundler::LockfileParser.new(File.read(gemfile_lock_path))
       Dir.chdir dirname do
         Bundler::Resolver.resolve(
@@ -70,8 +41,8 @@ COMPONENTS.each do |component|
             lockfile.specs
         ).each do |spec|
           sh "cp /tmp/all_the_gems/#{Process.pid}/#{spec.name}-*.gem ."
-          sh "cp /tmp/all_the_gems/#{Process.pid}/pg*.gem ." if COMPONENTS_WITH_DB.include?(component)
-          sh "cp /tmp/all_the_gems/#{Process.pid}/mysql*.gem ." if COMPONENTS_WITH_DB.include?(component)
+          sh "cp /tmp/all_the_gems/#{Process.pid}/pg*.gem ." if COMPONENTS.has_db?(component)
+          sh "cp /tmp/all_the_gems/#{Process.pid}/mysql*.gem ." if COMPONENTS.has_db?(component)
         end
       end
     end
@@ -138,8 +109,8 @@ namespace :all do
 
   task :stage_with_dependencies => :pre_stage_latest do
     mkdir_p "/tmp/all_the_gems/#{Process.pid}"
-    sh "cp #{root}/pkg/gems/*.gem /tmp/all_the_gems/#{Process.pid}"
-    sh "cp #{root}/vendor/cache/*.gem /tmp/all_the_gems/#{Process.pid}"
+    sh "cp #{COMPONENTS.root}/pkg/gems/*.gem /tmp/all_the_gems/#{Process.pid}"
+    sh "cp #{COMPONENTS.root}/vendor/cache/*.gem /tmp/all_the_gems/#{Process.pid}"
   end
 
   task :ensure_clean_state do
@@ -155,7 +126,7 @@ namespace :all do
 
   task :commit do
     File.open('pkg/commit_message.txt', 'w') do |f|
-      f.puts "# Preparing for #{version} release\n"
+      f.puts "# Preparing for #{COMPONENTS.version} release\n"
       f.puts
       f.puts "# UNCOMMENT THE LINE ABOVE TO APPROVE THIS COMMIT"
     end
@@ -171,20 +142,4 @@ namespace :all do
 
   desc "Meta task to build all gems, commit a release message, create a git branch and push the gems to rubygems"
   task :release => %w(ensure_clean_state pre_stage_latest commit branch push)
-end
-
-def component_needs_update(component, root, version)
-  Dir.chdir File.join(root, component) do
-    gemspec_path = File.join(root, component, "#{component}.gemspec")
-    gemspec = Gem::Specification.load gemspec_path
-    files = gemspec.files + [gemspec_path]
-    last_code_change_time = files.map { |file| File::Stat.new(file).mtime }.max
-    gem_file_name = last_released_component(component, root, version)
-
-    !File.exists?(gem_file_name) || last_code_change_time > File::Stat.new(gem_file_name).mtime
-  end
-end
-
-def last_released_component(component, root, version)
-  File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
 end
