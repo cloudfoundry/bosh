@@ -15,7 +15,7 @@ module Bosh::Stemcell
     let(:stemcell_environment) do
       instance_double('Bosh::Stemcell::Environment',
                       sanitize: nil,
-                      build_path: root_dir,
+                      build_path: File.join(root_dir, 'build'),
                       work_path: File.join(root_dir, 'work'))
     end
 
@@ -41,7 +41,7 @@ module Bosh::Stemcell
       StageCollection.stub(:for).with('FAKE_SPEC_NAME').and_return(stage_collection)
 
       StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
-                                  build_path: File.join(root_dir, 'build'),
+                                  build_path: File.join(root_dir, 'build', 'build'),
                                   command_env: 'env ',
                                   settings_file: settings_file,
                                   work_path: File.join(root_dir, 'work')).and_return(stage_runner)
@@ -53,9 +53,7 @@ module Bosh::Stemcell
                                      operating_system: operating_system).and_return(stemcell_builder_options)
     end
 
-    let(:build_dir) { File.join(root_dir, 'build') }
-    let(:work_dir) { File.join(root_dir, 'work') }
-    let(:etc_dir) { File.join(build_dir, 'etc') }
+    let(:etc_dir) { File.join(File.join(root_dir, 'build', 'build'), 'etc') }
     let(:settings_file) { File.join(etc_dir, 'settings.bash') }
 
     let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
@@ -68,7 +66,7 @@ module Bosh::Stemcell
       before do
         Process.stub(pid: 99999)
 
-        FileUtils.stub(:cp_r).with([], build_dir, preserve: true, verbose: true) do
+        FileUtils.stub(:cp_r).with([], File.join(root_dir, 'build', 'build'), preserve: true, verbose: true) do
           FileUtils.mkdir_p(etc_dir)
           FileUtils.touch(settings_file)
         end
@@ -81,7 +79,7 @@ module Bosh::Stemcell
       end
 
       it 'returns the full path of the generated stemcell archive' do
-        expect(stemcell_builder_command.build).to eq(File.join(work_dir, 'work', 'fake-stemcell.tgz'))
+        expect(stemcell_builder_command.build).to eq(File.join(root_dir, 'work', 'work', 'fake-stemcell.tgz'))
       end
 
       it 'creates a base directory for stemcell creation' do
@@ -93,11 +91,14 @@ module Bosh::Stemcell
       it 'creates a build directory for stemcell creation' do
         expect {
           stemcell_builder_command.build
-        }.to change { Dir.exists?(build_dir) }.from(false).to(true)
+        }.to change { Dir.exists?(File.join(root_dir, 'build')) }.from(false).to(true)
       end
 
       it 'copies the stemcell_builder code into the build directory' do
-        FileUtils.should_receive(:cp_r).with([], build_dir, preserve: true, verbose: true) do
+        FileUtils.should_receive(:cp_r).with([],
+                                             File.join(root_dir, 'build', 'build'),
+                                             preserve: true,
+                                             verbose: true) do
           FileUtils.mkdir_p(etc_dir)
           FileUtils.touch(settings_file)
         end
@@ -108,7 +109,7 @@ module Bosh::Stemcell
       it 'creates a work directory for stemcell creation chroot' do
         expect {
           stemcell_builder_command.build
-        }.to change { Dir.exists?(work_dir) }.from(false).to(true)
+        }.to change { Dir.exists?(File.join(root_dir, 'work')) }.from(false).to(true)
       end
 
       it 'writes a settings file into the build directory' do
@@ -127,7 +128,7 @@ module Bosh::Stemcell
 
         it 'nothing is passed to sudo via "env"' do
           StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
-                                      build_path: File.join(root_dir, 'build'),
+                                      build_path: File.join(root_dir, 'build', 'build'),
                                       command_env: 'env ',
                                       settings_file: settings_file,
                                       work_path: File.join(root_dir, 'work')).and_return(stage_runner)
@@ -146,7 +147,7 @@ module Bosh::Stemcell
 
         it 'they are passed to sudo via "env"' do
           StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
-                                      build_path: File.join(root_dir, 'build'),
+                                      build_path: File.join(root_dir, 'build', 'build'),
                                       command_env: "env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy'",
                                       settings_file: settings_file,
                                       work_path: File.join(root_dir, 'work')).and_return(stage_runner)
