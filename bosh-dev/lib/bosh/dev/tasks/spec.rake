@@ -112,10 +112,10 @@ namespace :spec do
       desc 'Run OpenStack MicroBOSH deployment suite'
       task :micro, [:net_type] do |_, args|
         begin
-          Rake::Task['spec:system:openstack:deploy_micro'].execute(args.net_type)
-          Rake::Task['spec:system:openstack:bat'].execute
+          Rake::Task['spec:system:openstack:deploy_micro'].invoke(args.net_type)
+          Rake::Task['spec:system:openstack:bat'].invoke
         ensure
-          Rake::Task['spec:system:openstack:teardown_microbosh'].execute
+          Rake::Task['spec:system:openstack:teardown_microbosh'].invoke
         end
       end
 
@@ -165,7 +165,7 @@ namespace :spec do
         ENV['BAT_VCAP_PRIVATE_KEY'] = ENV['BOSH_OPENSTACK_PRIVATE_KEY']
         ENV['BAT_DNS_HOST'] = ENV['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
         ENV['BAT_FAST'] = 'true'
-        Rake::Task['bat'].execute
+        Rake::Task['bat'].invoke
       end
     end
 
