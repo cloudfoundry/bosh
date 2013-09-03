@@ -3,7 +3,6 @@ require 'bosh/dev/gem_components'
 COMPONENTS = Bosh::Dev::GemComponents.new
 COMPONENTS.each do |component|
   namespace component do
-    gem     = "pkg/gems/#{component}-#{COMPONENTS.version}.gem"
     gemspec = "#{component}.gemspec"
 
     task :update_version_rb do #yes
