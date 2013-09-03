@@ -110,16 +110,16 @@ namespace :spec do
 
     namespace :openstack do
       desc 'Run OpenStack MicroBOSH deployment suite'
-      task :micro, [:net_type] do |_, net_type|
+      task :micro, [:net_type] do |_, args|
         begin
-          Rake::Task['spec:system:openstack:deploy_micro'].execute(net_type)
+          Rake::Task['spec:system:openstack:deploy_micro'].execute(args.net_type)
           Rake::Task['spec:system:openstack:bat'].execute
         ensure
           Rake::Task['spec:system:openstack:teardown_microbosh'].execute
         end
       end
 
-      task :deploy_micro, [:net_type] do |t, net_type|
+      task :deploy_micro, [:net_type] do |_, args|
         require 'bosh/dev/openstack/micro_bosh_deployment_manifest'
         require 'bosh/dev/openstack/bat_deployment_manifest'
 
@@ -128,7 +128,7 @@ namespace :spec do
         chdir(bat_helper.artifacts_dir) do
           chdir(bat_helper.micro_bosh_deployment_dir) do
 
-            micro_deployment_manifest = Bosh::Dev::Openstack::MicroBoshDeploymentManifest.new(net_type)
+            micro_deployment_manifest = Bosh::Dev::Openstack::MicroBoshDeploymentManifest.new(args.net_type)
             micro_deployment_manifest.write
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
@@ -140,7 +140,7 @@ namespace :spec do
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
           st_version = stemcell_version(bat_helper.bosh_stemcell_path)
 
-          bat_deployment_manifest = Bosh::Dev::Openstack::BatDeploymentManifest.new(net_type, director_uuid, st_version)
+          bat_deployment_manifest = Bosh::Dev::Openstack::BatDeploymentManifest.new(args.net_type, director_uuid, st_version)
           bat_deployment_manifest.write
         end
       end
