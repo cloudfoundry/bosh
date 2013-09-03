@@ -20,7 +20,7 @@ module Bosh::Agent
 
         DiskUtil.umount_guard(store_path)
 
-        mount_store(@old_cid, "-o ro") #read-only
+        Bosh::Agent::Config.platform.mount_persistent_disk(@old_cid, '-o ro')
 
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
@@ -30,21 +30,11 @@ module Bosh::Agent
         DiskUtil.umount_guard(store_path)
         DiskUtil.umount_guard(store_migration_target)
 
-        mount_store(@new_cid)
+        Bosh::Agent::Config.platform.mount_persistent_disk(@new_cid)
       end
 
       def check_mountpoints
         Pathname.new(store_path).mountpoint? && Pathname.new(store_migration_target).mountpoint?
-      end
-
-      def mount_store(cid, options="")
-        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-        partition = "#{disk}1"
-        logger.info("Mounting: #{partition} #{store_path}")
-        `mount #{options} #{partition} #{store_path}`
-        unless $?.exitstatus == 0
-          raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path} (exit code #{$?.exitstatus})"
-        end
       end
 
     end
@@ -62,7 +52,7 @@ module Bosh::Agent
 
         cids.each_key do |cid|
           disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-          partition = "#{disk}1"
+          partition = Bosh::Agent::Config.platform.is_disk_blockdev?? "#{disk}1" : "#{disk}"
           disk_info << cid unless DiskUtil.mount_entry(partition).nil?
         end
         disk_info
@@ -82,8 +72,15 @@ module Bosh::Agent
         if Bosh::Agent::Config.configure
           update_settings
           logger.info("MountDisk: #{@cid} - #{settings['disks'].inspect}")
+          if Bosh::Agent::Config.platform.is_disk_blockdev?
+            partition = setup_disk
+          else
+            disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(@cid)
+            partition = "#{disk}"
+          end
 
-          setup_disk
+          mount_persistent_disk(partition)
+          {}
         end
       end
 
@@ -139,9 +136,7 @@ module Bosh::Agent
         else
           raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
         end
-
-        mount_persistent_disk(partition)
-        {}
+        partition
       end
 
       def mount_persistent_disk(partition)
@@ -159,10 +154,7 @@ module Bosh::Agent
         FileUtils.chmod(0700, mountpoint)
 
         logger.info("Mount #{partition} #{mountpoint}")
-        `mount #{partition} #{mountpoint}`
-        unless $?.exitstatus == 0
-          raise Bosh::Agent::MessageHandlerError, "Failed mount #{partition} on #{mountpoint} #{$?.exitstatus}"
-        end
+        Bosh::Agent::Config.platform.mount_partition(partition, mountpoint)
       end
 
       def self.long_running?; true; end
