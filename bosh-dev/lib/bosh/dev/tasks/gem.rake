@@ -6,15 +6,7 @@ COMPONENTS.each do |component|
     gemspec = "#{component}.gemspec"
 
     task :update_version_rb do #yes
-      glob = File.join(COMPONENTS.root, component, 'lib', '**', 'version.rb')
-
-      version_file_path = Dir[glob].first
-      file_contents = File.read(version_file_path)
-
-      file_contents.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{COMPONENTS.version}'")
-      read_version = $2.gsub(/\A['"]|['"]\Z/, '') # remove only leading and trailing single or double quote
-
-      File.open(version_file_path, 'w') { |f| f.write file_contents } unless read_version == COMPONENTS.version
+      COMPONENTS.update_version(component)
     end
 
     task :pre_stage_latest => [:update_version_rb, :pkg] do #yes
