@@ -20,8 +20,8 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage property management' do
       expect(run_bosh('get property foo')).to match /Property `foo' value is `bar'/
       expect(run_bosh('set property foo baz')).to match /Property `foo' set to `baz'/
       expect(run_bosh('unset property foo')).to match /Property `foo' has been unset/
-      expect(run_bosh('get property foo', nil, failure_expected: true)).to match /Error 110003: Property `foo' not found/
-      expect(run_bosh('unset property foo', nil, failure_expected: true)).to match /Error 110003: Property `foo' not found/
+      expect(run_bosh('get property foo', failure_expected: true)).to match /Error 110003: Property `foo' not found/
+      expect(run_bosh('unset property foo', failure_expected: true)).to match /Error 110003: Property `foo' not found/
 
       run_bosh('set property nats.user admin')
       run_bosh('set property nats.password pass')

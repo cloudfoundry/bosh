@@ -7,8 +7,5 @@ MethodLength:
 LineLength:
   Max: 240
 
-AvoidPerlisms:
-  Enabled: false
-
 AccessControl:
   Enabled: false

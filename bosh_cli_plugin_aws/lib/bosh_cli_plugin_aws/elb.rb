@@ -81,6 +81,10 @@ module Bosh::Aws
       end
     end
 
+    def find_by_name(name)
+      aws_elb.load_balancers.find { |lb| lb.name == name }
+    end
+
     private
 
     attr_reader :aws_provider

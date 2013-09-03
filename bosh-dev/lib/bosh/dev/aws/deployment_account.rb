@@ -1,0 +1,35 @@
+require 'bosh/core/shell'
+require 'bosh/dev/aws/deployments_repository'
+
+module Bosh::Dev
+  module Aws
+    class DeploymentAccount
+      def initialize(deployment_name)
+        @deployment_name = deployment_name
+        @shell = Bosh::Core::Shell.new
+        @deployments_repository = Aws::DeploymentsRepository.new(path_root: '/tmp')
+        deployments_repository.clone_or_update!
+      end
+
+      def manifest_path
+        @manifest_path ||= File.join(deployments_repository.path, deployment_name, 'deployments/bosh/bosh.yml')
+      end
+
+      def bosh_user
+        @bosh_user ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_USER").chomp
+      end
+
+      def bosh_password
+        @bosh_password ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_PASSWORD").chomp
+      end
+
+      private
+
+      attr_reader :deployment_name, :shell, :deployments_repository
+
+      def deployment_bosh_environment_path
+        File.join(deployments_repository.path, deployment_name, 'bosh_environment')
+      end
+    end
+  end
+end

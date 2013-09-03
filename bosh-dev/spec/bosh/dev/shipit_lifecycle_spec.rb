@@ -7,10 +7,10 @@ module Bosh::Dev
     let(:repo_path) { '/home/user/bosh' }
     let(:head_reference) { double('Rugged::Reference', name: 'refs/heads/this-branch') }
     let(:repository) { double('Rugged::Repository', head: head_reference) }
-    let(:shell) { double('Bosh::Dev::Shell') }
+    let(:shell) { double('Bosh::Core::Shell') }
 
     before do
-      Bosh::Dev::Shell.stub(:new).and_return(shell)
+      Bosh::Core::Shell.stub(:new).and_return(shell)
       Rugged::Repository.stub(:discover).with('.').and_return(repo_path)
       Rugged::Repository.stub(:new).with(repo_path).and_return(repository)
     end

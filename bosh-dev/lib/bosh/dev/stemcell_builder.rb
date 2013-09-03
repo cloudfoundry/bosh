@@ -1,70 +1,42 @@
 require 'bosh/dev/build'
-require 'bosh/dev/stemcell_environment'
-require 'bosh/dev/stemcell_rake_methods'
-require 'bosh/stemcell/archive_filename'
+require 'bosh/dev/gems_generator'
+require 'bosh/stemcell/builder_command'
 
 module Bosh::Dev
   class StemcellBuilder
-    attr_reader :directory, :work_path
-
-    def initialize(infrastructure_name, candidate = Bosh::Dev::Build.candidate)
-      @candidate = candidate
+    def initialize(build, infrastructure_name, operating_system_name)
+      @build = build
       @infrastructure_name = infrastructure_name
-
-      mnt = ENV.fetch('FAKE_MNT', '/mnt')
-      @directory = File.join(mnt, 'stemcells', "#{infrastructure_name}")
-      @work_path = File.join(directory, 'work')
-      @build_path = File.join(directory, 'build')
+      @operating_system_name = operating_system_name
     end
 
-    def build
-      ENV['BUILD_PATH'] = build_path
-      ENV['WORK_PATH'] = work_path
+    def build_stemcell
+      generate_gems
 
-      environment = StemcellEnvironment.new(self)
-      environment.sanitize
+      stemcell_path = run_stemcell_builder_command
 
-      build_task
+      File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
 
-      stemcell_path!
+      stemcell_path
     end
 
     private
 
-    attr_reader :candidate,
-                :infrastructure_name,
-                :build_path
+    attr_reader :build, :infrastructure_name, :operating_system_name
 
-    def new_style_path
-      File.join(work_path, 'work', new_style_name)
+    def generate_gems
+      gems_generator = GemsGenerator.new
+      gems_generator.build_gems_into_release_dir
     end
 
-    def new_style_name
-      infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
-      Bosh::Stemcell::ArchiveFilename.new(candidate.number, infrastructure, name, false).to_s
-    end
-
-    def name
-      'bosh-stemcell'
-    end
-
-    def build_task
-      bosh_release_path = candidate.download_release
-
-      stemcell_rake_methods = Bosh::Dev::StemcellRakeMethods.new(args: {
-        tarball: bosh_release_path,
-        infrastructure: infrastructure_name,
-        stemcell_version: candidate.number,
-        stemcell_tgz: new_style_name,
-      })
-
-      stemcell_rake_methods.build_stemcell
-    end
-
-    def stemcell_path!
-      File.exist?(new_style_path) || raise("#{new_style_path} does not exist")
-
-      new_style_path
+    def run_stemcell_builder_command
+      stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
+        infrastructure_name: infrastructure_name,
+        operating_system_name: operating_system_name,
+        version: build.number,
+        release_tarball_path: build.download_release,
+      )
+      stemcell_builder_command.build
     end
   end
 end

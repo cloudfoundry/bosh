@@ -137,12 +137,12 @@ module Bosh::Dev
 
     describe '#promote_artifacts' do
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
-      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', ami_id: 'ami-ID') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
 
       before do
         Rake::FileUtilsExt.stub(:sh)
         DownloadAdapter.stub(new: download_adapter)
-        Bosh::Stemcell::Stemcell.stub(new: stemcell)
+        Bosh::Stemcell::Archive.stub(new: stemcell)
       end
 
       it 'syncs the pipeline gems' do
@@ -168,18 +168,20 @@ module Bosh::Dev
 
       describe 'update light bosh ami pointer file' do
         let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
-        let(:fake_stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
+        let(:fake_stemcell) { instance_double('Bosh::Stemcell::Archive') }
         let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
+        let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu') }
         let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
         let(:bucket_files) { fog_storage.directories.get('bosh-jenkins-artifacts').files }
 
         before do
           Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
+          Bosh::Stemcell::OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
 
           Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
 
           fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
-          Bosh::Stemcell::Stemcell.stub(new: fake_stemcell)
+          Bosh::Stemcell::Archive.stub(new: fake_stemcell)
 
           stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
         end
@@ -193,9 +195,9 @@ module Bosh::Dev
 
         it 'initializes a Stemcell with the downloaded stemcell filename' do
           Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-            with('123', infrastructure, 'bosh-stemcell', true).and_return(archive_filename)
+            with('123', infrastructure, operating_system, 'bosh-stemcell', true).and_return(archive_filename)
 
-          Bosh::Stemcell::Stemcell.should_receive(:new).with(fake_stemcell_filename)
+          Bosh::Stemcell::Archive.should_receive(:new).with(fake_stemcell_filename)
 
           subject.promote_artifacts
         end
@@ -217,7 +219,7 @@ module Bosh::Dev
     end
 
     describe '#upload_stemcell' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
       let(:logger) { instance_double('Logger').as_null_object }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
 
@@ -229,7 +231,7 @@ module Bosh::Dev
 
       describe 'when publishing a full stemcell' do
         let(:stemcell_contents) { 'contents of the stemcells' }
-        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Archive', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a stemcell to an S3 bucket' do
           logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz')
@@ -252,7 +254,7 @@ module Bosh::Dev
 
       describe 'when publishing a light stemcell' do
         let(:stemcell_contents) { 'this file is a light stemcell' }
-        let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', light?: true, path: '/tmp/light-bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
+        let(:stemcell) { instance_double('Bosh::Stemcell::Archive', light?: true, path: '/tmp/light-bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a light stemcell to S3 bucket' do
           build.upload_stemcell(stemcell)

@@ -5,7 +5,6 @@ require 'yaml'
 require 'stemcell'
 require 'release'
 require 'deployment'
-require 'vm'
 require 'fileutils'
 
 require 'tempfile'

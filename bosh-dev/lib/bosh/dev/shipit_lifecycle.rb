@@ -1,11 +1,11 @@
 require 'rugged'
 
-require 'bosh/dev/shell'
+require 'bosh/core/shell'
 
 module Bosh::Dev
   class ShipitLifecycle
     def initialize
-      @shell = Bosh::Dev::Shell.new
+      @shell = Bosh::Core::Shell.new
     end
 
     def pull

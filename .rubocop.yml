@@ -44,5 +44,15 @@ CaseIndentation:
 DotPosition:
   Enabled: false
 
+MethodLength:
+  CountComments: false
+  Max: 20
+
 Blocks:
   Enabled: false # {} for multi-line blocks in RSpec expectations is very common
+
+TrivialAccessors:
+  Enabled: false # Bosh::Stemcell::Infrastructure#light? was a false positive
+
+AvoidPerlisms:
+  Enabled: false # Unfortunately $CHILD_STATUS isn't always the same as $?

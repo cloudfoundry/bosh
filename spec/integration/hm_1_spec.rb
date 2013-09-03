@@ -13,7 +13,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
     deployment_manifest = yaml_file('simple', deployment_hash)
 
     Dir.chdir(TEST_RELEASE_DIR) do
-      run_bosh("create release --with-tarball", Dir.pwd)
+      run_bosh("create release --with-tarball", work_dir: Dir.pwd)
     end
 
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
@@ -26,11 +26,16 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
   end
 
   it "HM can be queried for stats" do
-    varz_json = RestClient.get("http://admin:admin@localhost:#{current_sandbox.hm_port}/varz")
-    varz = Yajl::Parser.parse(varz_json)
+    varz = {}
+    20.times do
+      varz_json = RestClient.get("http://admin:admin@localhost:#{current_sandbox.hm_port}/varz")
+      varz = Yajl::Parser.parse(varz_json)
+      break if varz['deployments_count'] == 1
+      sleep(0.5)
+    end
 
-    varz["deployments_count"].should == 1
-    varz["agents_count"].should_not == 0
+    expect(varz['deployments_count']).to eq(1)
+    expect(varz['agents_count']).to_not eq(0)
   end
 
   describe "resurrector" do

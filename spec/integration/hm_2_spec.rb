@@ -15,7 +15,7 @@ describe 'Bosh::Spec::IntegrationTest::HealthMonitor 2' do
     deployment_manifest = yaml_file('simple', deployment_hash)
 
     Dir.chdir(TEST_RELEASE_DIR) do
-      run_bosh("create release --with-tarball", Dir.pwd)
+      run_bosh("create release --with-tarball", work_dir: Dir.pwd)
     end
 
     run_bosh("target http://localhost:#{current_sandbox.director_port}")

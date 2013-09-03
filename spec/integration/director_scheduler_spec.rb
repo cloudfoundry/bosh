@@ -7,9 +7,9 @@ describe Bosh::Spec::IntegrationTest::DirectorScheduler do
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')
 
-    run_bosh('reset release', TEST_RELEASE_DIR)
-    run_bosh('create release --force', TEST_RELEASE_DIR)
-    run_bosh('upload release', TEST_RELEASE_DIR)
+    run_bosh('reset release', work_dir: TEST_RELEASE_DIR)
+    run_bosh('create release --force', work_dir: TEST_RELEASE_DIR)
+    run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
 
     run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 

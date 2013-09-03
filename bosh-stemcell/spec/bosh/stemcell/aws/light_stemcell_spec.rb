@@ -1,12 +1,12 @@
 require 'spec_helper'
 require 'bosh/stemcell/aws/light_stemcell'
-require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/archive'
 
 module Bosh::Stemcell
   module Aws
     describe LightStemcell do
       let(:stemcell) do
-        Stemcell.new(spec_asset('fake-stemcell-aws.tgz'))
+        Archive.new(spec_asset('fake-stemcell-aws.tgz'))
       end
 
       subject(:light_stemcell) do
@@ -16,12 +16,16 @@ module Bosh::Stemcell
       its(:path) { should eq(spec_asset('light-fake-stemcell-aws.tgz')) }
 
       describe '#write_archive' do
+        let(:region) do
+          instance_double('Bosh::Stemcell::Aws::Region', name: 'fake-region')
+        end
+
         let(:ami) do
-          instance_double('Bosh::Stemcell::Ami', publish: 'fake-ami-id', region: 'fake-region')
+          instance_double('Bosh::Stemcell::Aws::Ami', publish: 'fake-ami-id')
         end
 
         let(:stemcell) do
-          Stemcell.new(spec_asset('fake-stemcell-aws.tgz'))
+          Archive.new(spec_asset('fake-stemcell-aws.tgz'))
         end
 
         subject(:light_stemcell) do
@@ -29,7 +33,8 @@ module Bosh::Stemcell
         end
 
         before do
-          Ami.stub(new: ami)
+          Region.stub(new: region)
+          Ami.stub(:new).with(stemcell, region).and_return(ami)
           Rake::FileUtilsExt.stub(:sh)
           FileUtils.stub(:touch)
         end

@@ -1,67 +1,71 @@
 require 'spec_helper'
-
 require 'bosh/dev/automated_deployer'
 
 module Bosh::Dev
   describe AutomatedDeployer do
-    let(:micro_target) { 'micro.target.example.com' }
-    let(:bosh_target) { 'bosh.target.example.com' }
-    let(:username) { 'user' }
-    let(:password) { 'password' }
+    let(:micro_target) { 'https://micro.target.example.com:25555' }
+    let(:bosh_target) { 'https://bosh.target.example.com:25555' }
 
     let(:environment) { 'test_env' }
     let(:stemcell_path) { '/tmp/stemcell.tgz' }
     let(:release_path) { '/tmp/release.tgz' }
-    let(:repository_path) { '/tmp/repo/' }
+    let(:repository_path) { '/tmp/repo' }
 
-    let(:cli) { instance_double('Bosh::Dev::BoshCliSession').as_null_object }
-    let(:deployments_repository) { instance_double('Bosh::Dev::Aws::DeploymentsRepository', path: repository_path, clone_or_update!: nil) }
+    let(:deployment_account) do
+      instance_double('Bosh::Dev::Aws::DeploymentAccount',
+                      manifest_path: '/path/to/manifest.yml',
+                      bosh_user: 'fake-username',
+                      bosh_password: 'fake-password')
+    end
+
     let(:build_number) { '123' }
     let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
-    let(:shell) { instance_double('Shell') }
+    let(:micro_director_client) do
+      instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
+    end
+
+    let(:bosh_director_client) do
+      instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
+    end
 
     subject(:deployer) do
-      AutomatedDeployer.new(micro_target: micro_target,
-                            bosh_target: bosh_target,
-                            build_number: build_number,
-                            environment: environment,
-                            shell: shell,
-                            deployments_repository: deployments_repository,
-                            artifacts_downloader: artifacts_downloader,
-                            cli: cli)
+      AutomatedDeployer.new(
+        micro_target: micro_target,
+        bosh_target: bosh_target,
+        build_number: build_number,
+        environment: environment,
+        artifacts_downloader: artifacts_downloader,
+      )
+    end
+
+    before do
+      Bosh::Dev::Aws::DeploymentAccount.stub(:new).with(environment).and_return(deployment_account)
+      Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+      Bosh::Dev::DirectorClient.stub(:new).with(uri: micro_target,
+                                                username: 'fake-username',
+                                                password: 'fake-password').and_return(micro_director_client)
+      Bosh::Dev::DirectorClient.stub(:new).with(uri: bosh_target,
+                                                username: 'fake-username',
+                                                password: 'fake-password').and_return(bosh_director_client)
     end
 
     describe '#deploy' do
+      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
+
       before do
         artifacts_downloader.stub(:download_release).with(build_number).and_return(release_path)
         artifacts_downloader.stub(:download_stemcell).with(build_number).and_return(stemcell_path)
 
-        shell.stub(:run).with('. /tmp/repo/test_env/bosh_environment && echo $BOSH_USER').and_return("#{username}\n")
-        shell.stub(:run).with('. /tmp/repo/test_env/bosh_environment && echo $BOSH_PASSWORD').and_return("#{password}\n")
-      end
-
-      def bosh_should_be_called_with(*args)
-        cli.should_receive(:run_bosh).with(*args).ordered
+        Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
       end
 
       it 'follows the normal deploy procedure' do
-        bosh_should_be_called_with 'target micro.target.example.com'
-        bosh_should_be_called_with 'login user password'
-        bosh_should_be_called_with 'deployment /tmp/repo/test_env/deployments/bosh/bosh.yml'
-        bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', ignore_failures: true
-        bosh_should_be_called_with 'upload release /tmp/release.tgz', ignore_failures: true
-        bosh_should_be_called_with 'deploy', debug_on_fail: true
-
-        bosh_should_be_called_with 'target bosh.target.example.com'
-        bosh_should_be_called_with 'login user password'
-        bosh_should_be_called_with 'upload stemcell /tmp/stemcell.tgz', debug_on_fail: true
-
-        deployer.deploy
-      end
-
-      it 'clones a deployment repository' do
-        deployments_repository.should_receive(:clone_or_update!)
+        Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+        micro_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
+        micro_director_client.should_receive(:upload_release).with('/tmp/release.tgz')
+        micro_director_client.should_receive(:deploy).with('/path/to/manifest.yml')
+        bosh_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
 
         deployer.deploy
       end

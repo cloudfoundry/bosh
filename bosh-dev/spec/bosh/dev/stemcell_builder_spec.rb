@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
+
 require 'bosh/dev/stemcell_builder'
 
 module Bosh::Dev
@@ -7,66 +8,64 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:build_number) { '869' }
-    let(:infrastructure) { 'vsphere' }
+    let(:infrastructure_name) { 'vsphere' }
+    let(:operating_system_name) { 'ubuntu' }
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
-    let(:environment) { instance_double('Bosh::Dev::StemcellEnvironment', sanitize: nil) }
-    let(:stemcell_rake_methods) { instance_double('Bosh::Dev::StemcellRakeMethods', build_stemcell: nil) }
+    let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
+
+    let(:stemcell_builder_command) { instance_double('Bosh::Dev::BuildFromSpec', build: nil) }
+
+    let(:fake_work_path) { '/fake/work/path' }
+    let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
 
     subject(:builder) do
-      StemcellBuilder.new(infrastructure, build)
+      StemcellBuilder.new(build, infrastructure_name, operating_system_name)
     end
 
-    before do
-      StemcellEnvironment.stub(:new).with(builder).and_return(environment)
-    end
-
-    describe '#build' do
+    describe '#build_stemcell' do
       before do
-        StemcellRakeMethods.stub(:new).with(args: {
-          tarball: 'fake release path',
-          infrastructure: 'vsphere',
-          stemcell_version: build_number,
-          stemcell_tgz: 'bosh-stemcell-869-vsphere-esxi-ubuntu.tgz',
-        }).and_return(stemcell_rake_methods)
+        GemsGenerator.stub(:new).and_return(gems_generator)
 
-        stemcell_rake_methods.stub(:build_stemcell) do
-          FileUtils.mkdir_p('/mnt/stemcells/vsphere/work/work')
-          FileUtils.touch('/mnt/stemcells/vsphere/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+        Bosh::Stemcell::BuilderCommand.stub(:new).with(
+          infrastructure_name: infrastructure_name,
+          operating_system_name: operating_system_name,
+          release_tarball_path: build.download_release,
+          version: build_number,
+        ).and_return(stemcell_builder_command)
+
+        stemcell_builder_command.stub(:build) do
+          FileUtils.mkdir_p(fake_work_path)
+          FileUtils.touch(stemcell_file_path)
+          stemcell_file_path
         end
       end
 
-      it 'sanitizes the stemcell environment' do
-        environment.should_receive(:sanitize)
-        builder.build
-      end
+      it 'generates the bosh gems' do
+        gems_generator.should_receive(:build_gems_into_release_dir)
 
-      it 'sets BUILD_PATH, WORK_PATH as expected' do
-        ENV.should_receive(:[]=).with('BUILD_PATH', '/mnt/stemcells/vsphere/build')
-        ENV.should_receive(:[]=).with('WORK_PATH', '/mnt/stemcells/vsphere/work')
-
-        builder.build
+        builder.build_stemcell
       end
 
       it 'creates a basic stemcell and returns its absolute path' do
-        expect(builder.build).to eq('/mnt/stemcells/vsphere/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz')
+        expect(builder.build_stemcell).to eq('/fake/work/path/FAKE-stemcell.tgz')
       end
 
       it 'creates a basic stemcell' do
         expect {
-          builder.build
-        }.to change { File.exist?('/mnt/stemcells/vsphere/work/work/bosh-stemcell-869-vsphere-esxi-ubuntu.tgz') }.to(true)
+          builder.build_stemcell
+        }.to change { File.exist?('/fake/work/path/FAKE-stemcell.tgz') }.to(true)
       end
 
       context 'when the stemcell is not created' do
         before do
-          stemcell_rake_methods.stub(:build_stemcell)
+          stemcell_builder_command.stub(build: stemcell_file_path)
         end
 
         it 'fails early and loud' do
           expect {
-            builder.build
-          }.to raise_error(/\/bosh-stemcell-869-vsphere-esxi-ubuntu\.tgz does not exist/)
+            builder.build_stemcell
+          }.to raise_error("#{stemcell_file_path} does not exist")
         end
       end
     end

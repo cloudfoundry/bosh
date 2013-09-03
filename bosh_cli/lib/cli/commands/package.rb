@@ -22,12 +22,12 @@ module Bosh::Cli::Command
       FileUtils.mkdir_p(package_dir)
 
       generate_file(package_dir, "packaging") do
-        "# abort script on any command that exit " +
+        "# abort script on any command that exits " +
         "with a non zero value\nset -e\n"
       end
 
       generate_file(package_dir, "pre_packaging") do
-        "# abort script on any command that exit " +
+        "# abort script on any command that exits " +
         "with a non zero value\nset -e\n"
       end
 

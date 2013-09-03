@@ -28,12 +28,6 @@ describe 'with release, stemcell and deployment' do
     end
   end
 
-  xit 'should return vms in a deployment' do
-    bat_vms = vms(deployment.name)
-    bat_vms.size.should eq(1)
-    bat_vms.first.name.should eq('batlight/0')
-  end
-
   context 'dns' do
 
     before(:all) do
@@ -64,10 +58,6 @@ describe 'with release, stemcell and deployment' do
   end
 
   context 'job' do
-    it 'should restart a job' do
-      bosh('restart batlight 0').should succeed_with /batlight\/0 has been restarted/
-    end
-
     it 'should recreate a job' do
       bosh('recreate batlight 0').should succeed_with /batlight\/0 has been recreated/
     end
@@ -199,16 +189,6 @@ describe 'with release, stemcell and deployment' do
           results.should succeed_with(/Deleted `#{previous_release.name}/)
           releases.should_not include(previous_release)
         end
-      end
-    end
-  end
-
-  context 'stemcell' do
-
-    it 'should not delete a stemcell in use' do
-      expect { bosh("delete stemcell #{stemcell.name} #{stemcell.version}") }.to raise_error do |error|
-        error.should be_a Bosh::Exec::Error
-        error.output.should match /Error 50004/
       end
     end
   end

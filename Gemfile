@@ -9,6 +9,7 @@ gemspec path: 'blobstore_client'
 gemspec path: 'bosh_agent'
 gemspec path: 'bosh_aws_cpi'
 gemspec path: 'bosh_common'
+gemspec path: 'bosh-core'
 gemspec path: 'bosh_cpi'
 gemspec path: 'bosh_cli'
 gemspec path: 'bosh_cli_plugin_aws'
@@ -37,6 +38,7 @@ end
 group :development do
   gem 'ruby_gntp'
   gem 'debugger' if RUBY_VERSION < '2.0.0'
+  gem 'git-duet', require: false
 end
 
 group :bat do

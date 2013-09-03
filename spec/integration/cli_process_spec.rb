@@ -61,7 +61,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage deployment process' do
 
       Dir.chdir(TEST_RELEASE_DIR) do
         FileUtils.rm_rf('dev_releases')
-        run_bosh('create release --with-tarball', Dir.pwd)
+        run_bosh('create release --with-tarball', work_dir: Dir.pwd)
       end
 
       deployment_manifest = yaml_file(

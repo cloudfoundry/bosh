@@ -1,12 +1,12 @@
 require 'fileutils'
 require 'bosh/dev/aws'
-require 'bosh/dev/shell'
+require 'bosh/core/shell'
 
 module Bosh::Dev::Aws
   class DeploymentsRepository
     def initialize(options = {})
       @env = ENV.to_hash
-      @shell = Bosh::Dev::Shell.new
+      @shell = Bosh::Core::Shell.new
 
       @path_root = options.fetch(:path_root) { env.fetch('FAKE_MNT', '/mnt') }
     end

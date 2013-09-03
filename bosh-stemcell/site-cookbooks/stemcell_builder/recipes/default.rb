@@ -16,3 +16,6 @@ package 'libpq-dev'
 package 'libsqlite3-dev'
 package 'libxml2-dev'
 package 'libxslt-dev'
+
+# vSphere requirements
+package 'open-vm-dkms'

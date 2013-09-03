@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_publisher'
-require 'bosh/dev/stemcell_environment'
 
 module Bosh::Dev
   describe StemcellPublisher do
@@ -12,7 +11,7 @@ module Bosh::Dev
 
     describe '#publish' do
       let(:stemcell) do
-        instance_double('Bosh::Stemcell::Stemcell', infrastructure: 'aws')
+        instance_double('Bosh::Stemcell::Archive', infrastructure: 'aws')
       end
 
       let(:light_stemcell) do
@@ -20,7 +19,7 @@ module Bosh::Dev
       end
 
       let(:light_stemcell_stemcell) do
-        instance_double('Bosh::Stemcell::Stemcell')
+        instance_double('Bosh::Stemcell::Archive')
       end
 
       let(:candidate_build) { instance_double('Bosh::Dev::Build', upload_stemcell: nil) }
@@ -28,9 +27,9 @@ module Bosh::Dev
       let(:stemcell_path) { '/path/to/fake-stemcell.tgz' }
 
       before do
-        Bosh::Stemcell::Stemcell.stub(:new).with(stemcell_path).and_return(stemcell)
+        Bosh::Stemcell::Archive.stub(:new).with(stemcell_path).and_return(stemcell)
         Bosh::Stemcell::Aws::LightStemcell.stub(:new).with(stemcell).and_return(light_stemcell)
-        Bosh::Stemcell::Stemcell.stub(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell)
+        Bosh::Stemcell::Archive.stub(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell)
 
         Build.stub(candidate: candidate_build)
       end

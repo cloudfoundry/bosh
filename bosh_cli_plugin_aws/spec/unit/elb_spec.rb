@@ -225,6 +225,26 @@ describe Bosh::Aws::ELB do
     end
   end
 
+  describe 'find_by_name' do
+    let(:fake_elb_instance) { double(AWS::ELB::LoadBalancer, name: 'foo') }
+
+    before do
+      elb.stub(:aws_elb).and_return(fake_aws_elb)
+    end
+
+    it 'returns an elb of the given name' do
+      fake_aws_elb.should_receive(:load_balancers).and_return([fake_elb_instance])
+
+      expect(elb.find_by_name('foo')).to eq fake_elb_instance
+    end
+
+    it "returns nil if elb isn't found for given name" do
+      fake_aws_elb.should_receive(:load_balancers).and_return([fake_elb_instance])
+
+      expect(elb.find_by_name('bar')).to be_nil
+    end
+  end
+
   describe 'server certificate names' do
     before do
       elb.stub(:aws_iam).and_return(fake_aws_iam)
