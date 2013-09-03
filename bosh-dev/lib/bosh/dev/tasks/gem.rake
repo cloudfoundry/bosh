@@ -7,7 +7,7 @@ COMPONENTS.each do |component|
     gemspec = "#{component}.gemspec"
 
     task :update_version_rb do #yes
-      glob = File.join(COMPONENTS.root, component, "lib", "**", "version.rb")
+      glob = File.join(COMPONENTS.root, component, 'lib', '**', 'version.rb')
 
       version_file_path = Dir[glob].first
       file_contents = File.read(version_file_path)
@@ -50,14 +50,14 @@ COMPONENTS.each do |component|
 end
 
 namespace :all do
-  desc "Prepare latest gem versions for staging"
+  desc 'Prepare latest gem versions for staging'
   task :pre_stage_latest do # yes
-    rm_rf "pkg"
-    mkdir_p "pkg/gems"
+    rm_rf 'pkg'
+    mkdir_p 'pkg/gems'
     COMPONENTS.map { |f| Rake::Task["#{f}:pre_stage_latest"].invoke  }
   end
 
-  desc "Copy all staged gems into appropriate release subdirectories"
+  desc 'Copy all staged gems into appropriate release subdirectories'
   task :finalize_release_directory => COMPONENTS.map { |f| "#{f}:finalize_release_directory" } do # yes
     rm_rf "/tmp/all_the_gems/#{Process.pid}"
   end
