@@ -18,8 +18,8 @@ then
 fi
 
 function pkg_mgr {
-  centos_file=/etc/centos-release
-  ubuntu_file=/etc/debian_version
+  centos_file=$chroot/etc/centos-release
+  ubuntu_file=$chroot/etc/debian_version
 
   if [ -f $ubuntu_file ]
   then
