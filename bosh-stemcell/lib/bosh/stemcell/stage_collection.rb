@@ -51,7 +51,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
-        :image_install_grub,
+        :image_install_grub2,
         :image_aws_update_grub,
         :image_aws_prepare_stemcell,
         # Final stemcell
@@ -96,7 +96,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
-        :image_install_grub,
+        :image_install_grub2,
         :image_openstack_qcow2,
         :image_openstack_prepare_stemcell,
         # Final stemcell
@@ -138,7 +138,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
-        :image_install_grub,
+        :image_install_grub2,
         :image_vsphere_vmx,
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
@@ -181,7 +181,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
-        :image_install_grub,
+        :image_install_grub2,
         :image_vsphere_vmx,
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
