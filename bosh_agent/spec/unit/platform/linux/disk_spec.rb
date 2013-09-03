@@ -51,7 +51,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
       File.should_receive(:blockdev?).with('/dev/sdy1').and_return(true)
       disk_wrapper.stub(:mount_exists?).and_return false
-      disk_wrapper.should_receive(:sh).with("mount /dev/sdy1 #{store_path}")
+      disk_wrapper.should_receive(:sh).with("mount  /dev/sdy1 #{store_path}")
 
       disk_wrapper.mount_persistent_disk(2)
     end
@@ -60,7 +60,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       Dir.should_receive(:glob).twice.with(dev_path, 0).and_return(['/dev/sdy'])
       File.should_receive(:blockdev?).twice.with('/dev/sdy1').and_return(true)
       disk_wrapper.should_receive(:mount_exists?).and_return false
-      disk_wrapper.should_receive(:sh).with("mount /dev/sdy1 #{store_path}")
+      disk_wrapper.should_receive(:sh).with("mount  /dev/sdy1 #{store_path}")
 
       disk_wrapper.mount_persistent_disk(2)
 
