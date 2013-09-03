@@ -4,8 +4,19 @@ require 'bosh/stemcell/builder_command'
 
 module Bosh::Stemcell
   describe BuilderCommand do
-    let(:root_dir) { File.join('/mnt/stemcells', infrastructure.name) }
+    let(:root_dir) do
+      File.join('/mnt/stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
+    end
+
     let(:environment_hash) { {} }
+
+    let(:infrastructure) do
+      instance_double('Bosh::Stemcell::Infrastructure::Vsphere',
+                      name: 'vsphere',
+                      hypervisor: 'esxi')
+    end
+
+    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Stemcell::BuilderOptions',
@@ -13,12 +24,11 @@ module Bosh::Stemcell
                       spec_name: 'FAKE_SPEC_NAME')
     end
 
-    let(:version) { '007' }
-    let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
-    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Vsphere', name: 'vsphere') }
-    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
     let(:stage_collection) { instance_double('Bosh::Stemcell::StageCollection::Base', stages: 'FAKE_STAGES') }
     let(:stage_runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
+
+    let(:version) { '007' }
+    let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
 
     subject(:stemcell_builder_command) do
       BuilderCommand.new(infrastructure_name: infrastructure.name,
@@ -46,7 +56,7 @@ module Bosh::Stemcell
                                      operating_system: operating_system).and_return(stemcell_builder_options)
     end
 
-    let(:etc_dir) { File.join(File.join(root_dir, 'build', 'build'), 'etc') }
+    let(:etc_dir) { File.join(root_dir, 'build', 'build', 'etc') }
     let(:settings_file) { File.join(etc_dir, 'settings.bash') }
 
     let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }

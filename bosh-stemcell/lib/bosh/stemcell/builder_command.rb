@@ -11,7 +11,7 @@ module Bosh::Stemcell
   class BuilderCommand
     def initialize(options)
       @infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
-      operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
+      @operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
 
       @stemcell_builder_options = BuilderOptions.new(tarball: options.fetch(:release_tarball_path),
                                                      stemcell_version: options.fetch(:version),
@@ -54,6 +54,7 @@ module Bosh::Stemcell
     attr_reader :shell,
                 :environment,
                 :infrastructure,
+                :operating_system,
                 :stemcell_builder_options
 
     def sanitize
@@ -69,7 +70,7 @@ module Bosh::Stemcell
     end
 
     def base_directory
-      File.join('/mnt', 'stemcells', infrastructure.name)
+      File.join('/mnt', 'stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
     end
 
     def build_root
