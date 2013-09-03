@@ -14,7 +14,7 @@ module Bosh::Stemcell
     end
     let(:stemcell_environment) do
       instance_double('Bosh::Stemcell::Environment',
-                      sanitize: nil,
+                      directory: root_dir,
                       build_path: File.join(root_dir, 'build'),
                       work_path: File.join(root_dir, 'work'))
     end
@@ -66,16 +66,38 @@ module Bosh::Stemcell
       before do
         Process.stub(pid: 99999)
 
+        stemcell_builder_command.stub(:system)
+        FileUtils.touch('leftover.tgz')
+
         FileUtils.stub(:cp_r).with([], File.join(root_dir, 'build', 'build'), preserve: true, verbose: true) do
           FileUtils.mkdir_p(etc_dir)
           FileUtils.touch(settings_file)
         end
       end
 
-      it 'sanitizes the stemcell environment' do
-        stemcell_environment.should_receive(:sanitize)
+      describe 'sanitizing the environment' do
+        it 'removes any tgz files from current working directory' do
+          expect {
+            stemcell_builder_command.build
+          }.to change { Dir.glob('*.tgz').size }.to(0)
+        end
 
-        stemcell_builder_command.build
+        it 'unmounts work/work/mnt/tmp/grub/root.img' do
+          unmount_img_command = "sudo umount #{File.join(root_dir, 'work/work/mnt/tmp/grub/root.img')} 2> /dev/null"
+          stemcell_builder_command.should_receive(:system).with(unmount_img_command)
+          stemcell_builder_command.build
+        end
+
+        it 'unmounts work/work/mnt directory' do
+          unmount_dir_command = "sudo umount #{File.join(root_dir, 'work/work/mnt')} 2> /dev/null"
+          stemcell_builder_command.should_receive(:system).with(unmount_dir_command)
+          stemcell_builder_command.build
+        end
+
+        it 'removes stemcell root directory' do
+          stemcell_builder_command.should_receive(:system).with("sudo rm -rf #{stemcell_environment.directory}")
+          stemcell_builder_command.build
+        end
       end
 
       it 'returns the full path of the generated stemcell archive' do

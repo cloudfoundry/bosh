@@ -24,7 +24,7 @@ module Bosh::Stemcell
     end
 
     def build
-      stemcell_environment.sanitize
+      sanitize
 
       prepare_build_root
 
@@ -57,6 +57,14 @@ module Bosh::Stemcell
                 :environment,
                 :stemcell_environment,
                 :stemcell_builder_options
+
+    def sanitize
+      FileUtils.rm_rf('*.tgz')
+
+      system("sudo umount #{File.join(work_path, 'mnt/tmp/grub/root.img')} 2> /dev/null")
+      system("sudo umount #{File.join(work_path, 'mnt')} 2> /dev/null")
+      system("sudo rm -rf #{stemcell_environment.directory}")
+    end
 
     def settings
       stemcell_builder_options.default
