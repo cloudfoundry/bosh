@@ -4,19 +4,13 @@ require 'bosh/stemcell/builder_command'
 
 module Bosh::Stemcell
   describe BuilderCommand do
-    let(:root_dir) { '/mnt/root' }
+    let(:root_dir) { File.join('/mnt/stemcells', infrastructure.name) }
     let(:environment_hash) { {} }
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Stemcell::BuilderOptions',
                       default: options,
                       spec_name: 'FAKE_SPEC_NAME')
-    end
-    let(:stemcell_environment) do
-      instance_double('Bosh::Stemcell::Environment',
-                      directory: root_dir,
-                      build_path: File.join(root_dir, 'build'),
-                      work_path: File.join(root_dir, 'work'))
     end
 
     let(:version) { '007' }
@@ -46,7 +40,6 @@ module Bosh::Stemcell
                                   settings_file: settings_file,
                                   work_path: File.join(root_dir, 'work')).and_return(stage_runner)
 
-      Environment.stub(:new).with(infrastructure_name: infrastructure.name).and_return(stemcell_environment)
       BuilderOptions.stub(:new).with(tarball: release_tarball_path,
                                      stemcell_version: version,
                                      infrastructure: infrastructure,
@@ -95,7 +88,7 @@ module Bosh::Stemcell
         end
 
         it 'removes stemcell root directory' do
-          stemcell_builder_command.should_receive(:system).with("sudo rm -rf #{stemcell_environment.directory}")
+          stemcell_builder_command.should_receive(:system).with("sudo rm -rf #{root_dir}")
           stemcell_builder_command.build
         end
       end

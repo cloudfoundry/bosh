@@ -1,7 +1,6 @@
 require 'fileutils'
 
 require 'bosh/core/shell'
-require 'bosh/stemcell/environment'
 require 'bosh/stemcell/builder_options'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
@@ -11,10 +10,9 @@ require 'bosh/stemcell/stage_runner'
 module Bosh::Stemcell
   class BuilderCommand
     def initialize(options)
-      infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
+      @infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
       operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
 
-      @stemcell_environment = Environment.new(infrastructure_name: infrastructure.name)
       @stemcell_builder_options = BuilderOptions.new(tarball: options.fetch(:release_tarball_path),
                                                      stemcell_version: options.fetch(:version),
                                                      infrastructure: infrastructure,
@@ -55,7 +53,7 @@ module Bosh::Stemcell
 
     attr_reader :shell,
                 :environment,
-                :stemcell_environment,
+                :infrastructure,
                 :stemcell_builder_options
 
     def sanitize
@@ -63,19 +61,23 @@ module Bosh::Stemcell
 
       system("sudo umount #{File.join(work_path, 'mnt/tmp/grub/root.img')} 2> /dev/null")
       system("sudo umount #{File.join(work_path, 'mnt')} 2> /dev/null")
-      system("sudo rm -rf #{stemcell_environment.directory}")
+      system("sudo rm -rf #{base_directory}")
     end
 
     def settings
       stemcell_builder_options.default
     end
 
+    def base_directory
+      File.join('/mnt', 'stemcells', infrastructure.name)
+    end
+
     def build_root
-      stemcell_environment.build_path
+      File.join(base_directory, 'build')
     end
 
     def work_root
-      stemcell_environment.work_path
+      File.join(base_directory, 'work')
     end
 
     def prepare_build_root
