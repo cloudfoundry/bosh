@@ -60,14 +60,19 @@ module Bosh::Dev
     end
 
     def component_needs_update(component, root, version)
-      Dir.chdir(File.join(root, component)) do
-        gemspec_path = File.join(root, component, "#{component}.gemspec")
-        gemspec = Gem::Specification.load(gemspec_path)
-        files = gemspec.files + [gemspec_path]
-        last_code_change_time = files.map { |file| File::Stat.new(file).mtime }.max
-        gem_file_name = last_released_component(component, root, version)
+      gem_path = File.join(root, 'release', 'src', 'bosh', component, "#{component}-#{version}.gem")
 
-        !File.exists?(gem_file_name) || last_code_change_time > File::Stat.new(gem_file_name).mtime
+      return true unless File.exists?(gem_path)
+
+      gem_src_dir = File.join(root, component)
+      gemspec_path = File.join(gem_src_dir, "#{component}.gemspec")
+
+      Dir.chdir(gem_src_dir) do
+        gemspec = Gem::Specification.load(gemspec_path)
+        files = gemspec.files + [ gemspec_path ]
+
+        last_code_change_time = files.map { |file| File::Stat.new(file).mtime }.max
+        last_code_change_time > File::Stat.new(gem_path).mtime
       end
     end
     alias_method :component_needing_update?, :component_needs_update
