@@ -131,8 +131,6 @@ module Bosh::Dev
       end
     end
 
-    its(:gems_dir_url) { should eq('https://s3.amazonaws.com/bosh-ci-pipeline/123/gems/') }
-
     describe '#promote_artifacts' do
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
       let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
