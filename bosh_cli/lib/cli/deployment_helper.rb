@@ -243,19 +243,27 @@ module Bosh::Cli
     end
 
     def prompt_for_job_and_index
-      jobs = prepare_deployment_manifest.fetch('jobs')
+      jobs_list = jobs_and_indexes
 
-      return [jobs.first.fetch('name'), 0] if single_job_index_option?(jobs)
+      return jobs_list.first if jobs_list.size == 1
 
       choose do |menu|
         menu.prompt = 'Choose an instance: '
-        jobs.each do |job|
-          job_name = job.fetch('name')
-
-          0.upto(job.fetch('instances').to_i) do |index|
-            menu.choice("#{job_name}/#{index}") { [job_name, index] }
-          end
+        jobs_list.each do |job_name, index|
+          menu.choice("#{job_name}/#{index}") { [job_name, index] }
         end
+      end
+    end
+
+    def jobs_and_indexes
+      jobs = prepare_deployment_manifest.fetch('jobs')
+  
+      jobs.inject([]) do |jobs_and_indexes, job|
+        job_name = job.fetch('name')
+        0.upto(job.fetch('instances').to_i - 1) do |index|
+          jobs_and_indexes << [job_name, index]
+        end
+        jobs_and_indexes
       end
     end
 
@@ -264,10 +272,6 @@ module Bosh::Cli
     end
 
     private
-
-    def single_job_index_option?(jobs)
-      jobs.size == 1 && jobs.first.fetch('instances') == 1
-    end
 
     def find_job(job_name)
       jobs = prepare_deployment_manifest.fetch('jobs')

@@ -99,11 +99,13 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should implicitly chooses the only instance if job index not provided' do
+          command.should_not_receive(:choose)
           command.should_receive(:setup_interactive_shell).with('dea', 0)
           command.shell('dea')
         end
 
         it 'should implicitly chooses the only instance if job name not provided' do
+          command.should_not_receive(:choose)
           command.should_receive(:setup_interactive_shell).with('dea', 0)
           command.shell
         end

@@ -320,4 +320,30 @@ describe Bosh::Cli::DeploymentHelper do
       end
     end
   end
+
+  describe 'jobs_and_indexes' do
+    let(:manifest) do
+      {
+          'name' => 'mycloud',
+          'jobs' => [
+              {
+                  'name' => 'job1',
+                  'instances' => 1
+              },
+              {
+                  'name' => 'job2',
+                  'instances' => 2
+              }
+          ]
+      }
+    end
+
+    before do
+      tester.stub(prepare_deployment_manifest: manifest)
+    end
+
+    it 'returns array of ["job", index]' do
+      tester.jobs_and_indexes.should == [['job1', 0], ['job2', 0], ['job2', 1]]
+    end
+  end
 end
