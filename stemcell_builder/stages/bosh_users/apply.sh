@@ -9,19 +9,19 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
 # Set up users/groups
+vcap_user_groups='admin,adm,audio,cdrom,dialout,floppy,video,plugdev,dip'
+
 run_in_chroot $chroot "
-addgroup --system admin
-adduser --disabled-password --gecos Ubuntu vcap
+groupadd --system admin
+useradd -m --comment 'BOSH System User' vcap
 echo \"vcap:${bosh_users_password}\" | chpasswd
 echo \"root:${bosh_users_password}\" | chpasswd
+usermod -G ${vcap_user_groups} vcap
 "
 
-for grp in admin adm audio cdrom dialout floppy video plugdev dip
-do
-  run_in_chroot $chroot "adduser vcap $grp"
-done
-
+# Setup SUDO
 cp $assets_dir/sudoers $chroot/etc/sudoers
 
+# Add $bosh_dir/bin to $PATH
 echo "export PATH=$bosh_dir/bin:$PATH" >> $chroot/root/.bashrc
 echo "export PATH=$bosh_dir/bin:$PATH" >> $chroot/home/vcap/.bashrc
