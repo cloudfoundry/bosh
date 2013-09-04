@@ -72,6 +72,7 @@ module Bosh::Cli
       exit(1)
     rescue Bosh::Cli::CliError => e
       say_err e.message
+      puts ""
       exit(e.exit_code)
     end
 
