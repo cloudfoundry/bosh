@@ -108,7 +108,7 @@ module Bosh::Stemcell
       expect(vsphere_centos.stages).to eq([
                                             :base_centos,
                                             :base_yum,
-                                            #:bosh_users,
+                                            :bosh_users,
                                             #:bosh_monit,
                                             #:bosh_ruby,
                                             #:bosh_agent,

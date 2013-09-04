@@ -114,7 +114,7 @@ module Bosh::Stemcell
         :base_centos,
         :base_yum,
         # Bosh steps
-        #:bosh_users,
+        :bosh_users,
         #:bosh_monit,
         #:bosh_ruby,
         #:bosh_agent,
