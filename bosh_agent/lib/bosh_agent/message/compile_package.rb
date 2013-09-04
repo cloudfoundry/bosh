@@ -97,7 +97,7 @@ module Bosh::Agent
           Util.unpack_blob(blobstore_id, sha1, install_dir)
 
           pkg_link_dst = File.join(@base_dir, 'packages', pkg_name)
-          FileUtils.ln_sf(install_dir, pkg_link_dst)
+          Bosh::Agent::Util.create_symlink(install_dir, pkg_link_dst)
         end
       end
 
@@ -179,7 +179,7 @@ module Bosh::Agent
         FileUtils.mkdir_p install_dir
 
         pkg_link_dst = File.join(@base_dir, 'packages', @package_name)
-        FileUtils.ln_sf(install_dir, pkg_link_dst)
+        Bosh::Agent::Util.create_symlink(install_dir, pkg_link_dst)
 
         pct_space_used = pct_disk_used(@compile_base)
         if pct_space_used >= @max_disk_usage_pct
