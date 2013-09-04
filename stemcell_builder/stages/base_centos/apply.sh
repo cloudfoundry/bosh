@@ -19,20 +19,8 @@ unshare -m $SHELL <<INSTALL_YUM
   yum --installroot=$chroot --assumeyes install yum
 INSTALL_YUM
 
-unshare -m $SHELL <<INSTALL_BASE_OS
-  set -x
-
-  mkdir -p $chroot/dev
-  mount -obind /dev $chroot/dev
-  mount -obind /dev/pts $chroot/dev/pts
-
-  mkdir -p $chroot/proc
-  mount -obind /proc $chroot/proc
-
-  mkdir -p $chroot/sys
-  mount -obind /sys $chroot/sys
-
-  chroot $chroot rpm --force --nodeps --install http://mirror.centos.org/centos/6/os/x86_64/Packages/centos-release-6-4.el6.centos.10.x86_64.rpm
-  chroot $chroot yum --assumeyes groupinstall Base
-  chroot $chroot yum --assumeyes groupinstall 'Development Tools'
-INSTALL_BASE_OS
+run_in_chroot $chroot "
+rpm --force --nodeps --install http://mirror.centos.org/centos/6/os/x86_64/Packages/centos-release-6-4.el6.centos.10.x86_64.rpm
+yum --assumeyes groupinstall Base
+yum --assumeyes groupinstall 'Development Tools'
+"
