@@ -9,12 +9,20 @@ module Bosh::Dev
     let(:component_version_file) { "#{root}/fake-component/lib/fake/component/version.rb" }
 
     subject(:gem_component) do
-      GemComponent.new('fake-component', root)
+      GemComponent.new('fake-component')
     end
 
     before do
+      stub_const('Bosh::Dev::GemComponent::ROOT', root)
+
       Rake::FileUtilsExt.stub(:sh)
+
+      File.open(global_bosh_version_file, 'w') do |file|
+        file.write('123')
+      end
     end
+
+    its(:dot_gem) { should eq('fake-component-123.gem') }
 
     describe '#build_release_gem' do
       include FakeFS::SpecHelpers
@@ -41,12 +49,6 @@ module Bosh::Dev
 
     describe '#update_version' do
       before do
-        gem_component.stub(root: root)
-
-        File.open(global_bosh_version_file, 'w') do |file|
-          file.write('123')
-        end
-
         FileUtils.mkdir_p(File.dirname(component_version_file))
         File.open(component_version_file, 'w') do |file|
           file.write <<-RUBY.gsub /^\s+/, ''

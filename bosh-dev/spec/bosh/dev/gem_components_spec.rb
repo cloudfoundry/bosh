@@ -8,30 +8,42 @@ module Bosh::Dev
       GemComponents.new
     end
 
-    its(:to_a) do
-      should eq(%w[
-        agent_client
-        blobstore_client
-        bosh-core
-        bosh-stemcell
-        bosh_agent
-        bosh_aws_cpi
-        bosh_cli
-        bosh_cli_plugin_aws
-        bosh_cli_plugin_micro
-        bosh_common
-        bosh_cpi
-        bosh_encryption
-        bosh_openstack_cpi
-        bosh_registry
-        bosh_vsphere_cpi
-        director
-        health_monitor
-        monit_api
-        package_compiler
-        ruby_vim_sdk
-        simple_blobstore_server
-      ])
+    describe '#dot_gems' do
+      let(:root) { Dir.mktmpdir }
+      let(:global_bosh_version_file) { "#{root}/BOSH_VERSION" }
+
+      before do
+        stub_const('Bosh::Dev::GemComponent::ROOT', root)
+        File.open(global_bosh_version_file, 'w') do |file|
+          file.write('123')
+        end
+      end
+
+      its(:dot_gems) do
+        should eq(%w[
+          agent_client-123.gem
+          blobstore_client-123.gem
+          bosh-core-123.gem
+          bosh-stemcell-123.gem
+          bosh_agent-123.gem
+          bosh_aws_cpi-123.gem
+          bosh_cli-123.gem
+          bosh_cli_plugin_aws-123.gem
+          bosh_cli_plugin_micro-123.gem
+          bosh_common-123.gem
+          bosh_cpi-123.gem
+          bosh_encryption-123.gem
+          bosh_openstack_cpi-123.gem
+          bosh_registry-123.gem
+          bosh_vsphere_cpi-123.gem
+          director-123.gem
+          health_monitor-123.gem
+          monit_api-123.gem
+          package_compiler-123.gem
+          ruby_vim_sdk-123.gem
+          simple_blobstore_server-123.gem
+        ])
+      end
     end
 
     it { should have_db('director') }

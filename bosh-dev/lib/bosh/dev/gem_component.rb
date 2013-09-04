@@ -1,23 +1,28 @@
 module Bosh
   module Dev
     class GemComponent
-      def initialize(component, root = nil, version = nil)
+      ROOT = File.expand_path('../../../../../', __FILE__)
+
+      def initialize(component, version = nil)
         @component = component
-        @root = root
         @version = version
       end
 
+      def dot_gem
+        "#{component}-#{version}.gem"
+      end
+
       def build_release_gem
-        FileUtils.mkdir_p "#{root}/pkg/gems/"
+        FileUtils.mkdir_p "#{ROOT}/pkg/gems/"
 
         update_version
 
         gemspec = "#{component}.gemspec"
-        Rake::FileUtilsExt.sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/gems/"
+        Rake::FileUtilsExt.sh "cd #{component} && gem build #{gemspec} && mv #{dot_gem} #{ROOT}/pkg/gems/"
       end
 
       def update_version
-        glob = File.join(root, component, 'lib', '**', 'version.rb')
+        glob = File.join(ROOT, component, 'lib', '**', 'version.rb')
 
         version_file_path = Dir.glob(glob).first
         file_contents = File.read(version_file_path)
@@ -30,12 +35,8 @@ module Bosh
 
       attr_reader :component
 
-      def root
-        @root ||= File.expand_path('../../../../../', __FILE__)
-      end
-
       def version
-        @version ||= File.read("#{root}/BOSH_VERSION").strip
+        @version ||= File.read("#{ROOT}/BOSH_VERSION").strip
       end
     end
   end

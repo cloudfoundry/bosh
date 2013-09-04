@@ -41,6 +41,10 @@ module Bosh::Dev
       ].each(&block)
     end
 
+    def dot_gems
+      map { |component| GemComponent.new(component).dot_gem }
+    end
+
     def has_db?(component)
       %w(director bosh_registry).include?(component)
     end
@@ -48,7 +52,7 @@ module Bosh::Dev
     private
 
     def root
-      @root ||= File.expand_path('../../../../../', __FILE__)
+      GemComponent::ROOT
     end
 
     def version
