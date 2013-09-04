@@ -22,10 +22,12 @@ module Bosh::Dev
     let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
 
     subject(:builder) do
-      StemcellBuilder.new(build, infrastructure_name, operating_system_name)
+      StemcellBuilder.new(infrastructure_name: infrastructure_name,
+                          operating_system_name: operating_system_name)
     end
 
     before do
+      Build.stub(candidate: build)
       Bosh::Stemcell::BuilderCommand.stub(:new).with(
         infrastructure_name: infrastructure_name,
         operating_system_name: operating_system_name,
