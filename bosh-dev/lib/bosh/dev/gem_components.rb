@@ -22,11 +22,7 @@ module Bosh::Dev
       gem_component.update_version
 
       gemspec = "#{component}.gemspec"
-      if gem_component.stale?
-        Rake::FileUtilsExt.sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/gems/"
-      else
-        Rake::FileUtilsExt.sh "cp '#{last_released_component(component, root, version)}' #{root}/pkg/gems/"
-      end
+      Rake::FileUtilsExt.sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/gems/"
     end
 
     def each(&block)
