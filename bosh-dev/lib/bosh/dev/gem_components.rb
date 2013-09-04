@@ -43,10 +43,10 @@ module Bosh::Dev
         !File.exists?(gem_file_name) || last_code_change_time > File::Stat.new(gem_file_name).mtime
       end
     end
-    alias component_needing_update? component_needs_update
+    alias_method :component_needing_update?, :component_needs_update
 
     def last_released_component(component, root, version)
-      File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
+      File.join(root, 'release', 'src', 'bosh', component, "#{component}-#{version}.gem")
     end
 
     def root

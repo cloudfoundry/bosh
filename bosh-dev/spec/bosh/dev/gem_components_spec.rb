@@ -47,7 +47,7 @@ module Bosh::Dev
       let(:gemspec_klass) { class_double('Gem::Specification').as_stubbed_const }
 
       before do
-        Timecop.scale(3600000)
+        Timecop.scale(3_600_000)
 
         gemspec_klass.stub(:load).with('/fake-root/fake-component/fake-component.gemspec').and_return(gemspec)
 
@@ -116,13 +116,11 @@ module Bosh::Dev
       it "set the component's version to the global BOSH_VERSION" do
         expect {
           gem_components.update_version('fake-component')
-        }.to change {
-          File.read(component_version_file)
-        }.to <<-RUBY.gsub /^\s+/, ''
-          module Fake::Component
-            VERSION = 'fake-bosh-version'
-          end
-        RUBY
+        }.to change { File.read(component_version_file) }.to <<-RUBY.gsub /^\s+/, ''
+              module Fake::Component
+                VERSION = 'fake-bosh-version'
+              end
+          RUBY
       end
     end
   end
