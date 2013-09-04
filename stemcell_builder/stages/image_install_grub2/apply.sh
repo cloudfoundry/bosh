@@ -43,20 +43,41 @@ EOF
 # Figure out uuid of partition
 uuid=$(blkid -c /dev/null -sUUID -ovalue /dev/mapper/$dev)
 
-# Recreate vanilla menu.lst
-rm -f $mnt/boot/grub/menu.lst*
-run_in_chroot $mnt "update-grub -y"
+if [ -f $mnt/usr/sbin/update-grub ] # Ubuntu
+then
 
-# Modify root disk parameters to use the root partition's UUID
-sed -i -e "s/^# kopt=root=\([^ ]*\)/# kopt=root=UUID=$uuid/" $mnt/boot/grub/menu.lst
+  # Recreate vanilla menu.lst
+  rm -f $mnt/boot/grub/menu.lst*
+  run_in_chroot $mnt "update-grub -y"
 
-# NOTE: Don't change "groot" to use a UUID. The pv-boot grub mechanism on EC2
-# can't use this to figure out which device contains the kernel. It does
-# understand "root (hd0,0)", which is the default.
+  # Modify root disk parameters to use the root partition's UUID
+  sed -i -e "s/^# kopt=root=\([^ ]*\)/# kopt=root=UUID=$uuid/" $mnt/boot/grub/menu.lst
 
-# Regenerate menu.lst
-run_in_chroot $mnt "update-grub"
-rm -f $mnt/boot/grub/menu.lst~
+  # NOTE: Don't change "groot" to use a UUID. The pv-boot grub mechanism on EC2
+  # can't use this to figure out which device contains the kernel. It does
+  # understand "root (hd0,0)", which is the default.
+
+  # Regenerate menu.lst
+  run_in_chroot $mnt "update-grub"
+  rm -f $mnt/boot/grub/menu.lst~
+
+else # CentOS
+
+  kernel_version=$(run_in_chroot $mnt 'rpm -q --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}" kernel')
+
+  cat > $mnt/boot/grub/grub.conf <<GRUB_CONF
+default=0
+timeout=1
+title CentOS (${kernel_version})
+  root (hd0,0)
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=$uuid
+  initrd /boot/initramfs-${kernel_version}.img
+GRUB_CONF
+
+  run_in_chroot $mnt "rm -f /boot/grub/menu.lst"
+  run_in_chroot $mnt "ln -s ./grub.conf /boot/grub/menu.lst"
+
+fi
 
 # Clean up bootloader stuff
 umount $mnt/tmp/grub/$disk_image_name

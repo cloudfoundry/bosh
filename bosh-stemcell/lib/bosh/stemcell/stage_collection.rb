@@ -111,31 +111,30 @@ module Bosh::Stemcell
     class VsphereCentos < Base
       STAGES = [
         # Setup base chroot
-        :base_debootstrap,
-        :base_apt,
+        :base_centos,
+        :base_yum,
         # Bosh steps
-        :bosh_users,
-        :bosh_debs,
-        :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
-        :bosh_sysstat,
-        :bosh_sysctl,
-        :bosh_ntpdate,
-        :bosh_sudoers,
+        #:bosh_users,
+        #:bosh_monit,
+        #:bosh_ruby,
+        #:bosh_agent,
+        #:bosh_sysstat,
+        #:bosh_sysctl,
+        #:bosh_ntpdate,
+        #:bosh_sudoers,
         # Micro BOSH
-        :bosh_micro,
+        #:bosh_micro,
         # Install GRUB/kernel/etc
         :system_grub,
-        :system_kernel,
-        :system_open_vm_tools,
+        #:system_kernel,
+        #:system_open_vm_tools,
         # Misc
         :system_parameters,
         # Finalisation
         :bosh_clean,
-        :bosh_harden,
-        :bosh_tripwire,
-        :bosh_dpkg_list,
+        #:bosh_harden,
+        #:bosh_tripwire,
+        #:bosh_dpkg_list,
         # Image/bootloader
         :image_create,
         :image_install_grub2,
