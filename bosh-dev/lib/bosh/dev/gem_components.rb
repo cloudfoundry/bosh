@@ -15,16 +15,6 @@ module Bosh::Dev
       FileUtils.rm_rf "/tmp/all_the_gems/#{Process.pid}"
     end
 
-    def pre_stage_latest(component)
-      FileUtils.mkdir_p 'pkg/gems'
-
-      gem_component = GemComponent.new(component)
-      gem_component.update_version
-
-      gemspec = "#{component}.gemspec"
-      Rake::FileUtilsExt.sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/gems/"
-    end
-
     def each(&block)
       %w[
        agent_client
@@ -69,7 +59,8 @@ module Bosh::Dev
       FileUtils.rm_rf 'pkg'
 
       each do |component|
-        pre_stage_latest(component)
+        gem_component = GemComponent.new(component)
+        gem_component.build_release_gem
       end
 
       FileUtils.mkdir_p "/tmp/all_the_gems/#{Process.pid}"
