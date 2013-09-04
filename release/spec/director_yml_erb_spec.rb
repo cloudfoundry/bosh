@@ -66,11 +66,7 @@ update:
   canaries: 1
   canary_watch_time: 30000 - 90000
   update_watch_time: 30000 - 90000
-
-
-
-
-ax_in_flight: 1
+  max_in_flight: 1
 jobs:
 - name: bosh
   template:

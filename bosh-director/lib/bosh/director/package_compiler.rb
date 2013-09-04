@@ -181,7 +181,7 @@ module Bosh::Director
     private
 
     def prepare_tasks
-      @event_log.begin_stage('Preparing package compilation')
+      @event_log.begin_stage('Preparing package compilation', 1)
 
       @event_log.track('Finding packages to compile') do
         @deployment_plan.jobs.each do |job|
