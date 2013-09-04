@@ -55,7 +55,7 @@ module Bosh::Cli
 
       if manifest['release'].blank? && manifest['releases'].blank?
         err("Deployment manifest doesn't have release information: '" +
-            "please add 'release' or 'releases' section")
+              "please add 'release' or 'releases' section")
       end
 
       resolve_release_aliases(manifest)
@@ -90,7 +90,7 @@ module Bosh::Cli
     # if something goes wrong, so it doesn't need to have
     # a meaningful return value.
     # @return Boolean Were there any changes in deployment manifest?
-    def inspect_deployment_changes(manifest, options = { })
+    def inspect_deployment_changes(manifest, options = {})
       show_empty_changeset = true
 
       if options.has_key?(:show_empty_changeset)
@@ -169,7 +169,7 @@ module Bosh::Cli
 
       if old_stemcells.size != new_stemcells.size
         say('Stemcell update seems to be inconsistent with current '.make_red +
-            'deployment. Please carefully review changes above.'.make_red)
+              'deployment. Please carefully review changes above.'.make_red)
         unless confirmed?('Are you sure this configuration is correct?')
           cancel_deployment
         end
@@ -193,7 +193,7 @@ module Bosh::Cli
       diff.changed?
     rescue Bosh::Cli::ResourceNotFound
       say('Cannot get current deployment information from director, ' +
-          'possibly a new deployment'.make_red)
+            'possibly a new deployment'.make_red)
       true
     end
 
@@ -257,7 +257,7 @@ module Bosh::Cli
 
     def jobs_and_indexes
       jobs = prepare_deployment_manifest.fetch('jobs')
-  
+
       jobs.inject([]) do |jobs_and_indexes, job|
         job_name = job.fetch('name')
         0.upto(job.fetch('instances').to_i - 1) do |index|
