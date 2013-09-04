@@ -43,7 +43,7 @@ EOF
 # Figure out uuid of partition
 uuid=$(blkid -c /dev/null -sUUID -ovalue /dev/mapper/$dev)
 
-if [ -f $mnt/usr/sbin/update-grub ] # Ubuntu
+if [ -f $mnt/etc/debian_version ] # Ubuntu
 then
 
   # Recreate vanilla menu.lst
@@ -61,7 +61,8 @@ then
   run_in_chroot $mnt "update-grub"
   rm -f $mnt/boot/grub/menu.lst~
 
-else # CentOS
+elif [ -f $mnt/etc/centos-release ] # CentOS
+then
 
   kernel_version=$(run_in_chroot $mnt 'rpm -q --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}" kernel')
 
@@ -76,6 +77,11 @@ GRUB_CONF
 
   run_in_chroot $mnt "rm -f /boot/grub/menu.lst"
   run_in_chroot $mnt "ln -s ./grub.conf /boot/grub/menu.lst"
+
+else
+
+  echo "Unknown OS, exiting"
+  exit 2
 
 fi
 
