@@ -6,7 +6,7 @@ module Bosh::Stemcell
         when 'stemcell-openstack-kvm-ubuntu' then OpenstackUbuntu.new
         when 'stemcell-vsphere-esxi-centos' then VsphereCentos.new
         when 'stemcell-vsphere-esxi-ubuntu' then VsphereUbuntu.new
-        when 'stemcell-warden-ubuntu' then WardenUbuntu.new
+        when 'stemcell-warden-boshlite-ubuntu' then WardenUbuntu.new
         else raise ArgumentError.new("invalid stage collection: #{stage_collection_name}")
       end
     end

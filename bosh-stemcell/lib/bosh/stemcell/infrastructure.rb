@@ -50,7 +50,7 @@ module Bosh::Stemcell
 
     class Warden < Base
       def initialize
-        super(name: 'warden')
+        super(name: 'warden', hypervisor: 'boshlite')
       end
     end
   end
