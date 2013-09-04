@@ -10,14 +10,21 @@ source $base_dir/lib/prelude_apply.bash
 # Install grub
 pkg_mgr install grub
 
-if [ -d $chroot/usr/lib/grub ] # Ubuntu
+if [ -f $chroot/etc/debian_version ] # Ubuntu
 then
-  rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
-fi
 
-if [ -d $chroot/usr/share/grub ] # CentOS
+  rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
+
+elif [ -f $chroot/etc/centos-release ] # CentOS
 then
+
   rsync -a $chroot/usr/share/grub/x86*/ $chroot/boot/grub/
+
+else
+
+  echo "Unknown OS, exiting"
+  exit 2
+
 fi
 
 # When a kernel is installed, update-grub is run per /etc/kernel-img.conf.
