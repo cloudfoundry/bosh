@@ -86,42 +86,5 @@ module Bosh::Dev
         end
       end
     end
-
-    describe '#update_version' do
-      let(:root) { Dir.mktmpdir }
-      let(:global_bosh_version_file) { "#{root}/BOSH_VERSION" }
-      let(:component_version_file) { "#{root}/fake-component/lib/fake/component/version.rb" }
-
-      before do
-        gem_components.stub(root: root)
-
-        File.open(global_bosh_version_file, 'w') do |file|
-          file.write('fake-bosh-version')
-        end
-
-        FileUtils.mkdir_p(File.dirname(component_version_file))
-        File.open(component_version_file, 'w') do |file|
-          file.write <<-RUBY.gsub /^\s+/, ''
-            module Fake::Component
-              VERSION = '1.5.0.pre.3'
-            end
-          RUBY
-        end
-      end
-
-      after do
-        FileUtils.rm_r(root)
-      end
-
-      it "set the component's version to the global BOSH_VERSION" do
-        expect {
-          gem_components.update_version('fake-component')
-        }.to change { File.read(component_version_file) }.to <<-RUBY.gsub /^\s+/, ''
-              module Fake::Component
-                VERSION = 'fake-bosh-version'
-              end
-          RUBY
-      end
-    end
   end
 end

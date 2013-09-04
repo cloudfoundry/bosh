@@ -1,4 +1,5 @@
-require 'rake/file_utils_ext'
+require 'rake'
+require 'bosh/dev/gem_component'
 
 module Bosh::Dev
   class GemComponents
@@ -17,7 +18,8 @@ module Bosh::Dev
     def pre_stage_latest(component)
       FileUtils.mkdir_p 'pkg/gems'
 
-      update_version(component)
+      gem_component = GemComponent.new(component)
+      gem_component.update_version
 
       gemspec = "#{component}.gemspec"
       if component_needs_update(component, root, version)
@@ -69,16 +71,6 @@ module Bosh::Dev
       end
     end
     alias_method :component_needing_update?, :component_needs_update
-
-    def update_version(component)
-      glob = File.join(root, component, 'lib', '**', 'version.rb')
-
-      version_file_path = Dir[glob].first
-      file_contents = File.read(version_file_path)
-      file_contents.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{version}'")
-
-      File.open(version_file_path, 'w') { |f| f.write(file_contents) }
-    end
 
     private
 
