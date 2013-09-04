@@ -6,6 +6,7 @@ module Bosh::Stemcell
         when 'stemcell-openstack-kvm-ubuntu' then OpenstackUbuntu.new
         when 'stemcell-vsphere-esxi-centos' then VsphereCentos.new
         when 'stemcell-vsphere-esxi-ubuntu' then VsphereUbuntu.new
+        when 'stemcell-warden-ubuntu' then WardenUbuntu.new
         else raise ArgumentError.new("invalid stage collection: #{stage_collection_name}")
       end
     end
@@ -187,6 +188,42 @@ module Bosh::Stemcell
         :image_vsphere_prepare_stemcell,
         # Final stemcell
         :stemcell
+      ]
+
+      def initialize
+        super(stages: STAGES)
+      end
+    end
+
+    class WardenUbuntu < Base
+      STAGES = [
+          # Setup base chroot
+          :base_debootstrap,
+          :base_apt,
+          # Warden setup
+          :base_warden,
+          # Bosh steps
+          :bosh_users,
+          :bosh_debs,
+          :bosh_monit,
+          :bosh_ruby,
+          :bosh_agent,
+          :bosh_sysstat,
+          :bosh_sysctl,
+          :bosh_ntpdate,
+          :bosh_sudoers,
+          # Micro BOSH
+          :bosh_micro,
+          # Misc
+          :system_parameters,
+          # Finalisation
+          :bosh_clean,
+          :bosh_harden,
+          :bosh_dpkg_list,
+          # Image copy
+          :bosh_copy_root,
+          # Final stemcell
+          :stemcell
       ]
 
       def initialize
