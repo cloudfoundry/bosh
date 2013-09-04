@@ -1,5 +1,5 @@
 require 'bosh/dev/build'
-require 'bosh/dev/gems_generator'
+require 'bosh/dev/gem_components'
 require 'bosh/stemcell/builder_command'
 
 module Bosh::Dev
@@ -15,7 +15,8 @@ module Bosh::Dev
 
     def build_stemcell
       unless @stemcell_path
-        GemsGenerator.new.build_gems_into_release_dir
+        gem_components = GemComponents.new
+        gem_components.build_release_gems
 
         @stemcell_path = stemcell_builder_command.build
       end

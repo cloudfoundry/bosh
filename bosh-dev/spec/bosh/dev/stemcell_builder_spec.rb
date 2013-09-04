@@ -12,7 +12,7 @@ module Bosh::Dev
     let(:operating_system_name) { 'ubuntu' }
 
     let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
-    let(:gems_generator) { instance_double('Bosh::Dev::GemsGenerator', build_gems_into_release_dir: nil) }
+    let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
 
     let(:stemcell_builder_command) do
       instance_double('Bosh::Dev::BuilderCommand', build: nil, chroot_dir: '/fake/chroot/dir')
@@ -38,7 +38,7 @@ module Bosh::Dev
 
     describe '#build_stemcell' do
       before do
-        GemsGenerator.stub(:new).and_return(gems_generator)
+        GemComponents.stub(new: gem_components)
 
         stemcell_builder_command.stub(:build) do
           FileUtils.mkdir_p(fake_work_path)
@@ -48,7 +48,7 @@ module Bosh::Dev
       end
 
       it 'generates the bosh gems' do
-        gems_generator.should_receive(:build_gems_into_release_dir)
+        gem_components.should_receive(:build_release_gems)
 
         builder.build_stemcell
       end
@@ -65,7 +65,7 @@ module Bosh::Dev
 
       describe 'when called multiple times' do
         it 'builds the stemcell once' do
-          gems_generator.should_receive(:build_gems_into_release_dir).once
+          gem_components.should_receive(:build_release_gems).once
           stemcell_builder_command.should_receive(:build).once do
             FileUtils.mkdir_p(fake_work_path)
             FileUtils.touch(stemcell_file_path)
@@ -76,7 +76,7 @@ module Bosh::Dev
         end
 
         it 'raises an error if the stemcell files does not exist' do
-          gems_generator.should_receive(:build_gems_into_release_dir).once
+          gem_components.should_receive(:build_release_gems).once
           stemcell_builder_command.should_receive(:build).once do
             FileUtils.mkdir_p(fake_work_path)
             FileUtils.touch(stemcell_file_path)
