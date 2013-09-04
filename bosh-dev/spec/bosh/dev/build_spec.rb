@@ -15,7 +15,7 @@ module Bosh::Dev
                        aws_secret_access_key: secret_access_key)
     end
 
-    subject(:build) { Build.new(123) }
+    subject(:build) { Build.new(number: 123) }
 
     before(:all) do
       Fog.mock!

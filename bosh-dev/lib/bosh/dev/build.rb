@@ -14,11 +14,11 @@ module Bosh::Dev
 
     def self.candidate
       env_hash = ENV.to_hash
-      new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
+      new(number: env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
     end
 
-    def initialize(number)
-      @number = number
+    def initialize(options)
+      @number = options.fetch(:number)
       @logger = Logger.new($stdout)
       @promoter = PromoteArtifacts.new(self)
     end
