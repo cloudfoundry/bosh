@@ -57,10 +57,6 @@ module Bosh::Dev
 
     private
 
-    def last_released_component(component, root, version)
-      File.join(root, 'release', 'src', 'bosh', component, "#{component}-#{version}.gem")
-    end
-
     def root
       @root ||= File.expand_path('../../../../../', __FILE__)
     end
