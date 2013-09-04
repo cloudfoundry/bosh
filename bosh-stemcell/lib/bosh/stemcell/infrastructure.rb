@@ -50,7 +50,7 @@ module Bosh::Stemcell
 
     class Warden < Base
       def initialize
-        super(name: 'warden', hypervisor: 'boshlite')
+        super(name: 'warden', hypervisor: 'boshlite', default_disk_size: 2048)
       end
     end
   end
