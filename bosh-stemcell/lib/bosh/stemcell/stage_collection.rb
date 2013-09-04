@@ -212,8 +212,6 @@ module Bosh::Stemcell
           :bosh_sysctl,
           :bosh_ntpdate,
           :bosh_sudoers,
-          # Micro BOSH
-          :bosh_micro,
           # Misc
           :system_parameters,
           # Finalisation
