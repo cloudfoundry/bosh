@@ -70,7 +70,7 @@ module Bosh::Director
     # in the jobs defined by deployment plan
     # @return [void]
     def prepare_tasks
-      @event_log.begin_stage("Preparing package compilation")
+      @event_log.begin_stage("Preparing package compilation", 1)
 
       @event_log.track("Finding packages to compile") do
         @deployment_plan.jobs.each do |job|
