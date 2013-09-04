@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 describe Bosh::Cli::DeploymentHelper do
@@ -317,6 +315,55 @@ describe Bosh::Cli::DeploymentHelper do
     context 'when the job is not in the manifest' do
       it 'should return false' do
         expect(tester.job_unique_in_deployment?('job3')).to be_false
+      end
+    end
+  end
+
+  describe 'prompt_for_job_and_index' do
+    before do
+      tester.stub(prepare_deployment_manifest: manifest)
+    end
+
+    context 'when there is only 1 job instance in total' do
+      let(:manifest) do
+        {
+          'name' => 'mycloud',
+          'jobs' => [
+            {
+              'name' => 'job',
+              'instances' => 1
+            }
+          ]
+        }
+      end
+
+      it 'does not prompt the user to choose a job' do
+        tester.should_not_receive(:choose)
+        tester.prompt_for_job_and_index
+      end
+    end
+
+    context 'when there is more than 1 job instance' do
+      let(:manifest) do
+        {
+          'name' => 'mycloud',
+          'jobs' => [
+            {
+              'name' => 'job',
+              'instances' => 2
+            }
+          ]
+        }
+      end
+
+      it 'prompts the user to choose one' do
+        menu = double('menu')
+        tester.should_receive(:choose).and_yield(menu)
+        menu.should_receive(:prompt=).with('Choose an instance: ')
+        menu.should_receive(:choice).with('job/0')
+        menu.should_receive(:choice).with('job/1')
+
+        tester.prompt_for_job_and_index
       end
     end
   end
