@@ -26,11 +26,6 @@ module Bosh::Dev
       @download_adapter = DownloadAdapter.new
     end
 
-    def upload(release)
-      key = File.join(number.to_s, release_path)
-      upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
-    end
-
     def upload_gems(source_dir, dest_dir)
       Dir.chdir(source_dir) do
         Dir['**/*'].each do |file|
@@ -43,6 +38,11 @@ module Bosh::Dev
       end
     end
 
+    def upload_release(release)
+      key = File.join(number.to_s, release_path)
+      upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
+    end
+
     def download_release
       remote_dir = File.join(number.to_s, 'release')
       filename = promoter.release_file
@@ -50,20 +50,6 @@ module Bosh::Dev
       download_adapter.download(uri(remote_dir, filename), release_path)
 
       release_path
-    end
-
-    def download_stemcell(options = {})
-      infrastructure = options.fetch(:infrastructure)
-      name = options.fetch(:name)
-      light = options.fetch(:light)
-      output_directory = options.fetch(:output_directory) { Dir.pwd }
-
-      filename = stemcell_filename(number.to_s, infrastructure, name, light)
-      remote_dir = File.join(number.to_s, name, infrastructure.name)
-
-      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
-
-      filename
     end
 
     def upload_stemcell(stemcell)
@@ -78,6 +64,20 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_latest_path}")
       upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(stemcell.path), public: false)
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
+    end
+
+    def download_stemcell(options = {})
+      infrastructure = options.fetch(:infrastructure)
+      name = options.fetch(:name)
+      light = options.fetch(:light)
+      output_directory = options.fetch(:output_directory) { Dir.pwd }
+
+      filename = stemcell_filename(number.to_s, infrastructure, name, light)
+      remote_dir = File.join(number.to_s, name, infrastructure.name)
+
+      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
+
+      filename
     end
 
     def promote_artifacts

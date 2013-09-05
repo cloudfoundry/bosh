@@ -59,12 +59,12 @@ module Bosh::Dev
         File.stub(:open).with(release.tarball) { io }
         upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
 
-        subject.upload(release)
+        subject.upload_release(release)
       end
 
       context 'when the file does not exist' do
         it 'raises an error' do
-          expect { subject.upload(release) }.to raise_error(Errno::ENOENT)
+          expect { subject.upload_release(release) }.to raise_error(Errno::ENOENT)
         end
       end
     end
