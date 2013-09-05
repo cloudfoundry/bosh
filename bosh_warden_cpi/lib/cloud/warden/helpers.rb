@@ -18,15 +18,13 @@ module Bosh::WardenCloud
     end
 
     def sudo(cmd)
-      @logger.info "run 'sudo -n #{cmd}'" if @logger
-      Bosh::Exec.sh("sudo -n #{cmd}", yield: :on_false) do |result|
-        yield result if block_given?
-      end
+      sh(cmd, true)
     end
 
-    def sh(cmd)
-      @logger.info "run '#{cmd}'" if @logger
-      Bosh::Exec.sh("#{cmd}", yield: :on_false) do |result|
+    def sh(cmd, su = false)
+      runcmd = su == true ? "sudo -n #{cmd}" : cmd
+      @logger.info "run '#{runcmd}'" if @logger
+      Bosh::Exec.sh("#{runcmd}", yield: :on_false) do |result|
         yield result if block_given?
       end
     end

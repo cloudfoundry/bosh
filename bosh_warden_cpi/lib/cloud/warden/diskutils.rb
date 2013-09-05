@@ -16,7 +16,6 @@ module Bosh::WardenCloud
       end
     end
 
-
     def create_disk(disk_id, size)
       raise ArgumentError, 'disk size <= 0' unless size > 0
 
