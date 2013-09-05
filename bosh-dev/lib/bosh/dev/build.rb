@@ -21,18 +21,17 @@ module Bosh::Dev
       @number = options.fetch(:number)
       @logger = Logger.new($stdout)
       @promoter = PromoteArtifacts.new(self)
+      @bucket = 'bosh-ci-pipeline'
+      @upload_adapter = UploadAdapter.new
+      @download_adapter = DownloadAdapter.new
     end
 
     def upload(release, options = {})
-      bucket = 'bosh-ci-pipeline'
       key = File.join(number.to_s, release_path)
-      upload_adapter = options.fetch(:upload_adapter) { UploadAdapter.new }
       upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
     end
 
     def upload_gems(source_dir, dest_dir)
-      bucket = 'bosh-ci-pipeline'
-      upload_adapter = Bosh::Dev::UploadAdapter.new
       Dir.chdir(source_dir) do
         Dir['**/*'].each do |file|
           unless File.directory?(file)
@@ -45,7 +44,6 @@ module Bosh::Dev
     end
 
     def download_release(options = {})
-      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
       output_directory = options.fetch(:output_directory) { Dir.pwd }
 
       remote_dir = File.join(number.to_s, 'release')
@@ -60,7 +58,6 @@ module Bosh::Dev
       infrastructure = options.fetch(:infrastructure)
       name = options.fetch(:name)
       light = options.fetch(:light)
-      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
       output_directory = options.fetch(:output_directory) { Dir.pwd }
 
       filename = stemcell_filename(number.to_s, infrastructure, name, light)
@@ -96,7 +93,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :logger, :promoter
+    attr_reader :logger, :promoter, :download_adapter, :upload_adapter, :bucket
 
     def sync_buckets
       promoter.commands.peach do |cmd|

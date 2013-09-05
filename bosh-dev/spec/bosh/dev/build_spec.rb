@@ -15,6 +15,9 @@ module Bosh::Dev
                        aws_secret_access_key: secret_access_key)
     end
 
+    let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+
     subject(:build) { Build.new(number: 123) }
 
     before(:all) do
@@ -22,6 +25,9 @@ module Bosh::Dev
     end
 
     before do
+      Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter)
+      Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
+
       Fog::Mock.reset
       fog_storage.directories.create(key: 'bosh-ci-pipeline')
       fog_storage.directories.create(key: 'bosh-jenkins-artifacts')
@@ -47,19 +53,18 @@ module Bosh::Dev
 
     describe '#upload' do
       let(:release) { double(tarball: 'release-tarball.tgz') }
-      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
       let(:io) { double }
 
       it 'uploads the release with its build number' do
         File.stub(:open).with(release.tarball) { io }
         upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
 
-        subject.upload(release, upload_adapter: upload_adapter)
+        subject.upload(release)
       end
 
       context 'when the file does not exist' do
         it 'raises an error' do
-          expect { subject.upload(release, upload_adapter: upload_adapter) }.to raise_error(Errno::ENOENT)
+          expect { subject.upload(release) }.to raise_error(Errno::ENOENT)
         end
       end
     end
@@ -68,7 +73,6 @@ module Bosh::Dev
       let(:src) { 'source_dir' }
       let(:dst) { 'dest_dir' }
       let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
-      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
       let(:logger) { instance_double('Logger').as_null_object }
 
       before do
@@ -80,7 +84,6 @@ module Bosh::Dev
           end
         end
         Logger.stub(new: logger)
-        UploadAdapter.stub(new: upload_adapter)
       end
 
       it 'recursively uploads a directory into base_dir' do
@@ -106,12 +109,6 @@ module Bosh::Dev
     end
 
     describe '#download_release' do
-      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
-
-      before do
-        Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
-      end
-
       context 'when remote file does not exist' do
         it 'raises' do
           download_adapter.stub(:download).and_raise 'error'
@@ -132,12 +129,11 @@ module Bosh::Dev
     end
 
     describe '#promote_artifacts' do
-      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
       let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
 
       before do
+        Bosh::Dev::UploadAdapter.unstub!(:new)
         Rake::FileUtilsExt.stub(:sh)
-        DownloadAdapter.stub(new: download_adapter)
         Bosh::Stemcell::Archive.stub(new: stemcell)
       end
 
@@ -239,6 +235,8 @@ module Bosh::Dev
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
 
       before do
+        Bosh::Dev::UploadAdapter.unstub!(:new)
+
         FileUtils.mkdir('/tmp')
         File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
         Logger.stub(new: logger)
@@ -294,7 +292,7 @@ module Bosh::Dev
 
         it 'downloads the specified stemcell version from the pipeline bucket' do
           download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false, download_adapter: download_adapter)
+          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
         end
 
         context 'when remote file does not exist' do
@@ -302,14 +300,14 @@ module Bosh::Dev
             download_adapter.stub(:download).and_raise 'hell'
 
             expect {
-              build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false, download_adapter: download_adapter)
+              build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false)
             }.to raise_error 'hell'
           end
         end
 
         it 'downloads the specified light stemcell version from the pipeline bucket' do
           download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true, download_adapter: download_adapter)
+          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
         end
 
         it 'returns the name of the downloaded file' do
@@ -317,7 +315,6 @@ module Bosh::Dev
             infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
             name: 'bosh-stemcell',
             light: true,
-            download_adapter: download_adapter
           }
 
           download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
@@ -326,14 +323,11 @@ module Bosh::Dev
       end
 
       context 'when specifying a download directory' do
-
         it 'downloads the specified stemcell version from the pipeline bucket' do
           download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/a/b/c/bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false, download_adapter: download_adapter, output_directory: '/a/b/c')
+          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false, output_directory: '/a/b/c')
         end
-
       end
-
     end
 
     describe '#bosh_stemcell_path' do
