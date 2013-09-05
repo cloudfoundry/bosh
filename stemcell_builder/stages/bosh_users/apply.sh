@@ -9,7 +9,12 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
 # Set up users/groups
-vcap_user_groups='admin,adm,audio,cdrom,dialout,floppy,video,plugdev,dip'
+vcap_user_groups='admin,adm,audio,cdrom,dialout,floppy,video,dip'
+
+if [ -f $chroot/etc/debian_version ] # Ubuntu
+then
+  vcap_user_groups+=",plugdev"
+fi
 
 run_in_chroot $chroot "
 groupadd --system admin
