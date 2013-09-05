@@ -43,47 +43,32 @@ EOF
 # Figure out uuid of partition
 uuid=$(blkid -c /dev/null -sUUID -ovalue /dev/mapper/$dev)
 
-if [ -f $mnt/etc/debian_version ] # Ubuntu
+kernel_version=$(basename $(ls ${mnt}/boot/vmlinuz-* |tail -1) |cut -f2-8 -d'-')
+
+if [ -f ${mnt}/etc/debian_version ] # Ubuntu
 then
-
-  # Recreate vanilla menu.lst
-  rm -f $mnt/boot/grub/menu.lst*
-  run_in_chroot $mnt "update-grub -y"
-
-  # Modify root disk parameters to use the root partition's UUID
-  sed -i -e "s/^# kopt=root=\([^ ]*\)/# kopt=root=UUID=$uuid/" $mnt/boot/grub/menu.lst
-
-  # NOTE: Don't change "groot" to use a UUID. The pv-boot grub mechanism on EC2
-  # can't use this to figure out which device contains the kernel. It does
-  # understand "root (hd0,0)", which is the default.
-
-  # Regenerate menu.lst
-  run_in_chroot $mnt "update-grub"
-  rm -f $mnt/boot/grub/menu.lst~
-
-elif [ -f $mnt/etc/centos-release ] # CentOS
+  initrd_file="initrd.img-${kernel_version}"
+  os_name=$(source ${mnt}/etc/lsb-release ; echo -n ${DISTRIB_DESCRIPTION})
+elif [ -f ${mnt}/etc/centos-release ] # Centos
 then
-
-  kernel_version=$(run_in_chroot $mnt 'rpm -q --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}" kernel')
-
-  cat > $mnt/boot/grub/grub.conf <<GRUB_CONF
-default=0
-timeout=1
-title CentOS (${kernel_version})
-  root (hd0,0)
-  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=$uuid
-  initrd /boot/initramfs-${kernel_version}.img
-GRUB_CONF
-
-  run_in_chroot $mnt "rm -f /boot/grub/menu.lst"
-  run_in_chroot $mnt "ln -s ./grub.conf /boot/grub/menu.lst"
-
+  initrd_file="initramfs-${kernel_version}.img"
+  os_name=$(cat ${mnt}/etc/centos-release)
 else
-
   echo "Unknown OS, exiting"
   exit 2
-
 fi
+
+cat > $mnt/boot/grub/grub.conf <<GRUB_CONF
+default=0
+timeout=1
+title ${os_name} (${kernel_version})
+  root (hd0,0)
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid}
+  initrd /boot/${initrd_file}
+GRUB_CONF
+
+run_in_chroot $mnt "rm -f /boot/grub/menu.lst"
+run_in_chroot $mnt "ln -s ./grub.conf /boot/grub/menu.lst"
 
 # Clean up bootloader stuff
 umount $mnt/tmp/grub/$disk_image_name
