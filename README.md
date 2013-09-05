@@ -8,7 +8,7 @@ and deployment.
 
 * BOSH Documentation: [http://docs.cloudfoundry.com/docs/running/deploying-cf/](http://docs.cloudfoundry.com/docs/running/deploying-cf/)
 
-## Building and Installing BOSH gems from source
+## Installing BOSH gems
 
 To install the latest bosh CLI gems:
 
