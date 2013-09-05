@@ -7,7 +7,7 @@ namespace :spec do
   desc 'Run BOSH integration tests against a local sandbox'
   task :integration do
     require 'parallel_tests/tasks'
-    Rake::Task['parallel:spec'].invoke(ENV['TRAVIS'] ? 12 : nil, 'spec/integration/.*_spec.rb')
+    Rake::Task['parallel:spec'].invoke(ENV['TRAVIS'] ? 6 : nil, 'spec/integration/.*_spec.rb')
   end
 
   desc 'Run unit and functional tests for each BOSH component gem'
