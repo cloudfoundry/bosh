@@ -73,27 +73,11 @@ module Bosh::WardenCloud
 
       vm_handle = nil
       with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
-
         stemcell_path = @disk_utils.stemcell_path(stemcell_id)
         vm_id = uuid('vm')
 
-        if networks.size > 1
-          raise ArgumentError, 'Not support more than 1 nics'
-        end
-
-        unless Dir.exist?(stemcell_path)
-          cloud_error("Cannot find Stemcell(#{stemcell_id})")
-        end
-
-        vm_bind_mount = File.join(@bind_mount_points, vm_id)
-        FileUtils.mkdir_p(vm_bind_mount)
-        vm_ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
-        FileUtils.mkdir_p(vm_ephemeral_mount)
-
-        # Make the bind mount point shareable
-        sudo "mount --bind #{vm_bind_mount} #{vm_bind_mount}"
-        sudo "mount --make-unbindable #{vm_bind_mount}"
-        sudo "mount --make-shared #{vm_bind_mount}"
+        raise ArgumentError, 'Not support more than 1 nics' if networks.size > 1
+        cloud_error("Cannot find Stemcell(#{stemcell_id})") unless Dir.exist?(stemcell_path)
 
         # Create Container
         handle = with_warden do |client|
@@ -103,18 +87,7 @@ module Bosh::WardenCloud
           if networks.first[1]['type'] != 'dynamic'
             request.network = networks.first[1]['ip']
           end
-
-          bind_mount = Warden::Protocol::CreateRequest::BindMount.new
-          bind_mount.src_path = vm_bind_mount
-          bind_mount.dst_path = @warden_dev_root
-          bind_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
-
-          ephemeral_mount = Warden::Protocol::CreateRequest::BindMount.new
-          ephemeral_mount.src_path = vm_ephemeral_mount
-          ephemeral_mount.dst_path = '/var/vcap/data'
-          ephemeral_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
-
-          request.bind_mounts = [bind_mount, ephemeral_mount]
+          request.bind_mounts = bind_mount_prepare(vm_id)
           response = client.call(request)
           response.handle
         end
@@ -137,13 +110,7 @@ module Bosh::WardenCloud
         vm_id
       end
     rescue => e
-      if vm_handle
-        with_warden do |client|
-          request = Warden::Protocol::DestroyRequest.new
-          request.handle = vm_handle
-          client.call(request)
-        end
-      end
+      destroy_container(vm_handle) if vm_handle
       raise e
     end
 
@@ -155,11 +122,7 @@ module Bosh::WardenCloud
     def delete_vm(vm_id)
       with_thread_name("delete_vm(#{vm_id})") do
         if has_vm?(vm_id)
-          with_warden do |client|
-            request = Warden::Protocol::DestroyRequest.new
-            request.handle = vm_id
-            client.call(request)
-          end
+          destroy_container(vm_id)
           vm_bind_mount = File.join(@bind_mount_points, vm_id)
           sudo "umount #{vm_bind_mount}"
         end
@@ -304,6 +267,38 @@ module Bosh::WardenCloud
 
       @bind_mount_points = File.join(@disk_root, 'bind_mount_points')
       @ephemeral_mount_points = File.join(@disk_root, 'ephemeral_mount_point')
+    end
+
+    def bind_mount_prepare(vm_id)
+      vm_bind_mount = File.join(@bind_mount_points, vm_id)
+      FileUtils.mkdir_p(vm_bind_mount)
+      vm_ephemeral_mount = File.join(@ephemeral_mount_points, vm_id)
+      FileUtils.mkdir_p(vm_ephemeral_mount)
+
+      # Make the bind mount point shareable
+      sudo "mount --bind #{vm_bind_mount} #{vm_bind_mount}"
+      sudo "mount --make-unbindable #{vm_bind_mount}"
+      sudo "mount --make-shared #{vm_bind_mount}"
+
+      bind_mount = Warden::Protocol::CreateRequest::BindMount.new
+      bind_mount.src_path = vm_bind_mount
+      bind_mount.dst_path = @warden_dev_root
+      bind_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
+
+      ephemeral_mount = Warden::Protocol::CreateRequest::BindMount.new
+      ephemeral_mount.src_path = vm_ephemeral_mount
+      ephemeral_mount.dst_path = '/var/vcap/data'
+      ephemeral_mount.mode = Warden::Protocol::CreateRequest::BindMount::Mode::RW
+
+      return [bind_mount, ephemeral_mount]
+    end
+
+    def destroy_container(container_id)
+      with_warden do |client|
+        request = Warden::Protocol::DestroyRequest.new
+        request.handle = container_id
+        client.call(request)
+      end
     end
 
   end
