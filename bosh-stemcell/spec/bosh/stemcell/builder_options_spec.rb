@@ -67,38 +67,6 @@ module Bosh::Stemcell
       end
     end
 
-    describe '#spec_name' do
-      context 'when :infrastructure is aws' do
-        it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-xen-ubuntu')
-        end
-      end
-
-      context 'when :infrastructure is openstack' do
-        let(:infrastructure) { Infrastructure.for('openstack') }
-
-        it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-openstack-kvm-ubuntu')
-        end
-      end
-
-      context 'when :infrastructure is vsphere' do
-        let(:infrastructure) { Infrastructure.for('vsphere') }
-
-        it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-vsphere-esxi-ubuntu')
-        end
-
-        context 'when :operating_system is centos' do
-          let(:operating_system) { OperatingSystem.for('centos') }
-
-          it 'returns the spec file basename' do
-            expect(stemcell_builder_options.spec_name).to eq('stemcell-vsphere-esxi-centos')
-          end
-        end
-      end
-    end
-
     describe '#default' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }

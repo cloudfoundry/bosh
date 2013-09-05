@@ -15,10 +15,6 @@ module Bosh::Stemcell
       @bosh_micro_release_tgz_path = options.fetch(:tarball)
     end
 
-    def spec_name
-      ['stemcell', infrastructure.name, infrastructure.hypervisor, operating_system.name].join('-')
-    end
-
     def default
       {
         'stemcell_name' => 'bosh-stemcell',

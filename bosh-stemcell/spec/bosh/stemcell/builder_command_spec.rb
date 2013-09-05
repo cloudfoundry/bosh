@@ -19,9 +19,7 @@ module Bosh::Stemcell
     let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
 
     let(:stemcell_builder_options) do
-      instance_double('Bosh::Stemcell::BuilderOptions',
-                      default: options,
-                      spec_name: 'FAKE_SPEC_NAME')
+      instance_double('Bosh::Stemcell::BuilderOptions', default: options)
     end
 
     let(:stage_collection) { instance_double('Bosh::Stemcell::StageCollection::Base', stages: 'FAKE_STAGES') }
@@ -42,7 +40,7 @@ module Bosh::Stemcell
 
       Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
       OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
-      StageCollection.stub(:for).with('FAKE_SPEC_NAME').and_return(stage_collection)
+      StageCollection.stub(:for).with(infrastructure, operating_system).and_return(stage_collection)
 
       StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
                                   build_path: File.join(root_dir, 'build', 'build'),

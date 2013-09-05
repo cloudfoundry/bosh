@@ -1,12 +1,25 @@
+require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/operating_system'
+
 module Bosh::Stemcell
   module StageCollection
-    def self.for(stage_collection_name)
-      case stage_collection_name
-        when 'stemcell-aws-xen-ubuntu' then AwsUbuntu.new
-        when 'stemcell-openstack-kvm-ubuntu' then OpenstackUbuntu.new
-        when 'stemcell-vsphere-esxi-centos' then VsphereCentos.new
-        when 'stemcell-vsphere-esxi-ubuntu' then VsphereUbuntu.new
-        else raise ArgumentError.new("invalid stage collection: #{stage_collection_name}")
+    def self.for(infrastructure, operating_system)
+      case infrastructure
+        when Infrastructure::Aws then
+          case operating_system
+            when OperatingSystem::Ubuntu then AwsUbuntu.new
+            else raise ArgumentError.new("'#{infrastructure.name}' does not support '#{operating_system.name}'")
+          end
+        when Infrastructure::OpenStack then
+          case operating_system
+            when OperatingSystem::Ubuntu then OpenstackUbuntu.new
+            else raise ArgumentError.new("'#{infrastructure.name}' does not support '#{operating_system.name}'")
+          end
+        when Infrastructure::Vsphere then
+          case operating_system
+            when OperatingSystem::Centos then VsphereCentos.new
+            when OperatingSystem::Ubuntu then VsphereUbuntu.new
+          end
       end
     end
 

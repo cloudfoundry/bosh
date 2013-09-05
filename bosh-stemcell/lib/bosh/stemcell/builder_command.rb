@@ -34,7 +34,7 @@ module Bosh::Stemcell
 
       persist_settings_for_bash
 
-      stage_collection = StageCollection.for(stemcell_builder_options.spec_name)
+      stage_collection = StageCollection.for(infrastructure, operating_system)
       stage_runner = StageRunner.new(stages: stage_collection.stages,
                                      build_path: build_path,
                                      command_env: command_env,

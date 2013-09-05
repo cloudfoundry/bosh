@@ -6,17 +6,64 @@ module Bosh::Stemcell
     it { should be_a(Module) }
 
     describe '.for' do
-      it 'returns the correct stage collection' do
-        expect(StageCollection.for('stemcell-aws-xen-ubuntu')).to be_a(StageCollection::AwsUbuntu)
-        expect(StageCollection.for('stemcell-openstack-kvm-ubuntu')).to be_a(StageCollection::OpenstackUbuntu)
-        expect(StageCollection.for('stemcell-vsphere-esxi-centos')).to be_a(StageCollection::VsphereCentos)
-        expect(StageCollection.for('stemcell-vsphere-esxi-ubuntu')).to be_a(StageCollection::VsphereUbuntu)
+      let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+      context 'when infrastrucutre is AWS' do
+        let(:infrastructure) { Infrastructure.for('aws') }
+
+        context 'when operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'raises and error' do
+            expect {
+              StageCollection.for(infrastructure, operating_system)
+            }.to raise_error(ArgumentError, /'aws' does not support 'centos'/)
+          end
+        end
+
+        context 'when operating system is Ubuntu' do
+          it 'returns the correct stage collection' do
+            expect(StageCollection.for(infrastructure, operating_system)).to be_a(StageCollection::AwsUbuntu)
+          end
+        end
       end
 
-      it 'raises for unknown stage collection name' do
-        expect {
-          StageCollection.for('BAD_STAGE_COLLECTION_NAME')
-        }.to raise_error(ArgumentError, /invalid stage collection: BAD_STAGE_COLLECTION_NAME/)
+      context 'when infrastrucutre is OpenStack' do
+        let(:infrastructure) { Infrastructure.for('openstack') }
+
+        context 'when operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'raises and error' do
+            expect {
+              StageCollection.for(infrastructure, operating_system)
+            }.to raise_error(ArgumentError, /'openstack' does not support 'centos'/)
+          end
+        end
+
+        context 'when operating system is Ubuntu' do
+          it 'returns the correct stage collection' do
+            expect(StageCollection.for(infrastructure, operating_system)).to be_a(StageCollection::OpenstackUbuntu)
+          end
+        end
+      end
+
+      context 'when infrastrucutre is vSphere' do
+        let(:infrastructure) { Infrastructure.for('vsphere') }
+
+        context 'when operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'returns the correct stage collection' do
+            expect(StageCollection.for(infrastructure, operating_system)).to be_a(StageCollection::VsphereCentos)
+          end
+        end
+
+        context 'when operating system is Ubuntu' do
+          it 'returns the correct stage collection' do
+            expect(StageCollection.for(infrastructure, operating_system)).to be_a(StageCollection::VsphereUbuntu)
+          end
+        end
       end
     end
   end
