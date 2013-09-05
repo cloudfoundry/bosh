@@ -26,7 +26,7 @@ module Bosh::Dev
       @download_adapter = DownloadAdapter.new
     end
 
-    def upload(release, options = {})
+    def upload(release)
       key = File.join(number.to_s, release_path)
       upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
     end
@@ -43,13 +43,11 @@ module Bosh::Dev
       end
     end
 
-    def download_release(options = {})
-      output_directory = options.fetch(:output_directory) { Dir.pwd }
-
+    def download_release
       remote_dir = File.join(number.to_s, 'release')
       filename = promoter.release_file
 
-      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, release_path))
+      download_adapter.download(uri(remote_dir, filename), release_path)
 
       release_path
     end

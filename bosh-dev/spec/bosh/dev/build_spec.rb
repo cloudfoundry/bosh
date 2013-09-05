@@ -118,12 +118,12 @@ module Bosh::Dev
       end
 
       it 'downloads the specified release from the pipeline bucket' do
-        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), '/release/bosh-123.tgz')
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'release/bosh-123.tgz')
         build.download_release
       end
 
       it 'returns the relative path of the downloaded release' do
-        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), '/release/bosh-123.tgz')
+        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'release/bosh-123.tgz')
         expect(build.download_release).to eq 'release/bosh-123.tgz'
       end
     end
@@ -315,17 +315,11 @@ module Bosh::Dev
             infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
             name: 'bosh-stemcell',
             light: true,
+            output_directory: '/fake/artifacts/dir',
           }
 
-          download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
+          download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/fake/artifacts/dir/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
           expect(build.download_stemcell(options)).to eq 'light-bosh-stemcell-123-aws-xen-ubuntu.tgz'
-        end
-      end
-
-      context 'when specifying a download directory' do
-        it 'downloads the specified stemcell version from the pipeline bucket' do
-          download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/a/b/c/bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false, output_directory: '/a/b/c')
         end
       end
     end
