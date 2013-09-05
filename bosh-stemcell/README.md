@@ -9,36 +9,38 @@ vagrant plugin install vagrant-berkshelf --plugin-version 1.3.3
 vagrant plugin install vagrant-omnibus   --plugin-version 1.1.0
 ```
 
-## Smoke test
-
-```bash
-vagrant up
-vagrant ssh -c 'cd /bosh; bundle; bundle exec rake -T stemcell' # If this works you're set.
-```
-
 ## Building a vSphere stemcell
 
 ### Bring up the vagrant stemcell building VM
 
-From a fresh copy of the bosh repo
+From a fresh copy of the bosh repo:
 
 ```bash
 cd bosh-stemcell
 vagrant up
+vagrant ssh
 ```
 
-### Install VMWare's `ovftool`
+You're now inside the vagrant VM.
 
-After loggint into the vagrant VM
+### Install VMWare's ovftool
+
+After logging into the vagrant VM
+
+Download the ovftool from http://www.vmware.com/support/developer/ovf/ to `/bosh/tmp/ovftool.txt`
 
 ```bash
-vagrant ssh # login to the vagrant VM
-# Download the ovftool from http://www.vmware.com/support/developer/ovf/ to <BOSH_REPO_LOCATION>/tmp/ovftool.txt
-sudo bash /bosh/tmp/ovftool.txt # follow installation instructions
-which ovftool # should return a location
+cd /bosh
+curl $OVF_TOOL_URL > tmp/ovftool.txt
+sudo bash tmp/ovftool.txt            # follow installation instructions
+which ovftool                        # should return a location
+```
 
 # Build the stemcell
-cd /bosh
+
+```
 bundle install --local
-sudo CANDIDATE_BUILD_NUMBER=919 bundle exec rake ci:publish_stemcell[vsphere,ubuntu]
+sudo CANDIDATE_BUILD_NUMBER=961 bundle exec rake ci:build_stemcell[vsphere,ubuntu]
+# ...or...
+sudo CANDIDATE_BUILD_NUMBER=961 bundle exec rake ci:build_stemcell[vsphere,centos]
 ```
