@@ -10,7 +10,7 @@ module Bosh::Agent
       platform = File.join(File.dirname(__FILE__), 'platform', "#{platform_name}.rb")
 
       if File.exist?(platform)
-        load platform
+        require platform
       else
         raise UnknownPlatform, "platform '#{platform_name}' not found"
       end
