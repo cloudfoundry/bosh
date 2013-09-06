@@ -43,8 +43,7 @@ module Bosh::Stemcell
       StageCollection.stub(:new).with(infrastructure: infrastructure,
                                       operating_system: operating_system).and_return(stage_collection)
 
-      StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
-                                  build_path: File.join(root_dir, 'build', 'build'),
+      StageRunner.stub(:new).with(build_path: File.join(root_dir, 'build', 'build'),
                                   command_env: 'env ',
                                   settings_file: settings_file,
                                   work_path: File.join(root_dir, 'work')).and_return(stage_runner)
@@ -142,6 +141,12 @@ module Bosh::Stemcell
         expect(File.read(settings_file)).to match(/hello=world/)
       end
 
+      it 'calls #configure_and_apply' do
+        stage_runner.should_receive(:configure_and_apply).with('FAKE_STAGES')
+
+        stemcell_builder_command.build
+      end
+
       context 'when ENV contains variables besides HTTP_PROXY and NO_PROXY' do
         let(:environment_hash) do
           {
@@ -151,8 +156,7 @@ module Bosh::Stemcell
         end
 
         it 'nothing is passed to sudo via "env"' do
-          StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
-                                      build_path: File.join(root_dir, 'build', 'build'),
+          StageRunner.stub(:new).with(build_path: File.join(root_dir, 'build', 'build'),
                                       command_env: 'env ',
                                       settings_file: settings_file,
                                       work_path: File.join(root_dir, 'work')).and_return(stage_runner)
@@ -170,8 +174,7 @@ module Bosh::Stemcell
         end
 
         it 'they are passed to sudo via "env"' do
-          StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
-                                      build_path: File.join(root_dir, 'build', 'build'),
+          StageRunner.stub(:new).with(build_path: File.join(root_dir, 'build', 'build'),
                                       command_env: "env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy'",
                                       settings_file: settings_file,
                                       work_path: File.join(root_dir, 'work')).and_return(stage_runner)

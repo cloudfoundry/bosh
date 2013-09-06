@@ -15,8 +15,7 @@ module Bosh::Stemcell
     let(:work_path) { '/fake/path/to/work_dir' }
 
     subject(:stage_runner) do
-      described_class.new(stages: stages,
-                          build_path: build_path,
+      described_class.new(build_path: build_path,
                           command_env: command_env,
                           settings_file: settings_file,
                           work_path: work_path)
@@ -29,12 +28,6 @@ module Bosh::Stemcell
     end
 
     describe '#initialize' do
-      it 'requires :stages' do
-        expect {
-          StageRunner.new(build_path: 'FAKE', command_env: 'FAKE', settings_file: 'FAKE', work_path: 'FAKE')
-        }.to raise_error('key not found: :stages')
-      end
-
       it 'requires :build_path' do
         expect {
           StageRunner.new(stages: 'FAKE', command_env: 'FAKE', settings_file: 'FAKE', work_path: 'FAKE')
@@ -78,7 +71,7 @@ module Bosh::Stemcell
         stage_runner.should_receive(:puts).with("=== Configuring 'stage_0' stage ===")
         stage_runner.should_receive(:puts).with("=== Configuring 'stage_1' stage ===")
 
-        stage_runner.configure
+        stage_runner.configure(stages)
       end
 
       it 'runs the configure script for each stage in order' do
@@ -87,7 +80,7 @@ module Bosh::Stemcell
         shell.should_receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash')
 
-        stage_runner.configure
+        stage_runner.configure(stages)
       end
 
       context 'when a stage does not have a config.sh file' do
@@ -101,7 +94,7 @@ module Bosh::Stemcell
           shell.should_receive(:run).
             with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash')
 
-          stage_runner.configure
+          stage_runner.configure(stages)
         end
       end
 
@@ -116,7 +109,7 @@ module Bosh::Stemcell
           shell.should_not_receive(:run).
             with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash')
 
-          stage_runner.configure
+          stage_runner.configure(stages)
         end
       end
     end
@@ -129,7 +122,7 @@ module Bosh::Stemcell
           stage_runner.should_receive(:puts).with("=== Applying 'stage_1' stage ===")
           stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
 
-          stage_runner.apply
+          stage_runner.apply(stages)
         end
       end
 
@@ -141,7 +134,7 @@ module Bosh::Stemcell
         shell.should_receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/apply.sh /fake/path/to/work_dir/work')
 
-        stage_runner.apply
+        stage_runner.apply(stages)
       end
     end
   end

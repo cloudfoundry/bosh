@@ -36,12 +36,11 @@ module Bosh::Stemcell
 
       stage_collection = StageCollection.new(infrastructure: infrastructure,
                                              operating_system: operating_system)
-      stage_runner = StageRunner.new(stages: stage_collection.stages,
-                                     build_path: build_path,
+      stage_runner = StageRunner.new(build_path: build_path,
                                      command_env: command_env,
                                      settings_file: settings_path,
                                      work_path: work_root)
-      stage_runner.configure_and_apply
+      stage_runner.configure_and_apply(stage_collection.stages)
 
       stemcell_file
     end
