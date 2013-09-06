@@ -63,6 +63,48 @@ describe Bosh::Cli::Director do
   end
 
   describe 'API calls' do
+    describe '#list_vms' do
+      let(:http_client) { double('HTTPClient').as_null_object }
+      let(:response) { double('Response', body: response_body, code: 200, headers: {}) }
+      let(:request_headers) { {'Content-Type' => 'application/json', 'Authorization' => 'Basic dXNlcjpwYXNz' } }
+
+      before do
+        HTTPClient.stub(new: http_client)
+        http_client.stub(:request).with(:get, "https://127.0.0.1:8080/#{endpoint}", body: request_body, header: request_headers).and_return(response)
+      end
+
+      let(:vms) do
+        [{
+             'agent_id' => 'agent-id1',
+             'cid' => 'vm-id1',
+             'job' => 'dummy',
+             'index' => 0},
+         {
+             'agent_id' => 'agent-id2',
+             'cid' => 'vm-id2',
+             'job' => 'dummy',
+             'index' => 1
+         },
+         {
+             'agent_id' => 'agent-id3',
+             'cid' => 'vm-id3',
+             'job' => 'dummy',
+             'index' => 2
+         }]
+      end
+
+      let(:response_body) do
+        JSON.generate(vms)
+      end
+
+      let(:request_body) { nil }
+      let(:endpoint) { 'deployments/foo/vms' }
+
+      it 'lists vms for a given deployment' do
+        expect(@director.list_vms('foo')).to eq vms
+      end
+    end
+
     it 'creates user' do
       @director.should_receive(:post).
           with('/users', 'application/json',
