@@ -54,21 +54,12 @@ describe 'Ubuntu Stemcell' do
         'libcap2-bin'          => '1:2.17-2ubuntu1.1',
         'libyaml-dev'          => '0.1.3-1',
         'cmake'                => '2.8.0-5ubuntu1',
-      }.each do |pkg, version|
-        describe package(pkg) do
-          it { should be_installed.with_version(version) }
-        end
-      end
-    end
-
-    context 'installed by bosh_debs' do
-      {
-        'scsitools'        => '0.10-2.1ubuntu2',
-        'mg'               => '20090107-3',
-        'htop'             => '0.8.3-1ubuntu1',
-        'module-assistant' => '0.11.2ubuntu1',
-        'debhelper'        => '7.4.15ubuntu1',
-        'runit'            => '2.0.0-1ubuntu4',
+        'scsitools'            => '0.10-2.1ubuntu2',
+        'mg'                   => '20090107-3',
+        'htop'                 => '0.8.3-1ubuntu1',
+        'module-assistant'     => '0.11.2ubuntu1',
+        'debhelper'            => '7.4.15ubuntu1',
+        'runit'                => '2.0.0-1ubuntu4',
       }.each do |pkg, version|
         describe package(pkg) do
           it { should be_installed.with_version(version) }
@@ -113,6 +104,11 @@ describe 'Ubuntu Stemcell' do
     describe file('/var/vcap/micro/apply_spec.yml') do
       it { should be_file }
       it { should contain 'deployment: micro' }
+    end
+
+    describe file('/sbin/rescan-scsi-bus.sh') do
+      it { should be_file }
+      it { should be_executable }
     end
   end
 end

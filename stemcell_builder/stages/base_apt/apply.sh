@@ -55,3 +55,7 @@ run_in_chroot $chroot "apt-get clean"
 
 # Install base debs needed by both the warden and bosh
 pkg_mgr install $debs
+
+# Lifted from bosh_debs
+pkg_mgr install "scsitools mg htop module-assistant debhelper runit"
+#/Lifted from bosh_debs

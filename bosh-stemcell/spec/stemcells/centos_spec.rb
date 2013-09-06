@@ -16,8 +16,6 @@ describe 'CentOs Stemcell' do
 
     context 'installed by base_apt'
 
-    context 'installed by bosh_debs'
-
     context 'installed by bosh_micro'
 
     context 'installed by system_grub'

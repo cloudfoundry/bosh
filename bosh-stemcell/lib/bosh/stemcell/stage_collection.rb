@@ -37,7 +37,6 @@ module Bosh::Stemcell
       [
         # Bosh steps
         :bosh_users,
-        #:bosh_debs,
         #:bosh_monit,
         #:bosh_ruby,
         #:bosh_agent,
@@ -74,7 +73,6 @@ module Bosh::Stemcell
       [
         # Bosh steps
         :bosh_users,
-        :bosh_debs,
         :bosh_monit,
         :bosh_ruby,
         :bosh_agent,
