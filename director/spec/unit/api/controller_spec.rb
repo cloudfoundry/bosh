@@ -51,50 +51,6 @@ module Bosh::Director
         last_response.body.should == 'some data'
         File.exists?(tmp_file).should be_false
       end
-
-      it 'responds with a json when requesting /info' do
-        get '/info'
-        JSON.parse(last_response.body).should == {
-          'name' => 'Test Director',
-          'uuid' => Config.uuid,
-          'version' => "#{VERSION} (#{Config.revision})",
-          'user' => 'admin',
-          'cpi' => 'dummy',
-          'features' => {
-            'dns' => {
-              'status' => true,
-              'extras' => {
-                'domain_name' => 'bosh'
-              }
-            },
-            'compiled_package_cache' => {
-              'status' => true,
-              'extras' => {
-                'provider' => 'local'
-              }
-            },
-            'snapshots' => {
-              'status' => true
-            }
-          }
-        }
-      end
-
-      #context 'backup' do
-      #  it 'triggers the backup job' do
-      #    task = Models::Task.make
-      #    backup_manager = double(Api::BackupManager, task: task)
-      #    Api::BackupManager.should_receive(:run!).and_return(backup_manager)
-      #
-      #    post '/backup'
-      #  end
-      #
-      #  it 'redirects to the related task' do
-      #    post '/backup'
-      #
-      #    expect(last_response).to be_redirect
-      #  end
-      #end
     end
   end
 end
