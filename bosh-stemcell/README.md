@@ -44,3 +44,7 @@ sudo CANDIDATE_BUILD_NUMBER=961 bundle exec rake ci:build_stemcell[vsphere,ubunt
 # ...or...
 sudo CANDIDATE_BUILD_NUMBER=961 bundle exec rake ci:build_stemcell[vsphere,centos]
 ```
+One trick to speed up stemcell building iteration is to leverage apt-cacher-ng
+```
+sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=961 http_proxy=http://localhost:3142
+```
