@@ -40,7 +40,8 @@ module Bosh::Stemcell
                                      command_env: command_env,
                                      settings_file: settings_path,
                                      work_path: work_root)
-      stage_runner.configure_and_apply(stage_collection.stages)
+      stage_runner.configure_and_apply(stage_collection.operating_system_stages +
+                                         stage_collection.infrastructure_stages)
 
       stemcell_file
     end

@@ -9,12 +9,23 @@ module Bosh::Stemcell
       @operating_system = options.fetch(:operating_system)
     end
 
-    def stages
+    def operating_system_stages
       case operating_system
         when OperatingSystem::Centos then
-          operating_system_stages + hacked_centos_stages
+          [:base_centos, :base_yum] + hacked_centos_common
         when OperatingSystem::Ubuntu then
-          operating_system_stages + common_stages + infrastructure_stages
+          [:base_debootstrap, :base_apt] + common_stages
+      end
+    end
+
+    def infrastructure_stages
+      case infrastructure
+        when Infrastructure::Aws then
+          aws_stages
+        when Infrastructure::OpenStack then
+          openstack_stages
+        when Infrastructure::Vsphere then
+          operating_system.instance_of?(OperatingSystem::Centos) ? hacked_centos_vsphere : vsphere_stages
       end
     end
 
@@ -22,7 +33,7 @@ module Bosh::Stemcell
 
     attr_reader :infrastructure, :operating_system
 
-    def hacked_centos_stages
+    def hacked_centos_common
       [
         # Bosh steps
         :bosh_users,
@@ -39,6 +50,11 @@ module Bosh::Stemcell
         # Install GRUB/kernel/etc
         :system_grub,
         #:system_kernel,
+      ]
+    end
+
+    def hacked_centos_vsphere
+      [
         #:system_open_vm_tools,
         :system_parameters,
         :bosh_clean,
@@ -52,15 +68,6 @@ module Bosh::Stemcell
         :image_vsphere_prepare_stemcell,
         :stemcell
       ]
-    end
-
-    def operating_system_stages
-      case operating_system
-        when OperatingSystem::Centos then
-          [:base_centos, :base_yum]
-        when OperatingSystem::Ubuntu then
-          [:base_debootstrap, :base_apt]
-      end
     end
 
     def common_stages
@@ -81,17 +88,6 @@ module Bosh::Stemcell
         :system_grub,
         :system_kernel,
       ]
-    end
-
-    def infrastructure_stages
-      case infrastructure
-        when Infrastructure::Aws then
-          aws_stages
-        when Infrastructure::OpenStack then
-          openstack_stages
-        when Infrastructure::Vsphere then
-          vsphere_stages
-      end
     end
 
     def aws_stages

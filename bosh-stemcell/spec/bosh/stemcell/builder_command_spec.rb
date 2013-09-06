@@ -22,7 +22,12 @@ module Bosh::Stemcell
       instance_double('Bosh::Stemcell::BuilderOptions', default: options)
     end
 
-    let(:stage_collection) { instance_double('Bosh::Stemcell::StageCollection::Base', stages: 'FAKE_STAGES') }
+    let(:stage_collection) do
+      instance_double('Bosh::Stemcell::StageCollection::Base',
+                      operating_system_stages: ['FAKE_OS_STAGES'],
+                      infrastructure_stages: ['FAKE_INFRASTRUCTURE_STAGES']
+      )
+    end
     let(:stage_runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
 
     let(:version) { '007' }
@@ -142,7 +147,8 @@ module Bosh::Stemcell
       end
 
       it 'calls #configure_and_apply' do
-        stage_runner.should_receive(:configure_and_apply).with('FAKE_STAGES')
+        stage_runner.should_receive(:configure_and_apply).
+          with(['FAKE_OS_STAGES', 'FAKE_INFRASTRUCTURE_STAGES'])
 
         stemcell_builder_command.build
       end
