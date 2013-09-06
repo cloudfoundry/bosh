@@ -40,7 +40,8 @@ module Bosh::Stemcell
 
       Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
       OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
-      StageCollection.stub(:for).with(infrastructure, operating_system).and_return(stage_collection)
+      StageCollection.stub(:new).with(infrastructure: infrastructure,
+                                      operating_system: operating_system).and_return(stage_collection)
 
       StageRunner.stub(:new).with(stages: 'FAKE_STAGES',
                                   build_path: File.join(root_dir, 'build', 'build'),

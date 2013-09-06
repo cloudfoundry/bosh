@@ -2,40 +2,69 @@ require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
 module Bosh::Stemcell
-  module StageCollection
-    def self.for(infrastructure, operating_system)
-      case infrastructure
-        when Infrastructure::Aws then
-          case operating_system
-            when OperatingSystem::Ubuntu then AwsUbuntu.new
-            else raise ArgumentError.new("'#{infrastructure.name}' does not support '#{operating_system.name}'")
-          end
-        when Infrastructure::OpenStack then
-          case operating_system
-            when OperatingSystem::Ubuntu then OpenstackUbuntu.new
-            else raise ArgumentError.new("'#{infrastructure.name}' does not support '#{operating_system.name}'")
-          end
-        when Infrastructure::Vsphere then
-          case operating_system
-            when OperatingSystem::Centos then VsphereCentos.new
-            when OperatingSystem::Ubuntu then VsphereUbuntu.new
-          end
+  class StageCollection
+
+    def initialize(options)
+      @infrastructure   = options.fetch(:infrastructure)
+      @operating_system = options.fetch(:operating_system)
+    end
+
+    def stages
+      case operating_system
+        when OperatingSystem::Centos then
+          operating_system_stages + hacked_centos_stages
+        when OperatingSystem::Ubuntu then
+          operating_system_stages + common_stages + infrastructure_stages
       end
     end
 
-    class Base
-      attr_reader :stages
+    private
 
-      def initialize(options)
-        @stages = options.fetch(:stages)
+    attr_reader :infrastructure, :operating_system
+
+    def hacked_centos_stages
+      [
+        # Bosh steps
+        :bosh_users,
+        #:bosh_debs,
+        #:bosh_monit,
+        #:bosh_ruby,
+        #:bosh_agent,
+        #:bosh_sysstat,
+        #:bosh_sysctl,
+        #:bosh_ntpdate,
+        #:bosh_sudoers,
+        # Micro BOSH
+        #:bosh_micro,
+        # Install GRUB/kernel/etc
+        :system_grub,
+        #:system_kernel,
+        #:system_open_vm_tools,
+        :system_parameters,
+        :bosh_clean,
+        #:bosh_harden,
+        #:bosh_tripwire,
+        #:bosh_dpkg_list,
+        :image_create,
+        :image_install_grub,
+        :image_vsphere_vmx,
+        :image_vsphere_ovf,
+        :image_vsphere_prepare_stemcell,
+        :stemcell
+      ]
+    end
+
+    def operating_system_stages
+      case operating_system
+        when OperatingSystem::Centos then
+          [:base_centos, :base_yum]
+        when OperatingSystem::Ubuntu then
+          [:base_debootstrap, :base_apt]
       end
     end
 
-    class AwsUbuntu < Base
-      STAGES = [
-        # Setup base chroot
-        :base_debootstrap,
-        :base_apt,
+    def common_stages
+      [
         # Bosh steps
         :bosh_users,
         :bosh_debs,
@@ -51,6 +80,22 @@ module Bosh::Stemcell
         # Install GRUB/kernel/etc
         :system_grub,
         :system_kernel,
+      ]
+    end
+
+    def infrastructure_stages
+      case infrastructure
+        when Infrastructure::Aws then
+          aws_stages
+        when Infrastructure::OpenStack then
+          openstack_stages
+        when Infrastructure::Vsphere then
+          vsphere_stages
+      end
+    end
+
+    def aws_stages
+      [
         # Misc
         :system_aws_network,
         :system_aws_clock,
@@ -70,32 +115,10 @@ module Bosh::Stemcell
         # Final stemcell
         :stemcell
       ]
-
-      def initialize
-        super(stages: STAGES)
-      end
     end
 
-    class OpenstackUbuntu < Base
-      STAGES = [
-        # Setup base chroot
-        :base_debootstrap,
-        :base_apt,
-        # Bosh steps
-        :bosh_users,
-        :bosh_debs,
-        :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
-        :bosh_sysstat,
-        :bosh_sysctl,
-        :bosh_ntpdate,
-        :bosh_sudoers,
-        # Micro BOSH
-        :bosh_micro,
-        # Install GRUB/kernel/etc
-        :system_grub,
-        :system_kernel,
+    def openstack_stages
+      [
         # Misc
         :system_openstack_network,
         :system_openstack_clock,
@@ -115,74 +138,10 @@ module Bosh::Stemcell
         # Final stemcell
         :stemcell_openstack
       ]
-
-      def initialize
-        super(stages: STAGES)
-      end
     end
 
-    class VsphereCentos < Base
-      STAGES = [
-        # Setup base chroot
-        :base_centos,
-        :base_yum,
-        # Bosh steps
-        :bosh_users,
-        #:bosh_monit,
-        #:bosh_ruby,
-        #:bosh_agent,
-        #:bosh_sysstat,
-        #:bosh_sysctl,
-        #:bosh_ntpdate,
-        #:bosh_sudoers,
-        # Micro BOSH
-        #:bosh_micro,
-        # Install GRUB/kernel/etc
-        :system_grub,
-        #:system_kernel,
-        #:system_open_vm_tools,
-        # Misc
-        :system_parameters,
-        # Finalisation
-        :bosh_clean,
-        #:bosh_harden,
-        #:bosh_tripwire,
-        #:bosh_dpkg_list,
-        # Image/bootloader
-        :image_create,
-        :image_install_grub,
-        :image_vsphere_vmx,
-        :image_vsphere_ovf,
-        :image_vsphere_prepare_stemcell,
-        # Final stemcell
-        :stemcell
-      ]
-
-      def initialize
-        super(stages: STAGES)
-      end
-    end
-
-    class VsphereUbuntu < Base
-      STAGES = [
-        # Setup base chroot
-        :base_debootstrap,
-        :base_apt,
-        # Bosh steps
-        :bosh_users,
-        :bosh_debs,
-        :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
-        :bosh_sysstat,
-        :bosh_sysctl,
-        :bosh_ntpdate,
-        :bosh_sudoers,
-        # Micro BOSH
-        :bosh_micro,
-        # Install GRUB/kernel/etc
-        :system_grub,
-        :system_kernel,
+    def vsphere_stages
+      [
         :system_open_vm_tools,
         # Misc
         :system_parameters,
@@ -200,10 +159,6 @@ module Bosh::Stemcell
         # Final stemcell
         :stemcell
       ]
-
-      def initialize
-        super(stages: STAGES)
-      end
     end
   end
 end
