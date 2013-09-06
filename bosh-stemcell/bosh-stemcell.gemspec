@@ -24,4 +24,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec-fire'
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'serverspec'
+  spec.add_development_dependency 'foodcritic'
 end
