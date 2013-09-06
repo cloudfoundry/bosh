@@ -41,7 +41,6 @@ require "bosh_agent/monit"
 
 require "bosh_agent/infrastructure"
 require "bosh_agent/platform"
-require "bosh_agent/platform/unix"
 require "bosh_agent/platform/linux"
 require "bosh_agent/platform/ubuntu"
 require "bosh_agent/platform/rhel"

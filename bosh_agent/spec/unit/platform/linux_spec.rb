@@ -8,11 +8,6 @@ describe Bosh::Agent::Platform::Linux do
   let(:password)  { double("Password") }
   let(:platform)  { Bosh::Agent::Platform::Linux.new(disk, logrotate, password, network) }
 
-  it 'should call UNIX constructor' do
-    Bosh::Agent::Platform::UNIX.should_receive(:new).with(disk, logrotate, password, network)
-    Bosh::Agent::Platform::Linux.new(disk, logrotate, password, network)
-  end
-
   describe "Method delegation" do
 
     context "Disk" do
