@@ -5,16 +5,16 @@ module Bosh::Agent
 
   module Platform
     def self.platform(platform_name)
-      platform = File.join(File.dirname(__FILE__), 'platform', "#{platform_name}.rb")
-
-      if File.exist?(platform)
-        require platform
-      else
-        raise UnknownPlatform, "platform '#{platform_name}' not found"
+      case platform_name
+        when 'ubuntu'
+          Ubuntu.new
+        when 'centos'
+          Centos.new
+        when 'rhel'
+          Rhel.new
+        else
+          raise UnknownPlatform, "platform '#{platform_name}' not found"
       end
-
-      Platform.const_get(platform_name.capitalize).new
     end
-
   end
 end
