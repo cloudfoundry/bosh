@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent'
 
 module Bosh::Agent
   class Config
