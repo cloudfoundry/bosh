@@ -3,10 +3,8 @@
 module Bosh::Agent
   class UnknownPlatform < StandardError; end
 
-  class Platform
-
-    def initialize(platform_name)
-      @name = platform_name
+  module Platform
+    def self.platform(platform_name)
       platform = File.join(File.dirname(__FILE__), 'platform', "#{platform_name}.rb")
 
       if File.exist?(platform)
@@ -14,10 +12,8 @@ module Bosh::Agent
       else
         raise UnknownPlatform, "platform '#{platform_name}' not found"
       end
-    end
 
-    def platform
-      Platform.const_get(@name.capitalize).new
+      Platform.const_get(platform_name.capitalize).new
     end
 
   end

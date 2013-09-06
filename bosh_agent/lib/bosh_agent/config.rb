@@ -95,7 +95,7 @@ module Bosh::Agent
       end
 
       def platform
-        @platform ||= Bosh::Agent::Platform.new(@platform_name).platform
+        @platform ||= Bosh::Agent::Platform.platform(@platform_name)
       end
 
       def random_password(len)
