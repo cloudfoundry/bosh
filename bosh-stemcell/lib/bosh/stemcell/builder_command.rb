@@ -40,8 +40,9 @@ module Bosh::Stemcell
                                      command_env: command_env,
                                      settings_file: settings_path,
                                      work_path: work_root)
-      stage_runner.configure_and_apply(stage_collection.operating_system_stages +
-                                         stage_collection.infrastructure_stages)
+      stage_runner.configure_and_apply(stage_collection.operating_system_stages)
+      system(rspec_command) || raise('Stemcell specs failed')
+      stage_runner.configure_and_apply(stage_collection.infrastructure_stages)
 
       stemcell_file
     end
@@ -57,6 +58,14 @@ module Bosh::Stemcell
                 :infrastructure,
                 :operating_system,
                 :stemcell_builder_options
+
+    def rspec_command
+      [
+        "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
+        "SERVERSPEC_CHROOT=/mnt/stemcells/vsphere/esxi/#{operating_system.name}/work/work/chroot",
+        "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
+      ].join(' ')
+    end
 
     def sanitize
       FileUtils.rm_rf('*.tgz')

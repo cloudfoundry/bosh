@@ -44,7 +44,7 @@ module Bosh::Stemcell
       ENV.stub(to_hash: environment_hash)
 
       Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
-      OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
+      OperatingSystem.stub(:for).with(operating_system.name).and_return(operating_system)
       StageCollection.stub(:new).with(infrastructure: infrastructure,
                                       operating_system: operating_system).and_return(stage_collection)
 
@@ -72,7 +72,7 @@ module Bosh::Stemcell
       before do
         Process.stub(pid: 99999)
 
-        stemcell_builder_command.stub(:system)
+        stemcell_builder_command.stub(system: true)
         FileUtils.touch('leftover.tgz')
 
         FileUtils.stub(:cp_r).with([], File.join(root_dir, 'build', 'build'), preserve: true, verbose: true) do
@@ -146,11 +146,51 @@ module Bosh::Stemcell
         expect(File.read(settings_file)).to match(/hello=world/)
       end
 
-      it 'calls #configure_and_apply' do
-        stage_runner.should_receive(:configure_and_apply).
-          with(['FAKE_OS_STAGES', 'FAKE_INFRASTRUCTURE_STAGES'])
+      describe 'running stages' do
+        let(:expected_rspec_command) do
+          [
+            "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
+            "SERVERSPEC_CHROOT=/mnt/stemcells/vsphere/esxi/#{operating_system.name}/work/work/chroot",
+            "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
+          ].join(' ')
+        end
 
-        stemcell_builder_command.build
+        it 'calls #configure_and_apply' do
+          stage_runner.should_receive(:configure_and_apply).
+            with(['FAKE_OS_STAGES']).ordered
+          stemcell_builder_command.should_receive(:system).
+            with(expected_rspec_command)
+          stage_runner.should_receive(:configure_and_apply).
+            with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
+
+          stemcell_builder_command.build
+        end
+
+        context 'with CentOS' do
+          let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Centos', name: 'centos') }
+
+          it 'calls #configure_and_apply' do
+            stage_runner.should_receive(:configure_and_apply).
+              with(['FAKE_OS_STAGES']).ordered
+            stemcell_builder_command.should_receive(:system).
+              with(expected_rspec_command)
+            stage_runner.should_receive(:configure_and_apply).
+              with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
+
+            stemcell_builder_command.build
+          end
+        end
+
+        context 'when rspec fails' do
+          it 'raises an error' do
+            stemcell_builder_command.stub(:system).
+              with(expected_rspec_command).and_return(false)
+
+            expect {
+              stemcell_builder_command.build
+            }.to raise_error(RuntimeError, 'Stemcell specs failed')
+          end
+        end
       end
 
       context 'when ENV contains variables besides HTTP_PROXY and NO_PROXY' do
