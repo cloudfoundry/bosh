@@ -18,7 +18,7 @@ module Bosh::Agent
 
       context 'when the platform_name is "ubuntu"' do
         it 'returns an Ubuntu compatible platform implementation' do
-          expect(factory.platform('ubuntu')).to be_an_instance_of(Platform::Ubuntu)
+          expect(factory.platform('ubuntu')).to be_an_instance_of(Platform::Ubuntu::Adapter)
         end
       end
 

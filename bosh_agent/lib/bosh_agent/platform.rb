@@ -7,7 +7,7 @@ module Bosh::Agent
     def self.platform(platform_name)
       case platform_name
         when 'ubuntu'
-          Ubuntu.new
+          Ubuntu::Adapter.new
         when 'centos'
           Centos.new
         when 'rhel'
