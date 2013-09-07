@@ -30,7 +30,7 @@ describe Bosh::AwsCloud::Cloud do
 
   before :all do
     unless ENV['BOSH_AWS_ACCESS_KEY_ID'] && ENV['BOSH_AWS_SECRET_ACCESS_KEY'] && ENV['BOSH_AWS_SUBNET_ID']
-      raise "Mising env var.   You need 'BOSH_AWS_ACCESS_KEY_ID' 'BOSH_AWS_SECRET_ACCESS_KEY' and 'BOSH_AWS_SUBNET_ID' set."
+      raise "Missing env var.   You need 'BOSH_AWS_ACCESS_KEY_ID' 'BOSH_AWS_SECRET_ACCESS_KEY' and 'BOSH_AWS_SUBNET_ID' set."
     end
   end
 
