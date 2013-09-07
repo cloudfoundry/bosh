@@ -2,7 +2,7 @@
 
 module Bosh::Agent
   module Platform::Ubuntu
-    class Adapter < Platform::Linux
+    class Adapter < Platform::Linux::Adapter
       require 'bosh_agent/platform/linux/disk'
       require 'bosh_agent/platform/linux/logrotate'
       require 'bosh_agent/platform/ubuntu/network'

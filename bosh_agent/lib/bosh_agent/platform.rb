@@ -9,9 +9,9 @@ module Bosh::Agent
         when 'ubuntu'
           Ubuntu::Adapter.new
         when 'centos'
-          Centos.new
+          Centos::Adapter.new
         when 'rhel'
-          Rhel.new
+          Rhel::Adapter.new
         else
           raise UnknownPlatform, "platform '#{platform_name}' not found"
       end

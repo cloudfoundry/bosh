@@ -24,13 +24,13 @@ module Bosh::Agent
 
       context 'when the platform_name is "centos"' do
         it 'returns an CentOS compatible platform implementation' do
-          expect(factory.platform('centos')).to be_an_instance_of(Platform::Centos)
+          expect(factory.platform('centos')).to be_an_instance_of(Platform::Centos::Adapter)
         end
       end
 
       context 'when the platform_name is "rhel"' do
         it 'returns an CentOS compatible platform implementation' do
-          expect(factory.platform('rhel')).to be_an_instance_of(Platform::Rhel)
+          expect(factory.platform('rhel')).to be_an_instance_of(Platform::Rhel::Adapter)
         end
       end
 
