@@ -1,297 +1,415 @@
-# Copyright (c) 2009-2013 VMware, Inc.
+# -*- encoding: utf-8 -*-
+# Copyright (c) 2009-2013 GoPivotal, Inc.
 
-require "spec_helper"
-
-Bosh::Agent::Infrastructure.new("openstack").infrastructure
+require 'spec_helper'
+require 'bosh_agent/infrastructure/openstack'
 
 describe Bosh::Agent::Infrastructure::Openstack::Registry do
-  let(:user_data) {
+  let(:subject) { described_class }
+  let(:registry_schema) { 'http' }
+  let(:registry_hostname) { 'registry_endpoint' }
+  let(:registry_port) { '25777' }
+  let(:registry_endpoint) { "#{registry_schema}://#{registry_hostname}:#{registry_port}" }
+  let(:server_name) { 'server-name' }
+  let(:nameservers) { nil }
+  let(:openssh_public_key) { 'openssh-public-key' }
+  let(:user_data) do
     {
-      "registry" => {
-        "endpoint" => "http://registry_endpoint:25777"
-      },
-      "server" => {
-        "name" => "vm-name"
-      },
-      "openssh" => {
-        "public_key" => "public openssh key"
-      }
+      'registry' => { 'endpoint' => registry_endpoint },
+      'server' => { 'name' => server_name },
+      'dns' => { 'nameserver' => nameservers },
+      'openssh' => { 'public_key' => openssh_public_key },
+      'public_keys' => { 'default' => openssh_public_key }
     }
-  }
-
-  describe :get_settings do
-    let(:settings_json) {
-      {
-        "vm" => {
-          "name" => "vm-name"
-        },
-        "agent_id" => "agent-id",
-        "networks" => {
-          "network_a" => {
-            "type" => "manual"
-          }
-        },
-        "disks" => {
-          "system" => "/dev/vda",
-          "ephemeral" => "/dev/vdb",
-          "persistent" => {}
-        },
-        "env" => {
-          "test_env" => "value"
-        }
-      }
-    }
-    let(:settings) { Yajl::Encoder.encode({"status" => "ok", "settings" => Yajl::Encoder.encode(settings_json)}) }
-
-    it "should get settings from Bosh registry" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_registry_endpoint)
-          .and_return("http://registry_endpoint")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_server_name)
-          .and_return("vm-name")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .with("http://registry_endpoint/instances/vm-name/settings")
-          .and_return(settings)
-
-      settings = Bosh::Agent::Infrastructure::Openstack::Registry.get_settings
-      settings.should == settings_json
-    end
-
-    it "should raise exception when response from Bosh registry is invalid" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_registry_endpoint)
-          .and_return("http://registry_endpoint")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_server_name)
-          .and_return("vm-name")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .and_return("{\"status\":\"error\"}")
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_settings
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Invalid response received from Bosh registry/
-    end
-
-    it "should raise exception when settings from Bosh registry are invalid" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_registry_endpoint)
-          .and_return("http://registry_endpoint")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_server_name)
-          .and_return("vm-name")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .and_return("{\"status\":\"error\",\"settings\":#{Yajl::Encoder.encode("\"settings\"")}}")
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_settings
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Invalid settings received from Bosh registry/
-    end
-
-    it "should raise a LoadSettingsError exception when cannot parse settings" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_registry_endpoint)
-          .and_return("http://registry_endpoint")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_server_name)
-          .and_return("vm-name")
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .and_return({})
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_settings
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Cannot parse settings from Bosh registry/
-    end
   end
 
   describe :get_openssh_key do
-    it "should get OpenSSH public key from OpenStack meta data" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .with("http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key")
-          .and_return("public openssh key")
+    it 'should get openssh public key from meta-data service' do
+      subject.should_receive(:get_uri)
+              .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+              .and_return(openssh_public_key)
 
-      public_key = Bosh::Agent::Infrastructure::Openstack::Registry.get_openssh_key
-      public_key.should == "public openssh key"
+      expect(subject.get_openssh_key).to eql(openssh_public_key)
     end
 
-    it "should get OpenSSH public key from injected user data file" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .with("http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key")
-          .and_raise Bosh::Agent::LoadSettingsError
-      Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_user_data_from_file)
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:parse_user_data)
-          .and_return(user_data)
+    context 'when meta-data service is unavailable' do
+      it 'should get openssh public key from injected user file' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_raise(Bosh::Agent::LoadSettingsError)
 
-      public_key = Bosh::Agent::Infrastructure::Openstack::Registry.get_openssh_key
-      public_key.should == "public openssh key"
-    end
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_return(Yajl::Encoder.encode(user_data))
 
-    it "should raise a LoadSettingsError exception when cannot get OpenSSH public key" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-          .with("http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key")
-          .and_raise Bosh::Agent::LoadSettingsError
-      Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_user_data_from_file)
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:parse_user_data)
-          .and_return({})
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_openssh_key
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Cannot get OpenSSH public key from injected user data file/
-    end
-  end
-
-  describe :get_server_name do
-    it "should get server name" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_user_data)
-          .and_return(user_data)
-
-      server_name = Bosh::Agent::Infrastructure::Openstack::Registry.get_server_name
-      server_name.should == "vm-name"
-    end
-
-    it "should raise a LoadSettingsError exception when cannot get server name" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_user_data)
-          .and_return({})
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_server_name
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Cannot get OpenStack server name from user data/
-    end
-  end
-
-  describe :get_registry_endpoint do
-    it "should get Bosh registry endpoint" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_user_data)
-        .and_return(user_data)
-
-      registry_endpoint = Bosh::Agent::Infrastructure::Openstack::Registry.get_registry_endpoint
-      registry_endpoint.should == "http://registry_endpoint:25777"
-    end
-
-    it "should raise a LoadSettingsError exception when cannot get Bosh registry endpoint" do
-      Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_user_data)
-          .and_return({})
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_registry_endpoint
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Cannot get Bosh registry endpoint from user data/
-    end
-  end
-
-  describe :lookup_registry_endpoint do
-    context "without dns nameservers" do
-      it "should return Bosh registry endpoint" do
-        registry_endpoint = Bosh::Agent::Infrastructure::Openstack::Registry.lookup_registry_endpoint(user_data)
-        registry_endpoint.should == "http://registry_endpoint:25777"
+        expect(subject.get_openssh_key).to eql(openssh_public_key)
       end
     end
 
-    context "with dns nameservers" do
-      let(:user_data_with_dns) {
-        user_data_dns = user_data
-        user_data_dns["dns"] = { "nameserver" => ["10.11.12.13", "14.15.16.17"] }
-        user_data_dns
+    context 'when meta-data service does not contain a public key' do
+      it 'should get openssh public key from injected user file' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_return('')
+
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_return(Yajl::Encoder.encode(user_data))
+
+        expect(subject.get_openssh_key).to eql(openssh_public_key)
+      end
+    end
+
+    context 'when injected file does not exist' do
+      it 'should get openssh public key from config drive' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_raise(Bosh::Agent::LoadSettingsError)
+
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_raise(Errno::ENOENT)
+
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'meta_data.json'))
+            .and_return(Yajl::Encoder.encode(user_data))
+
+        expect(subject.get_openssh_key).to eql(openssh_public_key)
+      end
+    end
+
+    context 'when injected file does not contain a public key' do
+      it 'should get openssh public key from config drive' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_raise(Bosh::Agent::LoadSettingsError)
+
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_return('')
+
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'meta_data.json'))
+            .and_return(Yajl::Encoder.encode(user_data))
+
+        expect(subject.get_openssh_key).to eql(openssh_public_key)
+      end
+    end
+
+    context 'when config-drive does not exist' do
+      it 'should return nil' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_raise(Bosh::Agent::LoadSettingsError)
+
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_raise(Errno::ENOENT)
+
+        Bosh::Exec.should_receive(:sh)
+                  .with('blkid -l -t LABEL="config-2" -o device', on_error: :return)
+                  .and_return(Bosh::Exec::Result.new('command', '', 1))
+
+        expect(subject.get_openssh_key).to be_nil
+      end
+    end
+
+    context 'when config-drive file does not exist' do
+      it 'should return nil' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_raise(Bosh::Agent::LoadSettingsError)
+
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+        .and_raise(Errno::ENOENT)
+
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'meta_data.json'))
+            .and_raise(Errno::ENOENT)
+
+        expect(subject.get_openssh_key).to be_nil
+      end
+    end
+
+    context 'when config-drive file does not contain a public key' do
+      it 'should return nil' do
+        subject.should_receive(:get_uri)
+                .with('http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key')
+                .and_raise(Bosh::Agent::LoadSettingsError)
+
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+        .and_raise(Errno::ENOENT)
+
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'meta_data.json'))
+            .and_return('')
+
+        expect(subject.get_openssh_key).to be_nil
+      end
+    end
+  end
+
+  describe :get_settings do
+    let(:settings) do
+      {
+        'vm' => { 'name' => server_name },
+        'agent_id' => 'agent-id',
+        'networks' => { 'default' => { 'type' => 'dynamic' } },
+        'disks' => { 'system' => '/dev/xvda', 'persistent' => {} }
       }
-
-      it "should return Bosh registry endpoint as an IP address" do
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:lookup_registry_ip_address)
-            .with("registry_endpoint", ["10.11.12.13", "14.15.16.17"])
-            .and_return("4.3.2.1")
-
-        registry_endpoint = Bosh::Agent::Infrastructure::Openstack::Registry.lookup_registry_endpoint(user_data_with_dns)
-        registry_endpoint.should == "http://4.3.2.1:25777"
-      end
-
-      it "should not lookup for an IP address when Bosh registry endpoint is an IP address" do
-        user_data_with_ip = user_data_with_dns
-        user_data_with_ip["registry"]["endpoint"] = "http://1.2.3.4:25777"
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_not_receive(:lookup_registry_ip_address)
-
-        registry_endpoint = Bosh::Agent::Infrastructure::Openstack::Registry.lookup_registry_endpoint(user_data_with_ip)
-        registry_endpoint.should == "http://1.2.3.4:25777"
-      end
-
-      it "should raise a LoadSettingsError exception when cannot lookup the hostname" do
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:lookup_registry_ip_address)
-            .with("registry_endpoint", ["10.11.12.13", "14.15.16.17"])
-            .and_raise(Resolv::ResolvError)
-
-        expect {
-          Bosh::Agent::Infrastructure::Openstack::Registry.lookup_registry_endpoint(user_data_with_dns)
-        }.to raise_error Bosh::Agent::LoadSettingsError, /Cannot lookup registry_endpoint using 10.11.12.13, 14.15.16.17/
-      end
     end
-  end
+    let(:httpclient) { double('httpclient') }
+    let(:status) { 200 }
+    let(:body) { Yajl::Encoder.encode({ settings: Yajl::Encoder.encode(settings) }) }
+    let(:response) { double('response', status: status, body: body) }
+    let(:uri) { "#{registry_endpoint}/instances/#{server_name}/settings" }
 
-  describe :get_user_data do
-    context "first call" do
-      before(:each) do
-        Bosh::Agent::Infrastructure::Openstack::Registry.user_data = nil
-      end
+    before do
+      HTTPClient.stub(:new).and_return(httpclient)
+      httpclient.stub(:send_timeout=)
+      httpclient.stub(:receive_timeout=)
+      httpclient.stub(:connect_timeout=)
+      subject.user_data = nil
+    end
 
-      it "should get user data from OpenStack user data" do
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-            .with("http://169.254.169.254/latest/user-data")
+    it 'should get agent settings' do
+      subject.should_receive(:get_user_data).twice.and_return(user_data)
+      httpclient.should_receive(:get).with(uri, {}, { 'Accept' => 'application/json' }).and_return(response)
+
+      expect(subject.get_settings).to eql(settings)
+    end
+
+    it 'should raise a LoadSettingsError exception if user data does not contain registry endpoint' do
+      subject.should_receive(:get_user_data).and_return(user_data.tap { |hs| hs.delete('registry') })
+
+      expect do
+        subject.get_settings
+      end.to raise_error(Bosh::Agent::LoadSettingsError, /Cannot get BOSH registry endpoint from user data/)
+    end
+
+    it 'should raise a LoadSettingsError exception if user data does not contain the server name' do
+      subject.should_receive(:get_user_data).twice.and_return(user_data.tap { |hs| hs.delete('server') })
+
+      expect do
+        subject.get_settings
+      end.to raise_error(Bosh::Agent::LoadSettingsError, /Cannot get server name from user data/)
+    end
+
+    it 'should get registry settings from meta-data service' do
+      subject.should_receive(:get_uri)
+             .with('http://169.254.169.254/latest/user-data')
+             .and_return(Yajl::Encoder.encode(user_data))
+      subject.should_receive(:get_uri).with(uri).and_return(body)
+
+      expect(subject.get_settings).to eql(settings)
+    end
+
+    context 'when meta-data service is unavailable' do
+      it 'should get registry settings from injected user file' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_raise(Bosh::Agent::LoadSettingsError)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
             .and_return(Yajl::Encoder.encode(user_data))
+        subject.should_receive(:get_uri).with(uri).and_return(body)
 
-        openstack_user_data = Bosh::Agent::Infrastructure::Openstack::Registry.get_user_data
-        openstack_user_data.should == user_data
+        expect(subject.get_settings).to eql(settings)
       end
+    end
 
-      it "should get user data from from injected user data file" do
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_uri)
-            .with("http://169.254.169.254/latest/user-data")
-            .and_raise Bosh::Agent::LoadSettingsError
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_receive(:get_user_data_from_file)
+    context 'when meta-data service does not contain user-data' do
+      it 'should get registry settings from injected user file' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_return(Yajl::Encoder.encode({}))
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
             .and_return(Yajl::Encoder.encode(user_data))
+        subject.should_receive(:get_uri).with(uri).and_return(body)
 
-        openstack_user_data = Bosh::Agent::Infrastructure::Openstack::Registry.get_user_data
-        openstack_user_data.should == user_data
+        expect(subject.get_settings).to eql(settings)
       end
     end
 
-    context "next calls" do
-      before(:each) do
-        Bosh::Agent::Infrastructure::Openstack::Registry.user_data = user_data
+    context 'when injected file does not exist' do
+      it 'should get registry settings from config drive' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_raise(Bosh::Agent::LoadSettingsError)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_raise(Errno::ENOENT)
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'user_data'))
+            .and_return(Yajl::Encoder.encode(user_data))
+        subject.should_receive(:get_uri).with(uri).and_return(body)
+
+        expect(subject.get_settings).to eql(settings)
+      end
+    end
+
+    context 'when injected file does not contain user-data' do
+      it 'should get registry settings from config drive' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_raise(Bosh::Agent::LoadSettingsError)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_return(Yajl::Encoder.encode({}))
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'user_data'))
+            .and_return(Yajl::Encoder.encode(user_data))
+        subject.should_receive(:get_uri).with(uri).and_return(body)
+
+        expect(subject.get_settings).to eql(settings)
+      end
+    end
+
+    context 'when config-drive does not exist' do
+      it 'should raise a LoadSettingsError exception' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_raise(Bosh::Agent::LoadSettingsError)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_raise(Errno::ENOENT)
+        Bosh::Exec.should_receive(:sh)
+                  .with('blkid -l -t LABEL="config-2" -o device', on_error: :return)
+                  .and_return(Bosh::Exec::Result.new('command', '', 1))
+
+        expect do
+          subject.get_settings
+        end.to raise_error(Bosh::Agent::LoadSettingsError, /Failed to get VM user data/)
+      end
+    end
+
+    context 'when config-drive file does not exist' do
+      it 'should raise a LoadSettingsError exception' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_raise(Bosh::Agent::LoadSettingsError)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_raise(Errno::ENOENT)
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'user_data'))
+            .and_raise(Errno::ENOENT)
+
+        expect do
+          subject.get_settings
+        end.to raise_error(Bosh::Agent::LoadSettingsError, /Failed to get VM user data/)
+      end
+    end
+
+    context 'when config-drive file does not contain a user-data' do
+      it 'should raise a LoadSettingsError exception' do
+        subject.should_receive(:get_uri)
+               .with('http://169.254.169.254/latest/user-data')
+               .and_raise(Bosh::Agent::LoadSettingsError)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'var', 'vcap', 'bosh', 'user_data.json'))
+            .and_raise(Errno::ENOENT)
+        subject.should_receive(:mount_config_drive)
+        File.should_receive(:read)
+            .with(File.join(File::SEPARATOR, 'mnt', 'config', 'openstack', 'latest', 'user_data'))
+            .and_return(Yajl::Encoder.encode({}))
+
+        expect do
+          subject.get_settings
+        end.to raise_error(Bosh::Agent::LoadSettingsError, /Failed to get VM user data/)
+      end
+    end
+
+    context 'with invalid registry data' do
+      let(:body) { { settings: settings } }
+
+      it 'should raise a LoadSettingsError exception if registry date can not be parsed' do
+        subject.should_receive(:get_user_data).twice.and_return(user_data)
+        httpclient.should_receive(:get).with(uri, {}, { 'Accept' => 'application/json' }).and_return(response)
+
+        expect do
+          subject.get_settings
+        end.to raise_error(Bosh::Agent::LoadSettingsError, /Cannot parse data/)
+      end
+    end
+
+    context 'with invalid settings' do
+      let(:body) { Yajl::Encoder.encode({ settings: settings }) }
+
+      it 'should raise a LoadSettingsError exception if settings can not be parsed' do
+        subject.should_receive(:get_user_data).twice.and_return(user_data)
+        httpclient.should_receive(:get).with(uri, {}, { 'Accept' => 'application/json' }).and_return(response)
+
+        expect do
+          subject.get_settings
+        end.to raise_error(Bosh::Agent::LoadSettingsError, /Cannot parse data/)
+      end
+    end
+
+    context 'without settings Hash' do
+      let(:body) { Yajl::Encoder.encode({ sezzings: Yajl::Encoder.encode(settings) }) }
+
+      it 'should raise a LoadSettingsError exception if settings Hash not found' do
+        subject.should_receive(:get_user_data).twice.and_return(user_data)
+        httpclient.should_receive(:get).with(uri, {}, { 'Accept' => 'application/json' }).and_return(response)
+
+        expect do
+          subject.get_settings
+        end.to raise_error(Bosh::Agent::LoadSettingsError, /Invalid response received from BOSH registry/)
+      end
+    end
+
+    context 'with dns' do
+      let(:nameservers) { ['8.8.8.8'] }
+      let(:resolver) { double('resolver') }
+      let(:registry_ipaddress) { '1.2.3.4' }
+
+      before do
+        Resolv::DNS.stub(:new).with(nameserver: nameservers).and_return(resolver)
       end
 
-      it "should return previous user data" do
-        Bosh::Agent::Infrastructure::Openstack::Registry.should_not_receive(:get_uri)
-        openstack_user_data = Bosh::Agent::Infrastructure::Openstack::Registry.get_user_data
-        openstack_user_data.should == user_data
+      context 'when registry endpoint is a hostname' do
+        let(:uri) { "#{registry_schema}://#{registry_ipaddress}:#{registry_port}/instances/#{server_name}/settings" }
+
+        it 'should get agent settings' do
+          subject.should_receive(:get_user_data).twice.and_return(user_data)
+          httpclient.should_receive(:get).with(uri, {}, { 'Accept' => 'application/json' }).and_return(response)
+          resolver.should_receive(:getaddress).with(registry_hostname).and_return(registry_ipaddress)
+
+          expect(subject.get_settings).to eql(settings)
+        end
+
+        it 'should raise a LoadSettingsError exception if can not resolve the hostname' do
+          subject.should_receive(:get_user_data).and_return(user_data)
+          resolver.should_receive(:getaddress).with(registry_hostname).and_raise(Resolv::ResolvError)
+
+          expect do
+            subject.get_settings
+          end.to raise_error(Bosh::Agent::LoadSettingsError, /Cannot lookup registry_endpoint using/)
+        end
       end
-    end
-  end
 
-  describe :get_user_data_from_file do
-    it "should read injected user data file" do
-      File.should_receive(:read)
-          .with("/var/vcap/bosh/user_data.json")
-          .and_return(user_data)
+      context 'when registry endpoint is an IP address' do
+        let(:registry_hostname) { '1.2.3.4' }
 
-      openstack_user_data = Bosh::Agent::Infrastructure::Openstack::Registry.get_user_data_from_file
-      openstack_user_data.should == user_data
-    end
+        it 'should get agent settings' do
+          subject.should_receive(:get_user_data).twice.and_return(user_data)
+          httpclient.should_receive(:get).with(uri, {}, { 'Accept' => 'application/json' }).and_return(response)
+          resolver.should_not_receive(:getaddress)
 
-    it "should raise a LoadSettingsError exception when cannot read injected user data file" do
-      File.should_receive(:read)
-          .with("/var/vcap/bosh/user_data.json")
-          .and_raise Errno::ENOENT
-
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.get_user_data_from_file
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Failed to get user data from OpenStack injected user data file/
-    end
-  end
-
-  describe :parse_user_data do
-    it "should parse user data" do
-      openstack_user_data = Bosh::Agent::Infrastructure::Openstack::Registry.parse_user_data(Yajl::Encoder.encode(user_data))
-      openstack_user_data.should == user_data
-    end
-
-    it "should raise a LoadSettingsError exception when cannot parse user data" do
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.parse_user_data("test")
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Cannot parse user data/
-    end
-
-    it "should raise a LoadSettingsError exception when user data is not a Hash" do
-      expect {
-        Bosh::Agent::Infrastructure::Openstack::Registry.parse_user_data("")
-      }.to raise_error Bosh::Agent::LoadSettingsError, /Invalid user data format, Hash expected/
+          expect(subject.get_settings).to eql(settings)
+        end
+      end
     end
   end
 end
