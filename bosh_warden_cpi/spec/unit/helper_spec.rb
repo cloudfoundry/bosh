@@ -9,14 +9,12 @@ describe Bosh::WardenCloud::Helpers do
     end
   end
 
-  context 'sudo' do
+  context 'sudo/sh' do
     it 'run sudo cmd with sudo' do
       mock_sh('fake', true)
       sudo('fake')
     end
-  end
 
-  context 'sh' do
     it 'run sh cmd with sh' do
       mock_sh('fake')
       sh('fake')
@@ -41,7 +39,6 @@ describe Bosh::WardenCloud::Helpers do
         end
         res
       end
-
       @agent_properties = { 'ntp' => 'test' }
     end
 
@@ -110,9 +107,6 @@ describe Bosh::WardenCloud::Helpers do
     it 'runs runsvdir-start when start agent' do
       start_agent('fake_handle')
     end
-
   end
-
-
 
 end

@@ -38,7 +38,6 @@ describe Bosh::WardenCloud::DiskUtils do
 
   context 'delete_stemcell' do
     it 'can delete stemcell' do
-
       Dir.chdir(@stemcell_path) do
         mock_sh("tar -C #{@stemcell_root} -xzf #{image_path} 2>&1", true)
         @disk_util.stemcell_unpack(image_path, 'stemcell-uuid')

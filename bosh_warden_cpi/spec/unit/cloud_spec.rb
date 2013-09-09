@@ -123,11 +123,9 @@ describe Bosh::WardenCloud::Cloud do
       class FakeError < StandardError; end
       Bosh::WardenCloud::Cloud.any_instance.stub(:sudo) {}
       @cloud.stub(:set_agent_env) { raise FakeError.new }
-
       network_spec = {
           'nic1' => { 'ip' => '1.1.1.1', 'type' => 'static' },
       }
-
       begin
         @cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
       rescue FakeError
