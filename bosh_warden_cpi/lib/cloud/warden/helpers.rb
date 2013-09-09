@@ -93,5 +93,15 @@ module Bosh::WardenCloud
       tempfile.unlink
     end
 
+    def start_agent(handle)
+      with_warden do |client|
+        request = Warden::Protocol::SpawnRequest.new
+        request.handle = handle
+        request.privileged = true
+        request.script = '/usr/sbin/runsvdir-start'
+        client.call(request)
+      end
+    end
+
   end
 end

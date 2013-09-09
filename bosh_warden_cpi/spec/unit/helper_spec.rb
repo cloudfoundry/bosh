@@ -82,10 +82,37 @@ describe Bosh::WardenCloud::Helpers do
       end
     end
 
-    it 'gentrate a random file in tmp and mv to agent_setting_file' do
+    it 'generate a random file in tmp and mv to agent_setting_file' do
       Kernel.stub!(:rand).and_return(100)
       set_agent_env('fake_handle', {})
     end
   end
+
+  context 'start agent' do
+    before :each do
+      [:connect, :disconnect].each do |op|
+        Warden::Client.any_instance.stub(op) do
+          # no-op
+        end
+      end
+      Warden::Client.any_instance.stub(:call) do |req|
+        res = req.create_response
+        case req
+          when Warden::Protocol::SpawnRequest
+            req.script.should == '/usr/sbin/runsvdir-start'
+          else
+            raise "#{req} not supported"
+        end
+        res
+      end
+    end
+
+    it 'runs runsvdir-start when start agent' do
+      start_agent('fake_handle')
+    end
+
+  end
+
+
 
 end

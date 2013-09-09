@@ -80,7 +80,7 @@ module Bosh::WardenCloud
         cloud_error("Cannot find Stemcell(#{stemcell_id})") unless Dir.exist?(stemcell_path)
 
         # Create Container
-        handle = with_warden do |client|
+        vm_handle = with_warden do |client|
           request = Warden::Protocol::CreateRequest.new
           request.handle = vm_id
           request.rootfs = stemcell_path
@@ -91,22 +91,12 @@ module Bosh::WardenCloud
           response = client.call(request)
           response.handle
         end
-
-        vm_handle = handle
-        cloud_error("Cannot create vm with given handle #{vm_id}") unless handle == vm_id
+        cloud_error("Cannot create vm with given handle #{vm_id}") unless vm_handle == vm_id
 
         # Agent settings
         env = generate_agent_env(vm_id, agent_id, networks)
         set_agent_env(vm_id, env)
-
-        # Start bosh agent
-        with_warden do |client|
-          request = Warden::Protocol::SpawnRequest.new
-          request.handle = handle
-          request.privileged = true
-          request.script = '/usr/sbin/runsvdir-start'
-          client.call(request)
-        end
+        start_agent(vm_id)
         vm_id
       end
     rescue => e
