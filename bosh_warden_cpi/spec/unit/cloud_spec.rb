@@ -152,14 +152,16 @@ describe Bosh::WardenCloud::Cloud do
         end
         res
       end
-      mock_sh('umount', true)
-      mock_sh('rm -rf', true, 2)
+      mock_sh("umount #{@disk_root}/bind_mount_points/#{DEFAULT_HANDLE}", true)
+      mock_sh("rm -rf #{@disk_root}/ephemeral_mount_point/#{DEFAULT_HANDLE}", true)
+      mock_sh("rm -rf #{@disk_root}/bind_mount_points/#{DEFAULT_HANDLE}", true)
       @cloud.delete_vm(DEFAULT_HANDLE)
     end
 
     it 'should proceed even delete a vm which not exist' do
       @cloud.stub(:has_vm?).with('vm_not_existed').and_return(false)
-      mock_sh('rm -rf', true, 2)
+      mock_sh("rm -rf #{@disk_root}/ephemeral_mount_point/vm_not_existed", true)
+      mock_sh("rm -rf #{@disk_root}/bind_mount_points/vm_not_existed", true)
       expect {
         @cloud.delete_vm('vm_not_existed')
       }.to_not raise_error
@@ -178,8 +180,9 @@ describe Bosh::WardenCloud::Cloud do
         end
         res
       end
-      mock_sh('umount', true)
-      mock_sh('rm -rf', true, 2)
+      mock_sh("umount #{@disk_root}/bind_mount_points/#{DEFAULT_HANDLE}", true)
+      mock_sh("rm -rf #{@disk_root}/ephemeral_mount_point/#{DEFAULT_HANDLE}", true)
+      mock_sh("rm -rf #{@disk_root}/bind_mount_points/#{DEFAULT_HANDLE}", true)
       @cloud.delete_vm(DEFAULT_HANDLE)
     end
   end

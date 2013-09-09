@@ -20,7 +20,7 @@ describe Bosh::WardenCloud::DiskUtils do
 
   context 'create_stemcell' do
     it 'will use create stemcell' do
-      mock_sh('tar -C', true)
+      mock_sh("tar -C #{@stemcell_root} -xzf #{image_path} 2>&1", true)
       @disk_util.stemcell_unpack(image_path, 'stemcell-uuid')
       Dir.chdir(@stemcell_path) do
         Dir.glob('*').should have(1).items
@@ -29,7 +29,7 @@ describe Bosh::WardenCloud::DiskUtils do
     end
 
     it 'should raise error with bad image path' do
-      mock_sh('rm -rf', true)
+      mock_sh("rm -rf #{@stemcell_root}", true)
       expect {
         @disk_util.stemcell_unpack(bad_image_path, 'stemcell-uuid')
       }.to raise_error
@@ -40,11 +40,11 @@ describe Bosh::WardenCloud::DiskUtils do
     it 'can delete stemcell' do
 
       Dir.chdir(@stemcell_path) do
-        mock_sh('tar -C', true)
+        mock_sh("tar -C #{@stemcell_root} -xzf #{image_path} 2>&1", true)
         @disk_util.stemcell_unpack(image_path, 'stemcell-uuid')
         Dir.glob('*').should have(1).items
         Dir.glob('*').should include('stemcell-uuid')
-        mock_sh('rm -rf', true)
+        mock_sh("rm -rf #{@stemcell_root}", true)
         @disk_util.stemcell_delete('stemcell-uuid')
       end
     end
@@ -52,7 +52,7 @@ describe Bosh::WardenCloud::DiskUtils do
 
   context 'create_disk' do
     it 'can create disk' do
-      mock_sh('mkfs -t ext4')
+      mock_sh("/sbin/mkfs -t ext4 -F #{@disk_root}/disk-uuid.img 2>&1")
       @disk_util.create_disk('disk-uuid', 1)
       Dir.chdir(@disk_root) do
         image = 'disk-uuid.img'
@@ -88,7 +88,7 @@ describe Bosh::WardenCloud::DiskUtils do
 
   context 'delete_disk' do
     before :each do
-      mock_sh('mkfs -t ext4')
+      mock_sh("/sbin/mkfs -t ext4 -F #{@disk_root}/disk-uuid.img 2>&1")
       @disk_util.create_disk('disk-uuid', 1)
     end
 
@@ -124,18 +124,18 @@ describe Bosh::WardenCloud::DiskUtils do
     end
 
     it 'will invoke sudo mount to attach loop device' do
-      mock_sh('mount', true)
+      mock_sh("mount #{@disk_root}/disk-uuid.img #{@vm_id_path} -o loop", true)
       @disk_util.mount_disk(@vm_id_path, 'disk-uuid')
     end
 
     it 'will sudo invoke umount to detach loop device' do
-      mock_sh('umount', true)
+      mock_sh("umount #{@vm_id_path}", true)
       @disk_util.stub(:mount_entry).and_return('nop', nil)
       @disk_util.umount_disk(@vm_id_path)
     end
 
     it 'will retry umount for detach disk' do
-      mock_sh('umount', true, Bosh::WardenCloud::DiskUtils::UMOUNT_GUARD_RETRIES + 1, false)
+      mock_sh("umount #{@vm_id_path}", true, Bosh::WardenCloud::DiskUtils::UMOUNT_GUARD_RETRIES + 1, false)
       @disk_util.stub(:mount_entry).and_return('nop')
 
       expect {
