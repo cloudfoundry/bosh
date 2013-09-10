@@ -150,7 +150,7 @@ module Bosh::Stemcell
         let(:expected_rspec_command) do
           [
             "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
-            "SERVERSPEC_CHROOT=/mnt/stemcells/vsphere/esxi/#{operating_system.name}/work/work/chroot",
+            "SERVERSPEC_CHROOT=#{stemcell_builder_command.chroot_dir}",
             "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
           ].join(' ')
         end

@@ -48,7 +48,7 @@ module Bosh::Stemcell
     end
 
     def chroot_dir
-      File.join(work_path, 'chroot') # also defined in bash stages
+      File.join(work_path, 'chroot')
     end
 
     private
@@ -62,7 +62,7 @@ module Bosh::Stemcell
     def rspec_command
       [
         "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
-        "SERVERSPEC_CHROOT=/mnt/stemcells/vsphere/esxi/#{operating_system.name}/work/work/chroot",
+        "SERVERSPEC_CHROOT=#{chroot_dir}",
         "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
       ].join(' ')
     end
