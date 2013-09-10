@@ -8,25 +8,25 @@ module Bosh::Director
     describe Controller do
       include Rack::Test::Methods
 
-      before(:each) do
-        @temp_dir = Dir.mktmpdir
-        @blobstore_dir = File.join(@temp_dir, 'blobstore')
-        FileUtils.mkdir_p(@blobstore_dir)
-        FileUtils.mkdir_p(@temp_dir)
+      let!(:temp_dir) { Dir.mktmpdir}
+
+      before do
+        blobstore_dir = File.join(temp_dir, 'blobstore')
+        FileUtils.mkdir_p(blobstore_dir)
 
         test_config = Psych.load(spec_asset('test-director-config.yml'))
-        test_config['dir'] = @temp_dir
+        test_config['dir'] = temp_dir
         test_config['blobstore'] = {
             'provider' => 'local',
-            'options' => {'blobstore_path' => @blobstore_dir}
+            'options' => {'blobstore_path' => blobstore_dir}
         }
         test_config['snapshots']['enabled'] = true
         Config.configure(test_config)
         @director_app = App.new(Config.load_hash(test_config))
       end
 
-      after(:each) do
-        FileUtils.rm_rf(@temp_dir)
+      after do
+        FileUtils.rm_rf(temp_dir)
       end
 
       def app
@@ -558,12 +558,12 @@ module Bosh::Director
 
             new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
-            output_file = File.new(File.join(@temp_dir, 'debug'), 'w+')
+            output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
             output_file.print('Test output')
             output_file.close
 
             task = Models::Task[new_task_id]
-            task.output = @temp_dir
+            task.output = temp_dir
             task.save
 
             get "/tasks/#{new_task_id}/output"
@@ -576,12 +576,12 @@ module Bosh::Director
                  payload('application/x-compressed', spec_asset('tarball.tgz'))
             new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
-            output_file = File.new(File.join(@temp_dir, 'debug'), 'w+')
+            output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
             output_file.print('Test output')
             output_file.close
 
             task = Models::Task[new_task_id]
-            task.output = @temp_dir
+            task.output = temp_dir
             task.save
 
             # Range test
@@ -601,7 +601,7 @@ module Bosh::Director
 
           it 'supports returning different types of output (debug, cpi, event)' do
             %w(debug event cpi).each do |log_type|
-              output_file = File.new(File.join(@temp_dir, log_type), 'w+')
+              output_file = File.new(File.join(temp_dir, log_type), 'w+')
               output_file.print("Test output #{log_type}")
               output_file.close
             end
@@ -611,7 +611,7 @@ module Bosh::Director
             task.type = :update_deployment
             task.timestamp = Time.now.to_i
             task.description = 'description'
-            task.output = @temp_dir
+            task.output = temp_dir
             task.save
 
             %w(debug event cpi).each do |log_type|
@@ -632,7 +632,7 @@ module Bosh::Director
           end
 
           it 'supports returning old soap logs when type = (cpi || soap)' do
-            output_file = File.new(File.join(@temp_dir, 'soap'), 'w+')
+            output_file = File.new(File.join(temp_dir, 'soap'), 'w+')
             output_file.print('Test output soap')
             output_file.close
 
@@ -641,7 +641,7 @@ module Bosh::Director
             task.type = :update_deployment
             task.timestamp = Time.now.to_i
             task.description = 'description'
-            task.output = @temp_dir
+            task.output = temp_dir
             task.save
 
             %w(soap cpi).each do |log_type|
