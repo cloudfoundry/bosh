@@ -8,18 +8,18 @@ require 'bosh_aws_cpi'
 describe Bosh::AwsCloud::Cloud do
   let(:cpi_options) do
     {
-        'aws' => {
-            'region' => 'us-east-1',
-            'default_key_name' => 'bosh',
-            'fast_path_delete' => 'yes',
-            'access_key_id' => ENV['BOSH_AWS_ACCESS_KEY_ID'],
-            'secret_access_key' => ENV['BOSH_AWS_SECRET_ACCESS_KEY'],
-        },
-        'registry' => {
-            'endpoint' => 'fake',
-            'user' => 'fake',
-            'password' => 'fake'
-        }
+      'aws' => {
+        'region' => 'us-east-1',
+        'default_key_name' => 'bosh',
+        'fast_path_delete' => 'yes',
+        'access_key_id' => ENV['BOSH_AWS_ACCESS_KEY_ID'],
+        'secret_access_key' => ENV['BOSH_AWS_SECRET_ACCESS_KEY'],
+      },
+      'registry' => {
+        'endpoint' => 'fake',
+        'user' => 'fake',
+        'password' => 'fake'
+      }
     }
   end
 
@@ -58,10 +58,10 @@ describe Bosh::AwsCloud::Cloud do
   describe 'ec2' do
     let(:network_spec) do
       {
-          'default' => {
-              'type' => 'dynamic',
-              'cloud_properties' => {}
-          }
+        'default' => {
+          'type' => 'dynamic',
+          'cloud_properties' => {}
+        }
       }
     end
 
@@ -73,7 +73,8 @@ describe Bosh::AwsCloud::Cloud do
           { 'instance_type' => 'm1.small' },
           network_spec,
           [],
-          { 'key' => 'value' })
+          { 'key' => 'value' }
+        )
 
         expect(@instance_id).not_to be_nil
 
@@ -180,11 +181,11 @@ describe Bosh::AwsCloud::Cloud do
   describe 'vpc' do
     let(:network_spec) do
       {
-          'default' => {
-              'type' => 'manual',
-              'ip' => ip,
-              'cloud_properties' => {'subnet' => subnet_id}
-          }
+        'default' => {
+          'type' => 'manual',
+          'ip' => ip,
+          'cloud_properties' => { 'subnet' => subnet_id }
+        }
       }
     end
     let(:ip) { '10.0.0.10' } # use different IP to avoid race condition
