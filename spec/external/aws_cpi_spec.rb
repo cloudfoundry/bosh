@@ -110,7 +110,7 @@ describe Bosh::AwsCloud::Cloud do
 
         cpi.delete_snapshot(snapshot_id)
 
-        Bosh::Common.retryable(:tries => 20, :on => Bosh::Clouds::DiskNotAttached, :sleep => lambda { |n, e| [2**(n-1), 30].min }) do
+        Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
           cpi.detach_disk(@instance_id, @volume_id)
           true
         end
@@ -169,7 +169,7 @@ describe Bosh::AwsCloud::Cloud do
         cpi.attach_disk(@instance_id, @volume_id)
         expect(cpi.get_disks(@instance_id)).to eq [@volume_id]
 
-        Bosh::Common.retryable(:tries => 20, :on => Bosh::Clouds::DiskNotAttached, :sleep => lambda { |n, e| [2**(n-1), 30].min }) do
+        Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
           cpi.detach_disk(@instance_id, @volume_id)
           true
         end
