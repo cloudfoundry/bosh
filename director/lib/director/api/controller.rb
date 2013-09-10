@@ -106,6 +106,29 @@ module Bosh::Director
         nil
       end
 
+      post '/packages/matches', :consumes => :yaml do
+        manifest = Psych.load(request.body)
+        unless manifest.is_a?(Hash) && manifest['packages'].is_a?(Array)
+          raise BadManifest, "Manifest doesn't have a usable packages section"
+        end
+
+        fp_list = []
+        sha1_list = []
+
+        manifest['packages'].each do |package|
+          fp_list << package['fingerprint'] if package['fingerprint']
+          sha1_list << package['sha1'] if package['sha1']
+        end
+
+        filter = {:fingerprint => fp_list, :sha1 => sha1_list}.sql_or
+
+        result = Models::Package.where(filter).all.map { |package|
+          [package.sha1, package.fingerprint]
+        }.flatten.compact.uniq
+
+        json_encode(result)
+      end
+
       post '/releases', :consumes => :tgz do
         options = {}
         options['remote'] = false
@@ -142,6 +165,38 @@ module Bosh::Director
         json_encode(releases)
       end
 
+      get '/releases/:name' do
+        name = params[:name].to_s.strip
+        release = @release_manager.find_by_name(name)
+
+        result = { }
+
+        result['packages'] = release.packages.map do |package|
+          {
+            'name' => package.name,
+            'sha1' => package.sha1,
+            'version' => package.version.to_s,
+            'dependencies' => package.dependency_set.to_a
+          }
+        end
+
+        result['jobs'] = release.templates.map do |template|
+          {
+            'name' => template.name,
+            'sha1' => template.sha1,
+            'version' => template.version.to_s,
+            'packages' => template.package_names
+          }
+        end
+
+        result['versions'] = release.versions.map do |rv|
+          rv.version.to_s
+        end
+
+        content_type(:json)
+        json_encode(result)
+      end
+
       delete '/releases/:name' do
         release = @release_manager.find_by_name(params[:name])
 
@@ -150,6 +205,37 @@ module Bosh::Director
         options['version'] = params['version']
 
         task = @release_manager.delete_release(@user, release, options)
+        redirect "/tasks/#{task.id}"
+      end
+
+      post '/stemcells', :consumes => :tgz do
+        task = @stemcell_manager.create_stemcell(@user, request.body, :remote => false)
+        redirect "/tasks/#{task.id}"
+      end
+
+      post '/stemcells', :consumes => :json do
+        payload = json_decode(request.body)
+        task = @stemcell_manager.create_stemcell(@user, payload['location'], :remote => true)
+        redirect "/tasks/#{task.id}"
+      end
+
+      get '/stemcells' do
+        stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
+          {
+            'name' => stemcell.name,
+            'version' => stemcell.version,
+            'cid' => stemcell.cid
+          }
+        end
+        json_encode(stemcells)
+      end
+
+      delete '/stemcells/:name/:version' do
+        name, version = params[:name], params[:version]
+        options = {}
+        options['force'] = true if params['force'] == 'true'
+        stemcell = @stemcell_manager.find_by_name_and_version(name, version)
+        task = @stemcell_manager.delete_stemcell(@user, stemcell, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -340,90 +426,76 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/stemcells', :consumes => :tgz do
-        task = @stemcell_manager.create_stemcell(@user, request.body, :remote => false)
-        redirect "/tasks/#{task.id}"
+      # Property management
+      get '/deployments/:deployment/properties' do
+        properties = @property_manager.get_properties(params[:deployment]).map do |property|
+          { 'name' => property.name, 'value' => property.value }
+        end
+        json_encode(properties)
       end
 
-      post '/stemcells', :consumes => :json do
+      get '/deployments/:deployment/properties/:property' do
+        property = @property_manager.get_property(params[:deployment], params[:property])
+        json_encode('value' => property.value)
+      end
+
+      post '/deployments/:deployment/properties', :consumes => [:json] do
         payload = json_decode(request.body)
-        task = @stemcell_manager.create_stemcell(@user, payload['location'], :remote => true)
+        @property_manager.create_property(params[:deployment], payload['name'], payload['value'])
+        status(204)
+      end
+
+      post '/deployments/:deployment/ssh', :consumes => [:json] do
+        payload = json_decode(request.body)
+        task = @instance_manager.ssh(@user, payload)
         redirect "/tasks/#{task.id}"
       end
 
-      get '/stemcells' do
-        stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
-          {
-            'name' => stemcell.name,
-            'version' => stemcell.version,
-            'cid' => stemcell.cid
-          }
-        end
-        json_encode(stemcells)
+      put '/deployments/:deployment/properties/:property', :consumes => [:json] do
+        payload = json_decode(request.body)
+        @property_manager.update_property(params[:deployment], params[:property], payload['value'])
+        status(204)
       end
 
-      delete '/stemcells/:name/:version' do
-        name, version = params[:name], params[:version]
-        options = {}
-        options['force'] = true if params['force'] == 'true'
-        stemcell = @stemcell_manager.find_by_name_and_version(name, version)
-        task = @stemcell_manager.delete_stemcell(@user, stemcell, options)
-        redirect "/tasks/#{task.id}"
+      delete '/deployments/:deployment/properties/:property' do
+        @property_manager.delete_property(params[:deployment], params[:property])
+        status(204)
       end
 
-      get '/releases/:name' do
-        name = params[:name].to_s.strip
-        release = @release_manager.find_by_name(name)
+      # Cloud check
 
-        result = { }
+      # Initiate deployment scan
+      post '/deployments/:deployment/scans' do
+        start_task { @problem_manager.perform_scan(@user, params[:deployment]) }
+      end
 
-        result['packages'] = release.packages.map do |package|
+      # Get the list of problems for a particular deployment
+      get '/deployments/:deployment/problems' do
+        problems = @problem_manager.get_problems(params[:deployment]).map do |problem|
           {
-            'name' => package.name,
-            'sha1' => package.sha1,
-            'version' => package.version.to_s,
-            'dependencies' => package.dependency_set.to_a
+            'id' => problem.id,
+            'type' => problem.type,
+            'data' => problem.data,
+            'description' => problem.description,
+            'resolutions' => problem.resolutions
           }
         end
 
-        result['jobs'] = release.templates.map do |template|
-          {
-            'name' => template.name,
-            'sha1' => template.sha1,
-            'version' => template.version.to_s,
-            'packages' => template.package_names
-          }
-        end
-
-        result['versions'] = release.versions.map do |rv|
-          rv.version.to_s
-        end
-
-        content_type(:json)
-        json_encode(result)
+        json_encode(problems)
       end
 
-      post '/packages/matches', :consumes => :yaml do
-        manifest = Psych.load(request.body)
-        unless manifest.is_a?(Hash) && manifest['packages'].is_a?(Array)
-          raise BadManifest, "Manifest doesn't have a usable packages section"
-        end
+      # Try to resolve a set of problems
+      put '/deployments/:deployment/problems', :consumes => [:json] do
+        payload = json_decode(request.body)
+        start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload['resolutions']) }
+      end
 
-        fp_list = []
-        sha1_list = []
+      put '/deployments/:deployment/scan_and_fix', :consumes => :json do
+        jobs_json = json_decode(request.body)['jobs']
+        # payload: [['j1', 'i1'], ['j1', 'i2'], ['j2', 'i1'], ...]
+        payload = convert_job_instance_hash(jobs_json)
 
-        manifest['packages'].each do |package|
-          fp_list << package['fingerprint'] if package['fingerprint']
-          sha1_list << package['sha1'] if package['sha1']
-        end
-
-        filter = {:fingerprint => fp_list, :sha1 => sha1_list}.sql_or
-
-        result = Models::Package.where(filter).all.map { |package|
-          [package.sha1, package.fingerprint]
-        }.flatten.compact.uniq
-
-        json_encode(result)
+        start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
       end
 
       get '/tasks' do
@@ -522,78 +594,6 @@ module Bosh::Director
         @logger.warn('Something is proxying a blob through the director. Find out why before we remove this method. ZAUGYZ')
         tmp_file = @resource_manager.get_resource_path(params[:id])
         send_disposable_file(tmp_file, :type => 'application/x-gzip')
-      end
-
-      # Property management
-      get '/deployments/:deployment/properties' do
-        properties = @property_manager.get_properties(params[:deployment]).map do |property|
-          { 'name' => property.name, 'value' => property.value }
-        end
-        json_encode(properties)
-      end
-
-      get '/deployments/:deployment/properties/:property' do
-        property = @property_manager.get_property(params[:deployment], params[:property])
-        json_encode('value' => property.value)
-      end
-
-      post '/deployments/:deployment/properties', :consumes => [:json] do
-        payload = json_decode(request.body)
-        @property_manager.create_property(params[:deployment], payload['name'], payload['value'])
-        status(204)
-      end
-
-      post '/deployments/:deployment/ssh', :consumes => [:json] do
-        payload = json_decode(request.body)
-        task = @instance_manager.ssh(@user, payload)
-        redirect "/tasks/#{task.id}"
-      end
-
-      put '/deployments/:deployment/properties/:property', :consumes => [:json] do
-        payload = json_decode(request.body)
-        @property_manager.update_property(params[:deployment], params[:property], payload['value'])
-        status(204)
-      end
-
-      delete '/deployments/:deployment/properties/:property' do
-        @property_manager.delete_property(params[:deployment], params[:property])
-        status(204)
-      end
-
-      # Cloud check
-
-      # Initiate deployment scan
-      post '/deployments/:deployment/scans' do
-        start_task { @problem_manager.perform_scan(@user, params[:deployment]) }
-      end
-
-      # Get the list of problems for a particular deployment
-      get '/deployments/:deployment/problems' do
-        problems = @problem_manager.get_problems(params[:deployment]).map do |problem|
-          {
-            'id' => problem.id,
-            'type' => problem.type,
-            'data' => problem.data,
-            'description' => problem.description,
-            'resolutions' => problem.resolutions
-          }
-        end
-
-        json_encode(problems)
-      end
-
-      # Try to resolve a set of problems
-      put '/deployments/:deployment/problems', :consumes => [:json] do
-        payload = json_decode(request.body)
-        start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload['resolutions']) }
-      end
-
-      put '/deployments/:deployment/scan_and_fix', :consumes => :json do
-        jobs_json = json_decode(request.body)['jobs']
-        # payload: [['j1', 'i1'], ['j1', 'i2'], ['j2', 'i1'], ...]
-        payload = convert_job_instance_hash(jobs_json)
-
-        start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
       end
 
       post '/backups' do
