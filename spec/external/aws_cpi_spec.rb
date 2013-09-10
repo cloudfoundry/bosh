@@ -35,6 +35,12 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   before do
+    ec2 = AWS::EC2.new(
+      access_key_id:     cpi_options['aws']['access_key_id'],
+      secret_access_key: cpi_options['aws']['secret_access_key'],
+    )
+    ec2.instances.tagged('delete_me').each(&:terminate)
+
     delegate = double('delegate', logger: Logger.new(STDOUT))
     delegate.stub(:task_checkpoint)
     Bosh::Clouds::Config.configure(delegate)
@@ -63,7 +69,7 @@ describe Bosh::AwsCloud::Cloud do
     # possible race condition here
     cpi.has_vm?(@instance_id).should be_true
 
-    metadata = {deployment: 'deployment', job: 'cpi_spec', index: '0'}
+    metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
     cpi.set_vm_metadata(@instance_id, metadata)
 
     @volume_id = cpi.create_disk(2048, @instance_id)
