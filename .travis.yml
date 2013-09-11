@@ -6,6 +6,3 @@ rvm:
 env:
   - TASKS="ci:run:unit"
   - TASKS="ci:run:integration"
-matrix:
-  allow_failures:
-    - rvm: ruby-2.0.0
