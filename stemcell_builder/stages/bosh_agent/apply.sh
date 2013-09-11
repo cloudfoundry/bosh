@@ -25,6 +25,7 @@ else
     "
 fi
 
+mkdir -p $chroot/etc/sv
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent
 
 # runit
