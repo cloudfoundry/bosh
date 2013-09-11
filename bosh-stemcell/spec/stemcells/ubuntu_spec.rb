@@ -100,6 +100,12 @@ describe 'Ubuntu Stemcell' do
     end
   end
 
+  describe 'Ruby' do
+    describe command('/var/vcap/bosh/bin/ruby -r yaml -e "Psych::SyntaxError"') do
+      it { should return_exit_status(0) }
+    end
+  end
+
   describe 'Files' do
     describe file('/var/vcap/micro/apply_spec.yml') do
       it { should be_file }
