@@ -3,8 +3,8 @@ require 'bosh/dev/download_adapter'
 module Bosh
   module Dev
     class ArtifactsDownloader
-      def initialize(download_adapter = DownloadAdapter.new)
-        @download_adapter = download_adapter
+      def initialize
+        @download_adapter = DownloadAdapter.new
       end
 
       def download_release(build_number)
