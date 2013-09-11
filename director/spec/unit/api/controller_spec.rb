@@ -876,6 +876,61 @@ module Bosh::Director
             end
           end
         end
+
+        describe 'locks' do
+          let(:redis) { double('Redis') }
+
+          before do
+            BD::Config.stub(:redis).and_return(redis)
+          end
+
+          context 'list current locks' do
+            before do
+              redis.should_receive(:keys).with('lock:*').and_return(locks)
+            end
+
+            context 'when there are not any locks' do
+              let(:locks) { [] }
+
+              it 'should list the current locks' do
+                get '/locks'
+                expect(last_response.status).to eq 200
+
+                body = Yajl::Parser.parse(last_response.body)
+                expect(body).to be_kind_of(Array)
+                expect(body.size).to eql(locks.size)
+              end
+            end
+
+            context 'when there are current locks' do
+              let(:locks) {
+                [
+                  'lock:deployment:test-deployment',
+                  'lock:stemcells:test-stemcell:1',
+                  'lock:release:test-release',
+                  'lock:compile:test-package:test-stemcell'
+                ]
+              }
+              let(:lock_timeout) { Time.now.to_f }
+              let(:lock_id) { SecureRandom.uuid }
+
+              before do
+                locks.each do |lock|
+                  redis.should_receive(:get).with(lock).and_return("#{lock_timeout}:#{lock_id}")
+                end
+              end
+
+              it 'should list the current locks' do
+                get '/locks'
+                expect(last_response.status).to eq 200
+
+                body = Yajl::Parser.parse(last_response.body)
+                expect(body).to be_kind_of(Array)
+                expect(body.size).to eql(locks.size)
+              end
+            end
+          end
+        end
       end
     end
   end
