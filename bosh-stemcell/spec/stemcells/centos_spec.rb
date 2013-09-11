@@ -14,6 +14,17 @@ describe 'CentOs Stemcell' do
       it { should be_installed }
     end
 
+    context 'installed by base_centos' do
+      {
+        'centos-release' => '6-4.el6.centos.10.x86_64',
+        'epel-release'   => '6-8.noarch',
+      }.each do |pkg, version|
+        describe package(pkg) do
+          it { should be_installed.with_version(version) }
+        end
+      end
+    end
+
     context 'installed by base_yum' do
       {
         'upstart'        => '0.6.5-12.el6_4.1.x86_64',
@@ -40,6 +51,8 @@ describe 'CentOs Stemcell' do
         'psmisc'         => '22.6-15.el6_0.1.x86_64',
         'unzip'          => '6.0-1.el6.x86_64',
         'bison'          => '2.4.1-5.el6.x86_64',
+        'libyaml'        => '0.1.3-1.el6.x86_64',
+        'libyaml-devel'  => '0.1.3-1.el6.x86_64',
         'cmake'          => '2.6.4-5.el6.x86_64',
         'rpm-build'      => '4.8.0-32.el6.x86_64',
         'rpmdevtools'    => '7.5-2.el6.noarch',
@@ -57,6 +70,12 @@ describe 'CentOs Stemcell' do
     context 'installed by system_grub'
 
     context 'installed by system_kernel'
+  end
+
+  describe 'Ruby' do
+    describe command('/var/vcap/bosh/bin/ruby -r yaml -e "Psych::SyntaxError"') do
+      it { should return_exit_status(0) }
+    end
   end
 
   describe 'Files' do
