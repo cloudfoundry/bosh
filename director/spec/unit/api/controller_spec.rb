@@ -50,10 +50,6 @@ module Bosh::Director
         new_task
       end
 
-      def payload(content_type, params)
-        {'CONTENT_TYPE' => content_type.to_s,
-         :input => Yajl::Encoder.encode(params)}
-      end
 
       it 'requires auth' do
         get '/'
@@ -143,54 +139,46 @@ module Bosh::Director
 
         describe 'creating a stemcell' do
           it 'expects compressed stemcell file' do
-            post '/stemcells', {},
-                 payload('application/x-compressed', spec_asset('tarball.tgz'))
+            post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'expects remote stemcell location' do
-            post '/stemcells', {},
-                 payload('application/json', JSON.dump('location' => 'http://stemcell_url'))
+            post '/stemcells', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'only consumes application/x-compressed and application/json' do
-            post '/stemcells', {},
-                 payload('application/octet-stream', spec_asset('tarball.tgz'))
+            post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
             last_response.status.should == 404
           end
         end
 
         describe 'creating a release' do
           it 'expects compressed release file' do
-            post '/releases', {},
-                 payload('application/x-compressed', spec_asset('tarball.tgz'))
+            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'expects remote release location' do
-            post '/releases', {},
-                 payload('application/json', JSON.dump('location' => 'http://release_url'))
+            post '/releases', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'only consumes application/x-compressed and application/json' do
-            post '/releases', {},
-                 payload('application/octet-stream', spec_asset('tarball.tgz'))
+            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
             last_response.status.should == 404
           end
         end
 
         describe 'creating a deployment' do
           it 'expects compressed deployment file' do
-            post '/deployments', {},
-                 payload('text/yaml', spec_asset('test_conf.yaml'))
+            post '/deployments', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'only consumes text/yaml' do
-            post '/deployments', {},
-                 payload('text/plain', spec_asset('test_conf.yaml'))
+            post '/deployments', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
             last_response.status.should == 404
           end
         end
@@ -199,16 +187,14 @@ module Bosh::Director
           it 'allows putting jobs into different states' do
             Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/deployments/foo/jobs/nats?state=stopped', {},
-                payload('text/yaml', spec_asset('test_conf.yaml'))
+            put '/deployments/foo/jobs/nats?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allows putting job instances into different states' do
             Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/deployments/foo/jobs/dea/2?state=stopped', {},
-                payload('text/yaml', spec_asset('test_conf.yaml'))
+            put '/deployments/foo/jobs/dea/2?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -218,15 +204,13 @@ module Bosh::Director
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
-            put '/deployments/foo/jobs/dea/0/resurrection', {},
-                payload('application/json', JSON.dump({'resurrection_paused' => true}))
+            put '/deployments/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 200
             expect(instance.reload.resurrection_paused).to be_true
           end
 
           it "doesn't like invalid indices" do
-            put '/deployments/foo/jobs/dea/zb?state=stopped', {},
-                payload('text/yaml', spec_asset('test_conf.yaml'))
+            put '/deployments/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             last_response.status.should == 400
           end
 
@@ -528,8 +512,7 @@ module Bosh::Director
 
         describe 'polling task status' do
           it 'has API call that return task status' do
-            post '/releases', {},
-                 payload('application/x-compressed', spec_asset('tarball.tgz'))
+            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
             new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
             get "/tasks/#{new_task_id}"
@@ -553,8 +536,7 @@ module Bosh::Director
           end
 
           it 'has API call that return task output and task output with ranges' do
-            post '/releases', {},
-                 payload('application/x-compressed', spec_asset('tarball.tgz'))
+            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
 
             new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
@@ -572,8 +554,7 @@ module Bosh::Director
           end
 
           it 'has API call that return task output with ranges' do
-            post '/releases', {},
-                 payload('application/x-compressed', spec_asset('tarball.tgz'))
+            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
             new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
             output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
@@ -674,7 +655,7 @@ module Bosh::Director
           it 'creates a user' do
             Models::User.all.size.should == 0
 
-            post '/users', {}, payload('application/json', user_data)
+            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             new_user = Models::User[:username => username]
             new_user.should_not be_nil
@@ -682,21 +663,21 @@ module Bosh::Director
           end
 
           it "doesn't create a user with exising username" do
-            post '/users', {}, payload('application/json', user_data)
+            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)
-            post '/users', {}, payload('application/json', user_data)
+            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             last_response.status.should == 400
             Models::User.all.size.should == 1
           end
 
           it 'updates user password but not username' do
-            post '/users', {}, payload('application/json', user_data)
+            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)
             new_data = {'username' => username, 'password' => '456'}
-            put "/users/#{username}", {}, payload('application/json', new_data)
+            put "/users/#{username}", Yajl::Encoder.encode(new_data), { 'CONTENT_TYPE' => 'application/json' }
 
             last_response.status.should == 204
             user = Models::User[:username => username]
@@ -704,14 +685,14 @@ module Bosh::Director
 
             login_as(username, '456')
             change_name = {'username' => 'john2', 'password' => password}
-            put "/users/#{username}", {}, payload('application/json', change_name)
+            put "/users/#{username}", Yajl::Encoder.encode(change_name), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 400
             last_response.body.should ==
                 "{\"code\":20001,\"description\":\"The username is immutable\"}"
           end
 
           it 'deletes user' do
-            post '/users', {}, payload('application/json', user_data)
+            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)
             delete "/users/#{username}"
@@ -736,8 +717,7 @@ module Bosh::Director
             get '/deployments/othercloud/properties/foo'
             last_response.status.should == 404
 
-            post '/deployments/mycloud/properties', {},
-                 payload('application/json', {:name => 'foo', :value => 'bar'})
+            post '/deployments/mycloud/properties', Yajl::Encoder.encode('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 204
 
             get '/deployments/mycloud/properties/foo'
@@ -747,8 +727,7 @@ module Bosh::Director
             get '/deployments/othercloud/properties/foo'
             last_response.status.should == 404
 
-            put '/deployments/mycloud/properties/foo', {},
-                payload('application/json', :value => 'baz')
+            put '/deployments/mycloud/properties/foo', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 204
 
             get '/deployments/mycloud/properties/foo'
@@ -773,22 +752,19 @@ module Bosh::Director
             post '/deployments/mycloud/scans'
             expect_redirect_to_queued_task(last_response)
 
-            put '/deployments/mycloud/problems',
-                payload('application/json',
-                        :solutions => {42 => 'do_this', 43 => 'do_that', 44 => nil})
-            last_response.status.should == 404
+            put '/deployments/mycloud/problems', Yajl::Encoder.encode('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
+            expect_redirect_to_queued_task(last_response)
 
             problem = Models::DeploymentProblem.
                 create(:deployment_id => deployment.id, :resource_id => 2,
                        :type => 'test', :state => 'open', :data => {})
 
-            put '/deployments/mycloud/problems', {},
-                payload('application/json', :solution => 'default')
+            put '/deployments/mycloud/problems', Yajl::Encoder.encode('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'scans and fixes problems' do
-            put '/deployments/mycloud/scan_and_fix', {}, payload('application/json', 'jobs' => {'job' => [0]})
+            put '/deployments/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => { 'job' => [0] }), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
         end
