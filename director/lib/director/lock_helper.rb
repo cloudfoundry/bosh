@@ -30,7 +30,7 @@ module Bosh::Director
     # @yield [void] block to surround
     def with_stemcell_lock(name, version, opts = {})
       timeout = opts[:timeout] || 10
-      Config.logger.info("Acquiring deployment lock on #{name}:#{version}")
+      Config.logger.info("Acquiring stemcell lock on #{name}:#{version}")
       Lock.new("lock:stemcells:#{name}:#{version}", :timeout => timeout).
           lock { yield }
     end
@@ -43,7 +43,7 @@ module Bosh::Director
     # @yield [void] block to surround
     def with_release_lock(release, opts = {})
       timeout = opts[:timeout] || 10
-      Config.logger.info("Acquiring deployment lock on #{release}")
+      Config.logger.info("Acquiring release lock on #{release}")
       Lock.new("lock:release:#{release}", :timeout => timeout).lock { yield }
     end
 
