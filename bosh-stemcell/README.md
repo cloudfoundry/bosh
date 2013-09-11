@@ -48,3 +48,14 @@ One trick to speed up stemcell building iteration is to leverage apt-cacher-ng
 ```
 sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=961 http_proxy=http://localhost:3142
 ```
+
+# Booting a vSphere stemcell with Fusion
+## Given that you have VMware Fusion installed
+When you want to boot and run a vSphere stemcell
+* Download the stemcell tarball (provided by the pair working on the stemcell story)
+* And you double-click the tgz file in Finder, it'll create a new folder
+* In the new folder: Ctrl-Click the file "image", under "Open With", choose "Archive Utility"
+* And then you'll have one more folder! There you find the file: image.ovf.
+* Start VMware Fusion
+* And you click File -> Import ... to import the above OVF file. You should see a new VM in your VM library.
+* Double click that new VM and it should be booted.
