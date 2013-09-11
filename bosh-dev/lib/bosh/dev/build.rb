@@ -47,9 +47,9 @@ module Bosh::Dev
       remote_dir = File.join(number.to_s, 'release')
       filename = promoter.release_file
 
-      download_adapter.download(uri(remote_dir, filename), release_path)
+      download_adapter.download(uri(remote_dir, filename), download_release_path)
 
-      release_path
+      download_release_path
     end
 
     def upload_stemcell(stemcell)
@@ -117,6 +117,10 @@ module Bosh::Dev
 
     def release_path
       "release/#{promoter.release_file}"
+    end
+
+    def download_release_path
+      "tmp/#{promoter.release_file}"
     end
 
     def stemcell_filename(version, infrastructure, name, light)
