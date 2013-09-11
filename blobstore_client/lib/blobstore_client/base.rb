@@ -37,7 +37,7 @@ module Bosh
         raise e
       rescue Exception => e
         raise BlobstoreError,
-              sprintf('Failed to create object, underlying error: %s %s', e.message, e.backtrace.join("\n"))
+              sprintf('Failed to create object, underlying error: %s %s', e.inspect, e.backtrace.join("\n"))
       end
 
       # Get an object from the blobstore.
@@ -60,7 +60,7 @@ module Bosh
         raise e
       rescue Exception => e
         raise BlobstoreError,
-              sprintf('Failed to create object, underlying error: %s %s', e.message, e.backtrace.join("\n"))
+              sprintf('Failed to fetch object, underlying error: %s %s', e.inspect, e.backtrace.join("\n"))
       end
 
       # @return [void]
