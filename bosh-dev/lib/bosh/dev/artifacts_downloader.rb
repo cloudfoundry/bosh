@@ -8,12 +8,12 @@ module Bosh
       end
 
       def download_release(build_number)
-        remote_path = "https://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-#{build_number}.tgz"
+        remote_path = "http://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-#{build_number}.tgz"
         download_adapter.download(remote_path, "bosh-#{build_number}.tgz")
       end
 
       def download_stemcell(build_number)
-        remote_path = "https://s3.amazonaws.com/bosh-jenkins-artifacts/bosh-stemcell/aws/light-bosh-stemcell-#{build_number}-aws-xen-ubuntu.tgz"
+        remote_path = "http://s3.amazonaws.com/bosh-jenkins-artifacts/bosh-stemcell/aws/light-bosh-stemcell-#{build_number}-aws-xen-ubuntu.tgz"
         download_adapter.download(remote_path, "light-bosh-stemcell-#{build_number}-aws-xen-ubuntu.tgz")
       end
 
