@@ -99,4 +99,4 @@ opts = OptionParser.new do |opts|
 end
 opts.parse!(ARGV.dup)
 
-Bosh::Agent.run(options)
+Bosh::Agent::Runner.run(options)

@@ -78,13 +78,10 @@ require 'bosh_agent/message/ssh'
 require 'bosh_agent/handler'
 
 module Bosh::Agent
-  class << self
-    def run(options = {})
+  class Runner < Struct.new(:config)
+    def self.run(options)
       Runner.new(options).start
     end
-  end
-
-  class Runner < Struct.new(:config)
 
     def initialize(options)
       self.config = Bosh::Agent::Config.setup(options)
@@ -119,7 +116,6 @@ module Bosh::Agent
       end
     end
   end
-
 end
 
 if __FILE__ == $0
@@ -132,5 +128,5 @@ if __FILE__ == $0
     'platform_name' => 'ubuntu',
     'blobstore_options' => {}
   }
-  Bosh::Agent.run(options)
+  Bosh::Agent::Runner.run(options)
 end
