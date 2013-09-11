@@ -16,8 +16,7 @@ describe 'CentOs Stemcell' do
 
     context 'installed by base_yum' do
       {
-        # 'upstart'        => '0.6.5-8',
-
+        'upstart'        => '0.6.5-12.el6_4.1.x86_64',
         'openssl-devel'  => '1.0.0-27.el6_4.2',
         'lsof'           => '4.82-4.el6.x86_64',
         'libxml2'        => '2.7.6-12.el6_4.1.x86_64',
@@ -34,10 +33,18 @@ describe 'CentOs Stemcell' do
         'flex'           => '2.5.35-8.el6.x86_64',
         'openssh-server' => '5.3p1-84.1.el6',
         'wget'           => '1.12-1.8.el6.x86_64',
+        'libxml2'        => '2.7.6-12.el6_4.1.x86_64',
+        'libxml2-devel'  => '2.7.6-12.el6_4.1.x86_64',
+        'libxslt'        => '1.1.26-2.el6_3.1.x86_64',
+        'libxslt-devel'  => '1.1.26-2.el6_3.1.x86_64',
         'psmisc'         => '22.6-15.el6_0.1.x86_64',
         'unzip'          => '6.0-1.el6.x86_64',
         'bison'          => '2.4.1-5.el6.x86_64',
         'cmake'          => '2.6.4-5.el6.x86_64',
+        'rpm-build'      => '4.8.0-32.el6.x86_64',
+        'rpmdevtools'    => '7.5-2.el6.noarch',
+        'glibc-static'   => '2.12-1.107.el6_4.4.x86_64',
+        'runit'          => '2.1.1-6.el6.x86_64',
       }.each do |pkg, version|
         describe package(pkg) do
           it { should be_installed.with_version(version) }
