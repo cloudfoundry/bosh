@@ -16,7 +16,7 @@ module Bosh::Agent
       end
 
       it 'should create the class for the network' do
-        subject.instance_variable_get(:@network).should be_an_instance_of Platform::Rhel::Network
+        subject.instance_variable_get(:@network).should be_an_instance_of Platform::Centos::Network
       end
     end
   end
