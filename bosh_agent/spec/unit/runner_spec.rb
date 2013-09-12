@@ -3,10 +3,23 @@ require 'spec_helper'
 module Bosh::Agent
   describe Runner do
     describe '.run' do
-      it 'is started with Agent.run' do
-        runner = double('Bosh::Agent::Runner')
+      let(:runner) do
+        instance_double('Bosh::Agent::Runner', start: nil)
+      end
+
+      before do
         runner.should_receive(:start)
-        Runner.stub(:new).with(fake: 'options').and_return(runner)
+        Runner.stub(:new).and_return(runner)
+      end
+
+      it 'sets up the global config with the options passed' do
+        config = class_double('Bosh::Agent::Config').as_stubbed_const
+        config.should_receive(:setup).with(fake: 'options')
+
+        Bosh::Agent::Runner.run(fake: 'options')
+      end
+
+      it 'creates a new runner and starts it' do
 
         Bosh::Agent::Runner.run(fake: 'options')
       end
@@ -25,28 +38,20 @@ module Bosh::Agent
         'nats://user:pass@host:port'
       end
 
-
       subject(:runner) do
-        Runner.new(fake: 'options')
+        Runner.new
       end
 
       before do
         Bosh::Agent::Bootstrap.stub(new: bootstrap)
         @nat_handler = class_double('Bosh::Agent::Handler', start: nil).as_stubbed_const
         @config = class_double('Bosh::Agent::Config',
-                               setup: nil,
                                mbus: nats_url,
                                logger: logger,
                                configure: true).as_stubbed_const
         @monit = class_double('Bosh::Agent::Monit', enable: nil,
                                                     start: nil,
                                                     start_services: nil).as_stubbed_const
-      end
-
-      it 'sets up the global config with the options passed' do
-        @config.should_receive(:setup).with(fake: 'options')
-
-        runner.start
       end
 
       it 'bootstraps the agent' do
