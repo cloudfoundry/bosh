@@ -34,7 +34,6 @@ describe 'CentOs Stemcell' do
         'upstart'        => '0.6.5-12.el6_4.1.x86_64',
         'openssl-devel'  => '1.0.0-27.el6_4.2',
         'lsof'           => '4.82-4.el6.x86_64',
-        'libxml2'        => '2.7.6-12.el6_4.1.x86_64',
         'quota'          => '3.17-18.el6.x86_64',
         'rsync'          => '3.0.6-9.el6.x86_64',
         'strace'         => '4.5.19-1.17.el6.x86_64',
