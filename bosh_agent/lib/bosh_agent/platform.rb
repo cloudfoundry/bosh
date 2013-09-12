@@ -10,8 +10,6 @@ module Bosh::Agent
           Ubuntu::Adapter.new
         when 'centos'
           Centos::Adapter.new
-        when 'rhel'
-          Rhel::Adapter.new
         else
           raise UnknownPlatform, "platform '#{platform_name}' not found"
       end

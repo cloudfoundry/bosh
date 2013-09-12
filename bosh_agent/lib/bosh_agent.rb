@@ -44,7 +44,6 @@ require 'bosh_agent/platform/linux/adapter'
 require 'bosh_agent/platform/ubuntu'
 require 'bosh_agent/platform/ubuntu/adapter'
 require 'bosh_agent/platform/rhel'
-require 'bosh_agent/platform/rhel/adapter'
 require 'bosh_agent/platform/centos'
 require 'bosh_agent/platform/centos/adapter'
 

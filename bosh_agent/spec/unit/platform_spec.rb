@@ -28,12 +28,6 @@ module Bosh::Agent
         end
       end
 
-      context 'when the platform_name is "rhel"' do
-        it 'returns an CentOS compatible platform implementation' do
-          expect(factory.platform('rhel')).to be_an_instance_of(Platform::Rhel::Adapter)
-        end
-      end
-
       context 'when the platform_name is anything else' do
         it 'blows up with a sensible error for "osx"' do
           expect {
