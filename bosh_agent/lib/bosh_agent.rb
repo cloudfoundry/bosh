@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh
 end
 
@@ -77,16 +75,3 @@ require 'bosh_agent/message/ssh'
 
 require 'bosh_agent/handler'
 require 'bosh_agent/runner'
-
-if __FILE__ == $0
-  options = {
-    'configure' => true,
-    'logging' => { 'level' => 'DEBUG' },
-    'mbus' => 'nats://localhost:4222',
-    'agent_id' => 'not_configured',
-    'base_dir' => '/var/vcap',
-    'platform_name' => 'ubuntu',
-    'blobstore_options' => {}
-  }
-  Bosh::Agent::Runner.run(options)
-end
