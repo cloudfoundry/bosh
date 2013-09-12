@@ -55,12 +55,13 @@ sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=9
 
 Given that you have VMware Fusion installed, when you want to boot and run a vSphere stemcell:
 
-* Download the stemcell tarball (provided by the pair working on the stemcell story)
 * And you double-click the tgz file in Finder, it'll create a new folder
 * In the new folder: Ctrl-Click the file "image", under "Open With", choose "Archive Utility"
 * And then you'll have one more folder! There you find the file: image.ovf.
 * Start VMware Fusion
-* And you click File -> Import ... to import the above OVF file. You should see a new VM in your VM library.
+* And you click **File** -> **Import** ... to import the above OVF file. 
+* Save the imported ovf as `image.vmwarevm` in the `tmp` folder.
+* You should see a new VM in your VM library.
 * Double click that new VM and it should be booted.
 
 # Run the stemcell locally with VirtualBox
@@ -99,4 +100,3 @@ route add default gw 10.0.2.2 eth0
 
 Test the network with `ping 8.8.8.8`
 
->>>>>>> Updated readme
