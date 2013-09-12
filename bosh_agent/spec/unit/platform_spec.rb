@@ -17,14 +17,50 @@ module Bosh::Agent
       end
 
       context 'when the platform_name is "ubuntu"' do
-        it 'returns an Ubuntu compatible platform implementation' do
-          expect(factory.platform('ubuntu')).to be_an_instance_of(Platform::Ubuntu::Adapter)
+        subject(:platform) do
+          factory.platform('ubuntu')
+        end
+
+        it 'uses a generic logrotate strategy' do
+          platform.instance_variable_get(:@logrotate).should be_an_instance_of Platform::Linux::Logrotate
+          platform.instance_variable_get(:@logrotate).instance_variable_get(:@template_src).should include('lib/bosh_agent/platform/ubuntu/templates')
+        end
+
+        it 'uses a generic password strategy' do
+          platform.instance_variable_get(:@password).should be_an_instance_of Platform::Linux::Password
+        end
+
+        it 'uses a generic disk strategy' do
+          platform.instance_variable_get(:@disk).should be_an_instance_of Platform::Linux::Disk
+        end
+
+        it 'uses an ubuntu-specific network strategy' do
+          platform.instance_variable_get(:@network).should be_an_instance_of Platform::Ubuntu::Network
+          platform.instance_variable_get(:@network).instance_variable_get(:@template_dir).should include('lib/bosh_agent/platform/ubuntu/templates')
         end
       end
 
       context 'when the platform_name is "centos"' do
-        it 'returns an CentOS compatible platform implementation' do
-          expect(factory.platform('centos')).to be_an_instance_of(Platform::Centos::Adapter)
+        subject(:platform) do
+          factory.platform('centos')
+        end
+
+        it 'uses a generic logrotate strategy with a centos-specific template' do
+          platform.instance_variable_get(:@logrotate).should be_an_instance_of Platform::Linux::Logrotate
+          platform.instance_variable_get(:@logrotate).instance_variable_get(:@template_src).should include('lib/bosh_agent/platform/centos/templates')
+        end
+
+        it 'uses a generic password strategy' do
+          platform.instance_variable_get(:@password).should be_an_instance_of Platform::Linux::Password
+        end
+
+        it 'uses a centos-specific disk strategy' do
+          platform.instance_variable_get(:@disk).should be_an_instance_of Platform::Centos::Disk
+        end
+
+        it 'uses a centos-specific network strategy' do
+          platform.instance_variable_get(:@network).should be_an_instance_of Platform::Centos::Network
+          platform.instance_variable_get(:@network).instance_variable_get(:@template_dir).should include('lib/bosh_agent/platform/centos/templates')
         end
       end
 

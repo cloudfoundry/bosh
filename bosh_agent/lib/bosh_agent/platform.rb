@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Agent
   class UnknownPlatform < StandardError; end
 
@@ -7,9 +5,18 @@ module Bosh::Agent
     def self.platform(platform_name)
       case platform_name
         when 'ubuntu'
-          Ubuntu::Adapter.new
+          template_dir = File.expand_path(File.join(File.dirname(__FILE__), 'platform/ubuntu/templates'))
+          Platform::Linux::Adapter.new(Platform::Linux::Disk.new,
+                                       Platform::Linux::Logrotate.new(template_dir),
+                                       Platform::Linux::Password.new,
+                                       Platform::Ubuntu::Network.new(template_dir))
+
         when 'centos'
-          Centos::Adapter.new
+          template_dir = File.expand_path(File.join(File.dirname(__FILE__), 'platform/centos/templates'))
+          Platform::Linux::Adapter.new(Platform::Centos::Disk.new,
+                Platform::Linux::Logrotate.new(template_dir),
+                Platform::Linux::Password.new,
+                Platform::Centos::Network.new(template_dir))
         else
           raise UnknownPlatform, "platform '#{platform_name}' not found"
       end

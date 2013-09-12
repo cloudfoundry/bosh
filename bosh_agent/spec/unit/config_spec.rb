@@ -10,8 +10,8 @@ module Bosh::Agent
         stub_const('Bosh::Agent::Config', config_klass)
       end
 
-      it "returns an Ubuntu if platform_name is configured to be 'ubuntu'" do
-        expect(config_class.platform).to be_a(Platform::Ubuntu::Adapter)
+      it "returns an adapter with an Ubuntu network if platform_name is configured to be 'ubuntu'" do
+        expect(config_class.platform.instance_variable_get(:@network)).to be_a(Platform::Ubuntu::Network)
       end
     end
   end

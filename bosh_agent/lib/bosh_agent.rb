@@ -39,12 +39,19 @@ require 'bosh_agent/monit'
 
 require 'bosh_agent/infrastructure'
 require 'bosh_agent/platform'
+
 require 'bosh_agent/platform/linux'
+require 'bosh_agent/platform/linux/disk'
 require 'bosh_agent/platform/linux/adapter'
+require 'bosh_agent/platform/linux/logrotate'
+require 'bosh_agent/platform/linux/password'
+
 require 'bosh_agent/platform/ubuntu'
-require 'bosh_agent/platform/ubuntu/adapter'
+require 'bosh_agent/platform/ubuntu/network'
+
 require 'bosh_agent/platform/centos'
-require 'bosh_agent/platform/centos/adapter'
+require 'bosh_agent/platform/centos/disk'
+require 'bosh_agent/platform/centos/network'
 
 require 'bosh_agent/bootstrap'
 
