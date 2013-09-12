@@ -3,19 +3,11 @@
 module Bosh::Director
   module Api
     class InstanceManager
-      def initialize
-        @deployment_manager = DeploymentManager.new
-      end
-
       # @param [Integer] instance_id Instance id
       # @return [Models::Instance] Instance
       # @raise [InstanceNotFound]
       def find_instance(instance_id)
-        instance = Models::Instance[instance_id]
-        if instance.nil?
-          raise InstanceNotFound, "Instance #{instance_id} doesn't exist"
-        end
-        instance
+        InstanceLookup.new.by_id(instance_id)
       end
 
       # @param [String] deployment_name Deployment name
@@ -23,31 +15,14 @@ module Bosh::Director
       # @param [String] index Job index
       # @return [Models::Instance]
       def find_by_name(deployment_name, job, index)
-        deployment = @deployment_manager.find_by_name(deployment_name)
-
-        filter = {
-          :deployment_id => deployment.id,
-          :job => job,
-          :index => index
-        }
-
-        instance = Models::Instance.find(filter)
-        if instance.nil?
-          raise InstanceNotFound,
-                "`#{deployment_name}/#{job}/#{index}' doesn't exist"
-        end
-        instance
+        InstanceLookup.new.by_attributes(deployment_name, job, index)
       end
 
       # @param [Hash] filter Sequel-style DB record filter
       # @return [Array] List of instances that matched the filter
       # @raise [InstanceNotFound]
       def filter_by(filter)
-        instances = Models::Instance.filter(filter).all
-        if instances.empty?
-          raise InstanceNotFound, "No instances matched #{filter.inspect}"
-        end
-        instances
+        InstanceLookup.new.by_filter(filter)
       end
 
       # @param [Models::Instance] instance Instance
@@ -79,7 +54,7 @@ module Bosh::Director
 
       def ssh(user, options)
         description = "ssh: #{options['command']}:#{options['target']}"
-        deployment = @deployment_manager.find_by_name(options['deployment_name'])
+        deployment = DeploymentLookup.new.by_name(options['deployment_name'])
 
         JobQueue.new.enqueue(user, Jobs::Ssh, description, [deployment.id, options])
       end
