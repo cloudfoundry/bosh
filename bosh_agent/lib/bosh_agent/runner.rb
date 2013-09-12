@@ -15,10 +15,6 @@ module Bosh::Agent
 
       if Config.configure
         @logger.info('Configuring agent...')
-        # FIXME: this should not use message handler.
-        # The whole thing should be refactored so that
-        # regular code doesn't use RPC handlers other than
-        # for responding to RPC.
         Bootstrap.new.configure
 
         Monit.enable
