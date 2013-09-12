@@ -7,7 +7,7 @@ module Bosh::Agent
       require 'bosh_agent/platform/linux/password'
 
       def initialize
-        template_dir = File.expand_path('ubuntu/templates', File.dirname(__FILE__))
+        template_dir = File.expand_path('templates', File.dirname(__FILE__))
         super(Platform::Linux::Disk.new,
               Platform::Linux::Logrotate.new(template_dir),
               Platform::Linux::Password.new,

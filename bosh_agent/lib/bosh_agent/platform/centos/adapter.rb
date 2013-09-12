@@ -7,12 +7,11 @@ module Bosh::Agent
       require 'bosh_agent/platform/linux/password'
 
       def initialize
-        logrotate_template_dir = File.expand_path('ubuntu/templates', File.dirname(__FILE__))
-        network_template_dir = File.expand_path('centos/templates', File.dirname(__FILE__))
+        template_dir = File.expand_path('templates', File.dirname(__FILE__))
         super(Disk.new,
-              Platform::Linux::Logrotate.new(logrotate_template_dir),
+              Platform::Linux::Logrotate.new(template_dir),
               Platform::Linux::Password.new,
-              Platform::Centos::Network.new(network_template_dir))
+              Platform::Centos::Network.new(template_dir))
       end
     end
   end
