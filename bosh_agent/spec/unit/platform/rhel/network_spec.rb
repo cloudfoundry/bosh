@@ -8,47 +8,47 @@ describe Bosh::Agent::Platform::Centos::Network do
     Yajl::Parser.new.parse(settings_json)
   end
 
-  context "vSphere" do
+  context 'vSphere' do
     before do
-      Bosh::Agent::Config.infrastructure_name = "vsphere"
+      Bosh::Agent::Config.infrastructure_name = 'vsphere'
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
       Bosh::Agent::Config.settings = complete_settings
 
       Bosh::Agent::Util.stub(:update_file)
       network_wrapper.stub(:gratuitous_arp)
-      network_wrapper.stub(detect_mac_addresses: {"00:50:56:89:17:70" => "eth0"})
+      network_wrapper.stub(detect_mac_addresses: { '00:50:56:89:17:70' => 'eth0' })
     end
 
-    it "should generate centos network files" do
+    it 'should generate centos network files' do
       network_wrapper.stub(:update_file) do |data, file|
         file.should == '/etc/network/interfaces'
         data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 172.30.40.115\n    network 172.30.40.0\n    netmask 255.255.248.0\n    broadcast 172.30.47.255\n    gateway 172.30.40.1\n\n"
       end
-      network_wrapper.should_receive("sh").with("service network restart")
+      network_wrapper.should_receive('sh').with('service network restart')
 
       network_wrapper.setup_networking
     end
 
   end
 
-  context "AWS" do
+  context 'AWS' do
     let(:partial_settings) do
       json = %q[{"networks":{"default":{"dns":["1.2.3.4","5.6.7.8"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)
     end
 
     before do
-      Bosh::Agent::Config.infrastructure_name = "aws"
+      Bosh::Agent::Config.infrastructure_name = 'aws'
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       Bosh::Agent::Config.infrastructure.stub(load_settings: partial_settings)
       Bosh::Agent::Config.settings = partial_settings
     end
 
-    it "should configure dhcp with dns server prepended" do
+    it 'should configure dhcp with dns server prepended' do
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 5\.6\.7\.8;\nprepend domain-name-servers 1\.2\.3\.4;$/
-        file.should == "/etc/dhclient.conf"
+        file.should == '/etc/dhclient.conf'
         true # fake a change
       end
       network_wrapper.should_receive(:restart_dhclient)
@@ -57,21 +57,21 @@ describe Bosh::Agent::Platform::Centos::Network do
     end
   end
 
-  context "OpenStack" do
+  context 'OpenStack' do
     let (:partial_settings) do
       json = %q[{"networks":{"default":{"dns":["1.2.3.4"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)
     end
 
-    it "should configure dhcp with dns server prepended" do
-      Bosh::Agent::Config.infrastructure_name = "openstack"
+    it 'should configure dhcp with dns server prepended' do
+      Bosh::Agent::Config.infrastructure_name = 'openstack'
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       Bosh::Agent::Config.infrastructure.stub(load_settings: partial_settings)
       Bosh::Agent::Config.settings = partial_settings
 
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 1\.2\.3\.4;$/
-        file.should == "/etc/dhclient.conf"
+        file.should == '/etc/dhclient.conf'
         true # fake a change
       end
       network_wrapper.should_receive(:restart_dhclient)
