@@ -12,6 +12,7 @@ module Bosh::Director
         @deployment_manager = DeploymentManager.new
         @backup_manager = BackupManager.new
         @instance_manager = InstanceManager.new
+        @resurrector_manager = ResurrectorManager.new
         @problem_manager = ProblemManager.new
         @property_manager = PropertyManager.new
         @resource_manager = ResourceManager.new
@@ -352,9 +353,7 @@ module Bosh::Director
       put '/deployments/:deployment/jobs/:job/:index/resurrection', consumes: :json do
         payload = json_decode(request.body)
 
-        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
-        instance.resurrection_paused = payload['resurrection_paused']
-        instance.save
+        @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index], payload['resurrection_paused'])
       end
 
       post '/deployments/:deployment/jobs/:job/:index/snapshots' do
@@ -627,6 +626,13 @@ module Bosh::Director
         }
         content_type(:json)
         json_encode(status)
+      end
+
+      put '/resurrection', consumes: :json do
+        payload = json_decode(request.body)
+
+        @resurrector_manager.set_pause_for_all(payload['resurrection_paused'])
+        status(200)
       end
     end
   end
