@@ -25,3 +25,5 @@ rpm --force --nodeps --install http://dl.fedoraproject.org/pub/epel/6/x86_64/epe
 yum --assumeyes groupinstall Base
 yum --assumeyes groupinstall 'Development Tools'
 "
+
+touch ${chroot}/etc/sysconfig/network # must be present for network to be configured

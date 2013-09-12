@@ -23,6 +23,10 @@ describe 'CentOs Stemcell' do
           it { should be_installed.with_version(version) }
         end
       end
+
+      describe file('/etc/sysconfig/network') do
+        it { should be_file }
+      end
     end
 
     context 'installed by base_yum' do
