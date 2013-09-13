@@ -1,5 +1,6 @@
 module Bosh::Agent
-  class UnknownPlatform < StandardError; end
+  class UnknownPlatform < StandardError;
+  end
 
   module Platform
     def self.platform(platform_name)
@@ -14,9 +15,9 @@ module Bosh::Agent
         when 'centos'
           template_dir = File.expand_path(File.join(File.dirname(__FILE__), 'platform/centos/templates'))
           Platform::Linux::Adapter.new(Platform::Centos::Disk.new,
-                Platform::Linux::Logrotate.new(template_dir),
-                Platform::Linux::Password.new,
-                Platform::Centos::Network.new(template_dir))
+                                       Platform::Linux::Logrotate.new(template_dir),
+                                       Platform::Linux::Password.new,
+                                       Platform::Centos::Network.new(template_dir))
         else
           raise UnknownPlatform, "platform '#{platform_name}' not found"
       end
