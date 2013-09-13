@@ -1,3 +1,5 @@
+require 'ruby_vim_sdk'
+
 module VSphereCloud
 
   class Client
