@@ -113,4 +113,20 @@ describe 'Ubuntu Stemcell' do
       end
     end
   end
+
+  context 'installed by image_install_grub' do
+    describe file('/boot/grub/grub.conf') do
+      it { should be_file }
+      it { should contain 'default=0' }
+      it { should contain 'timeout=1' }
+      it { should contain 'title Ubuntu 10.04.4 LTS (3.0.0-32-virtual)' }
+      it { should contain '  root (hd0,0)' }
+      it { should contain '  kernel /boot/vmlinuz-3.0.0-32-virtual ro root=UUID=' }
+      it { should contain '  initrd /boot/initrd.img-3.0.0-32-virtual' }
+    end
+
+    describe file('/boot/grub/menu.lst') do
+      it { should be_linked_to('./grub.conf') }
+    end
+  end
 end

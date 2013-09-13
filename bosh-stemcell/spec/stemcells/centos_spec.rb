@@ -87,5 +87,19 @@ describe 'CentOs Stemcell' do
       it { should contain 'UUID=' }
       it { should contain '/ ext4 defaults 1 1' }
     end
+
+    describe file('/boot/grub/grub.conf') do
+      it { should be_file }
+      it { should contain 'default=0' }
+      it { should contain 'timeout=1' }
+      it { should contain 'title CentOS release 6.4 (Final) (2.6.32-358.18.1.el6.x86_64)' }
+      it { should contain '  root (hd0,0)' }
+      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.18.1.el6.x86_64 ro root=UUID=' }
+      it { should contain '  initrd /boot/initramfs-2.6.32-358.18.1.el6.x86_64.img' }
+    end
+
+    describe file('/boot/grub/menu.lst') do
+      it { should be_linked_to('./grub.conf') }
+    end
   end
 end
