@@ -36,10 +36,7 @@ describe VSphereCloud::Cloud do
   #    ntp:
   #    - 10.80.0.44
   #vcenters:
-  #    - host: 172.16.68.3
-  #user: root
-  #password: vmware
-  #datacenters:
+  #  - datacenters:
   #    - name: BOSH_DC
   #      vm_folder: ACCEPTANCE_BOSH_VMs
   #      template_folder: ACCEPTANCE_BOSH_Templates
@@ -60,6 +57,11 @@ describe VSphereCloud::Cloud do
 
   before :all do
     @cpi_options = YAML.load_file(env('BOSH_VSPHERE_CPI_OPTIONS'))
+    @cpi_options.fetch('vcenters').fetch(0).update(
+      'host' => env('BOSH_VSPHERE_CPI_HOST'),
+      'user' => env('BOSH_VSPHERE_CPI_USER'),
+      'password' => env('BOSH_VSPHERE_CPI_PASSWORD'),
+    )
     @cpi = described_class.new(@cpi_options)
 
     @vlan = env('BOSH_VSPHERE_VLAN')
