@@ -29,6 +29,7 @@ module Bosh::Stemcell
       )
     end
     let(:stage_runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
+    let(:disk_image) { instance_double('Bosh::Stemcell::DiskImage', mount: nil, unmount: nil) }
 
     let(:version) { '007' }
     let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
@@ -57,6 +58,10 @@ module Bosh::Stemcell
                                      stemcell_version: version,
                                      infrastructure: infrastructure,
                                      operating_system: operating_system).and_return(stemcell_builder_options)
+
+      Bosh::Stemcell::DiskImage.stub(:new).
+        with(image_file_path: File.join(root_dir, 'work', 'work', 'root.img'),
+             image_mount_point: File.join(root_dir, 'work', 'work', 'mnt')).and_return(disk_image)
     end
 
     let(:etc_dir) { File.join(root_dir, 'build', 'build', 'etc') }
@@ -150,7 +155,7 @@ module Bosh::Stemcell
         let(:expected_rspec_command) do
           [
             "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
-            "SERVERSPEC_CHROOT=#{stemcell_builder_command.chroot_dir}",
+            "SERVERSPEC_CHROOT=#{File.join(root_dir, 'work', 'work', 'mnt')}",
             "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
           ].join(' ')
         end
@@ -160,8 +165,10 @@ module Bosh::Stemcell
             with(['FAKE_OS_STAGES']).ordered
           stage_runner.should_receive(:configure_and_apply).
             with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
+          disk_image.should_receive(:mount).ordered
           stemcell_builder_command.should_receive(:system).
             with(expected_rspec_command).ordered
+          disk_image.should_receive(:unmount).ordered
 
           stemcell_builder_command.build
         end
@@ -174,8 +181,10 @@ module Bosh::Stemcell
               with(['FAKE_OS_STAGES']).ordered
             stage_runner.should_receive(:configure_and_apply).
               with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
+            disk_image.should_receive(:mount).ordered
             stemcell_builder_command.should_receive(:system).
               with(expected_rspec_command).ordered
+            disk_image.should_receive(:unmount).ordered
 
             stemcell_builder_command.build
           end
@@ -183,8 +192,10 @@ module Bosh::Stemcell
 
         context 'when rspec fails' do
           it 'raises an error' do
+            disk_image.should_receive(:mount).ordered
             stemcell_builder_command.stub(:system).
               with(expected_rspec_command).and_return(false)
+            disk_image.should_receive(:unmount).ordered
 
             expect {
               stemcell_builder_command.build

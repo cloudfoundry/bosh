@@ -9,7 +9,7 @@ module Bosh::Stemcell
     let(:options) do
       {
         image_file_path: '/path/to/FAKE_IMAGE',
-        mount_point: '/fake/mnt'
+        image_mount_point: '/fake/mnt'
       }
     end
 
@@ -26,22 +26,22 @@ module Bosh::Stemcell
       end
 
       it 'requires an mount_point' do
-        options.delete(:mount_point)
-        expect { DiskImage.new(options) }.to raise_error /key not found: :mount_point/
+        options.delete(:image_mount_point)
+        expect { DiskImage.new(options) }.to raise_error /key not found: :image_mount_point/
       end
     end
 
     describe '#mount' do
       it 'maps the file to a loop device' do
-        shell.should_receive(:run).with('kpartx -av /path/to/FAKE_IMAGE').and_return(kpartx_output)
+        shell.should_receive(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE').and_return(kpartx_output)
 
         image.mount
       end
 
       it 'mounts the loop device' do
-        shell.stub(:run).with('kpartx -av /path/to/FAKE_IMAGE').and_return(kpartx_output)
+        shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE').and_return(kpartx_output)
 
-        shell.should_receive(:run).with('mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt')
+        shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt')
 
         image.mount
       end
@@ -49,8 +49,8 @@ module Bosh::Stemcell
 
     describe '#unmount' do
       it 'unmounts the loop device and then unmaps the file' do
-        shell.should_receive(:run).with('umount /fake/mnt').ordered
-        shell.should_receive(:run).with('kpartx -dv /path/to/FAKE_IMAGE').ordered
+        shell.should_receive(:run).with('sudo umount /fake/mnt').ordered
+        shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE').ordered
 
         image.unmount
       end

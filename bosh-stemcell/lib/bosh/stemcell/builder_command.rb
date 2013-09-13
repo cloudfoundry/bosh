@@ -2,6 +2,7 @@ require 'fileutils'
 
 require 'bosh/core/shell'
 require 'bosh/stemcell/builder_options'
+require 'bosh/stemcell/disk_image'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 require 'bosh/stemcell/stage_collection'
@@ -42,7 +43,13 @@ module Bosh::Stemcell
                                      work_path: work_root)
       stage_runner.configure_and_apply(stage_collection.operating_system_stages)
       stage_runner.configure_and_apply(stage_collection.infrastructure_stages)
-      system(rspec_command) || raise('Stemcell specs failed')
+      begin
+        disk_image = DiskImage.new(image_file_path: image_file_path, image_mount_point: image_mount_point)
+        disk_image.mount
+        system(rspec_command) || raise('Stemcell specs failed')
+      ensure
+        disk_image.unmount
+      end
 
       stemcell_file
     end
@@ -62,16 +69,24 @@ module Bosh::Stemcell
     def rspec_command
       [
         "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
-        "SERVERSPEC_CHROOT=#{chroot_dir}",
+        "SERVERSPEC_CHROOT=#{image_mount_point}",
         "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
       ].join(' ')
+    end
+
+    def image_file_path
+      File.join(work_path, 'root.img')
+    end
+
+    def image_mount_point
+      File.join(work_path, 'mnt')
     end
 
     def sanitize
       FileUtils.rm_rf('*.tgz')
 
       system("sudo umount #{File.join(work_path, 'mnt/tmp/grub/root.img')} 2> /dev/null")
-      system("sudo umount #{File.join(work_path, 'mnt')} 2> /dev/null")
+      system("sudo umount #{image_mount_point} 2> /dev/null")
       system("sudo rm -rf #{base_directory}")
     end
 
