@@ -51,7 +51,9 @@ module Bosh::Cli
         check_arguments(state, job)
         index = valid_index_for(job, index)
         vm_state = VmState.new(self, force?)
-        JobState.new(self, vm_state).change(state, job, index)
+        job_state = JobState.new(self, vm_state)
+        status, task_id, completion_desc =job_state.change(state, job, index)
+        task_report(status, task_id, completion_desc)
       end
 
       def hard?

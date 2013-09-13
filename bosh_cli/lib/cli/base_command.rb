@@ -133,6 +133,8 @@ module Bosh::Cli
         end
       end
 
+      protected
+
       # Prints director task completion report. Note that event log usually
       # contains pretty detailed error report and other UI niceties, so most
       # of the time this could just do nothing
@@ -161,8 +163,6 @@ module Bosh::Cli
         say("\n#{report}") if report
         say("\nFor a more detailed error report, run: bosh task #{task_id} --debug") if status == :error
       end
-
-      protected
 
       def auth_required
         target_required

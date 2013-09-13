@@ -36,7 +36,8 @@ module Bosh::Cli
       completion_desc = COMPLETION_DESCRIPTIONS.fetch(state) % job_desc.make_green
 
       status, task_id = perform_vm_state_change(job, index, new_state, op_desc)
-      command.task_report(status, task_id, completion_desc)
+
+      [status, task_id, completion_desc]
     end
 
     private
