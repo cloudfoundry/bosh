@@ -80,6 +80,7 @@ eos
   end
 
   it 'should return nil when asked for network settings' do
+    Bosh::Agent::Config.setup('infrastructure_name' => 'dummy')
     properties = Bosh::Agent::Config.infrastructure.get_network_settings("test", {})
     properties.should be_nil
   end
