@@ -39,40 +39,31 @@ which ovftool                        # should return a location
 # Build the stemcell
 
 ```
+cd /bosh
 bundle install --local
-sudo CANDIDATE_BUILD_NUMBER=961 bundle exec rake ci:build_stemcell[vsphere,ubuntu]
-# ...or...
-sudo CANDIDATE_BUILD_NUMBER=961 bundle exec rake ci:build_stemcell[vsphere,centos]
+sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=980 http_proxy=http://localhost:3142
 ```
 
-One trick to speed up stemcell building iteration is to leverage apt-cacher-ng
+Alternatively, you can run that command without the caching proxy, and/or for another OS:
 
 ```
-sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=961 http_proxy=http://localhost:3142
+sudo CANDIDATE_BUILD_NUMBER=980 bundle exec rake ci:build_stemcell[vsphere,ubuntu]
 ```
 
-# Running the stemcell locally with Fusion
+# Run the stemcell locally with Fusion
 
-Given that you have VMware Fusion installed, when you want to boot and run a vSphere stemcell:
+VMware Fusion is the preferred local virtual environment.  You can [purchase it here](http://www.vmware.com/products/fusion/).  Once you have Fusion installed:
 
-* And you double-click the tgz file in Finder, it'll create a new folder
-* In the new folder: Ctrl-Click the file "image", under "Open With", choose "Archive Utility"
-* And then you'll have one more folder! There you find the file: image.ovf.
-* Start VMware Fusion
-* And you click **File** -> **Import** ... to import the above OVF file. 
-* Save the imported ovf as `image.vmwarevm` in the `tmp` folder.
+* Unpack the stemcell tarball.
+* Rename the new `image` file to `image.tgz` and untar that as well.  You should now have an `image.ovf` file.
+* Start VMware Fusion and import this file (**File** -> **Import**)
+* Save the imported OVF as `image.vmwarevm` in the `tmp` folder.
 * You should see a new VM in your VM library.
 * Double click that new VM and it should be booted.
 
-# Run the stemcell locally with VirtualBox
-
-## Import the VM
-
-The stemcell is dropped into `bosh/tmp/bosh-stemcell-961-vsphere-esxi-centos.tgz`.  Untar that file.  You now have a file named `image`.  Rename that to `image.tgz`, and untar *that* file.  You now have a file named `image.ovf`.  double click on that file to open it in VirtualBox.
-
 ## Add the NIC
 
-Before starting the VM in VIrtualBox:
+Before starting the VM in VirtualBox:
 
 1. Add a network interface (**Settings** > **Network** > **Adapter 1** > **Enable**)
 1. Select NAT networking (the default)
@@ -85,7 +76,28 @@ Before starting the VM in VIrtualBox:
     * Guest IP: blank
     * Guest Port: 22
 
-## Boot the VM
+# Run the stemcell locally with VirtualBox
+
+## Import the VM
+
+The stemcell is dropped into `bosh/tmp/bosh-stemcell-???-vsphere-esxi-centos.tgz`.  Untar that file.  You now have a file named `image`.  Rename that to `image.tgz`, and untar *that* file.  You now have a file named `image.ovf`.  double click on that file to open it in VirtualBox.
+
+## Add the NIC
+
+Before starting the VM in VirtualBox:
+
+1. Add a network interface (**Settings** > **Network** > **Adapter 1** > **Enable**)
+1. Select NAT networking (the default)
+1. Click on advanced
+1. Click on Port Forwarding and enable the following rule:
+    * Name: SSH
+    * Protocol: TCP
+    * Host IP: 127.0.0.1
+    * Host Port: 3333
+    * Guest IP: blank
+    * Guest Port: 22
+
+# Boot the VM
 
 Save the configuration and boot the VM.  Once you're booted, login as `root`/`c1oudc0w`.
 
