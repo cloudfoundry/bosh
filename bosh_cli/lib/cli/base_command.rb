@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'cli/job_command_args'
+
 module Bosh::Cli
   module Command
     class Base
@@ -167,21 +169,7 @@ module Bosh::Cli
       # @param [Array] args
       # @return [Array] job, index, command
       def parse_args(args)
-        job = args.shift
-        err('Please provide job name') if job.nil?
-        job, index = job.split('/', 2)
-
-        if index
-          if index =~ /^\d+$/
-            index = index.to_i
-          else
-            err('Invalid job index, integer number expected')
-          end
-        elsif args[0] =~ /^\d+$/
-          index = args.shift.to_i
-        end
-
-        [job, index, args]
+        JobCommandArgs.new(args).to_a
       end
 
       def auth_required
