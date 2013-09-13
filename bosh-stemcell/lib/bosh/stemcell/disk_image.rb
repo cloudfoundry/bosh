@@ -9,11 +9,11 @@ module Bosh::Stemcell
     end
 
     def mount
-      shell.run("sudo mount #{stemcell_loopback_device_name} #{image_mount_point}")
+      shell.run("sudo mount #{stemcell_loopback_device_name} #{image_mount_point}", output_command: true)
     end
 
     def unmount
-      shell.run("sudo umount #{image_mount_point}")
+      shell.run("sudo umount #{image_mount_point}", output_command: true)
       unmap_image
     end
 
@@ -27,14 +27,14 @@ module Bosh::Stemcell
 
     def map_image
       unless @image_device
-        output = shell.run("sudo kpartx -av #{image_file_path}")
+        output = shell.run("sudo kpartx -av #{image_file_path}", output_command: true)
         @image_device = output.split(' ')[2]
       end
       @image_device
     end
 
     def unmap_image
-      shell.run("sudo kpartx -dv #{image_file_path}")
+      shell.run("sudo kpartx -dv #{image_file_path}", output_command: true)
     end
   end
 end
