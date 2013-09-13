@@ -43,13 +43,7 @@ module Bosh::Stemcell
                                      work_path: work_root)
       stage_runner.configure_and_apply(stage_collection.operating_system_stages)
       stage_runner.configure_and_apply(stage_collection.infrastructure_stages)
-      begin
-        disk_image = DiskImage.new(image_file_path: image_file_path, image_mount_point: image_mount_point)
-        disk_image.mount
-        system(rspec_command) || raise('Stemcell specs failed')
-      ensure
-        disk_image.unmount
-      end
+      run_serverspec
 
       stemcell_file
     end
@@ -65,6 +59,14 @@ module Bosh::Stemcell
                 :infrastructure,
                 :operating_system,
                 :stemcell_builder_options
+
+    def run_serverspec
+      disk_image = DiskImage.new(image_file_path: image_file_path, image_mount_point: image_mount_point)
+      disk_image.mount
+      system(rspec_command) || raise('Stemcell specs failed')
+    ensure
+      disk_image.unmount
+    end
 
     def rspec_command
       [
