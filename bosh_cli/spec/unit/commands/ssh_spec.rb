@@ -6,7 +6,7 @@ require 'net/ssh/gateway'
 describe Bosh::Cli::Command::Ssh do
   let(:command) { described_class.new }
   let(:net_ssh) { double('ssh') }
-  let(:director) { double(Bosh::Cli::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
   let(:deployment) { 'mycloud' }
 
   let(:manifest) do

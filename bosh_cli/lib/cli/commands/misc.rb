@@ -25,7 +25,7 @@ module Bosh::Cli::Command
       else
         begin
           timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
-            director = Bosh::Cli::Director.new(target)
+            director = Bosh::Cli::Client::Director.new(target)
             status = director.get_status
 
             print_value("Name", status["name"])
@@ -35,7 +35,7 @@ module Bosh::Cli::Command
             print_value("UUID", status["uuid"])
             print_value("CPI", status["cpi"], "n/a")
             print_feature_list(status["features"]) if status["features"]
-            
+
             unless options[:target]
               config.target_name = status["name"]
               config.target_version = status["version"]
@@ -174,7 +174,7 @@ module Bosh::Cli::Command
         return
       end
 
-      director = Bosh::Cli::Director.new(director_url)
+      director = Bosh::Cli::Client::Director.new(director_url)
 
       begin
         status = director.get_status

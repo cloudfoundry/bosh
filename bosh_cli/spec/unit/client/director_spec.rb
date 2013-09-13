@@ -2,14 +2,14 @@
 
 require 'spec_helper'
 
-describe Bosh::Cli::Director do
+describe Bosh::Cli::Client::Director do
 
   DUMMY_TARGET = 'https://target.example.com:8080'
 
   before do
     URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
     Resolv.should_receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
-    @director = Bosh::Cli::Director.new(DUMMY_TARGET, 'user', 'pass')
+    @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, 'user', 'pass')
     @director.stub(retry_wait_interval: 0)
   end
 
@@ -481,7 +481,7 @@ describe Bosh::Cli::Director do
 
         URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
         Resolv.should_receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
-        @director = Bosh::Cli::Director.new(DUMMY_TARGET, 'user', 'pass', :no_track => true)
+        @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, 'user', 'pass', :no_track => true)
 
         @director.should_receive(:request).
             with(:get, '/stuff', 'text/plain', 'abc').
@@ -556,11 +556,11 @@ describe Bosh::Cli::Director do
 
       client = double('httpclient', :ssl_config => ssl_config)
       client.should_receive(:send_timeout=).
-          with(Bosh::Cli::Director::API_TIMEOUT)
+          with(Bosh::Cli::Client::Director::API_TIMEOUT)
       client.should_receive(:receive_timeout=).
-          with(Bosh::Cli::Director::API_TIMEOUT)
+          with(Bosh::Cli::Client::Director::API_TIMEOUT)
       client.should_receive(:connect_timeout=).
-          with(Bosh::Cli::Director::CONNECT_TIMEOUT)
+          with(Bosh::Cli::Client::Director::CONNECT_TIMEOUT)
 
       HTTPClient.stub(:new).and_return(client)
 

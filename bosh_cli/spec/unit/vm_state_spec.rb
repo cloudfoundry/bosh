@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Command::VmState do
-  let(:director) { stub(Bosh::Cli::Director) }
+  let(:director) { stub(Bosh::Cli::Client::Director) }
   let(:command) do
     stub(Bosh::Cli::Command::Base,
          interactive?: true,

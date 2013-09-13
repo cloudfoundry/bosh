@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Cli::Command::Vm do
   let(:command) { described_class.new }
-  let(:director) { double(Bosh::Cli::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
   let(:deployment) { 'dep1' }
   let(:target) { 'http://example.org' }
   let(:deployment_manifest) { {'name' => deployment} }

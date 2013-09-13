@@ -79,7 +79,7 @@ describe Bosh::Cli::Command::Base do
     add_config('target' => 'localhost:8080', 'deployment' => 'test')
 
     cmd = make
-    cmd.director.should be_kind_of(Bosh::Cli::Director)
+    cmd.director.should be_kind_of(Bosh::Cli::Client::Director)
     cmd.director.director_uri.should == URI.parse('https://localhost:8080')
   end
 

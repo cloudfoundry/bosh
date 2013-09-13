@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Cli::Command::Deployment do
 
-  let(:director) { double(Bosh::Cli::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
   let(:cmd) { described_class.new(nil, director) }
 
   before :each do

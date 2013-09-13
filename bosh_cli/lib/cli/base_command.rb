@@ -52,7 +52,7 @@ module Bosh::Cli
       end
 
       def director
-        @director ||= Bosh::Cli::Director.new(
+        @director ||= Bosh::Cli::Client::Director.new(
             target, username, password, @options.select { |k, _| k == :no_track })
       end
 

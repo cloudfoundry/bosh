@@ -8,7 +8,7 @@ describe Bosh::Cli::BackupDestinationPath do
   let(:epoch) { Time.now.to_i }
   let(:bosh_name) { 'bosh-name' }
   let(:bosh_status) { { 'name' => bosh_name } }
-  let(:director) { double(Bosh::Cli::Director, get_status: bosh_status) }
+  let(:director) { double(Bosh::Cli::Client::Director, get_status: bosh_status) }
 
   let(:pwd) { Dir.pwd }
 

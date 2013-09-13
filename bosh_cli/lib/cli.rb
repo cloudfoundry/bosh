@@ -52,7 +52,7 @@ require 'cli/deployment_helper'
 require 'cli/validation'
 require 'cli/cache'
 require 'cli/stemcell'
-require 'cli/director'
+require 'cli/client/director'
 require 'cli/director_task'
 
 require 'cli/line_wrap'

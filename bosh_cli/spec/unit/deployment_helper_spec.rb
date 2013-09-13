@@ -13,7 +13,7 @@ describe Bosh::Cli::DeploymentHelper do
     end
   end
 
-  let(:fake_director) { double(Bosh::Cli::Director) }
+  let(:fake_director) { double(Bosh::Cli::Client::Director) }
   let(:tester) { DeploymentHelperTester.new(fake_director) }
   let(:release_list) do
     [
@@ -207,7 +207,7 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
       manifest_file.close
-      director = double(Bosh::Cli::Director)
+      director = double(Bosh::Cli::Client::Director)
 
       cmd.stub(:deployment).and_return(manifest_file.path)
       cmd.stub(:director).and_return(director)
@@ -235,7 +235,7 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
       manifest_file.close
-      director = double(Bosh::Cli::Director, :uuid => 'deadbeef')
+      director = double(Bosh::Cli::Client::Director, :uuid => 'deadbeef')
 
       cmd.stub(:deployment).and_return(manifest_file.path)
       cmd.stub(:director).and_return(director)

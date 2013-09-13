@@ -4,7 +4,7 @@ require 'spec_helper'
 
 describe Bosh::Cli::Command::Release do
   let(:command) { described_class.new }
-  let(:director) { double(Bosh::Cli::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
   let(:release_archive) { spec_asset('valid_release.tgz') }
   let(:release_manifest) { spec_asset(File.join('release', 'release.MF')) }
   let(:release_location) { 'http://release_location' }
@@ -12,10 +12,10 @@ describe Bosh::Cli::Command::Release do
   before do
     command.stub(:director).and_return(director)
   end
-  
+
   describe 'upload release' do
     it_behaves_like 'a command which requires user is logged in', ->(command) { command.upload('http://release_location') }
-      
+
     context 'when the user is logged in' do
       before do
         command.stub(:logged_in? => true)
@@ -28,7 +28,7 @@ describe Bosh::Cli::Command::Release do
             command.should_receive(:upload_manifest)
               .with(release_manifest, hash_including(:rebase => nil))
             command.upload(release_manifest)
-          end          
+          end
 
           it 'should upload the release archive' do
             command.should_receive(:upload_tarball)
@@ -43,7 +43,7 @@ describe Bosh::Cli::Command::Release do
               .with(release_manifest, hash_including(:rebase => true))
             command.add_option(:rebase, true)
             command.upload(release_manifest)
-          end          
+          end
 
           it 'should upload the release archive' do
             command.should_receive(:upload_tarball)
@@ -99,7 +99,7 @@ describe Bosh::Cli::Command::Release do
           end
         end
       end
-      
+
       context 'remote release' do
         context 'without rebase' do
           it 'should upload the release' do
@@ -107,18 +107,18 @@ describe Bosh::Cli::Command::Release do
               .with(release_location, hash_including(:rebase => nil))
               .and_call_original
             director.should_receive(:upload_remote_release).with(release_location)
-  
+
             command.upload(release_location)
-          end          
+          end
         end
-        
+
         context 'with rebase' do
           it 'should upload the release' do
             command.should_receive(:upload_remote_release)
               .with(release_location, hash_including(:rebase => true))
               .and_call_original
             director.should_receive(:rebase_remote_release).with(release_location)
-  
+
             command.add_option(:rebase, true)
             command.upload(release_location)
           end
