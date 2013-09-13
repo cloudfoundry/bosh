@@ -1,5 +1,4 @@
-module Bosh::Cli::Command
-
+module Bosh::Cli
   class JobState
     OPERATION_DESCRIPTIONS = {
         start: 'start %s',
