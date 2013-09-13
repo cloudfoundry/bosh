@@ -80,4 +80,12 @@ describe 'CentOs Stemcell' do
   context 'installed by system_grub'
 
   context 'installed by system_kernel'
+
+  context 'installed by image_install_grub' do
+    describe file('/etc/fstab') do
+      it { should be_file }
+      it { should contain 'UUID=' }
+      it { should contain '/ ext4 defaults 1 1' }
+    end
+  end
 end

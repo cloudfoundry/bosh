@@ -53,6 +53,10 @@ elif [ -f ${mnt}/etc/centos-release ] # Centos
 then
   initrd_file="initramfs-${kernel_version}.img"
   os_name=$(cat ${mnt}/etc/centos-release)
+  cat > ${mnt}/etc/fstab <<FSTAB
+# /etc/fstab Created by BOSH Stemcell Builder
+UUID=${uuid} / ext4 defaults 1 1
+FSTAB
 else
   echo "Unknown OS, exiting"
   exit 2
