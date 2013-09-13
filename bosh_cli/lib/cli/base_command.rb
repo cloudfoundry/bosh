@@ -1,7 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'cli/job_command_args'
-
 module Bosh::Cli
   module Command
     class Base
@@ -165,12 +163,6 @@ module Bosh::Cli
       end
 
       protected
-
-      # @param [Array] args
-      # @return [Array] job, index, command
-      def parse_args(args)
-        JobCommandArgs.new(args).to_a
-      end
 
       def auth_required
         target_required
