@@ -1,11 +1,6 @@
 module Bosh::Agent
   module Platform::Linux
     class Adapter
-      require 'bosh_agent/platform/linux/disk'
-      require 'bosh_agent/platform/linux/logrotate'
-      require 'bosh_agent/platform/linux/network'
-      require 'bosh_agent/platform/linux/password'
-
       def initialize(disk, logrotate, password, network)
         @disk = disk
         @logrotate = logrotate

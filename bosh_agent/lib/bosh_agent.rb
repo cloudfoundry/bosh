@@ -41,10 +41,11 @@ require 'bosh_agent/infrastructure'
 require 'bosh_agent/platform'
 
 require 'bosh_agent/platform/linux'
-require 'bosh_agent/platform/linux/disk'
 require 'bosh_agent/platform/linux/adapter'
+require 'bosh_agent/platform/linux/disk'
 require 'bosh_agent/platform/linux/logrotate'
 require 'bosh_agent/platform/linux/password'
+require 'bosh_agent/platform/linux/network'
 
 require 'bosh_agent/platform/ubuntu'
 require 'bosh_agent/platform/ubuntu/network'
