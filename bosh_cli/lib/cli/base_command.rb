@@ -6,14 +6,8 @@ module Bosh::Cli
       extend Bosh::Cli::CommandDiscovery
       include Bosh::Cli::DeploymentHelper
 
-      attr_accessor :options
-      attr_reader :work_dir
-      attr_reader :runner
-
-      attr_accessor :out
-
-      # @return [Array] Arguments passed to command handler
-      attr_accessor :args
+      attr_accessor :options, :out, :args
+      attr_reader :work_dir, :exit_code, :runner
 
       DEFAULT_DIRECTOR_PORT = 25555
 
@@ -122,17 +116,6 @@ module Bosh::Cli
         options[:target] || config.target_name || target_url
       end
 
-      # Sets or returns command exit code
-      # @param [optional,Integer] code If param is given, sets exit code. If
-      #   it's nil, returns previously set exit_code
-      def exit_code(code = nil)
-        if code
-          @exit_code = code
-        else
-          @exit_code
-        end
-      end
-
       protected
 
       # Prints director task completion report. Note that event log usually
@@ -157,7 +140,7 @@ module Bosh::Cli
         end
 
         unless [:running, :done].include?(status)
-          exit_code(1)
+          @exit_code = 1
         end
 
         say("\n#{report}") if report
