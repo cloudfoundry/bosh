@@ -39,7 +39,7 @@ module Bosh::Stemcell
         :bosh_users,
         :bosh_monit,
         :bosh_ruby,
-        #:bosh_agent,
+        :bosh_agent,
         #:bosh_sysstat,
         #:bosh_sysctl,
         #:bosh_ntpdate,

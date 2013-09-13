@@ -85,6 +85,12 @@ describe 'CentOs Stemcell' do
     end
   end
 
+  describe 'installed by bosh_agent' do
+    describe command('/var/vcap/bosh/bin/ruby -r bosh_agent -e"Bosh::Agent"') do
+      it { should return_exit_status(0) }
+    end
+  end
+
   context 'installed by bosh_micro' do
     describe file('/var/vcap/micro/apply_spec.yml')
   end
