@@ -1,1 +1,0 @@
-require 'cloud/vsphere/client'
