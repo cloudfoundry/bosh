@@ -31,7 +31,7 @@ module Bosh
       #                       +request_and_track+ calls
       def initialize(director_uri, user = nil, password = nil, options = {})
         if director_uri.nil? || director_uri =~ /^\s*$/
-          raise DirectorMissing, "no director URI given"
+          raise DirectorMissing, 'no director URI given'
         end
 
         @director_uri = URI.parse(director_uri)
@@ -46,7 +46,7 @@ module Bosh
       end
 
       def uuid
-        @uuid ||= get_status["uuid"]
+        @uuid ||= get_status['uuid']
       end
 
       def exists?
@@ -69,15 +69,15 @@ module Bosh
         status = get_status
         # Backward compatibility: older directors return 200
         # only for logged in users
-        return true if !status.has_key?("version")
-        !status["user"].nil?
+        return true if !status.has_key?('version')
+        !status['user'].nil?
       rescue DirectorError
         false
       end
 
       def create_user(username, password)
-        payload = JSON.generate("username" => username, "password" => password)
-        response_code, _ = post("/users", "application/json", payload)
+        payload = JSON.generate('username' => username, 'password' => password)
+        response_code, _ = post('/users', 'application/json', payload)
         response_code == 204
       end
 
@@ -88,9 +88,9 @@ module Bosh
 
       def upload_stemcell(filename, options = {})
         options = options.dup
-        options[:content_type] = "application/x-compressed"
+        options[:content_type] = 'application/x-compressed'
 
-        upload_and_track(:post, "/stemcells", filename, options)
+        upload_and_track(:post, '/stemcells', filename, options)
       end
 
       def upload_remote_stemcell(stemcell_location, options = {})
@@ -103,30 +103,30 @@ module Bosh
       end
 
       def get_version
-        get_status["version"]
+        get_status['version']
       end
 
       def get_status
-        get_json("/info")
+        get_json('/info')
       end
 
       def list_stemcells
-        get_json("/stemcells")
+        get_json('/stemcells')
       end
 
       def list_releases
-        get_json("/releases")
+        get_json('/releases')
       end
 
       def list_deployments
-        get_json("/deployments")
+        get_json('/deployments')
       end
 
       def list_running_tasks(verbose = 1)
-        if version_less(get_version, "0.3.5")
-          get_json("/tasks?state=processing")
+        if version_less(get_version, '0.3.5')
+          get_json('/tasks?state=processing')
         else
-          get_json("/tasks?state=processing,cancelling,queued" +
+          get_json('/tasks?state=processing,cancelling,queued' +
 		   "&verbose=#{verbose}")
         end
       end
@@ -140,8 +140,8 @@ module Bosh
       end
 
       def match_packages(manifest_yaml)
-        url = "/packages/matches"
-        status, body = post(url, "text/yaml", manifest_yaml)
+        url = '/packages/matches'
+        status, body = post(url, 'text/yaml', manifest_yaml)
 
         if status == 200
           JSON.parse(body)
@@ -162,15 +162,15 @@ module Bosh
 
       def upload_release(filename, options = {})
         options = options.dup
-        options[:content_type] = "application/x-compressed"
+        options[:content_type] = 'application/x-compressed'
 
-        upload_and_track(:post, "/releases", filename, options)
+        upload_and_track(:post, '/releases', filename, options)
       end
 
       def rebase_release(filename, options = {})
         options = options.dup
-        options[:content_type] = "application/x-compressed"
-        upload_and_track(:post, "/releases?rebase=true", filename, options)
+        options[:content_type] = 'application/x-compressed'
+        upload_and_track(:post, '/releases?rebase=true', filename, options)
       end
 
       def upload_remote_release(release_location, options = {})
@@ -198,7 +198,7 @@ module Bosh
         url = "/stemcells/#{name}/#{version}"
 
         extras = []
-        extras << "force=true" if force
+        extras << 'force=true' if force
 
         request_and_track(:delete, add_query_string(url, extras), options)
       end
@@ -210,7 +210,7 @@ module Bosh
         url = "/deployments/#{name}"
 
         extras = []
-        extras << "force=true" if force
+        extras << 'force=true' if force
 
         request_and_track(:delete, add_query_string(url, extras), options)
       end
@@ -223,7 +223,7 @@ module Bosh
         url = "/releases/#{name}"
 
         extras = []
-        extras << "force=true" if force
+        extras << 'force=true' if force
         extras << "version=#{version}" if version
 
         request_and_track(:delete, add_query_string(url, extras), options)
@@ -233,13 +233,13 @@ module Bosh
         options = options.dup
 
         recreate = options.delete(:recreate)
-        options[:content_type] = "text/yaml"
+        options[:content_type] = 'text/yaml'
         options[:payload] = manifest_yaml
 
-        url = "/deployments"
+        url = '/deployments'
 
         extras = []
-        extras << "recreate=true" if recreate
+        extras << 'recreate=true' if recreate
 
         request_and_track(:post, add_query_string(url, extras), options)
       end
@@ -251,21 +251,21 @@ module Bosh
         url = "/deployments/#{deployment_name}/ssh"
 
         payload = {
-          "command" => "setup",
-          "deployment_name" => deployment_name,
-          "target" => {
-            "job" => job,
-            "indexes" => [index].compact
+          'command'         => 'setup',
+          'deployment_name' => deployment_name,
+          'target'          => {
+            'job'     => job,
+            'indexes' => [index].compact
           },
-          "params" => {
-            "user" => user,
-            "public_key" => public_key,
-            "password" => password
+          'params'          => {
+            'user'       => user,
+            'public_key' => public_key,
+            'password'   => password
           }
         }
 
         options[:payload] = JSON.generate(payload)
-        options[:content_type] = "application/json"
+        options[:content_type] = 'application/json'
 
         request_and_track(:post, url, options)
       end
@@ -276,17 +276,17 @@ module Bosh
         url = "/deployments/#{deployment_name}/ssh"
 
         payload = {
-          "command" => "cleanup",
-          "deployment_name" => deployment_name,
-          "target" => {
-            "job" => job,
-            "indexes" => (indexes || []).compact
+          'command'         => 'cleanup',
+          'deployment_name' => deployment_name,
+          'target'          => {
+            'job'     => job,
+            'indexes' => (indexes || []).compact
           },
-          "params" => { "user_regex" => user_regex }
+          'params'          => { 'user_regex' => user_regex }
         }
 
         options[:payload] = JSON.generate(payload)
-        options[:content_type] = "application/json"
+        options[:content_type] = 'application/json'
 
         request_and_track(:post, url, options)
       end
@@ -300,15 +300,15 @@ module Bosh
         url += "?state=#{new_state}"
 
         options[:payload] = manifest_yaml
-        options[:content_type] = "text/yaml"
+        options[:content_type] = 'text/yaml'
 
         request_and_track(:put, url, options)
       end
 
       def change_vm_resurrection(deployment_name, job_name, index, value)
         url = "/deployments/#{deployment_name}/jobs/#{job_name}/#{index}/resurrection"
-        payload = JSON.generate("resurrection_paused" => value)
-        put(url, "application/json", payload)
+        payload = JSON.generate('resurrection_paused' => value)
+        put(url, 'application/json', payload)
       end
 
       def rename_job(deployment_name, manifest_yaml, old_name, new_name,
@@ -319,9 +319,9 @@ module Bosh
 
         extras = []
         extras << "new_name=#{new_name}"
-        extras << "force=true" if force
+        extras << 'force=true' if force
 
-        options[:content_type] = "text/yaml"
+        options[:content_type] = 'text/yaml'
         options[:payload] = manifest_yaml
 
         request_and_track(:put, add_query_string(url, extras), options)
@@ -348,7 +348,7 @@ module Bosh
         status, task_id = request_and_track(:get, url, options)
 
         if status != :done
-          raise DirectorError, "Failed to fetch VMs information from director"
+          raise DirectorError, 'Failed to fetch VMs information from director'
         end
 
         output = get_task_result_log(task_id)
@@ -372,19 +372,19 @@ module Bosh
 
       def create_property(deployment_name, property_name, value)
         url = "/deployments/#{deployment_name}/properties"
-        payload = JSON.generate("name" => property_name, "value" => value)
-        post(url, "application/json", payload)
+        payload = JSON.generate('name' => property_name, 'value' => value)
+        post(url, 'application/json', payload)
       end
 
       def update_property(deployment_name, property_name, value)
         url = "/deployments/#{deployment_name}/properties/#{property_name}"
-        payload = JSON.generate("value" => value)
-        put(url, "application/json", payload)
+        payload = JSON.generate('value' => value)
+        put(url, 'application/json', payload)
       end
 
       def delete_property(deployment_name, property_name)
         url = "/deployments/#{deployment_name}/properties/#{property_name}"
-        delete(url, "application/json")
+        delete(url, 'application/json')
       end
 
       def get_property(deployment_name, property_name)
@@ -450,14 +450,14 @@ module Bosh
         options = options.dup
 
         url = "/deployments/#{deployment_name}/problems"
-        options[:content_type] = "application/json"
-        options[:payload] = JSON.generate("resolutions" => resolutions)
+        options[:content_type] = 'application/json'
+        options[:payload] = JSON.generate('resolutions' => resolutions)
 
         request_and_track(:put, url, options)
       end
 
       def get_current_time
-        _, _, headers = get("/info")
+        _, _, headers = get('/info')
         Time.parse(headers[:date]) rescue nil
       end
 
@@ -474,25 +474,25 @@ module Bosh
 
         if response_code != 200
           raise TaskTrackError, "Got HTTP #{response_code} " +
-            "while tracking task state"
+            'while tracking task state'
         end
 
         JSON.parse(body)
       rescue JSON::ParserError
-        raise TaskTrackError, "Cannot parse task JSON, " +
-          "incompatible director version"
+        raise TaskTrackError, 'Cannot parse task JSON, ' +
+          'incompatible director version'
       end
 
       def get_task_state(task_id)
-        get_task(task_id)["state"]
+        get_task(task_id)['state']
       end
 
       def get_task_result(task_id)
-        get_task(task_id)["result"]
+        get_task(task_id)['result']
       end
 
       def get_task_result_log(task_id)
-        log, _ = get_task_output(task_id, 0, "result")
+        log, _ = get_task_output(task_id, 0, 'result')
         log
       end
 
@@ -500,7 +500,7 @@ module Bosh
         uri = "/tasks/#{task_id}/output"
         uri += "?type=#{log_type}" if log_type
 
-        headers = {"Range" => "bytes=#{offset}-"}
+        headers = { 'Range' => "bytes=#{offset}-"}
         response_code, body, headers = get(uri, nil, nil, headers)
 
         if response_code == 206 &&
@@ -513,8 +513,8 @@ module Bosh
         end
 
         # backward compatible with renaming soap log to cpi log
-        if response_code == 204 && log_type == "cpi"
-          get_task_output(task_id, offset, "soap")
+        if response_code == 204 && log_type == 'cpi'
+          get_task_output(task_id, offset, 'soap')
         else
           [body, new_offset]
         end
@@ -528,11 +528,11 @@ module Bosh
       end
 
       def create_backup
-        request_and_track(:post, "/backups", {})
+        request_and_track(:post, '/backups', {})
       end
 
       def fetch_backup
-        _, path, _ = get("/backups", nil, nil, {}, :file => true)
+        _, path, _ = get('/backups', nil, nil, {}, :file => true)
         path
       end
 
@@ -579,7 +579,7 @@ module Bosh
       end
 
       def upload_and_track(method, uri, filename, options = {})
-        file = FileWithProgressBar.open(filename, "r")
+        file = FileWithProgressBar.open(filename, 'r')
         request_and_track(method, uri, options.merge(:payload => file))
       ensure
         file.stop_progress_bar if file
@@ -592,10 +592,10 @@ module Bosh
         headers = headers.dup
         tmp_file = nil
 
-        headers["Content-Type"] = content_type if content_type
+        headers['Content-Type'] = content_type if content_type
 
         if options[:file]
-          tmp_file = File.open(File.join(Dir.mktmpdir, "streamed-response"), "w")
+          tmp_file = File.open(File.join(Dir.mktmpdir, 'streamed-response'), 'w')
 
           response_reader = lambda { |part| tmp_file.write(part) }
         else
@@ -623,7 +623,7 @@ module Bosh
           # Some HTTP clients symbolize headers, some do not.
           # To make it easier to switch between them, we try
           # to symbolize them ourselves.
-          hash[k.to_s.downcase.gsub(/-/, "_").to_sym] = v
+          hash[k.to_s.downcase.gsub(/-/, '_').to_sym] = v
           hash
         end
 
@@ -637,11 +637,11 @@ module Bosh
       def parse_error_message(status, body)
         parsed_body = JSON.parse(body.to_s) rescue {}
 
-        if parsed_body["code"] && parsed_body["description"]
-          "Error %s: %s" % [parsed_body["code"],
-                            parsed_body["description"]]
+        if parsed_body['code'] && parsed_body['description']
+          'Error %s: %s' % [parsed_body['code'],
+                            parsed_body['description']]
         else
-          "HTTP %s: %s" % [status, body]
+          'HTTP %s: %s' % [status, body]
         end
       end
 
@@ -658,7 +658,7 @@ module Bosh
         # HTTPClient#set_auth doesn't seem to work properly,
         # injecting header manually instead.
         if @user && @password
-          headers["Authorization"] = "Basic " +
+          headers['Authorization'] = 'Basic ' +
               Base64.encode64("#{@user}:#{@password}").strip
         end
 
@@ -695,7 +695,7 @@ module Bosh
       end
 
       def get_json_with_status(url)
-        status, body, _ = get(url, "application/json")
+        status, body, _ = get(url, 'application/json')
         body = JSON.parse(body) if status == 200
         [status, body]
       rescue JSON::ParserError
@@ -704,7 +704,7 @@ module Bosh
 
       def add_query_string(url, parts)
         if parts.size > 0
-          "#{url}?#{parts.join("&")}"
+          "#{url}?#{parts.join('&')}"
         else
           url
         end
