@@ -14,6 +14,7 @@ packages="build-essential openssl-devel lsof \
 strace bind9-host dnsutils tcpdump iputils-arping \
 curl wget libcurl3 libcurl3-dev bison libreadline6-dev \
 libxml2 libxml2-devel libxslt libxslt-devel \
+dhclient \
 zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \

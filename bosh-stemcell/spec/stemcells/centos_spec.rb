@@ -51,6 +51,7 @@ describe 'CentOs Stemcell' do
       'iptables'       => '1.4.7-9.el6.x86_64',
       'sysstat'        => '9.0.4-20.el6.x86_64',
       'tcpdump'        => '4.0.0-3.20090921gitdf3cb4.2.el6.x86_64',
+      'dhclient'       => '4.1.1-34.P1.el6_4.1.x86_64',
       'zip'            => '3.0-1.el6.x86_64',
       'traceroute'     => '2.0.14-2.el6.x86_64',
       'gdb'            => '7.2-60.el6_4.1.x86_64',
