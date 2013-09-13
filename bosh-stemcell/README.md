@@ -65,16 +65,8 @@ VMware Fusion is the preferred local virtual environment.  You can [purchase it 
 
 Before starting the VM in VirtualBox:
 
-1. Add a network interface (**Settings** > **Network** > **Adapter 1** > **Enable**)
+1. Add a network interface (**Virtual Machine** > **Settings** > **Add Device...** > **Network Adapter**)
 1. Select NAT networking (the default)
-1. Click on advanced
-1. Click on Port Forwarding and enable the following rule:
-    * Name: SSH
-    * Protocol: TCP
-    * Host IP: 127.0.0.1
-    * Host Port: 3333
-    * Guest IP: blank
-    * Guest Port: 22
 
 # Run the stemcell locally with VirtualBox
 
@@ -103,7 +95,22 @@ Save the configuration and boot the VM.  Once you're booted, login as `root`/`c1
 
 ## Configure network locally
 
-You'll want to pick an IP that's not in use by your stemcell building vm (10.0.2.30 *should* be fine).
+### Fusion
+
+```
+$ grep subnet /Library/Preferences/VMware\ Fusion/*/dhcpd.conf
+/Library/Preferences/VMware Fusion/vmnet1/dhcpd.conf:subnet 172.16.0.0 netmask 255.255.255.0 {
+/Library/Preferences/VMware Fusion/vmnet8/dhcpd.conf:subnet 172.16.210.0 netmask 255.255.255.0 {
+```
+
+```
+ifconfig eth0 172.16.210.30/24 up
+route add default gw 172.16.210.2 eth0
+```
+
+### VirtualBox 
+
+You'll want to pick an IP that's not in use by your stemcell building vm. 10.0.2.30 *should* be fine.
 
 ```
 ifconfig eth0 10.0.2.30/24 up
