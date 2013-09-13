@@ -6,6 +6,7 @@ require 'cli/errors'
 require 'json'
 require 'httpclient'
 require 'base64'
+require 'cli/file_with_progress_bar'
 
 module Bosh
   module Cli
@@ -93,14 +94,14 @@ module Bosh
       end
 
       def upload_remote_stemcell(stemcell_location, options = {})
-        options = options.dup               
-        payload = { 'location' => stemcell_location }  
+        options = options.dup
+        payload = { 'location' => stemcell_location }
         options[:payload] = JSON.generate(payload)
-        options[:content_type] = 'application/json'          
+        options[:content_type] = 'application/json'
 
         request_and_track(:post, '/stemcells', options)
-      end      
-      
+      end
+
       def get_version
         get_status["version"]
       end
@@ -174,22 +175,22 @@ module Bosh
 
       def upload_remote_release(release_location, options = {})
         options = options.dup
-        payload = { 'location' => release_location }  
+        payload = { 'location' => release_location }
         options[:payload] = JSON.generate(payload)
-        options[:content_type] = 'application/json'          
+        options[:content_type] = 'application/json'
 
         request_and_track(:post, '/releases', options)
-      end           
+      end
 
       def rebase_remote_release(release_location, options = {})
         options = options.dup
-        payload = { 'location' => release_location }  
+        payload = { 'location' => release_location }
         options[:payload] = JSON.generate(payload)
-        options[:content_type] = 'application/json'          
+        options[:content_type] = 'application/json'
 
         request_and_track(:post, '/releases?rebase=true', options)
       end
-      
+
       def delete_stemcell(name, version, options = {})
         options = options.dup
         force = options.delete(:force)
@@ -711,55 +712,5 @@ module Bosh
 
       attr_reader :num_retries, :retry_wait_interval
     end
-
-    class FileWithProgressBar < ::File
-
-      def progress_bar
-        return @progress_bar if @progress_bar
-        out = Bosh::Cli::Config.output || StringIO.new
-        @progress_bar = ProgressBar.new(file_name, size, out)
-        @progress_bar.file_transfer_mode
-        @progress_bar
-      end
-
-      def file_name
-        File.basename(self.path)
-      end
-
-      def stop_progress_bar
-        progress_bar.halt unless progress_bar.finished?
-      end
-
-      def size
-        @size || File.size(self.path)
-      end
-
-      def size=(size)
-        @size=size
-      end
-
-      def read(*args)
-        result = super(*args)
-
-        if result && result.size > 0
-          progress_bar.inc(result.size)
-        else
-          progress_bar.finish
-        end
-
-        result
-      end
-
-      def write(*args)
-        count = super(*args)
-        if count
-          progress_bar.inc(count)
-        else
-          progress_bar.finish
-        end
-        count
-      end
-    end
-
   end
 end
