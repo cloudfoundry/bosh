@@ -199,6 +199,11 @@ describe Bosh::Cli::Director do
       @director.list_recent_tasks(50, 2)
     end
 
+    it 'lists current locks' do
+      @director.should_receive(:get).with('/locks', 'application/json').and_return([200, JSON.generate([], {})])
+      @director.list_locks
+    end
+
     it 'uploads local release' do
       @director.should_receive(:upload_and_track).
           with(:post, '/releases', '/path',

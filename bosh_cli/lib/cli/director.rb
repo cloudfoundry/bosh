@@ -134,6 +134,10 @@ module Bosh
         get_json("/tasks?limit=#{count}&verbose=#{verbose}")
       end
 
+      def list_locks
+        get_json('/locks')
+      end
+
       def get_release(name)
         get_json("/releases/#{name}")
       end
