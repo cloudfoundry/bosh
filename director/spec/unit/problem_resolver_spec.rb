@@ -1,96 +1,152 @@
+# -*- encoding: utf-8 -*-
+# Copyright (c) 2013 GoPivotal, Inc.
+
 require 'spec_helper'
 
 describe Bosh::Director::ProblemResolver do
-  before(:each) do
-    @deployment = BDM::Deployment.make(:name => "mycloud")
-    @other_deployment = BDM::Deployment.make(:name => "othercloud")
+  let(:subject) { described_class.new(deployment) }
+  let(:deployment) { BDM::Deployment.make(name: 'mycloud') }
 
-    @cloud = double("cloud")
-    BD::Config.stub(:cloud).and_return(@cloud)
+  let(:auto_resolution) { 'auto_resolution' }
+  let(:outofsyncvm_handler) {
+    double(Bosh::Director::ProblemHandlers::OutOfSyncVm, auto_resolution: auto_resolution)
+  }
+  let(:outofsyncvm_problem) {
+    BDM::DeploymentProblem.make(deployment_id: deployment.id, resource_id: 'resource-id',
+                                type: 'out_of_sync_vm', state: 'open')
+  }
+  let(:outofsyncvm_resolution) { 'delete_vm' }
+  let(:inactivedisk_handler) {
+    double(Bosh::Director::ProblemHandlers::InactiveDisk, auto_resolution: auto_resolution)
+  }
+  let(:inactivedisk_problem) {
+    BDM::DeploymentProblem.make(deployment_id: deployment.id, resource_id: 'resource-id',
+                                type: 'inactive_disk', state: 'open')
+  }
+  let(:inactivedisk_resolution) { 'delete_disk' }
+
+  before do
+    Bosh::Director::ProblemHandlers::InactiveDisk.stub(:new).and_return(inactivedisk_handler)
+    Bosh::Director::ProblemHandlers::OutOfSyncVm.stub(:new).and_return(outofsyncvm_handler)
   end
 
-  def make_job(deployment)
-    BD::ProblemResolver.new(deployment)
-  end
+  describe :apply_resolutions do
+    it 'should raise an exception if resolution is not found' do
+      problems = { outofsyncvm_problem.id.to_s => outofsyncvm_resolution }
 
-  def inactive_disk(id, deployment_id = nil)
-    BDM::DeploymentProblem.
-        make(:deployment_id => deployment_id || @deployment.id,
-             :resource_id => id,
-             :type => "inactive_disk",
-             :state => "open")
-  end
-
-  it "applies resolutions" do
-    disks = []
-    problems = []
-
-    agent = double("agent")
-    agent.should_receive(:list_disk).and_return([])
-
-    @cloud.should_receive(:detach_disk).exactly(1).times
-    @cloud.should_receive(:delete_disk).exactly(1).times
-
-    BD::AgentClient.stub(:new).and_return(agent)
-
-    2.times do
-      disk = BDM::PersistentDisk.make(:active => false)
-      disks << disk
-      problems << inactive_disk(disk.id)
+      expect do
+        subject.apply_resolutions({})
+      end.to raise_error(Bosh::Director::CloudcheckResolutionNotProvided, /is not provided/)
     end
 
-    job = make_job(@deployment)
+    it 'should apply resolutions' do
+      problems = { outofsyncvm_problem.id.to_s  => outofsyncvm_resolution,
+                   inactivedisk_problem.id.to_s => inactivedisk_resolution }
 
-    job.apply_resolutions({problems[0].id.to_s => "delete_disk", problems[1].id.to_s => "ignore"}).should == 2
+      outofsyncvm_handler.should_receive(:job=)
+      outofsyncvm_handler.should_receive(:resolution_plan).with(outofsyncvm_resolution)
+      outofsyncvm_handler.should_receive(:apply_resolution).with(outofsyncvm_resolution)
 
-    BDM::PersistentDisk.find(:id => disks[0].id).should be_nil
-    BDM::PersistentDisk.find(:id => disks[1].id).should_not be_nil
+      inactivedisk_handler.should_receive(:job=)
+      inactivedisk_handler.should_receive(:resolution_plan).with(inactivedisk_resolution)
+      inactivedisk_handler.should_receive(:apply_resolution).with(inactivedisk_resolution)
 
-    BDM::DeploymentProblem.filter(:state => "open").count.should == 0
-  end
+      expect(subject.apply_resolutions(problems)).to eql(problems.size)
+      expect(BDM::DeploymentProblem.filter(state: 'open').count).to eql(0)
+    end
 
-  it "whines on missing resolutions" do
-    problem = inactive_disk(22)
+    it 'should apply auto resolutions' do
+      problems = { outofsyncvm_problem.id.to_s  => nil,
+                   inactivedisk_problem.id.to_s => inactivedisk_resolution }
 
-    job = make_job(@deployment)
+      outofsyncvm_handler.should_receive(:job=)
+      outofsyncvm_handler.should_receive(:resolution_plan).with(auto_resolution)
+      outofsyncvm_handler.should_receive(:apply_resolution).with(auto_resolution)
 
-    lambda {
-      job.apply_resolutions({32 => "delete_disk"})
-    }.should raise_error(
-                 BD::CloudcheckResolutionNotProvided,
-                 "Resolution for problem #{problem.id} (inactive_disk) is not provided")
-  end
+      inactivedisk_handler.should_receive(:job=)
+      inactivedisk_handler.should_receive(:resolution_plan).with(inactivedisk_resolution)
+      inactivedisk_handler.should_receive(:apply_resolution).with(inactivedisk_resolution)
 
-  it "notices and logs extra resolutions" do
-    disks = (1..3).map { |_| BDM::PersistentDisk.make(:active => false) }
+      expect(subject.apply_resolutions(problems)).to eql(problems.size)
+      expect(BDM::DeploymentProblem.filter(state: 'open').count).to eql(0)
+    end
 
-    problems = [
-        inactive_disk(disks[0].id),
-        inactive_disk(disks[1].id),
-        inactive_disk(disks[2].id, @other_deployment.id)
-    ]
+    context 'failed resolutions' do
+      let(:problems) {
+        { outofsyncvm_problem.id.to_s  => outofsyncvm_resolution,
+          inactivedisk_problem.id.to_s => inactivedisk_resolution }
+      }
 
-    job1 = make_job(@deployment)
-    job1.apply_resolutions({problems[0].id.to_s => "ignore", problems[1].id.to_s => "ignore"}).should == 2
+      before do
+        outofsyncvm_handler.should_receive(:job=)
+        outofsyncvm_handler.should_receive(:resolution_plan).with(outofsyncvm_resolution)
 
-    job2 = make_job(@deployment)
+        inactivedisk_handler.should_receive(:job=)
+        inactivedisk_handler.should_receive(:resolution_plan).with(inactivedisk_resolution)
+        inactivedisk_handler.should_receive(:apply_resolution).with(inactivedisk_resolution)
+      end
 
-    messages = []
-    job2.should_receive(:track_and_log).exactly(5).times.and_return { |message| messages << message }
-    job2.apply_resolutions({
-                               problems[0].id.to_s => "ignore",
-                               problems[1].id.to_s => "ignore",
-                               problems[2].id.to_s => "ignore",
-                               "foobar" => "ignore",
-                               "318" => "do_stuff"
-                           })
+      it 'should count & mark as solved problem handler exceptions' do
+        outofsyncvm_handler.should_receive(:apply_resolution).with(outofsyncvm_resolution)
+                           .and_raise(Bosh::Director::ProblemHandlerError, 'Problem applying resolution')
 
-    messages.should =~ [
-        "Ignoring problem #{problems[0].id} (state is 'resolved')",
-        "Ignoring problem #{problems[1].id} (state is 'resolved')",
-        "Ignoring problem 318 (not found)",
-        "Ignoring problem #{problems[2].id} (not a part of this deployment)",
-        "Ignoring problem foobar (malformed id)"
-    ]
+        expect(subject.apply_resolutions(problems)).to eql(problems.size)
+        expect(BDM::DeploymentProblem.filter(state: 'open').count).to eql(0)
+      end
+
+      it 'should not count not mark as solved other exceptions' do
+        outofsyncvm_handler.should_receive(:apply_resolution).with(outofsyncvm_resolution)
+                           .and_raise(SystemCallError, 'System error')
+
+        expect(subject.apply_resolutions(problems)).to eql(problems.size - 1)
+        expect(BDM::DeploymentProblem.filter(state: 'open').count).to eql(1)
+      end
+    end
+
+    context 'ignored problems' do
+      context 'when problem has a malformed id' do
+        it 'should ignore problem' do
+          subject.should_receive(:track_and_log).with('Ignoring problem fake-problem-1 (malformed id)')
+
+          expect(subject.apply_resolutions({ 'fake-problem-1' => nil })).to eql(0)
+        end
+      end
+
+      context 'when problem is not found' do
+        it 'should ignore problem' do
+          subject.should_receive(:track_and_log).with('Ignoring problem 666 (not found)')
+
+          expect(subject.apply_resolutions({ '666' => nil })).to eql(0)
+        end
+      end
+
+      context 'when problem state is close' do
+        let(:closed_problem) {
+          BDM::DeploymentProblem.make(deployment_id: deployment.id, resource_id: 'resource-id',
+                                      type: 'out_of_sync_vm', state: 'closed')
+        }
+
+        it 'should ignore problem' do
+          subject.should_receive(:track_and_log).with("Ignoring problem #{closed_problem.id.to_s} (state is 'closed')")
+
+          expect(subject.apply_resolutions({ closed_problem.id.to_s => nil })).to eql(0)
+        end
+      end
+
+      context 'when problem is not part of deployment' do
+        let(:deployment2) { BDM::Deployment.make(name: 'mycloud2') }
+        let(:otherdeployment_problem) {
+          BDM::DeploymentProblem.make(deployment_id: deployment2.id, resource_id: 'resource-id',
+                                      type: 'out_of_sync_vm', state: 'open')
+        }
+
+        it 'should ignore problem' do
+          subject.should_receive(:track_and_log)
+                 .with("Ignoring problem #{otherdeployment_problem.id.to_s} (not a part of this deployment)")
+
+          expect(subject.apply_resolutions({ otherdeployment_problem.id.to_s => nil })).to eql(0)
+        end
+      end
+    end
   end
 end
