@@ -51,6 +51,9 @@ module Bosh::OpenStackCloud
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
+      
+      set_ssl_verify_peer(@openstack_properties)
+            
       begin
         @openstack = Fog::Compute.new(openstack_params)
       rescue Exception => e
@@ -863,5 +866,11 @@ module Bosh::OpenStackCloud
                                              registry_password)
     end
 
+    def set_ssl_verify_peer(options)
+      if options["ssl_verify_peer"] == false
+        Excon.defaults[:ssl_verify_peer] = false
+      end
+    end
+    
   end
 end

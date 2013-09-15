@@ -40,5 +40,8 @@ cloud:
     <% if_p('openstack.endpoint_type') do |endpoint_type| %>
     endpoint_type: <%= endpoint_type %>
     <% end %>
+    <% if_p('openstack.ssl_verify_peer') do |ssl_verify_peer| %>
+    ssl_verify_peer: <%= ssl_verify_peer %>
+    <% end %>
 <% end %>
 <% raise 'Could not find cloud plugin' if plugin.nil? %>

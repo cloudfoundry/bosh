@@ -26,6 +26,8 @@ module Bosh::Registry
           :openstack_region => @openstack_properties["region"],
           :openstack_endpoint_type => @openstack_properties["endpoint_type"]
         }
+        
+        set_ssl_verify_peer(@openstack_properties)
       end
 
       def openstack
@@ -62,6 +64,14 @@ module Bosh::Registry
         return (instance.private_ip_addresses + instance.floating_ip_addresses).compact
       end
 
+      private
+
+      def set_ssl_verify_peer(options)
+        if options["ssl_verify_peer"] == false
+          Excon.defaults[:ssl_verify_peer] = false
+        end
+      end
+        
     end
 
   end

@@ -68,3 +68,6 @@ properties:
   openstack.endpoint_type:
     description: OpenStack endpoint type (optional, by default publicURL)
     default: publicURL
+  openstack.ssl_verify_peer
+    description: Configures SSL verification for self-signed SSL Certificates.
+    default: true
