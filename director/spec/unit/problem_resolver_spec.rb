@@ -6,6 +6,9 @@ require 'spec_helper'
 describe Bosh::Director::ProblemResolver do
   let(:subject) { described_class.new(deployment) }
   let(:deployment) { BDM::Deployment.make(name: 'mycloud') }
+  let(:thread_pool) { double(Bosh::Director::ThreadPool) }
+  let(:pool) { double('pool') }
+  let(:max_threads) { 10 }
 
   let(:auto_resolution) { 'auto_resolution' }
   let(:outofsyncvm_handler) {
@@ -26,6 +29,11 @@ describe Bosh::Director::ProblemResolver do
   let(:inactivedisk_resolution) { 'delete_disk' }
 
   before do
+    BD::Config.stub(:max_threads).and_return(max_threads)
+    Bosh::Director::ThreadPool.stub(:new).with(max_threads: max_threads).and_return(thread_pool)
+    thread_pool.stub(:wrap).and_yield(pool)
+    pool.stub(:process).and_yield
+
     Bosh::Director::ProblemHandlers::InactiveDisk.stub(:new).and_return(inactivedisk_handler)
     Bosh::Director::ProblemHandlers::OutOfSyncVm.stub(:new).and_return(outofsyncvm_handler)
   end
@@ -47,6 +55,8 @@ describe Bosh::Director::ProblemResolver do
       outofsyncvm_handler.should_receive(:resolution_plan).with(outofsyncvm_resolution)
       outofsyncvm_handler.should_receive(:apply_resolution).with(outofsyncvm_resolution)
 
+      pool.should_receive(:wait).exactly(2).times
+
       inactivedisk_handler.should_receive(:job=)
       inactivedisk_handler.should_receive(:resolution_plan).with(inactivedisk_resolution)
       inactivedisk_handler.should_receive(:apply_resolution).with(inactivedisk_resolution)
@@ -62,6 +72,8 @@ describe Bosh::Director::ProblemResolver do
       outofsyncvm_handler.should_receive(:job=)
       outofsyncvm_handler.should_receive(:resolution_plan).with(auto_resolution)
       outofsyncvm_handler.should_receive(:apply_resolution).with(auto_resolution)
+
+      pool.should_receive(:wait).exactly(2).times
 
       inactivedisk_handler.should_receive(:job=)
       inactivedisk_handler.should_receive(:resolution_plan).with(inactivedisk_resolution)
@@ -80,6 +92,8 @@ describe Bosh::Director::ProblemResolver do
       before do
         outofsyncvm_handler.should_receive(:job=)
         outofsyncvm_handler.should_receive(:resolution_plan).with(outofsyncvm_resolution)
+
+        pool.should_receive(:wait).exactly(2).times
 
         inactivedisk_handler.should_receive(:job=)
         inactivedisk_handler.should_receive(:resolution_plan).with(inactivedisk_resolution)

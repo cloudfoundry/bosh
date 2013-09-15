@@ -16,20 +16,31 @@ module Bosh::Director
 
       @event_log = Config.event_log
       @logger = Config.logger
+      @lock = Mutex.new
     end
 
     ##
     # Apply resolutions to existing problems
     #
     # @param [Hash] resolutions Resolutions to apply
+    # @param [Hash] options Apply resolution options
+    # @option options [optional, Integer] max_threads Number of max threads
     # @return [Integer] Number of resolved problems
-    def apply_resolutions(resolutions)
+    def apply_resolutions(resolutions, options = {})
       @resolved_count = 0
 
       begin_stage('Applying problem resolutions', resolutions.size)
       problems = get_open_problems(resolutions)
-      problems.each do |problem|
-        apply_resolution(problem, resolutions[problem.id.to_s])
+      max_threads = options[:max_threads] || Config.max_threads
+      ThreadPool.new(max_threads: max_threads).wrap do |pool|
+        # Group by problem type to avoid collisions between same resource (a resource can only have 1 problem type)
+        problems.group_by { |problem| problem.type }.each_value do |problem_type|
+          problem_type.each do |problem|
+            pool.process { apply_resolution(problem, resolutions[problem.id.to_s]) }
+          end
+
+          pool.wait
+        end
       end
 
       log_ignored_resolutions(resolutions, problems)
@@ -70,17 +81,19 @@ module Bosh::Director
       resolution_summary = handler.resolution_plan(resolution) || 'no resolution'
 
       desc = "#{problem.type} #{problem.resource_id}: #{resolution_summary}"
-      begin
-        track_and_log("#{desc}") do
-          handler.apply_resolution(resolution)
+      with_thread_name("apply_resolution(#{desc})") do
+        begin
+          track_and_log("#{desc}") do
+            handler.apply_resolution(resolution)
+          end
+        rescue Bosh::Director::ProblemHandlerError => e
+          log_resolution_error(problem, e)
         end
-      rescue Bosh::Director::ProblemHandlerError => e
-        log_resolution_error(problem, e)
       end
 
       problem.state = 'resolved'
       problem.save
-      @resolved_count += 1
+      @lock.synchronize { @resolved_count += 1 }
     rescue => e
       log_resolution_error(problem, e)
     end
