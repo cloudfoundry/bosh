@@ -14,7 +14,16 @@ module Bosh::Stemcell
 
     def unmount
       shell.run("sudo umount #{image_mount_point}", output_command: true)
+    ensure
       unmap_image
+    end
+
+
+    def while_mounted
+      mount
+      yield self
+    ensure
+      unmount
     end
 
     private

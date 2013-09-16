@@ -55,6 +55,40 @@ module Bosh::Stemcell
 
         disk_image.unmount
       end
+
+      it 'unmaps the file even if unmounting the device fails' do
+        shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).and_raise
+        shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: true).ordered
+
+        expect { disk_image.unmount }.to raise_error
+      end
+    end
+
+    describe '#while_mounted' do
+      it 'mounts the disk, calls the provided block, and unmounts' do
+        fake_thing = double('FakeThing')
+        shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: true).and_return(kpartx_output)
+        shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: true)
+        fake_thing.should_receive(:fake_call).with(disk_image).ordered
+        shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).ordered
+        shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: true).ordered
+
+        disk_image.while_mounted do |image|
+          fake_thing.fake_call(image)
+        end
+      end
+
+      context 'when the block raises and error' do
+        it 'mounts the disk, calls the provided block, and unmounts' do
+          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: true).and_return(kpartx_output)
+          shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: true)
+
+          shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).ordered
+          shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: true).ordered
+
+          expect{ disk_image.while_mounted { |_| raise } }.to raise_error
+        end
+      end
     end
   end
 end
