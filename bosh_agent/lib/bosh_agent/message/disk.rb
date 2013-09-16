@@ -75,11 +75,12 @@ module Bosh::Agent
           case infra
             when "warden"
               partition = "#{disk}"
+              disk_info << cid
             else
               partition = "#{disk}1"
+              disk_info << cid unless DiskUtil.mount_entry(partition).nil?
           end
 
-          disk_info << cid unless DiskUtil.mount_entry(partition).nil?
         end
         disk_info
       end
