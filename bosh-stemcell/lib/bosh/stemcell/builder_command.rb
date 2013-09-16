@@ -43,7 +43,7 @@ module Bosh::Stemcell
                                      work_path: work_root)
       stage_runner.configure_and_apply(stage_collection.operating_system_stages)
       stage_runner.configure_and_apply(stage_collection.infrastructure_stages)
-      run_serverspec
+      # TODO: run_serverspec
 
       stemcell_file
     end
