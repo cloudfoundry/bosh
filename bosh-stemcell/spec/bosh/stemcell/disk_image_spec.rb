@@ -13,7 +13,7 @@ module Bosh::Stemcell
       }
     end
 
-    subject(:image) { DiskImage.new(options) }
+    subject(:disk_image) { DiskImage.new(options) }
 
     before do
       Bosh::Core::Shell.stub(:new).and_return(shell)
@@ -36,7 +36,7 @@ module Bosh::Stemcell
         shell.should_receive(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE',
                                         output_command: true).and_return(kpartx_output)
 
-        image.mount
+        disk_image.mount
       end
 
       it 'mounts the loop device' do
@@ -44,7 +44,7 @@ module Bosh::Stemcell
 
         shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: true)
 
-        image.mount
+        disk_image.mount
       end
     end
 
@@ -53,7 +53,7 @@ module Bosh::Stemcell
         shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).ordered
         shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: true).ordered
 
-        image.unmount
+        disk_image.unmount
       end
     end
   end
