@@ -1,10 +1,14 @@
 require 'bosh/core/shell'
+require 'tmpdir'
 
 module Bosh::Stemcell
   class DiskImage
+
+    attr_reader :image_mount_point
+
     def initialize(options)
       @image_file_path = options.fetch(:image_file_path)
-      @image_mount_point = options.fetch(:image_mount_point)
+      @image_mount_point = options.fetch(:image_mount_point, Dir.mktmpdir)
       @shell = Bosh::Core::Shell.new
     end
 
@@ -28,7 +32,7 @@ module Bosh::Stemcell
 
     private
 
-    attr_reader :image_file_path, :image_mount_point, :shell
+    attr_reader :image_file_path, :shell
 
     def stemcell_loopback_device_name
       "/dev/mapper/#{map_image}"

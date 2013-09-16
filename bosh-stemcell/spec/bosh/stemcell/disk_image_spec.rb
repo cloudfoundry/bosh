@@ -27,7 +27,11 @@ module Bosh::Stemcell
 
       it 'requires an mount_point' do
         options.delete(:image_mount_point)
-        expect { DiskImage.new(options) }.to raise_error /key not found: :image_mount_point/
+
+        dir_mock = class_double('Dir').as_stubbed_const
+        dir_mock.should_receive(:mktmpdir).and_return('/fake/tmpdir')
+
+        expect(DiskImage.new(options).image_mount_point).to eq('/fake/tmpdir')
       end
     end
 
