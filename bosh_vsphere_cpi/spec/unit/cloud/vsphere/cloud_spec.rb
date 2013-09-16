@@ -1,8 +1,6 @@
 require 'spec_helper'
 
 describe VSphereCloud::Cloud do
-  let(:client_stub) { double(cookie: nil) }
-  let(:client) { instance_double('VSphereCloud::Client', login: nil, logout: nil, stub: client_stub) }
   let(:config) { { fake: 'config' } }
 
   subject(:vsphere_cloud) { VSphereCloud::Cloud.new(config) }
@@ -10,7 +8,6 @@ describe VSphereCloud::Cloud do
   before do
     VSphereCloud::Config.should_receive(:configure).with(config)
     VSphereCloud::Cloud.any_instance.stub(:at_exit)
-    VSphereCloud::Client.stub(new: client)
   end
 
   describe 'has_vm?' do
