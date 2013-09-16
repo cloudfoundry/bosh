@@ -117,12 +117,10 @@ module Bosh::Stemcell
         end
       end
 
-
       context 'when verbose is true' do
         before { options[:verbose] = true }
 
         it 'mounts the disk, calls the provided block, and unmounts' do
-          fake_thing = double('FakeThing')
           shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: true).and_return(kpartx_output)
           shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: true)
           shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).ordered

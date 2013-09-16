@@ -23,7 +23,6 @@ module Bosh::Stemcell
       unmap_image
     end
 
-
     def while_mounted
       mount
       yield self
