@@ -11,8 +11,8 @@ module Bosh::Dev
     end
 
     describe '#generate_and_upload' do
-      let(:version_file) { instance_double('VersionFile', write: nil) }
-      let(:candidate_build) { instance_double('Build', number: 456, upload_gems: nil) }
+      let(:version_file) { instance_double('Bosh::Dev::VersionFile', write: nil) }
+      let(:candidate_build) { instance_double('Bosh::Dev::Build', number: 456, upload_gems: nil) }
 
       before do
         VersionFile.stub(:new).with(456).and_return(version_file)

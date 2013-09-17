@@ -15,7 +15,7 @@ module Bosh::Dev
     let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
 
     let(:stemcell_builder_command) do
-      instance_double('Bosh::Dev::BuilderCommand', build: nil, chroot_dir: '/fake/chroot/dir')
+      instance_double('Bosh::Stemcell::BuilderCommand', build: nil, chroot_dir: '/fake/chroot/dir')
     end
 
     let(:fake_work_path) { '/fake/work/path' }
