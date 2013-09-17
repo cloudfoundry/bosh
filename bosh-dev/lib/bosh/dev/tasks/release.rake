@@ -1,6 +1,10 @@
 namespace :release do
   desc 'Create BOSH dev release'
-  task :create_dev_release => :'all:finalize_release_directory' do
+  task :create_dev_release do
+    require 'bosh/dev/gem_components'
+
+    gem_components = Bosh::Dev::GemComponents.new
+    gem_components.build_release_gems
     create_release
   end
 
