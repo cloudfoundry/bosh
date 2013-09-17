@@ -54,10 +54,11 @@ module Bosh::Stemcell
       context 'when verbose is true' do
         before { options[:verbose] = true }
 
-        it 'mounts the loop device' do
-          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: true).and_return(kpartx_output)
-
-          shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: true)
+        it 'sends the correct command options' do
+          shell.should_receive(:run) do |_, options|
+            expect(options[:output_command]).to eq(true)
+            'fake output'
+          end
 
           disk_image.mount
         end
@@ -82,11 +83,13 @@ module Bosh::Stemcell
       context 'when verbose is true' do
         before { options[:verbose] = true }
 
-        it 'unmounts the loop device and then unmaps the file' do
-          shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).ordered
-          shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: true).ordered
+        it 'sends the correct command options' do
+          shell.should_receive(:run) do |_, options|
+            expect(options[:output_command]).to eq(true)
+            'fake output'
+          end
 
-          disk_image.unmount
+          disk_image.mount
         end
       end
     end
@@ -120,13 +123,13 @@ module Bosh::Stemcell
       context 'when verbose is true' do
         before { options[:verbose] = true }
 
-        it 'mounts the disk, calls the provided block, and unmounts' do
-          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: true).and_return(kpartx_output)
-          shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: true)
-          shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: true).ordered
-          shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: true).ordered
+        it 'sends the correct command options' do
+          shell.should_receive(:run) do |_, options|
+            expect(options[:output_command]).to eq(true)
+            'fake output'
+          end
 
-          disk_image.while_mounted {}
+          disk_image.mount
         end
       end
     end
