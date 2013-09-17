@@ -7,8 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-disk_image_name=root.img
-
 # unmap the loop device in case it's already mapped
 kpartx -dvs $work/$disk_image_name
 

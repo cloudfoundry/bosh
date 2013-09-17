@@ -11,7 +11,6 @@ vsphere=$work/vsphere
 
 mkdir -p $vsphere
 
-disk_image_name=root.img
 disk_size=$(($(stat --printf="%s" $work/$disk_image_name) / (1024*1024)))
 
 # 512 bytes per sector

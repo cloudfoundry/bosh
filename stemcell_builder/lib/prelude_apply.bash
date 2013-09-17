@@ -5,6 +5,8 @@ work=$1
 chroot=${chroot:=$work/chroot}
 mkdir -p $work $chroot
 
+disk_image_name=root.img
+
 # Source settings if present
 if [ -f $settings_file ]
 then
