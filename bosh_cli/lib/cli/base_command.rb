@@ -52,8 +52,7 @@ module Bosh::Cli
       end
 
       def director
-        @director ||= Bosh::Cli::Director.new(
-            target, username, password, @options.select { |k, _| k == :no_track })
+        @director ||= Bosh::Cli::Director.new(target, username, password, @options)
       end
 
       def release
