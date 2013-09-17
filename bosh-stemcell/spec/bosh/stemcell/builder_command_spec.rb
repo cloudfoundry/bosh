@@ -23,7 +23,7 @@ module Bosh::Stemcell
     end
 
     let(:stage_collection) do
-      instance_double('Bosh::Stemcell::StageCollection::Base',
+      instance_double('Bosh::Stemcell::StageCollection',
                       operating_system_stages: ['FAKE_OS_STAGES'],
                       infrastructure_stages: ['FAKE_INFRASTRUCTURE_STAGES']
       )
