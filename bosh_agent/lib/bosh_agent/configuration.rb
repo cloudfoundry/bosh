@@ -109,6 +109,4 @@ module Bosh::Agent
       ip
     end
   end
-
-  Config = Configuration.new
 end
