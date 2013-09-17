@@ -7,14 +7,20 @@ module Bosh::Stemcell
     attr_reader :image_mount_point
 
     def initialize(options)
-      @image_file_path = options.fetch(:image_file_path)
+      @image_file_path   = options.fetch(:image_file_path)
       @image_mount_point = options.fetch(:image_mount_point, Dir.mktmpdir)
-      @verbose = options.fetch(:verbose, false)
-      @shell = Bosh::Core::Shell.new
+      @verbose           = options.fetch(:verbose, false)
+      @shell             = Bosh::Core::Shell.new
     end
 
     def mount
-      shell.run("sudo mount #{stemcell_loopback_device_name} #{image_mount_point}", output_command: verbose)
+      device_path   = stemcell_loopback_device_name
+      mount_command = "sudo mount #{device_path} #{image_mount_point}"
+      shell.run(mount_command, output_command: verbose)
+    rescue RuntimeError => e
+      raise e unless e.message.include?("mount: special device #{device_path} does not exist")
+
+      shell.run(mount_command, output_command: verbose)
     end
 
     def unmount
@@ -35,15 +41,14 @@ module Bosh::Stemcell
     attr_reader :image_file_path, :verbose, :shell
 
     def stemcell_loopback_device_name
-      "/dev/mapper/#{map_image}"
+      split_output = map_image.split(' ')
+      device_name  = split_output[2]
+
+      File.join('/dev/mapper', device_name)
     end
 
     def map_image
-      unless @image_device
-        output = shell.run("sudo kpartx -av #{image_file_path}", output_command: verbose)
-        @image_device = output.split(' ')[2]
-      end
-      @image_device
+      shell.run("sudo kpartx -av #{image_file_path}", output_command: verbose)
     end
 
     def unmap_image

@@ -51,13 +51,50 @@ module Bosh::Stemcell
         disk_image.mount
       end
 
+      context 'when the device does not exist' do
+        it 'runs mount a second time' do
+          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+          shell.should_receive(:run).
+            with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.
+            and_raise(RuntimeError, 'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
+          shell.should_receive(:run).
+            with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered
+
+          disk_image.mount
+        end
+
+        context 'when the second mount command fails' do
+          it 'raises an error' do
+            shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).
+              and_return(kpartx_output)
+            shell.should_receive(:run).
+              with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.twice.
+              and_raise(RuntimeError, 'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
+
+            expect { disk_image.mount }.to raise_error(RuntimeError,
+                                                       'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
+          end
+        end
+      end
+
+      context 'when the mount command fails' do
+        it 'runs mount a second time' do
+          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+          shell.should_receive(:run).
+            with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.
+            and_raise(RuntimeError, 'UNEXEPECTED')
+
+          expect { disk_image.mount }.to raise_error(RuntimeError, 'UNEXEPECTED')
+        end
+      end
+
       context 'when verbose is true' do
         before { options[:verbose] = true }
 
         it 'sends the correct command options' do
           shell.should_receive(:run) do |_, options|
             expect(options[:output_command]).to eq(true)
-            'fake output'
+            kpartx_output
           end
 
           disk_image.mount
@@ -86,7 +123,7 @@ module Bosh::Stemcell
         it 'sends the correct command options' do
           shell.should_receive(:run) do |_, options|
             expect(options[:output_command]).to eq(true)
-            'fake output'
+            kpartx_output
           end
 
           disk_image.mount
@@ -126,7 +163,7 @@ module Bosh::Stemcell
         it 'sends the correct command options' do
           shell.should_receive(:run) do |_, options|
             expect(options[:output_command]).to eq(true)
-            'fake output'
+            kpartx_output
           end
 
           disk_image.mount
