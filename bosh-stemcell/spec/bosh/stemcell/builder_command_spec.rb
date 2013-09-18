@@ -167,8 +167,8 @@ module Bosh::Stemcell
             with(['FAKE_OS_STAGES']).ordered
           stage_runner.should_receive(:configure_and_apply).
             with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
-          # stemcell_builder_command.should_receive(:system).
-          #  with(expected_rspec_command).ordered
+          stemcell_builder_command.should_receive(:system).
+            with(expected_rspec_command).ordered
 
           stemcell_builder_command.build
         end
@@ -181,8 +181,8 @@ module Bosh::Stemcell
               with(['FAKE_OS_STAGES']).ordered
             stage_runner.should_receive(:configure_and_apply).
               with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
-            # stemcell_builder_command.should_receive(:system).
-            #  with(expected_rspec_command).ordered
+            stemcell_builder_command.should_receive(:system).
+              with(expected_rspec_command).ordered
 
             stemcell_builder_command.build
           end
