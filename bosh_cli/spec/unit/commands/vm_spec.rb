@@ -16,6 +16,12 @@ module Bosh::Cli
       command.stub(:prepare_deployment_manifest).and_return(deployment_manifest)
     end
 
+    describe 'usage' do
+      it 'to list arguments' do
+        expect(Config.commands['vm resurrection'].usage_with_params).to eq('vm resurrection [<job>] [<index>] <new_state>')
+      end
+    end
+
     context 'when "job & index" are not specified' do
       it 'changes the state of all jobs' do
         director.should_receive(:change_vm_resurrection_for_all).with(false)
