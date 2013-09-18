@@ -17,9 +17,10 @@ module Bosh::Stemcell
       device_path   = stemcell_loopback_device_name
       mount_command = "sudo mount #{device_path} #{image_mount_point}"
       shell.run(mount_command, output_command: verbose)
-    rescue RuntimeError => e
-      raise e unless e.message.include?("mount: special device #{device_path} does not exist")
+    rescue => e
+      raise e unless e.message.include?(mount_command)
 
+      sleep 0.5
       shell.run(mount_command, output_command: verbose)
     end
 

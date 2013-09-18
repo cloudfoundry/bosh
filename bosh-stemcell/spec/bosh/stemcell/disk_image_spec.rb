@@ -56,15 +56,25 @@ module Bosh::Stemcell
       end
 
       context 'when the device does not exist' do
-        it 'runs mount a second time' do
+        let(:mount_command) do
+          'sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt'
+        end
+
+        let(:mount_error) do
+          "Failed: '#{mount_command}' from /fake/mnt/blah/blah/bosh-stemcell, with exit status 8192\n\n"
+        end
+
+        before do
+          disk_image.stub(:sleep)
+        end
+
+        it 'runs mount a second time after sleeping long enough for the device node to be created' do
           losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
           shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
           shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
-          shell.should_receive(:run).
-            with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.
-            and_raise(RuntimeError, 'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
-          shell.should_receive(:run).
-            with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered
+          shell.should_receive(:run).with(mount_command, output_command: false).ordered.and_raise(mount_error)
+          disk_image.should_receive(:sleep).with(0.5)
+          shell.should_receive(:run).with(mount_command, output_command: false).ordered
 
           disk_image.mount
         end
@@ -73,14 +83,10 @@ module Bosh::Stemcell
           it 'raises an error' do
             losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
             shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-            shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).
-              and_return(kpartx_map_output)
-            shell.should_receive(:run).
-              with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.twice.
-              and_raise(RuntimeError, 'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
+            shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
+            shell.should_receive(:run).with(mount_command, output_command: false).ordered.twice.and_raise(mount_error)
 
-            expect { disk_image.mount }.to raise_error(RuntimeError,
-                                                       'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
+            expect { disk_image.mount }.to raise_error(mount_error)
           end
         end
       end
