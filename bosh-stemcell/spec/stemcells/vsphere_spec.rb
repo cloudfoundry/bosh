@@ -18,7 +18,7 @@ describe 'vSphere Stemcell' do
   end
 
   context 'installed by system_parameters' do
-    describe file('/etc/infrastructure') do
+    describe file('/var/vcap/bosh/etc/infrastructure') do
       it { should contain('vsphere') }
     end
   end
