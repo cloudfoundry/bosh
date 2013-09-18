@@ -38,7 +38,7 @@ module Bosh::Stemcell
 
     private
 
-    attr_reader :image_file_path, :verbose, :shell
+    attr_reader :image_file_path, :verbose, :shell, :device
 
     def stemcell_loopback_device_name
       split_output = map_image.split(' ')
@@ -48,11 +48,13 @@ module Bosh::Stemcell
     end
 
     def map_image
-      shell.run("sudo kpartx -av #{image_file_path}", output_command: verbose)
+      @device = shell.run("sudo losetup --show --find #{image_file_path}", output_command: verbose)
+      shell.run("sudo kpartx -av #{device}", output_command: verbose)
     end
 
     def unmap_image
-      shell.run("sudo kpartx -dv #{image_file_path}", output_command: verbose)
+      shell.run("sudo kpartx -dv #{device}", output_command: verbose)
+      shell.run("sudo losetup -dv #{device}", output_command: verbose)
     end
   end
 end

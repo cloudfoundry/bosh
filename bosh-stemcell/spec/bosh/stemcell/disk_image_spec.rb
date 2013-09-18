@@ -5,7 +5,7 @@ module Bosh::Stemcell
   describe DiskImage do
     let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
 
-    let(:kpartx_output) { 'add map FAKE_LOOP1p1 (252:3): 0 3997984 linear /dev/loop1 63' }
+    let(:kpartx_map_output) { 'add map FAKE_LOOP1p1 (252:3): 0 3997984 linear /dev/loop1 63' }
     let(:options) do
       {
         image_file_path: '/path/to/FAKE_IMAGE',
@@ -37,14 +37,18 @@ module Bosh::Stemcell
 
     describe '#mount' do
       it 'maps the file to a loop device' do
-        shell.should_receive(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE',
-                                        output_command: false).and_return(kpartx_output)
+        losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+        shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+        shell.should_receive(:run).with('sudo kpartx -av /dev/loop0',
+                                        output_command: false).and_return(kpartx_map_output)
 
         disk_image.mount
       end
 
       it 'mounts the loop device' do
-        shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+        losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+        shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+        shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
 
         shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false)
 
@@ -53,7 +57,9 @@ module Bosh::Stemcell
 
       context 'when the device does not exist' do
         it 'runs mount a second time' do
-          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+          losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+          shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+          shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
           shell.should_receive(:run).
             with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.
             and_raise(RuntimeError, 'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
@@ -65,8 +71,10 @@ module Bosh::Stemcell
 
         context 'when the second mount command fails' do
           it 'raises an error' do
-            shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).
-              and_return(kpartx_output)
+            losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+            shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+            shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).
+              and_return(kpartx_map_output)
             shell.should_receive(:run).
               with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.twice.
               and_raise(RuntimeError, 'mount: special device /dev/mapper/FAKE_LOOP1p1 does not exist')
@@ -79,7 +87,9 @@ module Bosh::Stemcell
 
       context 'when the mount command fails' do
         it 'runs mount a second time' do
-          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+          losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+          shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+          shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
           shell.should_receive(:run).
             with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false).ordered.
             and_raise(RuntimeError, 'UNEXEPECTED')
@@ -87,58 +97,41 @@ module Bosh::Stemcell
           expect { disk_image.mount }.to raise_error(RuntimeError, 'UNEXEPECTED')
         end
       end
-
-      context 'when verbose is true' do
-        before { options[:verbose] = true }
-
-        it 'sends the correct command options' do
-          shell.should_receive(:run) do |_, options|
-            expect(options[:output_command]).to eq(true)
-            kpartx_output
-          end
-
-          disk_image.mount
-        end
-      end
     end
 
     describe '#unmount' do
+      before do
+        disk_image.stub(device: '/dev/loop0') # pretend we've mounted
+      end
+
       it 'unmounts the loop device and then unmaps the file' do
         shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: false).ordered
-        shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: false).ordered
+        shell.should_receive(:run).with('sudo kpartx -dv /dev/loop0', output_command: false).ordered
+        shell.should_receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
 
         disk_image.unmount
       end
 
       it 'unmaps the file even if unmounting the device fails' do
         shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: false).and_raise
-        shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: false).ordered
+        shell.should_receive(:run).with('sudo kpartx -dv /dev/loop0', output_command: false).ordered
+        shell.should_receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
 
         expect { disk_image.unmount }.to raise_error
-      end
-
-      context 'when verbose is true' do
-        before { options[:verbose] = true }
-
-        it 'sends the correct command options' do
-          shell.should_receive(:run) do |_, options|
-            expect(options[:output_command]).to eq(true)
-            kpartx_output
-          end
-
-          disk_image.mount
-        end
       end
     end
 
     describe '#while_mounted' do
       it 'mounts the disk, calls the provided block, and unmounts' do
         fake_thing = double('FakeThing')
-        shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+        losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+        shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+        shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
         shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false)
         fake_thing.should_receive(:fake_call).with(disk_image).ordered
         shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: false).ordered
-        shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: false).ordered
+        shell.should_receive(:run).with('sudo kpartx -dv /dev/loop0', output_command: false).ordered
+        shell.should_receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
 
         disk_image.while_mounted do |image|
           fake_thing.fake_call(image)
@@ -147,26 +140,16 @@ module Bosh::Stemcell
 
       context 'when the block raises and error' do
         it 'mounts the disk, calls the provided block, and unmounts' do
-          shell.stub(:run).with('sudo kpartx -av /path/to/FAKE_IMAGE', output_command: false).and_return(kpartx_output)
+          losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+          shell.stub(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+          shell.stub(:run).with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
           shell.should_receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false)
 
           shell.should_receive(:run).with('sudo umount /fake/mnt', output_command: false).ordered
-          shell.should_receive(:run).with('sudo kpartx -dv /path/to/FAKE_IMAGE', output_command: false).ordered
+          shell.should_receive(:run).with('sudo kpartx -dv /dev/loop0', output_command: false).ordered
+          shell.should_receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
 
           expect { disk_image.while_mounted { |_| raise } }.to raise_error
-        end
-      end
-
-      context 'when verbose is true' do
-        before { options[:verbose] = true }
-
-        it 'sends the correct command options' do
-          shell.should_receive(:run) do |_, options|
-            expect(options[:output_command]).to eq(true)
-            kpartx_output
-          end
-
-          disk_image.mount
         end
       end
     end
