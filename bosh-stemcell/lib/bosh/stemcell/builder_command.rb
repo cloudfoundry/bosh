@@ -64,7 +64,9 @@ module Bosh::Stemcell
       [
         "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
         "STEMCELL_IMAGE=#{image_file_path}",
-        "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
+        'bundle exec rspec -fd',
+        "spec/stemcells/#{operating_system.name}_spec.rb",
+        "spec/stemcells/#{infrastructure.name}_spec.rb",
       ].join(' ')
     end
 
