@@ -142,4 +142,10 @@ describe 'Ubuntu Stemcell' do
       it { should be_linked_to('./grub.conf') }
     end
   end
+
+  context 'installed by system_parameters' do
+    describe file('/var/vcap/bosh/etc/operating_system') do
+      it { should contain('ubuntu') }
+    end
+  end
 end
