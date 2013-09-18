@@ -18,7 +18,7 @@ cp -rH $bosh_micro_release_tgz_path $chroot/$bosh_dir/src/micro_bosh/release.tgz
 cp $dir/assets/configure_micro_bosh.sh $chroot/$bosh_dir/src/micro_bosh/configure_micro_bosh.sh
 
 pkg_mgr install libpq-dev genisoimage
-run_in_bosh_chroot $chroot "$bosh_dir/src/micro_bosh/configure_micro_bosh.sh ${system_parameters_infrastructure} ${agent_gem_src_url:-}"
+run_in_bosh_chroot $chroot "$bosh_dir/src/micro_bosh/configure_micro_bosh.sh ${stemcell_infrastructure} ${agent_gem_src_url:-}"
 
 # Copy the generated apply spec to stemcell directory
 mkdir -p $work/stemcell

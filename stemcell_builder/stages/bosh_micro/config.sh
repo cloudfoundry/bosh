@@ -13,7 +13,7 @@ then
   persist_dir bosh_micro_package_compiler_path
   persist_file bosh_micro_manifest_yml_path
   persist_file bosh_micro_release_tgz_path
-  persist_value system_parameters_infrastructure
+  persist_value stemcell_infrastructure
 fi
 
 if [ -z "${agent_gem_src_url:-}" ]; then
