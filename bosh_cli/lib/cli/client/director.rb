@@ -312,6 +312,12 @@ module Bosh
           put(url, 'application/json', payload)
         end
 
+        def change_vm_resurrection_for_all(value)
+          url     = "/resurrection"
+          payload = JSON.generate('resurrection_paused' => value)
+          put(url, 'application/json', payload)
+        end
+
         def rename_job(deployment_name, manifest_yaml, old_name, new_name,
           force = false, options = {})
           options = options.dup

@@ -302,11 +302,19 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'changes job instance resurrection state' do
-      @director.should_receive(:request).
-        with(:put, '/deployments/foo/jobs/dea/0/resurrection',
-             'application/json', JSON.dump(resurrection_paused: true)).
-        and_return(true)
+      @director.should_receive(:request).with(:put,
+                                              '/deployments/foo/jobs/dea/0/resurrection',
+                                              'application/json',
+                                              '{"resurrection_paused":true}')
       @director.change_vm_resurrection('foo', 'dea', 0, true)
+    end
+
+    it 'change resurrection globally' do
+      @director.should_receive(:request).with(:put,
+                                              '/resurrection',
+                                              'application/json',
+                                              '{"resurrection_paused":false}')
+      @director.change_vm_resurrection_for_all(false)
     end
 
     it 'gets task state' do
