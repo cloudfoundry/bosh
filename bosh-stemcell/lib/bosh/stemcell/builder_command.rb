@@ -69,7 +69,7 @@ module Bosh::Stemcell
     end
 
     def image_file_path
-      File.join(work_path, 'root.img')
+      File.join(work_path, settings['stemcell_image_name'])
     end
 
     def image_mount_point
@@ -79,7 +79,7 @@ module Bosh::Stemcell
     def sanitize
       FileUtils.rm_rf('*.tgz')
 
-      system("sudo umount #{File.join(work_path, 'mnt/tmp/grub/root.img')} 2> /dev/null")
+      system("sudo umount #{File.join(work_path, 'mnt/tmp/grub', settings['stemcell_image_name'])} 2> /dev/null")
       system("sudo umount #{image_mount_point} 2> /dev/null")
       system("sudo rm -rf #{base_directory}")
     end

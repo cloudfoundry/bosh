@@ -62,7 +62,13 @@ module Bosh::Stemcell
     let(:etc_dir) { File.join(root_dir, 'build', 'build', 'etc') }
     let(:settings_file) { File.join(etc_dir, 'settings.bash') }
 
-    let(:options) { { 'hello' => 'world', 'stemcell_tgz' => 'fake-stemcell.tgz' } }
+    let(:options) do
+      {
+        'hello'               => 'world',
+        'stemcell_tgz'        => 'fake-stemcell.tgz',
+        'stemcell_image_name' => 'fake-root-disk-image.raw'
+      }
+    end
 
     its(:chroot_dir) { should eq(File.join(root_dir, 'work', 'work', 'chroot')) }
 
@@ -88,8 +94,9 @@ module Bosh::Stemcell
           }.to change { Dir.glob('*.tgz').size }.to(0)
         end
 
-        it 'unmounts work/work/mnt/tmp/grub/root.img' do
-          unmount_img_command = "sudo umount #{File.join(root_dir, 'work/work/mnt/tmp/grub/root.img')} 2> /dev/null"
+        it 'unmounts the disk image used to install Grub' do
+          image_path = File.join(root_dir, 'work/work/mnt/tmp/grub/fake-root-disk-image.raw')
+          unmount_img_command = "sudo umount #{image_path} 2> /dev/null"
           stemcell_builder_command.should_receive(:system).with(unmount_img_command)
           stemcell_builder_command.build
         end
@@ -150,7 +157,7 @@ module Bosh::Stemcell
         let(:expected_rspec_command) do
           [
             "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
-            "STEMCELL_IMAGE=#{File.join(root_dir, 'work', 'work', 'root.img')}",
+            "STEMCELL_IMAGE=#{File.join(root_dir, 'work', 'work', 'fake-root-disk-image.raw')}",
             "bundle exec rspec -fd spec/stemcells/#{operating_system.name}_spec.rb"
           ].join(' ')
         end

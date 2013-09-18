@@ -76,6 +76,12 @@ module Bosh::Stemcell
         expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
       end
 
+      it 'sets stemcell_image_name' do
+        result = stemcell_builder_options.default
+        expected_image_name = "#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}.raw"
+        expect(result['stemcell_image_name']).to eq(expected_image_name)
+      end
+
       it 'sets stemcell_version' do
         result = stemcell_builder_options.default
         expect(result['stemcell_version']).to eq('007')

@@ -19,6 +19,7 @@ module Bosh::Stemcell
       {
         'stemcell_name' => 'bosh-stemcell',
         'stemcell_tgz' => archive_filename.to_s,
+        'stemcell_image_name' => stemcell_image_name,
         'stemcell_version' => stemcell_version,
         'stemcell_hypervisor' => infrastructure.hypervisor,
         'stemcell_infrastructure' => infrastructure.name,
@@ -64,6 +65,10 @@ module Bosh::Stemcell
 
     def archive_filename
       ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false)
+    end
+
+    def stemcell_image_name
+      "#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}.raw"
     end
 
     def ruby_bin
