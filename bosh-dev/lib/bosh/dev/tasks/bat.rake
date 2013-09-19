@@ -9,7 +9,7 @@ rspec_opts.concat(%w(--format Bosh::Dev::DataDogFormatter --require bosh/dev/dat
 
 task :bat do
   Dir.chdir('bat') do
-    sh('rspec', 'spec/env_spec.rb', *Dir.glob('spec/bat/*_spec.rb'), *rspec_opts)
+    sh('rspec', 'spec/env_spec.rb', *Dir.glob('spec/system/*_spec.rb'), *rspec_opts)
   end
 end
 
