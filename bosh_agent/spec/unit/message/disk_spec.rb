@@ -23,6 +23,18 @@ describe Bosh::Agent::Message::MigrateDisk do
     mountpoint = double('mountpoint', mountpoint?: true)
     Pathname.stub(:new).with(@mount_path).and_return(mountpoint)
     Pathname.stub(:new).with(@migration_mount_path).and_return(mountpoint)
+
+    @original_backtick = Kernel.instance_method(:`)
+    bi = @backtick_invocations = []
+    stubbed_backtick = proc do |cmd|
+      bi << cmd
+    end
+    Kernel.define_method(:`, &stubbed_backtick)
+  end
+
+  after do
+    Kernel.define_method(:`, @original_backtick)
+    @backtick_invocations.clear
   end
 
   it 'should migrate to the new persistent disk' do
@@ -30,23 +42,21 @@ describe Bosh::Agent::Message::MigrateDisk do
     Bosh::Agent::Message::MigrateDisk.stub(:new).and_return(message)
     utils = Bosh::Agent::Message::DiskUtil
 
-    # Remount old disk as read-only
-    utils.should_receive(:`).with(/^umount #{@mount_path}\b/).ordered
-    message.should_receive(:`).with("mount -o ro /dev/sda1 #{@mount_path}").ordered
-
-    # Copy data from old disk to new disk
-    message.should_receive(:`).with(
-      "(cd #{@mount_path} && tar cf - .) | (cd #{@migration_mount_path} && tar xpf -)"
-    ).ordered
-
-    # Unmount all disks
-    utils.should_receive(:`).with(/^umount #{@mount_path}\b/).ordered
-    utils.should_receive(:`).with(/^umount #{@migration_mount_path}\b/).ordered
-
-    # Remount new disk
-    message.should_receive(:`).with("mount  /dev/sdb1 #{@mount_path}").ordered
-
     Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
+    @backtick_invocations.should eq(
+                                   [
+                                     # Remount old disk as read-only
+                                     "umount #{@mount_path} 2>&1",
+                                     "mount -o ro /dev/sda1 #{@mount_path}",
+                                     # Copy data from old disk to new disk
+                                     "(cd #{@mount_path} && tar cf - .) | (cd #{@migration_mount_path} && tar xpf -)",
+                                     # Unmount all disks
+                                     "umount #{@mount_path} 2>&1",
+                                     "umount #{@migration_mount_path} 2>&1",
+                                     # Remount new disk
+                                     "mount  /dev/sdb1 #{@mount_path}",
+                                   ]
+                                 )
   end
 end
 
