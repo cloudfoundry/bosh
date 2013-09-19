@@ -3,6 +3,14 @@
 module Bosh::Agent
   module Message
 
+    # Migrates persistent data from the old persistent disk to the new
+    # persistent disk.
+    #
+    # This message assumes that two mount messages have been received
+    # and processed: one to mount the old disk at /var/vcap/store and
+    # a second to mount the new disk at /var/vcap/store_migraton_target
+    # (sic).
+
     class MigrateDisk < Base
       def self.long_running?; true; end
 

@@ -3,8 +3,50 @@
 require 'spec_helper'
 
 describe Bosh::Agent::Message::MigrateDisk do
-  it 'should migrate disk' do
-    #handler = Bosh::Agent::Message::MigrateDisk.process(["4", "9"])
+  before do
+    Bosh::Agent::Config.settings = {'disks' => {
+      'ephemeral' => '/dev/sdq',
+      'persistent' => {
+        'old_disk_cid' => '/dev/sda',
+        'new_disk_cid' => '/dev/sdb'
+      }
+    }}
+    Bosh::Agent::Config.platform_name = 'ubuntu'
+    Bosh::Agent::Config.infrastructure_name = 'openstack'
+
+    Dir.stub(:glob).with(['/dev/sda', '/dev/vda', '/dev/xvda']).and_return(['/dev/sda'])
+    Dir.stub(:glob).with(['/dev/sdb', '/dev/vdb', '/dev/xvdb']).and_return(['/dev/sdb'])
+
+    @mount_path = File.join(Bosh::Agent::Config.base_dir, 'store')
+    @migration_mount_path = File.join(Bosh::Agent::Config.base_dir, 'store_migraton_target') # (sic)
+
+    mountpoint = double('mountpoint', mountpoint?: true)
+    Pathname.stub(:new).with(@mount_path).and_return(mountpoint)
+    Pathname.stub(:new).with(@migration_mount_path).and_return(mountpoint)
+  end
+
+  it 'should migrate to the new persistent disk' do
+    message = Bosh::Agent::Message::MigrateDisk.new
+    Bosh::Agent::Message::MigrateDisk.stub(:new).and_return(message)
+    utils = Bosh::Agent::Message::DiskUtil
+
+    # Remount old disk as read-only
+    utils.should_receive(:`).with(/^umount #{@mount_path}\b/).ordered
+    message.should_receive(:`).with("mount -o ro /dev/sda1 #{@mount_path}").ordered
+
+    # Copy data from old disk to new disk
+    message.should_receive(:`).with(
+      "(cd #{@mount_path} && tar cf - .) | (cd #{@migration_mount_path} && tar xpf -)"
+    ).ordered
+
+    # Unmount all disks
+    utils.should_receive(:`).with(/^umount #{@mount_path}\b/).ordered
+    utils.should_receive(:`).with(/^umount #{@migration_mount_path}\b/).ordered
+
+    # Remount new disk
+    message.should_receive(:`).with("mount  /dev/sdb1 #{@mount_path}").ordered
+
+    Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
   end
 end
 
