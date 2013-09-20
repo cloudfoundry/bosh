@@ -3,6 +3,10 @@
 require 'spec_helper'
 
 describe Bosh::Agent::Message::MigrateDisk do
+  let(:platform) { double('platform') }
+  let(:old_mountpoint) { double('old mountpoint', mountpoint?: false) }
+  let(:new_mountpoint) { double('new mountpoint', mountpoint?: false) }
+
   before do
     Bosh::Agent::Config.settings = {'disks' => {
       'ephemeral' => '/dev/sdq',
@@ -13,6 +17,7 @@ describe Bosh::Agent::Message::MigrateDisk do
     }}
     Bosh::Agent::Config.platform_name = 'ubuntu'
     Bosh::Agent::Config.infrastructure_name = 'openstack'
+    Bosh::Agent::Config.stub(platform: platform)
 
     Dir.stub(:glob).with(['/dev/sda', '/dev/vda', '/dev/xvda']).and_return(['/dev/sda'])
     Dir.stub(:glob).with(['/dev/sdb', '/dev/vdb', '/dev/xvdb']).and_return(['/dev/sdb'])
@@ -20,43 +25,103 @@ describe Bosh::Agent::Message::MigrateDisk do
     @mount_path = File.join(Bosh::Agent::Config.base_dir, 'store')
     @migration_mount_path = File.join(Bosh::Agent::Config.base_dir, 'store_migraton_target') # (sic)
 
-    mountpoint = double('mountpoint', mountpoint?: true)
-    Pathname.stub(:new).with(@mount_path).and_return(mountpoint)
-    Pathname.stub(:new).with(@migration_mount_path).and_return(mountpoint)
+    Pathname.stub(:new).with(@mount_path).and_return(old_mountpoint)
+    Pathname.stub(:new).with(@migration_mount_path).and_return(new_mountpoint)
+  end
 
-    @original_backtick = Kernel.instance_method(:`)
-    bi = @backtick_invocations = []
-    stubbed_backtick = proc do |cmd|
-      bi << cmd
+  context "when the new disk is mounted by a previous mount_disk message" do
+    let(:old_disk) { double('disk', partition_path: nil) }
+    let(:fake_migrator) { double('migrator') }
+
+    before do
+      old_mountpoint.stub(mountpoint?: true)
+      new_mountpoint.stub(mountpoint?: true)
     end
-    Kernel.define_method(:`, &stubbed_backtick)
+
+    it 'should migrate to the new persistent disk' do
+      # Remount old disk as read-only
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).with(@mount_path).ordered
+      platform.stub(:find_disk_by_cid).with('old_disk_cid').and_return(old_disk)
+      old_disk.should_receive(:mount).with(@mount_path, '-o ro').ordered.and_return(true)
+
+      # copy shit over
+      Bosh::Agent::DirCopier.stub(:new).with(@mount_path, @migration_mount_path).and_return(fake_migrator)
+      fake_migrator.should_receive(:copy).with().ordered
+
+      # Unmount all disks
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).with(@mount_path).ordered
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).with(@migration_mount_path).ordered
+
+      # Remount new disk
+      new_disk = double('new disk', partition_path: nil)
+      platform.stub(:find_disk_by_cid).with('new_disk_cid').and_return(new_disk)
+      new_disk.should_receive(:mount).with(@mount_path, '').ordered.and_return(true)
+
+      Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
+    end
   end
 
-  after do
-    Kernel.define_method(:`, @original_backtick)
-    @backtick_invocations.clear
+  context "when the new persistent disk is not mounted" do
+    let(:old_disk) { double('disk', partition_path: nil) }
+
+    before do
+      new_mountpoint.stub(mountpoint?: false)
+    end
+
+    it 'does not migrate data if either disk is not mounted' do
+      # Remount old disk as read-only
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).with(@mount_path).ordered
+      platform.stub(:find_disk_by_cid).with('old_disk_cid').and_return(old_disk)
+      old_disk.should_receive(:mount).with(@mount_path, '-o ro').ordered.and_return(true)
+
+      # new disk not mounted, don't copy
+      Bosh::Agent::DirCopier.should_not_receive(:new)
+
+      # Unmount all disks
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).with(@mount_path).ordered
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).with(@migration_mount_path).ordered
+
+      # Remount new disk
+      new_disk = double('new disk', partition_path: nil)
+      platform.stub(:find_disk_by_cid).with('new_disk_cid').and_return(new_disk)
+      new_disk.should_receive(:mount).with(@mount_path, '').ordered.and_return(true)
+
+      Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
+    end
   end
 
-  it 'should migrate to the new persistent disk' do
-    message = Bosh::Agent::Message::MigrateDisk.new
-    Bosh::Agent::Message::MigrateDisk.stub(:new).and_return(message)
-    utils = Bosh::Agent::Message::DiskUtil
+  context 'when it fails to remount the old disk' do
+    before do
+      disk = double('old disk', partition_path: nil)
+      platform.stub(:find_disk_by_cid).with('old_disk_cid').and_return(disk)
+      disk.stub(:mount).with(@mount_path, '-o ro').and_return(false)
+    end
 
-    Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
-    @backtick_invocations.should eq(
-                                   [
-                                     # Remount old disk as read-only
-                                     "umount #{@mount_path} 2>&1",
-                                     "mount -o ro /dev/sda1 #{@mount_path}",
-                                     # Copy data from old disk to new disk
-                                     "(cd #{@mount_path} && tar cf - .) | (cd #{@migration_mount_path} && tar xpf -)",
-                                     # Unmount all disks
-                                     "umount #{@mount_path} 2>&1",
-                                     "umount #{@migration_mount_path} 2>&1",
-                                     # Remount new disk
-                                     "mount  /dev/sdb1 #{@mount_path}",
-                                   ]
-                                 )
+    it 'raises Bosh::Agent::MessageHandlerError' do
+      Bosh::Agent::Message::DiskUtil.stub(:umount_guard).with(@mount_path)
+      expect {
+        Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
+      }.to raise_error(/Failed to mount: .* #{@mount_path}/)
+    end
+  end
+
+  context 'when it fails to remount the new disk' do
+    before do
+      disk = double('new disk', partition_path: nil)
+
+      platform.stub(find_disk_by_cid: double('old disk', mount: true, partition_path: nil))
+      platform.stub(:find_disk_by_cid).with('new_disk_cid').and_return(disk)
+
+      disk.stub(:mount).with(@mount_path, '').and_return(false)
+    end
+
+    it 'raises Bosh::Agent::MessageHandlerError' do
+      Bosh::Agent::Message::DiskUtil.stub(:umount_guard)
+
+      expect {
+        Bosh::Agent::Message::MigrateDisk.process(['old_disk_cid', 'new_disk_cid'])
+      }.to raise_error(/Failed to mount: .* #{@mount_path}/)
+    end
   end
 end
 

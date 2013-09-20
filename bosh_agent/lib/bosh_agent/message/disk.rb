@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/dir_copier'
 
 module Bosh::Agent
   module Message
@@ -32,7 +33,8 @@ module Bosh::Agent
 
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
-          `(cd #{store_path} && tar cf - .) | (cd #{store_migration_target} && tar xpf -)`
+          migrator = DirCopier.new(store_path, store_migration_target)
+          migrator.copy
         end
 
         DiskUtil.umount_guard(store_path)
@@ -41,17 +43,16 @@ module Bosh::Agent
         mount_store(@new_cid)
       end
 
+      private
       def check_mountpoints
         Pathname.new(store_path).mountpoint? && Pathname.new(store_migration_target).mountpoint?
       end
 
       def mount_store(cid, options="")
-        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-        partition = "#{disk}1"
-        logger.info("Mounting: #{partition} #{store_path}")
-        `mount #{options} #{partition} #{store_path}`
-        unless $?.exitstatus == 0
-          raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path} (exit code #{$?.exitstatus})"
+        disk = Bosh::Agent::Config.platform.find_disk_by_cid(cid)
+        logger.info("Mounting: #{disk.partition_path} #{store_path}")
+        unless disk.mount(store_path, options)
+          raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{disk.partition_path} #{store_path} (exit code #{$?.exitstatus})"
         end
       end
 

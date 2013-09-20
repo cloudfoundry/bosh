@@ -24,6 +24,10 @@ module Bosh::Agent
         @disk.lookup_disk_by_cid(cid)
       end
 
+      def find_disk_by_cid(cid)
+        @disk.find_disk_by_cid(cid)
+      end
+
       def get_data_disk_device_name
         @disk.get_data_disk_device_name
       end

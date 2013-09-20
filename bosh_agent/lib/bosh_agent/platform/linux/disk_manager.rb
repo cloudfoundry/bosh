@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/disk'
 
 module Bosh::Agent
   class Platform::Linux::DiskManager
@@ -61,6 +62,11 @@ module Bosh::Agent
         else
           raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
+    end
+
+    def find_disk_by_cid(cid)
+      disk_path = lookup_disk_by_cid(cid)
+      return Disk.new(disk_path)
     end
 
     def detect_block_device(disk_id)
