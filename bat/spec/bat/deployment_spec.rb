@@ -7,7 +7,6 @@ describe Bat::Deployment do
   include FakeFS::SpecHelpers
 
   let(:fake_template_evaluation_context) do
-    #instance_double('Bosh::Common::TemplateEvaluationContext')
     class FakeTemplateEvaluationContext
       attr_reader :fake_name
 
