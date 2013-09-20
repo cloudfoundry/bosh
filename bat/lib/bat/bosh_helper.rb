@@ -48,6 +48,7 @@ module Bat
       end
       output
     end
+    private :get_vms
 
     def wait_for_vm(name)
       5.times do
