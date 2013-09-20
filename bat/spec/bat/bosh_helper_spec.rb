@@ -138,4 +138,26 @@ describe Bat::BoshHelper do
     end
   end
 
+  describe '#ssh_options' do
+    context 'when both env vars BAT_VCAP_PASSWORD and BAT_VCAP_PRIVATE_KEY are set' do
+      before do
+        ENV['BAT_VCAP_PASSWORD']='fake_password'
+        ENV['BAT_VCAP_PRIVATE_KEY']='fake_private_key'
+      end
+      its(:ssh_options) { should eq(private_key: 'fake_private_key', password: 'fake_password')}
+    end
+
+    context 'when BAT_VCAP_PASSWORD is not set in env' do
+      it 'raises an error' do
+        expect {
+          bosh_helper.ssh_options
+        }.to raise_error(/BAT_VCAP_PASSWORD not set/)
+      end
+    end
+
+    context 'when BAT_VCAP_PRIVATE_KEY is not set in env' do
+      before { ENV['BAT_VCAP_PASSWORD']='fake_password' }
+      its(:ssh_options) { should eq(password: 'fake_password', private_key: nil) }
+    end
+  end
 end
