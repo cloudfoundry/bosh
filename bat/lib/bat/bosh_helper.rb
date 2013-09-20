@@ -62,10 +62,6 @@ module Bat
       @bosh_cli_config_tempfile.path
     end
 
-    def self.delete_bosh_cli_config
-      @bosh_cli_config_tempfile.delete if @bosh_cli_config_tempfile
-    end
-
     def bosh_bin
       BoshHelper.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
     end
