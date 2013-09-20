@@ -1,4 +1,4 @@
-require 'spec_helper'
+require 'system/spec_helper'
 
 describe 'with release and stemcell and two deployments' do
   let(:deployed_regexp) { /Deployed \`.*' to \`.*'/ }

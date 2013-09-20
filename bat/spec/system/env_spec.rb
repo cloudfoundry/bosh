@@ -1,6 +1,6 @@
 # Copyright (c) 2012 VMware, Inc.
 
-require 'spec_helper'
+require 'system/spec_helper'
 
 describe 'initialization', :skip_task_check do
   describe 'environment' do

@@ -1,4 +1,4 @@
-require 'spec_helper'
+require 'system/spec_helper'
 
 describe 'with release, stemcell and failed deployment' do
 

@@ -7,11 +7,11 @@ module DeploymentHelper
   end
 
   def stemcell
-    @stemcell ||= Stemcell.from_path(BoshHelper.read_environment('BAT_STEMCELL'))
+    @stemcell ||= Bat::Stemcell.from_path(BoshHelper.read_environment('BAT_STEMCELL'))
   end
 
   def release
-    @release ||= Release.from_path(BAT_RELEASE_DIR)
+    @release ||= Bat::Release.from_path(BAT_RELEASE_DIR)
   end
 
   def previous_release
@@ -20,7 +20,7 @@ module DeploymentHelper
 
   def deployment
     load_deployment_spec
-    @deployment ||= Deployment.new(@spec)
+    @deployment ||= Bat::Deployment.new(@spec)
   end
 
   # @return [Array[String]]
@@ -30,41 +30,39 @@ module DeploymentHelper
     result
   end
 
-  # @return [Array[Release]]
   def releases
     result = []
     jbosh('/releases').each do |r|
-      result << Release.new(r['name'], r['release_versions'].map { |v| v['version'] })
+      result << Bat::Release.new(r['name'], r['release_versions'].map { |v| v['version'] })
     end
     result
   end
 
-  # @return [Array[Stemcell]]
   def stemcells
     result = []
     jbosh('/stemcells').each do |s|
-      result << Stemcell.new(s['name'], s['version'])
+      result << Bat::Stemcell.new(s['name'], s['version'])
     end
     result
   end
 
   def requirement(what, present = true)
     case what
-      when Stemcell
+      when Bat::Stemcell
         if stemcells.include?(stemcell)
           puts 'stemcell already uploaded' if debug?
         else
           puts 'stemcell not uploaded' if debug?
           bosh("upload stemcell #{what.to_path}")
         end
-      when Release
+      when Bat::Release
         if releases.include?(release)
           puts 'release already uploaded' if debug?
         else
           puts 'release not uploaded' if debug?
           bosh("upload release #{what.to_path}")
         end
-      when Deployment
+      when Bat::Deployment
         if deployments.include?(deployment)
           puts 'deployment already deployed' if debug?
         else
@@ -88,13 +86,13 @@ module DeploymentHelper
     # skip delete of a deployment.
 
     case what
-      when Stemcell
+      when Bat::Stemcell
         return if fast?
         bosh("delete stemcell #{what.name} #{what.version}")
-      when Release
+      when Bat::Release
         return if fast?
         bosh("delete release #{what.name}")
-      when Deployment
+      when Bat::Deployment
         bosh("delete deployment #{what.name}")
         what.delete
       else
@@ -118,10 +116,10 @@ module DeploymentHelper
 
   # if with_deployment() is called without a block, it is up to the caller to
   # remove the generated deployment file
-  # @return [Deployment]
+  # @return [Bat::Deployment]
   def with_deployment(spec = {}, &block)
     deployed = false # move into Deployment ?
-    deployment = Deployment.new(@spec.merge(spec))
+    deployment = Bat::Deployment.new(@spec.merge(spec))
 
     if !block_given?
       return deployment
