@@ -96,4 +96,15 @@ describe Bat::BoshHelper do
       end
     end
   end
+
+  describe '#bosh_bin' do
+    context 'when BAT_BOSH_BIN is set in the env' do
+      its(:bosh_bin) { should eq('bundle exec bosh') }
+    end
+
+    context 'when BAT_BOSH_BIN is not set in the env' do
+      before { ENV['BAT_BOSH_BIN'] = '/fake/path/to/bosh' }
+      its(:bosh_bin) { should eq('/fake/path/to/bosh') }
+    end
+  end
 end
