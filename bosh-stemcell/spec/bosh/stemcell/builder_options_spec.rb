@@ -92,8 +92,6 @@ module Bosh::Stemcell
           {
             'UBUNTU_ISO' => 'fake_ubuntu_iso',
             'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
-            'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
-            'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
             'RUBY_BIN' => 'fake_ruby_bin',
           }
         end
@@ -111,8 +109,6 @@ module Bosh::Stemcell
           expect(result['bosh_protocol_version']).to eq('1')
           expect(result['UBUNTU_ISO']).to eq('fake_ubuntu_iso')
           expect(result['UBUNTU_MIRROR']).to eq('fake_ubuntu_mirror')
-          expect(result['TW_LOCAL_PASSPHRASE']).to eq('fake_tripwire_local_passphrase')
-          expect(result['TW_SITE_PASSPHRASE']).to eq('fake_tripwire_site_passphrase')
           expect(result['ruby_bin']).to eq('fake_ruby_bin')
           expect(result['bosh_release_src_dir']).to eq(File.join(expected_source_root, '/release/src/bosh'))
           expect(result['bosh_agent_src_dir']).to eq(File.join(expected_source_root, 'bosh_agent'))

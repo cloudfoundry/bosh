@@ -58,7 +58,6 @@ module Bosh::Stemcell
         :system_parameters,
         :bosh_clean,
         #:bosh_harden,
-        #:bosh_tripwire,
         #:bosh_dpkg_list,
         :image_create,
         :image_install_grub,
@@ -99,7 +98,6 @@ module Bosh::Stemcell
         :bosh_clean,
         :bosh_harden,
         :bosh_harden_ssh,
-        :bosh_tripwire,
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
@@ -122,7 +120,6 @@ module Bosh::Stemcell
         :bosh_clean,
         :bosh_harden,
         :bosh_harden_ssh,
-        :bosh_tripwire,
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
@@ -142,7 +139,6 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
-        :bosh_tripwire,
         :bosh_dpkg_list,
         # Image/bootloader
         :image_create,

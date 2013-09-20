@@ -1,7 +1,0 @@
-This directory is used to build the public stemcells and you need to know the
-"local" passphrase to do so. The passphrase needs to be set in the environment
-variable TW_PASSPHRASE.
-
-If you want to build your own stemcell with tripwire support you must replace
-site.key & local.key with your own keys, and then generate your own tw.cfg &
-tw.pol using those keys.

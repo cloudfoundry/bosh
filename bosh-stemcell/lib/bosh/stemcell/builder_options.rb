@@ -49,8 +49,6 @@ module Bosh::Stemcell
       {
         'UBUNTU_ISO' => environment['UBUNTU_ISO'],
         'UBUNTU_MIRROR' => environment['UBUNTU_MIRROR'],
-        'TW_LOCAL_PASSPHRASE' => environment['TW_LOCAL_PASSPHRASE'],
-        'TW_SITE_PASSPHRASE' => environment['TW_SITE_PASSPHRASE'],
       }
     end
 
