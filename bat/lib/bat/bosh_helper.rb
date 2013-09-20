@@ -5,6 +5,7 @@ require 'json'
 require 'net/ssh'
 require 'zlib'
 require 'archive/tar/minitar'
+require 'tempfile'
 
 require 'common/exec'
 
