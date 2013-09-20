@@ -107,4 +107,35 @@ describe Bat::BoshHelper do
       its(:bosh_bin) { should eq('/fake/path/to/bosh') }
     end
   end
+
+  describe '#bosh_director' do
+    context 'when BAT_DIRECTOR is set in the env' do
+      before { ENV['BAT_DIRECTOR'] = 'fake_director.hamazon.com' }
+      its(:bosh_director) { should eq('fake_director.hamazon.com') }
+    end
+
+    context 'when BAT_DIRECTOR is not set in the env' do
+      it 'raises an error' do
+        expect {
+          bosh_helper.bosh_director
+        }.to raise_error /BAT_DIRECTOR not set/
+      end
+    end
+  end
+
+  describe '#password' do
+    context 'when BAT_VCAP_PASSWORD is set in the env' do
+      before { ENV['BAT_VCAP_PASSWORD'] = 'fake_director.hamazon.com' }
+      its(:password) { should eq('fake_director.hamazon.com') }
+    end
+
+    context 'when BAT_VCAP_PASSWORD is not set in the env' do
+      it 'raises an error' do
+        expect {
+          bosh_helper.password
+        }.to raise_error /BAT_VCAP_PASSWORD not set/
+      end
+    end
+  end
+
 end
