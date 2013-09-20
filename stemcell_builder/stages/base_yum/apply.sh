@@ -12,7 +12,8 @@ pkg_mgr install upstart
 # Install base packages needed by both the warden and bosh
 packages="build-essential openssl-devel lsof \
 strace bind9-host dnsutils tcpdump iputils-arping \
-curl wget libcurl3 libcurl3-dev bison libreadline6-dev \
+curl wget libcurl3 libcurl3-dev bison \
+readline-devel \
 libxml2 libxml2-devel libxslt libxslt-devel \
 dhclient \
 zip unzip \

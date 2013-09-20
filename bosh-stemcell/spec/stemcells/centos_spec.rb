@@ -40,6 +40,7 @@ describe 'CentOs Stemcell' do
       'traceroute'     => '2.0.14-2.el6.x86_64',
       'gdb'            => '7.2-60.el6_4.1.x86_64',
       'curl'           => '7.19.7-37.el6_4.x86_64',
+      'readline-devel' => '6.0-4.el6.x86_64',
       'flex'           => '2.5.35-8.el6.x86_64',
       'openssh-server' => '5.3p1-84.1.el6',
       'wget'           => '1.12-1.8.el6.x86_64',
