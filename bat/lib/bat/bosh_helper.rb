@@ -76,10 +76,6 @@ module Bat
       BoshHelper.read_environment('BAT_VCAP_PASSWORD')
     end
 
-    def private_key
-      ENV['BAT_VCAP_PRIVATE_KEY']
-    end
-
     def ssh_options
       {
         private_key: private_key,
@@ -91,37 +87,9 @@ module Bat
       ENV['BAT_DNS_HOST']
     end
 
-    def debug?
-      ENV.has_key?('BAT_DEBUG')
-    end
-
-    def verbose?
-      ENV['BAT_DEBUG'] == 'verbose'
-    end
-
-    def fast?
-      ENV.has_key?('BAT_FAST')
-    end
-
-    def http_client
-      return @bosh if @bosh
-      @bosh = HTTPClient.new
-      @bosh.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      @bosh.set_auth(director_url, 'admin', 'admin')
-      @bosh
-    end
-
     def jbosh(path)
       body = http_client.get([director_url, path].join, 'application/json').body
       JSON.parse(body)
-    end
-
-    def director_url
-      "https://#{bosh_director}:25555"
-    end
-
-    def info
-      jbosh('/info')
     end
 
     def aws?
@@ -170,24 +138,6 @@ module Bat
       end
     end
 
-    # this method will retry a bunch of times, as when it is used to
-    # get json from a new batarang job, it may not have started when
-    # it we call it
-    def get_json(url, max_times = 120)
-      client = HTTPClient.new
-      tries = 0
-      begin
-        body = client.get(url, 'application/json').body
-      rescue Errno::ECONNREFUSED => e
-        raise e if tries == max_times
-        sleep(1)
-        tries += 1
-        retry
-      end
-
-      JSON.parse(body)
-    end
-
     def ssh(host, user, command, options = {})
       options = options.dup
       output = nil
@@ -222,6 +172,56 @@ module Bat
         list << entry if is_file
       end
       list
+    end
+
+    private
+    def debug?
+      ENV.has_key?('BAT_DEBUG')
+    end
+
+    def verbose?
+      ENV['BAT_DEBUG'] == 'verbose'
+    end
+
+    def fast?
+      ENV.has_key?('BAT_FAST')
+    end
+
+    def private_key
+      ENV['BAT_VCAP_PRIVATE_KEY']
+    end
+
+    def http_client
+      return @bosh if @bosh
+      @bosh = HTTPClient.new
+      @bosh.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      @bosh.set_auth(director_url, 'admin', 'admin')
+      @bosh
+    end
+
+    def director_url
+      "https://#{bosh_director}:25555"
+    end
+
+    def info
+      jbosh('/info')
+    end
+    # this method will retry a bunch of times, as when it is used to
+    # get json from a new batarang job, it may not have started when
+    # it we call it
+    def get_json(url, max_times = 120)
+      client = HTTPClient.new
+      tries = 0
+      begin
+        body = client.get(url, 'application/json').body
+      rescue Errno::ECONNREFUSED => e
+        raise e if tries == max_times
+        sleep(1)
+        tries += 1
+        retry
+      end
+
+      JSON.parse(body)
     end
   end
 end
