@@ -1,5 +1,5 @@
 module Bosh::Agent
-  class Platform::Centos::Disk < Platform::Linux::Disk
+  class Platform::Centos::Disk < Platform::Linux::DiskManager
     def detect_block_device(disk_id)
       device_path = "/sys/bus/scsi/devices/#{root_disk_scsi_host_id}:0:#{disk_id}:0/block/*"
       dirs = Dir.glob(device_path)

@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe Bosh::Agent::Platform::Linux::Disk do
+describe Bosh::Agent::Platform::Linux::DiskManager do
 
   context 'vSphere' do
 
@@ -10,7 +10,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     let(:store_path)    { File.join(Bosh::Agent::Config.base_dir, 'store') }
     let(:dev_path)      { '/sys/bus/scsi/devices/2:0:333:0/block/*' }
     let(:disk_wrapper)  {
-      disk_w = Bosh::Agent::Platform::Linux::Disk.new
+      disk_w = Bosh::Agent::Platform::Linux::DiskManager.new
       disk_w.stub(:rescan_scsi_bus)
       disk_w
     }
@@ -88,7 +88,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     end
 
     it 'should get data disk device name' do
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+      disk_wrapper = Bosh::Agent::Platform::Linux::DiskManager.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
 
       Dir.should_receive(:glob).with(%w(/dev/sdq /dev/vdq /dev/xvdq)).twice.and_return(%w(/dev/xvdq))
@@ -97,7 +97,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
 
     it 'should raise an error when data disk device name is not present at settings' do
       Bosh::Agent::Config.settings = { 'disks' => {  } }
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+      disk_wrapper = Bosh::Agent::Platform::Linux::DiskManager.new
 
       expect {
         disk_wrapper.get_data_disk_device_name
@@ -105,7 +105,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     end
 
     it 'should look up disk by cid' do
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+      disk_wrapper = Bosh::Agent::Platform::Linux::DiskManager.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
 
       Dir.should_receive(:glob).with(%w(/dev/sdf /dev/vdf /dev/xvdf)).twice.and_return(%w(/dev/xvdf))
@@ -122,7 +122,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     end
 
     it 'should get data disk device name' do
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+      disk_wrapper = Bosh::Agent::Platform::Linux::DiskManager.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
 
       Dir.should_receive(:glob).with(%w(/dev/sdq /dev/vdq /dev/xvdq)).twice.and_return(%w(/dev/vdq))
@@ -131,13 +131,13 @@ describe Bosh::Agent::Platform::Linux::Disk do
 
     it 'should not get data disk device name when not present at settings' do
       Bosh::Agent::Config.settings = { 'disks' => {  } }
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+      disk_wrapper = Bosh::Agent::Platform::Linux::DiskManager.new
 
       expect(disk_wrapper.get_data_disk_device_name).to be_nil
     end
 
     it 'should look up disk by cid' do
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
+      disk_wrapper = Bosh::Agent::Platform::Linux::DiskManager.new
       disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
 
       Dir.should_receive(:glob).with(%w(/dev/sdf /dev/vdf /dev/xvdf)).twice.and_return(%w(/dev/vdf))

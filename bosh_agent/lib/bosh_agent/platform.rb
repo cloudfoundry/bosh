@@ -7,7 +7,7 @@ module Bosh::Agent
       case platform_name
         when 'ubuntu'
           template_dir = File.expand_path(File.join(File.dirname(__FILE__), 'platform/ubuntu/templates'))
-          Platform::Linux::Adapter.new(Platform::Linux::Disk.new,
+          Platform::Linux::Adapter.new(Platform::Linux::DiskManager.new,
                                        Platform::Linux::Logrotate.new(template_dir),
                                        Platform::Linux::Password.new,
                                        Platform::Ubuntu::Network.new(template_dir))

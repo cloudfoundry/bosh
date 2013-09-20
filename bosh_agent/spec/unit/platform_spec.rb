@@ -31,7 +31,7 @@ module Bosh::Agent
         end
 
         it 'uses a generic disk strategy' do
-          platform.instance_variable_get(:@disk).should be_an_instance_of Platform::Linux::Disk
+          platform.instance_variable_get(:@disk).should be_an_instance_of Platform::Linux::DiskManager
         end
 
         it 'uses an ubuntu-specific network strategy' do

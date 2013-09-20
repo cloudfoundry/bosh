@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Linux::Disk
+  class Platform::Linux::DiskManager
     include Bosh::Exec
 
     VSPHERE_DATA_DISK = "/dev/sdb"
