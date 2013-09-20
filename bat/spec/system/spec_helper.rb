@@ -34,10 +34,6 @@ RSpec.configure do |config|
     $?.exitstatus.should == 0
   end
 
-  config.after(:suite) do
-    Bat::BoshHelper.delete_bosh_cli_config
-  end
-
   config.before(:each) do
     requirement :no_tasks_processing unless example.metadata[:skip_task_check]
   end
