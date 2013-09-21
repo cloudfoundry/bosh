@@ -58,6 +58,7 @@ describe 'CentOs Stemcell' do
       'rpmdevtools'    => '7.5-2.el6.noarch',
       'glibc-static'   => '2.12-1.107.el6_4.4.x86_64',
       'runit'          => '2.1.1-6.el6.x86_64',
+      'sudo'           => '1.8.6p3-7.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }

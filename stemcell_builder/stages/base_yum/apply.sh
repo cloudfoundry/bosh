@@ -19,7 +19,7 @@ dhclient \
 zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
-libaio1 gdb libcap2-bin libyaml-devel cmake"
+libaio1 gdb libcap2-bin libyaml-devel cmake sudo"
 pkg_mgr install $packages
 
 # Lifted from bosh_debs
