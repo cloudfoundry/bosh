@@ -78,6 +78,13 @@ describe 'CentOs Stemcell' do
     end
   end
 
+  context 'installed by bosh_sudoers' do
+    describe file('/etc/sudoers') do
+      it { should be_file }
+      it { should contain '#includedir /etc/sudoers.d' }
+    end
+  end
+
   context 'installed by bosh_micro' do
     describe file('/var/vcap/micro/apply_spec.yml')
   end

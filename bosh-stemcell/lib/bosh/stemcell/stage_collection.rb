@@ -43,7 +43,7 @@ module Bosh::Stemcell
         #:bosh_sysstat,
         #:bosh_sysctl,
         #:bosh_ntpdate,
-        #:bosh_sudoers,
+        :bosh_sudoers,
         # Micro BOSH
         #:bosh_micro,
         # Install GRUB/kernel/etc
