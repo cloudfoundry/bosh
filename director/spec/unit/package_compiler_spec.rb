@@ -145,6 +145,15 @@ describe Bosh::Director::PackageCompiler do
     compiler.compile_tasks_count.should == 6 + 5
     # But they are already compiled!
     compiler.compilations_performed.should == 0
+
+    check_event_log do |events|
+      expect(events.size).to eql(2)
+      expect(events.map { |e| e['stage'] }.uniq).to match_array(['Preparing package compilation'])
+      expect(events.map { |e| e['task'] }.uniq).to match_array(['Finding packages to compile'])
+      expect(events.map { |e| e['index'] }.uniq).to match_array([1])
+      expect(events.map { |e| e['total'] }.uniq).to match_array([1])
+      expect(events.map { |e| e['state'] }.uniq).to match_array(['started', 'finished'])
+    end
   end
 
   it "compiles all packages" do
@@ -233,6 +242,23 @@ describe Bosh::Director::PackageCompiler do
 
     @package_set_b.each do |package|
       package.compiled_packages.size.should >= 1
+    end
+
+    check_event_log do |events|
+      expect(events.size).to eql(24)
+      expect(events.map { |e| e['stage'] }.uniq).to match_array(['Preparing package compilation',
+                                                                 'Compiling packages'])
+      expect(events.map { |e| e['task'] }.uniq).to match_array(['Finding packages to compile',
+                                                                'common/0.1-dev',
+                                                                'p_syslog/0.1-dev',
+                                                                'warden/0.1-dev',
+                                                                'nginx/0.1-dev',
+                                                                'ruby/0.1-dev',
+                                                                'p_router/0.1-dev',
+                                                                'dea/0.1-dev'])
+      expect(events.map { |e| e['index'] }.uniq).to match_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+      expect(events.map { |e| e['total'] }.uniq).to match_array([1, 11])
+      expect(events.map { |e| e['state'] }.uniq).to eql(['started', 'finished'])
     end
   end
 
