@@ -160,4 +160,106 @@ describe Bat::BoshHelper do
       its(:ssh_options) { should eq(password: 'fake_password', private_key: nil) }
     end
   end
+
+  describe '#wait_for_vm' do
+    let(:successful_bosh_vms_output) do
+      <<OUTPUT
+Deployment `jesse'
+
+Director task 1112
+
+Task 5402 done
+
++-------------------------+---------+---------------+-------------+------------+--------------------------------------+--------------+
+| Job/index               | State   | Resource Pool | IPs         | CID        | Agent ID                             | Resurrection |
++-------------------------+---------+---------------+-------------+------------+--------------------------------------+--------------+
+| jessez/0                | running | fake_pool     | 10.20.30.1  | i-cid      | fake-agent-id                        | active       |
+| uaa_z1/0                | running | small_z1      | 10.50.91.2  | i-24cb6153 | da74e0d8-d2a6-4b2d-904a-b2f0e3dacc49 | active       |
+| uaa_z2/0                | running | timid_z2      | 10.60.80.3  | i-6b19c0da | c293814f-b613-c883-1862-2dcb34c566ad | active       |
++-------------------------+---------+---------------+-------------+------------+--------------------------------------+--------------+
+
+VMs total: 3
+OUTPUT
+    end
+
+    let(:bosh_vms_output_without_jesse) do
+      <<OUTPUT
+Deployment `jesse'
+
+Director task 1112
+
+Task 5402 done
+
++-------------------------+---------+---------------+-------------+------------+--------------------------------------+--------------+
+| Job/index               | State   | Resource Pool | IPs         | CID        | Agent ID                             | Resurrection |
++-------------------------+---------+---------------+-------------+------------+--------------------------------------+--------------+
+| uaa_z2/0                | running | timid_z2      | 10.60.80.3  | i-6b19c0da | c293814f-b613-c883-1862-2dcb34c566ad | active       |
++-------------------------+---------+---------------+-------------+------------+--------------------------------------+--------------+
+
+VMs total: 1
+OUTPUT
+    end
+
+    context 'when "bosh vms" contains the named vm' do
+      before do
+        fake_result = double('fake bosh exec result', output: successful_bosh_vms_output)
+        Bosh::Exec.stub(:sh).with(/bundle exec bosh .* vms --details/, {}).and_return(fake_result)
+      end
+
+      it 'returns the vm details' do
+        expect(bosh_helper.wait_for_vm('jessez/0')).to(
+          eq(
+            {
+              job_index: 'jessez/0',
+              state: 'running',
+              resource_pool: 'fake_pool',
+              ips: '10.20.30.1',
+              cid: 'i-cid',
+              agent_id: 'fake-agent-id',
+              resurrection: 'active',
+            }
+          )
+        )
+      end
+    end
+
+    context 'when the named vm is not contained in the output of "bosh vms"' do
+      before { Bosh::Exec.stub(:sh).with(/bosh .* vms --details/, {}).and_return(double('fake result', output: '')) }
+
+      it 'returns nil' do
+        expect(bosh_helper.wait_for_vm('jessez/0')).to be_nil
+      end
+    end
+
+    context 'when the named vms was not in bosh vms output at first, but appear after 4 retries' do
+      let(:bad_result) { double('fake exec result', output: bosh_vms_output_without_jesse) }
+      let(:good_result) { double('fake good exec result', output: successful_bosh_vms_output) }
+      before do
+        Bosh::Exec.stub(:sh).with(
+          /bosh .* vms --details/, {}
+        ).and_return(
+          bad_result,
+          bad_result,
+          bad_result,
+          good_result,
+        )
+      end
+
+      it 'returns the vm details' do
+        expect(bosh_helper.wait_for_vm('jessez/0')).to(
+          eq(
+            {
+              job_index: 'jessez/0',
+              state: 'running',
+              resource_pool: 'fake_pool',
+              ips: '10.20.30.1',
+              cid: 'i-cid',
+              agent_id: 'fake-agent-id',
+              resurrection: 'active',
+            }
+          )
+        )
+      end
+    end
+  end
 end
