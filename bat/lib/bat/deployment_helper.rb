@@ -3,10 +3,6 @@ require 'tmpdir'
 
 module Bat
   module DeploymentHelper
-    def spec
-      @spec ||= {}
-    end
-
     def stemcell
       @stemcell ||= Bat::Stemcell.from_path(BoshHelper.read_environment('BAT_STEMCELL'))
     end
@@ -186,6 +182,10 @@ module Bat
       @spec['properties']['name'] = name
     end
 
+    def deployment_name
+      @spec.fetch('properties', {}).fetch('name', 'bat')
+    end
+
     def use_release(version)
       @spec['properties']['release'] = version
     end
@@ -264,6 +264,10 @@ module Bat
     end
 
     private
+
+    def spec
+      @spec ||= {}
+    end
 
     def parse(line)
       JSON.parse(line)

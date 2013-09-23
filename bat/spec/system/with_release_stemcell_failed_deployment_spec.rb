@@ -21,7 +21,7 @@ describe 'with release, stemcell and failed deployment' do
     cleanup release
     cleanup stemcell
 
-    bosh("delete deployment #{spec.fetch('properties', {}).fetch('name', 'bat')}")
+    bosh("delete deployment #{deployment_name}")
     deployment_manifest_bad.delete
   end
 
