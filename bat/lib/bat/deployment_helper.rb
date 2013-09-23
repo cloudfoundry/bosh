@@ -162,16 +162,8 @@ module Bat
       @spec['properties']['job'] = job
     end
 
-    def use_template(template)
-      @spec['properties']['template'] = if template.respond_to?(:each)
-                                          string = ''
-                                          template.each do |item|
-                                            string += "\n      - #{item}"
-                                          end
-                                          string
-                                        else
-                                          template
-                                        end
+    def use_templates(templates)
+      @spec['properties']['template'] = templates.map { |item| "\n      - #{item}" }.join
     end
 
     def use_job_instances(count)
@@ -184,10 +176,6 @@ module Bat
 
     def deployment_name
       @spec.fetch('properties', {}).fetch('name', 'bat')
-    end
-
-    def use_release(version)
-      @spec['properties']['release'] = version
     end
 
     def use_static_ip
@@ -210,10 +198,6 @@ module Bat
       @spec['properties']['canaries'] = count
     end
 
-    def use_max_in_flight(count)
-      @spec['properties']['max_in_flight'] = count
-    end
-
     def use_pool_size(size)
       @spec['properties']['pool_size'] = size
     end
@@ -222,16 +206,8 @@ module Bat
       @spec['properties']['password'] = passwd
     end
 
-    def use_failing_job(where = 'control')
-      @spec['properties']['batlight']['fail'] = where
-    end
-
-    def use_missing_property(property = 'missing')
-      @spec['properties']['batlight'].delete(property)
-    end
-
-    def use_dynamic_drain
-      @spec['properties']['batlight']['drain_type'] = 'dynamic'
+    def use_failing_job
+      @spec['properties']['batlight']['fail'] = 'control'
     end
 
     def get_task_id(output, state = 'done')
