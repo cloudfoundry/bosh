@@ -176,10 +176,6 @@ module Bat
 
     private
 
-    def fast?
-      ENV.has_key?('BAT_FAST')
-    end
-
     def private_key
       ENV['BAT_VCAP_PRIVATE_KEY']
     end

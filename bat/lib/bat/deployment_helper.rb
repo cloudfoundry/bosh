@@ -78,16 +78,10 @@ module Bat
     end
 
     def cleanup(what)
-      # if BAT_FAST is set, we just return so the stemcell & release is
-      # preserved - this saves a lot of time! However, it's not safe to
-      # skip delete of a deployment.
-
       case what
         when Bat::Stemcell
-          return if fast?
           bosh("delete stemcell #{what.name} #{what.version}")
         when Bat::Release
-          return if fast?
           bosh("delete release #{what.name}")
         when Bat::Deployment
           bosh("delete deployment #{what.name}")

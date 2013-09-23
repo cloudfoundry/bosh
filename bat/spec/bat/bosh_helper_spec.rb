@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bat/bosh_helper'
 
 describe Bat::BoshHelper do
