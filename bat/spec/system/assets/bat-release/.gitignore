@@ -13,3 +13,5 @@ blobs
 *~
 *#
 #*
+src/batarang/Gemfile
+src/batarang/Gemfile.lock
