@@ -40,6 +40,7 @@ describe Bosh::Registry::InstanceManager do
   end
 
   describe "reading settings" do
+    
     it "returns settings after verifying IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
       actual_ip_is("10.0.0.1", nil)
@@ -76,6 +77,25 @@ describe Bosh::Registry::InstanceManager do
         manager.read_settings('foo', '10.0.0.1').should == 'bar'
       }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized') 
     end
+  end
+  
+  it "should implement ssl_verify_peer settings" do
+    config = valid_config
+    config["cloud"] = {
+      "plugin" => "openstack",
+      "openstack" => {
+        "auth_url" => "http://127.0.0.1:5000/v2.0",
+        "username" => "foo",
+        "api_key" => "bar",
+        "tenant" => "foo",
+        "region" => "",
+        "ssl_verify_peer" => "false"
+      }
+    }
+    Bosh::Registry.configure(config)
+    manager = Bosh::Registry.instance_manager
+    manager.openstack
+    Excon.defaults[:ssl_verify_peer].should be_false
   end
 
 end
