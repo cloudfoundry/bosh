@@ -7,7 +7,7 @@ describe 'with release, stemcell and failed deployment' do
     with_deployment
   end
 
-  before(:each) do
+  before do
     requirement stemcell
     requirement release
 
@@ -17,12 +17,11 @@ describe 'with release, stemcell and failed deployment' do
     use_job_instances(2)
   end
 
-  after(:each) do
-    cleanup release
-    cleanup stemcell
-
+  after do
     bosh("delete deployment #{deployment_name}")
     deployment_manifest_bad.delete
+    cleanup release
+    cleanup stemcell
   end
 
   context 'A brand new deployment' do
