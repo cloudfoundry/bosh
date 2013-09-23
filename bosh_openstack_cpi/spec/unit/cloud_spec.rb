@@ -13,7 +13,7 @@ describe Bosh::OpenStackCloud::Cloud do
       cloud = Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
       cloud.should be_an_instance_of(Bosh::OpenStackCloud::Cloud)
     end
-
+    
     it "raises ArgumentError on initializing with blank options" do
     	options = Hash.new("options")
     	expect { 
@@ -44,6 +44,15 @@ describe Bosh::OpenStackCloud::Cloud do
         Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
       }.to raise_error(Bosh::Clouds::CloudError,
                        "Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
+    end
+    
+    it "should implement ssl_verify_peer settings" do
+      Fog::Compute.stub(:new)
+      Fog::Image.stub(:new)
+      ssl_options = mock_cloud_options.clone
+      ssl_options["openstack"]["ssl_verify_peer"] = "false"
+      Bosh::Clouds::Provider.create(:openstack, ssl_options)
+      Excon.defaults[:ssl_verify_peer].should be_false
     end
     
   end

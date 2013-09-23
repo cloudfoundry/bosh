@@ -214,6 +214,9 @@ properties:
     description: OpenStack tenant name
   compiled_package_cache.options.openstack_region:
     description: OpenStack region (optional)
+  compiled_package_cache.options.openstack_ssl_verify_peer:
+    description: Configures SSL verification for self-signed SSL Certificates.
+    default: true
   compiled_package_cache.options.rackspace_username:
     description: Rackspace Cloud Files Username
   compiled_package_cache.options.rackspace_api_key:

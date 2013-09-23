@@ -122,6 +122,9 @@ compiled_package_cache:
       <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
       openstack_region: <%= openstack_region %>
       <% end %>
+			<% if_p('compiled_package_cache.options.openstack_ssl_verify_peer') do |ssl_verify_peer| %>
+	    ssl_verify_peer: <%= ssl_verify_peer %>
+	    <% end %>
     <% end %>
     <% if_p('compiled_package_cache.options.rackspace_username',
             'compiled_package_cache.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
