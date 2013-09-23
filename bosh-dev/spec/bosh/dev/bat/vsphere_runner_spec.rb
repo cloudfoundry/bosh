@@ -7,12 +7,15 @@ module Bosh::Dev::Bat
 
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6', name: 'bosh-infra-hyper-os') }
+
     let(:bat_helper) do
-      instance_double('Bosh::Dev::BatHelper',
-                      artifacts_dir: '/VsphereRunner_fake_artifacts_dir',
-                      micro_bosh_deployment_dir: '/VsphereRunner_fake_artifacts_dir/fake_micro_bosh_deployment_dir',
-                      micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
-                      bosh_stemcell_path: 'fake_bosh_stemcell_path')
+      instance_double(
+        'Bosh::Dev::BatHelper',
+        artifacts_dir:              '/VsphereRunner_fake_artifacts_dir',
+        micro_bosh_deployment_dir:  '/VsphereRunner_fake_artifacts_dir/fake_micro_bosh_deployment_dir',
+        micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
+        bosh_stemcell_path:         'fake_bosh_stemcell_path',
+      )
     end
 
     let(:microbosh_deployment_manifest) { instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest', write: nil) }
@@ -27,25 +30,13 @@ module Bosh::Dev::Bat
 
       Bosh::Dev::VSphere::MicroBoshDeploymentManifest.stub(new: microbosh_deployment_manifest)
       Bosh::Dev::VSphere::BatDeploymentManifest.stub(new: bat_deployment_manifest)
-
-      ENV.stub(:to_hash).and_return(
-        'BOSH_VSPHERE_MICROBOSH_IP' => 'fake_BOSH_VSPHERE_MICROBOSH_IP'
-      )
-    end
-
-    around do |example|
-      original_env = ENV
-
-      begin
-        ENV.clear
-        example.run
-      ensure
-        ENV.update(original_env)
-      end
     end
 
     describe '#run_bats' do
+      subject { described_class.new(env) }
+
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
+      let(:env) { { 'BOSH_VSPHERE_MICROBOSH_IP' => 'fake_BOSH_VSPHERE_MICROBOSH_IP' } }
 
       before do
         Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task)
@@ -94,7 +85,7 @@ module Bosh::Dev::Bat
               dns        enabled (domain_name: microbosh)
               compiled_package_cache disabled
               snapshots  disabled
-          STATUS
+        STATUS
         bosh_cli_session.stub(:run_bosh).with('status').and_return(status_output)
 
         bat_deployment_manifest.should_receive(:write) do
@@ -110,21 +101,21 @@ module Bosh::Dev::Bat
       end
 
       it 'sets the the required environment variables' do
-        expect(ENV['BAT_DEPLOYMENT_SPEC']).to be_nil
-        expect(ENV['BAT_DIRECTOR']).to be_nil
-        expect(ENV['BAT_DNS_HOST']).to be_nil
-        expect(ENV['BAT_STEMCELL']).to be_nil
-        expect(ENV['BAT_VCAP_PASSWORD']).to be_nil
-        expect(ENV['BAT_FAST']).to be_nil
+        expect(env['BAT_DEPLOYMENT_SPEC']).to be_nil
+        expect(env['BAT_DIRECTOR']).to be_nil
+        expect(env['BAT_DNS_HOST']).to be_nil
+        expect(env['BAT_STEMCELL']).to be_nil
+        expect(env['BAT_VCAP_PASSWORD']).to be_nil
+        expect(env['BAT_FAST']).to be_nil
 
         subject.run_bats
 
-        expect(ENV['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
-        expect(ENV['BAT_DIRECTOR']).to eq('fake_BOSH_VSPHERE_MICROBOSH_IP')
-        expect(ENV['BAT_DNS_HOST']).to eq('fake_BOSH_VSPHERE_MICROBOSH_IP')
-        expect(ENV['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
-        expect(ENV['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
-        expect(ENV['BAT_FAST']).to eq('true')
+        expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
+        expect(env['BAT_DIRECTOR']).to eq('fake_BOSH_VSPHERE_MICROBOSH_IP')
+        expect(env['BAT_DNS_HOST']).to eq('fake_BOSH_VSPHERE_MICROBOSH_IP')
+        expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
+        expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
+        expect(env['BAT_FAST']).to eq('true')
       end
 
       it 'invokes the "bat" rake task' do

@@ -7,9 +7,13 @@ require 'bosh/dev/vsphere/bat_deployment_manifest'
 
 module Bosh::Dev::Bat
   class VsphereRunner
-    def initialize
-      @env = ENV.to_hash
-      @bat_helper = Bosh::Dev::BatHelper.new('vsphere', :dont_care)
+    def self.build
+      new(ENV)
+    end
+
+    def initialize(env)
+      @env              = env
+      @bat_helper       = Bosh::Dev::BatHelper.new('vsphere', :dont_care)
       @bosh_cli_session = Bosh::Dev::BoshCliSession.new
       @stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
     end
@@ -55,12 +59,12 @@ module Bosh::Dev::Bat
     def prepare_bat_deployment
       create_bat_manifest
 
-      ENV['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-      ENV['BAT_DIRECTOR'] = director_hostname
-      ENV['BAT_DNS_HOST'] = director_ip
-      ENV['BAT_STEMCELL'] = bat_helper.bosh_stemcell_path
-      ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
-      ENV['BAT_FAST'] = 'true'
+      env['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
+      env['BAT_DIRECTOR']        = director_hostname
+      env['BAT_DNS_HOST']        = director_ip
+      env['BAT_STEMCELL']        = bat_helper.bosh_stemcell_path
+      env['BAT_VCAP_PASSWORD']   = 'c1oudc0w'
+      env['BAT_FAST']            = 'true'
     end
 
     def teardown_micro

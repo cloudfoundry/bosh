@@ -9,11 +9,13 @@ module Bosh::Dev::Bat
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6') }
 
     let(:bat_helper) do
-      instance_double('Bosh::Dev::BatHelper',
-                      artifacts_dir: '/AwsRunner_fake_artifacts_dir',
-                      micro_bosh_deployment_dir: '/AwsRunner_fake_artifacts_dir/fake_micro_bosh_deployment_dir',
-                      micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
-                      bosh_stemcell_path: 'fake_bosh_stemcell_path')
+      instance_double(
+        'Bosh::Dev::BatHelper',
+        artifacts_dir:              '/AwsRunner_fake_artifacts_dir',
+        micro_bosh_deployment_dir:  '/AwsRunner_fake_artifacts_dir/fake_micro_bosh_deployment_dir',
+        micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
+        bosh_stemcell_path:         'fake_bosh_stemcell_path',
+      )
     end
 
     let(:microbosh_deployment_manifest) { instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest', write: nil) }
@@ -29,28 +31,19 @@ module Bosh::Dev::Bat
 
       Bosh::Dev::Aws::MicroBoshDeploymentManifest.stub(new: microbosh_deployment_manifest)
       Bosh::Dev::Aws::BatDeploymentManifest.stub(new: bat_deployment_manifest)
-
-      ENV.stub(:to_hash).and_return(
-        'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN',
-        'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO',
-      )
-    end
-
-    around do |example|
-      original_env = ENV
-
-      begin
-        ENV.clear
-        example.run
-      ensure
-        ENV.update(original_env)
-      end
     end
 
     describe '#run_bats' do
+      subject { described_class.new(env) }
+
       let(:director_hostname) { 'micro.fake_BOSH_VPC_SUBDOMAIN.cf-app.com' }
       let(:director_ip) { 'micro.fake_BOSH_VPC_SUBDOMAIN.cf-app.com' }
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
+      let(:env) do
+        { 'BOSH_VPC_SUBDOMAIN'            => 'fake_BOSH_VPC_SUBDOMAIN',
+          'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO',
+        }
+      end
 
       before do
         Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task)
@@ -101,21 +94,21 @@ module Bosh::Dev::Bat
       end
 
       it 'sets the the required environment variables' do
-        expect(ENV['BAT_DEPLOYMENT_SPEC']).to be_nil
-        expect(ENV['BAT_DIRECTOR']).to be_nil
-        expect(ENV['BAT_DNS_HOST']).to be_nil
-        expect(ENV['BAT_STEMCELL']).to be_nil
-        expect(ENV['BAT_VCAP_PASSWORD']).to be_nil
-        expect(ENV['BAT_FAST']).to be_nil
+        expect(env['BAT_DEPLOYMENT_SPEC']).to be_nil
+        expect(env['BAT_DIRECTOR']).to be_nil
+        expect(env['BAT_DNS_HOST']).to be_nil
+        expect(env['BAT_STEMCELL']).to be_nil
+        expect(env['BAT_VCAP_PASSWORD']).to be_nil
+        expect(env['BAT_FAST']).to be_nil
 
         subject.run_bats
 
-        expect(ENV['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
-        expect(ENV['BAT_DIRECTOR']).to eq(director_hostname)
-        expect(ENV['BAT_DNS_HOST']).to eq(director_ip)
-        expect(ENV['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
-        expect(ENV['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
-        expect(ENV['BAT_FAST']).to eq('true')
+        expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
+        expect(env['BAT_DIRECTOR']).to eq(director_hostname)
+        expect(env['BAT_DNS_HOST']).to eq(director_ip)
+        expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
+        expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
+        expect(env['BAT_FAST']).to eq('true')
       end
 
       it 'invokes the "bat" rake task' do

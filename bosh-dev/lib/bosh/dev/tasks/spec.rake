@@ -104,7 +104,7 @@ namespace :spec do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         require 'bosh/dev/bat/aws_runner'
-        Bosh::Dev::Bat::AwsRunner.new.run_bats
+        Bosh::Dev::Bat::AwsRunner.build.run_bats
       end
     end
 
@@ -173,7 +173,7 @@ namespace :spec do
       desc 'Run vSphere MicroBOSH deployment suite'
       task :micro do
         require 'bosh/dev/bat/vsphere_runner'
-        Bosh::Dev::Bat::VsphereRunner.new.run_bats
+        Bosh::Dev::Bat::VsphereRunner.build.run_bats
       end
     end
 
