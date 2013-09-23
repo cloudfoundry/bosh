@@ -117,8 +117,8 @@ describe Bat::BoshHelper do
   describe '#ssh_options' do
     context 'when both env vars BAT_VCAP_PASSWORD and BAT_VCAP_PRIVATE_KEY are set' do
       before do
-        ENV['BAT_VCAP_PASSWORD']='fake_password'
-        ENV['BAT_VCAP_PRIVATE_KEY']='fake_private_key'
+        ENV['BAT_VCAP_PASSWORD'] = 'fake_password'
+        ENV['BAT_VCAP_PRIVATE_KEY'] = 'fake_private_key'
       end
       its(:ssh_options) { should eq(private_key: 'fake_private_key', password: 'fake_password') }
     end
@@ -132,14 +132,14 @@ describe Bat::BoshHelper do
     end
 
     context 'when BAT_VCAP_PRIVATE_KEY is not set in env' do
-      before { ENV['BAT_VCAP_PASSWORD']='fake_password' }
+      before { ENV['BAT_VCAP_PASSWORD'] = 'fake_password' }
       its(:ssh_options) { should eq(password: 'fake_password', private_key: nil) }
     end
   end
 
   describe '#wait_for_vm' do
-    let(:successful_bosh_vms_output) do
-      <<OUTPUT
+    # rubocop:disable LineLength
+    let(:successful_bosh_vms_output) { <<OUTPUT }
 Deployment `jesse'
 
 Director task 1112
@@ -156,10 +156,10 @@ Task 5402 done
 
 VMs total: 3
 OUTPUT
-    end
+    # rubocop:enable LineLength
 
-    let(:bosh_vms_output_without_jesse) do
-      <<OUTPUT
+    # rubocop:disable LineLength
+    let(:bosh_vms_output_without_jesse) { <<OUTPUT }
 Deployment `jesse'
 
 Director task 1112
@@ -174,7 +174,7 @@ Task 5402 done
 
 VMs total: 1
 OUTPUT
-    end
+    # rubocop:enable LineLength
 
     context 'when "bosh vms" contains the named vm' do
       before do
@@ -241,7 +241,7 @@ OUTPUT
 
   describe '#bosh_dns_host' do
     it 'should be the value of BAT_DNS_HOST env var' do
-      ENV['BAT_DNS_HOST']='dns.hamazon.com'
+      ENV['BAT_DNS_HOST'] = 'dns.hamazon.com'
       expect(bosh_helper.bosh_dns_host).to eq('dns.hamazon.com')
     end
   end
