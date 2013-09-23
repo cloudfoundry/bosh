@@ -1,11 +1,13 @@
 require 'spec_helper'
 require 'bosh/dev/vsphere/bat_deployment_manifest'
+require 'bosh/stemcell/archive'
 require 'psych'
 
 module Bosh::Dev
   module VSphere
     describe BatDeploymentManifest do
-      subject { BatDeploymentManifest.new('fake director_uuid', 'fake stemcell_version') }
+      let(:fake_stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'bosh-infra-hyper-os') }
+      subject { BatDeploymentManifest.new('fake director_uuid', fake_stemcell_archive) }
 
       its(:filename) { should eq ('bat.yml') }
 
@@ -23,8 +25,8 @@ properties:
   static_ip: ip
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
-    version: fake stemcell_version
+    name: bosh-infra-hyper-os
+    version: 13
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@ip:4222
   network:

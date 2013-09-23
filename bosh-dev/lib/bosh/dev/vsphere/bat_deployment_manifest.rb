@@ -8,10 +8,10 @@ module Bosh::Dev
 
       attr_reader :filename
 
-      def initialize(director_uuid, stemcell_version)
+      def initialize(director_uuid, stemcell_archive)
         @env = ENV.to_hash
         @director_uuid = director_uuid
-        @stemcell_version = stemcell_version
+        @stemcell_archive = stemcell_archive
         @filename = 'bat.yml'
       end
 
@@ -21,7 +21,9 @@ module Bosh::Dev
             { 'uuid' => director_uuid,
               'static_ip' => env['BOSH_VSPHERE_BAT_IP'],
               'pool_size' => 1,
-              'stemcell' => { 'name' => 'bosh-stemcell', 'version' => stemcell_version },
+              'stemcell' => {
+                'name' => stemcell_archive.name,
+                'version' => stemcell_archive.version },
               'instances' => 1,
               'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_VSPHERE_BAT_IP']}:4222",
               'network' =>
@@ -34,7 +36,7 @@ module Bosh::Dev
 
       private
 
-      attr_reader :env, :stemcell_version, :director_uuid
+      attr_reader :env, :stemcell_archive, :director_uuid
     end
   end
 end

@@ -41,14 +41,13 @@ module Bosh::Dev::Bat
         bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
         bosh_cli_session.run_bosh "micro deploy #{bat_helper.bosh_stemcell_path}"
         bosh_cli_session.run_bosh 'login admin admin'
-
         bosh_cli_session.run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
       end
     end
 
     def create_bat_manifest
       Dir.chdir(bat_helper.artifacts_dir) do
-        bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, stemcell_archive.version)
+        bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, stemcell_archive)
         bat_deployment_manifest.write
       end
     end
@@ -67,7 +66,7 @@ module Bosh::Dev::Bat
     def teardown_micro
       Dir.chdir(bat_helper.artifacts_dir) do
         bosh_cli_session.run_bosh 'delete deployment bat', ignore_failures: true
-        bosh_cli_session.run_bosh "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true
+        bosh_cli_session.run_bosh "delete stemcell #{stemcell_archive.name} #{stemcell_archive.version}", ignore_failures: true
         bosh_cli_session.run_bosh 'micro delete', ignore_failures: true
       end
     end

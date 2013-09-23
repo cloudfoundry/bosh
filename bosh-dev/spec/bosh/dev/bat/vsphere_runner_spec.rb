@@ -6,7 +6,7 @@ module Bosh::Dev::Bat
     include FakeFS::SpecHelpers
 
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
-    let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6') }
+    let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6', name: 'bosh-infra-hyper-os') }
     let(:bat_helper) do
       instance_double('Bosh::Dev::BatHelper',
                       artifacts_dir: '/VsphereRunner_fake_artifacts_dir',
@@ -102,7 +102,7 @@ module Bosh::Dev::Bat
         end
 
         Bosh::Dev::VSphere::BatDeploymentManifest.should_receive(:new).
-          with('b6b9cbe8-66d8-4440-9bd8-bd8d1990d574', '6').and_return(bat_deployment_manifest)
+          with('b6b9cbe8-66d8-4440-9bd8-bd8d1990d574', stemcell_archive).and_return(bat_deployment_manifest)
 
         subject.run_bats
 
@@ -138,7 +138,7 @@ module Bosh::Dev::Bat
       end
 
       it 'deletes the stemcell' do
-        bosh_cli_session.should_receive(:run_bosh).with("delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
+        bosh_cli_session.should_receive(:run_bosh).with("delete stemcell #{stemcell_archive.name} #{stemcell_archive.version}", ignore_failures: true)
         subject.run_bats
       end
 
@@ -158,7 +158,7 @@ module Bosh::Dev::Bat
         end
 
         it 'deletes the stemcell' do
-          bosh_cli_session.should_receive(:run_bosh).with("delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
+          bosh_cli_session.should_receive(:run_bosh).with("delete stemcell #{stemcell_archive.name} #{stemcell_archive.version}", ignore_failures: true)
           expect { subject.run_bats }.to raise_error
         end
 
