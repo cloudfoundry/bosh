@@ -47,23 +47,23 @@ module Bat
       case what
         when Bat::Stemcell
           if stemcells.include?(stemcell)
-            puts 'stemcell already uploaded' if debug?
+            puts 'stemcell already uploaded'
           else
-            puts 'stemcell not uploaded' if debug?
+            puts 'stemcell not uploaded'
             bosh("upload stemcell #{what.to_path}")
           end
         when Bat::Release
           if releases.include?(release)
-            puts 'release already uploaded' if debug?
+            puts 'release already uploaded'
           else
-            puts 'release not uploaded' if debug?
+            puts 'release not uploaded'
             bosh("upload release #{what.to_path}")
           end
         when Bat::Deployment
           if deployments.include?(deployment)
-            puts 'deployment already deployed' if debug?
+            puts 'deployment already deployed'
           else
-            puts 'deployment not deployed' if debug?
+            puts 'deployment not deployed'
             deployment.generate_deployment_manifest(@spec)
             bosh("deployment #{deployment.to_path}")
             bosh('deploy')

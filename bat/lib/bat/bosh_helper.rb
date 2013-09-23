@@ -22,14 +22,14 @@ module Bat
         "--config #{BoshHelper.bosh_cli_config_path} " +
         '--user admin --password admin ' +
         "#{arguments} 2>&1"
-      puts("--> #{command}") if debug?
+      puts("--> #{command}")
       begin
         result = Bosh::Exec.sh(command, options)
       rescue Bosh::Exec::Error => e
         puts("Bosh command failed: #{e.output}")
         raise
       end
-      puts(result.output) if verbose?
+      puts(result.output)
       yield result if block_given?
       result
     end
@@ -141,7 +141,7 @@ module Bat
     def ssh(host, user, command, options = {})
       options = options.dup
       output = nil
-      puts "--> ssh: #{user}@#{host} '#{command}'" if debug?
+      puts "--> ssh: #{user}@#{host} '#{command}'"
 
       private_key = options.delete(:private_key)
       options[:user_known_hosts_file] = %w[/dev/null]
@@ -155,7 +155,7 @@ module Bat
         output = ssh.exec!(command)
       end
 
-      puts "--> ssh output: '#{output}'" if verbose?
+      puts "--> ssh output: '#{output}'"
       output
     end
 
@@ -175,13 +175,6 @@ module Bat
     end
 
     private
-    def debug?
-      ENV.has_key?('BAT_DEBUG')
-    end
-
-    def verbose?
-      ENV['BAT_DEBUG'] == 'verbose'
-    end
 
     def fast?
       ENV.has_key?('BAT_FAST')

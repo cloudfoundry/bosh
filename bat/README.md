@@ -23,8 +23,6 @@ The 'dns' property MUST NOT be specified in the bat deployment spec properties. 
 
 If BAT_FAST is set, the stemcell & release will not be deleted between each spec. This speeds up testing considerably!
 
-For help troubleshooting test failures, set BAT_DEBUG. For more verbosity, set BAT_DEBUG to "verbose".
-
 If you want the tests to use a specifc bosh cli (versus the default picked up in the shell PATH), set BAT_BOSH_BIN to the `bosh` path.
 
 ## BAT_DEPLOYMENT_SPEC

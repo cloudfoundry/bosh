@@ -9,11 +9,12 @@ describe Bat::BoshHelper do
 
   before do
     stub_const('ENV', {})
+    bosh_helper.stub(:puts)
   end
 
   describe '#bosh' do
     let(:bosh_exec) { class_double('Bosh::Exec').as_stubbed_const(transfer_nested_constants: true) }
-    let(:bosh_exec_result) { instance_double('Bosh::Exec::Result') }
+    let(:bosh_exec_result) { instance_double('Bosh::Exec::Result', output: 'FAKE_OUTPUT') }
 
     it 'uses Bosh::Exec to shell out to bosh' do
       expected_command = %W(
@@ -24,13 +25,13 @@ describe Bat::BoshHelper do
         --user admin --password admin
         FAKE_ARGS 2>&1
       ).join(' ')
-
+      bosh_helper.should_receive(:puts).with("--> #{expected_command}")
       bosh_exec.should_receive(:sh).with(expected_command, {}).and_return(bosh_exec_result)
 
       bosh_helper.bosh('FAKE_ARGS')
     end
 
-    it 'returns the resutl of Bosh::Exec' do
+    it 'returns the result of Bosh::Exec' do
       bosh_exec.stub(sh: bosh_exec_result)
 
       expect(bosh_helper.bosh('FAKE_ARGS')).to eq(bosh_exec_result)
@@ -44,28 +45,9 @@ describe Bat::BoshHelper do
       end
     end
 
-    context 'when env var BAT_DEBUG is set' do
-      before { ENV['BAT_DEBUG'] = 'true' }
-
-      it 'prints the command' do
-        expected_command_pattern = %w(
-          bundle exec bosh
-          --non-interactive -P 1
-          --config .* --user admin --password admin FAKE_ARGS 2>&1
-        ).join(' ')
-        bosh_helper.stub(:puts)
-        bosh_exec.stub(:sh).with(/^#{expected_command_pattern}/, {}).and_return(bosh_exec_result)
-        bosh_helper.should_receive(:puts).with(/^--> #{expected_command_pattern}/)
-
-        bosh_helper.bosh('FAKE_ARGS')
-      end
-    end
-
     context 'when bosh command raises an error' do
-      it 'prints Bosh::Exec::Error messages and re-reases' do
+      it 'prints Bosh::Exec::Error messages and re-raises' do
         bosh_exec.stub(:sh).and_raise(Bosh::Exec::Error.new(1, 'fake command', 'fake output'))
-        # printing out that error is annoying
-        bosh_helper.stub(:puts)
 
         expect {
           bosh_helper.bosh('FAKE_ARG')
@@ -73,15 +55,10 @@ describe Bat::BoshHelper do
       end
     end
 
-    it 'prints output if env var BAT_DEBUG is verbose' do
-      ENV['BAT_DEBUG'] = 'verbose'
-      bosh_helper.stub(:puts)
-
-      fake_output = 'fake output'
-      bosh_exec_result.stub(output: fake_output)
+    it 'prints the output from the Bosh::Exec result' do
       bosh_exec.stub(:sh).and_return(bosh_exec_result)
 
-      bosh_helper.should_receive(:puts).with(fake_output)
+      bosh_helper.should_receive(:puts).with('FAKE_OUTPUT')
 
       bosh_helper.bosh('fake arg')
     end
@@ -144,7 +121,7 @@ describe Bat::BoshHelper do
         ENV['BAT_VCAP_PASSWORD']='fake_password'
         ENV['BAT_VCAP_PRIVATE_KEY']='fake_private_key'
       end
-      its(:ssh_options) { should eq(private_key: 'fake_private_key', password: 'fake_password')}
+      its(:ssh_options) { should eq(private_key: 'fake_private_key', password: 'fake_password') }
     end
 
     context 'when BAT_VCAP_PASSWORD is not set in env' do
