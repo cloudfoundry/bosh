@@ -103,8 +103,8 @@ namespace :spec do
     namespace :aws do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
-        require 'bosh/dev/bat/aws_runner'
-        Bosh::Dev::Bat::AwsRunner.build.run_bats
+        require 'bosh/dev/bat/runner'
+        Bosh::Dev::Bat::Runner.build.run_bats
       end
     end
 

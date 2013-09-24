@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'bosh/dev/bat/aws_runner'
+require 'bosh/dev/bat/runner'
 
 module Bosh::Dev::Bat
-  describe AwsRunner do
+  describe Runner do
     include FakeFS::SpecHelpers
 
     describe '.build' do

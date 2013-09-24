@@ -8,7 +8,7 @@ require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 require 'bosh/dev/aws/bat_deployment_manifest'
 
 module Bosh::Dev::Bat
-  class AwsRunner
+  class Runner
     # rubocop:disable ParameterLists
     def self.build
       env                           = ENV
