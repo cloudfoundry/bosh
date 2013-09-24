@@ -100,7 +100,6 @@ module Bosh::Dev::Bat
         expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
         expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
-        expect(env['BAT_FAST']).to eq('true')
       end
 
       it 'invokes the "bat" rake task' do
