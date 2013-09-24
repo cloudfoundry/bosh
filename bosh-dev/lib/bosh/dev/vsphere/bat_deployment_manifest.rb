@@ -8,8 +8,8 @@ module Bosh::Dev
 
       attr_reader :filename
 
-      def initialize(director_uuid, stemcell_archive)
-        @env = ENV.to_hash
+      def initialize(env, director_uuid, stemcell_archive)
+        @env = env
         @director_uuid = director_uuid
         @stemcell_archive = stemcell_archive
         @filename = 'bat.yml'
@@ -18,7 +18,7 @@ module Bosh::Dev
       def to_h
         { 'cpi' => 'vsphere',
           'properties' =>
-            { 'uuid' => director_uuid,
+            { 'uuid' => director_uuid.value,
               'static_ip' => env['BOSH_VSPHERE_BAT_IP'],
               'pool_size' => 1,
               'stemcell' => {

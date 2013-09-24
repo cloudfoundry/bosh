@@ -8,23 +8,33 @@ module Bosh::Dev::Bat
 
     describe '.build' do
       it 'returns vsphere runner with injected env and proper director address' do
+        bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
+        Bosh::Dev::BoshCliSession
+          .should_receive(:new)
+          .and_return(bosh_cli_session)
+
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
         Bosh::Dev::Bat::DirectorAddress
           .should_receive(:from_env)
           .with(ENV, 'BOSH_VSPHERE_MICROBOSH_IP')
           .and_return(director_address)
 
+        director_uuid = instance_double('Bosh::Dev::Bat::DirectorUuid')
+        Bosh::Dev::Bat::DirectorUuid
+          .should_receive(:new)
+          .with(bosh_cli_session)
+          .and_return(director_uuid)
+
         runner = instance_double('Bosh::Dev::Bat::VsphereRunner')
         described_class
           .should_receive(:new)
-          .with(ENV, director_address)
+          .with(ENV, director_address, director_uuid, bosh_cli_session)
           .and_return(runner)
 
         expect(described_class.build).to eq(runner)
       end
     end
 
-    let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6', name: 'bosh-infra-hyper-os') }
 
     let(:bat_helper) do
@@ -44,7 +54,6 @@ module Bosh::Dev::Bat
       FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
 
       Bosh::Dev::BatHelper.stub(:new).with('vsphere', anything).and_return(bat_helper)
-      Bosh::Dev::BoshCliSession.stub(new: bosh_cli_session)
       Bosh::Stemcell::Archive.stub(:new).with(bat_helper.bosh_stemcell_path).and_return(stemcell_archive)
 
       Bosh::Dev::VSphere::MicroBoshDeploymentManifest.stub(new: microbosh_deployment_manifest)
@@ -52,9 +61,11 @@ module Bosh::Dev::Bat
     end
 
     describe '#run_bats' do
-      subject { described_class.new(env, director_address) }
+      subject { described_class.new(env, director_address, director_uuid, bosh_cli_session) }
       let(:env) { {} }
       let(:director_address) { DirectorAddress.new('director-hostname', 'director-ip') }
+      let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid') }
+      let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
 
       before { Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task) }
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
@@ -90,27 +101,12 @@ module Bosh::Dev::Bat
       end
 
       it 'generates a bat manifest' do
-        status_output =
-          <<-STATUS
-            Director
-              Name       microbosh-vsphere-jenkins
-              URL        https://192.168.202.6:25555
-              Version    1.5.0.pre.857 (release:751e27c3 bosh:751e27c3)
-              User       admin
-              UUID       b6b9cbe8-66d8-4440-9bd8-bd8d1990d574
-              CPI        vsphere
-              dns        enabled (domain_name: microbosh)
-              compiled_package_cache disabled
-              snapshots  disabled
-        STATUS
-        bosh_cli_session.stub(:run_bosh).with('status').and_return(status_output)
-
         bat_deployment_manifest.should_receive(:write) do
           FileUtils.touch(File.join(Dir.pwd, 'FAKE_BAT_MANIFEST'))
         end
 
         Bosh::Dev::VSphere::BatDeploymentManifest.should_receive(:new).
-          with('b6b9cbe8-66d8-4440-9bd8-bd8d1990d574', stemcell_archive).and_return(bat_deployment_manifest)
+          with(env, director_uuid, stemcell_archive).and_return(bat_deployment_manifest)
 
         subject.run_bats
 
