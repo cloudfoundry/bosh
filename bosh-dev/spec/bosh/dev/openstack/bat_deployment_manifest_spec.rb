@@ -2,36 +2,35 @@ require 'spec_helper'
 require 'bosh/dev/openstack/bat_deployment_manifest'
 require 'psych'
 
-module Bosh::Dev
-  module Openstack
-    describe BatDeploymentManifest do
-      subject { described_class.new(env, net_type, director_uuid, stemcell_version) }
-      let(:env) { {} }
-      let(:net_type) { 'dynamic' }
-      let(:director_uuid) { 'fake director_uuid' }
-      let(:stemcell_version) { 'fake stemcell_version' }
+module Bosh::Dev::Openstack
+  describe BatDeploymentManifest do
+    subject { described_class.new(env, net_type, director_uuid, stemcell_version) }
+    let(:env) { {} }
+    let(:net_type) { 'dynamic' }
+    let(:director_uuid) { 'fake director_uuid' }
+    let(:stemcell_version) { 'fake stemcell_version' }
 
-      its(:filename) { should eq ('bat.yml') }
+    its(:filename) { should eq ('bat.yml') }
 
-      it 'is writable' do
-        expect(subject).to be_a(WritableManifest)
+    it 'is writable' do
+      expect(subject).to be_a(Bosh::Dev::WritableManifest)
+    end
+
+    describe '#to_h' do
+      before do
+        env.merge!(
+          'BOSH_OPENSTACK_VIP_BAT_IP'       => 'vip',
+          'BOSH_OPENSTACK_NET_ID'           => 'net_id',
+          'BOSH_OPENSTACK_NETWORK_CIDR'     => 'net_cidr',
+          'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
+          'BOSH_OPENSTACK_NETWORK_STATIC'   => 'net_static',
+          'BOSH_OPENSTACK_NETWORK_GATEWAY'  => 'net_gateway',
+        )
       end
 
-      describe '#to_h' do
-        before do
-          env.merge!(
-            'BOSH_OPENSTACK_VIP_BAT_IP'       => 'vip',
-            'BOSH_OPENSTACK_NET_ID'           => 'net_id',
-            'BOSH_OPENSTACK_NETWORK_CIDR'     => 'net_cidr',
-            'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
-            'BOSH_OPENSTACK_NETWORK_STATIC'   => 'net_static',
-            'BOSH_OPENSTACK_NETWORK_GATEWAY'  => 'net_gateway',
-          )
-        end
-
-        context 'manual' do
-          let(:net_type) { 'manual' }
-          let(:expected_yml) { <<YAML }
+      context 'manual' do
+        let(:net_type) { 'manual' }
+        let(:expected_yml) { <<YAML }
 ---
 cpi: openstack
 properties:
@@ -55,14 +54,14 @@ properties:
     net_id: net_id
 YAML
 
-          it 'generates the correct YAML' do
-            expect(subject.to_h).to eq(Psych.load(expected_yml))
-          end
+        it 'generates the correct YAML' do
+          expect(subject.to_h).to eq(Psych.load(expected_yml))
         end
+      end
 
-        context 'dynamic' do
-          let(:net_type) { 'dynamic' }
-          let(:expected_yml) { <<YAML }
+      context 'dynamic' do
+        let(:net_type) { 'dynamic' }
+        let(:expected_yml) { <<YAML }
 ---
 cpi: openstack
 properties:
@@ -78,9 +77,8 @@ properties:
   security_groups: default
 YAML
 
-          it 'generates the correct YAML' do
-            expect(subject.to_h).to eq(Psych.load(expected_yml))
-          end
+        it 'generates the correct YAML' do
+          expect(subject.to_h).to eq(Psych.load(expected_yml))
         end
       end
     end
