@@ -13,10 +13,7 @@ namespace :spec do
   desc 'Run unit and functional tests for each BOSH component gem'
   task :parallel_unit do
     require 'common/thread_pool'
-
-    trap('INT') do
-      exit
-    end
+    trap('INT') { exit }
 
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
@@ -59,13 +56,8 @@ namespace :spec do
 
   desc 'Run integration and unit tests in parallel'
   task :parallel_all do
-    unit = Thread.new do
-      Rake::Task['spec:parallel_unit'].invoke
-    end
-    integration = Thread.new do
-      Rake::Task['spec:integration'].invoke
-    end
-
+    unit        = Thread.new { Rake::Task['spec:parallel_unit'].invoke }
+    integration = Thread.new { Rake::Task['spec:integration'].invoke }
     [unit, integration].each(&:join)
   end
 
@@ -91,9 +83,11 @@ namespace :spec do
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/build'
-      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
-                                                                                  name: 'bosh-stemcell',
-                                                                                  light: false)
+      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(
+        infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
+        name: 'bosh-stemcell',
+        light: false
+      )
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
