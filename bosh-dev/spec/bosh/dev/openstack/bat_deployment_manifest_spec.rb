@@ -1,14 +1,16 @@
 require 'spec_helper'
 require 'bosh/dev/openstack/bat_deployment_manifest'
 require 'psych'
+require 'bosh/dev/bat/director_uuid'
+require 'bosh/stemcell/archive'
 
 module Bosh::Dev::Openstack
   describe BatDeploymentManifest do
-    subject { described_class.new(env, net_type, director_uuid, stemcell_version) }
+    subject { described_class.new(env, net_type, director_uuid, stemcell_archive) }
     let(:env) { {} }
     let(:net_type) { 'dynamic' }
-    let(:director_uuid) { 'fake director_uuid' }
-    let(:stemcell_version) { 'fake stemcell_version' }
+    let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid', value: 'director-uuid') }
+    let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'bosh-infra-hyper-os') }
 
     its(:filename) { should eq ('bat.yml') }
 
@@ -35,11 +37,11 @@ module Bosh::Dev::Openstack
 cpi: openstack
 properties:
   static_ip: vip
-  uuid: fake director_uuid
+  uuid: director-uuid
   pool_size: 1
   stemcell:
     name: bosh-stemcell
-    version: fake stemcell_version
+    version: 13
   instances: 1
   key_name:  jenkins
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
@@ -66,11 +68,11 @@ YAML
 cpi: openstack
 properties:
   static_ip: vip
-  uuid: fake director_uuid
+  uuid: director-uuid
   pool_size: 1
   stemcell:
     name: bosh-stemcell
-    version: fake stemcell_version
+    version: 13
   instances: 1
   key_name:  jenkins
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222

@@ -7,11 +7,11 @@ module Bosh::Dev::Openstack
 
     attr_reader :filename
 
-    def initialize(env, net_type, director_uuid, stemcell_version)
+    def initialize(env, net_type, director_uuid, stemcell_archive)
       @env = env
       @net_type = net_type
       @director_uuid = director_uuid
-      @stemcell_version = stemcell_version
+      @stemcell_archive = stemcell_archive
       @filename = 'bat.yml'
     end
 
@@ -21,9 +21,9 @@ module Bosh::Dev::Openstack
         'properties' =>
           {
             'static_ip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
-            'uuid' => director_uuid,
+            'uuid' => director_uuid.value,
             'pool_size' => 1,
-            'stemcell' => { 'name' => 'bosh-stemcell', 'version' => stemcell_version },
+            'stemcell' => { 'name' => 'bosh-stemcell', 'version' => stemcell_archive.version },
             'instances' => 1,
             'key_name' => 'jenkins',
             'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
@@ -48,6 +48,6 @@ module Bosh::Dev::Openstack
 
     private
 
-    attr_reader :env, :net_type, :stemcell_version, :director_uuid
+    attr_reader :env, :net_type, :stemcell_archive, :director_uuid
   end
 end
