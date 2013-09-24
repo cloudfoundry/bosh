@@ -8,8 +8,8 @@ module Bosh::Dev
 
       attr_reader :filename
 
-      def initialize(net_type)
-        @env = ENV.to_hash
+      def initialize(env, net_type)
+        @env = env
         @net_type = net_type
         @filename = 'micro_bosh.yml'
       end

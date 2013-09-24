@@ -5,9 +5,9 @@ require 'yaml'
 module Bosh::Dev
   module Openstack
     describe MicroBoshDeploymentManifest do
+      subject { MicroBoshDeploymentManifest.new(env, net_type) }
+      let(:env) { {} }
       let(:net_type) { 'dynamic' }
-
-      subject { MicroBoshDeploymentManifest.new(net_type) }
 
       its(:filename) { should eq('micro_bosh.yml') }
 
@@ -17,17 +17,17 @@ module Bosh::Dev
 
       describe '#to_h' do
         before do
-          ENV.stub(:to_hash).and_return({
-                                          'BOSH_OPENSTACK_VIP_DIRECTOR_IP' => 'vip',
-                                          'BOSH_OPENSTACK_MANUAL_IP' => 'ip',
-                                          'BOSH_OPENSTACK_NET_ID' => 'net_id',
-                                          'BOSH_OPENSTACK_AUTH_URL' => 'auth_url',
-                                          'BOSH_OPENSTACK_USERNAME' => 'username',
-                                          'BOSH_OPENSTACK_API_KEY' => 'api_key',
-                                          'BOSH_OPENSTACK_TENANT' => 'tenant',
-                                          'BOSH_OPENSTACK_REGION' => 'region',
-                                          'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
-                                        })
+          env.merge!(
+            'BOSH_OPENSTACK_VIP_DIRECTOR_IP' => 'vip',
+            'BOSH_OPENSTACK_MANUAL_IP' => 'ip',
+            'BOSH_OPENSTACK_NET_ID' => 'net_id',
+            'BOSH_OPENSTACK_AUTH_URL' => 'auth_url',
+            'BOSH_OPENSTACK_USERNAME' => 'username',
+            'BOSH_OPENSTACK_API_KEY' => 'api_key',
+            'BOSH_OPENSTACK_TENANT' => 'tenant',
+            'BOSH_OPENSTACK_REGION' => 'region',
+            'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
+          )
         end
 
         context 'when net_type is "manual"' do

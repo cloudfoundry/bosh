@@ -128,7 +128,7 @@ namespace :spec do
         chdir(bat_helper.artifacts_dir) do
           chdir(bat_helper.micro_bosh_deployment_dir) do
 
-            micro_deployment_manifest = Bosh::Dev::Openstack::MicroBoshDeploymentManifest.new(args.net_type)
+            micro_deployment_manifest = Bosh::Dev::Openstack::MicroBoshDeploymentManifest.new(ENV, args.net_type)
             micro_deployment_manifest.write
           end
           run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
