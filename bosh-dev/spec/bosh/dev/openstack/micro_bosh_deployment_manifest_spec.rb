@@ -2,38 +2,36 @@ require 'spec_helper'
 require 'bosh/dev/openstack/micro_bosh_deployment_manifest'
 require 'yaml'
 
-module Bosh::Dev
-  module Openstack
-    describe MicroBoshDeploymentManifest do
-      subject { MicroBoshDeploymentManifest.new(env, net_type) }
-      let(:env) { {} }
-      let(:net_type) { 'dynamic' }
+module Bosh::Dev::Openstack
+  describe MicroBoshDeploymentManifest do
+    subject { MicroBoshDeploymentManifest.new(env, net_type) }
+    let(:env) { {} }
+    let(:net_type) { 'dynamic' }
 
-      its(:filename) { should eq('micro_bosh.yml') }
+    its(:filename) { should eq('micro_bosh.yml') }
 
-      it 'is writable' do
-        expect(subject).to be_a(WritableManifest)
+    it 'is writable' do
+      expect(subject).to be_a(Bosh::Dev::WritableManifest)
+    end
+
+    describe '#to_h' do
+      before do
+        env.merge!(
+          'BOSH_OPENSTACK_VIP_DIRECTOR_IP' => 'vip',
+          'BOSH_OPENSTACK_MANUAL_IP' => 'ip',
+          'BOSH_OPENSTACK_NET_ID' => 'net_id',
+          'BOSH_OPENSTACK_AUTH_URL' => 'auth_url',
+          'BOSH_OPENSTACK_USERNAME' => 'username',
+          'BOSH_OPENSTACK_API_KEY' => 'api_key',
+          'BOSH_OPENSTACK_TENANT' => 'tenant',
+          'BOSH_OPENSTACK_REGION' => 'region',
+          'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
+        )
       end
 
-      describe '#to_h' do
-        before do
-          env.merge!(
-            'BOSH_OPENSTACK_VIP_DIRECTOR_IP' => 'vip',
-            'BOSH_OPENSTACK_MANUAL_IP' => 'ip',
-            'BOSH_OPENSTACK_NET_ID' => 'net_id',
-            'BOSH_OPENSTACK_AUTH_URL' => 'auth_url',
-            'BOSH_OPENSTACK_USERNAME' => 'username',
-            'BOSH_OPENSTACK_API_KEY' => 'api_key',
-            'BOSH_OPENSTACK_TENANT' => 'tenant',
-            'BOSH_OPENSTACK_REGION' => 'region',
-            'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
-          )
-        end
-
-        context 'when net_type is "manual"' do
-          let(:net_type) { 'manual' }
-          let(:expected_yml) do
-            <<YAML
+      context 'when net_type is "manual"' do
+        let(:net_type) { 'manual' }
+        let(:expected_yml) { <<YAML }
 ---
 name: microbosh-openstack-manual
 logging:
@@ -70,17 +68,15 @@ apply_spec:
       address: vip
   properties: {}
 YAML
-          end
 
-          it 'generates the correct YAML' do
-            expect(subject.to_h).to eq(Psych.load(expected_yml))
-          end
+        it 'generates the correct YAML' do
+          expect(subject.to_h).to eq(Psych.load(expected_yml))
         end
+      end
 
-        context 'when net_type is "dynamic"' do
-          let(:net_type) { 'dynamic' }
-          let(:expected_yml) do
-            <<YAML
+      context 'when net_type is "dynamic"' do
+        let(:net_type) { 'dynamic' }
+        let(:expected_yml) { <<YAML }
 ---
 name: microbosh-openstack-dynamic
 logging:
@@ -114,11 +110,9 @@ apply_spec:
       address: vip
   properties: {}
 YAML
-          end
 
-          it 'generates the correct YAML' do
-            expect(subject.to_h).to eq(Psych.load(expected_yml))
-          end
+        it 'generates the correct YAML' do
+          expect(subject.to_h).to eq(Psych.load(expected_yml))
         end
       end
     end
