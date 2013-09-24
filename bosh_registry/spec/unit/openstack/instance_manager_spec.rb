@@ -3,7 +3,6 @@
 require "spec_helper"
 
 describe Bosh::Registry::InstanceManager do
-
   before(:each) do
     @compute = double(Fog::Compute)
     Fog::Compute.stub(:new).and_return(@compute)
@@ -40,7 +39,6 @@ describe Bosh::Registry::InstanceManager do
   end
 
   describe "reading settings" do
-    
     it "returns settings after verifying IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
       actual_ip_is("10.0.0.1", nil)
@@ -97,5 +95,4 @@ describe Bosh::Registry::InstanceManager do
     manager.openstack
     Excon.defaults[:ssl_verify_peer].should be_false
   end
-
 end
