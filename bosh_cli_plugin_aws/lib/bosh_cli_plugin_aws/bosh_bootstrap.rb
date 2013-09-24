@@ -21,7 +21,7 @@ module Bosh
       def validate_requirements
 
         release_exist = director.list_releases.detect { |r| r['name'] == 'bosh' }
-        stemcell_exist = director.list_stemcells.detect { |r| r['name'] == 'bosh-stemcell' }
+        stemcell_exist = director.list_stemcells.first
 
         existing_deployments = director.list_deployments.map { |deployment| deployment['name'] }
 

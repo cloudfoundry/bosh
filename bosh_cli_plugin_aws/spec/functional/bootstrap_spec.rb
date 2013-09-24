@@ -158,7 +158,7 @@ describe 'AWS Bootstrap commands' do
       end
     end
 
-    context 'when the target already has a release and a stemcell' do
+    context 'when the target already has a release, possibly a stemcell' do
       before do
         aws.config.target = aws.options[:target] = 'http://localhost:25555'
 
@@ -177,7 +177,7 @@ describe 'AWS Bootstrap commands' do
         ]
 
         stub_request(:get, 'http://127.0.0.1:25555/stemcells').
-            to_return(:status => 200, :body => '[{"name":"bosh-stemcell","version":"2013-03-21_01-53-17","cid":"ami-1c990175"}]')
+            to_return(:status => 200, :body => '[{"name":"bosh-stemcell-ubuntu","version":"2013-03-21_01-53-17","cid":"ami-1c990175"}]')
         stub_request(:get, 'http://127.0.0.1:25555/releases').
             with(:headers => {'Content-Type' => 'application/json'}).
             to_return(:status => 200, :body => releases.to_json)
@@ -212,6 +212,15 @@ describe 'AWS Bootstrap commands' do
         end.to_not raise_error
       end
 
+      context 'when the target has no stemcell' do
+        it 'uploads a stemcell' do
+          stub_request(:get, 'http://127.0.0.1:25555/stemcells').
+            to_return(status: 200, body: '[]')
+          mock_s3.should_receive(:copy_remote_file)
+          Bosh::Cli::Command::Stemcell.any_instance.should_receive(:upload)
+          aws.bootstrap_bosh
+        end
+      end
     end
 
     context 'when the target already have a deployment' do
