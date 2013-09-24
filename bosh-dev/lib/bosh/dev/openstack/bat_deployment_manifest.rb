@@ -18,16 +18,18 @@ module Bosh::Dev::Openstack
     def to_h
       manifest_hash = {
         'cpi' => 'openstack',
-        'properties' =>
-          {
-            'static_ip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
-            'uuid' => director_uuid.value,
-            'pool_size' => 1,
-            'stemcell' => { 'name' => 'bosh-stemcell', 'version' => stemcell_archive.version },
-            'instances' => 1,
-            'key_name' => 'jenkins',
-            'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
-          }
+        'properties' => {
+          'static_ip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
+          'uuid' => director_uuid.value,
+          'pool_size' => 1,
+          'stemcell' => {
+            'name' => stemcell_archive.name,
+            'version' => stemcell_archive.version
+          },
+          'instances' => 1,
+          'key_name' => 'jenkins',
+          'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
+        }
       }
 
       if net_type == 'manual'

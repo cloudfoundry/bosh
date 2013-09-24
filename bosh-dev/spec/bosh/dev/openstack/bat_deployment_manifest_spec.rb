@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/openstack/bat_deployment_manifest'
+require 'bosh/stemcell/archive'
 require 'psych'
 require 'bosh/dev/bat/director_uuid'
 require 'bosh/stemcell/archive'
@@ -10,7 +11,7 @@ module Bosh::Dev::Openstack
     let(:env) { {} }
     let(:net_type) { 'dynamic' }
     let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid', value: 'director-uuid') }
-    let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'bosh-infra-hyper-os') }
+    let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'stemcell-name') }
 
     its(:filename) { should eq ('bat.yml') }
 
@@ -40,7 +41,7 @@ properties:
   uuid: director-uuid
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
+    name: stemcell-name
     version: 13
   instances: 1
   key_name:  jenkins
@@ -71,7 +72,7 @@ properties:
   uuid: director-uuid
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
+    name: stemcell-name
     version: 13
   instances: 1
   key_name:  jenkins
