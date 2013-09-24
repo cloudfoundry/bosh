@@ -1,9 +1,28 @@
 require 'spec_helper'
 require 'bosh/dev/bat/vsphere_runner'
+require 'bosh/dev/bat/director_address'
 
 module Bosh::Dev::Bat
   describe VsphereRunner do
     include FakeFS::SpecHelpers
+
+    describe '.build' do
+      it 'returns vsphere runner with injected env and proper director address' do
+        director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
+        Bosh::Dev::Bat::DirectorAddress
+          .should_receive(:from_env)
+          .with(ENV, 'BOSH_VSPHERE_MICROBOSH_IP')
+          .and_return(director_address)
+
+        runner = instance_double('Bosh::Dev::Bat::VsphereRunner')
+        described_class
+          .should_receive(:new)
+          .with(ENV, director_address)
+          .and_return(runner)
+
+        expect(described_class.build).to eq(runner)
+      end
+    end
 
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6', name: 'bosh-infra-hyper-os') }
@@ -33,14 +52,12 @@ module Bosh::Dev::Bat
     end
 
     describe '#run_bats' do
-      subject { described_class.new(env) }
+      subject { described_class.new(env, director_address) }
+      let(:env) { {} }
+      let(:director_address) { DirectorAddress.new('director-hostname', 'director-ip') }
 
+      before { Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task) }
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
-      let(:env) { { 'BOSH_VSPHERE_MICROBOSH_IP' => 'fake_BOSH_VSPHERE_MICROBOSH_IP' } }
-
-      before do
-        Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task)
-      end
 
       it 'generates a micro manifest' do
         microbosh_deployment_manifest.should_receive(:write) do
@@ -111,8 +128,8 @@ module Bosh::Dev::Bat
         subject.run_bats
 
         expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
-        expect(env['BAT_DIRECTOR']).to eq('fake_BOSH_VSPHERE_MICROBOSH_IP')
-        expect(env['BAT_DNS_HOST']).to eq('fake_BOSH_VSPHERE_MICROBOSH_IP')
+        expect(env['BAT_DIRECTOR']).to eq('director-hostname')
+        expect(env['BAT_DNS_HOST']).to eq('director-ip')
         expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
         expect(env['BAT_FAST']).to eq('true')
