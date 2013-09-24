@@ -2,34 +2,59 @@ require 'resolv'
 require 'bosh/dev/bat'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/director_address'
+require 'bosh/dev/bat/director_uuid'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/stemcell/archive'
 require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 require 'bosh/dev/aws/bat_deployment_manifest'
+require 'bosh/dev/vsphere/micro_bosh_deployment_manifest'
+require 'bosh/dev/vsphere/bat_deployment_manifest'
 
 module Bosh::Dev::Bat
   class Runner
     # rubocop:disable ParameterLists
     def self.build_aws
-      env                           = ENV
-      bat_helper                    = Bosh::Dev::BatHelper.new('aws', :dont_care)
-      director_address              = DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
-      bosh_cli_session              = Bosh::Dev::BoshCliSession.new
-      stemcell_archive              = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
-      microbosh_deployment_manifest = Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(env, bosh_cli_session)
-      bat_deployment_manifest       = Bosh::Dev::Aws::BatDeploymentManifest.new(env,
-                                                                                bosh_cli_session,
-                                                                                stemcell_archive.version)
-      new(env, bat_helper, director_address, bosh_cli_session, stemcell_archive, microbosh_deployment_manifest, bat_deployment_manifest)
+      env              = ENV
+      bat_helper       = Bosh::Dev::BatHelper.new('aws', :dont_care)
+      director_address = DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
+      bosh_cli_session = Bosh::Dev::BoshCliSession.new
+      stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
+
+      microbosh_deployment_manifest =
+        Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(env, bosh_cli_session)
+      bat_deployment_manifest =
+        Bosh::Dev::Aws::BatDeploymentManifest.new(env, bosh_cli_session, stemcell_archive.version)
+
+      new(env, bat_helper, director_address, bosh_cli_session, stemcell_archive,
+          microbosh_deployment_manifest, bat_deployment_manifest)
     end
 
-    def initialize(env,
+    def self.build_vsphere
+      env              = ENV
+      bat_helper       = Bosh::Dev::BatHelper.new('vsphere', :dont_care)
+      director_address = DirectorAddress.from_env(env, 'BOSH_VSPHERE_MICROBOSH_IP')
+      bosh_cli_session = Bosh::Dev::BoshCliSession.new
+      director_uuid    = DirectorUuid.new(bosh_cli_session)
+      stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
+
+      microbosh_deployment_manifest =
+        Bosh::Dev::VSphere::MicroBoshDeploymentManifest.new
+      bat_deployment_manifest =
+        Bosh::Dev::VSphere::BatDeploymentManifest.new(env, director_uuid, stemcell_archive.version)
+
+      new(env, bat_helper, director_address, bosh_cli_session, stemcell_archive,
+          microbosh_deployment_manifest, bat_deployment_manifest)
+    end
+
+    def initialize(
+      env,
       bat_helper,
       director_address,
       bosh_cli_session,
       stemcell_archive,
       microbosh_deployment_manifest,
-      bat_deployment_manifest)
+      bat_deployment_manifest
+    )
       @env                           = env
       @bat_helper                    = bat_helper
       @director_address              = director_address
