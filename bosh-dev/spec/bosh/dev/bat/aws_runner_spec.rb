@@ -16,6 +16,12 @@ module Bosh::Dev::Bat
           .with('aws', :dont_care)
           .and_return(bat_helper)
 
+        director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
+        Bosh::Dev::Bat::DirectorAddress
+          .should_receive(:resolved_from_env)
+          .with(ENV, 'BOSH_VPC_SUBDOMAIN')
+          .and_return(director_address)
+
         bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
         Bosh::Dev::BoshCliSession
           .should_receive(:new)
@@ -45,6 +51,7 @@ module Bosh::Dev::Bat
         described_class.should_receive(:new).with(
           ENV,
           bat_helper,
+          director_address,
           bosh_cli_session,
           stemcell_archive,
           microbosh_deployment_manifest,
@@ -60,6 +67,7 @@ module Bosh::Dev::Bat
         described_class.new(
           env,
           bat_helper,
+          director_address,
           bosh_cli_session,
           stemcell_archive,
           microbosh_deployment_manifest,
@@ -83,6 +91,8 @@ module Bosh::Dev::Bat
         )
       end
 
+      let(:director_address) { DirectorAddress.new('director-hostname', 'director-ip') }
+
       let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
       let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6') }
 
@@ -96,10 +106,6 @@ module Bosh::Dev::Bat
 
       before { Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task) }
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
-
-      before { Resolv.stub(:getaddress).with(director_hostname).and_return(director_ip) }
-      let(:director_hostname) { 'micro.fake_BOSH_VPC_SUBDOMAIN.cf-app.com' }
-      let(:director_ip) { 'micro.fake_BOSH_VPC_SUBDOMAIN.cf-app.com' }
 
       it 'generates a micro manifest' do
         microbosh_deployment_manifest.should_receive(:write) do
@@ -144,8 +150,8 @@ module Bosh::Dev::Bat
       it 'sets the the required environment variables' do
         subject.run_bats
         expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
-        expect(env['BAT_DIRECTOR']).to eq(director_hostname)
-        expect(env['BAT_DNS_HOST']).to eq(director_ip)
+        expect(env['BAT_DIRECTOR']).to eq('director-hostname')
+        expect(env['BAT_DNS_HOST']).to eq('director-ip')
         expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
         expect(env['BAT_FAST']).to eq('true')

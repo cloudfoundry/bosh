@@ -1,6 +1,7 @@
 require 'resolv'
 require 'bosh/dev/bat'
 require 'bosh/dev/bat_helper'
+require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/stemcell/archive'
 require 'bosh/dev/aws/micro_bosh_deployment_manifest'
@@ -12,23 +13,26 @@ module Bosh::Dev::Bat
     def self.build
       env                           = ENV
       bat_helper                    = Bosh::Dev::BatHelper.new('aws', :dont_care)
+      director_address              = DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
       bosh_cli_session              = Bosh::Dev::BoshCliSession.new
       stemcell_archive              = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
       microbosh_deployment_manifest = Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(env, bosh_cli_session)
       bat_deployment_manifest       = Bosh::Dev::Aws::BatDeploymentManifest.new(env,
                                                                                 bosh_cli_session,
                                                                                 stemcell_archive.version)
-      new(env, bat_helper, bosh_cli_session, stemcell_archive, microbosh_deployment_manifest, bat_deployment_manifest)
+      new(env, bat_helper, director_address, bosh_cli_session, stemcell_archive, microbosh_deployment_manifest, bat_deployment_manifest)
     end
 
     def initialize(env,
       bat_helper,
+      director_address,
       bosh_cli_session,
       stemcell_archive,
       microbosh_deployment_manifest,
       bat_deployment_manifest)
       @env                           = env
       @bat_helper                    = bat_helper
+      @director_address              = director_address
       @bosh_cli_session              = bosh_cli_session
       @stemcell_archive              = stemcell_archive
       @microbosh_deployment_manifest = microbosh_deployment_manifest
@@ -50,6 +54,7 @@ module Bosh::Dev::Bat
 
     attr_reader :env,
                 :bat_helper,
+                :director_address,
                 :bosh_cli_session,
                 :stemcell_archive,
                 :microbosh_deployment_manifest,
@@ -80,10 +85,9 @@ module Bosh::Dev::Bat
 
     def prepare_bat_deployment
       create_bat_manifest
-
       env['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-      env['BAT_DIRECTOR']        = director_hostname
-      env['BAT_DNS_HOST']        = director_ip
+      env['BAT_DIRECTOR']        = director_address.hostname
+      env['BAT_DNS_HOST']        = director_address.ip
       env['BAT_STEMCELL']        = bat_helper.bosh_stemcell_path
       env['BAT_VCAP_PASSWORD']   = 'c1oudc0w'
       env['BAT_FAST']            = 'true'
@@ -95,14 +99,6 @@ module Bosh::Dev::Bat
         bosh_cli_session.run_bosh "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true
         bosh_cli_session.run_bosh 'micro delete', ignore_failures: true
       end
-    end
-
-    def director_hostname
-      "micro.#{env.fetch('BOSH_VPC_SUBDOMAIN')}.cf-app.com"
-    end
-
-    def director_ip
-      Resolv.getaddress(director_hostname)
     end
   end
 end
