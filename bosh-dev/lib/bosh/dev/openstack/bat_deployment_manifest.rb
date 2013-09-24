@@ -8,8 +8,8 @@ module Bosh::Dev
 
       attr_reader :filename
 
-      def initialize(net_type, director_uuid, stemcell_version)
-        @env = ENV.to_hash
+      def initialize(env, net_type, director_uuid, stemcell_version)
+        @env = env
         @net_type = net_type
         @director_uuid = director_uuid
         @stemcell_version = stemcell_version

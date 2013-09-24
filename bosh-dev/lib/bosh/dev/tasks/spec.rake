@@ -140,7 +140,7 @@ namespace :spec do
           director_uuid = /UUID(\s)+((\w+-)+\w+)/.match(status)[2]
           st_version = stemcell_version(bat_helper.bosh_stemcell_path)
 
-          bat_deployment_manifest = Bosh::Dev::Openstack::BatDeploymentManifest.new(args.net_type, director_uuid, st_version)
+          bat_deployment_manifest = Bosh::Dev::Openstack::BatDeploymentManifest.new(ENV, args.net_type, director_uuid, st_version)
           bat_deployment_manifest.write
         end
       end

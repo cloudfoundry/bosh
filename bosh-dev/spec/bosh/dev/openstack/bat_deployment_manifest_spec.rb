@@ -5,9 +5,11 @@ require 'psych'
 module Bosh::Dev
   module Openstack
     describe BatDeploymentManifest do
+      subject { described_class.new(env, net_type, director_uuid, stemcell_version) }
+      let(:env) { {} }
       let(:net_type) { 'dynamic' }
-
-      subject { BatDeploymentManifest.new(net_type, 'fake director_uuid', 'fake stemcell_version') }
+      let(:director_uuid) { 'fake director_uuid' }
+      let(:stemcell_version) { 'fake stemcell_version' }
 
       its(:filename) { should eq ('bat.yml') }
 
@@ -17,20 +19,19 @@ module Bosh::Dev
 
       describe '#to_h' do
         before do
-          ENV.stub(:to_hash).and_return({
-                                          'BOSH_OPENSTACK_VIP_BAT_IP' => 'vip',
-                                          'BOSH_OPENSTACK_NET_ID' => 'net_id',
-                                          'BOSH_OPENSTACK_NETWORK_CIDR' => 'net_cidr',
-                                          'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
-                                          'BOSH_OPENSTACK_NETWORK_STATIC' => 'net_static',
-                                          'BOSH_OPENSTACK_NETWORK_GATEWAY' => 'net_gateway',
-                                        })
+          env.merge!(
+            'BOSH_OPENSTACK_VIP_BAT_IP'       => 'vip',
+            'BOSH_OPENSTACK_NET_ID'           => 'net_id',
+            'BOSH_OPENSTACK_NETWORK_CIDR'     => 'net_cidr',
+            'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
+            'BOSH_OPENSTACK_NETWORK_STATIC'   => 'net_static',
+            'BOSH_OPENSTACK_NETWORK_GATEWAY'  => 'net_gateway',
+          )
         end
 
         context 'manual' do
           let(:net_type) { 'manual' }
-          let(:expected_yml) do
-            <<YAML
+          let(:expected_yml) { <<YAML }
 ---
 cpi: openstack
 properties:
@@ -53,7 +54,6 @@ properties:
     security_groups: ["default"]
     net_id: net_id
 YAML
-          end
 
           it 'generates the correct YAML' do
             expect(subject.to_h).to eq(Psych.load(expected_yml))
@@ -62,9 +62,7 @@ YAML
 
         context 'dynamic' do
           let(:net_type) { 'dynamic' }
-
-          let(:expected_yml) do
-            <<YAML
+          let(:expected_yml) { <<YAML }
 ---
 cpi: openstack
 properties:
@@ -79,7 +77,6 @@ properties:
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   security_groups: default
 YAML
-          end
 
           it 'generates the correct YAML' do
             expect(subject.to_h).to eq(Psych.load(expected_yml))
