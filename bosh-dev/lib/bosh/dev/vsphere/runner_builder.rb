@@ -19,7 +19,7 @@ module Bosh::Dev::VSphere
       stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
 
       microbosh_deployment_manifest =
-        MicroBoshDeploymentManifest.new
+        MicroBoshDeploymentManifest.new(env)
       bat_deployment_manifest =
         BatDeploymentManifest.new(env, director_uuid, stemcell_archive)
 

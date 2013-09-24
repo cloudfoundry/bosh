@@ -37,7 +37,7 @@ module Bosh::Dev::VSphere
         microbosh_deployment_manifest = instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest')
         Bosh::Dev::VSphere::MicroBoshDeploymentManifest
           .should_receive(:new)
-          .with
+          .with(ENV)
           .and_return(microbosh_deployment_manifest)
 
         director_uuid = instance_double('Bosh::Dev::Bat::DirectorUuid')
