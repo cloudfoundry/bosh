@@ -43,7 +43,7 @@ module Bosh::Dev::Aws
         bat_deployment_manifest = instance_double('Bosh::Dev::Aws::BatDeploymentManifest')
         Bosh::Dev::Aws::BatDeploymentManifest
           .should_receive(:new)
-          .with(ENV, bosh_cli_session, 'stemcell-archive-version')
+          .with(ENV, bosh_cli_session, stemcell_archive)
           .and_return(bat_deployment_manifest)
 
         runner = instance_double('Bosh::Dev::Bat::Runner')

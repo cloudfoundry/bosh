@@ -19,7 +19,7 @@ module Bosh::Dev::Aws
       microbosh_deployment_manifest =
         MicroBoshDeploymentManifest.new(env, bosh_cli_session)
       bat_deployment_manifest =
-        BatDeploymentManifest.new(env, bosh_cli_session, stemcell_archive.version)
+        BatDeploymentManifest.new(env, bosh_cli_session, stemcell_archive)
 
       # rubocop:disable ParameterLists
       Bosh::Dev::Bat::Runner.new(
