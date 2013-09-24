@@ -77,6 +77,8 @@ describe Bosh::Director::AgentClient do
     Bosh::Director::Config.stub(:nats_rpc).and_return(nats_rpc)
     Bosh::Director::Config.encryption = true
 
+    Bosh::Director::App.stub(instance: double('App Instance').as_null_object)
+
     deployment = Bosh::Director::Models::Deployment.make
     stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
     cloud_properties = {"ram" => "2gb"}

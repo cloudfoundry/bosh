@@ -1,13 +1,18 @@
 require 'bosh/dev/build'
 require 'bosh/dev/version_file'
+require 'bosh/dev/gem_components'
 
 module Bosh
   module Dev
     class GemsGenerator
+      def initialize
+        @components = GemComponents.new
+      end
+
       def generate_and_upload
         VersionFile.new(Build.candidate.number).write
 
-        build_gems_into_release_dir
+        components.build_release_gems
 
         Dir.chdir('pkg') do
           Bundler.with_clean_env do
@@ -18,9 +23,9 @@ module Bosh
         end
       end
 
-      def build_gems_into_release_dir
-        Rake::Task['all:finalize_release_directory'].invoke
-      end
+      private
+
+      attr_reader :components
     end
   end
 end

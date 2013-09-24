@@ -9,7 +9,7 @@ module Bosh::Dev::Bat
   class VsphereRunner
     def initialize
       @env = ENV.to_hash
-      @bat_helper = Bosh::Dev::BatHelper.new('vsphere')
+      @bat_helper = Bosh::Dev::BatHelper.new('vsphere', :dont_care)
       @bosh_cli_session = Bosh::Dev::BoshCliSession.new
       @stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
     end

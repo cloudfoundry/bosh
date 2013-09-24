@@ -8,21 +8,19 @@ and deployment.
 
 * BOSH Documentation: [http://docs.cloudfoundry.com/docs/running/deploying-cf/](http://docs.cloudfoundry.com/docs/running/deploying-cf/)
 
-## Building and Installing BOSH gems from source
+## Installing BOSH gems
 
-Sometimes it's helpful to have the latest BOSH gems before they are published
-to RubyGems. Here is an example how to build the latest from source. The gem
-builds require ruby 1.9.3-p327 currently, which you can see in the
-.ruby-version file. This example works on OSX.
+To install the latest bosh CLI gems:
 
-    git clone https://github.com/cloudfoundry/bosh.git 
-    cd bosh
-    for i in bosh_common  blobstore_client bosh_cli ; do
-      cd $i ; 
-      gem build *.gemspec ;
-      GEM=$(ls -1rt| tail -1 ) ;
-      gem install $GEM; cd -;
-    done
+```
+gem install bosh_cli  --source http://bosh-jenkins-gems.s3.amazonaws.com --pre
+
+# Plugin required for deploying MicroBosh
+gem install bosh_cli_plugin_micro --source http://bosh-jenkins-gems.s3.amazonaws.com --pre
+
+# Plugin required for 'bosh aws create' and bootstrap commands
+gem install bosh_cli_plugin_aws --source http://bosh-jenkins-gems.s3.amazonaws.com --pre
+```
 
 # Cloud Foundry Resources
 

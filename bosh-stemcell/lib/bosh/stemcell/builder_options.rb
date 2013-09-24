@@ -15,18 +15,15 @@ module Bosh::Stemcell
       @bosh_micro_release_tgz_path = options.fetch(:tarball)
     end
 
-    def spec_name
-      ['stemcell', infrastructure.name, infrastructure.hypervisor, operating_system.name].join('-')
-    end
-
     def default
       {
         'stemcell_name' => 'bosh-stemcell',
         'stemcell_tgz' => archive_filename.to_s,
+        'stemcell_image_name' => stemcell_image_name,
         'stemcell_version' => stemcell_version,
         'stemcell_hypervisor' => infrastructure.hypervisor,
         'stemcell_infrastructure' => infrastructure.name,
-        'system_parameters_infrastructure' => infrastructure.name,
+        'stemcell_operating_system' => operating_system.name,
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
         'ruby_bin' => ruby_bin,
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
@@ -52,8 +49,6 @@ module Bosh::Stemcell
       {
         'UBUNTU_ISO' => environment['UBUNTU_ISO'],
         'UBUNTU_MIRROR' => environment['UBUNTU_MIRROR'],
-        'TW_LOCAL_PASSPHRASE' => environment['TW_LOCAL_PASSPHRASE'],
-        'TW_SITE_PASSPHRASE' => environment['TW_SITE_PASSPHRASE'],
       }
     end
 
@@ -68,6 +63,10 @@ module Bosh::Stemcell
 
     def archive_filename
       ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false)
+    end
+
+    def stemcell_image_name
+      "#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}.raw"
     end
 
     def ruby_bin

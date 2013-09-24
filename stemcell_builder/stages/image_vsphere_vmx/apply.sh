@@ -11,8 +11,7 @@ vsphere=$work/vsphere
 
 mkdir -p $vsphere
 
-disk_image_name=root.img
-disk_size=$(($(stat --printf="%s" $work/$disk_image_name) / (1024*1024)))
+disk_size=$(($(stat --printf="%s" $work/${stemcell_image_name}) / (1024*1024)))
 
 # 512 bytes per sector
 disk_sectors=$(($disk_size * 2048))
@@ -28,7 +27,7 @@ parentCID=ffffffff
 createType="vmfs"
 
 # Extent description
-RW $disk_sectors FLAT "$work/$disk_image_name" 0
+RW $disk_sectors FLAT "$work/${stemcell_image_name}" 0
 ddb.toolsVersion = "0"
 ddb.adapterType = "lsilogic"
 ddb.geometry.biosSectors = "63"

@@ -18,7 +18,7 @@ module Bosh::Dev
       let(:write_path) { '/tmp/test.yml' }
       let(:content) { 'content' }
 
-      context 'when the file exists' do
+      context 'when the remote file exists' do
         before do
           stub_request(:get, string_uri).to_return(body: content)
         end
@@ -53,7 +53,7 @@ module Bosh::Dev
         end
       end
 
-      context 'when the file does not exist' do
+      context 'when the remote file does not exist' do
         before do
           stub_request(:get, string_uri).to_return(status: 404)
         end
@@ -65,7 +65,19 @@ module Bosh::Dev
         end
       end
 
+      context 'when a proxy is available' do
+        before do
+          stub_const('ENV', {
+            'http_proxy' => 'http://proxy.example.com:1234'
+          })
+        end
+
+        it 'uses the proxy' do
+          net_http_mock = class_double('Net::HTTP').as_stubbed_const
+          net_http_mock.should_receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234)
+          adapter.download(uri, write_path)
+        end
+      end
     end
   end
 end
-

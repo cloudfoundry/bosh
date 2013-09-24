@@ -79,12 +79,6 @@ module Bosh::Director
           "networks" => idle_vm.network_settings
       }
 
-      # apply the instance state if it's already bound so we can recover if needed
-      if idle_vm.bound_instance
-        instance_spec = idle_vm.bound_instance.spec
-        %w(job index release).each { |key| state[key] = instance_spec[key] }
-      end
-
       vm.update(:apply_spec => state)
       agent.apply(state)
     end

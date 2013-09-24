@@ -1,42 +1,38 @@
 require 'bosh/dev/build'
-require 'bosh/dev/gems_generator'
+require 'bosh/dev/gem_components'
 require 'bosh/stemcell/builder_command'
 
 module Bosh::Dev
   class StemcellBuilder
-    def initialize(build, infrastructure_name, operating_system_name)
-      @build = build
-      @infrastructure_name = infrastructure_name
-      @operating_system_name = operating_system_name
+    def initialize(options)
+      build = Build.candidate
+      @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
+        infrastructure_name:   options.fetch(:infrastructure_name),
+        operating_system_name: options.fetch(:operating_system_name),
+        version:               build.number,
+        release_tarball_path:  build.download_release,
+      )
     end
 
     def build_stemcell
-      generate_gems
+      unless @stemcell_path
+        gem_components = GemComponents.new
+        gem_components.build_release_gems
 
-      stemcell_path = run_stemcell_builder_command
+        @stemcell_path = stemcell_builder_command.build
+      end
 
-      File.exist?(stemcell_path) || raise("#{stemcell_path} does not exist")
+      File.exist?(@stemcell_path) || raise("#{@stemcell_path} does not exist")
 
-      stemcell_path
+      @stemcell_path
+    end
+
+    def stemcell_chroot_dir
+      stemcell_builder_command.chroot_dir
     end
 
     private
 
-    attr_reader :build, :infrastructure_name, :operating_system_name
-
-    def generate_gems
-      gems_generator = GemsGenerator.new
-      gems_generator.build_gems_into_release_dir
-    end
-
-    def run_stemcell_builder_command
-      stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
-        infrastructure_name: infrastructure_name,
-        operating_system_name: operating_system_name,
-        version: build.number,
-        release_tarball_path: build.download_release,
-      )
-      stemcell_builder_command.build
-    end
+    attr_reader :stemcell_builder_command
   end
 end

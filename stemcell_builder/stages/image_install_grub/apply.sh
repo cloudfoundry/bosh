@@ -7,32 +7,33 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-disk_image_name=root.img
+disk_image=${work}/${stemcell_image_name}
 
 # unmap the loop device in case it's already mapped
-kpartx -dvs $work/$disk_image_name
+kpartx -dv ${disk_image}
 
 # Map partition in image to loopback
-dev=$(kpartx -avs $work/$disk_image_name | grep "^add" | cut -d" " -f3)
-loopback_dev="/dev/mapper/$dev"
+device=$(losetup --show --find ${disk_image})
+device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)
+loopback_dev="/dev/mapper/${device_partition}"
 
 # Mount partition
-mnt=$work/mnt
-mkdir -p $mnt
-mount $loopback_dev $mnt
+image_mount_point=${work}/mnt
+mkdir -p ${image_mount_point}
+mount ${loopback_dev} ${image_mount_point}
 
 # Install bootloader
-mkdir -p $mnt/tmp/grub
+mkdir -p ${image_mount_point}/tmp/grub
 
-touch $mnt/tmp/grub/$disk_image_name
+touch ${image_mount_point}/tmp/grub/${stemcell_image_name}
 
-mount --bind $work/$disk_image_name $mnt/tmp/grub/$disk_image_name
+mount --bind $work/${stemcell_image_name} ${image_mount_point}/tmp/grub/${stemcell_image_name}
 
-cat > $mnt/tmp/grub/device.map <<EOS
-(hd0) $disk_image_name
+cat > ${image_mount_point}/tmp/grub/device.map <<EOS
+(hd0) ${stemcell_image_name}
 EOS
 
-run_in_chroot $mnt "
+run_in_chroot ${image_mount_point} "
 cd /tmp/grub
 grub --device-map=device.map --batch <<EOF
 root (hd0,0)
@@ -41,52 +42,65 @@ EOF
 "
 
 # Figure out uuid of partition
-uuid=$(blkid -c /dev/null -sUUID -ovalue /dev/mapper/$dev)
+uuid=$(blkid -c /dev/null -sUUID -ovalue ${loopback_dev})
 
-# Recreate vanilla menu.lst
-rm -f $mnt/boot/grub/menu.lst*
-run_in_chroot $mnt "update-grub -y"
+kernel_version=$(basename $(ls ${image_mount_point}/boot/vmlinuz-* |tail -1) |cut -f2-8 -d'-')
 
-# Modify root disk parameters to use the root partition's UUID
-sed -i -e "s/^# kopt=root=\([^ ]*\)/# kopt=root=UUID=$uuid/" $mnt/boot/grub/menu.lst
+if [ -f ${image_mount_point}/etc/debian_version ] # Ubuntu
+then
+  initrd_file="initrd.img-${kernel_version}"
+  os_name=$(source ${image_mount_point}/etc/lsb-release ; echo -n ${DISTRIB_DESCRIPTION})
+elif [ -f ${image_mount_point}/etc/centos-release ] # Centos
+then
+  initrd_file="initramfs-${kernel_version}.img"
+  os_name=$(cat ${image_mount_point}/etc/centos-release)
+  cat > ${image_mount_point}/etc/fstab <<FSTAB
+# /etc/fstab Created by BOSH Stemcell Builder
+UUID=${uuid} / ext4 defaults 1 1
+FSTAB
+else
+  echo "Unknown OS, exiting"
+  exit 2
+fi
 
-# NOTE: Don't change "groot" to use a UUID. The pv-boot grub mechanism on EC2
-# can't use this to figure out which device contains the kernel. It does
-# understand "root (hd0,0)", which is the default.
+cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
+default=0
+timeout=1
+title ${os_name} (${kernel_version})
+  root (hd0,0)
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid}
+  initrd /boot/${initrd_file}
+GRUB_CONF
 
-# Regenerate menu.lst
-run_in_chroot $mnt "update-grub"
-rm -f $mnt/boot/grub/menu.lst~
+run_in_chroot ${image_mount_point} "rm -f /boot/grub/menu.lst"
+run_in_chroot ${image_mount_point} "ln -s ./grub.conf /boot/grub/menu.lst"
 
 # Clean up bootloader stuff
-umount $mnt/tmp/grub/$disk_image_name
-rm -rf $mnt/tmp/grub
+umount ${image_mount_point}/tmp/grub/${stemcell_image_name}
+rm -rf ${image_mount_point}/tmp/grub
 
 # Unmount partition
-echo "Unmounting $mnt"
 for try in $(seq 0 9); do
   sleep $try
-  echo -n "."
-  umount $mnt || continue
+  echo "Unmounting ${image_mount_point} (try: ${try})"
+  umount ${image_mount_point} || continue
   break
 done
-echo
 
-if mountpoint -q $mnt; then
-  echo "Could not unmount $mnt after 10 tries"
+if mountpoint -q ${image_mount_point}; then
+  echo "Could not unmount ${image_mount_point} after 10 tries"
   exit 1
 fi
 
 # Unmap partition
-echo "Removing device mappings for $disk_image_name"
 for try in $(seq 0 9); do
   sleep $try
-  echo -n "."
-  kpartx -dvs $work/$disk_image_name || continue
+  echo "Removing device mappings for ${disk_image} (try: ${try})"
+  kpartx -dv ${device} && losetup --verbose --detach ${device} || continue
   break
 done
 
-if [ -b $loopback_dev ]; then
-  echo "Could not remove device mapping at $loopback_dev"
+if [ -b ${loopback_dev} ]; then
+  echo "Could not remove device mapping at ${loopback_dev}"
   exit 1
 fi

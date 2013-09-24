@@ -26,7 +26,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_aws_cpi', "~>#{version}"
   s.add_dependency 'bosh_vsphere_cpi', "~>#{version}"
   s.add_dependency 'bosh_warden_cpi', "~>#{version}"
-  s.add_dependency 'bosh_vcloud_cpi', '~> 0.4.9'
   s.add_dependency 'eventmachine', '~>0.12.9'
   s.add_dependency 'fog', '~>1.14.0'
   s.add_dependency 'httpclient', '=2.2.4'
@@ -42,6 +41,12 @@ Gem::Specification.new do |s|
   s.add_dependency 'sys-filesystem', '~> 1.1.0'
   s.add_dependency 'thin', '~>1.5.0'
   s.add_dependency 'yajl-ruby', '~>1.1.0'
+
+  s.add_dependency 'bosh_vcloud_cpi', '~> 0.4.9'
+
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-fire'
+  s.add_development_dependency 'machinist', '~>1.0'
 
   s.bindir      = 'bin'
   s.executables << 'director_console'

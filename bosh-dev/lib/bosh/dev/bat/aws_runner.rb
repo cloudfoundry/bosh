@@ -10,7 +10,7 @@ module Bosh::Dev::Bat
   class AwsRunner
     def initialize
       @env = ENV.to_hash
-      @bat_helper = Bosh::Dev::BatHelper.new('aws')
+      @bat_helper = Bosh::Dev::BatHelper.new('aws', :dont_care)
       @bosh_cli_session = Bosh::Dev::BoshCliSession.new
       @stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
     end

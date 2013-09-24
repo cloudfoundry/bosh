@@ -10,11 +10,7 @@ module Bosh::Director
       # @return [Models::Deployment] Deployment model
       # @raise [DeploymentNotFound]
       def find_by_name(name)
-        deployment = Models::Deployment[:name => name]
-        if deployment.nil?
-          raise DeploymentNotFound, "Deployment `#{name}' doesn't exist"
-        end
-        deployment
+        DeploymentLookup.new.by_name(name)
       end
 
       def create_deployment(user, deployment_manifest, options = {})

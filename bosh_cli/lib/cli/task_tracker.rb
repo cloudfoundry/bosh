@@ -12,7 +12,7 @@ module Bosh
 
       attr_reader :renderer
 
-      # @param [Bosh::Cli::Director] director
+      # @param [Bosh::Cli::Client::Director] director
       # @param [Integer] task_id
       # @param [Hash] options
       def initialize(director, task_id, options = {})

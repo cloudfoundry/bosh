@@ -8,6 +8,7 @@ module Bosh::Stemcell
         expect(Infrastructure.for('openstack')).to be_an(Infrastructure::OpenStack)
         expect(Infrastructure.for('aws')).to be_an(Infrastructure::Aws)
         expect(Infrastructure.for('vsphere')).to be_a(Infrastructure::Vsphere)
+        expect(Infrastructure.for('warden')).to be_a(Infrastructure::Warden)
       end
 
       it 'raises for unknown instructures' do
@@ -41,26 +42,46 @@ module Bosh::Stemcell
       infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'bar', default_disk_size: 1024)
       expect(infrastructure).not_to be_light
     end
-  end
 
-  describe Infrastructure::Aws do
-    its(:name) { should eq('aws') }
-    it { should be_light }
-    its(:hypervisor) { should eq('xen') }
-    its(:default_disk_size) { should eq(2048) }
-  end
+    describe '.all' do
+      it 'returns all the infrastructure subclasses' do
+        known_infrastructures = ObjectSpace.each_object(Class).select { |klass| klass < Infrastructure::Base }
 
-  describe Infrastructure::OpenStack do
-    its(:name) { should eq('openstack') }
-    it { should_not be_light }
-    its(:hypervisor) { should eq('kvm') }
-    its(:default_disk_size) { should eq(10240) }
-  end
+        expect(Infrastructure.all.map(&:class)).to include(*known_infrastructures)
+      end
+    end
 
-  describe Infrastructure::Vsphere do
-    its(:name) { should eq('vsphere') }
-    it { should_not be_light }
-    its(:hypervisor) { should eq('esxi') }
-    its(:default_disk_size) { should eq(2048) }
+    describe Infrastructure::Aws do
+      subject do
+        Infrastructure::Aws.new
+      end
+
+      its(:name) { should eq('aws') }
+      it { should be_light }
+      its(:hypervisor) { should eq('xen') }
+      its(:default_disk_size) { should eq(2048) }
+    end
+
+    describe Infrastructure::OpenStack do
+      subject do
+        Infrastructure::OpenStack.new
+      end
+
+      its(:name) { should eq('openstack') }
+      it { should_not be_light }
+      its(:hypervisor) { should eq('kvm') }
+      its(:default_disk_size) { should eq(10240) }
+    end
+
+    describe Infrastructure::Vsphere do
+      subject do
+        Infrastructure::Vsphere.new
+      end
+
+      its(:name) { should eq('vsphere') }
+      it { should_not be_light }
+      its(:hypervisor) { should eq('esxi') }
+      its(:default_disk_size) { should eq(2048) }
+    end
   end
 end

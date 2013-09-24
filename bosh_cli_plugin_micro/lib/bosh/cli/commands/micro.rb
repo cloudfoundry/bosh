@@ -347,7 +347,7 @@ AGENT_HELP
           set_current(deployment_name)
         end
 
-        director = Bosh::Cli::Director.new(target)
+        director = Bosh::Cli::Client::Director.new(target)
 
         if options[:director_checks]
           begin

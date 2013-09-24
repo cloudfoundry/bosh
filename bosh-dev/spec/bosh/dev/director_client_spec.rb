@@ -1,9 +1,10 @@
 require 'spec_helper'
 require 'bosh/dev/director_client'
+require 'bosh/stemcell/archive'
 
 module Bosh::Dev
   describe DirectorClient do
-    let (:director_handle) { instance_double('Bosh::Cli::Director') }
+    let (:director_handle) { instance_double('Bosh::Cli::Client::Director') }
     let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
     subject(:director_client) do
@@ -17,7 +18,7 @@ module Bosh::Dev
     before do
       BoshCliSession.stub(new: cli)
 
-      director_klass = class_double('Bosh::Cli::Director').as_stubbed_const
+      director_klass = class_double('Bosh::Cli::Client::Director').as_stubbed_const
       director_klass.stub(:new).with(
         'bosh.example.com',
         'fake_username',

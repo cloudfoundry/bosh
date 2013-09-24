@@ -5,7 +5,7 @@ module Bosh::Dev::Aws
   describe BatDeploymentManifest do
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
     let(:receipts) do
-      instance_double('Bosh::Dev::Bat::Receipts',
+      instance_double('Bosh::Dev::Aws::Receipts',
                       vpc_outfile_path: 'fake_vpc_outfile_path',
                       route53_outfile_path: 'fake_route53_outfile_path'
       )

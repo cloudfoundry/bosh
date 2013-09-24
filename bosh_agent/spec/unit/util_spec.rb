@@ -99,4 +99,23 @@ describe Bosh::Agent::Util do
     expect { Bosh::Agent::Util.block_device_size(block_device) }.to raise_error(Bosh::Agent::MessageHandlerError, "Unable to determine disk size")
   end
 
+  it 'should return the network info' do
+    sigar = double('SigarBox')
+    net_info = double('net_info')
+    ifconfig = double('ifconfig')
+    Bosh::Agent::SigarBox.stub(:create_sigar).and_return(sigar)
+
+    sigar.should_receive(:net_info).and_return(net_info)
+    sigar.should_receive(:net_interface_config).with('eth0').and_return(ifconfig)
+    net_info.should_receive(:default_gateway_interface).and_return('eth0')
+    net_info.should_receive(:default_gateway)
+    ifconfig.should_receive(:address)
+    ifconfig.should_receive(:netmask)
+
+    network_info = Bosh::Agent::Util.get_network_info
+    expect(network_info).to have_key('ip')
+    expect(network_info).to have_key('netmask')
+    expect(network_info).to have_key('gateway')
+  end
+
 end

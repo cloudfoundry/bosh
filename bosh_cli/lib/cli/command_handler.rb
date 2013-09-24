@@ -39,23 +39,23 @@ module Bosh::Cli
     # @param [Array] args
     # @return [Integer] Command exit code
     def run(args, extra_options = {})
-      handler = @klass.new(@runner)
+      command = @klass.new(@runner)
 
       @options.each do |(name, arguments)|
         @parser.on(name, *arguments) do |value|
-          handler.add_option(format_option_name(name), value)
+          command.add_option(format_option_name(name), value)
         end
       end
 
       extra_options.each_pair do |name, value|
-        handler.add_option(format_option_name(name), value)
+        command.add_option(format_option_name(name), value)
       end
 
       args = parse_options(args)
 
       begin
-        handler.send(@method.name, *args)
-        handler.exit_code
+        command.send(@method.name, *args)
+        command.exit_code
       rescue ArgumentError => e
         err("Usage: #{usage_with_params}")
       end

@@ -1,24 +1,26 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Agent
-  class UnknownPlatform < StandardError; end
+  class UnknownPlatform < StandardError;
+  end
 
-  class Platform
+  module Platform
+    def self.platform(platform_name)
+      case platform_name
+        when 'ubuntu'
+          template_dir = File.expand_path(File.join(File.dirname(__FILE__), 'platform/ubuntu/templates'))
+          Platform::Linux::Adapter.new(Platform::Linux::Disk.new,
+                                       Platform::Linux::Logrotate.new(template_dir),
+                                       Platform::Linux::Password.new,
+                                       Platform::Ubuntu::Network.new(template_dir))
 
-    def initialize(platform_name)
-      @name = platform_name
-      platform = File.join(File.dirname(__FILE__), 'platform', "#{platform_name}.rb")
-
-      if File.exist?(platform)
-        load platform
-      else
-        raise UnknownPlatform, "platform '#{platform_name}' not found"
+        when 'centos'
+          template_dir = File.expand_path(File.join(File.dirname(__FILE__), 'platform/centos/templates'))
+          Platform::Linux::Adapter.new(Platform::Centos::Disk.new,
+                                       Platform::Linux::Logrotate.new(template_dir),
+                                       Platform::Linux::Password.new,
+                                       Platform::Centos::Network.new(template_dir))
+        else
+          raise UnknownPlatform, "platform '#{platform_name}' not found"
       end
     end
-
-    def platform
-      Platform.const_get(@name.capitalize).new
-    end
-
   end
 end

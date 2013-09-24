@@ -1,8 +1,8 @@
 require 'fileutils'
 
 require 'bosh/core/shell'
-require 'bosh/stemcell/environment'
 require 'bosh/stemcell/builder_options'
+require 'bosh/stemcell/disk_image'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 require 'bosh/stemcell/stage_collection'
@@ -11,10 +11,9 @@ require 'bosh/stemcell/stage_runner'
 module Bosh::Stemcell
   class BuilderCommand
     def initialize(options)
-      infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
-      operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
+      @infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
+      @operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
 
-      @stemcell_environment = Environment.new(infrastructure_name: infrastructure.name)
       @stemcell_builder_options = BuilderOptions.new(tarball: options.fetch(:release_tarball_path),
                                                      stemcell_version: options.fetch(:version),
                                                      infrastructure: infrastructure,
@@ -24,7 +23,7 @@ module Bosh::Stemcell
     end
 
     def build
-      stemcell_environment.sanitize
+      sanitize
 
       prepare_build_root
 
@@ -32,50 +31,91 @@ module Bosh::Stemcell
 
       copy_stemcell_builder_to_build_path
 
-      prepare_work_path
+      prepare_work_root
 
       persist_settings_for_bash
 
-      stage_collection = StageCollection.for(stemcell_builder_options.spec_name)
-      stage_runner = StageRunner.new(stages: stage_collection.stages,
-                                     build_path: build_path,
+      stage_collection = StageCollection.new(infrastructure: infrastructure,
+                                             operating_system: operating_system)
+      stage_runner = StageRunner.new(build_path: build_path,
                                      command_env: command_env,
                                      settings_file: settings_path,
-                                     work_path: work_path)
-      stage_runner.configure_and_apply
+                                     work_path: work_root)
+      stage_runner.configure_and_apply(stage_collection.operating_system_stages)
+      stage_runner.configure_and_apply(stage_collection.infrastructure_stages)
+      system(rspec_command) || raise('Stemcell specs failed')
 
       stemcell_file
+    end
+
+    def chroot_dir
+      File.join(work_path, 'chroot')
     end
 
     private
 
     attr_reader :shell,
                 :environment,
-                :stemcell_environment,
+                :infrastructure,
+                :operating_system,
                 :stemcell_builder_options
 
-    def spec_name
-      "#{stemcell_builder_options.spec_name}.spec"
+    def rspec_command
+      [
+        "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
+        "STEMCELL_IMAGE=#{image_file_path}",
+        'bundle exec rspec -fd',
+        "spec/stemcells/#{operating_system.name}_spec.rb",
+        "spec/stemcells/#{infrastructure.name}_spec.rb",
+      ].join(' ')
+    end
+
+    def image_file_path
+      File.join(work_path, settings['stemcell_image_name'])
+    end
+
+    def image_mount_point
+      File.join(work_path, 'mnt')
+    end
+
+    def sanitize
+      FileUtils.rm_rf('*.tgz')
+
+      system("sudo umount #{File.join(work_path, 'mnt/tmp/grub', settings['stemcell_image_name'])} 2> /dev/null")
+      system("sudo umount #{image_mount_point} 2> /dev/null")
+      system("sudo rm -rf #{base_directory}")
     end
 
     def settings
       stemcell_builder_options.default
     end
 
-    def build_root
-      stemcell_environment.build_path
+    def base_directory
+      File.join('/mnt', 'stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
     end
 
-    def work_path
-      stemcell_environment.work_path
+    def build_root
+      File.join(base_directory, 'build')
+    end
+
+    def work_root
+      File.join(base_directory, 'work')
     end
 
     def prepare_build_root
       FileUtils.mkdir_p(build_root, verbose: true)
     end
 
+    def prepare_work_root
+      FileUtils.mkdir_p(work_root, verbose: true)
+    end
+
     def build_path
       File.join(build_root, 'build')
+    end
+
+    def work_path
+      File.join(work_root, 'work')
     end
 
     def prepare_build_path
@@ -91,10 +131,6 @@ module Bosh::Stemcell
       FileUtils.cp_r(Dir.glob("#{stemcell_builder_source_dir}/*"), build_path, preserve: true, verbose: true)
     end
 
-    def prepare_work_path
-      FileUtils.mkdir_p(work_path, verbose: true)
-    end
-
     def settings_path
       File.join(build_path, 'etc', 'settings.bash')
     end
@@ -108,16 +144,12 @@ module Bosh::Stemcell
       end
     end
 
-    def stemcell_spec_path
-      File.join(build_path, 'spec', spec_name)
-    end
-
     def command_env
       "env #{hash_as_bash_env(proxy_settings_from_environment)}"
     end
 
     def stemcell_file
-      File.join(work_path, 'work', settings['stemcell_tgz'])
+      File.join(work_path, settings['stemcell_tgz'])
     end
 
     def proxy_settings_from_environment

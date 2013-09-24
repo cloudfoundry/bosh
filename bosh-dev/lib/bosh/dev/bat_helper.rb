@@ -5,9 +5,10 @@ module Bosh::Dev
   class BatHelper
     attr_reader :infrastructure
 
-    def initialize(infrastructure, build = Build.candidate)
+    def initialize(infrastructure, net_type)
       @infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure)
-      @build = build
+      @build = Build.candidate
+      @net_type = net_type
     end
 
     def bosh_stemcell_path
@@ -35,12 +36,12 @@ module Bosh::Dev
 
       fetch_stemcells
 
-      Rake::Task["spec:system:#{infrastructure.name}:micro"].invoke
+      Rake::Task["spec:system:#{infrastructure.name}:micro"].invoke(net_type)
     end
 
     private
 
-    attr_reader :build
+    attr_reader :build, :net_type
 
     def infrastructure_for_emitable_example
       ENV['BAT_INFRASTRUCTURE'] = infrastructure.name

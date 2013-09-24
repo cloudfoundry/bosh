@@ -2,11 +2,14 @@ require 'spec_helper'
 require 'fileutils'
 
 describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
+  let(:dummy_platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter', update_logging: nil) }
+
   before do
     Bosh::Agent::Config.state = Bosh::Agent::State.new(Tempfile.new('state').path)
 
     Bosh::Agent::Config.blobstore_provider = 'simple'
     Bosh::Agent::Config.blobstore_options = {}
+    Bosh::Agent::Config.stub(platform: dummy_platform)
     Bosh::Agent::Config.platform_name = 'dummy'
 
     FileUtils.mkdir_p(File.join(base_dir, 'monit'))

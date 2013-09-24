@@ -7,14 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-debs="build-essential libssl-dev lsof \
-strace bind9-host dnsutils tcpdump iputils-arping \
-curl wget libcurl3 libcurl3-dev bison libreadline6-dev \
-libxml2 libxml2-dev libxslt1.1 libxslt1-dev zip unzip \
-nfs-common flex psmisc apparmor-utils iptables sysstat \
-rsync openssh-server traceroute libncurses5-dev quota \
-libaio1 gdb tripwire libcap2-bin libyaml-dev cmake"
-
 # Disable interactive dpkg
 debconf="debconf debconf/frontend select noninteractive"
 run_in_chroot $chroot "echo ${debconf} | debconf-set-selections"
@@ -46,10 +38,23 @@ deb http://security.ubuntu.com/ubuntu $DISTRIB_CODENAME-security main universe m
 EOS
 
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
-apt_get install upstart
+pkg_mgr install upstart
 
 # Upgrade
-apt_get dist-upgrade
+run_in_chroot $chroot "apt-get update"
+run_in_chroot $chroot "apt-get -f -y --force-yes --no-install-recommends dist-upgrade"
+run_in_chroot $chroot "apt-get clean"
 
 # Install base debs needed by both the warden and bosh
-apt_get install $debs
+debs="build-essential libssl-dev lsof \
+strace bind9-host dnsutils tcpdump iputils-arping \
+curl wget libcurl3 libcurl3-dev bison libreadline6-dev \
+libxml2 libxml2-dev libxslt1.1 libxslt1-dev zip unzip \
+nfs-common flex psmisc apparmor-utils iptables sysstat \
+rsync openssh-server traceroute libncurses5-dev quota \
+libaio1 gdb tripwire libcap2-bin libyaml-dev cmake"
+pkg_mgr install $debs
+
+# Lifted from bosh_debs
+pkg_mgr install "scsitools mg htop module-assistant debhelper runit"
+#/Lifted from bosh_debs

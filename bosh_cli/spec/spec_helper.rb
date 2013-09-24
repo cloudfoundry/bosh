@@ -1,10 +1,12 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'rspec/core'
 require 'webmock'
 require 'timecop'
 
 require 'cli'
+
+Dir.glob(File.expand_path('support/**/*.rb', File.dirname(__FILE__))).each do |support|
+  require support
+end
 
 require 'support/command_shared_examples'
 

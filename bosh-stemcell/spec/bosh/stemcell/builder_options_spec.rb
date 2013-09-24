@@ -67,38 +67,6 @@ module Bosh::Stemcell
       end
     end
 
-    describe '#spec_name' do
-      context 'when :infrastructure is aws' do
-        it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-aws-xen-ubuntu')
-        end
-      end
-
-      context 'when :infrastructure is openstack' do
-        let(:infrastructure) { Infrastructure.for('openstack') }
-
-        it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-openstack-kvm-ubuntu')
-        end
-      end
-
-      context 'when :infrastructure is vsphere' do
-        let(:infrastructure) { Infrastructure.for('vsphere') }
-
-        it 'returns the spec file basename' do
-          expect(stemcell_builder_options.spec_name).to eq('stemcell-vsphere-esxi-ubuntu')
-        end
-
-        context 'when :operating_system is centos' do
-          let(:operating_system) { OperatingSystem.for('centos') }
-
-          it 'returns the spec file basename' do
-            expect(stemcell_builder_options.spec_name).to eq('stemcell-vsphere-esxi-centos')
-          end
-        end
-      end
-    end
-
     describe '#default' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }
@@ -106,6 +74,12 @@ module Bosh::Stemcell
       it 'sets stemcell_tgz' do
         result = stemcell_builder_options.default
         expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
+      end
+
+      it 'sets stemcell_image_name' do
+        result = stemcell_builder_options.default
+        expected_image_name = "#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}.raw"
+        expect(result['stemcell_image_name']).to eq(expected_image_name)
       end
 
       it 'sets stemcell_version' do
@@ -118,8 +92,6 @@ module Bosh::Stemcell
           {
             'UBUNTU_ISO' => 'fake_ubuntu_iso',
             'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
-            'TW_LOCAL_PASSPHRASE' => 'fake_tripwire_local_passphrase',
-            'TW_SITE_PASSPHRASE' => 'fake_tripwire_site_passphrase',
             'RUBY_BIN' => 'fake_ruby_bin',
           }
         end
@@ -130,15 +102,13 @@ module Bosh::Stemcell
 
           result = stemcell_builder_options.default
 
-          expect(result['system_parameters_infrastructure']).to eq(infrastructure.name)
           expect(result['stemcell_name']).to eq ('bosh-stemcell')
+          expect(result['stemcell_operating_system']).to eq(operating_system.name)
           expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
           expect(result['stemcell_hypervisor']).to eq(infrastructure.hypervisor)
           expect(result['bosh_protocol_version']).to eq('1')
           expect(result['UBUNTU_ISO']).to eq('fake_ubuntu_iso')
           expect(result['UBUNTU_MIRROR']).to eq('fake_ubuntu_mirror')
-          expect(result['TW_LOCAL_PASSPHRASE']).to eq('fake_tripwire_local_passphrase')
-          expect(result['TW_SITE_PASSPHRASE']).to eq('fake_tripwire_site_passphrase')
           expect(result['ruby_bin']).to eq('fake_ruby_bin')
           expect(result['bosh_release_src_dir']).to eq(File.join(expected_source_root, '/release/src/bosh'))
           expect(result['bosh_agent_src_dir']).to eq(File.join(expected_source_root, 'bosh_agent'))

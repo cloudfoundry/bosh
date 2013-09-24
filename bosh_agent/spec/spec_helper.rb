@@ -16,7 +16,9 @@ RSpec.configure do |config|
   config.include Bosh::Agent::Spec::UglyHelpers
 
   config.before do
-    Bosh::Agent::Config.clear
+    Bosh::Agent::Config.should be_a(Bosh::Agent::Configuration)
+    stub_const('Bosh::Agent::Config', Bosh::Agent::Configuration.new)
+
     Bosh::Agent::Config.logger = Logger.new(StringIO.new)
     setup_directories
     Bosh::Agent::Monit.enabled = false

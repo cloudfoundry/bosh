@@ -8,7 +8,7 @@ module Bosh::Dev
         @username = options.fetch(:username)
         @password = options.fetch(:password)
         @cli = BoshCliSession.new
-        @director_handle = Bosh::Cli::Director.new(uri, username, password)
+        @director_handle = Bosh::Cli::Client::Director.new(uri, username, password)
     end
 
     def upload_stemcell(stemcell_archive)

@@ -1,5 +1,6 @@
 require 'peach'
 
+require 'bosh/dev/promote_artifacts'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/stemcell/archive'
@@ -13,24 +14,19 @@ module Bosh::Dev
 
     def self.candidate
       env_hash = ENV.to_hash
-      new(env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
+      new(number: env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
     end
 
-    def initialize(number)
-      @number = number
+    def initialize(options)
+      @number = options.fetch(:number)
       @logger = Logger.new($stdout)
-    end
-
-    def upload(release, options = {})
-      bucket = 'bosh-ci-pipeline'
-      key = File.join(number.to_s, release_path)
-      upload_adapter = options.fetch(:upload_adapter) { UploadAdapter.new }
-      upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
+      @promoter = PromoteArtifacts.new(self)
+      @bucket = 'bosh-ci-pipeline'
+      @upload_adapter = UploadAdapter.new
+      @download_adapter = DownloadAdapter.new
     end
 
     def upload_gems(source_dir, dest_dir)
-      bucket = 'bosh-ci-pipeline'
-      upload_adapter = Bosh::Dev::UploadAdapter.new
       Dir.chdir(source_dir) do
         Dir['**/*'].each do |file|
           unless File.directory?(file)
@@ -42,31 +38,18 @@ module Bosh::Dev
       end
     end
 
-    def download_release(options = {})
-      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
-      output_directory = options.fetch(:output_directory) { Dir.pwd }
-
-      remote_dir = File.join(number.to_s, 'release')
-      filename = release_file
-
-      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, release_path))
-
-      release_path
+    def upload_release(release)
+      key = File.join(number.to_s, release_path)
+      upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
     end
 
-    def download_stemcell(options = {})
-      infrastructure = options.fetch(:infrastructure)
-      name = options.fetch(:name)
-      light = options.fetch(:light)
-      download_adapter = options.fetch(:download_adapter) { DownloadAdapter.new }
-      output_directory = options.fetch(:output_directory) { Dir.pwd }
+    def download_release
+      remote_dir = File.join(number.to_s, 'release')
+      filename = promoter.release_file
 
-      filename = stemcell_filename(number.to_s, infrastructure, name, light)
-      remote_dir = File.join(number.to_s, name, infrastructure.name)
+      download_adapter.download(uri(remote_dir, filename), download_release_path)
 
-      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
-
-      filename
+      download_release_path
     end
 
     def upload_stemcell(stemcell)
@@ -83,12 +66,18 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
-    def s3_release_url
-      File.join(s3_url, release_path)
-    end
+    def download_stemcell(options = {})
+      infrastructure = options.fetch(:infrastructure)
+      name = options.fetch(:name)
+      light = options.fetch(:light)
+      output_directory = options.fetch(:output_directory) { Dir.pwd }
 
-    def gems_dir_url
-      "https://s3.amazonaws.com/bosh-ci-pipeline/#{number}/gems/"
+      filename = stemcell_filename(number.to_s, infrastructure, name, light)
+      remote_dir = File.join(number.to_s, name, infrastructure.name)
+
+      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
+
+      filename
     end
 
     def promote_artifacts
@@ -102,20 +91,20 @@ module Bosh::Dev
 
     private
 
-    attr_reader :logger
+    attr_reader :logger, :promoter, :download_adapter, :upload_adapter, :bucket
 
     def sync_buckets
-      bucket_sync_commands.peach do |cmd|
+      promoter.commands.peach do |cmd|
         Rake::FileUtilsExt.sh(cmd)
       end
     end
 
     def update_light_bosh_ami_pointer_file
       Bosh::Dev::UploadAdapter.new.upload(
-          bucket_name: 'bosh-jenkins-artifacts',
-          key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
-          body: light_stemcell.ami_id,
-          public: true
+        bucket_name: 'bosh-jenkins-artifacts',
+        key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
+        body: light_stemcell.ami_id,
+        public: true
       )
     end
 
@@ -127,15 +116,11 @@ module Bosh::Dev
     end
 
     def release_path
-      "release/#{release_file}"
+      "release/#{promoter.release_file}"
     end
 
-    def release_file
-      "bosh-#{number}.tgz"
-    end
-
-    def s3_url
-      "s3://bosh-ci-pipeline/#{number}/"
+    def download_release_path
+      "tmp/#{promoter.release_file}"
     end
 
     def stemcell_filename(version, infrastructure, name, light)
@@ -146,14 +131,6 @@ module Bosh::Dev
     def uri(remote_directory_path, file_name)
       remote_file_path = File.join(remote_directory_path, file_name)
       URI.parse("http://bosh-ci-pipeline.s3.amazonaws.com/#{remote_file_path}")
-    end
-
-    def bucket_sync_commands
-      [
-        "s3cmd --verbose sync #{File.join(s3_url, 'gems/')} s3://bosh-jenkins-gems",
-        "s3cmd --verbose sync #{File.join(s3_url, 'release')} s3://bosh-jenkins-artifacts",
-        "s3cmd --verbose sync #{File.join(s3_url, 'bosh-stemcell')} s3://bosh-jenkins-artifacts",
-      ]
     end
   end
 end

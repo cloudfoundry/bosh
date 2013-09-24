@@ -13,8 +13,11 @@ function codename() {
 }
 
 function disable {
-  mv $1 $1.back
-  ln -s /bin/true $1
+  if [ -e $1 ]
+  then
+    mv $1 $1.back
+    ln -s /bin/true $1
+  fi
 }
 
 function enable {
@@ -41,9 +44,9 @@ function run_in_chroot {
     mount -n --bind /dev/pts $chroot/dev/pts
 
     mkdir -p $chroot/proc
-    mount -n -t proc proc $chroot/proc
+    mount -n --bind /proc $chroot/proc
 
-    chroot $chroot env -i $(cat $chroot/etc/environment) http_proxy=${http_proxy:-} bash -e -c "$script"
+    chroot $chroot env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin http_proxy=${http_proxy:-} bash -e -c "$script"
 EOS
 
   # Enable daemon startup

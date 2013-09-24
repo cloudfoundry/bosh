@@ -1,4 +1,4 @@
-module Bosh::Cli::Command
+module Bosh::Cli
   class VmState
     def initialize(command, force)
       @command = command

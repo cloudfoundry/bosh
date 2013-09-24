@@ -7,4 +7,4 @@ set -e
 export PATH=/var/vcap/bosh/bin:$PATH
 exec 2>&1
 
-exec /usr/bin/nice -n -10 /var/vcap/bosh/bin/bosh_agent -c -I $(cat /etc/infrastructure)
+exec nice -n -10 /var/vcap/bosh/bin/bosh_agent -c -I $(cat /var/vcap/bosh/etc/infrastructure) -P $(cat /var/vcap/bosh/etc/operating_system)

@@ -3,10 +3,7 @@ agent:
   ntp:
   - 10.80.0.44
 vcenters:
-- host: 172.16.68.3
-  user: root
-  password: vmware
-  datacenters:
+- datacenters:
   - name: BOSH_DC
     vm_folder: ACCEPTANCE_BOSH_VMs
     template_folder: ACCEPTANCE_BOSH_Templates

@@ -3,19 +3,18 @@ require 'bosh/core/shell'
 module Bosh::Stemcell
   class StageRunner
     def initialize(options)
-      @stages = options.fetch(:stages)
       @build_path = options.fetch(:build_path)
       @command_env = options.fetch(:command_env)
       @settings_file = options.fetch(:settings_file)
       @work_path = options.fetch(:work_path)
     end
 
-    def configure_and_apply
-      configure
-      apply
+    def configure_and_apply(stages)
+      configure(stages)
+      apply(stages)
     end
 
-    def configure
+    def configure(stages)
       stages.each do |stage|
         stage_config_script = File.join(build_path, 'stages', stage.to_s, 'config.sh')
 
@@ -26,7 +25,7 @@ module Bosh::Stemcell
       end
     end
 
-    def apply
+    def apply(stages)
       work_directory = File.join(work_path, 'work')
 
       stages.each do |stage|

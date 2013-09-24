@@ -115,7 +115,41 @@ describe Bosh::Director::ResourcePoolUpdater do
     end
   end
 
-  describe :update_state
+  describe '#update_state' do
+    let(:vm) { double('VM') }
+    let(:agent) { double('Agent') }
+    let(:network_settings) { { 'network1' =>  {} } }
+    let(:idle_vm) { double('Idle VM', network_settings: network_settings, bound_instance: instance) }
+    let(:resource_pool_spec) { {} }
+    let(:instance) { double('Instance', spec: {}) }
+    let(:deployment_plan) { double('DeploymentPlan', name: 'foo') }
+    let(:apply_spec) do
+      {
+        'deployment' => deployment_plan.name,
+        'resource_pool' => resource_pool_spec,
+        'networks' => network_settings,
+      }
+    end
+
+    before do
+      @resource_pool.stub(deployment_plan: deployment_plan)
+      @resource_pool.stub(spec: resource_pool_spec)
+      vm.stub(:update)
+      agent.stub(:apply)
+    end
+
+    it 'sends the agent an updated state' do
+      agent.should_receive(:apply).with(apply_spec)
+      @resource_pool_updater.update_state(agent, vm, idle_vm)
+    end
+
+    it 'updates the vm model with the updated state' do
+      vm.should_receive(:update).with(apply_spec: apply_spec)
+      @resource_pool_updater.update_state(agent, vm, idle_vm)
+    end
+
+  end
+
   describe :delete_extra_vms
   describe :delete_outdated_idle_vms
   describe :reserve_networks

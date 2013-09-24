@@ -6,7 +6,7 @@ describe Bosh::Cli::Command::JobManagement do
   let(:command) { described_class.new }
   let(:deployment) { 'dep1' }
   let(:manifest_yaml) { Psych.dump(deployment_manifest) }
-  let(:director) { double(Bosh::Cli::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
 
   before(:each) do
     director.stub(:change_job_state)

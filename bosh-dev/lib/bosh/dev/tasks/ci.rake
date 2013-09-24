@@ -20,36 +20,38 @@ namespace :ci do
     require 'bosh/dev/micro_bosh_release'
 
     build = Bosh::Dev::Build.candidate
-    build.upload(Bosh::Dev::MicroBoshRelease.new)
+    build.upload_release(Bosh::Dev::MicroBoshRelease.new)
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
-  task :build_stemcell, [:infrastructure, :operating_system] do |_, args|
+  task :build_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
 
-    options = args.to_hash
-
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(Bosh::Dev::Build.candidate,
-                                                      options.fetch(:infrastructure),
-                                                      options.fetch(:operating_system))
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
     stemcell_file = stemcell_builder.build_stemcell
 
     mkdir_p('tmp')
     cp(stemcell_file, File.join('tmp', File.basename(stemcell_file)))
   end
 
+  desc 'Run serverspec against a stemcell chroot'
+  task :test_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
+    require 'bosh/dev/build'
+    require 'bosh/dev/stemcell_builder'
+
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
+
+    system("cd bosh-stemcell && SERVERSPEC_CHROOT=#{stemcell_builder.stemcell_chroot_dir} rspec spec/stemcells") || raise('Failure in spec/stemcells')
+  end
+
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and publish to S3'
-  task :publish_stemcell, [:infrastructure, :operating_system] do |_, args|
+  task :publish_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
 
-    options = args.to_hash
-
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(Bosh::Dev::Build.candidate,
-                                                      options.fetch(:infrastructure),
-                                                      options.fetch(:operating_system))
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
     stemcell_file = stemcell_builder.build_stemcell
 
     stemcell_publisher = Bosh::Dev::StemcellPublisher.new

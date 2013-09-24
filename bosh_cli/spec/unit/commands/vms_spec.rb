@@ -4,7 +4,7 @@ require 'cli'
 
 describe Bosh::Cli::Command::Vms do
   let(:command) { described_class.new }
-  let(:director) { double(Bosh::Cli::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
   let(:deployment) { 'dep1' }
   let(:target) { 'http://example.org' }
 
@@ -92,7 +92,7 @@ describe Bosh::Cli::Command::Vms do
         'resurrection_paused' => true
       }
     }
- 
+
     before(:each) do
       director.stub(:fetch_vm_state).with(deployment) { [vm_state] }
     end
@@ -153,7 +153,7 @@ describe Bosh::Cli::Command::Vms do
       end
 
     end
-    
+
     context 'with vitals' do
       let(:vitals) { true }
 

@@ -23,3 +23,7 @@ require 'director/api/task_manager'
 require 'director/api/user_manager'
 require 'director/api/vm_state_manager'
 require 'director/api/backup_manager'
+require 'director/api/resurrector_manager'
+
+require 'director/api/instance_lookup'
+require 'director/api/deployment_lookup'

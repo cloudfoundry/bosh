@@ -2,7 +2,7 @@ inherit_from: ../.rubocop.yml
 
 AllCops:
   Excludes:
-  - spec/assets/**
+  - spec/system/assets/**
 
 AvoidPerlisms:
   Enabled: false

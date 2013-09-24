@@ -1,11 +1,11 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Agent::Bootstrap do
+  let(:dummy_platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter') }
 
-  before(:each) do
+  before do
     Bosh::Agent::Config.infrastructure_name = "dummy"
+    Bosh::Agent::Config.stub(platform: dummy_platform)
     Bosh::Agent::Config.platform_name = "dummy"
 
     @processor = Bosh::Agent::Bootstrap.new
