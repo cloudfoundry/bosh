@@ -23,7 +23,8 @@ module Bosh::Dev::Aws
 
     describe '#write' do
       it 'uses the command line tool to generate the manifest' do
-        bosh_cli_session.should_receive(:run_bosh).with("aws generate micro_bosh 'fake_vpc_outfile_path' 'fake_route53_outfile_path'")
+        bosh_cli_session.should_receive(:run_bosh).with(
+          "aws generate micro_bosh 'fake_vpc_outfile_path' 'fake_route53_outfile_path'")
         subject.write
       end
     end

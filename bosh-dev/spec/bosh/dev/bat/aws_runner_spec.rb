@@ -172,9 +172,7 @@ module Bosh::Dev::Bat
       end
 
       context 'when a failure occurs' do
-        before do
-          bat_rake_task.should_receive(:invoke).and_raise
-        end
+        before { bat_rake_task.should_receive(:invoke).and_raise }
 
         it 'deletes the bat deployment' do
           bosh_cli_session.should_receive(:run_bosh).with('delete deployment bat', ignore_failures: true)

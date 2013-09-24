@@ -35,14 +35,10 @@ module Bosh::Dev::Aws
 
     describe '#clone_or_update!' do
       context 'when the directory does exist' do
-        before do
-          FileUtils.mkdir_p(subject.path)
-        end
+        before { FileUtils.mkdir_p(subject.path) }
 
         context 'when the directory contains a .git subdirectory' do
-          before do
-            FileUtils.mkdir_p(File.join(subject.path, '.git'))
-          end
+          before { FileUtils.mkdir_p(File.join(subject.path, '.git')) }
 
           it 'updates the repo at "#path"' do
             shell.should_receive(:run).with('git pull')

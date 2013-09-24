@@ -20,7 +20,6 @@ module Bosh::Dev::Aws
 
       it 'clones or updates the aws deployments repository' do
         aws_deployments_repository.should_receive(:clone_or_update!)
-
         subject.vpc_outfile_path
       end
     end
@@ -30,7 +29,6 @@ module Bosh::Dev::Aws
 
       it 'clones or updates the aws deployments repository' do
         aws_deployments_repository.should_receive(:clone_or_update!)
-
         subject.route53_outfile_path
       end
     end
