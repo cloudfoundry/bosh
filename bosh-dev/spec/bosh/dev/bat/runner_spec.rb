@@ -8,9 +8,9 @@ require 'bosh/stemcell/archive'
 
 module Bosh::Dev::Bat
   describe Runner do
-    include FakeFS::SpecHelpers
-
     describe '#run_bats' do
+      include FakeFS::SpecHelpers
+
       subject do
         described_class.new(
           env,
@@ -29,6 +29,7 @@ module Bosh::Dev::Bat
         }
       end
 
+      before { FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir) }
       let(:bat_helper) do
         instance_double(
           'Bosh::Dev::BatHelper',
@@ -45,11 +46,6 @@ module Bosh::Dev::Bat
 
       let(:microbosh_deployment_manifest) { double('microbosh-deployment-manifest', write: nil) }
       let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
-
-      before do
-        FileUtils.mkdir('/mnt')
-        FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir)
-      end
 
       before { Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task) }
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
