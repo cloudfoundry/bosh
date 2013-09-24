@@ -40,7 +40,6 @@ module Bosh::Dev::Bat
       end
 
       let(:director_address) { DirectorAddress.new('director-hostname', 'director-ip') }
-
       let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
       let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6') }
 
@@ -81,7 +80,8 @@ module Bosh::Dev::Bat
       end
 
       it 'uploads the bosh stemcell to the micro' do
-        bosh_cli_session.should_receive(:run_bosh).with('upload stemcell fake_bosh_stemcell_path', debug_on_fail: true)
+        bosh_cli_session.should_receive(:run_bosh).with(
+          'upload stemcell fake_bosh_stemcell_path', debug_on_fail: true)
         subject.run_bats
       end
 
@@ -116,7 +116,8 @@ module Bosh::Dev::Bat
       end
 
       it 'deletes the stemcell' do
-        bosh_cli_session.should_receive(:run_bosh).with("delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
+        bosh_cli_session.should_receive(:run_bosh).with(
+          "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
         subject.run_bats
       end
 
@@ -129,12 +130,14 @@ module Bosh::Dev::Bat
         before { bat_rake_task.should_receive(:invoke).and_raise }
 
         it 'deletes the bat deployment' do
-          bosh_cli_session.should_receive(:run_bosh).with('delete deployment bat', ignore_failures: true)
+          bosh_cli_session.should_receive(:run_bosh).with(
+            'delete deployment bat', ignore_failures: true)
           expect { subject.run_bats }.to raise_error
         end
 
         it 'deletes the stemcell' do
-          bosh_cli_session.should_receive(:run_bosh).with("delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
+          bosh_cli_session.should_receive(:run_bosh).with(
+            "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
           expect { subject.run_bats }.to raise_error
         end
 

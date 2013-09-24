@@ -25,9 +25,7 @@ module Bosh::Dev::Bat
 
     def run_bats
       prepare_microbosh
-
       prepare_bat_deployment
-
       Rake::Task['bat'].invoke
     ensure
       teardown_micro
@@ -35,13 +33,15 @@ module Bosh::Dev::Bat
 
     private
 
-    attr_reader :env,
-                :bat_helper,
-                :director_address,
-                :bosh_cli_session,
-                :stemcell_archive,
-                :microbosh_deployment_manifest,
-                :bat_deployment_manifest
+    attr_reader(
+      :env,
+      :bat_helper,
+      :director_address,
+      :bosh_cli_session,
+      :stemcell_archive,
+      :microbosh_deployment_manifest,
+      :bat_deployment_manifest
+    )
 
     def create_microbosh_manifest
       Dir.chdir(bat_helper.micro_bosh_deployment_dir) do
@@ -51,7 +51,6 @@ module Bosh::Dev::Bat
 
     def prepare_microbosh
       create_microbosh_manifest
-
       Dir.chdir(bat_helper.artifacts_dir) do
         bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
         bosh_cli_session.run_bosh "micro deploy #{bat_helper.bosh_stemcell_path}"
