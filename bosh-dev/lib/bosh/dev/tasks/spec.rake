@@ -172,8 +172,8 @@ namespace :spec do
     namespace :vsphere do
       desc 'Run vSphere MicroBOSH deployment suite'
       task :micro do
-        require 'bosh/dev/bat/runner'
-        Bosh::Dev::Bat::Runner.build_vsphere.run_bats
+        require 'bosh/dev/vsphere/runner'
+        Bosh::Dev::VSphere::RunnerBuilder.new.build.run_bats
       end
     end
 
