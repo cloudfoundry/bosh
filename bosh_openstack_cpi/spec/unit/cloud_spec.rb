@@ -43,14 +43,5 @@ describe Bosh::OpenStackCloud::Cloud do
       }.to raise_error(Bosh::Clouds::CloudError,
                        "Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
     end
-
-    it "should implement ssl_verify_peer settings" do
-      Fog::Compute.stub(:new)
-      Fog::Image.stub(:new)
-      ssl_options = mock_cloud_options.clone
-      ssl_options["openstack"]["ssl_verify_peer"] = "false"
-      Bosh::Clouds::Provider.create(:openstack, ssl_options)
-      Excon.defaults[:ssl_verify_peer].should be_false
-    end
   end
 end
