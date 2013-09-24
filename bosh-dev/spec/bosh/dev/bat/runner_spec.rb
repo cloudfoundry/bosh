@@ -5,63 +5,6 @@ module Bosh::Dev::Bat
   describe Runner do
     include FakeFS::SpecHelpers
 
-    describe '.build_aws' do
-      it 'builds runner with bat helper initialized with aws' do
-        bat_helper = instance_double(
-          'Bosh::Dev::BatHelper',
-          bosh_stemcell_path: 'bosh-stemcell-path',
-        )
-        Bosh::Dev::BatHelper
-          .should_receive(:new)
-          .with('aws', :dont_care)
-          .and_return(bat_helper)
-
-        director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
-        Bosh::Dev::Bat::DirectorAddress
-          .should_receive(:resolved_from_env)
-          .with(ENV, 'BOSH_VPC_SUBDOMAIN')
-          .and_return(director_address)
-
-        bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
-        Bosh::Dev::BoshCliSession
-          .should_receive(:new)
-          .and_return(bosh_cli_session)
-
-        stemcell_archive = instance_double(
-          'Bosh::Stemcell::Archive',
-          version: 'stemcell-archive-version',
-        )
-        Bosh::Stemcell::Archive
-          .should_receive(:new)
-          .with('bosh-stemcell-path')
-          .and_return(stemcell_archive)
-
-        microbosh_deployment_manifest = instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest')
-        Bosh::Dev::Aws::MicroBoshDeploymentManifest
-          .should_receive(:new)
-          .with(ENV, bosh_cli_session)
-          .and_return(microbosh_deployment_manifest)
-
-        bat_deployment_manifest = instance_double('Bosh::Dev::Aws::BatDeploymentManifest')
-        Bosh::Dev::Aws::BatDeploymentManifest
-          .should_receive(:new)
-          .with(ENV, bosh_cli_session, 'stemcell-archive-version')
-          .and_return(bat_deployment_manifest)
-
-        described_class.should_receive(:new).with(
-          ENV,
-          bat_helper,
-          director_address,
-          bosh_cli_session,
-          stemcell_archive,
-          microbosh_deployment_manifest,
-          bat_deployment_manifest
-        )
-
-        described_class.build_aws
-      end
-    end
-
     describe '.build_vsphere' do
       it 'returns vsphere runner with injected env and proper director address' do
         bat_helper = instance_double(
@@ -159,8 +102,8 @@ module Bosh::Dev::Bat
       let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
       let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6') }
 
-      let(:microbosh_deployment_manifest) { instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest', write: nil) }
-      let(:bat_deployment_manifest) { instance_double('Bosh::Dev::Aws::BatDeploymentManifest', write: nil) }
+      let(:microbosh_deployment_manifest) { double('microbosh-deployment-manifest', write: nil) }
+      let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
 
       before do
         FileUtils.mkdir('/mnt')

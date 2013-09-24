@@ -5,30 +5,12 @@ require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bat/director_uuid'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/stemcell/archive'
-require 'bosh/dev/aws/micro_bosh_deployment_manifest'
-require 'bosh/dev/aws/bat_deployment_manifest'
 require 'bosh/dev/vsphere/micro_bosh_deployment_manifest'
 require 'bosh/dev/vsphere/bat_deployment_manifest'
 
 module Bosh::Dev::Bat
   class Runner
     # rubocop:disable ParameterLists
-    def self.build_aws
-      env              = ENV
-      bat_helper       = Bosh::Dev::BatHelper.new('aws', :dont_care)
-      director_address = DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
-      bosh_cli_session = Bosh::Dev::BoshCliSession.new
-      stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
-
-      microbosh_deployment_manifest =
-        Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(env, bosh_cli_session)
-      bat_deployment_manifest =
-        Bosh::Dev::Aws::BatDeploymentManifest.new(env, bosh_cli_session, stemcell_archive.version)
-
-      new(env, bat_helper, director_address, bosh_cli_session, stemcell_archive,
-          microbosh_deployment_manifest, bat_deployment_manifest)
-    end
-
     def self.build_vsphere
       env              = ENV
       bat_helper       = Bosh::Dev::BatHelper.new('vsphere', :dont_care)
