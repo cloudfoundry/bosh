@@ -5,7 +5,7 @@ module Bosh::Dev::Bat
   describe Runner do
     include FakeFS::SpecHelpers
 
-    describe '.build' do
+    describe '.build_aws' do
       it 'builds runner with bat helper initialized with aws' do
         bat_helper = instance_double(
           'Bosh::Dev::BatHelper',
@@ -58,7 +58,7 @@ module Bosh::Dev::Bat
           bat_deployment_manifest
         )
 
-        described_class.build
+        described_class.build_aws
       end
     end
 

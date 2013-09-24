@@ -10,7 +10,7 @@ require 'bosh/dev/aws/bat_deployment_manifest'
 module Bosh::Dev::Bat
   class Runner
     # rubocop:disable ParameterLists
-    def self.build
+    def self.build_aws
       env                           = ENV
       bat_helper                    = Bosh::Dev::BatHelper.new('aws', :dont_care)
       director_address              = DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
