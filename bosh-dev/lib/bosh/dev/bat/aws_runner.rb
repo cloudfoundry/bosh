@@ -8,16 +8,33 @@ require 'bosh/dev/aws/bat_deployment_manifest'
 
 module Bosh::Dev::Bat
   class AwsRunner
+    # rubocop:disable ParameterLists
     def self.build
-      new(ENV)
+      env                           = ENV
+      bat_helper                    = Bosh::Dev::BatHelper.new('aws', :dont_care)
+      bosh_cli_session              = Bosh::Dev::BoshCliSession.new
+      stemcell_archive              = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
+      microbosh_deployment_manifest = Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(env, bosh_cli_session)
+      bat_deployment_manifest       = Bosh::Dev::Aws::BatDeploymentManifest.new(env,
+                                                                                bosh_cli_session,
+                                                                                stemcell_archive.version)
+      new(env, bat_helper, bosh_cli_session, stemcell_archive, microbosh_deployment_manifest, bat_deployment_manifest)
     end
 
-    def initialize(env)
-      @env              = env
-      @bat_helper       = Bosh::Dev::BatHelper.new('aws', :dont_care)
-      @bosh_cli_session = Bosh::Dev::BoshCliSession.new
-      @stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
+    def initialize(env,
+      bat_helper,
+      bosh_cli_session,
+      stemcell_archive,
+      microbosh_deployment_manifest,
+      bat_deployment_manifest)
+      @env                           = env
+      @bat_helper                    = bat_helper
+      @bosh_cli_session              = bosh_cli_session
+      @stemcell_archive              = stemcell_archive
+      @microbosh_deployment_manifest = microbosh_deployment_manifest
+      @bat_deployment_manifest       = bat_deployment_manifest
     end
+    # rubocop:enable ParameterLists
 
     def run_bats
       prepare_microbosh
@@ -31,11 +48,16 @@ module Bosh::Dev::Bat
 
     private
 
-    attr_reader :env, :bat_helper, :bosh_cli_session, :stemcell_archive
+    attr_reader :env,
+                :bat_helper,
+                :bosh_cli_session,
+                :stemcell_archive,
+                :microbosh_deployment_manifest,
+                :bat_deployment_manifest
 
     def create_microbosh_manifest
       Dir.chdir(bat_helper.micro_bosh_deployment_dir) do
-        Bosh::Dev::Aws::MicroBoshDeploymentManifest.new(bosh_cli_session).write
+        microbosh_deployment_manifest.write
       end
     end
 
@@ -46,14 +68,12 @@ module Bosh::Dev::Bat
         bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
         bosh_cli_session.run_bosh "micro deploy #{bat_helper.bosh_stemcell_path}"
         bosh_cli_session.run_bosh 'login admin admin'
-
         bosh_cli_session.run_bosh "upload stemcell #{bat_helper.bosh_stemcell_path}", debug_on_fail: true
       end
     end
 
     def create_bat_manifest
       Dir.chdir(bat_helper.artifacts_dir) do
-        bat_deployment_manifest = Bosh::Dev::Aws::BatDeploymentManifest.new(bosh_cli_session, stemcell_archive.version)
         bat_deployment_manifest.write
       end
     end

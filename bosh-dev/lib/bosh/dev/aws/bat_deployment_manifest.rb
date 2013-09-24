@@ -4,10 +4,10 @@ require 'bosh/dev/bosh_cli_session'
 
 module Bosh::Dev::Aws
   class BatDeploymentManifest
-    def initialize(bosh_cli_session, stemcell_version)
+    def initialize(env, bosh_cli_session, stemcell_version)
       @bosh_cli_session = bosh_cli_session
       @stemcell_version = stemcell_version
-      @receipts = Receipts.new
+      @receipts = Receipts.new(env)
     end
 
     def write

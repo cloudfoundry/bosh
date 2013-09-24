@@ -51,8 +51,7 @@ module Bosh::Dev::Bat
 
     def create_bat_manifest
       Dir.chdir(bat_helper.artifacts_dir) do
-        bat_deployment_manifest = Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, stemcell_archive)
-        bat_deployment_manifest.write
+        Bosh::Dev::VSphere::BatDeploymentManifest.new(director_uuid, stemcell_archive).write
       end
     end
 

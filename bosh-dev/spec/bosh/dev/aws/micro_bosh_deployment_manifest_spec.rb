@@ -4,15 +4,17 @@ require 'bosh/dev/bosh_cli_session'
 
 module Bosh::Dev::Aws
   describe MicroBoshDeploymentManifest do
+    subject { described_class.new(env, bosh_cli_session) }
+    let(:env) { {} }
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
+
     let(:receipts) do
-      instance_double('Bosh::Dev::Aws::Receipts',
-                      vpc_outfile_path: 'fake_vpc_outfile_path',
-                      route53_outfile_path: 'fake_route53_outfile_path'
+      instance_double(
+        'Bosh::Dev::Aws::Receipts',
+        vpc_outfile_path: 'fake_vpc_outfile_path',
+        route53_outfile_path: 'fake_route53_outfile_path',
       )
     end
-
-    subject { described_class.new(bosh_cli_session) }
 
     before do
       Receipts.stub(:new).and_return(receipts)
