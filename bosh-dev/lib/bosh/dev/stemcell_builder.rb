@@ -15,12 +15,10 @@ module Bosh::Dev
     end
 
     def build_stemcell
-      unless @stemcell_path
-        gem_components = GemComponents.new
-        gem_components.build_release_gems
+      gem_components = GemComponents.new
+      gem_components.build_release_gems
 
-        @stemcell_path = stemcell_builder_command.build
-      end
+      @stemcell_path = stemcell_builder_command.build
 
       File.exist?(@stemcell_path) || raise("#{@stemcell_path} does not exist")
 

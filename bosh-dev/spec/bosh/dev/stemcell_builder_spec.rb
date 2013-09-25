@@ -65,35 +65,6 @@ module Bosh::Dev
         }.to change { File.exist?('/fake/work/path/FAKE-stemcell.tgz') }.to(true)
       end
 
-      describe 'when called multiple times' do
-        it 'builds the stemcell once' do
-          gem_components.should_receive(:build_release_gems).once
-          stemcell_builder_command.should_receive(:build).once do
-            FileUtils.mkdir_p(fake_work_path)
-            FileUtils.touch(stemcell_file_path)
-            stemcell_file_path
-          end
-
-          2.times { builder.build_stemcell }
-        end
-
-        it 'raises an error if the stemcell files does not exist' do
-          gem_components.should_receive(:build_release_gems).once
-          stemcell_builder_command.should_receive(:build).once do
-            FileUtils.mkdir_p(fake_work_path)
-            FileUtils.touch(stemcell_file_path)
-            stemcell_file_path
-          end
-
-          builder.build_stemcell
-          FileUtils.rm(stemcell_file_path)
-
-          expect {
-            builder.build_stemcell
-          }.to raise_error("#{stemcell_file_path} does not exist")
-        end
-      end
-
       context 'when the stemcell is not created' do
         before do
           stemcell_builder_command.stub(build: stemcell_file_path)
