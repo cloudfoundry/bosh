@@ -79,7 +79,7 @@ module Bosh::Stemcell
                                                                      #:bosh_sysctl,
                                                                      #:bosh_ntpdate,
                                                                      :bosh_sudoers,
-                                                                     #:bosh_micro,
+                                                                     :bosh_micro,
                                                                      :system_grub,
                                                                    #:system_kernel,
                                                                    ])

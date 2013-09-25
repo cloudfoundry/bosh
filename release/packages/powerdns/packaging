@@ -4,7 +4,7 @@ echo "Extracting PowerDNS archive ..."
 
 mkdir -p target
 
-dpkg -x powerdns/pdns-static_3.0.1-1_amd64.deb target
+ar p powerdns/pdns-static_3.0.1-1_amd64.deb data.tar.gz | tar zx -C target
 
 if [[ $? != 0 ]] ; then
   echo "Cannot unpack PowerDNS"

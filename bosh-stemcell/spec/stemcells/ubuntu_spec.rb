@@ -100,6 +100,11 @@ describe 'Ubuntu Stemcell' do
     describe file('/var/vcap/micro/apply_spec.yml') do
       it { should be_file }
       it { should contain 'deployment: micro' }
+      it { should contain 'powerdns' }
+    end
+
+    describe file('/var/vcap/micro_bosh/data/cache') do
+      it { should be_a_directory }
     end
   end
 

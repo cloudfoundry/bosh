@@ -86,7 +86,14 @@ describe 'CentOs Stemcell' do
   end
 
   context 'installed by bosh_micro' do
-    describe file('/var/vcap/micro/apply_spec.yml')
+    describe file('/var/vcap/micro/apply_spec.yml') do
+      it { should be_a_file }
+      it { should contain 'powerdns' }
+    end
+
+    describe file('/var/vcap/micro_bosh/data/cache') do
+      it { should be_a_directory }
+    end
   end
 
   context 'installed by system_grub'
