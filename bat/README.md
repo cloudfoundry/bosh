@@ -17,7 +17,7 @@ Before you can run BAT, you need to set the following environment variables:
 * **BAT_DNS_HOST**: DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
 
 The 'dns' property MUST NOT be specified in the bat deployment spec properties. At all.
-  
+
 ## Optional Environment Variables
 
 If you want the tests to use a specifc bosh cli (versus the default picked up in the shell PATH), set BAT_BOSH_BIN to the `bosh` path.
@@ -35,8 +35,8 @@ properties:
   uuid: 3aa92242-0423-40f8-97ac-15f8d2f385fa # BAT_DIRECTOR UUID
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
-    version: 1.5.0.pre
+    name: bosh-aws-xen-ubuntu
+    version: latest
   instances: 1
   key_name: idora # AWS key name if you're running on AWS
   mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
@@ -51,8 +51,8 @@ properties:
   uuid: 93a7819d-ca4e-4636-96dd-35a9f44a579b
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
-    version: 1.5.0.pre
+    name: bosh-aws-xen-ubuntu
+    version: latest
   instances: 1
   key_name: bosh
   mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
@@ -77,7 +77,7 @@ properties:
   uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
+    name: bosh-openstack-kvm-ubuntu
     version: latest
   instances: 1
   key_name: bosh # OpenStack key name
@@ -93,7 +93,7 @@ properties:
   uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
+    name: bosh-openstack-kvm-ubuntu
     version: latest
   instances: 1
   key_name: bosh # OpenStack key name

@@ -113,7 +113,7 @@ This is a sample of how OpenStack specific properties are used in a BOSH deploym
         network: default
         size: 1
         stemcell:
-          name: bosh-stemcell
+          name: bosh-openstack-kvm-ubuntu
           version: latest
         cloud_properties:
           instance_type: m1.small

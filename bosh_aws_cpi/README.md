@@ -9,25 +9,25 @@ These options are passed to the AWS CPI when it is instantiated.
 
 ### AWS options
 
-* `access_key_id` (required)  
+* `access_key_id` (required)
   AWS IAM user access key
-* `secret_access_key` (required)  
+* `secret_access_key` (required)
   AWS IAM secret access key
-* `default_key_name` (required)  
+* `default_key_name` (required)
   default AWS ssh key name to assign to created virtual machines
-* `default_security_groups` (required)  
+* `default_security_groups` (required)
   list of AWS security group to assign to created virtual machines
-* `ec2_private_key` (required)  
+* `ec2_private_key` (required)
   local path to the ssh private key, must match `default_key_name`
 * `region` (required)
   EC2 region
-* `ec2_endpoint` (optional)  
+* `ec2_endpoint` (optional)
   URL of the EC2 endpoint to connect to, defaults to the endpoint corresponding to the selected region,
   or `default_ec2_endpoint` if no region has been selected
-* `elb_endpoint` (optional)  
+* `elb_endpoint` (optional)
   URL of the ELB endpoint to connect to, default to the endpoint corresponding to the selected region,
   or `default_elb_endpoint` if no region has been selected
-* `max_retries` (optional)  
+* `max_retries` (optional)
   maximum number of time to retry an AWS API call, defaults to `DEFAULT_MAX_RETRIES`
 
 ### Registry options
@@ -35,11 +35,11 @@ These options are passed to the AWS CPI when it is instantiated.
 The registry options are passed to the AWS CPI by the BOSH director based on the settings in `director.yml`, but can be
 overridden if needed.
 
-* `endpoint` (required)  
+* `endpoint` (required)
   registry URL
-* `user` (required)  
+* `user` (required)
   registry user
-* `password` (required)  
+* `password` (required)
   registry password
 
 ### Agent options
@@ -51,16 +51,16 @@ overridden if needed.
 
 These options are specified under `cloud_options` in the `resource_pools` section of a BOSH deployment manifest.
 
-* `availability_zone` (optional)  
+* `availability_zone` (optional)
   the EC2 availability zone the VMs should be created in
-* `instance_type` (required)  
+* `instance_type` (required)
   which [type of instance](http://aws.amazon.com/ec2/instance-types/) the VMs should belong to
 
 ### Network options
 
 These options are specified under `cloud_options` in the `networks` section of a BOSH deployment manifest.
 
-* `type` (required)  
+* `type` (required)
   can be either `dynamic` for a DHCP assigned IP by AWS, or `vip` to use an Elastic IP (which needs to be already
   allocated)
 
@@ -91,8 +91,8 @@ This is a sample of how AWS specific properties are used in a BOSH deployment ma
         network: default
         size: 3
         stemcell:
-          name: bosh-stemcell
-          version: 0.6.7
+          name: bosh-aws-xen-ubuntu
+          version: latest
         cloud_properties:
           instance_type: m1.small
 

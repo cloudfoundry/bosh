@@ -42,7 +42,7 @@ resource_pools:
     network: default
     size: 8
     stemcell:
-      name: bosh-stemcell
+      name: bosh-openstack-kvm-ubuntu
       version: latest
     cloud_properties:
       instance_type: <flavor_name> # CHANGE
@@ -57,7 +57,7 @@ jobs:
         default: [dns, gateway]
         static_ips:
           - <ip_address_for_nats> # CHANGE
-          
+
   - name: redis
     template: redis
     instances: 1
@@ -98,7 +98,7 @@ jobs:
         default: [dns, gateway]
         static_ips:
           - <ip_address_for_blobstore> # CHANGE
-          
+
   - name: director
     template: director
     instances: 1
