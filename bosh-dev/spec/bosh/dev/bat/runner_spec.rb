@@ -42,7 +42,7 @@ module Bosh::Dev::Bat
 
       let(:director_address) { DirectorAddress.new('director-hostname', 'director-ip') }
       let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
-      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: '6') }
+      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'stemcell-name', version: '6') }
 
       let(:microbosh_deployment_manifest) { double('microbosh-deployment-manifest', write: nil) }
       let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
@@ -114,7 +114,7 @@ module Bosh::Dev::Bat
 
       it 'deletes the stemcell' do
         bosh_cli_session.should_receive(:run_bosh).with(
-          "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
+          "delete stemcell stemcell-name 6", ignore_failures: true)
         subject.run_bats
       end
 
@@ -134,7 +134,7 @@ module Bosh::Dev::Bat
 
         it 'deletes the stemcell' do
           bosh_cli_session.should_receive(:run_bosh).with(
-            "delete stemcell bosh-stemcell #{stemcell_archive.version}", ignore_failures: true)
+            "delete stemcell stemcell-name 6", ignore_failures: true)
           expect { subject.run_bats }.to raise_error
         end
 
