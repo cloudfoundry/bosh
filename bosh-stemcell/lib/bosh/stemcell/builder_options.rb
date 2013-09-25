@@ -17,7 +17,7 @@ module Bosh::Stemcell
 
     def default
       {
-        'stemcell_name' => 'bosh-stemcell',
+        'stemcell_name' => "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}",
         'stemcell_tgz' => archive_filename.to_s,
         'stemcell_image_name' => stemcell_image_name,
         'stemcell_version' => stemcell_version,

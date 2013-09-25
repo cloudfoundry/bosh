@@ -102,7 +102,8 @@ module Bosh::Stemcell
 
           result = stemcell_builder_options.default
 
-          expect(result['stemcell_name']).to eq ('bosh-stemcell')
+          expect(result['stemcell_name']).to eq(
+            "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}")
           expect(result['stemcell_operating_system']).to eq(operating_system.name)
           expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
           expect(result['stemcell_hypervisor']).to eq(infrastructure.hypervisor)
