@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
-
 require 'bosh/dev/stemcell_builder'
 
 module Bosh::Dev
@@ -22,13 +21,16 @@ module Bosh::Dev
     let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
 
     subject(:builder) do
-      StemcellBuilder.new(infrastructure_name: infrastructure_name,
+      StemcellBuilder.new(env, infrastructure_name: infrastructure_name,
                           operating_system_name: operating_system_name)
     end
+
+    let(:env) { {} }
 
     before do
       Build.stub(candidate: build)
       Bosh::Stemcell::BuilderCommand.stub(:new).with(
+        env,
         infrastructure_name: infrastructure_name,
         operating_system_name: operating_system_name,
         release_tarball_path: build.release_tarball_path,

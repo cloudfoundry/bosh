@@ -28,7 +28,7 @@ namespace :ci do
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(ENV.to_hash, args.to_hash)
     stemcell_file = stemcell_builder.build_stemcell
 
     mkdir_p('tmp')
@@ -41,7 +41,7 @@ namespace :ci do
     require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
+    stemcell_builder = Bosh::Dev::StemcellBuilder.new(ENV.to_hash, args.to_hash)
     stemcell_file = stemcell_builder.build_stemcell
 
     stemcell_publisher = Bosh::Dev::StemcellPublisher.new

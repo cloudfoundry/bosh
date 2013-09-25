@@ -1,16 +1,12 @@
 require 'spec_helper'
 require 'bosh/stemcell/builder_options'
-
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
 
 module Bosh::Stemcell
   describe BuilderOptions do
-    let(:environment_hash) { {} }
-
-    let(:infrastructure) { Infrastructure.for('aws') }
-    let(:operating_system) { OperatingSystem.for('ubuntu') }
-
+    subject(:stemcell_builder_options) { described_class.new(env, options) }
+    let(:env) { {} }
     let(:options) do
       {
         tarball: 'fake/release.tgz',
@@ -20,15 +16,12 @@ module Bosh::Stemcell
       }
     end
 
+    let(:infrastructure) { Infrastructure.for('aws') }
+    let(:operating_system) { OperatingSystem.for('ubuntu') }
     let(:expected_source_root) { File.expand_path('../../../../..', __FILE__) }
-
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
-    subject(:stemcell_builder_options) { BuilderOptions.new(options) }
-
     before do
-      ENV.stub(to_hash: environment_hash)
-
       ArchiveFilename.stub(:new).
         with('007', infrastructure, operating_system, 'bosh-stemcell', false).and_return(archive_filename)
     end
@@ -90,7 +83,7 @@ module Bosh::Stemcell
       # rubocop:disable MethodLength
       def self.it_sets_correct_environment_variables
         describe 'setting enviroment variables' do
-          let(:environment_hash) do
+          let(:env) do
             {
               'UBUNTU_ISO' => 'fake_ubuntu_iso',
               'UBUNTU_MIRROR' => 'fake_ubuntu_mirror',
@@ -124,7 +117,7 @@ module Bosh::Stemcell
           end
 
           context 'when RUBY_BIN is not set' do
-            before { environment_hash.delete('RUBY_BIN') }
+            before { env.delete('RUBY_BIN') }
 
             before do
               RbConfig::CONFIG.stub(:[]).with('bindir').and_return('/a/path/to/')
@@ -182,7 +175,7 @@ module Bosh::Stemcell
           end
 
           context 'if you have OVFTOOL set in the environment' do
-            let(:environment_hash) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
+            let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
             it 'sets image_vsphere_ovf_ovftool_path' do
               result = stemcell_builder_options.default

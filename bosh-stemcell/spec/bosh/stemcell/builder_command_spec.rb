@@ -8,7 +8,7 @@ module Bosh::Stemcell
       File.join('/mnt/stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
     end
 
-    let(:environment_hash) { {} }
+    let(:env) { {} }
 
     let(:infrastructure) do
       instance_double('Bosh::Stemcell::Infrastructure::Vsphere',
@@ -34,15 +34,13 @@ module Bosh::Stemcell
     let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
 
     subject(:stemcell_builder_command) do
-      BuilderCommand.new(infrastructure_name: infrastructure.name,
+      BuilderCommand.new(env, infrastructure_name: infrastructure.name,
                          operating_system_name: operating_system.name,
                          release_tarball_path: release_tarball_path,
                          version: version)
     end
 
     before do
-      ENV.stub(to_hash: environment_hash)
-
       Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
       OperatingSystem.stub(:for).with(operating_system.name).and_return(operating_system)
       StageCollection.stub(:new).with(infrastructure: infrastructure,
@@ -53,7 +51,7 @@ module Bosh::Stemcell
                                   settings_file: settings_file,
                                   work_path: File.join(root_dir, 'work')).and_return(stage_runner)
 
-      BuilderOptions.stub(:new).with(tarball: release_tarball_path,
+      BuilderOptions.stub(:new).with(env, tarball: release_tarball_path,
                                      stemcell_version: version,
                                      infrastructure: infrastructure,
                                      operating_system: operating_system).and_return(stemcell_builder_options)
@@ -192,7 +190,7 @@ module Bosh::Stemcell
       end
 
       context 'when ENV contains variables besides HTTP_PROXY and NO_PROXY' do
-        let(:environment_hash) do
+        let(:env) do
           {
             'NOT_HTTP_PROXY' => 'nice_proxy',
             'no_proxy_just_kidding' => 'naughty_proxy'
@@ -210,7 +208,7 @@ module Bosh::Stemcell
       end
 
       context 'ENV variables for HTTP_PROXY and NO_PROXY are passed to "env"' do
-        let(:environment_hash) do
+        let(:env) do
           {
             'HTTP_PROXY' => 'nice_proxy',
             'no_proxy' => 'naughty_proxy'

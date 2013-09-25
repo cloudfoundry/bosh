@@ -1,12 +1,11 @@
 require 'rbconfig'
-
 require 'bosh_agent/version'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Stemcell
   class BuilderOptions
-    def initialize(options)
-      @environment = ENV.to_hash
+    def initialize(env, options)
+      @environment = env
       @infrastructure = options.fetch(:infrastructure)
       @operating_system = options.fetch(:operating_system)
 
@@ -34,15 +33,21 @@ module Bosh::Stemcell
 
     private
 
-    attr_reader :environment,
-                :infrastructure,
-                :operating_system,
-                :stemcell_version,
-                :image_create_disk_size,
-                :bosh_micro_release_tgz_path
+    attr_reader(
+      :environment,
+      :infrastructure,
+      :operating_system,
+      :stemcell_version,
+      :image_create_disk_size,
+      :bosh_micro_release_tgz_path
+    )
 
     def vsphere_options
-      infrastructure.name == 'vsphere' ? { 'image_vsphere_ovf_ovftool_path' => environment['OVFTOOL'] } : {}
+      if infrastructure.name == 'vsphere'
+        { 'image_vsphere_ovf_ovftool_path' => environment['OVFTOOL'] }
+      else
+        {}
+      end
     end
 
     def environment_variables

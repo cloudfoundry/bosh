@@ -10,15 +10,18 @@ require 'bosh/stemcell/stage_runner'
 
 module Bosh::Stemcell
   class BuilderCommand
-    def initialize(options)
+    def initialize(env, options)
+      @environment = env
       @infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
       @operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
 
-      @stemcell_builder_options = BuilderOptions.new(tarball: options.fetch(:release_tarball_path),
-                                                     stemcell_version: options.fetch(:version),
-                                                     infrastructure: infrastructure,
-                                                     operating_system: operating_system)
-      @environment = ENV.to_hash
+      @stemcell_builder_options = BuilderOptions.new(
+        env,
+        tarball: options.fetch(:release_tarball_path),
+        stemcell_version: options.fetch(:version),
+        infrastructure: infrastructure,
+        operating_system: operating_system,
+      )
       @shell = Bosh::Core::Shell.new
     end
 
@@ -54,11 +57,13 @@ module Bosh::Stemcell
 
     private
 
-    attr_reader :shell,
-                :environment,
-                :infrastructure,
-                :operating_system,
-                :stemcell_builder_options
+    attr_reader(
+      :shell,
+      :environment,
+      :infrastructure,
+      :operating_system,
+      :stemcell_builder_options
+    )
 
     def rspec_command
       [
