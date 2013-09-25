@@ -94,7 +94,7 @@ module Bosh::Director
           {
             'resource_pool' => {
               'stemcell' => {
-                'name' => 'bosh-stemcell',
+                'name' => 'stemcell-name',
                 'version' => '3.0.2'
               },
               'cloud_properties' => { 'foo' => 'bar' },
@@ -105,7 +105,7 @@ module Bosh::Director
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
-          Models::Stemcell.make(name: 'bosh-stemcell', version: '3.0.2', cid: 'sc-302')
+          Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
           AgentClient.stub(:new).with('agent-222', anything).and_return(fake_new_agent)
           SecureRandom.stub(uuid: 'agent-222')

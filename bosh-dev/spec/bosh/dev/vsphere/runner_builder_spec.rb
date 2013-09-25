@@ -7,7 +7,7 @@ module Bosh::Dev::VSphere
       it 'returns vsphere runner with injected env and proper director address' do
         bat_helper = instance_double(
           'Bosh::Dev::BatHelper',
-          bosh_stemcell_path: 'bosh-stemcell-path',
+          bosh_stemcell_path: 'stemcell-path',
         )
         Bosh::Dev::BatHelper
           .should_receive(:new)
@@ -31,7 +31,7 @@ module Bosh::Dev::VSphere
         )
         Bosh::Stemcell::Archive
           .should_receive(:new)
-          .with('bosh-stemcell-path')
+          .with('stemcell-path')
           .and_return(stemcell_archive)
 
         microbosh_deployment_manifest = instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest')

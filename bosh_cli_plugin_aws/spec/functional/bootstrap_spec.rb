@@ -130,7 +130,7 @@ describe 'AWS Bootstrap commands' do
           {
               'name' => deployment_name,
               'releases' => [{ 'name' => 'bosh', 'version' => '13.1-dev' }],
-              'stemcells' => [{ 'name' => 'bosh-stemcell', 'version' => '2013-03-21_01-53-17' }]
+              'stemcells' => [{ 'name' => 'stemcell-name', 'version' => '2013-03-21_01-53-17' }]
           }
       ]
     end

@@ -83,10 +83,11 @@ describe Bosh::Aws::BoshManifest do
     end
 
     context 'setting the stemcell name' do
-      let(:stemcell_name) { 'bosh-stemcell-ubuntu' }
+      let(:stemcell_name) { 'stemcell-name' }
 
       it "sets stemcell name" do
-        expect(manifest['resource_pools'].first['stemcell']['name']).to eq 'bosh-stemcell-ubuntu'
+        resource_pool = manifest['resource_pools'].first
+        expect(resource_pool['stemcell']['name']).to eq('stemcell-name')
       end
     end
   end

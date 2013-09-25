@@ -3,56 +3,45 @@
 require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
-
-  before :each do
-    @tmp_dir = Dir.mktmpdir
-  end
-
-  after(:each) do
-    FileUtils.rm_rf(@tmp_dir)
-  end
+  before { @tmp_dir = Dir.mktmpdir }
+  after { FileUtils.rm_rf(@tmp_dir) }
 
   describe "EBS-volume based flow" do
     let(:creator) { double(Bosh::AwsCloud::StemcellCreator) }
 
-    before(:each) do
-      Bosh::AwsCloud::StemcellCreator.stub(:new => creator)
-    end
+    before { Bosh::AwsCloud::StemcellCreator.stub(:new => creator) }
 
     context "fake stemcell" do
       let(:stemcell_properties) do
         {
-            "root_device_name" => "/dev/sda1",
-            "architecture" => "x86_64",
-            "name" => "bosh-stemcell",
-            "version" => "1.2.3",
-            "ami" => {
-                "us-east-1" => "ami-xxxxxxxx"
-            }
+          "root_device_name" => "/dev/sda1",
+          "architecture" => "x86_64",
+          "name" => "stemcell-name",
+          "version" => "1.2.3",
+          "ami" => {
+            "us-east-1" => "ami-xxxxxxxx"
+          }
         }
       end
 
       it "should return a fake stemcell" do
-        cloud = mock_cloud do |ec2|
-        end
-
+        cloud = mock_cloud
         creator.should_receive(:fake?).and_return(true)
         creator.should_receive(:fake).and_return(double("ami", :id => "ami-xxxxxxxx"))
-
         cloud.create_stemcell("/tmp/foo", stemcell_properties).should == "ami-xxxxxxxx"
       end
-
     end
 
     context "real stemcell" do
       let(:stemcell_properties) do
         {
-            "root_device_name" => "/dev/sda1",
-            "architecture" => "x86_64",
-            "name" => "bosh-stemcell",
-            "version" => "1.2.3"
+          "root_device_name" => "/dev/sda1",
+          "architecture" => "x86_64",
+          "name" => "stemcell-name",
+          "version" => "1.2.3"
         }
       end
+
       let(:volume) { double("volume", :id => "vol-xxxxxxxx") }
       let(:stemcell) { double("stemcell", :id => "ami-xxxxxxxx") }
       let(:instance) { double("instance") }
@@ -99,6 +88,5 @@ describe Bosh::AwsCloud::Cloud do
         cloud.find_ebs_device("/dev/sdf").should == "/dev/xvdf"
       end
     end
-
   end
 end

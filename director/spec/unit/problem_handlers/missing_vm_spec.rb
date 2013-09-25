@@ -21,7 +21,7 @@ module Bosh::Director
         {
           'resource_pool' => {
             'stemcell' => {
-              'name' => 'bosh-stemcell',
+              'name' => 'stemcell-name',
               'version' => '3.0.2'
             },
             'cloud_properties' => { 'foo' => 'bar' },
@@ -40,7 +40,7 @@ module Bosh::Director
       it 'recreates a VM' do
         vm.update(:apply_spec => spec, env: { 'key1' => 'value1' })
         Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id)
-        Models::Stemcell.make(name: 'bosh-stemcell', version: '3.0.2', cid: 'sc-302')
+        Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
         SecureRandom.stub(uuid: 'agent-222')
         AgentClient.stub(:new).with('agent-222', anything).and_return(fake_new_agent)

@@ -7,7 +7,7 @@ module Bosh::Dev::Openstack
       it 'returns openstack runner with injected env and proper director address' do
         bat_helper = instance_double(
           'Bosh::Dev::BatHelper',
-          bosh_stemcell_path: 'bosh-stemcell-path',
+          bosh_stemcell_path: 'stemcell-path',
         )
         class_double('Bosh::Dev::BatHelper').as_stubbed_const
           .should_receive(:new)
@@ -31,7 +31,7 @@ module Bosh::Dev::Openstack
         )
         class_double('Bosh::Stemcell::Archive').as_stubbed_const
           .should_receive(:new)
-          .with('bosh-stemcell-path')
+          .with('stemcell-path')
           .and_return(stemcell_archive)
 
         microbosh_deployment_manifest = instance_double('Bosh::Dev::Openstack::MicroBoshDeploymentManifest')

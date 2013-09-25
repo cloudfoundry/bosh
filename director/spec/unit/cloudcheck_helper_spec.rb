@@ -72,21 +72,18 @@ module Bosh::Director
         end
 
         it 'whines when stemcell is not in DB' do
-          spec = {
-              'resource_pool' => {
-                  'stemcell' => {
-                      'name' => 'bosh-stemcell',
-                      'version' => '3.0.2'
-                  }
+          vm.update(apply_spec: {
+            'resource_pool' => {
+              'stemcell' => {
+                'name' => 'stemcell-name',
+                'version' => '3.0.2'
               }
-          }
-          env = {'key1' => 'value1'}
-
-          vm.update(apply_spec: spec, env: env)
+            }
+          }, env: {'key1' => 'value1'})
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error(ProblemHandlerError, "Unable to find stemcell 'bosh-stemcell 3.0.2'")
+          }.to raise_error(ProblemHandlerError, "Unable to find stemcell 'stemcell-name 3.0.2'")
         end
       end
 
@@ -95,7 +92,7 @@ module Bosh::Director
           {
               'resource_pool' => {
                   'stemcell' => {
-                      'name' => 'bosh-stemcell',
+                      'name' => 'stemcell-name',
                       'version' => '3.0.2'
                   },
                   'cloud_properties' => {'foo' => 'bar'},
@@ -108,7 +105,7 @@ module Bosh::Director
 
         before do
           VmCreator.stub(:generate_agent_id).and_return('agent-222')
-          Models::Stemcell.make(name: 'bosh-stemcell', version: '3.0.2', cid: 'sc-302')
+          Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
           vm.update(apply_spec: spec, env: {'key1' => 'value1'})
 
