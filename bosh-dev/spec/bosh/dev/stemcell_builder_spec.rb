@@ -11,7 +11,7 @@ module Bosh::Dev
     let(:infrastructure_name) { 'vsphere' }
     let(:operating_system_name) { 'ubuntu' }
 
-    let(:build) { instance_double('Bosh::Dev::Build', download_release: 'fake release path', number: build_number) }
+    let(:build) { instance_double('Bosh::Dev::Build::Candidate', release_tarball_path: 'fake release path', number: build_number) }
     let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
 
     let(:stemcell_builder_command) do
@@ -31,7 +31,7 @@ module Bosh::Dev
       Bosh::Stemcell::BuilderCommand.stub(:new).with(
         infrastructure_name: infrastructure_name,
         operating_system_name: operating_system_name,
-        release_tarball_path: build.download_release,
+        release_tarball_path: build.release_tarball_path,
         version: build_number,
       ).and_return(stemcell_builder_command)
     end

@@ -10,7 +10,7 @@ module Bosh::Dev
         infrastructure_name:   options.fetch(:infrastructure_name),
         operating_system_name: options.fetch(:operating_system_name),
         version:               build.number,
-        release_tarball_path:  build.download_release,
+        release_tarball_path:  build.release_tarball_path,
       )
     end
 
