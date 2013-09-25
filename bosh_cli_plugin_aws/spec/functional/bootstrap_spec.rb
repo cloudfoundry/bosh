@@ -213,10 +213,12 @@ describe 'AWS Bootstrap commands' do
       end
 
       context 'when the target has no stemcell' do
+        let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'bosh-stemcell-ubuntu')}
         it 'uploads a stemcell' do
           stub_request(:get, 'http://127.0.0.1:25555/stemcells').
             to_return(status: 200, body: '[]')
-          mock_s3.should_receive(:copy_remote_file)
+          mock_s3.should_receive(:copy_remote_file).and_return '/tmp/bosh_stemcell.tgz'
+          Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/bosh_stemcell.tgz').and_return(stemcell_archive)
           Bosh::Cli::Command::Stemcell.any_instance.should_receive(:upload)
           aws.bootstrap_bosh
         end

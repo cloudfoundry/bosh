@@ -5,6 +5,7 @@ describe Bosh::Aws::BoshManifest do
   let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
   let(:rds_receipt) { Psych.load_file(asset "test-aws_rds_bosh_receipt.yml") }
   let(:manifest_options) {{hm_director_user: 'hm', hm_director_password: 'hm_password'}}
+  let(:stemcell_name) { nil }
 
   it "sets the correct elastic ip" do
     described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options).vip.should == "50.200.100.3"
@@ -20,8 +21,9 @@ describe Bosh::Aws::BoshManifest do
 
   describe "generated yaml" do
     let(:manifest) do
-      manifest_yaml = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options).to_y
-      YAML.load(manifest_yaml)
+      manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options)
+      manifest.stemcell_name = stemcell_name if stemcell_name
+      YAML.load(manifest.to_y)
     end
     let(:properties) { manifest['properties'] }
 
@@ -78,6 +80,14 @@ describe Bosh::Aws::BoshManifest do
       expect(db['password']).to eq 'p76ad85e9793e58b7112a4881be100dee'
       expect(db['host']).to eq 'bosh.cabaz18bo7yr.us-east-1.rds.amazonaws.com'
       expect(db['port']).to eq 3306
+    end
+
+    context 'setting the stemcell name' do
+      let(:stemcell_name) { 'bosh-stemcell-ubuntu' }
+
+      it "sets stemcell name" do
+        expect(manifest['resource_pools'].first['stemcell']['name']).to eq 'bosh-stemcell-ubuntu'
+      end
     end
   end
 end

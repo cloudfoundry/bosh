@@ -1,5 +1,6 @@
 require_relative 'bootstrap'
 require 'net/https'
+require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'
@@ -21,7 +22,7 @@ module Bosh
       def validate_requirements
 
         release_exist = director.list_releases.detect { |r| r['name'] == 'bosh' }
-        stemcell_exist = director.list_stemcells.first
+        first_stemcell = director.list_stemcells.first
 
         existing_deployments = director.list_deployments.map { |deployment| deployment['name'] }
 
@@ -32,16 +33,19 @@ This command should be used for bootstrapping bosh from scratch.
           MSG
         end
 
-        return release_exist, stemcell_exist
+        return release_exist, first_stemcell
       end
 
       def start
+        release_exist, first_stemcell = validate_requirements
 
-        release_exist, stemcell_exist = validate_requirements
-
-        generate_manifest
         fetch_and_upload_release unless release_exist
-        fetch_and_upload_stemcell unless stemcell_exist
+        if first_stemcell
+          manifest.stemcell_name = first_stemcell['name']
+        else
+          manifest.stemcell_name = Bosh::Stemcell::Archive.new(fetch_and_upload_stemcell).name
+        end
+        generate_manifest
 
         deploy
 
@@ -107,7 +111,9 @@ This command should be used for bootstrapping bosh from scratch.
       def fetch_and_upload_stemcell
         stemcell_command = Bosh::Cli::Command::Stemcell.new
         stemcell_command.options = self.options
-        stemcell_command.upload(bosh_stemcell)
+        stemcell_path = bosh_stemcell
+        stemcell_command.upload(stemcell_path)
+        stemcell_path
       end
 
       def bosh_stemcell

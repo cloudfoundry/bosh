@@ -4,10 +4,13 @@ module Bosh
 
       attr_reader :director_uuid, :rds_receipt
 
+      attr_accessor :stemcell_name
+
       def initialize(vpc_receipt, route53_receipt, director_uuid, rds_receipt, options={})
         super(vpc_receipt, route53_receipt, options)
         @director_uuid = director_uuid
         @rds_receipt = rds_receipt
+        @stemcell_name = 'bosh-aws-xen-ubuntu'
       end
 
       def file_name
