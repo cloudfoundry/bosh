@@ -61,6 +61,7 @@ describe 'CentOs Stemcell' do
       'sudo'           => '1.8.6p3-7.el6.x86_64',
       'rsyslog'        => '5.8.10-7.el6_4.x86_64',
       'rsyslog-relp'   => '5.8.10-7.el6_4.x86_64',
+      'nc'             => '1.84-22.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
