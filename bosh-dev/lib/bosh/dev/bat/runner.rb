@@ -13,6 +13,7 @@ module Bosh::Dev::Bat
       microbosh_deployment_manifest,
       bat_deployment_manifest
     )
+    # rubocop:enable ParameterLists
       @env                           = env
       @bat_helper                    = bat_helper
       @director_address              = director_address
@@ -21,7 +22,6 @@ module Bosh::Dev::Bat
       @microbosh_deployment_manifest = microbosh_deployment_manifest
       @bat_deployment_manifest       = bat_deployment_manifest
     end
-    # rubocop:enable ParameterLists
 
     def run_bats
       prepare_microbosh
