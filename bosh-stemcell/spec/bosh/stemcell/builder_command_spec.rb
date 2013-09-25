@@ -1,61 +1,73 @@
 require 'spec_helper'
-
 require 'bosh/stemcell/builder_command'
 
 module Bosh::Stemcell
   describe BuilderCommand do
-    let(:root_dir) do
-      File.join('/mnt/stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
+    subject(:stemcell_builder_command) do
+      described_class.new(
+        env,
+        infrastructure_name: infrastructure.name,
+        operating_system_name: operating_system.name,
+        release_tarball_path: release_tarball_path,
+        version: version
+      )
     end
 
     let(:env) { {} }
 
     let(:infrastructure) do
-      instance_double('Bosh::Stemcell::Infrastructure::Vsphere',
-                      name: 'vsphere',
-                      hypervisor: 'esxi')
+      instance_double(
+        'Bosh::Stemcell::Infrastructure::Vsphere',
+        name: 'vsphere',
+        hypervisor: 'esxi'
+      )
     end
 
     let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
+    let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
+    let(:version) { '007' }
+
+    before do
+      Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
+      OperatingSystem.stub(:for).with(operating_system.name).and_return(operating_system)
+      StageCollection.stub(:new).with(
+        infrastructure: infrastructure,
+        operating_system: operating_system
+      ).and_return(stage_collection)
+
+      StageRunner.stub(:new).with(
+        build_path: File.join(root_dir, 'build', 'build'),
+        command_env: 'env ',
+        settings_file: settings_file,
+        work_path: File.join(root_dir, 'work')
+      ).and_return(stage_runner)
+
+      BuilderOptions.stub(:new).with(
+        env,
+        tarball: release_tarball_path,
+        stemcell_version: version,
+        infrastructure: infrastructure,
+        operating_system: operating_system
+      ).and_return(stemcell_builder_options)
+    end
+
+    let(:root_dir) do
+      File.join('/mnt/stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
+    end
 
     let(:stemcell_builder_options) do
       instance_double('Bosh::Stemcell::BuilderOptions', default: options)
     end
 
     let(:stage_collection) do
-      instance_double('Bosh::Stemcell::StageCollection',
-                      operating_system_stages: ['FAKE_OS_STAGES'],
-                      infrastructure_stages: ['FAKE_INFRASTRUCTURE_STAGES']
+      instance_double(
+        'Bosh::Stemcell::StageCollection',
+        operating_system_stages: ['FAKE_OS_STAGES'],
+        infrastructure_stages: ['FAKE_INFRASTRUCTURE_STAGES']
       )
     end
+
     let(:stage_runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
-
-    let(:version) { '007' }
-    let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
-
-    subject(:stemcell_builder_command) do
-      BuilderCommand.new(env, infrastructure_name: infrastructure.name,
-                         operating_system_name: operating_system.name,
-                         release_tarball_path: release_tarball_path,
-                         version: version)
-    end
-
-    before do
-      Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
-      OperatingSystem.stub(:for).with(operating_system.name).and_return(operating_system)
-      StageCollection.stub(:new).with(infrastructure: infrastructure,
-                                      operating_system: operating_system).and_return(stage_collection)
-
-      StageRunner.stub(:new).with(build_path: File.join(root_dir, 'build', 'build'),
-                                  command_env: 'env ',
-                                  settings_file: settings_file,
-                                  work_path: File.join(root_dir, 'work')).and_return(stage_runner)
-
-      BuilderOptions.stub(:new).with(env, tarball: release_tarball_path,
-                                     stemcell_version: version,
-                                     infrastructure: infrastructure,
-                                     operating_system: operating_system).and_return(stemcell_builder_options)
-    end
 
     let(:etc_dir) { File.join(root_dir, 'build', 'build', 'etc') }
     let(:settings_file) { File.join(etc_dir, 'settings.bash') }
