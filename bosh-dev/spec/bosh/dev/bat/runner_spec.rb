@@ -102,45 +102,49 @@ module Bosh::Dev::Bat
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
       end
 
-      it 'invokes the "bat" rake task' do
-        bat_rake_task.should_receive(:invoke)
-        subject.run_bats
-      end
+      def self.it_cleans_up_after_rake_task(ignore_error = false)
+        it 'deletes the bat deployment, stemcell and then micro' do
+          bosh_cli_session
+            .should_receive(:run_bosh)
+            .with('delete deployment bat', ignore_failures: true)
+            .ordered
 
-      it 'deletes the bat deployment' do
-        bosh_cli_session.should_receive(:run_bosh).with('delete deployment bat', ignore_failures: true)
-        subject.run_bats
-      end
+          bosh_cli_session.should_receive(:run_bosh)
+            .with('delete stemcell stemcell-name 6', ignore_failures: true)
+            .ordered
 
-      it 'deletes the stemcell' do
-        bosh_cli_session.should_receive(:run_bosh).with(
-          "delete stemcell stemcell-name 6", ignore_failures: true)
-        subject.run_bats
-      end
+          bosh_cli_session
+            .should_receive(:run_bosh)
+            .with('micro delete', ignore_failures: true)
+            .ordered
 
-      it 'deletes the micro' do
-        bosh_cli_session.should_receive(:run_bosh).with('micro delete', ignore_failures: true)
-        subject.run_bats
-      end
-
-      context 'when a failure occurs' do
-        before { bat_rake_task.should_receive(:invoke).and_raise }
-
-        it 'deletes the bat deployment' do
-          bosh_cli_session.should_receive(:run_bosh).with(
-            'delete deployment bat', ignore_failures: true)
-          expect { subject.run_bats }.to raise_error
+          begin
+            subject.run_bats
+          rescue
+            raise unless ignore_error
+          end
         end
+      end
 
-        it 'deletes the stemcell' do
-          bosh_cli_session.should_receive(:run_bosh).with(
-            "delete stemcell stemcell-name 6", ignore_failures: true)
-          expect { subject.run_bats }.to raise_error
+      context 'when bat rake task raises an error' do
+        before { bat_rake_task.stub(:invoke) }
+
+        it_cleans_up_after_rake_task
+
+        it 'invokes the "bat" rake task' do
+          bat_rake_task.should_receive(:invoke)
+          expect { subject.run_bats }.not_to raise_error
         end
+      end
 
-        it 'deletes the micro' do
-          bosh_cli_session.should_receive(:run_bosh).with('micro delete', ignore_failures: true)
-          expect { subject.run_bats }.to raise_error
+      context 'when bat rake task raises an error' do
+        before { bat_rake_task.should_receive(:invoke).and_raise(error) }
+        let(:error) { RuntimeError.new('error') }
+
+        it_cleans_up_after_rake_task(true)
+
+        it 're-raises rake task error' do
+          expect { subject.run_bats }.to raise_error(error)
         end
       end
     end
