@@ -83,8 +83,11 @@ describe Bhm::Plugins::DataDog do
         swap.percent
         swap.kb
         disk.system.percent
+        disk.system.inode_percent
         disk.ephemeral.percent
+        disk.ephemeral.inode_percent
         disk.persistent.percent
+        disk.persistent.inode_percent
         healthy
       ].each do |metric|
         dog_client.should_receive(:emit_points).with("bosh.healthmonitor.system.#{metric}", anything, anything)

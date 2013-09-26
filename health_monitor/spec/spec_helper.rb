@@ -54,9 +54,9 @@ def make_heartbeat(attrs = {})
           "mem" => { "percent" => 32.2, "kb" => 512031 },
           "swap" => { "percent" => 32.6, "kb" => 231312 },
           "disk" => {
-              "system" => { "percent" => 74 },
-              "ephemeral" => { "percent" => 33 },
-              "persistent" => { "percent" => 97 },
+              "system" => { "percent" => 74, "inode_percent" =>  68},
+              "ephemeral" => { "percent" => 33, "inode_percent" =>  74 },
+              "persistent" => { "percent" => 97, "inode_percent" =>  10 },
           }
       }
   }

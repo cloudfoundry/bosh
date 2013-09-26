@@ -99,8 +99,11 @@ module Bosh::HealthMonitor
         add_metric("system.swap.percent", @swap["percent"])
         add_metric("system.swap.kb", @swap["kb"])
         add_metric("system.disk.system.percent", @system_disk["percent"])
+        add_metric("system.disk.system.inode_percent", @system_disk["inode_percent"])
         add_metric("system.disk.ephemeral.percent", @ephemeral_disk["percent"])
+        add_metric("system.disk.ephemeral.inode_percent", @ephemeral_disk["inode_percent"])
         add_metric("system.disk.persistent.percent", @persistent_disk["percent"])
+        add_metric("system.disk.persistent.inode_percent", @persistent_disk["inode_percent"])
         add_metric("system.healthy", @job_state == "running" ? 1 : 0)
       end
 
