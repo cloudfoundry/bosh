@@ -7,13 +7,13 @@ module Bosh::Dev
     def self.for_candidate_build(infrastructure_name, operating_system_name)
       new(
         ENV.to_hash,
+        Build.candidate,
         infrastructure_name: infrastructure_name,
         operating_system_name: operating_system_name,
       )
     end
 
-    def initialize(env, options)
-      build = Build.candidate
+    def initialize(env, build, options)
       @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
         env,
         infrastructure_name:   options.fetch(:infrastructure_name),
