@@ -4,6 +4,14 @@ require 'bosh/stemcell/builder_command'
 
 module Bosh::Dev
   class StemcellBuilder
+    def self.for_candidate_build(infrastructure_name, operating_system_name)
+      new(
+        ENV.to_hash,
+        infrastructure_name: infrastructure_name,
+        operating_system_name: operating_system_name,
+      )
+    end
+
     def initialize(env, options)
       build = Build.candidate
       @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(

@@ -6,41 +6,59 @@ module Bosh::Dev
   describe StemcellBuilder do
     include FakeFS::SpecHelpers
 
-    let(:build_number) { '869' }
-    let(:infrastructure_name) { 'vsphere' }
-    let(:operating_system_name) { 'ubuntu' }
+    describe '.for_candidate_build' do
+      it 'returns an instance of stemcell builder' do
+        builder = instance_double('Bosh::Dev::StemcellBuilder')
+        described_class.should_receive(:new).with(ENV, {
+          infrastructure_name: 'infrastructure-name',
+          operating_system_name: 'operating-system-name',
+        }).and_return(builder)
 
-    let(:build) { instance_double('Bosh::Dev::Build::Candidate', release_tarball_path: 'fake release path', number: build_number) }
-    let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
-
-    let(:stemcell_builder_command) do
-      instance_double('Bosh::Stemcell::BuilderCommand', build: nil, chroot_dir: '/fake/chroot/dir')
+        described_class.for_candidate_build(
+          'infrastructure-name',
+          'operating-system-name',
+        ).should == builder
+      end
     end
-
-    let(:fake_work_path) { '/fake/work/path' }
-    let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
-
-    subject(:builder) do
-      StemcellBuilder.new(env, infrastructure_name: infrastructure_name,
-                          operating_system_name: operating_system_name)
-    end
-
-    let(:env) { {} }
-
-    before do
-      Build.stub(candidate: build)
-      Bosh::Stemcell::BuilderCommand.stub(:new).with(
-        env,
-        infrastructure_name: infrastructure_name,
-        operating_system_name: operating_system_name,
-        release_tarball_path: build.release_tarball_path,
-        version: build_number,
-      ).and_return(stemcell_builder_command)
-    end
-
-    its(:stemcell_chroot_dir) { should eq('/fake/chroot/dir') }
 
     describe '#build_stemcell' do
+      let(:build_number) { '869' }
+      let(:infrastructure_name) { 'vsphere' }
+      let(:operating_system_name) { 'ubuntu' }
+
+      let(:build) { instance_double('Bosh::Dev::Build::Candidate', release_tarball_path: 'fake release path', number: build_number) }
+      let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
+
+      let(:stemcell_builder_command) do
+        instance_double('Bosh::Stemcell::BuilderCommand', build: nil, chroot_dir: '/fake/chroot/dir')
+      end
+
+      let(:fake_work_path) { '/fake/work/path' }
+      let(:stemcell_file_path) { File.join(fake_work_path, 'FAKE-stemcell.tgz') }
+
+      subject(:builder) do
+        StemcellBuilder.new(
+          env,
+          infrastructure_name: infrastructure_name,
+          operating_system_name: operating_system_name
+        )
+      end
+
+      let(:env) { {} }
+
+      before do
+        Build.stub(candidate: build)
+        Bosh::Stemcell::BuilderCommand.stub(:new).with(
+          env,
+          infrastructure_name: infrastructure_name,
+          operating_system_name: operating_system_name,
+          release_tarball_path: build.release_tarball_path,
+          version: build_number,
+        ).and_return(stemcell_builder_command)
+      end
+
+      its(:stemcell_chroot_dir) { should eq('/fake/chroot/dir') }
+
       before do
         GemComponents.stub(new: gem_components)
 
