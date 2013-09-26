@@ -27,12 +27,12 @@ module Bosh::Dev
         instance_double(
           'Bosh::Stemcell::Aws::LightStemcell',
           write_archive: nil,
-          path: 'fake light stemcell path',
+          path: 'light-stemcell-path',
         )
       end
 
-      before { Bosh::Stemcell::Archive.stub(:new).with(light_stemcell.path).and_return(light_stemcell_stemcell) }
-      let(:light_stemcell_stemcell) { instance_double('Bosh::Stemcell::Archive') }
+      before { Bosh::Stemcell::Archive.stub(:new).with(light_stemcell.path).and_return(light_stemcell_archive) }
+      let(:light_stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
 
       before { Bosh::Stemcell::Archive.stub(:new).with(stemcell_path).and_return(stemcell) }
       let(:stemcell_path) { '/path/to/fake-stemcell.tgz' }
@@ -45,7 +45,7 @@ module Bosh::Dev
       context 'when infrastructure is aws' do
         it 'publishes an aws light stemcell' do
           light_stemcell.should_receive(:write_archive)
-          build.should_receive(:upload_stemcell).with(light_stemcell_stemcell)
+          build.should_receive(:upload_stemcell).with(light_stemcell_archive)
           publisher.publish(stemcell_path)
         end
       end
