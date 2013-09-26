@@ -79,7 +79,7 @@ describe VSphereCloud::Cloud do
             cluster.datacenter.name,
             "vm",
             cluster.datacenter.template_folder.name,
-            "#{stemcell_id} / #{datastore.mob.__mo_id__}",
+            "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
           ]
         ).and_return(double('fake stemcell vm'))
 
@@ -96,7 +96,7 @@ describe VSphereCloud::Cloud do
               cluster.datacenter.name,
               "vm",
               cluster.datacenter.template_folder.name,
-              "#{stemcell_id} / #{datastore.mob.__mo_id__}",
+              "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
             ]
           )
 

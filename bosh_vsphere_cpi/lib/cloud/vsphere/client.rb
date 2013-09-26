@@ -202,9 +202,8 @@ module VSphereCloud
     end
 
     def find_by_inventory_path(path)
-      path = [path] unless path.kind_of?(Array)
-      path = path.flatten.collect { |name| name.gsub("/", "%2f") }.join("/")
-      @service_content.search_index.find_by_inventory_path(path)
+      full_path = Array(path).join("/")
+      @service_content.search_index.find_by_inventory_path(full_path)
     end
 
     def wait_for_task(task)
