@@ -218,7 +218,6 @@ module Bosh::Dev
     end
 
     describe '#upload_stemcell' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
       let(:logger) { instance_double('Logger').as_null_object }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
 
@@ -231,44 +230,60 @@ module Bosh::Dev
       end
 
       describe 'when publishing a full stemcell' do
+        let(:stemcell) do
+          instance_double(
+            'Bosh::Stemcell::Archive',
+            light?: false,
+            path: 'unused',
+            infrastructure: 'vsphere',
+            name: 'stemcell-name'
+          )
+        end
         let(:stemcell_contents) { 'contents of the stemcells' }
-        let(:stemcell) { instance_double('Bosh::Stemcell::Archive', light?: false, path: '/tmp/bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a stemcell to an S3 bucket' do
-          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz')
-
+          key = '123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
+          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
           build.upload_stemcell(stemcell)
-
-          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz'
-          expect(bucket_files.get('123/bosh-stemcell/aws/bosh-stemcell-aws-ubuntu.tgz').body).to eq 'contents of the stemcells'
+          expect(bucket_files.map(&:key)).to include(key)
+          expect(bucket_files.get(key).body).to eq('contents of the stemcells')
         end
 
         it 'updates the latest stemcell in the S3 bucket' do
-          logger.should_receive(:info).with('uploaded to s3://bosh-ci-pipeline/123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz')
-
+          key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
+          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
           build.upload_stemcell(stemcell)
-
-          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz'
-          expect(bucket_files.get('123/bosh-stemcell/aws/bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'contents of the stemcells'
+          expect(bucket_files.map(&:key)).to include(key)
+          expect(bucket_files.get(key).body).to eq('contents of the stemcells')
         end
       end
 
       describe 'when publishing a light stemcell' do
+        let(:stemcell) do
+          instance_double(
+            'Bosh::Stemcell::Archive',
+            light?: true,
+            path: 'unused',
+            infrastructure: 'vsphere',
+            name: 'stemcell-name'
+          )
+        end
         let(:stemcell_contents) { 'this file is a light stemcell' }
-        let(:stemcell) { instance_double('Bosh::Stemcell::Archive', light?: true, path: '/tmp/light-bosh-stemcell-aws-ubuntu.tgz', infrastructure: 'aws', name: 'bosh-stemcell') }
 
         it 'publishes a light stemcell to S3 bucket' do
+          key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
+          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
           build.upload_stemcell(stemcell)
-
-          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/light-bosh-stemcell-aws-ubuntu.tgz'
-          expect(bucket_files.get('123/bosh-stemcell/aws/light-bosh-stemcell-aws-ubuntu.tgz').body).to eq 'this file is a light stemcell'
+          expect(bucket_files.map(&:key)).to include(key)
+          expect(bucket_files.get(key).body).to eq('this file is a light stemcell')
         end
 
         it 'updates the latest light stemcell in the s3 bucket' do
+          key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
+          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
           build.upload_stemcell(stemcell)
-
-          expect(bucket_files.map(&:key)).to include '123/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz'
-          expect(bucket_files.get('123/bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu.tgz').body).to eq 'this file is a light stemcell'
+          expect(bucket_files.map(&:key)).to include(key)
+          expect(bucket_files.get(key).body).to eq('this file is a light stemcell')
         end
       end
     end

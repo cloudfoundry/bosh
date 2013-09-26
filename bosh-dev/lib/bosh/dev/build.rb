@@ -50,9 +50,13 @@ module Bosh::Dev
     end
 
     def upload_stemcell(stemcell)
-      latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
-      s3_latest_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, latest_filename)
-      s3_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
+      infrastructure = Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure)
+
+      normal_filename = stemcell_filename(@number, infrastructure, 'bosh-stemcell', stemcell.light?)
+      latest_filename = stemcell_filename('latest', infrastructure, 'bosh-stemcell', stemcell.light?)
+
+      s3_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, normal_filename)
+      s3_latest_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, latest_filename)
 
       bucket = 'bosh-ci-pipeline'
       upload_adapter = Bosh::Dev::UploadAdapter.new
