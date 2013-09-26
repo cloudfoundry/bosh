@@ -50,7 +50,7 @@ describe Bosh::OpenStackCloud::Cloud do
       Fog::Compute.stub(:new)
       Fog::Image.stub(:new)
       ssl_options = mock_cloud_options.clone
-      ssl_options["openstack"]["ssl_verify_peer"] = "false"
+      ssl_options["openstack"]["ssl_verify_peer"] = false
       Bosh::Clouds::Provider.create(:openstack, ssl_options)
       Excon.defaults[:ssl_verify_peer].should be_false
     end

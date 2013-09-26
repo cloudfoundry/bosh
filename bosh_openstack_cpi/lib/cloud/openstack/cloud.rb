@@ -867,7 +867,7 @@ module Bosh::OpenStackCloud
     end
     
     def set_ssl_verify_peer( options )
-      if options["ssl_verify_peer"] and options["ssl_verify_peer"] == "false"
+      if options["ssl_verify_peer"] and !options["ssl_verify_peer"]
         Excon.defaults[:ssl_verify_peer] = false
       end
     end
