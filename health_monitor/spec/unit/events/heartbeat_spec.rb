@@ -50,9 +50,9 @@ describe Bhm::Events::Heartbeat do
         "mem" => { "percent" => 32.2, "kb" => 512031 },
         "swap" => { "percent" => 32.6, "kb" => 231312 },
         "disk" => {
-          "system" => { "percent" => 74 },
-          "ephemeral" => { "percent" => 33 },
-          "persistent" => { "percent" => 97 },
+          "system" => { "percent" => 74, "inode_percent" => 68 },
+          "ephemeral" => { "percent" => 33, "inode_percent" => 74 },
+          "persistent" => { "percent" => 97, "inode_percent" => 10 },
         }
       }
     }
@@ -90,8 +90,11 @@ describe Bhm::Events::Heartbeat do
     metrics["system.swap.percent"].should == 32.6
     metrics["system.swap.kb"].should == 231312
     metrics["system.disk.system.percent"].should == 74
+    metrics["system.disk.system.inode_percent"].should == 68
     metrics["system.disk.ephemeral.percent"].should == 33
+    metrics["system.disk.ephemeral.inode_percent"].should == 74
     metrics["system.disk.persistent.percent"].should == 97
+    metrics["system.disk.persistent.inode_percent"].should == 10
     metrics["system.healthy"].should == 1
   end
 
