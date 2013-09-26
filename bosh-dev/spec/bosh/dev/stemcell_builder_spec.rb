@@ -12,10 +12,12 @@ module Bosh::Dev
 
       it 'returns an instance of stemcell builder' do
         builder = instance_double('Bosh::Dev::StemcellBuilder')
-        described_class.should_receive(:new).with(ENV, build, {
-          infrastructure_name: 'infrastructure-name',
-          operating_system_name: 'operating-system-name',
-        }).and_return(builder)
+        described_class.should_receive(:new).with(
+          ENV,
+          build,
+          'infrastructure-name',
+          'operating-system-name',
+        ).and_return(builder)
 
         described_class.for_candidate_build(
           'infrastructure-name',
@@ -29,8 +31,8 @@ module Bosh::Dev
         StemcellBuilder.new(
           env,
           build,
-          infrastructure_name: infrastructure_name,
-          operating_system_name: operating_system_name
+          infrastructure_name,
+          operating_system_name,
         )
       end
 
@@ -38,14 +40,14 @@ module Bosh::Dev
       let(:build) do
         instance_double(
           'Bosh::Dev::Build::Candidate',
-          release_tarball_path: 'fake release path',
+          release_tarball_path: 'release-tarball-path',
           number: build_number,
         )
       end
-
-      let(:build_number) { '869' }
       let(:infrastructure_name) { 'vsphere' }
       let(:operating_system_name) { 'ubuntu' }
+
+      let(:build_number) { '869' }
 
       before { GemComponents.stub(new: gem_components) }
       let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }

@@ -8,16 +8,16 @@ module Bosh::Dev
       new(
         ENV.to_hash,
         Build.candidate,
-        infrastructure_name: infrastructure_name,
-        operating_system_name: operating_system_name,
+        infrastructure_name,
+        operating_system_name,
       )
     end
 
-    def initialize(env, build, options)
+    def initialize(env, build, infrastructure_name, operating_system_name)
       @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
         env,
-        infrastructure_name:   options.fetch(:infrastructure_name),
-        operating_system_name: options.fetch(:operating_system_name),
+        infrastructure_name:   infrastructure_name,
+        operating_system_name: operating_system_name,
         version:               build.number,
         release_tarball_path:  build.release_tarball_path,
       )
