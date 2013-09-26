@@ -866,7 +866,7 @@ module Bosh::OpenStackCloud
                                              registry_password)
     end
     
-    def set_ssl_verify_peer( options )
+    def set_ssl_verify_peer(options)
       if options["ssl_verify_peer"] == false
         Excon.defaults[:ssl_verify_peer] = false
       end
