@@ -47,7 +47,7 @@ sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=9
 Alternatively, you can run that command without the caching proxy, and/or for another OS:
 
 ```
-sudo CANDIDATE_BUILD_NUMBER=980 bundle exec rake ci:build_stemcell[vsphere,ubuntu]
+sudo bundle exec rake ci:build_stemcell[vsphere,ubuntu] CANDIDATE_BUILD_NUMBER=980
 ```
 
 # Run the stemcell locally with Fusion
