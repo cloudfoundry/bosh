@@ -9,9 +9,10 @@ namespace :ci do
 
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
+    require 'bosh/dev/build'
     require 'bosh/dev/gems_generator'
-
-    Bosh::Dev::GemsGenerator.new.generate_and_upload
+    build = Bosh::Dev::Build.candidate
+    Bosh::Dev::GemsGenerator.new(build).generate_and_upload
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
