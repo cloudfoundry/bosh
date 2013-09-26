@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/dev/build'
 require 'bosh/dev/gems_generator'
 
 module Bosh::Dev
