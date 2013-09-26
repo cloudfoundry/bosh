@@ -24,6 +24,7 @@ rpm --force --nodeps --install http://mirror.centos.org/centos/6/os/x86_64/Packa
 rpm --force --nodeps --install http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 yum --assumeyes groupinstall Base
 yum --assumeyes groupinstall 'Development Tools'
+yum --assumeyes install rsyslog-relp
 "
 
 touch ${chroot}/etc/sysconfig/network # must be present for network to be configured
