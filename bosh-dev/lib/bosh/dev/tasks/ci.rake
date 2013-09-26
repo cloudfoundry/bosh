@@ -46,7 +46,7 @@ namespace :ci do
       args.infrastructure_name, args.operating_system_name)
     stemcell_file = stemcell_builder.build_stemcell
 
-    stemcell_publisher = Bosh::Dev::StemcellPublisher.new
+    stemcell_publisher = Bosh::Dev::StemcellPublisher.for_candidate_build
     stemcell_publisher.publish(stemcell_file)
   end
 
