@@ -89,7 +89,7 @@ describe Bosh::Registry::InstanceManager do
         "api_key" => "bar",
         "tenant" => "foo",
         "region" => "",
-        "ssl_verify_peer" => "false"
+        "ssl_verify_peer" => false
       }
     }
     Bosh::Registry.configure(config)
