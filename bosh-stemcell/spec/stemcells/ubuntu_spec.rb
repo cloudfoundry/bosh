@@ -47,6 +47,8 @@ describe 'Ubuntu Stemcell' do
       'gdb'                  => '7.1-1ubuntu2',
       'tripwire'             => '2.3.1.2.0-13',
       'libcap2-bin'          => '1:2.17-2ubuntu1.1',
+      'libcap-dev'           => '1:2.17-2ubuntu1.1',
+      'libbz2-dev'           => '1.0.5-4ubuntu0.2',
       'libyaml-dev'          => '0.1.3-1',
       'cmake'                => '2.8.0-5ubuntu1',
       'scsitools'            => '0.10-2.1ubuntu2',

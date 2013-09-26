@@ -53,6 +53,8 @@ describe 'CentOs Stemcell' do
       'bison'          => '2.4.1-5.el6.x86_64',
       'libyaml'        => '0.1.3-1.el6.x86_64',
       'libyaml-devel'  => '0.1.3-1.el6.x86_64',
+      'bzip2-devel'    => '1.0.5-7.el6_0.x86_64',
+      'libcap-devel'   => '2.16-5.5.el6.x86_64',
       'cmake'          => '2.6.4-5.el6.x86_64',
       'rpm-build'      => '4.8.0-32.el6.x86_64',
       'rpmdevtools'    => '7.5-2.el6.noarch',
