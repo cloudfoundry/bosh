@@ -6,13 +6,10 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     describe '.candidate' do
-      subject { Build.candidate }
+      subject { described_class.candidate }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
-        before do
-          stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate')
-        end
-
+        before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
         its(:number) { should eq 'candidate' }
       end
 

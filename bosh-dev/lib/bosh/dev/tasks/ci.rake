@@ -19,9 +19,7 @@ namespace :ci do
   task publish_microbosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
     require 'bosh/dev/micro_bosh_release'
-
-    build = Bosh::Dev::Build.candidate
-    build.upload_release(Bosh::Dev::MicroBoshRelease.new)
+    Bosh::Dev::Build.candidate.upload_release(Bosh::Dev::MicroBoshRelease.new)
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
@@ -53,8 +51,6 @@ namespace :ci do
   desc 'Promote from pipeline to artifacts bucket'
   task :promote_artifacts do
     require 'bosh/dev/build'
-
-    build = Bosh::Dev::Build.candidate
-    build.promote_artifacts
+    Bosh::Dev::Build.candidate.promote_artifacts
   end
 end

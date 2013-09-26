@@ -15,7 +15,6 @@ module Bosh::Dev
 
     def self.candidate
       candidate_build_number = ENV['CANDIDATE_BUILD_NUMBER']
-
       if candidate_build_number
         Candidate.new(number: candidate_build_number)
       else
