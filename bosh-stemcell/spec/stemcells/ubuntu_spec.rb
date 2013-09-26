@@ -56,6 +56,8 @@ describe 'Ubuntu Stemcell' do
       'debhelper'            => '7.4.15ubuntu1',
       'runit'                => '2.0.0-1ubuntu4',
       'sudo'                 => '1.7.2p1-1ubuntu5.6',
+      'rsyslog'              => '4.2.0-2ubuntu8.1',
+      'rsyslog-relp'         => '4.2.0-2ubuntu8.1',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
