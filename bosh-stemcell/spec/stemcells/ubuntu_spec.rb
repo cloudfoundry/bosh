@@ -92,15 +92,6 @@ describe 'Ubuntu Stemcell' do
   end
 
   context 'installed by bosh_micro' do
-    {
-      'libpq-dev'   => '8.4.17-0ubuntu10.04',
-      'genisoimage' => '9:1.1.10-1ubuntu1',
-    }.each do |pkg, version|
-      describe package(pkg) do
-        it { should be_installed.with_version(version) }
-      end
-    end
-
     describe file('/var/vcap/micro/apply_spec.yml') do
       it { should be_file }
       it { should contain 'deployment: micro' }
