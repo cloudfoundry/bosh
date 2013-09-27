@@ -7,7 +7,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
   let(:image) { double("image", :id => "i-bar", :name => "i-bar") }
   let(:unique_name) { SecureRandom.uuid }
-  
+
   before :each do
     @tmp_dir = Dir.mktmpdir
   end
@@ -66,7 +66,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
       sc_id.should == "i-bar"
     end
-    
+
     it "sets image properties from cloud_properties" do
       image_params = {
         :name => "BOSH-#{unique_name}",
@@ -75,7 +75,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :location => "#{@tmp_dir}/root.img",
         :is_public => false,
         :properties => {
-          :name => "bosh-stemcell",
+          :name => "stemcell-name",
           :version => "x.y.z",
           :os_type => "linux",
           :os_distro => "ubuntu",
@@ -94,7 +94,7 @@ describe Bosh::OpenStackCloud::Cloud do
       cloud.should_receive(:wait_resource).with(image, :active)
 
       sc_id = cloud.create_stemcell("/tmp/foo", {
-        "name" => "bosh-stemcell",
+        "name" => "stemcell-name",
         "version" => "x.y.z",
         "os_type" => "linux",
         "os_distro" => "ubuntu",
@@ -134,16 +134,16 @@ describe Bosh::OpenStackCloud::Cloud do
       })
 
       sc_id.should == "i-bar"
-    end    
-    
-    it "should throw an error for non existent root image in stemcell archive" do  
+    end
+
+    it "should throw an error for non existent root image in stemcell archive" do
       result = Bosh::Exec::Result.new("cmd", "output", 0)
       Bosh::Exec.should_receive(:sh).and_return(result)
 
       cloud = mock_glance
-      
+
       File.stub(:exists?).and_return(false)
-      
+
       expect {
         cloud.create_stemcell("/tmp/foo", {
           "container_format" => "bare",
@@ -165,7 +165,7 @@ describe Bosh::OpenStackCloud::Cloud do
           "container_format" => "ami",
           "disk_format" => "ami"
         })
-      }.to raise_exception(Bosh::Clouds::CloudError, 
+      }.to raise_exception(Bosh::Clouds::CloudError,
                            "Extracting stemcell root image failed. Check task debug log for details.")
     end
   end

@@ -2,38 +2,40 @@
 
 require 'spec_helper'
 
-describe Bosh::Director::Jobs::CloudCheck::Scan do
-  describe 'Resque job class expectations' do
-    let(:job_type) { :cck_scan }
-    it_behaves_like 'a Resque job'
-  end
-
-  describe 'instance methods' do
-    before do
-      deployment = BDM::Deployment.make(name: 'deployment')
-      Bosh::Director::ProblemScanner.should_receive(:new).with(deployment).and_return(scanner)
+module Bosh::Director
+  describe Jobs::CloudCheck::Scan do
+    describe 'Resque job class expectations' do
+      let(:job_type) { :cck_scan }
+      it_behaves_like 'a Resque job'
     end
 
-    let(:job) { described_class.new('deployment') }
-    let(:scanner) { double(Bosh::Director::ProblemScanner)}
-    let(:deployment) { BDM::Deployment[1] }
+    describe 'instance methods' do
+      before do
+        deployment = Models::Deployment.make(name: 'deployment')
+        ProblemScanner.should_receive(:new).with(deployment).and_return(scanner)
+      end
 
-    it 'should obtain a deployment lock' do
-      job.should_receive(:with_deployment_lock).and_yield
+      let(:job) { described_class.new('deployment') }
+      let(:scanner) { instance_double('Bosh::Director::ProblemScanner') }
+      let(:deployment) { Models::Deployment[1] }
 
-      scanner.as_null_object
+      it 'should obtain a deployment lock' do
+        job.should_receive(:with_deployment_lock).and_yield
 
-      job.perform
-    end
+        scanner.as_null_object
 
-    it 'should run the scan' do
-      job.stub(:with_deployment_lock).and_yield
+        job.perform
+      end
 
-      scanner.should_receive(:reset).ordered
-      scanner.should_receive(:scan_vms).ordered
-      scanner.should_receive(:scan_disks).ordered
+      it 'should run the scan' do
+        job.stub(:with_deployment_lock).and_yield
 
-      job.perform
+        scanner.should_receive(:reset).ordered
+        scanner.should_receive(:scan_vms).ordered
+        scanner.should_receive(:scan_disks).ordered
+
+        job.perform
+      end
     end
   end
 end

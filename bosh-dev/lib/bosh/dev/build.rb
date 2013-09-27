@@ -3,6 +3,7 @@ require 'peach'
 require 'bosh/dev/promote_artifacts'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/upload_adapter'
+require 'bosh/dev/micro_bosh_release'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
@@ -13,8 +14,12 @@ module Bosh::Dev
     attr_reader :number
 
     def self.candidate
-      env_hash = ENV.to_hash
-      new(number: env_hash.fetch('CANDIDATE_BUILD_NUMBER'))
+      candidate_build_number = ENV['CANDIDATE_BUILD_NUMBER']
+      if candidate_build_number
+        Candidate.new(number: candidate_build_number)
+      else
+        Local.new
+      end
     end
 
     def initialize(options)
@@ -43,19 +48,14 @@ module Bosh::Dev
       upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball), public: true)
     end
 
-    def download_release
-      remote_dir = File.join(number.to_s, 'release')
-      filename = promoter.release_file
-
-      download_adapter.download(uri(remote_dir, filename), download_release_path)
-
-      download_release_path
-    end
-
     def upload_stemcell(stemcell)
-      latest_filename = stemcell_filename('latest', Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure), stemcell.name, stemcell.light?)
-      s3_latest_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, latest_filename)
-      s3_path = File.join(number.to_s, stemcell.name, stemcell.infrastructure, File.basename(stemcell.path))
+      infrastructure = Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure)
+
+      normal_filename = stemcell_filename(@number, infrastructure, 'bosh-stemcell', stemcell.light?)
+      latest_filename = stemcell_filename('latest', infrastructure, 'bosh-stemcell', stemcell.light?)
+
+      s3_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, normal_filename)
+      s3_latest_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, latest_filename)
 
       bucket = 'bosh-ci-pipeline'
       upload_adapter = Bosh::Dev::UploadAdapter.new
@@ -119,10 +119,6 @@ module Bosh::Dev
       "release/#{promoter.release_file}"
     end
 
-    def download_release_path
-      "tmp/#{promoter.release_file}"
-    end
-
     def stemcell_filename(version, infrastructure, name, light)
       operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
       Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, name, light).to_s
@@ -131,6 +127,29 @@ module Bosh::Dev
     def uri(remote_directory_path, file_name)
       remote_file_path = File.join(remote_directory_path, file_name)
       URI.parse("http://bosh-ci-pipeline.s3.amazonaws.com/#{remote_file_path}")
+    end
+
+    class Local < self
+      def initialize
+        super(number: 'local')
+      end
+
+      def release_tarball_path
+        release = MicroBoshRelease.new
+        release.tarball
+      end
+    end
+
+    class Candidate < self
+      def release_tarball_path
+        remote_dir = File.join(number.to_s, 'release')
+        filename = promoter.release_file
+        downloaded_release_path = "tmp/#{promoter.release_file}"
+
+        download_adapter.download(uri(remote_dir, filename), downloaded_release_path)
+
+        downloaded_release_path
+      end
     end
   end
 end

@@ -15,7 +15,7 @@ unshare -m $SHELL <<INSTALL_YUM
   set -x
 
   mkdir -p /etc/pki
-  mount -obind $chroot/etc/pki /etc/pki
+  mount --no-mtab --bind $chroot/etc/pki /etc/pki
   yum --installroot=$chroot --assumeyes install yum
 INSTALL_YUM
 

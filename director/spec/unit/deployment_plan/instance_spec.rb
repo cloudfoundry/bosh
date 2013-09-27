@@ -5,11 +5,11 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::DeploymentPlan::Instance do
 
   let(:domain_name) { 'test_domain' }
-  
+
   before(:each) do
     BD::Config.stub(:dns_domain_name).and_return(domain_name)
   end
-  
+
   def make(job, index)
     BD::DeploymentPlan::Instance.new(job, index)
   end
@@ -296,13 +296,13 @@ describe Bosh::Director::DeploymentPlan::Instance do
       let(:deployment_name) { 'mycloud' }
       let(:job_spec) { {:name => 'job', :release => 'release', :templates => []} }
       let(:job_index) { 0 }
-      let(:release_spec) { {:name => 'release', :version => '1.1-dev'} }      
-      let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'bosh-stemcell', 'version' => '1.0'}} }
+      let(:release_spec) { {:name => 'release', :version => '1.1-dev'} }
+      let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
       let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
       let(:properties) { {'key' => 'value'} }
       let(:reservation)  { BD::NetworkReservation.new_dynamic }
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
-      
+
       it 'returns instance spec' do
         deployment = make_deployment('mycloud')
         plan = double(BD::DeploymentPlan, :model => deployment, :name => deployment_name, :canonical_name => deployment_name)
@@ -313,19 +313,19 @@ describe Bosh::Director::DeploymentPlan::Instance do
 
         network = BD::DeploymentPlan::DynamicNetwork.new(plan, network_spec)
         network.reserve(reservation)
-        plan.stub(:network).and_return(network)            
-        
+        plan.stub(:network).and_return(network)
+
         job.stub(:release).and_return(release)
         job.stub(:instance_state).with(job_index).and_return('started')
         job.stub(:default_network).and_return({})
-        job.stub(:resource_pool).and_return(resource_pool)        
+        job.stub(:resource_pool).and_return(resource_pool)
         job.stub(:package_spec).and_return(packages)
-        job.stub(:persistent_disk).and_return(0)        
+        job.stub(:persistent_disk).and_return(0)
         job.stub(:properties).and_return(properties)
 
         instance = make(job, job_index)
         instance.add_network_reservation(network_spec['name'], reservation)
-        
+
         spec = instance.spec
         expect(spec['deployment']).to eql(deployment_name)
         expect(spec['release']).to eql(release_spec)
@@ -336,7 +336,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
           'type' => 'dynamic',
           'cloud_properties' => network_spec['cloud_properties'],
           'dns_record_name' => "#{job_index}.#{job.canonical_name}.#{network_spec['name']}.#{plan.canonical_name}.#{domain_name}"
-        )              
+        )
         expect(spec['resource_pool']).to eql(resource_pool_spec)
         expect(spec['packages']).to eql(packages)
         expect(spec['persistent_disk']).to eql(0)

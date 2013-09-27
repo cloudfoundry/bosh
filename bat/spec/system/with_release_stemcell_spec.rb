@@ -28,7 +28,7 @@ describe 'with release and stemcell and two deployments' do
         /var/vcap/packages/batarang/bin/batarang
       ]
       use_job('colocated')
-      use_template(%w[batarang batlight])
+      use_templates(%w[batarang batlight])
 
       use_persistent_disk(2048)
 
@@ -89,8 +89,6 @@ describe 'with release and stemcell and two deployments' do
         ssh(static_ip, 'vcap', "echo 'foobar' > #{SAVE_FILE}", @our_ssh_options)
         @size = persistent_disk(static_ip)
         use_persistent_disk(4096)
-        # use_job("batfoo")
-        # use_template("batlight")
         @second_deployment_result = requirement deployment
       end
 

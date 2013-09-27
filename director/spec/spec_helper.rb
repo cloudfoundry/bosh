@@ -157,8 +157,6 @@ end
 SpecHelper.init
 
 BD = Bosh::Director
-BDA = BD::Api
-BDM = BD::Models
 
 RSpec.configure do |rspec|
   rspec.before(:each) do

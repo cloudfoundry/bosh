@@ -35,7 +35,7 @@ resource_pools:
     network: default
     size: 7
     stemcell:
-      name: bosh-stemcell
+      name: bosh-aws-xen-ubuntu
       version: latest
     cloud_properties:
       instance_type: m1.small
@@ -44,7 +44,7 @@ resource_pools:
     network: default
     size: 1
     stemcell:
-      name: bosh-stemcell
+      name: bosh-aws-xen-ubuntu
       version: latest
     cloud_properties:
       instance_type: m1.medium

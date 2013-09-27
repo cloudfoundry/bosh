@@ -2,18 +2,19 @@ require 'spec_helper'
 require 'bosh/dev/vsphere/micro_bosh_deployment_manifest'
 require 'psych'
 
-module Bosh::Dev
-  module VSphere
-    describe MicroBoshDeploymentManifest do
-      it 'is writable' do
-        expect(subject).to be_a(WritableManifest)
-      end
+module Bosh::Dev::VSphere
+  describe MicroBoshDeploymentManifest do
+    subject { described_class.new(env) }
+    let(:env) { {} }
 
-      its(:filename) { should eq('micro_bosh.yml') }
+    it 'is writable' do
+      expect(subject).to be_a(Bosh::Dev::WritableManifest)
+    end
 
-      describe '#to_h' do
-        let(:expected_yml) do
-          <<YAML
+    its(:filename) { should eq('micro_bosh.yml') }
+
+    describe '#to_h' do
+      let(:expected_yml) { <<YAML }
 ---
 name: microbosh-vsphere-jenkins
 
@@ -72,32 +73,30 @@ apply_spec:
             - vcenter_cluster:
                 resource_pool: vcenter_rp
 YAML
-        end
 
-        before do
-          ENV.stub(:to_hash).and_return(
-            'BOSH_VSPHERE_MICROBOSH_IP' => 'ip',
-            'BOSH_VSPHERE_NETMASK' => 'netmask',
-            'BOSH_VSPHERE_GATEWAY' => 'gateway',
-            'BOSH_VSPHERE_DNS' => 'dns',
-            'BOSH_VSPHERE_NET_ID' => 'net_id',
-            'BOSH_VSPHERE_NTP_SERVER' => 'ntp_server',
-            'BOSH_VSPHERE_VCENTER' => 'vcenter',
-            'BOSH_VSPHERE_VCENTER_USER' => 'vcenter_user',
-            'BOSH_VSPHERE_VCENTER_PASSWORD' => 'vcenter_pwd',
-            'BOSH_VSPHERE_VCENTER_DC' => 'vcenter_dc',
-            'BOSH_VSPHERE_VCENTER_CLUSTER' => 'vcenter_cluster',
-            'BOSH_VSPHERE_VCENTER_RESOURCE_POOL' => 'vcenter_rp',
-            'BOSH_VSPHERE_VCENTER_FOLDER_PREFIX' => 'vcenter_folder_prefix',
-            'BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX' => 'vcenter_ubosh_folder_prefix',
-            'BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN' => 'vcenter_datastore_pattern',
-            'BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN' => 'vcenter_ubosh_datastore_pattern',
-          )
-        end
+      before do
+        env.merge!(
+          'BOSH_VSPHERE_MICROBOSH_IP' => 'ip',
+          'BOSH_VSPHERE_NETMASK' => 'netmask',
+          'BOSH_VSPHERE_GATEWAY' => 'gateway',
+          'BOSH_VSPHERE_DNS' => 'dns',
+          'BOSH_VSPHERE_NET_ID' => 'net_id',
+          'BOSH_VSPHERE_NTP_SERVER' => 'ntp_server',
+          'BOSH_VSPHERE_VCENTER' => 'vcenter',
+          'BOSH_VSPHERE_VCENTER_USER' => 'vcenter_user',
+          'BOSH_VSPHERE_VCENTER_PASSWORD' => 'vcenter_pwd',
+          'BOSH_VSPHERE_VCENTER_DC' => 'vcenter_dc',
+          'BOSH_VSPHERE_VCENTER_CLUSTER' => 'vcenter_cluster',
+          'BOSH_VSPHERE_VCENTER_RESOURCE_POOL' => 'vcenter_rp',
+          'BOSH_VSPHERE_VCENTER_FOLDER_PREFIX' => 'vcenter_folder_prefix',
+          'BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX' => 'vcenter_ubosh_folder_prefix',
+          'BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN' => 'vcenter_datastore_pattern',
+          'BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN' => 'vcenter_ubosh_datastore_pattern',
+        )
+      end
 
-        it 'generates the correct YAML' do
-          expect(subject.to_h).to eq(Psych.load(expected_yml))
-        end
+      it 'generates the correct YAML' do
+        expect(subject.to_h).to eq(Psych.load(expected_yml))
       end
     end
   end
