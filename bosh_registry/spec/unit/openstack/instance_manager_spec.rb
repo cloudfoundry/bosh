@@ -3,7 +3,6 @@
 require "spec_helper"
 
 describe Bosh::Registry::InstanceManager do
-
   before(:each) do
     @compute = double(Fog::Compute)
     Fog::Compute.stub(:new).and_return(@compute)
@@ -77,5 +76,4 @@ describe Bosh::Registry::InstanceManager do
       }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized') 
     end
   end
-
 end

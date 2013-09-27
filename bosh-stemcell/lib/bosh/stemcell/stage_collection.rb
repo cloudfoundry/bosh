@@ -45,7 +45,7 @@ module Bosh::Stemcell
         #:bosh_ntpdate,
         :bosh_sudoers,
         # Micro BOSH
-        #:bosh_micro,
+        :bosh_micro,
         # Install GRUB/kernel/etc
         :system_grub,
         #:system_kernel,

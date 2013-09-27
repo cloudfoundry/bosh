@@ -9,40 +9,29 @@ namespace :ci do
 
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
+    require 'bosh/dev/build'
     require 'bosh/dev/gems_generator'
-
-    Bosh::Dev::GemsGenerator.new.generate_and_upload
+    build = Bosh::Dev::Build.candidate
+    Bosh::Dev::GemsGenerator.new(build).generate_and_upload
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
   task publish_microbosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
     require 'bosh/dev/micro_bosh_release'
-
-    build = Bosh::Dev::Build.candidate
-    build.upload_release(Bosh::Dev::MicroBoshRelease.new)
+    Bosh::Dev::Build.candidate.upload_release(Bosh::Dev::MicroBoshRelease.new)
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
   task :build_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
-    require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
+    stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
+      args.infrastructure_name, args.operating_system_name)
     stemcell_file = stemcell_builder.build_stemcell
 
     mkdir_p('tmp')
     cp(stemcell_file, File.join('tmp', File.basename(stemcell_file)))
-  end
-
-  desc 'Run serverspec against a stemcell chroot'
-  task :test_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
-    require 'bosh/dev/build'
-    require 'bosh/dev/stemcell_builder'
-
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
-
-    system("cd bosh-stemcell && SERVERSPEC_CHROOT=#{stemcell_builder.stemcell_chroot_dir} rspec spec/stemcells") || raise('Failure in spec/stemcells')
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and publish to S3'
@@ -51,18 +40,17 @@ namespace :ci do
     require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.new(args.to_hash)
+    stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
+      args.infrastructure_name, args.operating_system_name)
     stemcell_file = stemcell_builder.build_stemcell
 
-    stemcell_publisher = Bosh::Dev::StemcellPublisher.new
+    stemcell_publisher = Bosh::Dev::StemcellPublisher.for_candidate_build
     stemcell_publisher.publish(stemcell_file)
   end
 
   desc 'Promote from pipeline to artifacts bucket'
   task :promote_artifacts do
     require 'bosh/dev/build'
-
-    build = Bosh::Dev::Build.candidate
-    build.promote_artifacts
+    Bosh::Dev::Build.candidate.promote_artifacts
   end
 end

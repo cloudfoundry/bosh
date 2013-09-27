@@ -1,30 +1,33 @@
 require 'spec_helper'
+require 'bosh/dev/bat/director_uuid'
 require 'bosh/dev/vsphere/bat_deployment_manifest'
+require 'bosh/stemcell/archive'
 require 'psych'
 
-module Bosh::Dev
-  module VSphere
-    describe BatDeploymentManifest do
-      subject { BatDeploymentManifest.new('fake director_uuid', 'fake stemcell_version') }
+module Bosh::Dev::VSphere
+  describe BatDeploymentManifest do
+    subject { described_class.new(env, director_uuid, stemcell_archive) }
+    let(:env) { {} }
+    let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid', value: 'director-uuid') }
+    let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'bosh-infra-hyper-os') }
 
-      its(:filename) { should eq ('bat.yml') }
+    its(:filename) { should eq ('bat.yml') }
 
-      it 'is writable' do
-        expect(subject).to be_a(WritableManifest)
-      end
+    it 'is writable' do
+      expect(subject).to be_a(Bosh::Dev::WritableManifest)
+    end
 
-      describe '#to_h' do
-        let(:expected_yml) do
-          <<YAML
+    describe '#to_h' do
+      let(:expected_yml) { <<YAML }
 ---
 cpi: vsphere
 properties:
-  uuid: fake director_uuid
+  uuid: director-uuid
   static_ip: ip
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
-    version: fake stemcell_version
+    name: bosh-infra-hyper-os
+    version: 13
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@ip:4222
   network:
@@ -37,22 +40,20 @@ properties:
     gateway: net_gateway
     vlan: net_id
 YAML
-        end
 
-        before do
-          ENV.stub(:to_hash).and_return({
-                                          'BOSH_VSPHERE_BAT_IP' => 'ip',
-                                          'BOSH_VSPHERE_NET_ID' => 'net_id',
-                                          'BOSH_VSPHERE_NETWORK_CIDR' => 'net_cidr',
-                                          'BOSH_VSPHERE_NETWORK_STATIC' => 'net_static',
-                                          'BOSH_VSPHERE_NETWORK_GATEWAY' => 'net_gateway',
-                                          'BOSH_VSPHERE_NETWORK_RESERVED' => 'reserved1|reserved2',
-                                        })
-        end
+      before do
+        env.merge!(
+          'BOSH_VSPHERE_BAT_IP' => 'ip',
+          'BOSH_VSPHERE_NET_ID' => 'net_id',
+          'BOSH_VSPHERE_NETWORK_CIDR' => 'net_cidr',
+          'BOSH_VSPHERE_NETWORK_STATIC' => 'net_static',
+          'BOSH_VSPHERE_NETWORK_GATEWAY' => 'net_gateway',
+          'BOSH_VSPHERE_NETWORK_RESERVED' => 'reserved1|reserved2',
+        )
+      end
 
-        it 'generates the correct YAML' do
-          expect(subject.to_h).to eq(Psych.load(expected_yml))
-        end
+      it 'generates the correct YAML' do
+        expect(subject.to_h).to eq(Psych.load(expected_yml))
       end
     end
   end

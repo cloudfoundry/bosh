@@ -3,10 +3,6 @@ require 'tmpdir'
 
 module Bat
   module DeploymentHelper
-    def spec
-      @spec ||= {}
-    end
-
     def stemcell
       @stemcell ||= Bat::Stemcell.from_path(BoshHelper.read_environment('BAT_STEMCELL'))
     end
@@ -51,23 +47,23 @@ module Bat
       case what
         when Bat::Stemcell
           if stemcells.include?(stemcell)
-            puts 'stemcell already uploaded' if debug?
+            puts 'stemcell already uploaded'
           else
-            puts 'stemcell not uploaded' if debug?
+            puts 'stemcell not uploaded'
             bosh("upload stemcell #{what.to_path}")
           end
         when Bat::Release
           if releases.include?(release)
-            puts 'release already uploaded' if debug?
+            puts 'release already uploaded'
           else
-            puts 'release not uploaded' if debug?
+            puts 'release not uploaded'
             bosh("upload release #{what.to_path}")
           end
         when Bat::Deployment
           if deployments.include?(deployment)
-            puts 'deployment already deployed' if debug?
+            puts 'deployment already deployed'
           else
-            puts 'deployment not deployed' if debug?
+            puts 'deployment not deployed'
             deployment.generate_deployment_manifest(@spec)
             bosh("deployment #{deployment.to_path}")
             bosh('deploy')
@@ -82,16 +78,10 @@ module Bat
     end
 
     def cleanup(what)
-      # if BAT_FAST is set, we just return so the stemcell & release is
-      # preserved - this saves a lot of time! However, it's not safe to
-      # skip delete of a deployment.
-
       case what
         when Bat::Stemcell
-          return if fast?
           bosh("delete stemcell #{what.name} #{what.version}")
         when Bat::Release
-          return if fast?
           bosh("delete release #{what.name}")
         when Bat::Deployment
           bosh("delete deployment #{what.name}")
@@ -166,16 +156,8 @@ module Bat
       @spec['properties']['job'] = job
     end
 
-    def use_template(template)
-      @spec['properties']['template'] = if template.respond_to?(:each)
-                                          string = ''
-                                          template.each do |item|
-                                            string += "\n      - #{item}"
-                                          end
-                                          string
-                                        else
-                                          template
-                                        end
+    def use_templates(templates)
+      @spec['properties']['template'] = templates.map { |item| "\n      - #{item}" }.join
     end
 
     def use_job_instances(count)
@@ -186,8 +168,8 @@ module Bat
       @spec['properties']['name'] = name
     end
 
-    def use_release(version)
-      @spec['properties']['release'] = version
+    def deployment_name
+      @spec.fetch('properties', {}).fetch('name', 'bat')
     end
 
     def use_static_ip
@@ -210,10 +192,6 @@ module Bat
       @spec['properties']['canaries'] = count
     end
 
-    def use_max_in_flight(count)
-      @spec['properties']['max_in_flight'] = count
-    end
-
     def use_pool_size(size)
       @spec['properties']['pool_size'] = size
     end
@@ -222,16 +200,8 @@ module Bat
       @spec['properties']['password'] = passwd
     end
 
-    def use_failing_job(where = 'control')
-      @spec['properties']['batlight']['fail'] = where
-    end
-
-    def use_missing_property(property = 'missing')
-      @spec['properties']['batlight'].delete(property)
-    end
-
-    def use_dynamic_drain
-      @spec['properties']['batlight']['drain_type'] = 'dynamic'
+    def use_failing_job
+      @spec['properties']['batlight']['fail'] = 'control'
     end
 
     def get_task_id(output, state = 'done')
@@ -264,6 +234,10 @@ module Bat
     end
 
     private
+
+    def spec
+      @spec ||= {}
+    end
 
     def parse(line)
       JSON.parse(line)

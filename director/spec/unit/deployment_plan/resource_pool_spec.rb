@@ -8,13 +8,13 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     BD::DeploymentPlan::ResourcePool.new(plan, spec)
   end
 
-  let :valid_spec do
+  let(:valid_spec) do
     {
       "name" => "small",
       "size" => 22,
       "network" => "test",
       "stemcell" => {
-        "name" => "bosh-stemcell",
+        "name" => "stemcell-name",
         "version" => "0.5.2"
       },
       "cloud_properties" => {"foo" => "bar"},
@@ -33,7 +33,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       rp.name.should == "small"
       rp.size.should == 22
       rp.stemcell.should be_kind_of(BD::DeploymentPlan::Stemcell)
-      rp.stemcell.name.should == "bosh-stemcell"
+      rp.stemcell.name.should == "stemcell-name"
       rp.stemcell.version.should == "0.5.2"
       rp.network.should == network
       rp.cloud_properties.should == {"foo" => "bar"}
@@ -83,7 +83,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     rp.spec.should == {
       "name" => "small",
       "cloud_properties" => {"foo" => "bar"},
-      "stemcell" => {"name" => "bosh-stemcell", "version" => "0.5.2"}
+      "stemcell" => {"name" => "stemcell-name", "version" => "0.5.2"}
     }
   end
 
@@ -139,5 +139,4 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       rp.idle_vms.select { |vm| vm.has_network_reservation? }.size.should == 3
     end
   end
-
 end

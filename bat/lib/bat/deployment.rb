@@ -21,7 +21,7 @@ module Bat
     end
 
     def delete
-      puts "<-- rm #{path}" if debug?
+      puts "<-- rm #{path}"
       FileUtils.rm_rf(File.dirname(to_path)) unless keep?
     end
 
@@ -29,7 +29,7 @@ module Bat
       @context = Bosh::Common::TemplateEvaluationContext.new(spec)
       erb = ERB.new(load_template(@context.spec.cpi))
       result = erb.result(@context.get_binding)
-      puts result if debug?
+      puts result
       @yaml = YAML.load(result)
       store_manifest(result)
     end
@@ -52,10 +52,6 @@ module Bat
 
     def tempfile(name)
       File.open(File.join(Dir.mktmpdir, name), 'w')
-    end
-
-    def debug?
-      ENV['BAT_DEBUG'] == 'verbose'
     end
 
     def keep?

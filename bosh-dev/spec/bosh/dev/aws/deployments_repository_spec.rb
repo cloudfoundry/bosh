@@ -5,32 +5,29 @@ module Bosh::Dev::Aws
   describe DeploymentsRepository do
     include FakeFS::SpecHelpers
 
+    subject { described_class.new(env, options) }
+    let(:env) { { 'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO' } }
+    let(:options) { {} }
+
+    before { Bosh::Core::Shell.stub(new: shell) }
     let(:shell) { instance_double('Bosh::Core::Shell', run: 'FAKE_SHELL_OUTPUT') }
-
-    before do
-      Bosh::Core::Shell.stub(new: shell)
-
-      ENV.stub(to_hash: {
-        'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO'
-      })
-    end
 
     describe '#path' do
       its(:path) { should eq('/mnt/deployments') }
 
       context 'when "FAKE_MNT" is set' do
         before do
-          ENV.stub(to_hash: {
+          env.merge!(
             'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO',
             'FAKE_MNT' => '/my/private/idaho'
-          })
+          )
         end
 
         its(:path) { should eq('/my/private/idaho/deployments') }
       end
 
       context 'when path is passed into initialize' do
-        subject(:deployments_repository) { DeploymentsRepository.new(path_root: '/some/fake/path') }
+        before { options[:path_root] = '/some/fake/path' }
 
         its(:path) { should eq('/some/fake/path/deployments') }
       end
@@ -38,14 +35,10 @@ module Bosh::Dev::Aws
 
     describe '#clone_or_update!' do
       context 'when the directory does exist' do
-        before do
-          FileUtils.mkdir_p(subject.path)
-        end
+        before { FileUtils.mkdir_p(subject.path) }
 
         context 'when the directory contains a .git subdirectory' do
-          before do
-            FileUtils.mkdir_p(File.join(subject.path, '.git'))
-          end
+          before { FileUtils.mkdir_p(File.join(subject.path, '.git')) }
 
           it 'updates the repo at "#path"' do
             shell.should_receive(:run).with('git pull')

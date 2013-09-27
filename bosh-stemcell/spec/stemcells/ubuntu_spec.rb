@@ -47,6 +47,8 @@ describe 'Ubuntu Stemcell' do
       'gdb'                  => '7.1-1ubuntu2',
       'tripwire'             => '2.3.1.2.0-13',
       'libcap2-bin'          => '1:2.17-2ubuntu1.1',
+      'libcap-dev'           => '1:2.17-2ubuntu1.1',
+      'libbz2-dev'           => '1.0.5-4ubuntu0.2',
       'libyaml-dev'          => '0.1.3-1',
       'cmake'                => '2.8.0-5ubuntu1',
       'scsitools'            => '0.10-2.1ubuntu2',
@@ -56,6 +58,8 @@ describe 'Ubuntu Stemcell' do
       'debhelper'            => '7.4.15ubuntu1',
       'runit'                => '2.0.0-1ubuntu4',
       'sudo'                 => '1.7.2p1-1ubuntu5.6',
+      'rsyslog'              => '4.2.0-2ubuntu8.1',
+      'rsyslog-relp'         => '4.2.0-2ubuntu8.1',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -100,6 +104,11 @@ describe 'Ubuntu Stemcell' do
     describe file('/var/vcap/micro/apply_spec.yml') do
       it { should be_file }
       it { should contain 'deployment: micro' }
+      it { should contain 'powerdns' }
+    end
+
+    describe file('/var/vcap/micro_bosh/data/cache') do
+      it { should be_a_directory }
     end
   end
 

@@ -24,9 +24,9 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     BD::Models::Stemcell.make(:name => name, :version => version)
   end
 
-  let :valid_spec do
+  let(:valid_spec) do
     {
-      "name" => "bosh-stemcell",
+      "name" => "stemcell-name",
       "version" => "0.5.2"
     }
   end
@@ -36,7 +36,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       resource_pool = make_resource_pool(make_plan)
 
       sc = make(resource_pool, valid_spec)
-      sc.name.should == "bosh-stemcell"
+      sc.name.should == "stemcell-name"
       sc.version.should == "0.5.2"
     end
 
@@ -64,7 +64,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       deployment = make_deployment("mycloud")
       plan = make_plan(deployment)
       resource_pool = make_resource_pool(plan)
-      stemcell = make_stemcell("bosh-stemcell", "0.5.2")
+      stemcell = make_stemcell("stemcell-name", "0.5.2")
 
       sc = make(resource_pool, valid_spec)
       sc.bind_model
@@ -111,5 +111,4 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
                        "Deployment not bound in the deployment plan")
     end
   end
-
 end

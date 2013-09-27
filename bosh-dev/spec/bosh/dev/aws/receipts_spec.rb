@@ -3,18 +3,16 @@ require 'bosh/dev/aws/receipts'
 
 module Bosh::Dev::Aws
   describe Receipts do
+    subject { described_class.new(env) }
+    let(:env) { { 'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN' } }
+
+    before { DeploymentsRepository.stub(new: aws_deployments_repository) }
     let(:aws_deployments_repository) do
-      instance_double('Bosh::Dev::Aws::DeploymentsRepository',
-                      clone_or_update!: true,
-                      path: '/fake/deployments/path')
-    end
-
-    before do
-      DeploymentsRepository.stub(new: aws_deployments_repository)
-
-      ENV.stub(to_hash: {
-        'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN',
-      })
+      instance_double(
+        'Bosh::Dev::Aws::DeploymentsRepository',
+        clone_or_update!: true,
+        path: '/fake/deployments/path',
+      )
     end
 
     describe '#vpc_outfile_path' do
@@ -22,7 +20,6 @@ module Bosh::Dev::Aws
 
       it 'clones or updates the aws deployments repository' do
         aws_deployments_repository.should_receive(:clone_or_update!)
-
         subject.vpc_outfile_path
       end
     end
@@ -32,7 +29,6 @@ module Bosh::Dev::Aws
 
       it 'clones or updates the aws deployments repository' do
         aws_deployments_repository.should_receive(:clone_or_update!)
-
         subject.route53_outfile_path
       end
     end

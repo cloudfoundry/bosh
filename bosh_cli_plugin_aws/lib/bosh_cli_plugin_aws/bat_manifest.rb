@@ -3,13 +3,13 @@ require 'net/http'
 module Bosh
   module Aws
     class BatManifest < MicroboshManifest
+      attr_reader :stemcell_version, :director_uuid, :stemcell_name
 
-      attr_reader :stemcell_version, :director_uuid
-
-      def initialize(vpc_receipt, route53_receipt, stemcell_version, director_uuid)
+      def initialize(vpc_receipt, route53_receipt, stemcell_version, director_uuid, stemcell_name)
         super(vpc_receipt, route53_receipt)
         @stemcell_version = stemcell_version
         @director_uuid = director_uuid
+        @stemcell_name = stemcell_name
       end
 
       def file_name

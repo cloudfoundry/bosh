@@ -1,46 +1,40 @@
 require 'spec_helper'
 
 describe Bosh::Aws::BatManifest do
-  let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
-  let(:vpc_config) { vpc_receipt['original_configuration'] }
-  let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
-  let(:stemcell_version) { 'latest' }
-  let(:manifest) { Bosh::Aws::BatManifest.new(vpc_receipt, route53_receipt, stemcell_version, 'deadbeef') }
+  subject { described_class.new(vpc_receipt, route53_receipt, 'stemcell-version', 'director-uuid', 'stemcell-name') }
+  let(:vpc_receipt)     { Psych.load_file(asset('test-output.yml')) }
+  let(:route53_receipt) { Psych.load_file(asset('test-aws_route53_receipt.yml')) }
 
-  it 'returns the stemcell_version' do
-    manifest.stemcell_version.should == stemcell_version
-  end
+  its(:stemcell_version) { should eq 'stemcell-version' }
+  its(:vip)              { should eq '50.200.100.2' }
+  its(:director_uuid)    { should eq 'director-uuid' }
 
-  it "sets the correct elastic ip" do
-    manifest.vip.should == "50.200.100.2"
-  end
+  context 'when vip is missing' do
+    before { route53_receipt['elastic_ips']['bat']['ips'] = [] }
 
-  it "warns when vip is missing" do
-    route53_receipt['elastic_ips']['bat']['ips'] = []
-
-    manifest = Bosh::Aws::BatManifest.new(vpc_receipt, route53_receipt, stemcell_version, 'deadbeef')
-    manifest.should_receive(:warning).with("Missing vip field")
-    manifest.to_y
-  end
-
-  context "mocked director uuid call" do
-
-    it 'warns when domain is missing' do
-      vpc_receipt["vpc"]["domain"] = nil
-      manifest.should_receive(:warning).with('Missing domain field').at_least(1).times
-      manifest.to_y
+    it 'warns' do
+      subject.should_receive(:warning).with('Missing vip field')
+      subject.to_y
     end
+  end
 
-    it 'finds the director UUID' do
-      manifest.director_uuid.should == 'deadbeef'
+  context 'when domain is missing' do
+    before { vpc_receipt['vpc']['domain'] = nil }
+
+    it 'warns' do
+      subject
+        .should_receive(:warning)
+        .with('Missing domain field')
+        .at_least(1).times
+      subject.to_y
     end
+  end
 
-    it 'generates the template' do
-      spec = manifest.to_y
-      spec.should == <<YAML
+  it 'generates the template' do
+    expect(subject.to_y).to eq(<<YAML)
 ---
 name: bat
-director_uuid: deadbeef
+director_uuid: director-uuid
 cpi: aws
 
 release:
@@ -50,8 +44,8 @@ release:
 resource_pools:
 - name: default
   stemcell:
-    name: bosh-stemcell
-    version: latest
+    name: stemcell-name
+    version: stemcell-version
   network: default
   size: 1
   cloud_properties:
@@ -101,11 +95,11 @@ jobs:
 
 properties:
   static_ip: 50.200.100.2
-  uuid: deadbeef
+  uuid: director-uuid
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
-    version: latest
+    name: stemcell-name
+    version: stemcell-version
   instances: 1
   key_name:  dev102
   mbus: nats://nats:0b450ada9f830085e2cdeff6@micro.cfdev.com:4222
@@ -123,7 +117,5 @@ properties:
     missing: nope
 
 YAML
-    end
   end
-
 end

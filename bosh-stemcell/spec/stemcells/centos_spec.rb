@@ -53,12 +53,17 @@ describe 'CentOs Stemcell' do
       'bison'          => '2.4.1-5.el6.x86_64',
       'libyaml'        => '0.1.3-1.el6.x86_64',
       'libyaml-devel'  => '0.1.3-1.el6.x86_64',
+      'bzip2-devel'    => '1.0.5-7.el6_0.x86_64',
+      'libcap-devel'   => '2.16-5.5.el6.x86_64',
       'cmake'          => '2.6.4-5.el6.x86_64',
       'rpm-build'      => '4.8.0-32.el6.x86_64',
       'rpmdevtools'    => '7.5-2.el6.noarch',
       'glibc-static'   => '2.12-1.107.el6_4.4.x86_64',
       'runit'          => '2.1.1-6.el6.x86_64',
       'sudo'           => '1.8.6p3-7.el6.x86_64',
+      'rsyslog'        => '5.8.10-7.el6_4.x86_64',
+      'rsyslog-relp'   => '5.8.10-7.el6_4.x86_64',
+      'nc'             => '1.84-22.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -86,7 +91,14 @@ describe 'CentOs Stemcell' do
   end
 
   context 'installed by bosh_micro' do
-    describe file('/var/vcap/micro/apply_spec.yml')
+    describe file('/var/vcap/micro/apply_spec.yml') do
+      it { should be_a_file }
+      it { should contain 'powerdns' }
+    end
+
+    describe file('/var/vcap/micro_bosh/data/cache') do
+      it { should be_a_directory }
+    end
   end
 
   context 'installed by system_grub'

@@ -64,6 +64,25 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe 'aws generate bat' do
+      let(:create_vpc_output_yml) { asset 'test-output.yml' }
+      let(:route53_receipt_yml) { asset 'test-aws_route53_receipt.yml' }
+
+      it 'has the correct stemcell name' do
+        aws.stub(:target_required)
+        aws.stub_chain(:director, :uuid).and_return('deadbeef')
+
+        Dir.mktmpdir do |dir|
+          Dir.chdir(dir) do
+            aws.create_bat_manifest(create_vpc_output_yml, route53_receipt_yml, 123, 'test-stemcell')
+            yaml = Psych.load_file('bat.yml')
+            expect(yaml['resource_pools'].first['stemcell']['name']).to eq 'test-stemcell'
+            expect(yaml['properties']['stemcell']['name']).to eq 'test-stemcell'
+          end
+        end
+      end
+    end
+
     describe "aws create" do
       let(:config_file) { asset "create_all.yml" }
       let(:migrator) {double("Migrator")}

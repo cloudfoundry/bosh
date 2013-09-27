@@ -4,10 +4,9 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Aws
   class DeploymentsRepository
-    def initialize(options = {})
-      @env = ENV.to_hash
+    def initialize(env, options = {})
+      @env = env
       @shell = Bosh::Core::Shell.new
-
       @path_root = options.fetch(:path_root) { env.fetch('FAKE_MNT', '/mnt') }
     end
 

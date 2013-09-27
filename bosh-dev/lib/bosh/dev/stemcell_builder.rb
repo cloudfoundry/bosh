@@ -4,23 +4,30 @@ require 'bosh/stemcell/builder_command'
 
 module Bosh::Dev
   class StemcellBuilder
-    def initialize(options)
-      build = Build.candidate
+    def self.for_candidate_build(infrastructure_name, operating_system_name)
+      new(
+        ENV.to_hash,
+        Build.candidate,
+        infrastructure_name,
+        operating_system_name,
+      )
+    end
+
+    def initialize(env, build, infrastructure_name, operating_system_name)
       @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
-        infrastructure_name:   options.fetch(:infrastructure_name),
-        operating_system_name: options.fetch(:operating_system_name),
+        env,
+        infrastructure_name:   infrastructure_name,
+        operating_system_name: operating_system_name,
         version:               build.number,
-        release_tarball_path:  build.download_release,
+        release_tarball_path:  build.release_tarball_path,
       )
     end
 
     def build_stemcell
-      unless @stemcell_path
-        gem_components = GemComponents.new
-        gem_components.build_release_gems
+      gem_components = GemComponents.new
+      gem_components.build_release_gems
 
-        @stemcell_path = stemcell_builder_command.build
-      end
+      @stemcell_path = stemcell_builder_command.build
 
       File.exist?(@stemcell_path) || raise("#{@stemcell_path} does not exist")
 

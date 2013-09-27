@@ -10,7 +10,7 @@ release:
 resource_pools:
 - name: default
   stemcell:
-    name: bosh-stemcell
+    name: <%= stemcell_name %>
     version: <%= stemcell_version %>
   network: default
   size: 1
@@ -64,7 +64,7 @@ properties:
   uuid: <%= director_uuid %>
   pool_size: 1
   stemcell:
-    name: bosh-stemcell
+    name: <%= stemcell_name %>
     version: <%= stemcell_version %>
   instances: 1
   key_name:  <%= key_pair_name %>
