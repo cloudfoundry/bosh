@@ -6,14 +6,24 @@ module Bosh::Dev
     describe '.for_environment' do
       it 'builds an automated deployer' do
         downloader = instance_double('Bosh::Dev::ArtifactsDownloader')
-        ArtifactsDownloader.should_receive(:new).and_return(downloader)
+        class_double('Bosh::Dev::ArtifactsDownloader')
+          .as_stubbed_const
+          .should_receive(:new)
+        .and_return(downloader)
+
+        deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
+        class_double('Bosh::Dev::Aws::DeploymentAccount')
+          .as_stubbed_const
+          .should_receive(:new)
+          .with('environment')
+          .and_return(deployment_account)
 
         deployer = instance_double('Bosh::Dev::AutomatedDeployer')
         described_class.should_receive(:new).with(
           'micro-target',
           'bosh-target',
           'build-number',
-          'environment',
+          deployment_account,
           downloader,
         ).and_return(deployer)
 
@@ -32,7 +42,7 @@ module Bosh::Dev
           micro_target,
           bosh_target,
           build_number,
-          environment,
+          deployment_account,
           artifacts_downloader,
         )
       end
@@ -40,17 +50,7 @@ module Bosh::Dev
       let(:micro_target) { 'https://micro.target.example.com:25555' }
       let(:bosh_target) { 'https://bosh.target.example.com:25555' }
       let(:build_number) { '123' }
-      let(:environment) { 'test_env' }
-      let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
-      before { Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive) }
-      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
-
-      let(:stemcell_path) { '/tmp/stemcell.tgz' }
-      let(:release_path) { '/tmp/release.tgz' }
-      let(:repository_path) { '/tmp/repo' }
-
-      before { Bosh::Dev::Aws::DeploymentAccount.stub(:new).with(environment).and_return(deployment_account) }
       let(:deployment_account) do
         instance_double(
           'Bosh::Dev::Aws::DeploymentAccount',
@@ -59,6 +59,15 @@ module Bosh::Dev
           bosh_password: 'fake-password',
         )
       end
+
+      let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
+
+      before { Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive) }
+      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
+
+      let(:stemcell_path) { '/tmp/stemcell.tgz' }
+      let(:release_path) { '/tmp/release.tgz' }
+      let(:repository_path) { '/tmp/repo' }
 
       before do
         Bosh::Dev::DirectorClient.stub(:new).with(

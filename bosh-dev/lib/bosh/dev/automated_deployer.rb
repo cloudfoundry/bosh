@@ -7,17 +7,21 @@ require 'bosh/stemcell/archive'
 module Bosh::Dev
   class AutomatedDeployer
     def self.for_environment(micro_target, bosh_target, build_number, environment)
-      new(micro_target, bosh_target, build_number, environment, ArtifactsDownloader.new)
+      new(
+        micro_target,
+        bosh_target,
+        build_number,
+        Aws::DeploymentAccount.new(environment),
+        ArtifactsDownloader.new,
+      )
     end
 
-    def initialize(micro_target, bosh_target, build_number, environment, artifacts_downloader)
+    def initialize(micro_target, bosh_target, build_number, deployment_account, artifacts_downloader)
       @micro_target = micro_target
       @bosh_target = bosh_target
       @build_number = build_number
-      @environment = environment
-
+      @deployment_account = deployment_account
       @artifacts_downloader = artifacts_downloader
-      @deployment_account = Aws::DeploymentAccount.new(environment)
     end
 
     def deploy
@@ -39,10 +43,9 @@ module Bosh::Dev
     attr_reader(
       :micro_target,
       :bosh_target,
-      :artifacts_downloader,
       :build_number,
-      :environment,
       :deployment_account,
+      :artifacts_downloader,
     )
 
     def micro_director_client
