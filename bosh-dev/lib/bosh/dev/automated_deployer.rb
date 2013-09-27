@@ -6,17 +6,18 @@ require 'bosh/stemcell/archive'
 
 module Bosh::Dev
   class AutomatedDeployer
-    def initialize(options = {})
-      @micro_target = options.fetch(:micro_target)
-      @bosh_target = options.fetch(:bosh_target)
-      @build_number = options.fetch(:build_number)
-      @environment = options.fetch(:environment)
+    def self.for_environment(micro_target, bosh_target, build_number, environment)
+      new(micro_target, bosh_target, build_number, environment, ArtifactsDownloader.new)
+    end
 
-      @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
-      @deployment_account = Aws::DeploymentAccount.new(options.fetch(:environment))
+    def initialize(micro_target, bosh_target, build_number, environment, artifacts_downloader)
+      @micro_target = micro_target
+      @bosh_target = bosh_target
+      @build_number = build_number
+      @environment = environment
 
-      @micro_director_client = DirectorClient.new(uri: micro_target, username: deployment_account.bosh_user, password: deployment_account.bosh_password)
-      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: deployment_account.bosh_user, password: deployment_account.bosh_password)
+      @artifacts_downloader = artifacts_downloader
+      @deployment_account = Aws::DeploymentAccount.new(environment)
     end
 
     def deploy
@@ -35,13 +36,30 @@ module Bosh::Dev
 
     private
 
-    attr_reader :micro_target,
-                :bosh_target,
-                :artifacts_downloader,
-                :build_number,
-                :environment,
-                :deployment_account,
-                :micro_director_client,
-                :bosh_director_client
+    attr_reader(
+      :micro_target,
+      :bosh_target,
+      :artifacts_downloader,
+      :build_number,
+      :environment,
+      :deployment_account,
+    )
+
+    def micro_director_client
+      @micro_director_client ||= DirectorClient.new(
+        uri: micro_target,
+        username: deployment_account.bosh_user,
+        password: deployment_account.bosh_password
+      )
+    end
+
+    def bosh_director_client
+      @director_client ||= DirectorClient.new(
+        uri: bosh_target,
+        username: deployment_account.bosh_user,
+        password: deployment_account.bosh_password
+      )
+    end
+
   end
 end

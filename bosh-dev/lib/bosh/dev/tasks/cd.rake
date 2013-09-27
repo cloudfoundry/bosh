@@ -3,11 +3,11 @@ namespace :cd do
   task :deploy, [:build_number, :micro_target, :bosh_target, :environment] do |_, args|
     require 'bosh/dev/automated_deployer'
 
-    deployer = Bosh::Dev::AutomatedDeployer.new(
-        micro_target: args[:micro_target],
-        bosh_target: args[:bosh_target],
-        build_number: args[:build_number],
-        environment: args[:environment]
+    deployer = Bosh::Dev::AutomatedDeployer.for_environment(
+      args.micro_target,
+      args.bosh_target,
+      args.build_number,
+      args.environment,
     )
     deployer.deploy
   end
