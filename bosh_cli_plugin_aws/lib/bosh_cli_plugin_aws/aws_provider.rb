@@ -8,7 +8,7 @@ module Bosh
       end
 
       def ec2
-        @ec2 ||= ::AWS::EC2.new(credentials)
+        @ec2 ||= ::AWS::EC2.new(credentials.merge('ec2_endpoint' => ec2_endpoint))
       end
 
       def elb
@@ -40,6 +40,10 @@ module Bosh
       end
 
       private
+
+      def ec2_endpoint
+        "ec2.#{region}.amazonaws.com"
+      end
 
       def elb_endpoint
         "elasticloadbalancing.#{region}.amazonaws.com"
