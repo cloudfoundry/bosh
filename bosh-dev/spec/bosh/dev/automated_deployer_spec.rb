@@ -5,17 +5,26 @@ module Bosh::Dev
   describe AutomatedDeployer do
     describe '.for_environment' do
       it 'builds an automated deployer' do
+        stub_const('ENV', env = double('ENV'))
+
         downloader = instance_double('Bosh::Dev::ArtifactsDownloader')
         class_double('Bosh::Dev::ArtifactsDownloader')
           .as_stubbed_const
           .should_receive(:new)
         .and_return(downloader)
 
+        deployments_repository = instance_double('Bosh::Dev::Aws::DeploymentsRepository')
+        class_double('Bosh::Dev::Aws::DeploymentsRepository')
+          .as_stubbed_const
+          .should_receive(:new)
+          .with(env, path_root: '/tmp')
+          .and_return(deployments_repository)
+
         deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
         class_double('Bosh::Dev::Aws::DeploymentAccount')
           .as_stubbed_const
           .should_receive(:new)
-          .with('environment')
+          .with('environment', deployments_repository)
           .and_return(deployment_account)
 
         deployer = instance_double('Bosh::Dev::AutomatedDeployer')
