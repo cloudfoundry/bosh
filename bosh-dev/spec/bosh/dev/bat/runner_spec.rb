@@ -61,12 +61,14 @@ module Bosh::Dev::Bat
       end
 
       it 'targets the micro' do
-        bosh_cli_session.should_receive(:run_bosh).with('micro deployment fake_micro_bosh_deployment_name')
+        bosh_cli_session.should_receive(:run_bosh).with(
+          'micro deployment fake_micro_bosh_deployment_name')
         subject.run_bats
       end
 
       it 'deploys the micro' do
-        bosh_cli_session.should_receive(:run_bosh).with('micro deploy fake_bosh_stemcell_path')
+        bosh_cli_session.should_receive(:run_bosh).with(
+          'micro deploy fake_bosh_stemcell_path')
         subject.run_bats
       end
 
