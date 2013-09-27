@@ -27,14 +27,8 @@ module Bosh::Dev
       let(:spec_system_micro_task) { instance_double('Rake::Task', invoke: nil) }
 
       before do
-        ENV.delete('BAT_INFRASTRUCTURE')
         Rake::Task.stub(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(spec_system_micro_task)
-
         FileUtils.stub(rm_rf: nil, mkdir_p: nil)
-      end
-
-      after do
-        ENV.delete('BAT_INFRASTRUCTURE')
       end
 
       it 'removes the artifacts dir' do
@@ -47,14 +41,6 @@ module Bosh::Dev
         FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
 
         subject.run_rake
-      end
-
-      it 'sets ENV["BAT_INFRASTRUCTURE"]' do
-        expect(ENV['BAT_INFRASTRUCTURE']).to be_nil
-
-        subject.run_rake
-
-        expect(ENV['BAT_INFRASTRUCTURE']).to eq(infrastructure_name)
       end
 
       it 'downloads stemcells for the specified infrastructure' do

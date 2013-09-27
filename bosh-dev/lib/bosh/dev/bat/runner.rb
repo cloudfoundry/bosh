@@ -67,12 +67,13 @@ module Bosh::Dev::Bat
     end
 
     def set_bat_env_variables
-      env['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-      env['BAT_DIRECTOR']        = director_address.hostname
-      env['BAT_DNS_HOST']        = director_address.ip
-      env['BAT_STEMCELL']        = bat_helper.bosh_stemcell_path
+      env['BAT_DEPLOYMENT_SPEC']  = File.join(bat_helper.artifacts_dir, 'bat.yml')
+      env['BAT_DIRECTOR']         = director_address.hostname
+      env['BAT_DNS_HOST']         = director_address.ip
+      env['BAT_STEMCELL']         = bat_helper.bosh_stemcell_path
       env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY']
-      env['BAT_VCAP_PASSWORD']   = 'c1oudc0w'
+      env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
+      env['BAT_INFRASTRUCTURE']   = stemcell_archive.infrastructure
     end
 
     def run_bat

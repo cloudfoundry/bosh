@@ -42,7 +42,14 @@ module Bosh::Dev::Bat
 
       let(:director_address) { DirectorAddress.new('director-hostname', 'director-ip') }
       let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: 'fake_BoshCliSession_output') }
-      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'stemcell-name', version: '6') }
+      let(:stemcell_archive) do
+        instance_double(
+          'Bosh::Stemcell::Archive',
+          name: 'stemcell-name',
+          version: '6',
+          infrastructure: 'infrastructure',
+        )
+      end
 
       let(:microbosh_deployment_manifest) { double('microbosh-deployment-manifest', write: nil) }
       let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
@@ -102,6 +109,7 @@ module Bosh::Dev::Bat
         expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
         expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
+        expect(env['BAT_INFRASTRUCTURE']).to eq('infrastructure')
       end
 
       def self.it_cleans_up_after_rake_task(ignore_error = false)
