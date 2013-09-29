@@ -17,7 +17,15 @@ describe Bosh::Cli::Command::Base do
       @cmd.add_option(:config, @config)
       @cmd.add_option(:cache_dir, @cache)
       @manifest_path = spec_asset("deployment.MF")
-      @manifest_yaml = { "name" => "foo", "cloud" => {} }
+      @manifest_yaml = {
+        "name" => "foo",
+        "cloud" => {
+          "plugin" => "openstack",
+          "properties" => {
+            "openstack" => {}
+          }
+        }
+      }
       @manifest_yaml["resources"] = {
         "persistent_disk" => 16384,
         "cloud_properties" => {}
@@ -122,6 +130,26 @@ describe Bosh::Cli::Command::Base do
         end
 
         command.agent(request)
+      end
+    end
+
+    describe 'ssh command' do
+      before do
+        @cmd.stub(:deployment).and_return(@manifest_path)
+        @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
+        @cmd.stub(:target).and_return("https://1.2.3.4:25555")
+      end
+
+      it 'opens interactive shell' do
+        @cmd.should_receive(:system).with("ssh vcap@1.2.3.4").and_return(123)
+        @cmd.should_receive(:exit).with(123)
+        @cmd.micro_ssh
+      end
+
+      it 'runs a shell command via ssh' do
+        @cmd.should_receive(:system).with("ssh vcap@1.2.3.4 command to run").and_return(0)
+        @cmd.should_receive(:exit).with(0)
+        @cmd.micro_ssh("command", "to", "run")
       end
     end
 

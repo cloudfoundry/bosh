@@ -75,6 +75,16 @@ Update an existing micro BOSH instance.  The existing persistent disk will be at
 
   % bosh micro deploy ~/cf/stemcells/micro-bosh-stemcell-0.4.5.tgz --update
 
+== ssh
+
+You can open an ssh connection:
+
+  % bosh micro ssh
+
+You can run a command upon your microbosh via ssh:
+
+  % bosh micro ssh "command to run"
+
 == delete
 
 The delete command will delete the VM, stemcell and persistent disk.
