@@ -3,8 +3,10 @@
 require 'spec_helper'
 
 describe Bosh::Agent::Message::MigrateDisk do
-  it 'is long running' do
-    Bosh::Agent::Message::MigrateDisk.long_running?.should == true
+  describe '.long_running?' do
+    it 'is always true' do
+      Bosh::Agent::Message::MigrateDisk.long_running?.should == true
+    end
   end
 
   it 'should migrate disk' do
