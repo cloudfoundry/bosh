@@ -17,13 +17,23 @@ module Bosh::Agent
       @disk_retry_timeout = DISK_RETRY_MAX_DEFAULT
     end
 
-    def mount_persistent_disk(cid)
+    def mount_persistent_disk(cid, options='')
       FileUtils.mkdir_p(@store_dir)
       disk = lookup_disk_by_cid(cid)
       partition = "#{disk}1"
       if File.blockdev?(partition) && !mount_exists?(partition)
-        mount(partition, @store_dir)
+        mount(partition, @store_dir, options)
       end
+    end
+
+    # This makes warden-cpi merge possible
+    # warden cpi will bind mount a directory rather than a block device into containers
+    def is_disk_blockdev?
+       true
+    end
+
+    def mount_partition(partition, mount_point)
+      mount(partition, mount_point)
     end
 
     def get_data_disk_device_name
@@ -109,9 +119,9 @@ module Bosh::Agent
       File.join('/dev', blockdev)
     end
 
-    def mount(partition, path)
+    def mount(partition, path, options='')
       @logger.info("Mount #{partition} #{path}")
-      sh "mount #{partition} #{path}"
+      sh "mount #{options} #{partition} #{path}"
     end
 
     def mount_exists?(partition)
