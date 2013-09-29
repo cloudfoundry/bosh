@@ -63,10 +63,6 @@ module Bosh::Director
       # @return [Hash<Integer, String>] Individual instance expected states
       attr_accessor :instance_states
 
-      # @return [Exception] Exception that requires job update process to be
-      #   interrupted
-      attr_accessor :halt_exception
-
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [Bosh::Director::DeploymentPlan::Job]
@@ -87,9 +83,7 @@ module Bosh::Director
         @all_properties = nil # All properties available to job
         @properties = nil # Actual job properties
 
-        @error_mutex = Mutex.new
         @packages = {}
-        @halt = false
         @unneeded_instances = []
       end
 
@@ -201,17 +195,6 @@ module Bosh::Director
       def use_compiled_package(compiled_package_model)
         compiled_package = CompiledPackage.new(compiled_package_model)
         @packages[compiled_package.name] = compiled_package
-      end
-
-      def should_halt?
-        @halt
-      end
-
-      def record_update_error(error, options = {})
-        @error_mutex.synchronize do
-          @halt = true
-          @halt_exception = error
-        end
       end
 
       def parse_name

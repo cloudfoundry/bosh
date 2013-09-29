@@ -58,15 +58,13 @@ module Bosh::Director
             desc = "#{@job.name}/#{instance.index}"
             @event_log.track("#{desc} (canary)") do |ticker|
               with_thread_name("canary_update(#{desc})") do
-                unless @job.should_halt?
-                  begin
-                    InstanceUpdater.new(instance, ticker).
-                      update(:canary => true)
-                  rescue Exception => e
-                    @logger.error("Error updating canary instance: #{e}\n" +
-                                  "#{e.backtrace.join("\n")}")
-                    @job.record_update_error(e, :canary => true)
-                  end
+                begin
+                  InstanceUpdater.new(instance, ticker).
+                    update(:canary => true)
+                rescue Exception => e
+                  @logger.error("Error updating canary instance: #{e}\n" +
+                                "#{e.backtrace.join("\n")}")
+                  raise
                 end
               end
             end
@@ -76,11 +74,6 @@ module Bosh::Director
         pool.wait
         @logger.info("Finished canary update")
 
-        if @job.should_halt?
-          @logger.warn("Halting deployment due to a canary failure")
-          halt
-        end
-
         # Continue with the rest of the updates
         @logger.info("Continuing the rest of the update")
         instances.each do |instance|
@@ -88,14 +81,12 @@ module Bosh::Director
             desc = "#{@job.name}/#{instance.index}"
             @event_log.track(desc) do |ticker|
               with_thread_name("instance_update(#{desc})") do
-                unless @job.should_halt?
-                  begin
-                    InstanceUpdater.new(instance, ticker).update
-                  rescue Exception => e
-                    @logger.error("Error updating instance: #{e}\n" +
-                                  "#{e.backtrace.join("\n")}")
-                    @job.record_update_error(e)
-                  end
+                begin
+                  InstanceUpdater.new(instance, ticker).update
+                rescue Exception => e
+                  @logger.error("Error updating instance: #{e}\n" +
+                                "#{e.backtrace.join("\n")}")
+                  raise
                 end
               end
             end
@@ -104,17 +95,6 @@ module Bosh::Director
       end
 
       @logger.info("Finished the rest of the update")
-
-      if @job.should_halt?
-        @logger.warn("Halting deployment due to an update failure")
-        halt
-      end
-    end
-
-    def halt
-      error = @job.halt_exception ||
-        RuntimeError.new("Deployment has been halted")
-      raise error
     end
 
   end
