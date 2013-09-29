@@ -33,6 +33,7 @@ module Bosh::Agent
         mount_store(@new_cid)
       end
 
+      private
       def check_mountpoints
         Pathname.new(store_path).mountpoint? && Pathname.new(store_migration_target).mountpoint?
       end
