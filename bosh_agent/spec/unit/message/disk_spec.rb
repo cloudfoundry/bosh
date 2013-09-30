@@ -9,6 +9,16 @@ describe Bosh::Agent::Message::MigrateDisk do
     end
   end
 
+  describe '.process' do
+    it 'delegates to #migrate and returns an empty hash' do
+      message = double('migrate_disk message')
+      described_class.should_receive(:new).with().and_return(message)
+      message.should_receive(:migrate).with(["old_disk_cid", "new_disk_cid"])
+
+      described_class.process(["old_disk_cid", "new_disk_cid"]).should eq({})
+    end
+  end
+
   it 'should migrate disk' do
     #handler = Bosh::Agent::Message::MigrateDisk.process(["4", "9"])
   end
