@@ -2,19 +2,17 @@ require_relative 'errors'
 
 module Bosh
   class Retryable
-
     def initialize(options = {})
       opts = validate_options(options)
 
       @ensure_callback = opts[:ensure]
       @matching        = opts[:matching]
-      @on_exception    = [ opts[:on] ].flatten
+      @on_exception    = [opts[:on]].flatten
       @try_count       = 0
       @retry_exception = nil
       @retry_limit     = opts[:tries]
       @sleeper         = opts[:sleep]
     end
-
 
     # this method will loop until the block returns a true value
     def retryer(&block)
@@ -67,7 +65,6 @@ module Bosh
     def exponential_sleeper
       lambda { |tries, _| [2**(tries-1), 10].min } # 1, 2, 4, 8, 10, 10..10 seconds
     end
-
   end
 end
 

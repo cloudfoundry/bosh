@@ -2,9 +2,7 @@ require 'spec_helper'
 require 'common/retryable'
 
 describe Bosh::Retryable do
-  before do
-    Kernel.stub(:sleep)
-  end
+  before { Kernel.stub(:sleep) }
 
   it 'should raise an ArgumentError error if invalid options are used' do
     expect {
