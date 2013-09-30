@@ -123,4 +123,64 @@ describe VSphereCloud::Cloud do
       end
     end
   end
+
+  describe '#generate_network_env' do
+    let(:device) { instance_double('Vim::Vm::Device::VirtualEthernetCard', backing: backing, mac_address: '00:00:00:00:00:00') }
+    let(:devices) { [device] }
+    let(:network1) {
+      {
+        'cloud_properties' => {
+          'name' => 'fake_network1'
+        }
+      }
+    }
+    let(:networks) { { 'fake_network1' => network1 } }
+    let(:dvs_index) { {} }
+    let(:expected_output) { {
+      'fake_network1' => {
+        'cloud_properties' => {
+          'name' => 'fake_network1'
+        },
+        'mac' => '00:00:00:00:00:00'
+      }
+    } }
+
+    before do
+      device.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard) { true }
+    end
+
+    context 'using a distributed switch' do
+      let(:backing) { instance_double('Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo') }
+      let(:dvs_index) { { 'fake_pgkey1' => 'fake_network1' } }
+
+      it 'generates the network env' do
+        backing.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo) { true }
+        backing.stub_chain(:port, :portgroup_key) { 'fake_pgkey1' }
+
+        expect(vsphere_cloud.generate_network_env(devices, networks, dvs_index)).to eq(expected_output)
+      end
+    end
+
+    context 'using a standard switch' do
+      let(:backing) { double(device_name: 'fake_network1') }
+
+      it 'generates the network env' do
+        backing.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo) { false }
+
+        expect(vsphere_cloud.generate_network_env(devices, networks, dvs_index)).to eq(expected_output)
+      end
+    end
+
+    context 'passing in device that is not a VirtualEthernetCard' do
+      let(:devices) { [device, double()] }
+      let(:backing) { double(device_name: 'fake_network1') }
+
+      it 'ignores non VirtualEthernetCard devices' do
+        backing.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo) { false }
+
+        expect(vsphere_cloud.generate_network_env(devices, networks, dvs_index)).to eq(expected_output)
+      end
+    end
+  end
+
 end
