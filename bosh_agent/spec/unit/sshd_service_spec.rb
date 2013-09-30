@@ -32,7 +32,6 @@ module Bosh::Agent
     end
 
     describe '#start_sshd' do
-
       before do
         EventMachine.stub(:add_periodic_timer)
         sshd_service.enable(0, 0)
@@ -43,11 +42,7 @@ module Bosh::Agent
 
       it 'shells out to start the ssh service' do
         fake_lock.stub(:synchronize).and_yield
-        sshd_service.should_receive(:`).with('service ssh start') do
-          # ensure zero exit status on the global $?
-          system('true')
-        end
-
+        sshd_service.should_receive(:`).with('service ssh start') { `true` }
         sshd_service.start_sshd
       end
 
@@ -59,15 +54,9 @@ module Bosh::Agent
         end
 
         context 'when sshd status is started' do
-          before do
-            sshd_service.stub(:`).with('service ssh status') do
-              `true`
-              'running'
-            end
-          end
+          before { sshd_service.stub(:`).with('service ssh status') { `true`; 'running' } }
 
           it 'does not raise' do
-
             expect {
               sshd_service.start_sshd
             }.not_to raise_error
@@ -75,9 +64,7 @@ module Bosh::Agent
         end
 
         context 'when sshd status is not started' do
-          before do
-            sshd_service.stub(:`).with('service ssh status') { `false` }
-          end
+          before { sshd_service.stub(:`).with('service ssh status') { `true`; 'stopped' } }
 
           it 'raises' do
             expect {
@@ -88,11 +75,8 @@ module Bosh::Agent
 
         context 'when sshd status was not started but it becomes started on a second attempt' do
           it 'does not raise' do
-            sshd_service.should_receive(:`).ordered.with('service ssh status') { `false` }
-            sshd_service.should_receive(:`).ordered.with('service ssh status') do
-              `true`
-              'running'
-            end
+            sshd_service.should_receive(:`).ordered.with('service ssh status') { `true`; 'stopped' }
+            sshd_service.should_receive(:`).ordered.with('service ssh status') { `true`; 'running' }
             expect {
               sshd_service.start_sshd
             }.not_to raise_error
