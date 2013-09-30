@@ -19,8 +19,79 @@ describe Bosh::Agent::Message::MigrateDisk do
     end
   end
 
-  it 'should migrate disk' do
-    #handler = Bosh::Agent::Message::MigrateDisk.process(["4", "9"])
+  describe '#migrate' do
+    let(:migration_mount_point) { '/var/vcap/store_migraton_target' } # sic
+    let(:persistent_disk_mount_point) { '/var/vcap/store' }
+    before do
+      store_path = double('store path', mountpoint?: true)
+      Pathname.stub(:new).with(persistent_disk_mount_point).and_return(
+        store_path
+      )
+
+      migration_target_path = double('migration path', mountpoint?: true)
+      Pathname.stub(:new).with(migration_mount_point).and_return(
+        migration_target_path
+      )
+    end
+
+    let(:config_class) { double('agent config') }
+    before {  stub_const('Bosh::Agent::Config', config_class) }
+
+    subject(:migrate_disk) { described_class.new }
+    before do
+      fake_logger = double('logger', info: true)
+      config_class.stub(logger: fake_logger)
+      config_class.stub(base_dir: '/var/vcap')
+      platform = double('platform')
+      config_class.stub(platform: platform)
+      platform.stub(:lookup_disk_by_cid).with("old_disk_cid").and_return(
+        '/dev/sda',
+      )
+      platform.stub(:lookup_disk_by_cid).with("new_disk_cid").and_return(
+        '/dev/sdb',
+      )
+
+      #config_class.stub(
+      #  settings: {
+      #    'disks' => {
+      #      'ephemeral' => '/dev/sdq',
+      #      'persistent' => {
+      #        'old_disk_cid' => '/dev/sda',
+      #        'new_disk_cid' => '/dev/sdb'
+      #      }
+      #    }
+      #  }
+      #)
+    end
+
+    it 'remounts the old disk RO, copies files over, and mounts the new disk' do
+      # re-mount old disk read-only
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
+          persistent_disk_mount_point,
+      )
+      migrate_disk.should_receive(:`).ordered.with(
+        "mount -o ro /dev/sda1 #{persistent_disk_mount_point}")
+
+      # copy stuff over
+      migrate_disk.should_receive(:`).ordered.with(
+        "(cd #{persistent_disk_mount_point} && tar cf - .) | (cd #{migration_mount_point} && tar xpf -)"
+      )
+
+      # unmount old disk
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
+        persistent_disk_mount_point,
+      )
+
+      # re-mount new disk to the right mount point
+      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
+        migration_mount_point,
+      )
+      migrate_disk.should_receive(:`).ordered.with(
+        "mount  /dev/sdb1 #{persistent_disk_mount_point}"
+      )
+
+      migrate_disk.migrate(["old_disk_cid", "new_disk_cid"])
+    end
   end
 end
 
