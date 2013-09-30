@@ -69,8 +69,15 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
           persistent_disk_mount_point,
       )
-      migrate_disk.should_receive(:`).ordered.with(
-        "mount -o ro /dev/sda1 #{persistent_disk_mount_point}")
+      mounter_old_disk = double('mounter for old disk')
+      Bosh::Agent::Mounter.stub(:new).with(
+        anything,
+        'old_disk_cid',
+        persistent_disk_mount_point,
+        anything,
+        anything,
+      ).and_return(mounter_old_disk)
+      mounter_old_disk.should_receive(:mount).with('-o ro').ordered
 
       # copy stuff over
       migrate_disk.should_receive(:`).ordered.with(
@@ -86,9 +93,15 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
         migration_mount_point,
       )
-      migrate_disk.should_receive(:`).ordered.with(
-        "mount  /dev/sdb1 #{persistent_disk_mount_point}"
-      )
+      mounter_new_disk = double('mounter for new disk')
+      Bosh::Agent::Mounter.stub(:new).with(
+        anything,
+        'new_disk_cid',
+        persistent_disk_mount_point,
+        anything,
+        anything,
+      ).and_return(mounter_new_disk)
+      mounter_new_disk.should_receive(:mount).with('').ordered
 
       migrate_disk.migrate(["old_disk_cid", "new_disk_cid"])
     end
