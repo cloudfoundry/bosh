@@ -75,10 +75,6 @@ module Bat
       info['cpi'] == 'openstack'
     end
 
-    def vsphere?
-      info['cpi'] == 'vsphere'
-    end
-
     def compiled_package_cache?
       info['features'] && info['features']['compiled_package_cache']
     end
