@@ -40,7 +40,7 @@ module Bosh::Agent
       end
 
       def mount_store(cid, options="")
-        Mounter.new(Config.platform, cid, store_path, logger, self).mount(options)
+        Mounter.new(Config.platform, cid, store_path, logger).mount(options)
       end
     end
 

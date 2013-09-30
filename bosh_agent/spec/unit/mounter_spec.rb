@@ -9,14 +9,12 @@ describe Bosh::Agent::Mounter do
         disk_cid,
         mount_point,
         logger,
-        backticker,
       )
     end
     let(:platform) { double('platform') }
     let(:disk_cid) { 'disk_cid' }
     let(:mount_point) { '/path/to/mount/point' }
     let(:logger) { double('logger') }
-    let(:backticker) { double('backticker') }
 
     context 'when command to mount succeeds' do
       it 'looks up the disk device path, logs, and mounts the partition onto path' do
@@ -26,7 +24,7 @@ describe Bosh::Agent::Mounter do
         logger.should_receive(:info).with(
           "Mounting: /dev/sda1 #{mount_point}"
         )
-        backticker.should_receive(:`).with(
+        mounter.should_receive(:`).with(
           "mount  /dev/sda1 #{mount_point}"
         )
 
@@ -42,7 +40,7 @@ describe Bosh::Agent::Mounter do
         logger.should_receive(:info).with(
           "Mounting: /dev/sda1 #{mount_point}"
         )
-        backticker.should_receive(:`).with(
+        mounter.should_receive(:`).with(
           "mount  /dev/sda1 #{mount_point}"
         ) { system("false") }
 

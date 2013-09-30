@@ -75,7 +75,6 @@ describe Bosh::Agent::Message::MigrateDisk do
         'old_disk_cid',
         persistent_disk_mount_point,
         anything,
-        anything,
       ).and_return(mounter_old_disk)
       mounter_old_disk.should_receive(:mount).with('-o ro').ordered
 
@@ -98,7 +97,6 @@ describe Bosh::Agent::Message::MigrateDisk do
         anything,
         'new_disk_cid',
         persistent_disk_mount_point,
-        anything,
         anything,
       ).and_return(mounter_new_disk)
       mounter_new_disk.should_receive(:mount).with('').ordered
