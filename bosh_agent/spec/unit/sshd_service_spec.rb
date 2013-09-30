@@ -43,7 +43,10 @@ module Bosh::Agent
 
       it 'shells out to start the ssh service' do
         fake_lock.stub(:synchronize).and_yield
-        sshd_service.should_receive(:`).with('service ssh start')
+        sshd_service.should_receive(:`).with('service ssh start') do
+          # ensure zero exit status on the global $?
+          system('true')
+        end
 
         sshd_service.start_sshd
       end
