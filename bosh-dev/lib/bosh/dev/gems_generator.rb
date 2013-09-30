@@ -8,11 +8,15 @@ module Bosh::Dev
       @build = build
       @components = GemComponents.new
     end
-
-    def generate_and_upload
+    
+    def generate
       VersionFile.new(@build.number).write
 
       @components.build_release_gems
+    end
+    
+    def generate_and_upload
+      generate
 
       Dir.chdir('pkg') do
         Bundler.with_clean_env do
