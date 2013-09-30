@@ -56,8 +56,8 @@ module Bosh
     end
 
     def wait
-      Kernel.sleep @sleeper.respond_to?(:call) ? @sleeper.call(@try_count, @retry_exception) : @sleeper
-    rescue *exceptions
+      Kernel.sleep(@sleeper.respond_to?(:call) ? @sleeper.call(@try_count, @retry_exception) : @sleeper)
+    rescue *@on_exception
       # SignalException could be raised while sleeping, so if you want to catch it,
       # it need to be passed in the list of exceptions to ignore
     end
