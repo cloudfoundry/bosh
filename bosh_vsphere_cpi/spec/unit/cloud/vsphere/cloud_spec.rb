@@ -64,7 +64,7 @@ describe VSphereCloud::Cloud do
         client.stub(:find_by_inventory_path).with(
           [
             cluster.datacenter.name,
-            "vm",
+            'vm',
             cluster.datacenter.template_folder.name,
             stemcell_id,
           ]
@@ -77,7 +77,7 @@ describe VSphereCloud::Cloud do
         client.should_receive(:find_by_inventory_path).with(
           [
             cluster.datacenter.name,
-            "vm",
+            'vm',
             cluster.datacenter.template_folder.name,
             "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
           ]
@@ -94,7 +94,7 @@ describe VSphereCloud::Cloud do
           client.stub(:find_by_inventory_path).with(
             [
               cluster.datacenter.name,
-              "vm",
+              'vm',
               cluster.datacenter.template_folder.name,
               "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
             ]
