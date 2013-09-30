@@ -22,18 +22,15 @@ describe Bosh::Agent::Message::Ssh do
   it "should return success when create succeeds" do
     ssh = Bosh::Agent::Message::Ssh.new(ssh_create_args)
     FileUtils.stub(:chown_R)
-    @sshd_started = false
-    Bosh::Agent::SshdMonitor.stub(:start_sshd) { @sshd_started = true }
     Bosh::Agent::Config.stub(:default_ip).and_return("127.0.0.1")
     ssh.stub(:shell_cmd)
     rtn = ssh.setup
-    rtn["status"].should == "success" && @sshd_started.should == true
+    rtn["status"].should == "success"
   end
 
   it "should copy public key into users director" do
     ssh = Bosh::Agent::Message::Ssh.new(ssh_create_args)
     FileUtils.stub(:chown_R)
-    Bosh::Agent::SshdMonitor.stub(:start_sshd)
     Bosh::Agent::Config.stub(:default_ip).and_return("127.0.0.1")
     ssh.stub(:shell_cmd)
     rtn = ssh.setup
@@ -43,7 +40,6 @@ describe Bosh::Agent::Message::Ssh do
 
   it "should not cleanup privileged users" do
     ssh = Bosh::Agent::Message::Ssh.new(ssh_cleanup_args)
-    Bosh::Agent::SshdMonitor.stub(:stop_sshd)
     ssh.stub(:shell_cmd).with("userdel -r root") { raise "Unexpected results" }
     rtn = ssh.cleanup
     rtn["status"].should == "success"

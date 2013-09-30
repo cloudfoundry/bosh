@@ -66,7 +66,6 @@ require 'bosh_agent/settings'
 require 'bosh_agent/file_matcher'
 require 'bosh_agent/file_aggregator'
 require 'bosh_agent/ntp'
-require 'bosh_agent/sshd_monitor'
 require 'bosh_agent/syslog_monitor'
 
 require 'bosh_agent/apply_plan/helpers'
