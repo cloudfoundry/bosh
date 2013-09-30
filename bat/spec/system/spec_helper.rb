@@ -57,6 +57,7 @@ RSpec::Matchers.define :succeed_with do |expected|
       raise ArgumentError, "don't know what to do with a #{expected.class}"
     end
   end
+
   failure_message_for_should do |actual|
     if expected.instance_of?(Regexp)
       what = 'match'
