@@ -84,5 +84,61 @@ module Bosh::Agent
         end
       end
     end
+
+    describe '#stop_sshd' do
+      let(:fake_lock) { double('lock') }
+      before { Mutex.stub(new: fake_lock) }
+
+      before { sshd_service.stub(ok_to_stop?: true) }
+
+      before do
+        EventMachine.stub(:add_periodic_timer)
+        sshd_service.enable(0, 0)
+      end
+
+      it 'shells out to stop the ssh service' do
+        fake_lock.stub(:synchronize).and_yield
+        sshd_service.should_receive(:`).with('service ssh stop')
+        sshd_service.stop_sshd
+      end
+
+      context 'when the sshd start command fails' do
+        before do
+          sshd_service.stub(:`).with('service ssh stop') { `false` }
+          fake_lock.stub(:synchronize).and_yield
+          sshd_service.stub(:sleep)
+        end
+
+        context 'when sshd status is stopped' do
+          before { sshd_service.stub(:`).with('service ssh status') { `true`; 'stop' } }
+
+          it 'does not raise' do
+            expect {
+              sshd_service.stop_sshd
+            }.not_to raise_error
+          end
+        end
+
+        context 'when sshd status is not stopped' do
+          before { sshd_service.stub(:`).with('service ssh status') { `true`; 'running' } }
+
+          it 'raises' do
+            expect {
+              sshd_service.stop_sshd
+            }.to raise_error('Failed to stop sshd')
+          end
+        end
+
+        context 'when sshd status was not stopped but it becomes stopped on a second attempt' do
+          it 'does not raise' do
+            sshd_service.should_receive(:`).ordered.with('service ssh status') { `true`; 'running' }
+            sshd_service.should_receive(:`).ordered.with('service ssh status') { `true`; 'stop' }
+            expect {
+              sshd_service.stop_sshd
+            }.not_to raise_error
+          end
+        end
+      end
+    end
   end
 end
