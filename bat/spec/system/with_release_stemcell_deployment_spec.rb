@@ -28,6 +28,20 @@ describe 'with release, stemcell and deployment' do
     end
   end
 
+  describe 'ssh' do
+    it 'can bosh ssh into a vm' do
+      private_key = ssh_options[:private_key]
+      if private_key
+        bosh_ssh_options = {
+          gateway_host: bosh_director,
+          gateway_user: 'vcap',
+          gateway_identity_file: private_key,
+        }.map { |k, v| "--#{k} '#{v}'" }.join(' ')
+      end
+      bosh("ssh batlight 0 'uname -a' #{bosh_ssh_options}").should succeed_with /Linux/
+    end
+  end
+
   context 'dns' do
 
     before(:all) do
