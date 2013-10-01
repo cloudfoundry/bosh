@@ -56,7 +56,7 @@ module Bosh
     end
 
     def wait
-      Kernel.sleep(@sleeper.respond_to?(:call) ? @sleeper.call(@try_count, @retry_exception) : @sleeper)
+      sleep(@sleeper.respond_to?(:call) ? @sleeper.call(@try_count, @retry_exception) : @sleeper)
     rescue *@on_exception
       # SignalException could be raised while sleeping, so if you want to catch it,
       # it need to be passed in the list of exceptions to ignore
@@ -64,6 +64,10 @@ module Bosh
 
     def exponential_sleeper
       lambda { |tries, _| [2**(tries-1), 10].min } # 1, 2, 4, 8, 10, 10..10 seconds
+    end
+
+    def sleep(*args, &blk)
+      Kernel.sleep(*args, &blk)
     end
   end
 end
