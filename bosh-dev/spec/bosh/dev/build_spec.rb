@@ -6,17 +6,49 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     describe '.candidate' do
-      subject { described_class.candidate }
+      subject { described_class.candidate(logger) }
+      let(:logger) { Logger.new('/dev/null') }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
         before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
+
         it { should be_a(Build::Candidate) }
         its(:number) { should eq('candidate') }
+
+        it 'uses DownloadAdapater as download adapter' do
+          download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
+          Bosh::Dev::DownloadAdapter
+            .should_receive(:new)
+            .and_return(download_adapter)
+
+          build = instance_double('Bosh::Dev::Build::Local')
+          Bosh::Dev::Build::Candidate
+            .should_receive(:new)
+            .with('candidate', download_adapter)
+            .and_return(build)
+
+          subject.should == build
+        end
       end
 
       context 'when CANDIDATE_BUILD_NUMBER is not set' do
         it { should be_a(Build::Local) }
         its(:number) { should eq('local') }
+
+        it 'uses LocalDownloadAdapater as download adapter' do
+          download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
+          Bosh::Dev::LocalDownloadAdapter
+            .should_receive(:new)
+            .and_return(download_adapter)
+
+          build = instance_double('Bosh::Dev::Build::Local')
+          Bosh::Dev::Build::Local
+            .should_receive(:new)
+            .with('local', download_adapter)
+            .and_return(build)
+
+          subject.should == build
+        end
       end
     end
 
@@ -38,6 +70,7 @@ module Bosh::Dev
     subject(:build) { Build::Candidate.new('123', download_adapter) }
 
     before(:all) { Fog.mock! }
+    after(:all) { Fog.unmock! }
 
     before do
       Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter)
@@ -51,10 +84,6 @@ module Bosh::Dev
         'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
         'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id
       )
-    end
-
-    after(:all) do
-      Fog.unmock!
     end
 
     describe '#upload' do
@@ -291,7 +320,6 @@ module Bosh::Dev
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
       context 'when not specifying a download directory' do
-
         it 'downloads the specified stemcell version from the pipeline bucket' do
           download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/bosh-stemcell-123-aws-xen-ubuntu.tgz')
           build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
@@ -363,6 +391,9 @@ module Bosh::Dev
     subject { described_class.new('123', download_adapter) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
+    before(:all) { Fog.mock! }
+    after(:all)  { Fog.unmock! }
+
     describe '#release_tarball_path' do
       let(:micro_bosh_release) { instance_double('Bosh::Dev::MicroBoshRelease', tarball: '/fake/path/to/release/tarball') }
 
@@ -370,6 +401,39 @@ module Bosh::Dev
 
       it 'returns the path to new microbosh release' do
         expect(subject.release_tarball_path).to eq('/fake/path/to/release/tarball')
+      end
+    end
+
+    describe '#download_stemcell' do
+      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+
+      context 'when downloading does not result in an error' do
+        it 'uses download adapter to move stemcell to given location' do
+          download_adapter
+            .should_receive(:download)
+            .with('bosh-stemcell-123-aws-xen-ubuntu.tgz', '/output-directory/bosh-stemcell-123-aws-xen-ubuntu.tgz')
+          subject.download_stemcell(
+            infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
+            name: 'bosh-stemcell',
+            light: false,
+            output_directory: '/output-directory',
+          )
+        end
+      end
+
+      context 'when downloading results in an error' do
+        it 'propagates raised error' do
+          error = RuntimeError.new('error-message')
+          download_adapter.stub(:download).and_raise(error)
+
+          expect {
+            subject.download_stemcell(
+              infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'),
+              light: false,
+              name: 'stemcell-name',
+            )
+          }.to raise_error(error)
+        end
       end
     end
   end

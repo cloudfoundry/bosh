@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bosh/dev/download_adapter'
 
 module Bosh::Dev

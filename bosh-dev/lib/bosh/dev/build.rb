@@ -1,7 +1,7 @@
 require 'peach'
-
 require 'bosh/dev/promote_artifacts'
 require 'bosh/dev/download_adapter'
+require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/dev/micro_bosh_release'
 require 'bosh/stemcell/archive'
@@ -13,12 +13,14 @@ module Bosh::Dev
   class Build
     attr_reader :number
 
-    def self.candidate
-      candidate_build_number = ENV['CANDIDATE_BUILD_NUMBER']
-      if candidate_build_number
-        Candidate.new(candidate_build_number, DownloadAdapter.new)
+    def self.candidate(logger = Logger.new(STDERR))
+      number = ENV['CANDIDATE_BUILD_NUMBER']
+      if number
+        logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
+        Candidate.new(number, DownloadAdapter.new)
       else
-        Local.new('local', DownloadAdapter.new)
+        logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
+        Local.new('local', LocalDownloadAdapter.new)
       end
     end
 
@@ -74,9 +76,7 @@ module Bosh::Dev
 
       filename = stemcell_filename(number.to_s, infrastructure, name, light)
       remote_dir = File.join(number.to_s, name, infrastructure.name)
-
       download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
-
       filename
     end
 
@@ -134,6 +134,17 @@ module Bosh::Dev
         release = MicroBoshRelease.new
         release.tarball
       end
+
+      def download_stemcell(options = {})
+        infrastructure = options.fetch(:infrastructure)
+        name = options.fetch(:name)
+        light = options.fetch(:light)
+        output_directory = options.fetch(:output_directory) { Dir.pwd }
+
+        filename = stemcell_filename(number.to_s, infrastructure, name, light)
+        download_adapter.download(filename, File.join(output_directory, filename))
+        filename
+      end
     end
 
     class Candidate < self
@@ -141,9 +152,7 @@ module Bosh::Dev
         remote_dir = File.join(number.to_s, 'release')
         filename = promoter.release_file
         downloaded_release_path = "tmp/#{promoter.release_file}"
-
         download_adapter.download(uri(remote_dir, filename), downloaded_release_path)
-
         downloaded_release_path
       end
     end
