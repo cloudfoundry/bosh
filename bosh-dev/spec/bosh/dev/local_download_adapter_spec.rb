@@ -1,8 +1,12 @@
 require 'spec_helper'
+require 'logger'
 require 'bosh/dev/local_download_adapter'
 
 describe Bosh::Dev::LocalDownloadAdapter do
   include FakeFS::SpecHelpers
+
+  subject { described_class.new(logger) }
+  let(:logger) { Logger.new('/dev/null') }
 
   describe '#download' do
     before { FileUtils.mkdir('/tmp') }

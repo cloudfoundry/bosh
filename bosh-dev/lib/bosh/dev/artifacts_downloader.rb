@@ -4,7 +4,7 @@ require 'bosh/dev/download_adapter'
 module Bosh::Dev
   class ArtifactsDownloader
     def initialize
-      @download_adapter = DownloadAdapter.new
+      @download_adapter = DownloadAdapter.new(Logger.new(STDERR))
     end
 
     def download_release(build_number)

@@ -19,6 +19,7 @@ module Bosh::Dev
           download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
           Bosh::Dev::DownloadAdapter
             .should_receive(:new)
+            .with(logger)
             .and_return(download_adapter)
 
           build = instance_double('Bosh::Dev::Build::Local')
@@ -39,6 +40,7 @@ module Bosh::Dev
           download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
           Bosh::Dev::LocalDownloadAdapter
             .should_receive(:new)
+            .with(logger)
             .and_return(download_adapter)
 
           build = instance_double('Bosh::Dev::Build::Local')

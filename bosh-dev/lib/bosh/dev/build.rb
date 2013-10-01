@@ -1,4 +1,5 @@
 require 'peach'
+require 'logger'
 require 'bosh/dev/promote_artifacts'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
@@ -17,10 +18,10 @@ module Bosh::Dev
       number = ENV['CANDIDATE_BUILD_NUMBER']
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
-        Candidate.new(number, DownloadAdapter.new)
+        Candidate.new(number, DownloadAdapter.new(logger))
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
-        Local.new('local', LocalDownloadAdapter.new)
+        Local.new('local', LocalDownloadAdapter.new(logger))
       end
     end
 

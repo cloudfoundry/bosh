@@ -1,11 +1,14 @@
 require 'spec_helper'
+require 'logger'
 require 'bosh/dev/artifacts_downloader'
 
 module Bosh::Dev
   describe ArtifactsDownloader do
-    let(:fake_download_adapter) { DownloadAdapter.new }
     subject(:artifacts_downloader) { ArtifactsDownloader.new }
+
     before { DownloadAdapter.stub(new: fake_download_adapter) }
+    let(:fake_download_adapter) { DownloadAdapter.new(logger) }
+    let(:logger) { Logger.new('/dev/null') }
 
     describe '#download_release' do
       it 'downloads a release and returns path' do
