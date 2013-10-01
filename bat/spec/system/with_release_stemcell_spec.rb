@@ -54,8 +54,6 @@ describe 'with release and stemcell and two deployments' do
       pending "This fails on AWS VPC because use_static_ip only sets the eip but doesn't prevent collision" if aws?
       pending "This fails on OpenStack because use_static_ip only sets the floating IP but doesn't prevent collision" if openstack?
 
-      @first_deployment_result.should succeed_with deployed_regexp
-
       # second deployment can't use static IP or there will be a collision with the first deployment
       no_static_ip
       use_deployment_name('bat2')
