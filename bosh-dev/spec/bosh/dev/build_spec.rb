@@ -35,15 +35,12 @@ module Bosh::Dev
     let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
-    subject(:build) { Build::Candidate.new('123') }
+    subject(:build) { Build::Candidate.new('123', download_adapter) }
 
-    before(:all) do
-      Fog.mock!
-    end
+    before(:all) { Fog.mock! }
 
     before do
       Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter)
-      Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
 
       Fog::Mock.reset
       fog_storage.directories.create(key: 'bosh-ci-pipeline')
@@ -339,10 +336,8 @@ module Bosh::Dev
   end
 
   describe Build::Candidate do
-    subject(:build) { Build::Candidate.new('123') }
-
+    subject(:build) { Build::Candidate.new('123', download_adapter) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
-    before { Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter) }
 
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
@@ -365,10 +360,10 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    it { Build::Local.should < Build }
+    subject { described_class.new('123', download_adapter) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
     describe '#release_tarball_path' do
-      subject { described_class.new('123') }
       let(:micro_bosh_release) { instance_double('Bosh::Dev::MicroBoshRelease', tarball: '/fake/path/to/release/tarball') }
 
       before { Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release) }

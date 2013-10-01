@@ -16,19 +16,19 @@ module Bosh::Dev
     def self.candidate
       candidate_build_number = ENV['CANDIDATE_BUILD_NUMBER']
       if candidate_build_number
-        Candidate.new(candidate_build_number)
+        Candidate.new(candidate_build_number, DownloadAdapter.new)
       else
-        Local.new('local')
+        Local.new('local', DownloadAdapter.new)
       end
     end
 
-    def initialize(number)
+    def initialize(number, download_adapter)
       @number = number
       @logger = Logger.new($stdout)
       @promoter = PromoteArtifacts.new(self)
       @bucket = 'bosh-ci-pipeline'
       @upload_adapter = UploadAdapter.new
-      @download_adapter = DownloadAdapter.new
+      @download_adapter = download_adapter
     end
 
     def upload_gems(source_dir, dest_dir)
