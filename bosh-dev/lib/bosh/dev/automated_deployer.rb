@@ -66,6 +66,5 @@ module Bosh::Dev
         password: deployment_account.bosh_password
       )
     end
-
   end
 end
