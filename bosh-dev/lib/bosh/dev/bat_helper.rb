@@ -28,12 +28,8 @@ module Bosh::Dev
     end
 
     def run_rake
-      sanitize_directories
-
       prepare_directories
-
       fetch_stemcells
-
       Rake::Task["spec:system:#{infrastructure.name}:micro"].invoke(net_type)
     end
 
@@ -41,18 +37,19 @@ module Bosh::Dev
 
     attr_reader :build, :net_type
 
-    def sanitize_directories
-      FileUtils.rm_rf(artifacts_dir)
-    end
-
     def prepare_directories
+      FileUtils.rm_rf(artifacts_dir)
       FileUtils.mkdir_p(micro_bosh_deployment_dir)
     end
 
     def fetch_stemcells
-      build.download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: infrastructure.light?, output_directory: artifacts_dir)
+      build.download_stemcell(
+        infrastructure: infrastructure,
+        name: 'bosh-stemcell',
+        light: infrastructure.light?,
+        output_directory: artifacts_dir,
+      )
     end
-
   end
 end
 
