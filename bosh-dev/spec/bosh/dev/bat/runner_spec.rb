@@ -101,15 +101,25 @@ module Bosh::Dev::Bat
       end
 
       it 'sets the the required environment variables' do
-        env['BOSH_OPENSTACK_PRIVATE_KEY'] = 'private-key-path'
         subject.run_bats
         expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
         expect(env['BAT_DIRECTOR']).to eq('director-hostname')
         expect(env['BAT_DNS_HOST']).to eq('director-ip')
         expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
-        expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
         expect(env['BAT_INFRASTRUCTURE']).to eq('infrastructure')
+      end
+
+      it 'sets BAT_VCAP_PRIVATE_KEY to BOSH_OPENSTACK_PRIVATE_KEY if present' do
+        env['BOSH_OPENSTACK_PRIVATE_KEY'] = 'private-key-path'
+        subject.run_bats
+        expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
+      end
+
+      it 'sets BAT_VCAP_PRIVATE_KEY to BOSH_KEY_PATH if present' do
+        env['BOSH_KEY_PATH'] = 'private-key-path'
+        subject.run_bats
+        expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
       end
 
       def self.it_cleans_up_after_rake_task(ignore_error = false)
