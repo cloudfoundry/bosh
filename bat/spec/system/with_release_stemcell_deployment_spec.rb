@@ -21,7 +21,7 @@ describe 'with release, stemcell and deployment' do
       Dir.mktmpdir do |tmpdir|
         ssh(static_ip, 'vcap', "echo #{password} | sudo -S pkill -9 agent", ssh_options)
         wait_for_vm('batlight/0')
-        bosh("logs batlight 0 --agent --dir #{tmpdir}")
+        bosh_safe("logs batlight 0 --agent --dir #{tmpdir}").should succeed
       end
     end
   end
@@ -36,7 +36,7 @@ describe 'with release, stemcell and deployment' do
           gateway_identity_file: private_key,
         }.map { |k, v| "--#{k} '#{v}'" }.join(' ')
       end
-      bosh("ssh batlight 0 'uname -a' #{bosh_ssh_options}").should succeed_with /Linux/
+      bosh_safe("ssh batlight 0 'uname -a' #{bosh_ssh_options}").should succeed_with /Linux/
     end
   end
 
@@ -66,19 +66,19 @@ describe 'with release, stemcell and deployment' do
 
   describe 'job' do
     it 'should recreate a job' do
-      bosh('recreate batlight 0').should succeed_with /batlight\/0 has been recreated/
+      bosh_safe('recreate batlight 0').should succeed_with /batlight\/0 has been recreated/
     end
 
     it 'should stop and start a job' do
-      bosh('stop batlight 0').should succeed_with /batlight\/0 has been stopped/
-      bosh('start batlight 0').should succeed_with /batlight\/0 has been started/
+      bosh_safe('stop batlight 0').should succeed_with /batlight\/0 has been stopped/
+      bosh_safe('start batlight 0').should succeed_with /batlight\/0 has been started/
     end
   end
 
   describe 'logs' do
     it 'should get agent log' do
       with_tmpdir do
-        bosh('logs batlight 0 --agent').should succeed_with /Logs saved in/
+        bosh_safe('logs batlight 0 --agent').should succeed_with /Logs saved in/
         files = tar_contents(tarfile)
         files.should include './current'
       end
@@ -86,7 +86,7 @@ describe 'with release, stemcell and deployment' do
 
     it 'should get job logs' do
       with_tmpdir do
-        bosh('logs batlight 0').should succeed_with /Logs saved in/
+        bosh_safe('logs batlight 0').should succeed_with /Logs saved in/
         files = tar_contents(tarfile)
         files.should include './batlight/batlight.stdout.log'
         files.should include './batlight/batlight.stderr.log'
@@ -98,7 +98,7 @@ describe 'with release, stemcell and deployment' do
     after { FileUtils.rm_f('bosh_backup.tgz') }
 
     it 'works' do
-      bosh('backup bosh_backup.tgz').should succeed_with /Backup of BOSH director was put in/
+      bosh_safe('backup bosh_backup.tgz').should succeed_with /Backup of BOSH director was put in/
 
       files = tar_contents('bosh_backup.tgz', true)
       files.each { |f| expect(f.size).to be > 0 }
@@ -113,14 +113,14 @@ describe 'with release, stemcell and deployment' do
   describe 'managed properties' do
     context 'with no property' do
       it 'should not return a value' do
-        expect { bosh('get property doesntexist') }.to raise_error do |error|
-          error.should be_a Bosh::Exec::Error
-          error.output.should match /Error 110003/
-        end
+        result = bosh_safe('get property doesntexist')
+        result.should_not succeed
+        result.output.should match /Error 110003/
       end
 
       it 'should set a property' do
-        result = bosh('set property newprop something')
+        result = bosh_safe('set property newprop something')
+        result.should succeed
         result.output.should match /This will be a new property/
         result.output.should match /Property `newprop' set to `something'/
       end
@@ -128,15 +128,16 @@ describe 'with release, stemcell and deployment' do
 
     context 'with existing property' do
       it 'should set a property' do
-        bosh('set property prop1 value1')
-        result = bosh('set property prop1 value2')
+        bosh_safe('set property prop1 value1').should succeed
+        result = bosh_safe('set property prop1 value2')
+        result.should succeed
         result.output.should match /Current `prop1' value is `value1'/
         result.output.should match /Property `prop1' set to `value2'/
       end
 
       it 'should get a value' do
-        bosh('set property prop2 value3')
-        bosh('get property prop2').should succeed_with /Property `prop2' value is `value3'/
+        bosh_safe('set property prop2 value3').should succeed
+        bosh_safe('get property prop2').should succeed_with /Property `prop2' value is `value3'/
       end
     end
   end
@@ -146,40 +147,37 @@ describe 'with release, stemcell and deployment' do
       after { bosh("delete release #{previous_release.name} #{previous_release.version}", on_error: :return) }
 
       it 'should succeed when the release is valid' do
-        bosh("upload release #{previous_release.to_path}").should succeed_with /Release uploaded/
+        bosh_safe("upload release #{previous_release.to_path}").should succeed_with /Release uploaded/
       end
 
       it 'should fail when the release already is uploaded' do
-        expect { bosh("upload release #{release.to_path}") }.to raise_error do |error|
-          error.should be_a Bosh::Exec::Error
-          error.output.should match /This release version has already been uploaded/
-        end
+        result = bosh_safe("upload release #{release.to_path}")
+        result.should_not succeed
+        result.output.should match /This release version has already been uploaded/
       end
     end
 
     describe 'delete' do
-      before { bosh("upload release #{previous_release.to_path}") }
-
       context 'in use' do
-        it 'should not be possible to delete' do
-          expect { bosh("delete release #{previous_release.name}") }.to raise_error do |error|
-            error.should be_a Bosh::Exec::Error
-            error.output.should match /Error 30007/
-          end
-
-          bosh("delete release #{previous_release.name} #{previous_release.version}")
+        it 'should not be possible to delete a release that is in use' do
+          result = bosh_safe("delete release #{release.name}")
+          result.should_not succeed
+          result.output.should match /Error 30007/
         end
 
-        it 'should be possible to delete a different version' do
-          results = bosh("delete release #{previous_release.name} #{previous_release.version}")
-          results.should succeed_with(/Deleted `#{previous_release.name}/)
+        it 'should not be possible to delete the version that is in use' do
+          result = bosh_safe("delete release #{release.name} #{release.version}")
+          result.should_not succeed
+          result.output.should match /Error 30008/
         end
       end
 
       context 'not in use' do
+        before { bosh("upload release #{previous_release.to_path}") }
+
         it 'should be possible to delete a single release' do
-          results = bosh("delete release #{previous_release.name} #{previous_release.version}")
-          results.should succeed_with(/Deleted `#{previous_release.name}/)
+          result = bosh_safe("delete release #{previous_release.name} #{previous_release.version}")
+          result.should succeed_with(/Deleted `#{previous_release.name}/)
           releases.should_not include(previous_release)
         end
       end
