@@ -15,7 +15,7 @@
       "path": "./site-cookbooks/stemcell_builder"
     },
     "java": {
-      "locked_version": "1.12.0"
+      "locked_version": "1.13.0"
     },
     "windows": {
       "locked_version": "1.10.0"
