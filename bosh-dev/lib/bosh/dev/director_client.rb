@@ -34,7 +34,7 @@ module Bosh::Dev
     attr_reader :uri, :username, :password, :cli, :director_handle
 
     def target_and_login!
-      cli.run_bosh("target #{uri}")
+      cli.run_bosh("target #{uri}", retryable: Bosh::Retryable.new(tries: 3, on: [RuntimeError]))
       cli.run_bosh("login #{username} #{password}")
     end
 

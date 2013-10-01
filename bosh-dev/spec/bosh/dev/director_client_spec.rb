@@ -42,7 +42,10 @@ module Bosh::Dev
       end
 
       it 'always re-targets and logs in first' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         cli.should_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true).ordered
 
@@ -70,7 +73,10 @@ module Bosh::Dev
       end
 
       it 'always re-targets and logs in first' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         cli.should_receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
 
@@ -99,7 +105,10 @@ module Bosh::Dev
       end
 
       it 'always re-targets and logs in first' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         cli.should_receive(:run_bosh).with(/deployment/).ordered
         cli.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
