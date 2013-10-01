@@ -98,7 +98,7 @@ namespace :spec do
       desc 'Run AWS MicroBOSH deployment suite'
       task :micro do
         require 'bosh/dev/aws/runner_builder'
-        Bosh::Dev::Aws::RunnerBuilder.new.build.run_bats
+        Bosh::Dev::Aws::RunnerBuilder.new.build.deploy_microbosh_and_run_bats
       end
     end
 
@@ -106,7 +106,7 @@ namespace :spec do
       desc 'Run Openstack MicroBOSH deployment suite'
       task :micro, [:net_type] do |_, args|
         require 'bosh/dev/openstack/runner_builder'
-        Bosh::Dev::Openstack::RunnerBuilder.new.build(args.net_type).run_bats
+        Bosh::Dev::Openstack::RunnerBuilder.new.build(args.net_type).deploy_microbosh_and_run_bats
       end
     end
 
@@ -114,7 +114,7 @@ namespace :spec do
       desc 'Run vSphere MicroBOSH deployment suite'
       task :micro do
         require 'bosh/dev/vsphere/runner_builder'
-        Bosh::Dev::VSphere::RunnerBuilder.new.build.run_bats
+        Bosh::Dev::VSphere::RunnerBuilder.new.build.deploy_microbosh_and_run_bats
       end
     end
   end

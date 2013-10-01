@@ -23,14 +23,18 @@ module Bosh::Dev::Bat
       @bat_deployment_manifest       = bat_deployment_manifest
     end
 
-    def run_bats
+    def deploy_microbosh_and_run_bats
       create_microbosh_manifest
       deploy_microbosh
-      create_bat_manifest
-      set_bat_env_variables
-      run_bat
+      run_bats
     ensure
       teardown_micro
+    end
+
+    def run_bats
+      create_bat_manifest
+      set_bat_env_variables
+      Rake::Task['bat'].invoke
     end
 
     private
@@ -74,10 +78,6 @@ module Bosh::Dev::Bat
       env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY'] || env['BOSH_KEY_PATH']
       env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
       env['BAT_INFRASTRUCTURE']   = stemcell_archive.infrastructure
-    end
-
-    def run_bat
-      Rake::Task['bat'].invoke
     end
 
     def teardown_micro
