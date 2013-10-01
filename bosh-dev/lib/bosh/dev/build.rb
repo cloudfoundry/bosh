@@ -16,14 +16,14 @@ module Bosh::Dev
     def self.candidate
       candidate_build_number = ENV['CANDIDATE_BUILD_NUMBER']
       if candidate_build_number
-        Candidate.new(number: candidate_build_number)
+        Candidate.new(candidate_build_number)
       else
-        Local.new
+        Local.new('local')
       end
     end
 
-    def initialize(options)
-      @number = options.fetch(:number)
+    def initialize(number)
+      @number = number
       @logger = Logger.new($stdout)
       @promoter = PromoteArtifacts.new(self)
       @bucket = 'bosh-ci-pipeline'
@@ -130,10 +130,6 @@ module Bosh::Dev
     end
 
     class Local < self
-      def initialize
-        super(number: 'local')
-      end
-
       def release_tarball_path
         release = MicroBoshRelease.new
         release.tarball

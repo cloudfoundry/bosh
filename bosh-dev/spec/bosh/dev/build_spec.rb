@@ -10,11 +10,13 @@ module Bosh::Dev
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
         before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
-        its(:number) { should eq 'candidate' }
+        it { should be_a(Build::Candidate) }
+        its(:number) { should eq('candidate') }
       end
 
       context 'when CANDIDATE_BUILD_NUMBER is not set' do
         it { should be_a(Build::Local) }
+        its(:number) { should eq('local') }
       end
     end
 
@@ -23,15 +25,17 @@ module Bosh::Dev
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
     let(:fog_storage) do
-      Fog::Storage.new(provider: 'AWS',
-                       aws_access_key_id: access_key_id,
-                       aws_secret_access_key: secret_access_key)
+      Fog::Storage.new(
+        provider: 'AWS',
+        aws_access_key_id: access_key_id,
+        aws_secret_access_key: secret_access_key,
+      )
     end
 
     let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
-    subject(:build) { Build::Candidate.new(number: 123) }
+    subject(:build) { Build::Candidate.new('123') }
 
     before(:all) do
       Fog.mock!
@@ -45,9 +49,10 @@ module Bosh::Dev
       fog_storage.directories.create(key: 'bosh-ci-pipeline')
       fog_storage.directories.create(key: 'bosh-jenkins-artifacts')
 
-      stub_const('ENV',
-                 'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
-                 'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id
+      stub_const(
+        'ENV',
+        'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
+        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id
       )
     end
 
@@ -334,19 +339,15 @@ module Bosh::Dev
   end
 
   describe Build::Candidate do
+    subject(:build) { Build::Candidate.new('123') }
+
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
-
-    subject(:build) { Build::Candidate.new(number: 123) }
-
-    before do
-      Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
-    end
+    before { Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter) }
 
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
         it 'raises' do
           download_adapter.stub(:download).and_raise 'error'
-
           expect { build.release_tarball_path }.to raise_error 'error'
         end
       end
@@ -366,14 +367,11 @@ module Bosh::Dev
   describe Build::Local do
     it { Build::Local.should < Build }
 
-    its(:number) { should eq('local') }
-
     describe '#release_tarball_path' do
+      subject { described_class.new('123') }
       let(:micro_bosh_release) { instance_double('Bosh::Dev::MicroBoshRelease', tarball: '/fake/path/to/release/tarball') }
 
-      before do
-        Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release)
-      end
+      before { Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release) }
 
       it 'returns the path to new microbosh release' do
         expect(subject.release_tarball_path).to eq('/fake/path/to/release/tarball')
