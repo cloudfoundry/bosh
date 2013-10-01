@@ -13,6 +13,7 @@ require 'cloud/vsphere/resources/resource_pool'
 require 'cloud/vsphere/resources/scorer'
 require 'cloud/vsphere/resources/util'
 require 'cloud/vsphere/models/disk'
+require 'cloud/vsphere/path_finder'
 
 module VSphereCloud
 
@@ -745,9 +746,9 @@ module VSphereCloud
         if device.kind_of?(Vim::Vm::Device::VirtualEthernetCard)
           backing = device.backing
           if backing.kind_of?(Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo)
-            v_network_name = dvs_index[device.backing.port.portgroup_key]
+            v_network_name = dvs_index[backing.port.portgroup_key]
           else
-            v_network_name = device.backing.device_name
+            v_network_name = PathFinder.new.path(backing.network)
           end
           allocated_networks = nics[v_network_name] || []
           allocated_networks << device
@@ -995,7 +996,7 @@ module VSphereCloud
         dvs_index[port.portgroup_key] = v_network_name
       else
         backing_info = Vim::Vm::Device::VirtualEthernetCard::NetworkBackingInfo.new
-        backing_info.device_name = v_network_name
+        backing_info.device_name = network.name
         backing_info.network = network
       end
 

@@ -144,9 +144,12 @@ describe VSphereCloud::Cloud do
         'mac' => '00:00:00:00:00:00'
       }
     } }
+    let(:path_finder) { instance_double('VSphereCloud::PathFinder') }
 
     before do
       device.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard) { true }
+      VSphereCloud::PathFinder.stub(:new).and_return(path_finder)
+      path_finder.stub(:path).with(any_args).and_return('fake_network1')
     end
 
     context 'using a distributed switch' do
@@ -162,7 +165,7 @@ describe VSphereCloud::Cloud do
     end
 
     context 'using a standard switch' do
-      let(:backing) { double(device_name: 'fake_network1') }
+      let(:backing) { double(network: 'fake_network1') }
 
       it 'generates the network env' do
         backing.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo) { false }
@@ -173,7 +176,7 @@ describe VSphereCloud::Cloud do
 
     context 'passing in device that is not a VirtualEthernetCard' do
       let(:devices) { [device, double()] }
-      let(:backing) { double(device_name: 'fake_network1') }
+      let(:backing) { double(network: 'fake_network1') }
 
       it 'ignores non VirtualEthernetCard devices' do
         backing.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo) { false }
@@ -181,6 +184,42 @@ describe VSphereCloud::Cloud do
         expect(vsphere_cloud.generate_network_env(devices, networks, dvs_index)).to eq(expected_output)
       end
     end
+
+    context 'when the network is in a folder' do
+
+      context 'using a standard switch' do
+        let(:path_finder) { instance_double('VSphereCloud::PathFinder') }
+        let(:fake_network_object) { double() }
+        let(:backing) { double(network: fake_network_object) }
+        let(:network1) {
+          {
+            'cloud_properties' => {
+              'name' => 'networks/fake_network1'
+            }
+          }
+        }
+        let(:networks) { { 'networks/fake_network1' => network1 } }
+        let(:expected_output) { {
+          'networks/fake_network1' => {
+            'cloud_properties' => {
+              'name' => 'networks/fake_network1'
+            },
+            'mac' => '00:00:00:00:00:00'
+          }
+        } }
+
+        it 'generates the network env' do
+          VSphereCloud::PathFinder.stub(:new).and_return(path_finder)
+          path_finder.stub(:path).with(fake_network_object).and_return('networks/fake_network1')
+
+          backing.stub(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo) { false }
+
+          expect(vsphere_cloud.generate_network_env(devices, networks, dvs_index)).to eq(expected_output)
+        end
+      end
+
+    end
+
   end
 
   describe '#create_nic_config_spec' do
@@ -240,7 +279,7 @@ describe VSphereCloud::Cloud do
 
     context 'using a standard switch' do
       let(:v_network_name) { 'fake_network1' }
-      let(:network) { double() }
+      let(:network) { double(name: v_network_name) }
       let(:dvs_index) { {} }
 
       it 'sets correct backing in device config spec' do
