@@ -39,19 +39,25 @@ RSpec.configure do |config|
   end
 end
 
-RSpec::Matchers.define :succeed do |expected|
-  match do |actual|
-    actual.exit_status == 0
+RSpec::Matchers.define :succeed do |_|
+  match { |actual| actual.exit_status == 0 }
+
+  failure_message_for_should do |actual|
+    'expected command to exit with 0 but was ' +
+      "#{actual.exit_status}. output was\n#{actual.output}"
   end
 end
 
 RSpec::Matchers.define :succeed_with do |expected|
+  expect_string = expected.instance_of?(String)
+  expect_regex  = expected.instance_of?(Regexp)
+
   match do |actual|
     if actual.exit_status != 0
       false
-    elsif expected.instance_of?(String)
+    elsif expect_string
       actual.output == expected
-    elsif expected.instance_of?(Regexp)
+    elsif expect_regex
       !!actual.output.match(expected)
     else
       raise ArgumentError, "don't know what to do with a #{expected.class}"
@@ -59,13 +65,18 @@ RSpec::Matchers.define :succeed_with do |expected|
   end
 
   failure_message_for_should do |actual|
-    if expected.instance_of?(Regexp)
+    if expect_string
+      what = 'be'
+      exp = expected
+    elsif expect_regex
       what = 'match'
       exp = "/#{expected.source}/"
     else
-      what = 'be'
-      exp = expected
+      raise ArgumentError, "don't know what to do with a #{expected.class}"
     end
-    "expected\n#{actual.output}to #{what}\n#{exp}"
+
+    'expected command to exit with 0 but was ' +
+      "#{actual.exit_status}. expected output to " +
+      "#{what} '#{exp}' but was\n#{actual.output}"
   end
 end
