@@ -431,7 +431,7 @@ module Bosh::Dev
           expected_stemcell_name = 'stemcell-name-build-number-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
           download_adapter
             .should_receive(:download)
-            .with(expected_stemcell_name, "/output-directory/#{expected_stemcell_name}")
+            .with("tmp/#{expected_stemcell_name}", "/output-directory/#{expected_stemcell_name}")
           perform
         end
       end
