@@ -1,5 +1,4 @@
 require 'bosh/dev/vsphere'
-require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bat/director_uuid'
 require 'bosh/dev/bosh_cli_session'
@@ -10,9 +9,8 @@ require 'bosh/dev/bat/runner'
 
 module Bosh::Dev::VSphere
   class RunnerBuilder
-    def build
+    def build(bat_helper, net_type)
       env              = ENV
-      bat_helper       = Bosh::Dev::BatHelper.new('vsphere', :dont_care)
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_VSPHERE_MICROBOSH_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.new
       director_uuid    = Bosh::Dev::Bat::DirectorUuid.new(bosh_cli_session)

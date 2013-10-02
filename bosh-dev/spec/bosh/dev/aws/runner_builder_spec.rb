@@ -1,18 +1,15 @@
 require 'spec_helper'
+require 'bosh/dev/bat_helper'
 require 'bosh/dev/aws/runner_builder'
 
 module Bosh::Dev::Aws
   describe RunnerBuilder do
     describe '#build' do
-      it 'builds runner with bat helper initialized with aws' do
+      it 'builds runner' do
         bat_helper = instance_double(
           'Bosh::Dev::BatHelper',
           bosh_stemcell_path: 'bosh-stemcell-path',
         )
-        Bosh::Dev::BatHelper
-          .should_receive(:new)
-          .with('aws', :dont_care)
-          .and_return(bat_helper)
 
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
         Bosh::Dev::Bat::DirectorAddress
@@ -57,7 +54,7 @@ module Bosh::Dev::Aws
           bat_deployment_manifest
         ).and_return(runner)
 
-        expect(subject.build).to eq(runner)
+        expect(subject.build(bat_helper, 'net-type')).to eq(runner)
       end
     end
   end

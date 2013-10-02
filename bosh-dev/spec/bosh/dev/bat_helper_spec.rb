@@ -5,84 +5,78 @@ module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
-    let(:infrastructure_name) { 'FAKE_INFRASTRUCTURE_NAME' }
-    let(:fake_infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name, light?: light) }
+    subject { described_class.new(infrastructure_name, operating_system_name, 'manual') }
+
+    before { Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(infrastructure) }
+    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name, light?: light) }
+    let(:infrastructure_name) { 'infrastructure-name' }
+    
+    before { Bosh::Stemcell::OperatingSystem.should_receive(:for).and_return(operating_system) }
+    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: operating_system_name) }
+    let(:operating_system_name) { 'operating-system-name' }
+
+    expected_artifacts_dir = '/tmp/ci-artifacts/infrastructure-name/operating-system-name'
+
     let(:light) { false }
+    
+    before { Build.stub(candidate: build) }
     let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
 
-    subject { BatHelper.new(infrastructure_name, 'manual') }
-
-    before do
-      Build.stub(candidate: build)
-      Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(fake_infrastructure)
-    end
-
     describe '#initialize' do
-      it 'sets infrastructre' do
-        expect(subject.infrastructure).to eq(fake_infrastructure)
-      end
+      its(:infrastructure)   { should == infrastructure }
+      its(:operating_system) { should == operating_system }
+
+      its(:micro_bosh_deployment_name) { should == 'microbosh' }
+      its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
+      its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }
     end
 
     describe '#run_rake' do
+      before { Rake::Task.stub(:[]).and_return(spec_system_micro_task) }
       let(:spec_system_micro_task) { instance_double('Rake::Task', invoke: nil) }
 
-      before do
-        Rake::Task.stub(:[]).with("spec:system:#{infrastructure_name}:micro").and_return(spec_system_micro_task)
-        FileUtils.stub(rm_rf: nil, mkdir_p: nil)
-      end
+      before { FileUtils.stub(rm_rf: nil, mkdir_p: nil) }
 
       it 'removes the artifacts dir' do
         FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir)
-
         subject.run_rake
       end
 
       it 'creates the microbosh depolyments dir (which is contained within artifacts dir)' do
         FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
-
         subject.run_rake
       end
 
       it 'downloads stemcells for the specified infrastructure' do
-        build.should_receive(:download_stemcell).with(infrastructure: subject.infrastructure, name: 'bosh-stemcell', light: light, output_directory: '/tmp/ci-artifacts/FAKE_INFRASTRUCTURE_NAME/deployments')
-
+        build.should_receive(:download_stemcell).with(
+          name: 'bosh-stemcell',
+          infrastructure: infrastructure,
+          operating_system: operating_system,
+          light: light,
+          output_directory: "#{expected_artifacts_dir}/deployments",
+        )
         subject.run_rake
       end
 
-      it 'invokes the spec:system:<infrastructure>:micro rake task with the network type as argument' do
-        spec_system_micro_task.should_receive(:invoke).with('manual')
-
+      it 'invokes the spec:system:micro rake task' do
+        Rake::Task
+          .should_receive(:[])
+          .with("spec:system:micro")
+          .and_return(spec_system_micro_task)
+        spec_system_micro_task
+          .should_receive(:invoke)
+          .with('infrastructure-name', 'operating-system-name', 'manual')
         subject.run_rake
       end
-    end
-
-    describe '#artifacts_dir' do
-      %w[openstack vsphere aws].each do |i|
-        let(:infrastructure_name) { i }
-
-        its(:artifacts_dir) { should eq(File.join('/tmp', 'ci-artifacts', subject.infrastructure.name, 'deployments')) }
-      end
-    end
-
-    describe '#micro_bosh_deployment_dir' do
-      its(:micro_bosh_deployment_dir) { should eq(File.join(subject.artifacts_dir, subject.micro_bosh_deployment_name)) }
-    end
-
-    describe '#micro_bosh_deployment_name' do
-      its(:micro_bosh_deployment_name) { should == 'microbosh' }
     end
 
     describe '#bosh_stemcell_path' do
-      before do
-        build.stub(:bosh_stemcell_path) do |infrastructure, artifacts_dir|
-          expect(infrastructure.name).to eq(infrastructure_name)
-          expect(artifacts_dir).to eq(subject.artifacts_dir)
-          'fake bosh stemcell path'
-        end
-      end
-
       it 'delegates to the build' do
-        expect(subject.bosh_stemcell_path).to eq('fake bosh stemcell path')
+        build
+          .should_receive(:bosh_stemcell_path)
+          .with(infrastructure, operating_system, "#{expected_artifacts_dir}/deployments")
+          .and_return('bosh-stemcell-path')
+        expect(subject.bosh_stemcell_path).to eq('bosh-stemcell-path')
       end
     end
   end

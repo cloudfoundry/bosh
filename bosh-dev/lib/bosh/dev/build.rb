@@ -70,12 +70,13 @@ module Bosh::Dev
     end
 
     def download_stemcell(options = {})
-      infrastructure = options.fetch(:infrastructure)
+      infrastructure   = options.fetch(:infrastructure)
+      operating_system = options.fetch(:operating_system)
       name = options.fetch(:name)
       light = options.fetch(:light)
       output_directory = options.fetch(:output_directory) { Dir.pwd }
 
-      filename = stemcell_filename(number.to_s, infrastructure, name, light)
+      filename   = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, operating_system, name, light).to_s
       remote_dir = File.join(number.to_s, name, infrastructure.name)
       download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
       filename
@@ -86,8 +87,14 @@ module Bosh::Dev
       update_light_bosh_ami_pointer_file
     end
 
-    def bosh_stemcell_path(infrastructure, download_dir)
-      File.join(download_dir, stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', infrastructure.light?))
+    def bosh_stemcell_path(infrastructure, operating_system, download_dir)
+      File.join(download_dir, Bosh::Stemcell::ArchiveFilename.new(
+        number.to_s,
+        infrastructure,
+        operating_system,
+        'bosh-stemcell',
+        infrastructure.light?,
+      ).to_s)
     end
 
     private
@@ -111,7 +118,8 @@ module Bosh::Dev
 
     def light_stemcell
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
-      download_stemcell(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
+      operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
+      download_stemcell(infrastructure: infrastructure, operating_system: operating_system, name: 'bosh-stemcell', light: true)
       filename = stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', true)
       Bosh::Stemcell::Archive.new(filename)
     end
@@ -138,11 +146,12 @@ module Bosh::Dev
 
       def download_stemcell(options = {})
         infrastructure = options.fetch(:infrastructure)
+        operating_system = options.fetch(:operating_system)
         name = options.fetch(:name)
         light = options.fetch(:light)
         output_directory = options.fetch(:output_directory) { Dir.pwd }
 
-        filename = stemcell_filename(number.to_s, infrastructure, name, light)
+        filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, operating_system, name, light).to_s
         download_adapter.download(filename, File.join(output_directory, filename))
         filename
       end

@@ -1,5 +1,4 @@
 require 'bosh/dev/aws'
-require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/stemcell/archive'
@@ -9,9 +8,8 @@ require 'bosh/dev/bat/runner'
 
 module Bosh::Dev::Aws
   class RunnerBuilder
-    def build
+    def build(bat_helper, net_type)
       env              = ENV
-      bat_helper       = Bosh::Dev::BatHelper.new('aws', :dont_care)
       director_address = Bosh::Dev::Bat::DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
       bosh_cli_session = Bosh::Dev::BoshCliSession.new
       stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)

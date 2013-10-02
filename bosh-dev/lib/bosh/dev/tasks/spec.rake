@@ -84,7 +84,8 @@ namespace :spec do
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/build'
       ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(
-        infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
+        infrastructure:   Bosh::Stemcell::Infrastructure.for('vsphere'),
+        operating_system: Bosh::Stemcell::OperatingSystem.for('ubuntu'),
         name: 'bosh-stemcell',
         light: false
       )
@@ -94,28 +95,24 @@ namespace :spec do
   end
 
   namespace :system do
-    namespace :aws do
-      desc 'Run AWS MicroBOSH deployment suite'
-      task :micro do
-        require 'bosh/dev/aws/runner_builder'
-        Bosh::Dev::Aws::RunnerBuilder.new.build.deploy_microbosh_and_run_bats
-      end
-    end
+    task :micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
+      require 'bosh/dev/aws/runner_builder'
+      require 'bosh/dev/openstack/runner_builder'
+      require 'bosh/dev/vsphere/runner_builder'
 
-    namespace :openstack do
-      desc 'Run Openstack MicroBOSH deployment suite'
-      task :micro, [:net_type] do |_, args|
-        require 'bosh/dev/openstack/runner_builder'
-        Bosh::Dev::Openstack::RunnerBuilder.new.build(args.net_type).deploy_microbosh_and_run_bats
-      end
-    end
+      runner_class = {
+        'aws'       => Bosh::Dev::Aws::RunnerBuilder,
+        'openstack' => Bosh::Dev::Openstack::RunnerBuilder,
+        'vsphere'   => Bosh::Dev::VSphere::RunnerBuilder,
+      }[args.infrastructure_name]
 
-    namespace :vsphere do
-      desc 'Run vSphere MicroBOSH deployment suite'
-      task :micro do
-        require 'bosh/dev/vsphere/runner_builder'
-        Bosh::Dev::VSphere::RunnerBuilder.new.build.deploy_microbosh_and_run_bats
-      end
+      bat_helper = Bosh::Dev::BatHelper.new(
+        args.infrastructure_name,
+        args.operating_system_name,
+        args.net_type,
+      )
+      runner = runner_class.new.build(bat_helper, args.net_type)
+      runner.deploy_microbosh_and_run_bats
     end
   end
 end

@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/operating_system'
 require 'bosh/dev/build'
 
 module Bosh::Dev
@@ -216,18 +218,19 @@ module Bosh::Dev
         end
 
         it 'downloads the aws bosh-stemcell for the current build' do
-          subject.should_receive(:download_stemcell).
-            with(infrastructure: infrastructure, name: 'bosh-stemcell', light: true)
-
+          subject.should_receive(:download_stemcell).with(
+            infrastructure: infrastructure,
+            operating_system: operating_system,
+            name: 'bosh-stemcell',
+            light: true,
+          )
           subject.promote_artifacts
         end
 
         it 'initializes a Stemcell with the downloaded stemcell filename' do
-          Bosh::Stemcell::ArchiveFilename.should_receive(:new).
-            with('123', infrastructure, operating_system, 'bosh-stemcell', true).and_return(archive_filename)
-
+          Bosh::Stemcell::ArchiveFilename.should_receive(:new).with(
+            '123', infrastructure, operating_system, 'bosh-stemcell', true).and_return(archive_filename)
           Bosh::Stemcell::Archive.should_receive(:new).with(fake_stemcell_filename)
-
           subject.promote_artifacts
         end
 
@@ -320,47 +323,87 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name', hypervisor: 'infrastructure-hypervisor') }
+      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
 
       context 'when not specifying a download directory' do
-        it 'downloads the specified stemcell version from the pipeline bucket' do
-          download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: false)
-        end
+        it 'downloads the specified non-light stemcell version from the pipeline bucket' do
+          expected_s3_bucket     = 'http://bosh-ci-pipeline.s3.amazonaws.com'
+          expected_s3_folder     = '/123/bosh-stemcell/infrastructure-name'
+          expected_stemcell_name = 'bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
 
-        context 'when remote file does not exist' do
-          it 'raises' do
-            download_adapter.stub(:download).and_raise 'hell'
-
-            expect {
-              build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'), name: 'fooey', light: false)
-            }.to raise_error 'hell'
-          end
+          download_adapter.should_receive(:download).with(
+            URI("#{expected_s3_bucket}#{expected_s3_folder}/#{expected_stemcell_name}"),
+            "/#{expected_stemcell_name}",
+          )
+          build.download_stemcell(
+            infrastructure: infrastructure,
+            operating_system: operating_system,
+            name: 'bosh-stemcell',
+            light: false,
+          )
         end
 
         it 'downloads the specified light stemcell version from the pipeline bucket' do
-          download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          build.download_stemcell(infrastructure: Bosh::Stemcell::Infrastructure.for('aws'), name: 'bosh-stemcell', light: true)
+          expected_s3_bucket     = 'http://bosh-ci-pipeline.s3.amazonaws.com'
+          expected_s3_folder     = '/123/bosh-stemcell/infrastructure-name'
+          expected_stemcell_name = 'light-bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
+
+          download_adapter.should_receive(:download).with(
+            URI("#{expected_s3_bucket}#{expected_s3_folder}/#{expected_stemcell_name}"),
+            "/#{expected_stemcell_name}",
+          )
+          build.download_stemcell(
+            infrastructure: infrastructure,
+            operating_system: operating_system,
+            name: 'bosh-stemcell',
+            light: true,
+          )
+        end
+
+        context 'when remote file does not exist' do
+          it 'propagates downloading error' do
+            error = RuntimeError.new('error-message')
+            download_adapter.stub(:download).and_raise(error)
+            expect {
+              build.download_stemcell(
+                infrastructure: infrastructure,
+                operating_system: operating_system,
+                name: 'bosh-stemcell',
+                light: false,
+              )
+            }.to raise_error(error)
+          end
         end
 
         it 'returns the name of the downloaded file' do
-          options = {
-            infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
+          download_adapter.should_receive(:download)
+          build.download_stemcell(
+            infrastructure: infrastructure,
+            operating_system: operating_system,
             name: 'bosh-stemcell',
-            light: true,
-            output_directory: '/fake/artifacts/dir',
-          }
-
-          download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/light-bosh-stemcell-123-aws-xen-ubuntu.tgz'), '/fake/artifacts/dir/light-bosh-stemcell-123-aws-xen-ubuntu.tgz')
-          expect(build.download_stemcell(options)).to eq 'light-bosh-stemcell-123-aws-xen-ubuntu.tgz'
+            light: false,
+          ).should eq('bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz')
         end
       end
     end
 
     describe '#bosh_stemcell_path' do
-      let(:infrastructure) { Bosh::Stemcell::Infrastructure::Aws.new }
+      let(:infrastructure) do
+        instance_double(
+          'Bosh::Stemcell::Infrastructure::Base',
+          name: 'infrastructure-name',
+          hypervisor: 'infrastructure-hypervisor',
+          light?: true,
+        )
+      end
+
+      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
 
       it 'works' do
-        expect(subject.bosh_stemcell_path(infrastructure, download_directory)).to eq(File.join(download_directory, 'light-bosh-stemcell-123-aws-xen-ubuntu.tgz'))
+        bosh_stemcell_path     = subject.bosh_stemcell_path(infrastructure, operating_system, download_directory)
+        expected_stemcell_name = 'light-bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
+        expect(bosh_stemcell_path).to eq(File.join(download_directory, expected_stemcell_name))
       end
     end
   end
@@ -390,7 +433,7 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    subject { described_class.new('123', download_adapter) }
+    subject { described_class.new('build-number', download_adapter) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
     before(:all) { Fog.mock! }
@@ -409,14 +452,28 @@ module Bosh::Dev
     describe '#download_stemcell' do
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
+      let(:infrastructure) do
+        instance_double(
+          'Bosh::Stemcell::Infrastructure::Base',
+          name: 'infrastructure-name',
+          hypervisor: 'infrastructure-hypervisor',
+          light?: true,
+        )
+      end
+
+      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
+
       context 'when downloading does not result in an error' do
         it 'uses download adapter to move stemcell to given location' do
+          expected_stemcell_name = 'stemcell-name-build-number-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
           download_adapter
             .should_receive(:download)
-            .with('bosh-stemcell-123-aws-xen-ubuntu.tgz', '/output-directory/bosh-stemcell-123-aws-xen-ubuntu.tgz')
+            .with(expected_stemcell_name, "/output-directory/#{expected_stemcell_name}")
+
           subject.download_stemcell(
-            infrastructure: Bosh::Stemcell::Infrastructure.for('aws'),
-            name: 'bosh-stemcell',
+            infrastructure: infrastructure,
+            operating_system: operating_system,
+            name: 'stemcell-name',
             light: false,
             output_directory: '/output-directory',
           )
@@ -430,9 +487,11 @@ module Bosh::Dev
 
           expect {
             subject.download_stemcell(
-              infrastructure: Bosh::Stemcell::Infrastructure.for('vsphere'),
-              light: false,
+              infrastructure: infrastructure,
+              operating_system: operating_system,
               name: 'stemcell-name',
+              light: false,
+              output_directory: '/output-directory',
             )
           }.to raise_error(error)
         end

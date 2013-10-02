@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/dev/bat_helper'
 require 'bosh/dev/vsphere/runner_builder'
 
 module Bosh::Dev::VSphere
@@ -9,10 +10,6 @@ module Bosh::Dev::VSphere
           'Bosh::Dev::BatHelper',
           bosh_stemcell_path: 'stemcell-path',
         )
-        Bosh::Dev::BatHelper
-          .should_receive(:new)
-          .with('vsphere', :dont_care)
-          .and_return(bat_helper)
 
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
         Bosh::Dev::Bat::DirectorAddress
@@ -63,7 +60,7 @@ module Bosh::Dev::VSphere
           bat_deployment_manifest
         ).and_return(runner)
 
-        expect(subject.build).to eq(runner)
+        expect(subject.build(bat_helper, 'net-type')).to eq(runner)
       end
     end
   end
