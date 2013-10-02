@@ -69,13 +69,7 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
-    def download_stemcell(options = {})
-      infrastructure   = options.fetch(:infrastructure)
-      operating_system = options.fetch(:operating_system)
-      name = options.fetch(:name)
-      light = options.fetch(:light)
-      output_directory = options.fetch(:output_directory) { Dir.pwd }
-
+    def download_stemcell(name, infrastructure, operating_system, light, output_directory)
       filename   = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, operating_system, name, light).to_s
       remote_dir = File.join(number.to_s, name, infrastructure.name)
       download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
@@ -117,10 +111,11 @@ module Bosh::Dev
     end
 
     def light_stemcell
+      name = 'bosh-stemcell'
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
       operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-      download_stemcell(infrastructure: infrastructure, operating_system: operating_system, name: 'bosh-stemcell', light: true)
-      filename = stemcell_filename(number.to_s, infrastructure, 'bosh-stemcell', true)
+      download_stemcell(name, infrastructure, operating_system, true, Dir.pwd)
+      filename = stemcell_filename(number.to_s, infrastructure, name, true)
       Bosh::Stemcell::Archive.new(filename)
     end
 
@@ -144,13 +139,7 @@ module Bosh::Dev
         release.tarball
       end
 
-      def download_stemcell(options = {})
-        infrastructure = options.fetch(:infrastructure)
-        operating_system = options.fetch(:operating_system)
-        name = options.fetch(:name)
-        light = options.fetch(:light)
-        output_directory = options.fetch(:output_directory) { Dir.pwd }
-
+      def download_stemcell(name, infrastructure, operating_system, light, output_directory)
         filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, infrastructure, operating_system, name, light).to_s
         download_adapter.download(filename, File.join(output_directory, filename))
         filename

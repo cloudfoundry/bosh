@@ -76,11 +76,11 @@ module Bosh::Dev
 
     def fetch_stemcells
       build.download_stemcell(
-        name: 'bosh-stemcell',
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        light: infrastructure.light?,
-        output_directory: artifacts_dir,
+        'bosh-stemcell',
+        infrastructure,
+        operating_system,
+        infrastructure.light?,
+        artifacts_dir,
       )
     end
 

@@ -89,11 +89,11 @@ module Bosh::Dev
 
       it 'downloads stemcells for the specified infrastructure' do
         build.should_receive(:download_stemcell).with(
-          name: 'bosh-stemcell',
-          infrastructure: infrastructure,
-          operating_system: operating_system,
-          light: false,
-          output_directory: "#{expected_artifacts_dir}/deployments",
+          'bosh-stemcell',
+          infrastructure,
+          operating_system,
+          false,
+          "#{expected_artifacts_dir}/deployments",
         )
         subject.deploy_microbosh_and_run_bats
       end

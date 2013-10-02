@@ -56,8 +56,6 @@ module Bosh::Dev
       end
     end
 
-    let(:job_name) { 'current_job' }
-    let(:download_directory) { '/FAKE/CUSTOM/WORK/DIRECTORY' }
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
     let(:fog_storage) do
@@ -68,26 +66,23 @@ module Bosh::Dev
       )
     end
 
+    before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
     let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
     subject(:build) { Build::Candidate.new('123', download_adapter) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
 
     before(:all) { Fog.mock! }
     after(:all) { Fog.unmock! }
 
     before do
-      Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter)
-
       Fog::Mock.reset
       fog_storage.directories.create(key: 'bosh-ci-pipeline')
       fog_storage.directories.create(key: 'bosh-jenkins-artifacts')
-
-      stub_const(
-        'ENV',
+      stub_const('ENV', {
         'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
         'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id
-      )
+      })
     end
 
     describe '#upload' do
@@ -97,7 +92,6 @@ module Bosh::Dev
       it 'uploads the release with its build number' do
         File.stub(:open).with(release.tarball) { io }
         upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
-
         subject.upload_release(release)
       end
 
@@ -117,7 +111,6 @@ module Bosh::Dev
       before do
         FileUtils.mkdir_p(src)
         Dir.chdir(src) do
-
           files.each do |path|
             FileUtils.mkdir_p(File.dirname(path))
             File.open(path, 'w') { |f| f.write("Contents of #{path}") }
@@ -219,11 +212,7 @@ module Bosh::Dev
 
         it 'downloads the aws bosh-stemcell for the current build' do
           subject.should_receive(:download_stemcell).with(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            name: 'bosh-stemcell',
-            light: true,
-          )
+            'bosh-stemcell', infrastructure, operating_system, true, Dir.pwd)
           subject.promote_artifacts
         end
 
@@ -301,6 +290,7 @@ module Bosh::Dev
             name: 'stemcell-name'
           )
         end
+
         let(:stemcell_contents) { 'this file is a light stemcell' }
 
         it 'publishes a light stemcell to S3 bucket' do
@@ -322,69 +312,38 @@ module Bosh::Dev
     end
 
     describe '#download_stemcell' do
-      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
-      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name', hypervisor: 'infrastructure-hypervisor') }
+      def perform(light = false)
+        build.download_stemcell('stemcell-name', infrastructure, operating_system, light, Dir.pwd)
+      end
+
+      let(:infrastructure)   { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name', hypervisor: 'infrastructure-hypervisor') }
       let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
 
-      context 'when not specifying a download directory' do
-        it 'downloads the specified non-light stemcell version from the pipeline bucket' do
-          expected_s3_bucket     = 'http://bosh-ci-pipeline.s3.amazonaws.com'
-          expected_s3_folder     = '/123/bosh-stemcell/infrastructure-name'
-          expected_stemcell_name = 'bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
+      expected_s3_bucket     = 'http://bosh-ci-pipeline.s3.amazonaws.com'
+      expected_s3_folder     = '/123/stemcell-name/infrastructure-name'
+      expected_stemcell_name = 'stemcell-name-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
 
-          download_adapter.should_receive(:download).with(
-            URI("#{expected_s3_bucket}#{expected_s3_folder}/#{expected_stemcell_name}"),
-            "/#{expected_stemcell_name}",
-          )
-          build.download_stemcell(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            name: 'bosh-stemcell',
-            light: false,
-          )
-        end
+      it 'downloads the specified non-light stemcell version from the pipeline bucket' do
+        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{expected_stemcell_name}")
+        download_adapter.should_receive(:download).with(expected_uri, "/#{expected_stemcell_name}")
+        perform
+      end
 
-        it 'downloads the specified light stemcell version from the pipeline bucket' do
-          expected_s3_bucket     = 'http://bosh-ci-pipeline.s3.amazonaws.com'
-          expected_s3_folder     = '/123/bosh-stemcell/infrastructure-name'
-          expected_stemcell_name = 'light-bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
+      it 'downloads the specified light stemcell version from the pipeline bucket' do
+        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/light-#{expected_stemcell_name}")
+        download_adapter.should_receive(:download).with(expected_uri, "/light-#{expected_stemcell_name}")
+        perform(true)
+      end
 
-          download_adapter.should_receive(:download).with(
-            URI("#{expected_s3_bucket}#{expected_s3_folder}/#{expected_stemcell_name}"),
-            "/#{expected_stemcell_name}",
-          )
-          build.download_stemcell(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            name: 'bosh-stemcell',
-            light: true,
-          )
-        end
+      it 'returns the name of the downloaded file' do
+        download_adapter.should_receive(:download)
+        perform.should eq(expected_stemcell_name)
+      end
 
-        context 'when remote file does not exist' do
-          it 'propagates downloading error' do
-            error = RuntimeError.new('error-message')
-            download_adapter.stub(:download).and_raise(error)
-            expect {
-              build.download_stemcell(
-                infrastructure: infrastructure,
-                operating_system: operating_system,
-                name: 'bosh-stemcell',
-                light: false,
-              )
-            }.to raise_error(error)
-          end
-        end
-
-        it 'returns the name of the downloaded file' do
-          download_adapter.should_receive(:download)
-          build.download_stemcell(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            name: 'bosh-stemcell',
-            light: false,
-          ).should eq('bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz')
-        end
+      it 'propagates downloading error when remote file does not exist' do
+        error = RuntimeError.new('error-message')
+        download_adapter.stub(:download).and_raise(error)
+        expect { perform }.to raise_error(error)
       end
     end
 
@@ -401,6 +360,7 @@ module Bosh::Dev
       let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
 
       it 'works' do
+        download_directory     = '/FAKE/CUSTOM/WORK/DIRECTORY'
         bosh_stemcell_path     = subject.bosh_stemcell_path(infrastructure, operating_system, download_directory)
         expected_stemcell_name = 'light-bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
         expect(bosh_stemcell_path).to eq(File.join(download_directory, expected_stemcell_name))
@@ -415,18 +375,21 @@ module Bosh::Dev
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
         it 'raises' do
-          download_adapter.stub(:download).and_raise 'error'
-          expect { build.release_tarball_path }.to raise_error 'error'
+          error = Exception.new('error-message')
+          download_adapter.stub(:download).and_raise(error)
+          expect { build.release_tarball_path }.to raise_error(error)
         end
       end
 
       it 'downloads the specified release from the pipeline bucket' do
-        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'tmp/bosh-123.tgz')
+        download_adapter.should_receive(:download).with(
+          URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'tmp/bosh-123.tgz')
         build.release_tarball_path
       end
 
       it 'returns the relative path of the downloaded release' do
-        download_adapter.should_receive(:download).with(URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'tmp/bosh-123.tgz')
+        download_adapter.should_receive(:download).with(
+          URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'tmp/bosh-123.tgz')
         expect(build.release_tarball_path).to eq 'tmp/bosh-123.tgz'
       end
     end
@@ -440,17 +403,17 @@ module Bosh::Dev
     after(:all)  { Fog.unmock! }
 
     describe '#release_tarball_path' do
-      let(:micro_bosh_release) { instance_double('Bosh::Dev::MicroBoshRelease', tarball: '/fake/path/to/release/tarball') }
-
-      before { Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release) }
-
       it 'returns the path to new microbosh release' do
-        expect(subject.release_tarball_path).to eq('/fake/path/to/release/tarball')
+        micro_bosh_release = instance_double('Bosh::Dev::MicroBoshRelease', tarball: 'tarball-path')
+        Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release)
+        expect(subject.release_tarball_path).to eq('tarball-path')
       end
     end
 
     describe '#download_stemcell' do
-      let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+      def perform
+        subject.download_stemcell('stemcell-name', infrastructure, operating_system, false, '/output-directory')
+      end
 
       let(:infrastructure) do
         instance_double(
@@ -469,14 +432,7 @@ module Bosh::Dev
           download_adapter
             .should_receive(:download)
             .with(expected_stemcell_name, "/output-directory/#{expected_stemcell_name}")
-
-          subject.download_stemcell(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            name: 'stemcell-name',
-            light: false,
-            output_directory: '/output-directory',
-          )
+          perform
         end
       end
 
@@ -484,16 +440,7 @@ module Bosh::Dev
         it 'propagates raised error' do
           error = RuntimeError.new('error-message')
           download_adapter.stub(:download).and_raise(error)
-
-          expect {
-            subject.download_stemcell(
-              infrastructure: infrastructure,
-              operating_system: operating_system,
-              name: 'stemcell-name',
-              light: false,
-              output_directory: '/output-directory',
-            )
-          }.to raise_error(error)
+          expect { perform }.to raise_error(error)
         end
       end
     end

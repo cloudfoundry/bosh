@@ -84,10 +84,11 @@ namespace :spec do
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/build'
       ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(
-        infrastructure:   Bosh::Stemcell::Infrastructure.for('vsphere'),
-        operating_system: Bosh::Stemcell::OperatingSystem.for('ubuntu'),
-        name: 'bosh-stemcell',
-        light: false
+        'bosh-stemcell',
+        Bosh::Stemcell::Infrastructure.for('vsphere'),
+        Bosh::Stemcell::OperatingSystem.for('ubuntu'),
+        false,
+        Dir.pwd,
       )
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
