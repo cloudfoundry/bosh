@@ -10,8 +10,6 @@ Tools for creating stemcells
 0. Add instructions to set BOSH_AWS_... environment variables
 0. Install the vagrant plugins we use:
 
-        vagrant plugin install vagrant-berkshelf --plugin-version 1.3.3
-        vagrant plugin install vagrant-omnibus   --plugin-version 1.1.0
         vagrant plugin install vagrant-aws       --plugin-version 0.3.0
 
 #### Bring up the vagrant stemcell building VM

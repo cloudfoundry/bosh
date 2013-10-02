@@ -28,33 +28,9 @@ Vagrant.configure('2') do |config|
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
-    sudo apt-add-repository -y 'deb http://us.archive.ubuntu.com/ubuntu/ raring multiverse'
-    sudo apt-add-repository -y 'deb http://us.archive.ubuntu.com/ubuntu/ raring-updates multiverse'
-    sudo apt-get -y update
-
     sudo mkdir -p /mnt/stemcells
     sudo chown -R ubuntu /mnt/stemcells
     BASH
-  end
-
-  config.omnibus.chef_version = '11.6.0'
-  config.berkshelf.enabled = true
-  config.vm.provision :chef_solo do |chef|
-    chef.add_recipe 'apt'
-    chef.add_recipe 'ruby_build'
-    chef.add_recipe 'rbenv::system'
-    chef.add_recipe 'stemcell_builder'
-    chef.json = {
-      rbenv: {
-        rubies: %w[1.9.3-p448],
-        global: '1.9.3-p448',
-        gems: {
-          '1.9.3-p448' => [
-            { 'name' => 'bundler' },
-          ]
-        },
-      }
-    }
   end
 
   config.vm.synced_folder '../', '/bosh'
