@@ -5,46 +5,86 @@ module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(infrastructure_name, operating_system_name, 'manual') }
+    subject { described_class.new(bat_runner_builder, infrastructure, operating_system, build, 'net-type') }
 
-    before { Bosh::Stemcell::Infrastructure.should_receive(:for).and_return(infrastructure) }
-    let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: infrastructure_name, light?: light) }
-    let(:infrastructure_name) { 'infrastructure-name' }
-    
-    before { Bosh::Stemcell::OperatingSystem.should_receive(:for).and_return(operating_system) }
-    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: operating_system_name) }
-    let(:operating_system_name) { 'operating-system-name' }
+    let(:bat_runner_builder) { instance_double('Bosh::Dev::Aws::RunnerBuilder') }
+
+    let(:infrastructure) do
+      instance_double(
+        'Bosh::Stemcell::Infrastructure::Base',
+        name: 'infrastructure-name',
+        light?: false,
+      )
+    end
+
+    let(:operating_system) do
+      instance_double(
+        'Bosh::Stemcell::OperatingSystem::Base',
+        name: 'operating-system-name',
+      )
+    end
+
+    let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
+
+    describe '.for_rake_args' do
+      it 'returns bat helper configured with rake arguments' do
+        rake_args = Struct.new(
+          :infrastructure_name,
+          :operating_system_name,
+          :net_type,
+        ).new('infrastructure-name', 'operating-system-name', 'net-type')
+
+        described_class
+          .should_receive(:runner_builder_for_infrastructure_name)
+          .with('infrastructure-name')
+          .and_return(bat_runner_builder)
+
+        Bosh::Stemcell::Infrastructure
+          .should_receive(:for)
+          .with('infrastructure-name')
+          .and_return(infrastructure)
+
+        Bosh::Stemcell::OperatingSystem
+          .should_receive(:for)
+          .with('operating-system-name')
+          .and_return(operating_system)
+
+        Build.should_receive(:candidate).and_return(build)
+
+        bat_helper = instance_double('Bosh::Dev::BatHelper')
+        described_class
+          .should_receive(:new)
+          .with(bat_runner_builder, infrastructure, operating_system, build, 'net-type')
+          .and_return(bat_helper)
+
+        described_class.for_rake_args(rake_args).should == bat_helper
+      end
+    end
 
     expected_artifacts_dir = '/tmp/ci-artifacts/infrastructure-name/operating-system-name'
 
-    let(:light) { false }
-    
-    before { Build.stub(candidate: build) }
-    let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
-
     describe '#initialize' do
-      its(:infrastructure)   { should == infrastructure }
-      its(:operating_system) { should == operating_system }
-
+      its(:infrastructure)             { should == infrastructure }
+      its(:operating_system)           { should == operating_system }
       its(:micro_bosh_deployment_name) { should == 'microbosh' }
       its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
       its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }
     end
 
-    describe '#run_rake' do
-      before { Rake::Task.stub(:[]).and_return(spec_system_micro_task) }
-      let(:spec_system_micro_task) { instance_double('Rake::Task', invoke: nil) }
+    describe '#deploy_microbosh_and_run_bats' do
+      before { bat_runner_builder.stub(build: bat_runner) }
+      let(:bat_runner) { instance_double('Bosh::Dev::Bat::Runner', deploy_microbosh_and_run_bats: nil) }
 
       before { FileUtils.stub(rm_rf: nil, mkdir_p: nil) }
 
       it 'removes the artifacts dir' do
         FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir)
-        subject.run_rake
+        subject.deploy_microbosh_and_run_bats
       end
 
       it 'creates the microbosh depolyments dir (which is contained within artifacts dir)' do
         FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
-        subject.run_rake
+        subject.deploy_microbosh_and_run_bats
       end
 
       it 'downloads stemcells for the specified infrastructure' do
@@ -52,21 +92,34 @@ module Bosh::Dev
           name: 'bosh-stemcell',
           infrastructure: infrastructure,
           operating_system: operating_system,
-          light: light,
+          light: false,
           output_directory: "#{expected_artifacts_dir}/deployments",
         )
-        subject.run_rake
+        subject.deploy_microbosh_and_run_bats
       end
 
-      it 'invokes the spec:system:micro rake task' do
-        Rake::Task
-          .should_receive(:[])
-          .with("spec:system:micro")
-          .and_return(spec_system_micro_task)
-        spec_system_micro_task
-          .should_receive(:invoke)
-          .with('infrastructure-name', 'operating-system-name', 'manual')
-        subject.run_rake
+      it 'uses bats runner to deploy microbosh and run bats' do
+        bat_runner_builder
+          .should_receive(:build)
+          .with(subject, 'net-type')
+          .and_return(bat_runner)
+
+        bat_runner.should_receive(:deploy_microbosh_and_run_bats)
+        subject.deploy_microbosh_and_run_bats
+      end
+    end
+
+    describe '#run_bats' do
+      it 'uses bats runner to run bats without deploying microbosh ' +
+         '(assumption is user already has microbosh)' do
+        bat_runner = instance_double('Bosh::Dev::Bat::Runner')
+        bat_runner_builder
+          .should_receive(:build)
+          .with(subject, 'net-type')
+          .and_return(bat_runner)
+
+        bat_runner.should_receive(:run_bats)
+        subject.run_bats
       end
     end
 

@@ -93,28 +93,6 @@ namespace :spec do
       t.rspec_opts = %w(--format documentation --color)
     end
   end
-
-  namespace :system do
-    task :micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
-      require 'bosh/dev/aws/runner_builder'
-      require 'bosh/dev/openstack/runner_builder'
-      require 'bosh/dev/vsphere/runner_builder'
-
-      runner_class = {
-        'aws'       => Bosh::Dev::Aws::RunnerBuilder,
-        'openstack' => Bosh::Dev::Openstack::RunnerBuilder,
-        'vsphere'   => Bosh::Dev::VSphere::RunnerBuilder,
-      }[args.infrastructure_name]
-
-      bat_helper = Bosh::Dev::BatHelper.new(
-        args.infrastructure_name,
-        args.operating_system_name,
-        args.net_type,
-      )
-      runner = runner_class.new.build(bat_helper, args.net_type)
-      runner.deploy_microbosh_and_run_bats
-    end
-  end
 end
 
 desc 'Run unit and integration specs'
