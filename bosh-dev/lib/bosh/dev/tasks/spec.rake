@@ -1,6 +1,6 @@
 require 'rspec'
-require 'rspec/core/rake_task'
 require 'tempfile'
+require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
 
 namespace :spec do
@@ -92,6 +92,18 @@ namespace :spec do
       )
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
+    end
+  end
+
+  namespace :system do
+    desc 'Run system (BATs) tests (deploys microbosh)'
+    task :micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
+      Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
+    end
+
+    desc 'Run system (BATs) tests (uses existing microbosh)'
+    task :existing_micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
+      Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
   end
 end
