@@ -13,7 +13,7 @@ describe Bosh::OpenStackCloud::Cloud do
       cloud = Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
       cloud.should be_an_instance_of(Bosh::OpenStackCloud::Cloud)
     end
-    
+
     it "raises ArgumentError on initializing with blank options" do
     	options = Hash.new("options")
     	expect { 
