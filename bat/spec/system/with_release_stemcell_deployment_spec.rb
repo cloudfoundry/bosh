@@ -29,13 +29,20 @@ describe 'with release, stemcell and deployment' do
   describe 'ssh' do
     it 'can bosh ssh into a vm' do
       private_key = ssh_options[:private_key]
+
       if private_key
         bosh_ssh_options = {
           gateway_host: bosh_director,
           gateway_user: 'vcap',
           gateway_identity_file: private_key,
         }.map { |k, v| "--#{k} '#{v}'" }.join(' ')
+
+        # Note gateway_host + ip: ...fingerprint does not match for "micro.ci2.cf-app.com,54.208.15.101" (Net::SSH::HostKeyMismatch)
+        Bosh::Exec.sh("ssh-keygen -R '#{bosh_director},#{static_ip}'")
+      else
+        Bosh::Exec.sh("ssh-keygen -R '#{static_ip}'")
       end
+
       bosh_safe("ssh batlight 0 'uname -a' #{bosh_ssh_options}").should succeed_with /Linux/
     end
   end
