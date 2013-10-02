@@ -75,7 +75,12 @@ require 'bosh_agent/apply_plan/plan'
 require 'bosh_agent/disk_util'
 
 require 'bosh_agent/message/base'
-require 'bosh_agent/message/disk'
+
+require 'bosh_agent/message/list_disk'
+require 'bosh_agent/message/migrate_disk'
+require 'bosh_agent/message/mount_disk'
+require 'bosh_agent/message/unmount_disk'
+
 require 'bosh_agent/message/state'
 require 'bosh_agent/message/drain'
 require 'bosh_agent/message/apply'

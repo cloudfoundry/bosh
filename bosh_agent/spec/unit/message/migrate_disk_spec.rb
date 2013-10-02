@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 describe Bosh::Agent::Message::MigrateDisk do
@@ -66,7 +64,7 @@ describe Bosh::Agent::Message::MigrateDisk do
 
     it 'remounts the old disk RO, copies files over, and mounts the new disk' do
       # re-mount old disk read-only
-      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
+      Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
           persistent_disk_mount_point,
       )
       mounter_old_disk = double('mounter for old disk')
@@ -84,12 +82,12 @@ describe Bosh::Agent::Message::MigrateDisk do
       )
 
       # unmount old disk
-      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
+      Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
         persistent_disk_mount_point,
       )
 
       # re-mount new disk to the right mount point
-      Bosh::Agent::Message::DiskUtil.should_receive(:umount_guard).ordered.with(
+      Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
         migration_mount_point,
       )
       mounter_new_disk = double('mounter for new disk')
@@ -104,52 +102,4 @@ describe Bosh::Agent::Message::MigrateDisk do
       migrate_disk.migrate(["old_disk_cid", "new_disk_cid"])
     end
   end
-end
-
-describe Bosh::Agent::Message::UnmountDisk do
-  it 'should unmount disk' do
-    platform = double(:platform)
-    Bosh::Agent::Config.stub(:platform).and_return(platform)
-    platform.stub(:lookup_disk_by_cid).and_return('/dev/sdy')
-    Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
-
-    handler = Bosh::Agent::Message::UnmountDisk.new
-    Bosh::Agent::DiskUtil.stub(:umount_guard)
-
-    handler.unmount(['4']).should == {message: 'Unmounted /dev/sdy1 on /foomount'}
-  end
-
-  it 'should fall through if mount is not present' do
-    platform = double(:platform)
-    Bosh::Agent::Config.stub(:platform).and_return(platform)
-    platform.stub(:lookup_disk_by_cid).and_return('/dev/sdx')
-    Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return(nil)
-
-    handler = Bosh::Agent::Message::UnmountDisk.new
-    handler.stub(:umount_guard)
-
-    handler.unmount(['4']).should == {message: 'Unknown mount for partition: /dev/sdx1'}
-  end
-end
-
-describe Bosh::Agent::Message::ListDisk do
-
-  it 'should return empty list' do
-    settings = { 'disks' => { } }
-    Bosh::Agent::Config.settings = settings
-    Bosh::Agent::Message::ListDisk.process([]).should == []
-  end
-
-  it 'should list persistent disks' do
-    platform = double(:platform)
-    Bosh::Agent::Config.stub(:platform).and_return(platform)
-    platform.stub(:lookup_disk_by_cid).and_return('/dev/sdy')
-    Bosh::Agent::Message::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
-
-    settings = { 'disks' => { 'persistent' => { 199 => 2 }}}
-    Bosh::Agent::Config.settings = settings
-
-    Bosh::Agent::Message::ListDisk.process([]).should == [199]
-  end
-
 end
