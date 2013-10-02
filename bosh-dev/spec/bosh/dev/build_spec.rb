@@ -256,7 +256,7 @@ module Bosh::Dev
           instance_double(
             'Bosh::Stemcell::Archive',
             light?: false,
-            path: 'unused',
+            path: '/tmp/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz',
             infrastructure: 'vsphere',
             name: 'stemcell-name'
           )
@@ -285,7 +285,7 @@ module Bosh::Dev
           instance_double(
             'Bosh::Stemcell::Archive',
             light?: true,
-            path: 'unused',
+            path: '/tmp/light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz',
             infrastructure: 'vsphere',
             name: 'stemcell-name'
           )

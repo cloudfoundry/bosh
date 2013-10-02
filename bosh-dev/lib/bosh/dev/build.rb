@@ -52,10 +52,8 @@ module Bosh::Dev
     end
 
     def upload_stemcell(stemcell)
-      infrastructure = Bosh::Stemcell::Infrastructure.for(stemcell.infrastructure)
-
-      normal_filename = stemcell_filename(@number, infrastructure, 'bosh-stemcell', stemcell.light?)
-      latest_filename = stemcell_filename('latest', infrastructure, 'bosh-stemcell', stemcell.light?)
+      normal_filename = File.basename(stemcell.path)
+      latest_filename = normal_filename.gsub(/#{@number}/, 'latest')
 
       s3_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, normal_filename)
       s3_latest_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, latest_filename)
@@ -115,18 +113,12 @@ module Bosh::Dev
       name = 'bosh-stemcell'
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
       operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-      download_stemcell(name, infrastructure, operating_system, true, Dir.pwd)
-      filename = stemcell_filename(number.to_s, infrastructure, name, true)
+      filename = download_stemcell(name, infrastructure, operating_system, true, Dir.pwd)
       Bosh::Stemcell::Archive.new(filename)
     end
 
     def release_path
       "release/#{promoter.release_file}"
-    end
-
-    def stemcell_filename(version, infrastructure, name, light)
-      operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-      Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, name, light).to_s
     end
 
     def uri(remote_directory_path, file_name)
