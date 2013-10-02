@@ -6,6 +6,7 @@ Tools for creating stemcells
 
 #### Once-off manual steps:
 
+0. Upload a keypair called "bosh" to AWS that you'll use to connect to the remote vm later
 0. Create "bosh-stemcell" security group on AWS to allow SSH access to the stemcell (once per AWS account)
 0. Add instructions to set BOSH_AWS_... environment variables
 0. Install the vagrant plugins we use:
