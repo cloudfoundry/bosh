@@ -75,7 +75,7 @@ module Bosh::Dev::Bat
       env['BAT_DIRECTOR']         = director_address.hostname
       env['BAT_DNS_HOST']         = director_address.ip
       env['BAT_STEMCELL']         = bat_helper.bosh_stemcell_path
-      env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY'] || env['BOSH_KEY_PATH']
+      env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY']
       env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
       env['BAT_INFRASTRUCTURE']   = stemcell_archive.infrastructure
     end

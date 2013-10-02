@@ -160,12 +160,6 @@ module Bosh::Dev::Bat
         expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
       end
 
-      it 'sets BAT_VCAP_PRIVATE_KEY to BOSH_KEY_PATH if present' do
-        env['BOSH_KEY_PATH'] = 'private-key-path'
-        subject.run_bats
-        expect(env['BAT_VCAP_PRIVATE_KEY']).to eq('private-key-path')
-      end
-
       it 'invokes the "bat" rake task' do
         bat_rake_task.should_receive(:invoke)
         subject.run_bats
