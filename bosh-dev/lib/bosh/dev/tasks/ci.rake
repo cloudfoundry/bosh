@@ -48,6 +48,13 @@ namespace :ci do
     stemcell_publisher.publish(stemcell_file)
   end
 
+  task :publish_stemcell_in_vm, [:infrastructure_name, :operating_system_name, :vm_name] do |_, args|
+    require 'bosh/dev/stemcell_vm'
+
+    stemcell_vm = Bosh::Dev::StemcellVm.new(args.with_defaults(vm_name: 'remote'))
+    stemcell_vm.publish
+  end
+
   desc 'Promote from pipeline to artifacts bucket'
   task :promote_artifacts do
     require 'bosh/dev/build'
