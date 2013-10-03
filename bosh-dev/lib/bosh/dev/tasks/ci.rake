@@ -54,7 +54,7 @@ namespace :ci do
   task :publish_stemcell_in_vm, [:infrastructure_name, :operating_system_name, :vm_name] do |_, args|
     require 'bosh/dev/stemcell_vm'
 
-    stemcell_vm = Bosh::Dev::StemcellVm.new(args.to_hash)
+    stemcell_vm = Bosh::Dev::StemcellVm.new(args.to_hash, ENV)
     stemcell_vm.publish
   end
 
