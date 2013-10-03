@@ -6,12 +6,13 @@ module Bosh::Dev
       @operating_system_name = options.fetch(:operating_system_name)
       @env = env
     end
-#
+
     def publish
       Rake::FileUtilsExt.sh <<-BASH
         set -eu
 
-        vagrant destroy #{vm_name} --force
+        cd bosh-stemcell
+        [ -e .vagrant/machines/remote/aws/id ] && vagrant destroy #{vm_name} --force
         vagrant up #{vm_name} --provider #{provider}
 
         time vagrant ssh -c "

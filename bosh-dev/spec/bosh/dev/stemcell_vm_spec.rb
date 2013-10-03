@@ -28,6 +28,18 @@ module Bosh::Dev
 
       before { Rake::FileUtilsExt.stub(:sh) }
 
+      it 'changes to the bosh-stemcell dir so its Vagrantfile is visible' do
+        Rake::FileUtilsExt.should_receive(:sh).with(/cd bosh-stemcell/)
+
+        vm.publish
+      end
+
+      it 'avoids loading the virtualbox driver by checking for a running ami' do
+        Rake::FileUtilsExt.should_receive(:sh).with(include('[ -e .vagrant/machines/remote/aws/id ] && vagrant destroy remote --force'))
+
+        vm.publish
+      end
+
       it 'recreates the VM to ensure a clean environment' do
         Rake::FileUtilsExt.should_receive(:sh) do |cmd|
           expect(cmd).to match /vagrant destroy remote --force/
