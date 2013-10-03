@@ -84,6 +84,7 @@ module Bosh::Dev
 
         it 'uses the "aws" provider' do
           Rake::FileUtilsExt.should_receive(:sh).with(/vagrant up remote --provider aws/)
+
           vm.publish
         end
       end
@@ -93,6 +94,7 @@ module Bosh::Dev
 
         it 'uses the "virtualbox" provider' do
           Rake::FileUtilsExt.should_receive(:sh).with(/vagrant up local --provider virtualbox/)
+
           vm.publish
         end
       end
