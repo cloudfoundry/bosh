@@ -83,6 +83,8 @@ namespace :spec do
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/build'
+
+      File.exists?(ENV['BOSH_VSPHERE_STEMCELL']) ||
       ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(
         'bosh-stemcell',
         Bosh::Stemcell::Infrastructure.for('vsphere'),
