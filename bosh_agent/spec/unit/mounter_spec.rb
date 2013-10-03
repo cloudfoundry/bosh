@@ -3,46 +3,35 @@ require 'bosh_agent/mounter'
 
 describe Bosh::Agent::Mounter do
   describe '#mount' do
-    subject(:mounter) do
-      described_class.new(
-        platform,
-        disk_cid,
-        mount_point,
-        logger,
-      )
+    subject(:mounter) { described_class.new(logger, shell_runner) }
+    let(:logger) { double('logger') }
+    let(:shell_runner) { double() }
+
+    def perform
+      mounter.mount('/dev/sda', '/path/to/mount/point', '')
     end
 
-    let(:platform) { double('platform') }
-    let(:disk_cid) { 'disk_cid' }
-    let(:mount_point) { '/path/to/mount/point' }
-    let(:logger) { double('logger') }
-
-    before { mounter.stub(:`) }
-
     context 'when mount succeeds' do
-      before { mounter.stub(last_process_status: process_status) }
-      let(:process_status) { instance_double('Process::Status', exitstatus: 0) }
+      let(:result) { instance_double('Bosh::Exec::Result', exit_status: 0, output: 'mount-output', failed?: false) }
 
       it 'runs mount command with looked up disk' do
-        platform.should_receive(:lookup_disk_by_cid).with(disk_cid).and_return('/dev/sda')
-        logger.should_receive(:info).with("Mounting: /dev/sda1 #{mount_point}")
-        mounter.should_receive(:`).with("mount  /dev/sda1 #{mount_point}")
-        mounter.mount('')
+        logger.should_receive(:info).with('Mounting: /dev/sda1 /path/to/mount/point')
+        shell_runner.should_receive(:sh).with('mount  /dev/sda1 /path/to/mount/point', on_error: :return).and_return(result)
+        perform
       end
     end
 
     context 'when mount fails' do
-      before { mounter.stub(last_process_status: process_status) }
-      let(:process_status) { instance_double('Process::Status', exitstatus: 127) }
+      let(:result) { instance_double('Bosh::Exec::Result', exit_status: 127, output: 'mount-output', failed?: true) }
 
       it 'raises' do
-        platform.should_receive(:lookup_disk_by_cid).with(disk_cid).and_return('/dev/sda')
-        logger.should_receive(:info).with("Mounting: /dev/sda1 #{mount_point}")
-        mounter.should_receive(:`).with("mount  /dev/sda1 #{mount_point}").and_return('mount-output')
+        logger.should_receive(:info).with('Mounting: /dev/sda1 /path/to/mount/point')
+        shell_runner.should_receive(:sh).with('mount  /dev/sda1 /path/to/mount/point', on_error: :return).and_return(result)
 
-        expect {
-          mounter.mount('')
-        }.to raise_error(Bosh::Agent::MessageHandlerError, /Failed to mount.*127.*mount-output/)
+        expect { perform }.to raise_error(
+          Bosh::Agent::MessageHandlerError,
+          "Failed to mount: '/dev/sda1' '/path/to/mount/point' Exit status: 127 Output: mount-output",
+        )
       end
     end
   end

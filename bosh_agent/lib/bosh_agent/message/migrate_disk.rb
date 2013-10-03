@@ -46,7 +46,8 @@ module Bosh::Agent
       end
 
       def mount_store(cid, options="")
-        Mounter.new(Config.platform, cid, store_path, logger).mount(options)
+        device = Config.platform.lookup_disk_by_cid(cid)
+        Mounter.new(logger).mount(device, store_path, options)
       end
     end
   end

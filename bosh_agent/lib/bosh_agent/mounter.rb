@@ -2,30 +2,25 @@ require 'bosh_agent'
 
 module Bosh::Agent
   class Mounter
-    def initialize(platform, cid, store_path, logger)
-      @platform = platform
-      @cid = cid
-      @store_path = store_path
+    def initialize(logger, shell_runner=Bosh::Exec)
       @logger = logger
+      @shell_runner = shell_runner
     end
 
-    def mount(options)
-      disk = @platform.lookup_disk_by_cid(@cid)
-      partition = "#{disk}1"
+    def mount(device, mount_point, options)
+      partition = "#{device}1"
 
-      @logger.info("Mounting: #{partition} #{@store_path}")
-      output = `mount #{options} #{partition} #{@store_path}`
+      @logger.info("Mounting: #{partition} #{mount_point}")
+      results = shell_runner.sh("mount #{options} #{partition} #{mount_point}", on_error: :return)
 
-      unless (status = last_process_status.exitstatus).zero?
+      if results.failed?
         raise Bosh::Agent::MessageHandlerError,
-          "Failed to mount: '#{partition}' '#{@store_path}' Exit status: #{status} Output: #{output}"
+              "Failed to mount: '#{partition}' '#{mount_point}' Exit status: #{results.exit_status} Output: #{results.output}"
       end
     end
 
     private
 
-    def last_process_status
-      $?
-    end
+    attr_reader :shell_runner
   end
 end

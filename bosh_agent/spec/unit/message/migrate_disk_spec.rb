@@ -33,7 +33,7 @@ describe Bosh::Agent::Message::MigrateDisk do
     end
 
     let(:config_class) { double('agent config') }
-    before {  stub_const('Bosh::Agent::Config', config_class) }
+    before { stub_const('Bosh::Agent::Config', config_class) }
 
     subject(:migrate_disk) { described_class.new }
     before do
@@ -48,33 +48,20 @@ describe Bosh::Agent::Message::MigrateDisk do
       platform.stub(:lookup_disk_by_cid).with("new_disk_cid").and_return(
         '/dev/sdb',
       )
-
-      #config_class.stub(
-      #  settings: {
-      #    'disks' => {
-      #      'ephemeral' => '/dev/sdq',
-      #      'persistent' => {
-      #        'old_disk_cid' => '/dev/sda',
-      #        'new_disk_cid' => '/dev/sdb'
-      #      }
-      #    }
-      #  }
-      #)
     end
 
     it 'remounts the old disk RO, copies files over, and mounts the new disk' do
       # re-mount old disk read-only
       Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
-          persistent_disk_mount_point,
-      )
-      mounter_old_disk = double('mounter for old disk')
-      Bosh::Agent::Mounter.stub(:new).with(
-        anything,
-        'old_disk_cid',
         persistent_disk_mount_point,
-        anything,
-      ).and_return(mounter_old_disk)
-      mounter_old_disk.should_receive(:mount).with('-o ro').ordered
+      )
+      mounter = double('mounter for disks')
+      Bosh::Agent::Mounter.stub(:new).with(
+        config_class.logger,
+      ).and_return(mounter)
+      mounter.should_receive(:mount).with('/dev/sda',
+                                          persistent_disk_mount_point,
+                                          '-o ro').ordered
 
       # copy stuff over
       migrate_disk.should_receive(:`).ordered.with(
@@ -90,14 +77,9 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
         migration_mount_point,
       )
-      mounter_new_disk = double('mounter for new disk')
-      Bosh::Agent::Mounter.stub(:new).with(
-        anything,
-        'new_disk_cid',
-        persistent_disk_mount_point,
-        anything,
-      ).and_return(mounter_new_disk)
-      mounter_new_disk.should_receive(:mount).with('').ordered
+      mounter.should_receive(:mount).with('/dev/sdb',
+                                          persistent_disk_mount_point,
+                                          '').ordered
 
       migrate_disk.migrate(["old_disk_cid", "new_disk_cid"])
     end

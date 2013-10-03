@@ -5,6 +5,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
   subject(:disk_manager) { Bosh::Agent::Platform::Linux::Disk.new }
   let(:store_path) { File.join(Bosh::Agent::Config.base_dir, 'store') }
   let(:dev_path) { '/sys/bus/scsi/devices/2:0:333:0/block/*' }
+  let(:mounter) { instance_double('Bosh::Agent::Mounter', mount: nil) }
 
   let(:configuration) do
     instance_double('Bosh::Agent::Configuration',
@@ -18,6 +19,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
   before { stub_const('Bosh::Agent::Config', configuration) }
   before { stub_const('Bosh::Agent::Platform::Linux::Disk::DEV_PATH_TIMEOUT', 0) }
   before { stub_const('Bosh::Agent::Platform::Linux::Disk::DISK_RETRY_MAX_DEFAULT', 2) }
+  before { Bosh::Agent::Mounter.stub(:new).and_return(mounter) }
 
   context 'vSphere' do
     let(:settings) { { 'disks' => { 'persistent' => { 2 => '333' } } } }
@@ -59,13 +61,13 @@ describe Bosh::Agent::Platform::Linux::Disk do
       end
 
       it 'mounts persistent disk to store_dir if not already mounted' do
-        disk_manager.should_receive(:sh).with("mount /dev/sdy1 #{store_path}")
+        mounter.should_receive(:mount).with('/dev/sdy', store_path, '')
 
         disk_manager.mount_persistent_disk(2)
       end
 
       it 'mounts persistent disk only once' do
-        disk_manager.should_receive(:sh).with("mount /dev/sdy1 #{store_path}").once
+        mounter.should_receive(:mount).with('/dev/sdy', store_path, '').once
 
         disk_manager.mount_persistent_disk(2)
         disk_manager.mount_persistent_disk(2)
