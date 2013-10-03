@@ -74,9 +74,32 @@ describe 'CentOs Stemcell' do
     end
   end
 
-  context 'installed by system_grub'
+  context 'installed by system_grub' do
+    {
+      'grub' => '0.97-81.el6.x86_64',
+    }.each do |pkg, version|
+      describe package(pkg) do
+        it { should be_installed.with_version(version) }
+      end
+    end
 
-  context 'installed by system_kernel'
+    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+      describe file("/boot/grub/#{grub_stage}") do
+        it { should be_file }
+      end
+    end
+  end
+
+  context 'installed by system_kernel' do
+    {
+      'kernel'         => '2.6.32-358.18.1.el6.x86_64',
+      'kernel-headers' => '2.6.32-358.18.1.el6.x86_64',
+    }.each do |pkg, version|
+      describe package(pkg) do
+        it { should be_installed.with_version(version) }
+      end
+    end
+  end
 
   context 'installed by image_install_grub' do
     describe file('/etc/fstab') do

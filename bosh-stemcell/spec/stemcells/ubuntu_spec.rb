@@ -12,6 +12,22 @@ describe 'Ubuntu Stemcell' do
     it { should_not be_installed }
   end
 
+  context 'installed by base_debootstrap' do
+    {
+      'ubuntu-minimal' => '1.197',
+    }.each do |pkg, version|
+      describe package(pkg) do
+        it { should be_installed.with_version(version) }
+      end
+    end
+
+    describe file('/etc/lsb-release') do
+      it { should be_file }
+      it { should contain 'DISTRIB_RELEASE=10.04' }
+      it { should contain 'DISTRIB_CODENAME=lucid' }
+    end
+  end
+
   context 'installed by base_apt' do
     {
       'upstart'              => '0.6.5-8',
@@ -81,6 +97,12 @@ describe 'Ubuntu Stemcell' do
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
+      end
+    end
+
+    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+      describe file("/boot/grub/#{grub_stage}") do
+        it { should be_file }
       end
     end
   end
