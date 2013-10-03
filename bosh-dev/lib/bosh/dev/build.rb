@@ -76,8 +76,16 @@ module Bosh::Dev
     end
 
     def promote_artifacts
-      sync_buckets
-      update_light_bosh_ami_pointer_file
+      promoter.commands.peach do |cmd|
+        Rake::FileUtilsExt.sh(cmd)
+      end
+
+      Bosh::Dev::UploadAdapter.new.upload(
+        bucket_name: 'bosh-jenkins-artifacts',
+        key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
+        body: light_stemcell.ami_id,
+        public: true
+      )
     end
 
     def bosh_stemcell_path(infrastructure, operating_system, download_dir)
@@ -93,21 +101,6 @@ module Bosh::Dev
     private
 
     attr_reader :logger, :promoter, :download_adapter, :upload_adapter, :bucket
-
-    def sync_buckets
-      promoter.commands.peach do |cmd|
-        Rake::FileUtilsExt.sh(cmd)
-      end
-    end
-
-    def update_light_bosh_ami_pointer_file
-      Bosh::Dev::UploadAdapter.new.upload(
-        bucket_name: 'bosh-jenkins-artifacts',
-        key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
-        body: light_stemcell.ami_id,
-        public: true
-      )
-    end
 
     def light_stemcell
       name = 'bosh-stemcell'
