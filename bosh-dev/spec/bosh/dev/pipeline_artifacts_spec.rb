@@ -1,9 +1,8 @@
 require 'spec_helper'
-require 'bosh/stemcell/pipeline_artifacts'
+require 'bosh/dev/pipeline_artifacts'
 
 module Bosh
-  module Stemcell
-
+  module Dev
     describe PipelineArtifacts do
       let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
       let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Aws', name: 'fake', light?: false) }

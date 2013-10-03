@@ -3,7 +3,7 @@ require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 
 module Bosh
-  module Stemcell
+  module Dev
     class PipelineArtifacts
 
       def initialize(version)

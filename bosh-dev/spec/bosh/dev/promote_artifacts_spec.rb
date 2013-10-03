@@ -16,7 +16,7 @@ module Bosh::Dev
     its(:release_file) { should eq('bosh-123.tgz') }
 
     describe '#commands' do
-      let(:pipeline_artifacts) { instance_double('Bosh::Stemcell::PipelineArtifacts', list: archive_filenames) }
+      let(:pipeline_artifacts) { instance_double('Bosh::Dev::PipelineArtifacts', list: archive_filenames) }
       let(:archive_filenames) do
         [
           instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'blue/stemcell-blue.tgz'),
@@ -25,7 +25,7 @@ module Bosh::Dev
       end
 
       before do
-        pipeline_artifacts_klass = class_double('Bosh::Stemcell::PipelineArtifacts').as_stubbed_const
+        pipeline_artifacts_klass = class_double('Bosh::Dev::PipelineArtifacts').as_stubbed_const
         pipeline_artifacts_klass.stub(:new).with(build.number).and_return(pipeline_artifacts)
       end
 
