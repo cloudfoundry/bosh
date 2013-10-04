@@ -2,10 +2,10 @@ require 'spec_helper'
 require 'cli'
 
 describe Bosh::Cli::Command::Vms do
-  let(:command) { described_class.new }
-  let(:director) { double(Bosh::Cli::Client::Director) }
+  let(:command)    { described_class.new }
+  let(:director)   { double(Bosh::Cli::Client::Director) }
   let(:deployment) { 'dep1' }
-  let(:target) { 'http://example.org' }
+  let(:target)     { 'http://example.org' }
 
   before do
     command.stub(:director).and_return(director)
@@ -45,6 +45,8 @@ describe Bosh::Cli::Command::Vms do
     end
 
     let(:options) { {details: false, dns: false, vitals: false} }
+
+    before { command.stub(:say) }
 
     context 'when deployment has vms' do
       before { director.stub(:fetch_vm_state).with(deployment) { [vm_state] } }
@@ -179,8 +181,9 @@ describe Bosh::Cli::Command::Vms do
     context 'when deployment has no vms' do
       before { director.stub(:fetch_vm_state).with(deployment) { [] } }
 
-      it 'raises an error' do
-        expect { perform }.to raise_error(Bosh::Cli::CliError, 'No VMs')
+      it 'does not raise an error and says "No VMs"' do
+        command.should_receive(:say).with("No VMs")
+        expect { perform }.to_not raise_error
       end
     end
   end
