@@ -62,15 +62,15 @@ namespace :spec do
   end
 
   namespace :external do
-    desc 'AWS CPI can exercise the VM lifecycle'
-    RSpec::Core::RakeTask.new(:aws_vm_lifecycle) do |t|
-      t.pattern = 'spec/external/aws_cpi_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
-
     desc 'AWS bootstrap CLI can provision and destroy resources'
     RSpec::Core::RakeTask.new(:aws_bootstrap) do |t|
       t.pattern = 'spec/external/aws_bootstrap_spec.rb'
+      t.rspec_opts = %w(--format documentation --color)
+    end
+
+    desc 'AWS CPI can exercise the VM lifecycle'
+    RSpec::Core::RakeTask.new(:aws_vm_lifecycle) do |t|
+      t.pattern = 'spec/external/aws_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
 
@@ -82,16 +82,6 @@ namespace :spec do
 
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
-      require 'bosh/dev/build'
-
-      File.exists?(ENV['BOSH_VSPHERE_STEMCELL']) ||
-      ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(
-        'bosh-stemcell',
-        Bosh::Stemcell::Infrastructure.for('vsphere'),
-        Bosh::Stemcell::OperatingSystem.for('ubuntu'),
-        false,
-        Dir.pwd,
-      )
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
