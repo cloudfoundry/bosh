@@ -7,9 +7,7 @@ module Bosh::Agent
       @shell_runner = shell_runner
     end
 
-    def mount(device, mount_point, options)
-      partition = "#{device}1"
-
+    def mount(partition, mount_point, options)
       @logger.info("Mounting: #{partition} #{mount_point}")
       results = shell_runner.sh("mount #{options} #{partition} #{mount_point}", on_error: :return)
 

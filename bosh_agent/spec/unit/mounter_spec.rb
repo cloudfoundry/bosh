@@ -8,7 +8,7 @@ describe Bosh::Agent::Mounter do
     let(:shell_runner) { double() }
 
     def perform
-      mounter.mount('/dev/sda', '/path/to/mount/point', '')
+      mounter.mount('/dev/sda1', '/path/to/mount/point', '')
     end
 
     context 'when mount succeeds' do

@@ -92,11 +92,7 @@ module Bosh::Agent
         FileUtils.mkdir_p(mountpoint)
         FileUtils.chmod(0700, mountpoint)
 
-        logger.info("Mount #{partition} #{mountpoint}")
-        `mount #{partition} #{mountpoint}`
-        unless $?.exitstatus == 0
-          raise Bosh::Agent::MessageHandlerError, "Failed mount #{partition} on #{mountpoint} #{$?.exitstatus}"
-        end
+        Mounter.new(logger).mount(partition, mountpoint, '')
       end
 
       def self.long_running?; true; end

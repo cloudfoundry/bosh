@@ -59,7 +59,7 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::Mounter.stub(:new).with(
         config_class.logger,
       ).and_return(mounter)
-      mounter.should_receive(:mount).with('/dev/sda',
+      mounter.should_receive(:mount).with('/dev/sda1',
                                           persistent_disk_mount_point,
                                           '-o ro').ordered
 
@@ -77,7 +77,7 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
         migration_mount_point,
       )
-      mounter.should_receive(:mount).with('/dev/sdb',
+      mounter.should_receive(:mount).with('/dev/sdb1',
                                           persistent_disk_mount_point,
                                           '').ordered
 

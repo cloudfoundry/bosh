@@ -23,7 +23,7 @@ module Bosh::Agent
       disk = lookup_disk_by_cid(cid)
       partition = "#{disk}1"
       if File.blockdev?(partition) && !mount_exists?(partition)
-        mounter.mount(disk, @store_dir, options)
+        mounter.mount(partition, @store_dir, options)
       end
     end
 

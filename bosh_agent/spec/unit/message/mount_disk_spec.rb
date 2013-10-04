@@ -19,14 +19,18 @@ module Bosh::Agent
                           base_dir: '/var/vcap',
           )
         end
+        let(:mounter) { instance_double('Bosh::Agent::Mounter', mount: nil) }
+
         let(:logger) { instance_double('Logger', info: nil) }
-        let(:platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter', lookup_disk_by_cid: '/dev/sda')}
+        let(:platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter', lookup_disk_by_cid: '/dev/sda') }
 
         before { stub_const('Bosh::Agent::DiskUtil', disk_util) }
         let(:disk_util) { class_double('Bosh::Agent::DiskUtil') }
 
         before do
           Settings.stub(:load)
+          Bosh::Agent::Mounter.stub(:new).with(logger).and_return(mounter)
+
           mount_disk_handler.stub(:`)
           mount_disk_handler.stub(:sleep)
 
@@ -45,7 +49,7 @@ module Bosh::Agent
           end
 
           it 'raises' do
-            expect{
+            expect {
               mount_disk_handler.mount
             }.to raise_error(MessageHandlerError, 'Unable to format /dev/sda')
           end
@@ -82,10 +86,22 @@ module Bosh::Agent
 
         context 'not mount a disk for migration' do
           it 'mounts to /var/vcap/store' do
-            mount_disk_handler.should_receive(:`).with('mount /dev/sda1 /var/vcap/store')
+            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store', '')
             mount_disk_handler.mount
 
             expect(File.directory?('/var/vcap/store')).to be_true
+          end
+        end
+
+        context 'fails to mount a disk' do
+          it 'passes through error from Mounter' do
+            mounter.stub(:mount).and_raise(Bosh::Agent::MessageHandlerError,
+                                           "Failed to mount: '/dev/sda1' '/var/vcap/store' Exit status: 1 Output: FAIL")
+            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store', '')
+            expect {
+              mount_disk_handler.mount
+            }.to raise_error(Bosh::Agent::MessageHandlerError,
+                             "Failed to mount: '/dev/sda1' '/var/vcap/store' Exit status: 1 Output: FAIL")
           end
         end
       end
