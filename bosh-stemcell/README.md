@@ -5,7 +5,6 @@ Tools for creating stemcells
 ## Install the vagrant plugins we use:
 
 ```bash
-vagrant plugin install vagrant-aws       --plugin-version 0.3.0
 vagrant plugin install vagrant-berkshelf --plugin-version 1.3.3
 vagrant plugin install vagrant-omnibus   --plugin-version 1.1.0
 ```
@@ -18,11 +17,9 @@ From a fresh copy of the bosh repo:
 
 ```bash
 cd bosh-stemcell
-vagrant up local
-vagrant ssh local
+vagrant up
+vagrant ssh
 ```
-
-NOTE: use 'remote' to use an AWS hosted VM
 
 You're now inside the vagrant VM.
 
@@ -44,13 +41,13 @@ which ovftool                        # should return a location
 ```bash
 cd /bosh
 bundle install --local
-CANDIDATE_BUILD_NUMBER=980 http_proxy=http://localhost:3142 bundle exec rake ci:build_stemcell[vsphere,centos]
+sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=980 http_proxy=http://localhost:3142
 ```
 
 Alternatively, you can run that command without the caching proxy, and/or for another OS:
 
 ```bash
-CANDIDATE_BUILD_NUMBER=980 bundle exec rake ci:build_stemcell[vsphere,ubuntu]
+sudo bundle exec rake ci:build_stemcell[vsphere,ubuntu] CANDIDATE_BUILD_NUMBER=980
 ```
 
 # Run the stemcell locally with Fusion
