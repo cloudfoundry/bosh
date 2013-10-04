@@ -2,39 +2,49 @@ require 'spec_helper'
 require 'cli'
 
 describe Bosh::Cli::Command::Vms do
-  let(:command)    { described_class.new }
-  let(:director)   { double(Bosh::Cli::Client::Director) }
-  let(:deployment) { 'dep1' }
-  let(:target)     { 'http://example.org' }
+  subject(:command) { described_class.new }
 
-  before do
-    command.stub(:director).and_return(director)
-    command.stub(:nl)
-    command.stub(:logged_in? => true)
-    command.options[:target] = target
-  end
+  before { command.stub(director: director, logged_in?: true, nl: nil, say: nil) }
+  let(:director) { double(Bosh::Cli::Client::Director) }
 
   describe 'list' do
+    before { command.options[:target] = target }
+    let(:target) { 'http://example.org' }
+
     context 'with no arguments' do
-      it 'lists vms in all deployments' do
-        director.stub(:list_deployments) { [{ 'name' => 'dep1' }, { 'name' => 'dep2' }] }
-        command.should_receive(:show_deployment).with('dep1', target: target)
-        command.should_receive(:show_deployment).with('dep2', target: target)
+      def perform
         command.list
       end
 
-      it 'raises an error if there are not any deployments' do
-        director.stub(:list_deployments) { [] }
-        expect {
-          command.list
-        }.to raise_error(Bosh::Cli::CliError, 'No deployments')
+      context 'when there are multiple deployments' do
+        before { director.stub(:list_deployments) { [{ 'name' => 'dep1' }, { 'name' => 'dep2' }] } }
+
+        it 'lists vms in all deployments' do
+          command.should_receive(:show_deployment).with('dep1', target: target)
+          command.should_receive(:show_deployment).with('dep2', target: target)
+          perform
+        end
+      end
+
+      context 'when there no deployments' do
+        before { director.stub(:list_deployments) { [] } }
+
+        it 'raises an error' do
+          expect { perform }.to raise_error(Bosh::Cli::CliError, 'No deployments')
+        end
       end
     end
 
     context 'with a deployment argument' do
-      it 'lists vms in the deployment' do
-        command.should_receive(:show_deployment).with('dep1', target: target)
+      def perform
         command.list('dep1')
+      end
+
+      context 'when deployment with given name can be found' do
+        it 'lists vms in the deployment' do
+          command.should_receive(:show_deployment).with('dep1', target: target)
+          command.list('dep1')
+        end
       end
     end
   end
@@ -44,9 +54,8 @@ describe Bosh::Cli::Command::Vms do
       command.show_deployment(deployment, options)
     end
 
-    let(:options) { {details: false, dns: false, vitals: false} }
-
-    before { command.stub(:say) }
+    let(:deployment) { 'dep1' }
+    let(:options)    { {details: false, dns: false, vitals: false} }
 
     context 'when deployment has vms' do
       before { director.stub(:fetch_vm_state).with(deployment) { [vm_state] } }
