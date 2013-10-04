@@ -1,5 +1,4 @@
 shared_examples_for 'a stemcell' do
-
   describe 'installed by bosh_ruby' do
     describe command('/var/vcap/bosh/bin/ruby -r yaml -e "Psych::SyntaxError"') do
       it { should return_exit_status(0) }
@@ -28,6 +27,17 @@ shared_examples_for 'a stemcell' do
 
     describe file('/var/vcap/micro_bosh/data/cache') do
       it { should be_a_directory }
+    end
+  end
+
+  # currently `should cotain` on a file does not properly escape $PATH
+  context 'installed by bosh_users' do
+    describe command("grep -q 'export PATH=/var/vcap/bosh/bin:\\$PATH\n' /root/.bashrc") do
+      it { should return_exit_status(0) }
+    end
+
+    describe command("grep -q 'export PATH=/var/vcap/bosh/bin:\\$PATH\n' /home/vcap/.bashrc") do
+      it { should return_exit_status(0) }
     end
   end
 end
