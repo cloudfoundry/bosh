@@ -5,9 +5,6 @@ namespace :ci do
 
     desc 'Meta task to run spec:integration'
     task integration: %w(spec:integration)
-
-    desc 'Meta task to run spec:system:micro'
-    task system: %w(spec:system:micro)
   end
 
   desc 'Publish CI pipeline gems to S3'
