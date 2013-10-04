@@ -100,26 +100,14 @@ describe Bosh::Cli::Command::Base do
     end
 
     describe 'agent command' do
-      let(:runner) { double(Bosh::Cli::Runner) }
-      let(:command) { Bosh::Cli::Command::Micro.new(runner) }
-
-      let(:agent) { double(Bosh::Agent::HTTPClient) }
+      before { @cmd.stub(deployer: deployer) }
       let(:deployer) { double(Bosh::Deployer::InstanceManager, agent: agent) }
-      let(:request) { 'ping' }
-      let(:response) { 'pong' }
-
-      before do
-        File.stub(basename: 'deployments')
-        command.stub(deployer: deployer)
-      end
+      let(:agent)    { double(Bosh::Agent::HTTPClient) }
 
       it 'sends the command to an agent and shows the returned output' do
-        agent.should_receive(request.to_sym).and_return(response)
-        command.should_receive(:say) do |pong|
-          expect(pong).to include response
-        end
-
-        command.agent(request)
+        agent.should_receive(:ping).and_return('pong')
+        @cmd.should_receive(:say) { |response| expect(response).to include('pong') }
+        @cmd.agent('ping')
       end
     end
 
