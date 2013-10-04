@@ -61,7 +61,7 @@ describe Bosh::Agent::Message::MigrateDisk do
       ).and_return(mounter)
       mounter.should_receive(:mount).with('/dev/sda1',
                                           persistent_disk_mount_point,
-                                          '-o ro').ordered
+                                          read_only: true).ordered
 
       # copy stuff over
       migrate_disk.should_receive(:`).ordered.with(
@@ -78,8 +78,7 @@ describe Bosh::Agent::Message::MigrateDisk do
         migration_mount_point,
       )
       mounter.should_receive(:mount).with('/dev/sdb1',
-                                          persistent_disk_mount_point,
-                                          '').ordered
+                                          persistent_disk_mount_point, {}).ordered
 
       migrate_disk.migrate(["old_disk_cid", "new_disk_cid"])
     end

@@ -86,7 +86,7 @@ module Bosh::Agent
 
         context 'not mount a disk for migration' do
           it 'mounts to /var/vcap/store' do
-            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store', '')
+            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store')
             mount_disk_handler.mount
 
             expect(File.directory?('/var/vcap/store')).to be_true
@@ -97,7 +97,7 @@ module Bosh::Agent
           it 'passes through error from Mounter' do
             mounter.stub(:mount).and_raise(Bosh::Agent::MessageHandlerError,
                                            "Failed to mount: '/dev/sda1' '/var/vcap/store' Exit status: 1 Output: FAIL")
-            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store', '')
+            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store')
             expect {
               mount_disk_handler.mount
             }.to raise_error(Bosh::Agent::MessageHandlerError,

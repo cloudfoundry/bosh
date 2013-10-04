@@ -92,7 +92,7 @@ module Bosh::Agent
         FileUtils.mkdir_p(mountpoint)
         FileUtils.chmod(0700, mountpoint)
 
-        Mounter.new(logger).mount(partition, mountpoint, '')
+        Mounter.new(logger).mount(partition, mountpoint)
       end
 
       def self.long_running?; true; end

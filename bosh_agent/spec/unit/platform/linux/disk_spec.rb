@@ -61,13 +61,13 @@ describe Bosh::Agent::Platform::Linux::Disk do
       end
 
       it 'mounts persistent disk to store_dir if not already mounted' do
-        mounter.should_receive(:mount).with('/dev/sdy1', store_path, '')
+        mounter.should_receive(:mount).with('/dev/sdy1', store_path, {})
 
         disk_manager.mount_persistent_disk(2)
       end
 
       it 'mounts persistent disk only once' do
-        mounter.should_receive(:mount).with('/dev/sdy1', store_path, '').once
+        mounter.should_receive(:mount).with('/dev/sdy1', store_path, {}).once
 
         disk_manager.mount_persistent_disk(2)
         disk_manager.mount_persistent_disk(2)

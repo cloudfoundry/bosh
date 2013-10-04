@@ -18,7 +18,7 @@ module Bosh::Agent
       @mounter = Mounter.new(@logger)
     end
 
-    def mount_persistent_disk(cid, options='')
+    def mount_persistent_disk(cid, options={})
       FileUtils.mkdir_p(@store_dir)
       disk = lookup_disk_by_cid(cid)
       partition = "#{disk}1"

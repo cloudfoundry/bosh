@@ -27,7 +27,7 @@ module Bosh::Agent
 
         DiskUtil.umount_guard(store_path)
 
-        mount_store(@old_cid, "-o ro") #read-only
+        mount_store(@old_cid, read_only: true)
 
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
@@ -45,7 +45,7 @@ module Bosh::Agent
         Pathname.new(store_path).mountpoint? && Pathname.new(store_migration_target).mountpoint?
       end
 
-      def mount_store(cid, options="")
+      def mount_store(cid, options={})
         device = Config.platform.lookup_disk_by_cid(cid)
         partition = "#{device}1"
         Mounter.new(logger).mount(partition, store_path, options)
