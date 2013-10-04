@@ -175,5 +175,13 @@ describe Bosh::Cli::Command::Vms do
         end
       end
     end
+
+    context 'when deployment has no vms' do
+      before { director.stub(:fetch_vm_state).with(deployment) { [] } }
+
+      it 'raises an error' do
+        expect { perform }.to raise_error(Bosh::Cli::CliError, 'No VMs')
+      end
+    end
   end
 end
