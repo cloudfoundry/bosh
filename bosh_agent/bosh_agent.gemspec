@@ -24,11 +24,11 @@ Gem::Specification.new do |s|
   s.add_dependency          'sigar',            '~>0.7.2'
   s.add_dependency          'httpclient',       '=2.2.4'
   s.add_dependency          'syslog_protocol',  '~>0.9.2'
+  s.add_dependency          'crack',            '~>0.3.2'
 
   # Bosh Dependencies
   s.add_dependency          'bosh_common',      "~>#{version}"
   s.add_dependency          'bosh_encryption',  "~>#{version}"
-  s.add_dependency          'monit_api',        "~>#{version}"
   s.add_dependency          'blobstore_client', "~>#{version}"
 
   s.add_development_dependency  'rspec-fire'

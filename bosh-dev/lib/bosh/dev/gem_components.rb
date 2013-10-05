@@ -34,7 +34,6 @@ module Bosh::Dev
        bosh_vsphere_cpi
        director
        health_monitor
-       monit_api
        package_compiler
        ruby_vim_sdk
        simple_blobstore_server

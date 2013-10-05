@@ -1,7 +1,8 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
+require "monit_api"
 
 describe MonitApi::Client do
-  STATUS = Crack::XML.parse(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+  STATUS = Crack::XML.parse(File.read(File.expand_path("../../../assets/monit_api/status.xml", __FILE__)))
 
   describe "get_status" do
 
@@ -11,7 +12,7 @@ describe MonitApi::Client do
 
       response = double("response")
       response.stub(:code).and_return("200")
-      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+      response.stub(:body).and_return(File.read(File.expand_path("../../../assets/monit_api/status.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request["authorization"].should be_nil
@@ -27,7 +28,7 @@ describe MonitApi::Client do
 
       response = double("response")
       response.stub(:code).and_return("200")
-      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+      response.stub(:body).and_return(File.read(File.expand_path("../../../assets/monit_api/status.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request["authorization"].should == "Basic dXNlcjpwYXNzd29yZA=="
@@ -43,7 +44,7 @@ describe MonitApi::Client do
 
       response = double("response")
       response.stub(:code).and_return("200")
-      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status.xml", __FILE__)))
+      response.stub(:body).and_return(File.read(File.expand_path("../../../assets/monit_api/status.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request.method.should == "GET"
@@ -63,7 +64,7 @@ describe MonitApi::Client do
 
       response = double("response")
       response.stub(:code).and_return("200")
-      response.stub(:body).and_return(File.read(File.expand_path("../../assets/status_without_servicegroups.xml", __FILE__)))
+      response.stub(:body).and_return(File.read(File.expand_path("../../../assets/monit_api/status_without_servicegroups.xml", __FILE__)))
 
       http_client.should_receive(:request).with { |request|
         request.method.should == "GET"

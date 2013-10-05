@@ -17,7 +17,6 @@ AllCops:
    - bosh_vsphere_cpi/**
    - director/**
    - health_monitor/**
-   - monit_api/**
    - package_compiler/**
    - release/**
    - ruby_vim_sdk/**
