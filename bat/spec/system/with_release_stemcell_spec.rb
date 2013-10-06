@@ -77,7 +77,7 @@ describe 'with release and stemcell and two deployments' do
     it 'should deploy using a static network', ssh: true do
       pending "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
       pending "doesn't work on OpenStack as the VIP IP isn't visible to the VM" if openstack?
-      ssh(static_ip, 'vcap', 'ifconfig eth0', @our_ssh_options).should match /#{static_ip}/
+      ssh(static_ip, 'vcap', '/sbin/ifconfig eth0', @our_ssh_options).should match /#{static_ip}/
     end
 
     context 'second deployment' do
