@@ -16,16 +16,10 @@ module Bosh
 
       describe '#list' do
         it 'returns a complete list of stemcell build artifact names' do
-          Bosh::Stemcell::ArchiveFilename.stub(:new).with('latest',
-                                                          anything,
-                                                          anything,
-                                                          anything,
-                                                          anything).and_return('fake-latest-archive-filename')
-          Bosh::Stemcell::ArchiveFilename.stub(:new).with(version,
-                                                          anything,
-                                                          anything,
-                                                          anything,
-                                                          anything).and_return("fake-#{version}-archive-filename")
+          Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+            'latest', infrastructure, operating_system, 'bosh-stemcell', false).and_return('fake-latest-archive-filename')
+          Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+            version, infrastructure, operating_system, 'bosh-stemcell', false).and_return("fake-#{version}-archive-filename")
 
           expected_list = %w[
             bosh-stemcell/fake/fake-123-archive-filename
@@ -37,27 +31,16 @@ module Bosh
 
         context 'infrastructure is light capable' do
           let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Aws', name: 'fake', light?: true) }
+
           it 'returns artifact filenames for both light and regular stemcells' do
-            Bosh::Stemcell::ArchiveFilename.stub(:new).with('latest',
-                                                            anything,
-                                                            anything,
-                                                            anything,
-                                                            true).and_return('light-fake-latest-archive-filename')
-            Bosh::Stemcell::ArchiveFilename.stub(:new).with(version,
-                                                            anything,
-                                                            anything,
-                                                            anything,
-                                                            true).and_return("light-fake-#{version}-archive-filename")
-            Bosh::Stemcell::ArchiveFilename.stub(:new).with('latest',
-                                                            anything,
-                                                            anything,
-                                                            anything,
-                                                            false).and_return('fake-latest-archive-filename')
-            Bosh::Stemcell::ArchiveFilename.stub(:new).with(version,
-                                                            anything,
-                                                            anything,
-                                                            anything,
-                                                            false).and_return("fake-#{version}-archive-filename")
+            Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+              'latest', infrastructure, operating_system, 'bosh-stemcell', true).and_return('light-fake-latest-archive-filename')
+            Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+              version, infrastructure, operating_system, 'bosh-stemcell', true).and_return("light-fake-#{version}-archive-filename")
+            Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+              'latest', infrastructure, operating_system, 'bosh-stemcell', false).and_return('fake-latest-archive-filename')
+            Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+              version, infrastructure, operating_system, 'bosh-stemcell', false).and_return("fake-#{version}-archive-filename")
 
             expected_list = %w[
               bosh-stemcell/fake/light-fake-123-archive-filename
@@ -68,22 +51,15 @@ module Bosh
 
             expect(artifacts.list.sort).to eq(expected_list)
           end
-
         end
 
         context 'multiple infrastructures are returned if specified' do
           it 'returns artifact filenames for all infrastructures' do
             Bosh::Stemcell::Infrastructure.stub(:all).and_return([infrastructure, infrastructure])
-            Bosh::Stemcell::ArchiveFilename.stub(:new).with('latest',
-                                                            anything,
-                                                            anything,
-                                                            anything,
-                                                            anything).and_return('fake-latest-archive-filename')
-            Bosh::Stemcell::ArchiveFilename.stub(:new).with(version,
-                                                            anything,
-                                                            anything,
-                                                            anything,
-                                                            anything).and_return("fake-#{version}-archive-filename")
+            Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+              'latest', infrastructure, operating_system, 'bosh-stemcell', false).and_return('fake-latest-archive-filename')
+            Bosh::Stemcell::ArchiveFilename.stub(:new).with(
+              version, infrastructure, operating_system, 'bosh-stemcell', false).and_return("fake-#{version}-archive-filename")
 
             expected_list = %w[
               bosh-stemcell/fake/fake-123-archive-filename
