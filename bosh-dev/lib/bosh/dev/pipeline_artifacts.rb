@@ -5,23 +5,38 @@ require 'bosh/stemcell/infrastructure'
 module Bosh
   module Dev
     class PipelineArtifacts
+      def self.all(version)
+        matrix_names = [
+          %w(vsphere   ubuntu),
+          %w(aws       ubuntu),
+          %w(openstack ubuntu),
+        ]
 
-      def initialize(version)
+        matrix = matrix_names.map do |(infrastructure_name, os_name)|
+          [
+            Bosh::Stemcell::Infrastructure.for(infrastructure_name),
+            Bosh::Stemcell::OperatingSystem.for(os_name),
+          ]
+        end
+
+        new(version, matrix)
+      end
+
+      def initialize(version, matrix)
         @version = version
+        @matrix = matrix
       end
 
       def list
-        os = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-
         artifact_names = []
 
-        Bosh::Stemcell::Infrastructure.all.each do |infrastructure|
+        matrix.each do |(infrastructure, operating_system)|
           versions.each do |version|
-            filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', false)
+            filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, 'bosh-stemcell', false)
             artifact_names << archive_path(filename.to_s, infrastructure)
 
             if infrastructure.light?
-              light_filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, os, 'bosh-stemcell', true)
+              light_filename = Bosh::Stemcell::ArchiveFilename.new(version, infrastructure, operating_system, 'bosh-stemcell', true)
               artifact_names << archive_path(light_filename.to_s, infrastructure)
             end
           end
@@ -32,6 +47,8 @@ module Bosh
 
       private
 
+      attr_reader :version, :matrix
+
       def versions
         [version, 'latest']
       end
@@ -39,8 +56,6 @@ module Bosh
       def archive_path(filename, infrastructure)
         File.join('bosh-stemcell', infrastructure.name, filename)
       end
-
-      attr_reader :version
     end
   end
 end

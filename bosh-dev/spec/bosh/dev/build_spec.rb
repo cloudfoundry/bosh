@@ -193,13 +193,16 @@ module Bosh::Dev
       describe 'update light bosh ami pointer file' do
         let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
         let(:fake_stemcell) { instance_double('Bosh::Stemcell::Archive') }
-        let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws') }
+        let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws', light?: true) }
         let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu') }
         let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
         let(:bucket_files) { fog_storage.directories.get('bosh-jenkins-artifacts').files }
 
         before do
+          Bosh::Stemcell::Infrastructure.stub(:for).and_return(instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'name', light?: false))
           Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
+
+          Bosh::Stemcell::OperatingSystem.stub(:for).and_return(instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'name'))
           Bosh::Stemcell::OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
 
           Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
