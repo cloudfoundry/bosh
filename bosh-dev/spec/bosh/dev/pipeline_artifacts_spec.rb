@@ -5,16 +5,17 @@ module Bosh
   module Dev
     describe PipelineArtifacts do
       describe '.all' do
-        it 'returns pipepline artifacts with all infrastructures for ubuntu' do
+        it 'returns pipepline artifacts with all infrastructures for ubuntu and vsphere centos' do
           artifacts = instance_double('Bosh::Dev::PipelineArtifacts')
 
           described_class.should_receive(:new) do |version, matrix|
             expect(version).to eq('version')
-            expect(matrix.size).to eq(3)
+            expect(matrix.size).to eq(4)
 
-            expect(matrix[0].map(&:name)).to eq(%w(vsphere ubuntu))
-            expect(matrix[1].map(&:name)).to eq(%w(aws ubuntu))
-            expect(matrix[2].map(&:name)).to eq(%w(openstack ubuntu))
+            expect(matrix[0].map(&:name)).to eq(%w(vsphere   ubuntu))
+            expect(matrix[1].map(&:name)).to eq(%w(vsphere   centos))
+            expect(matrix[2].map(&:name)).to eq(%w(aws       ubuntu))
+            expect(matrix[3].map(&:name)).to eq(%w(openstack ubuntu))
 
             artifacts
           end

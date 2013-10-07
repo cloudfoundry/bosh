@@ -8,6 +8,7 @@ module Bosh
       def self.all(version)
         matrix_names = [
           %w(vsphere   ubuntu),
+          %w(vsphere   centos),
           %w(aws       ubuntu),
           %w(openstack ubuntu),
         ]
