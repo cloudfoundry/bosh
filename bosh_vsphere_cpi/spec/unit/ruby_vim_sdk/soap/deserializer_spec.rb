@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ruby_vim_sdk'
 
 describe VimSdk::Soap::SoapDeserializer do
   it 'should deserialize a basic object' do

@@ -35,7 +35,6 @@ module Bosh::Dev
        director
        health_monitor
        package_compiler
-       ruby_vim_sdk
        simple_blobstore_server
       ].each(&block)
     end

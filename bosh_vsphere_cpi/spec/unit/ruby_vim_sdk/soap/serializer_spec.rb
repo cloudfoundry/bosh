@@ -1,8 +1,10 @@
 require 'spec_helper'
+require 'ruby_vim_sdk'
 
 describe VimSdk::Soap::SoapSerializer do
   it 'should serialize a simple object' do
     test_class = Class.new(VimSdk::Vmodl::DataObject) do
+
       @type_info = VimSdk::DataType.new('test.Test', 'Test', 'DataObject', 'test_version', [
         ['byte_test', VimSdk::SoapByte, 'test_version'],
         ['short_test', VimSdk::SoapShort, 'test_version'],

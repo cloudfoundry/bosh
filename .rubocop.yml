@@ -19,7 +19,6 @@ AllCops:
    - health_monitor/**
    - package_compiler/**
    - release/**
-   - ruby_vim_sdk/**
    - simple_blobstore_server/**
    - spec/**
    - stemcell_builder/**

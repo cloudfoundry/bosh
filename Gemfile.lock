@@ -152,7 +152,6 @@ PATH
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
       membrane (~> 0.0.2)
-      ruby_vim_sdk (~> 1.5.0.pre.3)
       sequel (~> 3.43.0)
 
 PATH
@@ -208,14 +207,6 @@ PATH
       bosh_common (~> 1.5.0.pre.3)
       trollop (~> 1.16)
       yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: ruby_vim_sdk
-  specs:
-    ruby_vim_sdk (1.5.0.pre.3)
-      builder (~> 3.1.4)
-      httpclient (= 2.2.4)
-      nokogiri (~> 1.5.6)
 
 PATH
   remote: simple_blobstore_server
@@ -495,7 +486,6 @@ DEPENDENCIES
   rspec-fire
   rubocop
   ruby_gntp
-  ruby_vim_sdk!
   rugged
   serverspec
   simple_blobstore_server!
