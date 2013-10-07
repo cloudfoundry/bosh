@@ -84,6 +84,8 @@ logging:
 network:
   type: dynamic
   vip: vip
+  cloud_properties:
+    net_id: net_id
 resources:
   persistent_disk: 4096
   cloud_properties:
