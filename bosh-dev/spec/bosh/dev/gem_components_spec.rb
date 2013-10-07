@@ -38,7 +38,7 @@ module Bosh::Dev
           bosh_vsphere_cpi-123.gem
           director-123.gem
           health_monitor-123.gem
-          package_compiler-123.gem
+          bosh-release-123.gem
           simple_blobstore_server-123.gem
         ])
       end

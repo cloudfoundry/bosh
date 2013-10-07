@@ -18,7 +18,7 @@ fi
 
 if [ -z "${agent_gem_src_url:-}" ]; then
   mkdir -p $assets_dir/gems
-  cp -rvH $bosh_release_src_dir/package_compiler/* $assets_dir/gems
+  cp -rvH $bosh_release_src_dir/bosh-release/* $assets_dir/gems
 else
   persist_value agent_gem_src_url
 fi

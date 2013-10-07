@@ -8,9 +8,9 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
-mkdir -p $chroot/$bosh_dir/src/micro_bosh/package_compiler
+mkdir -p $chroot/$bosh_dir/src/micro_bosh/bosh-release
 if [ -z "${agent_gem_src_url:-}" ]; then
-  cp -rvH $assets_dir/gems $chroot/$bosh_dir/src/micro_bosh/package_compiler/gems
+  cp -rvH $assets_dir/gems $chroot/$bosh_dir/src/micro_bosh/bosh-release/gems
 fi
 
 cp -rH $bosh_micro_manifest_yml_path $chroot/$bosh_dir/src/micro_bosh/release.yml

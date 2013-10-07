@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'tmpdir'
 
-describe Bosh::PackageCompiler::Compiler do
+describe Bosh::Release::Compiler do
   before :all do
     @base_dir = Dir.mktmpdir
     @blobstore_path = File.join(@base_dir, 'blob_cache')
@@ -30,7 +30,7 @@ describe Bosh::PackageCompiler::Compiler do
   end
 
   context 'when' do
-    let(:compiler) { Bosh::PackageCompiler::Compiler.new(options) }
+    let(:compiler) { Bosh::Release::Compiler.new(options) }
 
     let(:test_agent) do
       agent = double(:agent)
@@ -92,7 +92,7 @@ describe Bosh::PackageCompiler::Compiler do
 
   it 'should compile packages for a specified job' do
     options[:job] = 'micro_aws'
-    @compiler = Bosh::PackageCompiler::Compiler.new(options)
+    @compiler = Bosh::Release::Compiler.new(options)
     test_agent = double(:agent)
     test_agent.stub(:ping)
     result = {'result' => {'blobstore_id' => 'blah', 'sha1' => 'blah'}}
@@ -109,7 +109,7 @@ describe Bosh::PackageCompiler::Compiler do
     }
     job_properties = {}
 
-    @compiler = Bosh::PackageCompiler::Compiler.new(options)
+    @compiler = Bosh::Release::Compiler.new(options)
     @compiler.add_default_properties(spec_properties, job_properties)
     spec_properties.should == spec_properties
   end
@@ -126,7 +126,7 @@ describe Bosh::PackageCompiler::Compiler do
       'bar.vfalse' => {'default' => false}
     }
 
-    @compiler = Bosh::PackageCompiler::Compiler.new(options)
+    @compiler = Bosh::Release::Compiler.new(options)
     @compiler.add_default_properties(spec_properties, job_properties)
     spec_properties.should == {'foo' => {'bar1' => 'original',
                                          'bar2' => 'added'},

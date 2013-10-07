@@ -34,7 +34,7 @@ module Bosh::Dev
        bosh_vsphere_cpi
        director
        health_monitor
-       package_compiler
+       bosh-release
        simple_blobstore_server
       ].each(&block)
     end

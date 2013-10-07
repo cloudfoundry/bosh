@@ -25,11 +25,11 @@ export HOME=/root
 
 if [ -z "${agent_gem_src_url:-}" ]; then
 (
-  cd ${bosh_src_dir}/package_compiler/gems
-  gem install package_compiler --no-rdoc --no-ri -l -w
+  cd ${bosh_src_dir}/bosh-release/gems
+  gem install bosh-release --no-rdoc --no-ri -l -w
 )
 else
-  gem install package_compiler -r --no-rdoc --no-ri -w --pre --source ${agent_gem_src_url}
+  gem install bosh-release -r --no-rdoc --no-ri -w --pre --source ${agent_gem_src_url}
 fi
 
 mkdir -p ${bosh_app_dir}/bosh/blob
@@ -51,8 +51,7 @@ function wait_agent {
 }
 wait_agent ${agent_host} ${agent_port}
 
-# Start compiler
-package_compiler \
+bosh-release \
   --cpi ${infrastructure} \
   compile \
     ${bosh_src_dir}/release.yml \

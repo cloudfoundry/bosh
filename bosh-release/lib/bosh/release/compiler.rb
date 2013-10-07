@@ -1,5 +1,5 @@
 module Bosh
-  module PackageCompiler
+  module Release
     class Compiler
       include Bosh::Common::PropertyHelper
 

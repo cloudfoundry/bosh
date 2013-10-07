@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
 require "trollop"
-require "package_compiler"
+require "bosh/release"
 
 CPIS = %w[aws openstack vcloud vsphere]
 COMMANDS = %w[apply compile]
 
 def usage(msg=nil)
   $stderr.puts "error: #{msg}" if msg
-  $stderr.puts "usage: package_compiler <options> <command> <arguments>"
+  $stderr.puts "usage: bosh-release <options> <command> <arguments>"
   $stderr.puts "  options:"
   $stderr.puts "    --cpi <cloud provider interface> (#{CPIS.join(', ')})"
   $stderr.puts "    --job <job to compile> (defaults to 'micro_<cpi>')"
@@ -51,4 +51,4 @@ else
   usage "unknown command: #{options["command"]}"
 end
 
-Bosh::PackageCompiler::Runner.start(options)
+Bosh::Release::Runner.start(options)

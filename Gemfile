@@ -18,7 +18,7 @@ gemspec path: 'bosh_registry'
 gemspec path: 'bosh_vsphere_cpi'
 gemspec path: 'director'
 gemspec path: 'health_monitor'
-gemspec path: 'package_compiler'
+gemspec path: 'bosh-release'
 gemspec path: 'simple_blobstore_server'
 
 gem 'rake', '~>10.0'

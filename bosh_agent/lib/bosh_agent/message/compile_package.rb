@@ -10,7 +10,7 @@ module Bosh::Agent
     # blobstore. It returns the uploaded blob's blobstore_id & sha1.
     #
     # This message has the following uses:
-    # * the package_compiler (within the stemcell_builder) to
+    # * the bosh-release (within the stemcell_builder) to
     #   compile packages to the microbosh's local blobstore
     # * the director requests packages be compiled during deployment
     #   if they are not yet compiled and available in the blobstore

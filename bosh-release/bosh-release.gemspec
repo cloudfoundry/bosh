@@ -3,7 +3,7 @@
 version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|
-  s.name         = 'package_compiler'
+  s.name         = 'bosh-release'
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'Bosh package compiler'
@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = 'lib'
   s.bindir       = 'bin'
-  s.executables  = %w(package_compiler)
+  s.executables  = %w(bosh-release)
 
   s.add_dependency 'agent_client', "~>#{version}"
   s.add_dependency 'blobstore_client', "~>#{version}"

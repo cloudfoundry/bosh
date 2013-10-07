@@ -111,7 +111,7 @@ module Bosh::Stemcell
             expect(result['image_create_disk_size']).to eq(default_disk_size)
             expect(result['bosh_micro_enabled']).to eq('yes')
             expect(result['bosh_micro_package_compiler_path']).to eq(
-              File.join(expected_source_root, 'package_compiler'))
+              File.join(expected_source_root, 'bosh-release'))
             expect(result['bosh_micro_manifest_yml_path']).to eq(expected_release_micro_manifest_path)
             expect(result['bosh_micro_release_tgz_path']).to eq('fake/release.tgz')
           end

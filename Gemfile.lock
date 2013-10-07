@@ -32,6 +32,16 @@ PATH
       peach
 
 PATH
+  remote: bosh-release
+  specs:
+    bosh-release (1.5.0.pre.3)
+      agent_client (~> 1.5.0.pre.3)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      trollop (~> 1.16)
+      yajl-ruby (~> 1.1.0)
+
+PATH
   remote: bosh-stemcell
   specs:
     bosh-stemcell (1.5.0.pre.3)
@@ -196,16 +206,6 @@ PATH
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
       uuidtools (~> 2.1)
-      yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: package_compiler
-  specs:
-    package_compiler (1.5.0.pre.3)
-      agent_client (~> 1.5.0.pre.3)
-      blobstore_client (~> 1.5.0.pre.3)
-      bosh_common (~> 1.5.0.pre.3)
-      trollop (~> 1.16)
       yajl-ruby (~> 1.1.0)
 
 PATH
@@ -445,6 +445,7 @@ DEPENDENCIES
   blobstore_client!
   bosh-core!
   bosh-dev!
+  bosh-release!
   bosh-stemcell!
   bosh_agent!
   bosh_aws_cpi!
@@ -475,7 +476,6 @@ DEPENDENCIES
   mysql2
   nats
   net-ssh
-  package_compiler!
   parallel_tests
   pg
   rack-test
