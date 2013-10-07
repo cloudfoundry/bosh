@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -333,6 +331,7 @@ module Bosh::Director
         @network.should_receive(:release)
 
         compiler = make(@plan)
+        compiler.stub(:with_compile_lock).and_yield
 
         expect {
           compiler.compile
