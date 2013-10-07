@@ -1,3 +1,0 @@
-CoreTypes.py and ServerObjects.py were copied from the Python VIM SDK.
-
-VmomiSupport.py translates them to Ruby.
