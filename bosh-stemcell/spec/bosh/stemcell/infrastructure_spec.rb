@@ -41,14 +41,6 @@ module Bosh::Stemcell
       infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'bar', default_disk_size: 1024)
       expect(infrastructure).not_to be_light
     end
-
-    describe '.all' do
-      it 'returns all the infrastructure subclasses' do
-        known_infrastructures = ObjectSpace.each_object(Class).select { |klass| klass < Infrastructure::Base }
-
-        expect(Infrastructure.all.map(&:class)).to include(*known_infrastructures)
-      end
-    end
   end
 
   describe Infrastructure::Aws do
