@@ -130,7 +130,7 @@ describe 'Ubuntu Stemcell' do
       it { should contain 'UUID=' }
       it { should contain '/ ext4 defaults 1 1' }
     end
-    
+
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
       it { should contain 'default=0' }
