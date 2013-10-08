@@ -43,7 +43,7 @@ module Bosh::Deployer
         }
 
         registry_config = {
-          "logfile" => "./bosh_registry.log",
+          "logfile" => "./bosh-registry.log",
           "http" => {
             "port" => uri.port,
             "user" => user,
@@ -71,11 +71,11 @@ module Bosh::Deployer
         end
 
         unless has_bosh_registry?
-          err "bosh_registry command not found - " +
-            "run 'gem install bosh_registry'"
+          err "bosh-registry command not found - " +
+            "run 'gem install bosh-registry'"
         end
 
-        cmd = "bosh_registry -c #{@registry_config.path}"
+        cmd = "bosh-registry -c #{@registry_config.path}"
 
         @registry_pid = spawn(cmd)
 
@@ -95,11 +95,11 @@ module Bosh::Deployer
           if timeout_time - Time.now.to_f > 0
             retry
           else
-            err "Cannot access bosh_registry: #{e.message}"
+            err "Cannot access bosh-registry: #{e.message}"
           end
         end
 
-        logger.info("bosh_registry is ready on port #{@registry_port}")
+        logger.info("bosh-registry is ready on port #{@registry_port}")
       ensure
         @registry_config.unlink if @registry_config
       end
@@ -163,7 +163,7 @@ module Bosh::Deployer
 
       def has_bosh_registry?(path=ENV['PATH'])
         path.split(":").each do |dir|
-          return true if File.exist?(File.join(dir, "bosh_registry"))
+          return true if File.exist?(File.join(dir, "bosh-registry"))
         end
         false
       end

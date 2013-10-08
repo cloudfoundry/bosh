@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "bosh_registry"
+require "bosh/registry"
 require "optparse"
 
 config_file = nil

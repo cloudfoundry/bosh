@@ -5,4 +5,4 @@ module Bosh::Registry
   end
 end
 
-require "bosh_registry/models/registry_instance"
+require "bosh/registry/models/registry_instance"

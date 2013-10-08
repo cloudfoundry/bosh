@@ -34,7 +34,7 @@ module Bosh::Dev
           bosh_cpi-123.gem
           bosh_encryption-123.gem
           bosh_openstack_cpi-123.gem
-          bosh_registry-123.gem
+          bosh-registry-123.gem
           bosh_vsphere_cpi-123.gem
           director-123.gem
           health_monitor-123.gem
@@ -45,6 +45,6 @@ module Bosh::Dev
     end
 
     it { should have_db('director') }
-    it { should have_db('bosh_registry') }
+    it { should have_db('bosh-registry') }
   end
 end

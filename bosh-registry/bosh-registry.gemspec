@@ -3,7 +3,7 @@
 version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|
-  s.name         = 'bosh_registry'
+  s.name         = 'bosh-registry'
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH Registry'
@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/* db/*`.split("\n") + %w(README.md)
   s.require_path = 'lib'
   s.bindir       = 'bin'
-  s.executables  = %w(bosh_registry bosh_registry_migrate)
+  s.executables  = %w(bosh-registry bosh-registry-migrate)
 
   s.add_dependency 'sequel', '~>3.43.0'
   s.add_dependency 'sinatra', '~>1.4.2'

@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'bosh_registry/client'
+require 'bosh/registry/client'
 require 'json'
 
 describe Bosh::Registry::Client do

@@ -30,7 +30,7 @@ module Bosh::Dev
        bosh_cpi
        bosh_encryption
        bosh_openstack_cpi
-       bosh_registry
+       bosh-registry
        bosh_vsphere_cpi
        director
        health_monitor
@@ -44,7 +44,7 @@ module Bosh::Dev
     end
 
     def has_db?(component)
-      %w(director bosh_registry).include?(component)
+      %w(director bosh-registry).include?(component)
     end
 
     private

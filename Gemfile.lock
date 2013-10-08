@@ -32,6 +32,17 @@ PATH
       peach
 
 PATH
+  remote: bosh-registry
+  specs:
+    bosh-registry (1.5.0.pre.3)
+      aws-sdk (= 1.8.5)
+      fog (~> 1.14.0)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.4.2)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
   remote: bosh-release
   specs:
     bosh-release (1.5.0.pre.3)
@@ -69,9 +80,9 @@ PATH
   specs:
     bosh_aws_cpi (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
+      bosh-registry (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
-      bosh_registry (~> 1.5.0.pre.3)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
 
@@ -106,11 +117,11 @@ PATH
   specs:
     bosh_cli_plugin_micro (1.5.0.pre.3)
       agent_client (~> 1.5.0.pre.3)
+      bosh-registry (~> 1.5.0.pre.3)
       bosh_aws_cpi (~> 1.5.0.pre.3)
       bosh_cli (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
       bosh_openstack_cpi (~> 1.5.0.pre.3)
-      bosh_registry (~> 1.5.0.pre.3)
       bosh_vcloud_cpi (~> 0.4.9)
       bosh_vsphere_cpi (~> 1.5.0.pre.3)
       sqlite3 (~> 1.3.7)
@@ -137,23 +148,12 @@ PATH
   remote: bosh_openstack_cpi
   specs:
     bosh_openstack_cpi (1.5.0.pre.3)
+      bosh-registry (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
-      bosh_registry (~> 1.5.0.pre.3)
       fog (~> 1.14.0)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
-
-PATH
-  remote: bosh_registry
-  specs:
-    bosh_registry (1.5.0.pre.3)
-      aws-sdk (= 1.8.5)
-      fog (~> 1.14.0)
-      sequel (~> 3.43.0)
-      sinatra (~> 1.4.2)
-      thin (~> 1.5.0)
-      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh_vsphere_cpi
@@ -445,6 +445,7 @@ DEPENDENCIES
   blobstore_client!
   bosh-core!
   bosh-dev!
+  bosh-registry!
   bosh-release!
   bosh-stemcell!
   bosh_agent!
@@ -456,7 +457,6 @@ DEPENDENCIES
   bosh_cpi!
   bosh_encryption!
   bosh_openstack_cpi!
-  bosh_registry!
   bosh_vsphere_cpi!
   ci_reporter
   debugger

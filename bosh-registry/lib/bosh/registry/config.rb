@@ -27,7 +27,7 @@ module Bosh::Registry
 
       plugin = config["cloud"]["plugin"]
       begin
-        require "bosh_registry/instance_manager/#{plugin}"
+        require "bosh/registry/instance_manager/#{plugin}"
       rescue LoadError
         raise ConfigError, "Could not find Provider Plugin: #{plugin}"
       end

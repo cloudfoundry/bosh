@@ -17,7 +17,7 @@ module SpecHelper
       configure_logging
       configure_temp_dir
 
-      require "bosh_registry"
+      require "bosh/registry"
       init_database
     end
 

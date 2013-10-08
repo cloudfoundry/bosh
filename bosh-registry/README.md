@@ -1,14 +1,14 @@
 # BOSH Registry
 Copyright (c) 2009-2013 VMware, Inc.
 
-For online documentation see: http://rubydoc.info/gems/bosh_registry/
+For online documentation see: http://rubydoc.info/gems/bosh-registry/
 
 ## Usage
 
-    bin/bosh_registry_migrate [<options>]
+    bin/bosh-registry-migrate [<options>]
         -c, --config FILE  Bosh Registry configuration file
 
-    bin/bosh_registry [<options>]
+    bin/bosh-registry [<options>]
         -c, --config FILE  Bosh Registry configuration file
 
 ## Configuration

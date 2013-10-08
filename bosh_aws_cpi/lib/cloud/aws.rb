@@ -16,7 +16,7 @@ require "common/exec"
 require "common/thread_pool"
 require "common/thread_formatter"
 
-require "bosh_registry/client"
+require "bosh/registry/client"
 
 require "cloud"
 require "cloud/aws/helpers"
