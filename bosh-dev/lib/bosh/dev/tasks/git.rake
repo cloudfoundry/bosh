@@ -10,11 +10,10 @@ namespace :git do
   end
 
   task :promote_branch, [:dev_branch, :stable_branch] do |_, args|
+    require 'logger'
     require 'bosh/dev/git_promoter'
-
-    puts "Promoting local git branch #{args.dev_branch} to remote branch #{args.stable_branch}"
-
-    Bosh::Dev::GitPromoter.new.promote(args.dev_branch, args.stable_branch)
+    promoter = Bosh::Dev::GitPromoter.new(Logger.new(STDERR))
+    promoter.promote(args.dev_branch, args.stable_branch)
   end
 
   task :tag_and_push, [:sha, :build_number] do |_, args|
