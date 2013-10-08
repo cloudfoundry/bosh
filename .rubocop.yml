@@ -24,6 +24,9 @@ AllCops:
    - vendor/**
    - tmp/**
 
+CollectionMethods:
+  Enabled: false # Enabling this doesn't like "inject"
+
 Encoding:
   Enabled: false
 
