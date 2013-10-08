@@ -155,7 +155,7 @@ module Bosh::Director
 
     describe 'encryption' do
       it 'should encrypt message' do
-        credentials = Bosh::EncryptionHandler.generate_credentials
+        credentials = Bosh::Core::EncryptionHandler.generate_credentials
         client_opts = { timeout: 0.1, :credentials => credentials }
         response = { 'value' => 5 }
 
@@ -164,7 +164,7 @@ module Bosh::Director
           request = args[1]
           data = request['encrypted_data']
 
-          handler = Bosh::EncryptionHandler.new('bar', credentials)
+          handler = Bosh::Core::EncryptionHandler.new('bar', credentials)
 
           message = handler.decrypt(data)
           message['method'].should == 'baz'

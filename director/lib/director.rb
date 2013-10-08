@@ -38,7 +38,7 @@ require 'nats/client'
 require 'securerandom'
 
 require 'common/thread_formatter'
-require 'encryption/encryption_handler'
+require 'bosh/core/encryption_handler'
 require 'director/api'
 require 'director/dns_helper'
 require 'director/errors'

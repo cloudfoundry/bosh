@@ -18,7 +18,7 @@ require 'sigar'
 
 require 'common/exec'
 require 'common/properties'
-require 'encryption/encryption_handler'
+require 'bosh/core/encryption_handler'
 
 module Bosh::Agent
   BOSH_APP = BOSH_APP_USER = BOSH_APP_GROUP = 'vcap'

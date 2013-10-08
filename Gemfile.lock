@@ -20,6 +20,8 @@ PATH
   remote: bosh-core
   specs:
     bosh-core (1.5.0.pre.3)
+      gibberish (~> 1.2.0)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh-dev
@@ -63,8 +65,8 @@ PATH
   specs:
     bosh_agent (1.5.0.pre.3)
       blobstore_client (~> 1.5.0.pre.3)
+      bosh-core (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
-      bosh_encryption (~> 1.5.0.pre.3)
       crack (~> 0.3.2)
       httpclient (= 2.2.4)
       nats (~> 0.4.28)
@@ -138,13 +140,6 @@ PATH
       bosh_common (~> 1.5.0.pre.3)
 
 PATH
-  remote: bosh_encryption
-  specs:
-    bosh_encryption (1.5.0.pre.3)
-      gibberish (~> 1.2.0)
-      yajl-ruby (~> 1.1.0)
-
-PATH
   remote: bosh_openstack_cpi
   specs:
     bosh_openstack_cpi (1.5.0.pre.3)
@@ -170,10 +165,10 @@ PATH
     director (1.5.0.pre.3)
       bcrypt-ruby (~> 3.0.1)
       blobstore_client (~> 1.5.0.pre.3)
+      bosh-core (~> 1.5.0.pre.3)
       bosh_aws_cpi (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
-      bosh_encryption (~> 1.5.0.pre.3)
       bosh_openstack_cpi (~> 1.5.0.pre.3)
       bosh_vcloud_cpi (~> 0.4.9)
       bosh_vsphere_cpi (~> 1.5.0.pre.3)
@@ -392,7 +387,7 @@ GEM
       httpclient
       nokogiri (~> 1.5)
       rest-client
-    rufus-scheduler (2.0.19)
+    rufus-scheduler (2.0.22)
       tzinfo (>= 0.3.23)
     rugged (0.16.0)
     sequel (3.43.0)
@@ -455,7 +450,6 @@ DEPENDENCIES
   bosh_cli_plugin_micro!
   bosh_common!
   bosh_cpi!
-  bosh_encryption!
   bosh_openstack_cpi!
   bosh_vsphere_cpi!
   ci_reporter

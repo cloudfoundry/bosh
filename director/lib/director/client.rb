@@ -15,7 +15,7 @@ module Bosh::Director
 
       if options[:credentials]
         @encryption_handler =
-          Bosh::EncryptionHandler.new(@client_id, options[:credentials])
+          Bosh::Core::EncryptionHandler.new(@client_id, options[:credentials])
       end
 
       @resource_manager = Api::ResourceManager.new
@@ -73,7 +73,7 @@ module Bosh::Director
         if @encryption_handler
           begin
             response = @encryption_handler.decrypt(response["encrypted_data"])
-          rescue Bosh::EncryptionHandler::CryptError => e
+          rescue Bosh::Core::EncryptionHandler::CryptError => e
             response["exception"] = "CryptError: #{e.inspect} #{e.backtrace}"
           end
           @logger.info("Response: #{response}")

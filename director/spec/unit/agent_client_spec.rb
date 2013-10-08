@@ -97,7 +97,7 @@ describe Bosh::Director::AgentClient do
                                               cloud_properties,
                                               network_settings, Array(99),
                                               env)
-    handler = Bosh::EncryptionHandler.new(vm.agent_id, vm.credentials)
+    handler = Bosh::Core::EncryptionHandler.new(vm.agent_id, vm.credentials)
 
     nats_rpc.should_receive(:send_request) do |*args, &blk|
       data = args[1]["encrypted_data"]

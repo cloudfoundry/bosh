@@ -5,10 +5,9 @@ require "gibberish"
 require "securerandom"
 require "yajl"
 
-module Bosh
+module Bosh::Core
   # Utility class for decrypting/encrypting Director/Agent message exchanges
   class EncryptionHandler
-
     class CryptError < StandardError; end
 
     class SessionError < CryptError; end
@@ -140,5 +139,4 @@ module Bosh
       end
     end
   end
-
 end
