@@ -47,14 +47,16 @@ properties:
   key_name:  jenkins
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
+    type: manual
     cidr: net_cidr
     reserved:
       - net_reserved
     static:
       - net_static
     gateway: net_gateway
-    security_groups: ["default"]
-    net_id: net_id
+    cloud_properties:
+      security_groups: [ default ]
+      net_id: net_id
 YAML
 
         it 'generates the correct YAML' do
@@ -77,7 +79,11 @@ properties:
   instances: 1
   key_name:  jenkins
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
-  security_groups: default
+  network:
+    type: dynamic
+    cloud_properties:
+      security_groups: [ default ]
+      net_id: net_id
 YAML
 
         it 'generates the correct YAML' do
