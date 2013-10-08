@@ -335,18 +335,19 @@ module Bosh::Director
           tear_down_vm(vm_data)
         end
       end
-
     end
 
     # Tears down a VM and releases the network reservations.
     # @param [VmData] vm_data The VmData object for the VM to tear down.
     def tear_down_vm(vm_data)
       vm = vm_data.vm
-      reservation = vm_data.reservation
-      @logger.info("Deleting compilation VM: #{vm.cid}")
-      @cloud.delete_vm(vm.cid)
-      vm.destroy
-      release_network(reservation)
+      if vm.exists?
+        reservation = vm_data.reservation
+        @logger.info("Deleting compilation VM: #{vm.cid}")
+        @cloud.delete_vm(vm.cid)
+        vm.destroy
+        release_network(reservation)
+      end
     end
 
     # @param [CompileTask] task

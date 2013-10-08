@@ -230,6 +230,7 @@ module Bosh::Director
           'networks' => net
         }
       }
+
       it 'reuses compilation VMs' do
         prepare_samples
         @plan.stub(:jobs).and_return([@j_dea])
@@ -299,7 +300,7 @@ module Bosh::Director
         end
       end
 
-      it "clean ups compilation vms if there's a failing compilation" do
+      it 'cleans up compilation vms if there is a failing compilation' do
         prepare_samples
         @plan.stub(:jobs).and_return([@j_dea])
 
@@ -336,6 +337,59 @@ module Bosh::Director
         expect {
           compiler.compile
         }.to raise_error(RuntimeError)
+      end
+    end
+
+    describe 'tearing down compilation vms' do
+      before do # prepare compilation
+        release  = instance_double('Bosh::Director::DeploymentPlan::Release',  name: 'release')
+        stemcell = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
+        resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
+
+        package  = make_package('common')
+        template = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [package])
+        job      = instance_double(
+          'Bosh::Director::DeploymentPlan::Job',
+          name: 'job-with-one-package',
+          release: release,
+          templates: [template],
+          resource_pool: resource_pool,
+        )
+
+        @plan.stub(jobs: [job])
+      end
+
+      before do # create vm
+        @network.stub(:reserve) { |reservation| reservation.reserved = true }
+        @network.stub(:network_settings)
+        @cloud.stub(:create_vm).and_return('vm-cid-1')
+      end
+
+      def self.it_tears_down_vm_exactly_once
+        it 'tears down VMs exactly once when RpcTimeout error occurs' do
+          # agent raises error
+          agent = instance_double('Bosh::Director::AgentClient', apply: nil)
+          agent.should_receive(:wait_until_ready).and_raise(RpcTimeout)
+          AgentClient.should_receive(:new).and_return(agent)
+
+          # vm is destroyed
+          @cloud.should_receive(:delete_vm)
+          @network.should_receive(:release)
+
+          compiler = make(@plan)
+          compiler.stub(:with_compile_lock).and_yield
+          expect { compiler.compile }.to raise_error(RpcTimeout)
+        end
+      end
+
+      context 'reuse_compilation_vms is true' do
+        before { @config.stub(reuse_compilation_vms: true) }
+        it_tears_down_vm_exactly_once
+      end
+
+      context 'reuse_compilation_vms is false' do
+        before { @config.stub(reuse_compilation_vms: false) }
+        it_tears_down_vm_exactly_once
       end
     end
 
