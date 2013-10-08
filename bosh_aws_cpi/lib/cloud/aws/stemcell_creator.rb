@@ -1,6 +1,6 @@
 module Bosh::AwsCloud
   class StemcellCreator
-    include Bosh::Exec
+    include Bosh::Common::Exec
     include Helpers
 
     attr_reader :region, :stemcell_properties
@@ -67,7 +67,7 @@ module Bosh::AwsCloud
       result = sh(command)
 
       logger.debug("stemcell copy output:\n#{result.output}")
-    rescue Bosh::Exec::Error => e
+    rescue Bosh::Common::Exec::Error => e
       raise Bosh::Clouds::CloudError, "Unable to copy stemcell root image: #{e.message}"
     end
 

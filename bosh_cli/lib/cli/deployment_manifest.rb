@@ -1,4 +1,4 @@
-require 'common/deep_copy'
+require 'bosh/common/deep_copy'
 
 module Bosh::Cli
   class DeploymentManifest

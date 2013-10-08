@@ -1,6 +1,6 @@
 require 'openssl'
 
-module Bosh
+module Bosh::Common
   module Ssl
     class Certificate
       class SubjectsDoNotMatchException < RuntimeError;

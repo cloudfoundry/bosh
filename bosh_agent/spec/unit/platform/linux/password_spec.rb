@@ -12,8 +12,8 @@ describe Bosh::Agent::Platform::Linux::Password do
   }
 
   it 'should update passwords' do
-    Bosh::Exec.should_receive(:sh).with("usermod -p '#{encrypted_password}' root 2>%")
-    Bosh::Exec.should_receive(:sh).with("usermod -p '#{encrypted_password}' vcap 2>%")
+    Bosh::Common::Exec.should_receive(:sh).with("usermod -p '#{encrypted_password}' root 2>%")
+    Bosh::Common::Exec.should_receive(:sh).with("usermod -p '#{encrypted_password}' vcap 2>%")
 
     password.update(partial_settings)
   end

@@ -1,9 +1,9 @@
-require 'common/runs_commands'
+require 'bosh/common/runs_commands'
 
-describe Bosh::RunsCommands do
+describe Bosh::Common::RunsCommands do
 
   class C
-    include Bosh::RunsCommands
+    include Bosh::Common::RunsCommands
   end
 
   it 'delegates the sh method to its command runner' do
@@ -16,9 +16,9 @@ describe Bosh::RunsCommands do
     c.sh 'hi'
   end
 
-  it 'defaults the command runner to Bosh::Exec' do
+  it 'defaults the command runner to Bosh::Common::Exec' do
     c = C.new
-    Bosh::Exec.should_receive(:sh).with('hi')
+    Bosh::Common::Exec.should_receive(:sh).with('hi')
     c.sh('hi')
   end
 end

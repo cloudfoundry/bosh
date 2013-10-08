@@ -7,7 +7,7 @@ require 'zlib'
 require 'archive/tar/minitar'
 require 'tempfile'
 
-require 'common/exec'
+require 'bosh/common/exec'
 
 module Bat
   module BoshHelper
@@ -24,8 +24,8 @@ module Bat
         "#{arguments} 2>&1"
       puts("--> #{command}")
       begin
-        result = Bosh::Exec.sh(command, options)
-      rescue Bosh::Exec::Error => e
+        result = Bosh::Common::Exec.sh(command, options)
+      rescue Bosh::Common::Exec::Error => e
         puts("Bosh command failed: #{e.output}")
         raise
       end

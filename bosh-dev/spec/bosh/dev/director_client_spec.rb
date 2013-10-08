@@ -44,7 +44,7 @@ module Bosh::Dev
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        Bosh::Common::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
         cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
@@ -73,7 +73,7 @@ module Bosh::Dev
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        Bosh::Common::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
         cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
@@ -105,7 +105,7 @@ module Bosh::Dev
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        Bosh::Common::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
         cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered

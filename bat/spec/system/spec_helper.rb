@@ -5,7 +5,7 @@ require 'fileutils'
 require 'tempfile'
 require 'resolv'
 
-require 'common/exec'
+require 'bosh/common/exec'
 
 require 'bat/stemcell'
 require 'bat/release'

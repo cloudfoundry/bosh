@@ -37,7 +37,7 @@ module Bosh::Deployer
     end
 
     def check_dependencies
-      if Bosh::Common.which(%w[genisoimage mkisofs]).nil?
+      if Bosh::Common::Common.which(%w[genisoimage mkisofs]).nil?
         err("either of 'genisoimage' or 'mkisofs' commands must be present")
       end
     end

@@ -1,5 +1,5 @@
-require "common/thread_pool"
-require "common/thread_formatter"
+require "bosh/common/thread_pool"
+require "bosh/common/thread_formatter"
 require "securerandom"
 
 autoload :VSphereCloud, "cloud/vsphere/cloud"

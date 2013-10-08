@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
 
   s.executables = 'vsphere_cpi_console'
 
-  s.add_dependency 'bosh_common', "~>#{version}"
+  s.add_dependency 'bosh-common', "~>#{version}"
   s.add_dependency 'bosh_cpi', "~>#{version}"
   s.add_dependency 'membrane', '~>0.0.2'
   s.add_dependency 'sequel', '~>3.43.0'

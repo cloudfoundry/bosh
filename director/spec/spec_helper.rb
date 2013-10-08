@@ -30,7 +30,7 @@ module SpecHelper
       configure_temp_dir
 
       require "director"
-      @logger.formatter = ThreadFormatter.new
+      @logger.formatter = Bosh::Common::ThreadFormatter.new
 
       init_database
 

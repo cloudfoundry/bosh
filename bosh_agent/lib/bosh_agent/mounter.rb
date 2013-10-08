@@ -2,7 +2,7 @@ require 'bosh_agent'
 
 module Bosh::Agent
   class Mounter
-    def initialize(logger, shell_runner=Bosh::Exec)
+    def initialize(logger, shell_runner=Bosh::Common::Exec)
       @logger = logger
       @shell_runner = shell_runner
     end

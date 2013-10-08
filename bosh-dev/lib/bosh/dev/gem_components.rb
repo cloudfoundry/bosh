@@ -26,7 +26,7 @@ module Bosh::Dev
        bosh_cli
        bosh_cli_plugin_aws
        bosh_cli_plugin_micro
-       bosh_common
+       bosh-common
        bosh_cpi
        bosh_openstack_cpi
        bosh-registry

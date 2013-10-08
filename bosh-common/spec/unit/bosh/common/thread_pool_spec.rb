@@ -1,10 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
+require "bosh/common/thread_pool"
 
-require "common/thread_pool"
-
-describe Bosh::ThreadPool do
+describe Bosh::Common::ThreadPool do
 
   before(:all) do
     @logger = Logger.new(STDOUT)
@@ -16,7 +15,7 @@ describe Bosh::ThreadPool do
     current = 0
     lock = Mutex.new
 
-    Bosh::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
+    Bosh::Common::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
       4.times do
         pool.process do
           lock.synchronize do
@@ -36,7 +35,7 @@ describe Bosh::ThreadPool do
 
   it "should raise exceptions" do
     lambda {
-      Bosh::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
+      Bosh::Common::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
         5.times do |index|
           pool.process do
             sleep(0.050)
@@ -52,7 +51,7 @@ describe Bosh::ThreadPool do
     lock = Mutex.new
 
     lambda {
-      Bosh::ThreadPool.new(:max_threads => 1, :logger => @logger).wrap do |pool|
+      Bosh::Common::ThreadPool.new(:max_threads => 1, :logger => @logger).wrap do |pool|
         10.times do |index|
           pool.process do
             lock.synchronize { max = index if index > max }

@@ -34,7 +34,7 @@ describe Bosh::Aws::ELB do
       vpc.stub(:subnets).and_return({ 'sub_name1' => 'sub_id1', 'sub_name2' => 'sub_id2' })
       vpc.stub(:security_group_by_name).with('security_group_name').and_return(fake_aws_security_group)
 
-      Bosh::Common.stub(:wait)
+      Bosh::Common::Common.stub(:wait)
     end
 
     describe 'is successful' do

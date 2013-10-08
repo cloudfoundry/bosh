@@ -16,7 +16,7 @@ module Bosh::Agent
     protected
     # Actually update password
     def update_password(user, encrypted_password)
-      Bosh::Exec.sh "usermod -p '#{encrypted_password}' #{user} 2>%"
+      Bosh::Common::Exec.sh "usermod -p '#{encrypted_password}' #{user} 2>%"
     end
   end
 end

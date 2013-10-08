@@ -17,5 +17,5 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = 'lib'
 
-  s.add_dependency 'bosh_common', "~>#{version}"
+  s.add_dependency 'bosh-common', "~>#{version}"
 end

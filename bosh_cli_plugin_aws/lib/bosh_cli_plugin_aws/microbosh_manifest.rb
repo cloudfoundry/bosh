@@ -86,7 +86,7 @@ module Bosh
         @cert if @cert
         key_path = director_ssl['private_key_path'] || 'director.key'
         cert_path = director_ssl['certificate_path'] || 'director.pem'
-        @cert = Bosh::Ssl::Certificate.new(key_path, cert_path, "*.#{vpc_config['vpc']['domain']}").load_or_create
+        @cert = Bosh::Common::Ssl::Certificate.new(key_path, cert_path, "*.#{vpc_config['vpc']['domain']}").load_or_create
       end
 
       def director_ssl

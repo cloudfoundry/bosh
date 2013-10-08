@@ -10,7 +10,7 @@ require 'openssl'
 
 module Bosh::Agent
   class Bootstrap
-    include Bosh::Exec
+    include Bosh::Common::Exec
 
     def initialize
       FileUtils.mkdir_p(File.join(base_dir, 'bosh'))

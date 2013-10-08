@@ -1,6 +1,6 @@
 require_relative 'errors'
 
-module Bosh
+module Bosh::Common
   class Retryable
     def initialize(options = {})
       opts = validate_options(options)

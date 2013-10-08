@@ -1,6 +1,6 @@
 require 'bosh/dev'
 require 'bosh/core/shell'
-require 'common/retryable'
+require 'bosh/common/retryable'
 require 'tempfile'
 
 module Bosh::Dev
@@ -11,7 +11,7 @@ module Bosh::Dev
 
     def run_bosh(cmd, options = {})
       debug_on_fail = !!options.delete(:debug_on_fail)
-      retryable     = options.delete(:retryable) || Bosh::Retryable.new
+      retryable     = options.delete(:retryable) || Bosh::Common::Retryable.new
 
       bosh_command = "bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}"
       puts bosh_command

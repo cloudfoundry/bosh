@@ -2,7 +2,7 @@
 
 module Bosh::Agent
   class Platform::Ubuntu::Network < Platform::Linux::Network
-    include Bosh::Exec
+    include Bosh::Common::Exec
 
     def initialize(template_dir)
       super

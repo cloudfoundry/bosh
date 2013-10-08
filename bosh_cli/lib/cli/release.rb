@@ -104,7 +104,7 @@ module Bosh::Cli
 
       options = merge_private_data(provider, options)
 
-      opts = Bosh::Common.symbolize_keys(options)
+      opts = Bosh::Common::Common.symbolize_keys(options)
       @blobstore = Bosh::Blobstore::Client.create(provider, opts)
 
     rescue Bosh::Blobstore::BlobstoreError => e

@@ -100,9 +100,9 @@ module Bosh::Agent
 
     def udevadm_settle
       if File.exists? "/sbin/udevadm"
-        Bosh::Exec.sh "/sbin/udevadm settle"
+        Bosh::Common::Exec.sh "/sbin/udevadm settle"
       elsif File.exists? "/sbin/udevsettle"
-        Bosh::Exec.sh "/sbin/udevsettle"
+        Bosh::Common::Exec.sh "/sbin/udevsettle"
       else
         raise Bosh::Agent::LoadSettingsError, "No udevsettle"
       end
@@ -118,17 +118,17 @@ module Bosh::Agent
     end
 
     def mount_cdrom
-      result = Bosh::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
+      result = Bosh::Common::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
       raise Bosh::Agent::LoadSettingsError,
         "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
     end
 
     def umount_cdrom
-      Bosh::Exec.sh "umount #@cdrom_settings_mount_point 2>&1"
+      Bosh::Common::Exec.sh "umount #@cdrom_settings_mount_point 2>&1"
     end
 
     def eject_cdrom
-      Bosh::Exec.sh "eject #{cdrom_device}"
+      Bosh::Common::Exec.sh "eject #{cdrom_device}"
     end
 
   end

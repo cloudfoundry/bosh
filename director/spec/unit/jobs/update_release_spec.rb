@@ -89,8 +89,8 @@ module Bosh::Director
 
       context 'extracting a release' do
         it 'should fail if cannot extract release archive' do
-          result = Bosh::Exec::Result.new('cmd', 'output', 1)
-          Bosh::Exec.should_receive(:sh).and_return(result)
+          result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+          Bosh::Common::Exec.should_receive(:sh).and_return(result)
 
           release_dir = ReleaseHelper.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
@@ -346,8 +346,8 @@ module Bosh::Director
       end
 
       it 'should fail if cannot extract package archive' do
-        result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        Bosh::Exec.should_receive(:sh).and_return(result)
+        result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+        Bosh::Common::Exec.should_receive(:sh).and_return(result)
 
         expect {
           @job.create_package(
@@ -440,8 +440,8 @@ module Bosh::Director
       end
 
       it 'should fail if cannot extract job archive' do
-        result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        Bosh::Exec.should_receive(:sh).and_return(result)
+        result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+        Bosh::Common::Exec.should_receive(:sh).and_return(result)
 
         expect { @job.create_job(@job_attrs) }.to raise_error(JobInvalidArchive)
       end

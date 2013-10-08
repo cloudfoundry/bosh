@@ -190,7 +190,7 @@ module Bosh::AwsCloud
         end
         error = AWS::EC2::Errors::Client::VolumeInUse
 
-        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: error, ensure: ensure_cb) do
+        Bosh::Common::Common.retryable(tries: tries, sleep: sleep_cb, on: error, ensure: ensure_cb) do
           volume.delete
           true # return true to only retry on Exceptions
         end
@@ -547,7 +547,7 @@ module Bosh::AwsCloud
       # AWS might still lie and say that the disk isn't ready yet, so
       # we try again just to be really sure it is telling the truth
       attachment = nil
-      Bosh::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
+      Bosh::Common::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
         attachment = volume.attach_to(instance, device_name)
       end
 

@@ -3,7 +3,7 @@
 module Bosh::Agent
 
   class Handler
-    include Bosh::Exec
+    include Bosh::Common::Exec
 
     attr_accessor :nats
     attr_reader :processors

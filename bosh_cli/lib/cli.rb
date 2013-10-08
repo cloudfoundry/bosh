@@ -38,8 +38,8 @@ unless defined?(Bosh::Cli::VERSION)
   require 'cli/version'
 end
 
-require 'common/common'
-require 'common/exec'
+require 'bosh/common/common'
+require 'bosh/common/exec'
 
 require 'cli/config'
 require 'cli/core_ext'
@@ -76,7 +76,7 @@ require 'cli/release_tarball'
 
 require 'cli/blob_manager'
 
-require 'common/properties'
+require 'bosh/common/properties'
 require 'cli/job_property_collection'
 require 'cli/job_property_validator'
 

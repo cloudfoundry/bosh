@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'common/deep_copy'
+require 'bosh/common/deep_copy'
 
 module Bosh::Common
   describe DeepCopy do
