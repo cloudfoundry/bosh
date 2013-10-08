@@ -75,6 +75,23 @@ module Bosh::Dev
         vm.publish
       end
 
+      it 'cleans up the VM even if something fails' do
+        Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+          raise 'BANG' if cmd =~ /rake ci:publish_stemcell/
+
+          actual = strip_heredoc(cmd)
+          expected = strip_heredoc(<<-BASH)
+            set -eu
+            cd bosh-stemcell
+            vagrant destroy remote --force
+          BASH
+
+          expect(actual).to include(expected)
+        end.twice
+
+        expect { vm.publish }.to raise_error('BANG')
+      end
+
       context 'when the UBUNTU_ISO is (optionally) specified' do
         before { env['UBUNTU_ISO'] = 'fake-UBUNTU_ISO' }
 
