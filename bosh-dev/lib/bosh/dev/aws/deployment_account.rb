@@ -23,6 +23,10 @@ module Bosh::Dev
         @bosh_password ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_PASSWORD").chomp
       end
 
+      def run_with_env(command)
+        shell.run(". #{deployment_bosh_environment_path} && #{command}")
+      end
+
       private
 
       attr_reader :deployment_name, :shell, :deployments_repository
