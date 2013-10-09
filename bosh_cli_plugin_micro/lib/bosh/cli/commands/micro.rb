@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'pp'
-
-require "deployer"
+require 'deployer'
 
 module Bosh::Cli::Command
   class Micro < Base
