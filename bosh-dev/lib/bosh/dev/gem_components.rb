@@ -56,10 +56,6 @@ module Bosh::Dev
       map { |component| GemComponent.new(component) }
     end
 
-    def version
-      File.read("#{root}/BOSH_VERSION").strip
-    end
-
     def stage_with_dependencies
       FileUtils.rm_rf 'pkg'
 
