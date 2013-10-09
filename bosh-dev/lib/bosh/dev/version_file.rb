@@ -9,7 +9,7 @@ module Bosh::Dev
 
     def initialize(version_number)
       raise ArgumentError.new('Version number must be specified.') unless version_number
-
+      raise "#{BOSH_VERSION_FILE} must exist" unless File.exists?(BOSH_VERSION_FILE)
       @version_number = version_number
     end
 
