@@ -70,7 +70,7 @@ module Bosh::Director
         @log_device = Logger::LogDevice.new(logging.fetch('file', STDOUT))
         @logger = Logger.new(@log_device)
         @logger.level = Logger.const_get(logging.fetch('level', 'debug').upcase)
-        @logger.formatter = Bosh::Common::ThreadFormatter.new
+        @logger.formatter = ThreadFormatter.new
 
         # use a separate logger for redis to make it stfu
         redis_logger = Logger.new(@log_device)

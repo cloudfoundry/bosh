@@ -14,9 +14,9 @@ require "tmpdir"
 require "securerandom"
 require "yajl"
 
-require "bosh/common/exec"
-require "bosh/common/thread_pool"
-require "bosh/common/thread_formatter"
+require "common/exec"
+require "common/thread_pool"
+require "common/thread_formatter"
 
 require 'bosh/registry/client'
 require "cloud"

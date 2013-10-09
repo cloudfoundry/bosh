@@ -1,6 +1,6 @@
 require 'rspec'
 require 'yaml'
-require 'bosh/common/properties'
+require 'common/properties'
 
 describe 'director.yml.erb' do
 

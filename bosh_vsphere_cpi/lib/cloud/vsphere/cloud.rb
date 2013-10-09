@@ -118,7 +118,7 @@ module VSphereCloud
 
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
-        Bosh::Common::ThreadPool.new(max_threads: 32, logger: @logger).wrap do |pool|
+        Bosh::ThreadPool.new(max_threads: 32, logger: @logger).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
             templates = client.get_property(datacenter.template_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)

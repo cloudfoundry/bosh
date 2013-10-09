@@ -24,7 +24,7 @@ module Bosh::Dev
         full_cmd = "bosh -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd"
 
         before { retryable.stub(:sleep) }
-        let(:retryable) { Bosh::Common::Retryable.new(tries: 2, on: [RuntimeError]) }
+        let(:retryable) { Bosh::Retryable.new(tries: 2, on: [RuntimeError]) }
         let(:error)     { RuntimeError.new('eror-message') }
 
         context 'when command finally succeeds on the third time' do

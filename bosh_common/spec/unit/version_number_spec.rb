@@ -1,4 +1,4 @@
-require 'bosh/common/version_number'
+require 'common/version_number'
 
 describe Bosh::Common::VersionNumber do
   def version(value)

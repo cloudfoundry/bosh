@@ -12,10 +12,10 @@ describe Bat::BoshHelper do
   end
 
   describe '#bosh' do
-    let(:bosh_exec) { class_double('Bosh::Common::Exec').as_stubbed_const(transfer_nested_constants: true) }
-    let(:bosh_exec_result) { instance_double('Bosh::Common::Exec::Result', output: 'FAKE_OUTPUT') }
+    let(:bosh_exec) { class_double('Bosh::Exec').as_stubbed_const(transfer_nested_constants: true) }
+    let(:bosh_exec_result) { instance_double('Bosh::Exec::Result', output: 'FAKE_OUTPUT') }
 
-    it 'uses Bosh::Common::Exec to shell out to bosh' do
+    it 'uses Bosh::Exec to shell out to bosh' do
       expected_command = %W(
         bundle exec bosh
         --non-interactive
@@ -30,14 +30,14 @@ describe Bat::BoshHelper do
       bosh_helper.bosh('FAKE_ARGS')
     end
 
-    it 'returns the result of Bosh::Common::Exec' do
+    it 'returns the result of Bosh::Exec' do
       bosh_exec.stub(sh: bosh_exec_result)
 
       expect(bosh_helper.bosh('FAKE_ARGS')).to eq(bosh_exec_result)
     end
 
     context 'when options are passed' do
-      it 'passes the options to Bosh::Common::Exec' do
+      it 'passes the options to Bosh::Exec' do
         bosh_exec.should_receive(:sh).with(anything, { foo: :bar }).and_return(bosh_exec_result)
 
         bosh_helper.bosh('FAKE_ARGS', { foo: :bar })
@@ -45,16 +45,16 @@ describe Bat::BoshHelper do
     end
 
     context 'when bosh command raises an error' do
-      it 'prints Bosh::Common::Exec::Error messages and re-raises' do
-        bosh_exec.stub(:sh).and_raise(Bosh::Common::Exec::Error.new(1, 'fake command', 'fake output'))
+      it 'prints Bosh::Exec::Error messages and re-raises' do
+        bosh_exec.stub(:sh).and_raise(Bosh::Exec::Error.new(1, 'fake command', 'fake output'))
 
         expect {
           bosh_helper.bosh('FAKE_ARG')
-        }.to raise_error(Bosh::Common::Exec::Error, /fake command/)
+        }.to raise_error(Bosh::Exec::Error, /fake command/)
       end
     end
 
-    it 'prints the output from the Bosh::Common::Exec result' do
+    it 'prints the output from the Bosh::Exec result' do
       bosh_exec.stub(:sh).and_return(bosh_exec_result)
 
       bosh_helper.should_receive(:puts).with('FAKE_OUTPUT')
@@ -63,7 +63,7 @@ describe Bat::BoshHelper do
     end
 
     context 'when a block is passed' do
-      it 'yields the Bosh::Common::Exec result' do
+      it 'yields the Bosh::Exec result' do
         bosh_exec.stub(sh: bosh_exec_result)
 
         expect { |b|
@@ -179,7 +179,7 @@ OUTPUT
     context 'when "bosh vms" contains the named vm' do
       before do
         fake_result = double('fake bosh exec result', output: successful_bosh_vms_output)
-        Bosh::Common::Exec.stub(:sh).with(/bundle exec bosh .* vms --details/, {}).and_return(fake_result)
+        Bosh::Exec.stub(:sh).with(/bundle exec bosh .* vms --details/, {}).and_return(fake_result)
       end
 
       it 'returns the vm details' do
@@ -200,7 +200,7 @@ OUTPUT
     end
 
     context 'when the named vm is not contained in the output of "bosh vms"' do
-      before { Bosh::Common::Exec.stub(:sh).with(/bosh .* vms --details/, {}).and_return(double('fake result', output: '')) }
+      before { Bosh::Exec.stub(:sh).with(/bosh .* vms --details/, {}).and_return(double('fake result', output: '')) }
 
       it 'returns nil' do
         expect(bosh_helper.wait_for_vm('jessez/0')).to be_nil
@@ -211,7 +211,7 @@ OUTPUT
       let(:bad_result) { double('fake exec result', output: bosh_vms_output_without_jesse) }
       let(:good_result) { double('fake good exec result', output: successful_bosh_vms_output) }
       before do
-        Bosh::Common::Exec.stub(:sh).with(
+        Bosh::Exec.stub(:sh).with(
           /bosh .* vms --details/, {}
         ).and_return(
           bad_result,

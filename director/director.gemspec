@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'bcrypt-ruby', '~>3.0.1'
   s.add_dependency 'blobstore_client', "~>#{version}"
   s.add_dependency 'bosh-core', "~>#{version}"
-  s.add_dependency 'bosh-common', "~>#{version}"
+  s.add_dependency 'bosh_common', "~>#{version}"
   s.add_dependency 'bosh_cpi', "~>#{version}"
   s.add_dependency 'bosh_openstack_cpi', "~>#{version}"
   s.add_dependency 'bosh_aws_cpi', "~>#{version}"

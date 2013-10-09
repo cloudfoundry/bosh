@@ -133,9 +133,9 @@ describe Bosh::Agent::Bootstrap do
         context "without anything mounted or formatted" do
 
           before do
-            swap_result = Bosh::Common::Exec::Result.new("cat /proc/swaps | grep #{data_disk}1", '',1)
+            swap_result = Bosh::Exec::Result.new("cat /proc/swaps | grep #{data_disk}1", '',1)
             @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1", :on_error => :return).and_return(swap_result)
-            mount_result = Bosh::Common::Exec::Result.new("mount | grep #{data_disk}2", '',1)
+            mount_result = Bosh::Exec::Result.new("mount | grep #{data_disk}2", '',1)
             @processor.should_receive(:sh).with("mount | grep #{data_disk}2", :on_error => :return).and_return(mount_result)
           end
 
@@ -175,9 +175,9 @@ describe Bosh::Agent::Bootstrap do
         context "with swap mounted" do
   
           before do
-            swap_result = Bosh::Common::Exec::Result.new("cat /proc/swaps | grep #{data_disk}1", '/dev/xvdb1                              partition	1702884	0	-1',0)
+            swap_result = Bosh::Exec::Result.new("cat /proc/swaps | grep #{data_disk}1", '/dev/xvdb1                              partition	1702884	0	-1',0)
             @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1", :on_error => :return).and_return(swap_result)
-            mount_result = Bosh::Common::Exec::Result.new("mount | grep #{data_disk}2", '',2)
+            mount_result = Bosh::Exec::Result.new("mount | grep #{data_disk}2", '',2)
             @processor.should_receive(:sh).with("mount | grep #{data_disk}2", :on_error => :return).and_return(mount_result)
             Dir.should_receive(:glob).with("#{data_disk}[1-2]").and_return(["#{data_disk}1", "#{data_disk}2"])
           end
@@ -198,9 +198,9 @@ describe Bosh::Agent::Bootstrap do
         context "with data partition mounted" do
   
           before do
-            swap_result = Bosh::Common::Exec::Result.new("cat /proc/swaps | grep #{data_disk}1",'',1)
+            swap_result = Bosh::Exec::Result.new("cat /proc/swaps | grep #{data_disk}1",'',1)
             @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1", :on_error => :return).and_return(swap_result)
-            mount_result = Bosh::Common::Exec::Result.new("mount | grep #{data_disk}2", '/dev/xvdb2 on /var/vcap/data type ext4 (rw)',0)
+            mount_result = Bosh::Exec::Result.new("mount | grep #{data_disk}2", '/dev/xvdb2 on /var/vcap/data type ext4 (rw)',0)
             @processor.should_receive(:sh).with("mount | grep #{data_disk}2", :on_error => :return).and_return(mount_result)
             Dir.should_receive(:glob).with("#{data_disk}[1-2]").and_return(["#{data_disk}1", "#{data_disk}2"])
           end

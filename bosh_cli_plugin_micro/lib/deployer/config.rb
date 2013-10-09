@@ -29,7 +29,7 @@ module Bosh::Deployer
 
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
-        @logger.formatter = Bosh::Common::ThreadFormatter.new
+        @logger.formatter = ThreadFormatter.new
 
         apply_spec = config["apply_spec"]
         @spec_properties = apply_spec["properties"]

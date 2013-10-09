@@ -7,7 +7,7 @@ describe Bosh::Agent::Mounter do
     let(:logger) { double('logger') }
     let(:shell_runner) { double() }
     let(:options) { {} }
-    let(:result) { instance_double('Bosh::Common::Exec::Result', exit_status: 0, output: 'mount-output', failed?: false) }
+    let(:result) { instance_double('Bosh::Exec::Result', exit_status: 0, output: 'mount-output', failed?: false) }
 
     def perform
       mounter.mount('/dev/sda1', '/path/to/mount/point', options)
@@ -22,7 +22,7 @@ describe Bosh::Agent::Mounter do
     end
 
     context 'when mount fails' do
-      let(:result) { instance_double('Bosh::Common::Exec::Result', exit_status: 127, output: 'mount-output', failed?: true) }
+      let(:result) { instance_double('Bosh::Exec::Result', exit_status: 127, output: 'mount-output', failed?: true) }
 
       it 'raises' do
         logger.should_receive(:info).with('Mounting: /dev/sda1 /path/to/mount/point')

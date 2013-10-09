@@ -2,7 +2,7 @@
 
 module Bosh::Agent
   class Util
-    include Bosh::Common::Exec
+    include Bosh::Exec
 
     class << self
       def base_dir

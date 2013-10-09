@@ -420,7 +420,7 @@ module Bosh::Deployer
     end
 
     def wait_until_ready(component, wait_time = 1, retries = 300)
-      Bosh::Common::Common.retryable(sleep: wait_time, tries: retries, on: CONNECTION_EXCEPTIONS) do |tries, e|
+      Bosh::Common.retryable(sleep: wait_time, tries: retries, on: CONNECTION_EXCEPTIONS) do |tries, e|
         logger.debug("Waiting for #{component} to be ready: #{e.inspect}") if tries > 0
         yield
         true

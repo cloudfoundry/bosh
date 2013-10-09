@@ -8,7 +8,7 @@ Config = Struct.new(:task_checkpoint, :logger)
 Bosh::Clouds::Config.configure(Config.new(true, Logger.new(File::NULL)))
 
 require "cloud/aws/resource_wait"
-require "bosh/common/ssl"
+require "common/ssl"
 
 require "bosh_cli_plugin_aws/version"
 require "bosh_cli_plugin_aws/ec2"

@@ -184,7 +184,7 @@ module Bosh::Cli::Command
 
       dhcp_options = vpc.dhcp_options
 
-      Bosh::Common::Common.retryable(sleep: aws_retry_wait_time,
+      Bosh::Common.retryable(sleep: aws_retry_wait_time,
                              tries: 120, on: [::AWS::Errors::Base]) do |tries, e|
         say("unable to delete resource: #{e}") if tries > 0
         vpc.delete_security_groups
@@ -383,7 +383,7 @@ module Bosh::Cli::Command
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
       if confirmed?('Are you sure you want to delete all security groups?')
-        Bosh::Common::Common.retryable(sleep: aws_retry_wait_time,
+        Bosh::Common.retryable(sleep: aws_retry_wait_time,
                                tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
           say("unable to delete security groups: #{e}") if tries > 0
           ec2.delete_all_security_groups

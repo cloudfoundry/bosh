@@ -1,9 +1,11 @@
 # Copyright (c) 2012 VMware, Inc.
 
-require "bosh/common/exec/result"
-require "bosh/common/exec/error"
+module Bosh; end
 
-module Bosh::Common
+require "common/exec/result"
+require "common/exec/error"
+
+module Bosh
 
   # Module to execute shell commands using different ways to invoke processes.
   module Exec
@@ -15,9 +17,9 @@ module Bosh::Common
     # A sample way to mock the execution of "ls /":
     #   it "should be possible to mock the result of a command execution" do
     #     cmd = "ls /"
-    #     result = Bosh::Common::Exec::Result.new(cmd, "bin etc var", "", 0)
-    #     Bosh::Common::Exec.should_receive(:sh).with(cmd).and_return(result)
-    #     result = Bosh::Common::Exec.sh(cmd)
+    #     result = Bosh::Exec::Result.new(cmd, "bin etc var", "", 0)
+    #     Bosh::Exec.should_receive(:sh).with(cmd).and_return(result)
+    #     result = Bosh::Exec.sh(cmd)
     #     result.success?.should be_true
     #   end
     #
@@ -27,13 +29,13 @@ module Bosh::Common
     # @param [String] command shell command to execute
     # @param [Hash] options
     # @option options [Symbol] :on_error if set to :return failing commands
-    #   return [Bosh::Common::Exec::Result] instead of raising [Bosh::Common::Exec::Error]
+    #   return [Bosh::Exec::Result] instead of raising [Bosh::Exec::Error]
     # @option options [Symbol] :yield if set to :on_false it will execute
     #   the block when the command fails, else it will execute the block
     #   only when the command succeeds. Implies :on_error = :return
-    # @yield [Bosh::Common::Exec::Result] command result
-    # @return [Bosh::Common::Exec::Result] command result
-    # @raise [Bosh::Common::Exec::Error] raised when the command isn't found or
+    # @yield [Bosh::Exec::Result] command result
+    # @return [Bosh::Exec::Result] command result
+    # @raise [Bosh::Exec::Error] raised when the command isn't found or
     #   the command exits with a non zero status
     # @example by default execute block only when command succeeds and raise
     #   error on failure
@@ -79,7 +81,7 @@ module Bosh::Common
 
     # Helper method to add sh as a class method when it is included
     def self.included(base)
-      base.extend(Bosh::Common::Exec)
+      base.extend(Bosh::Exec)
     end
 
     module_function :sh

@@ -619,9 +619,9 @@ module Bosh::Cli::Command
     end
 
     def commit_hash
-      status = Bosh::Common::Exec.sh('git show-ref --head --hash=8 2> /dev/null')
+      status = Bosh::Exec.sh('git show-ref --head --hash=8 2> /dev/null')
       status.output.split.first
-    rescue Bosh::Common::Exec::Error => e
+    rescue Bosh::Exec::Error => e
       '00000000'
     end
   end

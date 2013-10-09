@@ -1,9 +1,9 @@
 require 'yaml'
-require 'bosh/common/exec'
+require 'common/exec'
 
 module Bat
   class Stemcell
-    include Bosh::Common::Exec
+    include Bosh::Exec
 
     attr_reader :path
     attr_reader :name

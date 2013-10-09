@@ -1,4 +1,4 @@
-require 'bosh/common/deep_copy'
+require 'common/deep_copy'
 
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS

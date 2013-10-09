@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'bosh/common/version_number'
+require 'common/version_number'
 
 module Bosh::Director
   module Jobs
@@ -80,7 +80,7 @@ module Bosh::Director
         release_tgz = File.join(@tmp_release_dir,
                                 Api::ReleaseManager::RELEASE_TGZ)
 
-        result = Bosh::Common::Exec.sh("tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1", :on_error => :return)
         if result.failed?
           logger.error("Extracting release archive failed in dir #{@tmp_release_dir}, " +
                        "tar returned #{result.exit_status}, " +
@@ -357,7 +357,7 @@ module Bosh::Director
           logger.info("Creating #{desc} from provided bits")
 
           package_tgz = File.join(@tmp_release_dir, "packages", "#{name}.tgz")
-          result = Bosh::Common::Exec.sh("tar -tzf #{package_tgz} 2>&1", :on_error => :return)
+          result = Bosh::Exec.sh("tar -tzf #{package_tgz} 2>&1", :on_error => :return)
           if result.failed?
             logger.error("Extracting #{desc} archive failed, " +
                          "tar returned #{result.exit_status}, " +
@@ -485,7 +485,7 @@ module Bosh::Director
         FileUtils.mkdir_p(job_dir)
 
         desc = "job `#{name}/#{version}'"
-        result = Bosh::Common::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
         if result.failed?
           logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
                        "tar returned #{result.exit_status}, " +

@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'bosh/common/common'
+require 'common/common'
 require 'blobstore_client/version'
 require 'blobstore_client/errors'
 require 'blobstore_client/client'

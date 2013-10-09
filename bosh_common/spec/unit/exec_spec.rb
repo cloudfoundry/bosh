@@ -1,21 +1,21 @@
 # Copyright (c) 2012 VMware, Inc.
 
 require "spec_helper"
-require "bosh/common/exec"
+require "common/exec"
 
-describe Bosh::Common::Exec do
+describe Bosh::Exec do
   let(:opts) { {} }
 
   context "existing command" do
 
     context "executes successfully" do
       it "should not fail" do
-        Bosh::Common::Exec.sh("ls /", opts).failed?.should be_false
+        Bosh::Exec.sh("ls /", opts).failed?.should be_false
       end
 
       it "should execute block" do
         block = false
-        Bosh::Common::Exec.sh("ls /", opts) do
+        Bosh::Exec.sh("ls /", opts) do
           block = true
         end
         block.should be_true
@@ -25,9 +25,9 @@ describe Bosh::Common::Exec do
     context "fails to execute" do
       it "should raise error by default" do
         expect {
-          Bosh::Common::Exec.sh("ls /asdasd 2>&1", opts)
+          Bosh::Exec.sh("ls /asdasd 2>&1", opts)
         }.to raise_error { |error|
-          error.should be_a Bosh::Common::Exec::Error
+          error.should be_a Bosh::Exec::Error
           error.output.should match /No such file or directory/
         }
       end
@@ -35,7 +35,7 @@ describe Bosh::Common::Exec do
       it "should yield block on false" do
         opts[:yield] = :on_false
         block = false
-        Bosh::Common::Exec.sh("ls /asdasd 2>&1", opts) do
+        Bosh::Exec.sh("ls /asdasd 2>&1", opts) do
           block = true
         end
         block.should be_true
@@ -43,7 +43,7 @@ describe Bosh::Common::Exec do
 
       it "should return result" do
         opts[:on_error] = :return
-        Bosh::Common::Exec.sh("ls /asdasd 2>&1", opts).failed?.should be_true
+        Bosh::Exec.sh("ls /asdasd 2>&1", opts).failed?.should be_true
       end
     end
 
@@ -52,21 +52,21 @@ describe Bosh::Common::Exec do
   context "missing command" do
     it "should raise error by default" do
       expect {
-        Bosh::Common::Exec.sh("/asdasd 2>&1", opts)
-      }.to raise_error Bosh::Common::Exec::Error
+        Bosh::Exec.sh("/asdasd 2>&1", opts)
+      }.to raise_error Bosh::Exec::Error
     end
 
     it "should not raise error when requested" do
       opts[:on_error] = :return
       expect {
-        Bosh::Common::Exec.sh("/asdasd 2>&1", opts)
-      }.to_not raise_error Bosh::Common::Exec::Error
+        Bosh::Exec.sh("/asdasd 2>&1", opts)
+      }.to_not raise_error Bosh::Exec::Error
     end
 
     it "should execute block when requested" do
       opts[:yield] = :on_false
       expect {
-      Bosh::Common::Exec.sh("/asdasd 2>&1", opts) do
+      Bosh::Exec.sh("/asdasd 2>&1", opts) do
         raise "foo"
       end
       }.to raise_error "foo"
@@ -77,22 +77,22 @@ describe Bosh::Common::Exec do
   context "mock" do
     it "should be possible fake result" do
       cmd = "ls /"
-      result = Bosh::Common::Exec::Result.new(cmd, "output", 0)
-      Bosh::Common::Exec.should_receive(:sh).with(cmd).and_return(result)
-      result = Bosh::Common::Exec.sh(cmd)
+      result = Bosh::Exec::Result.new(cmd, "output", 0)
+      Bosh::Exec.should_receive(:sh).with(cmd).and_return(result)
+      result = Bosh::Exec.sh(cmd)
       result.success?.should be_true
     end
   end
 
   context "module" do
     it "should be possible to invoke as a module" do
-      Bosh::Common::Exec.sh("ls /").success?.should be_true
+      Bosh::Exec.sh("ls /").success?.should be_true
     end
   end
 
   context "include" do
     class IncludeTest
-      include Bosh::Common::Exec
+      include Bosh::Exec
       def run
         sh("ls /")
       end

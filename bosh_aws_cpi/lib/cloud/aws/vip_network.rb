@@ -33,7 +33,7 @@ module Bosh::AwsCloud
       # API call will fail in that case.
 
       errors = [AWS::EC2::Errors::IncorrectInstanceState]
-      Bosh::Common::Common.retryable(tries: 10, sleep: 1, on: errors) do
+      Bosh::Common.retryable(tries: 10, sleep: 1, on: errors) do
         instance.associate_elastic_ip(elastic_ip)
         true # need to return true to end the retries
       end

@@ -1,4 +1,4 @@
-require "bosh/common/common"
+require "common/common"
 
 module Bosh::AwsCloud
   class InstanceManager
@@ -36,7 +36,7 @@ module Bosh::AwsCloud
       # is too slow to update its state when we have released the IP address and want to
       # realocate it again.
       errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
-      Bosh::Common::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
+      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
         @logger.warn("IP address was in use: #{error}") if tries > 0
         @instance = @region.instances.create(instance_params)
       end

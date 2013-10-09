@@ -2,7 +2,7 @@
 
 require "logger"
 
-module Bosh::Common
+module Bosh
 
   class ThreadPool
 

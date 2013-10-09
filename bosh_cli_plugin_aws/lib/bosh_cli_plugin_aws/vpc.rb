@@ -61,7 +61,7 @@ module Bosh
 
       def delete_vpc
         @aws_vpc.delete
-        Bosh::Common::Common.retryable(tries: 30, sleep: 5, on: []) do
+        Bosh::Common.retryable(tries: 30, sleep: 5, on: []) do
           begin
             false if @aws_vpc.state
           rescue AWS::EC2::Errors::InvalidVpcID::NotFound

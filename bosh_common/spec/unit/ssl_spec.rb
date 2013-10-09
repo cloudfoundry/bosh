@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'bosh/common/ssl'
+require 'common/ssl'
 require 'tmpdir'
 
-describe Bosh::Common::Ssl::Certificate do
+describe Bosh::Ssl::Certificate do
   let(:subject_name) { '/C=US/O=Pivotal/CN=myapp.foo.com' }
   let(:common_name) { 'myapp.foo.com' }
   let(:server_certificate) { described_class.new(key_path, certificate_path, common_name) }
@@ -22,7 +22,7 @@ describe Bosh::Common::Ssl::Certificate do
         it 'raises an error' do
           expect {
             server_certificate.load_or_create
-          }.to raise_error(Bosh::Common::Ssl::Certificate::MatchingFileNotFound, /The key that matches the given certificate could not be found\./)
+          }.to raise_error(Bosh::Ssl::Certificate::MatchingFileNotFound, /The key that matches the given certificate could not be found\./)
         end
       end
 
@@ -36,7 +36,7 @@ describe Bosh::Common::Ssl::Certificate do
         it 'raises an error' do
           expect {
             server_certificate.load_or_create
-          }.to raise_error(Bosh::Common::Ssl::Certificate::MatchingFileNotFound, /The certificate that matches the given key could not be found\./)
+          }.to raise_error(Bosh::Ssl::Certificate::MatchingFileNotFound, /The certificate that matches the given key could not be found\./)
         end
       end
 

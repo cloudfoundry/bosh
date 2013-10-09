@@ -2,7 +2,7 @@
 
 module Bosh::Agent
   class Platform::Linux::Disk
-    include Bosh::Common::Exec
+    include Bosh::Exec
 
     VSPHERE_DATA_DISK = "/dev/sdb"
     DEV_PATH_TIMEOUT=180
@@ -104,7 +104,7 @@ module Bosh::Agent
     def get_available_scsi_path(disk_id)
       rescan_scsi_bus
       blockdev = nil
-      Bosh::Common::Common.retryable(tries: @disk_retry_timeout, on: Bosh::Agent::DiskNotFoundError) do
+      Bosh::Common.retryable(tries: @disk_retry_timeout, on: Bosh::Agent::DiskNotFoundError) do
         blockdev = detect_block_device(disk_id)
       end
       File.join('/dev', blockdev)

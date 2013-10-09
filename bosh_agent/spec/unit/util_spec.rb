@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-require 'bosh/common/exec'
+require 'common/exec'
 
 describe Bosh::Agent::Util do
 
@@ -82,7 +82,7 @@ describe Bosh::Agent::Util do
   it 'should return the block device size' do
     block_device = "/dev/sda1"
     File.should_receive(:blockdev?).with(block_device).and_return true
-    Bosh::Agent::Util.should_receive(:sh).with("/sbin/sfdisk -s #{block_device} 2>&1").and_return(Bosh::Common::Exec::Result.new("/sbin/sfdisk -s #{block_device} 2>&1", '1024', 0))
+    Bosh::Agent::Util.should_receive(:sh).with("/sbin/sfdisk -s #{block_device} 2>&1").and_return(Bosh::Exec::Result.new("/sbin/sfdisk -s #{block_device} 2>&1", '1024', 0))
     Bosh::Agent::Util.block_device_size(block_device).should == 1024
   end
 
@@ -95,7 +95,7 @@ describe Bosh::Agent::Util do
   it 'should raise exception when output is not an integer' do
     block_device = "/dev/not_a_block_device"
     File.should_receive(:blockdev?).with(block_device).and_return true
-    Bosh::Agent::Util.should_receive(:sh).with("/sbin/sfdisk -s #{block_device} 2>&1").and_return(Bosh::Common::Exec::Result.new("/sbin/sfdisk -s #{block_device} 2>&1", 'foobar', 0))
+    Bosh::Agent::Util.should_receive(:sh).with("/sbin/sfdisk -s #{block_device} 2>&1").and_return(Bosh::Exec::Result.new("/sbin/sfdisk -s #{block_device} 2>&1", 'foobar', 0))
     expect { Bosh::Agent::Util.block_device_size(block_device) }.to raise_error(Bosh::Agent::MessageHandlerError, "Unable to determine disk size")
   end
 

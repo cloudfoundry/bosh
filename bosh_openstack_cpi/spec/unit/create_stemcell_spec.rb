@@ -137,8 +137,8 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     it "should throw an error for non existent root image in stemcell archive" do
-      result = Bosh::Common::Exec::Result.new("cmd", "output", 0)
-      Bosh::Common::Exec.should_receive(:sh).and_return(result)
+      result = Bosh::Exec::Result.new("cmd", "output", 0)
+      Bosh::Exec.should_receive(:sh).and_return(result)
 
       cloud = mock_glance
 
@@ -153,8 +153,8 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     it "should fail if cannot extract root image" do
-      result = Bosh::Common::Exec::Result.new("cmd", "output", 1)
-      Bosh::Common::Exec.should_receive(:sh).and_return(result)
+      result = Bosh::Exec::Result.new("cmd", "output", 1)
+      Bosh::Exec.should_receive(:sh).and_return(result)
 
       cloud = mock_glance
 

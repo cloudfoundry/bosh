@@ -1,7 +1,7 @@
 # Copyright (c) 2012 VMware, Inc.
 
 require "spec_helper"
-require "bosh/common/properties"
+require "common/properties"
 
 describe Bosh::Common::TemplateEvaluationContext do
 

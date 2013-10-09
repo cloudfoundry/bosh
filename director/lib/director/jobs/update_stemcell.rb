@@ -34,7 +34,7 @@ module Bosh::Director
         stemcell_dir = Dir.mktmpdir("stemcell")
 
         track_and_log("Extracting stemcell archive") do
-          result = Bosh::Common::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1", :on_error => :return)
+          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1", :on_error => :return)
           if result.failed?
             logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " +
                          "tar returned #{result.exit_status}, " +

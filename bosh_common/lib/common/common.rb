@@ -1,8 +1,9 @@
 # Copyright (c) 2012 VMware, Inc.
-require 'bosh/common/errors'
-require 'bosh/common/retryable'
+require 'common/errors'
+require 'common/retryable'
 
-module Bosh::Common
+module Bosh
+
   # Module for common methods used throughout the BOSH code.
   module Common
 
@@ -50,13 +51,13 @@ module Bosh::Common
     # The block is called with two parameters: the number of tries and the most recent
     # exception. If the block returns true retrying is stopped.
     # Examples:
-    #   Bosh::Common::Common.retryable do |retries, exception|
+    #   Bosh::Common.retryable do |retries, exception|
     #     puts "try #{retries} failed with exception: #{exception}" if retries > 0
     #     pick_up_soap
     #   end
     #
     #   # Wait for EC2 instance to be terminated
-    #   Bosh::Common::Common.retryable(on: AWS::EC2::Errors::RequestLimitExceeded) do |retries, exception|
+    #   Bosh::Common.retryable(on: AWS::EC2::Errors::RequestLimitExceeded) do |retries, exception|
     #     @ec2.instance['i-a3x5g5'].status == :terminated
     #   end
     #
@@ -77,7 +78,7 @@ module Bosh::Common
     #     f.close
     #  end
     #
-    #  Bosh::Common::Common.retryable(ensure: ensure_cb) do
+    #  Bosh::Common.retryable(ensure: ensure_cb) do
     #    # process file
     #  end
     #
@@ -85,7 +86,7 @@ module Bosh::Common
     #   Default: `/.*/`
     #   Retry based on the exception message
     #   Example:
-    #   Bosh::Common::Common.retryable(matching: /IO timeout/) do |retries, exception|
+    #   Bosh::Common.retryable(matching: /IO timeout/) do |retries, exception|
     #     raise "yo, IO timeout!" if retries == 0
     #   end
     #
@@ -93,7 +94,7 @@ module Bosh::Common
     #   Default: `[]`
     #   The array of exception classes to retry on.
     #   Example:
-    #   Bosh::Common::Common.retryable(on: [StandardError, ArgumentError]) do
+    #   Bosh::Common.retryable(on: [StandardError, ArgumentError]) do
     #     # do something and retry if StandardError or ArgumentError is raised
     #   end
     #
@@ -104,18 +105,18 @@ module Bosh::Common
     #   and sleep that many seconds. The Proc will be called with the number of tries
     #   and the raised exception (or nil)
     #   Example:
-    #   Bosh::Common::Common.retryable(sleep: lambda { |n,e| logger.info(e.message) if e; 4**n }) { }
+    #   Bosh::Common.retryable(sleep: lambda { |n,e| logger.info(e.message) if e; 4**n }) { }
     #
     # @options opts [Fixnum] :tries
     #   Default: 2
     #   Number of times to try
     #   Example:
-    #   Bosh::Common::Common.retryable(tries: 3, on: OpenURI::HTTPError) do
+    #   Bosh::Common.retryable(tries: 3, on: OpenURI::HTTPError) do
     #     xml = open("http://example.com/test.xml").read
     #   end
     #
     def retryable(options = {}, &block)
-      Bosh::Common::Retryable.new(options).retryer(&block)
+      Bosh::Retryable.new(options).retryer(&block)
     end
 
     module_function :retryable

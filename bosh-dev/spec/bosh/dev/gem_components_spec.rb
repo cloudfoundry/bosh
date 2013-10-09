@@ -30,7 +30,7 @@ module Bosh::Dev
           bosh_cli-123.gem
           bosh_cli_plugin_aws-123.gem
           bosh_cli_plugin_micro-123.gem
-          bosh-common-123.gem
+          bosh_common-123.gem
           bosh_cpi-123.gem
           bosh_openstack_cpi-123.gem
           bosh-registry-123.gem

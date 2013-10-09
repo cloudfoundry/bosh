@@ -28,7 +28,7 @@ describe 'bosh_cli_plugin_aws_external' do
     )
     FileUtils.mkdir_p(BOSH_WORK_DIR)
     run_bosh "aws destroy"
-    Bosh::Common::Common.retryable(tries: 15) do
+    Bosh::Common.retryable(tries: 15) do
       ec2.vpcs.count == 0 &&
           ec2.key_pairs.map(&:name).empty? &&
           s3.buckets.to_a.empty?
@@ -43,7 +43,7 @@ describe 'bosh_cli_plugin_aws_external' do
   after(:all) do
     ec2.key_pairs.map(&:name).should == ['bosh']
     run_bosh "aws destroy"
-    Bosh::Common::Common.retryable(tries: 15) do
+    Bosh::Common.retryable(tries: 15) do
       ec2.vpcs.count == 0 &&
           ec2.key_pairs.map(&:name).empty? &&
           s3.buckets.to_a.empty?

@@ -89,7 +89,7 @@ module Bosh
           Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
           instance.add_tag("Name", {value: name})
           elastic_ip = allocate_elastic_ip
-          Bosh::Common::Common.retryable(tries: 30, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
+          Bosh::Common.retryable(tries: 30, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
             instance.associate_elastic_ip(elastic_ip)
             true
           end
@@ -178,7 +178,7 @@ module Bosh
       def remove_key_pair(name)
         key_pair = key_pair_by_name(name)
         key_pair.delete unless key_pair.nil?
-        Bosh::Common::Common.retryable(tries: 15) do
+        Bosh::Common.retryable(tries: 15) do
           key_pair_by_name(name).nil?
         end
       end
@@ -186,7 +186,7 @@ module Bosh
       def remove_all_key_pairs
         aws_ec2.key_pairs.each(&:delete)
 
-        Bosh::Common::Common.retryable(tries: 10) do
+        Bosh::Common.retryable(tries: 10) do
           aws_ec2.key_pairs.to_a.empty?
         end
       end

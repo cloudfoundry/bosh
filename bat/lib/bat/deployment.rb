@@ -3,7 +3,7 @@ require 'tempfile'
 require 'yaml'
 
 module Bosh; end # Ugly hack
-require 'bosh/common/properties'
+require 'common/properties'
 
 module Bat
   class Deployment

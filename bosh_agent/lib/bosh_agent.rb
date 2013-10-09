@@ -16,8 +16,8 @@ require 'ipaddr'
 require 'httpclient'
 require 'sigar'
 
-require 'bosh/common/exec'
-require 'bosh/common/properties'
+require 'common/exec'
+require 'common/properties'
 require 'bosh/core/encryption_handler'
 
 module Bosh::Agent

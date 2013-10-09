@@ -1,9 +1,9 @@
 # Copyright (c) 2012 VMware, Inc.
 
 require "spec_helper"
-require "bosh/common/common"
+require "common/common"
 
-describe Bosh::Common::Common do
+describe Bosh::Common do
 
   describe "::symbolize_keys" do
     ORIGINAL = {
@@ -24,48 +24,48 @@ describe Bosh::Common::Common do
 
     it "should not modify the original hash" do
       duplicate = ORIGINAL.dup
-      Bosh::Common::Common.symbolize_keys(ORIGINAL)
+      Bosh::Common.symbolize_keys(ORIGINAL)
       ORIGINAL.should == duplicate
     end
 
     it "should return a new hash with all keys as symbols" do
-      Bosh::Common::Common.symbolize_keys(ORIGINAL).should == EXPECTED
+      Bosh::Common.symbolize_keys(ORIGINAL).should == EXPECTED
     end
   end
 
   describe "::which" do
     let(:path) {
       path = ENV["PATH"]
-      path += ":#{File.expand_path('../../../../assets', __FILE__)}"
+      path += ":#{File.expand_path('../../assets', __FILE__)}"
     }
 
     it "should return the path when it finds the executable" do
-      Bosh::Common::Common.which("foo1", path).should_not be_nil
+      Bosh::Common.which("foo1", path).should_not be_nil
     end
 
     it "should return the path when it finds an executable" do
-      Bosh::Common::Common.which(%w[foo2 foo1], path).should match(%r{/foo1$})
+      Bosh::Common.which(%w[foo2 foo1], path).should match(%r{/foo1$})
     end
 
     it "should return nil when it isn't executable" do
-      Bosh::Common::Common.which("foo2", path).should be_nil
+      Bosh::Common.which("foo2", path).should be_nil
     end
 
     it "should return nil when it doesn't find an executable" do
-      Bosh::Common::Common.which("foo1").should be_nil
+      Bosh::Common.which("foo1").should be_nil
     end
   end
 
   describe "::retryable" do
-    it 'should create an instance of Bosh::Common::Retryable' do
+    it 'should create an instance of Bosh::Retryable' do
       opts = {on: StandardError}
-      retryer = double(Bosh::Common::Retryable)
+      retryer = double(Bosh::Retryable)
       block = Proc.new { true }
 
-      Bosh::Common::Retryable.should_receive(:new).with(opts).and_return retryer
+      Bosh::Retryable.should_receive(:new).with(opts).and_return retryer
       retryer.should_receive(:retryer)
 
-      Bosh::Common::Common.retryable(opts, &block)
+      Bosh::Common.retryable(opts, &block)
     end
   end
 

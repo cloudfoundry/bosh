@@ -12,7 +12,7 @@ namespace :spec do
 
   desc 'Run unit and functional tests for each BOSH component gem'
   task :parallel_unit do
-    require 'bosh/common/thread_pool'
+    require 'common/thread_pool'
     trap('INT') { exit }
 
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
@@ -22,7 +22,7 @@ namespace :spec do
 
     puts "Logging spec results in #{spec_logs}"
 
-    Bosh::Common::ThreadPool.new(max_threads: 10, logger: Logger.new('/dev/null')).wrap do |pool|
+    Bosh::ThreadPool.new(max_threads: 10, logger: Logger.new('/dev/null')).wrap do |pool|
       builds.each do |build|
         puts "-----Building #{build}-----"
 

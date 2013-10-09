@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'agent_client', "~>#{version}"
   s.add_dependency 'blobstore_client', "~>#{version}"
-  s.add_dependency 'bosh-common', "~>#{version}"
+  s.add_dependency 'bosh_common', "~>#{version}"
   s.add_dependency 'yajl-ruby', '~>1.1.0'
   s.add_dependency 'trollop', '~>1.16'
 end

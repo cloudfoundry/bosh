@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'bosh/common/deep_copy'
+require 'common/deep_copy'
 
 module Bosh::Cli
   class JobPropertyCollection

@@ -29,7 +29,7 @@ module Bosh::Aws
         cert = certs[cert_name]
         dns_record = settings['dns_record']
 
-        certificate = Bosh::Common::Ssl::Certificate.new(cert['private_key_path'],
+        certificate = Bosh::Ssl::Certificate.new(cert['private_key_path'],
                                                  cert['certificate_path'],
                                                  "#{dns_record}.#{domain}",
                                                  cert['certificate_chain_path']
@@ -48,7 +48,7 @@ module Bosh::Aws
         }
       end
 
-      Bosh::Common::Common.retryable(tries: 15, on: AWS::ELB::Errors::CertificateNotFound) do
+      Bosh::Common.retryable(tries: 15, on: AWS::ELB::Errors::CertificateNotFound) do
         aws_elb.load_balancers.create(name, options).tap do |new_elb|
           new_elb.configure_health_check({
                                            :healthy_threshold => 5,
@@ -75,7 +75,7 @@ module Bosh::Aws
     end
 
     def delete_server_certificates
-      Bosh::Common::Common.retryable(tries: 5, sleep: 2) do
+      Bosh::Common.retryable(tries: 5, sleep: 2) do
         aws_iam.server_certificates.each(&:delete)
         aws_iam.server_certificates.to_a.empty?
       end
@@ -110,7 +110,7 @@ module Bosh::Aws
       begin
         certificate = nil
 
-        Bosh::Common::Common.retryable(on: AWS::IAM::Errors::MalformedCertificate, tries: 10, sleep: 2) do
+        Bosh::Common.retryable(on: AWS::IAM::Errors::MalformedCertificate, tries: 10, sleep: 2) do
           begin
             certificate = certificates.upload(options)
             server_certificate_names.include? name

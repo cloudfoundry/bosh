@@ -3,7 +3,7 @@
 require "thin"
 require "sinatra"
 require "monitor"
-require "bosh/common/ssl"
+require "common/ssl"
 
 module Bosh::Agent
 
@@ -32,7 +32,7 @@ module Bosh::Agent
         end
       end
 
-      certificate = Bosh::Common::Ssl::Certificate.new('agent.key',
+      certificate = Bosh::Ssl::Certificate.new('agent.key',
                                                'agent.cert',
                                                uri.host
       ).load_or_create

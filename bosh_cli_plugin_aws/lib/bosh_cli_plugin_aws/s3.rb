@@ -52,7 +52,7 @@ module Bosh
 
       def fetch_object_contents(bucket_name, object_name)
         bucket = fetch_bucket(bucket_name)
-        Bosh::Common::Common.retryable(on: AWS::S3::Errors::NoSuchBucket, tries: 10) do
+        Bosh::Common.retryable(on: AWS::S3::Errors::NoSuchBucket, tries: 10) do
           bucket.objects[object_name].read
         end
       rescue AWS::S3::Errors::NoSuchKey

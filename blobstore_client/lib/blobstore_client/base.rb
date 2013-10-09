@@ -9,7 +9,7 @@ module Bosh
 
       # @param [Hash] options blobstore specific options
       def initialize(options)
-        @options = Bosh::Common::Common.symbolize_keys(options)
+        @options = Bosh::Common.symbolize_keys(options)
       end
 
       # Saves a file or a string to the blobstore.

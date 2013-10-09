@@ -1,6 +1,6 @@
 require 'rake/file_utils'
 require 'yaml'
-require 'bosh/common/deep_copy'
+require 'common/deep_copy'
 require 'bosh/stemcell/aws/region'
 require 'bosh/stemcell/aws/ami'
 

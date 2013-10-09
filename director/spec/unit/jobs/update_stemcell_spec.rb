@@ -83,8 +83,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should fail if cannot extract stemcell" do
-    result = Bosh::Common::Exec::Result.new("cmd", "output", 1)
-    Bosh::Common::Exec.should_receive(:sh).and_return(result)
+    result = Bosh::Exec::Result.new("cmd", "output", 1)
+    Bosh::Exec.should_receive(:sh).and_return(result)
 
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
 

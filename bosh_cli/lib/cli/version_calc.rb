@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'bosh/common/version_number'
+require 'common/version_number'
 
 module Bosh::Cli
   module VersionCalc

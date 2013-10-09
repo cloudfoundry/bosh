@@ -34,7 +34,7 @@ class Batarang::Sinatra < Sinatra::Base
     body = request.body.read
     json = JSON.parse(body)
     halt unless json && json["command"]
-    result = Bosh::Common::Exec.sh(json["command"])
+    result = Bosh::Exec.sh(json["command"])
     {
       :status => result.exit_status,
       :stdout => result.output

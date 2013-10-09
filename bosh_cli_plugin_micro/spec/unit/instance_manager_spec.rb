@@ -90,7 +90,7 @@ module Bosh
           cloud.stub(create_disk: 'DISK-CID-CREATE')
           cloud.stub(:attach_disk) #.with('VM-CID-CREATE', 'DISK-CID-CREATE')
 
-          Bosh::Common::Common.stub(:retryable).and_yield(1, 'foo')
+          Bosh::Common.stub(:retryable).and_yield(1, 'foo')
 
           agent.stub(:ping)
           agent.stub(:run_task)
