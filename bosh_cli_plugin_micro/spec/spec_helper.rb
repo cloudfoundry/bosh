@@ -3,6 +3,7 @@ require 'rspec'
 require 'rspec/fire'
 require 'cli'
 require 'bosh/cli/commands/micro'
+require 'fakefs/spec_helpers'
 
 def spec_asset(filename)
   File.expand_path("../assets/#{filename}", __FILE__)
