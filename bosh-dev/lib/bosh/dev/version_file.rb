@@ -13,18 +13,18 @@ module Bosh::Dev
       @version_number = version_number
     end
 
+    def version
+      File.read(BOSH_VERSION_FILE).strip
+    end
+
     def write
       File.write(BOSH_VERSION_FILE, updated_version_string)
     end
 
     private
 
-    def existing_version_string
-      File.read(BOSH_VERSION_FILE)
-    end
-
     def updated_version_string
-      existing_version_string.gsub(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}")
+      version.gsub(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}\n")
     end
   end
 end
