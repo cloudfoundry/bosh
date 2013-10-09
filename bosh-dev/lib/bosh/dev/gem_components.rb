@@ -39,7 +39,7 @@ module Bosh::Dev
     end
 
     def dot_gems
-      map { |component| GemComponent.new(component).dot_gem }
+      components.map { |component| component.dot_gem }
     end
 
     def has_db?(component)
@@ -52,6 +52,10 @@ module Bosh::Dev
       GemComponent::ROOT
     end
 
+    def components
+      map { |component| GemComponent.new(component) }
+    end
+
     def version
       File.read("#{root}/BOSH_VERSION").strip
     end
@@ -59,10 +63,7 @@ module Bosh::Dev
     def stage_with_dependencies
       FileUtils.rm_rf 'pkg'
 
-      each do |component|
-        gem_component = GemComponent.new(component)
-        gem_component.build_release_gem
-      end
+      components.each { |component| component.build_release_gem }
 
       FileUtils.mkdir_p "/tmp/all_the_gems/#{Process.pid}"
       Rake::FileUtilsExt.sh "cp #{root}/pkg/gems/*.gem /tmp/all_the_gems/#{Process.pid}"
