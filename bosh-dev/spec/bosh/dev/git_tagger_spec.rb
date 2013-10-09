@@ -20,7 +20,7 @@ module Bosh::Dev
         end
 
         it 'pushes tags' do
-          Open3.should_receive(:capture3).with('git', 'push', '--tags').and_return(success)
+          Open3.should_receive(:capture3).with('git', 'push', 'origin', '--tags').and_return(success)
           git_tagger.tag_and_push(sha, build_number)
         end
       end
