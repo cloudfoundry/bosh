@@ -3,7 +3,7 @@ require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 
 module Bosh::Dev
-  class PipelineArtifacts
+  class StemcellArtifacts
     def self.all(version)
       matrix_names = [
         %w(vsphere   ubuntu),

@@ -1,4 +1,4 @@
-require 'bosh/dev/pipeline_artifacts'
+require 'bosh/dev/stemcell_artifacts'
 
 module Bosh::Dev
   class PromoteArtifacts
@@ -7,7 +7,7 @@ module Bosh::Dev
     end
 
     def commands
-      stemcell_artifacts = PipelineArtifacts.all(build.number)
+      stemcell_artifacts = StemcellArtifacts.all(build.number)
 
       stemcell_commands = stemcell_artifacts.list.map do |stemcell_archive_filename|
         from = File.join(source, stemcell_archive_filename.to_s)
