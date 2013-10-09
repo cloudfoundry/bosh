@@ -17,11 +17,11 @@ describe Bosh::Spec::IntegrationTest::DirectorScheduler do
     deployment_hash['jobs'][0]['persistent_disk'] = 20480
     deployment_manifest = yaml_file('simple', deployment_hash)
     run_bosh("deployment #{deployment_manifest.path}")
-
     run_bosh('deploy')
-
-    current_sandbox.start_scheduler
   end
+
+  before { current_sandbox.scheduler_process.start }
+  after { current_sandbox.scheduler_process.stop }
 
   def snapshots
     Dir[File.join(current_sandbox.agent_tmp_path, 'snapshots', '*')]

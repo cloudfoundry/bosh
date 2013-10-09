@@ -5,38 +5,25 @@ module Bosh::Dev::Sandbox
   class Postgresql
     attr_reader :directory
 
-    def initialize(directory, runner = Bosh::Core::Shell.new)
+    def initialize(directory, db_name, logger, runner = Bosh::Core::Shell.new)
       @directory = directory
+      @db_name = db_name
+      @logger = logger
       @runner = runner
     end
 
-    def setup
-      runner.run("initdb -D #{directory}")
+    def create_db
+      @logger.info("Creating database #{db_name}")
+      runner.run(%Q{psql -c 'create database "#{db_name}";' > /dev/null})
     end
 
-    def run
-      runner.run("pg_ctl start -D #{directory} -l #{directory}/pg.log")
-    end
-
-    def destroy
-      runner.run("pg_ctl stop -m immediate -D #{directory}")
-    end
-
-    def dump
-      runner.run("pg_dump --host #{directory} --format=custom --file=#{dump_path} postgres")
-    end
-
-    def restore
-      runner.run("pg_restore --host #{directory} --clean --format=custom --file=#{dump_path}")
+    def drop_db
+      @logger.info("Dropping database #{db_name}")
+      runner.run(%Q{psql -c 'drop database "#{db_name}";' > /dev/null})
     end
 
     private
 
-    attr_reader :runner
-
-    def dump_path
-      "#{directory}/postgresql_backup"
-    end
-
+    attr_reader :db_name, :runner
   end
 end

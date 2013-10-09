@@ -13,17 +13,23 @@ scheduled_jobs:
   - command: SnapshotDeployments
     schedule: '*/2 * * * * *'
   - command: ScheduledBackup
-    schedule: '*/3 * * * * *'
+    schedule: '*/1 * * * * *'
 db:
-  adapter: sqlite
-  database: <%= sandbox_root %>/director.sqlite
+  adapter: postgres
+  database: <%= db_name %>
+  # Settings are set to defaults since DbBackup
+  # currently does not support export without them
+  host: 127.0.0.1
+  port: 5432
+  user: postgres
+  password: null
   connection_options:
     max_connections: 32
     pool_timeout: 10
 dns:
   db:
-    adapter: sqlite
-    database: <%= sandbox_root %>/director-dns.sqlite
+    adapter: postgres
+    database: <%= db_name %>
     connection_options:
       max_connections: 32
       pool_timeout: 10
