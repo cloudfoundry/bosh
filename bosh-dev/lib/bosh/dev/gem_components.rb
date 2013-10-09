@@ -1,11 +1,18 @@
 require 'rake'
 require 'bosh/dev/gem_component'
+require 'bosh/dev/version_file'
 
 module Bosh::Dev
   class GemComponents
     include Enumerable
 
+    def initialize(build_number)
+      @version_file = VersionFile.new(build_number)
+    end
+
     def build_release_gems
+      @version_file.write
+
       stage_with_dependencies
 
       each do |component|

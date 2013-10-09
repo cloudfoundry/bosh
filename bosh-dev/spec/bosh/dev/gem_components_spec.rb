@@ -4,8 +4,26 @@ require 'bosh/dev/gem_components'
 
 module Bosh::Dev
   describe GemComponents do
+    let(:version_file) do
+      instance_double('Bosh::Dev::VersionFile', write: nil)
+    end
+
     subject(:gem_components) do
-      GemComponents.new
+      GemComponents.new('123')
+    end
+
+    before do
+      VersionFile.stub(:new).with(456).and_return(version_file)
+      Bosh::Dev::VersionFile.stub(:new).with('123').and_return(version_file)
+
+      Rake::FileUtilsExt.stub(:sh)
+    end
+
+    describe '#build_release_gems' do
+      it 'updates BOSH_VERSION' do
+        version_file.should_receive(:write)
+        gem_components.build_release_gems
+      end
     end
 
     describe '#dot_gems' do

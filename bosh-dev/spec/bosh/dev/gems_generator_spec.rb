@@ -11,17 +11,9 @@ module Bosh::Dev
       before { GemComponents.stub(new: gem_components) }
       let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
 
-      before { VersionFile.stub(:new).with(456).and_return(version_file) }
-      let(:version_file) { instance_double('Bosh::Dev::VersionFile', write: nil) }
-
       before do
         Rake::FileUtilsExt.stub(:sh)
         Dir.stub(:chdir).and_yield
-      end
-
-      it 'updates BOSH_VERSION' do
-        version_file.should_receive(:write)
-        subject.generate_and_upload
       end
 
       it 'builds all bosh gems' do
