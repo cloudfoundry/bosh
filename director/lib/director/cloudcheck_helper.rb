@@ -2,8 +2,6 @@
 
 module Bosh::Director
   module CloudcheckHelper
-    include MetadataHelper
-
     # Helper functions that come in handy for
     # cloudcheck:
     # 1. VM/agent interactions
@@ -124,8 +122,13 @@ module Bosh::Director
       new_vm.apply_spec = spec
       new_vm.save
 
-      instance.update(:vm => new_vm) if instance
-      update_vm_metadata(new_vm)
+      if instance
+        instance.update(:vm => new_vm)
+
+        # refresh metadata after new instance has been set
+        VmMetadataUpdater.build.update(new_vm, {})
+      end
+
       agent_client(new_vm).wait_until_ready
 
       # After this point agent is actually responding to

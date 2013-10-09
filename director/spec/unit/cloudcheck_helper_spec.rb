@@ -126,6 +126,13 @@ module Bosh::Director
                   with('agent-222', 'sc-302', {'foo' => 'bar'}, ['A', 'B', 'C'], ['disk-cid'], {'key1' => 'value1'}).
                   ordered.and_return('new-vm-cid')
 
+              vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+              Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
+              vm_metadata_updater.should_receive(:update) do |vm, metadata|
+                expect(vm.cid).to eq('new-vm-cid')
+                expect(metadata).to eq({})
+              end
+
               fake_new_agent.should_receive(:wait_until_ready).ordered
               fake_cloud.should_receive(:attach_disk).with('new-vm-cid', 'disk-cid').ordered
 
@@ -154,6 +161,13 @@ module Bosh::Director
             fake_cloud.should_receive(:create_vm).
                 with('agent-222', 'sc-302', {'foo' => 'bar'}, ['A', 'B', 'C'], [], {'key1' => 'value1'}).
                 ordered.and_return('new-vm-cid')
+
+            vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+            Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
+            vm_metadata_updater.should_receive(:update) do |vm, metadata|
+              expect(vm.cid).to eq('new-vm-cid')
+              expect(metadata).to eq({})
+            end
 
             fake_new_agent.should_receive(:wait_until_ready).ordered
             fake_new_agent.should_receive(:apply).with(spec).ordered

@@ -105,53 +105,75 @@ module Bosh::Director
       end
     end
 
-    describe 'update' do
+    describe '#update' do
+      def self.it_updates_vm_metadata
+        it 'updates vm metadata' do
+          vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater')
+          Bosh::Director::VmMetadataUpdater.should_receive(:build).and_return(vm_metadata_updater)
+          vm_metadata_updater.should_receive(:update).with(vm_model, {})
+          subject.update
+        end
+      end
+
       context 'with only a dns change' do
         let(:changes) { [:dns].to_set }
 
         it 'should only call update_dns' do
           subject.should_receive(:update_dns)
           subject.should_not_receive(:step)
+          subject.update
+        end
 
+        it 'does not update vm metadata' do
+          Bosh::Director::VmMetadataUpdater.should_not_receive(:new)
           subject.update
         end
       end
 
       context 'when the vm need to be stopped' do
-        it 'stops the VM' do
-          subject.should_receive(:stop)
-
+        before do
           subject.stub(:stop)
           subject.stub(:start!)
           subject.stub(:apply_state)
           subject.stub(:wait_until_running)
           subject.stub(current_state: {'job_state' => 'running'})
+        end
 
+        it 'stops the VM' do
+          subject.should_receive(:stop)
           subject.update
         end
+
+        it_updates_vm_metadata
       end
 
       context 'when a snapshot is needed' do
         let(:job_changed) { true }
         let(:packages_changed) { true }
 
-        it 'should only call update_dns' do
-          subject.should_receive(:take_snapshot)
-
+        before do
           subject.stub(:stop)
           subject.stub(:start!)
           subject.stub(:apply_state)
           subject.stub(:wait_until_running)
           subject.stub(current_state: {'job_state' => 'running'})
+        end
 
+        it 'should take snapshot' do
+          subject.should_receive(:take_snapshot)
           subject.update
         end
+
+        it_updates_vm_metadata
       end
 
       context 'when there is a network change' do
         let(:networks_changed) { true }
 
         before do
+          cloud.stub(:configure_networks)
+          agent_client.stub(:prepare_network_change)
+          agent_client.stub(:wait_until_ready)
           subject.stub(:sleep)
           subject.stub(:stop)
           subject.stub(:update_resource_pool)
@@ -187,6 +209,13 @@ module Bosh::Director
           context 'without persistent disk' do
             let(:persistent_disk_changed) { true }
 
+            before do
+              job.stub(persistent_disk: 1)
+              cloud.stub(create_disk: 'disk-cid')
+              cloud.stub(:attach_disk)
+              agent_client.stub(:mount_disk)
+            end
+
             it 'should recreate vm and attach disk' do
               agent_client.should_not_receive(:prepare_network_change)
               cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
@@ -198,6 +227,8 @@ module Bosh::Director
 
               subject.update
             end
+
+            it_updates_vm_metadata
           end
         end
       end
@@ -216,6 +247,8 @@ module Bosh::Director
             subject.update(:canary => true)
             expect(subject.canary?).to be_true
           end
+
+          it_updates_vm_metadata
         end
 
         context 'when canary is not passed in' do
@@ -223,6 +256,8 @@ module Bosh::Director
             subject.update
             expect(subject.canary?).to be_false
           end
+
+          it_updates_vm_metadata
         end
       end
     end

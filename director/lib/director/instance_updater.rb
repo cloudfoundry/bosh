@@ -3,7 +3,6 @@
 module Bosh::Director
   class InstanceUpdater
     include DnsHelper
-    include MetadataHelper
 
     MAX_ATTACH_DISK_TRIES = 3
     UPDATE_STEPS = 7
@@ -74,7 +73,7 @@ module Bosh::Director
       step { update_dns }
       step { update_persistent_disk }
 
-      update_vm_metadata(@vm)
+      VmMetadataUpdater.build.update(@vm, {})
 
       step { apply_state(@instance.spec) }
 

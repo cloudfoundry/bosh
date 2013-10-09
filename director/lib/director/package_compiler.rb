@@ -3,7 +3,6 @@
 module Bosh::Director
   class PackageCompiler
     include LockHelper
-    include MetadataHelper
 
     attr_reader :compilations_performed
 
@@ -221,7 +220,7 @@ module Bosh::Director
           task_result = nil
 
           prepare_vm(stemcell) do |vm_data|
-            update_vm_metadata(vm_data.vm, :compiling => package.name)
+            vm_metadata_updater.update(vm_data.vm, :compiling => package.name)
             agent_task =
               vm_data.agent.compile_package(package.blobstore_id,
                                             package.sha1, package.name,
@@ -413,6 +412,12 @@ module Bosh::Director
         counter += 1 unless task.compiled?
       end
       counter
+    end
+
+    private
+
+    def vm_metadata_updater
+      @vm_metadata_updater ||= VmMetadataUpdater.build
     end
   end
 end

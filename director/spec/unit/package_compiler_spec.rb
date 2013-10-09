@@ -162,6 +162,11 @@ module Bosh::Director
 
       AgentClient.should_receive(:new).exactly(11).times.and_return(*agents)
 
+      vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+      Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
+      vm_metadata_updater.should_receive(:update).with(anything, { compiling: 'common'})
+      vm_metadata_updater.should_receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
+
       agents.each do |agent|
         initial_state = {
           'deployment' => 'mycloud',

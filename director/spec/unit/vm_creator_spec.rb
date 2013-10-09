@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::VmCreator do
 
-  before(:each) do
+  before do
     @cloud = double("cloud")
     Bosh::Director::Config.stub(:cloud).and_return(@cloud)
 
@@ -37,6 +37,22 @@ describe Bosh::Director::VmCreator do
     vm.deployment.should == @deployment
     Bosh::Director::Models::Vm.all.should == [vm]
   end
+
+  it 'sets vm metadata' do
+    @cloud.stub(create_vm: 'fake-vm-cid')
+
+    vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater')
+    Bosh::Director::VmMetadataUpdater.should_receive(:build).and_return(vm_metadata_updater)
+    vm_metadata_updater.should_receive(:update) do |vm, metadata|
+      vm.cid.should == 'fake-vm-cid'
+      metadata.should == {}
+    end
+
+    Bosh::Director::VmCreator.new.create(
+      @deployment, @stemcell, @resource_pool_spec.cloud_properties,
+      @network_settings, nil, @resource_pool_spec.env)
+  end
+
 
   it "should create vm with disk" do
     @cloud.should_receive(:create_vm).with(kind_of(String), "stemcell-id", {"ram" => "2gb"}, @network_settings, [99], {})

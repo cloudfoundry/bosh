@@ -4,7 +4,6 @@ module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
   class VmCreator
     include EncryptionHelper
-    include MetadataHelper
 
     # this is used to retry VM creation on clouds that are unreliable (e.g. AWS)
     MAX_CREATE_VM_TRIES = 5
@@ -54,7 +53,7 @@ module Bosh::Director
       vm = Models::Vm.new(options)
 
       vm.save
-      update_vm_metadata(vm)
+      VmMetadataUpdater.build.update(vm, {})
       vm
     rescue => e
       logger.error("error creating vm: #{e.message}")
