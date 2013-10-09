@@ -29,10 +29,12 @@ pkg_mgr install $packages
 
 # runit
 pkg_mgr install "rpm-build rpmdevtools glibc-static"
+cookbook_release=1.2.0
 runit_version=runit-2.1.1
 run_in_chroot $chroot "
-  curl -L https://github.com/opscode-cookbooks/runit/blob/master/files/default/${runit_version}.tar.gz?raw=true > /tmp/${runit_version}.tar.gz
-  tar -C /tmp -xvf /tmp/${runit_version}.tar.gz
+  curl -L https://github.com/opscode-cookbooks/runit/archive/v${cookbook_release}.tar.gz > /tmp/v${cookbook_release}.tar.gz
+  tar -C /tmp -xvf /tmp/v${cookbook_release}.tar.gz
+  tar -C /tmp -xvf /tmp/runit-${cookbook_release}/files/default/${runit_version}.tar.gz
   cd /tmp/${runit_version}
   ./build.sh
   rpm -i /rpmbuild/RPMS/${runit_version}.rpm

@@ -1,4 +1,3 @@
-# order is important here :(
 require 'spec_helper'
 require 'cloud/vsphere/client'
 
@@ -21,8 +20,9 @@ module VSphereCloud
           client.find_by_inventory_path("foobar")
         end
 
-        it 'escapes slashes into %2f' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo%2fbar')
+        it 'does not escape slashes into %2f' +
+           'because we want to allow users to specify nested objects' do
+          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar')
           client.find_by_inventory_path("foo/bar")
         end
       end
@@ -33,8 +33,9 @@ module VSphereCloud
           client.find_by_inventory_path(['foo', 'bar'])
         end
 
-        it 'escapes slashes' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar%2fbaz')
+        it 'does not escape slashes into %2f' +
+           'because we want to allow users to specify nested objects' do
+          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz')
           client.find_by_inventory_path(['foo', 'bar/baz'])
         end
       end
@@ -44,8 +45,10 @@ module VSphereCloud
           fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz')
           client.find_by_inventory_path(['foo', ['bar', 'baz']])
         end
-        it 'escapes slashes' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz%2fjaz')
+
+        it 'does not escape slashes into %2f' +
+           'because we want to allow users to specify nested objects' do
+          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz/jaz')
           client.find_by_inventory_path(['foo', ['bar', 'baz/jaz']])
         end
       end

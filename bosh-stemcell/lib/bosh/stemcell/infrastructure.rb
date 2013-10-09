@@ -15,15 +15,6 @@ module Bosh::Stemcell
       end
     end
 
-    def self.all
-      [
-        Infrastructure::Vsphere,
-        Infrastructure::Aws,
-        Infrastructure::OpenStack,
-        Infrastructure::Warden
-      ].map(&:new)
-    end
-
     class Base
       attr_reader :name, :hypervisor, :default_disk_size
 

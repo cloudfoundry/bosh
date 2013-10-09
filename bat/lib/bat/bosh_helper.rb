@@ -34,6 +34,10 @@ module Bat
       result
     end
 
+    def bosh_safe(command, options = {})
+      bosh(command, options.merge(on_error: :return))
+    end
+
     def self.bosh_cli_config_path
       @bosh_cli_config_tempfile ||= Tempfile.new('bosh_config')
       @bosh_cli_config_tempfile.path
@@ -73,10 +77,6 @@ module Bat
 
     def openstack?
       info['cpi'] == 'openstack'
-    end
-
-    def vsphere?
-      info['cpi'] == 'vsphere'
     end
 
     def compiled_package_cache?

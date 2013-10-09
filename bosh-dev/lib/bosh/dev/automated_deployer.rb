@@ -2,21 +2,29 @@ require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployment_account'
+require 'bosh/dev/aws/deployments_repository'
 require 'bosh/stemcell/archive'
 
 module Bosh::Dev
   class AutomatedDeployer
-    def initialize(options = {})
-      @micro_target = options.fetch(:micro_target)
-      @bosh_target = options.fetch(:bosh_target)
-      @build_number = options.fetch(:build_number)
-      @environment = options.fetch(:environment)
+    def self.for_environment(micro_target, bosh_target, build_number, environment)
+      deployments_repository = Aws::DeploymentsRepository.new(ENV, path_root: '/tmp')
+      deployment_account = Aws::DeploymentAccount.new(environment, deployments_repository)
+      new(
+        micro_target,
+        bosh_target,
+        build_number,
+        deployment_account,
+        ArtifactsDownloader.new,
+      )
+    end
 
-      @artifacts_downloader = options.fetch(:artifacts_downloader) { ArtifactsDownloader.new }
-      @deployment_account = Aws::DeploymentAccount.new(options.fetch(:environment))
-
-      @micro_director_client = DirectorClient.new(uri: micro_target, username: deployment_account.bosh_user, password: deployment_account.bosh_password)
-      @bosh_director_client = DirectorClient.new(uri: bosh_target, username: deployment_account.bosh_user, password: deployment_account.bosh_password)
+    def initialize(micro_target, bosh_target, build_number, deployment_account, artifacts_downloader)
+      @micro_target = micro_target
+      @bosh_target = bosh_target
+      @build_number = build_number
+      @deployment_account = deployment_account
+      @artifacts_downloader = artifacts_downloader
     end
 
     def deploy
@@ -35,13 +43,28 @@ module Bosh::Dev
 
     private
 
-    attr_reader :micro_target,
-                :bosh_target,
-                :artifacts_downloader,
-                :build_number,
-                :environment,
-                :deployment_account,
-                :micro_director_client,
-                :bosh_director_client
+    attr_reader(
+      :micro_target,
+      :bosh_target,
+      :build_number,
+      :deployment_account,
+      :artifacts_downloader,
+    )
+
+    def micro_director_client
+      @micro_director_client ||= DirectorClient.new(
+        uri: micro_target,
+        username: deployment_account.bosh_user,
+        password: deployment_account.bosh_password
+      )
+    end
+
+    def bosh_director_client
+      @director_client ||= DirectorClient.new(
+        uri: bosh_target,
+        username: deployment_account.bosh_user,
+        password: deployment_account.bosh_password
+      )
+    end
   end
 end

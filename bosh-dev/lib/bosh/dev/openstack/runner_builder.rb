@@ -1,5 +1,4 @@
 require 'bosh/dev/openstack'
-require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bat/director_uuid'
 require 'bosh/dev/bosh_cli_session'
@@ -10,9 +9,8 @@ require 'bosh/dev/bat/runner'
 
 module Bosh::Dev::Openstack
   class RunnerBuilder
-    def build(net_type)
+    def build(bat_helper, net_type)
       env              = ENV
-      bat_helper       = Bosh::Dev::BatHelper.new('openstack', :dont_care)
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_OPENSTACK_VIP_DIRECTOR_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.new
       director_uuid    = Bosh::Dev::Bat::DirectorUuid.new(bosh_cli_session)

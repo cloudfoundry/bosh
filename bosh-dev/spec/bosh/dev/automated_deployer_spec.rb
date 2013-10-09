@@ -3,55 +3,104 @@ require 'bosh/dev/automated_deployer'
 
 module Bosh::Dev
   describe AutomatedDeployer do
-    let(:micro_target) { 'https://micro.target.example.com:25555' }
-    let(:bosh_target) { 'https://bosh.target.example.com:25555' }
+    describe '.for_environment' do
+      it 'builds an automated deployer' do
+        stub_const('ENV', env = double('ENV'))
 
-    let(:environment) { 'test_env' }
-    let(:stemcell_path) { '/tmp/stemcell.tgz' }
-    let(:release_path) { '/tmp/release.tgz' }
-    let(:repository_path) { '/tmp/repo' }
+        downloader = instance_double('Bosh::Dev::ArtifactsDownloader')
+        class_double('Bosh::Dev::ArtifactsDownloader')
+          .as_stubbed_const
+          .should_receive(:new)
+        .and_return(downloader)
 
-    let(:deployment_account) do
-      instance_double('Bosh::Dev::Aws::DeploymentAccount',
-                      manifest_path: '/path/to/manifest.yml',
-                      bosh_user: 'fake-username',
-                      bosh_password: 'fake-password')
-    end
+        deployments_repository = instance_double('Bosh::Dev::Aws::DeploymentsRepository')
+        class_double('Bosh::Dev::Aws::DeploymentsRepository')
+          .as_stubbed_const
+          .should_receive(:new)
+          .with(env, path_root: '/tmp')
+          .and_return(deployments_repository)
 
-    let(:build_number) { '123' }
-    let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
+        deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
+        class_double('Bosh::Dev::Aws::DeploymentAccount')
+          .as_stubbed_const
+          .should_receive(:new)
+          .with('environment', deployments_repository)
+          .and_return(deployment_account)
 
-    let(:micro_director_client) do
-      instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
-    end
+        deployer = instance_double('Bosh::Dev::AutomatedDeployer')
+        described_class.should_receive(:new).with(
+          'micro-target',
+          'bosh-target',
+          'build-number',
+          deployment_account,
+          downloader,
+        ).and_return(deployer)
 
-    let(:bosh_director_client) do
-      instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
-    end
-
-    subject(:deployer) do
-      AutomatedDeployer.new(
-        micro_target: micro_target,
-        bosh_target: bosh_target,
-        build_number: build_number,
-        environment: environment,
-        artifacts_downloader: artifacts_downloader,
-      )
-    end
-
-    before do
-      Bosh::Dev::Aws::DeploymentAccount.stub(:new).with(environment).and_return(deployment_account)
-      Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
-      Bosh::Dev::DirectorClient.stub(:new).with(uri: micro_target,
-                                                username: 'fake-username',
-                                                password: 'fake-password').and_return(micro_director_client)
-      Bosh::Dev::DirectorClient.stub(:new).with(uri: bosh_target,
-                                                username: 'fake-username',
-                                                password: 'fake-password').and_return(bosh_director_client)
+        expect(described_class.for_environment(
+          'micro-target',
+          'bosh-target',
+          'build-number',
+          'environment',
+        )).to eq(deployer)
+      end
     end
 
     describe '#deploy' do
+      subject(:deployer) do
+        AutomatedDeployer.new(
+          micro_target,
+          bosh_target,
+          build_number,
+          deployment_account,
+          artifacts_downloader,
+        )
+      end
+
+      let(:micro_target) { 'https://micro.target.example.com:25555' }
+      let(:bosh_target) { 'https://bosh.target.example.com:25555' }
+      let(:build_number) { '123' }
+
+      let(:deployment_account) do
+        instance_double(
+          'Bosh::Dev::Aws::DeploymentAccount',
+          manifest_path: '/path/to/manifest.yml',
+          bosh_user: 'fake-username',
+          bosh_password: 'fake-password',
+        )
+      end
+
+      let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
+
+      before { Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive) }
       let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
+
+      let(:stemcell_path) { '/tmp/stemcell.tgz' }
+      let(:release_path) { '/tmp/release.tgz' }
+      let(:repository_path) { '/tmp/repo' }
+
+      before do
+        Bosh::Dev::DirectorClient.stub(:new).with(
+          uri: micro_target,
+          username: 'fake-username',
+          password: 'fake-password',
+        ).and_return(micro_director_client)
+      end
+
+      let(:micro_director_client) do
+        instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
+      end
+
+      before do
+        Bosh::Dev::DirectorClient.stub(:new).with(
+          uri: bosh_target,
+          username: 'fake-username',
+          password: 'fake-password',
+        ).and_return(bosh_director_client)
+      end
+
+      let(:bosh_director_client) do
+        instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
+      end
 
       before do
         artifacts_downloader.stub(:download_release).with(build_number).and_return(release_path)

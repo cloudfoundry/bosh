@@ -32,7 +32,7 @@ resources:
    cloud_properties:
       ram: 2048
       disk: 8192
-      cpu: 4
+      cpu: 1
 
 cloud:
   plugin: vsphere

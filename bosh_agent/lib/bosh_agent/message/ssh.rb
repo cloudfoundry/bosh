@@ -60,8 +60,6 @@ module Bosh::Agent
           end
           FileUtils.chown_R(user, user, ssh_dir)
 
-          # Start sshd
-          SshdMonitor.start_sshd
           {"command" => @command, "status" => "success", "ip" => Bosh::Agent::Config.default_ip}
         rescue => e
           return {"command" => @command, "status" => "failure", "error" => e.message}
@@ -101,10 +99,6 @@ module Bosh::Agent
             shell_cmd(%Q[userdel -r #{user}])
           end
 
-          # Stop sshd. Note, SshdMonitor handles the race between stopping sshd
-          # when multiple users are logged in, so we dont have to do any
-          # specific checks here.
-          SshdMonitor.stop_sshd
           {"command" => @command, "status" => "success"}
         rescue => e
           return {"command" => @command, "status" => "failure", "error" => e.message}

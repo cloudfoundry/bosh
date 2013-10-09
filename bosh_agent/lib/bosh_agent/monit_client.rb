@@ -1,36 +1,38 @@
-module MonitApi
+require "logger"
+require "net/http"
+require "crack"
 
-  TYPES = {
-    :file_system => 0,
-    :directory => 1,
-    :file => 2,
-    :process => 3,
-    :remote_host => 4,
-    :system => 5,
-    :fifo => 6
-  }
+module Bosh::Agent
+  class MonitClient
+    TYPES = {
+      :file_system => 0,
+      :directory => 1,
+      :file => 2,
+      :process => 3,
+      :remote_host => 4,
+      :system => 5,
+      :fifo => 6
+    }
 
-  TYPES_INVERSE = TYPES.invert
+    TYPES_INVERSE = TYPES.invert
 
-  STATUS_MESSAGES = {
-    :file_system => "accessible",
-    :directory => "accessible",
-    :file => "accessible",
-    :process => "running",
-    :remote_host => "online with all services",
-    :system => "running",
-    :fifo => "accessible"
-  }
+    STATUS_MESSAGES = {
+      :file_system => "accessible",
+      :directory => "accessible",
+      :file => "accessible",
+      :process => "running",
+      :remote_host => "online with all services",
+      :system => "running",
+      :fifo => "accessible"
+    }
 
-  MONITOR = {
-    :no => 0,
-    :yes => 1,
-    :init => 2
-  }
+    MONITOR = {
+      :no => 0,
+      :yes => 1,
+      :init => 2
+    }
 
-  MONITOR_INVERSE = MONITOR.invert
-
-  class Client
+    MONITOR_INVERSE = MONITOR.invert
 
     def initialize(uri, options = {})
       @logger = options[:logger] || Logger.new(nil)
@@ -129,7 +131,7 @@ module MonitApi
       if arg.kind_of?(Hash)
         if arg.has_key?(:group)
           services = services.select { |service| service_groups_index[service["name"]] &&
-              service_groups_index[service["name"]].include?(arg[:group]) }
+            service_groups_index[service["name"]].include?(arg[:group]) }
         end
         services = services.select { |service| service["type"] == TYPES[arg[:type]].to_s } if arg.has_key?(:type)
         services
@@ -152,7 +154,5 @@ module MonitApi
         raise response.message
       end
     end
-
   end
-
 end

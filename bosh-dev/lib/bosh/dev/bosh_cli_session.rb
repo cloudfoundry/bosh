@@ -1,5 +1,6 @@
 require 'bosh/dev'
 require 'bosh/core/shell'
+require 'common/retryable'
 require 'tempfile'
 
 module Bosh::Dev
@@ -10,12 +11,13 @@ module Bosh::Dev
 
     def run_bosh(cmd, options = {})
       debug_on_fail = !!options.delete(:debug_on_fail)
+      retryable     = options.delete(:retryable) || Bosh::Retryable.new
 
       bosh_command = "bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}"
       puts bosh_command
-      shell.run bosh_command, options
-    rescue
-      run_bosh 'task last --debug', last_number: 100, debug_on_fail: false if debug_on_fail
+      retryable.retryer { shell.run(bosh_command, options) }
+    rescue RuntimeError
+      run_bosh('task last --debug', last_number: 100, debug_on_fail: false) if debug_on_fail
       raise
     end
 

@@ -2,53 +2,33 @@
 
 Tools for creating stemcells
 
-## Install the vagrant plugins we use:
+## Building a stemcell
 
-```bash
-vagrant plugin install vagrant-berkshelf --plugin-version 1.3.3
-vagrant plugin install vagrant-omnibus   --plugin-version 1.1.0
-```
+#### Once-off manual steps:
 
-## Building a vSphere stemcell
+0. Upload a keypair called "bosh" to AWS that you'll use to connect to the remote vm later
+0. Create "bosh-stemcell" security group on AWS to allow SSH access to the stemcell (once per AWS account)
+0. Add instructions to set BOSH_AWS_... environment variables
+0. Install the vagrant plugins we use:
 
-### Bring up the vagrant stemcell building VM
+        vagrant plugin install vagrant-aws       --plugin-version 0.3.0
+
+#### Bring up the vagrant stemcell building VM
 
 From a fresh copy of the bosh repo:
 
-```bash
-cd bosh-stemcell
-vagrant up
-vagrant ssh
-```
+    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
+    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
+    cd bosh-stemcell
+    vagrant up local
 
-You're now inside the vagrant VM.
+#### Build the stemcell from inside the VM
 
-### Install VMWare's ovftool
-
-After logging into the vagrant VM
-
-Download the ovftool from http://www.vmware.com/support/developer/ovf/ to `/bosh/tmp/ovftool.txt`
-
-```bash
-cd /bosh
-curl $OVF_TOOL_URL > tmp/ovftool.txt
-sudo bash tmp/ovftool.txt            # follow installation instructions
-which ovftool                        # should return a location
-```
-
-# Build the stemcell
-
-```bash
-cd /bosh
-bundle install --local
-sudo bundle exec rake ci:build_stemcell[vsphere,centos] CANDIDATE_BUILD_NUMBER=980 http_proxy=http://localhost:3142
-```
-
-Alternatively, you can run that command without the caching proxy, and/or for another OS:
-
-```bash
-sudo bundle exec rake ci:build_stemcell[vsphere,ubuntu] CANDIDATE_BUILD_NUMBER=980
-```
+    vagrant ssh -c '
+      cd /bosh
+      bundle install --local
+      CANDIDATE_BUILD_NUMBER=1045 http_proxy=http://localhost:3142/ bundle exec rake ci:build_stemcell[vsphere,centos]
+    ' local
 
 # Run the stemcell locally with Fusion
 
@@ -111,7 +91,7 @@ ifconfig eth0 172.16.210.30/24 up
 route add default gw 172.16.210.2 eth0
 ```
 
-### VirtualBox 
+### VirtualBox
 
 You'll want to pick an IP that's not in use by your stemcell building vm. 10.0.2.30 *should* be fine.
 

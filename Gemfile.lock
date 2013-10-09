@@ -44,8 +44,8 @@ PATH
       blobstore_client (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_encryption (~> 1.5.0.pre.3)
+      crack (~> 0.3.2)
       httpclient (= 2.2.4)
-      monit_api (~> 1.5.0.pre.3)
       nats (~> 0.4.28)
       netaddr (~> 1.5.0)
       sigar (~> 0.7.2)
@@ -210,12 +210,6 @@ PATH
       thin (~> 1.5.0)
       uuidtools (~> 2.1)
       yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: monit_api
-  specs:
-    monit_api (1.5.0.pre.3)
-      crack (~> 0.3.2)
 
 PATH
   remote: package_compiler
@@ -505,7 +499,6 @@ DEPENDENCIES
   json
   machinist (~> 1.0)
   minitar
-  monit_api!
   mysql2
   nats
   net-ssh

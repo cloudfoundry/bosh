@@ -1,32 +1,37 @@
 Vagrant.configure('2') do |config|
-  config.vm.box = 'opscode_ubuntu-13.04_provisionerless'
-  config.vm.box_url = 'https://opscode-vm-bento.s3.amazonaws.com/vagrant/opscode_ubuntu-13.04_provisionerless.box'
-  config.omnibus.chef_version = '11.6.0'
+  env = ENV.to_hash
+  config.vm.box = 'bosh-stemcell'
+  config.ssh.username = 'ubuntu'
 
-  config.vm.provider 'virtualbox' do |v|
-    v.customize ['modifyvm', :id, '--cpus', '2']
-    v.customize ['modifyvm', :id, '--memory', '2048']
+  config.vm.define :local do |local|
+    local.vm.box_url = 'https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/bosh-stemcell-virtualbox.box'
+    local.vm.provider :virtualbox do |virtualbox|
+      virtualbox.customize ['modifyvm', :id, '--cpus', '2']
+      virtualbox.customize ['modifyvm', :id, '--memory', '2048']
+    end
   end
 
-  config.vm.provision :chef_solo do |chef|
-    chef.add_recipe 'apt'
-    chef.add_recipe 'ruby_build'
-    chef.add_recipe 'rbenv::system'
-    chef.add_recipe 'stemcell_builder'
-    chef.json = {
-      rbenv: {
-        rubies: %w[1.9.3-p448],
-        global: '1.9.3-p448',
-        gems: {
-          '1.9.3-p448' => [
-            { 'name' => 'bundler' },
-          ]
-        },
-      }
-    }
+  config.vm.define :remote do |remote|
+    remote.vm.box_url = 'https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/bosh-stemcell-aws.box'
+    remote.vm.provider :aws do |aws, override|
+      aws.instance_type = 'c1.medium'
+      aws.access_key_id = env.fetch('BOSH_AWS_ACCESS_KEY_ID')
+      aws.secret_access_key = env.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
+      aws.keypair_name = 'bosh'
+      aws.security_groups = ['bosh-stemcell']
+      aws.tags = { 'Name' => 'bosh-stemcell' }
+
+      override.ssh.username = 'ubuntu'
+      override.ssh.private_key_path = '~/.ssh/id_rsa_bosh'
+    end
   end
 
-  config.berkshelf.enabled = true
+  config.vm.provision :shell do |shell|
+    shell.inline = <<-BASH
+    sudo mkdir -p /mnt/stemcells
+    sudo chown -R ubuntu /mnt/stemcells
+    BASH
+  end
 
   config.vm.synced_folder '../', '/bosh'
 end

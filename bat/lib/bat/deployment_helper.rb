@@ -50,14 +50,14 @@ module Bat
             puts 'stemcell already uploaded'
           else
             puts 'stemcell not uploaded'
-            bosh("upload stemcell #{what.to_path}")
+            bosh_safe("upload stemcell #{what.to_path}").should succeed
           end
         when Bat::Release
           if releases.include?(release)
             puts 'release already uploaded'
           else
             puts 'release not uploaded'
-            bosh("upload release #{what.to_path}")
+            bosh_safe("upload release #{what.to_path}").should succeed
           end
         when Bat::Deployment
           if deployments.include?(deployment)
@@ -65,8 +65,8 @@ module Bat
           else
             puts 'deployment not deployed'
             deployment.generate_deployment_manifest(@spec)
-            bosh("deployment #{deployment.to_path}")
-            bosh('deploy')
+            bosh_safe("deployment #{deployment.to_path}").should succeed
+            bosh_safe('deploy').should succeed
           end
         when :no_tasks_processing
           if tasks_processing?
@@ -80,11 +80,11 @@ module Bat
     def cleanup(what)
       case what
         when Bat::Stemcell
-          bosh("delete stemcell #{what.name} #{what.version}")
+          bosh_safe("delete stemcell #{what.name} #{what.version}").should succeed
         when Bat::Release
-          bosh("delete release #{what.name}")
+          bosh_safe("delete release #{what.name}").should succeed
         when Bat::Deployment
-          bosh("delete deployment #{what.name}")
+          bosh_safe("delete deployment #{what.name}").should succeed
           what.delete
         else
           raise "unknown cleanup: #{what}"

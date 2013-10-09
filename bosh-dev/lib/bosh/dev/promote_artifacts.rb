@@ -1,4 +1,4 @@
-require 'bosh/stemcell/pipeline_artifacts'
+require 'bosh/dev/pipeline_artifacts'
 
 module Bosh::Dev
   class PromoteArtifacts
@@ -7,11 +7,11 @@ module Bosh::Dev
     end
 
     def commands
-      stemcell_artifacts = Bosh::Stemcell::PipelineArtifacts.new(build.number)
+      stemcell_artifacts = PipelineArtifacts.all(build.number)
+
       stemcell_commands = stemcell_artifacts.list.map do |stemcell_archive_filename|
         from = File.join(source, stemcell_archive_filename.to_s)
         to = File.join(destination, stemcell_archive_filename.to_s)
-
         "s3cmd --verbose cp #{from} #{to}"
       end
 

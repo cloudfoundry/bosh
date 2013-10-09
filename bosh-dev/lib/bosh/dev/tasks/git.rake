@@ -9,11 +9,19 @@ namespace :git do
     Bosh::Dev::ShipitLifecycle.new.push
   end
 
+  desc 'Git promote a branch to another'
   task :promote_branch, [:dev_branch, :stable_branch] do |_, args|
+    require 'logger'
     require 'bosh/dev/git_promoter'
+    promoter = Bosh::Dev::GitPromoter.new(Logger.new(STDERR))
+    promoter.promote(args.dev_branch, args.stable_branch)
+  end
 
-    puts "Promoting local git branch #{args.dev_branch} to remote branch #{args.stable_branch}"
-
-    Bosh::Dev::GitPromoter.new.promote(args.dev_branch, args.stable_branch)
+  desc 'Git tag a sha with a build number'
+  task :tag_and_push, [:sha, :build_number] do |_, args|
+    require 'logger'
+    require 'bosh/dev/git_tagger'
+    tagger = Bosh::Dev::GitTagger.new(Logger.new(STDERR))
+    tagger.tag_and_push(args.sha, args.build_number)
   end
 end

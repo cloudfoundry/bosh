@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/monit_client'
 
 module Bosh::Agent
-
   # A good chunk of this code is lifted from the implementation of POSIX::Spawn::Child
   class Monit
     BUFSIZE = (32 * 1024)
@@ -63,7 +63,7 @@ module Bosh::Agent
         end
 
         user, cred = monit_credentials
-        MonitApi::Client.new("https://#{user}:#{cred}@127.0.0.1:2822", :logger => logger)
+        MonitClient.new("https://#{user}:#{cred}@127.0.0.1:2822", :logger => logger)
       end
 
       def random_credential

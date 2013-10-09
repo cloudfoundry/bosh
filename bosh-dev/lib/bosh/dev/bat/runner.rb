@@ -23,12 +23,18 @@ module Bosh::Dev::Bat
       @bat_deployment_manifest       = bat_deployment_manifest
     end
 
-    def run_bats
-      prepare_microbosh
-      prepare_bat_deployment
-      Rake::Task['bat'].invoke
+    def deploy_microbosh_and_run_bats
+      create_microbosh_manifest
+      deploy_microbosh
+      run_bats
     ensure
       teardown_micro
+    end
+
+    def run_bats
+      create_bat_manifest
+      set_bat_env_variables
+      Rake::Task['bat'].invoke
     end
 
     private
@@ -49,8 +55,7 @@ module Bosh::Dev::Bat
       end
     end
 
-    def prepare_microbosh
-      create_microbosh_manifest
+    def deploy_microbosh
       Dir.chdir(bat_helper.artifacts_dir) do
         bosh_cli_session.run_bosh "micro deployment #{bat_helper.micro_bosh_deployment_name}"
         bosh_cli_session.run_bosh "micro deploy #{bat_helper.bosh_stemcell_path}"
@@ -65,14 +70,14 @@ module Bosh::Dev::Bat
       end
     end
 
-    def prepare_bat_deployment
-      create_bat_manifest
-      env['BAT_DEPLOYMENT_SPEC'] = File.join(bat_helper.artifacts_dir, 'bat.yml')
-      env['BAT_DIRECTOR']        = director_address.hostname
-      env['BAT_DNS_HOST']        = director_address.ip
-      env['BAT_STEMCELL']        = bat_helper.bosh_stemcell_path
-      env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY']
-      env['BAT_VCAP_PASSWORD']   = 'c1oudc0w'
+    def set_bat_env_variables
+      env['BAT_DEPLOYMENT_SPEC']  = File.join(bat_helper.artifacts_dir, 'bat.yml')
+      env['BAT_DIRECTOR']         = director_address.hostname
+      env['BAT_DNS_HOST']         = director_address.ip
+      env['BAT_STEMCELL']         = bat_helper.bosh_stemcell_path
+      env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY'] || env['BOSH_KEY_PATH']
+      env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
+      env['BAT_INFRASTRUCTURE']   = stemcell_archive.infrastructure
     end
 
     def teardown_micro

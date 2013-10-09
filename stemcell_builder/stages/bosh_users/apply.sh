@@ -28,5 +28,5 @@ usermod -G ${vcap_user_groups} vcap
 cp $assets_dir/sudoers $chroot/etc/sudoers
 
 # Add $bosh_dir/bin to $PATH
-echo "export PATH=$bosh_dir/bin:$PATH" >> $chroot/root/.bashrc
-echo "export PATH=$bosh_dir/bin:$PATH" >> $chroot/home/vcap/.bashrc
+echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/root/.bashrc
+echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/home/vcap/.bashrc

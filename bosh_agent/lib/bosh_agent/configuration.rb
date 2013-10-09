@@ -1,9 +1,6 @@
 module Bosh::Agent
   class Configuration
     DEFAULT_BASE_DIR = '/var/vcap'
-    DEFAULT_SSHD_MONITOR_INTERVAL = 30
-    DEFAULT_SSHD_START_DELAY = 30
-
     CONFIG_OPTIONS = [
       :base_dir,
       :logger,
@@ -25,9 +22,6 @@ module Bosh::Agent
       :settings_file,
       :settings,
       :state,
-      :sshd_monitor_interval,
-      :sshd_start_delay,
-      :sshd_monitor_enabled,
       :credentials
     ]
 
@@ -68,10 +62,6 @@ module Bosh::Agent
       @smtp_password = random_password(8)
 
       @heartbeat_interval = config['heartbeat_interval']
-
-      @sshd_monitor_interval = config['sshd_monitor_interval'] || DEFAULT_SSHD_MONITOR_INTERVAL
-      @sshd_start_delay = config['sshd_start_delay'] || DEFAULT_SSHD_START_DELAY
-      @sshd_monitor_enabled = config['sshd_monitor_enabled']
 
       unless @configure
         @logger.info("Configuring Agent with: #{config.inspect}")

@@ -4,10 +4,10 @@ require 'bosh/dev/aws/deployments_repository'
 module Bosh::Dev
   module Aws
     class DeploymentAccount
-      def initialize(deployment_name)
+      def initialize(deployment_name, deployments_repository)
         @deployment_name = deployment_name
+        @deployments_repository = deployments_repository
         @shell = Bosh::Core::Shell.new
-        @deployments_repository = Aws::DeploymentsRepository.new(path_root: '/tmp')
         deployments_repository.clone_or_update!
       end
 

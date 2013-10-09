@@ -289,7 +289,6 @@ AGENT_HELP
     private
 
     def deployer(manifest_filename=nil)
-      check_if_deployments_dir
       deployment_required unless manifest_filename
 
       if @deployer.nil?
@@ -315,15 +314,7 @@ AGENT_HELP
       @deployer
     end
 
-    def check_if_deployments_dir
-      #force the issue to maintain central bosh-deployments.yml
-      if File.basename(work_dir) != "deployments"
-        err "Sorry, your current directory doesn't look like deployments directory"
-      end
-    end
-
     def find_deployment(name)
-      check_if_deployments_dir
       File.expand_path(File.join(work_dir, "#{name}", MICRO_BOSH_YAML))
     end
 

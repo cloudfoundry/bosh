@@ -18,7 +18,6 @@ AllCops:
    - bosh_warden_cpi/**
    - director/**
    - health_monitor/**
-   - monit_api/**
    - package_compiler/**
    - release/**
    - ruby_vim_sdk/**

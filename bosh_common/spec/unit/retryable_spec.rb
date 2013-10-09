@@ -2,9 +2,7 @@ require 'spec_helper'
 require 'common/retryable'
 
 describe Bosh::Retryable do
-  before do
-    Kernel.stub(:sleep)
-  end
+  before { Kernel.stub(:sleep) }
 
   it 'should raise an ArgumentError error if invalid options are used' do
     expect {
@@ -34,6 +32,66 @@ describe Bosh::Retryable do
     end
 
     count.should == 3
+  end
+
+  context 'when sleeper raises retryable error' do
+    let(:sleeper) { Proc.new { raise(sleeper_error_class, 'error-message') } }
+    let(:sleeper_error_class) { Class.new(Exception) }
+    let(:block_error_class)   { Class.new(Exception) }
+
+    context 'when error is raised in the sleeper block' do
+      it 'should retry and return successfully' do
+        count = 0
+        described_class.new(tries: 2, on: [sleeper_error_class], sleep: sleeper).retryer do |tries|
+          count += 1
+          tries == 2 ? true : false
+        end
+        count.should == 2
+      end
+    end
+
+    context 'when error is raised in retryable block' do
+      it 'should retry and return successfully' do
+        count = 0
+        described_class.new(tries: 2, on: [sleeper_error_class, block_error_class], sleep: sleeper).retryer do |tries|
+          count += 1
+          tries == 2 ? true : raise(block_error_class, 'yield-error')
+        end
+        count.should == 2
+      end
+    end
+  end
+
+  context 'when sleeper raises non-retryable error' do
+    let(:sleeper) { Proc.new { raise(sleeper_error_class, 'error-message') } }
+    let(:sleeper_error_class) { Class.new(Exception) }
+    let(:block_error_class)   { Class.new(Exception) }
+
+    context 'when error is raised in the sleeper block' do
+      it 'does not retry and propagates sleeper error' do
+        count = 0
+        expect {
+          described_class.new(tries: 2, on: [], sleep: sleeper).retryer do |_|
+            count += 1
+            false
+          end
+        }.to raise_error(sleeper_error_class, 'error-message')
+        count.should == 1
+      end
+    end
+
+    context 'when error is raised in retryable block' do
+      it 'does not retry and propagates sleeper error instead of propagating retryable error' do
+        count = 0
+        expect {
+          described_class.new(tries: 2, on: [block_error_class], sleep: sleeper).retryer do |_|
+            count += 1
+            raise(block_error_class, 'yield-error')
+          end
+        }.to raise_error(sleeper_error_class, 'error-message')
+        count.should == 1
+      end
+    end
   end
 
   it 'should retry when given error is raised and given message matches' do

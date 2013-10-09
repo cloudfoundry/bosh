@@ -22,8 +22,15 @@ module Bosh::Cli::Command
 
     def show_deployment(name, options={})
       say("Deployment `#{name.make_green}'")
+
       vms = director.fetch_vm_state(name)
-      err('No VMs') if vms.empty?
+
+      if vms.empty?
+        nl
+        say('No VMs')
+        nl
+        return
+      end
 
       sorted = vms.sort do |a, b|
         s = a['job_name'].to_s <=> b['job_name'].to_s

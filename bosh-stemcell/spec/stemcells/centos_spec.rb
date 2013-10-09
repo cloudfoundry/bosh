@@ -1,6 +1,9 @@
 require 'spec_helper'
 
 describe 'CentOs Stemcell' do
+
+  it_behaves_like 'a stemcell'
+
   describe package('apt') do
     it { should_not be_installed }
   end
@@ -71,39 +74,32 @@ describe 'CentOs Stemcell' do
     end
   end
 
-  describe 'installed by bosh_ruby' do
-    describe command('/var/vcap/bosh/bin/ruby -r yaml -e "Psych::SyntaxError"') do
-      it { should return_exit_status(0) }
+  context 'installed by system_grub' do
+    {
+      'grub' => '0.97-81.el6.x86_64',
+    }.each do |pkg, version|
+      describe package(pkg) do
+        it { should be_installed.with_version(version) }
+      end
+    end
+
+    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+      describe file("/boot/grub/#{grub_stage}") do
+        it { should be_file }
+      end
     end
   end
 
-  describe 'installed by bosh_agent' do
-    describe command('/var/vcap/bosh/bin/ruby -r bosh_agent -e"Bosh::Agent"') do
-      it { should return_exit_status(0) }
+  context 'installed by system_kernel' do
+    {
+      'kernel'         => '2.6.32-358.18.1.el6.x86_64',
+      'kernel-headers' => '2.6.32-358.18.1.el6.x86_64',
+    }.each do |pkg, version|
+      describe package(pkg) do
+        it { should be_installed.with_version(version) }
+      end
     end
   end
-
-  context 'installed by bosh_sudoers' do
-    describe file('/etc/sudoers') do
-      it { should be_file }
-      it { should contain '#includedir /etc/sudoers.d' }
-    end
-  end
-
-  context 'installed by bosh_micro' do
-    describe file('/var/vcap/micro/apply_spec.yml') do
-      it { should be_a_file }
-      it { should contain 'powerdns' }
-    end
-
-    describe file('/var/vcap/micro_bosh/data/cache') do
-      it { should be_a_directory }
-    end
-  end
-
-  context 'installed by system_grub'
-
-  context 'installed by system_kernel'
 
   context 'installed by image_install_grub' do
     describe file('/etc/fstab') do

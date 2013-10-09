@@ -46,8 +46,11 @@ describe Bhm::Plugins::CloudWatch do
             "system.swap.percent",
             "system.swap.kb",
             "system.disk.system.percent",
+            "system.disk.system.inode_percent",
             "system.disk.ephemeral.percent",
+            "system.disk.ephemeral.inode_percent",
             "system.disk.persistent.percent",
+            "system.disk.persistent.inode_percent",
             "system.healthy"
         ]
       end

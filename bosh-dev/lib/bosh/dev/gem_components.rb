@@ -35,7 +35,6 @@ module Bosh::Dev
        bosh_warden_cpi
        director
        health_monitor
-       monit_api
        package_compiler
        ruby_vim_sdk
        simple_blobstore_server

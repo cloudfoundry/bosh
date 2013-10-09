@@ -80,7 +80,7 @@ describe Bosh::Agent::Heartbeat do
         :ephemeral => {:percent => '4'},
         :persistent => {:percent => '3'}
     }
-    Bosh::Agent::Message::DiskUtil.stub(:get_usage).and_return(fake_disk_usage)
+    Bosh::Agent::DiskUtil.stub(:get_usage).and_return(fake_disk_usage)
 
     expected_payload = {
       "job" => "mutator",

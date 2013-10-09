@@ -4,36 +4,37 @@ require 'bosh/stemcell/archive'
 
 module Bosh::Dev
   describe DirectorClient do
-    let (:director_handle) { instance_double('Bosh::Cli::Client::Director') }
-    let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
-
     subject(:director_client) do
       DirectorClient.new(
-        uri: 'bosh.example.com',
+        uri:      'bosh.example.com',
         username: 'fake_username',
         password: 'fake_password',
       )
     end
 
-    before do
-      BoshCliSession.stub(new: cli)
+    before { BoshCliSession.stub(new: cli) }
+    let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
-      director_klass = class_double('Bosh::Cli::Client::Director').as_stubbed_const
-      director_klass.stub(:new).with(
-        'bosh.example.com',
-        'fake_username',
-        'fake_password',
-      ).and_return(director_handle)
+    before do
+      class_double('Bosh::Cli::Client::Director')
+        .as_stubbed_const
+        .stub(:new)
+        .with('bosh.example.com', 'fake_username', 'fake_password')
+        .and_return(director_handle)
     end
+    let (:director_handle) { instance_double('Bosh::Cli::Client::Director') }
 
     describe '#upload_stemcell' do
       let(:stemcell_archive) do
-        instance_double('Bosh::Stemcell::Archive', name: 'fake-stemcell', version: '008', path: '/path/to/fake-stemcell-008.tgz')
+        instance_double(
+          'Bosh::Stemcell::Archive',
+          name: 'fake-stemcell',
+          version: '008',
+          path: '/path/to/fake-stemcell-008.tgz',
+        )
       end
 
-      before do
-        director_handle.stub(:list_stemcells) { [] }
-      end
+      before { director_handle.stub(:list_stemcells) { [] } }
 
       it 'uploads the stemcell with the cli' do
         cli.should_receive(:run_bosh).with('upload stemcell /path/to/fake-stemcell-008.tgz', debug_on_fail: true)
@@ -42,7 +43,10 @@ module Bosh::Dev
       end
 
       it 'always re-targets and logs in first' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         cli.should_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true).ordered
 
@@ -50,9 +54,7 @@ module Bosh::Dev
       end
 
       context 'when the stemcell being uploaded exists on the director' do
-        before do
-          director_handle.stub(:list_stemcells).and_return([{ 'name' => 'fake-stemcell', 'version' => '008' }])
-        end
+        before { director_handle.stub(:list_stemcells).and_return([{ 'name' => 'fake-stemcell', 'version' => '008' }]) }
 
         it 'does not re-upload it' do
           cli.should_not_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true)
@@ -70,7 +72,10 @@ module Bosh::Dev
       end
 
       it 'always re-targets and logs in first' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         cli.should_receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
 
@@ -99,7 +104,10 @@ module Bosh::Dev
       end
 
       it 'always re-targets and logs in first' do
-        cli.should_receive(:run_bosh).with('target bosh.example.com').ordered
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
         cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         cli.should_receive(:run_bosh).with(/deployment/).ordered
         cli.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered

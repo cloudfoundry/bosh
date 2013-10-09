@@ -12,14 +12,16 @@ namespace :ci do
     require 'bosh/dev/build'
     require 'bosh/dev/gems_generator'
     build = Bosh::Dev::Build.candidate
-    Bosh::Dev::GemsGenerator.new(build).generate_and_upload
+    gems_generator = Bosh::Dev::GemsGenerator.new(build)
+    gems_generator.generate_and_upload
   end
 
   desc 'Publish CI pipeline MicroBOSH release to S3'
   task publish_microbosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
     require 'bosh/dev/micro_bosh_release'
-    Bosh::Dev::Build.candidate.upload_release(Bosh::Dev::MicroBoshRelease.new)
+    build = Bosh::Dev::Build.candidate
+    build.upload_release(Bosh::Dev::MicroBoshRelease.new)
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
@@ -48,9 +50,16 @@ namespace :ci do
     stemcell_publisher.publish(stemcell_file)
   end
 
+  task :publish_stemcell_in_vm, [:infrastructure_name, :operating_system_name, :vm_name] do |_, args|
+    require 'bosh/dev/stemcell_vm'
+    stemcell_vm = Bosh::Dev::StemcellVm.new(args.to_hash, ENV)
+    stemcell_vm.publish
+  end
+
   desc 'Promote from pipeline to artifacts bucket'
   task :promote_artifacts do
     require 'bosh/dev/build'
-    Bosh::Dev::Build.candidate.promote_artifacts
+    build = Bosh::Dev::Build.candidate
+    build.promote_artifacts
   end
 end

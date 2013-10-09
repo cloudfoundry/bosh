@@ -1,12 +1,31 @@
 require 'spec_helper'
 
 describe 'Ubuntu Stemcell' do
+
+  it_behaves_like 'a stemcell'
+
   describe package('apt') do
     it { should be_installed }
   end
 
   describe package('rpm') do
     it { should_not be_installed }
+  end
+
+  context 'installed by base_debootstrap' do
+    {
+      'ubuntu-minimal' => '1.197',
+    }.each do |pkg, version|
+      describe package(pkg) do
+        it { should be_installed.with_version(version) }
+      end
+    end
+
+    describe file('/etc/lsb-release') do
+      it { should be_file }
+      it { should contain 'DISTRIB_RELEASE=10.04' }
+      it { should contain 'DISTRIB_CODENAME=lucid' }
+    end
   end
 
   context 'installed by base_apt' do
@@ -72,52 +91,18 @@ describe 'Ubuntu Stemcell' do
     end
   end
 
-  describe 'installed by bosh_ruby' do
-    describe command('/var/vcap/bosh/bin/ruby -r yaml -e "Psych::SyntaxError"') do
-      it { should return_exit_status(0) }
-    end
-  end
-
-  describe 'installed by bosh_agent' do
-    describe command('/var/vcap/bosh/bin/ruby -r bosh_agent -e"Bosh::Agent"') do
-      it { should return_exit_status(0) }
-    end
-  end
-
-  context 'installed by bosh_sudoers' do
-    describe file('/etc/sudoers') do
-      it { should be_file }
-      it { should contain '#includedir /etc/sudoers.d' }
-    end
-  end
-
-  context 'installed by bosh_micro' do
-    {
-      'libpq-dev'   => '8.4.17-0ubuntu10.04',
-      'genisoimage' => '9:1.1.10-1ubuntu1',
-    }.each do |pkg, version|
-      describe package(pkg) do
-        it { should be_installed.with_version(version) }
-      end
-    end
-
-    describe file('/var/vcap/micro/apply_spec.yml') do
-      it { should be_file }
-      it { should contain 'deployment: micro' }
-      it { should contain 'powerdns' }
-    end
-
-    describe file('/var/vcap/micro_bosh/data/cache') do
-      it { should be_a_directory }
-    end
-  end
-
   context 'installed by system_grub' do
     {
       'grub' => '0.97-29ubuntu60.10.04.2',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
+      end
+    end
+
+    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+      describe file("/boot/grub/#{grub_stage}") do
+        it { should be_file }
       end
     end
   end

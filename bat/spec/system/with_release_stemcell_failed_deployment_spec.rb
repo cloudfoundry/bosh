@@ -26,7 +26,7 @@ describe 'with release, stemcell and failed deployment' do
 
   context 'A brand new deployment' do
     it 'should stop the deployment if the canary fails' do
-      bosh("deployment #{deployment_manifest_bad.to_path}").should succeed
+      bosh_safe("deployment #{deployment_manifest_bad.to_path}").should succeed
       failed_deployment_result = bosh('deploy', on_error: :return)
 
       # possibly check for:
@@ -42,14 +42,14 @@ describe 'with release, stemcell and failed deployment' do
   context 'A deployment already exists' do
     it 'should stop the deployment if the canary fails' do
       deployment_manifest_good = with_deployment
-      bosh("deployment #{deployment_manifest_good.to_path}").should succeed
-      bosh('deploy').should succeed
+      bosh_safe("deployment #{deployment_manifest_good.to_path}").should succeed
+      bosh_safe('deploy').should succeed
 
-      bosh("deployment #{deployment_manifest_bad.to_path}").should succeed
-      failed_deployment_result = bosh('deploy', on_error: :return)
+      bosh_safe("deployment #{deployment_manifest_bad.to_path}").should succeed
 
       # possibly check for:
       # Error 400007: `batlight/0' is not running after update
+      failed_deployment_result = bosh_safe('deploy')
       failed_deployment_result.should_not succeed
 
       events(get_task_id(failed_deployment_result.output, 'error')).each do |event|

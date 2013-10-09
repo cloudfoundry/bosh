@@ -3,15 +3,13 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Cli::Command::Base do
-
-  before :each do
+  before do
     @config = File.join(Dir.mktmpdir, "bosh_config")
     @cache = File.join(Dir.mktmpdir, "bosh_cache")
   end
 
   describe Bosh::Cli::Command::Micro do
-
-    before :each do
+    before do
       @cmd = Bosh::Cli::Command::Micro.new(nil)
       @cmd.add_option(:non_interactive, true)
       @cmd.add_option(:config, @config)
@@ -54,7 +52,7 @@ describe Bosh::Cli::Command::Base do
       @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
       @manifest_yaml["resources"]["cloud_properties"]["image_id"] = "sc-id"
       @cmd.stub(:deployer).and_return(mock_deployer)
-      @cmd.perform()
+      @cmd.perform
     end
 
     it "should not allow deploying a micro BOSH instance if no stemcell is provided" do
@@ -62,7 +60,7 @@ describe Bosh::Cli::Command::Base do
         @cmd.stub(:deployment).and_return(@manifest_path)
         @manifest_yaml = { "name" => "foo" }
         @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
-        @cmd.perform()
+        @cmd.perform
       }.to raise_error(Bosh::Cli::CliError, "No stemcell provided")
     end
 
@@ -80,7 +78,7 @@ describe Bosh::Cli::Command::Base do
         @manifest_yaml["resources"]["cloud_properties"]["image_id"] = "sc-id"
         @manifest_yaml["resources"]["persistent_disk"] = nil
         @cmd.stub(:deployer).and_return(mock_deployer)
-        @cmd.perform()
+        @cmd.perform
       }.to raise_error(Bosh::Cli::CliExit, error_message)
     end
 
@@ -102,34 +100,19 @@ describe Bosh::Cli::Command::Base do
     end
 
     describe 'agent command' do
-      let(:runner) { double(Bosh::Cli::Runner) }
-      let(:command) { Bosh::Cli::Command::Micro.new(runner) }
-
-      let(:agent) { double(Bosh::Agent::HTTPClient) }
+      before { @cmd.stub(deployer: deployer) }
       let(:deployer) { double(Bosh::Deployer::InstanceManager, agent: agent) }
-      let(:request) { 'ping' }
-      let(:response) { 'pong' }
-
-      before do
-        File.stub(basename: 'deployments')
-        command.stub(deployer: deployer)
-      end
+      let(:agent)    { double(Bosh::Agent::HTTPClient) }
 
       it 'sends the command to an agent and shows the returned output' do
-        agent.should_receive(request.to_sym).and_return(response)
-        command.should_receive(:say) do |pong|
-          expect(pong).to include response
-        end
-
-        command.agent(request)
+        agent.should_receive(:ping).and_return('pong')
+        @cmd.should_receive(:say) { |response| expect(response).to include('pong') }
+        @cmd.agent('ping')
       end
     end
 
     describe "deploying/updating with --update-if-exists flag" do
-      let(:deployer) do
-        mock(Bosh::Deployer::InstanceManager, {
-          :renderer= => nil, :discover_bosh_ip => nil})
-      end
+      let(:deployer) { mock(Bosh::Deployer::InstanceManager, :renderer= => nil, :discover_bosh_ip => nil) }
 
       before do
         deployer.stub(check_dependencies: true)

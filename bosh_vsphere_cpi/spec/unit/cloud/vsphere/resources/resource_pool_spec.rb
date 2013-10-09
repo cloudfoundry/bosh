@@ -3,13 +3,13 @@
 require File.expand_path("../../../../../spec_helper", __FILE__)
 
 describe VSphereCloud::Resources::ResourcePool do
-  before(:each) do
+  before do
     @client = double(:client)
     VSphereCloud::Config.client = @client
     VSphereCloud::Config.mem_overcommit = 1.0
   end
 
-  describe :initialize do
+  describe "#initialize" do
     it "should create a resource pool" do
       cluster = double(:cluster)
       cluster_config = VSphereCloud::Config::ClusterConfig.new("foo")

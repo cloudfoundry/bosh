@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/dev/bat_helper'
 require 'bosh/dev/openstack/runner_builder'
 
 module Bosh::Dev::Openstack
@@ -9,10 +10,6 @@ module Bosh::Dev::Openstack
           'Bosh::Dev::BatHelper',
           bosh_stemcell_path: 'stemcell-path',
         )
-        class_double('Bosh::Dev::BatHelper').as_stubbed_const
-          .should_receive(:new)
-          .with('openstack', :dont_care)
-          .and_return(bat_helper)
 
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
         class_double('Bosh::Dev::Bat::DirectorAddress').as_stubbed_const
@@ -64,7 +61,7 @@ module Bosh::Dev::Openstack
             bat_deployment_manifest
           ).and_return(runner)
 
-        expect(subject.build('net-type')).to eq(runner)
+        expect(subject.build(bat_helper, 'net-type')).to eq(runner)
       end
     end
   end

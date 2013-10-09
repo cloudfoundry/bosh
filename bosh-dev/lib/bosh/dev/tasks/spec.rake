@@ -1,6 +1,6 @@
 require 'rspec'
-require 'rspec/core/rake_task'
 require 'tempfile'
+require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
 
 namespace :spec do
@@ -83,10 +83,14 @@ namespace :spec do
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
       require 'bosh/dev/build'
+
+      File.exists?(ENV['BOSH_VSPHERE_STEMCELL']) ||
       ENV['BOSH_VSPHERE_STEMCELL'] = Bosh::Dev::Build.candidate.download_stemcell(
-        infrastructure: Bosh::Stemcell::Infrastructure::Vsphere.new,
-        name: 'bosh-stemcell',
-        light: false
+        'bosh-stemcell',
+        Bosh::Stemcell::Infrastructure.for('vsphere'),
+        Bosh::Stemcell::OperatingSystem.for('ubuntu'),
+        false,
+        Dir.pwd,
       )
       t.pattern = 'spec/external/vsphere_cpi_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
@@ -94,28 +98,14 @@ namespace :spec do
   end
 
   namespace :system do
-    namespace :aws do
-      desc 'Run AWS MicroBOSH deployment suite'
-      task :micro do
-        require 'bosh/dev/aws/runner_builder'
-        Bosh::Dev::Aws::RunnerBuilder.new.build.run_bats
-      end
+    desc 'Run system (BATs) tests (deploys microbosh)'
+    task :micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
+      Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
-    namespace :openstack do
-      desc 'Run Openstack MicroBOSH deployment suite'
-      task :micro, [:net_type] do |_, args|
-        require 'bosh/dev/openstack/runner_builder'
-        Bosh::Dev::Openstack::RunnerBuilder.new.build(args.net_type).run_bats
-      end
-    end
-
-    namespace :vsphere do
-      desc 'Run vSphere MicroBOSH deployment suite'
-      task :micro do
-        require 'bosh/dev/vsphere/runner_builder'
-        Bosh::Dev::VSphere::RunnerBuilder.new.build.run_bats
-      end
+    desc 'Run system (BATs) tests (uses existing microbosh)'
+    task :existing_micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
+      Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
   end
 end

@@ -30,7 +30,7 @@ module Bosh::Agent
 
         if @full_format
           response["vitals"] = Bosh::Agent::Monit.get_vitals
-          response["vitals"]["disk"] = Bosh::Agent::Message::DiskUtil.get_usage
+          response["vitals"]["disk"] = Bosh::Agent::DiskUtil.get_usage
         end
 
         response

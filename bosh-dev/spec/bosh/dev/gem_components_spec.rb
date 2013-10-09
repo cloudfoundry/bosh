@@ -39,7 +39,6 @@ module Bosh::Dev
           bosh_warden_cpi-123.gem
           director-123.gem
           health_monitor-123.gem
-          monit_api-123.gem
           package_compiler-123.gem
           ruby_vim_sdk-123.gem
           simple_blobstore_server-123.gem
