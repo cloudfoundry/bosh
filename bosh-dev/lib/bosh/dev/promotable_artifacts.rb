@@ -8,7 +8,7 @@ module Bosh::Dev
     end
 
     def all
-      commands.map { |command| PromotableArtifact.new(command) }
+      gem_artifacts + release_artifacts + stemcell_artifacts
     end
 
     def source
@@ -27,19 +27,25 @@ module Bosh::Dev
 
     attr_reader :build
 
-    def commands
-      stemcell_artifacts = StemcellArtifacts.all(build.number)
+    def gem_artifacts
+      commands = ["s3cmd --verbose sync #{File.join(source, 'gems/')} s3://bosh-jenkins-gems"]
+      commands.map { |command| PromotableArtifact.new(command) }
+    end
 
-      stemcell_commands = stemcell_artifacts.list.map do |stemcell_archive_filename|
+    def release_artifacts
+      commands = ["s3cmd --verbose cp #{File.join(source, 'release', release_file)} #{File.join(destination, 'release', release_file)}"]
+      commands.map { |command| PromotableArtifact.new(command) }
+    end
+
+    def stemcell_artifacts
+      stemcell_artifacts = StemcellArtifacts.all(build.number)
+      commands = stemcell_artifacts.list.map do |stemcell_archive_filename|
         from = File.join(source, stemcell_archive_filename.to_s)
         to = File.join(destination, stemcell_archive_filename.to_s)
         "s3cmd --verbose cp #{from} #{to}"
       end
 
-      [
-        "s3cmd --verbose sync #{File.join(source, 'gems/')} s3://bosh-jenkins-gems",
-        "s3cmd --verbose cp #{File.join(source, 'release', release_file)} #{File.join(destination, 'release', release_file)}",
-      ] + stemcell_commands
+      commands.map { |command| PromotableArtifact.new(command) }
     end
   end
 end
