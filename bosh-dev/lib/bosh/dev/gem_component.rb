@@ -31,13 +31,13 @@ module Bosh
         File.open(version_file_path, 'w') { |f| f.write(file_contents) }
       end
 
-      private
-
-      attr_reader :component
-
       def version
         @version ||= File.read("#{ROOT}/BOSH_VERSION").strip
       end
+
+      private
+
+      attr_reader :component
     end
   end
 end
