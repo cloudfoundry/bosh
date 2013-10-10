@@ -1,13 +1,9 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 require "spec_helper"
 require "tempfile"
 require "cloud"
+require "logger"
 require "bosh_openstack_cpi"
 
-##
-# BOSH OpenStack CPI Integration tests
-#
 describe Bosh::OpenStackCloud::Cloud do
   let(:cpi_options) do
     {

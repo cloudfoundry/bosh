@@ -76,7 +76,7 @@ namespace :spec do
 
     desc 'OpenStack CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:openstack_vm_lifecycle) do |t|
-      t.pattern = 'spec/external/openstack_cpi_spec.rb'
+      t.pattern = 'bosh_openstack_cpi/spec/integration/lifecycle_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
 
