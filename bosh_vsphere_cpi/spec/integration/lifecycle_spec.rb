@@ -25,62 +25,57 @@ describe VSphereCloud::Cloud do
   #          - BOSH_CL:
   #          resource_pool: ACCEPTANCE_RP
   #
-
-  def env(var_name)
-    variable = ENV[var_name]
-    raise "SPEC: Missing environment variable #{var_name}" unless variable
-    variable
+  before(:all) do
+    @cpi_options_path  = ENV['BOSH_VSPHERE_CPI_OPTIONS']  || raise("Missing BOSH_VSPHERE_CPI_OPTIONS")
+    @cpi_host          = ENV['BOSH_VSPHERE_CPI_HOST']     || raise("Missing BOSH_VSPHERE_CPI_HOST")
+    @cpi_user          = ENV['BOSH_VSPHERE_CPI_USER']     || raise("Missing BOSH_VSPHERE_CPI_USER")
+    @cpi_password      = ENV['BOSH_VSPHERE_CPI_PASSWORD'] || raise("Missing BOSH_VSPHERE_CPI_PASSWORD")
+    @cpi_vlan          = ENV['BOSH_VSPHERE_VLAN']         || raise("Missing BOSH_VSPHERE_VLAN")
+    @cpi_stemcell      = ENV['BOSH_VSPHERE_STEMCELL']     || raise("Missing BOSH_VSPHERE_STEMCELL")
   end
 
-  before :all do
-    @cpi_options = YAML.load_file(env('BOSH_VSPHERE_CPI_OPTIONS'))
-    @cpi_options.fetch('vcenters').fetch(0).update(
-      'host' => env('BOSH_VSPHERE_CPI_HOST'),
-      'user' => env('BOSH_VSPHERE_CPI_USER'),
-      'password' => env('BOSH_VSPHERE_CPI_PASSWORD'),
+  before(:all) do
+    cpi_options = YAML.load_file(@cpi_options_path)
+    cpi_options.fetch('vcenters').fetch(0).update(
+      'host' => @cpi_host,
+      'user' => @cpi_user,
+      'password' => @cpi_password,
     )
-    @cpi = described_class.new(@cpi_options)
-
-    @vlan = env('BOSH_VSPHERE_VLAN')
-
-    Dir.mktmpdir do |temp_dir|
-      output = `tar -C #{temp_dir} -xzf #{env('BOSH_VSPHERE_STEMCELL')} 2>&1`
-      raise "SPEC: Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
-
-      @stemcell_id = @cpi.create_stemcell("#{temp_dir}/image", nil)
-    end
-  end
-
-  after(:all) do
-    cpi.delete_stemcell(@stemcell_id) if @stemcell_id
+    @cpi = described_class.new(cpi_options)
   end
 
   let(:cpi) { @cpi }
 
-  before do
-    @vm_id = nil
-    @disk_id = nil
+  before(:all) do
+    Dir.mktmpdir do |temp_dir|
+      output = `tar -C #{temp_dir} -xzf #{@cpi_stemcell} 2>&1`
+      raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
+      @stemcell_id = @cpi.create_stemcell("#{temp_dir}/image", nil)
+    end
   end
 
-  after do
-    cpi.delete_vm(@vm_id) if @vm_id
-    cpi.delete_disk(@disk_id) if @disk_id
-  end
+  after(:all) { cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
+
+  before { @vm_id = nil }
+  after { cpi.delete_vm(@vm_id) if @vm_id }
+
+  before { @disk_id = nil }
+  after { cpi.delete_disk(@disk_id) if @disk_id }
 
   def vm_lifecycle(network_spec, disk_locality)
     resource_pool = {
-        'ram' => 1024,
-        'disk' => 2048,
-        'cpu' => 1,
+      'ram' => 1024,
+      'disk' => 2048,
+      'cpu' => 1,
     }
 
     @vm_id = cpi.create_vm(
-        'agent-007',
-        @stemcell_id,
-        resource_pool,
-        network_spec,
-        disk_locality,
-        {'key' => 'value'}
+      'agent-007',
+      @stemcell_id,
+      resource_pool,
+      network_spec,
+      disk_locality,
+      {'key' => 'value'}
     )
 
     @vm_id.should_not be_nil
@@ -118,14 +113,14 @@ describe VSphereCloud::Cloud do
   describe 'vsphere' do
     let(:network_spec) do
       {
-          "static" => {
-              "ip" => "169.254.1.1", #172.16.69.102",
-              "netmask" => "255.255.254.0",
-              "cloud_properties" => {"name" => @vlan},
-              "default" => ["dns", "gateway"],
-              "dns" => ["169.254.1.2"],  #["172.16.69.100"],
-              "gateway" => "169.254.1.3" #"172.16.68.1"
-          }
+        "static" => {
+          "ip" => "169.254.1.1", #172.16.69.102",
+          "netmask" => "255.255.254.0",
+          "cloud_properties" => {"name" => @cpi_vlan},
+          "default" => ["dns", "gateway"],
+          "dns" => ["169.254.1.2"],  #["172.16.69.100"],
+          "gateway" => "169.254.1.3" #"172.16.68.1"
+        }
       }
     end
 
@@ -147,13 +142,6 @@ describe VSphereCloud::Cloud do
       it 'should exercise the vm lifecycle' do
         vm_lifecycle(network_spec, [@existing_volume_id])
       end
-
-      # This is not implemented in vsphere
-      #it 'should list the disks' do
-      #  vm_lifecycle(network_spec, [@existing_volume_id]) do
-      #    cpi.get_disks(@vm_id).should == [@disk_id]
-      #  end
-      #end
     end
   end
 end

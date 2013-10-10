@@ -1,6 +1,6 @@
+require 'json'
 require 'membrane'
 require 'ruby_vim_sdk'
-
 require 'cloud/vsphere/client'
 require 'cloud/vsphere/config'
 require 'cloud/vsphere/lease_updater'
@@ -833,11 +833,11 @@ module VSphereCloud
 
     def get_current_agent_env(location)
       contents = fetch_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json")
-      contents ? Yajl::Parser.parse(contents) : nil
+      contents ? JSON.load(contents) : nil
     end
 
     def set_agent_env(vm, location, env)
-      env_json = Yajl::Encoder.encode(env)
+      env_json = JSON.dump(env)
 
       connect_cdrom(vm, false)
       upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
