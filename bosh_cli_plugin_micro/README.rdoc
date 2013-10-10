@@ -22,7 +22,7 @@ A datastore folder other than 'BOSH_Disks' is required if your vCenter hosts oth
 
 The disk_path folder needs to be created manually.
 
-Your configuration must live inside a 'deployments' directory and follow the convention of having a $name subdir containing micro_bosh.yml,
+Commonly, configurations live inside a 'deployments' directory and follow the convention of having a $name subdir containing micro_bosh.yml,
 where $name is your deployment name.  For example:
 
   % find deployments -name micro_bosh.yml
@@ -30,13 +30,12 @@ where $name is your deployment name.  For example:
   deployments/dev32/micro_bosh.yml
   deployments/dev33/micro_bosh.yml
 
-The 'bosh micro' commands must also be run within the deployments directory.
-
-Deployment state is persisted to deployments/bosh-deployments.yml
+Deployment state is persisted to bosh-deployments.yml, in the present working directory.
 
 = USAGE:
 
-First, be sure to read the CONFIGURATION section and cd into your deployments/ directory.
+First, be sure to read the CONFIGURATION section and cd into a useful directory to store deployment
+state files.
 
 == help
 
@@ -58,9 +57,16 @@ The bosh micro plugin help is display after the standard bosh command usage:
 
 == deployment
 
-Set the micro bosh deployment to work with:
+Set the micro bosh deployment to work with.  This can be done either by specifying a directory that
+includes a deployment manifest called 'micro_bosh.yml', or by specifying a full relative path to a
+micro bosh deployment manifest.
 
   % bosh micro deployment dev33
+  Deployment set to '/var/vcap/deployments/dev33/micro_bosh.yml'
+
+__OR__
+
+  % bosh micro deployment dev33/micro_bosh.yml
   Deployment set to '/var/vcap/deployments/dev33/micro_bosh.yml'
 
 == deploy
@@ -103,7 +109,7 @@ Show the list of deployments, this is just a table view of deployments/bosh-depl
 
 == apply
 
-The micro-bosh-stemcell includes an embedded apply_spec.yml.  This command can be used to apply a different spec to an existing instance.
+The bosh-stemcell includes an embedded apply_spec.yml.  This command can be used to apply a different spec to an existing instance.
 The apply_spec.yml properties are merged with your deployment's network.ip and cloud.properties.vcenters properties.
 
   % bosh micro apply apply_spec.yml
