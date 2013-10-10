@@ -107,6 +107,9 @@ module Bosh::Deployer
       @sessions.each_value { |s| s.close }
     end
 
+    def strip_relative_path(path)
+      path[/#{Regexp.escape File.join(Dir.pwd, '')}(.*)/, 1] || path
+    end
   end
 
 end

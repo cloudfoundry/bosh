@@ -120,10 +120,9 @@ module Bosh::Cli::Command
 
       deployer.check_dependencies
 
-      rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
+      rel_path = strip_relative_path(deployment)
 
       desc = "`#{rel_path.make_green}' to `#{target_name.make_green}'"
-
 
       if deployer.exists?
         if !options[:update_if_exists] && !update
