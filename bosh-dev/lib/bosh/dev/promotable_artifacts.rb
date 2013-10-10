@@ -1,5 +1,7 @@
 require 'bosh/dev/stemcell_artifacts'
 require 'bosh/dev/promotable_artifact'
+require 'bosh/dev/gem_components'
+require 'bosh/dev/gem_artifact'
 
 module Bosh::Dev
   class PromotableArtifacts
@@ -28,8 +30,8 @@ module Bosh::Dev
     attr_reader :build
 
     def gem_artifacts
-      commands = ["s3cmd --verbose sync #{File.join(source, 'gems/')} s3://bosh-jenkins-gems"]
-      commands.map { |command| PromotableArtifact.new(command) }
+      gem_components = GemComponents.new(build.number)
+      gem_components.components.map { |component| GemArtifact.new(component, source, build.number) }
     end
 
     def release_artifacts

@@ -4,25 +4,33 @@ require 'bosh/dev/gem_component'
 
 module Bosh::Dev
   describe GemArtifact do
-    describe '#promote' do
-      include FakeFS::SpecHelpers
+    include FakeFS::SpecHelpers
 
+    describe '#promote' do
       let(:component) do
         instance_double('Bosh::Dev::GemComponent', dot_gem: 'bosh-foo-1.5.0.pre.789.gem')
       end
 
       subject(:gem_artifact) do
-        GemArtifact.new(component, 's3://bosh-ci-pipeline/1234', '1234')
+        GemArtifact.new(component, 's3://bosh-ci-pipeline/1234/', '1234')
       end
 
       before do
         RakeFileUtils.stub(:sh)
         FileUtils.mkdir_p('~/.gem')
         FileUtils.touch('~/.gem/credentials')
+        subject.stub(:puts)
+        subject.stub(:warn)
       end
 
       it 'creates a temporary directory to place downloaded gems' do
         expect { gem_artifact.promote }.to change { File.directory?('tmp/gems-1234') }.to(true)
+      end
+
+      it 'clears out the temporary directory if it alredy exists to avoid promoting bad gems' do
+        FileUtils.mkdir_p('tmp/gems-1234')
+        FileUtils.touch('tmp/gems-1234/bad.gem')
+        expect { gem_artifact.promote }.to change { File.exist?('tmp/gems-1234/bad.gem') }.to(false)
       end
 
       it 'downloads the gem from the pipeline bucket' do
@@ -39,7 +47,18 @@ module Bosh::Dev
 
       it 'fails with a debuggable error if the RubyGems credentials are missing' do
         FileUtils.rm('~/.gem/credentials')
-        expect { gem_artifact.promote }.to raise_error("Your rubygems.org credentials aren't set. Run `gem push` to set them.")
+        expect {
+          gem_artifact.promote
+        }.to raise_error("Your rubygems.org credentials aren't set. Run `gem push` to set them.")
+      end
+
+      it 'expands the path to the .gem dir since File.exists? needs this' do
+        File.should_receive(:exists?) do |path|
+          expect(path).not_to include('~')
+          path != 'tmp/gems-1234'
+        end.any_number_of_times
+
+        gem_artifact.promote
       end
     end
   end
