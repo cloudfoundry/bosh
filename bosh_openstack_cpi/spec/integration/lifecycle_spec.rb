@@ -2,17 +2,27 @@ require "spec_helper"
 require "tempfile"
 require "cloud"
 require "logger"
-require "bosh_openstack_cpi"
 
 describe Bosh::OpenStackCloud::Cloud do
-  let(:cpi_options) do
-    {
+  before(:all) do
+    @auth_url    = ENV['BOSH_OPENSTACK_AUTH_URL']    || raise("Missing BOSH_OPENSTACK_AUTH_URL")
+    @username    = ENV['BOSH_OPENSTACK_USERNAME']    || raise("Missing BOSH_OPENSTACK_USERNAME")
+    @api_key     = ENV['BOSH_OPENSTACK_API_KEY']     || raise("Missing BOSH_OPENSTACK_API_KEY")
+    @tenant      = ENV['BOSH_OPENSTACK_TENANT']      || raise("Missing BOSH_OPENSTACK_TENANT")
+    @region      = ENV['BOSH_OPENSTACK_REGION']      || raise("Missing BOSH_OPENSTACK_REGION")
+    @stemcell_id = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise("Missing BOSH_OPENSTACK_STEMCELL_ID")
+    @net_id      = ENV['BOSH_OPENSTACK_NET_ID']      || raise("Missing BOSH_OPENSTACK_NET_ID")
+    @manual_ip   = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise("Missing BOSH_OPENSTACK_MANUAL_IP")
+  end
+
+  subject(:cpi) do
+    described_class.new(
       "openstack" => {
-        "auth_url" => ENV["BOSH_OPENSTACK_AUTH_URL"],
-        "username" => ENV["BOSH_OPENSTACK_USERNAME"],
-        "api_key" => ENV["BOSH_OPENSTACK_API_KEY"],
-        "tenant" => ENV["BOSH_OPENSTACK_TENANT"],
-        "region" => ENV["BOSH_OPENSTACK_REGION"],
+        "auth_url" => @auth_url,
+        "username" => @username,
+        "api_key" => @api_key,
+        "tenant" => @tenant,
+        "region" => @region,
         "endpoint_type" => "publicURL",
         "default_key_name" => "jenkins",
         "default_security_groups" => ["default"]
@@ -22,31 +32,27 @@ describe Bosh::OpenStackCloud::Cloud do
         "user" => "fake",
         "password" => "fake"
       }
-    }
+    )
   end
 
-  let(:cpi) { described_class.new(cpi_options) }
-  let(:stemcell) { ENV["BOSH_OPENSTACK_STEMCELL_ID"] }
-  let(:net_id) { ENV["BOSH_OPENSTACK_NET_ID"] }
-  let(:ip) { ENV["BOSH_OPENSTACK_MANUAL_IP"] }
-
-  before(:each) do
-    delegate = double("delegate", logger: Logger.new(STDOUT))
-    delegate.stub(:task_checkpoint)
+  before do
+    delegate = double("delegate", task_checkpoint: nil, logger: Logger.new(STDOUT))
     Bosh::Clouds::Config.configure(delegate)
-    Bosh::Registry::Client.stub(:new).and_return(double("registry").as_null_object)
-
-    @server_id = nil
-    @volume_id = nil
   end
 
-  after(:each) do
+  before { Bosh::Registry::Client.stub(:new).and_return(double("registry").as_null_object) }
+
+  before { @server_id = nil }
+
+  after do
     if @server_id
       cpi.delete_vm(@server_id)
       cpi.has_vm?(@server_id).should be_false
     end
-    cpi.delete_disk(@volume_id) if @volume_id
   end
+
+  before { @volume_id = nil }
+  after { cpi.delete_disk(@volume_id) if @volume_id }
 
   def vm_lifecycle(stemcell_id, network_spec, disk_locality)
     @server_id = cpi.create_vm(
@@ -94,21 +100,16 @@ describe Bosh::OpenStackCloud::Cloud do
 
     context "without existing disks" do
       it "should exercise the vm lifecycle" do
-        vm_lifecycle(stemcell, network_spec, [])
+        vm_lifecycle(@stemcell_id, network_spec, [])
       end
     end
 
     context "with existing disks" do
-      before(:each) do
-        @existing_volume_id = cpi.create_disk(2048)
-      end
-
-      after(:each) do
-        cpi.delete_disk(@existing_volume_id) if @existing_volume_id
-      end
+      before { @existing_volume_id = cpi.create_disk(2048) }
+      after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it "should exercise the vm lifecycle" do
-        vm_lifecycle(stemcell, network_spec, [@existing_volume_id])
+        vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
       end
     end
   end
@@ -118,37 +119,31 @@ describe Bosh::OpenStackCloud::Cloud do
       {
         "default" => {
           "type" => "manual",
-           "ip" => ip,
-           "cloud_properties" => {
-               "net_id" => net_id}
+          "ip" => @manual_ip,
+          "cloud_properties" => {
+            "net_id" => @net_id
+          }
         }
       }
     end
 
     context "without existing disks" do
       it "should exercise the vm lifecycle" do
-        vm_lifecycle(stemcell, network_spec, [])
+        vm_lifecycle(@stemcell_id, network_spec, [])
       end
     end
 
     context "with existing disks" do
-      before(:each) do
-        @existing_volume_id = cpi.create_disk(2048)
-      end
-
-      after(:each) do
-        cpi.delete_disk(@existing_volume_id) if @existing_volume_id
-      end
+      before { @existing_volume_id = cpi.create_disk(2048) }
+      after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it "should exercise the vm lifecycle" do
         # Sometimes Quantum is too slow to release an IP address, so when we
         # spin up a new vm reusing the same IP it fails with a vm state error
-        # but without any clue what the problem is (you should check the nova
-        # log).
-        # This should be removed once we figure out how to deal with this
-        # situation.
+        # but without any clue what the problem is (you should check the nova log).
+        # This should be removed once we figure out how to deal with this situation.
         sleep(120)
-        vm_lifecycle(stemcell, network_spec, [@existing_volume_id])
+        vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
       end
     end
   end
