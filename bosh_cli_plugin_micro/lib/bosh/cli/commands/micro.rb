@@ -313,10 +313,12 @@ AGENT_HELP
 
     def find_deployment(name)
       if File.directory?(name)
-        File.expand_path(File.join(work_dir, "#{name}", MICRO_BOSH_YAML))
+        filename = File.join("#{name}", MICRO_BOSH_YAML)
       else
-        File.expand_path(File.join(work_dir, "#{name}"))
+        filename = name
       end
+
+      File.expand_path(filename, Dir.pwd)
     end
 
     def deployment_name

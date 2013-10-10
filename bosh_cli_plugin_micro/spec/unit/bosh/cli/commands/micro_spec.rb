@@ -20,7 +20,7 @@ module Bosh::Cli::Command
         Bosh::Deployer::InstanceManager.stub(create: double('Deployer', discover_bosh_ip: '5'))
       end
 
-      context 'the full path to a manifest is given' do
+      context 'a relative path to a manifest is given' do
         before do
           FileUtils.touch('/tmp/foo/other_manifest.yml')
         end
@@ -34,7 +34,22 @@ module Bosh::Cli::Command
         end
       end
 
-      context 'name is given' do
+      context 'an absolute path to a manifest is given' do
+        before do
+          FileUtils.touch('/tmp/foo/other_manifest.yml')
+        end
+
+        it 'sets the deployment location' do
+          micro_command.micro_deployment('/tmp/foo/other_manifest.yml')
+
+          deployer_config_file = File.expand_path('~/.bosh_deployer_config')
+          deployer_config = YAML.load_file(deployer_config_file)
+          expect(deployer_config['deployment']).to eq('https://5:25555' => '/tmp/foo/other_manifest.yml')
+        end
+      end
+
+
+      context 'directory is given' do
         it 'can get and set the deployment location' do
           micro_command.micro_deployment('foo')
 
@@ -113,7 +128,7 @@ module Bosh::Cli::Command
         end
       end
 
-      context 'name is not given' do
+      context 'no deployment path is given' do
         context 'deployment is already set' do
           it 'says the current deployment' do
             deployer_config_file = File.expand_path('~/.bosh_deployer_config')
