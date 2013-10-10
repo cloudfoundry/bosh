@@ -82,7 +82,7 @@ namespace :spec do
 
     desc 'vSphere CPI can exercise the VM lifecycle'
     RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
-      t.pattern = 'spec/external/vsphere_cpi_spec.rb'
+      t.pattern = 'bosh_vsphere_cpi/spec/integration/lifecycle_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
   end
