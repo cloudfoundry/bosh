@@ -18,7 +18,8 @@ module Bosh::Dev::Bat
         bosh_cli_session,
         stemcell_archive,
         microbosh_deployment_manifest,
-        bat_deployment_manifest
+        bat_deployment_manifest,
+        microbosh_deployment_cleaner,
       )
     end
 
@@ -46,7 +47,9 @@ module Bosh::Dev::Bat
       )
     end
 
+    # Multiple implementations for the following
     let(:microbosh_deployment_manifest) { double('microbosh-deployment-manifest', write: nil) }
+    let(:microbosh_deployment_cleaner) { double('microbosh-deployment-cleaner', clean: nil) }
     let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
 
     describe '#deploy_microbosh_and_run_bats' do
@@ -58,6 +61,11 @@ module Bosh::Dev::Bat
         end
         subject.deploy_microbosh_and_run_bats
         expect(Dir.entries(bat_helper.micro_bosh_deployment_dir)).to include('FAKE_MICROBOSH_MANIFEST')
+      end
+
+      it 'cleans any previous deployments out' do
+        microbosh_deployment_cleaner.should_receive(:clean)
+        subject.deploy_microbosh_and_run_bats
       end
 
       it 'targets the micro' do
