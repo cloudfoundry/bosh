@@ -8,7 +8,7 @@ module Bosh::Dev
       include FakeFS::SpecHelpers
 
       let(:component) do
-        instance_double('Bosh::Dev::GemComponent', version: '1.5.0.pre.789', dot_gem: 'bosh-foo-1.5.0.pre.789.gem')
+        instance_double('Bosh::Dev::GemComponent', dot_gem: 'bosh-foo-1.5.0.pre.789.gem')
       end
 
       subject(:gem_artifact) do

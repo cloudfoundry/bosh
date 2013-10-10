@@ -45,10 +45,6 @@ module Bosh::Dev
       ].each(&block)
     end
 
-    def dot_gems
-      components.map { |component| component.dot_gem }
-    end
-
     def has_db?(component)
       %w(director bosh-registry).include?(component)
     end
@@ -60,7 +56,7 @@ module Bosh::Dev
     end
 
     def components
-      map { |component| GemComponent.new(component) }
+      map { |component| GemComponent.new(component, @version_file.version) }
     end
 
     def stage_with_dependencies
