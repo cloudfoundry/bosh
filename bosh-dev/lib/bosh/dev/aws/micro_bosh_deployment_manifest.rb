@@ -8,6 +8,18 @@ module Bosh::Dev::Aws
       @receipts = Receipts.new(env)
     end
 
+    def access_key_id
+      manifest.access_key_id
+    end
+
+    def secret_access_key
+      manifest.secret_access_key
+    end
+
+    def director_name
+      "micro-#{manifest.name}"
+    end
+
     def write
       File.write(manifest.file_name, manifest.to_yaml)
     end

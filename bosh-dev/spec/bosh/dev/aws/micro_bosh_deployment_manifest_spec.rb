@@ -19,10 +19,17 @@ module Bosh::Dev::Aws
     let(:manifest) do
       instance_double(
         'Bosh::Aws::MicroboshManifest',
+        name: 'fake-name',
+        access_key_id: 'fake-access-key-id',
+        secret_access_key: 'fake-secret-access-key',
       )
     end
 
     before { YAML.stub(load_file: {}) }
+
+    its(:director_name) { should == 'micro-fake-name' }
+    its(:access_key_id) { should == 'fake-access-key-id' }
+    its(:secret_access_key) { should == 'fake-secret-access-key' }
 
     describe '#write' do
       before do
@@ -34,7 +41,10 @@ module Bosh::Dev::Aws
         YAML.should_receive(:load_file).with('fake_vpc_outfile_path').and_return('vpc-receipt' => true)
         YAML.should_receive(:load_file).with('fake_route53_outfile_path').and_return('route53-receipt' => true)
         Bosh::Aws::MicroboshManifest.should_receive(:new).with(
-          { 'vpc-receipt' => true }, { 'route53-receipt' => true })
+          { 'vpc-receipt' => true },
+          { 'route53-receipt' => true },
+          { hm_director_user: 'admin', hm_director_password: 'admin' },
+        )
         subject.write
       end
 
