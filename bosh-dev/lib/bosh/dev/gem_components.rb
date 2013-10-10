@@ -11,8 +11,6 @@ module Bosh::Dev
     end
 
     def build_release_gems
-      @version_file.write
-
       stage_with_dependencies
 
       each do |component|
@@ -45,6 +43,13 @@ module Bosh::Dev
       ].each(&block)
     end
 
+    def components
+      return @components if @components
+
+      @version_file.write
+      @components = map { |component| GemComponent.new(component, @version_file.version) }
+    end
+
     def has_db?(component)
       %w(director bosh-registry).include?(component)
     end
@@ -53,10 +58,6 @@ module Bosh::Dev
 
     def root
       GemComponent::ROOT
-    end
-
-    def components
-      map { |component| GemComponent.new(component, @version_file.version) }
     end
 
     def stage_with_dependencies

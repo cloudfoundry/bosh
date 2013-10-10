@@ -5,7 +5,7 @@ require 'bosh/dev/gem_components'
 module Bosh::Dev
   describe GemComponents do
     let(:version_file) do
-      instance_double('Bosh::Dev::VersionFile', version: '1.5.0.pre.123',  write: nil)
+      instance_double('Bosh::Dev::VersionFile', version: '1.5.0.pre.123', write: nil)
     end
 
     let(:gem_component) do
@@ -24,10 +24,33 @@ module Bosh::Dev
       Rake::FileUtilsExt.stub(:sh)
     end
 
-    describe '#build_release_gems' do
-      it 'updates BOSH_VERSION' do
+    describe '#components' do
+      it 'always updates BOSH_VERSION first to ensure it is up-to-date' do
         version_file.should_receive(:write)
-        gem_components.build_release_gems
+        gem_components.components
+      end
+
+      it 'returns a list of GemComponent objects for each gem' do
+        GemComponent.should_receive(:new).with('agent_client', version_file.version)
+        GemComponent.should_receive(:new).with('blobstore_client', version_file.version)
+        GemComponent.should_receive(:new).with('bosh-core', version_file.version)
+        GemComponent.should_receive(:new).with('bosh-stemcell', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_agent', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_aws_cpi', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_cli', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_cli_plugin_aws', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_cli_plugin_micro', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_common', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_cpi', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_openstack_cpi', version_file.version)
+        GemComponent.should_receive(:new).with('bosh-registry', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_vsphere_cpi', version_file.version)
+        GemComponent.should_receive(:new).with('director', version_file.version)
+        GemComponent.should_receive(:new).with('health_monitor', version_file.version)
+        GemComponent.should_receive(:new).with('bosh-release', version_file.version)
+        GemComponent.should_receive(:new).with('simple_blobstore_server', version_file.version)
+
+        gem_components.components
       end
     end
 
