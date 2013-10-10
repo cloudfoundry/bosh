@@ -148,8 +148,45 @@ properties:
 
   # Blobstore
   blobstore.provider:
-    description: Provider of the blobstore used by director and agent (dav|simple|s3)
+    description: Provider of the blobstore used by director and agent (dav|simple|s3|swift)
     default: 'dav'
+
+  blobstore.options.bucket_name:
+    description: AWS S3 Bucket used for the compiled package cache
+  blobstore.options.access_key_id:
+    description: AWS access_key_id used for the compiled package cache
+  blobstore.options.secret_access_key:
+    description: AWS secret_access_key used for the compiled package cache
+  blobstore.options.swift_provider:
+    description:  OpenStack Swift provider (supported providers are hp, openstack and rackspace)
+  blobstore.options.container_name:
+    description: Name of the container
+  blobstore.options.hp_access_key:
+    description: HP Object Storage Access Key
+  blobstore.options.hp_secret_key:
+    description: HP Object Storage Secret Key
+  blobstore.options.hp_tenant_id:
+    description: HP Object Storage Project ID
+  blobstore.options.hp_avl_zone:
+    description: HP Object Storage Availability Zone (region-a.geo-1 or region-b.geo-1)
+  blobstore.options.openstack_auth_url:
+    description: URL of the OpenStack Identity endpoint to connect to
+  blobstore.options.openstack_username:
+    description: OpenStack user name
+  blobstore.options.openstack_api_key:
+    description: OpenStack API key
+  blobstore.options.openstack_tenant:
+    description: OpenStack tenant name
+  blobstore.options.openstack_region:
+    description: OpenStack region (optional)
+  blobstore.options.rackspace_username:
+    description: Rackspace Cloud Files Username
+  blobstore.options.rackspace_api_key:
+    description: Rackspace Cloud Files API Key
+  blobstore.options.rackspace_region:
+    description: Rackspace Cloud Files Region (optional, dfw or ord)
+
+
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
   blobstore.access_key_id:
