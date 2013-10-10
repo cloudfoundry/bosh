@@ -67,24 +67,6 @@ namespace :spec do
       t.pattern = 'spec/external/aws_bootstrap_spec.rb'
       t.rspec_opts = %w(--format documentation --color)
     end
-
-    desc 'AWS CPI can exercise the VM lifecycle'
-    RSpec::Core::RakeTask.new(:aws_vm_lifecycle) do |t|
-      t.pattern = 'bosh_aws_cpi/spec/integration/lifecycle_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
-
-    desc 'OpenStack CPI can exercise the VM lifecycle'
-    RSpec::Core::RakeTask.new(:openstack_vm_lifecycle) do |t|
-      t.pattern = 'bosh_openstack_cpi/spec/integration/lifecycle_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
-
-    desc 'vSphere CPI can exercise the VM lifecycle'
-    RSpec::Core::RakeTask.new(:vsphere_vm_lifecycle) do |t|
-      t.pattern = 'bosh_vsphere_cpi/spec/integration/lifecycle_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
   end
 
   namespace :system do
