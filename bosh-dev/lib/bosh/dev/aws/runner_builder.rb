@@ -15,7 +15,7 @@ module Bosh::Dev::Aws
       stemcell_archive = Bosh::Stemcell::Archive.new(bat_helper.bosh_stemcell_path)
 
       microbosh_deployment_manifest =
-        MicroBoshDeploymentManifest.new(env, bosh_cli_session)
+        MicroBoshDeploymentManifest.new(env)
       bat_deployment_manifest =
         BatDeploymentManifest.new(env, bosh_cli_session, stemcell_archive)
 

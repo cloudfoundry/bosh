@@ -34,7 +34,7 @@ module Bosh::Dev::Aws
         microbosh_deployment_manifest = instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest')
         Bosh::Dev::Aws::MicroBoshDeploymentManifest
           .should_receive(:new)
-          .with(ENV, bosh_cli_session)
+          .with(ENV)
           .and_return(microbosh_deployment_manifest)
 
         bat_deployment_manifest = instance_double('Bosh::Dev::Aws::BatDeploymentManifest')

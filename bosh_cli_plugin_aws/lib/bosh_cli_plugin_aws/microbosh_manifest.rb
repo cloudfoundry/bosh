@@ -1,3 +1,5 @@
+require 'common/ssl'
+
 module Bosh
   module Aws
     class MicroboshManifest

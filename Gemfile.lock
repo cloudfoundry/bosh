@@ -30,6 +30,7 @@ PATH
       bosh-core
       bosh-stemcell
       bosh_cli
+      bosh_cli_plugin_aws
       bosh_common
       peach
 
