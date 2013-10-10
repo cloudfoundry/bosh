@@ -1,9 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
+require 'logger'
 require 'tempfile'
 require 'cloud'
-require 'bosh_aws_cpi'
 
 describe Bosh::AwsCloud::Cloud do
   let(:cpi_options) do
