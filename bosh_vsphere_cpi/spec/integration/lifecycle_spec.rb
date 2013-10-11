@@ -4,11 +4,11 @@ require 'yaml'
 
 describe VSphereCloud::Cloud do
   before(:all) do
-    @cpi_host     = ENV['BOSH_VSPHERE_CPI_HOST']     || raise("Missing BOSH_VSPHERE_CPI_HOST")
-    @cpi_user     = ENV['BOSH_VSPHERE_CPI_USER']     || raise("Missing BOSH_VSPHERE_CPI_USER")
-    @cpi_password = ENV['BOSH_VSPHERE_CPI_PASSWORD'] || raise("Missing BOSH_VSPHERE_CPI_PASSWORD")
-    @cpi_vlan     = ENV['BOSH_VSPHERE_VLAN']         || raise("Missing BOSH_VSPHERE_VLAN")
-    @cpi_stemcell = ENV['BOSH_VSPHERE_STEMCELL']     || raise("Missing BOSH_VSPHERE_STEMCELL") # points to a stemcell tgz
+    @host          = ENV['BOSH_VSPHERE_CPI_HOST']     || raise("Missing BOSH_VSPHERE_CPI_HOST")
+    @user          = ENV['BOSH_VSPHERE_CPI_USER']     || raise("Missing BOSH_VSPHERE_CPI_USER")
+    @password      = ENV['BOSH_VSPHERE_CPI_PASSWORD'] || raise("Missing BOSH_VSPHERE_CPI_PASSWORD")
+    @vlan          = ENV['BOSH_VSPHERE_VLAN']         || raise("Missing BOSH_VSPHERE_VLAN")
+    @stemcell_path = ENV['BOSH_VSPHERE_STEMCELL']     || raise("Missing BOSH_VSPHERE_STEMCELL")
   end
 
   before(:all) do
@@ -17,9 +17,9 @@ describe VSphereCloud::Cloud do
         "ntp" => ["10.80.0.44"],
       },
       "vcenters" => [{
-        "host" => @cpi_host,
-        "user" => @cpi_user,
-        "password" => @cpi_password,
+        "host" => @host,
+        "user" => @user,
+        "password" => @password,
         "datacenters" => [{
           "name" => "BOSH_DC",
           "vm_folder" => "ACCEPTANCE_BOSH_VMs",
@@ -40,7 +40,7 @@ describe VSphereCloud::Cloud do
 
   before(:all) do
     Dir.mktmpdir do |temp_dir|
-      output = `tar -C #{temp_dir} -xzf #{@cpi_stemcell} 2>&1`
+      output = `tar -C #{temp_dir} -xzf #{@stemcell_path} 2>&1`
       raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
       @stemcell_id = @cpi.create_stemcell("#{temp_dir}/image", nil)
     end
@@ -71,8 +71,6 @@ describe VSphereCloud::Cloud do
     )
 
     @vm_id.should_not be_nil
-
-    # possible race condition here
     cpi.has_vm?(@vm_id).should be_true
 
     metadata = {deployment: 'deployment', job: 'cpi_spec', index: '0'}
@@ -108,7 +106,7 @@ describe VSphereCloud::Cloud do
         "static" => {
           "ip" => "169.254.1.1", #172.16.69.102",
           "netmask" => "255.255.254.0",
-          "cloud_properties" => {"name" => @cpi_vlan},
+          "cloud_properties" => {"name" => @vlan},
           "default" => ["dns", "gateway"],
           "dns" => ["169.254.1.2"],  #["172.16.69.100"],
           "gateway" => "169.254.1.3" #"172.16.68.1"
@@ -123,13 +121,8 @@ describe VSphereCloud::Cloud do
     end
 
     context 'with existing disks' do
-      before do
-        @existing_volume_id = cpi.create_disk(2048)
-      end
-
-      after do
-        cpi.delete_disk(@existing_volume_id) if @existing_volume_id
-      end
+      before { @existing_volume_id = cpi.create_disk(2048) }
+      after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'should exercise the vm lifecycle' do
         vm_lifecycle(network_spec, [@existing_volume_id])
