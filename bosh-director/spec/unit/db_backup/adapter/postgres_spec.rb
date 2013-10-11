@@ -1,42 +1,42 @@
 require 'spec_helper'
 
 describe Bosh::Director::DbBackup::Adapter::Postgres do
-
   describe 'export' do
-    let(:user) { 'user1' }
-    let(:password) { 'password1' }
-    let(:database) { 'database' }
-    let(:host) { 'host.com' }
-    let(:port) { 5432 }
-    let(:path) { 'my/awesome/path' }
-    let(:success_status) { double('Status', success?: true) }
-    let(:errored_status) { double('Status', success?: false, exitstatus: 5) }
-    subject {
+    subject do
       described_class.new(
-          {
-              'user' => user,
-              'password' => password,
-              'database' => database,
-              'host' => host,
-              'port' => port,
-          })
-    }
+        'user' => 'user1',
+        'password' => 'password1',
+        'database' => 'database',
+        'host' => 'host.com',
+        'port' => 5432,
+      )
+    end
+
+    let(:export_path) { 'my/awesome/path' }
 
     it 'exports the database to a file' do
-      Open3.should_receive(:capture3).with({'PGPASSWORD' => password},
-                                           'pg_dump',
-                                           '--host', host,
-                                           '--port', port.to_s,
-                                           '--username', user,
-                                           '--file', path,
-                                           database).and_return([nil, nil, success_status])
-      expect(subject.export(path)).to eq path
+      status = instance_double('Process::Status', success?: true)
+
+      Open3.should_receive(:capture3).with(
+        {'PGPASSWORD' => 'password1'},
+        'pg_dump',
+        '--host', 'host.com',
+        '--port', '5432',
+        '--username', 'user1',
+        '--file', export_path,
+        'database',
+      ).and_return([nil, nil, status])
+
+      expect(subject.export(export_path)).to eq(export_path)
     end
 
     it 'raises if it fails to export' do
-      Open3.stub(:capture3).and_return(['stdout string', 'a stderr message', errored_status])
-      expect{subject.export(path)}.to raise_error(RuntimeError, "pg_dump exited 5, output: 'stdout string', error: 'a stderr message'")
+      status = instance_double('Process::Status', success?: false, exitstatus: 5)
+
+      Open3.stub(:capture3).and_return(['stdout', 'stderr', status])
+
+      expect { subject.export(export_path) }.to raise_error(
+        RuntimeError, "pg_dump exited 5, output: 'stdout', error: 'stderr'")
     end
   end
-
 end
