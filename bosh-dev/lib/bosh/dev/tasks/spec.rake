@@ -18,6 +18,8 @@ namespace :spec do
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
 
+    cpi_builds = Dir['*'].select { |f| File.directory?(f) && f.end_with?("_cpi") }
+
     spec_logs = Dir.mktmpdir
 
     puts "Logging spec results in #{spec_logs}"
@@ -27,11 +29,11 @@ namespace :spec do
         puts "-----Building #{build}-----"
 
         pool.process do
-          log_file = "#{spec_logs}/#{build}.log"
-          cmd = "cd #{build} && rspec --tty -c -f p spec > #{log_file} 2>&1"
-          success = system(cmd)
+          log_file    = "#{spec_logs}/#{build}.log"
+          rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
+          rspec_cmd   = "cd #{build} && rspec --tty -c -f p #{rspec_files} > #{log_file} 2>&1"
 
-          if success
+          if system(rspec_cmd)
             print File.read(log_file)
           else
             raise("#{build} failed to build unit tests: #{File.read(log_file)}")
@@ -48,9 +50,13 @@ namespace :spec do
     builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
     builds -= ['bat']
 
+    cpi_builds = Dir['*'].select { |f| File.directory?(f) && f.end_with?("_cpi") }
+
     builds.each do |build|
-      puts "-----#{build}-----"
-      system("cd #{build} && rspec spec") || raise("#{build} failed to build unit tests")
+      puts "-----Building #{build}-----"
+      rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
+      rspec_cmd   = "cd #{build} && rspec #{rspec_files}"
+      raise("#{build} failed to build unit tests") unless system(rspec_cmd)
     end
   end
 
