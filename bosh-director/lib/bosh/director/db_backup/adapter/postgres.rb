@@ -10,18 +10,21 @@ module Bosh
           end
 
           def export(path)
-            out, err, status = Open3.capture3(
-              {'PGPASSWORD' => @db_config.fetch('password')},
+            env = {}
+            env['PGPASSWORD'] = @db_config['password'] if @db_config.has_key?('password')
+
+            stdout, stderr, status = Open3.capture3(
+              env,
               'pg_dump',
-              '--host', @db_config.fetch('host'),
-              '--port', @db_config.fetch('port').to_s,
+              '--host',     @db_config.fetch('host'),
+              '--port',     @db_config.fetch('port').to_s,
               '--username', @db_config.fetch('user'),
-              '--file', path,
+              '--file',     path,
               @db_config.fetch('database'),
             )
 
             unless status.success?
-              raise("pg_dump exited #{status.exitstatus}, output: '#{out}', error: '#{err}'")
+              raise("pg_dump exited #{status.exitstatus}, output: '#{stdout}', error: '#{stderr}'")
             end
 
             path
