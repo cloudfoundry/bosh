@@ -3,45 +3,37 @@ require 'tempfile'
 require 'yaml'
 
 describe VSphereCloud::Cloud do
-  # This test expects environment variables:
-  #
-  # BOSH_VSPHERE_STEMCELL which points to a stemcell tgz
-  # BOSH_VSPHERE_VLAN
-  # BOSH_VSPHERE_CPI_OPTIONS which should look like this:
-  #---
-  #agent:
-  #    ntp:
-  #    - 10.80.0.44
-  #vcenters:
-  #  - datacenters:
-  #    - name: BOSH_DC
-  #      vm_folder: ACCEPTANCE_BOSH_VMs
-  #      template_folder: ACCEPTANCE_BOSH_Templates
-  #      disk_path: ACCEPTANCE_BOSH_Disks
-  #      datastore_pattern: jalapeno
-  #      persistent_datastore_pattern: jalapeno
-  #      allow_mixed_datastores: true
-  #      clusters:
-  #          - BOSH_CL:
-  #          resource_pool: ACCEPTANCE_RP
-  #
   before(:all) do
-    @cpi_options_path  = ENV['BOSH_VSPHERE_CPI_OPTIONS']  || raise("Missing BOSH_VSPHERE_CPI_OPTIONS")
-    @cpi_host          = ENV['BOSH_VSPHERE_CPI_HOST']     || raise("Missing BOSH_VSPHERE_CPI_HOST")
-    @cpi_user          = ENV['BOSH_VSPHERE_CPI_USER']     || raise("Missing BOSH_VSPHERE_CPI_USER")
-    @cpi_password      = ENV['BOSH_VSPHERE_CPI_PASSWORD'] || raise("Missing BOSH_VSPHERE_CPI_PASSWORD")
-    @cpi_vlan          = ENV['BOSH_VSPHERE_VLAN']         || raise("Missing BOSH_VSPHERE_VLAN")
-    @cpi_stemcell      = ENV['BOSH_VSPHERE_STEMCELL']     || raise("Missing BOSH_VSPHERE_STEMCELL")
+    @cpi_host     = ENV['BOSH_VSPHERE_CPI_HOST']     || raise("Missing BOSH_VSPHERE_CPI_HOST")
+    @cpi_user     = ENV['BOSH_VSPHERE_CPI_USER']     || raise("Missing BOSH_VSPHERE_CPI_USER")
+    @cpi_password = ENV['BOSH_VSPHERE_CPI_PASSWORD'] || raise("Missing BOSH_VSPHERE_CPI_PASSWORD")
+    @cpi_vlan     = ENV['BOSH_VSPHERE_VLAN']         || raise("Missing BOSH_VSPHERE_VLAN")
+    @cpi_stemcell = ENV['BOSH_VSPHERE_STEMCELL']     || raise("Missing BOSH_VSPHERE_STEMCELL") # points to a stemcell tgz
   end
 
   before(:all) do
-    cpi_options = YAML.load_file(@cpi_options_path)
-    cpi_options.fetch('vcenters').fetch(0).update(
-      'host' => @cpi_host,
-      'user' => @cpi_user,
-      'password' => @cpi_password,
+    @cpi = described_class.new(
+      "agent" => {
+        "ntp" => ["10.80.0.44"],
+      },
+      "vcenters" => [{
+        "host" => @cpi_host,
+        "user" => @cpi_user,
+        "password" => @cpi_password,
+        "datacenters" => [{
+          "name" => "BOSH_DC",
+          "vm_folder" => "ACCEPTANCE_BOSH_VMs",
+          "template_folder" => "ACCEPTANCE_BOSH_Templates",
+          "disk_path" => "ACCEPTANCE_BOSH_Disks",
+          "datastore_pattern" => "jalapeno",
+          "persistent_datastore_pattern" => "jalapeno",
+          "allow_mixed_datastores" => true,
+          "clusters" => [{
+            "BOSH_CL" => {"resource_pool" => "ACCEPTANCE_RP"}
+          }]
+        }]
+      }]
     )
-    @cpi = described_class.new(cpi_options)
   end
 
   let(:cpi) { @cpi }
