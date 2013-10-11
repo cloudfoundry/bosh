@@ -67,12 +67,12 @@ module Bosh::Agent
 
       def get_usage
         usage = {
-          :system => {:percent => fs_usage_safe('/')}
+          system: fs_usage_safe('/')
         }
         ephemeral_percent = fs_usage_safe(File.join(base_dir, 'data'))
-        usage[:ephemeral] = {:percent => ephemeral_percent} if ephemeral_percent
+        usage[:ephemeral] = ephemeral_percent if ephemeral_percent
         persistent_percent = fs_usage_safe(File.join(base_dir, 'store'))
-        usage[:persistent] = {:percent => persistent_percent} if persistent_percent
+        usage[:persistent] = persistent_percent if persistent_percent
 
         usage
       end
@@ -87,7 +87,15 @@ module Bosh::Agent
         return unless fs
 
         usage = sigar.file_system_usage(path)
-        (usage.use_percent * 100).to_i.to_s
+        space_usage_percent = (usage.use_percent * 100)
+
+        # inode pct calculation taken from 'df' src
+        # http://lingrok.org/xref/coreutils/src/df.c
+        inode_total = usage.files
+        inode_used_100 = (inode_total - usage.free_files) * 100
+        inode_usage_percent = inode_used_100 / inode_total + (inode_used_100 % inode_total != 0 ? 1 : 0)
+
+        { percent: space_usage_percent.to_i.to_s, inode_percent: inode_usage_percent.to_i.to_s }
       end
 
     end
