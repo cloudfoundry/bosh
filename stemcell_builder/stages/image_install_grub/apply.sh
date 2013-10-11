@@ -50,6 +50,10 @@ if [ -f ${image_mount_point}/etc/debian_version ] # Ubuntu
 then
   initrd_file="initrd.img-${kernel_version}"
   os_name=$(source ${image_mount_point}/etc/lsb-release ; echo -n ${DISTRIB_DESCRIPTION})
+  cat > ${image_mount_point}/etc/fstab <<FSTAB
+# /etc/fstab Created by BOSH Stemcell Builder
+UUID=${uuid} / ext4 defaults 1 1
+FSTAB
 elif [ -f ${image_mount_point}/etc/centos-release ] # Centos
 then
   initrd_file="initramfs-${kernel_version}.img"
