@@ -126,13 +126,22 @@ module Bosh::Cli::Command
 
       if deployer.exists?
         if !options[:update_if_exists] && !update
-          err "Instance exists.  Did you mean to --update?"
+          err "Instance exists. Did you mean to --update?"
         end
         confirmation = "Updating"
         method = :update_deployment
       else
+        prefered_dir = File.dirname(File.dirname(deployment))
+
+        unless prefered_dir == Dir.pwd
+          confirm_deployment("\n#{'No `bosh-deployments.yml` file found in current directory.'.make_red}\n\n" +
+                                 "Conventionally, `bosh-deployments.yml` should be saved in " +
+                                 "#{prefered_dir.make_green}.\n" +
+                                 "Is #{Dir.pwd.make_yellow} a directory where you can save state?")
+        end
+
         err "No existing instance to update" if update
-        confirmation = "Deploying new"
+        confirmation = "Deploying new micro BOSH instance"
         method = :create_deployment
 
         # make sure the user knows a persistent disk is required
@@ -141,7 +150,7 @@ module Bosh::Cli::Command
         end
       end
 
-      confirm_deployment("#{confirmation} micro BOSH instance #{desc}")
+      confirm_deployment("#{confirmation} #{desc}")
 
       if is_tgz?(stemcell)
         stemcell_file = Bosh::Cli::Stemcell.new(stemcell, cache)
@@ -337,7 +346,7 @@ AGENT_HELP
       if deployer.exists?
         bosh_ip = deployer.discover_bosh_ip
         if URI.parse(target).host != bosh_ip
-          set_current(deployment_name)
+          set_current(deployment)
         end
 
         director = Bosh::Cli::Client::Director.new(target)
