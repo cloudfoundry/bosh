@@ -148,6 +148,7 @@ module Bosh::Dev
         instance_double('Bosh::Dev::PromotableArtifacts', all: [
           instance_double('Bosh::Dev::GemArtifact', promote: nil),
           instance_double('Bosh::Dev::PromotableArtifact', promote: nil),
+          instance_double('Bosh::Dev::LightStemcellPointer', promote: nil),
         ])
       end
 
@@ -164,57 +165,6 @@ module Bosh::Dev
         end
 
         subject.promote_artifacts
-      end
-
-      describe 'update light bosh ami pointer file' do
-        let(:fake_stemcell_filename) { 'FAKE_STEMCELL_FILENAME' }
-        let(:fake_stemcell) { instance_double('Bosh::Stemcell::Archive') }
-        let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'aws', light?: true) }
-        let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu') }
-        let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: fake_stemcell_filename) }
-        let(:bucket_files) { fog_storage.directories.get('bosh-jenkins-artifacts').files }
-
-        before do
-          Bosh::Stemcell::Infrastructure.stub(:for).and_return(instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'name', light?: false))
-          Bosh::Stemcell::Infrastructure.stub(:for).with('aws').and_return(infrastructure)
-
-          Bosh::Stemcell::OperatingSystem.stub(:for).and_return(instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'name'))
-          Bosh::Stemcell::OperatingSystem.stub(:for).with('ubuntu').and_return(operating_system)
-
-          Bosh::Stemcell::ArchiveFilename.stub(:new).and_return(archive_filename)
-
-          fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
-          Bosh::Stemcell::Archive.stub(new: fake_stemcell)
-
-          stub_request(:get, 'http://bosh-ci-pipeline.s3.amazonaws.com/123/bosh-stemcell/aws/FAKE_STEMCELL_FILENAME')
-        end
-
-        it 'downloads the aws bosh-stemcell for the current build' do
-          subject.should_receive(:download_stemcell).with(
-            'bosh-stemcell', infrastructure, operating_system, true, Dir.pwd)
-          subject.promote_artifacts
-        end
-
-        it 'initializes a Stemcell with the downloaded stemcell filename' do
-          Bosh::Stemcell::ArchiveFilename.should_receive(:new).with(
-            '123', infrastructure, operating_system, 'bosh-stemcell', true).and_return(archive_filename)
-          Bosh::Stemcell::Archive.should_receive(:new).with(fake_stemcell_filename)
-          subject.promote_artifacts
-        end
-
-        it 'updates the S3 object with the AMI ID from the stemcell.MF' do
-          fake_stemcell.stub(ami_id: 'FAKE_AMI_ID')
-
-          subject.promote_artifacts
-
-          expect(bucket_files.get('last_successful-bosh-stemcell-aws_ami_us-east-1').body).to eq('FAKE_AMI_ID')
-        end
-
-        it 'is publicly reachable' do
-          subject.promote_artifacts
-
-          expect(bucket_files.get('last_successful-bosh-stemcell-aws_ami_us-east-1').public_url).to_not be_nil
-        end
       end
     end
 

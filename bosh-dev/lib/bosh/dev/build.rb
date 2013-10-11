@@ -1,6 +1,7 @@
 require 'peach'
 require 'logger'
 require 'bosh/dev/promotable_artifacts'
+require 'bosh/dev/light_stemcell_pointer'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
@@ -79,13 +80,6 @@ module Bosh::Dev
       promotable_artifacts.all.peach do |artifact|
         artifact.promote
       end
-
-      Bosh::Dev::UploadAdapter.new.upload(
-        bucket_name: 'bosh-jenkins-artifacts',
-        key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
-        body: light_stemcell.ami_id,
-        public: true
-      )
     end
 
     def bosh_stemcell_path(infrastructure, operating_system, download_dir)
@@ -98,10 +92,6 @@ module Bosh::Dev
       ).to_s)
     end
 
-    private
-
-    attr_reader :logger, :promotable_artifacts, :download_adapter, :upload_adapter, :bucket
-
     def light_stemcell
       name = 'bosh-stemcell'
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
@@ -109,6 +99,10 @@ module Bosh::Dev
       filename = download_stemcell(name, infrastructure, operating_system, true, Dir.pwd)
       Bosh::Stemcell::Archive.new(filename)
     end
+
+    private
+
+    attr_reader :logger, :promotable_artifacts, :download_adapter, :upload_adapter, :bucket
 
     def release_path
       "release/#{promotable_artifacts.release_file}"
