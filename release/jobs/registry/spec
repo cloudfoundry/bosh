@@ -68,3 +68,11 @@ properties:
   openstack.endpoint_type:
     description: OpenStack endpoint type (optional, by default publicURL)
     default: publicURL
+
+  # For CloudStack
+  cloudstack.endpoint:
+    description: CloudStack Endpoint URL
+  cloudstack.api_key:
+    description: CloudStack API Key
+  cloudstack.secret_access_key:
+    description: CloudStack Secret Access Key

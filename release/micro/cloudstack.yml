@@ -1,0 +1,67 @@
+---
+deployment: micro
+release:
+  name: micro
+  version: 9
+jobs:
+  - name: micro_cloudstack
+    template:
+      - nats
+      - redis
+      - postgres
+      - powerdns
+      - blobstore
+      - director
+      - registry
+      - health_monitor  
+configuration_hash: {}
+properties:
+  micro: true
+  nats:
+    user: nats
+    password: nats
+    auth_timeout: 3
+    address: 127.0.0.1
+  redis:
+    address: 127.0.0.1
+    password: redis
+  postgres: &bosh_db
+    user: postgres
+    password: postges
+    host: 127.0.0.1
+    listen_address: 127.0.0.1
+    database: bosh
+  blobstore:
+    address: 127.0.0.1
+    director:
+      user: director
+      password: director
+    agent:
+      user: agent
+      password: agent
+  director:
+    address: 127.0.0.1
+    name: micro
+    port: 25555
+    db: *bosh_db
+  registry:
+    address: 127.0.0.1
+    db: *bosh_db
+    http:
+      user: admin
+      password: admin
+  hm:
+    http:
+      user: hm
+      password: hm
+    director_account:
+      user: admin
+      password: admin
+    intervals:
+      log_stats: 300
+      agent_timeout: 180
+      rogue_agent_alert: 180
+  dns:
+    address: 127.0.0.1
+    domain_name: microbosh
+    db: *bosh_db

@@ -1,49 +1,76 @@
-# BOSH [![Build Status](https://travis-ci.org/cloudfoundry/bosh.png?branch=master)](https://travis-ci.org/cloudfoundry/bosh) [![Code Climate](https://codeclimate.com/github/cloudfoundry/bosh.png)](https://codeclimate.com/github/cloudfoundry/bosh) [![Dependency Status](https://gemnasium.com/cloudfoundry/bosh.png)](https://gemnasium.com/cloudfoundry/bosh)
+# BOSH CloudStack CPI from NTT
 
-Cloud Foundry BOSH is an open source tool chain for release engineering,
-deployment and lifecycle management of large scale distributed services.
-In this manual we describe the architecture, topology, configuration, and
-use of BOSH, as well as the structure and conventions used in packaging
-and deployment.
+A CPI for CloudStack.
 
-* BOSH Documentation: [http://docs.cloudfoundry.com/docs/running/deploying-cf/](http://docs.cloudfoundry.com/docs/running/deploying-cf/)
+## Current Status
 
-## Installing BOSH gems
+Working on merging source code from ZJU-SEL and NTT.
 
-To install the latest bosh CLI gems:
+## Known Limitations
 
+* Supports only Basic Zones (Floating IPs are not supported)
+* Tested with CloudStack 4.0.0
+* There might be some missing features (alpha state)
+
+## How to deploy Micro BOSH
+
+## Inception server
+
+You need a VM on the CloudStack domain where you install a BOSH instance using this CPI. This VM is so-called "inception" server. Intall BOSH CLI and BOSH Deployer gems and run all operations on the VM.
+
+### Why do I need an inception server?
+
+NTT CloudStack CPI creates stemcells, which are VM templates, by copying pre-composed disk images to data volumes which automatically attached by BOSH Deployer. This procedure is same as that of the AWS CPI and requires that the VM where BOSH Deployer works is running on the same domain where you want to deploy your BOSH instance.
+
+## Security Groups
+
+The inception server must have a security group which opens the TCP port 25889, which is used by the temporary BOSH Registry launched by BOSH Deployer.
+
+You also need to create one or more security groups for VMs create by your BOSH instance. We recommend that you create a secrity group which opnes all the TCP and UDP ports for testing.
+
+## Deployment Manifest
+
+Describe the configuration for your MicroBOSH.
+
+```yaml
+---
+name: firstbosh
+logging:
+  level: DEBUG
+network:
+  type: dynamic
+resources:
+  persistent_disk: 40960
+  cloud_properties:
+    instance_type: m1.medium
+cloud:
+  plugin: cloudstack
+  properties:
+    cloudstack:
+      api_key: <your_api_key>
+      secret_access_key: <your_secret_access_key>
+      endpoint: <your_end_point_url>
+      default_security_groups:
+        - <security_groups_for_bosh>
+      private_key: <path_to_your_private_key>
+      state_timeout: 600
+      stemcell_public_visibility: true
+      default_zone: <default_zone_name>
+      default_key_name: <default_keypair_name>
+    registry:
+      endpoint: http://admin:admin@<ip_address_of_your_inception_sever>:25889
+      user: admin
+      password: admin
 ```
-gem install bosh_cli --pre
 
-# Plugin required for deploying MicroBosh
-gem install bosh_cli_plugin_micro --pre
+## Stemcells
 
-# Plugin required for 'bosh aws create' and bootstrap commands
-gem install bosh_cli_plugin_aws --pre
+You can generate a stemcell for CloudStack using the `release:create_dev_releas` and `local:build_stemcell` tasks.
+
+E.g.:
+
+```sh
+CANDIDATE_BUILD_NUMBER=3939 bundle exec rake release:create_dev_release && sudo env PATH=$PATH CANDIDATE_BUILD_NUMBER=3939 bundle exec rake "local:build_stemcell[cloudstack,ubuntu]"
 ```
 
-# Cloud Foundry Resources
-
-_Cloud Foundry Open Source Platform as a Service_
-
-## Learn
-
-Our documentation, currently a work in progress, is available here:
-[http://docs.cloudfoundry.com/](http://docs.cloudfoundry.com/)
-
-## Ask Questions
-
-Questions about the Cloud Foundry Open Source Project can be directed to our Google Groups.
-
-* BOSH Developers: [https://groups.google.com/a/cloudfoundry.org/group/bosh-dev/topics](https://groups.google.com/a/cloudfoundry.org/group/bosh-dev/topics)
-* BOSH Users:[https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics](https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics)
-* VCAP (Cloud Foundry) Developers: [https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics](https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics)
-
-## File a bug
-
-Bugs can be filed using Github Issues within the various repositories of the
-[Cloud Foundry](http://github.com/cloudfoundry) components.
-
-## Contributing
-
-Please read the [contributors' guide](CONTRIBUTING.md)
+`CANDIDATE_BUILD_NUMBER` is any number which you like.
