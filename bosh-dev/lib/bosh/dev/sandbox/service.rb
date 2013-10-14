@@ -1,3 +1,4 @@
+require 'timeout'
 require 'bosh/dev'
 
 module Bosh::Dev::Sandbox
@@ -25,8 +26,8 @@ module Bosh::Dev::Sandbox
         @logger.info("Started #{@cmd_array.first} with PID #{@pid}")
 
         Process.detach(@pid)
-        tries = 0
 
+        tries = 0
         while !running?
           tries += 1
           raise RuntimeError, "Cannot run #{@cmd_array} with #{env.inspect}" if tries > 20
@@ -37,18 +38,41 @@ module Bosh::Dev::Sandbox
 
     def stop(signal="TERM")
       return unless running?
-      @logger.info("Killing #{@cmd_array.first} with PID=#{@pid}")
-      Process.kill(signal, @pid)
-    rescue Errno::ESRCH
-      @logger.info("Process #{@cmd_array.first} with PID=#{@pid} not found")
+
+      begin
+        @logger.info("Killing #{@cmd_array.first} with PID=#{@pid}")
+        Process.kill(signal, @pid)
+      rescue Errno::ESRCH # No such process
+        @logger.info("Process #{@cmd_array.first} with PID=#{@pid} not found")
+        return
+      end
+
+      # Block until process exits to avoid race conditions in the caller
+      # (e.g. director process is killed but we don't wait and then we
+      # try to delete db which is in use by director)
+      wait_for_process_to_exit_or_be_killed
     end
 
     private
 
     def running?
       @pid && Process.kill(0, @pid)
-    rescue Errno::ESRCH
+    rescue Errno::ESRCH # No such process
       false
+    end
+
+    def wait_for_process_to_exit_or_be_killed(remaining_attempts=30)
+      # Actually just twiddle our thumbs here because wait() can hang forever...
+      while running?
+        remaining_attempts -= 1
+        if remaining_attempts == 5
+          Process.kill("KILL", @pid)
+        elsif remaining_attempts == 0
+          raise "KILL signal ignored by #{@cmd_array.first} with PID=#{@pid}"
+        else
+          sleep(0.2)
+        end
+      end
     end
   end
 end

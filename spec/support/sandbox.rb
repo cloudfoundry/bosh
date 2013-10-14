@@ -1,7 +1,7 @@
 require 'benchmark'
 require 'securerandom'
 require 'bosh/dev/sandbox/service'
-require 'bosh/dev/sandbox/redis_waiter'
+require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/database_migrator'
 require 'bosh/dev/sandbox/postgresql'
 
@@ -48,6 +48,9 @@ module Bosh
         @redis_process = Bosh::Dev::Sandbox::Service.new(
           %W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
 
+        @redis_socket_connector = Bosh::Dev::Sandbox::SocketConnector.new(
+          "localhost", redis_port, @logger)
+
         @blobstore_process = Bosh::Dev::Sandbox::Service.new(
           %W[simple_blobstore_server -c #{sandbox_path(BLOBSTORE_CONFIG)}],
           { output: "#{logs_path}/blobstore.out" },
@@ -62,6 +65,9 @@ module Bosh
           { output: "#{base_log_path}.director.out" },
           @logger,
         )
+
+        @director_socket_connector = Bosh::Dev::Sandbox::SocketConnector.new(
+          "localhost", director_port, @logger)
 
         @worker_process = Bosh::Dev::Sandbox::Service.new(
           %W[bosh-director-worker -c #{director_config}],
@@ -81,8 +87,7 @@ module Bosh
           @logger,
         )
 
-        @redis_waiter = Bosh::Dev::Sandbox::RedisWaiter.new("localhost", redis_port, @logger)
-        @postgresql   = Bosh::Dev::Sandbox::Postgresql.new(sandbox_root, @name, @logger)
+        @postgresql = Bosh::Dev::Sandbox::Postgresql.new(sandbox_root, @name, @logger)
         @database_migrator = Bosh::Dev::Sandbox::DatabaseMigrator.new(DIRECTOR_PATH, director_config)
       end
 
@@ -107,7 +112,7 @@ module Bosh
         @redis_process.start
         @blobstore_process.start
         @nats_process.start
-        @redis_waiter.wait
+        @redis_socket_connector.try_to_connect
       end
 
       def reset(name)
@@ -129,7 +134,6 @@ module Bosh
 
         FileUtils.rm_rf(blobstore_storage_dir)
         FileUtils.mkdir_p(blobstore_storage_dir)
-
         FileUtils.rm_rf(director_tmp_path)
         FileUtils.mkdir_p(director_tmp_path)
 
@@ -137,23 +141,12 @@ module Bosh
           f.write(Yajl::Encoder.encode("uuid" => DIRECTOR_UUID))
         end
 
-        @director_port = nil
         write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
-
-        @hm_port = nil
         write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
 
         @director_process.start
         @worker_process.start
-
-        tries = 0
-        loop do
-          `lsof -w -i :#{director_port} | grep LISTEN`
-          break if $?.exitstatus == 0
-          tries += 1
-          raise "could not connect to director on port #{director_port}" if tries > 50
-          sleep(1)
-        end
+        @director_socket_connector.try_to_connect(50)
       end
 
       def reconfigure_director
