@@ -26,11 +26,12 @@ module Bosh
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
 
       attr_reader :name
-      alias_method :db_name, :name
-      attr_accessor :director_fix_stateful_nodes
-
       attr_reader :health_monitor_process
       attr_reader :scheduler_process
+
+      alias_method :db_name, :name
+      attr_reader :blobstore_storage_dir
+      attr_accessor :director_fix_stateful_nodes
 
       def initialize
         @logger = Logger.new(STDOUT)
@@ -117,36 +118,7 @@ module Bosh
 
       def reset(name)
         time = Benchmark.realtime { do_reset(name) }
-        puts "Reset took #{time} seconds"
-      end
-
-      def do_reset(name)
-        @worker_process.stop('QUIT')
-        @director_process.stop
-        @health_monitor_process.stop
-        kill_agents
-
-        Redis.new(:host => "localhost", :port => redis_port).flushdb
-
-        @postgresql.drop_db
-        @postgresql.create_db
-        @database_migrator.migrate
-
-        FileUtils.rm_rf(blobstore_storage_dir)
-        FileUtils.mkdir_p(blobstore_storage_dir)
-        FileUtils.rm_rf(director_tmp_path)
-        FileUtils.mkdir_p(director_tmp_path)
-
-        File.open(File.join(director_tmp_path, "state.json"), "w") do |f|
-          f.write(Yajl::Encoder.encode("uuid" => DIRECTOR_UUID))
-        end
-
-        write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
-        write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
-
-        @director_process.start
-        @worker_process.start
-        @director_socket_connector.try_to_connect(50)
+        @logger.info("Reset took #{time} seconds")
       end
 
       def reconfigure_director
@@ -206,6 +178,37 @@ module Bosh
         @sandbox_root ||= Dir.mktmpdir.tap { |p| @logger.info("sandbox=#{p}") }
       end
 
+      private
+
+      def do_reset(name)
+        @worker_process.stop('QUIT')
+        @director_process.stop
+        @health_monitor_process.stop
+        kill_agents
+
+        Redis.new(:host => "localhost", :port => redis_port).flushdb
+
+        @postgresql.drop_db
+        @postgresql.create_db
+        @database_migrator.migrate
+
+        FileUtils.rm_rf(blobstore_storage_dir)
+        FileUtils.mkdir_p(blobstore_storage_dir)
+        FileUtils.rm_rf(director_tmp_path)
+        FileUtils.mkdir_p(director_tmp_path)
+
+        File.open(File.join(director_tmp_path, "state.json"), "w") do |f|
+          f.write(Yajl::Encoder.encode("uuid" => DIRECTOR_UUID))
+        end
+
+        write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
+        write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
+
+        @director_process.start
+        @worker_process.start
+        @director_socket_connector.try_to_connect(50)
+      end
+
       def kill_agents
         Dir[File.join(agent_tmp_path, "running_vms", "*")].each do |vm|
           begin
@@ -250,9 +253,7 @@ module Bosh
         return 61000 + test_number * 100 + offset
       end
 
-      private
-
-      attr_reader :logs_path, :director_tmp_path, :dns_db_path, :task_logs_dir, :blobstore_storage_dir
+      attr_reader :logs_path, :director_tmp_path, :dns_db_path, :task_logs_dir
     end
   end
 end
