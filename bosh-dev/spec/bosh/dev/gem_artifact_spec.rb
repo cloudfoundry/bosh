@@ -27,10 +27,10 @@ module Bosh::Dev
         expect { gem_artifact.promote }.to change { File.directory?('tmp/gems-1234') }.to(true)
       end
 
-      it 'clears out the temporary directory if it alredy exists to avoid promoting bad gems' do
+      it 'clears out the temporary directory if it already exists to avoid promoting bad gems' do
         FileUtils.mkdir_p('tmp/gems-1234')
-        FileUtils.touch('tmp/gems-1234/bad.gem')
-        expect { gem_artifact.promote }.to change { File.exist?('tmp/gems-1234/bad.gem') }.to(false)
+        FileUtils.touch("tmp/gems-1234/#{component.dot_gem}")
+        expect { gem_artifact.promote }.to change { File.exist?("tmp/gems-1234/#{component.dot_gem}") }.to(false)
       end
 
       it 'downloads the gem from the pipeline bucket' do
@@ -52,10 +52,10 @@ module Bosh::Dev
         }.to raise_error("Your rubygems.org credentials aren't set. Run `gem push` to set them.")
       end
 
-      it 'expands the path to the .gem dir since File.exists? needs this' do
+      it 'expands the path to the .gem dir since File.exists? does not like "~" in the path' do
         File.should_receive(:exists?) do |path|
           expect(path).not_to include('~')
-          path != 'tmp/gems-1234'
+          path != "tmp/gems-1234/#{component.dot_gem}"
         end.any_number_of_times
 
         gem_artifact.promote

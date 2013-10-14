@@ -9,8 +9,10 @@ module Bosh::Dev
     def promote
       ensure_rubygems_crendentials!
 
+      dot_gem_path = "#{tmp_download_dir}/#{@component.dot_gem}"
+      FileUtils.rm(dot_gem_path) if File.exists?(dot_gem_path)
       RakeFileUtils.sh("s3cmd --verbose get #{@pipeline_prefix}gems/gems/#{@component.dot_gem} #{tmp_download_dir}")
-      RakeFileUtils.sh("gem push #{tmp_download_dir}/#{@component.dot_gem}")
+      RakeFileUtils.sh("gem push #{dot_gem_path}")
       puts "Promoted: #{@component.dot_gem}"
     rescue
       warn "Failed to promote: #{@component.dot_gem}"
@@ -26,7 +28,6 @@ module Bosh::Dev
 
     def tmp_download_dir
       dir = "tmp/gems-#{@build_number}"
-      FileUtils.rm_r(dir) if File.exists?(dir)
       FileUtils.mkdir_p(dir)
       dir
     end
