@@ -46,7 +46,7 @@ module Bosh::Dev
         GemComponent.should_receive(:new).with('bosh-registry', version_file.version)
         GemComponent.should_receive(:new).with('bosh_vsphere_cpi', version_file.version)
         GemComponent.should_receive(:new).with('director', version_file.version)
-        GemComponent.should_receive(:new).with('health_monitor', version_file.version)
+        GemComponent.should_receive(:new).with('bosh-monitor', version_file.version)
         GemComponent.should_receive(:new).with('bosh-release', version_file.version)
         GemComponent.should_receive(:new).with('simple_blobstore_server', version_file.version)
 
@@ -82,7 +82,7 @@ module Bosh::Dev
           bosh-registry
           bosh_vsphere_cpi
           director
-          health_monitor
+          bosh-monitor
           bosh-release
           simple_blobstore_server
         ])

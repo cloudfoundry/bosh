@@ -239,7 +239,7 @@ module Bosh
 
       def start_healthmonitor
         hm_output = "#{logs_path}/health_monitor.out"
-        run_with_pid(%W[health_monitor -c #{hm_config}], hm_pid, :output => hm_output)
+        run_with_pid(%W[bosh-monitor -c #{hm_config}], hm_pid, :output => hm_output)
       end
 
       def blobstore_storage_dir

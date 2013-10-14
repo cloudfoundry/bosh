@@ -1,8 +1,8 @@
 set -e
 
-cd bosh/health_monitor
+cd bosh/bosh-monitor
 
 mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
 gem_cmd="/var/vcap/packages/ruby/bin/gem install --local --no-ri --no-rdoc -w -n ${BOSH_INSTALL_TARGET}/bin -i ${BOSH_INSTALL_TARGET}/gem_home"
 
-$gem_cmd health_monitor
+$gem_cmd bosh-monitor

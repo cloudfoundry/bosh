@@ -15,7 +15,7 @@ AllCops:
    - bosh-registry/**
    - bosh_vsphere_cpi/**
    - director/**
-   - health_monitor/**
+   - bosh-monitor/**
    - bosh-release/**
    - release/**
    - simple_blobstore_server/**

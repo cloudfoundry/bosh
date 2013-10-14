@@ -16,7 +16,7 @@ gemspec path: 'bosh_openstack_cpi'
 gemspec path: 'bosh-registry'
 gemspec path: 'bosh_vsphere_cpi'
 gemspec path: 'director'
-gemspec path: 'health_monitor'
+gemspec path: 'bosh-monitor'
 gemspec path: 'bosh-release'
 gemspec path: 'simple_blobstore_server'
 

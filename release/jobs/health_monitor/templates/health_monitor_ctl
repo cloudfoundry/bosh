@@ -17,7 +17,7 @@ case $1 in
     echo $$ > $PIDFILE
 
     exec chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/health_monitor/bin/health_monitor \
+      /var/vcap/packages/health_monitor/bin/bosh-monitor \
       -c /var/vcap/jobs/health_monitor/config/health_monitor.yml \
       >>$LOG_DIR/health_monitor.stdout.log 2>>$LOG_DIR/health_monitor.stderr.log
     ;;

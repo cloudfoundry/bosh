@@ -35,6 +35,21 @@ PATH
       peach
 
 PATH
+  remote: bosh-monitor
+  specs:
+    bosh-monitor (1.5.0.pre.3)
+      aws-sdk (= 1.8.5)
+      dogapi (~> 1.6.0)
+      em-http-request (~> 0.3.0)
+      eventmachine (~> 0.12.10)
+      logging (~> 1.5.0)
+      nats (~> 0.4.28)
+      sinatra (~> 1.4.2)
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1)
+      yajl-ruby (~> 1.1.0)
+
+PATH
   remote: bosh-registry
   specs:
     bosh-registry (1.5.0.pre.3)
@@ -187,21 +202,6 @@ PATH
       sinatra (~> 1.4.2)
       sys-filesystem (~> 1.1.0)
       thin (~> 1.5.0)
-      yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: health_monitor
-  specs:
-    health_monitor (1.5.0.pre.3)
-      aws-sdk (= 1.8.5)
-      dogapi (~> 1.6.0)
-      em-http-request (~> 0.3.0)
-      eventmachine (~> 0.12.10)
-      logging (~> 1.5.0)
-      nats (~> 0.4.28)
-      sinatra (~> 1.4.2)
-      thin (~> 1.5.0)
-      uuidtools (~> 2.1)
       yajl-ruby (~> 1.1.0)
 
 PATH
@@ -413,6 +413,7 @@ DEPENDENCIES
   blobstore_client!
   bosh-core!
   bosh-dev!
+  bosh-monitor!
   bosh-registry!
   bosh-release!
   bosh-stemcell!
@@ -431,7 +432,6 @@ DEPENDENCIES
   fakefs
   foodcritic
   git-duet
-  health_monitor!
   httpclient
   jenkins_api_client
   json
