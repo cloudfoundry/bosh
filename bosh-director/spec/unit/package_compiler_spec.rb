@@ -231,19 +231,42 @@ module Bosh::Director
       # and the compilation is not even in-flight. e.g.
       # - you have 3 compilation workers, but you've got 5 packages to compile; or
       # - package "bar" depends on "foo", deploy is cancelled when compiling "foo" ("bar" is blocked)
-      before do
-        @director_job.stub(:task_cancelled?).and_return(true)
-        @director_job.stub(:task_checkpoint)
-      end
 
       it 'cancels the compilation' do
-        prepare_samples
+        director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
+        event_log = instance_double('Bosh::Director::EventLog', begin_stage: nil)
+        event_log.stub(:track).with(anything).and_yield
 
-        @plan.stub(:jobs).and_return([@j_router])
+        config = class_double('Bosh::Director::Config').as_stubbed_const
+        config.stub(
+          current_job: director_job,
+          cloud: double('cpi'),
+          event_log: event_log,
+          logger: double('logger', info: nil, debug: nil),
+          use_compiled_package_cache?: false,
+        )
 
-        compiler = PackageCompiler.new(@plan)
+        network = double('network', name: 'network_name')
+        compilation_config = instance_double('Bosh::Director::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
+                                    reuse_compilation_vms: true)
+        release = double('release', name: 'release_name')
+        stemcell_model = double('stemcell_model', desc: 'stemcell description', id: 'stemcell_id', sha1: 'beef')
+        stemcell = double('stemcell', model: stemcell_model)
+        resource_pool = double('resource_pool', stemcell: stemcell)
+        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release, name: 'job_name', resource_pool: resource_pool)
+        package_model = instance_double('Bosh::Director::Models::Package', desc: 'package description', id: 'package_id', dependency_set: [],
+                               fingerprint: 'deadbeef')
+        template = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [ package_model ])
+        job.stub(templates: [template])
+        planner = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, name: 'mycloud')
 
-        compiler.compile
+        planner.stub(:jobs).and_return([job])
+
+        compiler = PackageCompiler.new(planner)
+
+        expect {
+          compiler.compile
+        }.not_to raise_error
       end
     end
 
