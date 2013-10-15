@@ -1029,22 +1029,20 @@ module VSphereCloud
     end
 
     def fix_device_unit_numbers(devices, device_changes)
-      max_unit_numbers = {}
+      controllers_available_unit_numbers = Hash.new { |h,k| h[k] = (0..15).to_a }
       devices.each do |device|
         if device.controller_key
-          max_unit_number = max_unit_numbers[device.controller_key]
-          if max_unit_number.nil? || max_unit_number < device.unit_number
-            max_unit_numbers[device.controller_key] = device.unit_number
-          end
+          available_unit_numbers = controllers_available_unit_numbers[device.controller_key]
+          available_unit_numbers.delete(device.unit_number)
         end
       end
 
       device_changes.each do |device_change|
         device = device_change.device
         if device.controller_key && device.unit_number.nil?
-          max_unit_number = max_unit_numbers[device.controller_key] || 0
-          device.unit_number = max_unit_number + 1
-          max_unit_numbers[device.controller_key] = device.unit_number
+          available_unit_numbers = controllers_available_unit_numbers[device.controller_key]
+          raise "No available unit numbers for device: #{device.inspect}" if available_unit_numbers.empty?
+          device.unit_number = available_unit_numbers.shift
         end
       end
     end
