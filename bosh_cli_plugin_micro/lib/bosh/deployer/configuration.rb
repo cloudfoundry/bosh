@@ -37,6 +37,7 @@ module Bosh::Deployer
         column :name, :text, :unique => true, :null => false
         column :uuid, :text
         column :stemcell_cid, :text
+        column :stemcell_sha1, :text
         column :stemcell_name, :text
         column :vm_cid, :text
         column :disk_cid, :text
