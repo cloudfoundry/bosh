@@ -20,7 +20,8 @@ module Bosh::Dev::Aws
     end
 
     def push
-      Bosh::Dev::GitRepoUpdater.new.update_directory(path)
+      git_repo_updater = Bosh::Dev::GitRepoUpdater.new
+      git_repo_updater.update_directory(path)
     end
 
     private
