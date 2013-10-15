@@ -30,10 +30,6 @@ module Bosh::Director
       @all_packages = []
     end
 
-    def make(plan)
-      PackageCompiler.new(plan)
-    end
-
     def make_package(name, deps = [], version = '0.1-dev')
       package = Models::Package.make(name: name, version: version)
       package.dependency_set = deps
@@ -123,7 +119,7 @@ module Bosh::Director
         @j_router.should_receive(:use_compiled_package).with(cp2)
       end
 
-      compiler = make(@plan)
+      compiler = PackageCompiler.new(@plan)
       compiler.compile
       # For @stemcell_a we need to compile:
       # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
@@ -138,7 +134,7 @@ module Bosh::Director
       prepare_samples
 
       @plan.stub(:jobs).and_return([@j_dea, @j_router])
-      compiler = make(@plan)
+      compiler = PackageCompiler.new(@plan)
 
       @network.should_receive(:reserve).at_least(@n_workers).times do |reservation|
         reservation.should be_an_instance_of(NetworkReservation)
@@ -291,7 +287,7 @@ module Bosh::Director
         @network.should_receive(:release).at_most(@n_workers).times
         @director_job.should_receive(:task_checkpoint).once
 
-        compiler = make(@plan)
+        compiler = PackageCompiler.new(@plan)
 
         @package_set_a.each do |package|
           compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -336,7 +332,7 @@ module Bosh::Director
 
         @network.should_receive(:release)
 
-        compiler = make(@plan)
+        compiler = PackageCompiler.new(@plan)
         compiler.stub(:with_compile_lock).and_yield
 
         expect {
@@ -381,7 +377,7 @@ module Bosh::Director
           @cloud.should_receive(:delete_vm)
           @network.should_receive(:release)
 
-          compiler = make(@plan)
+          compiler = PackageCompiler.new(@plan)
           compiler.stub(:with_compile_lock).and_yield
           expect { compiler.compile }.to raise_error(RpcTimeout)
         end
@@ -404,7 +400,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, [])
 
-      compiler = make(@plan)
+      compiler = PackageCompiler.new(@plan)
       callback = nil
       compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id) do |&block|
         callback = block
@@ -422,7 +418,7 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
       let(:task) { CompileTask.new(package, stemcell, []) }
-      let(:compiler) { make(@plan) }
+      let(:compiler) { PackageCompiler.new(@plan) }
       let(:cache_key) { 'cache key' }
 
       before do
