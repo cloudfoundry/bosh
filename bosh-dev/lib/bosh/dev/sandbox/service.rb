@@ -28,7 +28,7 @@ module Bosh::Dev::Sandbox
         Process.detach(@pid)
 
         tries = 0
-        while !running?
+        until running?
           tries += 1
           raise RuntimeError, "Cannot run #{@cmd_array} with #{env.inspect}" if tries > 20
           sleep(0.1)
@@ -36,7 +36,7 @@ module Bosh::Dev::Sandbox
       end
     end
 
-    def stop(signal="TERM")
+    def stop(signal = 'TERM')
       return unless running?
 
       begin
@@ -61,12 +61,12 @@ module Bosh::Dev::Sandbox
       false
     end
 
-    def wait_for_process_to_exit_or_be_killed(remaining_attempts=30)
+    def wait_for_process_to_exit_or_be_killed(remaining_attempts = 30)
       # Actually just twiddle our thumbs here because wait() can hang forever...
       while running?
         remaining_attempts -= 1
         if remaining_attempts == 5
-          Process.kill("KILL", @pid)
+          Process.kill('KILL', @pid)
         elsif remaining_attempts == 0
           raise "KILL signal ignored by #{@cmd_array.first} with PID=#{@pid}"
         else

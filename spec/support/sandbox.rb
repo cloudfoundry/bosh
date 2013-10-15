@@ -88,8 +88,11 @@ module Bosh
           @logger,
         )
 
-        @postgresql = Bosh::Dev::Sandbox::Postgresql.new(sandbox_root, @name, @logger)
-        @database_migrator = Bosh::Dev::Sandbox::DatabaseMigrator.new(DIRECTOR_PATH, director_config)
+        @postgresql = Bosh::Dev::Sandbox::Postgresql.new(
+          sandbox_root, @name, @logger)
+
+        @database_migrator = Bosh::Dev::Sandbox::DatabaseMigrator.new(
+          DIRECTOR_PATH, director_config, @logger)
       end
 
       def agent_tmp_path

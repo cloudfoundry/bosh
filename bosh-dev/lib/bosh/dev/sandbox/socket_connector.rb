@@ -8,7 +8,7 @@ module Bosh::Dev::Sandbox
       @logger = logger
     end
 
-    def try_to_connect(remaining_attempts=20)
+    def try_to_connect(remaining_attempts = 20)
       remaining_attempts -= 1
       socket = Socket.new(Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0)
       socket.connect(@addr)
