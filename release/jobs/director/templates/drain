@@ -24,7 +24,7 @@ stop_workers
 
 COMPONENT=drain erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/drain.yml
 
-num_workers=`/var/vcap/packages/director/bin/drain_workers -r -c /var/vcap/jobs/director/config/drain.yml 2>>$LOG_DIR/drain.stderr.log`
+num_workers=`/var/vcap/packages/director/bin/bosh-director-drain-workers -r -c /var/vcap/jobs/director/config/drain.yml 2>>$LOG_DIR/drain.stderr.log`
 
 if [ $num_workers -eq 0 ]; then
   echo 0

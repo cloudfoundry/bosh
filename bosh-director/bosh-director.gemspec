@@ -48,10 +48,10 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'machinist', '~>1.0'
 
   s.bindir      = 'bin'
-  s.executables << 'director_console'
-  s.executables << 'director_scheduler'
-  s.executables << 'director'
-  s.executables << 'drain_workers'
-  s.executables << 'worker'
-  s.executables << 'bosh_director_migrate'
+  s.executables << 'bosh-director'
+  s.executables << 'bosh-director-console'
+  s.executables << 'bosh-director-drain-workers'
+  s.executables << 'bosh-director-migrate'
+  s.executables << 'bosh-director-scheduler'
+  s.executables << 'bosh-director-worker'
 end

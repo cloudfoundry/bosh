@@ -135,7 +135,7 @@ module Bosh
 
         FileUtils.rm_rf(sqlite_db)
         Dir.chdir(DIRECTOR_PATH) do
-          output = `bin/bosh_director_migrate -c #{director_config}`
+          output = `bin/bosh-director-migrate -c #{director_config}`
           unless $?.exitstatus == 0
             puts "Failed to run migration:"
             puts output
@@ -204,8 +204,8 @@ module Bosh
         write_in_sandbox("director_test.yml", load_config_template(DIRECTOR_CONF_TEMPLATE))
         write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
 
-        run_with_pid(%W[director -c #{director_config}], director_pid, :output => director_output_path)
-        run_with_pid(%W[worker -c #{director_config}], worker_pid, :output => worker_output_path, :env => {"QUEUE" => "*"})
+        run_with_pid(%W[bosh-director -c #{director_config}], director_pid, :output => director_output_path)
+        run_with_pid(%W[bosh-director-worker -c #{director_config}], worker_pid, :output => worker_output_path, :env => {"QUEUE" => "*"})
 
         tries = 0
         loop do
@@ -234,7 +234,7 @@ module Bosh
         kill_process(director_pid)
         director_output = "#{base_log_path}.director.out"
         write_in_sandbox("director_test.yml", load_config_template(DIRECTOR_CONF_TEMPLATE))
-        run_with_pid(%W[director -c #{director_config}], director_pid, :output => director_output)
+        run_with_pid(%W[bosh-director -c #{director_config}], director_pid, :output => director_output)
       end
 
       def start_healthmonitor
@@ -282,7 +282,7 @@ module Bosh
 
       def start_scheduler
         scheduler_output = "#{base_log_path}.scheduler.out"
-        run_with_pid(%W[director_scheduler -c #{director_config}], scheduler_pid, output: scheduler_output)
+        run_with_pid(%W[bosh-director-scheduler -c #{director_config}], scheduler_pid, output: scheduler_output)
       end
 
       def stop_nats
