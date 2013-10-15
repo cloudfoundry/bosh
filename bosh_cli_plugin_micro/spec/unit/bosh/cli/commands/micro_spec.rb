@@ -5,17 +5,20 @@ module Bosh::Cli::Command
   describe Micro do
     include FakeFS::SpecHelpers
 
-    let(:runner) { double('Runner') }
-    let(:manifest_hash) { {'network' => 'something'} }
     subject(:micro_command) { Micro.new(runner) }
+    let(:runner) { double('Runner') }
+
+    before { micro_command.stub(load_yaml_file: manifest_hash) }
+    let(:manifest_hash) { {'network' => 'something'} }
+
+    before { FileUtils.mkdir_p(File.expand_path('~')) } # wat!
 
     before do
-      FileUtils.mkdir_p('/tmp/foo/')
-      FileUtils.mkdir_p(File.expand_path('~'))
+      FileUtils.mkdir_p('/tmp/foo')
       FileUtils.touch('/tmp/foo/micro_bosh.yml')
-      Dir.chdir('/tmp')
-      micro_command.stub(:load_yaml_file).and_return(manifest_hash)
+    end
 
+    before do
       Bosh::Deployer::InstanceManager.stub(create: double(
         'Deployer',
         discover_bosh_ip: '5',
@@ -27,6 +30,8 @@ module Bosh::Cli::Command
     end
 
     describe 'micro deployment' do
+      before { Dir.chdir('/tmp') }
+
       context 'a relative path to a manifest is given' do
         before { FileUtils.touch('/tmp/foo/other_manifest.yml') }
 
@@ -165,11 +170,10 @@ module Bosh::Cli::Command
     end
 
     describe 'perform' do
-      let(:confirmation) do
+      confirmation =
         "\nNo `bosh-deployments.yml` file found in current directory." +
         "\n\nConventionally, `bosh-deployments.yml` should be saved in /tmp." +
         "\nIs /tmp/foo a directory where you can save state?"
-      end
 
       before do
         BoshExtensions.stub(:err)
@@ -191,7 +195,7 @@ module Bosh::Cli::Command
         context 'not in directory one level up from `micro_bosh.yml`' do
           it 'confirms that current directory is valid to save state' do
             micro_command.should_receive(:confirmed?).with(confirmation).and_return(true)
-            Dir.chdir('foo') { micro_command.perform('stemcell') }
+            Dir.chdir('/tmp/foo') { micro_command.perform('stemcell') }
           end
         end
 
@@ -211,13 +215,17 @@ module Bosh::Cli::Command
     before do
       @cmd = Bosh::Cli::Command::Micro.new(nil)
       @cmd.add_option(:non_interactive, true)
-      @cmd.add_option(:config, @config)
-      @cmd.add_option(:cache_dir, @cache)
+      @cmd.add_option(:config, nil)
+      @cmd.add_option(:cache_dir, nil)
+
       @manifest_path = spec_asset("deployment.MF")
-      @manifest_yaml = { "name" => "foo", "cloud" => {} }
-      @manifest_yaml["resources"] = {
-        "persistent_disk" => 16384,
-        "cloud_properties" => {}
+      @manifest_yaml = {
+        "name" => "foo",
+        "cloud" => {},
+        "resources" => {
+          "persistent_disk" => 16384,
+          "cloud_properties" => {}
+        },
       }
     end
 
