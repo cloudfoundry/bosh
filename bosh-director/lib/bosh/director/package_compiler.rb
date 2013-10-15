@@ -387,6 +387,8 @@ module Bosh::Director
       compiled_package
     end
 
+    private
+
     def director_job_cancelled?
       @director_job && @director_job.task_cancelled?
     end
@@ -413,8 +415,6 @@ module Bosh::Director
       end
       counter
     end
-
-    private
 
     def vm_metadata_updater
       @vm_metadata_updater ||= VmMetadataUpdater.build
