@@ -14,12 +14,12 @@ module Bosh::Dev::Sandbox
 
     def create_db
       @logger.info("Creating database #{db_name}")
-      runner.run(%Q{psql -c 'create database "#{db_name}";' > /dev/null})
+      runner.run(%Q{psql -d postgres -c 'create database "#{db_name}";' > /dev/null})
     end
 
     def drop_db
       @logger.info("Dropping database #{db_name}")
-      runner.run(%Q{psql -c 'drop database "#{db_name}";' > /dev/null})
+      runner.run(%Q{psql -d postgres -c 'drop database "#{db_name}";' > /dev/null})
     end
 
     private

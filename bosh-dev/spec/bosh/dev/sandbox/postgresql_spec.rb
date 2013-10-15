@@ -10,14 +10,16 @@ module Bosh::Dev::Sandbox
 
     describe '#create_db' do
       it 'creates a database' do
-        runner.should_receive(:run).with(%Q{psql -c 'create database "fake_db_name";' > /dev/null})
+        runner.should_receive(:run).with(
+          %Q{psql -d postgres -c 'create database "fake_db_name";' > /dev/null})
         postgresql.create_db
       end
     end
 
     describe '#drop_db' do
       it 'drops a database' do
-        runner.should_receive(:run).with(%Q{psql -c 'drop database "fake_db_name";' > /dev/null})
+        runner.should_receive(:run).with(
+          %Q{psql -d postgres -c 'drop database "fake_db_name";' > /dev/null})
         postgresql.drop_db
       end
     end
