@@ -7,7 +7,7 @@ module Bosh::Deployer
     end
 
     def self.load_apply_spec(dir)
-      file = "apply_spec.yml"
+      file = 'apply_spec.yml'
       apply_spec = File.join(dir, file)
       unless File.exist?(apply_spec)
         err "this isn't a micro bosh stemcell - #{file} missing"
@@ -20,7 +20,7 @@ module Bosh::Deployer
 
     def initialize(spec)
       @spec = spec
-      @properties = @spec["properties"]
+      @properties = @spec['properties']
     end
 
     # Update the spec with the IP of the micro bosh instance.
@@ -30,8 +30,8 @@ module Bosh::Deployer
     def update(bosh_ip, service_ip)
       # set the director name to what is specified in the micro_bosh.yml
       if Config.name
-        @properties["director"] = {} unless @properties["director"]
-        @properties["director"]["name"] = Config.name
+        @properties['director'] = {} unless @properties['director']
+        @properties['director']['name'] = Config.name
       end
 
       # on AWS blobstore and nats need to use an elastic IP (if available),
@@ -49,11 +49,11 @@ module Bosh::Deployer
       # health monitor does not listen to any ports, so there is no
       # need to update the service address, but we still want to
       # be able to override values in the apply_spec
-      override_property(@properties, "hm", Config.spec_properties["hm"])
+      override_property(@properties, 'hm', Config.spec_properties['hm'])
 
-      override_property(@properties, "director", Config.spec_properties["director"])
-      set_property(@properties, "ntp", Config.spec_properties["ntp"])
-      set_property(@properties, "compiled_package_cache", Config.spec_properties["compiled_package_cache"])
+      override_property(@properties, 'director', Config.spec_properties['director'])
+      set_property(@properties, 'ntp', Config.spec_properties['ntp'])
+      set_property(@properties, 'compiled_package_cache', Config.spec_properties['compiled_package_cache'])
 
       @spec
     end
@@ -65,23 +65,23 @@ module Bosh::Deployer
 
     # @return [String] the port the director runs on
     def director_port
-      @properties["director"]["port"]
+      @properties['director']['port']
     end
 
     private
 
     # update the agent service section from the contents of the apply_spec
     def update_agent_service_address(service, address)
-      agent = @properties["agent"] ||= {}
+      agent = @properties['agent'] ||= {}
       svc = agent[service] ||= {}
-      svc["address"] = address
+      svc['address'] = address
 
       override_property(agent, service, Config.agent_properties[service])
     end
 
     def update_service_address(service, address)
       return unless @properties[service]
-      @properties[service]["address"] = address
+      @properties[service]['address'] = address
 
       override_property(@properties, service, Config.spec_properties[service])
     end
