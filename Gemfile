@@ -49,9 +49,6 @@ group :development, :test do
   gem 'rubocop', require: false
   gem 'parallel_tests'
   gem 'rack-test'
-  gem 'guard'
-  gem 'guard-bundler'
-  gem 'guard-rspec'
   gem 'ci_reporter'
   gem 'rspec'
   gem 'rspec-fire'
