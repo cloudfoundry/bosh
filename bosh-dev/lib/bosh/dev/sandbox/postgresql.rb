@@ -12,14 +12,16 @@ module Bosh::Dev::Sandbox
       @runner = runner
     end
 
+    # Assumption is that user running tests can
+    # login via psql without entering password.
     def create_db
       @logger.info("Creating database #{db_name}")
-      runner.run(%Q{psql -d postgres -c 'create database "#{db_name}";' > /dev/null})
+      runner.run(%Q{psql -U postgres -c 'create database "#{db_name}";' > /dev/null})
     end
 
     def drop_db
       @logger.info("Dropping database #{db_name}")
-      runner.run(%Q{psql -d postgres -c 'drop database "#{db_name}";' > /dev/null})
+      runner.run(%Q{psql -U postgres -c 'drop database "#{db_name}";' > /dev/null})
     end
 
     private
