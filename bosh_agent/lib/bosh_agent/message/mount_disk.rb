@@ -16,8 +16,14 @@ module Bosh::Agent
         if Bosh::Agent::Config.configure
           update_settings
           logger.info("MountDisk: #{@cid} - #{settings['disks'].inspect}")
-
-          setup_disk
+          if Bosh::Agent::Config.platform.is_disk_blockdev?
+            partition = setup_disk
+          else
+            disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(@cid)
+            partition = "#{disk}"
+          end
+          mount_persistent_disk(partition)
+          {}
         end
       end
 
@@ -74,8 +80,7 @@ module Bosh::Agent
           raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
         end
 
-        mount_persistent_disk(partition)
-        {}
+        partition
       end
 
       def mount_persistent_disk(partition)
@@ -92,7 +97,7 @@ module Bosh::Agent
         FileUtils.mkdir_p(mountpoint)
         FileUtils.chmod(0700, mountpoint)
 
-        Mounter.new(logger).mount(partition, mountpoint)
+        Bosh::Agent::Config.platform.mount_partition(partition, mountpoint)
       end
 
       def self.long_running?; true; end

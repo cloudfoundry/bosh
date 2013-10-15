@@ -15,7 +15,7 @@ module Bosh::Agent
 
         cids.each_key do |cid|
           disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-          partition = "#{disk}1"
+          partition = Bosh::Agent::Config.platform.is_disk_blockdev?? "#{disk}1" : "#{disk}"
           disk_info << cid unless DiskUtil.mount_entry(partition).nil?
         end
         disk_info

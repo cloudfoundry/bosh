@@ -33,6 +33,8 @@ describe Bosh::Agent::Message::MigrateDisk do
     end
 
     let(:config_class) { double('agent config') }
+    let(:platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter') }
+
     before { stub_const('Bosh::Agent::Config', config_class) }
 
     subject(:migrate_disk) { described_class.new }
@@ -40,7 +42,6 @@ describe Bosh::Agent::Message::MigrateDisk do
       fake_logger = double('logger', info: true)
       config_class.stub(logger: fake_logger)
       config_class.stub(base_dir: '/var/vcap')
-      platform = double('platform')
       config_class.stub(platform: platform)
       platform.stub(:lookup_disk_by_cid).with("old_disk_cid").and_return(
         '/dev/sda',
@@ -48,6 +49,7 @@ describe Bosh::Agent::Message::MigrateDisk do
       platform.stub(:lookup_disk_by_cid).with("new_disk_cid").and_return(
         '/dev/sdb',
       )
+      platform.stub(:is_disk_blockdev?).and_return(true)
     end
 
     it 'remounts the old disk RO, copies files over, and mounts the new disk' do
@@ -59,9 +61,7 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::Mounter.stub(:new).with(
         config_class.logger,
       ).and_return(mounter)
-      mounter.should_receive(:mount).with('/dev/sda1',
-                                          persistent_disk_mount_point,
-                                          read_only: true).ordered
+      platform.should_receive(:mount_persistent_disk).with('old_disk_cid', {:read_only=>true})
 
       # copy stuff over
       migrate_disk.should_receive(:`).ordered.with(
@@ -77,8 +77,7 @@ describe Bosh::Agent::Message::MigrateDisk do
       Bosh::Agent::DiskUtil.should_receive(:umount_guard).ordered.with(
         migration_mount_point,
       )
-      mounter.should_receive(:mount).with('/dev/sdb1',
-                                          persistent_disk_mount_point, {}).ordered
+      platform.should_receive(:mount_persistent_disk).with('new_disk_cid')
 
       migrate_disk.migrate(["old_disk_cid", "new_disk_cid"])
     end
