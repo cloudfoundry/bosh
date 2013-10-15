@@ -104,121 +104,125 @@ module Bosh::Director
         with('common').at_least(1).times.and_return(@p_common)
     end
 
-    it "doesn't do anything if there are no packages to compile" do
-      prepare_samples
+    context 'when all needed packages are compiled' do
+      it "doesn't perform any compilation" do
+        prepare_samples
 
-      @plan.stub(:jobs).and_return([@j_dea, @j_router])
+        @plan.stub(:jobs).and_return([@j_dea, @j_router])
 
-      @package_set_a.each do |package|
-        cp1 = make_compiled(package, @stemcell_a.model)
-        @j_dea.should_receive(:use_compiled_package).with(cp1)
+        @package_set_a.each do |package|
+          cp1 = make_compiled(package, @stemcell_a.model)
+          @j_dea.should_receive(:use_compiled_package).with(cp1)
+        end
+
+        @package_set_b.each do |package|
+          cp2 = make_compiled(package, @stemcell_b.model)
+          @j_router.should_receive(:use_compiled_package).with(cp2)
+        end
+
+        compiler = PackageCompiler.new(@plan)
+        compiler.compile
+        # For @stemcell_a we need to compile:
+        # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
+        # For @stemcell_b:
+        # [p_nginx, p_common, p_router, p_ruby, p_warden] = 5
+        compiler.compile_tasks_count.should == 6 + 5
+        # But they are already compiled!
+        compiler.compilations_performed.should == 0
       end
-
-      @package_set_b.each do |package|
-        cp2 = make_compiled(package, @stemcell_b.model)
-        @j_router.should_receive(:use_compiled_package).with(cp2)
-      end
-
-      compiler = PackageCompiler.new(@plan)
-      compiler.compile
-      # For @stemcell_a we need to compile:
-      # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
-      # For @stemcell_b:
-      # [p_nginx, p_common, p_router, p_ruby, p_warden] = 5
-      compiler.compile_tasks_count.should == 6 + 5
-      # But they are already compiled!
-      compiler.compilations_performed.should == 0
     end
 
-    it 'compiles all packages' do
-      prepare_samples
+    context 'when none of the packages are compiled' do
+      it 'compiles all packages' do
+        prepare_samples
 
-      @plan.stub(:jobs).and_return([@j_dea, @j_router])
-      compiler = PackageCompiler.new(@plan)
+        @plan.stub(:jobs).and_return([@j_dea, @j_router])
+        compiler = PackageCompiler.new(@plan)
 
-      @network.should_receive(:reserve).at_least(@n_workers).times do |reservation|
-        reservation.should be_an_instance_of(NetworkReservation)
-        reservation.reserved = true
-      end
-
-      @network.should_receive(:network_settings).
-        exactly(11).times.and_return('network settings')
-
-      net = {'default' => 'network settings'}
-      vm_cids = (0..10).map { |i| "vm-cid-#{i}" }
-      agents = (0..10).map { instance_double('Bosh::Director::AgentClient') }
-
-      @cloud.should_receive(:create_vm).exactly(6).times.
-        with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
-        and_return(*vm_cids[0..5])
-
-      @cloud.should_receive(:create_vm).exactly(5).times.
-        with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
-        and_return(*vm_cids[6..10])
-
-      AgentClient.should_receive(:new).exactly(11).times.and_return(*agents)
-
-      vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
-      Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
-      vm_metadata_updater.should_receive(:update).with(anything, { compiling: 'common'})
-      vm_metadata_updater.should_receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
-
-      agents.each do |agent|
-        initial_state = {
-          'deployment' => 'mycloud',
-          'resource_pool' => 'package_compiler',
-          'networks' => net
-        }
-
-        agent.should_receive(:wait_until_ready)
-        agent.should_receive(:apply).with(initial_state)
-        agent.should_receive(:compile_package) do |*args|
-          name = args[2]
-          dot = args[3].rindex('.')
-          version, build = args[3][0..dot-1], args[3][dot+1..-1]
-
-          package = Models::Package.find(name: name, version: version)
-          args[0].should == package.blobstore_id
-          args[1].should == package.sha1
-
-          args[4].should be_a(Hash)
-
-          {
-            'result' => {
-              'sha1' => "compiled #{package.id}",
-              'blobstore_id' => "blob #{package.id}"
-            }
-          }
+        @network.should_receive(:reserve).at_least(@n_workers).times do |reservation|
+          reservation.should be_an_instance_of(NetworkReservation)
+          reservation.reserved = true
         end
-      end
 
-      @package_set_a.each do |package|
-        compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
-      end
+        @network.should_receive(:network_settings).
+            exactly(11).times.and_return('network settings')
 
-      @package_set_b.each do |package|
-        compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
-      end
+        net = {'default' => 'network settings'}
+        vm_cids = (0..10).map { |i| "vm-cid-#{i}" }
+        agents = (0..10).map { instance_double('Bosh::Director::AgentClient') }
 
-      @j_dea.should_receive(:use_compiled_package).exactly(6).times
-      @j_router.should_receive(:use_compiled_package).exactly(5).times
+        @cloud.should_receive(:create_vm).exactly(6).times.
+            with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
+            and_return(*vm_cids[0..5])
 
-      vm_cids.each do |vm_cid|
-        @cloud.should_receive(:delete_vm).with(vm_cid)
-      end
+        @cloud.should_receive(:create_vm).exactly(5).times.
+            with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
+            and_return(*vm_cids[6..10])
 
-      @network.should_receive(:release).at_least(@n_workers).times
-      @director_job.should_receive(:task_checkpoint).once
+        AgentClient.should_receive(:new).exactly(11).times.and_return(*agents)
 
-      compiler.compile
-      compiler.compilations_performed.should == 11
+        vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+        Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
+        vm_metadata_updater.should_receive(:update).with(anything, { compiling: 'common'})
+        vm_metadata_updater.should_receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
 
-      @package_set_a.each do |package|
-        package.compiled_packages.size.should >= 1
-      end
+        agents.each do |agent|
+          initial_state = {
+              'deployment' => 'mycloud',
+              'resource_pool' => 'package_compiler',
+              'networks' => net
+          }
 
-      @package_set_b.each do |package|
-        package.compiled_packages.size.should >= 1
+          agent.should_receive(:wait_until_ready)
+          agent.should_receive(:apply).with(initial_state)
+          agent.should_receive(:compile_package) do |*args|
+            name = args[2]
+            dot = args[3].rindex('.')
+            version, build = args[3][0..dot-1], args[3][dot+1..-1]
+
+            package = Models::Package.find(name: name, version: version)
+            args[0].should == package.blobstore_id
+            args[1].should == package.sha1
+
+            args[4].should be_a(Hash)
+
+            {
+                'result' => {
+                    'sha1' => "compiled #{package.id}",
+                    'blobstore_id' => "blob #{package.id}"
+                }
+            }
+          end
+        end
+
+        @package_set_a.each do |package|
+          compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
+        end
+
+        @package_set_b.each do |package|
+          compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+        end
+
+        @j_dea.should_receive(:use_compiled_package).exactly(6).times
+        @j_router.should_receive(:use_compiled_package).exactly(5).times
+
+        vm_cids.each do |vm_cid|
+          @cloud.should_receive(:delete_vm).with(vm_cid)
+        end
+
+        @network.should_receive(:release).at_least(@n_workers).times
+        @director_job.should_receive(:task_checkpoint).once
+
+        compiler.compile
+        compiler.compilations_performed.should == 11
+
+        @package_set_a.each do |package|
+          package.compiled_packages.size.should >= 1
+        end
+
+        @package_set_b.each do |package|
+          package.compiled_packages.size.should >= 1
+        end
       end
     end
 
