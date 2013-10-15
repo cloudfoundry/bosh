@@ -14,11 +14,11 @@ module Bosh::Deployer
       def update_spec(spec)
         properties = spec.properties
 
-        properties["vcd"] =
-          Config.spec_properties["vcd"] ||
-          Config.cloud_options["properties"]["vcds"].first.dup
+        properties['vcd'] =
+          Config.spec_properties['vcd'] ||
+          Config.cloud_options['properties']['vcds'].first.dup
 
-        properties["vcd"]["address"] ||= properties["vcd"]["url"]
+        properties['vcd']['address'] ||= properties['vcd']['url']
       end
 
       # @return [Integer] size in MiB

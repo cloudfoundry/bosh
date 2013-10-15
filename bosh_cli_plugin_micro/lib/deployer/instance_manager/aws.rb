@@ -10,32 +10,32 @@ module Bosh::Deployer
 
         # pick from micro_bosh.yml the aws settings in `apply_spec` section (apply_spec.properties.aws),
         # and if it doesn't exist, use the bosh deployer aws properties (cloud.properties.aws)
-        properties["aws"] = Config.spec_properties["aws"] || Config.cloud_options["properties"]["aws"].dup
+        properties['aws'] = Config.spec_properties['aws'] || Config.cloud_options['properties']['aws'].dup
 
-        properties["aws"]["registry"] = Config.cloud_options["properties"]["registry"]
-        properties["aws"]["stemcell"] = Config.cloud_options["properties"]["stemcell"]
+        properties['aws']['registry'] = Config.cloud_options['properties']['registry']
+        properties['aws']['stemcell'] = Config.cloud_options['properties']['stemcell']
 
-        spec.delete("networks")
+        spec.delete('networks')
       end
 
       def configure
-        properties = Config.cloud_options["properties"]
-        @ssh_user = properties["aws"]["ssh_user"]
-        @ssh_port = properties["aws"]["ssh_port"] || 22
-        @ssh_wait = properties["aws"]["ssh_wait"] || 60
+        properties = Config.cloud_options['properties']
+        @ssh_user = properties['aws']['ssh_user']
+        @ssh_port = properties['aws']['ssh_port'] || 22
+        @ssh_wait = properties['aws']['ssh_wait'] || 60
 
-        key = properties["aws"]["ec2_private_key"]
-        err "Missing properties.aws.ec2_private_key" unless key
+        key = properties['aws']['ec2_private_key']
+        err 'Missing properties.aws.ec2_private_key' unless key
         @ssh_key = File.expand_path(key)
         unless File.exists?(@ssh_key)
           err "properties.aws.ec2_private_key '#{key}' does not exist"
         end
 
-        uri = URI.parse(properties["registry"]["endpoint"])
-        user, password = uri.userinfo.split(":", 2)
+        uri = URI.parse(properties['registry']['endpoint'])
+        user, password = uri.userinfo.split(':', 2)
         @registry_port = uri.port
 
-        @registry_db = Tempfile.new("bosh_registry_db")
+        @registry_db = Tempfile.new('bosh_registry_db')
 
         @registry_connection_settings = {
             'adapter' => 'sqlite',
@@ -43,20 +43,20 @@ module Bosh::Deployer
         }
 
         registry_config = {
-          "logfile" => "./bosh-registry.log",
-          "http" => {
-            "port" => uri.port,
-            "user" => user,
-            "password" => password
+          'logfile' => './bosh-registry.log',
+          'http' => {
+            'port' => uri.port,
+            'user' => user,
+            'password' => password
           },
-          "db" => @registry_connection_settings,
-          "cloud" => {
-            "plugin" => "aws",
-            "aws" => properties["aws"]
+          'db' => @registry_connection_settings,
+          'cloud' => {
+            'plugin' => 'aws',
+            'aws' => properties['aws']
           }
         }
 
-        @registry_config = Tempfile.new("bosh_registry_yml")
+        @registry_config = Tempfile.new('bosh_registry_yml')
         @registry_config.write(Psych.dump(registry_config))
         @registry_config.close
       end
@@ -66,12 +66,12 @@ module Bosh::Deployer
 
         Sequel.connect(@registry_connection_settings) do |db|
           migrate(db)
-          instances = @deployments["registry_instances"]
+          instances = @deployments['registry_instances']
           db[:registry_instances].insert_multiple(instances) if instances
         end
 
         unless has_bosh_registry?
-          err "bosh-registry command not found - " +
+          err 'bosh-registry command not found - ' +
             "run 'gem install bosh-registry'"
         end
 
@@ -106,14 +106,14 @@ module Bosh::Deployer
 
       def stop
         if @registry_pid && process_exists?(@registry_pid)
-          Process.kill("INT", @registry_pid)
+          Process.kill('INT', @registry_pid)
           Process.waitpid(@registry_pid)
         end
 
         return unless @registry_connection_settings
 
         Sequel.connect(@registry_connection_settings) do |db|
-          @deployments["registry_instances"] = db[:registry_instances].map {|row| row}
+          @deployments['registry_instances'] = db[:registry_instances].map {|row| row}
         end
 
         save_state
@@ -162,8 +162,8 @@ module Bosh::Deployer
       private
 
       def has_bosh_registry?(path=ENV['PATH'])
-        path.split(":").each do |dir|
-          return true if File.exist?(File.join(dir, "bosh-registry"))
+        path.split(':').each do |dir|
+          return true if File.exist?(File.join(dir, 'bosh-registry'))
         end
         false
       end

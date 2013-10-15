@@ -25,7 +25,7 @@ module Bosh::Deployer
       attr_accessor :stage, :total, :index
 
       def initialize
-        enter_stage("Deployer", 0)
+        enter_stage('Deployer', 0)
       end
 
       def enter_stage(stage, total)
@@ -60,8 +60,8 @@ module Bosh::Deployer
     def initialize(config)
       Config.configure(config)
 
-      @state_yml = File.join(config["dir"], DEPLOYMENTS_FILE)
-      load_state(config["name"])
+      @state_yml = File.join(config['dir'], DEPLOYMENTS_FILE)
+      load_state(config['name'])
 
       Config.uuid = state.uuid
 
@@ -136,50 +136,50 @@ module Bosh::Deployer
         err "stemcell #{state.stemcell_cid} already exists"
       end
 
-      renderer.enter_stage("Deploy Micro BOSH", 11)
+      renderer.enter_stage('Deploy Micro BOSH', 11)
 
       state.stemcell_cid = create_stemcell(stemcell_tgz)
-      state.stemcell_name = File.basename(stemcell_tgz, ".tgz")
+      state.stemcell_name = File.basename(stemcell_tgz, '.tgz')
       save_state
 
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
-        update_vm_metadata(state.vm_cid, {"Name" => state.name})
+        update_vm_metadata(state.vm_cid, { 'Name' => state.name})
         discover_bosh_ip
       end
       save_state
 
-      step "Waiting for the agent" do        
+      step 'Waiting for the agent' do
         begin
           wait_until_agent_ready
         rescue *CONNECTION_EXCEPTIONS
-          err "Unable to connect to Bosh agent. Check logs for more details."
+          err 'Unable to connect to Bosh agent. Check logs for more details.'
         end
       end
 
-      step "Updating persistent disk" do
+      step 'Updating persistent disk' do
         update_persistent_disk
       end
 
       unless @apply_spec
-        step "Fetching apply spec" do
+        step 'Fetching apply spec' do
           @apply_spec = Specification.new(agent.release_apply_spec)
         end
       end
 
       apply
 
-      step "Waiting for the director" do
+      step 'Waiting for the director' do
         begin
           wait_until_director_ready
         rescue *CONNECTION_EXCEPTIONS
-          err "Unable to connect to Bosh Director. Retry manually or check logs for more details."
+          err 'Unable to connect to Bosh Director. Retry manually or check logs for more details.'
         end
       end
     end
 
     def destroy
-      renderer.enter_stage("Delete micro BOSH", 7)
+      renderer.enter_stage('Delete micro BOSH', 7)
       agent_stop
       if state.disk_cid
         step "Deleting persistent disk `#{state.disk_cid}'" do
@@ -193,7 +193,7 @@ module Bosh::Deployer
     end
 
     def update(stemcell_tgz)
-      renderer.enter_stage("Prepare for update", 5)
+      renderer.enter_stage('Prepare for update', 5)
       agent_stop
       detach_disk(state.disk_cid)
       delete_vm
@@ -207,14 +207,14 @@ module Bosh::Deployer
 
     def create_stemcell(stemcell_tgz)
       unless is_tgz?(stemcell_tgz)
-        step "Using existing stemcell" do
+        step 'Using existing stemcell' do
         end
 
         return stemcell_tgz
       end
 
-      Dir.mktmpdir("sc-") do |stemcell|
-        step "Unpacking stemcell" do
+      Dir.mktmpdir('sc-') do |stemcell|
+        step 'Unpacking stemcell' do
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
@@ -224,11 +224,11 @@ module Bosh::Deployer
         properties = load_stemcell_manifest(stemcell)
 
         # override with values from the deployment manifest
-        override = Config.cloud_options["properties"]["stemcell"]
-        properties["cloud_properties"].merge!(override) if override
+        override = Config.cloud_options['properties']['stemcell']
+        properties['cloud_properties'].merge!(override) if override
 
-        step "Uploading stemcell" do
-          cloud.create_stemcell("#{stemcell}/image", properties["cloud_properties"])
+        step 'Uploading stemcell' do
+          cloud.create_stemcell("#{stemcell}/image", properties['cloud_properties'])
         end
       end
     rescue => e
@@ -252,13 +252,13 @@ module Bosh::Deployer
     end
 
     def mount_disk(disk_cid)
-      step "Mount disk" do
+      step 'Mount disk' do
         agent.run_task(:mount_disk, disk_cid.to_s)
       end
     end
 
     def unmount_disk(disk_cid)
-      step "Unmount disk" do
+      step 'Unmount disk' do
         if disk_info.include?(disk_cid)
           agent.run_task(:unmount_disk, disk_cid.to_s)
         else
@@ -269,7 +269,7 @@ module Bosh::Deployer
     end
 
     def migrate_disk(src_disk_cid, dst_disk_cid)
-      step "Migrate disk" do
+      step 'Migrate disk' do
         agent.run_task(:migrate_disk, src_disk_cid.to_s, dst_disk_cid.to_s)
       end
     end
@@ -280,7 +280,7 @@ module Bosh::Deployer
     end
 
     def create_disk
-      step "Create disk" do
+      step 'Create disk' do
         size = Config.resources['persistent_disk']
         state.disk_cid = cloud.create_disk(size, state.vm_cid)
         save_state
@@ -292,14 +292,14 @@ module Bosh::Deployer
       unmount_disk(disk_cid)
 
       begin
-        step "Detach disk" do
+        step 'Detach disk' do
           cloud.detach_disk(vm_cid, disk_cid) if vm_cid
         end
       rescue Bosh::Clouds::DiskNotAttached
       end
 
       begin
-        step "Delete disk" do
+        step 'Delete disk' do
           cloud.delete_disk(disk_cid)
         end
       rescue Bosh::Clouds::DiskNotFound
@@ -316,11 +316,11 @@ module Bosh::Deployer
 
     def detach_disk(disk_cid)
       unless disk_cid
-        err "Error: nil value given for persistent disk id"
+        err 'Error: nil value given for persistent disk id'
       end
 
       unmount_disk(disk_cid)
-      step "Detach disk" do
+      step 'Detach disk' do
         cloud.detach_disk(state.vm_cid, disk_cid)
       end
     end
@@ -376,7 +376,7 @@ module Bosh::Deployer
 
       spec ||= @apply_spec
 
-      step "Applying micro BOSH spec" do
+      step 'Applying micro BOSH spec' do
         # first update spec with infrastructure specific stuff
         update_spec(spec)
         # then update spec with generic changes
@@ -405,7 +405,7 @@ module Bosh::Deployer
     end
 
     def agent_stop
-      step "Stopping agent services" do
+      step 'Stopping agent services' do
         begin
           agent.run_task(:stop)
         rescue
@@ -414,7 +414,7 @@ module Bosh::Deployer
     end
 
     def agent_start
-      step "Starting agent services" do
+      step 'Starting agent services' do
         agent.run_task(:start)
       end
     end
@@ -428,7 +428,7 @@ module Bosh::Deployer
     end
 
     def agent_port
-      uri = URI.parse(Config.cloud_options["properties"]["agent"]["mbus"])
+      uri = URI.parse(Config.cloud_options['properties']['agent']['mbus'])
 
       uri.port
     end
@@ -436,14 +436,14 @@ module Bosh::Deployer
     def wait_until_agent_ready #XXX >> agent_client
       remote_tunnel(@registry_port)
 
-      wait_until_ready("agent") { agent.ping }
+      wait_until_ready('agent') { agent.ping }
     end
 
     def wait_until_director_ready
       port = @apply_spec.director_port
       url = "https://#{bosh_ip}:#{port}/info"
 
-      wait_until_ready("director", 1, 600) do
+      wait_until_ready('director', 1, 600) do
 
         http_client = HTTPClient.new
 
@@ -451,7 +451,7 @@ module Bosh::Deployer
         http_client.ssl_config.verify_callback = Proc.new {}
 
         response = http_client.get(url)
-        message = "Nginx has started but the application it is proxying to has not started yet."
+        message = 'Nginx has started but the application it is proxying to has not started yet.'
         raise Bosh::Deployer::DirectorGatewayError.new(message) if response.status == 502 || response.status == 503
         info = Yajl::Parser.parse(response.body)
         logger.info("Director is ready: #{info.inspect}")
@@ -459,13 +459,13 @@ module Bosh::Deployer
     end
 
     def delete_stemcell
-      err "Cannot find existing stemcell" unless state.stemcell_cid
+      err 'Cannot find existing stemcell' unless state.stemcell_cid
 
       if state.stemcell_cid == state.stemcell_name
-        step "Preserving stemcell" do
+        step 'Preserving stemcell' do
         end
       else
-        step "Delete stemcell" do
+        step 'Delete stemcell' do
           cloud.delete_stemcell(state.stemcell_cid)
         end
       end
@@ -476,9 +476,9 @@ module Bosh::Deployer
     end
 
     def delete_vm
-      err "Cannot find existing VM" unless state.vm_cid
+      err 'Cannot find existing VM' unless state.vm_cid
 
-      step "Delete VM" do
+      step 'Delete VM' do
         cloud.delete_vm(state.vm_cid)
       end
       state.vm_cid = nil
@@ -491,7 +491,7 @@ module Bosh::Deployer
         Psych.load_file(@state_yml)
       else
         logger.info("No existing deployments found (will save to #{@state_yml})")
-        { "instances" => [], "disks" => [] }
+        { 'instances' => [], 'disks' => [] }
       end
     end
 
@@ -520,8 +520,8 @@ module Bosh::Deployer
     def load_state(name)
       @deployments = load_deployments
 
-      disk_model.insert_multiple(@deployments["disks"]) if disk_model
-      instance_model.insert_multiple(@deployments["instances"])
+      disk_model.insert_multiple(@deployments['disks']) if disk_model
+      instance_model.insert_multiple(@deployments['instances'])
 
       @state = instance_model.find(:name => name)
       if @state.nil?
@@ -536,10 +536,10 @@ module Bosh::Deployer
 
     def save_state
       state.save
-      @deployments["instances"] = instance_model.map { |instance| instance.values }
-      @deployments["disks"] = disk_model.map { |disk| disk.values } if disk_model
+      @deployments['instances'] = instance_model.map { |instance| instance.values }
+      @deployments['disks'] = disk_model.map { |disk| disk.values } if disk_model
 
-      File.open(@state_yml, "w") do |file|
+      File.open(@state_yml, 'w') do |file|
         file.write(Psych.dump(@deployments))
       end
     end

@@ -10,7 +10,7 @@ module Bosh::Deployer
 
       def disk_model
         if @disk_model.nil?
-          require "cloud/vsphere"
+          require 'cloud/vsphere'
           @disk_model = VSphereCloud::Models::Disk
         end
         @disk_model
@@ -19,21 +19,21 @@ module Bosh::Deployer
       def update_spec(spec)
         properties = spec.properties
 
-        properties["vcenter"] =
-          Config.spec_properties["vcenter"] ||
-          Config.cloud_options["properties"]["vcenters"].first.dup
+        properties['vcenter'] =
+          Config.spec_properties['vcenter'] ||
+          Config.cloud_options['properties']['vcenters'].first.dup
 
-        properties["vcenter"]["address"] ||= properties["vcenter"]["host"]
+        properties['vcenter']['address'] ||= properties['vcenter']['host']
       end
     end
 
     # @return [Integer] size in MiB
     def disk_size(cid)
-      disk_model.first(:uuid => cid).size
+      disk_model.first(uuid: cid).size
     end
 
     def persistent_disk_changed?
-      Config.resources["persistent_disk"] != disk_size(state.disk_cid)
+      Config.resources['persistent_disk'] != disk_size(state.disk_cid)
     end
 
     def check_dependencies
