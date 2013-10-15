@@ -1,60 +1,34 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'open3'
+require 'bosh/deployer/logger_renderer'
+require 'bosh/deployer/director_gateway_error'
 
 module Bosh::Deployer
-
-  class DirectorGatewayError < RuntimeError; end
-
   class InstanceManager
-    
+
     CONNECTION_EXCEPTIONS = [
       Bosh::Agent::Error,
       Errno::ECONNREFUSED,
       Errno::ETIMEDOUT,
-      Bosh::Deployer::DirectorGatewayError,
+      DirectorGatewayError,
       HTTPClient::ConnectTimeoutError
     ]
 
+    extend Helpers
     include Helpers
 
     attr_reader :state
     attr_accessor :renderer
 
-    class LoggerRenderer
-      attr_accessor :stage, :total, :index
+    def self.create(config)
+      plugin = cloud_plugin(config)
 
-      def initialize
-        enter_stage('Deployer', 0)
+      begin
+        require "bosh/deployer/instance_manager/#{plugin}"
+      rescue LoadError
+        err "Could not find Provider Plugin: #{plugin}"
       end
 
-      def enter_stage(stage, total)
-        @stage = stage
-        @total = total
-        @index = 0
-      end
-
-      def update(state, task)
-        Config.logger.info("#{@stage} - #{state} #{task}")
-        @index += 1 if state == :finished
-      end
-    end
-
-    class << self
-
-      include Helpers
-
-      def create(config)
-        plugin = cloud_plugin(config)
-
-        begin
-          require "bosh/deployer/instance_manager/#{plugin}"
-        rescue LoadError
-          err "Could not find Provider Plugin: #{plugin}"
-        end
-        Bosh::Deployer::InstanceManager.const_get(plugin.capitalize).new(config)
-      end
-
+      InstanceManager.const_get(plugin.capitalize).new(config)
     end
 
     def initialize(config)
@@ -144,7 +118,7 @@ module Bosh::Deployer
 
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
-        update_vm_metadata(state.vm_cid, { 'Name' => state.name})
+        update_vm_metadata(state.vm_cid, { 'Name' => state.name })
         discover_bosh_ip
       end
       save_state
@@ -240,7 +214,7 @@ module Bosh::Deployer
 
     def create_vm(stemcell_cid)
       resources = Config.resources['cloud_properties']
-      networks  = Config.networks
+      networks = Config.networks
       env = Config.env
       cloud.create_vm(state.uuid, stemcell_cid, resources, networks, nil, env)
     end
@@ -263,7 +237,7 @@ module Bosh::Deployer
           agent.run_task(:unmount_disk, disk_cid.to_s)
         else
           logger.error("not unmounting %s as it doesn't belong to me: %s" %
-            [disk_cid, disk_info])
+                         [disk_cid, disk_info])
         end
       end
     end
@@ -336,8 +310,8 @@ module Bosh::Deployer
       agent_disk_cid = disk_info.first
       if agent_disk_cid != state.disk_cid
         err "instance #{state.vm_cid} has invalid disk: " +
-          "Agent reports #{agent_disk_cid} while " +
-          "deployer's record shows #{state.disk_cid}"
+              "Agent reports #{agent_disk_cid} while " +
+              "deployer's record shows #{state.disk_cid}"
       end
     end
 
@@ -452,7 +426,7 @@ module Bosh::Deployer
 
         response = http_client.get(url)
         message = 'Nginx has started but the application it is proxying to has not started yet.'
-        raise Bosh::Deployer::DirectorGatewayError.new(message) if response.status == 502 || response.status == 503
+        raise DirectorGatewayError.new(message) if response.status == 502 || response.status == 503
         info = Yajl::Parser.parse(response.body)
         logger.info("Director is ready: #{info.inspect}")
       end
