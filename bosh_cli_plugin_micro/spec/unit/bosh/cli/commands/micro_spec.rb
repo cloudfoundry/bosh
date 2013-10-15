@@ -230,20 +230,25 @@ module Bosh::Cli::Command
     end
 
     it "allows deploying a micro BOSH instance passing stemcell as argument" do
+      stemcell_archive = instance_double('Bosh::Stemcell::Archive')
+      Bosh::Stemcell::Archive.should_receive(:new).and_return(stemcell_archive)
+
+      mock_stemcell = double(Bosh::Cli::Stemcell)
+      mock_stemcell.should_receive(:validate)
+      mock_stemcell.should_receive(:valid?).and_return(true)
+      Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
+
       mock_deployer = double(Bosh::Deployer::InstanceManager)
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
-      mock_deployer.should_receive(:create_deployment).with("stemcell.tgz")
-      mock_stemcell = double(Bosh::Cli::Stemcell)
-      mock_stemcell.should_receive(:validate)
-      mock_stemcell.should_receive(:valid?).and_return(true)
+      mock_deployer.should_receive(:create_deployment).with("stemcell.tgz", stemcell_archive)
+      @cmd.stub(:deployer).and_return(mock_deployer)
 
       @cmd.stub(:deployment).and_return(@manifest_path)
       @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
       @cmd.stub(:target_name).and_return("micro-test")
-      Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
-      @cmd.stub(:deployer).and_return(mock_deployer)
+
       @cmd.perform("stemcell.tgz")
     end
 
@@ -252,7 +257,7 @@ module Bosh::Cli::Command
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
-      mock_deployer.should_receive(:create_deployment).with("sc-id")
+      mock_deployer.should_receive(:create_deployment).with("sc-id", nil)
 
       @cmd.stub(:deployment).and_return(@manifest_path)
       @cmd.stub(:target_name).and_return("micro-test")

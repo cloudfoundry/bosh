@@ -86,25 +86,19 @@ module Bosh::Deployer
       stop
     end
 
-    def create_deployment(stemcell_tgz)
-      with_lifecycle do
-        create(stemcell_tgz)
-      end
+    def create_deployment(stemcell_tgz, stemcell_archive)
+      with_lifecycle { create(stemcell_tgz, stemcell_archive) }
     end
 
-    def update_deployment(stemcell_tgz)
-      with_lifecycle do
-        update(stemcell_tgz)
-      end
+    def update_deployment(stemcell_tgz, stemcell_archive)
+      with_lifecycle { update(stemcell_tgz, stemcell_archive) }
     end
 
     def delete_deployment
-      with_lifecycle do
-        destroy
-      end
+      with_lifecycle { destroy }
     end
 
-    def create(stemcell_tgz)
+    def create(stemcell_tgz, stemcell_archive)
       err "VM #{state.vm_cid} already exists" if state.vm_cid
       if state.stemcell_cid && state.stemcell_cid != state.stemcell_name
         err "stemcell #{state.stemcell_cid} already exists"
@@ -114,6 +108,7 @@ module Bosh::Deployer
 
       state.stemcell_cid = create_stemcell(stemcell_tgz)
       state.stemcell_name = File.basename(stemcell_tgz, '.tgz')
+      state.stemcell_sha1 = stemcell_archive.sha1 if stemcell_archive
       save_state
 
       step "Creating VM from #{state.stemcell_cid}" do
@@ -166,7 +161,8 @@ module Bosh::Deployer
       delete_stemcell
     end
 
-    def update(stemcell_tgz)
+    def update(stemcell_tgz, stemcell_archive)
+      return unless has_pending_changes?(state, stemcell_archive)
       renderer.enter_stage('Prepare for update', 5)
       agent_stop
       detach_disk(state.disk_cid)
@@ -176,7 +172,7 @@ module Bosh::Deployer
       # we can upgrade to a bigger persistent disk.
       # Perhaps use "--preserve" to skip the delete?
       delete_stemcell
-      create(stemcell_tgz)
+      create(stemcell_tgz, stemcell_archive)
     end
 
     def create_stemcell(stemcell_tgz)
@@ -502,6 +498,7 @@ module Bosh::Deployer
         @state = instance_model.new
         @state.uuid = "bm-#{generate_unique_name}"
         @state.name = name
+        @state.stemcell_sha1 = nil
         @state.save
       else
         discover_bosh_ip
@@ -524,6 +521,11 @@ module Bosh::Deployer
         $stderr.puts output
         err "'#{command}' failed with exit status=#{status.exitstatus} [#{output}]"
       end
+    end
+
+    def has_pending_changes?(state, stemcell_archive)
+      return true unless stemcell_archive
+      state.stemcell_sha1 != stemcell_archive.sha1
     end
   end
 end

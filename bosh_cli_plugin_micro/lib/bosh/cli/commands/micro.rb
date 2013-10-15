@@ -1,6 +1,8 @@
 require 'pp'
 require 'bosh/deployer'
 require 'bosh/deployer/deployer_renderer'
+require 'bosh/stemcell'
+require 'bosh/stemcell/archive'
 
 module Bosh::Cli::Command
   class Micro < Base
@@ -163,6 +165,8 @@ module Bosh::Cli::Command
         unless stemcell_file.valid?
           err('Stemcell is invalid, please fix, verify and upload again')
         end
+
+        stemcell_archive = Bosh::Stemcell::Archive.new(stemcell)
       end
 
       renderer = Bosh::Deployer::DeployerRenderer.new
@@ -171,7 +175,7 @@ module Bosh::Cli::Command
 
       start_time = Time.now
 
-      deployer.send(method, stemcell)
+      deployer.send(method, stemcell, stemcell_archive)
 
       renderer.finish('done')
 

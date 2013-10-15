@@ -166,6 +166,7 @@ PATH
     bosh_cli_plugin_micro (1.5.0.pre.3)
       agent_client (~> 1.5.0.pre.3)
       bosh-registry (~> 1.5.0.pre.3)
+      bosh-stemcell (~> 1.5.0.pre.3)
       bosh_aws_cpi (~> 1.5.0.pre.3)
       bosh_cli (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)

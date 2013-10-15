@@ -34,46 +34,122 @@ module Bosh
       end
 
       describe '#update' do
-        it 'updates a Bosh instance' do
-          spec = Psych.load_file(spec_asset("apply_spec.yml"))
-          Specification.should_receive(:load_apply_spec).and_return(spec)
+        def perform
+          deployer.update(stemcell_id, stemcell_archive)
+        end
 
-          disk_cid = "22"
+        let(:stemcell_id) { 'bosh-instance-1.0.tgz' }
+
+        before do # deployed vm
+          deployer.state.vm_cid = 'VM-CID-UPDATE'
+          deployer.state.stemcell_cid = 'SC-CID-UPDATE'
+        end
+
+        before do # attached disk
+          deployer.state.disk_cid = 'fake-disk-cid'
+          agent.stub(list_disk: ['fake-disk-cid'])
+          deployer.disk_model.delete
+          deployer.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
+        end
+
+        let(:apply_spec) { YAML.load_file(spec_asset("apply_spec.yml")) }
+        before { Specification.stub(load_apply_spec: apply_spec) }
+
+        before do # ??
           deployer.stub(:wait_until_agent_ready)
           deployer.stub(:wait_until_director_ready)
-          deployer.stub(:load_apply_spec).and_return(spec)
-          deployer.stub(:load_stemcell_manifest).and_return({})
+          deployer.stub(load_stemcell_manifest: {})
+        end
 
-          deployer.state.stemcell_cid = "SC-CID-UPDATE"
-          deployer.state.vm_cid = "VM-CID-UPDATE"
-          deployer.state.disk_cid = disk_cid
+        before { cloud.as_null_object }
+        before { agent.stub(:run_task) }
 
-          disk = deployer.disk_model.new
-          disk.uuid = disk_cid
-          disk.size = 4096
-          disk.save
+        def self.it_updates_deployed_instance
+          it 'updates deployed instance' do
+            agent.should_receive(:run_task).with(:stop)
+            agent.should_receive(:run_task).with(:unmount_disk, 'fake-disk-cid').and_return({})
+            cloud.should_receive(:detach_disk).with('VM-CID-UPDATE', 'fake-disk-cid')
+            cloud.should_receive(:delete_vm).with('VM-CID-UPDATE')
+            cloud.should_receive(:delete_stemcell).with('SC-CID-UPDATE')
+            cloud.should_receive(:create_stemcell).and_return('SC-CID')
+            cloud.should_receive(:create_vm).and_return('VM-CID')
+            cloud.should_receive(:attach_disk).with('VM-CID', 'fake-disk-cid')
+            agent.should_receive(:run_task).with(:mount_disk, 'fake-disk-cid').and_return({})
+            agent.should_receive(:list_disk).and_return(['fake-disk-cid'])
+            agent.should_receive(:run_task).with(:stop)
+            agent.should_receive(:run_task).with(:apply, apply_spec)
+            agent.should_receive(:run_task).with(:start)
+            perform
+          end
 
-          agent.should_receive(:run_task).with(:stop)
-          agent.should_receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
-          cloud.should_receive(:detach_disk).with("VM-CID-UPDATE", disk_cid)
-          cloud.should_receive(:delete_vm).with("VM-CID-UPDATE")
-          cloud.should_receive(:delete_stemcell).with("SC-CID-UPDATE")
-          cloud.should_receive(:create_stemcell).and_return("SC-CID")
-          cloud.should_receive(:create_vm).and_return("VM-CID")
-          cloud.should_receive(:attach_disk).with("VM-CID", disk_cid)
-          agent.should_receive(:run_task).with(:mount_disk, disk_cid).and_return({})
-          agent.should_receive(:list_disk).and_return([disk_cid])
-          agent.should_receive(:run_task).with(:stop)
-          agent.should_receive(:run_task).with(:apply, spec)
-          agent.should_receive(:run_task).with(:start)
+          it 'saves deployed vm, stemcell cids' do
+            cloud.stub(create_vm: 'VM-CID', create_stemcell: 'SC-CID')
+            perform
+            expect(deployer.state.stemcell_cid).to eq('SC-CID')
+            expect(deployer.state.vm_cid).to eq('VM-CID')
+            expect(deployer.state.disk_cid).to eq('fake-disk-cid')
+            expect(load_deployment).to eq(deployer.state.values)
+          end
+        end
 
-          deployer.update(stemcell_tgz)
+        context 'when stemcell archive is provided' do
+          let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
+          before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
 
-          deployer.state.stemcell_cid.should == "SC-CID"
-          deployer.state.vm_cid.should == "VM-CID"
-          deployer.state.disk_cid.should == disk_cid
+          context 'with a different stemcell (determined via sha1 difference)' do
+            before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
 
-          load_deployment.should == deployer.state.values
+            it_updates_deployed_instance
+
+            it 'saves deployed stemcell sha1' do
+              perform
+              expect(deployer.state.stemcell_sha1).to eq('fake-stemcell-sha1')
+            end
+          end
+
+          context 'with the same stemcell (determined via sha1 equality)' do
+            before { deployer.state.stemcell_sha1 = 'fake-stemcell-sha1' }
+
+            it 'does not communicate with an agent of deployed instance' do
+              agent.should_not_receive(:run_task)
+              perform
+            end
+
+            it 'does not use cpi actions to update deployed instance' do
+              cloud_actions = %w(detach_disk delete_vm delete_stemcell create_stemcell create_vm attach_disk)
+              cloud_actions.each { |a| cloud.should_not_receive(a) }
+              perform
+            end
+
+            it 'keeps same stemcell sha1 which is same as before' do
+              perform
+              expect(deployer.state.stemcell_sha1).to eq('fake-stemcell-sha1')
+            end
+          end
+
+          context "when previously used stemcell's sha1 was not recorded " +
+                  "(before quick update feature was introduced)" do
+            before { deployer.state.stemcell_sha1 = nil }
+
+            it_updates_deployed_instance
+
+            it 'saves deployed stemcell sha1' do
+              perform
+              expect(deployer.state.stemcell_sha1).to eq('fake-stemcell-sha1')
+            end
+          end
+        end
+
+        context 'when stemcell archive is not provided' do
+          let(:stemcell_archive) { nil }
+
+          it_updates_deployed_instance
+
+          it 'does not save deployed stemcell sha1 ' +
+             'because sha1 can only be obtained from full stemcell archive' do
+            perform
+            expect(deployer.state.stemcell_sha1).to be_nil
+          end
         end
       end
 
@@ -81,6 +157,10 @@ module Bosh
         let(:spec) { Psych.load_file(spec_asset('apply_spec.yml')) }
         let(:director_http_response) { double('Response', status: 200, body: '') }
         let(:director_http_client) { instance_double('HTTPClient', get: director_http_response).as_null_object }
+
+        def perform
+          deployer.create(stemcell_tgz, nil)
+        end
 
         before do
           cloud.stub(create_stemcell: 'SC-CID-CREATE')
@@ -104,19 +184,16 @@ module Bosh
           agent.should_receive(:run_task).with(:stop)
           agent.should_receive(:run_task).with(:apply, spec)
           agent.should_receive(:run_task).with(:start)
-
-          deployer.create(stemcell_tgz)
+          perform
         end
 
         it 'goes to 11' do
-          deployer.create(stemcell_tgz)
-
+          perform
           expect(deployer.renderer.total).to eq 11
         end
 
         it 'updates the saved state file' do
-          deployer.create(stemcell_tgz)
-
+          perform
           expect(deployer.state.stemcell_cid).to eq 'SC-CID-CREATE'
           expect(deployer.state.vm_cid).to eq 'VM-CID-CREATE'
           expect(deployer.state.disk_cid).to eq 'DISK-CID-CREATE'
@@ -126,10 +203,8 @@ module Bosh
         context 'when unable to connect to agent' do
           it 'provides a nice error' do
             agent.should_receive(:ping).and_raise(DirectorGatewayError)
-
-            expect {
-              deployer.create(stemcell_tgz)
-            }.to raise_error(Bosh::Cli::CliError, /Unable to connect to Bosh agent/)
+            expect { perform }.to raise_error(
+              Bosh::Cli::CliError, /Unable to connect to Bosh agent/)
           end
         end
 
@@ -137,9 +212,8 @@ module Bosh
           let(:director_http_response) { double('Response', status: 503) }
 
           it 'provides a nice error' do
-            expect {
-              deployer.create(stemcell_tgz)
-            }.to raise_error(Bosh::Cli::CliError, /Unable to connect to Bosh Director/)
+            expect { perform }.to raise_error(
+              Bosh::Cli::CliError, /Unable to connect to Bosh Director/)
           end
         end
 
@@ -147,9 +221,8 @@ module Bosh
           before { deployer.state.stemcell_cid = 'SC-CID' }
 
           it 'fails to create a Bosh instance' do
-            expect {
-              deployer.create(stemcell_tgz)
-            }.to raise_error(Bosh::Cli::CliError, /stemcell SC-CID already exists/)
+            expect { perform }.to raise_error(
+              Bosh::Cli::CliError, /stemcell SC-CID already exists/)
           end
         end
 
@@ -157,9 +230,8 @@ module Bosh
           before { deployer.state.vm_cid = 'VM-CID' }
 
           it 'fails to create a Bosh instance' do
-            expect {
-              deployer.create(stemcell_tgz)
-            }.to raise_error(Bosh::Cli::CliError, /VM VM-CID already exists/)
+            expect { perform }.to raise_error(
+              Bosh::Cli::CliError, /VM VM-CID already exists/)
           end
         end
       end

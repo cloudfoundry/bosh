@@ -68,7 +68,7 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:start)
 
     discover_bosh_ip('10.0.0.1', 'VM-CID-CREATE')
-    @deployer.create(BOSH_STEMCELL_TGZ)
+    @deployer.create(BOSH_STEMCELL_TGZ, nil)
 
     @deployer.state.stemcell_cid.should == 'SC-CID-CREATE'
     @deployer.state.vm_cid.should == 'VM-CID-CREATE'
@@ -137,7 +137,7 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:start)
 
     discover_bosh_ip('10.0.0.2', 'VM-CID')
-    @deployer.update(BOSH_STEMCELL_TGZ)
+    @deployer.update(BOSH_STEMCELL_TGZ, nil)
 
     @deployer.state.stemcell_cid.should == 'SC-CID'
     @deployer.state.vm_cid.should == 'VM-CID'
@@ -150,7 +150,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.state.stemcell_cid = 'SC-CID'
 
     expect {
-      @deployer.create(BOSH_STEMCELL_TGZ)
+      @deployer.create(BOSH_STEMCELL_TGZ, nil)
     }.to raise_error(Bosh::Cli::CliError)
   end
 
@@ -158,7 +158,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.state.vm_cid = 'VM-CID'
 
     expect {
-      @deployer.create(BOSH_STEMCELL_TGZ)
+      @deployer.create(BOSH_STEMCELL_TGZ, nil)
     }.to raise_error(Bosh::Cli::CliError)
   end
 

@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'sqlite3', '~>1.3.7'
 
   s.add_dependency 'bosh_cli',      "~>#{version}"
+  s.add_dependency 'bosh-stemcell', "~>#{version}"
   s.add_dependency 'bosh-registry', "~>#{version}"
   s.add_dependency 'agent_client',  "~>#{version}"
 

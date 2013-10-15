@@ -59,7 +59,7 @@ describe Bosh::Deployer::InstanceManager do
 
       expect {
         Timeout::timeout(5) {
-          @deployer.create(BOSH_STEMCELL_TGZ)
+          @deployer.create(BOSH_STEMCELL_TGZ, nil)
         }
       }.to_not raise_error(TimeoutError)
 
@@ -102,7 +102,7 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:apply, spec)
     @agent.should_receive(:run_task).with(:start)
 
-    @deployer.create(BOSH_STEMCELL_TGZ)
+    @deployer.create(BOSH_STEMCELL_TGZ, nil)
 
     @deployer.state.stemcell_cid.should == "SC-CID-CREATE"
     @deployer.state.vm_cid.should == "VM-CID-CREATE"
@@ -171,7 +171,7 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:apply, spec)
     @agent.should_receive(:run_task).with(:start)
 
-    @deployer.update(BOSH_STEMCELL_TGZ)
+    @deployer.update(BOSH_STEMCELL_TGZ, nil)
 
     @deployer.state.stemcell_cid.should == "SC-CID"
     @deployer.state.vm_cid.should == "VM-CID"
@@ -184,7 +184,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.state.stemcell_cid = "SC-CID"
 
     expect {
-      @deployer.create(BOSH_STEMCELL_TGZ)
+      @deployer.create(BOSH_STEMCELL_TGZ, nil)
     }.to raise_error(Bosh::Cli::CliError)
   end
 
@@ -192,7 +192,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.state.vm_cid = "VM-CID"
 
     expect {
-      @deployer.create(BOSH_STEMCELL_TGZ)
+      @deployer.create(BOSH_STEMCELL_TGZ, nil)
     }.to raise_error(Bosh::Cli::CliError)
   end
 
