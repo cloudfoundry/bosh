@@ -138,7 +138,7 @@ module Bosh::Director
       end
 
       def get_revision
-        Dir.chdir(File.expand_path("../../../../..", __FILE__))
+        Dir.chdir(File.expand_path("../../../../../..", __FILE__))
         revision_command = "(cat REVISION 2> /dev/null || " +
             "git show-ref --head --hash=8 2> /dev/null || " +
             "echo 00000000) | head -n1"

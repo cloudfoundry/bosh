@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'director/api/deployment_lookup'
+require 'bosh/director/api/deployment_lookup'
 
 module Bosh::Director
   module Api

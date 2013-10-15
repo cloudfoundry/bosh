@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'director'
-require 'director/scheduler'
+require 'bosh/director'
+require 'bosh/director/scheduler'
 
 config_file = ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 

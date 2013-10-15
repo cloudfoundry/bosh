@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'director'
+require 'bosh/director'
 require 'thin'
 
 config_file = nil

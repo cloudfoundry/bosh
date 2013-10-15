@@ -4,7 +4,7 @@ APP_DIR = File.expand_path(File.join("..", ".."), __FILE__)
 
 DEFAULT_DIRECTOR_CONFIG = File.join(APP_DIR, "config", "bosh-director.yml")
 
-require 'director'
+require 'bosh/director'
 require 'irb'
 require 'irb/completion'
 require 'rack/test'

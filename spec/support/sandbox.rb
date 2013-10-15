@@ -29,7 +29,7 @@ module Bosh
       HM_PID = "health_monitor.pid"
       REDIS_PID = "redis.pid"
 
-      DIRECTOR_PATH = File.expand_path("../../../director", __FILE__)
+      DIRECTOR_PATH = File.expand_path("../../../bosh-director", __FILE__)
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
 
       TESTCASE_SQLITE_DB = "director.sqlite"

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require "erb"
-require "director"
+require "bosh/director"
 
 config_file = nil
 index = nil

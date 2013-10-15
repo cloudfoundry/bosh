@@ -1,5 +1,5 @@
-require 'director/db_backup/adapter'
-require 'director/db_backup/error'
+require 'bosh/director/db_backup/adapter'
+require 'bosh/director/db_backup/error'
 
 module Bosh
   module Director

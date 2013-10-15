@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'director/scheduler'
+require 'bosh/director/scheduler'
 
 module Bosh::Director
   describe Scheduler do

@@ -35,6 +35,35 @@ PATH
       peach
 
 PATH
+  remote: bosh-director
+  specs:
+    bosh-director (1.5.0.pre.3)
+      bcrypt-ruby (~> 3.0.1)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh-core (~> 1.5.0.pre.3)
+      bosh_aws_cpi (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
+      bosh_openstack_cpi (~> 1.5.0.pre.3)
+      bosh_vcloud_cpi (~> 0.4.9)
+      bosh_vsphere_cpi (~> 1.5.0.pre.3)
+      eventmachine (~> 0.12.9)
+      fog (~> 1.14.0)
+      httpclient (= 2.2.4)
+      nats (~> 0.4.28)
+      netaddr (~> 1.5.0)
+      rack-test (~> 0.6.2)
+      rake (~> 10.0.3)
+      redis (~> 3.0.2)
+      resque (~> 1.23.0)
+      rufus-scheduler (~> 2.0.18)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.4.2)
+      sys-filesystem (~> 1.1.0)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
   remote: bosh-monitor
   specs:
     bosh-monitor (1.5.0.pre.3)
@@ -174,35 +203,6 @@ PATH
       bosh_cpi (~> 1.5.0.pre.3)
       membrane (~> 0.0.2)
       sequel (~> 3.43.0)
-
-PATH
-  remote: director
-  specs:
-    director (1.5.0.pre.3)
-      bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 1.5.0.pre.3)
-      bosh-core (~> 1.5.0.pre.3)
-      bosh_aws_cpi (~> 1.5.0.pre.3)
-      bosh_common (~> 1.5.0.pre.3)
-      bosh_cpi (~> 1.5.0.pre.3)
-      bosh_openstack_cpi (~> 1.5.0.pre.3)
-      bosh_vcloud_cpi (~> 0.4.9)
-      bosh_vsphere_cpi (~> 1.5.0.pre.3)
-      eventmachine (~> 0.12.9)
-      fog (~> 1.14.0)
-      httpclient (= 2.2.4)
-      nats (~> 0.4.28)
-      netaddr (~> 1.5.0)
-      rack-test (~> 0.6.2)
-      rake (~> 10.0.3)
-      redis (~> 3.0.2)
-      resque (~> 1.23.0)
-      rufus-scheduler (~> 2.0.18)
-      sequel (~> 3.43.0)
-      sinatra (~> 1.4.2)
-      sys-filesystem (~> 1.1.0)
-      thin (~> 1.5.0)
-      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: simple_blobstore_server
@@ -413,6 +413,7 @@ DEPENDENCIES
   blobstore_client!
   bosh-core!
   bosh-dev!
+  bosh-director!
   bosh-monitor!
   bosh-registry!
   bosh-release!
@@ -428,7 +429,6 @@ DEPENDENCIES
   bosh_vsphere_cpi!
   ci_reporter
   debugger
-  director!
   fakefs
   foodcritic
   git-duet

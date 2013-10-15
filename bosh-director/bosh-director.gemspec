@@ -3,7 +3,7 @@
 version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|
-  s.name         = 'director'
+  s.name         = 'bosh-director'
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH Director'

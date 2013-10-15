@@ -36,7 +36,7 @@ module Bosh::Dev
        bosh_openstack_cpi
        bosh-registry
        bosh_vsphere_cpi
-       director
+       bosh-director
        bosh-monitor
        bosh-release
        simple_blobstore_server
@@ -51,7 +51,7 @@ module Bosh::Dev
     end
 
     def has_db?(component)
-      %w(director bosh-registry).include?(component)
+      %w(bosh-director bosh-registry).include?(component)
     end
 
     private

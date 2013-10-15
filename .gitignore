@@ -30,8 +30,6 @@ bosh_cli_plugin_aws/spec/assets/private.yml
 create-rds-output*.yml
 create-vpc-output*.yml
 
-director/director.db
-
 micro/tmp
 
 pkg/

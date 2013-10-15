@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'director/api/instance_lookup'
+require 'bosh/director/api/instance_lookup'
 
 module Bosh::Director
   module Api

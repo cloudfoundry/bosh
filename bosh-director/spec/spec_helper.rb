@@ -29,7 +29,7 @@ module SpecHelper
       configure_logging
       configure_temp_dir
 
-      require "director"
+      require "bosh/director"
       @logger.formatter = ThreadFormatter.new
 
       init_database

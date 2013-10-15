@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "director"
+require "bosh/director"
 
 config_file = nil
 report = false
