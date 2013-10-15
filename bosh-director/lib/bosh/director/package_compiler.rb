@@ -169,7 +169,7 @@ module Bosh::Director
               pool.process { process_task(task) }
             end
 
-            break if !pool.working? && @ready_tasks.empty?
+            break if !pool.working? && (director_job_cancelled? || @ready_tasks.empty?)
             sleep(0.1)
           end
         end
@@ -207,6 +207,7 @@ module Bosh::Director
         end
       end
     end
+    private :compile_packages, :process_task
 
     def compile_package(task)
       package = task.package

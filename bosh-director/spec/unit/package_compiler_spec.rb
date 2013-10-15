@@ -226,6 +226,27 @@ module Bosh::Director
       end
     end
 
+    context 'when the deploy is cancelled and there is a pending compilation' do
+      # this can happen when the cancellation comes in when there is a package to be compiled,
+      # and the compilation is not even in-flight. e.g.
+      # - you have 3 compilation workers, but you've got 5 packages to compile; or
+      # - package "bar" depends on "foo", deploy is cancelled when compiling "foo" ("bar" is blocked)
+      before do
+        @director_job.stub(:task_cancelled?).and_return(true)
+        @director_job.stub(:task_checkpoint)
+      end
+
+      it 'cancels the compilation' do
+        prepare_samples
+
+        @plan.stub(:jobs).and_return([@j_router])
+
+        compiler = PackageCompiler.new(@plan)
+
+        compiler.compile
+      end
+    end
+
     describe 'with reuse_compilation_vms option set' do
       let(:net) { {'default' => 'network settings'} }
       let(:initial_state) {
