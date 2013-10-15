@@ -2,9 +2,7 @@
 
 module Bosh::Deployer
   class InstanceManager
-
     class Vsphere < InstanceManager
-
       def remote_tunnel(port)
       end
 
@@ -25,22 +23,21 @@ module Bosh::Deployer
 
         properties['vcenter']['address'] ||= properties['vcenter']['host']
       end
-    end
 
-    # @return [Integer] size in MiB
-    def disk_size(cid)
-      disk_model.first(uuid: cid).size
-    end
+      # @return [Integer] size in MiB
+      def disk_size(cid)
+        disk_model.first(uuid: cid).size
+      end
 
-    def persistent_disk_changed?
-      Config.resources['persistent_disk'] != disk_size(state.disk_cid)
-    end
+      def persistent_disk_changed?
+        Config.resources['persistent_disk'] != disk_size(state.disk_cid)
+      end
 
-    def check_dependencies
-      if Bosh::Common.which(%w[genisoimage mkisofs]).nil?
-        err("either of 'genisoimage' or 'mkisofs' commands must be present")
+      def check_dependencies
+        if Bosh::Common.which(%w[genisoimage mkisofs]).nil?
+          err("either of 'genisoimage' or 'mkisofs' commands must be present")
+        end
       end
     end
-
   end
 end
