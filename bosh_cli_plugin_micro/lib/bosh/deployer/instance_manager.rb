@@ -48,7 +48,7 @@ module Bosh::Deployer
         plugin = cloud_plugin(config)
 
         begin
-          require "deployer/instance_manager/#{plugin}"
+          require "bosh/deployer/instance_manager/#{plugin}"
         rescue LoadError
           err "Could not find Provider Plugin: #{plugin}"
         end

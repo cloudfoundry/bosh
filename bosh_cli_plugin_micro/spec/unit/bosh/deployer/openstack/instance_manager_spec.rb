@@ -6,14 +6,14 @@ BOSH_STEMCELL_TGZ ||= 'bosh-instance-1.0.tgz'
 describe Bosh::Deployer::InstanceManager do
   before(:each) do
     @dir = Dir.mktmpdir('bdim_spec')
-    @config = Psych.load_file(spec_asset('test-bootstrap-config-aws.yml'))
+    @config = Psych.load_file(spec_asset('test-bootstrap-config-openstack.yml'))
     @config['dir'] = @dir
     @config['name'] = "spec-#{SecureRandom.uuid}"
     @config['logging'] = { 'file' => "#{@dir}/bmim.log" }
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = double('cloud')
-    @ec2 = double('ec2')
-    @cloud.stub(:ec2).and_return(@ec2)
+    @openstack = double('openstack')
+    @cloud.stub(:openstack).and_return(@openstack)
     Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
     @agent = double('agent')
     @deployer.stub(:agent).and_return(@agent)
@@ -29,12 +29,11 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   def discover_bosh_ip(ip, id)
-    instance = double('instance')
-    instances = double('instances')
-    @ec2.should_receive(:instances).twice.and_return(instances)
-    instances.should_receive(:[]).twice.with(id).and_return(instance)
-    instance.should_receive(:public_ip_address).and_return(ip)
-    instance.should_receive(:has_elastic_ip?).and_return(false)
+    server = double('server')
+    servers = double('servers')
+    @openstack.should_receive(:servers).and_return(servers)
+    servers.should_receive(:get).with(id).and_return(server)
+    server.should_receive(:floating_ip_address).and_return(ip)
   end
 
   it 'should not populate disk model' do
@@ -44,7 +43,7 @@ describe Bosh::Deployer::InstanceManager do
 
   it 'should create a Bosh instance' do
     @deployer.stub(:service_ip).and_return('10.0.0.10')
-    spec = Psych.load_file(spec_asset('apply_spec_aws.yml'))
+    spec = Psych.load_file(spec_asset('apply_spec_openstack.yml'))
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
 
     @deployer.stub(:run_command)
@@ -107,7 +106,7 @@ describe Bosh::Deployer::InstanceManager do
 
   it 'should update a Bosh instance' do
     @deployer.stub(:service_ip).and_return('10.0.0.10')
-    spec = Psych.load_file(spec_asset('apply_spec_aws.yml'))
+    spec = Psych.load_file(spec_asset('apply_spec_openstack.yml'))
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
 
     disk_cid = '22'
@@ -179,9 +178,9 @@ describe Bosh::Deployer::InstanceManager do
     }.to raise_error(Bosh::Cli::CliError)
   end
 
-  require 'deployer/instance_manager/aws'
+  require 'bosh/deployer/instance_manager/openstack'
 
-  internal_to Bosh::Deployer::InstanceManager::Aws do
+  internal_to Bosh::Deployer::InstanceManager::Openstack do
     it 'should not find bosh-registry' do
       path = '/usr/bin:/bin'
       @deployer.has_bosh_registry?(path).should be_false

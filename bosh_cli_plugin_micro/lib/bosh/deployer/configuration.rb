@@ -46,7 +46,7 @@ module Bosh::Deployer
 
       Bosh::Clouds::Config.configure(self)
 
-      require "deployer/models/instance"
+      require "bosh/deployer/models/instance"
 
       @cloud_options["properties"]["agent"]["mbus"] ||=
         "https://vcap:b00tstrap@0.0.0.0:6868"
@@ -142,7 +142,7 @@ module Bosh::Deployer
     end
 
     def load_defaults(provider)
-      file = File.join(File.dirname(File.expand_path(__FILE__)), "../../config/#{provider}_defaults.yml")
+      file = File.join(File.dirname(File.expand_path(__FILE__)), "../../../config/#{provider}_defaults.yml")
       Psych.load_file(file)
     end
   end

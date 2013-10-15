@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require "timeout"
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 BOSH_STEMCELL_TGZ ||= "bosh-instance-1.0.tgz"
 

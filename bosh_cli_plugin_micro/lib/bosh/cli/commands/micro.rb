@@ -1,5 +1,5 @@
 require 'pp'
-require 'deployer'
+require 'bosh/deployer'
 
 module Bosh::Cli::Command
   class Micro < Base
