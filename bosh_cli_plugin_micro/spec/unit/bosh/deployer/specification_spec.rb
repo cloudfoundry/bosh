@@ -1,15 +1,14 @@
 require 'spec_helper'
+
 describe Bosh::Deployer::Specification do
-
-  let(:spec_dir) {File.dirname(spec_asset('apply_spec.yml'))}
-  let(:spec_properties) { {} }
-  let(:agent_properties) { {} }
   let(:spec) { Bosh::Deployer::Specification.load_from_stemcell(spec_dir) }
+  let(:spec_dir) {File.dirname(spec_asset('apply_spec.yml'))}
 
-  before do
-    Bosh::Deployer::Config.stub(:agent_properties).and_return(agent_properties)
-    Bosh::Deployer::Config.stub(:spec_properties).and_return(spec_properties)
-  end
+  before { Bosh::Deployer::Config.stub(agent_properties: agent_properties) }
+  let(:agent_properties) { {} }
+
+  before { Bosh::Deployer::Config.stub(spec_properties: spec_properties) }
+  let(:spec_properties) { {} }
 
   it 'should load from file' do
     expect(spec.director_port).to eq 25555
@@ -43,11 +42,11 @@ describe Bosh::Deployer::Specification do
   describe 'compiled package cache' do
     let(:spec_properties) do
       {
-          'compiled_package_cache' => {
-              'bucket' => 'foo',
-              'access_key_id' => 'bar',
-              'secret_access_key' => 'baz'
-          }
+        'compiled_package_cache' => {
+          'bucket' => 'foo',
+          'access_key_id' => 'bar',
+          'secret_access_key' => 'baz'
+        }
       }
     end
 
@@ -60,12 +59,12 @@ describe Bosh::Deployer::Specification do
   describe 'director ssl' do
     let(:spec_properties) do
       {
-          'director' => {
-              'ssl' => {
-                  'cert' => 'foo-cert',
-                  'key' => 'baz-key'
-              }
+        'director' => {
+          'ssl' => {
+            'cert' => 'foo-cert',
+            'key' => 'baz-key'
           }
+        }
       }
     end
 
