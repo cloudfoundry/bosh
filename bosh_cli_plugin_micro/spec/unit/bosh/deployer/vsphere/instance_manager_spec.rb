@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh
@@ -146,9 +144,7 @@ module Bosh
         end
 
         context 'when stemcell CID exists' do
-          before do
-            deployer.state.stemcell_cid = 'SC-CID'
-          end
+          before { deployer.state.stemcell_cid = 'SC-CID' }
 
           it 'fails to create a Bosh instance' do
             expect {
@@ -158,9 +154,7 @@ module Bosh
         end
 
         context 'when VM CID exists' do
-          before do
-            deployer.state.vm_cid = 'VM-CID'
-          end
+          before { deployer.state.vm_cid = 'VM-CID' }
 
           it 'fails to create a Bosh instance' do
             expect {
@@ -171,7 +165,6 @@ module Bosh
       end
 
       describe '#destroy' do
-
         before do
           deployer.state.stemcell_cid = 'STEMCELL-CID'
           deployer.state.vm_cid = 'VM-CID'
