@@ -1,5 +1,6 @@
 require 'open3'
 require 'bosh/deployer/logger_renderer'
+require 'bosh/deployer/hash_fingerprinter'
 require 'bosh/deployer/director_gateway_error'
 
 module Bosh::Deployer
@@ -20,18 +21,21 @@ module Bosh::Deployer
     attr_accessor :renderer
 
     def self.create(config)
-      plugin = cloud_plugin(config)
+      plugin_name = cloud_plugin(config)
 
       begin
-        require "bosh/deployer/instance_manager/#{plugin}"
+        require "bosh/deployer/instance_manager/#{plugin_name}"
       rescue LoadError
-        err "Could not find Provider Plugin: #{plugin}"
+        err "Could not find Provider Plugin: #{plugin_name}"
       end
 
-      InstanceManager.const_get(plugin.capitalize).new(config)
+      config_sha1 = Bosh::Deployer::HashFingerprinter.new.sha1(config)
+
+      plugin_class = InstanceManager.const_get(plugin_name.capitalize)
+      plugin_class.new(config, config_sha1)
     end
 
-    def initialize(config)
+    def initialize(config, config_sha1)
       Config.configure(config)
 
       @state_yml = File.join(config['dir'], DEPLOYMENTS_FILE)
@@ -39,6 +43,7 @@ module Bosh::Deployer
 
       Config.uuid = state.uuid
 
+      @config_sha1 = config_sha1
       @renderer = LoggerRenderer.new
     end
 
@@ -145,12 +150,9 @@ module Bosh::Deployer
         end
       end
 
-      # Capture stemcell sha1 here (end of the deployment)
+      # Capture stemcell and config sha1 here (end of the deployment)
       # to avoid locking deployer out if this deployment does not succeed
-      if stemcell_archive
-        state.stemcell_sha1 = stemcell_archive.sha1
-        save_state
-      end
+      save_fingerprints(stemcell_archive)
     end
 
     def destroy
@@ -531,7 +533,15 @@ module Bosh::Deployer
 
     def has_pending_changes?(state, stemcell_archive)
       return true unless stemcell_archive
-      state.stemcell_sha1 != stemcell_archive.sha1
+      stemcell_changed = state.stemcell_sha1 != stemcell_archive.sha1
+      config_changed   = state.config_sha1   != @config_sha1
+      stemcell_changed || config_changed
+    end
+
+    def save_fingerprints(stemcell_archive)
+      state.stemcell_sha1 = stemcell_archive ? stemcell_archive.sha1 : nil
+      state.config_sha1 = @config_sha1
+      save_state
     end
   end
 end

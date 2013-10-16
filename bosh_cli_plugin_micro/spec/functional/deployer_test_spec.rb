@@ -6,7 +6,7 @@ describe Bosh::Deployer do
     @dir = ENV['BOSH_DEPLOYER_DIR'] || Dir.mktmpdir('bd_spec')
     config = Psych.load_file(spec_asset(config_yml))
     config['dir'] = @dir
-    @deployer = Bosh::Deployer::InstanceManager.new(config)
+    @deployer = Bosh::Deployer::InstanceManager.new(config, 'fake-config-sha1')
   end
 
   describe 'vSphere' do

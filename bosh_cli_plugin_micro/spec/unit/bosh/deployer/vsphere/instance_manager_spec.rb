@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/deployer/instance_manager/vsphere'
 
 module Bosh
   module Deployer
@@ -14,7 +15,7 @@ module Bosh
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:agent) { double('Bosh::Agent::HTTPClient') } # Uses method_missing :(
       let(:stemcell_tgz) { 'bosh-instance-1.0.tgz' }
-      subject(:deployer) { InstanceManager.create(config) }
+      subject(:deployer) { InstanceManager::Vsphere.new(config, 'fake-config-sha1') }
 
       before do
         Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
@@ -111,18 +112,49 @@ module Bosh
           end
         end
 
+        def self.it_keeps_stemcell_sha1
+          it 'keeps same stemcell sha1 which is same as before' do
+            expect { perform }.to_not change {
+              deployer.state.stemcell_sha1
+            }.from('fake-stemcell-sha1')
+          end
+        end
+
+        def self.it_updates_config_sha1
+          context 'when the director becomes ready' do
+            it 'saves deployed config sha1' do
+              deployer.should_receive(:wait_until_director_ready).and_return(nil)
+              expect { perform }.to change { deployer.state.config_sha1 }.to('fake-config-sha1')
+            end
+          end
+
+          context 'when the director does not become ready' do
+            it 'does not save newly deployed config sha1' do
+              error = Exception.new('director-ready-error')
+              deployer.should_receive(:wait_until_director_ready).and_raise(error)
+              expect {
+                expect { perform }.to raise_error(error) # rescue propagated error
+              }.to_not change { deployer.state.config_sha1 }
+            end
+          end
+        end
+
+        def self.it_keeps_config_sha1
+          it 'keeps same config sha1 which is same as before' do
+            expect { perform }.to_not change {
+              deployer.state.config_sha1
+            }.from('fake-config-sha1')
+          end
+        end
+
         context 'when stemcell archive is provided' do
           let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
           before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
+          before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
 
-          context 'with a different stemcell (determined via sha1 difference)' do
-            before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
-            it_updates_deployed_instance
-            it_updates_stemcell_sha1
-          end
-
-          context 'with the same stemcell (determined via sha1 equality)' do
+          context 'with the same stemcell and same config' do
             before { deployer.state.stemcell_sha1 = 'fake-stemcell-sha1' }
+            before { deployer.state.config_sha1 = 'fake-config-sha1' }
 
             it 'does not communicate with an agent of deployed instance' do
               agent.should_not_receive(:run_task)
@@ -135,17 +167,41 @@ module Bosh
               perform
             end
 
-            it 'keeps same stemcell sha1 which is same as before' do
-              perform
-              expect(deployer.state.stemcell_sha1).to eq('fake-stemcell-sha1')
-            end
+            it_keeps_stemcell_sha1
+            it_keeps_config_sha1
           end
 
-          context "when previously used stemcell's sha1 was not recorded " +
-                  "(before quick update feature was introduced)" do
-            before { deployer.state.stemcell_sha1 = nil }
+          context 'with a different stemcell (determined via sha1 difference) and same config' do
+            before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
+            before { deployer.state.config_sha1 = 'fake-config-sha1' }
             it_updates_deployed_instance
             it_updates_stemcell_sha1
+            it_keeps_config_sha1
+          end
+
+          context 'with a same stemcell and different config' do
+            before { deployer.state.stemcell_sha1 = 'fake-stemcell-sha1' }
+            before { deployer.state.config_sha1 = 'fake-different-config-sha1' }
+            it_updates_deployed_instance
+            it_keeps_stemcell_sha1
+            it_updates_config_sha1
+          end
+
+          context 'with a different stemcell and different config' do
+            before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
+            before { deployer.state.config_sha1 = 'fake-different-config-sha1' }
+            it_updates_deployed_instance
+            it_updates_stemcell_sha1
+            it_updates_config_sha1
+          end
+
+          context "when previously used stemcell's sha1 and config's sha were not recorded " +
+                  "(before quick update feature was introduced)" do
+            before { deployer.state.stemcell_sha1 = nil }
+            before { deployer.state.config_sha1 = nil }
+            it_updates_deployed_instance
+            it_updates_stemcell_sha1
+            it_updates_config_sha1
           end
         end
 
@@ -153,9 +209,11 @@ module Bosh
           let(:stemcell_archive) { nil }
 
           it_updates_deployed_instance
+          it_updates_config_sha1
 
-          it 'does not save deployed stemcell sha1 ' +
+          it 'saves deployed stemcell sha1 to nil' +
              'because sha1 can only be obtained from full stemcell archive' do
+            deployer.state.stemcell_sha1 = 'fake-previous-stemcell-sha1'
             perform
             expect(deployer.state.stemcell_sha1).to be_nil
           end
