@@ -22,7 +22,11 @@ db:
   host: 127.0.0.1
   port: 5432
   user: postgres
-  password: null
+
+  # Failure to set `sslmode` will produce following error
+  # 'PG::Error: SSL error: decryption failed or bad record mac:'
+  sslmode: "disable"
+
   connection_options:
     max_connections: 32
     pool_timeout: 10
