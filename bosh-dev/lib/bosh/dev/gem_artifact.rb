@@ -12,7 +12,7 @@ module Bosh::Dev
       dot_gem_path = "#{tmp_download_dir}/#{@component.dot_gem}"
       FileUtils.rm(dot_gem_path) if File.exists?(dot_gem_path)
       RakeFileUtils.sh("s3cmd --verbose get #{@pipeline_prefix}gems/gems/#{@component.dot_gem} #{tmp_download_dir}")
-      RakeFileUtils.sh("gem push #{dot_gem_path}")
+      Bundler.with_clean_env { RakeFileUtils.sh("gem push #{dot_gem_path}") }
       puts "Promoted: #{@component.dot_gem}"
     rescue
       warn "Failed to promote: #{@component.dot_gem}"

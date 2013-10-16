@@ -45,6 +45,15 @@ module Bosh::Dev
         gem_artifact.promote
       end
 
+      it 'avoids bleeding bundler ENV stuff into the gem push' do
+        stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
+        RakeFileUtils.stub(:sh) do |cmd|
+          expect(ENV.keys.grep(/BUNDLE/)).to eq([]) if cmd =~ /gem push/
+        end
+
+        gem_artifact.promote
+      end
+
       it 'fails with a debuggable error if the RubyGems credentials are missing' do
         FileUtils.rm('~/.gem/credentials')
         expect {

@@ -32,6 +32,7 @@ PATH
       bosh_cli
       bosh_cli_plugin_aws
       bosh_common
+      bundler
       peach
 
 PATH
