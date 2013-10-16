@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require 'spec_helper'
 
 describe Bosh::Deployer do
@@ -11,13 +10,8 @@ describe Bosh::Deployer do
   end
 
   describe 'vSphere' do
-    before(:all) do
-      setup('test-bootstrap-config.yml')
-    end
-
-    after(:all) do
-      FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
-    end
+    before(:all) { setup('test-bootstrap-config.yml') }
+    after(:all)  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
 
     it 'should create a Bosh VM' do
       pending 'stemcell tgz' unless @stemcell_tgz
@@ -37,13 +31,8 @@ describe Bosh::Deployer do
   end
 
   describe 'aws' do
-    before(:all) do
-      setup('test-bootstrap-config-aws.yml')
-    end
-
-    after(:all) do
-      FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
-    end
+    before(:all) { setup('test-bootstrap-config-aws.yml') }
+    after(:all)  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
 
     it 'should instantiate a deployer' do
       @deployer.cloud.should be_kind_of(Bosh::AwsCloud::Cloud)
