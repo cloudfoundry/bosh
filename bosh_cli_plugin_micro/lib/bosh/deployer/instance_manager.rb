@@ -108,7 +108,6 @@ module Bosh::Deployer
 
       state.stemcell_cid = create_stemcell(stemcell_tgz)
       state.stemcell_name = File.basename(stemcell_tgz, '.tgz')
-      state.stemcell_sha1 = stemcell_archive.sha1 if stemcell_archive
       save_state
 
       step "Creating VM from #{state.stemcell_cid}" do
@@ -144,6 +143,13 @@ module Bosh::Deployer
         rescue *CONNECTION_EXCEPTIONS
           err 'Unable to connect to Bosh Director. Retry manually or check logs for more details.'
         end
+      end
+
+      # Capture stemcell sha1 here (end of the deployment)
+      # to avoid locking deployer out if this deployment does not succeed
+      if stemcell_archive
+        state.stemcell_sha1 = stemcell_archive.sha1
+        save_state
       end
     end
 

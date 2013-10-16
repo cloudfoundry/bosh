@@ -92,19 +92,33 @@ module Bosh
           end
         end
 
+        def self.it_updates_stemcell_sha1
+          context 'when the director becomes ready' do
+            it 'saves deployed stemcell sha1' do
+              deployer.should_receive(:wait_until_director_ready).and_return(nil)
+              expect { perform }.to change { deployer.state.stemcell_sha1 }.to('fake-stemcell-sha1')
+            end
+          end
+
+          context 'when the director does not become ready' do
+            it 'does not save newly deployed stemcell sha1' do
+              error = Exception.new('director-ready-error')
+              deployer.should_receive(:wait_until_director_ready).and_raise(error)
+              expect {
+                expect { perform }.to raise_error(error) # rescue propagated error
+              }.to_not change { deployer.state.stemcell_sha1 }
+            end
+          end
+        end
+
         context 'when stemcell archive is provided' do
           let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
           before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
 
           context 'with a different stemcell (determined via sha1 difference)' do
             before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
-
             it_updates_deployed_instance
-
-            it 'saves deployed stemcell sha1' do
-              perform
-              expect(deployer.state.stemcell_sha1).to eq('fake-stemcell-sha1')
-            end
+            it_updates_stemcell_sha1
           end
 
           context 'with the same stemcell (determined via sha1 equality)' do
@@ -130,13 +144,8 @@ module Bosh
           context "when previously used stemcell's sha1 was not recorded " +
                   "(before quick update feature was introduced)" do
             before { deployer.state.stemcell_sha1 = nil }
-
             it_updates_deployed_instance
-
-            it 'saves deployed stemcell sha1' do
-              perform
-              expect(deployer.state.stemcell_sha1).to eq('fake-stemcell-sha1')
-            end
+            it_updates_stemcell_sha1
           end
         end
 
