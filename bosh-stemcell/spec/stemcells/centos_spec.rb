@@ -92,8 +92,8 @@ describe 'CentOs Stemcell' do
 
   context 'installed by system_kernel' do
     {
-      'kernel'         => '2.6.32-358.18.1.el6.x86_64',
-      'kernel-headers' => '2.6.32-358.18.1.el6.x86_64',
+      'kernel'         => '2.6.32-358.23.2.el6.x86_64',
+      'kernel-headers' => '2.6.32-358.23.2.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -112,10 +112,10 @@ describe 'CentOs Stemcell' do
       it { should be_file }
       it { should contain 'default=0' }
       it { should contain 'timeout=1' }
-      it { should contain 'title CentOS release 6.4 (Final) (2.6.32-358.18.1.el6.x86_64)' }
+      it { should contain 'title CentOS release 6.4 (Final) (2.6.32-358.23.2.el6.x86_64)' }
       it { should contain '  root (hd0,0)' }
-      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.18.1.el6.x86_64 ro root=UUID=' }
-      it { should contain '  initrd /boot/initramfs-2.6.32-358.18.1.el6.x86_64.img' }
+      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.23.2.el6.x86_64 ro root=UUID=' }
+      it { should contain '  initrd /boot/initramfs-2.6.32-358.23.2.el6.x86_64.img' }
     end
 
     describe file('/boot/grub/menu.lst') do
