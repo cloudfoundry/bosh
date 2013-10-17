@@ -40,8 +40,8 @@ module Bosh::Blobstore
       context 'with unknown client provider' do
         it 'raise an exception' do
           expect {
-            Client.create('foobar', {})
-          }.to raise_error /^Invalid client provider/
+            Client.create('fake-unknown-provider', {})
+          }.to raise_error(/^Unknown client provider 'fake-unknown-provider'/)
         end
       end
     end
