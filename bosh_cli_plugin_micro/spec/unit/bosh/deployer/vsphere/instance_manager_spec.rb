@@ -1,10 +1,12 @@
 require 'spec_helper'
 require 'bosh/deployer/instance_manager/vsphere'
+require 'bosh/deployer/ui_messager'
 
 module Bosh
   module Deployer
     describe InstanceManager do
-      let(:dir) { Dir.mktmpdir("bdim_spec") }
+      subject(:deployer) { InstanceManager::Vsphere.new(config, 'fake-config-sha1', ui_messager) }
+      let(:ui_messager) { UiMessager.for_deployer }
       let(:config) do
         config = Psych.load_file(spec_asset('test-bootstrap-config.yml'))
         config['dir'] = dir
@@ -12,10 +14,11 @@ module Bosh
         config['logging'] = { 'file' => "#{dir}/bmim.log" }
         config
       end
+
+      let(:dir) { Dir.mktmpdir("bdim_spec") }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:agent) { double('Bosh::Agent::HTTPClient') } # Uses method_missing :(
       let(:stemcell_tgz) { 'bosh-instance-1.0.tgz' }
-      subject(:deployer) { InstanceManager::Vsphere.new(config, 'fake-config-sha1') }
 
       before do
         Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])

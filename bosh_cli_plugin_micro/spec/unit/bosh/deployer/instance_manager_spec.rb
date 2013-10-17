@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Deployer::InstanceManager do
-  describe '.create' do
+  describe '#create' do
     let(:config) { { 'cloud' => { 'plugin' => 'fake-plugin' } } }
 
     it 'tries to require instance manager specific class' +
@@ -40,10 +40,15 @@ describe Bosh::Deployer::InstanceManager do
         .with(config)
         .and_return('fake-config-sha1')
 
+      ui_messager = instance_double('Bosh::Deployer::UiMessager')
+      Bosh::Deployer::UiMessager
+        .should_receive(:for_deployer)
+        .and_return(ui_messager)
+
       plugin_instance = instance_double('Bosh::Deployer::InstanceManager')
       plugin_class
         .should_receive(:new)
-        .with(config, 'fake-config-sha1')
+        .with(config, 'fake-config-sha1', ui_messager)
         .and_return(plugin_instance)
 
       expect(described_class.create(config)).to eq(plugin_instance)

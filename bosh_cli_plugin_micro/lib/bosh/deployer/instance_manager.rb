@@ -2,6 +2,7 @@ require 'open3'
 require 'bosh/deployer/logger_renderer'
 require 'bosh/deployer/hash_fingerprinter'
 require 'bosh/deployer/director_gateway_error'
+require 'bosh/deployer/ui_messager'
 
 module Bosh::Deployer
   class InstanceManager
@@ -30,12 +31,13 @@ module Bosh::Deployer
       end
 
       config_sha1 = Bosh::Deployer::HashFingerprinter.new.sha1(config)
+      ui_messager = Bosh::Deployer::UiMessager.for_deployer
 
       plugin_class = InstanceManager.const_get(plugin_name.capitalize)
-      plugin_class.new(config, config_sha1)
+      plugin_class.new(config, config_sha1, ui_messager)
     end
 
-    def initialize(config, config_sha1)
+    def initialize(config, config_sha1, ui_messager)
       Config.configure(config)
 
       @state_yml = File.join(config['dir'], DEPLOYMENTS_FILE)
@@ -44,6 +46,7 @@ module Bosh::Deployer
       Config.uuid = state.uuid
 
       @config_sha1 = config_sha1
+      @ui_messager = ui_messager
       @renderer = LoggerRenderer.new
     end
 
@@ -170,7 +173,11 @@ module Bosh::Deployer
     end
 
     def update(stemcell_tgz, stemcell_archive)
-      return unless has_pending_changes?(state, stemcell_archive)
+      result, message = has_pending_changes?(state, stemcell_archive)
+      @ui_messager.info(message)
+
+      return unless result
+
       renderer.enter_stage('Prepare for update', 5)
       agent_stop
       detach_disk(state.disk_cid)
@@ -532,10 +539,10 @@ module Bosh::Deployer
     end
 
     def has_pending_changes?(state, stemcell_archive)
-      return true unless stemcell_archive
-      stemcell_changed = state.stemcell_sha1 != stemcell_archive.sha1
-      config_changed   = state.config_sha1   != @config_sha1
-      stemcell_changed || config_changed
+      return [true,  :update_stemcell_unknown] if !stemcell_archive
+      return [true,  :update_stemcell_changed] if state.stemcell_sha1 != stemcell_archive.sha1
+      return [true,  :update_config_changed]   if state.config_sha1   != @config_sha1
+      return [false, :update_no_changes]
     end
 
     def save_fingerprints(stemcell_archive)
@@ -545,3 +552,4 @@ module Bosh::Deployer
     end
   end
 end
+

@@ -4,9 +4,13 @@ describe Bosh::Deployer do
   def setup(config_yml)
     @stemcell_tgz = ENV['BOSH_STEMCELL_TGZ']
     @dir = ENV['BOSH_DEPLOYER_DIR'] || Dir.mktmpdir('bd_spec')
+
     config = Psych.load_file(spec_asset(config_yml))
     config['dir'] = @dir
-    @deployer = Bosh::Deployer::InstanceManager.new(config, 'fake-config-sha1')
+
+    messager = Bosh::Deployer::UiMessager.for_deployer
+    @deployer = Bosh::Deployer::InstanceManager.new(
+      config, 'fake-config-sha1', messager)
   end
 
   describe 'vSphere' do
