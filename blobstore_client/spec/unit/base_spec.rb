@@ -29,6 +29,11 @@ describe Bosh::Blobstore::BaseClient do
   end
 
   describe '#get' do
+    it 'allows to pass options optionally' do
+      expect { subject.get('id', 'file')     }.to_not raise_error(ArgumentError)
+      expect { subject.get('id', 'file', {}) }.to_not raise_error(ArgumentError)
+    end
+
     it 'should raise a NotImplemented exception' do
       expect { subject.get('id', 'file') }.to raise_error(
         Bosh::Blobstore::NotImplemented, 'not supported by this blobstore')
