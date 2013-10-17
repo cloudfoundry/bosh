@@ -2,10 +2,7 @@
 
 module Bosh::Deployer
   class InstanceManager
-
     class Vcloud < InstanceManager
-
-
       def remote_tunnel(port)
         # VCloud / vsphere does not use bosh-registry so no remote_tunnel
         # to bosh-registry is required
@@ -36,6 +33,5 @@ module Bosh::Deployer
         end
       end
     end
-
   end
 end

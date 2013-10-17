@@ -1,10 +1,6 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Deployer
   class InstanceManager
-
     class Openstack < InstanceManager
-
       def update_spec(spec)
         properties = spec.properties
 
@@ -18,6 +14,7 @@ module Bosh::Deployer
         spec.delete('networks')
       end
 
+      # rubocop:disable MethodLength
       def configure
         properties = Config.cloud_options['properties']
         @ssh_user = properties['openstack']['ssh_user']
@@ -59,9 +56,11 @@ module Bosh::Deployer
         @registry_config.write(Psych.dump(registry_config))
         @registry_config.close
       end
+      # rubocop:enable MethodLength
 
+      # rubocop:disable MethodLength
       def start
-        configure()
+        configure
 
         Sequel.connect(@registry_connection_settings) do |db|
           migrate(db)
@@ -86,7 +85,7 @@ module Bosh::Deployer
         end
 
         timeout_time = Time.now.to_f + (60 * 5)
-        http_client = HTTPClient.new()
+        http_client = HTTPClient.new
         begin
           http_client.head("http://127.0.0.1:#{@registry_port}")
           sleep 0.5
@@ -102,6 +101,7 @@ module Bosh::Deployer
       ensure
         @registry_config.unlink if @registry_config
       end
+      # rubocop:enable MethodLength
 
       def stop
         if @registry_pid && process_exists?(@registry_pid)
@@ -112,7 +112,7 @@ module Bosh::Deployer
         return unless @registry_connection_settings
 
         Sequel.connect(@registry_connection_settings) do |db|
-          @deployments['registry_instances'] = db[:registry_instances].map {|row| row}
+          @deployments['registry_instances'] = db[:registry_instances].map { |row| row }
         end
 
         save_state
@@ -154,7 +154,7 @@ module Bosh::Deployer
 
       private
 
-      def has_bosh_registry?(path=ENV['PATH'])
+      def has_bosh_registry?(path = ENV['PATH'])
         path.split(':').each do |dir|
           return true if File.exist?(File.join(dir, 'bosh-registry'))
         end
@@ -164,11 +164,10 @@ module Bosh::Deployer
       def migrate(db)
         db.create_table :registry_instances do
           primary_key :id
-          column :instance_id, :text, :unique => true, :null => false
-          column :settings, :text, :null => false
+          column :instance_id, :text, unique: true, null: false
+          column :settings, :text, null: false
         end
       end
-
     end
   end
 end

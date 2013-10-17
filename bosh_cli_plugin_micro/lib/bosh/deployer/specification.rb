@@ -1,6 +1,5 @@
 module Bosh::Deployer
   class Specification
-
     def self.load_from_stemcell(dir)
       spec = load_apply_spec(dir)
       Specification.new(spec)
@@ -9,9 +8,7 @@ module Bosh::Deployer
     def self.load_apply_spec(dir)
       file = 'apply_spec.yml'
       apply_spec = File.join(dir, file)
-      unless File.exist?(apply_spec)
-        err "this isn't a micro bosh stemcell - #{file} missing"
-      end
+      err "this isn't a micro bosh stemcell - #{file} missing" unless File.exist?(apply_spec)
       Psych.load_file(apply_spec)
     end
 
@@ -50,10 +47,14 @@ module Bosh::Deployer
       # need to update the service address, but we still want to
       # be able to override values in the apply_spec
       override_property(@properties, 'hm', Config.spec_properties['hm'])
-
       override_property(@properties, 'director', Config.spec_properties['director'])
       set_property(@properties, 'ntp', Config.spec_properties['ntp'])
-      set_property(@properties, 'compiled_package_cache', Config.spec_properties['compiled_package_cache'])
+
+      set_property(
+        @properties,
+        'compiled_package_cache',
+        Config.spec_properties['compiled_package_cache'],
+      )
 
       @spec
     end

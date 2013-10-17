@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Deployer::Specification do
   let(:spec) { Bosh::Deployer::Specification.load_from_stemcell(spec_dir) }
-  let(:spec_dir) {File.dirname(spec_asset('apply_spec.yml'))}
+  let(:spec_dir) { File.dirname(spec_asset('apply_spec.yml')) }
 
   before { Bosh::Deployer::Config.stub(agent_properties: agent_properties) }
   let(:agent_properties) { {} }
@@ -25,8 +25,8 @@ describe Bosh::Deployer::Specification do
   end
 
   describe 'agent override' do
-    let(:agent_properties) { {'blobstore' => {'address' => '3.3.3.3'}} }
-    let(:spec_properties) { {'ntp' => %w[1.2.3.4]} }
+    let(:agent_properties) { { 'blobstore' => { 'address' => '3.3.3.3' } } }
+    let(:spec_properties) { { 'ntp' => %w[1.2.3.4] } }
 
     it 'should update blobstore address' do
       spec.update('1.1.1.1', '2.2.2.2')
@@ -52,7 +52,8 @@ describe Bosh::Deployer::Specification do
 
     it 'should update the apply spec if enabled in micro_bosh.yml apply_spec' do
       spec.update('1.1.1.1', '2.2.2.2')
-      expect(spec.properties['compiled_package_cache']).to eq spec_properties['compiled_package_cache']
+      expect(spec.properties['compiled_package_cache']).to eq(
+        spec_properties['compiled_package_cache'])
     end
   end
 
@@ -70,7 +71,7 @@ describe Bosh::Deployer::Specification do
 
     it 'updates the apply spec with ssl key and cert' do
       spec.update('1.1.1.1', '2.2.2.2')
-      expect(spec.properties['director']['ssl']).to eq spec_properties['director']['ssl']
+      expect(spec.properties['director']['ssl']).to eq(spec_properties['director']['ssl'])
       expect(spec.properties['director']['ssl']).to_not be_nil
     end
   end

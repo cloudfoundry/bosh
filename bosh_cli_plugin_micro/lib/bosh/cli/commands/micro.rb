@@ -14,7 +14,7 @@ module Bosh::Cli::Command
 
     def initialize(runner)
       super(runner)
-      options[:config] ||= DEFAULT_CONFIG_PATH #hijack Cli::Config
+      options[:config] ||= DEFAULT_CONFIG_PATH # hijack Cli::Config
     end
 
     usage 'micro'
@@ -22,15 +22,14 @@ module Bosh::Cli::Command
     def micro_help
       say('bosh micro sub-commands:')
       nl
-      cmds = Bosh::Cli::Config.commands.values.find_all {|c|
-        c.usage =~ /^micro/
-      }
+      cmds = Bosh::Cli::Config.commands
+      cmds = cmds.values.find_all { |c| c.usage =~ /^micro/ }
       Bosh::Cli::Command::Help.list_commands(cmds)
     end
 
     usage 'micro deployment'
     desc 'Choose micro deployment to work with, or display current deployment'
-    def micro_deployment(name=nil)
+    def micro_deployment(name = nil)
       if name
         set_current(name)
       else
@@ -38,10 +37,11 @@ module Bosh::Cli::Command
       end
     end
 
+    # rubocop:disable MethodLength
     def set_current(name)
       manifest_filename = find_deployment(name)
 
-      if !File.exists?(manifest_filename)
+      unless File.exists?(manifest_filename)
         err "Missing manifest for #{name} (tried '#{manifest_filename}')"
       end
 
@@ -71,6 +71,7 @@ module Bosh::Cli::Command
       config.set_deployment(manifest_filename)
       config.save
     end
+    # rubocop:enable MethodLength
 
     def show_current
       say(deployment ? "Current deployment is '#{deployment.make_green}'" : 'Deployment not set')
@@ -98,11 +99,12 @@ module Bosh::Cli::Command
       say('Target'.ljust(15) + target_name)
     end
 
+    # rubocop:disable MethodLength
     usage 'micro deploy'
     desc 'Deploy a micro BOSH instance to the currently selected deployment'
     option '--update', 'update existing instance'
     option '--update-if-exists', 'create new or update existing instance'
-    def perform(stemcell=nil)
+    def perform(stemcell = nil)
       update = !!options[:update]
 
       err 'No deployment set' unless deployment
@@ -137,10 +139,12 @@ module Bosh::Cli::Command
         prefered_dir = File.dirname(File.dirname(deployment))
 
         unless prefered_dir == Dir.pwd
-          confirm_deployment("\n#{'No `bosh-deployments.yml` file found in current directory.'.make_red}\n\n" +
-                               'Conventionally, `bosh-deployments.yml` should be saved in ' +
-                                 "#{prefered_dir.make_green}.\n" +
-                                 "Is #{Dir.pwd.make_yellow} a directory where you can save state?")
+          confirm_deployment(
+            "\n#{'No `bosh-deployments.yml` file found in current directory.'.make_red}\n\n" +
+            'Conventionally, `bosh-deployments.yml` should be saved in ' +
+            "#{prefered_dir.make_green}.\n" +
+            "Is #{Dir.pwd.make_yellow} a directory where you can save state?"
+          )
         end
 
         err 'No existing instance to update' if update
@@ -185,6 +189,7 @@ module Bosh::Cli::Command
 
       say("Deployed #{desc}, took #{format_time(duration).make_green} to complete")
     end
+    # rubocop:enable MethodLength
 
     usage 'micro delete'
     desc 'Delete micro BOSH instance (including persistent disk)'
@@ -195,8 +200,10 @@ module Bosh::Cli::Command
 
       name = deployer.state.name
 
-      say "\nYou are going to delete micro BOSH deployment `#{name}'.\n\n" \
-      "THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red
+      say(
+        "\nYou are going to delete micro BOSH deployment `#{name}'.\n\n" +
+        "THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red
+      )
 
       unless confirmed?
         say 'Canceled deleting deployment'.make_green
@@ -233,16 +240,16 @@ module Bosh::Cli::Command
       na = 'n/a'
 
       deployments_table = table do |t|
-        t.headings = [ 'Name', 'VM name', 'Stemcell name']
+        t.headings = ['Name', 'VM name', 'Stemcell name']
         deployments.each do |r|
-          t << [ r[:name], r[:vm_cid] || na, r[:stemcell_cid] || na  ]
+          t << [r[:name], r[:vm_cid] || na, r[:stemcell_cid] || na]
         end
       end
 
       say("\n")
       say(deployments_table)
       say("\n")
-      say('Deployments total: %d' % deployments.size)
+      say("Deployments total: #{deployments.size}")
     end
 
     usage 'micro agent <args>'
@@ -298,13 +305,13 @@ AGENT_HELP
 
     private
 
-    def deployer(manifest_filename=nil)
+    def deployer(manifest_filename = nil)
       deployment_required unless manifest_filename
 
       if @deployer.nil?
         manifest_filename ||= deployment
 
-        if !File.exists?(manifest_filename)
+        unless File.exists?(manifest_filename)
           err("Cannot find deployment manifest in `#{manifest_filename}'")
         end
 
@@ -347,6 +354,7 @@ AGENT_HELP
       config.target_uuid = nil
     end
 
+    # rubocop:disable MethodLength
     def update_target
       if deployer.exists?
         bosh_ip = deployer.discover_bosh_ip
@@ -377,6 +385,7 @@ AGENT_HELP
 
       config.save
     end
+    # rubocop:enable MethodLength
 
     def confirm_deployment(msg)
       unless confirmed?(msg)
@@ -385,7 +394,9 @@ AGENT_HELP
     end
 
     def deployer_state(column)
-      if value = deployer.state.send(column)
+      value = deployer.state.send(column)
+
+      if value
         value.make_green
       else
         'n/a'.make_red

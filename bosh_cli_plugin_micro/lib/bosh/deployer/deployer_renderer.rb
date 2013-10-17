@@ -34,14 +34,14 @@ module Bosh::Deployer
 
     def update(state, task)
       event = {
-        "time"     => Time.now,
-        "stage"    => @stage,
-        "task"     => task,
-        "tags"     => [],
-        "index"    => @index+1,
-        "total"    => @total,
-        "state"    => state.to_s,
-        "progress" => state == :finished ? 100 : 0
+        'time'     => Time.now,
+        'stage'    => @stage,
+        'task'     => task,
+        'tags'     => [],
+        'index'    => @index + 1,
+        'total'    => @total,
+        'state'    => state.to_s,
+        'progress' => state == :finished ? 100 : 0
       }
 
       add_event(event)

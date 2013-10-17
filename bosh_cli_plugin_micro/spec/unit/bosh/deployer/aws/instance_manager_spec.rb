@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require 'spec_helper'
 
 BOSH_STEMCELL_TGZ ||= 'bosh-instance-1.0.tgz'
@@ -25,7 +24,8 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   def load_deployment
-    @deployer.send(:load_deployments)['instances'].select { |d| d[:name] == @deployer.state.name }.first
+    instances = @deployer.send(:load_deployments)['instances']
+    instances.detect { |d| d[:name] == @deployer.state.name }
   end
 
   def discover_bosh_ip(ip, id)
@@ -51,7 +51,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub(:wait_until_agent_ready)
     @deployer.stub(:wait_until_director_ready)
     @deployer.stub(:load_apply_spec).and_return(spec)
-    @deployer.stub(:load_stemcell_manifest).and_return({'cloud_properties' => {}})
+    @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
 
     @deployer.state.uuid.should_not be_nil
 
@@ -115,7 +115,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub(:wait_until_agent_ready)
     @deployer.stub(:wait_until_director_ready)
     @deployer.stub(:load_apply_spec).and_return(spec)
-    @deployer.stub(:load_stemcell_manifest).and_return({'cloud_properties' => {}})
+    @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
     @deployer.stub(:persistent_disk_changed?).and_return(false)
 
     @deployer.state.stemcell_cid = 'SC-CID-UPDATE'

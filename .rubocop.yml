@@ -8,7 +8,6 @@ AllCops:
    - bosh_aws_cpi/**
    - bosh_cli/**
    - bosh_cli_plugin_aws/**
-   - bosh_cli_plugin_micro/**
    - bosh_common/**
    - bosh_cpi/**
    - bosh_openstack_cpi/**
@@ -54,3 +53,7 @@ TrivialAccessors:
 
 AvoidPerlisms:
   Enabled: false # Unfortunately $CHILD_STATUS isn't always the same as $?
+
+AlignParameters:
+  Enabled: false
+

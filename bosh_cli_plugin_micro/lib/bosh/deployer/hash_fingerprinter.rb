@@ -16,7 +16,7 @@ module Bosh::Deployer
         [k, sorted_value]
       end
 
-      mapped_hash.sort_by { |(k,_)| k }
+      mapped_hash.sort_by { |(k, _)| k }
     end
   end
 end

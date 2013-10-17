@@ -10,12 +10,12 @@ module Bosh
       let(:config) do
         config = Psych.load_file(spec_asset('test-bootstrap-config.yml'))
         config['dir'] = dir
-        config['name'] = "spec-my-awesome-spec"
+        config['name'] = 'spec-my-awesome-spec'
         config['logging'] = { 'file' => "#{dir}/bmim.log" }
         config
       end
 
-      let(:dir) { Dir.mktmpdir("bdim_spec") }
+      let(:dir) { Dir.mktmpdir('bdim_spec') }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:agent) { double('Bosh::Agent::HTTPClient') } # Uses method_missing :(
       let(:stemcell_tgz) { 'bosh-instance-1.0.tgz' }
@@ -34,7 +34,8 @@ module Bosh
       end
 
       def load_deployment
-        deployer.send(:load_deployments)["instances"].select { |d| d[:name] == deployer.state.name }.first
+        instances = deployer.send(:load_deployments)['instances']
+        instances.detect { |d| d[:name] == deployer.state.name }
       end
 
       describe '#update' do
@@ -56,7 +57,7 @@ module Bosh
           deployer.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
         end
 
-        let(:apply_spec) { YAML.load_file(spec_asset("apply_spec.yml")) }
+        let(:apply_spec) { YAML.load_file(spec_asset('apply_spec.yml')) }
         before { Specification.stub(load_apply_spec: apply_spec) }
 
         before do # ??
@@ -68,6 +69,7 @@ module Bosh
         before { cloud.as_null_object }
         before { agent.stub(:run_task) }
 
+        # rubocop:disable MethodLength
         def self.it_updates_deployed_instance
           it 'updates deployed instance' do
             agent.should_receive(:run_task).with(:stop)
@@ -95,6 +97,7 @@ module Bosh
             expect(load_deployment).to eq(deployer.state.values)
           end
         end
+        # rubocop:enable MethodLength
 
         def self.it_updates_stemcell_sha1
           context 'when the director becomes ready' do
@@ -165,8 +168,14 @@ module Bosh
             end
 
             it 'does not use cpi actions to update deployed instance' do
-              cloud_actions = %w(detach_disk delete_vm delete_stemcell create_stemcell create_vm attach_disk)
-              cloud_actions.each { |a| cloud.should_not_receive(a) }
+              %w(
+                detach_disk
+                delete_vm
+                delete_stemcell
+                create_stemcell
+                create_vm
+                attach_disk
+              ).each { |a| cloud.should_not_receive(a) }
               perform
             end
 
@@ -199,7 +208,7 @@ module Bosh
           end
 
           context "when previously used stemcell's sha1 and config's sha were not recorded " +
-                  "(before quick update feature was introduced)" do
+                  '(before quick update feature was introduced)' do
             before { deployer.state.stemcell_sha1 = nil }
             before { deployer.state.config_sha1 = nil }
             it_updates_deployed_instance
@@ -226,7 +235,12 @@ module Bosh
       describe '#create' do
         let(:spec) { Psych.load_file(spec_asset('apply_spec.yml')) }
         let(:director_http_response) { double('Response', status: 200, body: '') }
-        let(:director_http_client) { instance_double('HTTPClient', get: director_http_response).as_null_object }
+        let(:director_http_client) do
+          instance_double(
+            'HTTPClient',
+            get: director_http_response,
+          ).as_null_object
+        end
 
         def perform
           deployer.create(stemcell_tgz, nil)
@@ -236,7 +250,7 @@ module Bosh
           cloud.stub(create_stemcell: 'SC-CID-CREATE')
           cloud.stub(create_vm: 'VM-CID-CREATE')
           cloud.stub(create_disk: 'DISK-CID-CREATE')
-          cloud.stub(:attach_disk) #.with('VM-CID-CREATE', 'DISK-CID-CREATE')
+          cloud.stub(:attach_disk) # .with('VM-CID-CREATE', 'DISK-CID-CREATE')
 
           Bosh::Common.stub(:retryable).and_yield(1, 'foo')
 
@@ -328,7 +342,8 @@ module Bosh
             cloud.stub(:delete_vm)
             cloud.stub(:delete_stemcell)
 
-            File.stub(:open).with(File.join(dir, 'bosh-deployments.yml'), 'w').and_yield(deployments_file)
+            deployments_path = File.join(dir, 'bosh-deployments.yml')
+            File.stub(:open).with(deployments_path, 'w').and_yield(deployments_file)
           end
 
           it 'saves intermediate state to bosh-deployments.yml' do
@@ -367,8 +382,6 @@ module Bosh
             expect(deployer.state.disk_cid).to be_nil
           end
         end
-
-        #context 'when disk is not assigned'
 
         context 'when stemcell CID does not exists' do
           before do

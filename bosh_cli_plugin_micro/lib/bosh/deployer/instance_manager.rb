@@ -106,6 +106,7 @@ module Bosh::Deployer
       with_lifecycle { destroy }
     end
 
+    # rubocop:disable MethodLength
     def create(stemcell_tgz, stemcell_archive)
       err "VM #{state.vm_cid} already exists" if state.vm_cid
       if state.stemcell_cid && state.stemcell_cid != state.stemcell_name
@@ -157,6 +158,7 @@ module Bosh::Deployer
       # to avoid locking deployer out if this deployment does not succeed
       save_fingerprints(stemcell_archive)
     end
+    # rubocop:enable MethodLength
 
     def destroy
       renderer.enter_stage('Delete micro BOSH', 7)
@@ -190,6 +192,7 @@ module Bosh::Deployer
       create(stemcell_tgz, stemcell_archive)
     end
 
+    # rubocop:disable MethodLength
     def create_stemcell(stemcell_tgz)
       unless is_tgz?(stemcell_tgz)
         step 'Using existing stemcell' do
@@ -222,6 +225,7 @@ module Bosh::Deployer
       delete_stemcell if is_tgz?(stemcell_tgz) && state.stemcell_cid
       raise e
     end
+    # rubocop:enable MethodLength
 
     def create_vm(stemcell_cid)
       resources = Config.resources['cloud_properties']
@@ -247,8 +251,7 @@ module Bosh::Deployer
         if disk_info.include?(disk_cid)
           agent.run_task(:unmount_disk, disk_cid.to_s)
         else
-          logger.error("not unmounting %s as it doesn't belong to me: %s" %
-                         [disk_cid, disk_info])
+          logger.error("not unmounting #{disk_cid} as it doesn't belong to me: #{disk_info}")
         end
       end
     end
@@ -280,19 +283,21 @@ module Bosh::Deployer
         step 'Detach disk' do
           cloud.detach_disk(vm_cid, disk_cid) if vm_cid
         end
-      rescue Bosh::Clouds::DiskNotAttached
+      rescue Bosh::Clouds::DiskNotAttached => e
+        logger.info(e.inspect)
       end
 
       begin
         step 'Delete disk' do
           cloud.delete_disk(disk_cid)
         end
-      rescue Bosh::Clouds::DiskNotFound
+      rescue Bosh::Clouds::DiskNotFound => e
+        logger.info(e.inspect)
       end
     end
 
     # it is up to the caller to save/update disk state info
-    def attach_disk(disk_cid, is_create=false)
+    def attach_disk(disk_cid, is_create = false)
       return unless disk_cid
 
       cloud.attach_disk(state.vm_cid, disk_cid)
@@ -393,7 +398,8 @@ module Bosh::Deployer
       step 'Stopping agent services' do
         begin
           agent.run_task(:stop)
-        rescue
+        rescue => e
+          logger.info(e.inspect)
         end
       end
     end
@@ -405,7 +411,12 @@ module Bosh::Deployer
     end
 
     def wait_until_ready(component, wait_time = 1, retries = 300)
-      Bosh::Common.retryable(sleep: wait_time, tries: retries, on: CONNECTION_EXCEPTIONS) do |tries, e|
+      retry_options = {
+        sleep: wait_time,
+        tries: retries,
+        on: CONNECTION_EXCEPTIONS,
+      }
+      Bosh::Common.retryable(retry_options) do |tries, e|
         logger.debug("Waiting for #{component} to be ready: #{e.inspect}") if tries > 0
         yield
         true
@@ -413,14 +424,11 @@ module Bosh::Deployer
     end
 
     def agent_port
-      uri = URI.parse(Config.cloud_options['properties']['agent']['mbus'])
-
-      uri.port
+      URI.parse(Config.cloud_options['properties']['agent']['mbus']).port
     end
 
-    def wait_until_agent_ready #XXX >> agent_client
+    def wait_until_agent_ready
       remote_tunnel(@registry_port)
-
       wait_until_ready('agent') { agent.ping }
     end
 
@@ -433,7 +441,7 @@ module Bosh::Deployer
         http_client = HTTPClient.new
 
         http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        http_client.ssl_config.verify_callback = Proc.new {}
+        http_client.ssl_config.verify_callback = proc {}
 
         response = http_client.get(url)
         message = 'Nginx has started but the application it is proxying to has not started yet.'
@@ -447,8 +455,7 @@ module Bosh::Deployer
       err 'Cannot find existing stemcell' unless state.stemcell_cid
 
       if state.stemcell_cid == state.stemcell_name
-        step 'Preserving stemcell' do
-        end
+        step('Preserving stemcell') { }
       else
         step 'Delete stemcell' do
           cloud.delete_stemcell(state.stemcell_cid)
@@ -462,10 +469,7 @@ module Bosh::Deployer
 
     def delete_vm
       err 'Cannot find existing VM' unless state.vm_cid
-
-      step 'Delete VM' do
-        cloud.delete_vm(state.vm_cid)
-      end
+      step('Delete VM') { cloud.delete_vm(state.vm_cid) }
       state.vm_cid = nil
       save_state
     end
@@ -508,7 +512,7 @@ module Bosh::Deployer
       disk_model.insert_multiple(@deployments['disks']) if disk_model
       instance_model.insert_multiple(@deployments['instances'])
 
-      @state = instance_model.find(:name => name)
+      @state = instance_model.find(name: name)
       if @state.nil?
         @state = instance_model.new
         @state.uuid = "bm-#{generate_unique_name}"
@@ -539,10 +543,10 @@ module Bosh::Deployer
     end
 
     def has_pending_changes?(state, stemcell_archive)
-      return [true,  :update_stemcell_unknown] if !stemcell_archive
+      return [true,  :update_stemcell_unknown] unless stemcell_archive
       return [true,  :update_stemcell_changed] if state.stemcell_sha1 != stemcell_archive.sha1
       return [true,  :update_config_changed]   if state.config_sha1   != @config_sha1
-      return [false, :update_no_changes]
+      [false, :update_no_changes]
     end
 
     def save_fingerprints(stemcell_archive)

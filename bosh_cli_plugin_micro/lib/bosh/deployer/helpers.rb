@@ -1,11 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'net/ssh'
 
 module Bosh::Deployer
-
   module Helpers
-
     DEPLOYMENTS_FILE = 'bosh-deployments.yml'
 
     def is_tgz?(path)
@@ -26,11 +22,9 @@ module Bosh::Deployer
     end
 
     def process_exists?(pid)
-      begin
-        Process.kill(0, pid)
-      rescue Errno::ESRCH
-        false
-      end
+      Process.kill(0, pid)
+    rescue Errno::ESRCH
+      false
     end
 
     def socket_readable?(ip, port)
@@ -54,23 +48,21 @@ module Bosh::Deployer
       socket.close if socket
     end
 
+    # rubocop:disable MethodLength
     def remote_tunnel(port)
       @sessions ||= {}
       return if @sessions[port]
 
       ip = Config.bosh_ip
 
-      loop until socket_readable?(ip, @ssh_port) do
-        #sshd is up, sleep while host keys are generated
-        sleep @ssh_wait
-      end
+      # sshd is up, sleep while host keys are generated
+      loop until socket_readable?(ip, @ssh_port) { sleep(@ssh_wait) }
 
       if @sessions[port].nil?
         logger.info("Starting SSH session for port forwarding to #{@ssh_user}@#{ip}...")
         loop do
           begin
-            @sessions[port] = Net::SSH.start(ip, @ssh_user, :keys => [@ssh_key],
-                                             :paranoid => false)
+            @sessions[port] = Net::SSH.start(ip, @ssh_user, keys: [@ssh_key], paranoid: false)
             logger.debug("ssh #{@ssh_user}@#{ip}: ESTABLISHED")
             break
           rescue => e
@@ -90,7 +82,10 @@ module Bosh::Deployer
           begin
             @sessions[port].loop { true }
           rescue IOError => e
-            logger.debug("SSH session #{@sessions[port].inspect} forwarding for port #{port} terminated: #{e.inspect}")
+            logger.debug(
+              "SSH session #{@sessions[port].inspect} " +
+              "forwarding for port #{port} terminated: #{e.inspect}"
+            )
             @sessions.delete(port)
           end
         end
@@ -102,6 +97,7 @@ module Bosh::Deployer
         exit status if status
       end
     end
+    # rubocop:enable MethodLength
 
     def close_ssh_sessions
       @sessions.each_value { |s| s.close }
@@ -111,5 +107,4 @@ module Bosh::Deployer
       path[/#{Regexp.escape File.join(Dir.pwd, '')}(.*)/, 1] || path
     end
   end
-
 end

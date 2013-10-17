@@ -5,6 +5,7 @@ module Bosh::Deployer
     attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
                   :spec_properties, :agent_properties, :bosh_ip, :env, :name, :net_conf
 
+    # rubocop:disable MethodLength
     def configure(config)
       plugin = cloud_plugin(config)
 
@@ -34,7 +35,7 @@ module Bosh::Deployer
 
       @db.create_table :instances do
         primary_key :id
-        column :name, :text, :unique => true, :null => false
+        column :name, :text, unique: true, null: false
         column :uuid, :text
         column :stemcell_cid, :text
         column :stemcell_sha1, :text
@@ -57,11 +58,12 @@ module Bosh::Deployer
       @cloud = nil
       @networks = nil
     end
+    # rubocop:enable MethodLength
 
     def cloud
       if @cloud.nil?
-        @cloud = Bosh::Clouds::Provider.create(@cloud_options['plugin'],
-                                               @cloud_options['properties'])
+        @cloud = Bosh::Clouds::Provider.create(
+          @cloud_options['plugin'], @cloud_options['properties'])
       end
       @cloud
     end
@@ -71,10 +73,11 @@ module Bosh::Deployer
       user, password = uri.userinfo.split(':', 2)
       uri.userinfo = nil
       uri.host = bosh_ip
-      Bosh::Agent::HTTPClient.new(uri.to_s,
-                                  { 'user' => user,
-                                    'password' => password,
-                                    'reply_to' => uuid })
+      Bosh::Agent::HTTPClient.new(uri.to_s, {
+        'user' => user,
+        'password' => password,
+        'reply_to' => uuid,
+      })
     end
 
     def agent_url
@@ -92,7 +95,7 @@ module Bosh::Deployer
           'ip' => @net_conf['ip'],
           'dns' => @net_conf['dns'],
           'type' => @net_conf['type'],
-          'default' => ['dns', 'gateway']
+          'default' => %w(dns gateway)
         }
       }
       if @net_conf['vip']
@@ -118,14 +121,12 @@ module Bosh::Deployer
     def migrate_cpi
       cpi = @cloud_options['plugin']
       require_path = File.join('cloud', cpi)
-      cpi_path = $LOAD_PATH.find { |p| File.exist?(
-        File.join(p, require_path)) }
+      cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, require_path)) }
       migrations = File.expand_path('../db/migrations', cpi_path)
 
       if File.directory?(migrations)
         Sequel.extension :migration
-        Sequel::TimestampMigrator.new(
-          @db, migrations, :table => "#{cpi}_cpi_schema").run
+        Sequel::TimestampMigrator.new(@db, migrations, table: "#{cpi}_cpi_schema").run
       end
     end
 
@@ -133,9 +134,9 @@ module Bosh::Deployer
       src.merge(dst) do |key, old, new|
         if new.respond_to?(:blank) && new.blank?
           old
-        elsif old.kind_of?(Hash) and new.kind_of?(Hash)
+        elsif old.kind_of?(Hash) && new.kind_of?(Hash)
           deep_merge(old, new)
-        elsif old.kind_of?(Array) and new.kind_of?(Array)
+        elsif old.kind_of?(Array) && new.kind_of?(Array)
           old.concat(new).uniq
         else
           new
@@ -144,7 +145,7 @@ module Bosh::Deployer
     end
 
     def load_defaults(provider)
-      file = File.join(File.dirname(File.expand_path(__FILE__)), "../../../config/#{provider}_defaults.yml")
+      file = File.expand_path("../../../../config/#{provider}_defaults.yml", __FILE__)
       Psych.load_file(file)
     end
   end
