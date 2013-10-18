@@ -12,6 +12,14 @@ module Bosh
         blobstore_client_constantize(blobstore_provider).new(options)
       end
 
+      def self.safe_create(provider, options = {})
+        wrapped_client = create(provider, options)
+        sha1_client    = Sha1VerifiableBlobstoreClient.new(wrapped_client)
+
+        retryable = Retryable.new(tries: 5, sleep: 0.5, on: [BlobstoreError])
+        RetryableBlobstoreClient.new(sha1_client, retryable)
+      end
+
       private
 
       def self.blobstore_client_constantize(base_string)

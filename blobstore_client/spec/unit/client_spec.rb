@@ -45,5 +45,62 @@ module Bosh::Blobstore
         end
       end
     end
+
+    describe '.safe_create' do
+      context 'with known provider' do
+        it 'returns retryable client' do
+          client = described_class.safe_create('simple', {})
+          client.should be_an_instance_of(RetryableBlobstoreClient)
+        end
+
+        it 'makes retryable client with simple client' do
+          wrapped_client = instance_double('Bosh::Blobstore::SimpleBlobstoreClient')
+          SimpleBlobstoreClient
+            .should_receive(:new)
+            .and_return(wrapped_client)
+
+          sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
+          Sha1VerifiableBlobstoreClient
+            .should_receive(:new)
+            .with(wrapped_client)
+            .and_return(sha1_verifiable_client)
+
+          retryable = instance_double('Bosh::Retryable')
+          Bosh::Retryable
+            .should_receive(:new)
+            .and_return(retryable)
+
+          retryable_client = instance_double('Bosh::Blobstore::RetryableBlobstoreClient')
+          RetryableBlobstoreClient
+            .should_receive(:new)
+            .with(sha1_verifiable_client, retryable)
+            .and_return(retryable_client)
+
+          expect(described_class.safe_create('simple', {})).to eq(retryable_client)
+        end
+
+        it 'makes retryable client with simple client' do
+          options = { 'fake-key' => 'fake-value' }
+          SimpleBlobstoreClient.should_receive(:new).with(options).and_call_original
+          described_class.safe_create('simple', options)
+        end
+
+        it 'makes retryable object with default options' do
+          Bosh::Retryable
+            .should_receive(:new)
+            .with(tries: 5, sleep: 0.5, on: [BlobstoreError])
+            .and_call_original
+          described_class.safe_create('simple', {})
+        end
+      end
+
+      context 'with unknown provider' do
+        it 'raise an exception' do
+          expect {
+            described_class.safe_create('fake-unknown-provider', {})
+          }.to raise_error(/^Unknown client provider 'fake-unknown-provider'/)
+        end
+      end
+    end
   end
 end
