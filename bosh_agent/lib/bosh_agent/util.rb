@@ -16,37 +16,26 @@ module Bosh::Agent
       def unpack_blob(blobstore_id, sha1, install_path)
         bsc_options = Bosh::Agent::Config.blobstore_options
         bsc_provider = Bosh::Agent::Config.blobstore_provider
-        blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
+        blobstore_client = Bosh::Blobstore::Client.safe_create(bsc_provider, bsc_options)
 
         data_tmp = File.join(base_dir, 'data', 'tmp')
         FileUtils.mkdir_p(data_tmp)
 
         begin
           tf = Tempfile.open(blobstore_id, data_tmp)
-          logger.info("Retrieving blob: #{blobstore_id}")
 
-          blobstore_client.get(blobstore_id, tf)
-          logger.info("Done retrieving blob")
+          logger.info("Retrieving blob '#{blobstore_id}'")
+          blobstore_client.get(blobstore_id, tf, sha1: sha1)
 
-          tf.flush
-          blob_data_file = tf.path
-
-          logger.info("creating #{install_path}")
+          logger.info("Creating '#{install_path}'")
           FileUtils.mkdir_p(install_path)
 
-          blob_sha1 = Digest::SHA1.file(blob_data_file).hexdigest
-          logger.info("hexdigest of #{blob_data_file}")
-
-          unless blob_sha1 == sha1
-            raise Bosh::Agent::MessageHandlerError,
-                  "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}, Blobstore ID: #{blobstore_id}, Install Path: #{install_path}"
-          end
-
-          logger.info("Installing to: #{install_path}")
+          logger.info("Installing to '#{install_path}'")
           Dir.chdir(install_path) do
-            output = `tar --no-same-owner -zxvf #{blob_data_file}`
-            raise Bosh::Agent::MessageHandlerError.new(
-              "Failed to unpack blob", output) unless $?.exitstatus == 0
+            output = `tar --no-same-owner -zxvf #{tf.path}`
+            unless $?.exitstatus == 0
+              raise Bosh::Agent::MessageHandlerError.new("Failed to unpack blob", output)
+            end
           end
         rescue Exception => e
           logger.info("Failure unpacking blob: #{e.inspect} #{e.backtrace}")
@@ -57,7 +46,6 @@ module Bosh::Agent
             tf.unlink
           end
         end
-
       end
 
       # @param [Hash] Instance spec

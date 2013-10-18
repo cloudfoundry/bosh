@@ -15,7 +15,11 @@ describe Bosh::Agent::Util do
     response.stub(:status).and_return(200)
 
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
-    httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
+    httpclient
+      .should_receive(:get)
+      .with(*get_args)
+      .and_yield(dummy_package_data)
+      .and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"
@@ -28,15 +32,20 @@ describe Bosh::Agent::Util do
     response = double("response")
     response.stub(:status).and_return(200)
 
-    get_args = [ "/resources/some_blobstore_id", {}, {} ]
-    httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
+    get_args = ["/resources/some_blobstore_id", {}, {}]
+    httpclient
+      .should_receive(:get)
+      .with(*get_args)
+      .at_least(:once)
+      .and_yield(dummy_package_data)
+      .and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"
 
     expect {
       Bosh::Agent::Util.unpack_blob(blobstore_id, "bogus_sha1", install_dir)
-    }.to raise_error(Bosh::Agent::MessageHandlerError, /Expected sha1/)
+    }.to raise_error(Bosh::Blobstore::BlobstoreError, /sha1 mismatch/)
   end
 
   it "should return a binding with config variable" do
