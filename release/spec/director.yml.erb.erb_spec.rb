@@ -3,7 +3,7 @@ require 'yaml'
 require 'common/properties'
 require 'json'
 
-describe 'director.yml.erb' do
+describe 'director.yml.erb.erb' do
   let(:deployment_manifest_fragment) do
     {
       'properties' => {
@@ -65,7 +65,7 @@ describe 'director.yml.erb' do
   end
 
   let(:erb_yaml) do
-    erb_yaml_path = File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb')
+    erb_yaml_path = File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb.erb')
 
     File.read(erb_yaml_path)
   end
