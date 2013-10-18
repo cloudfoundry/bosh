@@ -3,6 +3,7 @@ require 'blobstore_client/version'
 require 'blobstore_client/errors'
 require 'blobstore_client/client'
 require 'blobstore_client/retryable_blobstore_client'
+require 'blobstore_client/sha1_verifiable_blobstore_client'
 
 Bosh::Blobstore.autoload(:BaseClient, 'blobstore_client/base')
 Bosh::Blobstore.autoload(:S3BlobstoreClient, 'blobstore_client/s3_blobstore_client')
