@@ -36,7 +36,7 @@ module Bosh::Agent
 
           logger.info("Installing to '#{install_path}'")
           Dir.chdir(install_path) do
-            output = `tar --no-same-owner -zxvf #{tf.path}`
+            output = `tar --no-same-owner -zxvf #{tf.path} 2>&1`
             unless $?.exitstatus == 0
               raise Bosh::Agent::MessageHandlerError.new("Failed to unpack blob", output)
             end
