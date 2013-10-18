@@ -1,24 +1,21 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 require 'common/exec'
 
 describe Bosh::Agent::Util do
-
-  before(:each) do
+  before do
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
-
-    @httpclient = double("httpclient")
-    HTTPClient.stub(:new).and_return(@httpclient)
   end
+
+  before { HTTPClient.stub(new: httpclient) }
+  let(:httpclient) { instance_double('HTTPClient') }
 
   it "should unpack a blob" do
     response = double("response")
     response.stub(:status).and_return(200)
 
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
-    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
+    httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"
@@ -32,7 +29,7 @@ describe Bosh::Agent::Util do
     response.stub(:status).and_return(200)
 
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
-    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
+    httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"
@@ -117,5 +114,4 @@ describe Bosh::Agent::Util do
     expect(network_info).to have_key('netmask')
     expect(network_info).to have_key('gateway')
   end
-
 end
