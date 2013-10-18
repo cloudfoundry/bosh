@@ -126,6 +126,7 @@ describe 'Ubuntu Stemcell' do
       it { should contain 'title Ubuntu 10.04.4 LTS (3.0.0-32-virtual)' }
       it { should contain '  root (hd0,0)' }
       it { should contain '  kernel /boot/vmlinuz-3.0.0-32-virtual ro root=UUID=' }
+      it { should contain ' selinux=0' }
       it { should contain '  initrd /boot/initrd.img-3.0.0-32-virtual' }
     end
 
