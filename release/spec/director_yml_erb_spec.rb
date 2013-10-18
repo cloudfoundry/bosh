@@ -4,7 +4,7 @@ require 'common/properties'
 require 'json'
 
 describe 'director.yml.erb' do
-  let(:gigantic_hash) do
+  let(:deployment_manifest_fragment) do
     {
       'properties' => {
         'ntp' => [
@@ -70,32 +70,51 @@ describe 'director.yml.erb' do
     File.read(erb_yaml_path)
   end
 
-  context 'when vcenter.password is alphanumeric' do
-    it 'renders vcenter password correctly' do
-      spec = gigantic_hash
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['cloud']['properties']['vcenters'][0]['password']).to eq('vcenter.password')
-    end
-  end
-
-  context 'when vcenter.password begins with a bang' do
+  context 'when vcenter.address begins with a bang and contains quotes' do
     before do
-      gigantic_hash['properties']['vcenter']['password'] = '!vcenter.password'
+      deployment_manifest_fragment['properties']['vcenter']['address'] = "!vcenter.address''"
     end
 
-    it 'renders vcenter password correctly' do
-      spec = gigantic_hash
+    it 'renders vcenter address correctly' do
+      spec = deployment_manifest_fragment
 
       rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
 
       parsed = YAML.load(rendered_yaml)
 
-      expect(parsed['cloud']['properties']['vcenters'][0]['password']).to eq('!vcenter.password')
+      expect(parsed['cloud']['properties']['vcenters'][0]['host']).to eq("!vcenter.address''")
     end
   end
 
+  context 'when vcenter.user begins with a bang and contains quotes' do
+    before do
+      deployment_manifest_fragment['properties']['vcenter']['user'] = "!vcenter.user''"
+    end
+
+    it 'renders vcenter user correctly' do
+      spec = deployment_manifest_fragment
+
+      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+      parsed = YAML.load(rendered_yaml)
+
+      expect(parsed['cloud']['properties']['vcenters'][0]['user']).to eq("!vcenter.user''")
+    end
+  end
+
+  context 'when vcenter.password begins with a bang and contains quotes' do
+    before do
+      deployment_manifest_fragment['properties']['vcenter']['password'] = "!vcenter.password''"
+    end
+
+    it 'renders vcenter password correctly' do
+      spec = deployment_manifest_fragment
+
+      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+      parsed = YAML.load(rendered_yaml)
+
+      expect(parsed['cloud']['properties']['vcenters'][0]['password']).to eq("!vcenter.password''")
+    end
+  end
 end

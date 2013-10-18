@@ -207,8 +207,8 @@ cloud:
     mem_overcommit_ratio: 0.7
     cpi_log: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.cpi.log
     vcenters:
-      - host: <%= address %>
-        user: <%= user %>
+      - host: <%= JSON.dump(address) %>
+        user: <%= JSON.dump(user) %>
         password: <%= JSON.dump(password) %>
         datacenters:
           <% datacenters.each do |dc| %>
