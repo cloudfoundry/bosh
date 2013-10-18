@@ -209,7 +209,7 @@ cloud:
     vcenters:
       - host: <%= address %>
         user: <%= user %>
-        password: <%= password %>
+        password: <%= JSON.dump(password) %>
         datacenters:
           <% datacenters.each do |dc| %>
           - name: <%= dc['name'] %>
