@@ -60,7 +60,7 @@ module Bosh::Stemcell
   describe Infrastructure::Vsphere do
     its(:name)              { should eq('vsphere') }
     its(:hypervisor)        { should eq('esxi') }
-    its(:default_disk_size) { should eq(2048) }
+    its(:default_disk_size) { should eq(3072) }
     it { should_not be_light }
   end
 end
