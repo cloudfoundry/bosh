@@ -24,8 +24,12 @@ module Bosh::Agent
         begin
           tf = Tempfile.open(blobstore_id, data_tmp)
 
-          logger.info("Retrieving blob '#{blobstore_id}'")
-          blobstore_client.get(blobstore_id, tf, sha1: sha1)
+          begin
+            logger.info("Retrieving blob '#{blobstore_id}'")
+            blobstore_client.get(blobstore_id, tf, sha1: sha1)
+          rescue Bosh::Blobstore::BlobstoreError => e
+            raise Bosh::Agent::MessageHandlerError.new(e.inspect)
+          end
 
           logger.info("Creating '#{install_path}'")
           FileUtils.mkdir_p(install_path)
