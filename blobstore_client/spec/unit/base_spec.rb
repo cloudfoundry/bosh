@@ -3,6 +3,8 @@ require 'spec_helper'
 describe Bosh::Blobstore::BaseClient do
   subject { described_class.new({}) }
 
+  it_implements_base_client_interface
+
   describe '#create' do
     it 'should raise a NotImplemented exception' do
       expect { subject.create('contents') }.to raise_error(

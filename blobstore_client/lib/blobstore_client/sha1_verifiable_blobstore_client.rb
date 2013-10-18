@@ -2,7 +2,9 @@ require 'digest/sha1'
 
 module Bosh
   module Blobstore
-    class Sha1VerifiableBlobstoreClient
+    class Sha1VerifiableBlobstoreClient < BaseClient
+      extend Forwardable
+
       def initialize(client)
         @client = client
       end
@@ -23,6 +25,8 @@ module Bosh
 
         result_file
       end
+
+      def_delegators :@client, :create, :delete, :exists?
 
       private
 

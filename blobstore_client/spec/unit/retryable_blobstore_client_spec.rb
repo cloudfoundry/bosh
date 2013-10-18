@@ -2,11 +2,14 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe RetryableBlobstoreClient do
-    describe '#get' do
-      subject { described_class.new(wrapped_client, retryable) }
-      let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
-      let(:retryable)      { Bosh::Retryable.new(tries: 2, sleep: 0, on: [BlobstoreError]) }
+    subject { described_class.new(wrapped_client, retryable) }
+    let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:retryable)      { Bosh::Retryable.new(tries: 2, sleep: 0, on: [BlobstoreError]) }
 
+    it_implements_base_client_interface
+    it_calls_wrapped_client_methods(except: [:get])
+
+    describe '#get' do
       let(:file) { Tempfile.new('fake-file') }
 
       it 'calls wrapped client with all given arguments' do
@@ -19,7 +22,7 @@ module Bosh::Blobstore
         returned_file = double('fake-file')
         wrapped_client
           .should_receive(:get)
-          .with('fake-id', nil)
+          .with('fake-id', nil, {})
           .and_return(returned_file)
         expect(subject.get('fake-id', nil)).to eq(returned_file)
       end
@@ -38,7 +41,7 @@ module Bosh::Blobstore
         context 'when file is given explicitly' do
           it 'calls wrapped client multiple times and returns successfully' do
             wrapped_client.should_receive(:get).ordered.and_raise(error)
-            wrapped_client.should_receive(:get).ordered.with('fake-id', file)
+            wrapped_client.should_receive(:get).ordered.with('fake-id', file, {})
             expect { subject.get('fake-id', file) }.to_not raise_error
           end
         end
@@ -46,7 +49,7 @@ module Bosh::Blobstore
         context 'when file is not given explicitly' do
           it 'calls wrapped client multiple times and returns successfully' do
             wrapped_client.should_receive(:get).ordered.and_raise(error)
-            wrapped_client.should_receive(:get).ordered.with('fake-id', nil)
+            wrapped_client.should_receive(:get).ordered.with('fake-id', nil, {})
             expect { subject.get('fake-id', nil) }.to_not raise_error
           end
         end

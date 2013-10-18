@@ -2,10 +2,13 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe Sha1VerifiableBlobstoreClient do
-    describe '#get' do
-      subject { described_class.new(wrapped_client) }
-      let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
+    subject { described_class.new(wrapped_client) }
+    let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
 
+    it_implements_base_client_interface
+    it_calls_wrapped_client_methods(except: [:get])
+
+    describe '#get' do
       let(:file) { double('fake-file', path: 'fake-file-path') }
 
       it 'calls wrapped client with all given arguments' do

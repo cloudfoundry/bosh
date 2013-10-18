@@ -5,6 +5,8 @@ require 'blobstore_client'
 require 'erb'
 require 'tempfile'
 
+require File.expand_path('../support/shared_examples/base', __FILE__)
+
 def asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))
 end

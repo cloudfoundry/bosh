@@ -2,6 +2,18 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe S3BlobstoreClient do
+    describe 'interface' do
+      subject do
+        s3_blobstore(
+          encryption_key: 'bla',
+          bucket_name: 'test',
+          access_key_id: 'KEY',
+          secret_access_key: 'SECRET'
+        )
+      end
+
+      it_implements_base_client_interface
+    end
 
     let(:s3) { double(AWS::S3) }
 
@@ -61,6 +73,7 @@ module Bosh::Blobstore
             encryption_key: 'kjahsdjahsgdlahs'
           }
         end
+
         let(:client) { s3_blobstore(options) }
 
         it 'should encrypt' do

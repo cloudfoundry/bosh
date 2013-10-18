@@ -2,31 +2,33 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe SimpleBlobstoreClient do
+    subject(:client) { SimpleBlobstoreClient.new('endpoint' => 'http://localhost') }
+
+    it_implements_base_client_interface
 
     let(:response) { double(HTTP::Message) }
     let(:httpclient) { double(HTTPClient) }
 
-    before(:each) do
-      HTTPClient.stub(:new).and_return(httpclient)
-    end
+    before { HTTPClient.stub(new: httpclient) }
 
     describe 'options' do
       it 'should set up authentication when present' do
         response.stub(status: 200, content: 'content_id')
 
-        httpclient.should_receive(:get).with('http://localhost/resources/foo', {},
-                                             { 'Authorization' => 'Basic am9objpzbWl0aA==' }).and_return(response)
+        httpclient.should_receive(:get).with(
+          'http://localhost/resources/foo', {},
+          { 'Authorization' => 'Basic am9objpzbWl0aA==' }
+        ).and_return(response)
 
-        SimpleBlobstoreClient.new({ 'endpoint' => 'http://localhost',
-                                    'user' => 'john',
-                                    'password' => 'smith' }).get('foo')
+        SimpleBlobstoreClient.new(
+          'endpoint' => 'http://localhost',
+          'user' => 'john',
+          'password' => 'smith'
+        ).get('foo')
       end
-
     end
 
     describe 'operations' do
-      let(:client) { SimpleBlobstoreClient.new('endpoint' => 'http://localhost') }
-
       it 'should create an object' do
         response.stub(status: 200, content: 'content_id')
         httpclient.should_receive(:post) do |*args|
