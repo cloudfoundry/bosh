@@ -1,12 +1,12 @@
-require "common/thread_pool"
-require "common/thread_formatter"
-require "securerandom"
+require 'forwardable'
+require 'securerandom'
+require 'common/thread_pool'
+require 'common/thread_formatter'
 
-autoload :VSphereCloud, "cloud/vsphere/cloud"
+autoload :VSphereCloud, 'cloud/vsphere/cloud'
 
 module Bosh
   module Clouds
-
     class VSphere
       extend Forwardable
 
@@ -28,5 +28,4 @@ module Bosh
 
     Vsphere = VSphere # alias name for dynamic plugin loading
   end
-
 end

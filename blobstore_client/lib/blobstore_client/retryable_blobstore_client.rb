@@ -1,3 +1,5 @@
+require 'forwardable'
+
 module Bosh
   module Blobstore
     class RetryableBlobstoreClient < BaseClient
