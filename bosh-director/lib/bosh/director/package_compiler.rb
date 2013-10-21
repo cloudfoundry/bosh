@@ -114,7 +114,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, dependencies, job)
 
-      compiled_package = find_compiled_package(task)
+      compiled_package = task.find_compiled_package(@logger, @event_log)
       if compiled_package
         task.use_compiled_package(compiled_package)
       end
@@ -215,7 +215,7 @@ module Bosh::Director
 
       with_compile_lock(package.id, stemcell.id) do
         # Check if the package was compiled in a parallel deployment
-        compiled_package = find_compiled_package(task)
+        compiled_package = task.find_compiled_package(@logger, @event_log)
         if compiled_package.nil?
           build = Models::CompiledPackage.generate_build_number(package, stemcell)
           task_result = nil
@@ -348,44 +348,6 @@ module Bosh::Director
         vm.destroy
         release_network(reservation)
       end
-    end
-
-    # @param [CompileTask] task
-    # @return [Models::CompiledPackage]
-    def find_compiled_package(task)
-      package = task.package
-      stemcell = task.stemcell
-      dependency_key = task.dependency_key
-
-      # Check if this package is already compiled
-      compiled_package = Models::CompiledPackage[
-        :package_id => package.id,
-        :stemcell_id => stemcell.id,
-        :dependency_key => dependency_key
-      ]
-      if compiled_package
-        @logger.info("Found compiled version of package `#{package.desc}' " +
-                     "for stemcell `#{stemcell.desc}'")
-      else
-        if Config.use_compiled_package_cache?
-          if BlobUtil.exists_in_global_cache?(package, task.cache_key)
-            @event_log.track("Downloading '#{package.desc}' from global cache") do
-              # has side effect of putting CompiledPackage model in db
-              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
-            end
-          end
-        end
-
-        if compiled_package
-          @logger.info("Package `Found compiled version of package `#{package.desc}'" +
-                       "for stemcell `#{stemcell.desc}' in global cache")
-        else
-          @logger.info("Package `#{package.desc}' " +
-                       "needs to be compiled on `#{stemcell.desc}'")
-        end
-      end
-
-      compiled_package
     end
 
     private

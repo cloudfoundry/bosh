@@ -481,34 +481,6 @@ module Bosh::Director
         Config.stub(:use_compiled_package_cache?).and_return(true)
       end
 
-      describe '.find_compiled_package' do
-        it 'returns compiled package if found in local blobstore' do
-          compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: '[]')
-          BlobUtil.should_not_receive(:fetch_from_global_cache)
-          compiler.find_compiled_package(task).should == compiled_package
-        end
-
-        it 'returns nil if could not find compiled package and not using global blobstore' do
-          Config.stub(:use_compiled_package_cache?).and_return(false)
-          BlobUtil.should_not_receive(:fetch_from_global_cache)
-          compiler.find_compiled_package(task).should == nil
-        end
-
-        it 'returns nil if compiled_package not found in local or global blobstore' do
-          Config.stub(:use_compiled_package_cache?).and_return(true)
-          Config.stub(:compiled_package_cache_blobstore).and_return(double('cache', exists?: false))
-          compiler.find_compiled_package(task).should == nil
-        end
-
-        it 'returns the compiled package from the global blobstore if not found locally' do
-          compiled_package = double('compiled package', package: package, stemcell: stemcell, dependency_key: '[]')
-          Config.stub(:use_compiled_package_cache?).and_return(true)
-          Config.stub(:compiled_package_cache_blobstore).and_return(double('cache', exists?: true))
-          BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, cache_key, task.dependency_key).and_return(compiled_package)
-          compiler.find_compiled_package(task).should == compiled_package
-        end
-      end
-
       it 'should check if compiled package is in global blobstore' do
         callback = nil
         compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id) do |&block|
@@ -516,7 +488,7 @@ module Bosh::Director
         end
 
         BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
-        compiler.stub(:find_compiled_package)
+        task.stub(:find_compiled_package)
         BlobUtil.should_not_receive(:save_to_global_cache)
         compiler.stub(:prepare_vm)
         Models::CompiledPackage.stub(:create)
@@ -531,7 +503,7 @@ module Bosh::Director
           callback = block
         end
 
-        compiler.stub(:find_compiled_package)
+        task.stub(:find_compiled_package)
         compiled_package = double('compiled package', package: package, stemcell: stemcell, blobstore_id: 'some blobstore id')
         BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
         BlobUtil.should_receive(:save_to_global_cache).with(compiled_package, cache_key)
