@@ -470,12 +470,6 @@ module Bosh::Director
       let(:cache_key) { 'cache key' }
 
       before do
-        package.fingerprint = 'fingerprint'
-        package.save
-        stemcell.sha1 = 'shawone'
-        stemcell.save
-
-        task.dependency_key = '[]'
         task.stub(:cache_key).and_return(cache_key)
 
         Config.stub(:use_compiled_package_cache?).and_return(true)
