@@ -214,5 +214,63 @@ module Bosh::Director
         }
       end
     end
+
+    describe '#find_compiled_package' do
+      let(:event_log) { double("event_log") }
+      let(:logger) { double("logger", info:nil) }
+      let(:package) { Models::Package.make }
+      let(:stemcell) { Models::Stemcell.make }
+      subject(:task) { CompileTask.new(package, stemcell, []) }
+
+      context 'when global package cache is not used' do
+        before { Config.stub(:use_compiled_package_cache?).and_return(false) }
+        context 'when compiled package is found in local blobstore' do
+          it 'returns it' do
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: '[]')
+            BlobUtil.should_not_receive(:fetch_from_global_cache)
+            task.find_compiled_package(logger, event_log).should == compiled_package
+          end
+        end
+
+        context 'when compiled package is not found in local blobstore' do
+          it 'returns nil' do
+            BlobUtil.should_not_receive(:fetch_from_global_cache)
+            task.find_compiled_package(logger, event_log).should == nil
+          end
+        end
+      end
+
+      context 'when using global package cache' do
+        before { Config.stub(:use_compiled_package_cache?).and_return(true) }
+
+        context 'when compiled package is not found in local blobstore' do
+          context 'nor was it found in the global one' do
+            it 'returns nil' do
+              BlobUtil.stub(:exists_in_global_cache?).with(package, task.cache_key).and_return(false)
+              task.find_compiled_package(logger, event_log).should == nil
+            end
+          end
+
+          context 'but it was found in the global blobstore' do
+            it 'returns the compiled package' do
+              event_log.stub(:track).with(anything).and_yield
+
+              compiled_package = double('compiled package', package: package, stemcell: stemcell, dependency_key: '[]')
+              BlobUtil.stub(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
+              BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, task.cache_key, task.dependency_key).and_return(compiled_package)
+              task.find_compiled_package(logger, event_log).should == compiled_package
+            end
+          end
+        end
+
+        context 'when compiled package is found in local blobstore' do
+          it 'returns it' do
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: '[]')
+            BlobUtil.should_not_receive(:fetch_from_global_cache)
+            task.find_compiled_package(logger, event_log).should == compiled_package
+          end
+        end
+      end
+    end
   end
 end
