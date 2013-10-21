@@ -165,6 +165,7 @@ module Bosh::Stemcell
 
         context 'when infrastruture is vsphere' do
           let(:infrastructure) { Infrastructure.for('vsphere') }
+          let(:default_disk_size) { 3072 }
 
           it_sets_correct_environment_variables
 
