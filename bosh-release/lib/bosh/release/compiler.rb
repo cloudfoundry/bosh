@@ -21,7 +21,7 @@ module Bosh
         bsc_provider = @options["blobstore_provider"]
         bsc_options = @options["blobstore_options"]
         @logger.info("Creating Blobstore client with #{bsc_provider} provider and options #{bsc_options}")
-        @blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
+        @blobstore_client = Bosh::Blobstore::Client.safe_create(bsc_provider, bsc_options)
       end
 
       def start

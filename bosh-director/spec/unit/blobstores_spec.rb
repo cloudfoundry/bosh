@@ -2,18 +2,38 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Blobstores do
+    subject(:blobstores) { described_class.new(config) }
     let(:config) { Config.load_file(asset('test-director-config.yml')) }
-    let(:blobstores) { described_class.new(config) }
 
-    context 'normal blobstore' do
+    before { Bosh::Blobstore::Client.stub(:safe_create) }
+
+    describe '#blobstore' do
       it 'provides the blobstore client' do
-        expect(blobstores.blobstore).to be_a(Bosh::Blobstore::SimpleBlobstoreClient)
+        blobstore_client = double('fake-blobstore-client')
+        Bosh::Blobstore::Client
+          .should_receive(:safe_create)
+          .with('simple', {
+            'endpoint' => 'http://127.0.0.1',
+            'user'     => 'admin',
+            'password' => nil,
+          })
+          .and_return(blobstore_client)
+        expect(blobstores.blobstore).to eq(blobstore_client)
       end
     end
 
-    context 'backup destination blobstore' do
+    describe '#backup_destination' do
       it 'provides the blobstore client' do
-        expect(blobstores.backup_destination).to be_a(Bosh::Blobstore::S3BlobstoreClient)
+        blobstore_client = double('fake-blobstore-client')
+        Bosh::Blobstore::Client
+          .should_receive(:safe_create)
+          .with('s3', {
+            'bucket_name' => 'foo',
+            'access_key_id' => 'asdf',
+            'secret_access_key' => 'zxcv',
+          })
+          .and_return(blobstore_client)
+        expect(blobstores.backup_destination).to eq(blobstore_client)
       end
 
       context 'when no backup blobstore is specified' do

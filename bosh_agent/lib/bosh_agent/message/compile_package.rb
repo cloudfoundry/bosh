@@ -35,7 +35,7 @@ module Bosh::Agent
       def initialize(args)
         bsc_provider = Bosh::Agent::Config.blobstore_provider
         bsc_options = Bosh::Agent::Config.blobstore_options
-        @blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
+        @blobstore_client = Bosh::Blobstore::Client.safe_create(bsc_provider, bsc_options)
         @blobstore_id, @sha1, @package_name, @package_version, @dependencies = args
 
         @base_dir = Bosh::Agent::Config.base_dir

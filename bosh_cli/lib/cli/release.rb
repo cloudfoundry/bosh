@@ -105,7 +105,7 @@ module Bosh::Cli
       options = merge_private_data(provider, options)
 
       opts = Bosh::Common.symbolize_keys(options)
-      @blobstore = Bosh::Blobstore::Client.create(provider, opts)
+      @blobstore = Bosh::Blobstore::Client.safe_create(provider, opts)
 
     rescue Bosh::Blobstore::BlobstoreError => e
       err("Cannot initialize blobstore: #{e}")

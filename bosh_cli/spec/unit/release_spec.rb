@@ -1,10 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::Release do
-
-  before :each do
+  before do
     @release_dir = Dir.mktmpdir
     FileUtils.mkdir_p(File.join(@release_dir, "config"))
   end
@@ -68,10 +65,10 @@ describe Bosh::Cli::Release do
     it "should print a warning when it contains blobstore_secret" do
       r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
       opts = {
-          :uid => "bosh",
-          :secret => "bar"
+        :uid => "bosh",
+        :secret => "bar"
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("atmos", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("atmos", opts)
       r.should_receive(:say)
 
       r.blobstore
@@ -85,11 +82,11 @@ describe Bosh::Cli::Release do
     it "should merge s3 secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/s3"))
       opts = {
-          :bucket_name => "test",
-          :secret_access_key => "foo",
-          :access_key_id => "bar"
+        :bucket_name => "test",
+        :secret_access_key => "foo",
+        :access_key_id => "bar"
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("s3", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("s3", opts)
       r.blobstore
     end
 
@@ -101,10 +98,10 @@ describe Bosh::Cli::Release do
     it "should merge atmos secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
       opts = {
-          :uid => "bosh",
-          :secret => "bar"
+        :uid => "bosh",
+        :secret => "bar"
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("atmos", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("atmos", opts)
       r.blobstore
     end
 
@@ -116,16 +113,16 @@ describe Bosh::Cli::Release do
     it "should merge swift (HP) secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-hp"))
       opts = {
-          :container_name => "test",
-          :swift_provider => "hp",
-          :hp => {
-            :hp_access_key => "foo",
-            :hp_secret_key => "bar",
-            :hp_tenant_id => "foo",
-            :hp_avl_zone => "avl"
-          }
+        :container_name => "test",
+        :swift_provider => "hp",
+        :hp => {
+          :hp_access_key => "foo",
+          :hp_secret_key => "bar",
+          :hp_tenant_id => "foo",
+          :hp_avl_zone => "avl"
+        }
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("swift", opts)
       r.blobstore
     end
 
@@ -137,17 +134,17 @@ describe Bosh::Cli::Release do
     it "should merge swift (OpenStack) secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-openstack"))
       opts = {
-          :container_name => "test",
-          :swift_provider => "openstack",
-          :openstack => {
-            :openstack_auth_url => "url",
-            :openstack_username => "foo",
-            :openstack_api_key => "bar",
-            :openstack_tenant => "foo",
-            :openstack_region => "reg"
-          }
+        :container_name => "test",
+        :swift_provider => "openstack",
+        :openstack => {
+          :openstack_auth_url => "url",
+          :openstack_username => "foo",
+          :openstack_api_key => "bar",
+          :openstack_tenant => "foo",
+          :openstack_region => "reg"
+        }
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("swift", opts)
       r.blobstore
     end
 
@@ -159,15 +156,15 @@ describe Bosh::Cli::Release do
     it "should merge swift (Rackspace) secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
       opts = {
-          :container_name => "test",
-          :swift_provider => "rackspace",
-          :rackspace => {
-            :rackspace_username => "foo",
-            :rackspace_api_key => "bar",
-            :rackspace_region => "reg"
-          }
+        :container_name => "test",
+        :swift_provider => "rackspace",
+        :rackspace => {
+          :rackspace_username => "foo",
+          :rackspace_api_key => "bar",
+          :rackspace_region => "reg"
+        }
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("swift", opts)
       r.blobstore
     end
 
@@ -179,9 +176,9 @@ describe Bosh::Cli::Release do
     it "should not throw an error when merging empty secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/local"))
       opts = {
-          :blobstore_path => "/tmp/blobstore"
+        :blobstore_path => "/tmp/blobstore"
       }
-      Bosh::Blobstore::Client.should_receive(:create).with("local", opts)
+      Bosh::Blobstore::Client.should_receive(:safe_create).with("local", opts)
       r.blobstore
     end
 
@@ -189,8 +186,8 @@ describe Bosh::Cli::Release do
       r = Bosh::Cli::Release.new(spec_asset("config/bad-providers"))
       expect {
         r.blobstore
-      }.to raise_error(Bosh::Cli::CliError, "blobstore private provider " +
-          "does not match final provider")
+      }.to raise_error(Bosh::Cli::CliError,
+        "blobstore private provider does not match final provider")
     end
   end
 end

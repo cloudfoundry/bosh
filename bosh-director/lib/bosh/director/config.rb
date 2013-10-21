@@ -166,7 +166,7 @@ module Bosh::Director
           if @compiled_package_cache_blobstore.nil? && use_compiled_package_cache?
             provider = @compiled_package_cache_options["provider"]
             options = @compiled_package_cache_options["options"]
-            @compiled_package_cache_blobstore = Bosh::Blobstore::Client.create(provider, options)
+            @compiled_package_cache_blobstore = Bosh::Blobstore::Client.safe_create(provider, options)
           end
         end
         @compiled_package_cache_blobstore

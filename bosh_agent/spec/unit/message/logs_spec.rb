@@ -122,13 +122,17 @@ describe Bosh::Agent::Message::FetchLogs do
     FileUtils.mkdir_p(log_dir)
 
     bad_client = double(Bosh::Blobstore::Client)
-    Bosh::Blobstore::Client.stub(:create).and_return(bad_client)
+    Bosh::Blobstore::Client.stub(:safe_create).and_return(bad_client)
 
-    bad_client.stub(:create).and_raise(Bosh::Blobstore::BlobstoreError.new("no mood to upload today"))
+    bad_client.stub(:create).and_raise(
+      Bosh::Blobstore::BlobstoreError.new("no mood to upload today"))
 
     lambda {
       process(:agent)
-    }.should raise_error(Bosh::Agent::MessageHandlerError, "unable to upload logs to blobstore: no mood to upload today")
+    }.should raise_error(
+      Bosh::Agent::MessageHandlerError,
+      "unable to upload logs to blobstore: no mood to upload today",
+    )
   end
 
   it "raises an error if there is a problem packing logs" do
@@ -137,7 +141,8 @@ describe Bosh::Agent::Message::FetchLogs do
 
     bad_aggregator = Bosh::Agent::FileAggregator.new
     bad_aggregator.stub(:add_file).and_return(true)
-    bad_aggregator.stub(:generate_tarball).and_raise(Bosh::Agent::FileAggregator::PackagingError.new("come back later"))
+    bad_aggregator.stub(:generate_tarball).and_raise(
+      Bosh::Agent::FileAggregator::PackagingError.new("come back later"))
 
     handler = make_handler(:agent)
     handler.aggregator = bad_aggregator
@@ -231,5 +236,4 @@ describe Bosh::Agent::Message::FetchLogs do
       File.exists?("log3.log").should be_true
     end
   end
-
 end
