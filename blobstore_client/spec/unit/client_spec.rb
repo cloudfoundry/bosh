@@ -88,7 +88,7 @@ module Bosh::Blobstore
         it 'makes retryable object with default options' do
           Bosh::Retryable
             .should_receive(:new)
-            .with(tries: 5, sleep: 0.5, on: [BlobstoreError])
+            .with(tries: 3, sleep: 0.5, on: [BlobstoreError])
             .and_call_original
           described_class.safe_create('simple', {})
         end

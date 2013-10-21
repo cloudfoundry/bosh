@@ -15,8 +15,7 @@ module Bosh
       def self.safe_create(provider, options = {})
         wrapped_client = create(provider, options)
         sha1_client    = Sha1VerifiableBlobstoreClient.new(wrapped_client)
-
-        retryable = Retryable.new(tries: 5, sleep: 0.5, on: [BlobstoreError])
+        retryable      = Retryable.new(tries: 3, sleep: 0.5, on: [BlobstoreError])
         RetryableBlobstoreClient.new(sha1_client, retryable)
       end
 
