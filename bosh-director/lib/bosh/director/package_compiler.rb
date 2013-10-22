@@ -46,19 +46,18 @@ module Bosh::Director
     # in the current deployment and kicks off compilation.
     # @return [void]
     def compile
-      @logger.info("Generating a list of compile tasks")
+      @logger.info('Generating a list of compile tasks')
       prepare_tasks
 
       @compile_tasks.each_value do |task|
         if task.ready_to_compile?
-          @logger.info("Package `#{task.package.desc}' is ready to be " +
-                       "compiled for stemcell `#{task.stemcell.desc}'")
+          @logger.info("Package `#{task.package.desc}' is ready to be compiled for stemcell `#{task.stemcell.desc}'")
           @ready_tasks << task
         end
       end
 
       if @ready_tasks.empty?
-        @logger.info("All packages are already compiled")
+        @logger.info('All packages are already compiled')
       else
         compile_packages
         director_job_checkpoint
@@ -83,27 +82,27 @@ module Bosh::Director
                                             package.sha1, package.name,
                                             "#{package.version}.#{build}",
                                             task.dependency_spec)
-            task_result = agent_task["result"]
+            task_result = agent_task['result']
           end
 
           compiled_package = Models::CompiledPackage.create do |p|
             p.package = package
             p.stemcell = stemcell
-            p.sha1 = task_result["sha1"]
+            p.sha1 = task_result['sha1']
             p.build = build
-            p.blobstore_id = task_result["blobstore_id"]
+            p.blobstore_id = task_result['blobstore_id']
             p.dependency_key = task.dependency_key
           end
 
           if Config.use_compiled_package_cache?
             if BlobUtil.exists_in_global_cache?(package, task.cache_key)
-              @logger.info("Already exists in global package cache, skipping upload")
+              @logger.info('Already exists in global package cache, skipping upload')
             else
-              @logger.info("Uploading to global package cache")
+              @logger.info('Uploading to global package cache')
               BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
             end
           else
-            @logger.info("Global blobstore not configured, skipping upload")
+            @logger.info('Global blobstore not configured, skipping upload')
           end
 
           @counter_mutex.synchronize { @compilations_performed += 1 }
@@ -125,8 +124,7 @@ module Bosh::Director
       if @deployment_plan.compilation.reuse_compilation_vms
         vm_data = @vm_reuser.get_vm(stemcell)
         if vm_data
-          @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for " +
-                       "stemcell `#{stemcell.desc}'")
+          @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for stemcell `#{stemcell.desc}'")
           begin
             yield vm_data
           ensure
@@ -138,8 +136,7 @@ module Bosh::Director
         if @vm_reuser.get_num_vms(stemcell) >=
           @deployment_plan.compilation.workers
           raise PackageCompilationNotEnoughWorkersForReuse,
-                "There should never be more VMs for a stemcell than the " +
-                "number of workers in reuse_compilation_vms mode"
+                'There should never be more VMs for a stemcell than the number of workers in reuse_compilation_vms mode'
         end
       end
 
@@ -182,15 +179,14 @@ module Bosh::Director
     private
 
     def prepare_tasks
-      @event_log.begin_stage("Preparing package compilation")
+      @event_log.begin_stage('Preparing package compilation')
 
-      @event_log.track("Finding packages to compile") do
+      @event_log.track('Finding packages to compile') do
         @deployment_plan.jobs.each do |job|
           job_desc = "#{job.release.name}/#{job.name}"
           stemcell = job.resource_pool.stemcell
 
-          @logger.info("Job `#{job_desc}' needs to run " +
-                         "on stemcell `#{stemcell.model.desc}'")
+          @logger.info("Job `#{job_desc}' needs to run on stemcell `#{stemcell.model.desc}'")
 
           job.templates.each do |template|
             template.package_models.each do |package|
@@ -206,8 +202,7 @@ module Bosh::Director
       # has no cycles: this is being enforced on release upload.
       # Other than that it's a vanilla DFS.
 
-      @logger.info("Checking whether package `#{package.desc}' needs " +
-                     "to be compiled for stemcell `#{stemcell.desc}'")
+      @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.desc}'")
       task_key = [package.id, stemcell.id]
       task = @compile_tasks[task_key]
 
@@ -229,8 +224,7 @@ module Bosh::Director
 
       @logger.info("Processing package `#{package.desc}' dependencies")
       dependencies.each do |dependency|
-        @logger.info("Package `#{package.desc}' depends on " +
-                       "package `#{dependency.desc}'")
+        @logger.info("Package `#{package.desc}' depends on package `#{dependency.desc}'")
         dependency_task = generate_compile_task(job, dependency, stemcell)
         task.add_dependency(dependency_task)
       end
@@ -257,10 +251,9 @@ module Bosh::Director
         @network.reserve(reservation)
       end
 
-      if !reservation.reserved?
+      unless reservation.reserved?
         raise PackageCompilationNetworkNotReserved,
-              "Could not reserve network for package compilation: " +
-                reservation.error.to_s
+              "Could not reserve network for package compilation: #{reservation.error}"
       end
 
       reservation
@@ -273,7 +266,7 @@ module Bosh::Director
     end
 
     def compile_packages
-      @event_log.begin_stage("Compiling packages", compilation_count)
+      @event_log.begin_stage('Compiling packages', compilation_count)
       number_of_workers = @deployment_plan.compilation.workers
 
       begin
@@ -310,12 +303,10 @@ module Bosh::Director
 
     def enqueue_unblocked_tasks(task)
       @tasks_mutex.synchronize do
-        @logger.info("Unblocking dependents of " +
-                       "`#{task.package.desc}` for `#{task.stemcell.desc}`")
+        @logger.info("Unblocking dependents of `#{task.package.desc}` for `#{task.stemcell.desc}`")
         task.dependent_tasks.each do |dep_task|
           if dep_task.ready_to_compile?
-            @logger.info("Package `#{dep_task.package.desc}' now ready to be " +
-                           "compiled for `#{dep_task.stemcell.desc}'")
+            @logger.info("Package `#{dep_task.package.desc}' now ready to be compiled for `#{dep_task.stemcell.desc}'")
             @ready_tasks << dep_task
           end
         end
@@ -351,9 +342,9 @@ module Bosh::Director
 
     def configure_vm(vm, agent, network_settings)
       state = {
-        "deployment" => @deployment_plan.name,
-        "resource_pool" => "package_compiler",
-        "networks" => network_settings
+        'deployment' => @deployment_plan.name,
+        'resource_pool' => 'package_compiler',
+        'networks' => network_settings
       }
 
       vm.update(:apply_spec => state)
