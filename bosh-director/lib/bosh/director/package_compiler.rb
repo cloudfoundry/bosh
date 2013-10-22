@@ -153,62 +153,6 @@ module Bosh::Director
       end
     end
 
-    def compile_packages
-      @event_log.begin_stage("Compiling packages", compilation_count)
-      number_of_workers = @deployment_plan.compilation.workers
-
-      begin
-        ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-          loop do
-            # process as many tasks without waiting
-            loop do
-              break if director_job_cancelled?
-              task = @tasks_mutex.synchronize { @ready_tasks.pop }
-              break if task.nil?
-
-              pool.process { process_task(task) }
-            end
-
-            break if !pool.working? && (director_job_cancelled? || @ready_tasks.empty?)
-            sleep(0.1)
-          end
-        end
-      ensure
-        # Delete all of the VMs if we were reusing compilation VMs. This can't
-        # happen until everything was done compiling.
-        if @deployment_plan.compilation.reuse_compilation_vms
-          # Using a new ThreadPool instead of reusing the previous one,
-          # as if there's a failed compilation, the thread pool will stop
-          # processing any new thread.
-          ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-            @vm_reuser.each do |vm_data|
-              pool.process { tear_down_vm(vm_data) }
-            end
-          end
-        end
-      end
-    end
-
-    def process_task(task)
-      package_desc = task.package.desc
-      stemcell_desc = task.stemcell.desc
-      task_desc = "package `#{package_desc}' for stemcell `#{stemcell_desc}'"
-
-      with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
-        if director_job_cancelled?
-          @logger.info("Cancelled compiling #{task_desc}")
-        else
-          @event_log.track(package_desc) do
-            @logger.info("Compiling #{task_desc}")
-            compile_package(task)
-            @logger.info("Finished compiling #{task_desc}")
-            enqueue_unblocked_tasks(task)
-          end
-        end
-      end
-    end
-    private :compile_packages, :process_task
-
     def compile_package(task)
       package = task.package
       stemcell = task.stemcell
@@ -351,6 +295,61 @@ module Bosh::Director
     end
 
     private
+
+    def compile_packages
+      @event_log.begin_stage("Compiling packages", compilation_count)
+      number_of_workers = @deployment_plan.compilation.workers
+
+      begin
+        ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
+          loop do
+            # process as many tasks without waiting
+            loop do
+              break if director_job_cancelled?
+              task = @tasks_mutex.synchronize { @ready_tasks.pop }
+              break if task.nil?
+
+              pool.process { process_task(task) }
+            end
+
+            break if !pool.working? && (director_job_cancelled? || @ready_tasks.empty?)
+            sleep(0.1)
+          end
+        end
+      ensure
+        # Delete all of the VMs if we were reusing compilation VMs. This can't
+        # happen until everything was done compiling.
+        if @deployment_plan.compilation.reuse_compilation_vms
+          # Using a new ThreadPool instead of reusing the previous one,
+          # as if there's a failed compilation, the thread pool will stop
+          # processing any new thread.
+          ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
+            @vm_reuser.each do |vm_data|
+              pool.process { tear_down_vm(vm_data) }
+            end
+          end
+        end
+      end
+    end
+
+    def process_task(task)
+      package_desc = task.package.desc
+      stemcell_desc = task.stemcell.desc
+      task_desc = "package `#{package_desc}' for stemcell `#{stemcell_desc}'"
+
+      with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
+        if director_job_cancelled?
+          @logger.info("Cancelled compiling #{task_desc}")
+        else
+          @event_log.track(package_desc) do
+            @logger.info("Compiling #{task_desc}")
+            compile_package(task)
+            @logger.info("Finished compiling #{task_desc}")
+            enqueue_unblocked_tasks(task)
+          end
+        end
+      end
+    end
 
     def director_job_cancelled?
       @director_job && @director_job.task_cancelled?
