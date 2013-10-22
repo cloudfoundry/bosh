@@ -585,12 +585,7 @@ module Bosh::Director
         end
       end
 
-      # JMS and MB: We don't know why this code exists. According to JP it shouldn't. We want to remove it.
-      # To get comforable with that idea, we log something we can look for in production.
-      #
-      # GET /resources/deadbeef
       get '/resources/:id' do
-        @logger.warn('Something is proxying a blob through the director. Find out why before we remove this method. ZAUGYZ')
         tmp_file = @resource_manager.get_resource_path(params[:id])
         send_disposable_file(tmp_file, :type => 'application/x-gzip')
       end
