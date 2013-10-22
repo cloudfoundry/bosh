@@ -61,8 +61,15 @@ module Bosh::Director
       {"state" => "done", "value" => msg, "agent_task_id" => nil}
     end
 
-    [:apply, :compile_package, :drain, :fetch_logs, :migrate_disk, :mount_disk,
-     :stop, :unmount_disk].each do |method|
+    [ :apply,
+      :compile_package,
+      :drain,
+      :fetch_logs,
+      :migrate_disk,
+      :mount_disk,
+      :stop,
+      :unmount_disk,
+    ].each do |method|
       define_method (method) do |*args|
         task = AgentClient.convert_old_message_to_new(super(*args))
         while task["state"] == "running"
@@ -73,6 +80,5 @@ module Bosh::Director
         task["value"]
       end
     end
-
   end
 end
