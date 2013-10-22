@@ -65,94 +65,6 @@ module Bosh::Director
       end
     end
 
-    # Generates all compilation tasks required to compile all packages
-    # in the jobs defined by deployment plan
-    # @return [void]
-    def prepare_tasks
-      @event_log.begin_stage("Preparing package compilation")
-
-      @event_log.track("Finding packages to compile") do
-        @deployment_plan.jobs.each do |job|
-          job_desc = "#{job.release.name}/#{job.name}"
-          stemcell = job.resource_pool.stemcell
-
-          @logger.info("Job `#{job_desc}' needs to run " +
-                       "on stemcell `#{stemcell.model.desc}'")
-
-          job.templates.each do |template|
-            template.package_models.each do |package|
-              generate_compile_task(job, package, stemcell.model)
-            end
-          end
-        end
-      end
-    end
-
-    # Generates compilation task for a given (package, stemcell) tuple
-    # @param [DeploymentPlan::Job] job Job spec
-    # @param [Models::Package] package Package model
-    # @param [Models::Stemcell] stemcell Stemcell model
-    # @return [CompileTask] Compilation task for this package/stemcell tuple
-    def generate_compile_task(job, package, stemcell)
-      # Our assumption here is that package dependency graph
-      # has no cycles: this is being enforced on release upload.
-      # Other than that it's a vanilla DFS.
-
-      @logger.info("Checking whether package `#{package.desc}' needs " +
-                   "to be compiled for stemcell `#{stemcell.desc}'")
-      task_key = [package.id, stemcell.id]
-      task = @compile_tasks[task_key]
-
-      if task # We already visited this task and its dependencies
-        task.add_job(job) # But we still need to register this job with task
-        return task
-      end
-
-      dependencies = package.dependency_set.map do |name|
-        job.release.get_package_model_by_name(name)
-      end
-
-      task = CompileTask.new(package, stemcell, dependencies, job)
-
-      compiled_package = task.find_compiled_package(@logger, @event_log)
-      if compiled_package
-        task.use_compiled_package(compiled_package)
-      end
-
-      @logger.info("Processing package `#{package.desc}' dependencies")
-      dependencies.each do |dependency|
-        @logger.info("Package `#{package.desc}' depends on " +
-                     "package `#{dependency.desc}'")
-        dependency_task = generate_compile_task(job, dependency, stemcell)
-        task.add_dependency(dependency_task)
-      end
-
-      @compile_tasks[task_key] = task
-      task
-    end
-
-    def reserve_network
-      reservation = NetworkReservation.new_dynamic
-
-      @network_mutex.synchronize do
-        @network.reserve(reservation)
-      end
-
-      if !reservation.reserved?
-        raise PackageCompilationNetworkNotReserved,
-          "Could not reserve network for package compilation: " +
-          reservation.error.to_s
-      end
-
-      reservation
-    end
-
-    def release_network(reservation)
-      @network_mutex.synchronize do
-        @network.release(reservation)
-      end
-    end
-
     def compile_package(task)
       package = task.package
       stemcell = task.stemcell
@@ -267,8 +179,66 @@ module Bosh::Director
       end
     end
 
-    # Tears down a VM and releases the network reservations.
-    # @param [VmData] vm_data The VmData object for the VM to tear down.
+    private
+
+    def prepare_tasks
+      @event_log.begin_stage("Preparing package compilation")
+
+      @event_log.track("Finding packages to compile") do
+        @deployment_plan.jobs.each do |job|
+          job_desc = "#{job.release.name}/#{job.name}"
+          stemcell = job.resource_pool.stemcell
+
+          @logger.info("Job `#{job_desc}' needs to run " +
+                         "on stemcell `#{stemcell.model.desc}'")
+
+          job.templates.each do |template|
+            template.package_models.each do |package|
+              generate_compile_task(job, package, stemcell.model)
+            end
+          end
+        end
+      end
+    end
+
+    def generate_compile_task(job, package, stemcell)
+      # Our assumption here is that package dependency graph
+      # has no cycles: this is being enforced on release upload.
+      # Other than that it's a vanilla DFS.
+
+      @logger.info("Checking whether package `#{package.desc}' needs " +
+                     "to be compiled for stemcell `#{stemcell.desc}'")
+      task_key = [package.id, stemcell.id]
+      task = @compile_tasks[task_key]
+
+      if task # We already visited this task and its dependencies
+        task.add_job(job) # But we still need to register this job with task
+        return task
+      end
+
+      dependencies = package.dependency_set.map do |name|
+        job.release.get_package_model_by_name(name)
+      end
+
+      task = CompileTask.new(package, stemcell, dependencies, job)
+
+      compiled_package = task.find_compiled_package(@logger, @event_log)
+      if compiled_package
+        task.use_compiled_package(compiled_package)
+      end
+
+      @logger.info("Processing package `#{package.desc}' dependencies")
+      dependencies.each do |dependency|
+        @logger.info("Package `#{package.desc}' depends on " +
+                       "package `#{dependency.desc}'")
+        dependency_task = generate_compile_task(job, dependency, stemcell)
+        task.add_dependency(dependency_task)
+      end
+
+      @compile_tasks[task_key] = task
+      task
+    end
+
     def tear_down_vm(vm_data)
       vm = vm_data.vm
       if vm.exists?
@@ -280,7 +250,27 @@ module Bosh::Director
       end
     end
 
-    private
+    def reserve_network
+      reservation = NetworkReservation.new_dynamic
+
+      @network_mutex.synchronize do
+        @network.reserve(reservation)
+      end
+
+      if !reservation.reserved?
+        raise PackageCompilationNetworkNotReserved,
+              "Could not reserve network for package compilation: " +
+                reservation.error.to_s
+      end
+
+      reservation
+    end
+
+    def release_network(reservation)
+      @network_mutex.synchronize do
+        @network.release(reservation)
+      end
+    end
 
     def compile_packages
       @event_log.begin_stage("Compiling packages", compilation_count)
