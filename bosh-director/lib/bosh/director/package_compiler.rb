@@ -201,20 +201,6 @@ module Bosh::Director
       end
     end
 
-    def enqueue_unblocked_tasks(task)
-      @tasks_mutex.synchronize do
-        @logger.info("Unblocking dependents of " +
-                     "`#{task.package.desc}` for `#{task.stemcell.desc}`")
-        task.dependent_tasks.each do |dep_task|
-          if dep_task.ready_to_compile?
-            @logger.info("Package `#{dep_task.package.desc}' now ready to be " +
-                         "compiled for `#{dep_task.stemcell.desc}'")
-            @ready_tasks << dep_task
-          end
-        end
-      end
-    end
-
     # This method will create a VM for each stemcell in the stemcells array
     # passed in.  The VMs are yielded and their destruction is ensured.
     # @param [Models::Stemcell] stemcell The stemcells that need to have
@@ -327,6 +313,20 @@ module Bosh::Director
             @vm_reuser.each do |vm_data|
               pool.process { tear_down_vm(vm_data) }
             end
+          end
+        end
+      end
+    end
+
+    def enqueue_unblocked_tasks(task)
+      @tasks_mutex.synchronize do
+        @logger.info("Unblocking dependents of " +
+                       "`#{task.package.desc}` for `#{task.stemcell.desc}`")
+        task.dependent_tasks.each do |dep_task|
+          if dep_task.ready_to_compile?
+            @logger.info("Package `#{dep_task.package.desc}' now ready to be " +
+                           "compiled for `#{dep_task.stemcell.desc}'")
+            @ready_tasks << dep_task
           end
         end
       end
