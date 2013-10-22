@@ -43,8 +43,6 @@ module Bosh
           deployer.update(stemcell_id, stemcell_archive)
         end
 
-        let(:stemcell_id) { 'bosh-instance-1.0.tgz' }
-
         before do # deployed vm
           deployer.state.vm_cid = 'VM-CID-UPDATE'
           deployer.state.stemcell_cid = 'SC-CID-UPDATE'
@@ -58,7 +56,6 @@ module Bosh
         end
 
         let(:apply_spec) { YAML.load_file(spec_asset('apply_spec.yml')) }
-        before { Specification.stub(load_apply_spec: apply_spec) }
 
         before do # ??
           deployer.stub(:wait_until_agent_ready)
@@ -70,14 +67,16 @@ module Bosh
         before { agent.stub(:run_task) }
 
         # rubocop:disable MethodLength
-        def self.it_updates_deployed_instance
+        def self.it_updates_deployed_instance(stemcell_cid, options = {})
+          will_create_stemcell = options[:will_create_stemcell]
+
           it 'updates deployed instance' do
             agent.should_receive(:run_task).with(:stop)
             agent.should_receive(:run_task).with(:unmount_disk, 'fake-disk-cid').and_return({})
             cloud.should_receive(:detach_disk).with('VM-CID-UPDATE', 'fake-disk-cid')
             cloud.should_receive(:delete_vm).with('VM-CID-UPDATE')
             cloud.should_receive(:delete_stemcell).with('SC-CID-UPDATE')
-            cloud.should_receive(:create_stemcell).and_return('SC-CID')
+            cloud.should_receive(:create_stemcell).and_return('SC-CID') if will_create_stemcell
             cloud.should_receive(:create_vm).and_return('VM-CID')
             cloud.should_receive(:attach_disk).with('VM-CID', 'fake-disk-cid')
             agent.should_receive(:run_task).with(:mount_disk, 'fake-disk-cid').and_return({})
@@ -89,21 +88,40 @@ module Bosh
           end
 
           it 'saves deployed vm, stemcell cids' do
-            cloud.stub(create_vm: 'VM-CID', create_stemcell: 'SC-CID')
+            cloud.stub(create_vm: 'VM-CID')
             perform
-            expect(deployer.state.stemcell_cid).to eq('SC-CID')
+            expect(deployer.state.stemcell_cid).to eq(stemcell_cid)
             expect(deployer.state.vm_cid).to eq('VM-CID')
             expect(deployer.state.disk_cid).to eq('fake-disk-cid')
             expect(load_deployment).to eq(deployer.state.values)
           end
         end
+
+        def self.it_does_not_update_deployed_instance
+          it 'does not communicate with an agent of deployed instance' do
+            agent.should_not_receive(:run_task)
+            perform
+          end
+
+          it 'does not use cpi actions to update deployed instance' do
+            %w(
+              detach_disk
+              delete_vm
+              delete_stemcell
+              create_stemcell
+              create_vm
+              attach_disk
+            ).each { |a| cloud.should_not_receive(a) }
+            perform
+          end
+        end
         # rubocop:enable MethodLength
 
-        def self.it_updates_stemcell_sha1
+        def self.it_updates_stemcell_sha1(sha1)
           context 'when the director becomes ready' do
             it 'saves deployed stemcell sha1' do
               deployer.should_receive(:wait_until_director_ready).and_return(nil)
-              expect { perform }.to change { deployer.state.stemcell_sha1 }.to('fake-stemcell-sha1')
+              expect { perform }.to change { deployer.state.stemcell_sha1 }.to(sha1)
             end
           end
 
@@ -118,19 +136,19 @@ module Bosh
           end
         end
 
-        def self.it_keeps_stemcell_sha1
+        def self.it_keeps_stemcell_sha1(sha1)
           it 'keeps same stemcell sha1 which is same as before' do
             expect { perform }.to_not change {
               deployer.state.stemcell_sha1
-            }.from('fake-stemcell-sha1')
+            }.from(sha1)
           end
         end
 
-        def self.it_updates_config_sha1
+        def self.it_updates_config_sha1(sha1)
           context 'when the director becomes ready' do
             it 'saves deployed config sha1' do
               deployer.should_receive(:wait_until_director_ready).and_return(nil)
-              expect { perform }.to change { deployer.state.config_sha1 }.to('fake-config-sha1')
+              expect { perform }.to change { deployer.state.config_sha1 }.to(sha1)
             end
           end
 
@@ -145,89 +163,112 @@ module Bosh
           end
         end
 
-        def self.it_keeps_config_sha1
+        def self.it_keeps_config_sha1(sha1)
           it 'keeps same config sha1 which is same as before' do
             expect { perform }.to_not change {
               deployer.state.config_sha1
-            }.from('fake-config-sha1')
+            }.from(sha1)
           end
         end
 
-        context 'when stemcell archive is provided' do
+        context 'when stemcell archive is provided' +
+                '(stemcell archives include sha1 in the stemcell.MF)' do
+          before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
           let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
-          before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
-          before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
+
+          before { cloud.stub(create_stemcell: 'fake-stemcell-cid') }
+          let(:stemcell_id) { 'bosh-instance-1.0.tgz' }
+
+          before { Specification.stub(load_apply_spec: apply_spec) }
 
           context 'with the same stemcell and same config' do
             before { deployer.state.stemcell_sha1 = 'fake-stemcell-sha1' }
             before { deployer.state.config_sha1 = 'fake-config-sha1' }
-
-            it 'does not communicate with an agent of deployed instance' do
-              agent.should_not_receive(:run_task)
-              perform
-            end
-
-            it 'does not use cpi actions to update deployed instance' do
-              %w(
-                detach_disk
-                delete_vm
-                delete_stemcell
-                create_stemcell
-                create_vm
-                attach_disk
-              ).each { |a| cloud.should_not_receive(a) }
-              perform
-            end
-
-            it_keeps_stemcell_sha1
-            it_keeps_config_sha1
+            it_does_not_update_deployed_instance
+            it_keeps_stemcell_sha1 'fake-stemcell-sha1'
+            it_keeps_config_sha1 'fake-config-sha1'
           end
 
           context 'with a different stemcell (determined via sha1 difference) and same config' do
             before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
             before { deployer.state.config_sha1 = 'fake-config-sha1' }
-            it_updates_deployed_instance
-            it_updates_stemcell_sha1
-            it_keeps_config_sha1
+            it_updates_deployed_instance 'fake-stemcell-cid', will_create_stemcell: true
+            it_updates_stemcell_sha1 'fake-stemcell-sha1'
+            it_keeps_config_sha1 'fake-config-sha1'
           end
 
           context 'with a same stemcell and different config' do
             before { deployer.state.stemcell_sha1 = 'fake-stemcell-sha1' }
             before { deployer.state.config_sha1 = 'fake-different-config-sha1' }
-            it_updates_deployed_instance
-            it_keeps_stemcell_sha1
-            it_updates_config_sha1
+            it_updates_deployed_instance 'fake-stemcell-cid', will_create_stemcell: true
+            it_keeps_stemcell_sha1 'fake-stemcell-sha1'
+            it_updates_config_sha1 'fake-config-sha1'
           end
 
           context 'with a different stemcell and different config' do
             before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
             before { deployer.state.config_sha1 = 'fake-different-config-sha1' }
-            it_updates_deployed_instance
-            it_updates_stemcell_sha1
-            it_updates_config_sha1
+            it_updates_deployed_instance 'fake-stemcell-cid', will_create_stemcell: true
+            it_updates_stemcell_sha1 'fake-stemcell-sha1'
+            it_updates_config_sha1 'fake-config-sha1'
           end
 
           context "when previously used stemcell's sha1 and config's sha were not recorded " +
                   '(before quick update feature was introduced)' do
             before { deployer.state.stemcell_sha1 = nil }
             before { deployer.state.config_sha1 = nil }
-            it_updates_deployed_instance
-            it_updates_stemcell_sha1
-            it_updates_config_sha1
+            it_updates_deployed_instance 'fake-stemcell-cid', will_create_stemcell: true
+            it_updates_stemcell_sha1 'fake-stemcell-sha1'
+            it_updates_config_sha1 'fake-config-sha1'
           end
         end
 
-        context 'when stemcell archive is not provided' do
+        context 'when stemcell archive is not provided ' +
+                '(e.g. only ami id is given instead of tgz file)' do
           let(:stemcell_archive) { nil }
+          let(:stemcell_id) { 'fake-ami-id' }
 
-          it_updates_deployed_instance
-          it_updates_config_sha1
+          before { agent.stub(release_apply_spec: apply_spec) }
 
-          it 'saves deployed stemcell sha1 to nil' +
-             'because sha1 can only be obtained from full stemcell archive' do
-            deployer.state.stemcell_sha1 = 'fake-previous-stemcell-sha1'
-            perform
-            expect(deployer.state.stemcell_sha1).to be_nil
+          context 'with the same stemcell and same config' do
+            before { deployer.state.stemcell_sha1 = 'fake-ami-id' }
+            before { deployer.state.config_sha1 = 'fake-config-sha1' }
+            it_does_not_update_deployed_instance
+            it_keeps_stemcell_sha1 'fake-ami-id'
+            it_keeps_config_sha1 'fake-config-sha1'
+          end
+
+          context 'with a different stemcell (i.e. different stemcell id) and same config' do
+            before { deployer.state.stemcell_sha1 = 'fake-different-ami-id' }
+            before { deployer.state.config_sha1 = 'fake-config-sha1' }
+            it_updates_deployed_instance 'fake-ami-id', will_create_stemcell: false
+            it_updates_stemcell_sha1 'fake-ami-id'
+            it_keeps_config_sha1 'fake-config-sha1'
+          end
+
+          context 'with a same stemcell and different config' do
+            before { deployer.state.stemcell_sha1 = 'fake-ami-id' }
+            before { deployer.state.config_sha1 = 'fake-different-config-sha1' }
+            it_updates_deployed_instance 'fake-ami-id', will_create_stemcell: false
+            it_keeps_stemcell_sha1 'fake-ami-id'
+            it_updates_config_sha1 'fake-config-sha1'
+          end
+
+          context 'with a different stemcell and different config' do
+            before { deployer.state.stemcell_sha1 = 'fake-different-ami-id' }
+            before { deployer.state.config_sha1 = 'fake-different-config-sha1' }
+            it_updates_deployed_instance 'fake-ami-id', will_create_stemcell: false
+            it_updates_stemcell_sha1 'fake-ami-id'
+            it_updates_config_sha1 'fake-config-sha1'
+          end
+
+          context "when previously used stemcell and config's sha were not recorded " +
+                  '(before quick update feature was introduced)' do
+            before { deployer.state.stemcell_sha1 = nil }
+            before { deployer.state.config_sha1 = nil }
+            it_updates_deployed_instance 'fake-ami-id', will_create_stemcell: false
+            it_updates_stemcell_sha1 'fake-ami-id'
+            it_updates_config_sha1 'fake-config-sha1'
           end
         end
       end
@@ -250,7 +291,7 @@ module Bosh
           cloud.stub(create_stemcell: 'SC-CID-CREATE')
           cloud.stub(create_vm: 'VM-CID-CREATE')
           cloud.stub(create_disk: 'DISK-CID-CREATE')
-          cloud.stub(:attach_disk) # .with('VM-CID-CREATE', 'DISK-CID-CREATE')
+          cloud.stub(:attach_disk)
 
           Bosh::Common.stub(:retryable).and_yield(1, 'foo')
 

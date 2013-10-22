@@ -156,7 +156,7 @@ module Bosh::Deployer
 
       # Capture stemcell and config sha1 here (end of the deployment)
       # to avoid locking deployer out if this deployment does not succeed
-      save_fingerprints(stemcell_archive)
+      save_fingerprints(stemcell_tgz, stemcell_archive)
     end
     # rubocop:enable MethodLength
 
@@ -175,7 +175,7 @@ module Bosh::Deployer
     end
 
     def update(stemcell_tgz, stemcell_archive)
-      result, message = has_pending_changes?(state, stemcell_archive)
+      result, message = has_pending_changes?(state, stemcell_tgz, stemcell_archive)
       @ui_messager.info(message)
 
       return unless result
@@ -542,15 +542,31 @@ module Bosh::Deployer
       end
     end
 
-    def has_pending_changes?(state, stemcell_archive)
-      return [true,  :update_stemcell_unknown] unless stemcell_archive
-      return [true,  :update_stemcell_changed] if state.stemcell_sha1 != stemcell_archive.sha1
-      return [true,  :update_config_changed]   if state.config_sha1   != @config_sha1
+    def has_pending_changes?(state, stemcell_tgz, stemcell_archive)
+      # If stemcell_archive is not provided
+      # it means that there is no file on the file system
+      # but rather we have a unique stemcell identifier (e.g. ami id)
+      if stemcell_archive
+        if state.stemcell_sha1 != stemcell_archive.sha1
+          return [true, :update_stemcell_changed]
+        end
+      elsif stemcell_tgz
+        if state.stemcell_sha1 != stemcell_tgz
+          return [true, :update_stemcell_changed]
+        end
+      else
+        return [true, :update_stemcell_unknown]
+      end
+
+      if state.config_sha1 != @config_sha1
+        return [true, :update_config_changed]
+      end
+
       [false, :update_no_changes]
     end
 
-    def save_fingerprints(stemcell_archive)
-      state.stemcell_sha1 = stemcell_archive ? stemcell_archive.sha1 : nil
+    def save_fingerprints(stemcell_tgz, stemcell_archive)
+      state.stemcell_sha1 = stemcell_archive ? stemcell_archive.sha1 : stemcell_tgz
       state.config_sha1 = @config_sha1
       save_state
     end
