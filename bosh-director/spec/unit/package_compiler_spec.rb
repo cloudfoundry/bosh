@@ -449,17 +449,13 @@ module Bosh::Director
       task = CompileTask.new(package, stemcell, [])
 
       compiler = PackageCompiler.new(@plan)
-      callback = nil
-      compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id) do |&block|
-        callback = block
-      end
+      fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage')
+      task.stub(:find_compiled_package).and_return(fake_compiled_package)
+
+      compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
       compiler.compile_package(task)
 
-      compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: '[]')
-
-      callback.call
-
-      task.compiled_package.should == compiled_package
+      task.compiled_package.should == fake_compiled_package
     end
 
     describe 'the global blobstore' do
@@ -476,10 +472,7 @@ module Bosh::Director
       end
 
       it 'should check if compiled package is in global blobstore' do
-        callback = nil
-        compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id) do |&block|
-          callback = block
-        end
+        compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
         BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
         task.stub(:find_compiled_package)
@@ -488,14 +481,10 @@ module Bosh::Director
         Models::CompiledPackage.stub(:create)
 
         compiler.compile_package(task)
-        callback.call
       end
 
       it 'should save compiled package to global cache if not exists' do
-        callback = nil
-        compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id) do |&block|
-          callback = block
-        end
+        compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
         task.stub(:find_compiled_package)
         compiled_package = double('compiled package', package: package, stemcell: stemcell, blobstore_id: 'some blobstore id')
@@ -505,16 +494,12 @@ module Bosh::Director
         Models::CompiledPackage.stub(:create).and_return(compiled_package)
 
         compiler.compile_package(task)
-        callback.call
       end
 
       it 'only checks the global cache if Config.use_compiled_package_cache? is set' do
         Config.stub(:use_compiled_package_cache?).and_return(false)
 
-        callback = nil
-        compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id) do |&block|
-          callback = block
-        end
+        compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
         BlobUtil.should_not_receive(:exists_in_global_cache?)
         BlobUtil.should_not_receive(:save_to_global_cache)
@@ -522,7 +507,6 @@ module Bosh::Director
         Models::CompiledPackage.stub(:create)
 
         compiler.compile_package(task)
-        callback.call
       end
     end
 
