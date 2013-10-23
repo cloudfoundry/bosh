@@ -17,7 +17,7 @@ case $1 in
     echo $$ > $PIDFILE
 
     chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/registry/bin/bosh_registry_migrate \
+      /var/vcap/packages/registry/bin/bosh-registry-migrate \
       -c /var/vcap/jobs/registry/config/registry.yml \
       >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
 
@@ -27,7 +27,7 @@ case $1 in
     fi
 
     exec chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/registry/bin/bosh_registry \
+      /var/vcap/packages/registry/bin/bosh-registry \
       -c /var/vcap/jobs/registry/config/registry.yml \
       >>$LOG_DIR/registry.stdout.log 2>>$LOG_DIR/registry.stderr.log
     ;;

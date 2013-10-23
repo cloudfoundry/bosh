@@ -44,6 +44,12 @@ module Bosh::Blobstore
       HTTPClient.stub(:new).and_return(@http_client)
     end
 
+    describe 'interface' do
+      subject { SwiftBlobstoreClient.new(options) }
+      let(:options) { swift_options('test-container', 'hp', true) }
+      it_implements_base_client_interface
+    end
+
     describe 'on HP Cloud Storage' do
       let(:data) { 'some content' }
       let(:directories) { double('directories') }

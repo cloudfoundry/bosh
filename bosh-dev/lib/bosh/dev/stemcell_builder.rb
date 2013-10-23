@@ -14,6 +14,7 @@ module Bosh::Dev
     end
 
     def initialize(env, build, infrastructure_name, operating_system_name)
+      @build_number = build.number
       @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
         env,
         infrastructure_name:   infrastructure_name,
@@ -24,7 +25,7 @@ module Bosh::Dev
     end
 
     def build_stemcell
-      gem_components = GemComponents.new
+      gem_components = GemComponents.new(@build_number)
       gem_components.build_release_gems
 
       @stemcell_path = stemcell_builder_command.build

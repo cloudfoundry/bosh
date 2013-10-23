@@ -27,7 +27,7 @@ case $1 in
     COMPONENT=scheduler erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/scheduler.yml
 
     exec chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/director/bin/director_scheduler \
+      /var/vcap/packages/director/bin/bosh-director-scheduler \
       -c /var/vcap/jobs/director/config/scheduler.yml \
       >>$LOG_DIR/scheduler.stdout.log \
       2>>$LOG_DIR/scheduler.stderr.log

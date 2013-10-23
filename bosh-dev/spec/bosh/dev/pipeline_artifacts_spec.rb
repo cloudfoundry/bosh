@@ -1,11 +1,11 @@
 require 'spec_helper'
-require 'bosh/dev/pipeline_artifacts'
+require 'bosh/dev/stemcell_artifacts'
 
 module Bosh::Dev
-  describe PipelineArtifacts do
+  describe StemcellArtifacts do
     describe '.all' do
       it 'returns pipepline artifacts with all infrastructures for ubuntu and vsphere centos' do
-        artifacts = instance_double('Bosh::Dev::PipelineArtifacts')
+        artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
 
         described_class.should_receive(:new) do |version, matrix|
           expect(version).to eq('version')

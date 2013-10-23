@@ -1,23 +1,21 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require 'spec_helper'
 
 describe Bosh::Deployer do
   def setup(config_yml)
     @stemcell_tgz = ENV['BOSH_STEMCELL_TGZ']
     @dir = ENV['BOSH_DEPLOYER_DIR'] || Dir.mktmpdir('bd_spec')
+
     config = Psych.load_file(spec_asset(config_yml))
     config['dir'] = @dir
-    @deployer = Bosh::Deployer::InstanceManager.new(config)
+
+    messager = Bosh::Deployer::UiMessager.for_deployer
+    @deployer = Bosh::Deployer::InstanceManager.new(
+      config, 'fake-config-sha1', messager)
   end
 
   describe 'vSphere' do
-    before(:all) do
-      setup('test-bootstrap-config.yml')
-    end
-
-    after(:all) do
-      FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
-    end
+    before(:all) { setup('test-bootstrap-config.yml') }
+    after(:all)  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
 
     it 'should create a Bosh VM' do
       pending 'stemcell tgz' unless @stemcell_tgz
@@ -37,13 +35,8 @@ describe Bosh::Deployer do
   end
 
   describe 'aws' do
-    before(:all) do
-      setup('test-bootstrap-config-aws.yml')
-    end
-
-    after(:all) do
-      FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
-    end
+    before(:all) { setup('test-bootstrap-config-aws.yml') }
+    after(:all)  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
 
     it 'should instantiate a deployer' do
       @deployer.cloud.should be_kind_of(Bosh::AwsCloud::Cloud)

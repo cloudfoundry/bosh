@@ -21,11 +21,17 @@ module Bosh::Dev::VSphere
       bat_deployment_manifest =
         BatDeploymentManifest.new(env, director_uuid, stemcell_archive)
 
+      microbosh_deployment_cleaner = MicroBoshDeploymentCleaner.new
+
       # rubocop:disable ParameterLists
       Bosh::Dev::Bat::Runner.new(
         env, bat_helper, director_address, bosh_cli_session, stemcell_archive,
-        microbosh_deployment_manifest, bat_deployment_manifest)
+        microbosh_deployment_manifest, bat_deployment_manifest, microbosh_deployment_cleaner)
       # rubocop:enable ParameterLists
     end
+  end
+
+  class MicroBoshDeploymentCleaner
+    def clean; end
   end
 end

@@ -9,8 +9,12 @@ module Bosh::Dev
 
     def initialize(version_number)
       raise ArgumentError.new('Version number must be specified.') unless version_number
-
+      raise "#{BOSH_VERSION_FILE} must exist" unless File.exists?(BOSH_VERSION_FILE)
       @version_number = version_number
+    end
+
+    def version
+      File.read(BOSH_VERSION_FILE).strip
     end
 
     def write
@@ -19,12 +23,8 @@ module Bosh::Dev
 
     private
 
-    def existing_version_string
-      File.read(BOSH_VERSION_FILE)
-    end
-
     def updated_version_string
-      existing_version_string.gsub(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}")
+      version.gsub(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}\n")
     end
   end
 end

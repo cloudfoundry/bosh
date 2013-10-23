@@ -37,7 +37,7 @@ case $1 in
     COMPONENT=worker_$INDEX erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/worker_$INDEX.yml
 
     exec chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/director/bin/worker \
+      /var/vcap/packages/director/bin/bosh-director-worker \
       -c /var/vcap/jobs/director/config/worker_$INDEX.yml \
       >>$LOG_DIR/worker_$INDEX.stdout.log \
       2>>$LOG_DIR/worker_$INDEX.stderr.log

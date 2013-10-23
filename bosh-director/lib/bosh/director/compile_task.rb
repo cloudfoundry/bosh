@@ -1,0 +1,191 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+module Bosh::Director
+  class CompileTask
+    # @return [Models::Package] What package is being compiled
+    attr_reader :package
+
+    # @return [Models::Stemcell] What stemcell package is compiled for
+    attr_reader :stemcell
+
+    # @return [Array<DeploymentPlan::Job>] Jobs interested in this package
+    attr_reader :jobs
+
+    # @return [Models::CompiledPackage] Compiled package DB model
+    attr_reader :compiled_package
+
+    # @return [String] Dependency key (changing it will trigger recompilation
+    #   even when package bits haven't changed)
+    attr_accessor :dependency_key
+
+    # @return [Array<CompileTask>] Tasks this task depends on
+    attr_reader :dependencies
+
+    # @return [Array<CompileTask>] Tasks depending on this task
+    attr_reader :dependent_tasks
+
+    # @return [String] A unique checksum based on the dependencies in this task
+    attr_reader :cache_key
+
+    # @param [Models::Package] package What package is being compiled
+    #   by this task
+    # @param [Models::Stemcell] stemcell What stemcell package is compiled for
+    # @param [Array<Models::Package>] dependent_packages Package models that this task depends on
+    # @param [DeploymentPlan::Job] initial_job The first job that this task is associate with
+    def initialize(package, stemcell, dependent_packages, initial_job = nil)
+      @package = package
+      @stemcell = stemcell
+
+      @jobs = []
+      add_job(initial_job) if initial_job
+      @dependencies = []
+      @dependent_tasks = []
+
+      @dependency_key = generate_dependency_key(dependent_packages)
+
+      @cache_key = generate_cache_key(dependent_packages)
+    end
+
+    # @return [Boolean] Whether this task is ready to be compiled
+    def ready_to_compile?
+      !compiled? && all_dependencies_compiled?
+    end
+
+    # @return [Boolean]
+    def all_dependencies_compiled?
+      @dependencies.all? { |task| task.compiled? }
+    end
+
+    # @return [Boolean]
+    def compiled?
+      !@compiled_package.nil?
+    end
+
+    # Makes compiled package available to all jobs waiting for it
+    # @param [Models::CompiledPackage] compiled_package Compiled package
+    # @return [void]
+    def use_compiled_package(compiled_package)
+      @compiled_package = compiled_package
+
+      @jobs.each do |job|
+        job.use_compiled_package(@compiled_package)
+      end
+    end
+
+    # Adds job to a list of job requiring this compiled package
+    # @note Cycle detection is done elsewhere
+    # @param [DeploymentPlan::Job] job Job to be added
+    # @return [void]
+    def add_job(job)
+      return if @jobs.include?(job)
+      @jobs << job
+      if @compiled_package
+        # If package is already compiled we can make it available to job
+        # immediately, otherwise it will be done by #use_compiled_package
+        job.use_compiled_package(@compiled_package)
+      end
+    end
+
+    # Adds a compilation task to the list of dependencies
+    # @note Cycle detection performed elsewhere
+    # @param [CompileTask] task Compilation task
+    # @param [Boolean] reciprocate If true, add self as dependent task to other
+    # @return [void]
+    def add_dependency(task, reciprocate=true)
+      @dependencies << task
+      if reciprocate
+        task.add_dependent_task(self, false)
+      end
+    end
+
+    # Adds a compilation task to the list of dependent tasks
+    # @note Cycle detection performed elsewhere
+    # @param [CompileTask] task Compilation task
+    # @param [Boolean] reciprocate If true, add self as dependency to to other
+    # @return [void]
+    def add_dependent_task(task, reciprocate=true)
+      @dependent_tasks << task
+      if reciprocate
+        task.add_dependency(self, false)
+      end
+    end
+
+    # This call only makes sense if all dependencies have already been compiled,
+    # otherwise it raises an exception
+    # @return [Hash] Hash representation of all package dependencies. Agent uses
+    #   that to download package dependencies before compiling the package on a
+    #   compilation VM.
+    def dependency_spec
+      spec = {}
+
+      @dependencies.each do |dep_task|
+        unless dep_task.compiled?
+          raise DirectorError,
+                "Cannot generate package dependency spec " +
+                "for `#{@package.name}', " +
+                "`#{dep_task.package.name}' hasn't been compiled yet"
+        end
+
+        compiled_package = dep_task.compiled_package
+
+        spec[compiled_package.name] = {
+          "name" => compiled_package.name,
+          "version" => "#{compiled_package.version}.#{compiled_package.build}",
+          "sha1" => compiled_package.sha1,
+          "blobstore_id" => compiled_package.blobstore_id
+        }
+      end
+
+      spec
+    end
+
+    # @param [CompileTask] task
+    # @return [Models::CompiledPackage]
+    def find_compiled_package(logger, event_log)
+      # Check if this package is already compiled
+      compiled_package = Models::CompiledPackage[
+        :package_id => package.id,
+        :stemcell_id => stemcell.id,
+        :dependency_key => dependency_key
+      ]
+      if compiled_package
+        logger.info("Found compiled version of package `#{package.desc}' " +
+                       "for stemcell `#{stemcell.desc}'")
+      else
+        if Config.use_compiled_package_cache?
+          if BlobUtil.exists_in_global_cache?(package, cache_key)
+            event_log.track("Downloading '#{package.desc}' from global cache") do
+              # has side effect of putting CompiledPackage model in db
+              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
+            end
+          end
+        end
+
+        if compiled_package
+          logger.info("Package `Found compiled version of package `#{package.desc}'" +
+                         "for stemcell `#{stemcell.desc}' in global cache")
+        else
+          logger.info("Package `#{package.desc}' " +
+                         "needs to be compiled on `#{stemcell.desc}'")
+        end
+      end
+
+      compiled_package
+    end
+
+    private
+    def generate_dependency_key(packages)
+      key = packages.sort { |a, b|
+        a.name <=> b.name
+      }.map { |p| [p.name, p.version]}
+
+      Yajl::Encoder.encode(key)
+    end
+
+    def generate_cache_key(dependent_packages)
+      dependency_fingerprints = dependent_packages.sort_by(&:name).map {|p| p.fingerprint }
+      hash_input = ([package.fingerprint, stemcell.sha1]+dependency_fingerprints).join("")
+      Digest::SHA1.hexdigest(hash_input)
+    end
+  end
+end

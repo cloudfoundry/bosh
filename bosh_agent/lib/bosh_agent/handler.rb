@@ -320,7 +320,7 @@ module Bosh::Agent
     def lookup_encryption_handler(arg)
       if arg[:session_id]
         message_session_id = arg[:session_id]
-        @sessions[message_session_id] ||= Bosh::EncryptionHandler.new(@agent_id, @credentials)
+        @sessions[message_session_id] ||= Bosh::Core::EncryptionHandler.new(@agent_id, @credentials)
         encryption_handler = @sessions[message_session_id]
         return encryption_handler
       elsif arg[:reply_to]
@@ -348,7 +348,7 @@ module Bosh::Agent
       # Log exceptions from the EncryptionHandler, but stay quiet on the wire.
       begin
         msg = encryption_handler.decrypt(msg["encrypted_data"])
-      rescue Bosh::EncryptionHandler::CryptError => e
+      rescue Bosh::Core::EncryptionHandler::CryptError => e
         log_encryption_error(e)
         return
       end

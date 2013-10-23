@@ -68,7 +68,7 @@ default=0
 timeout=1
 title ${os_name} (${kernel_version})
   root (hd0,0)
-  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid}
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} selinux=0
   initrd /boot/${initrd_file}
 GRUB_CONF
 

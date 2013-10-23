@@ -2,9 +2,15 @@ namespace :bosh_agent do
   desc 'Update the BOSH Agent code running on an instance'
   task :update, [:instance_name, :gw_host, :gw_user] do |_, args|
     require 'bosh/dev/instance'
+    require 'bosh/dev/build'
+    require 'bosh/dev/version_file'
     require 'bosh/dev/gem_component'
 
-    gem_component = Bosh::Dev::GemComponent.new('bosh_agent')
+    build = Bosh::Dev::Build.candidate
+
+    version_file = Bosh::Dev::VersionFile.new(build.number)
+
+    gem_component = Bosh::Dev::GemComponent.new('bosh_agent', version_file.version)
     gem_component.build_release_gem
 
     options = args.with_defaults(gw_user: 'vcap')

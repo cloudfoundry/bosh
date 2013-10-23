@@ -16,15 +16,19 @@ module Bosh::Dev
         build_number,
         deployment_account,
         ArtifactsDownloader.new,
+        deployments_repository
       )
     end
 
-    def initialize(micro_target, bosh_target, build_number, deployment_account, artifacts_downloader)
+    # rubocop:disable ParameterLists
+    def initialize(micro_target, bosh_target, build_number, deployment_account, artifacts_downloader,
+      deployments_repository)
       @micro_target = micro_target
       @bosh_target = bosh_target
       @build_number = build_number
       @deployment_account = deployment_account
       @artifacts_downloader = artifacts_downloader
+      @deployments_repository = deployments_repository
     end
 
     def deploy
@@ -41,6 +45,11 @@ module Bosh::Dev
       bosh_director_client.upload_stemcell(stemcell_archive)
     end
 
+    def migrate
+      deployment_account.run_with_env('bosh aws create --trace')
+      deployments_repository.push
+    end
+
     private
 
     attr_reader(
@@ -49,6 +58,7 @@ module Bosh::Dev
       :build_number,
       :deployment_account,
       :artifacts_downloader,
+      :deployments_repository,
     )
 
     def micro_director_client

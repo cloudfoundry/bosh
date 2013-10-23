@@ -47,7 +47,7 @@ module Bosh::Stemcell
     def run_sudo_with_command_env(command)
       shell = Bosh::Core::Shell.new
 
-      shell.run("sudo #{command_env} #{command}")
+      shell.run("sudo #{command_env} #{command} 2>&1")
     end
   end
 end

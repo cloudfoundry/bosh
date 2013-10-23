@@ -3,7 +3,7 @@ module Bosh
     class GemComponent
       ROOT = File.expand_path('../../../../../', __FILE__)
 
-      def initialize(component, version = nil)
+      def initialize(component, version)
         @component = component
         @version = version
       end
@@ -33,11 +33,7 @@ module Bosh
 
       private
 
-      attr_reader :component
-
-      def version
-        @version ||= File.read("#{ROOT}/BOSH_VERSION").strip
-      end
+      attr_reader :component, :version
     end
   end
 end

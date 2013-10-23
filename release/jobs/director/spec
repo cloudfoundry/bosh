@@ -2,7 +2,7 @@
 name: director
 templates:
   director_ctl: bin/director_ctl
-  director.yml.erb: config/director.yml.erb
+  director.yml.erb.erb: config/director.yml.erb
   worker_ctl: bin/worker_ctl
   drain: bin/drain
   sudoers: config/sudoers
@@ -286,7 +286,7 @@ properties:
   vcenter.password:
     description: Password to connect to vCenter server used by vspher cpi
   vcenter.datacenters:
-    description: Datacenters in vCenter to use (value is an array of Hashes representing datacenters and clusters, See director.yml.erb)
+    description: Datacenters in vCenter to use (value is an array of Hashes representing datacenters and clusters, See director.yml.erb.erb)
   vcd.url:
     description: TODO
   vcd.user:

@@ -2,14 +2,16 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe LocalClient do
-    before(:each) do
+    subject { described_class.new(@options) }
+
+    it_implements_base_client_interface
+
+    before do
       @tmp = Dir.mktmpdir
       @options = { 'blobstore_path' => @tmp }
     end
 
-    after(:each) do
-      FileUtils.rm_rf(@tmp)
-    end
+    after { FileUtils.rm_rf(@tmp) }
 
     it 'should require blobstore_path option' do
       expect { LocalClient.new({}) }.to raise_error

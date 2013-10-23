@@ -18,6 +18,9 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
+  spec.add_dependency 'gibberish', '~>1.2.0'
+  spec.add_dependency 'yajl-ruby', '~>1.1.0'
+
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'rspec-fire'

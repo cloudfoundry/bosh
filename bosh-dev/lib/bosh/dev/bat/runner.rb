@@ -11,7 +11,8 @@ module Bosh::Dev::Bat
       bosh_cli_session,
       stemcell_archive,
       microbosh_deployment_manifest,
-      bat_deployment_manifest
+      bat_deployment_manifest,
+      microbosh_deployment_cleaner
     )
     # rubocop:enable ParameterLists
       @env                           = env
@@ -21,10 +22,12 @@ module Bosh::Dev::Bat
       @stemcell_archive              = stemcell_archive
       @microbosh_deployment_manifest = microbosh_deployment_manifest
       @bat_deployment_manifest       = bat_deployment_manifest
+      @microbosh_deployment_cleaner  = microbosh_deployment_cleaner
     end
 
     def deploy_microbosh_and_run_bats
       create_microbosh_manifest
+      microbosh_deployment_cleaner.clean
       deploy_microbosh
       run_bats
     ensure
@@ -46,7 +49,8 @@ module Bosh::Dev::Bat
       :bosh_cli_session,
       :stemcell_archive,
       :microbosh_deployment_manifest,
-      :bat_deployment_manifest
+      :bat_deployment_manifest,
+      :microbosh_deployment_cleaner,
     )
 
     def create_microbosh_manifest

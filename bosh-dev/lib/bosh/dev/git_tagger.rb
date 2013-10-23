@@ -17,7 +17,7 @@ module Bosh::Dev
       stdout, stderr, status = Open3.capture3('git', 'tag', '-a', tag_name, '-m', 'ci-tagged', sha)
       raise "Failed to tag #{sha}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout, stderr, status = Open3.capture3('git', 'push', '--tags')
+      stdout, stderr, status = Open3.capture3('git', 'push', 'origin', '--tags')
       raise "Failed to push tags: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
     end
   end

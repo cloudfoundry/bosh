@@ -20,6 +20,8 @@ PATH
   remote: bosh-core
   specs:
     bosh-core (1.5.0.pre.3)
+      gibberish (~> 1.2.0)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh-dev
@@ -28,8 +30,76 @@ PATH
       bosh-core
       bosh-stemcell
       bosh_cli
+      bosh_cli_plugin_aws
       bosh_common
+      bundler
       peach
+
+PATH
+  remote: bosh-director
+  specs:
+    bosh-director (1.5.0.pre.3)
+      bcrypt-ruby (~> 3.0.1)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh-core (~> 1.5.0.pre.3)
+      bosh_aws_cpi (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
+      bosh_openstack_cpi (~> 1.5.0.pre.3)
+      bosh_vcloud_cpi (~> 0.4.9)
+      bosh_vsphere_cpi (~> 1.5.0.pre.3)
+      bosh_warden_cpi (~> 1.5.0.pre.3)
+      eventmachine (~> 0.12.9)
+      fog (~> 1.14.0)
+      httpclient (= 2.2.4)
+      nats (~> 0.4.28)
+      netaddr (~> 1.5.0)
+      rack-test (~> 0.6.2)
+      rake (~> 10.0.3)
+      redis (~> 3.0.2)
+      resque (~> 1.23.0)
+      rufus-scheduler (~> 2.0.18)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.4.2)
+      sys-filesystem (~> 1.1.0)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh-monitor
+  specs:
+    bosh-monitor (1.5.0.pre.3)
+      aws-sdk (= 1.8.5)
+      dogapi (~> 1.6.0)
+      em-http-request (~> 0.3.0)
+      eventmachine (~> 0.12.10)
+      logging (~> 1.5.0)
+      nats (~> 0.4.28)
+      sinatra (~> 1.4.2)
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh-registry
+  specs:
+    bosh-registry (1.5.0.pre.3)
+      aws-sdk (= 1.8.5)
+      fog (~> 1.14.0)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.4.2)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh-release
+  specs:
+    bosh-release (1.5.0.pre.3)
+      agent_client (~> 1.5.0.pre.3)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      trollop (~> 1.16)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh-stemcell
@@ -42,8 +112,8 @@ PATH
   specs:
     bosh_agent (1.5.0.pre.3)
       blobstore_client (~> 1.5.0.pre.3)
+      bosh-core (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
-      bosh_encryption (~> 1.5.0.pre.3)
       crack (~> 0.3.2)
       httpclient (= 2.2.4)
       nats (~> 0.4.28)
@@ -59,9 +129,9 @@ PATH
   specs:
     bosh_aws_cpi (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
+      bosh-registry (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
-      bosh_registry (~> 1.5.0.pre.3)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
 
@@ -96,11 +166,12 @@ PATH
   specs:
     bosh_cli_plugin_micro (1.5.0.pre.3)
       agent_client (~> 1.5.0.pre.3)
+      bosh-registry (~> 1.5.0.pre.3)
+      bosh-stemcell (~> 1.5.0.pre.3)
       bosh_aws_cpi (~> 1.5.0.pre.3)
       bosh_cli (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
       bosh_openstack_cpi (~> 1.5.0.pre.3)
-      bosh_registry (~> 1.5.0.pre.3)
       bosh_vcloud_cpi (~> 0.4.9)
       bosh_vsphere_cpi (~> 1.5.0.pre.3)
       sqlite3 (~> 1.3.7)
@@ -117,33 +188,15 @@ PATH
       bosh_common (~> 1.5.0.pre.3)
 
 PATH
-  remote: bosh_encryption
-  specs:
-    bosh_encryption (1.5.0.pre.3)
-      gibberish (~> 1.2.0)
-      yajl-ruby (~> 1.1.0)
-
-PATH
   remote: bosh_openstack_cpi
   specs:
     bosh_openstack_cpi (1.5.0.pre.3)
+      bosh-registry (~> 1.5.0.pre.3)
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
-      bosh_registry (~> 1.5.0.pre.3)
       fog (~> 1.14.0)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
-
-PATH
-  remote: bosh_registry
-  specs:
-    bosh_registry (1.5.0.pre.3)
-      aws-sdk (= 1.8.5)
-      fog (~> 1.14.0)
-      sequel (~> 3.43.0)
-      sinatra (~> 1.4.2)
-      thin (~> 1.5.0)
-      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh_vsphere_cpi
@@ -152,7 +205,6 @@ PATH
       bosh_common (~> 1.5.0.pre.3)
       bosh_cpi (~> 1.5.0.pre.3)
       membrane (~> 0.0.2)
-      ruby_vim_sdk (~> 1.5.0.pre.3)
       sequel (~> 3.43.0)
 
 PATH
@@ -165,69 +217,6 @@ PATH
       warden-client
       warden-protocol
       yajl-ruby
-
-PATH
-  remote: director
-  specs:
-    director (1.5.0.pre.3)
-      bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 1.5.0.pre.3)
-      bosh_aws_cpi (~> 1.5.0.pre.3)
-      bosh_common (~> 1.5.0.pre.3)
-      bosh_cpi (~> 1.5.0.pre.3)
-      bosh_encryption (~> 1.5.0.pre.3)
-      bosh_openstack_cpi (~> 1.5.0.pre.3)
-      bosh_vcloud_cpi (~> 0.4.9)
-      bosh_vsphere_cpi (~> 1.5.0.pre.3)
-      bosh_warden_cpi (~> 1.5.0.pre.3)
-      eventmachine (~> 0.12.9)
-      fog (~> 1.14.0)
-      httpclient (= 2.2.4)
-      nats (~> 0.4.28)
-      netaddr (~> 1.5.0)
-      rack-test (~> 0.6.2)
-      rake (~> 10.0.3)
-      redis (~> 3.0.2)
-      resque (~> 1.23.0)
-      rufus-scheduler (~> 2.0.18)
-      sequel (~> 3.43.0)
-      sinatra (~> 1.4.2)
-      sys-filesystem (~> 1.1.0)
-      thin (~> 1.5.0)
-      yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: health_monitor
-  specs:
-    health_monitor (1.5.0.pre.3)
-      aws-sdk (= 1.8.5)
-      dogapi (~> 1.6.0)
-      em-http-request (~> 0.3.0)
-      eventmachine (~> 0.12.10)
-      logging (~> 1.5.0)
-      nats (~> 0.4.28)
-      sinatra (~> 1.4.2)
-      thin (~> 1.5.0)
-      uuidtools (~> 2.1)
-      yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: package_compiler
-  specs:
-    package_compiler (1.5.0.pre.3)
-      agent_client (~> 1.5.0.pre.3)
-      blobstore_client (~> 1.5.0.pre.3)
-      bosh_common (~> 1.5.0.pre.3)
-      trollop (~> 1.16)
-      yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: ruby_vim_sdk
-  specs:
-    ruby_vim_sdk (1.5.0.pre.3)
-      builder (~> 3.1.4)
-      httpclient (= 2.2.4)
-      nokogiri (~> 1.5.6)
 
 PATH
   remote: simple_blobstore_server
@@ -257,7 +246,6 @@ GEM
     builder (3.1.4)
     ci_reporter (1.9.0)
       builder (>= 2.1.2)
-    coderay (1.0.9)
     columnize (0.3.6)
     crack (0.3.2)
     daemons (1.1.9)
@@ -301,18 +289,6 @@ GEM
       multi_json (~> 1.3)
     gibberish (1.2.2)
     git-duet (0.1.3)
-    guard (1.8.0)
-      formatador (>= 0.2.4)
-      listen (>= 1.0.0)
-      lumberjack (>= 1.0.2)
-      pry (>= 0.9.10)
-      thor (>= 0.14.6)
-    guard-bundler (1.0.0)
-      bundler (~> 1.0)
-      guard (~> 1.1)
-    guard-rspec (2.5.4)
-      guard (>= 1.1)
-      rspec (~> 2.11)
     highline (1.6.19)
     httpclient (2.2.4)
     jenkins_api_client (0.13.0)
@@ -323,18 +299,12 @@ GEM
       thor (>= 0.16.0)
     json (1.8.0)
     json_pure (1.8.0)
-    listen (1.2.2)
-      rb-fsevent (>= 0.9.3)
-      rb-inotify (>= 0.9)
-      rb-kqueue (>= 0.2)
     little-plugger (1.1.3)
     log4r (1.1.10)
     logging (1.5.2)
       little-plugger (>= 1.1.2)
-    lumberjack (1.0.4)
     machinist (1.0.6)
     membrane (0.0.2)
-    method_source (0.8.1)
     mime-types (1.23)
     minitar (0.5.4)
     mixlib-shellout (1.1.0)
@@ -363,10 +333,6 @@ GEM
     polyglot (0.3.3)
     powerpack (0.0.1)
     progressbar (0.9.2)
-    pry (0.9.12.2)
-      coderay (~> 1.0.5)
-      method_source (~> 0.8)
-      slop (~> 3.4)
     rack (1.5.2)
     rack-protection (1.5.0)
       rack
@@ -374,11 +340,6 @@ GEM
       rack (>= 1.0)
     rainbow (1.1.4)
     rake (10.0.4)
-    rb-fsevent (0.9.3)
-    rb-inotify (0.9.0)
-      ffi (>= 0.5.0)
-    rb-kqueue (0.2.0)
-      ffi (>= 0.5.0)
     redis (3.0.4)
     redis-namespace (1.3.0)
       redis (~> 3.0.0)
@@ -471,6 +432,10 @@ DEPENDENCIES
   blobstore_client!
   bosh-core!
   bosh-dev!
+  bosh-director!
+  bosh-monitor!
+  bosh-registry!
+  bosh-release!
   bosh-stemcell!
   bosh_agent!
   bosh_aws_cpi!
@@ -479,21 +444,14 @@ DEPENDENCIES
   bosh_cli_plugin_micro!
   bosh_common!
   bosh_cpi!
-  bosh_encryption!
   bosh_openstack_cpi!
-  bosh_registry!
   bosh_vsphere_cpi!
   bosh_warden_cpi!
   ci_reporter
   debugger
-  director!
   fakefs
   foodcritic
   git-duet
-  guard
-  guard-bundler
-  guard-rspec
-  health_monitor!
   httpclient
   jenkins_api_client
   json
@@ -502,7 +460,6 @@ DEPENDENCIES
   mysql2
   nats
   net-ssh
-  package_compiler!
   parallel_tests
   pg
   rack-test
@@ -513,7 +470,6 @@ DEPENDENCIES
   rspec-fire
   rubocop
   ruby_gntp
-  ruby_vim_sdk!
   rugged
   serverspec
   simple_blobstore_server!

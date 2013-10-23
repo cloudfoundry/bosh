@@ -1,6 +1,7 @@
 require 'peach'
 require 'logger'
-require 'bosh/dev/promote_artifacts'
+require 'bosh/dev/promotable_artifacts'
+require 'bosh/dev/light_stemcell_pointer'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
@@ -28,7 +29,7 @@ module Bosh::Dev
     def initialize(number, download_adapter)
       @number = number
       @logger = Logger.new($stdout)
-      @promoter = PromoteArtifacts.new(self)
+      @promotable_artifacts = PromotableArtifacts.new(self)
       @bucket = 'bosh-ci-pipeline'
       @upload_adapter = UploadAdapter.new
       @download_adapter = download_adapter
@@ -76,16 +77,9 @@ module Bosh::Dev
     end
 
     def promote_artifacts
-      promoter.commands.peach do |cmd|
-        Rake::FileUtilsExt.sh(cmd)
+      promotable_artifacts.all.peach do |artifact|
+        artifact.promote
       end
-
-      Bosh::Dev::UploadAdapter.new.upload(
-        bucket_name: 'bosh-jenkins-artifacts',
-        key: 'last_successful-bosh-stemcell-aws_ami_us-east-1',
-        body: light_stemcell.ami_id,
-        public: true
-      )
     end
 
     def bosh_stemcell_path(infrastructure, operating_system, download_dir)
@@ -98,10 +92,6 @@ module Bosh::Dev
       ).to_s)
     end
 
-    private
-
-    attr_reader :logger, :promoter, :download_adapter, :upload_adapter, :bucket
-
     def light_stemcell
       name = 'bosh-stemcell'
       infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
@@ -110,8 +100,12 @@ module Bosh::Dev
       Bosh::Stemcell::Archive.new(filename)
     end
 
+    private
+
+    attr_reader :logger, :promotable_artifacts, :download_adapter, :upload_adapter, :bucket
+
     def release_path
-      "release/#{promoter.release_file}"
+      "release/#{promotable_artifacts.release_file}"
     end
 
     def uri(remote_directory_path, file_name)
@@ -136,8 +130,8 @@ module Bosh::Dev
     class Candidate < self
       def release_tarball_path
         remote_dir = File.join(number.to_s, 'release')
-        filename = promoter.release_file
-        downloaded_release_path = "tmp/#{promoter.release_file}"
+        filename = promotable_artifacts.release_file
+        downloaded_release_path = "tmp/#{promotable_artifacts.release_file}"
         download_adapter.download(uri(remote_dir, filename), downloaded_release_path)
         downloaded_release_path
       end

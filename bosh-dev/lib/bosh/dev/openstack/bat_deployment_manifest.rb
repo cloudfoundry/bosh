@@ -29,20 +29,23 @@ module Bosh::Dev::Openstack
           'instances' => 1,
           'key_name' => 'jenkins',
           'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
+          'network' => {
+            'type' => net_type,
+            'cloud_properties' => {
+              'net_id' => env['BOSH_OPENSTACK_NET_ID'],
+              'security_groups' => ['default']
+            }
+          }
         }
       }
 
       if net_type == 'manual'
-        manifest_hash['properties']['network'] = {
+        manifest_hash['properties']['network'].merge!(
           'cidr' => env['BOSH_OPENSTACK_NETWORK_CIDR'],
           'reserved' => [env['BOSH_OPENSTACK_NETWORK_RESERVED']],
           'static' => [env['BOSH_OPENSTACK_NETWORK_STATIC']],
-          'gateway' => env['BOSH_OPENSTACK_NETWORK_GATEWAY'],
-          'security_groups' => ['default'],
-          'net_id' => env['BOSH_OPENSTACK_NET_ID']
-        }
-      else
-        manifest_hash['properties']['security_groups'] = 'default'
+          'gateway' => env['BOSH_OPENSTACK_NETWORK_GATEWAY']
+        )
       end
 
       manifest_hash

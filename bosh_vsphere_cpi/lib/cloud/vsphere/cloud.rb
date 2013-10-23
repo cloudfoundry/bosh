@@ -1,6 +1,6 @@
+require 'json'
 require 'membrane'
 require 'ruby_vim_sdk'
-
 require 'cloud/vsphere/client'
 require 'cloud/vsphere/config'
 require 'cloud/vsphere/lease_updater'
@@ -833,11 +833,11 @@ module VSphereCloud
 
     def get_current_agent_env(location)
       contents = fetch_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json")
-      contents ? Yajl::Parser.parse(contents) : nil
+      contents ? JSON.load(contents) : nil
     end
 
     def set_agent_env(vm, location, env)
-      env_json = Yajl::Encoder.encode(env)
+      env_json = JSON.dump(env)
 
       connect_cdrom(vm, false)
       upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
@@ -1029,22 +1029,20 @@ module VSphereCloud
     end
 
     def fix_device_unit_numbers(devices, device_changes)
-      max_unit_numbers = {}
+      controllers_available_unit_numbers = Hash.new { |h,k| h[k] = (0..15).to_a }
       devices.each do |device|
         if device.controller_key
-          max_unit_number = max_unit_numbers[device.controller_key]
-          if max_unit_number.nil? || max_unit_number < device.unit_number
-            max_unit_numbers[device.controller_key] = device.unit_number
-          end
+          available_unit_numbers = controllers_available_unit_numbers[device.controller_key]
+          available_unit_numbers.delete(device.unit_number)
         end
       end
 
       device_changes.each do |device_change|
         device = device_change.device
         if device.controller_key && device.unit_number.nil?
-          max_unit_number = max_unit_numbers[device.controller_key] || 0
-          device.unit_number = max_unit_number + 1
-          max_unit_numbers[device.controller_key] = device.unit_number
+          available_unit_numbers = controllers_available_unit_numbers[device.controller_key]
+          raise "No available unit numbers for device: #{device.inspect}" if available_unit_numbers.empty?
+          device.unit_number = available_unit_numbers.shift
         end
       end
     end

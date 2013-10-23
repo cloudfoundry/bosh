@@ -61,7 +61,7 @@ describe 'CentOs Stemcell' do
       'cmake'          => '2.6.4-5.el6.x86_64',
       'rpm-build'      => '4.8.0-32.el6.x86_64',
       'rpmdevtools'    => '7.5-2.el6.noarch',
-      'glibc-static'   => '2.12-1.107.el6_4.4.x86_64',
+      'glibc-static'   => '2.12-1.107.el6_4.5.x86_64',
       'runit'          => '2.1.1-6.el6.x86_64',
       'sudo'           => '1.8.6p3-7.el6.x86_64',
       'rsyslog'        => '5.8.10-7.el6_4.x86_64',
@@ -92,8 +92,8 @@ describe 'CentOs Stemcell' do
 
   context 'installed by system_kernel' do
     {
-      'kernel'         => '2.6.32-358.18.1.el6.x86_64',
-      'kernel-headers' => '2.6.32-358.18.1.el6.x86_64',
+      'kernel'         => '2.6.32-358.23.2.el6.x86_64',
+      'kernel-headers' => '2.6.32-358.23.2.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -112,10 +112,11 @@ describe 'CentOs Stemcell' do
       it { should be_file }
       it { should contain 'default=0' }
       it { should contain 'timeout=1' }
-      it { should contain 'title CentOS release 6.4 (Final) (2.6.32-358.18.1.el6.x86_64)' }
+      it { should contain 'title CentOS release 6.4 (Final) (2.6.32-358.23.2.el6.x86_64)' }
       it { should contain '  root (hd0,0)' }
-      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.18.1.el6.x86_64 ro root=UUID=' }
-      it { should contain '  initrd /boot/initramfs-2.6.32-358.18.1.el6.x86_64.img' }
+      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.23.2.el6.x86_64 ro root=UUID=' }
+      it { should contain ' selinux=0' }
+      it { should contain '  initrd /boot/initramfs-2.6.32-358.23.2.el6.x86_64.img' }
     end
 
     describe file('/boot/grub/menu.lst') do

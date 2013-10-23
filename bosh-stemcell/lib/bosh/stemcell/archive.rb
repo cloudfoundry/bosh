@@ -1,5 +1,5 @@
-require 'rake/file_utils_ext'
 require 'yaml'
+require 'rake/file_utils_ext'
 require 'bosh/stemcell/aws/region'
 
 module Bosh::Stemcell
@@ -25,6 +25,12 @@ module Bosh::Stemcell
 
     def version
       cloud_properties.fetch('version')
+    end
+
+    def sha1
+      sha1 = manifest.fetch('sha1')
+      raise 'sha1 must not be nil' unless sha1
+      sha1.to_s
     end
 
     def light?

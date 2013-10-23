@@ -1,5 +1,5 @@
 require 'rugged'
-
+require 'bosh/dev'
 require 'bosh/core/shell'
 
 module Bosh::Dev
@@ -13,6 +13,7 @@ module Bosh::Dev
     end
 
     def push
+      raise 'Will not git push to master branch directly' if current_branch == 'master'
       @shell.run("git push origin #{current_branch}", output_command: true)
     end
 

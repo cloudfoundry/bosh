@@ -1,7 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require 'rspec'
 require 'tmpdir'
-
 require 'cloud/aws'
 
 MOCK_AWS_ACCESS_KEY_ID = 'foo'

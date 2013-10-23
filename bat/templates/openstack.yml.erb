@@ -30,8 +30,8 @@ networks:
   cloud_properties: {}
 
 - name: default
-<% if p('network.net_id', false) %>
-  type: manual
+  type: <%= p('network.type') %>
+  <% if p('network.type') == 'manual' %>
   subnets:
   - range: <%= properties.network.cidr %>
     reserved:
@@ -51,22 +51,21 @@ networks:
       - <%= dns %>
       <% end %>
     cloud_properties:
-      security_groups: <%= p('network.security_groups') %>
-      net_id: <%= p('network.net_id') %>
-<% else %>
-  type: dynamic
-  <% if_p('dns_nameserver') do |dns_nameserver| %>
-  dns:
-    - <%= dns_nameserver %>
-  <% end %>
-  <% if properties.security_groups %>
-  cloud_properties:
-    security_groups:
-      - <%= properties.security_groups %>
+      security_groups: <%= p('network.cloud_properties.security_groups') %>
+      net_id: <%= p('network.cloud_properties.net_id') %>
   <% else %>
-  cloud_properties: {}
+  dns:
+    <% if_p('dns_nameserver') do |dns_nameserver| %>
+    - <%= dns_nameserver %>
+    <% end %>
+    <% if_p('network.dns') do |dns| %>
+    - <%= dns %>
+    <% end %>
+  cloud_properties:
+    security_groups: <%= p('network.cloud_properties.security_groups') %>
+    net_id: <%= p('network.cloud_properties.net_id') %>
   <% end %>
-<% end %>
+
 
 resource_pools:
   - name: common

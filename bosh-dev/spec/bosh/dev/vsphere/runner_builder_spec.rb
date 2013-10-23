@@ -37,6 +37,11 @@ module Bosh::Dev::VSphere
           .with(ENV)
           .and_return(microbosh_deployment_manifest)
 
+        microbosh_deployment_cleaner = instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentCleaner')
+        Bosh::Dev::VSphere::MicroBoshDeploymentCleaner
+          .should_receive(:new)
+          .and_return(microbosh_deployment_cleaner)
+
         director_uuid = instance_double('Bosh::Dev::Bat::DirectorUuid')
         Bosh::Dev::Bat::DirectorUuid
           .should_receive(:new)
@@ -57,7 +62,8 @@ module Bosh::Dev::VSphere
           bosh_cli_session,
           stemcell_archive,
           microbosh_deployment_manifest,
-          bat_deployment_manifest
+          bat_deployment_manifest,
+          microbosh_deployment_cleaner,
         ).and_return(runner)
 
         expect(subject.build(bat_helper, 'net-type')).to eq(runner)

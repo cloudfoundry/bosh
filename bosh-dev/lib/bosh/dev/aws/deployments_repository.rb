@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'bosh/dev/aws'
 require 'bosh/core/shell'
+require 'bosh/dev/git_repo_updater'
 
 module Bosh::Dev::Aws
   class DeploymentsRepository
@@ -16,6 +17,11 @@ module Bosh::Dev::Aws
 
     def clone_or_update!
       git_repo?(path) ? update_repo : clone_repo
+    end
+
+    def push
+      git_repo_updater = Bosh::Dev::GitRepoUpdater.new
+      git_repo_updater.update_directory(path)
     end
 
     private

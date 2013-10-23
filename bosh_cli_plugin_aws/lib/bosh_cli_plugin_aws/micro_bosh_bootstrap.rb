@@ -51,7 +51,7 @@ module Bosh
       end
 
       def cleanup_previous_deployments
-        rm_files = %w[bosh-deployments.yml micro bosh_registry.log]
+        rm_files = %w[bosh-deployments.yml micro bosh-registry.log]
         rm_files.each { |file| FileUtils.rm_rf File.join("deployments", file) }
       end
 

@@ -3,9 +3,10 @@ require "spec_helper"
 describe 'Bosh::Spec::IntegrationTest::HealthMonitor 2' do
   include IntegrationExampleGroup
 
-  before do
-    current_sandbox.start_healthmonitor
+  before { current_sandbox.health_monitor_process.start }
+  after { current_sandbox.health_monitor_process.stop }
 
+  before do
     release_filename    = File.join(TEST_RELEASE_DIR, "dev_releases", "bosh-release-0.1-dev.tgz")
     stemcell_filename   = spec_asset("valid_stemcell.tgz")
     deployment_hash = Bosh::Spec::Deployments.simple_manifest

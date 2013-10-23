@@ -34,8 +34,14 @@ module Bosh::Dev::Aws
         microbosh_deployment_manifest = instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest')
         Bosh::Dev::Aws::MicroBoshDeploymentManifest
           .should_receive(:new)
-          .with(ENV, bosh_cli_session)
+          .with(ENV)
           .and_return(microbosh_deployment_manifest)
+
+        microbosh_deployment_cleaner = instance_double('Bosh::Dev::Aws::MicroBoshDeploymentCleaner')
+        Bosh::Dev::Aws::MicroBoshDeploymentCleaner
+          .should_receive(:new)
+          .with(microbosh_deployment_manifest)
+          .and_return(microbosh_deployment_cleaner)
 
         bat_deployment_manifest = instance_double('Bosh::Dev::Aws::BatDeploymentManifest')
         Bosh::Dev::Aws::BatDeploymentManifest
@@ -51,7 +57,8 @@ module Bosh::Dev::Aws
           bosh_cli_session,
           stemcell_archive,
           microbosh_deployment_manifest,
-          bat_deployment_manifest
+          bat_deployment_manifest,
+          microbosh_deployment_cleaner,
         ).and_return(runner)
 
         expect(subject.build(bat_helper, 'net-type')).to eq(runner)

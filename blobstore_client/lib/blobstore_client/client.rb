@@ -1,16 +1,22 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh
   module Blobstore
     class Client
       PROVIDER_NAMES = %w[dav simple s3 swift atmos local]
 
       def self.create(blobstore_provider, options = {})
-        unless PROVIDER_NAMES.include? blobstore_provider
-          raise BlobstoreError, "Invalid client provider, available providers are: #{PROVIDER_NAMES}"
+        unless PROVIDER_NAMES.include?(blobstore_provider)
+          raise BlobstoreError,
+            "Unknown client provider '#{blobstore_provider}', " +
+            "available providers are: #{PROVIDER_NAMES}"
         end
-
         blobstore_client_constantize(blobstore_provider).new(options)
+      end
+
+      def self.safe_create(provider, options = {})
+        wrapped_client = create(provider, options)
+        sha1_client    = Sha1VerifiableBlobstoreClient.new(wrapped_client)
+        retryable      = Retryable.new(tries: 3, sleep: 0.5, on: [BlobstoreError])
+        RetryableBlobstoreClient.new(sha1_client, retryable)
       end
 
       private

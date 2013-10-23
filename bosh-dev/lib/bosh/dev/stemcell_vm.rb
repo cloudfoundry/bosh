@@ -25,6 +25,12 @@ module Bosh::Dev
           time bundle exec rake ci:publish_stemcell[#{infrastructure_name},#{operating_system_name}]
         " #{vm_name}
       BASH
+    ensure
+      Rake::FileUtilsExt.sh <<-BASH
+        set -eu
+        cd bosh-stemcell
+        vagrant destroy #{vm_name} --force
+      BASH
     end
 
     private

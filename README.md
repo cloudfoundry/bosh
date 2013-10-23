@@ -13,13 +13,13 @@ and deployment.
 To install the latest bosh CLI gems:
 
 ```
-gem install bosh_cli  --source http://bosh-jenkins-gems.s3.amazonaws.com --pre
+gem install bosh_cli --pre
 
 # Plugin required for deploying MicroBosh
-gem install bosh_cli_plugin_micro --source http://bosh-jenkins-gems.s3.amazonaws.com --pre
+gem install bosh_cli_plugin_micro --pre
 
 # Plugin required for 'bosh aws create' and bootstrap commands
-gem install bosh_cli_plugin_aws --source http://bosh-jenkins-gems.s3.amazonaws.com --pre
+gem install bosh_cli_plugin_aws --pre
 ```
 
 # Cloud Foundry Resources

@@ -7,7 +7,7 @@ require "yaml"
 require "nats/client"
 require "redis"
 require "restclient"
-require "director"
+require "bosh/director"
 
 
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))

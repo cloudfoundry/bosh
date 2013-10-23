@@ -2,6 +2,18 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe S3BlobstoreClient do
+    describe 'interface' do
+      subject do
+        s3_blobstore(
+          encryption_key: 'bla',
+          bucket_name: 'test',
+          access_key_id: 'KEY',
+          secret_access_key: 'SECRET'
+        )
+      end
+
+      it_implements_base_client_interface
+    end
 
     let(:s3) { double(AWS::S3) }
 
@@ -30,7 +42,8 @@ module Bosh::Blobstore
       it 'should raise an error if using simple and encryption' do
         options = { 'bucket_name' => 'test',
                     'encryption_key' => 'KEY' }
-        expect { s3_blobstore(options) }.to raise_error BlobstoreError, "can't use read-only with an encryption key"
+        expect { s3_blobstore(options) }.to raise_error(
+          BlobstoreError, "can't use read-only with an encryption key")
       end
 
       it 'should be processed and passed to the AWS::S3 class' do
@@ -51,7 +64,9 @@ module Bosh::Blobstore
       end
     end
 
-    describe 'create' do
+    describe '#create' do
+      subject(:client) { s3_blobstore(options) }
+
       context 'encrypted' do
         let(:options) do
           {
@@ -61,7 +76,6 @@ module Bosh::Blobstore
             encryption_key: 'kjahsdjahsgdlahs'
           }
         end
-        let(:client) { s3_blobstore(options) }
 
         it 'should encrypt' do
           client.should_receive(:store_in_s3) do |path, id|
@@ -79,8 +93,6 @@ module Bosh::Blobstore
             secret_access_key: 'SECRET'
           }
         end
-
-        let(:client) { s3_blobstore(options) }
 
         it 'should not encrypt when key is missing' do
           client.should_not_receive(:encrypt_file)
@@ -123,7 +135,6 @@ module Bosh::Blobstore
             secret_access_key: 'SECRET',
           }
         end
-        let(:client) { s3_blobstore(options) }
 
         it 'should store to folder' do
           client.should_receive(:store_in_s3) do |_, id|
@@ -133,9 +144,19 @@ module Bosh::Blobstore
           client.create(file, 'foobar')
         end
       end
+
+      context 'with read-only access' do
+        let(:options) { { bucket_name: 'fake-bucket' } }
+
+        it 'raises an error' do
+          expect {
+            client.create('fake-oid')
+          }.to raise_error(BlobstoreError, 'unsupported action')
+        end
+      end
     end
 
-    describe 'get' do
+    describe '#get' do
       let(:options) do
         {
           bucket_name: 'test',
@@ -193,21 +214,39 @@ module Bosh::Blobstore
       let(:blob) { double(AWS::S3::S3Object) }
 
       it 'should return true if the object already exists' do
-        blob.should_receive(:exists?).and_return(true)
         client.should_receive(:get_object_from_s3).with('fake-oid').and_return(blob)
-
+        blob.should_receive(:exists?).and_return(true)
         client.exists?('fake-oid').should be_true
       end
 
       it 'should return false if the object does not exist' do
-        blob.should_receive(:exists?).and_return(false)
         client.should_receive(:get_object_from_s3).with('fake-oid').and_return(blob)
-
+        blob.should_receive(:exists?).and_return(false)
         client.exists?('fake-oid').should be_false
+      end
+
+      context 'without folder options' do
+        let(:options) { { bucket_name: 'fake-bucket' } }
+
+        it 'should pass through to simple.object_exists? for #exists?' do
+          client.simple.should_receive(:exists?).with('fake-oid')
+          client.exists?('fake-oid')
+        end
+      end
+
+      context 'with folder options' do
+        let(:options) { { bucket_name: 'fake-bucket', folder: 'fake-folder' } }
+
+        it 'should pass through to simple.object_exists? for #exists? with folder' do
+          client.simple.should_receive(:exists?).with('fake-folder/fake-oid')
+          client.exists?('fake-oid')
+        end
       end
     end
 
-    describe 'delete' do
+    describe '#delete' do
+      subject(:client) { s3_blobstore(options) }
+
       context 'without folder option' do
         let(:options) do
           {
@@ -217,7 +256,7 @@ module Bosh::Blobstore
             secret_access_key: 'SECRET'
           }
         end
-        let(:client) { s3_blobstore(options) }
+
         let(:blob) { double(AWS::S3::S3Object) }
 
         it 'should delete an object' do
@@ -246,7 +285,7 @@ module Bosh::Blobstore
             secret_access_key: 'SECRET'
           }
         end
-        let(:client) { s3_blobstore(options) }
+
         let(:blob) { double(AWS::S3::S3Object) }
 
         it 'should delete an object' do
@@ -255,6 +294,16 @@ module Bosh::Blobstore
           client.should_receive(:get_object_from_s3).with('folder/fake-oid').and_return(blob)
           blob.should_receive(:delete)
           client.delete('fake-oid')
+        end
+      end
+
+      context 'with read-only access' do
+        let(:options) { { bucket_name: 'fake-bucket' } }
+
+        it 'raises an error' do
+          expect {
+            client.delete('fake-oid')
+          }.to raise_error(BlobstoreError, 'unsupported action')
         end
       end
     end

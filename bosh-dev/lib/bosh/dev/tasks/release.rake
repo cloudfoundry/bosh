@@ -1,9 +1,11 @@
 namespace :release do
   desc 'Create BOSH dev release'
   task :create_dev_release do
+    require 'bosh/dev/build'
     require 'bosh/dev/gem_components'
 
-    gem_components = Bosh::Dev::GemComponents.new
+    build = Bosh::Dev::Build.candidate
+    gem_components = Bosh::Dev::GemComponents.new(build.number)
     gem_components.build_release_gems
     create_release
   end

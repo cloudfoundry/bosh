@@ -8,24 +8,24 @@ AllCops:
    - bosh_aws_cpi/**
    - bosh_cli/**
    - bosh_cli_plugin_aws/**
-   - bosh_cli_plugin_micro/**
    - bosh_common/**
    - bosh_cpi/**
-   - bosh_encryption/**
    - bosh_openstack_cpi/**
-   - bosh_registry/**
+   - bosh-registry/**
    - bosh_vsphere_cpi/**
    - bosh_warden_cpi/**
-   - director/**
-   - health_monitor/**
-   - package_compiler/**
+   - bosh-director/**
+   - bosh-monitor/**
+   - bosh-release/**
    - release/**
-   - ruby_vim_sdk/**
    - simple_blobstore_server/**
    - spec/**
    - stemcell_builder/**
    - vendor/**
    - tmp/**
+
+CollectionMethods:
+  Enabled: false # Enabling this doesn't like "inject"
 
 Encoding:
   Enabled: false
@@ -54,3 +54,7 @@ TrivialAccessors:
 
 AvoidPerlisms:
   Enabled: false # Unfortunately $CHILD_STATUS isn't always the same as $?
+
+AlignParameters:
+  Enabled: false
+

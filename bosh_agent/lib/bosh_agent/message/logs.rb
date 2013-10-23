@@ -87,11 +87,9 @@ module Bosh::Agent
       def upload_tarball(path)
         bsc_options  = Bosh::Agent::Config.blobstore_options
         bsc_provider = Bosh::Agent::Config.blobstore_provider
-
-        blobstore = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
+        blobstore = Bosh::Blobstore::Client.safe_create(bsc_provider, bsc_options)
 
         logger.info("Uploading tarball to blobstore")
-
         blobstore_id = nil
 
         File.open(path) do |f|

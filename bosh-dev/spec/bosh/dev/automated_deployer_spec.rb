@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/automated_deployer'
+require 'bosh/dev/aws/deployments_repository'
 
 module Bosh::Dev
   describe AutomatedDeployer do
@@ -34,6 +35,7 @@ module Bosh::Dev
           'build-number',
           deployment_account,
           downloader,
+          deployments_repository
         ).and_return(deployer)
 
         expect(described_class.for_environment(
@@ -53,6 +55,7 @@ module Bosh::Dev
           build_number,
           deployment_account,
           artifacts_downloader,
+          deployments_repository
         )
       end
 
@@ -70,6 +73,8 @@ module Bosh::Dev
       end
 
       let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
+
+      let(:deployments_repository) { instance_double('Bosh::Dev::Aws::DeploymentsRepository') }
 
       before { Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive) }
       let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
@@ -117,6 +122,15 @@ module Bosh::Dev
         bosh_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
 
         deployer.deploy
+      end
+
+      describe '#migrate' do
+        it 'runs AWS migrations' do
+          deployment_account.should_receive(:run_with_env).with('bosh aws create --trace')
+          deployments_repository.should_receive(:push)
+          deployer.migrate
+        end
+
       end
     end
   end

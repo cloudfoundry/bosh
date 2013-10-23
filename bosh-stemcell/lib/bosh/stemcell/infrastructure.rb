@@ -38,7 +38,7 @@ module Bosh::Stemcell
 
     class Vsphere < Base
       def initialize
-        super(name: 'vsphere', hypervisor: 'esxi', default_disk_size: 2048)
+        super(name: 'vsphere', hypervisor: 'esxi', default_disk_size: 3072)
       end
     end
 

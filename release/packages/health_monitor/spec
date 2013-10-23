@@ -3,4 +3,4 @@ name: health_monitor
 dependencies:
 - ruby
 files:
-- bosh/health_monitor/*.gem
+- bosh/bosh-monitor/*.gem

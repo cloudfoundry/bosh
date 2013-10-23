@@ -30,7 +30,7 @@ function pkg_mgr {
   elif [ -f $centos_file ]
   then
     echo "Found $centos_file - Assuming CentOS"
-    run_in_chroot $chroot "yum update"
+    run_in_chroot $chroot "yum update --assumeyes"
     run_in_chroot $chroot "yum --verbose --assumeyes $*"
     run_in_chroot $chroot "yum clean all"
   else

@@ -4,7 +4,7 @@ require "spec_helper"
 
 describe Bosh::Cli::JobPropertyValidator do
   before do
-    File.stub(:read).with('/jobs/director/templates/director.yml.erb').and_return('---\nname: <%= p("director.name") %>')
+    File.stub(:read).with('/jobs/director/templates/director.yml.erb.erb').and_return('---\nname: <%= p("director.name") %>')
     File.stub(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return('---\nprovider: <%= p("blobstore.provider") %>')
     File.stub(:read).with('/jobs/blobstore/templates/test.yml.erb').and_return('---\nhost: <%= spec.networks.send("foo").ip %>')
   end
@@ -16,7 +16,7 @@ describe Bosh::Cli::JobPropertyValidator do
                             {'description' => 'Name of director'},
                         'director.port' =>
                             {'description' => 'Port that the director nginx listens on', 'default' => 25555}},
-           all_templates: %w[/jobs/director/templates/director.yml.erb])
+           all_templates: %w[/jobs/director/templates/director.yml.erb.erb])
   end
 
   let(:blobstore_job) do

@@ -21,6 +21,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-stemcell'
   spec.add_dependency 'peach'
   spec.add_dependency 'bosh_cli'
+  spec.add_dependency 'bosh_cli_plugin_aws'
+  spec.add_dependency 'bundler'
+
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'rspec-fire'

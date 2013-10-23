@@ -154,13 +154,13 @@ describe Bosh::Agent::Handler do
   describe 'Encryption' do
 
     before(:each) do
-      @credentials = Bosh::EncryptionHandler.generate_credentials
+      @credentials = Bosh::Core::EncryptionHandler.generate_credentials
       Bosh::Agent::Config.credentials = @credentials
 
       @handler = Bosh::Agent::Handler.new
       @handler.nats = @nats
 
-      @encryption_handler = Bosh::EncryptionHandler.new('client_id', @credentials)
+      @encryption_handler = Bosh::Core::EncryptionHandler.new('client_id', @credentials)
 
       @cipher = Gibberish::AES.new(@credentials['crypt_key'])
     end
@@ -199,7 +199,7 @@ describe Bosh::Agent::Handler do
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
-        }.should raise_error(Bosh::EncryptionHandler::DecryptionError)
+        }.should raise_error(Bosh::Core::EncryptionHandler::DecryptionError)
       }
 
       @handler.handle_message(
@@ -248,7 +248,7 @@ describe Bosh::Agent::Handler do
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
-        }.should raise_error(Bosh::EncryptionHandler::SessionError, /session_id mismatch/)
+        }.should raise_error(Bosh::Core::EncryptionHandler::SessionError, /session_id mismatch/)
       }
 
       @handler.handle_message(
@@ -275,7 +275,7 @@ describe Bosh::Agent::Handler do
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
-        }.should raise_error(Bosh::EncryptionHandler::SignatureError, /Expected hmac/)
+        }.should raise_error(Bosh::Core::EncryptionHandler::SignatureError, /Expected hmac/)
       }
 
       @handler.handle_message(
@@ -306,7 +306,7 @@ describe Bosh::Agent::Handler do
       @handler.should_receive(:log_encryption_error) { |*args|
         lambda {
           raise args[0]
-        }.should raise_error(Bosh::EncryptionHandler::SequenceNumberError)
+        }.should raise_error(Bosh::Core::EncryptionHandler::SequenceNumberError)
       }
 
       # Send it again

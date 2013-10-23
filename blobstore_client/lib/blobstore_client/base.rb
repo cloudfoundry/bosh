@@ -43,8 +43,9 @@ module Bosh
       # Get an object from the blobstore.
       # @param [String] id object id
       # @param [File] file where to store the fetched object
+      # @param [Hash] options for individual request configuration
       # @return [String] the object contents if the file parameter is nil
-      def get(id, file = nil)
+      def get(id, file = nil, options = {})
         if file
           get_file(id, file)
           file.flush

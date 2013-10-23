@@ -9,6 +9,7 @@ namespace :cd do
       args.build_number,
       args.environment,
     )
+    deployer.migrate
     deployer.deploy
   end
 end

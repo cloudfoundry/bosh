@@ -2,12 +2,13 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe DavBlobstoreClient do
+    subject { described_class.new({}) }
     let(:response) { double(HTTP::Message) }
     let(:httpclient) { double(HTTPClient) }
 
-    before(:each) do
-      HTTPClient.stub(:new).and_return(httpclient)
-    end
+    before { HTTPClient.stub(new: httpclient) }
+
+    it_implements_base_client_interface
 
     describe 'options' do
       it 'should set up authentication when present' do

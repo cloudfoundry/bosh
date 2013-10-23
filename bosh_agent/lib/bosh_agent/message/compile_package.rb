@@ -10,7 +10,7 @@ module Bosh::Agent
     # blobstore. It returns the uploaded blob's blobstore_id & sha1.
     #
     # This message has the following uses:
-    # * the package_compiler (within the stemcell_builder) to
+    # * the bosh-release (within the stemcell_builder) to
     #   compile packages to the microbosh's local blobstore
     # * the director requests packages be compiled during deployment
     #   if they are not yet compiled and available in the blobstore
@@ -35,7 +35,7 @@ module Bosh::Agent
       def initialize(args)
         bsc_provider = Bosh::Agent::Config.blobstore_provider
         bsc_options = Bosh::Agent::Config.blobstore_options
-        @blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
+        @blobstore_client = Bosh::Blobstore::Client.safe_create(bsc_provider, bsc_options)
         @blobstore_id, @sha1, @package_name, @package_version, @dependencies = args
 
         @base_dir = Bosh::Agent::Config.base_dir

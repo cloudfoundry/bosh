@@ -1,12 +1,9 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Agent::Message::CompilePackage do
-
-  before(:each) do
-    Bosh::Agent::Config.blobstore_provider = "simple"
-    Bosh::Agent::Config.blobstore_options = {}
+  before do
+    Bosh::Agent::Config.blobstore_provider = 'simple'
+    Bosh::Agent::Config.blobstore_options = { 'fake-key' => 'fake-value' }
     @httpclient = double("httpclient")
     HTTPClient.stub(:new).and_return(@httpclient)
 
@@ -22,9 +19,13 @@ describe Bosh::Agent::Message::CompilePackage do
   end
 
   it "should have a blobstore client" do
+    blobstore_client = double('fake-blobstore-client')
+    Bosh::Blobstore::Client
+      .should_receive(:safe_create)
+      .with('simple', { 'fake-key' => 'fake-value' })
+      .and_return(blobstore_client)
     handler = Bosh::Agent::Message::CompilePackage.new(nil)
-    handler.blobstore_client.
-        should be_an_instance_of(Bosh::Blobstore::SimpleBlobstoreClient)
+    expect(handler.blobstore_client).to eq(blobstore_client)
   end
 
   it "should unpack a package" do
