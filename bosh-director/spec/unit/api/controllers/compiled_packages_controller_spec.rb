@@ -2,17 +2,17 @@ require 'spec_helper'
 require 'rack/test'
 require 'bosh/director/api/controllers/compiled_packages_controller'
 
-module Bosh::Director::Api
-  describe Controllers::CompiledPackagesController do
+module Bosh::Director
+  describe Api::Controllers::CompiledPackagesController do
     include Rack::Test::Methods
 
-    subject(:app) { Controllers::CompiledPackagesController } # "app" is a Rack::Test hook
+    subject(:app) { Api::Controllers::CompiledPackagesController } # "app" is a Rack::Test hook
 
     before do
-      Controllers::CompiledPackagesController.enable(:raise_errors)
-      Controllers::CompiledPackagesController.disable(:show_exceptions)
+      #Controllers::CompiledPackagesController.enable(:raise_errors)
+      #Controllers::CompiledPackagesController.disable(:show_exceptions)
 
-      ResourceManager.stub(:new)
+      Api::ResourceManager.stub(:new)
     end
 
 
@@ -36,13 +36,36 @@ module Bosh::Director::Api
       end
 
       context 'authenticated access' do
-        before { authorize 'admin', 'admin' }
+        before do
+          authorize 'admin', 'admin'
+          Models::Stemcell.make(name: 'bosh-stemcell', version: '123')
+          release = Models::Release.make(name: 'cf-release')
+          Models::ReleaseVersion.make(release: release, version: '456')
+        end
 
-        it 'returns a tarball' do
-          get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+        context 'when the specified stemcell and release exist' do
+          it 'returns a tarball' do
+            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
 
-          expect(last_response.status).to eq(200)
-          expect(last_response.content_type).to eq('application/x-compressed')
+            expect(last_response.status).to eq(200)
+            expect(last_response.content_type).to eq('application/x-compressed')
+          end
+        end
+
+        context 'when the stemcell does not exist' do
+          it 'returns a 404' do
+            get '/stemcells/invalid-stemcell/123/releases/cf-release/456/compiled_packages'
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+
+        context 'when the release does not exist' do
+          it 'returns a 404' do
+            get '/stemcells/bosh-stemcell/123/releases/invalid-release/456/compiled_packages'
+
+            expect(last_response.status).to eq(404)
+          end
         end
       end
     end
