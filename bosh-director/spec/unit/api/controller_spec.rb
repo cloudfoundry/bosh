@@ -12,7 +12,7 @@ module Bosh::Director
       end
 
       it 'includes each resourceful controller as middleware' do
-        expect(Controller.middleware).to include(
+        expect(Controller.middleware).to eq([
                  [Controllers::BackupsController, empty_args, no_block],
                  [Controllers::DeploymentsController, empty_args, no_block],
                  [Controllers::InfoController, empty_args, no_block],
@@ -23,7 +23,7 @@ module Bosh::Director
                  [Controllers::StemcellsController, empty_args, no_block],
                  [Controllers::TasksController, empty_args, no_block],
                  [Controllers::UsersController, empty_args, no_block],
-               )
+               ])
       end
     end
   end
