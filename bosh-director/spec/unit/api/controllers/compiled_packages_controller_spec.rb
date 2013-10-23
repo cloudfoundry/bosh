@@ -9,8 +9,12 @@ module Bosh::Director::Api
     subject(:app) { Controllers::CompiledPackagesController } # "app" is a Rack::Test hook
 
     before do
+      Controllers::CompiledPackagesController.enable(:raise_errors)
+      Controllers::CompiledPackagesController.disable(:show_exceptions)
+
       ResourceManager.stub(:new)
     end
+
 
     describe 'GET', '/compiled_packages/:release/:release_version/:stemcell_name/:stemcell_version' do
       context 'unauthenticated access' do
