@@ -155,7 +155,7 @@ module Bosh::Deployer
       private
 
       def has_bosh_registry?(path = ENV['PATH'])
-        path.split(':').each do |dir|
+        path.split(File::PATH_SEPARATOR).each do |dir|
           return true if File.exist?(File.join(dir, 'bosh-registry'))
         end
         false
