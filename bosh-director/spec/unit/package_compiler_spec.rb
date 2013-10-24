@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe PackageCompiler do
+    let(:job) { double('job').as_null_object }
+
     before do
       @cloud = double(:cpi)
       Config.stub(:cloud).and_return(@cloud)
@@ -44,7 +46,7 @@ module Bosh::Director
       deps = package.dependency_set.map do |dep_name|
         Models::Package.find(name: dep_name)
       end
-      task = CompileTask.new(package, stemcell, deps)
+      task = CompileTask.new(package, stemcell, deps, job)
       dep_key = task.dependency_key
 
       Models::CompiledPackage.make(package: package,
@@ -446,7 +448,7 @@ module Bosh::Director
       package = Models::Package.make
       stemcell = Models::Stemcell.make
 
-      task = CompileTask.new(package, stemcell, [])
+      task = CompileTask.new(package, stemcell, [], job)
 
       compiler = PackageCompiler.new(@plan)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage')
@@ -461,7 +463,7 @@ module Bosh::Director
     describe 'the global blobstore' do
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
-      let(:task) { CompileTask.new(package, stemcell, []) }
+      let(:task) { CompileTask.new(package, stemcell, [], job) }
       let(:compiler) { PackageCompiler.new(@plan) }
       let(:cache_key) { 'cache key' }
 

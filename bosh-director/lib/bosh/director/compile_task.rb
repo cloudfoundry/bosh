@@ -32,12 +32,12 @@ module Bosh::Director
     # @param [Models::Stemcell] stemcell What stemcell package is compiled for
     # @param [Array<Models::Package>] dependent_packages Package models that this task depends on
     # @param [DeploymentPlan::Job] initial_job The first job that this task is associate with
-    def initialize(package, stemcell, dependent_packages, initial_job = nil)
+    def initialize(package, stemcell, dependent_packages, initial_job)
       @package = package
       @stemcell = stemcell
 
       @jobs = []
-      add_job(initial_job) if initial_job
+      add_job(initial_job)
       @dependencies = []
       @dependent_tasks = []
 
