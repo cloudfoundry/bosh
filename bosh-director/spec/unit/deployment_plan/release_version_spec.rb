@@ -2,10 +2,10 @@
 
 require File.expand_path("../../../spec_helper", __FILE__)
 
-describe Bosh::Director::DeploymentPlan::Release do
+describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
   def make(plan, spec)
-    BD::DeploymentPlan::Release.new(plan, spec)
+    BD::DeploymentPlan::ReleaseVersion.new(plan, spec)
   end
 
   def make_plan(deployment)

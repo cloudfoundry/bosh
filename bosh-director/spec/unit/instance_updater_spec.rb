@@ -12,7 +12,7 @@ module Bosh::Director
     let(:deployment_plan) { double('Bosh::Director::DeploymentPlan', model: deployment_model, dns_domain: domain, name: 'deployment') }
     let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: stemcell_model) }
 
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::Release', spec: 'release-spec') }
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: 'release-spec') }
     let(:resource_pool) {
       double('Bosh::Director::DeploymentPlan::ResourcePool',
              stemcell: stemcell,

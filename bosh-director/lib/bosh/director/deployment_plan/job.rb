@@ -30,7 +30,7 @@ module Bosh::Director
       # @return [DeploymentPlan] Current deployment plan
       attr_accessor :deployment
 
-      # @return [DeploymentPlan::Release] Release this job belongs to
+      # @return [DeploymentPlan::ReleaseVersion] Release this job belongs to
       attr_accessor :release
 
       # @return [DeploymentPlan::ResourcePool] Resource pool this job should

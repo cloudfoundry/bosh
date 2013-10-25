@@ -58,7 +58,7 @@ module Bosh::Director
     end
 
     def prepare_samples
-      @release = instance_double('Bosh::Director::DeploymentPlan::Release',
+      @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
                                  name: 'cf-release',
                                  model: Models::ReleaseVersion.make)
       @stemcell_a = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
@@ -393,7 +393,7 @@ module Bosh::Director
 
     describe 'tearing down compilation vms' do
       before do # prepare compilation
-        release  = instance_double('Bosh::Director::DeploymentPlan::Release',  name: 'release')
+        release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  name: 'release')
         stemcell = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 

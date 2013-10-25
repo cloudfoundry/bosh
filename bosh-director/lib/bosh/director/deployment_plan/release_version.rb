@@ -1,8 +1,6 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
-    class Release
+    class ReleaseVersion
       include ValidationHelper
 
       # @return [String] Release name
@@ -18,8 +16,8 @@ module Bosh::Director
       def initialize(deployment_plan, spec)
         @deployment_plan = deployment_plan
 
-        @name = safe_property(spec, "name", :class => String)
-        @version = safe_property(spec, "version", :class => String)
+        @name = safe_property(spec, 'name', :class => String)
+        @version = safe_property(spec, 'version', :class => String)
 
         @model = nil
         @templates = {}
@@ -33,7 +31,7 @@ module Bosh::Director
       def bind_model
         deployment = @deployment_plan.model
         if deployment.nil?
-          raise DirectorError, "Deployment not bound in the deployment plan"
+          raise DirectorError, 'Deployment not bound in the deployment plan'
         end
 
         release = @manager.find_by_name(@name)
@@ -51,10 +49,10 @@ module Bosh::Director
       # release spec
       # @return [void]
       def bind_templates
-        # Release version model needs to be known so we can look up its
+        # ReleaseVersion model needs to be known so we can look up its
         # templates
         if @model.nil?
-          raise DirectorError, "Release model not bound in release spec"
+          raise DirectorError, 'ReleaseVersion model not bound in release spec'
         end
 
         # By now job specs from the deployment manifest should
@@ -70,8 +68,8 @@ module Bosh::Director
       # @return [Hash] Hash representation
       def spec
         {
-          "name" => @name,
-          "version" => @version
+          'name' => @name,
+          'version' => @version
         }
       end
 

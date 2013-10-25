@@ -24,8 +24,8 @@ module Bosh::Director
       end
 
       it 'should bind releases' do
-        r1 = stub(Release)
-        r2 = stub(Release)
+        r1 = stub(ReleaseVersion)
+        r2 = stub(ReleaseVersion)
 
         plan.should_receive(:releases).and_return([r1, r2])
 
@@ -76,8 +76,8 @@ module Bosh::Director
       end
 
       it 'should bind templates' do
-        r1 = double(Release)
-        r2 = double(Release)
+        r1 = double(ReleaseVersion)
+        r2 = double(ReleaseVersion)
 
         plan.should_receive(:releases).and_return([r1, r2])
 
