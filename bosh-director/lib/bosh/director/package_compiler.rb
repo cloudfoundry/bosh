@@ -211,10 +211,8 @@ module Bosh::Director
         return task
       end
 
-      release_version = job.release
-      dependencies = package.dependency_set.map do |name|
-        release_version.get_package_model_by_name(name)
-      end
+      release_version = job.release.model
+      dependencies = release_version.dependencies(package.name)
 
       task = CompileTask.new(package, stemcell, dependencies, job)
 

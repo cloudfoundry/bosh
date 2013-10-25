@@ -58,9 +58,10 @@ module Bosh::Director
     end
 
     def prepare_samples
+      @release_version_model = Models::ReleaseVersion.make
       @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
                                  name: 'cf-release',
-                                 model: Models::ReleaseVersion.make)
+                                 model: @release_version_model)
       @stemcell_a = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
       @stemcell_b = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
 
@@ -99,11 +100,9 @@ module Bosh::Director
 
       @package_set_b = [@p_nginx, @p_common, @p_router, @p_warden, @p_ruby]
 
-      # Dependencies lookup expected!
-      @release.should_receive(:get_package_model_by_name).
-        with('ruby').at_least(1).times.and_return(@p_ruby)
-      @release.should_receive(:get_package_model_by_name).
-        with('common').at_least(1).times.and_return(@p_common)
+      (@package_set_a + @package_set_b).each do |package|
+        @release_version_model.packages << package
+      end
     end
 
     context 'when all needed packages are compiled' do
@@ -251,12 +250,13 @@ module Bosh::Director
         network = double('network', name: 'network_name')
         compilation_config = instance_double('Bosh::Director::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
                                     reuse_compilation_vms: true)
-        release = double('release', name: 'release_name')
+        release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: [])
+        release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell_model = double('stemcell_model', desc: 'stemcell description', id: 'stemcell_id', sha1: 'beef')
         stemcell = double('stemcell', model: stemcell_model)
         resource_pool = double('resource_pool', stemcell: stemcell)
-        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release, name: 'job_name', resource_pool: resource_pool)
-        package_model = instance_double('Bosh::Director::Models::Package', desc: 'package description', id: 'package_id', dependency_set: [],
+        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', resource_pool: resource_pool)
+        package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
                                fingerprint: 'deadbeef')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [ package_model ])
         job.stub(templates: [template])
@@ -393,7 +393,9 @@ module Bosh::Director
 
     describe 'tearing down compilation vms' do
       before do # prepare compilation
-        release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  name: 'release')
+        prepare_samples
+
+        release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  model: @release_version_model, name: 'release')
         stemcell = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
