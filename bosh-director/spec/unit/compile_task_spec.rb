@@ -4,8 +4,8 @@ module Bosh::Director
   describe CompileTask do
     let(:job) { double('job').as_null_object }
 
-    def make(package, stemcell, dependencies = nil)
-      CompileTask.new(package, stemcell, dependencies || [], job)
+    def make(package, stemcell)
+      CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
     end
 
     describe 'creation' do
@@ -23,7 +23,7 @@ module Bosh::Director
       let(:dependent_packages) { [] }
 
       subject(:task) do
-        CompileTask.new(package, stemcell, dependent_packages, job)
+        CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
       end
 
       context 'with an initial job' do
@@ -31,48 +31,6 @@ module Bosh::Director
 
         it 'can create' do
           task.jobs.should == [job]
-        end
-      end
-
-      describe 'dependency key' do
-        it 'correctly handles the "no dependencies" case' do
-          task.dependency_key.should == '[]'
-        end
-
-        context 'when it depends on one package' do
-          let(:dependent_packages) { [dep_pkg1] }
-
-          it 'generates a list of (name, version) of dependent packages' do
-            task.dependency_key.should == '[["abc","10.1-dev"]]'
-          end
-        end
-
-        context 'when it depends on multiple packages' do
-          let(:dependent_packages) { [dep_pkg1, dep_pkg2] }
-
-          it 'sorts the dependency keys by package name' do
-            task.dependency_key.should == '[["abc","10.1-dev"],["zyx","9.2-dev"]]'
-          end
-        end
-      end
-
-      describe 'cache key' do
-        it 'should generate a unique cache key for a package and stemcell' do
-          hash_input = [package_fingerprint, stemcell_sha1].join('')
-
-          Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
-          task.cache_key.should == 'a new sha'
-        end
-
-        context 'when it depends on multiple packages' do
-          let(:dependent_packages) { [dep_pkg1, dep_pkg2] }
-
-          it 'should handle multiple dependent packages and use their fingerprints sorted by package name' do
-            hash_input = [package_fingerprint, stemcell_sha1, 'dp_fingerprint1', 'dp_fingerprint2'].join('')
-
-            Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
-            task.cache_key.should == 'a new sha'
-          end
         end
       end
     end
@@ -236,13 +194,16 @@ module Bosh::Director
       let(:logger) { double("logger", info:nil) }
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
-      subject(:task) { CompileTask.new(package, stemcell, [], job) }
+      let(:dependency_key) { 'fake-dependency-key' }
+      let(:cache_key) { 'fake-cache-key' }
+
+      subject(:task) { CompileTask.new(package, stemcell, job, dependency_key, cache_key) }
 
       context 'when global package cache is not used' do
         before { Config.stub(:use_compiled_package_cache?).and_return(false) }
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: '[]')
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: dependency_key)
             BlobUtil.should_not_receive(:fetch_from_global_cache)
             task.find_compiled_package(logger, event_log).should == compiled_package
           end
@@ -271,7 +232,7 @@ module Bosh::Director
             it 'returns the compiled package' do
               event_log.stub(:track).with(anything).and_yield
 
-              compiled_package = double('compiled package', package: package, stemcell: stemcell, dependency_key: '[]')
+              compiled_package = double('compiled package', package: package, stemcell: stemcell, dependency_key: dependency_key)
               BlobUtil.stub(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
               BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, task.cache_key, task.dependency_key).and_return(compiled_package)
               task.find_compiled_package(logger, event_log).should == compiled_package
@@ -281,7 +242,7 @@ module Bosh::Director
 
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: '[]')
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: dependency_key)
             BlobUtil.should_not_receive(:fetch_from_global_cache)
             task.find_compiled_package(logger, event_log).should == compiled_package
           end

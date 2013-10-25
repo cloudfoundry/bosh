@@ -4,7 +4,23 @@ module Bosh::Director
   describe PackageCompiler do
     let(:job) { double('job').as_null_object }
 
+    let(:release_version_model) do
+      Models::ReleaseVersion.make
+    end
+
+    let(:thread_pool) do
+      thread_pool = instance_double('ThreadPool')
+      thread_pool.stub(:wrap).and_yield(thread_pool)
+      thread_pool.stub(:process).and_yield
+      thread_pool.stub(:working?).and_return(false)
+      thread_pool
+    end
+
     before do
+      ThreadPool.stub(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
+
+      Config.stub(redis: double('fake-redis'))
+
       @cloud = double(:cpi)
       Config.stub(:cloud).and_return(@cloud)
 
@@ -42,12 +58,9 @@ module Bosh::Director
 
     def make_compiled(package, stemcell, sha1 = 'deadbeef',
       blobstore_id = 'deadcafe')
-      # A little bit of prep to satisfy dependency keys
-      deps = package.dependency_set.map do |dep_name|
-        Models::Package.find(name: dep_name)
-      end
-      task = CompileTask.new(package, stemcell, deps, job)
-      dep_key = task.dependency_key
+      dep_key = release_version_model.package_dependency_key(package.name)
+      cache_key = release_version_model.package_cache_key(package.name, stemcell)
+      CompileTask.new(package, stemcell, job, dep_key, cache_key)
 
       Models::CompiledPackage.make(package: package,
                                    dependency_key: dep_key,
@@ -58,10 +71,9 @@ module Bosh::Director
     end
 
     def prepare_samples
-      @release_version_model = Models::ReleaseVersion.make
       @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
                                  name: 'cf-release',
-                                 model: @release_version_model)
+                                 model: release_version_model)
       @stemcell_a = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
       @stemcell_b = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
 
@@ -101,7 +113,7 @@ module Bosh::Director
       @package_set_b = [@p_nginx, @p_common, @p_router, @p_warden, @p_ruby]
 
       (@package_set_a + @package_set_b).each do |package|
-        @release_version_model.packages << package
+        release_version_model.packages << package
       end
     end
 
@@ -250,7 +262,8 @@ module Bosh::Director
         network = double('network', name: 'network_name')
         compilation_config = instance_double('Bosh::Director::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
                                     reuse_compilation_vms: true)
-        release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: [])
+        release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion',
+                                                dependencies: [], package_dependency_key: 'fake-dependency-key', package_cache_key: 'fake-cache-key')
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell_model = double('stemcell_model', desc: 'stemcell description', id: 'stemcell_id', sha1: 'beef')
         stemcell = double('stemcell', model: stemcell_model)
@@ -395,7 +408,7 @@ module Bosh::Director
       before do # prepare compilation
         prepare_samples
 
-        release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  model: @release_version_model, name: 'release')
+        release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  model: release_version_model, name: 'release')
         stemcell = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
@@ -450,7 +463,7 @@ module Bosh::Director
       package = Models::Package.make
       stemcell = Models::Stemcell.make
 
-      task = CompileTask.new(package, stemcell, [], job)
+      task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
       compiler = PackageCompiler.new(@plan)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage')
@@ -465,7 +478,7 @@ module Bosh::Director
     describe 'the global blobstore' do
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
-      let(:task) { CompileTask.new(package, stemcell, [], job) }
+      let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
       let(:compiler) { PackageCompiler.new(@plan) }
       let(:cache_key) { 'cache key' }
 

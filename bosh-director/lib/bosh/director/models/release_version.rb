@@ -21,6 +21,20 @@ module Bosh::Director::Models
       packages_by_name.fetch(package_name)
     end
 
+    def package_dependency_key(package_name)
+      key = dependencies(package_name).sort { |a, b|
+        a.name <=> b.name
+      }.map { |p| [p.name, p.version]}
+
+      Yajl::Encoder.encode(key)
+    end
+
+    def package_cache_key(package_name, stemcell)
+      dependency_fingerprints = dependencies(package_name).sort_by(&:name).map {|p| p.fingerprint }
+      hash_input = ([package_by_name(package_name).fingerprint, stemcell.sha1]+dependency_fingerprints).join("")
+      Digest::SHA1.hexdigest(hash_input)
+    end
+
     private
 
     def packages_by_name
