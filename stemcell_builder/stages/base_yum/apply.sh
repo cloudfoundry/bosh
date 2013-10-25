@@ -5,6 +5,9 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
+#Add rsyslog rpm repo
+cp $assets_dir/rsyslog.repo $chroot//etc/yum.repos.d/
+pkg_mgr update
 
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
 pkg_mgr install upstart

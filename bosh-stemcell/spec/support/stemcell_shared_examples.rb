@@ -24,4 +24,20 @@ shared_examples_for 'a stemcell' do
       it { should return_exit_status(0) }
     end
   end
+
+  context 'installed by rsyslog' do
+
+    describe file('/etc/rsyslog.conf') do
+      it { should be_file }
+    end
+
+    describe file('/etc/init.d/rsyslog') do
+      it { should be_file }
+      it { should be_executable }
+    end
+
+    describe command('rsyslogd -v') do
+      it { should return_stdout /7\.4\.5/ }
+    end
+  end
 end

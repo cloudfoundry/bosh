@@ -13,14 +13,6 @@ describe 'Ubuntu Stemcell' do
   end
 
   context 'installed by base_debootstrap' do
-    {
-      'ubuntu-minimal' => '1.197',
-    }.each do |pkg, version|
-      describe package(pkg) do
-        it { should be_installed.with_version(version) }
-      end
-    end
-
     describe file('/etc/lsb-release') do
       it { should be_file }
       it { should contain 'DISTRIB_RELEASE=10.04' }
@@ -77,8 +69,10 @@ describe 'Ubuntu Stemcell' do
       'debhelper'            => '7.4.15ubuntu1',
       'runit'                => '2.0.0-1ubuntu4',
       'sudo'                 => '1.7.2p1-1ubuntu5.6',
-      'rsyslog'              => '4.2.0-2ubuntu8.1',
-      'rsyslog-relp'         => '4.2.0-2ubuntu8.1',
+      'uuid-dev'             => '2.17.2-0ubuntu1.10.04.2',
+      'libgcrypt11-dev'      => '1.4.4-5ubuntu2.2',
+      'python-docutils'      => '0.6-3',
+      'libgnutls-dev'        => '2.8.5-2ubuntu0.4',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -160,6 +154,12 @@ describe 'Ubuntu Stemcell' do
       subject { file('/etc/ssh/sshd_config') }
 
       it { should contain /^PermitRootLogin no$/ }
+    end
+  end
+
+  context 'installed by rsyslog' do
+    describe file('/etc/init/rsyslog.conf') do
+      it { should contain('/usr/local/sbin/rsyslogd') }
     end
   end
 end
