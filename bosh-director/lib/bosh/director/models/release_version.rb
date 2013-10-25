@@ -12,9 +12,13 @@ module Bosh::Director::Models
     end
 
     def dependencies(package_name)
-      packages_by_name[package_name].dependency_set.map do |package_name|
-        packages_by_name.fetch(package_name)
+      package_by_name(package_name).dependency_set.map do |package_name|
+        package_by_name(package_name)
       end
+    end
+
+    def package_by_name(package_name)
+      packages_by_name.fetch(package_name)
     end
 
     private

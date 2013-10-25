@@ -89,12 +89,7 @@ module Bosh::Director
       # @param [String] name Package name
       # @return [Models::Package]
       def get_package_model_by_name(name)
-        @all_packages ||= @model.packages.inject({}) do |hash, package|
-          hash[package.name] = package
-          hash
-        end
-
-        @all_packages[name]
+        @model.package_by_name(name)
       end
 
       # Adds template to a list of templates used by this release for the

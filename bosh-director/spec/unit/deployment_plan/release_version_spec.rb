@@ -1,9 +1,6 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ReleaseVersion do
-
   def make(plan, spec)
     BD::DeploymentPlan::ReleaseVersion.new(plan, spec)
   end
@@ -133,15 +130,16 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       release.bind_model
       release.get_template_model_by_name("dea").should == t1
       release.get_template_model_by_name("stager").should == nil
+
       release.get_package_model_by_name("ruby18").should == p1
-      release.get_package_model_by_name("ruby19").should == nil
-      release.get_package_model_by_name("ruby20").should == nil
+      expect { release.get_package_model_by_name("ruby19") }.to raise_error /key not found/
+      expect { release.get_package_model_by_name("ruby20") }.to raise_error /key not found/
 
       release = make(plan, {"name" => "bar", "version" => "55"})
       release.bind_model
       release.get_template_model_by_name("dea").should == nil
       release.get_template_model_by_name("stager").should == t2
-      release.get_package_model_by_name("ruby18").should == nil
+      expect { release.get_package_model_by_name("ruby18") }.to raise_error /key not found/
       release.get_package_model_by_name("ruby19").should == p2
       release.get_package_model_by_name("ruby20").should == p3
     end
