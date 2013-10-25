@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director::Models
   class ReleaseVersion < Sequel::Model(Bosh::Director::Config.db)
     many_to_one  :release
@@ -11,6 +9,20 @@ module Bosh::Director::Models
       validates_presence [:release_id, :version]
       validates_unique [:release_id, :version]
       validates_format VALID_ID, :version
+    end
+
+    def dependencies(package_name)
+      packages_by_name[package_name].dependency_set.map do |package_name|
+        packages_by_name.fetch(package_name)
+      end
+    end
+
+    private
+
+    def packages_by_name
+      @packages_by_name ||= packages.inject({}) do |cache, package|
+        cache.merge(package.name => package)
+      end
     end
   end
 end
