@@ -22,6 +22,7 @@ useradd -m --comment 'BOSH System User' vcap
 echo \"vcap:${bosh_users_password}\" | chpasswd
 echo \"root:${bosh_users_password}\" | chpasswd
 usermod -G ${vcap_user_groups} vcap
+usermod -s /bin/bash vcap
 "
 
 # Setup SUDO
