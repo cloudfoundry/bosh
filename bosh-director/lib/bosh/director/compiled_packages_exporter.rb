@@ -2,7 +2,7 @@ require 'tempfile'
 
 module Bosh::Director
   class CompiledPackagesExporter
-    def initialize
+    def initialize(_)
       @tgz = Tempfile.new('fake.tgz')
     end
 
