@@ -9,9 +9,6 @@ module Bosh::Director
     subject(:app) { Api::Controllers::CompiledPackagesController } # "app" is a Rack::Test hook
 
     before do
-      #Controllers::CompiledPackagesController.enable(:raise_errors)
-      #Controllers::CompiledPackagesController.disable(:show_exceptions)
-
       Api::ResourceManager.stub(:new)
     end
 
