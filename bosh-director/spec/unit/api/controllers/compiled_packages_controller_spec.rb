@@ -53,8 +53,11 @@ module Bosh::Director
           let(:exporter) { instance_double('Bosh::Director::CompiledPackagesExporter', tgz_path: fake_tgz_file.path) }
 
           before do
-            CompiledPackageGroup.stub(:new).and_return(package_group)
-            CompiledPackagesExporter.stub(:new).and_return(exporter)
+            package_group = CompiledPackageGroup.stub(:new).and_return(package_group)
+            blobstore_client = double('blobstore client')
+            App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
+
+            CompiledPackagesExporter.stub(:new).with(package_group, blobstore_client).and_return(exporter)
           end
 
           it 'returns a tarball' do
