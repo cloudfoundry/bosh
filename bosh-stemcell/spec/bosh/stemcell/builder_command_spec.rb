@@ -62,8 +62,7 @@ module Bosh::Stemcell
     let(:stage_collection) do
       instance_double(
         'Bosh::Stemcell::StageCollection',
-        operating_system_stages: ['FAKE_OS_STAGES'],
-        infrastructure_stages: ['FAKE_INFRASTRUCTURE_STAGES']
+        all_stages: %w(FAKE_OS_STAGES FAKE_INFRASTRUCTURE_STAGES)
       )
     end
 
@@ -176,9 +175,7 @@ module Bosh::Stemcell
 
         it 'calls #configure_and_apply' do
           stage_runner.should_receive(:configure_and_apply).
-            with(['FAKE_OS_STAGES']).ordered
-          stage_runner.should_receive(:configure_and_apply).
-            with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
+            with(%w(FAKE_OS_STAGES FAKE_INFRASTRUCTURE_STAGES)).ordered
           stemcell_builder_command.should_receive(:system).
             with(expected_rspec_command).ordered
 
@@ -190,9 +187,7 @@ module Bosh::Stemcell
 
           it 'calls #configure_and_apply' do
             stage_runner.should_receive(:configure_and_apply).
-              with(['FAKE_OS_STAGES']).ordered
-            stage_runner.should_receive(:configure_and_apply).
-              with(['FAKE_INFRASTRUCTURE_STAGES']).ordered
+              with(%w(FAKE_OS_STAGES FAKE_INFRASTRUCTURE_STAGES)).ordered
             stemcell_builder_command.should_receive(:system).
               with(expected_rspec_command).ordered
 

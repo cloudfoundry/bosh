@@ -9,6 +9,23 @@ module Bosh::Stemcell
       @operating_system = options.fetch(:operating_system)
     end
 
+    def all_stages
+      operating_system_stages + agent_stages + infrastructure_stages
+    end
+
+    private
+
+    attr_reader :infrastructure, :operating_system
+
+    def agent_stages
+      [
+        :bosh_ruby,
+        :bosh_agent,
+        # Micro BOSH
+        :bosh_micro,
+      ]
+    end
+
     def operating_system_stages
       case operating_system
         when OperatingSystem::Centos then
@@ -29,23 +46,15 @@ module Bosh::Stemcell
       end
     end
 
-    private
-
-    attr_reader :infrastructure, :operating_system
-
     def hacked_centos_common
       [
         # Bosh steps
         :bosh_users,
         :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
         #:bosh_sysstat,
         #:bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
-        # Micro BOSH
-        :bosh_micro,
         # Install GRUB/kernel/etc
         :system_grub,
         #:system_kernel,
@@ -73,14 +82,10 @@ module Bosh::Stemcell
         # Bosh steps
         :bosh_users,
         :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
         :bosh_sysstat,
         :bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
-        # Micro BOSH
-        :bosh_micro,
         # Install GRUB/kernel/etc
         :system_grub,
         :system_kernel,
