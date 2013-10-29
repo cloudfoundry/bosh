@@ -20,12 +20,7 @@ module Bosh::Director
 
     describe '#download' do
       it 'returns path to directory with download manifest yaml and blobs for compiled packages' do
-        ['blobstore_id1', 'blobstore_id2'].each do |blobstore_id|
-          blobstore_client.stub(:get).with(blobstore_id, anything) do |id, file|
-            file.should_receive(:close)
-          end
-        end
-
+        blobstore_client.stub(:get)
 
         download_dir = downloader.download
 
@@ -45,6 +40,23 @@ compiled_packages:
   stemcell_sha: sha_1_for_stemcell
   blobstore_id: blobstore_id2
 YAML
+      end
+
+      it 'downloads blobs using the injected blobstore client' do
+        blobstore_client.should_receive(:get).with('blobstore_id1', anything)
+        blobstore_client.should_receive(:get).with('blobstore_id2', anything)
+
+        downloader.download
+      end
+
+      it 'closes the files passed to blobstore client' do
+        ['blobstore_id1', 'blobstore_id2'].each do |blobstore_id|
+          blobstore_client.stub(:get).with(blobstore_id, anything) do |_, file|
+            file.should_receive(:close)
+          end
+        end
+
+        downloader.download
       end
     end
   end
