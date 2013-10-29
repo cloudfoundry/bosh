@@ -8,6 +8,7 @@ require 'bosh/director/api/controllers/resurrection_controller'
 require 'bosh/director/api/controllers/stemcells_controller'
 require 'bosh/director/api/controllers/tasks_controller'
 require 'bosh/director/api/controllers/users_controller'
+require 'bosh/director/api/controllers/compiled_packages_controller'
 
 module Bosh::Director
   module Api
@@ -22,6 +23,7 @@ module Bosh::Director
       use Controllers::StemcellsController
       use Controllers::TasksController
       use Controllers::UsersController
+      use Controllers::CompiledPackagesController
     end
   end
 end

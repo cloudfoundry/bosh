@@ -1,5 +1,3 @@
-require 'bosh/director/models/compiled_package'
-
 module Bosh::Director
   class CompiledPackageGroup
     def initialize(release_version, stemcell)

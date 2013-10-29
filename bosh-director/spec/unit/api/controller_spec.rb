@@ -23,6 +23,7 @@ module Bosh::Director
                  [Controllers::StemcellsController, empty_args, no_block],
                  [Controllers::TasksController, empty_args, no_block],
                  [Controllers::UsersController, empty_args, no_block],
+                 [Controllers::CompiledPackagesController, empty_args, no_block],
                ])
       end
     end
