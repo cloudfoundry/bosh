@@ -62,4 +62,14 @@ namespace :ci do
     build = Bosh::Dev::Build.candidate
     build.promote_artifacts
   end
+
+  task :promote, [:candidate_build_number, :candidate_sha, :stable_branch] do |_, args|
+    require 'logger'
+    require 'bosh/dev/promoter'
+
+    logger = Logger.new(STDERR)
+
+    promoter = Bosh::Dev::Promoter.new(args.to_hash.merge(logger: logger))
+    promoter.promote
+  end
 end
