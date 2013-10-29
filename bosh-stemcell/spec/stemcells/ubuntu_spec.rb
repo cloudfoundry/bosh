@@ -152,7 +152,7 @@ describe 'Ubuntu Stemcell' do
     describe 'disallow root login' do
       subject { file('/etc/ssh/sshd_config') }
 
-      it { should contain /^PermitRootLogin no$/}
+      it { should contain /^PermitRootLogin no$/ }
     end
   end
 end
