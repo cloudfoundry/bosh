@@ -16,7 +16,12 @@ module Bosh::Director
       @compiled_package_group.compiled_packages.each do |compiled_package|
         blobstore_id = compiled_package.blobstore_id
 
-        compiled_packages['compiled_packages'] << {'name' => compiled_package.package.name, 'blobstore_id' => blobstore_id}
+        compiled_packages['compiled_packages'] << {
+          'name' => compiled_package.package.name,
+          'fingerprint' => compiled_package.package.fingerprint,
+          'stemcell_sha' => @compiled_package_group.stemcell_sha,
+          'blobstore_id' => blobstore_id,
+        }
         compiled_package_blob = File.open(File.join(temp_dir, 'blobs', blobstore_id), 'w')
         @blobstore_client.get(blobstore_id, compiled_package_blob)
         compiled_package_blob.close

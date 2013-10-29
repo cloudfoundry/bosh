@@ -4,7 +4,7 @@ require 'bosh/director/compiled_package_group'
 module Bosh::Director
   describe CompiledPackageGroup do
     let(:release_version) { Models::ReleaseVersion.make }
-    let(:stemcell) { Models::Stemcell.make }
+    let(:stemcell) { Models::Stemcell.make(sha1: 'fake_stemcell_sha1') }
 
     let(:package1) { Models::Package.make }
     let(:package2) { Models::Package.make }
@@ -33,6 +33,12 @@ module Bosh::Director
         release_version.stub(:package_dependency_key).with(package3.name).and_return('')
 
         expect(package_group.compiled_packages).to eq([compiled_package1])
+      end
+    end
+
+    describe '#stemcell_sha' do
+      it 'returns the stemcells sha1' do
+        expect(package_group.stemcell_sha).to eq('fake_stemcell_sha1')
       end
     end
   end

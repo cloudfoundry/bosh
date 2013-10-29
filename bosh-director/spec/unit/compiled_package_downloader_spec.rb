@@ -6,13 +6,14 @@ module Bosh::Director
   describe CompiledPackageDownloader do
     include FakeFS::SpecHelpers
 
-    let(:package1) { double('package1', name: 'pkg-001') }
-    let(:package2) { double('package2', name: 'pkg-002') }
+    let(:package1) { double('package1', name: 'pkg-001', fingerprint: 'fingerprint_for_package_1') }
+    let(:package2) { double('package2', name: 'pkg-002', fingerprint: 'fingerprint_for_package_2') }
 
     let(:compiled_package1) { double('compiled_package1', blobstore_id: 'blobstore_id1', package: package1) }
     let(:compiled_package2) { double('compiled_package2', blobstore_id: 'blobstore_id2', package: package2) }
 
-    let(:compiled_package_group) { double('package group', compiled_packages: [compiled_package1, compiled_package2]) }
+    let(:compiled_package_group) { double('package group', compiled_packages: [compiled_package1, compiled_package2],
+                                                           stemcell_sha: 'sha_1_for_stemcell') }
     let(:blobstore_client) { double('blobstore client') }
 
     subject(:downloader) { CompiledPackageDownloader.new(compiled_package_group, blobstore_client) }
@@ -36,8 +37,12 @@ module Bosh::Director
 ---
 compiled_packages:
 - name: pkg-001
+  fingerprint: fingerprint_for_package_1
+  stemcell_sha: sha_1_for_stemcell
   blobstore_id: blobstore_id1
 - name: pkg-002
+  fingerprint: fingerprint_for_package_2
+  stemcell_sha: sha_1_for_stemcell
   blobstore_id: blobstore_id2
 YAML
       end
