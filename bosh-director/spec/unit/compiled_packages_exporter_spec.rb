@@ -20,5 +20,26 @@ module Bosh::Director
         exporter.tgz_path.should eq(File.join(download_dir, 'compiled_packages.tgz'))
       end
     end
+
+    describe '#cleanup' do
+      it 'removes the download directory using the downloader' do
+        group = double('compiled package group')
+        blobstore_client = double('blobstore client')
+
+        download_dir = '/path/to/download_dir'
+        downloader = double('compiled package downloader', download: download_dir)
+
+        CompiledPackageDownloader.stub(new: downloader)
+
+        archiver = double('gzipper', compress: nil)
+        TarGzipper.stub(new: archiver)
+
+        exporter = CompiledPackagesExporter.new(group, blobstore_client)
+        exporter.tgz_path
+
+        downloader.should_receive(:cleanup)
+        exporter.cleanup
+      end
+    end
   end
 end

@@ -61,11 +61,19 @@ module Bosh::Director
           end
 
           it 'returns a tarball' do
+            exporter.stub(:cleanup)
+
             get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
 
             expect(last_response.status).to eq(200)
             expect(last_response.content_type).to eq('application/x-compressed')
             expect(last_response.body).to eq('fake tgz content')
+          end
+
+          it 'cleans up the artifacts' do
+            exporter.should_receive(:cleanup).with(no_args)
+            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            last_response.status
           end
         end
 

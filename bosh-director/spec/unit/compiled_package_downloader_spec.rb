@@ -73,5 +73,17 @@ module Bosh::Director
         downloader.download
       end
     end
+
+    describe '#cleanup' do
+      it 'removes the download dir' do
+        blobstore_client.stub(:get)
+
+        download_dir = downloader.download
+
+        expect { downloader.cleanup }.to change {
+          File.exists?(download_dir)
+        }.from(true).to(false)
+      end
+    end
   end
 end

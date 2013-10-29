@@ -17,7 +17,11 @@ module Bosh::Director
         compiled_packages = CompiledPackageGroup.new(release_version, stemcell)
         exporter = CompiledPackagesExporter.new(compiled_packages, App.instance.blobstores.blobstore)
 
-        send_file exporter.tgz_path, type: :tgz
+        begin
+          send_file exporter.tgz_path, type: :tgz
+        ensure
+          exporter.cleanup
+        end
       end
     end
   end
