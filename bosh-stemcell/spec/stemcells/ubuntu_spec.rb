@@ -136,6 +136,13 @@ describe 'Ubuntu Stemcell' do
     end
   end
 
+  context 'installed by bosh_user' do
+    describe file('/etc/passwd') do
+      it { should be_file }
+      it { should contain '/home/vcap:/bin/bash' }
+    end
+  end
+
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
       it { should contain('ubuntu') }
