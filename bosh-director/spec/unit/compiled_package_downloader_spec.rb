@@ -26,18 +26,24 @@ module Bosh::Director
 
         File.should exist(File.join(download_dir, 'compiled_packages.yml'))
 
-        File.open(File.join(download_dir, 'compiled_packages.yml')).read.should eq(<<YAML)
----
-compiled_packages:
-- name: pkg-001
-  fingerprint: fingerprint_for_package_1
-  stemcell_sha: sha_1_for_stemcell
-  blobstore_id: blobstore_id1
-- name: pkg-002
-  fingerprint: fingerprint_for_package_2
-  stemcell_sha: sha_1_for_stemcell
-  blobstore_id: blobstore_id2
-YAML
+        YAML.load_file(File.join(download_dir, 'compiled_packages.yml')).should eq(
+          {
+            'compiled_packages' => [
+              {
+                'name' => 'pkg-001',
+                'fingerprint' => 'fingerprint_for_package_1',
+                'stemcell_sha' => 'sha_1_for_stemcell',
+                'blobstore_id' => 'blobstore_id1',
+              },
+              {
+                'name' => 'pkg-002',
+                'fingerprint' => 'fingerprint_for_package_2',
+                'stemcell_sha' => 'sha_1_for_stemcell',
+                'blobstore_id' => 'blobstore_id2',
+              },
+            ]
+          }
+        )
       end
 
       it 'downloads blobs using the injected blobstore client' do
