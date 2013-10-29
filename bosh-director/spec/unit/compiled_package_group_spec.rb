@@ -36,9 +36,9 @@ module Bosh::Director
       end
     end
 
-    describe '#stemcell_sha' do
+    describe '#stemcell_sha1' do
       it 'returns the stemcells sha1' do
-        expect(package_group.stemcell_sha).to eq('fake_stemcell_sha1')
+        expect(package_group.stemcell_sha1).to eq('fake_stemcell_sha1')
       end
     end
   end

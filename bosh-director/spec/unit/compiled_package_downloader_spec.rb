@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/director/compiled_package_downloader'
+require 'bosh/director/compiled_package_group'
 require 'fakefs/spec_helpers'
 
 module Bosh::Director
@@ -12,8 +13,8 @@ module Bosh::Director
     let(:compiled_package1) { double('compiled_package1', blobstore_id: 'blobstore_id1', package: package1) }
     let(:compiled_package2) { double('compiled_package2', blobstore_id: 'blobstore_id2', package: package2) }
 
-    let(:compiled_package_group) { double('package group', compiled_packages: [compiled_package1, compiled_package2],
-                                                           stemcell_sha: 'sha_1_for_stemcell') }
+    let(:compiled_package_group) { instance_double('Bosh::Director::CompiledPackageGroup', compiled_packages: [compiled_package1, compiled_package2],
+                                                           stemcell_sha1: 'sha_1_for_stemcell') }
     let(:blobstore_client) { double('blobstore client') }
 
     subject(:downloader) { CompiledPackageDownloader.new(compiled_package_group, blobstore_client) }
@@ -31,14 +32,14 @@ module Bosh::Director
             'compiled_packages' => [
               {
                 'name' => 'pkg-001',
-                'fingerprint' => 'fingerprint_for_package_1',
-                'stemcell_sha' => 'sha_1_for_stemcell',
+                'package_fingerprint' => 'fingerprint_for_package_1',
+                'stemcell_sha1' => 'sha_1_for_stemcell',
                 'blobstore_id' => 'blobstore_id1',
               },
               {
                 'name' => 'pkg-002',
-                'fingerprint' => 'fingerprint_for_package_2',
-                'stemcell_sha' => 'sha_1_for_stemcell',
+                'package_fingerprint' => 'fingerprint_for_package_2',
+                'stemcell_sha1' => 'sha_1_for_stemcell',
                 'blobstore_id' => 'blobstore_id2',
               },
             ]

@@ -17,7 +17,7 @@ module Bosh::Director
       end.compact
     end
 
-    def stemcell_sha
+    def stemcell_sha1
       @stemcell.sha1
     end
   end

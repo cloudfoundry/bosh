@@ -18,8 +18,8 @@ module Bosh::Director
 
         compiled_packages['compiled_packages'] << {
           'name' => compiled_package.package.name,
-          'fingerprint' => compiled_package.package.fingerprint,
-          'stemcell_sha' => @compiled_package_group.stemcell_sha,
+          'package_fingerprint' => compiled_package.package.fingerprint,
+          'stemcell_sha1' => @compiled_package_group.stemcell_sha1,
           'blobstore_id' => blobstore_id,
         }
         compiled_package_blob = File.open(File.join(temp_dir, 'blobs', blobstore_id), 'w')
