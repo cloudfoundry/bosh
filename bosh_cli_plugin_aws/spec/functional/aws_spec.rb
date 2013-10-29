@@ -824,27 +824,6 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
-    describe 'aws delete_all elbs' do
-      let(:config) do
-        { 'aws' => { fake: 'aws config' } }
-      end
-
-      let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
-      subject(:destroyer) { Bosh::Aws::Destroyer.new(ui) }
-
-      it 'should remove all ELBs' do
-        ui.stub(:confirmed?).and_return(true)
-
-        fake_elb = instance_double('Bosh::Aws::ELB')
-        Bosh::Aws::ELB.stub(:new).with(fake: 'aws config').and_return(fake_elb)
-
-        fake_elb.should_receive(:delete_elbs)
-        fake_elb.should_receive(:names).and_return(%w(one two))
-
-        destroyer.delete_all_elbs(config)
-      end
-    end
-
     describe 'aws bootstrap micro' do
       subject(:aws) { described_class.new }
       let(:fake_bootstrap) { double('micro bosh bootstrap') }
