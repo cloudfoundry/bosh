@@ -11,8 +11,11 @@ module Bosh::Director
     def tgz_path
       downloader = CompiledPackageDownloader.new(@compiled_package_group, @blobstore_client)
       download_dir = downloader.download
+      download_path = File.join(download_dir, 'compiled_packages.tgz')
 
-      TarGzipper.new.compress(download_dir, '*', File.join(download_dir, 'compiled_packages.tgz')).path
+      TarGzipper.new.compress(download_dir, '*', download_path)
+
+      download_path
     end
   end
 end

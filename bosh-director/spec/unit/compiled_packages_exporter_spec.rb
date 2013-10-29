@@ -13,14 +13,11 @@ module Bosh::Director
         CompiledPackageDownloader.stub(:new).with(group, blobstore_client).and_return(downloader)
 
         archiver = double('gzipper')
-        tgz_file = double('file')
-        archiver.stub(:compress).with(download_dir, '*', File.join(download_dir, 'compiled_packages.tgz')).and_return(tgz_file)
+        archiver.stub(:compress).with(download_dir, '*', File.join(download_dir, 'compiled_packages.tgz'))
         TarGzipper.stub(:new).and_return(archiver)
 
-        fake_tgz_path = double('fake path')
-        tgz_file.stub(:path).with(no_args).and_return(fake_tgz_path)
         exporter = CompiledPackagesExporter.new(group, blobstore_client)
-        exporter.tgz_path.should eq(fake_tgz_path)
+        exporter.tgz_path.should eq(File.join(download_dir, 'compiled_packages.tgz'))
       end
     end
   end
