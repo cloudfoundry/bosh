@@ -18,7 +18,7 @@ module Bosh::Director
 
     subject(:downloader) { CompiledPackageDownloader.new(compiled_package_group, blobstore_client) }
 
-    describe '#download_path' do
+    describe '#download' do
       it 'returns path to directory with download manifest yaml and blobs for compiled packages' do
         ['blobstore_id1', 'blobstore_id2'].each do |blobstore_id|
           blobstore_client.stub(:get).with(blobstore_id, anything) do |id, file|
