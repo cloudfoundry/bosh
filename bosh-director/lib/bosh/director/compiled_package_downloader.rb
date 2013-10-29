@@ -18,7 +18,7 @@ module Bosh::Director
         blobstore_id = compiled_package.blobstore_id
 
         compiled_packages['compiled_packages'] << {
-          'name' => compiled_package.package.name,
+          'package_name' => compiled_package.package.name,
           'package_fingerprint' => compiled_package.package.fingerprint,
           'stemcell_sha1' => @compiled_package_group.stemcell_sha1,
           'blobstore_id' => blobstore_id,

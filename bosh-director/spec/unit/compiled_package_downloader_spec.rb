@@ -31,13 +31,13 @@ module Bosh::Director
           {
             'compiled_packages' => [
               {
-                'name' => 'pkg-001',
+                'package_name' => 'pkg-001',
                 'package_fingerprint' => 'fingerprint_for_package_1',
                 'stemcell_sha1' => 'sha_1_for_stemcell',
                 'blobstore_id' => 'blobstore_id1',
               },
               {
-                'name' => 'pkg-002',
+                'package_name' => 'pkg-002',
                 'package_fingerprint' => 'fingerprint_for_package_2',
                 'stemcell_sha1' => 'sha_1_for_stemcell',
                 'blobstore_id' => 'blobstore_id2',
