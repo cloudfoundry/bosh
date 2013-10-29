@@ -14,7 +14,7 @@ module Bosh::Director
     end
 
 
-    describe 'GET', '/compiled_packages/:release/:release_version/:stemcell_name/:stemcell_version' do
+    describe 'GET', '/stemcells/:stemcell_name/:stemcell_version/releases/:release/:release_version/compiled_packages' do
       context 'unauthenticated access' do
         it 'returns 401' do
           get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
