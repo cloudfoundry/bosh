@@ -19,14 +19,12 @@ module Bosh::Director
     subject(:downloader) { CompiledPackageDownloader.new(compiled_package_group, blobstore_client) }
 
     describe '#download' do
-      it 'returns path to directory with download manifest yaml and blobs for compiled packages' do
+      it 'returns path to directory with download manifest yaml' do
         blobstore_client.stub(:get)
 
         download_dir = downloader.download
 
         File.should exist(File.join(download_dir, 'compiled_packages.yml'))
-        File.should exist(File.join(download_dir, 'blobs', 'blobstore_id1'))
-        File.should exist(File.join(download_dir, 'blobs', 'blobstore_id2'))
 
         File.open(File.join(download_dir, 'compiled_packages.yml')).read.should eq(<<YAML)
 ---
@@ -40,6 +38,15 @@ compiled_packages:
   stemcell_sha: sha_1_for_stemcell
   blobstore_id: blobstore_id2
 YAML
+      end
+
+      it 'creates blobs files under the blobs subdir' do
+        blobstore_client.stub(:get)
+
+        download_dir = downloader.download
+
+        File.should exist(File.join(download_dir, 'blobs', 'blobstore_id1'))
+        File.should exist(File.join(download_dir, 'blobs', 'blobstore_id2'))
       end
 
       it 'downloads blobs using the injected blobstore client' do
