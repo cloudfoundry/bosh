@@ -158,6 +158,7 @@ module Bosh::Cli::Command
       destroyer = Bosh::Aws::Destroyer.new(self)
       config = load_config(config_file)
 
+      destroyer.ensure_not_production!(config)
       destroyer.delete_all_elbs(config)
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)

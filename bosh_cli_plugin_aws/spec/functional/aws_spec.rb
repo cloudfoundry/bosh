@@ -128,6 +128,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it 'should destroy the specified VPCs, RDS DBs, and S3 Volumes' do
+        destroyer.should_receive(:ensure_not_production!).ordered
         aws.should_receive(:delete_all_ec2)
         aws.should_receive(:delete_all_ebs)
         aws.should_receive(:delete_all_rds_dbs)
@@ -137,7 +138,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_elastic_ips)
         aws.should_receive(:delete_all_security_groups)
         aws.should_receive(:delete_all_route53_records)
-        destroyer.should_receive(:delete_all_elbs)
+        destroyer.should_receive(:delete_all_elbs).ordered
 
         aws.destroy(config_file)
       end
