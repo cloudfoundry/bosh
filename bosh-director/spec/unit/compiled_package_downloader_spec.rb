@@ -40,6 +40,13 @@ compiled_packages:
 YAML
       end
 
+      it 'downloads blobs using the injected blobstore client' do
+        blobstore_client.should_receive(:get).with('blobstore_id1', anything)
+        blobstore_client.should_receive(:get).with('blobstore_id2', anything)
+
+        downloader.download
+      end
+
       it 'creates blobs files under the blobs subdir' do
         blobstore_client.stub(:get)
 
@@ -47,13 +54,6 @@ YAML
 
         File.should exist(File.join(download_dir, 'blobs', 'blobstore_id1'))
         File.should exist(File.join(download_dir, 'blobs', 'blobstore_id2'))
-      end
-
-      it 'downloads blobs using the injected blobstore client' do
-        blobstore_client.should_receive(:get).with('blobstore_id1', anything)
-        blobstore_client.should_receive(:get).with('blobstore_id2', anything)
-
-        downloader.download
       end
 
       it 'closes the files passed to blobstore client' do
