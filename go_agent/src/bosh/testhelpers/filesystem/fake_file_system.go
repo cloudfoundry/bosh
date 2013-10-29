@@ -1,4 +1,4 @@
-package agent
+package filesystem
 
 import "os"
 
@@ -6,14 +6,14 @@ type FakeFileSystem struct {
 	Files map[string]*FakeFileStats
 
 	HomeDirUsername string
-	HomeDirHomeDir string
+	HomeDirHomeDir  string
 }
 
 type FakeFileStats struct {
 	FileMode    os.FileMode
-	Username        string
+	Username    string
 	CreatedWith string
-	Content		string
+	Content     string
 }
 
 func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {

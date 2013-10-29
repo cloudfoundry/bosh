@@ -1,4 +1,4 @@
-package agent
+package infrastructure
 
 type FakeInfrastructure struct {
 	PublicKey string

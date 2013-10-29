@@ -1,23 +1,25 @@
-package agent
+package bootstrap
 
 import (
+	testfs "bosh/testhelpers/filesystem"
+	testinf "bosh/testhelpers/infrastructure"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-	testagent "testhelpers/agent"
 	"testing"
 )
 
 func TestRunSetsUpSsh(t *testing.T) {
-	fakeFs := &testagent.FakeFileSystem{
+	fakeFs := &testfs.FakeFileSystem{
 		HomeDirHomeDir: "/some/home/dir",
 	}
 
-	fakeInfrastructure := &testagent.FakeInfrastructure{
+	fakeInfrastructure := &testinf.FakeInfrastructure{
 		PublicKey: "some public key",
 	}
 
-	Run(fakeFs, fakeInfrastructure)
+	boot := New(fakeFs, fakeInfrastructure)
+	boot.Run()
 
 	sshDirPath := "/some/home/dir/.ssh"
 	sshDirStat := fakeFs.GetFileTestStat(sshDirPath)

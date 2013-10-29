@@ -1,4 +1,4 @@
-package agent
+package infrastructure
 
 import (
 	"github.com/stretchr/testify/assert"
