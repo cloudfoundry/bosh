@@ -1,0 +1,6 @@
+[submodule "go_agent/src/github.com/stretchr/testify"]
+	path = go_agent/src/github.com/stretchr/testify
+	url = https://github.com/stretchr/testify.git
+[submodule "go_agent/src/github.com/stretchr/objx"]
+	path = go_agent/src/github.com/stretchr/objx
+	url = https://github.com/stretchr/objx.git

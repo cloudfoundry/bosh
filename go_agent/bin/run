@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+$(dirname $0)/go run src/main/agent.go $*

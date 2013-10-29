@@ -1,0 +1,31 @@
+#!/bin/bash
+
+result=0
+
+echo -e "\n Formatting packages..."
+$(dirname $0)/go fmt agent/...
+let "result+=$?"
+
+echo -e "\n Installing package dependencies..."
+$(dirname $0)/go test -i agent/...
+let "result+=$?"
+
+echo -e "\n Testing packages:"
+$(dirname $0)/go test agent/... -parallel 4$@
+let "result+=$?"
+
+echo -e "\n Vetting packages for potential issues..."
+$(dirname $0)/go vet agent/...
+let "result+=$?"
+
+echo -e "\n Running build script to confirm everything compiles..."
+$(dirname $0)/build
+let "result+=$?"
+
+if [ $result -eq 0 ]; then
+	echo -e "\nSUITE SUCCESS"
+else
+	echo -e "\nSUITE FAILURE"
+fi
+
+exit $result
