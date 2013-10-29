@@ -45,9 +45,9 @@ module Bosh::Director
         context 'when the specified stemcell and release exist' do
           let(:package_group) { instance_double('Bosh::Director::CompiledPackageGroup') }
           let(:fake_tgz_file) do
-            Tempfile.new('fake_tgz').tap do |f|
+            Tempfile.open('fake_tgz') do |f|
               f.write('fake tgz content')
-              f.close
+              f
             end
           end
           let(:exporter) { instance_double('Bosh::Director::CompiledPackagesExporter', tgz_path: fake_tgz_file.path) }
