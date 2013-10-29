@@ -25,11 +25,11 @@ namespace :ci do
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
-  task :build_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
+  task :build_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
     require 'bosh/dev/stemcell_builder'
 
     stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
-      args.infrastructure_name, args.operating_system_name)
+      args.infrastructure_name, args.operating_system_name, args.agent_name)
     stemcell_file = stemcell_builder.build_stemcell
 
     mkdir_p('tmp')
@@ -37,13 +37,13 @@ namespace :ci do
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and publish to S3'
-  task :publish_stemcell, [:infrastructure_name, :operating_system_name] do |_, args|
+  task :publish_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
 
     stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
-      args.infrastructure_name, args.operating_system_name)
+      args.infrastructure_name, args.operating_system_name, args.agent_name)
     stemcell_file = stemcell_builder.build_stemcell
 
     stemcell_publisher = Bosh::Dev::StemcellPublisher.for_candidate_build

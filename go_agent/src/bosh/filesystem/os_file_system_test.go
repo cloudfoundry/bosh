@@ -28,7 +28,6 @@ func TestMkdirAll(t *testing.T) {
 	assert.True(t, os.IsNotExist(err))
 
 	fileMode := os.FileMode(0700)
-	expectedMode := fileMode | os.ModeDir
 
 	err = osFs.MkdirAll(testPath, fileMode)
 	assert.NoError(t, err)
@@ -36,7 +35,7 @@ func TestMkdirAll(t *testing.T) {
 	stat, err := os.Stat(testPath)
 	assert.NoError(t, err)
 	assert.True(t, stat.IsDir())
-	assert.Equal(t, stat.Mode(), expectedMode)
+	assert.Equal(t, stat.Mode().Perm(), fileMode)
 }
 
 func TestChown(t *testing.T) {

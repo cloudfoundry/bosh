@@ -17,11 +17,13 @@ module Bosh::Dev
           build,
           'infrastructure-name',
           'operating-system-name',
+          'ruby-agent',
         ).and_return(builder)
 
         described_class.for_candidate_build(
           'infrastructure-name',
           'operating-system-name',
+          'ruby-agent',
         ).should == builder
       end
     end
@@ -33,6 +35,7 @@ module Bosh::Dev
           build,
           infrastructure_name,
           operating_system_name,
+          agent_name,
         )
       end
 
@@ -46,6 +49,7 @@ module Bosh::Dev
       end
       let(:infrastructure_name) { 'vsphere' }
       let(:operating_system_name) { 'ubuntu' }
+      let(:agent_name) { 'ruby' }
 
       let(:build_number) { '869' }
 
@@ -64,6 +68,7 @@ module Bosh::Dev
           env,
           infrastructure_name: infrastructure_name,
           operating_system_name: operating_system_name,
+          agent_name: agent_name,
           release_tarball_path: build.release_tarball_path,
           version: build_number,
         ).and_return(stemcell_builder_command)

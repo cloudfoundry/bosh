@@ -27,6 +27,7 @@ module Bosh::Stemcell
         'ruby_bin' => ruby_bin,
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
+        'go_agent_src_dir' => File.join(source_root, 'go_agent'),
         'image_create_disk_size' => image_create_disk_size
       }.merge(bosh_micro_options).merge(environment_variables).merge(vsphere_options)
     end

@@ -14,6 +14,7 @@ module Bosh::Stemcell
       @environment = env
       @infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
       @operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
+      @agent_name = options.fetch(:agent_name) || 'ruby'
 
       @stemcell_builder_options = BuilderOptions.new(
         env,
@@ -40,7 +41,8 @@ module Bosh::Stemcell
 
       stage_collection = StageCollection.new(
         infrastructure: infrastructure,
-        operating_system: operating_system
+        operating_system: operating_system,
+        agent_name: agent_name,
       )
       stage_runner = StageRunner.new(
         build_path: build_path,
@@ -65,6 +67,7 @@ module Bosh::Stemcell
       :environment,
       :infrastructure,
       :operating_system,
+      :agent_name,
       :stemcell_builder_options
     )
 
@@ -74,6 +77,7 @@ module Bosh::Stemcell
         "STEMCELL_IMAGE=#{image_file_path}",
         'bundle exec rspec -fd',
         "spec/stemcells/#{operating_system.name}_spec.rb",
+        "spec/stemcells/#{agent_name}_agent_spec.rb",
         "spec/stemcells/#{infrastructure.name}_spec.rb",
       ].join(' ')
     end

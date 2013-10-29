@@ -5,8 +5,9 @@ module Bosh::Stemcell
   class StageCollection
 
     def initialize(options)
-      @infrastructure   = options.fetch(:infrastructure)
+      @infrastructure = options.fetch(:infrastructure)
       @operating_system = options.fetch(:operating_system)
+      @agent_name = options.fetch(:agent_name)
     end
 
     def all_stages
@@ -15,15 +16,22 @@ module Bosh::Stemcell
 
     private
 
-    attr_reader :infrastructure, :operating_system
+    attr_reader :infrastructure, :operating_system, :agent_name
 
     def agent_stages
-      [
-        :bosh_ruby,
-        :bosh_agent,
-        # Micro BOSH
-        :bosh_micro,
-      ]
+      case agent_name
+        when 'go'
+          [
+            :bosh_go_agent,
+            #:bosh_micro,
+          ]
+        else
+          [
+            :bosh_ruby,
+            :bosh_agent,
+            :bosh_micro,
+          ]
+      end
     end
 
     def operating_system_stages
@@ -57,7 +65,7 @@ module Bosh::Stemcell
         :bosh_sudoers,
         # Install GRUB/kernel/etc
         :system_grub,
-        #:system_kernel,
+      #:system_kernel,
       ]
     end
 
