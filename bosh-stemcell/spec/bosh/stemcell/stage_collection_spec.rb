@@ -176,7 +176,7 @@ module Bosh::Stemcell
               #:system_open_vm_tools,
               :system_parameters,
               :bosh_clean,
-              #:bosh_harden,
+              :bosh_harden,
               #:bosh_dpkg_list,
               :image_create,
               :image_install_grub,
