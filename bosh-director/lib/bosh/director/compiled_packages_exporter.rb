@@ -1,9 +1,7 @@
 require 'bosh/director/tar_gzipper'
+require 'bosh/director/compiled_package_downloader'
 
 module Bosh::Director
-  class CompiledPackageDownloader
-  end
-
   class CompiledPackagesExporter
     def initialize(compiled_package_group, blobstore_client)
       @compiled_package_group = compiled_package_group
