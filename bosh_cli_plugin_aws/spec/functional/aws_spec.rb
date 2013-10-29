@@ -4,7 +4,7 @@ describe Bosh::Cli::Command::AWS do
   let(:aws) { subject }
   let(:default_config_filename) do
     File.expand_path(File.join(
-                         File.dirname(__FILE__), '..', '..', 'templates', 'aws_configuration_template.yml.erb'
+                       File.dirname(__FILE__), '..', '..', 'templates', 'aws_configuration_template.yml.erb'
                      ))
   end
 
@@ -85,7 +85,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe 'aws create' do
       let(:config_file) { asset 'create_all.yml' }
-      let(:migrator) {double('Migrator')}
+      let(:migrator) { double('Migrator') }
 
       around do |example|
         previous_env = ENV.to_hash
@@ -98,7 +98,7 @@ describe Bosh::Cli::Command::AWS do
 
         example.run
 
-        previous_env.each { |k,v| ENV[k] = v }
+        previous_env.each { |k, v| ENV[k] = v }
       end
 
       it 'should run the migrations' do
@@ -116,7 +116,16 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe 'aws destroy' do
-      let(:config_file) { asset 'config.yml' }
+      let(:config_file) { double('config_file') }
+      let(:config) do
+        { fake: 'config' }
+      end
+      let(:destroyer) { instance_double('Bosh::Aws::Destroyer') }
+
+      before do
+        aws.stub(:load_config).with(config_file).and_return(config)
+        Bosh::Aws::Destroyer.stub(:new).with(aws).and_return(destroyer)
+      end
 
       it 'should destroy the specified VPCs, RDS DBs, and S3 Volumes' do
         aws.should_receive(:delete_all_ec2)
@@ -128,22 +137,33 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_elastic_ips)
         aws.should_receive(:delete_all_security_groups)
         aws.should_receive(:delete_all_route53_records)
-        aws.should_receive(:delete_all_elbs)
-        aws.destroy config_file
+        destroyer.should_receive(:delete_all_elbs)
+
+        aws.destroy(config_file)
+      end
+    end
+
+    describe 'load_config' do
+      let(:config_file) { double('config_file') }
+
+      let(:config) do
+        instance_double('Bosh::Aws::AwsConfig', configuration: 'fake configuration')
       end
 
-      it 'should use a default config file when none is provided' do
-        aws.should_receive(:delete_all_ec2)
-        aws.should_receive(:delete_all_ebs)
-        aws.should_receive(:delete_all_rds_dbs)
-        aws.should_receive(:delete_all_s3)
-        aws.should_receive(:delete_all_vpcs)
-        aws.should_receive(:delete_all_key_pairs)
-        aws.should_receive(:delete_all_elastic_ips)
-        aws.should_receive(:delete_all_security_groups)
-        aws.should_receive(:delete_all_route53_records)
-        aws.should_receive(:delete_all_elbs)
-        aws.destroy
+      context 'when a config file is provided' do
+        it 'uses the provided file' do
+          Bosh::Aws::AwsConfig.should_receive(:new).with(config_file).and_return(config)
+
+          expect(aws.send(:load_config, config_file)).to eq('fake configuration')
+        end
+      end
+
+      context 'when a config file is not provided' do
+        it 'uses a default config' do
+          Bosh::Aws::AwsConfig.should_receive(:new).with(default_config_filename).and_return(config)
+
+          expect(aws.send(:load_config)).to eq('fake configuration')
+        end
       end
     end
 
@@ -184,85 +204,85 @@ describe Bosh::Cli::Command::AWS do
       let(:output_file) { asset 'test-output.yml' }
 
       it 'should delete the vpc and all its dependencies, and release the elastic ips' do
-      fake_ec2 = double('ec2')
-      fake_vpc = double('vpc')
-      fake_dhcp_options = double('dhcp options')
-      fake_route53 = double('route53')
+        fake_ec2 = double('ec2')
+        fake_vpc = double('vpc')
+        fake_dhcp_options = double('dhcp options')
+        fake_route53 = double('route53')
 
-      Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-      Bosh::Aws::VPC.stub(:find).with(fake_ec2, 'vpc-13724979').and_return(fake_vpc)
-      Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        Bosh::Aws::VPC.stub(:find).with(fake_ec2, 'vpc-13724979').and_return(fake_vpc)
+        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
 
-      fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
-      fake_vpc.stub(:instances_count).and_return(0)
+        fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
+        fake_vpc.stub(:instances_count).and_return(0)
 
-      fake_vpc.should_receive :delete_security_groups
-      fake_vpc.should_receive :delete_subnets
-      fake_vpc.should_receive :delete_vpc
-      fake_dhcp_options.should_receive :delete
-      fake_ec2.should_receive(:internet_gateway_ids).and_return(['gw1id', 'gw2id'])
-      fake_ec2.should_receive(:delete_internet_gateways).with(['gw1id', 'gw2id'])
-      fake_ec2.should_receive(:remove_key_pair).with 'somenamez'
-      fake_ec2.should_receive(:release_elastic_ips).with ['107.23.46.162', '107.23.53.76']
-      fake_ec2.should_receive(:release_elastic_ips).with ['123.45.6.7']
-      fake_ec2.should_receive(:release_elastic_ips).with ['123.45.6.8']
-      fake_ec2.should_receive(:release_elastic_ips).with ['123.4.5.9']
-      fake_route53.should_receive(:delete_record).with('*', 'cfdev.com')
-      fake_route53.should_receive(:delete_record).with('micro', 'cfdev.com')
-      fake_route53.should_receive(:delete_record).with('bosh', 'cfdev.com')
-      fake_route53.should_receive(:delete_record).with('bat', 'cfdev.com')
+        fake_vpc.should_receive :delete_security_groups
+        fake_vpc.should_receive :delete_subnets
+        fake_vpc.should_receive :delete_vpc
+        fake_dhcp_options.should_receive :delete
+        fake_ec2.should_receive(:internet_gateway_ids).and_return(['gw1id', 'gw2id'])
+        fake_ec2.should_receive(:delete_internet_gateways).with(['gw1id', 'gw2id'])
+        fake_ec2.should_receive(:remove_key_pair).with 'somenamez'
+        fake_ec2.should_receive(:release_elastic_ips).with ['107.23.46.162', '107.23.53.76']
+        fake_ec2.should_receive(:release_elastic_ips).with ['123.45.6.7']
+        fake_ec2.should_receive(:release_elastic_ips).with ['123.45.6.8']
+        fake_ec2.should_receive(:release_elastic_ips).with ['123.4.5.9']
+        fake_route53.should_receive(:delete_record).with('*', 'cfdev.com')
+        fake_route53.should_receive(:delete_record).with('micro', 'cfdev.com')
+        fake_route53.should_receive(:delete_record).with('bosh', 'cfdev.com')
+        fake_route53.should_receive(:delete_record).with('bat', 'cfdev.com')
 
-      aws.send(:delete_vpc, output_file)
-    end
+        aws.send(:delete_vpc, output_file)
+      end
 
       it 'should retry on AWS errors' do
-      fake_ec2 = double('ec2')
-      fake_vpc = double('vpc')
-      fake_route_53 = double('route53')
-      fake_dhcp_options = double('dhcp_options')
+        fake_ec2 = double('ec2')
+        fake_vpc = double('vpc')
+        fake_route_53 = double('route53')
+        fake_dhcp_options = double('dhcp_options')
 
-      Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-      Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
-      Bosh::Aws::Route53.stub(:new).and_return(fake_vpc)
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
+        Bosh::Aws::Route53.stub(:new).and_return(fake_vpc)
 
-      fake_vpc.stub(:instances_count).and_return(0)
-      fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
-      fake_vpc.stub(:delete_security_groups)
-      fake_vpc.stub(:delete_subnets)
-      fake_vpc.stub(:delete_vpc)
-      fake_vpc.stub(:remove_key_pair)
-      fake_vpc.stub(:delete_record)
+        fake_vpc.stub(:instances_count).and_return(0)
+        fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
+        fake_vpc.stub(:delete_security_groups)
+        fake_vpc.stub(:delete_subnets)
+        fake_vpc.stub(:delete_vpc)
+        fake_vpc.stub(:remove_key_pair)
+        fake_vpc.stub(:delete_record)
 
-      fake_ec2.stub(:internet_gateway_ids)
-      fake_ec2.stub(:delete_internet_gateways)
-      fake_ec2.stub(:remove_key_pair)
-      fake_ec2.stub(:release_elastic_ips)
+        fake_ec2.stub(:internet_gateway_ids)
+        fake_ec2.stub(:delete_internet_gateways)
+        fake_ec2.stub(:remove_key_pair)
+        fake_ec2.stub(:release_elastic_ips)
 
-      fake_dhcp_options.stub(:delete)
+        fake_dhcp_options.stub(:delete)
 
-      aws.stub(aws_retry_wait_time: 0)
+        aws.stub(aws_retry_wait_time: 0)
 
-      fake_vpc.should_receive(:delete_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
-      fake_vpc.should_receive(:delete_security_groups).ordered.once.and_return(true)
-      aws.send(:delete_vpc, output_file)
-    end
+        fake_vpc.should_receive(:delete_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+        fake_vpc.should_receive(:delete_security_groups).ordered.once.and_return(true)
+        aws.send(:delete_vpc, output_file)
+      end
 
       context 'when there are instances running' do
-      it "throws a nice error message and doesn't delete any resources" do
-        fake_vpc = double('vpc')
+        it "throws a nice error message and doesn't delete any resources" do
+          fake_vpc = double('vpc')
 
-        Bosh::Aws::EC2.stub(:new)
-        Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
+          Bosh::Aws::EC2.stub(:new)
+          Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
 
-        fake_vpc.stub(:instances_count).and_return(1)
-        fake_vpc.stub(:vpc_id).and_return('vpc-13724979')
+          fake_vpc.stub(:instances_count).and_return(1)
+          fake_vpc.stub(:vpc_id).and_return('vpc-13724979')
 
-        expect {
-          fake_vpc.should_not_receive(:delete_security_groups)
-          aws.send(:delete_vpc, output_file)
-        }.to raise_error(Bosh::Cli::CliError, '1 instance(s) running in vpc-13724979 - delete them first')
+          expect {
+            fake_vpc.should_not_receive(:delete_security_groups)
+            aws.send(:delete_vpc, output_file)
+          }.to raise_error(Bosh::Cli::CliError, '1 instance(s) running in vpc-13724979 - delete them first')
+        end
       end
-    end
     end
 
     describe 'aws destroy key pairs' do
@@ -291,7 +311,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'should not delete the key pairs' do
           fake_ec2.should_not_receive(:remove_all_key_pairs)
-          aws.send(:delete_all_key_pairs,config_file)
+          aws.send(:delete_all_key_pairs, config_file)
         end
       end
     end
@@ -479,8 +499,8 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
         aws.should_receive(:confirmed?).
-            with('Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?').
-            and_return(false)
+          with('Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?').
+          and_return(false)
 
         aws.send(:delete_all_ec2, config_file)
       end
@@ -558,8 +578,8 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).with('It will delete 2 EBS volume(s)')
         aws.should_receive(:confirmed?).
-            with('Are you sure you want to delete all unattached EBS volumes?').
-            and_return(false)
+          with('Are you sure you want to delete all unattached EBS volumes?').
+          and_return(false)
 
         aws.send(:delete_all_ebs, config_file)
       end
@@ -637,9 +657,9 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
         aws.should_receive(:say).
-            with("Database Instances:\n\tinstance1\t(database_name: bosh_db)\n\tinstance2\t(database_name: important_db)")
+          with("Database Instances:\n\tinstance1\t(database_name: bosh_db)\n\tinstance2\t(database_name: important_db)")
         aws.should_receive(:confirmed?).with('Are you sure you want to delete all databases?').
-            and_return(false)
+          and_return(false)
 
         aws.send(:delete_all_rds_dbs, config_file)
       end
@@ -675,7 +695,7 @@ describe Bosh::Cli::Command::AWS do
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
 
         aws.should_receive(:confirmed?).with('Are you sure you want to delete all databases?').
-            and_return(true)
+          and_return(true)
 
         aws.send(:delete_all_rds_dbs, config_file)
       end
@@ -805,15 +825,23 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe 'aws delete_all elbs' do
-      let(:config_file) { asset 'config.yml' }
+      let(:config) do
+        { 'aws' => { fake: 'aws config' } }
+      end
+
+      let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
+      subject(:destroyer) { Bosh::Aws::Destroyer.new(ui) }
 
       it 'should remove all ELBs' do
-        fake_elb = double('elb')
-        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
+        ui.stub(:confirmed?).and_return(true)
+
+        fake_elb = instance_double('Bosh::Aws::ELB')
+        Bosh::Aws::ELB.stub(:new).with(fake: 'aws config').and_return(fake_elb)
+
         fake_elb.should_receive(:delete_elbs)
         fake_elb.should_receive(:names).and_return(%w(one two))
-        aws.should_receive(:confirmed?).and_return(true)
-        aws.send(:delete_all_elbs, config_file)
+
+        destroyer.delete_all_elbs(config)
       end
     end
 
@@ -828,8 +856,8 @@ describe Bosh::Cli::Command::AWS do
         it 'prompts the user for admin password' do
           fake_bootstrap.should_receive(:start)
           Bosh::Aws::MicroBoshBootstrap.should_receive(:new).with(
-              anything,
-              kind_of(Hash)
+            anything,
+            kind_of(Hash)
           ).and_return(fake_bootstrap)
           aws.should_receive(:ask).and_return('username')
           aws.should_receive(:ask).and_return('password')
@@ -849,8 +877,8 @@ describe Bosh::Cli::Command::AWS do
         it 'saves the randomly generated password??' do
           fake_bootstrap.should_receive(:start)
           Bosh::Aws::MicroBoshBootstrap.should_receive(:new).with(
-              anything,
-              kind_of(Hash)
+            anything,
+            kind_of(Hash)
           ).and_return(fake_bootstrap)
 
           fake_bootstrap.should_receive(:create_user).with('hm', anything).ordered
