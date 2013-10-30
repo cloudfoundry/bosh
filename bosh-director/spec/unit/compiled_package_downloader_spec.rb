@@ -25,9 +25,9 @@ module Bosh::Director
 
         download_dir = downloader.download
 
-        File.should exist(File.join(download_dir, 'compiled_packages.yml'))
+        File.should exist(File.join(download_dir, 'compiled_packages', 'compiled_packages.yml'))
 
-        YAML.load_file(File.join(download_dir, 'compiled_packages.yml')).should eq(
+        YAML.load_file(File.join(download_dir, 'compiled_packages', 'compiled_packages.yml')).should eq(
           {
             'compiled_packages' => [
               {
@@ -59,8 +59,8 @@ module Bosh::Director
 
         download_dir = downloader.download
 
-        File.should exist(File.join(download_dir, 'blobs', 'blobstore_id1'))
-        File.should exist(File.join(download_dir, 'blobs', 'blobstore_id2'))
+        File.should exist(File.join(download_dir, 'compiled_packages', 'blobs', 'blobstore_id1'))
+        File.should exist(File.join(download_dir, 'compiled_packages', 'blobs', 'blobstore_id2'))
       end
 
       it 'closes the files passed to blobstore client' do

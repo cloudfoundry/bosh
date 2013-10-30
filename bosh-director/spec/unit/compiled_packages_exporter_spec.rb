@@ -13,7 +13,7 @@ module Bosh::Director
         CompiledPackageDownloader.stub(:new).with(group, blobstore_client).and_return(downloader)
 
         archiver = double('gzipper')
-        archiver.stub(:compress).with(download_dir, '*', File.join(download_dir, 'compiled_packages.tgz'))
+        archiver.stub(:compress).with(download_dir, 'compiled_packages', File.join(download_dir, 'compiled_packages.tgz'))
         TarGzipper.stub(:new).and_return(archiver)
 
         exporter = CompiledPackagesExporter.new(group, blobstore_client)

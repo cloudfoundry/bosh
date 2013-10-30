@@ -13,7 +13,7 @@ module Bosh::Director
       download_dir = @downloader.download
       download_path = File.join(download_dir, 'compiled_packages.tgz')
 
-      TarGzipper.new.compress(download_dir, '*', download_path)
+      TarGzipper.new.compress(download_dir, 'compiled_packages', download_path)
 
       download_path
     end
