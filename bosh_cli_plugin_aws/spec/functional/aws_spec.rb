@@ -124,7 +124,7 @@ describe Bosh::Cli::Command::AWS do
 
       before do
         aws.stub(:load_config).with(config_file).and_return(config)
-        Bosh::Aws::Destroyer.stub(:new).with(aws).and_return(destroyer)
+        Bosh::Aws::Destroyer.stub(:new).with(aws, config).and_return(destroyer)
       end
 
       it 'should destroy the specified VPCs, RDS DBs, and S3 Volumes' do

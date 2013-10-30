@@ -155,11 +155,11 @@ module Bosh::Cli::Command
     usage 'aws destroy'
     desc 'destroy everything in an AWS account'
     def destroy(config_file = nil)
-      destroyer = Bosh::Aws::Destroyer.new(self)
       config = load_config(config_file)
+      destroyer = Bosh::Aws::Destroyer.new(self, config)
 
-      destroyer.ensure_not_production!(config)
-      destroyer.delete_all_elbs(config)
+      destroyer.ensure_not_production!
+      destroyer.delete_all_elbs
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)

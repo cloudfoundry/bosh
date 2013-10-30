@@ -6,7 +6,7 @@ module Bosh::Aws
       { 'aws' => { fake: 'aws config' } }
     end
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
-    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui) }
+    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui, config) }
 
     describe '#ensure_not_production!' do
       before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
@@ -17,7 +17,7 @@ module Bosh::Aws
 
         it 'assumes it is production and aborts' do
           expect {
-            destroyer.ensure_not_production!(config)
+            destroyer.ensure_not_production!
           }.to raise_error(/aborting/)
         end
       end
@@ -26,14 +26,14 @@ module Bosh::Aws
         before { ec2.stub(instances_count: 20) }
 
         it 'assumes it is not production and continues' do
-          destroyer.ensure_not_production!(config)
+          destroyer.ensure_not_production!
         end
       end
     end
 
     describe '#delete_all_elbs' do
       it 'removes all ELBs' do
-        ui.stub(:confirmed?).and_return(true)
+        ui.stub(confirmed?: true)
 
         fake_elb = instance_double('Bosh::Aws::ELB')
         Bosh::Aws::ELB.stub(:new).with(fake: 'aws config').and_return(fake_elb)
@@ -41,7 +41,7 @@ module Bosh::Aws
         fake_elb.should_receive(:delete_elbs)
         fake_elb.should_receive(:names).and_return(%w(one two))
 
-        destroyer.delete_all_elbs(config)
+        destroyer.delete_all_elbs
       end
     end
   end
