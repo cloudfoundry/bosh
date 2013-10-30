@@ -53,11 +53,11 @@ module Bosh::Director
           let(:exporter) { instance_double('Bosh::Director::CompiledPackagesExporter', tgz_path: fake_tgz_file.path) }
 
           before do
-            package_group = CompiledPackageGroup.stub(:new).and_return(package_group)
+            CompiledPackageGroup.stub(:new).and_return(package_group)
             blobstore_client = double('blobstore client')
             App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
 
-            CompiledPackagesExporter.stub(:new).with(package_group, blobstore_client).and_return(exporter)
+            CompiledPackagesExporter.stub(:new).with(package_group, blobstore_client, anything).and_return(exporter)
           end
 
           it 'returns a tarball' do
@@ -74,6 +74,17 @@ module Bosh::Director
             exporter.should_receive(:cleanup).with(no_args)
             get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
             last_response.status
+          end
+
+          it 'creates the output directory' do
+            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            File.should be_directory(File.join(Dir.tmpdir, 'compiled_packages'))
+          end
+
+          it 'passes the output directory to the exporter' do
+            output_dir = File.join(Dir.tmpdir, 'compiled_packages')
+            CompiledPackagesExporter.should_receive(:new).with(anything, anything, output_dir).and_return(exporter)
+            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
           end
         end
 
