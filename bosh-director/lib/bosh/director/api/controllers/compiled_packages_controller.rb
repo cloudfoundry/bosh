@@ -17,9 +17,12 @@ module Bosh::Director
         compiled_packages = CompiledPackageGroup.new(release_version, stemcell)
         output_dir = File.join(Dir.tmpdir, 'compiled_packages')
         FileUtils.mkdir_p(output_dir)
-        exporter = CompiledPackagesExporter.new(compiled_packages, App.instance.blobstores.blobstore, output_dir)
+        exporter = CompiledPackagesExporter.new(compiled_packages, App.instance.blobstores.blobstore)
 
-        send_file exporter.tgz_path, type: :tgz
+        output_path = File.join(output_dir, "compiled_packages_#{Time.now.to_f}.tar.gz")
+        exporter.export(output_path)
+
+        send_file output_path, type: :tgz
       end
     end
   end

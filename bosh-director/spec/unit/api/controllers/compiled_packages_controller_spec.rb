@@ -2,6 +2,7 @@ require 'spec_helper'
 require 'rack/test'
 require 'bosh/director/api/controllers/compiled_packages_controller'
 require 'tempfile'
+require 'timecop'
 
 module Bosh::Director
   describe Api::Controllers::CompiledPackagesController do
@@ -44,27 +45,31 @@ module Bosh::Director
 
         context 'when the specified stemcell and release exist' do
           let(:package_group) { instance_double('Bosh::Director::CompiledPackageGroup') }
-          let(:fake_tgz_file) do
-            Tempfile.open('fake_tgz') do |f|
-              f.write('fake tgz content')
-              f
-            end
+          let(:exporter) do
+            double = instance_double('Bosh::Director::CompiledPackagesExporter')
+            double.stub(:export) { |path| FileUtils.touch(path) }
+            double
           end
-          let(:exporter) { instance_double('Bosh::Director::CompiledPackagesExporter', tgz_path: fake_tgz_file.path) }
 
           before do
             CompiledPackageGroup.stub(:new).and_return(package_group)
             blobstore_client = double('blobstore client')
             App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
 
-            CompiledPackagesExporter.stub(:new).with(package_group, blobstore_client, anything).and_return(exporter)
+            CompiledPackagesExporter.stub(:new).with(package_group, blobstore_client).and_return(exporter)
           end
 
-          it 'returns a tarball' do
+          it 'sets the mime type to application/x-compressed' do
             get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
 
             expect(last_response.status).to eq(200)
             expect(last_response.content_type).to eq('application/x-compressed')
+          end
+
+          it 'creates a tarball with CompiledPackagesExporter and returns it' do
+            expect(exporter).to receive(:export).with(anything) { |f| File.write(f, 'fake tgz content') }
+            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+
             expect(last_response.body).to eq('fake tgz content')
           end
 
@@ -75,8 +80,13 @@ module Bosh::Director
 
           it 'passes the output directory to the exporter' do
             output_dir = File.join(Dir.tmpdir, 'compiled_packages')
-            CompiledPackagesExporter.should_receive(:new).with(anything, anything, output_dir).and_return(exporter)
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+
+            timestamp = Time.new
+            output_path = File.join(output_dir, "compiled_packages_#{timestamp.to_f}.tar.gz")
+            expect(exporter).to receive(:export).with(output_path)
+            Timecop.freeze(timestamp) do
+              get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            end
           end
         end
 
