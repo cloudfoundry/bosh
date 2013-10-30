@@ -62,7 +62,7 @@ module Bosh::Director
         Config.stub(:dns_domain_name).and_return('bosh')
         @deleter.should_receive(:delete_dns_records).with('5.test.%.foo.bosh', 0)
         @deployment_plan.should_receive(:canonical_name).and_return('foo')
-        domain = stub('domain', id:  0)
+        domain = double('domain', id:  0)
         @deployment_plan.should_receive(:dns_domain).and_return(domain)
         @cloud.should_receive(:delete_vm).with(vm.cid)
 

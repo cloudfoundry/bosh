@@ -131,8 +131,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       it 'should delete references to no longer used stemcells' do
         deployment = Bosh::Director::Models::Deployment.make
 
-        resource_pool_spec = stub('resource_pool_spec')
-        stemcell_spec = stub('stemcell_spec')
+        resource_pool_spec = double('resource_pool_spec')
+        stemcell_spec = double('stemcell_spec')
 
         new_stemcell = Bosh::Director::Models::Stemcell.make
         old_stemcell = Bosh::Director::Models::Stemcell.make

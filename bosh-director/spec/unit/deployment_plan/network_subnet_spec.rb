@@ -5,7 +5,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::DeploymentPlan::NetworkSubnet do
 
   before(:each) do
-    @network = stub(BD::DeploymentPlan::Network, :name => "net_a")
+    @network = double(BD::DeploymentPlan::Network, :name => "net_a")
   end
 
   def subnet_spec(properties)
