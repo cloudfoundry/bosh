@@ -139,10 +139,8 @@ describe Bosh::Cli::Command::AWS do
         destroyer.should_receive(:delete_all_vpcs).ordered
         destroyer.should_receive(:delete_all_key_pairs).ordered
         destroyer.should_receive(:delete_all_elastic_ips).ordered
-
-        aws.should_receive(:delete_all_security_groups)
+        destroyer.should_receive(:delete_all_security_groups).ordered
         aws.should_receive(:delete_all_route53_records)
-
         aws.destroy(config_file)
       end
     end
@@ -162,39 +160,6 @@ describe Bosh::Cli::Command::AWS do
         it 'uses a default config' do
           Bosh::Aws::AwsConfig.should_receive(:new).with(default_config_filename).and_return(config)
           expect(aws.send(:load_config)).to eq('fake_configuration')
-        end
-      end
-    end
-
-    describe 'aws delete_all security_groups' do
-      let(:config_file) { asset 'config.yml' }
-      let(:fake_ec2) { double('EC2') }
-
-      before do
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-      end
-
-      context 'when non-interactive' do
-        before do
-          aws.should_receive(:confirmed?).and_return(true)
-        end
-
-        it 'should retry if it can not delete security groups due to eventual consistency' do
-          aws.stub(aws_retry_wait_time: 0)
-          fake_ec2.should_receive(:delete_all_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
-          fake_ec2.should_receive(:delete_all_security_groups).ordered.once.and_return(true)
-          aws.send(:delete_all_security_groups, config_file)
-        end
-      end
-
-      context 'when interactive and bailing out' do
-        before do
-          aws.should_receive(:confirmed?).and_return(false)
-        end
-
-        it 'should not delete security groups' do
-          fake_ec2.should_not_receive(:delete_all_security_groups)
-          aws.send(:delete_all_security_groups, config_file)
         end
       end
     end

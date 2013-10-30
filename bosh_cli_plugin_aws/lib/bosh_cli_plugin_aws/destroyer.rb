@@ -86,6 +86,17 @@ module Bosh::Aws
       end
     end
 
+    def delete_all_security_groups(wait_time=10)
+      if @ui.confirmed?('Are you sure you want to delete all security groups?')
+        retryable = Bosh::Retryable.new(sleep: wait_time, tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse])
+        retryable.retryer do |tries, e|
+          @ui.say("unable to delete security groups: #{e}") if tries > 0
+          ec2.delete_all_security_groups
+          true # retryable block must yield true if we only want to retry on Exceptions
+        end
+      end
+    end
+
     private
 
     def ec2

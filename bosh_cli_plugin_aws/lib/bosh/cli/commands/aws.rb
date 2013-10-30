@@ -172,8 +172,8 @@ module Bosh::Cli::Command
       destroyer.delete_all_vpcs
       destroyer.delete_all_key_pairs
       destroyer.delete_all_elastic_ips
+      destroyer.delete_all_security_groups
 
-      delete_all_security_groups(config_file)
       delete_all_route53_records(config_file)
     end
 
@@ -233,20 +233,6 @@ module Bosh::Cli::Command
       if certificates.any? && confirmed?("Are you sure you want to delete all server certificates? (#{certificates.join(', ')})")
         elb.delete_server_certificates
         say 'Server certificates deleted.'
-      end
-    end
-
-    def delete_all_security_groups(config_file)
-      config = load_config(config_file)
-      ec2 = Bosh::Aws::EC2.new(config['aws'])
-
-      if confirmed?('Are you sure you want to delete all security groups?')
-        Bosh::Common.retryable(sleep: aws_retry_wait_time,
-                               tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
-          say("unable to delete security groups: #{e}") if tries > 0
-          ec2.delete_all_security_groups
-          true # retryable block must yield true if we only want to retry on Exceptions
-        end
       end
     end
 

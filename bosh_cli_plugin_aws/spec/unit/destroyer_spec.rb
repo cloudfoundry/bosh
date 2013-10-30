@@ -283,5 +283,35 @@ module Bosh::Aws
         end
       end
     end
+
+    describe '#delete_all_security_groups' do
+      before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+
+      context 'when user confirmed deletion' do
+        before { ui.stub(confirmed?: true) }
+
+        it 'retries if it can not delete security groups due to eventual consistency' do
+          ec2.should_receive(:delete_all_security_groups)
+            .ordered
+            .exactly(119).times
+            .and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+          ec2.should_receive(:delete_all_security_groups)
+            .ordered
+            .once
+            .and_return(true)
+          destroyer.delete_all_security_groups(0) # sleep 0
+        end
+      end
+
+      context 'when user did not confirm deletion' do
+        before { ui.stub(confirmed?: false) }
+
+        it 'should not delete security groups' do
+          ec2.should_not_receive(:delete_all_security_groups)
+          destroyer.delete_all_security_groups
+        end
+      end
+    end
   end
 end
