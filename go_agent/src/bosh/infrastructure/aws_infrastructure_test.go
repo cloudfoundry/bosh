@@ -20,7 +20,7 @@ func TestGetPublicKey(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	aws := NewAwsInfrastructure(ts.URL)
+	aws := newAwsInfrastructure(ts.URL)
 
 	key, err := aws.GetPublicKey()
 	assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestGetSettingsWhenADnsIsNotProvided(t *testing.T) {
 	metadataTs := httptest.NewServer(metadataHandler)
 	defer metadataTs.Close()
 
-	aws := NewAwsInfrastructure(metadataTs.URL)
+	aws := newAwsInfrastructure(metadataTs.URL)
 
 	settings, err := aws.GetSettings()
 	assert.NoError(t, err)

@@ -1,26 +1,17 @@
 package main
 
 import (
-	"bosh/bootstrap"
-	"bosh/filesystem"
-	"bosh/infrastructure"
+	"bosh/app"
 	"fmt"
 	"os"
 )
 
 func main() {
-	fs := filesystem.OsFileSystem{}
-	infrastructure := infrastructure.NewAwsInfrastructure("http://169.254.169.254")
+	a := app.New()
+	err := a.Run(os.Args)
 
-	b := bootstrap.New(fs, infrastructure)
-	err := b.Run()
 	if err != nil {
-		failWithError(err)
-		return
+		fmt.Fprintf(os.Stderr, err.Error()+"\n")
+		os.Exit(1)
 	}
-}
-
-func failWithError(err error) {
-	fmt.Fprintf(os.Stderr, err.Error())
-	os.Exit(1)
 }

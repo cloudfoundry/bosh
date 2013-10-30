@@ -11,7 +11,7 @@ type awsInfrastructure struct {
 	metadataHost string
 }
 
-func NewAwsInfrastructure(metadataHost string) (infrastructure Infrastructure) {
+func newAwsInfrastructure(metadataHost string) (infrastructure Infrastructure) {
 	return awsInfrastructure{
 		metadataHost: metadataHost,
 	}
