@@ -237,5 +237,28 @@ module Bosh::Aws
         destroyer.delete_all_vpcs
       end
     end
+
+    describe '#delete_all_key_pairs' do
+      before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+
+      context 'when user confirmed deletion' do
+        before { ui.stub(confirmed?: true) }
+
+        it 'removes all key pairs' do
+          ec2.should_receive(:remove_all_key_pairs)
+          destroyer.delete_all_key_pairs
+        end
+      end
+
+      context 'when user did not confirm deletion' do
+        before { ui.stub(confirmed?: false) }
+
+        it 'does not remove any key pairs' do
+          ec2.should_not_receive(:remove_all_key_pairs)
+          destroyer.delete_all_key_pairs
+        end
+      end
+    end
   end
 end

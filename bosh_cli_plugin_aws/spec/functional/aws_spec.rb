@@ -137,8 +137,8 @@ describe Bosh::Cli::Command::AWS do
         destroyer.should_receive(:delete_all_rds).ordered
         destroyer.should_receive(:delete_all_s3).ordered
         destroyer.should_receive(:delete_all_vpcs).ordered
+        destroyer.should_receive(:delete_all_key_pairs).ordered
 
-        aws.should_receive(:delete_all_key_pairs)
         aws.should_receive(:delete_all_elastic_ips)
         aws.should_receive(:delete_all_security_groups)
         aws.should_receive(:delete_all_route53_records)
@@ -280,37 +280,6 @@ describe Bosh::Cli::Command::AWS do
             fake_vpc.should_not_receive(:delete_security_groups)
             aws.send(:delete_vpc, output_file)
           }.to raise_error(Bosh::Cli::CliError, '1 instance(s) running in vpc-13724979 - delete them first')
-        end
-      end
-    end
-
-    describe 'aws destroy key pairs' do
-      let(:config_file) { asset 'config.yml' }
-      let(:fake_ec2) { double('EC2') }
-
-      before do
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-      end
-
-      context 'when non-interactive' do
-        before do
-          aws.should_receive(:confirmed?).and_return(true)
-        end
-
-        it 'should remove the key pairs' do
-          fake_ec2.should_receive(:remove_all_key_pairs).and_return(true)
-          aws.send(:delete_all_key_pairs, config_file)
-        end
-      end
-
-      context 'when interactive and bailing out' do
-        before do
-          aws.should_receive(:confirmed?).and_return(false)
-        end
-
-        it 'should not delete the key pairs' do
-          fake_ec2.should_not_receive(:remove_all_key_pairs)
-          aws.send(:delete_all_key_pairs, config_file)
         end
       end
     end

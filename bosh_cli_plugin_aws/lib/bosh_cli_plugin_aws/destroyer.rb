@@ -72,6 +72,13 @@ module Bosh::Aws
       @vpc_destroyer.delete_all
     end
 
+    def delete_all_key_pairs
+      if @ui.confirmed?('Are you sure you want to delete all SSH Keypairs?')
+        @ui.say('Deleting all key pairs...')
+        ec2.remove_all_key_pairs
+      end
+    end
+
     private
 
     def ec2
