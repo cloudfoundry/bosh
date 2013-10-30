@@ -183,58 +183,6 @@ module Bosh::Cli::Command
       Bosh::Aws::S3.new(config['aws'])
     end
 
-    def delete_vpc(details_file)
-      details = load_yaml_file details_file
-
-      ec2 = Bosh::Aws::EC2.new(details['aws'])
-      vpc = Bosh::Aws::VPC.find(ec2, details['vpc']['id'])
-      route53 = Bosh::Aws::Route53.new(details['aws'])
-
-      err("#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first") if vpc.instances_count > 0
-
-      dhcp_options = vpc.dhcp_options
-
-      Bosh::Common.retryable(sleep: aws_retry_wait_time,
-                             tries: 120, on: [::AWS::Errors::Base]) do |tries, e|
-        say("unable to delete resource: #{e}") if tries > 0
-        vpc.delete_security_groups
-        vpc.delete_subnets
-        ec2.delete_internet_gateways(ec2.internet_gateway_ids)
-        vpc.delete_vpc
-        dhcp_options.delete
-
-        if details['key_pairs']
-          details['key_pairs'].each do |name|
-            ec2.remove_key_pair name
-          end
-        end
-
-        if details['elastic_ips']
-          details['elastic_ips'].values.each do |job|
-            ec2.release_elastic_ips(job['ips'])
-            if job['dns_record']
-              route53.delete_record(job['dns_record'], details['vpc']['domain'])
-            end
-          end
-        end
-        true # retryable block must yield true if we only want to retry on Exceptions
-      end
-
-      say 'deleted VPC and all dependencies'.make_green
-    end
-
-    def deployment_manifest_state
-      @output_state['deployment_manifest'] ||= {}
-    end
-
-    def deployment_properties
-      deployment_manifest_state['properties'] ||= {}
-    end
-
-    def flush_output_state(file_path)
-      File.open(file_path, 'w') { |f| f.write output_state.to_yaml }
-    end
-
     def default_config_file
       File.expand_path(File.join(
         File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'aws_configuration_template.yml.erb'
@@ -243,10 +191,7 @@ module Bosh::Cli::Command
 
     def load_config(config_file=nil)
       config_file ||= default_config_file
-
       Bosh::Aws::AwsConfig.new(config_file).configuration
     end
-
-    def aws_retry_wait_time; 10; end
   end
 end
