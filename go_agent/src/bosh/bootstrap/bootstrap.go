@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"bosh/filesystem"
 	"bosh/infrastructure"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 const (
 	VCAP_USERNAME = "vcap"
+	VCAP_BASE_DIR = "/var/vcap"
 )
 
 type bootstrap struct {
@@ -30,6 +32,7 @@ func (boot bootstrap) Run() (err error) {
 		return
 	}
 
+	err = boot.fetchSettings()
 	if err != nil {
 		return
 	}
@@ -60,6 +63,22 @@ func (boot bootstrap) setupSsh() (err error) {
 
 	boot.fs.Chown(authKeysPath, VCAP_USERNAME)
 	boot.fs.Chmod(authKeysPath, os.FileMode(0600))
+	return
+}
+
+func (boot bootstrap) fetchSettings() (err error) {
+	settings, err := boot.infrastructure.GetSettings()
+	if err != nil {
+		return wrapError(err, "Error fetching settings")
+	}
+
+	settingsJson, err := json.Marshal(settings)
+	if err != nil {
+		return wrapError(err, "Error marshalling settings json")
+	}
+
+	boot.fs.WriteToFile(filepath.Join(VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
+
 	return
 }
 

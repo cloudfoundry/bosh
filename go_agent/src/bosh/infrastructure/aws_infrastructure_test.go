@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -25,3 +26,41 @@ func TestGetPublicKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, key, expectedKey)
 }
+
+func TestGetSettingsWhenADnsIsNotProvided(t *testing.T) {
+	expectedSettings := `{"agent_id":"my-agent-id"}`
+
+	registryHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, r.Method, "GET")
+		assert.Equal(t, r.URL.Path, "/instances/123-456-789/settings")
+		w.Write([]byte(expectedSettings))
+	})
+
+	registryTs := httptest.NewServer(registryHandler)
+	defer registryTs.Close()
+
+	expectedUserData := fmt.Sprintf(`{"registry":{"endpoint":"%s"}}`, registryTs.URL)
+	expectedInstanceId := "123-456-789"
+
+	metadataHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, r.Method, "GET")
+
+		switch r.URL.Path {
+		case "/latest/user-data":
+			w.Write([]byte(expectedUserData))
+		case "/latest/meta-data/instance-id":
+			w.Write([]byte(expectedInstanceId))
+		}
+	})
+
+	metadataTs := httptest.NewServer(metadataHandler)
+	defer metadataTs.Close()
+
+	aws := NewAwsInfrastructure(metadataTs.URL)
+
+	settings, err := aws.GetSettings()
+	assert.NoError(t, err)
+	assert.Equal(t, settings, Settings{AgentId: "my-agent-id"})
+}
+
+// TODO handle dns being provided

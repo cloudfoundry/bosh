@@ -1,8 +1,10 @@
 package bootstrap
 
 import (
+	"bosh/infrastructure"
 	testfs "bosh/testhelpers/filesystem"
 	testinf "bosh/testhelpers/infrastructure"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
@@ -38,4 +40,27 @@ func TestRunSetsUpSsh(t *testing.T) {
 	assert.Equal(t, authKeysStat.FileMode, os.FileMode(0600))
 	assert.Equal(t, authKeysStat.Username, "vcap")
 	assert.Equal(t, authKeysStat.Content, "some public key")
+}
+
+func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
+	fakeFs := &testfs.FakeFileSystem{}
+
+	expectedSettings := infrastructure.Settings{
+		AgentId: "123-456-789",
+	}
+
+	fakeInfrastructure := &testinf.FakeInfrastructure{
+		Settings: expectedSettings,
+	}
+
+	boot := New(fakeFs, fakeInfrastructure)
+	boot.Run()
+
+	settingsFileStat := fakeFs.GetFileTestStat(VCAP_BASE_DIR + "/bosh/settings.json")
+	settingsJson, err := json.Marshal(expectedSettings)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, settingsFileStat)
+	assert.Equal(t, settingsFileStat.CreatedWith, "WriteToFile")
+	assert.Equal(t, settingsFileStat.Content, string(settingsJson))
 }
