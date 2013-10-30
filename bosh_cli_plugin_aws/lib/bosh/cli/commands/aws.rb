@@ -160,7 +160,8 @@ module Bosh::Cli::Command
 
       destroyer.ensure_not_production!
       destroyer.delete_all_elbs
-      delete_all_ec2(config_file)
+      destroyer.delete_all_ec2
+
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
       delete_all_s3(config_file)
@@ -283,27 +284,6 @@ module Bosh::Cli::Command
         s3.empty if confirmed?('Are you sure you want to empty and delete all buckets?')
       else
         say('No S3 buckets found')
-      end
-    end
-
-    def delete_all_ec2(config_file)
-      config = load_config(config_file)
-      credentials = config['aws']
-      ec2 = Bosh::Aws::EC2.new(credentials)
-
-      formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
-      unless formatted_names.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        say("Instances:\n\t#{formatted_names.join("\n\t")}")
-
-        if confirmed?('Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?')
-          say 'Terminating instances and waiting for them to die...'
-          if !ec2.terminate_instances
-            say 'Warning: instances did not terminate yet after 100 retries'.make_red
-          end
-        end
-      else
-        say('No EC2 instances found')
       end
     end
 

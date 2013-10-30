@@ -129,7 +129,8 @@ describe Bosh::Cli::Command::AWS do
 
       it 'should destroy the specified VPCs, RDS DBs, and S3 Volumes' do
         destroyer.should_receive(:ensure_not_production!).ordered
-        aws.should_receive(:delete_all_ec2)
+        destroyer.should_receive(:delete_all_elbs).ordered
+        destroyer.should_receive(:delete_all_ec2).ordered
         aws.should_receive(:delete_all_ebs)
         aws.should_receive(:delete_all_rds_dbs)
         aws.should_receive(:delete_all_s3)
@@ -138,7 +139,6 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_elastic_ips)
         aws.should_receive(:delete_all_security_groups)
         aws.should_receive(:delete_all_route53_records)
-        destroyer.should_receive(:delete_all_elbs).ordered
 
         aws.destroy(config_file)
       end
@@ -473,76 +473,6 @@ describe Bosh::Cli::Command::AWS do
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.send(:delete_all_s3, config_file)
-        end
-      end
-    end
-
-    describe 'aws terminate_all ec2' do
-      let(:config_file) { asset 'config.yml' }
-
-      it 'should warn the user that the operation is destructive and list the instances' do
-        fake_ec2 = double('ec2')
-
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(2)
-        fake_ec2.stub(:instance_names).and_return({ 'I12345' => 'instance_1', 'I67890' => 'instance_2' })
-
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
-        aws.should_receive(:confirmed?).
-          with('Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?').
-          and_return(false)
-
-        aws.send(:delete_all_ec2, config_file)
-      end
-
-      context 'interactive mode (default)' do
-        context 'when the user agrees to terminate all the instances' do
-          it 'should terminate all instances' do
-            fake_ec2 = double('ec2')
-
-            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-            aws.stub(:say)
-            aws.stub(:confirmed?).and_return(true)
-            fake_ec2.stub(:instances_count).and_return(2)
-            fake_ec2.stub(:instance_names).and_return(%w[i-foo i-bar])
-
-            fake_ec2.should_receive :terminate_instances
-
-            aws.send(:delete_all_ec2, config_file)
-          end
-        end
-
-        context 'when the user wants to bail out of ec2 termination' do
-          it 'should not terminate any instances' do
-            fake_ec2 = double('ec2')
-
-            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-            aws.stub(:say).twice
-            aws.stub(:confirmed?).and_return(false)
-            fake_ec2.stub(:instances_count).and_return(0)
-            fake_ec2.stub(:instance_names).and_return(double.as_null_object)
-
-            fake_ec2.should_not_receive :terminate_instances
-
-            aws.send(:delete_all_ec2, config_file)
-          end
-        end
-      end
-
-      context 'non-interactive mode' do
-        it 'should terminate all instances' do
-          fake_ec2 = double('ec2')
-
-          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-          aws.stub(:say)
-          fake_ec2.stub(:instances_count).and_return(0)
-          fake_ec2.stub_chain(:instance_names, :map).and_return(['foo (id: i-1234)'])
-
-          fake_ec2.should_receive :terminate_instances
-
-          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.send(:delete_all_ec2, config_file)
         end
       end
     end

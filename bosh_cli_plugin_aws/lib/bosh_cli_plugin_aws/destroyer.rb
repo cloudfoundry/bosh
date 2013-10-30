@@ -17,5 +17,24 @@ module Bosh::Aws
         elb.delete_elbs
       end
     end
+
+    def delete_all_ec2
+      ec2 = Bosh::Aws::EC2.new(@credentials)
+      formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
+
+      unless formatted_names.empty?
+        @ui.say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
+        @ui.say("Instances:\n\t#{formatted_names.join("\n\t")}")
+
+        if @ui.confirmed?('Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?')
+          @ui.say('Terminating instances and waiting for them to die...')
+          if !ec2.terminate_instances
+            @ui.say('Warning: instances did not terminate yet after 100 retries'.make_red)
+          end
+        end
+      else
+        @ui.say('No EC2 instances found')
+      end
+    end
   end
 end

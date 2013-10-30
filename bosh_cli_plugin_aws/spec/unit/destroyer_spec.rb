@@ -44,5 +44,59 @@ module Bosh::Aws
         destroyer.delete_all_elbs
       end
     end
+
+    describe '#destroy_all_ec2' do
+      before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+
+      before { ui.stub(say: nil) }
+
+      context 'when there is at least one instance' do
+        before { ec2.stub(instances_count: 2, instance_names: { 'i1' => 'instance1-name', 'i2' => 'instance2-name' }) }
+
+        it 'warns the user that the operation is destructive and list the instances' do
+          ui.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
+          ui.should_receive(:say).with("Instances:\n\tinstance1-name (id: i1)\n\tinstance2-name (id: i2)")
+
+          ui.should_receive(:confirmed?)
+            .with(/terminate all .* EC2 instances .* non-persistent EBS/)
+            .and_return(false)
+
+          destroyer.delete_all_ec2
+        end
+
+        context 'when the user agrees to terminate all the instances' do
+          before { ui.stub(confirmed?: true) }
+
+          it 'terminates all instances' do
+            ec2.should_receive(:terminate_instances)
+            destroyer.delete_all_ec2
+          end
+        end
+
+        context 'when the user wants to bail out of ec2 termination' do
+          before { ui.stub(confirmed?: false) }
+
+          it 'does not terminate any instances' do
+            ec2.should_not_receive(:terminate_instances)
+            destroyer.delete_all_ec2
+          end
+        end
+      end
+
+      context 'when there is no instances' do
+        before { ec2.stub(instances_count: 0, instance_names: {}) }
+
+        it 'notifies user that there is no ec2 instances' do
+          ui.should_receive(:say).with(/No EC2 instances/)
+          destroyer.delete_all_ec2
+        end
+
+        it 'does not terminate any instances' do
+          ec2.should_not_receive(:terminate_instances)
+          destroyer.delete_all_ec2
+        end
+      end
+    end
   end
 end
