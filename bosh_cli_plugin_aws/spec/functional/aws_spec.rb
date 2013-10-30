@@ -418,16 +418,6 @@ describe Bosh::Cli::Command::AWS do
         aws.send(:delete_all_s3, config_file)
       end
 
-      it 'should not empty S3 if more than 20 insances are running' do
-        fake_ec2 = double('ec2')
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(21)
-
-        expect {
-          aws.send(:delete_all_s3, config_file)
-        }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
-      end
-
       context 'interactive mode (default)' do
         context 'when the users agrees to nuke the buckets' do
           it 'should empty and delete all S3 buckets associated with an account' do
@@ -504,16 +494,6 @@ describe Bosh::Cli::Command::AWS do
           and_return(false)
 
         aws.send(:delete_all_ec2, config_file)
-      end
-
-      it 'should error if more than 20 instances are running' do
-        fake_ec2 = double('ec2')
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(21)
-
-        expect {
-          aws.send(:delete_all_ec2, config_file)
-        }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
       context 'interactive mode (default)' do
@@ -663,16 +643,6 @@ describe Bosh::Cli::Command::AWS do
           and_return(false)
 
         aws.send(:delete_all_rds_dbs, config_file)
-      end
-
-      it 'should not delete_all rds databases if more than 20 insances are running' do
-        fake_ec2 = double('ec2')
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(21)
-
-        expect {
-          aws.send(:delete_all_rds_dbs, config_file)
-        }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
       def mock_deletes(fake_rds)
