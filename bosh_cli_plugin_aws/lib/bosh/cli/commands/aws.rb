@@ -223,18 +223,6 @@ module Bosh::Cli::Command
       say 'deleted VPC and all dependencies'.make_green
     end
 
-    def delete_server_certificates(config_file)
-      config = load_config(config_file)
-      credentials = config['aws']
-      elb = Bosh::Aws::ELB.new(credentials)
-      certificates = elb.server_certificate_names
-
-      if certificates.any? && confirmed?("Are you sure you want to delete all server certificates? (#{certificates.join(', ')})")
-        elb.delete_server_certificates
-        say 'Server certificates deleted.'
-      end
-    end
-
     def deployment_manifest_state
       @output_state['deployment_manifest'] ||= {}
     end

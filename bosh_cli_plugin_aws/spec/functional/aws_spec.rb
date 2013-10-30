@@ -249,37 +249,6 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
-    describe 'aws destroy server certificates' do
-      let(:config_file) { asset 'config.yml' }
-      let(:fake_elb) { double('ELB', server_certificate_names: ['cf_router']) }
-
-      before do
-        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
-      end
-
-      context 'when non-interactive' do
-        before do
-          aws.should_receive(:confirmed?).and_return(true)
-        end
-
-        it 'should remove the key pairs' do
-          fake_elb.should_receive(:delete_server_certificates).and_return(true)
-          aws.send(:delete_server_certificates, config_file)
-        end
-      end
-
-      context 'when interactive and bailing out' do
-        before do
-          aws.should_receive(:confirmed?).and_return(false)
-        end
-
-        it 'should not delete the key pairs' do
-          fake_elb.should_not_receive(:delete_server_certificates)
-          aws.send(:delete_server_certificates, config_file)
-        end
-      end
-    end
-
     describe 'aws bootstrap micro' do
       subject(:aws) { described_class.new }
       let(:fake_bootstrap) { double('micro bosh bootstrap') }
