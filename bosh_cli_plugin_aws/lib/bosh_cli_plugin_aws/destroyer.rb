@@ -1,8 +1,9 @@
 module Bosh::Aws
   class Destroyer
-    def initialize(ui, config)
+    def initialize(ui, config, rds_destroyer)
       @ui = ui
       @credentials = config['aws']
+      @rds_destroyer = rds_destroyer
     end
 
     def ensure_not_production!
@@ -47,6 +48,10 @@ module Bosh::Aws
       else
         @ui.say('No EBS volumes found')
       end
+    end
+
+    def delete_all_rds
+      @rds_destroyer.delete_all
     end
 
     private

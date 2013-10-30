@@ -116,24 +116,23 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe 'aws destroy' do
-      let(:config_file) { double('config_file') }
-      let(:config) do
-        { fake: 'config' }
-      end
+      before { Bosh::Aws::Destroyer.stub(:new).with(aws, config, rds_destroyer).and_return(destroyer) }
       let(:destroyer) { instance_double('Bosh::Aws::Destroyer') }
 
-      before do
-        aws.stub(:load_config).with(config_file).and_return(config)
-        Bosh::Aws::Destroyer.stub(:new).with(aws, config).and_return(destroyer)
-      end
+      before { Bosh::Aws::RdsDestroyer.stub(:new).with(aws, config).and_return(rds_destroyer) }
+      let(:rds_destroyer) { instance_double('Bosh::Aws::RdsDestroyer') }
 
-      it 'should destroy the specified VPCs, RDS DBs, and S3 Volumes' do
+      before { aws.stub(:load_config).with(config_file).and_return(config) }
+      let(:config_file) { double('config_file') }
+      let(:config) { { fake: 'config' } }
+
+      it 'destroys the specified VPCs, RDS DBs, and S3 Volumes' do
         destroyer.should_receive(:ensure_not_production!).ordered
         destroyer.should_receive(:delete_all_elbs).ordered
         destroyer.should_receive(:delete_all_ec2).ordered
         destroyer.should_receive(:delete_all_ebs).ordered
+        destroyer.should_receive(:delete_all_rds).ordered
 
-        aws.should_receive(:delete_all_rds_dbs)
         aws.should_receive(:delete_all_s3)
         aws.should_receive(:delete_all_vpcs)
         aws.should_receive(:delete_all_key_pairs)
@@ -147,24 +146,19 @@ describe Bosh::Cli::Command::AWS do
 
     describe 'load_config' do
       let(:config_file) { double('config_file') }
-
-      let(:config) do
-        instance_double('Bosh::Aws::AwsConfig', configuration: 'fake configuration')
-      end
+      let(:config) { instance_double('Bosh::Aws::AwsConfig', configuration: 'fake_configuration') }
 
       context 'when a config file is provided' do
         it 'uses the provided file' do
           Bosh::Aws::AwsConfig.should_receive(:new).with(config_file).and_return(config)
-
-          expect(aws.send(:load_config, config_file)).to eq('fake configuration')
+          expect(aws.send(:load_config, config_file)).to eq('fake_configuration')
         end
       end
 
       context 'when a config file is not provided' do
         it 'uses a default config' do
           Bosh::Aws::AwsConfig.should_receive(:new).with(default_config_filename).and_return(config)
-
-          expect(aws.send(:load_config)).to eq('fake configuration')
+          expect(aws.send(:load_config)).to eq('fake_configuration')
         end
       end
     end
@@ -475,178 +469,6 @@ describe Bosh::Cli::Command::AWS do
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.send(:delete_all_s3, config_file)
         end
-      end
-    end
-
-    describe 'aws delete_all rds databases' do
-      let(:config_file) { asset 'config.yml' }
-
-      it 'should warn the user that the operation is destructive and list the instances' do
-        fake_ec2 = double('ec2')
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(20)
-        fake_rds = double('rds')
-        fake_rds.stub(:database_names).and_return({ 'instance1' => 'bosh_db', 'instance2' => 'important_db' })
-        fake_rds.stub(:databases).and_return([])
-
-        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        aws.should_receive(:say).
-          with("Database Instances:\n\tinstance1\t(database_name: bosh_db)\n\tinstance2\t(database_name: important_db)")
-        aws.should_receive(:confirmed?).with('Are you sure you want to delete all databases?').
-          and_return(false)
-
-        aws.send(:delete_all_rds_dbs, config_file)
-      end
-
-      def mock_deletes(fake_rds)
-        fake_rds.should_receive :delete_subnet_groups
-        fake_rds.should_receive :delete_security_groups
-        fake_rds.should_receive :delete_db_parameter_group
-      end
-
-      it "should delete db_subnets when dbs don't exist" do
-        fake_ec2 = double('ec2')
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(20)
-
-        fake_rds = double('rds')
-        fake_rds.should_receive(:database_names).and_return([])
-        fake_rds.should_receive(:databases).and_return([])
-
-
-        mock_deletes(fake_rds)
-
-        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-
-        aws.should_receive(:confirmed?).with('Are you sure you want to delete all databases?').
-          and_return(true)
-
-        aws.send(:delete_all_rds_dbs, config_file)
-      end
-
-      context 'interactive mode (default)' do
-        before do
-          fake_ec2 = double('ec2')
-          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-          fake_ec2.stub(:instances_count).and_return(20)
-        end
-
-        context 'when the user agrees to delete all the databases' do
-          it 'should delete all databases' do
-            fake_rds = double('rds')
-
-            Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-            aws.stub(:say).twice
-            aws.stub(:confirmed?).and_return(true)
-
-            fake_rds.stub(:database_names).and_return(%w[foo bar])
-            fake_rds.stub(:databases).and_return([])
-            mock_deletes(fake_rds)
-
-            fake_rds.should_receive :delete_databases
-
-            aws.send(:delete_all_rds_dbs, config_file)
-          end
-        end
-
-        context 'when the user wants to bail out of rds database deletion' do
-          it 'should not terminate any databases' do
-            fake_rds = double('rds')
-
-            Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-            aws.stub(:say).twice
-            aws.stub(:confirmed?).and_return(false)
-            fake_rds.stub(:database_names).and_return(double.as_null_object)
-
-            fake_rds.should_not_receive :delete_databases
-
-            aws.send(:delete_all_rds_dbs, config_file)
-          end
-        end
-
-        context 'when not all instances could be deleted' do
-          it 'throws a nice error message' do
-            fake_rds = double('rds')
-            Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-            fake_rds.stub(:database_names).and_return({ 'instance1' => 'bosh_db', 'instance2' => 'important_db' })
-            fake_bosh_rds = double('instance1', db_name: 'bosh_db', endpoint_port: 1234, db_instance_status: :irrelevant)
-            fake_rds.stub(:databases).and_return([fake_bosh_rds])
-
-            ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-
-            fake_rds.should_receive :delete_databases
-
-            expect {
-              aws.send(:delete_all_rds_dbs, config_file)
-            }.to raise_error(Bosh::Cli::CliError, 'not all rds instances could be deleted')
-          end
-
-          context 'when a database goes away while printing status' do
-            it 'should delete all databases' do
-              fake_rds = double('rds')
-              Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-              fake_rds.stub(:database_names).and_return({ 'instance1' => 'bosh_db', 'instance2' => 'important_db' })
-              fake_bosh_rds = double('instance1', db_name: 'bosh_db', endpoint_port: 1234, db_instance_status: :irrelevant)
-              fake_bosh_rds.should_receive(:db_name).and_raise(::AWS::RDS::Errors::DBInstanceNotFound)
-
-              fake_rds.should_receive(:databases).and_return([fake_bosh_rds], [fake_bosh_rds], [])
-
-              ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-
-              mock_deletes(fake_rds)
-
-              fake_rds.should_receive :delete_databases
-
-              aws.send(:delete_all_rds_dbs, config_file)
-            end
-          end
-        end
-      end
-
-      context 'non-interactive mode' do
-        it 'should delete all databases' do
-          fake_ec2 = double('ec2')
-          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-          fake_ec2.stub(:instances_count).and_return(20)
-          fake_rds = double('rds')
-
-          Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-          aws.stub(:say).twice
-          fake_rds.stub_chain(:database_names, :map).and_return(['database_name: foo'])
-          fake_rds.stub(:databases).and_return([])
-
-          fake_rds.should_receive :delete_databases
-          fake_rds.should_receive :delete_subnet_groups
-          fake_rds.should_receive :delete_security_groups
-          fake_rds.should_receive :delete_db_parameter_group
-
-          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.send(:delete_all_rds_dbs, config_file)
-        end
-      end
-    end
-
-    describe 'aws delete_all rds subnet_groups' do
-      let(:config_file) { asset 'config.yml' }
-
-      it 'should remove all RDS subnet grops' do
-        fake_rds = double('rds')
-        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-        fake_rds.should_receive :delete_subnet_groups
-        aws.send(:delete_all_rds_subnet_groups, config_file)
-      end
-    end
-
-    describe 'aws delete_all rds security_groups' do
-      let(:config_file) { asset 'config.yml' }
-
-      it 'should remove all RDS subnet grops' do
-        fake_rds = double('rds')
-        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-        fake_rds.should_receive :delete_security_groups
-        aws.send(:delete_all_rds_security_groups, config_file)
       end
     end
 

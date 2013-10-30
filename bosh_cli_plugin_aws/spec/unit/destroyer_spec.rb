@@ -2,9 +2,10 @@ require 'spec_helper'
 
 module Bosh::Aws
   describe Destroyer do
+    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui, config, rds_destroyer) }
     let(:config) { { 'aws' => { fake: 'aws config' } } }
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
-    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui, config) }
+    let(:rds_destroyer) { instance_double('Bosh::Aws::RdsDestroyer') }
 
     describe '#ensure_not_production!' do
       before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
@@ -118,7 +119,7 @@ module Bosh::Aws
       end
     end
 
-    describe '#delete_all ebs' do
+    describe '#delete_all_ebs' do
       before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
       let(:ec2) { instance_double('Bosh::Aws::EC2') }
 
@@ -171,6 +172,13 @@ module Bosh::Aws
           ec2.should_not_receive(:delete_volumes)
           destroyer.delete_all_ebs
         end
+      end
+    end
+
+    describe '#delete_all_rds' do
+      it 'delegates to rds_destroyer' do
+        rds_destroyer.should_receive(:delete_all)
+        destroyer.delete_all_rds
       end
     end
   end

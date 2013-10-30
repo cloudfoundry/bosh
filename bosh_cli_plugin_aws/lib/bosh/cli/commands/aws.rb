@@ -2,6 +2,7 @@ require 'aws-sdk'
 require 'securerandom'
 require_relative '../../../bosh_cli_plugin_aws'
 require 'bosh_cli_plugin_aws/destroyer'
+require 'bosh_cli_plugin_aws/rds_destroyer'
 
 module Bosh::Cli::Command
   class AWS < Base
@@ -156,14 +157,16 @@ module Bosh::Cli::Command
     desc 'destroy everything in an AWS account'
     def destroy(config_file = nil)
       config = load_config(config_file)
-      destroyer = Bosh::Aws::Destroyer.new(self, config)
+
+      rds_destroyer = Bosh::Aws::RdsDestroyer.new(self, config)
+      destroyer = Bosh::Aws::Destroyer.new(self, config, rds_destroyer)
 
       destroyer.ensure_not_production!
       destroyer.delete_all_elbs
       destroyer.delete_all_ec2
       destroyer.delete_all_ebs
+      destroyer.delete_all_rds
 
-      delete_all_rds_dbs(config_file)
       delete_all_s3(config_file)
       delete_all_vpcs(config_file)
       delete_all_key_pairs(config_file)
@@ -299,40 +302,6 @@ module Bosh::Cli::Command
       end
     end
 
-    def delete_all_rds_dbs(config_file)
-      config = load_config(config_file)
-      credentials = config['aws']
-      rds = Bosh::Aws::RDS.new(credentials)
-
-      formatted_names = rds.database_names.map { |instance, db| "#{instance}\t(database_name: #{db})" }
-
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-      say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
-
-      if confirmed?('Are you sure you want to delete all databases?')
-        rds.delete_databases unless formatted_names.empty?
-        err('not all rds instances could be deleted') unless all_rds_instances_deleted?(rds)
-
-        delete_all_rds_subnet_groups(config_file)
-        delete_all_rds_security_groups(config_file)
-        rds.delete_db_parameter_group('utf8')
-      end
-    end
-
-    def delete_all_rds_subnet_groups(config_file)
-      config = load_config(config_file)
-      credentials = config['aws']
-      rds = Bosh::Aws::RDS.new(credentials)
-      rds.delete_subnet_groups
-    end
-
-    def delete_all_rds_security_groups(config_file)
-      config = load_config(config_file)
-      credentials = config['aws']
-      rds = Bosh::Aws::RDS.new(credentials)
-      rds.delete_security_groups
-    end
-
     def delete_all_security_groups(config_file)
       config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config['aws'])
@@ -363,23 +332,6 @@ module Bosh::Cli::Command
       route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
     end
 
-    def all_rds_instances_deleted?(rds)
-      return true if rds.databases.count == 0
-      (1..120).any? do |attempt|
-        say 'waiting for RDS deletion...'
-        sleep 10
-        rds.databases.each do |db_instance|
-          begin
-            say "  #{db_instance.db_name} #{db_instance.db_instance_status}"
-          rescue ::AWS::RDS::Errors::DBInstanceNotFound
-            # it is possible for a db to be deleted between the time the
-            # each returns an instance and when we print out its info
-          end
-        end
-        rds.databases.count == 0
-      end
-    end
-
     def deployment_manifest_state
       @output_state['deployment_manifest'] ||= {}
     end
@@ -394,8 +346,8 @@ module Bosh::Cli::Command
 
     def default_config_file
       File.expand_path(File.join(
-                           File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'aws_configuration_template.yml.erb'
-                       ))
+        File.dirname(__FILE__), '..', '..', '..', '..', 'templates', 'aws_configuration_template.yml.erb'
+      ))
     end
 
     def load_config(config_file=nil)
