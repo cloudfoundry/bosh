@@ -3,6 +3,7 @@ require 'securerandom'
 require_relative '../../../bosh_cli_plugin_aws'
 require 'bosh_cli_plugin_aws/destroyer'
 require 'bosh_cli_plugin_aws/rds_destroyer'
+require 'bosh_cli_plugin_aws/vpc_destroyer'
 
 module Bosh::Cli::Command
   class AWS < Base
@@ -159,7 +160,8 @@ module Bosh::Cli::Command
       config = load_config(config_file)
 
       rds_destroyer = Bosh::Aws::RdsDestroyer.new(self, config)
-      destroyer = Bosh::Aws::Destroyer.new(self, config, rds_destroyer)
+      vpc_destroyer = Bosh::Aws::VpcDestroyer.new(self, config)
+      destroyer = Bosh::Aws::Destroyer.new(self, config, rds_destroyer, vpc_destroyer)
 
       destroyer.ensure_not_production!
       destroyer.delete_all_elbs
@@ -167,8 +169,8 @@ module Bosh::Cli::Command
       destroyer.delete_all_ebs
       destroyer.delete_all_rds
       destroyer.delete_all_s3
+      destroyer.delete_all_vpcs
 
-      delete_all_vpcs(config_file)
       delete_all_key_pairs(config_file)
       delete_all_elastic_ips(config_file)
       delete_all_security_groups(config_file)
@@ -220,38 +222,6 @@ module Bosh::Cli::Command
       end
 
       say 'deleted VPC and all dependencies'.make_green
-    end
-
-    def delete_all_vpcs(config_file)
-      config = load_config(config_file)
-
-      ec2 = Bosh::Aws::EC2.new(config['aws'])
-      vpc_ids = ec2.vpcs.map { |vpc| vpc.id }
-      dhcp_options = []
-
-      unless vpc_ids.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        say("VPCs:\n\t#{vpc_ids.join("\n\t")}")
-
-        if confirmed?('Are you sure you want to delete all VPCs?')
-          vpc_ids.each do |vpc_id|
-            vpc = Bosh::Aws::VPC.find(ec2, vpc_id)
-            err("#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first") if vpc.instances_count > 0
-
-            dhcp_options << vpc.dhcp_options
-
-            vpc.delete_network_interfaces
-            vpc.delete_security_groups
-            ec2.delete_internet_gateways(ec2.internet_gateway_ids)
-            vpc.delete_subnets
-            vpc.delete_route_tables
-            vpc.delete_vpc
-          end
-          dhcp_options.uniq(&:id).map(&:delete)
-        end
-      else
-        say('No VPCs found')
-      end
     end
 
     def delete_all_key_pairs(config_file)

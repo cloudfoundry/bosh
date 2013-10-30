@@ -4,8 +4,8 @@ describe Bosh::Cli::Command::AWS do
   let(:aws) { subject }
   let(:default_config_filename) do
     File.expand_path(File.join(
-                       File.dirname(__FILE__), '..', '..', 'templates', 'aws_configuration_template.yml.erb'
-                     ))
+      File.dirname(__FILE__), '..', '..', 'templates', 'aws_configuration_template.yml.erb'
+    ))
   end
 
   before { aws.stub(:sleep) }
@@ -116,11 +116,14 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe 'aws destroy' do
-      before { Bosh::Aws::Destroyer.stub(:new).with(aws, config, rds_destroyer).and_return(destroyer) }
+      before { Bosh::Aws::Destroyer.stub(:new).with(aws, config, rds_destroyer, vpc_destroyer).and_return(destroyer) }
       let(:destroyer) { instance_double('Bosh::Aws::Destroyer') }
 
       before { Bosh::Aws::RdsDestroyer.stub(:new).with(aws, config).and_return(rds_destroyer) }
       let(:rds_destroyer) { instance_double('Bosh::Aws::RdsDestroyer') }
+
+      before { Bosh::Aws::VpcDestroyer.stub(:new).with(aws, config).and_return(vpc_destroyer) }
+      let(:vpc_destroyer) { instance_double('Bosh::Aws::VpcDestroyer') }
 
       before { aws.stub(:load_config).with(config_file).and_return(config) }
       let(:config_file) { double('config_file') }
@@ -133,8 +136,8 @@ describe Bosh::Cli::Command::AWS do
         destroyer.should_receive(:delete_all_ebs).ordered
         destroyer.should_receive(:delete_all_rds).ordered
         destroyer.should_receive(:delete_all_s3).ordered
+        destroyer.should_receive(:delete_all_vpcs).ordered
 
-        aws.should_receive(:delete_all_vpcs)
         aws.should_receive(:delete_all_key_pairs)
         aws.should_receive(:delete_all_elastic_ips)
         aws.should_receive(:delete_all_security_groups)
@@ -370,26 +373,6 @@ describe Bosh::Cli::Command::AWS do
         it 'should not delete the key pairs' do
           fake_ec2.should_not_receive(:release_all_elastic_ips)
           aws.send(:delete_all_elastic_ips, config_file)
-        end
-      end
-    end
-
-    describe 'aws delete all vpcs' do
-      let(:fake_ec2) { double('EC2') }
-      let(:fake_vpc) { double('VPC', id: 'vpc-1234') }
-
-      before do
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:vpcs).and_return([fake_vpc])
-      end
-
-      context 'when interactive and bailing out' do
-        it 'should not delete anything' do
-          aws.should_receive(:confirmed?).and_return(false)
-
-          Bosh::Aws::VPC.should_not_receive(:find)
-
-          aws.send(:delete_all_vpcs, asset('config.yml'))
         end
       end
     end

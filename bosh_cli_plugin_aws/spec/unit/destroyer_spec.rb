@@ -2,10 +2,11 @@ require 'spec_helper'
 
 module Bosh::Aws
   describe Destroyer do
-    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui, config, rds_destroyer) }
+    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui, config, rds_destroyer, vpc_destroyer) }
     let(:config) { { 'aws' => { fake: 'aws config' } } }
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
     let(:rds_destroyer) { instance_double('Bosh::Aws::RdsDestroyer') }
+    let(:vpc_destroyer) { instance_double('Bosh::Aws::VpcDestroyer') }
 
     describe '#ensure_not_production!' do
       before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
@@ -227,6 +228,13 @@ module Bosh::Aws
           s3.should_not_receive(:empty)
           destroyer.delete_all_s3
         end
+      end
+    end
+
+    describe '#delete_all_vpcs' do
+      it 'delegates to vpc_destroyer' do
+        vpc_destroyer.should_receive(:delete_all)
+        destroyer.delete_all_vpcs
       end
     end
   end

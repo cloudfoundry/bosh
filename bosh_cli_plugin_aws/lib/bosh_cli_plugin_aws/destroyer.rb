@@ -1,9 +1,10 @@
 module Bosh::Aws
   class Destroyer
-    def initialize(ui, config, rds_destroyer)
+    def initialize(ui, config, rds_destroyer, vpc_destroyer)
       @ui = ui
       @credentials = config['aws']
       @rds_destroyer = rds_destroyer
+      @vpc_destroyer = vpc_destroyer
     end
 
     def ensure_not_production!
@@ -65,6 +66,10 @@ module Bosh::Aws
       else
         @ui.say('No S3 buckets found')
       end
+    end
+
+    def delete_all_vpcs
+      @vpc_destroyer.delete_all
     end
 
     private
