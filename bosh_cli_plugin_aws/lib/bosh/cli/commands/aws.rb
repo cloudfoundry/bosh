@@ -166,8 +166,8 @@ module Bosh::Cli::Command
       destroyer.delete_all_ec2
       destroyer.delete_all_ebs
       destroyer.delete_all_rds
+      destroyer.delete_all_s3
 
-      delete_all_s3(config_file)
       delete_all_vpcs(config_file)
       delete_all_key_pairs(config_file)
       delete_all_elastic_ips(config_file)
@@ -271,22 +271,6 @@ module Bosh::Cli::Command
       if confirmed?('Are you sure you want to delete all Elastic IPs?')
         say 'Releasing all elastic IPs...'
         ec2.release_all_elastic_ips
-      end
-    end
-
-    def delete_all_s3(config_file)
-      config = load_config(config_file)
-
-      s3 = Bosh::Aws::S3.new(config['aws'])
-      bucket_names = s3.bucket_names
-
-      unless bucket_names.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        say("Buckets:\n\t#{bucket_names.join("\n\t")}")
-
-        s3.empty if confirmed?('Are you sure you want to empty and delete all buckets?')
-      else
-        say('No S3 buckets found')
       end
     end
 

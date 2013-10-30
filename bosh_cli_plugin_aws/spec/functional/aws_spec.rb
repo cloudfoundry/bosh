@@ -132,8 +132,8 @@ describe Bosh::Cli::Command::AWS do
         destroyer.should_receive(:delete_all_ec2).ordered
         destroyer.should_receive(:delete_all_ebs).ordered
         destroyer.should_receive(:delete_all_rds).ordered
+        destroyer.should_receive(:delete_all_s3).ordered
 
-        aws.should_receive(:delete_all_s3)
         aws.should_receive(:delete_all_vpcs)
         aws.should_receive(:delete_all_key_pairs)
         aws.should_receive(:delete_all_elastic_ips)
@@ -390,84 +390,6 @@ describe Bosh::Cli::Command::AWS do
           Bosh::Aws::VPC.should_not_receive(:find)
 
           aws.send(:delete_all_vpcs, asset('config.yml'))
-        end
-      end
-    end
-
-    describe 'aws empty s3' do
-      let(:config_file) { asset 'config.yml' }
-
-      it 'should warn the user that the operation is destructive and list the buckets' do
-        fake_ec2 = double('ec2')
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        fake_ec2.stub(:instances_count).and_return(20)
-        fake_s3 = double('s3')
-
-        Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-        fake_s3.stub(:bucket_names).and_return(['buckets of fun', 'barrel of monkeys'])
-
-        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        aws.should_receive(:say).with("Buckets:\n\tbuckets of fun\n\tbarrel of monkeys")
-        aws.should_receive(:confirmed?).with('Are you sure you want to empty and delete all buckets?').and_return(false)
-
-        aws.send(:delete_all_s3, config_file)
-      end
-
-      context 'interactive mode (default)' do
-        context 'when the users agrees to nuke the buckets' do
-          it 'should empty and delete all S3 buckets associated with an account' do
-            fake_ec2 = double('ec2')
-            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-            fake_ec2.stub(:instances_count).and_return(20)
-            fake_s3 = double('s3')
-            fake_bucket_names = %w[foo bar]
-
-            Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-            fake_s3.stub(:bucket_names).and_return(fake_bucket_names)
-
-            aws.stub(:say).twice
-            aws.stub(:confirmed?).and_return(true)
-
-            fake_s3.should_receive :empty
-
-            aws.send(:delete_all_s3, config_file)
-          end
-        end
-
-        context 'when the user wants to bail out' do
-          it 'should not destroy the buckets' do
-            fake_ec2 = double('ec2')
-            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-            fake_ec2.stub(:instances_count).and_return(20)
-            fake_s3 = double('s3')
-
-            Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-            fake_s3.stub(:bucket_names).and_return(double.as_null_object)
-            aws.stub(:say).twice
-            aws.stub(:confirmed?).and_return(false)
-
-            fake_s3.should_not_receive :empty
-
-            aws.send(:delete_all_s3, config_file)
-          end
-        end
-      end
-
-      context 'non-interactive mode' do
-        it 'should empty and delete all S3 buckets associated with an account' do
-          fake_ec2 = double('ec2')
-          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-          fake_ec2.stub(:instances_count).and_return(20)
-          fake_s3 = double('s3')
-
-          Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-          fake_s3.stub(:bucket_names).and_return(%w[foo bar])
-          aws.stub(:say).twice
-
-          fake_s3.should_receive :empty
-
-          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.send(:delete_all_s3, config_file)
         end
       end
     end

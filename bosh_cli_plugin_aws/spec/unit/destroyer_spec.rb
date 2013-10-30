@@ -181,5 +181,53 @@ module Bosh::Aws
         destroyer.delete_all_rds
       end
     end
+
+    describe '#delete_all_s3' do
+      before { Bosh::Aws::S3.stub(:new).with(fake: 'aws config').and_return(s3) }
+      let(:s3) { instance_double('Bosh::Aws::S3') }
+
+      context 'when there is at least one bucket' do
+        before { s3.stub(bucket_names: ['bucket1-name', 'bucket2-name']) }
+
+        it 'warns the user that the operation is destructive and list the buckets' do
+          ui.should_receive(:say).with(/DESTRUCTIVE OPERATION/)
+          ui.should_receive(:say).with("Buckets:\n\tbucket1-name\n\tbucket2-name")
+          ui.should_receive(:confirmed?).with('Are you sure you want to empty and delete all buckets?').and_return(false)
+          destroyer.delete_all_s3
+        end
+
+        context 'when user confirmed deletion' do
+          before { ui.stub(confirmed?: true) }
+
+          it 'delete all S3 buckets associated with an account' do
+            s3.should_receive(:empty)
+            destroyer.delete_all_s3
+          end
+        end
+
+        context 'when user does not confirm deletion' do
+          before { ui.stub(confirmed?: false) }
+
+          it 'does not delete any S3 buckets' do
+            s3.should_not_receive(:empty)
+            destroyer.delete_all_s3
+          end
+        end
+      end
+
+      context 'where there are no s3 buckets' do
+        before { s3.stub(bucket_names: []) }
+
+        it 'notifies user that there is no buckets' do
+          ui.should_receive(:say).with(/No S3 buckets/)
+          destroyer.delete_all_s3
+        end
+
+        it 'does not delete any S3 buckets' do
+          s3.should_not_receive(:empty)
+          destroyer.delete_all_s3
+        end
+      end
+    end
   end
 end

@@ -54,6 +54,19 @@ module Bosh::Aws
       @rds_destroyer.delete_all
     end
 
+    def delete_all_s3
+      s3 = Bosh::Aws::S3.new(@credentials)
+      bucket_names = s3.bucket_names
+
+      unless bucket_names.empty?
+        @ui.say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
+        @ui.say("Buckets:\n\t#{bucket_names.join("\n\t")}")
+        s3.empty if @ui.confirmed?('Are you sure you want to empty and delete all buckets?')
+      else
+        @ui.say('No S3 buckets found')
+      end
+    end
+
     private
 
     def ec2
