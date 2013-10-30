@@ -97,6 +97,22 @@ module Bosh::Aws
       end
     end
 
+    def delete_all_route53_records
+      @ui.say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
+
+      omit_types = @ui.options[:omit_types] || %w(NS SOA)
+      if omit_types.empty?
+        msg = 'Are you sure you want to delete all records from Route 53?'
+      else
+        msg = "Are you sure you want to delete all but #{omit_types.join('/')} records from Route 53?"
+      end
+
+      if @ui.confirmed?(msg)
+        route53 = Bosh::Aws::Route53.new(@credentials)
+        route53.delete_all_records(omit_types: omit_types)
+      end
+    end
+
     private
 
     def ec2

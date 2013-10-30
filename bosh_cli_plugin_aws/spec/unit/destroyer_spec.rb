@@ -313,5 +313,54 @@ module Bosh::Aws
         end
       end
     end
+
+    describe '#delete_all_route53_records' do
+      before { Bosh::Aws::Route53.stub(:new).with(fake: 'aws config').and_return(route53) }
+      let(:route53) { instance_double('Bosh::Aws::Route53') }
+
+      context 'when omit types are specified' do
+        before { ui.stub(options: {omit_types: %w(custom)}) }
+
+        context 'when user confirmed deletion' do
+          before { ui.stub(confirmed?: true) }
+
+          it 'removes all route 53 records except user specified' do
+            route53.should_receive(:delete_all_records).with(omit_types: %w(custom))
+            destroyer.delete_all_route53_records
+          end
+        end
+
+        context 'when user did not confirm deletion' do
+          before { ui.stub(confirmed?: false) }
+
+          it 'does not remove 53 records' do
+            route53.should_not_receive(:delete_all_records)
+            destroyer.delete_all_route53_records
+          end
+        end
+      end
+
+      context 'when omit types are not specified' do
+        before { ui.stub(options: {}) }
+
+        context 'when user confirmed deletion' do
+          before { ui.stub(confirmed?: true) }
+
+          it 'removes all route 53 records except NS and SOA' do
+            route53.should_receive(:delete_all_records).with(omit_types: %w(NS SOA))
+            destroyer.delete_all_route53_records
+          end
+        end
+
+        context 'when user did not confirm deletion' do
+          before { ui.stub(confirmed?: false) }
+
+          it 'does not remove 53 records' do
+            route53.should_not_receive(:delete_all_records)
+            destroyer.delete_all_route53_records
+          end
+        end
+      end
+    end
   end
 end

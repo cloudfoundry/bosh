@@ -140,7 +140,7 @@ describe Bosh::Cli::Command::AWS do
         destroyer.should_receive(:delete_all_key_pairs).ordered
         destroyer.should_receive(:delete_all_elastic_ips).ordered
         destroyer.should_receive(:delete_all_security_groups).ordered
-        aws.should_receive(:delete_all_route53_records)
+        destroyer.should_receive(:delete_all_route53_records).ordered
         aws.destroy(config_file)
       end
     end

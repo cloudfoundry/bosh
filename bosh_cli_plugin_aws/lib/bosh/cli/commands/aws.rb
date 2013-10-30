@@ -173,8 +173,7 @@ module Bosh::Cli::Command
       destroyer.delete_all_key_pairs
       destroyer.delete_all_elastic_ips
       destroyer.delete_all_security_groups
-
-      delete_all_route53_records(config_file)
+      destroyer.delete_all_route53_records
     end
 
     private
@@ -234,22 +233,6 @@ module Bosh::Cli::Command
         elb.delete_server_certificates
         say 'Server certificates deleted.'
       end
-    end
-
-    def delete_all_route53_records(config_file)
-      config = load_config(config_file)
-      route53 = Bosh::Aws::Route53.new(config['aws'])
-
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-
-      omit_types = options[:omit_types] || %w[NS SOA]
-      if omit_types.empty?
-        msg = 'Are you sure you want to delete all records from Route 53?'
-      else
-        msg = "Are you sure you want to delete all but #{omit_types.join('/')} records from Route 53?"
-      end
-
-      route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
     end
 
     def deployment_manifest_state
