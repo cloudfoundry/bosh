@@ -28,7 +28,9 @@ module Bosh::Director
         compiled_package_blob.close
       end
 
-      File.open(File.join(@download_dir, 'compiled_packages.yml'), 'w').write(YAML.dump(compiled_packages))
+      File.open(File.join(@download_dir, 'compiled_packages.yml'), 'w') do |f|
+        f.write(YAML.dump(compiled_packages))
+      end
 
       @download_dir
     end
