@@ -19,11 +19,7 @@ module Bosh::Director
         FileUtils.mkdir_p(output_dir)
         exporter = CompiledPackagesExporter.new(compiled_packages, App.instance.blobstores.blobstore, output_dir)
 
-        begin
-          send_file exporter.tgz_path, type: :tgz
-        ensure
-          exporter.cleanup
-        end
+        send_file exporter.tgz_path, type: :tgz
       end
     end
   end
