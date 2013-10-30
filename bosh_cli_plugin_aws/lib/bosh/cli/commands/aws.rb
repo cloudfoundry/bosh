@@ -161,8 +161,8 @@ module Bosh::Cli::Command
       destroyer.ensure_not_production!
       destroyer.delete_all_elbs
       destroyer.delete_all_ec2
+      destroyer.delete_all_ebs
 
-      delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
       delete_all_s3(config_file)
       delete_all_vpcs(config_file)
@@ -333,22 +333,6 @@ module Bosh::Cli::Command
       rds.delete_security_groups
     end
 
-    def delete_all_ebs(config_file)
-      config = load_config(config_file)
-      credentials = config['aws']
-      ec2 = Bosh::Aws::EC2.new(credentials)
-      check_volume_count(config)
-
-      if ec2.volume_count > 0
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
-        say("It will delete #{ec2.volume_count} EBS volume(s)")
-
-        ec2.delete_volumes if confirmed?('Are you sure you want to delete all unattached EBS volumes?')
-      else
-        say('No EBS volumes found')
-      end
-    end
-
     def delete_all_security_groups(config_file)
       config = load_config(config_file)
       ec2 = Bosh::Aws::EC2.new(config['aws'])
@@ -406,11 +390,6 @@ module Bosh::Cli::Command
 
     def flush_output_state(file_path)
       File.open(file_path, 'w') { |f| f.write output_state.to_yaml }
-    end
-
-    def check_volume_count(config)
-      ec2 = Bosh::Aws::EC2.new(config['aws'])
-      err("#{ec2.volume_count} volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.volume_count > 20
     end
 
     def default_config_file

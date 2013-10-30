@@ -6,8 +6,8 @@ module Bosh::Aws
     end
 
     def ensure_not_production!
-      ec2 = Bosh::Aws::EC2.new(@credentials)
       raise "#{ec2.instances_count} instance(s) running. This isn't a dev account (more than 20) please make sure you want to do this, aborting." if ec2.instances_count > 20
+      raise "#{ec2.volume_count} volume(s) present. This isn't a dev account (more than 20) please make sure you want to do this, aborting."      if ec2.volume_count > 20
     end
 
     def delete_all_elbs
@@ -19,7 +19,6 @@ module Bosh::Aws
     end
 
     def delete_all_ec2
-      ec2 = Bosh::Aws::EC2.new(@credentials)
       formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
 
       unless formatted_names.empty?
@@ -35,6 +34,25 @@ module Bosh::Aws
       else
         @ui.say('No EC2 instances found')
       end
+    end
+
+    def delete_all_ebs
+      if ec2.volume_count > 0
+        @ui.say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
+        @ui.say("It will delete #{ec2.volume_count} EBS volume(s)")
+
+        if @ui.confirmed?('Are you sure you want to delete all unattached EBS volumes?')
+          ec2.delete_volumes
+        end
+      else
+        @ui.say('No EBS volumes found')
+      end
+    end
+
+    private
+
+    def ec2
+      @ec2 ||= Bosh::Aws::EC2.new(@credentials)
     end
   end
 end
