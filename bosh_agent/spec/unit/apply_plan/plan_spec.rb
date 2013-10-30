@@ -95,4 +95,14 @@ describe Bosh::Agent::ApplyPlan::Plan do
 
   end
 
+  describe '#has_downloaded_new_bits?' do
+    let(:spec) { {'fake' => 'spec'} }
+
+    it 'checks spec for presence of key' do
+      spec.should_receive(:key?).with('has_downloaded_new_bits')
+
+      Bosh::Agent::ApplyPlan::Plan.new(spec).has_downloaded_new_bits?
+    end
+  end
+
 end

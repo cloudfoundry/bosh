@@ -91,6 +91,9 @@ module Bosh::Agent
         end
       end
 
+      def has_downloaded_new_bits?
+        @spec.key?('has_downloaded_new_bits')
+      end
     end
   end
 end
