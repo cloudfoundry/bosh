@@ -6,19 +6,21 @@ module Bosh::Director
     describe '#tgz_path' do
       it 'downloads the compiled packages from blobstore using CompiledPackageDownloader and creates a gzipped tar using DirGzipper' do
         group = double('compiled package group')
-        downloader = double('compiled package downloader')
         download_dir = '/path/to/download_dir'
-        downloader.stub(:download).with(no_args).and_return(download_dir)
+
+        downloader = double('compiled package downloader')
         blobstore_client = double('blobstore client')
         CompiledPackageDownloader.stub(:new).with(group, blobstore_client).and_return(downloader)
 
         output_dir = '/path/to/output_dir'
         archiver = double('gzipper')
-        archiver.stub(:compress).with(download_dir, 'compiled_packages', File.join(output_dir, 'compiled_packages.tgz'))
         TarGzipper.stub(:new).and_return(archiver)
 
         exporter = CompiledPackagesExporter.new(group, blobstore_client, output_dir)
-        exporter.tgz_path.should eq(File.join(output_dir, 'compiled_packages.tgz'))
+
+        downloader.should_receive(:download).with(no_args).and_return(download_dir)
+        archiver.should_receive(:compress).with(download_dir, 'compiled_packages', File.join(output_dir, 'compiled_packages.tgz'))
+        expect(exporter.tgz_path).to eq(File.join(output_dir, 'compiled_packages.tgz'))
       end
     end
 
