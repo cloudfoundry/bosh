@@ -99,7 +99,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     end
 
     it 'installs packages' do
-      apply_message.stub(:apply_job)
+      apply_message.should_receive(:apply_job)
 
       job_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'packages')
       FileUtils.mkdir_p(job_dir)
