@@ -260,5 +260,28 @@ module Bosh::Aws
         end
       end
     end
+
+    describe '#delete_all_elastic_ips' do
+      before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+
+      context 'when user confirmed deletion' do
+        before { ui.stub(confirmed?: true) }
+
+        it 'removes all elastic ips' do
+          ec2.should_receive(:release_all_elastic_ips)
+          destroyer.delete_all_elastic_ips
+        end
+      end
+
+      context 'when user did not confirm deletion' do
+        before { ui.stub(confirmed?: false) }
+
+        it 'does not remove elastic ips' do
+          ec2.should_not_receive(:release_all_elastic_ips)
+          destroyer.delete_all_elastic_ips
+        end
+      end
+    end
   end
 end

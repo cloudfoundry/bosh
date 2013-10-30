@@ -79,6 +79,13 @@ module Bosh::Aws
       end
     end
 
+    def delete_all_elastic_ips
+      if @ui.confirmed?('Are you sure you want to delete all Elastic IPs?')
+        @ui.say('Releasing all elastic IPs...')
+        ec2.release_all_elastic_ips
+      end
+    end
+
     private
 
     def ec2

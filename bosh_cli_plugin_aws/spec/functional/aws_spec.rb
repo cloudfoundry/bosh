@@ -138,8 +138,8 @@ describe Bosh::Cli::Command::AWS do
         destroyer.should_receive(:delete_all_s3).ordered
         destroyer.should_receive(:delete_all_vpcs).ordered
         destroyer.should_receive(:delete_all_key_pairs).ordered
+        destroyer.should_receive(:delete_all_elastic_ips).ordered
 
-        aws.should_receive(:delete_all_elastic_ips)
         aws.should_receive(:delete_all_security_groups)
         aws.should_receive(:delete_all_route53_records)
 
@@ -311,37 +311,6 @@ describe Bosh::Cli::Command::AWS do
         it 'should not delete the key pairs' do
           fake_elb.should_not_receive(:delete_server_certificates)
           aws.send(:delete_server_certificates, config_file)
-        end
-      end
-    end
-
-    describe 'aws destroy elastic ips' do
-      let(:config_file) { asset 'config.yml' }
-      let(:fake_ec2) { double('EC2') }
-
-      before do
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-      end
-
-      context 'when non-interactive' do
-        before do
-          aws.should_receive(:confirmed?).and_return(true)
-        end
-
-        it 'should remove the key pairs' do
-          fake_ec2.should_receive(:release_all_elastic_ips).and_return(true)
-          aws.send(:delete_all_elastic_ips, config_file)
-        end
-      end
-
-      context 'when interactive and bailing out' do
-        before do
-          aws.should_receive(:confirmed?).and_return(false)
-        end
-
-        it 'should not delete the key pairs' do
-          fake_ec2.should_not_receive(:release_all_elastic_ips)
-          aws.send(:delete_all_elastic_ips, config_file)
         end
       end
     end

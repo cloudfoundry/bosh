@@ -171,8 +171,8 @@ module Bosh::Cli::Command
       destroyer.delete_all_s3
       destroyer.delete_all_vpcs
       destroyer.delete_all_key_pairs
+      destroyer.delete_all_elastic_ips
 
-      delete_all_elastic_ips(config_file)
       delete_all_security_groups(config_file)
       delete_all_route53_records(config_file)
     end
@@ -222,16 +222,6 @@ module Bosh::Cli::Command
       end
 
       say 'deleted VPC and all dependencies'.make_green
-    end
-
-    def delete_all_elastic_ips(config_file)
-      config = load_config(config_file)
-      ec2 = Bosh::Aws::EC2.new(config['aws'])
-
-      if confirmed?('Are you sure you want to delete all Elastic IPs?')
-        say 'Releasing all elastic IPs...'
-        ec2.release_all_elastic_ips
-      end
     end
 
     def delete_server_certificates(config_file)
