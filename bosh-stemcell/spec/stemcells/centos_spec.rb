@@ -134,7 +134,7 @@ describe 'CentOs Stemcell' do
     describe 'disallow unsafe setuid binaries' do
       subject { backend.run_command('find / -xdev -perm +6000 -a -type f')[:stdout].split }
 
-      it { should eq(%w(/bin/su /usr/bin/sudo)) }
+      it { should match_array(%w(/bin/su /usr/bin/sudo)) }
     end
 
     describe 'disallow root login' do
