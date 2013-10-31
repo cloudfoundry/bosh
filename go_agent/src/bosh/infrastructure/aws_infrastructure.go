@@ -51,20 +51,7 @@ func (inf awsInfrastructure) GetSettings() (settings Settings, err error) {
 	}
 
 	settingsUrl := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceId)
-
-	settingsResp, err := http.Get(settingsUrl)
-	if err != nil {
-		return
-	}
-	defer settingsResp.Body.Close()
-
-	settingsBytes, err := ioutil.ReadAll(settingsResp.Body)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(settingsBytes, &settings)
-	return
+	return inf.getSettingsAtUrl(settingsUrl)
 }
 
 func (inf awsInfrastructure) getInstanceId() (instanceId string, err error) {
@@ -140,5 +127,31 @@ func (inf awsInfrastructure) resolveRegistryEndpoint(namedEndpoint string, nameS
 
 	registryUrl.Host = fmt.Sprintf("%s:%s", registryIp, registryHostAndPort[1])
 	resolvedEndpoint = registryUrl.String()
+	return
+}
+
+type settingsWrapperType struct {
+	Settings string
+}
+
+func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings Settings, err error) {
+	wrapperResponse, err := http.Get(settingsUrl)
+	if err != nil {
+		return
+	}
+	defer wrapperResponse.Body.Close()
+
+	wrapperBytes, err := ioutil.ReadAll(wrapperResponse.Body)
+	if err != nil {
+		return
+	}
+
+	wrapper := new(settingsWrapperType)
+	err = json.Unmarshal(wrapperBytes, wrapper)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
 	return
 }

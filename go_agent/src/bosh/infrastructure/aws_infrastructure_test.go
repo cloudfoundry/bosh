@@ -94,7 +94,7 @@ func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip str
 // Server methods
 
 func spinUpRegistry(t *testing.T) (ts *httptest.Server, port string) {
-	settings := `{"agent_id":"my-agent-id"}`
+	settings := `{"settings": "{\"agent_id\":\"my-agent-id\"}"}`
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, r.Method, "GET")
