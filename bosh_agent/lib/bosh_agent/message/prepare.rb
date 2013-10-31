@@ -79,7 +79,7 @@ module Bosh::Agent::Message
     end
 
     def log_bit_download_with_agent_state
-      @old_spec['has_downloaded_new_bits'] = true
+      @old_spec['prepared_spec'] = @new_spec
       Bosh::Agent::Config.state.write(@old_spec)
     end
   end

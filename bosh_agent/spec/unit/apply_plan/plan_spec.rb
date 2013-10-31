@@ -1,6 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Agent::ApplyPlan::Plan do
 
@@ -96,13 +94,27 @@ describe Bosh::Agent::ApplyPlan::Plan do
   end
 
   describe '#has_downloaded_new_bits?' do
-    let(:spec) { {'fake' => 'spec'} }
+    let(:new_spec) { { 'fake' => 'new_spec' } }
 
-    it 'checks spec for presence of key' do
-      spec.should_receive(:key?).with('has_downloaded_new_bits')
+    context 'when prepared_spec equals new_spec' do
+      let(:spec) { { 'fake' => 'spec', 'prepared_spec' => new_spec } }
+      it 'is true' do
+        expect(Bosh::Agent::ApplyPlan::Plan.new(spec).has_prepared_spec?(new_spec)).to eq(true)
+      end
+    end
 
-      Bosh::Agent::ApplyPlan::Plan.new(spec).has_downloaded_new_bits?
+    context 'when prepared_spec is not new_spec' do
+      let(:spec) { { 'fake' => 'spec', 'prepared_spec' => { 'not' => 'new spec' } } }
+      it 'is false' do
+        expect(Bosh::Agent::ApplyPlan::Plan.new(spec).has_prepared_spec?(new_spec)).to eq(false)
+      end
+    end
+
+    context 'when prepared_spec is absent' do
+      let(:spec) { { 'fake' => 'spec' } }
+      it 'is false' do
+        expect(Bosh::Agent::ApplyPlan::Plan.new(spec).has_prepared_spec?(new_spec)).to eq(false)
+      end
     end
   end
-
 end

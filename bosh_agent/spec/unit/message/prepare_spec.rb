@@ -14,17 +14,7 @@ module Bosh::Agent::Message
     before do
       Bosh::Agent::Config.state = Bosh::Agent::State.new('state_file')
 
-      Bosh::Agent::Config.blobstore_provider = 'simple'
-      Bosh::Agent::Config.blobstore_options = {}
       Bosh::Agent::Config.stub(platform: dummy_platform)
-      Bosh::Agent::Config.platform_name = 'dummy'
-
-      # FIXME: use Dummy platform for tests
-      system_root = Bosh::Agent::Config.system_root
-      FileUtils.mkdir_p(File.join(system_root, 'etc', 'logrotate.d'))
-
-      @httpclient = double('httpclient')
-      HTTPClient.stub(:new).and_return(@httpclient)
     end
 
     context 'when an empty list is passed to the initializer' do
@@ -77,10 +67,10 @@ module Bosh::Agent::Message
           expect { prepare_message.prepare }.to raise_error(Bosh::Agent::MessageHandlerError)
         end
 
-        it 'adds `has_downloaded_new_bits` key to agent config state and sets to true' do
+        it 'persists the prepared spec to the agent state file' do
           new_plan.stub(:install_jobs)
           new_plan.stub(:install_packages)
-          agent_state.should_receive(:write).with({ 'fake' => 'old_spec', 'has_downloaded_new_bits' => true })
+          agent_state.should_receive(:write).with({ 'fake' => 'old_spec', 'prepared_spec' => { 'fake' => 'prepare_spec' } })
 
           prepare_message.prepare
         end
