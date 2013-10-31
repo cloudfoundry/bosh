@@ -16,8 +16,21 @@ module Bosh::Director
 
     let(:blobstore_client) { double('blobstore client') }
 
-    let(:compiled_package1) { instance_double('Bosh::Director::Models::CompiledPackage', blobstore_id: 'blobstore_id1') }
-    let(:compiled_package2) { instance_double('Bosh::Director::Models::CompiledPackage', blobstore_id: 'blobstore_id2') }
+    let(:compiled_package1) do
+      instance_double(
+        'Bosh::Director::Models::CompiledPackage',
+        blobstore_id: 'fake-compiled-package1-blobstore-id',
+        sha1: 'fake-compiled-package1-sha1',
+      )
+    end
+
+    let(:compiled_package2) do
+      instance_double(
+        'Bosh::Director::Models::CompiledPackage',
+        blobstore_id: 'fake-compiled-package2-blobstore-id',
+        sha1: 'fake-compiled-package2-sha1',
+      )
+    end
 
     describe '#download' do
       before { blobstore_client.stub(:get) }
@@ -31,15 +44,17 @@ module Bosh::Director
       end
 
       it 'downloads blobs using blobstore client' do
-        blobstore_client.should_receive(:get).with('blobstore_id1', be_a(File))
-        blobstore_client.should_receive(:get).with('blobstore_id2', be_a(File))
+        blobstore_client.should_receive(:get).with(
+          'fake-compiled-package1-blobstore-id', be_a(File), sha1: 'fake-compiled-package1-sha1')
+        blobstore_client.should_receive(:get).with(
+          'fake-compiled-package2-blobstore-id', be_a(File), sha1: 'fake-compiled-package2-sha1')
         downloader.download
       end
 
       it 'creates blobs files under the blobs subdirectory' do
         download_dir = downloader.download
-        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'blobstore_id1'))).to be_true
-        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'blobstore_id2'))).to be_true
+        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'fake-compiled-package1-blobstore-id'))).to be_true
+        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'fake-compiled-package2-blobstore-id'))).to be_true
       end
     end
 

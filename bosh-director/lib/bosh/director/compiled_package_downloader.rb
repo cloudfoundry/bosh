@@ -19,7 +19,7 @@ module Bosh::Director
       @compiled_package_group.compiled_packages.each do |compiled_package|
         blobstore_id = compiled_package.blobstore_id
         File.open(File.join(blobs_path, blobstore_id), 'w') do |f|
-          @blobstore_client.get(blobstore_id, f)
+          @blobstore_client.get(blobstore_id, f, sha1: compiled_package.sha1)
         end
       end
 
