@@ -11,32 +11,37 @@ module Bosh::Director
     def download
       @download_dir = Dir.mktmpdir
 
-      compiled_packages = {'compiled_packages' => []}
       FileUtils.mkdir_p(File.join(@download_dir, 'compiled_packages', 'blobs'))
 
       @compiled_package_group.compiled_packages.each do |compiled_package|
         blobstore_id = compiled_package.blobstore_id
 
-        compiled_packages['compiled_packages'] << {
-          'package_name' => compiled_package.package.name,
-          'package_fingerprint' => compiled_package.package.fingerprint,
-          'stemcell_sha1' => @compiled_package_group.stemcell_sha1,
-          'blobstore_id' => blobstore_id,
-        }
         compiled_package_blob = File.open(File.join(@download_dir, 'compiled_packages', 'blobs', blobstore_id), 'w')
         @blobstore_client.get(blobstore_id, compiled_package_blob)
         compiled_package_blob.close
       end
 
-      File.open(File.join(@download_dir, 'compiled_packages', 'compiled_packages.yml'), 'w') do |f|
-        f.write(YAML.dump(compiled_packages))
-      end
-
+      write_yaml
       @download_dir
     end
 
     def cleanup
       FileUtils.rm_rf(@download_dir)
+    end
+
+    private
+    def write_yaml
+      hashes = @compiled_package_group.compiled_packages.map do |compiled_package|
+        {
+          'package_name' => compiled_package.package.name,
+          'package_fingerprint' => compiled_package.package.fingerprint,
+          'stemcell_sha1' => @compiled_package_group.stemcell_sha1,
+          'blobstore_id' => compiled_package.blobstore_id,
+        }
+      end
+      File.open(File.join(@download_dir, 'compiled_packages', 'compiled_packages.yml'), 'w') do |f|
+        f.write(YAML.dump('compiled_packages' => hashes))
+      end
     end
   end
 end
