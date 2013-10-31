@@ -1,3 +1,6 @@
+require 'bosh/director'
+require 'bosh/director/compiled_package_yaml_writer'
+
 require 'fileutils'
 require 'tmpdir'
 
@@ -21,27 +24,12 @@ module Bosh::Director
         compiled_package_blob.close
       end
 
-      write_yaml
+      CompiledPackageYamlWriter.new(@compiled_package_group, File.join(@download_dir, 'compiled_packages')).write
       @download_dir
     end
 
     def cleanup
       FileUtils.rm_rf(@download_dir)
-    end
-
-    private
-    def write_yaml
-      hashes = @compiled_package_group.compiled_packages.map do |compiled_package|
-        {
-          'package_name' => compiled_package.package.name,
-          'package_fingerprint' => compiled_package.package.fingerprint,
-          'stemcell_sha1' => @compiled_package_group.stemcell_sha1,
-          'blobstore_id' => compiled_package.blobstore_id,
-        }
-      end
-      File.open(File.join(@download_dir, 'compiled_packages', 'compiled_packages.yml'), 'w') do |f|
-        f.write(YAML.dump('compiled_packages' => hashes))
-      end
     end
   end
 end
