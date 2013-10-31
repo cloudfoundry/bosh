@@ -1,5 +1,5 @@
 require 'bosh/director'
-require 'bosh/director/compiled_package_yaml_writer'
+require 'bosh/director/compiled_package_manifest'
 
 require 'fileutils'
 require 'tmpdir'
@@ -26,7 +26,7 @@ module Bosh::Director
         compiled_package_blob.close
       end
 
-      CompiledPackageYamlWriter.new(@compiled_package_group, @download_dir.join('compiled_packages')).write
+      CompiledPackageManifest.new(@compiled_package_group, @download_dir.join('compiled_packages')).write
       @download_dir
     end
 
