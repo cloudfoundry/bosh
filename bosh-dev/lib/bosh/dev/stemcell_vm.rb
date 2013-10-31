@@ -4,7 +4,7 @@ module Bosh::Dev
       @vm_name = options.fetch(:vm_name)
       @infrastructure_name = options.fetch(:infrastructure_name)
       @operating_system_name = options.fetch(:operating_system_name)
-      @agent_name = options.fetch(:agent_name) || 'ruby'
+      @agent_name = options.fetch(:agent_name, 'ruby')
       @env = env
     end
 

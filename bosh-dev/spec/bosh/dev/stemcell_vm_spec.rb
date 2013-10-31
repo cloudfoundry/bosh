@@ -9,7 +9,6 @@ module Bosh::Dev
           vm_name: 'remote',
           infrastructure_name: 'fake-infrastructure_name',
           operating_system_name: 'fake-operating_system_name',
-          agent_name: nil,
         }
       end
 
