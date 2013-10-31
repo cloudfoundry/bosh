@@ -34,6 +34,13 @@ module Bosh::Director
 
         expect(package_group.compiled_packages).to eq([compiled_package1])
       end
+
+      it 'only queries database once' do
+        Models::CompiledPackage.stub(:[]).and_call_original
+        package_group.compiled_packages
+        package_group.compiled_packages
+        expect(Models::CompiledPackage).to have_received(:[]).once
+      end
     end
 
     describe '#stemcell_sha1' do
