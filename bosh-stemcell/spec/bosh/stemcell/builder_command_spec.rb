@@ -52,7 +52,8 @@ module Bosh::Stemcell
         tarball: release_tarball_path,
         stemcell_version: version,
         infrastructure: infrastructure,
-        operating_system: operating_system
+        operating_system: operating_system,
+        agent_name: expected_agent_name,
       ).and_return(stemcell_builder_options)
     end
 

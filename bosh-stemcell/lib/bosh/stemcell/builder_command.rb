@@ -22,6 +22,7 @@ module Bosh::Stemcell
         stemcell_version: options.fetch(:version),
         infrastructure: infrastructure,
         operating_system: operating_system,
+        agent_name: agent_name,
       )
       @shell = Bosh::Core::Shell.new
     end
