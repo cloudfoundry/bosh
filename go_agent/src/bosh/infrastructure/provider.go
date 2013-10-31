@@ -11,7 +11,7 @@ type provider struct {
 
 func NewProvider() (p provider) {
 	p.infrastructures = map[string]Infrastructure{
-		"aws": newAwsInfrastructure("http://169.254.169.254"),
+		"aws": newAwsInfrastructure("http://169.254.169.254", digDnsResolver{}),
 	}
 	return
 }

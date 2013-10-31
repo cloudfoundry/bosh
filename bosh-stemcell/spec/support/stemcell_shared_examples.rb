@@ -16,4 +16,12 @@ shared_examples_for 'a stemcell' do
       it { should return_exit_status(0) }
     end
   end
+
+  context 'installed by base_<os>' do
+
+    # required by go_agent
+    describe command('dig -v') do
+      it { should return_exit_status(0) }
+    end
+  end
 end
