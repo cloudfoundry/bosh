@@ -37,7 +37,7 @@ networks:
     type: dynamic
     cloud_properties:
       security_groups:
-        - default # CHANGE: Security Group
+        - bosh # CHANGE: Security Group
 
 resource_pools:
   - name: medium
@@ -145,4 +145,4 @@ properties:
     tenant: tenant # CHANGE: OpenStack Tenant
     region: # CHANGE: OpenStack Region (optional)
     default_key_name: bosh-key-name # CHANGE: AWS EC2 default Keyname to use when spinning up new VMs
-    default_security_groups: ["default"] # CHANGE: AWS EC2 default Security Groups to use when spinning up new VMs
+    default_security_groups: ["bosh"] # CHANGE: AWS EC2 default Security Groups to use when spinning up new VMs
