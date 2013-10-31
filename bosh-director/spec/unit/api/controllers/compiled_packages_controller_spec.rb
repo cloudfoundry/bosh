@@ -8,41 +8,25 @@ module Bosh::Director
   describe Api::Controllers::CompiledPackagesController do
     include Rack::Test::Methods
 
-    subject(:app) { Api::Controllers::CompiledPackagesController } # "app" is a Rack::Test hook
+    subject(:app) { described_class } # "app" is a Rack::Test hook
 
-    before do
-      Api::ResourceManager.stub(:new)
-    end
+    before { Api::ResourceManager.stub(:new) }
 
     describe 'GET', '/stemcells/:stemcell_name/:stemcell_version/releases/:release/:release_version/compiled_packages' do
-      context 'unauthenticated access' do
-        it 'returns 401' do
-          get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
-          expect(last_response.status).to eq(401)
-        end
-      end
-
-      context 'accessing with invalid credentials' do
-        it 'returns 401' do
-          authorize 'invalid-user', 'invalid-password'
-
-          get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
-          expect(last_response.status).to eq(401)
-        end
+      def perform
+        get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
       end
 
       context 'authenticated access' do
-        before do
-          authorize 'admin', 'admin'
-
-          Models::Stemcell.make(name: 'bosh-stemcell', version: '123')
-          release = Models::Release.make(name: 'cf-release')
-          Models::ReleaseVersion.make(release: release, version: '456')
-        end
+        before { authorize 'admin', 'admin' }
 
         context 'when the specified stemcell and release exist' do
+          before do
+            Models::Stemcell.make(name: 'bosh-stemcell', version: '123')
+            release = Models::Release.make(name: 'cf-release')
+            Models::ReleaseVersion.make(release: release, version: '456')
+          end
+
           let(:package_group) { instance_double('Bosh::Director::CompiledPackageGroup') }
           let(:exporter) do
             double = instance_double('Bosh::Director::CompiledPackagesExporter')
@@ -61,21 +45,19 @@ module Bosh::Director
           end
 
           it 'sets the mime type to application/x-compressed' do
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
-            expect(last_response.status).to eq(200)
+            perform
+            expect(last_response).to be_ok
             expect(last_response.content_type).to eq('application/x-compressed')
           end
 
           it 'creates a tarball with CompiledPackagesExporter and returns it' do
             expect(exporter).to receive(:export).with(anything) { |f| File.write(f, 'fake tgz content') }
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
+            perform
             expect(last_response.body).to eq('fake tgz content')
           end
 
           it 'creates the output directory' do
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            perform
             File.should be_directory(File.join(Dir.tmpdir, 'compiled_packages'))
           end
 
@@ -85,34 +67,53 @@ module Bosh::Director
             timestamp = Time.new
             output_path = File.join(output_dir, "compiled_packages_#{timestamp.to_f}.tar.gz")
             expect(exporter).to receive(:export).with(output_path)
-            Timecop.freeze(timestamp) do
-              get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-            end
+            Timecop.freeze(timestamp) { perform }
           end
 
           it 'cleans up the stale exported packages with a StaleFileKiller' do
             output_dir = File.join(Dir.tmpdir, 'compiled_packages')
             StaleFileKiller.should_receive(:new).with(output_dir).and_return(killer)
 
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            perform
             expect(killer).to have_received(:kill)
           end
         end
 
         context 'when the stemcell does not exist' do
-          it 'returns a 404' do
-            get '/stemcells/invalid-stemcell/123/releases/cf-release/456/compiled_packages'
+          before do
+            release = Models::Release.make(name: 'cf-release')
+            Models::ReleaseVersion.make(release: release, version: '456')
+          end
 
-            expect(last_response.status).to eq(404)
+          it 'returns a 404' do
+            perform
+            expect(last_response).to be_not_found
           end
         end
 
         context 'when the release does not exist' do
-          it 'returns a 404' do
-            get '/stemcells/bosh-stemcell/123/releases/invalid-release/456/compiled_packages'
+          before { Models::Stemcell.make(name: 'bosh-stemcell', version: '123') }
 
-            expect(last_response.status).to eq(404)
+          it 'returns a 404' do
+            perform
+            expect(last_response).to be_not_found
           end
+        end
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'unauthenticated access' do
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
         end
       end
     end

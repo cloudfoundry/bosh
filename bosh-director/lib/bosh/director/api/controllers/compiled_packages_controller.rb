@@ -2,6 +2,7 @@ require 'bosh/director/api/controllers/base_controller'
 require 'bosh/director/api/stemcell_manager'
 require 'bosh/director/compiled_package_group'
 require 'bosh/director/compiled_packages_exporter'
+require 'bosh/director/stale_file_killer'
 
 module Bosh::Director
   module Api::Controllers
@@ -14,11 +15,13 @@ module Bosh::Director
         release = release_manager.find_by_name(params[:release_name])
         release_version = release_manager.find_version(release, params[:release_version])
 
-        compiled_packages = CompiledPackageGroup.new(release_version, stemcell)
         output_dir = File.join(Dir.tmpdir, 'compiled_packages')
         FileUtils.mkdir_p(output_dir)
+
         killer = StaleFileKiller.new(output_dir)
         killer.kill
+
+        compiled_packages = CompiledPackageGroup.new(release_version, stemcell)
         exporter = CompiledPackagesExporter.new(compiled_packages, App.instance.blobstores.blobstore)
 
         output_path = File.join(output_dir, "compiled_packages_#{Time.now.to_f}.tar.gz")
