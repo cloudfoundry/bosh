@@ -130,7 +130,7 @@ module Bosh::Director
         end
       end
 
-      context 'when the vm need to be stopped' do
+      context 'when the job instance needs to be stopped' do
         before do
           subject.stub(:stop)
           subject.stub(:start!)
@@ -139,7 +139,7 @@ module Bosh::Director
           subject.stub(current_state: {'job_state' => 'running'})
         end
 
-        it 'stops the VM' do
+        it 'stops the job' do
           subject.should_receive(:stop)
           subject.update
         end
