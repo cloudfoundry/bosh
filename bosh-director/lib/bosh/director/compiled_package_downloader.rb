@@ -3,6 +3,7 @@ require 'bosh/director/compiled_package_yaml_writer'
 
 require 'fileutils'
 require 'tmpdir'
+require 'pathname'
 
 module Bosh::Director
   class CompiledPackageDownloader
@@ -12,24 +13,25 @@ module Bosh::Director
     end
 
     def download
-      @download_dir = Dir.mktmpdir
+      @download_dir = Pathname.new(Dir.mktmpdir)
 
-      FileUtils.mkdir_p(File.join(@download_dir, 'compiled_packages', 'blobs'))
+      blobs_path = @download_dir.join('compiled_packages', 'blobs')
+      blobs_path.mkpath
 
       @compiled_package_group.compiled_packages.each do |compiled_package|
         blobstore_id = compiled_package.blobstore_id
 
-        compiled_package_blob = File.open(File.join(@download_dir, 'compiled_packages', 'blobs', blobstore_id), 'w')
+        compiled_package_blob = blobs_path.join(blobstore_id).open('w')
         @blobstore_client.get(blobstore_id, compiled_package_blob)
         compiled_package_blob.close
       end
 
-      CompiledPackageYamlWriter.new(@compiled_package_group, File.join(@download_dir, 'compiled_packages')).write
+      CompiledPackageYamlWriter.new(@compiled_package_group, @download_dir.join('compiled_packages')).write
       @download_dir
     end
 
     def cleanup
-      FileUtils.rm_rf(@download_dir)
+      @download_dir.rmtree
     end
   end
 end
