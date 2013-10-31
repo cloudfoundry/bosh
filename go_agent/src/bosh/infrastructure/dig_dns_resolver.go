@@ -13,6 +13,12 @@ type digDnsResolver struct {
 }
 
 func (res digDnsResolver) LookupHost(dnsServers []string, host string) (ipString string, err error) {
+	ip := net.ParseIP(host)
+	if ip != nil {
+		ipString = host
+		return
+	}
+
 	for _, dnsServer := range dnsServers {
 		ipString, err = lookupHostWithDnsServer(dnsServer, host)
 		if err == nil {
