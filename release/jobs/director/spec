@@ -158,6 +158,29 @@ properties:
     description: AWS secret_access_key used by s3 blobstore plugin
   blobstore.address:
     description: Addess of blobstore server used by simple blobstore plugin
+  blobstore.swift_container_name:
+    description: Container Name used by swift blobstore plugin
+  blobstore.swift_provider:
+    description: Specific provider used by swift blobstore plugin (openstack, hp, rackspace)
+    default: openstack
+  blobstore.openstack.openstack_auth_url:
+    description: OpenStack Auth URL used by swift blobstore plugin
+  blobstore.openstack.openstack_username:
+    description: OpenStack Username by swift blobstore plugin
+  blobstore.openstack.openstack_api_key:
+    description: OpenStack API Key/Password used by swift blobstore plugin
+  blobstore.openstack.openstack_tenant:
+    description: OpenStack Tenant used by swift blobstore plugin
+  blobstore.openstack.openstack_region:
+    description: OpenStack Region used by swift blobstore plugin
+  blobstore.hp.hp_access_key:
+    description: HP Access Key used by swift blobstore plugin
+  blobstore.hp.hp_secret_key:
+    description: HP Secret Key used by swift blobstore plugin
+  blobstore.hp.hp_tenant_id:
+    description: HP Tenant used by swift blobstore plugin
+  blobstore.hp.hp_avl_zone:
+    description: HP Availability Zone used by swift blobstore plugin
   blobstore.port:
     description: Port of blobstore server used by simple blobstore plugin
     default: 25250
