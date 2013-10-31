@@ -14,7 +14,6 @@ module Bosh::Director
       Api::ResourceManager.stub(:new)
     end
 
-
     describe 'GET', '/stemcells/:stemcell_name/:stemcell_version/releases/:release/:release_version/compiled_packages' do
       context 'unauthenticated access' do
         it 'returns 401' do
@@ -50,6 +49,8 @@ module Bosh::Director
             double.stub(:export) { |path| FileUtils.touch(path) }
             double
           end
+          let(:killer) { double('stale file killer', kill: nil) }
+          before { StaleFileKiller.stub(new: killer) }
 
           before do
             CompiledPackageGroup.stub(:new).and_return(package_group)
@@ -87,6 +88,14 @@ module Bosh::Director
             Timecop.freeze(timestamp) do
               get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
             end
+          end
+
+          it 'cleans up the stale exported packages with a StaleFileKiller' do
+            output_dir = File.join(Dir.tmpdir, 'compiled_packages')
+            StaleFileKiller.should_receive(:new).with(output_dir).and_return(killer)
+
+            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            expect(killer).to have_received(:kill)
           end
         end
 

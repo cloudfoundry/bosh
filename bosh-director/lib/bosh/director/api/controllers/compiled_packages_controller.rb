@@ -17,6 +17,8 @@ module Bosh::Director
         compiled_packages = CompiledPackageGroup.new(release_version, stemcell)
         output_dir = File.join(Dir.tmpdir, 'compiled_packages')
         FileUtils.mkdir_p(output_dir)
+        killer = StaleFileKiller.new(output_dir)
+        killer.kill
         exporter = CompiledPackagesExporter.new(compiled_packages, App.instance.blobstores.blobstore)
 
         output_path = File.join(output_dir, "compiled_packages_#{Time.now.to_f}.tar.gz")
