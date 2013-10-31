@@ -3,7 +3,7 @@ require 'bosh/director/compiled_package_group'
 require 'bosh/director/compiled_package_manifest'
 
 describe Bosh::Director::CompiledPackageManifest do
-  subject(:manifest) { described_class.new(group, 'fake-dir') }
+  subject(:manifest) { described_class.new(group) }
 
   before { group.stub(compiled_packages: compiled_packages, stemcell_sha1: 'fake-stemcell-sha1') }
   let(:group) { instance_double('Bosh::Director::CompiledPackageGroup') }

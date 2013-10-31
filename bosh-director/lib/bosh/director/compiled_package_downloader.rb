@@ -1,9 +1,7 @@
-require 'bosh/director'
-require 'bosh/director/compiled_package_manifest'
-
 require 'fileutils'
 require 'tmpdir'
-require 'pathname'
+require 'bosh/director'
+require 'bosh/director/compiled_package_manifest'
 
 module Bosh::Director
   class CompiledPackageDownloader
@@ -13,25 +11,23 @@ module Bosh::Director
     end
 
     def download
-      @download_dir = Pathname.new(Dir.mktmpdir)
+      @download_dir = Dir.mktmpdir
 
-      blobs_path = @download_dir.join('compiled_packages', 'blobs')
-      blobs_path.mkpath
+      blobs_path = File.join(@download_dir, 'compiled_packages', 'blobs')
+      FileUtils.mkpath(blobs_path)
 
       @compiled_package_group.compiled_packages.each do |compiled_package|
         blobstore_id = compiled_package.blobstore_id
-
-        compiled_package_blob = blobs_path.join(blobstore_id).open('w')
-        @blobstore_client.get(blobstore_id, compiled_package_blob)
-        compiled_package_blob.close
+        File.open(File.join(blobs_path, blobstore_id), 'w') do |f|
+          @blobstore_client.get(blobstore_id, f)
+        end
       end
 
-      CompiledPackageManifest.new(@compiled_package_group, @download_dir.join('compiled_packages')).write
       @download_dir
     end
 
     def cleanup
-      @download_dir.rmtree
+      FileUtils.rm_rf(@download_dir)
     end
   end
 end

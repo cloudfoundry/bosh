@@ -1,10 +1,10 @@
+require 'yaml'
 require 'bosh/director'
 
 module Bosh::Director
   class CompiledPackageManifest
-    def initialize(group, dir)
+    def initialize(group)
       @compiled_package_group = group
-      @dir = dir
     end
 
     def to_h
@@ -20,10 +20,8 @@ module Bosh::Director
       }
     end
 
-    def write
-      File.open(File.join(@dir, 'compiled_packages.yml'), 'w') do |f|
-        f.write(YAML.dump(to_h))
-      end
+    def write(dest_path)
+      File.open(dest_path, 'w') { |f| f.write(YAML.dump(to_h)) }
     end
   end
 end

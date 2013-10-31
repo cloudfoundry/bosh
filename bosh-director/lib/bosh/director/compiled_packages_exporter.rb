@@ -12,11 +12,13 @@ module Bosh::Director
       downloader = CompiledPackageDownloader.new(@compiled_package_group, @blobstore_client)
       download_dir = downloader.download
 
-      TarGzipper.new.compress(download_dir, 'compiled_packages', output_path)
+      manifest = CompiledPackageManifest.new(@compiled_package_group)
+      manifest.write(File.join(download_dir, 'compiled_packages.MF'))
 
+      archiver = TarGzipper.new
+      archiver.compress(download_dir, ['compiled_packages', 'compiled_packages.MF'], output_path)
+    ensure
       downloader.cleanup
-
-      nil
     end
   end
 end
