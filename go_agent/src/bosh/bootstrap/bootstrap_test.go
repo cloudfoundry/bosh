@@ -2,9 +2,9 @@ package bootstrap
 
 import (
 	"bosh/settings"
-	testfs "bosh/testhelpers/filesystem"
 	testinf "bosh/testhelpers/infrastructure"
 	testplatform "bosh/testhelpers/platform"
+	testsys "bosh/testhelpers/system"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -76,8 +76,8 @@ func TestRunSetsUpNetworking(t *testing.T) {
 	assert.Equal(t, fakeInfrastructure.SetupNetworkingNetworks, s.Networks)
 }
 
-func getBootstrapDependencies() (fs *testfs.FakeFileSystem, inf *testinf.FakeInfrastructure, p *testplatform.FakePlatform) {
-	fs = &testfs.FakeFileSystem{}
+func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, p *testplatform.FakePlatform) {
+	fs = &testsys.FakeFileSystem{}
 	inf = &testinf.FakeInfrastructure{}
 	p = &testplatform.FakePlatform{}
 	return

@@ -1,18 +1,20 @@
 package platform
 
 import (
-	"bosh/filesystem"
 	"bosh/settings"
+	"bosh/system"
 	"bytes"
 	"text/template"
 )
 
 type ubuntu struct {
-	fs filesystem.FileSystem
+	fs        system.FileSystem
+	cmdRunner system.CmdRunner
 }
 
-func newUbuntuPlatform(fs filesystem.FileSystem) (p ubuntu) {
+func newUbuntuPlatform(fs system.FileSystem, cmdRunner system.CmdRunner) (p ubuntu) {
 	p.fs = fs
+	p.cmdRunner = cmdRunner
 	return
 }
 
@@ -38,6 +40,14 @@ func (u ubuntu) SetupDhcp(networks settings.Networks) (err error) {
 	}
 
 	err = u.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
+	if err != nil {
+		return
+	}
+
+	// Ignore errors here, just run the commands
+	u.cmdRunner.RunCommand("pkill", "dhclient3")
+	u.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+
 	return
 }
 

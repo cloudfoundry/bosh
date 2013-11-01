@@ -1,10 +1,10 @@
 package bootstrap
 
 import (
-	"bosh/filesystem"
 	"bosh/infrastructure"
 	"bosh/platform"
 	"bosh/settings"
+	"bosh/system"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,12 +18,12 @@ const (
 )
 
 type bootstrap struct {
-	fs             filesystem.FileSystem
+	fs             system.FileSystem
 	infrastructure infrastructure.Infrastructure
 	platform       platform.Platform
 }
 
-func New(fs filesystem.FileSystem, inf infrastructure.Infrastructure, p platform.Platform) (b bootstrap) {
+func New(fs system.FileSystem, inf infrastructure.Infrastructure, p platform.Platform) (b bootstrap) {
 	b.fs = fs
 	b.infrastructure = inf
 	b.platform = p

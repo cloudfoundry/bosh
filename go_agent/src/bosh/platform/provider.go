@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"bosh/filesystem"
+	"bosh/system"
 	"errors"
 	"fmt"
 )
@@ -10,9 +10,9 @@ type provider struct {
 	platforms map[string]Platform
 }
 
-func NewProvider(fs filesystem.FileSystem) (p provider) {
+func NewProvider(fs system.FileSystem, cmdRunner system.CmdRunner) (p provider) {
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(fs),
+		"ubuntu": newUbuntuPlatform(fs, cmdRunner),
 	}
 	return
 }

@@ -2,9 +2,9 @@ package app
 
 import (
 	"bosh/bootstrap"
-	"bosh/filesystem"
 	"bosh/infrastructure"
 	"bosh/platform"
+	"bosh/system"
 	"flag"
 	"io/ioutil"
 )
@@ -22,7 +22,8 @@ func New() (app App) {
 }
 
 func (app App) Run(args []string) (err error) {
-	fs := filesystem.OsFileSystem{}
+	fs := system.OsFileSystem{}
+	runner := system.ExecCmdRunner{}
 
 	opts, err := parseOptions(args)
 	if err != nil {
@@ -35,7 +36,7 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
-	platformProvider := platform.NewProvider(fs)
+	platformProvider := platform.NewProvider(fs, runner)
 	platform, err := platformProvider.Get(opts.PlatformName)
 
 	b := bootstrap.New(fs, infrastructure, platform)
