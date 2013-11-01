@@ -12,9 +12,15 @@ module Bosh::Director
 
     before { Api::ResourceManager.stub(:new) }
 
-    describe 'GET', '/stemcells/:stemcell_name/:stemcell_version/releases/:release/:release_version/compiled_packages' do
+    describe 'POST', '/compiled_package_groups/export' do
       def perform
-        get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+        params = {
+          stemcell_name:    'bosh-stemcell',
+          stemcell_version: '123',
+          release_name:     'cf-release',
+          release_version:  '456',
+        }
+        post '/compiled_package_groups/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
       end
 
       context 'authenticated access' do
@@ -28,13 +34,15 @@ module Bosh::Director
           end
 
           let(:package_group) { instance_double('Bosh::Director::CompiledPackageGroup') }
+
           let(:exporter) do
-            double = instance_double('Bosh::Director::CompiledPackagesExporter')
-            double.stub(:export) { |path| FileUtils.touch(path) }
-            double
+            instance_double('Bosh::Director::CompiledPackagesExporter').tap do |cpe|
+              cpe.stub(:export) { |path| FileUtils.touch(path) }
+            end
           end
-          let(:killer) { double('stale file killer', kill: nil) }
+
           before { StaleFileKiller.stub(new: killer) }
+          let(:killer) { instance_double('Bosh::Director::StaleFileKiller', kill: nil) }
 
           before do
             CompiledPackageGroup.stub(:new).and_return(package_group)
