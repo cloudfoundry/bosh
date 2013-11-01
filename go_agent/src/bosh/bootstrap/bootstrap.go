@@ -3,6 +3,8 @@ package bootstrap
 import (
 	"bosh/filesystem"
 	"bosh/infrastructure"
+	"bosh/platform"
+	"bosh/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,11 +20,13 @@ const (
 type bootstrap struct {
 	fs             filesystem.FileSystem
 	infrastructure infrastructure.Infrastructure
+	platform       platform.Platform
 }
 
-func New(fs filesystem.FileSystem, infrastructure infrastructure.Infrastructure) (b bootstrap) {
+func New(fs filesystem.FileSystem, inf infrastructure.Infrastructure, p platform.Platform) (b bootstrap) {
 	b.fs = fs
-	b.infrastructure = infrastructure
+	b.infrastructure = inf
+	b.platform = p
 	return
 }
 
@@ -32,7 +36,12 @@ func (boot bootstrap) Run() (err error) {
 		return
 	}
 
-	err = boot.fetchSettings()
+	s, err := boot.fetchSettings()
+	if err != nil {
+		return
+	}
+
+	err = boot.infrastructure.SetupNetworking(boot.platform, s.Networks)
 	if err != nil {
 		return
 	}
@@ -66,19 +75,20 @@ func (boot bootstrap) setupSsh() (err error) {
 	return
 }
 
-func (boot bootstrap) fetchSettings() (err error) {
-	settings, err := boot.infrastructure.GetSettings()
+func (boot bootstrap) fetchSettings() (s settings.Settings, err error) {
+	s, err = boot.infrastructure.GetSettings()
 	if err != nil {
-		return wrapError(err, "Error fetching settings")
+		err = wrapError(err, "Error fetching settings")
+		return
 	}
 
-	settingsJson, err := json.Marshal(settings)
+	settingsJson, err := json.Marshal(s)
 	if err != nil {
-		return wrapError(err, "Error marshalling settings json")
+		err = wrapError(err, "Error marshalling settings json")
+		return
 	}
 
 	boot.fs.WriteToFile(filepath.Join(VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
-
 	return
 }
 

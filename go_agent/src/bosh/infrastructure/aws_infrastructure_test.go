@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"bosh/settings"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestGetPublicKey(t *testing.T) {
+func TestAwsGetPublicKey(t *testing.T) {
 	expectedKey := "some public key"
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,28 +30,28 @@ func TestGetPublicKey(t *testing.T) {
 	assert.Equal(t, key, expectedKey)
 }
 
-func TestGetSettingsWhenADnsIsNotProvided(t *testing.T) {
-	registryTs, _ := spinUpRegistry(t)
+func TestAwsGetSettingsWhenADnsIsNotProvided(t *testing.T) {
+	registryTs, _, expectedSettings := spinUpAwsRegistry(t)
 	defer registryTs.Close()
 
 	expectedUserData := fmt.Sprintf(`{"registry":{"endpoint":"%s"}}`, registryTs.URL)
 
-	metadataTs := spinUpMetadaServer(t, expectedUserData)
+	metadataTs := spinUpAwsMetadaServer(t, expectedUserData)
 	defer metadataTs.Close()
 
 	aws := newAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{})
 
-	settings, err := aws.GetSettings()
+	s, err := aws.GetSettings()
 	assert.NoError(t, err)
-	assert.Equal(t, settings, Settings{AgentId: "my-agent-id"})
+	assert.Equal(t, s, expectedSettings)
 }
 
-func TestGetSettingsWhenDnsServersAreProvided(t *testing.T) {
+func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{
 		LookupHostIp: "127.0.0.1",
 	}
 
-	registryTs, registryTsPort := spinUpRegistry(t)
+	registryTs, registryTsPort, expectedSettings := spinUpAwsRegistry(t)
 	defer registryTs.Close()
 
 	expectedUserData := fmt.Sprintf(`
@@ -64,16 +65,38 @@ func TestGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 		}`,
 		registryTsPort)
 
-	metadataTs := spinUpMetadaServer(t, expectedUserData)
+	metadataTs := spinUpAwsMetadaServer(t, expectedUserData)
 	defer metadataTs.Close()
 
 	aws := newAwsInfrastructure(metadataTs.URL, fakeDnsResolver)
 
-	settings, err := aws.GetSettings()
+	s, err := aws.GetSettings()
 	assert.NoError(t, err)
-	assert.Equal(t, settings, Settings{AgentId: "my-agent-id"})
+	assert.Equal(t, s, expectedSettings)
 	assert.Equal(t, fakeDnsResolver.LookupHostHost, "the.registry.name")
 	assert.Equal(t, fakeDnsResolver.LookupHostDnsServers, []string{"8.8.8.8", "9.9.9.9"})
+}
+
+func TestAwsSetupNetworking(t *testing.T) {
+	fakeDnsResolver := &FakeDnsResolver{}
+	aws := newAwsInfrastructure("", fakeDnsResolver)
+	fakeDelegate := &FakeNetworkingDelegate{}
+	networks := settings.Networks{"bosh": settings.NetworkSettings{}}
+
+	aws.SetupNetworking(fakeDelegate, networks)
+
+	assert.Equal(t, fakeDelegate.SetupDhcpNetworks, networks)
+}
+
+// Fake Networking Delegate
+
+type FakeNetworkingDelegate struct {
+	SetupDhcpNetworks settings.Networks
+}
+
+func (d *FakeNetworkingDelegate) SetupDhcp(networks settings.Networks) (err error) {
+	d.SetupDhcpNetworks = networks
+	return
 }
 
 // Fake Dns Resolver
@@ -93,13 +116,47 @@ func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip str
 
 // Server methods
 
-func spinUpRegistry(t *testing.T) (ts *httptest.Server, port string) {
-	settings := `{"settings": "{\"agent_id\":\"my-agent-id\"}"}`
+func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expectedSettings settings.Settings) {
+	settingsJson := `{
+		"agent_id": "my-agent-id",
+		"networks": {
+			"netA": {
+				"default": ["dns", "gateway"],
+				"dns": [
+					"xx.xx.xx.xx",
+					"yy.yy.yy.yy"
+				]
+			},
+			"netB": {
+				"dns": [
+					"zz.zz.zz.zz"
+				]
+			}
+		}
+	}`
+	settingsJson = strings.Replace(settingsJson, `"`, `\"`, -1)
+	settingsJson = strings.Replace(settingsJson, "\n", "", -1)
+	settingsJson = strings.Replace(settingsJson, "\t", "", -1)
+
+	settingsJson = fmt.Sprintf(`{"settings": "%s"}`, settingsJson)
+
+	expectedSettings = settings.Settings{
+		AgentId: "my-agent-id",
+		Networks: settings.Networks{
+			"netA": settings.NetworkSettings{
+				Default: []string{"dns", "gateway"},
+				Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy"},
+			},
+			"netB": settings.NetworkSettings{
+				Dns: []string{"zz.zz.zz.zz"},
+			},
+		},
+	}
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, r.Method, "GET")
 		assert.Equal(t, r.URL.Path, "/instances/123-456-789/settings")
-		w.Write([]byte(settings))
+		w.Write([]byte(settingsJson))
 	})
 
 	ts = httptest.NewServer(handler)
@@ -111,7 +168,7 @@ func spinUpRegistry(t *testing.T) (ts *httptest.Server, port string) {
 	return
 }
 
-func spinUpMetadaServer(t *testing.T, userData string) (ts *httptest.Server) {
+func spinUpAwsMetadaServer(t *testing.T, userData string) (ts *httptest.Server) {
 	instanceId := "123-456-789"
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

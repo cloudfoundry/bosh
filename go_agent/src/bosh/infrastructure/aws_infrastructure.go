@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"bosh/settings"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -39,7 +40,7 @@ func (inf awsInfrastructure) GetPublicKey() (publicKey string, err error) {
 	return
 }
 
-func (inf awsInfrastructure) GetSettings() (settings Settings, err error) {
+func (inf awsInfrastructure) GetSettings() (s settings.Settings, err error) {
 	instanceId, err := inf.getInstanceId()
 	if err != nil {
 		return
@@ -52,6 +53,10 @@ func (inf awsInfrastructure) GetSettings() (settings Settings, err error) {
 
 	settingsUrl := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceId)
 	return inf.getSettingsAtUrl(settingsUrl)
+}
+
+func (inf awsInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks settings.Networks) (err error) {
+	return delegate.SetupDhcp(networks)
 }
 
 func (inf awsInfrastructure) getInstanceId() (instanceId string, err error) {
@@ -134,7 +139,7 @@ type settingsWrapperType struct {
 	Settings string
 }
 
-func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings Settings, err error) {
+func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (s settings.Settings, err error) {
 	wrapperResponse, err := http.Get(settingsUrl)
 	if err != nil {
 		return
@@ -152,6 +157,6 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings Sett
 		return
 	}
 
-	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
+	err = json.Unmarshal([]byte(wrapper.Settings), &s)
 	return
 }

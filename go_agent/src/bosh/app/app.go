@@ -4,6 +4,7 @@ import (
 	"bosh/bootstrap"
 	"bosh/filesystem"
 	"bosh/infrastructure"
+	"bosh/platform"
 	"flag"
 	"io/ioutil"
 )
@@ -13,6 +14,7 @@ type App struct {
 
 type options struct {
 	InfrastructureName string
+	PlatformName       string
 }
 
 func New() (app App) {
@@ -33,7 +35,10 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
-	b := bootstrap.New(fs, infrastructure)
+	platformProvider := platform.NewProvider(fs)
+	platform, err := platformProvider.Get(opts.PlatformName)
+
+	b := bootstrap.New(fs, infrastructure, platform)
 	err = b.Run()
 	return
 }
@@ -42,6 +47,7 @@ func parseOptions(args []string) (opts options, err error) {
 	flagSet := flag.NewFlagSet("bosh-agent-args", flag.ContinueOnError)
 	flagSet.SetOutput(ioutil.Discard)
 	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
+	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
 
 	err = flagSet.Parse(args[1:])
 	return

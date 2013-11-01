@@ -1,9 +1,10 @@
 package bootstrap
 
 import (
-	"bosh/infrastructure"
+	"bosh/settings"
 	testfs "bosh/testhelpers/filesystem"
 	testinf "bosh/testhelpers/infrastructure"
+	testplatform "bosh/testhelpers/platform"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -12,15 +13,11 @@ import (
 )
 
 func TestRunSetsUpSsh(t *testing.T) {
-	fakeFs := &testfs.FakeFileSystem{
-		HomeDirHomeDir: "/some/home/dir",
-	}
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeFs.HomeDirHomeDir = "/some/home/dir"
+	fakeInfrastructure.PublicKey = "some public key"
 
-	fakeInfrastructure := &testinf.FakeInfrastructure{
-		PublicKey: "some public key",
-	}
-
-	boot := New(fakeFs, fakeInfrastructure)
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	sshDirPath := "/some/home/dir/.ssh"
@@ -43,17 +40,14 @@ func TestRunSetsUpSsh(t *testing.T) {
 }
 
 func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
-	fakeFs := &testfs.FakeFileSystem{}
-
-	expectedSettings := infrastructure.Settings{
+	expectedSettings := settings.Settings{
 		AgentId: "123-456-789",
 	}
 
-	fakeInfrastructure := &testinf.FakeInfrastructure{
-		Settings: expectedSettings,
-	}
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = expectedSettings
 
-	boot := New(fakeFs, fakeInfrastructure)
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	settingsFileStat := fakeFs.GetFileTestStat(VCAP_BASE_DIR + "/bosh/settings.json")
@@ -63,4 +57,28 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 	assert.NotNil(t, settingsFileStat)
 	assert.Equal(t, settingsFileStat.CreatedWith, "WriteToFile")
 	assert.Equal(t, settingsFileStat.Content, string(settingsJson))
+}
+
+func TestRunSetsUpNetworking(t *testing.T) {
+	s := settings.Settings{
+		Networks: settings.Networks{
+			"bosh": settings.NetworkSettings{},
+		},
+	}
+
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = s
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.Equal(t, fakeInfrastructure.SetupNetworkingDelegate, fakePlatform)
+	assert.Equal(t, fakeInfrastructure.SetupNetworkingNetworks, s.Networks)
+}
+
+func getBootstrapDependencies() (fs *testfs.FakeFileSystem, inf *testinf.FakeInfrastructure, p *testplatform.FakePlatform) {
+	fs = &testfs.FakeFileSystem{}
+	inf = &testinf.FakeInfrastructure{}
+	p = &testplatform.FakePlatform{}
+	return
 }

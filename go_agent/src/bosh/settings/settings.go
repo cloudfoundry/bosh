@@ -1,7 +1,39 @@
-package infrastructure
+package settings
 
 type Settings struct {
-	AgentId string `json:"agent_id"`
+	AgentId  string   `json:"agent_id"`
+	Networks Networks `json:"networks"`
+}
+
+type Networks map[string]NetworkSettings
+
+type NetworkSettings struct {
+	Default []string
+	Dns     []string
+}
+
+func (n Networks) DefaultNetworkFor(category string) (settings NetworkSettings, found bool) {
+	if len(n) == 0 {
+		return
+	}
+
+	if len(n) == 1 {
+		found = true
+	}
+
+	for _, networkSettings := range n {
+		for _, def := range networkSettings.Default {
+			if def == category {
+				found = true
+			}
+		}
+		if found {
+			settings = networkSettings
+			return
+		}
+	}
+
+	return
 }
 
 //{
