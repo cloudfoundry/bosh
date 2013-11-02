@@ -18,11 +18,11 @@ describe Bosh::Cli::Command::ExportCompiledPackages do
 
     after { FileUtils.rm_rf(download_dir) }
 
-    context 'when the user is logged in' do
-      before { command.stub(logged_in?: true) }
+    context 'when some director is targeted' do
+      before { command.stub(target: 'fake-target') }
 
-      context 'when some director is targeted' do
-        before { command.stub(target: 'fake-target') }
+      context 'when the user is logged in' do
+        before { command.stub(logged_in?: true) }
 
         context 'when nothing is there in download dir' do
           it 'downloads tgz and puts it in a correct place' do
@@ -60,18 +60,18 @@ describe Bosh::Cli::Command::ExportCompiledPackages do
         end
       end
 
-      context 'when nothing is targeted' do
-        it 'fails with required target error' do
-          command.stub(target: nil)
-          expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
+      context 'when the user is not logged in' do
+        it 'fails and tells the user to login' do
+          command.stub(logged_in?: false)
+          expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
         end
       end
     end
 
-    context 'when the user is not logged in' do
-      it 'fails and tells the user to login' do
-        command.stub(logged_in?: false)
-        expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
+    context 'when nothing is targeted' do
+      it 'fails with required target error' do
+        command.stub(target: nil)
+        expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
       end
     end
   end
