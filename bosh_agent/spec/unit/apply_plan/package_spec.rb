@@ -86,25 +86,5 @@ describe Bosh::Agent::ApplyPlan::Package do
       File.realpath(job_link_path).
         should == File.realpath(subject.install_path)
     end
-
-    it 'does not fetch a package more than once' do
-      job = make_job(job_spec, template_spec['name'], template_spec)
-      job2 = make_job(job_spec2, template_spec['name'], template_spec)
-
-      subject.should_receive(:fetch_bits).once.
-        and_return { FileUtils.mkdir_p(subject.install_path) }
-
-      subject.install_for_job(job)
-      subject.install_for_job(job2)
-
-      job_link_path = File.join(job.install_path, 'packages', 'postgres')
-      job_link_path2 = File.join(job2.install_path, 'packages', 'postgres')
-
-      File.realpath(job_link_path).
-        should == File.realpath(subject.install_path)
-      File.realpath(job_link_path2).
-        should == File.realpath(subject.install_path)
-    end
   end
-
 end

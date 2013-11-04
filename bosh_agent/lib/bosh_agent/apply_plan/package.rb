@@ -26,10 +26,7 @@ module Bosh::Agent
       end
 
       def install_for_job(job)
-        unless @installed_for_sys
-          fetch_bits
-          @installed_for_sys = true
-        end
+        fetch_bits
         create_symlink_in_job(job) if job
       rescue SystemCallError => e
         install_failed("System call error: #{e.message}")
