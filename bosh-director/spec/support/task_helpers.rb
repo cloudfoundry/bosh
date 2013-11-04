@@ -4,12 +4,15 @@ module Bosh::Director
   module Test
     module TaskHelpers
       def expect_redirect_to_queued_task(response)
-        response.should be_redirect
-        (last_response.location =~ /\/tasks\/(\d+)/).should_not be_nil
+        expect(response).to be_redirect
 
-        new_task = Models::Task[$1]
-        new_task.state.should == 'queued'
-        new_task
+        match = response.location.match(%r{/tasks/(\d+)})
+        expect(match).to_not be_nil
+
+        task_id = match[1]
+        task = Models::Task[task_id]
+        expect(task.state).to eq('queued')
+        task
       end
     end
   end
