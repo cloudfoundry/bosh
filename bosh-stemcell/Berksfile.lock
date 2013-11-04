@@ -3,6 +3,9 @@
     "golang": {
       "locked_version": "1.1.2"
     },
+    "stemcell-golang": {
+      "path": "./sites-cookbooks/stemcell-golang"
+    },
     "git": {
       "locked_version": "2.7.0"
     },
