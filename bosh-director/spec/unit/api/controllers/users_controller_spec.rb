@@ -39,15 +39,6 @@ module Bosh::Director
         basic_authorize username, password
       end
 
-      def expect_redirect_to_queued_task(response)
-        response.should be_redirect
-        (last_response.location =~ /\/tasks\/(\d+)/).should_not be_nil
-
-        new_task = Models::Task[$1]
-        new_task.state.should == 'queued'
-        new_task
-      end
-
       it 'requires auth' do
         get '/'
         last_response.status.should == 401
