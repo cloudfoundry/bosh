@@ -51,7 +51,7 @@ module Bosh::Director
       manager.delete_resource(id)
       expect {
         manager.get_resource(id)
-      }.to_not raise_error ResourceError
+      }.to raise_error Bosh::Director::ResourceNotFound
     end
   end
 end

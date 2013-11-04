@@ -3,7 +3,7 @@ require 'bosh/director/scheduler'
 
 module Bosh::Director
   describe Scheduler do
-    let(:cloud) { stub(:Cloud) }
+    let(:cloud) { double(:Cloud) }
     let(:uuid) { 'deadbeef' }
     let(:director_name) { 'Test Director' }
     let(:fake_scheduler) { instance_double('Rufus::Scheduler::PlainScheduler') }

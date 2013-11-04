@@ -46,7 +46,7 @@ module Bosh::Director
 
         bound_vm = double(:IdleVm)
         bound_vm.stub(:bound_instance).
-            and_return(stub(DeploymentPlan::Instance))
+            and_return(double(DeploymentPlan::Instance))
         unbound_vm = double(:IdleVm)
         unbound_vm.stub(:bound_instance).and_return(nil)
 
