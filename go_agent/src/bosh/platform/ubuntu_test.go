@@ -2,7 +2,7 @@ package platform
 
 import (
 	"bosh/settings"
-	testsys "bosh/testhelpers/system"
+	testsys "bosh/system/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

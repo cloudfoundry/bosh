@@ -1,10 +1,10 @@
 package bootstrap
 
 import (
+	testinf "bosh/infrastructure/testhelpers"
+	testplatform "bosh/platform/testhelpers"
 	"bosh/settings"
-	testinf "bosh/testhelpers/infrastructure"
-	testplatform "bosh/testhelpers/platform"
-	testsys "bosh/testhelpers/system"
+	testsys "bosh/system/testhelpers"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"os"

@@ -1,4 +1,4 @@
-package system
+package testhelpers
 
 import "os"
 

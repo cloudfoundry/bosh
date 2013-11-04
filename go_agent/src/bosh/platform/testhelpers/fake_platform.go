@@ -1,4 +1,4 @@
-package platform
+package testhelpers
 
 import (
 	"bosh/infrastructure"

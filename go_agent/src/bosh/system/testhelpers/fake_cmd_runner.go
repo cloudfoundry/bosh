@@ -1,4 +1,4 @@
-package system
+package testhelpers
 
 type FakeCmdRunner struct {
 	RunCommands [][]string
