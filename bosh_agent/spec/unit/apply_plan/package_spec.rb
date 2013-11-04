@@ -65,6 +65,23 @@ describe Bosh::Agent::ApplyPlan::Package do
     end
   end
 
+  describe '#prepare_for_install' do
+    context 'when fetching packages succeeds' do
+      it 'downloads (but does not symlink) packages and does not raise any error' do
+        subject.should_receive(:fetch_bits)
+        expect { subject.prepare_for_install }.to_not raise_error
+      end
+    end
+
+    context 'when fetching packages fails' do
+      it 'raises installation error' do
+        error = Exception.new('error')
+        subject.should_receive(:fetch_bits).and_raise(error)
+        expect { subject.prepare_for_install }.to raise_error(error)
+      end
+    end
+  end
+
   describe 'installation' do
     it 'fetches package and creates symlink in packages and jobs' do
       job = make_job(job_spec, template_spec['name'], template_spec)

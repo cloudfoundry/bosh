@@ -39,8 +39,12 @@ module Bosh::Agent
         @link_path = File.join(@base_dir, 'jobs', @template)
       end
 
-      def install
+      def prepare_for_install
         fetch_bits
+      end
+
+      def install
+        fetch_bits_and_symlink
         bind_configuration
         harden_permissions
       rescue SystemCallError => e

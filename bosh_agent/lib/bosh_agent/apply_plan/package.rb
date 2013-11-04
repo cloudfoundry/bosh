@@ -25,8 +25,12 @@ module Bosh::Agent
         @link_path = File.join(@base_dir, 'packages', @name)
       end
 
-      def install_for_job(job)
+      def prepare_for_install
         fetch_bits
+      end
+
+      def install_for_job(job)
+        fetch_bits_and_symlink
         create_symlink_in_job(job) if job
       rescue SystemCallError => e
         install_failed("System call error: #{e.message}")

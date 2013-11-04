@@ -25,7 +25,10 @@ module Bosh::Agent
         unless Dir.exist?(@install_path)
           Bosh::Agent::Util.unpack_blob(@blobstore_id, @checksum, @install_path)
         end
+      end
 
+      def fetch_bits_and_symlink
+        fetch_bits
         Bosh::Agent::Util.create_symlink(@install_path, @link_path)
       end
     end
