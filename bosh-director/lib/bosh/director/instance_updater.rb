@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh/director/instance_preparer'
 
 module Bosh::Director
   class InstanceUpdater
@@ -58,6 +58,7 @@ module Bosh::Director
         return
       end
 
+      step { InstancePreparer.new(@instance, agent).prepare }
       step { stop }
       step { take_snapshot }
 
