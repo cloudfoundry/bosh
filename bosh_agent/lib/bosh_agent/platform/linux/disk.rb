@@ -23,19 +23,7 @@ module Bosh::Agent
       FileUtils.mkdir_p(@store_dir)
       disk = lookup_disk_by_cid(cid)
       partition = is_disk_blockdev?? "#{disk}1" : "#{disk}"
-      infra_option = {}
-      case @config.infrastructure_name
-        when "vsphere", "aws", "openstack"
-          nil
-        when "warden"
-          infra_option = { bind_mount: true }
-        else
-          raise Bosh::Agent::FatalError, "call is_disk_blockdev failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
-      end
-
-      if File.blockdev?(partition) && !mount_exists?(partition)
-        mounter.mount(partition, @store_dir, options.merge(infra_option))
-      end
+      mount_partition(partition, @store_dir, options)
     end
 
     def is_disk_blockdev?
@@ -49,8 +37,22 @@ module Bosh::Agent
       end
     end
 
-    def mount_partition(partition, mount_point)
-      mounter.mount(partition, mount_point)
+    def mount_partition(partition, mount_point, options={})
+      infra_option = {}
+      case @config.infrastructure_name
+        when "vsphere", "aws", "openstack"
+          nil
+        when "warden"
+          infra_option = { bind_mount: true }
+        else
+          raise Bosh::Agent::FatalError, "call is_disk_blockdev failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
+      end
+
+      proceed_mount = is_disk_blockdev?? File.blockdev?(partition) : true
+
+      if proceed_mount && !mount_exists?(partition)
+        mounter.mount(partition, mount_point, options.merge(infra_option))
+      end
     end
 
     def get_data_disk_device_name
@@ -142,7 +144,7 @@ module Bosh::Agent
     end
 
     def mount_exists?(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+      `mount`.lines.select { |l| l.match(/#{partition}/) }.first
     end
 
     private
