@@ -17,6 +17,9 @@ module Bosh::Agent::Message
       plan = Bosh::Agent::ApplyPlan::Plan.new(@apply_spec)
       plan.jobs.each(&:prepare_for_install)
       plan.packages.each(&:prepare_for_install)
+      {}
+    rescue Exception => e
+      raise Bosh::Agent::MessageHandlerError, "#{e.inspect}\n#{e.backtrace}"
     end
   end
 end

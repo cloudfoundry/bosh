@@ -67,7 +67,36 @@ module Bosh::Agent::Message
           .and_return(package1)
         package1.should_receive(:prepare_for_install)
 
-        message.run
+        expect(message.run).to eq({})
+      end
+
+      context 'when job preparation for install fails' do
+        before do
+          job1 = instance_double('Bosh::Agent::ApplyPlan::Job')
+          job1.stub(:prepare_for_install).and_raise(Exception.new('error'))
+          Bosh::Agent::ApplyPlan::Job.stub(new: job1)
+        end
+
+        it 'raises MessageHandlerError instead of propagating other error for message processor to catch it' do
+          expect { message.run }.to raise_error(Bosh::Agent::MessageHandlerError, /error/)
+        end
+      end
+
+      context 'when package preparation for install fails' do
+        before do
+          job1 = instance_double('Bosh::Agent::ApplyPlan::Job', prepare_for_install: nil)
+          Bosh::Agent::ApplyPlan::Job.stub(new: job1)
+        end
+
+        before do
+          package1 = instance_double('Bosh::Agent::ApplyPlan::Package')
+          package1.stub(:prepare_for_install).and_raise(Exception.new('error'))
+          Bosh::Agent::ApplyPlan::Package.stub(new: package1)
+        end
+
+        it 'raises MessageHandlerError instead of propagating other error for message processor to catch it' do
+          expect { message.run }.to raise_error(Bosh::Agent::MessageHandlerError, /error/)
+        end
       end
     end
   end
