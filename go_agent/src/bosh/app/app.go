@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bosh/agent"
 	"bosh/bootstrap"
 	"bosh/infrastructure"
+	"bosh/mbus"
 	"bosh/platform"
 	"bosh/system"
 	"flag"
@@ -38,9 +40,24 @@ func (app App) Run(args []string) (err error) {
 
 	platformProvider := platform.NewProvider(fs, runner)
 	platform, err := platformProvider.Get(opts.PlatformName)
+	if err != nil {
+		return
+	}
 
 	b := bootstrap.New(fs, infrastructure, platform)
-	err = b.Run()
+	s, err := b.Run()
+	if err != nil {
+		return
+	}
+
+	mbusHandlerProvider := mbus.NewHandlerProvider(s)
+	mbusHandler, err := mbusHandlerProvider.Get()
+	if err != nil {
+		return
+	}
+
+	a := agent.New(mbusHandler)
+	err = a.Run()
 	return
 }
 

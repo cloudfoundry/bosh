@@ -30,13 +30,13 @@ func New(fs system.FileSystem, inf infrastructure.Infrastructure, p platform.Pla
 	return
 }
 
-func (boot bootstrap) Run() (err error) {
+func (boot bootstrap) Run() (s settings.Settings, err error) {
 	err = boot.setupSsh()
 	if err != nil {
 		return
 	}
 
-	s, err := boot.fetchSettings()
+	s, err = boot.fetchSettings()
 	if err != nil {
 		return
 	}

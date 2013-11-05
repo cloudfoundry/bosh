@@ -1,8 +1,9 @@
 package settings
 
 type Settings struct {
-	AgentId  string   `json:"agent_id"`
-	Networks Networks `json:"networks"`
+	AgentId  string `json:"agent_id"`
+	Networks Networks
+	Mbus     string
 }
 
 type Networks map[string]NetworkSettings

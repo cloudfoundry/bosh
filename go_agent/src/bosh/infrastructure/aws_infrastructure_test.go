@@ -132,7 +132,8 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 					"zz.zz.zz.zz"
 				]
 			}
-		}
+		},
+		"mbus": "https://vcap:b00tstrap@0.0.0.0:6868"
 	}`
 	settingsJson = strings.Replace(settingsJson, `"`, `\"`, -1)
 	settingsJson = strings.Replace(settingsJson, "\n", "", -1)
@@ -151,6 +152,7 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 				Dns: []string{"zz.zz.zz.zz"},
 			},
 		},
+		Mbus: "https://vcap:b00tstrap@0.0.0.0:6868",
 	}
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
