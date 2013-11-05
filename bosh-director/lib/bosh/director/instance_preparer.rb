@@ -8,9 +8,15 @@ module Bosh::Director
     end
 
     def prepare
-      unless @instance.state == 'detached'
-        @agent_client.prepare(@instance.spec)
-      end
+      @agent_client.prepare(@instance.spec) unless detached?
+    rescue RpcRemoteException => e
+      raise unless e.message =~/unknown message/
+    end
+
+    private
+
+    def detached?
+      @instance.state == 'detached'
     end
   end
 end

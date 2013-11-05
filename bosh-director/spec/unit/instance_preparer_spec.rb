@@ -26,29 +26,40 @@ module Bosh::Director
           preparer.prepare
         end
 
-        context "when agent responds to 'prepare' message successfully" do
+        context "and agent responds to 'prepare' message successfully" do
           before { agent_client.stub(:prepare).and_return(valid_response_for_prepare) }
           let(:valid_response_for_prepare) { {} }
 
           it 'does not raise an error' do
-            expect { preparer.prepare }.to_not raise_error
+            expect { preparer.prepare }.not_to raise_error
+          end
+
+          context 'and agent responds with an error' do
+            let(:error) do
+              RpcRemoteException.new('something else went wrong')
+            end
+
+            before do
+              agent_client.stub(:prepare).and_raise(error)
+            end
+
+            it 'propagates the error' do
+              expect { preparer.prepare }.to raise_error(error)
+            end
           end
         end
 
-        context "when agent does not respond to 'prepare' message " +
-                'because that bosh-agent version did not support it' do
-          before { agent_client.stub(:prepare).and_return('blah') }
-
-          it 'does not raise an error since prepare message it just an optimization' do
-            expect { preparer.prepare }.to_not raise_error
+        context "when agent does not know how to respond to 'prepare'" do
+          let(:error) do
+            RpcRemoteException.new('unknown message {"method"=>"prepare", "blah"=>"blah"}')
           end
-        end
 
-        context "when agent responds to 'prepare' message with an error" do
-          before { agent_client.stub(:prepare).and_raise('blah') }
+          before do
+            agent_client.stub(:prepare).and_raise(error)
+          end
 
-          it 'propagates an error' do
-            expect { preparer.prepare }.to raise_error('blah')
+          it 'tolerates the error since prepare message is an optimization and old agents might not know it' do
+            expect { preparer.prepare }.not_to raise_error
           end
         end
       end
