@@ -330,29 +330,4 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
       }.to_not change { apply_data }
     end
   end
-
-  context 'when agent has prepared for the spec to apply' do
-    let(:apply_data) { { 'fake' => 'apply_data' } }
-    let(:job) { double('job') }
-    let(:package) { double('package') }
-    let(:deployment) { double('deployment', empty?: false) }
-    let(:old_plan) { double('old plan', deployment: deployment, packages: []) }
-    let(:new_plan) { double('new plan', configured?: true, has_jobs?: true, has_packages?: true,
-                            deployment: deployment, packages: [], configure_jobs: nil) }
-
-    subject(:apply_message) { Bosh::Agent::Message::Apply.new([apply_data]) }
-
-    before do
-      Bosh::Agent::ApplyPlan::Plan.stub(:new).and_return(old_plan)
-      Bosh::Agent::ApplyPlan::Plan.stub(:new).with(apply_data).and_return(new_plan)
-      old_plan.stub(:has_prepared_spec?).with(apply_data).and_return(true)
-    end
-
-    it 'does not install jobs or packages' do
-      new_plan.should_not_receive(:install_jobs)
-      new_plan.should_not_receive(:install_packages)
-
-      apply_message.apply
-    end
-  end
 end

@@ -108,9 +108,7 @@ module Bosh::Agent
       end
 
       def apply_job
-        if @old_plan.has_prepared_spec?(@new_spec)
-          logger.info("New jobs already installed")
-        elsif @new_plan.has_jobs?
+        if @new_plan.has_jobs?
           @new_plan.install_jobs
         else
           logger.info("No job")
@@ -118,9 +116,7 @@ module Bosh::Agent
       end
 
       def apply_packages
-        if @old_plan.has_prepared_spec?(@new_spec)
-          logger.info("New packages already installed")
-        elsif @new_plan.has_packages?
+        if @new_plan.has_packages?
           @new_plan.install_packages
         else
           logger.info("No packages")

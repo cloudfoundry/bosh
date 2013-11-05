@@ -88,10 +88,6 @@ module Bosh::Agent
           job.configure(job_index)
         end
       end
-
-      def has_prepared_spec?(new_spec)
-        @spec['prepared_spec'] == new_spec
-      end
     end
   end
 end
