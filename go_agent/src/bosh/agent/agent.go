@@ -19,5 +19,6 @@ func (a agent) Run() (err error) {
 		return
 	}
 
-	return a.mbusHandler.Run(handlerFunc)
+	err = a.mbusHandler.Run(handlerFunc)
+	return
 }

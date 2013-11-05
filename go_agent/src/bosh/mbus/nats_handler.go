@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"github.com/cloudfoundry/yagnats"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type natsHandler struct {
-	client   yagnats.NATSClient
-	settings settings.Settings
+	client      yagnats.NATSClient
+	settings    settings.Settings
+	keepRunning bool
 }
 
 func newNatsHandler(client yagnats.NATSClient, s settings.Settings) (handler natsHandler) {
@@ -21,12 +25,22 @@ func newNatsHandler(client yagnats.NATSClient, s settings.Settings) (handler nat
 }
 
 func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
+	err = h.Start(handlerFunc)
+	h.runUntilInterrupted()
+	return
+}
+
+func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
 		return
 	}
 
-	h.client.Connect(connProvider)
+	err = h.client.Connect(connProvider)
+	if err != nil {
+		return
+	}
+
 	subject := fmt.Sprintf("agent.%s", h.settings.AgentId)
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
@@ -47,6 +61,27 @@ func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
 	})
 
 	return
+}
+
+func (h natsHandler) Stop() {
+	h.client.Disconnect()
+	h.keepRunning = false
+}
+
+func (h natsHandler) runUntilInterrupted() {
+	h.keepRunning = true
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-c:
+			h.keepRunning = false
+		}
+	}()
+
+	for h.keepRunning {
+	}
 }
 
 func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {

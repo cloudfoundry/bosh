@@ -19,6 +19,7 @@ func assertResponseForRequest(t *testing.T, req mbus.Request, expectedResp mbus.
 	agent := New(handler)
 	err := agent.Run()
 	assert.NoError(t, err)
+	assert.True(t, handler.ReceivedRun)
 
 	resp := handler.Func(req)
 

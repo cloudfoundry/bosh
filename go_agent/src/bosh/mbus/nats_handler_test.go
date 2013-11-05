@@ -8,34 +8,40 @@ import (
 	"testing"
 )
 
-func TestNatsHandlerRunStartsListening(t *testing.T) {
+func TestNatsHandlerStart(t *testing.T) {
 	client, handler := createNatsClientAndHandler()
 
 	var receivedRequest Request
 
-	handler.Run(func(req Request) (resp Response) {
+	handler.Start(func(req Request) (resp Response) {
 		receivedRequest = req
 		return Response{Value: "expected value"}
 	})
+	defer handler.Stop()
 
+	// check connection
 	assert.NotNil(t, client.ConnectedConnectionProvider)
 
+	// check subscriptions
 	assert.Equal(t, len(client.Subscriptions), 1)
 	subscriptions := client.Subscriptions["agent.my-agent-id"]
 	assert.Equal(t, len(subscriptions), 1)
 
+	// test subscription callback
 	subscription := client.Subscriptions["agent.my-agent-id"][0]
 	subscription.Callback(&yagnats.Message{
 		Subject: "agent.my-agent-id",
 		Payload: `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`,
 	})
 
+	// request received
 	assert.Equal(t, receivedRequest, Request{
 		ReplyTo: "reply to me!",
 		Method:  "ping",
 		Args:    []string{"foo", "bar"},
 	})
 
+	// response sent
 	assert.Equal(t, len(client.PublishedMessages), 1)
 	messages := client.PublishedMessages["reply to me!"]
 
