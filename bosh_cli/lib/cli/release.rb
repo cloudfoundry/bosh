@@ -42,7 +42,7 @@ module Bosh::Cli
     end
 
     # Shared attributes, present in repo
-    [:final_name, :min_cli_version].each do |attr|
+    [:final_name].each do |attr|
       define_method(attr) do
         @final_config[attr.to_s]
       end
@@ -173,7 +173,6 @@ module Bosh::Cli
           # Following two options are only needed for older clients
           # to fail gracefully and never actually read by a new client
           "blobstore_options" => "deprecated",
-          "min_cli_version" => "0.12"
         }
 
         @dev_config = new_dev_config
@@ -196,7 +195,6 @@ module Bosh::Cli
 
         new_final_config = {
           "final_name" => @final_config["name"],
-          "min_cli_version" => @final_config["min_cli_version"],
           "blobstore" => {
             "provider" => "atmos",
             "options" => @final_config["blobstore_options"]["atmos_options"]

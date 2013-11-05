@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   class CompileTask
     # @return [Models::Package] What package is being compiled
@@ -27,23 +25,18 @@ module Bosh::Director
     # @return [String] A unique checksum based on the dependencies in this task
     attr_reader :cache_key
 
-    # @param [Models::Package] package What package is being compiled
-    #   by this task
-    # @param [Models::Stemcell] stemcell What stemcell package is compiled for
-    # @param [Array<Models::Package>] dependent_packages Package models that this task depends on
-    # @param [DeploymentPlan::Job] initial_job The first job that this task is associate with
-    def initialize(package, stemcell, dependent_packages, initial_job = nil)
+
+    def initialize(package, stemcell, initial_job, dependency_key, cache_key)
       @package = package
       @stemcell = stemcell
 
       @jobs = []
-      add_job(initial_job) if initial_job
+      add_job(initial_job)
       @dependencies = []
       @dependent_tasks = []
 
-      @dependency_key = generate_dependency_key(dependent_packages)
-
-      @cache_key = generate_cache_key(dependent_packages)
+      @dependency_key = dependency_key
+      @cache_key = cache_key
     end
 
     # @return [Boolean] Whether this task is ready to be compiled
@@ -171,21 +164,6 @@ module Bosh::Director
       end
 
       compiled_package
-    end
-
-    private
-    def generate_dependency_key(packages)
-      key = packages.sort { |a, b|
-        a.name <=> b.name
-      }.map { |p| [p.name, p.version]}
-
-      Yajl::Encoder.encode(key)
-    end
-
-    def generate_cache_key(dependent_packages)
-      dependency_fingerprints = dependent_packages.sort_by(&:name).map {|p| p.fingerprint }
-      hash_input = ([package.fingerprint, stemcell.sha1]+dependency_fingerprints).join("")
-      Digest::SHA1.hexdigest(hash_input)
     end
   end
 end

@@ -1,6 +1,5 @@
 ---
 final_name: bat
-min_cli_version: 1.5.0.pre.3
 blobstore:
   provider: s3
   options:

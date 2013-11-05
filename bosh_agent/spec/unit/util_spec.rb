@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'common/exec'
+require 'tmpdir'
 
 describe Bosh::Agent::Util do
   before do
@@ -136,5 +137,35 @@ describe Bosh::Agent::Util do
     expect(network_info).to have_key('ip')
     expect(network_info).to have_key('netmask')
     expect(network_info).to have_key('gateway')
+  end
+
+  describe '.create_symlink' do
+    before do
+      @workspace = Dir.mktmpdir
+      @old_name = File.join(@workspace, 'old')
+      @new_name = File.join(@workspace, 'new')
+      FileUtils.mkpath(@old_name)
+    end
+    after { FileUtils.rm_r(@workspace) }
+
+    context 'when destination does not exist' do
+      it 'creates a symlink at dst pointing to src' do
+        expect {
+          Bosh::Agent::Util.create_symlink(@old_name, @new_name)
+        }.to change { File.symlink?(@new_name) }.from(false).to(true)
+        File.readlink(@new_name).should eq(@old_name)
+      end
+    end
+
+    context 'when destination exist and points to a directory' do
+      # This is what FileUtils#ln_sf SHOULD do but sadly does not
+      it 'replaces the existing link' do
+        second_target = File.join(@workspace, 'jazz')
+        Bosh::Agent::Util.create_symlink(@old_name, @new_name)
+        Bosh::Agent::Util.create_symlink(second_target, @new_name)
+
+        expect(File.readlink(@new_name)).not_to eq(@old_name)
+      end
+    end
   end
 end

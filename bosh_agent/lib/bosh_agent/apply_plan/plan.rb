@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Agent
   module ApplyPlan
     class Plan
@@ -91,6 +89,9 @@ module Bosh::Agent
         end
       end
 
+      def has_prepared_spec?(new_spec)
+        @spec['prepared_spec'] == new_spec
+      end
     end
   end
 end

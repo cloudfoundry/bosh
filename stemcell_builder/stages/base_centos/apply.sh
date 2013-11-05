@@ -6,7 +6,7 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
 mkdir -p $chroot/var/lib/rpm
-rpm --root $chroot --rebuilddb
+rpm --root $chroot --initdb
 rpm --root $chroot --force --nodeps --install http://mirror.centos.org/centos/6/os/x86_64/Packages/centos-release-6-4.el6.centos.10.x86_64.rpm
 
 cp /etc/resolv.conf $chroot/etc/resolv.conf

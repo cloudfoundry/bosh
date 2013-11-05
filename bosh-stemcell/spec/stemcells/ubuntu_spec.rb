@@ -136,9 +136,30 @@ describe 'Ubuntu Stemcell' do
     end
   end
 
+  context 'installed by bosh_user' do
+    describe file('/etc/passwd') do
+      it { should be_file }
+      it { should contain '/home/vcap:/bin/bash' }
+    end
+  end
+
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
       it { should contain('ubuntu') }
+    end
+  end
+
+  context 'installed by bosh_harden' do
+    describe 'disallow unsafe setuid binaries' do
+      subject { backend.run_command('find / -xdev -perm +6000 -a -type f')[:stdout].split }
+
+      it { should match_array(%w(/bin/su /usr/bin/sudo /usr/bin/sudoedit)) }
+    end
+
+    describe 'disallow root login' do
+      subject { file('/etc/ssh/sshd_config') }
+
+      it { should contain /^PermitRootLogin no$/ }
     end
   end
 end

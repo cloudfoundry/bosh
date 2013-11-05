@@ -37,7 +37,7 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     it "parses release" do
       job = described_class.new(@plan, @spec)
-      release = double(BD::DeploymentPlan::Release)
+      release = double(BD::DeploymentPlan::ReleaseVersion)
       @plan.should_receive(:release).with("appcloud").and_return(release)
       job.parse_release
       job.release.should == release
@@ -53,7 +53,7 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     it "parses a single template" do
       job = described_class.new(@plan, @spec)
-      release = double(BD::DeploymentPlan::Release)
+      release = double(BD::DeploymentPlan::ReleaseVersion)
       template = double(BD::DeploymentPlan::Template)
 
       @plan.should_receive(:release).with("appcloud").and_return(release)
@@ -68,7 +68,7 @@ describe Bosh::Director::DeploymentPlan::Job do
     it "parses multiple templates" do
       @spec["template"] = %w(foo bar)
       job = described_class.new(@plan, @spec)
-      release = double(BD::DeploymentPlan::Release)
+      release = double(BD::DeploymentPlan::ReleaseVersion)
       foo_template = double(BD::DeploymentPlan::Template)
       bar_template = double(BD::DeploymentPlan::Template)
 
@@ -145,7 +145,7 @@ describe Bosh::Director::DeploymentPlan::Job do
         @spec["properties"] = props
         @spec["template"] = %w(foo bar)
 
-        release = double(BD::DeploymentPlan::Release)
+        release = double(BD::DeploymentPlan::ReleaseVersion)
 
         @plan.stub(:properties).and_return(props)
         @plan.should_receive(:release).with("appcloud").and_return(release)
@@ -237,7 +237,7 @@ describe Bosh::Director::DeploymentPlan::Job do
             "mem" => {"default" => 256}
         }
 
-        release = double(BD::DeploymentPlan::Release)
+        release = double(BD::DeploymentPlan::ReleaseVersion)
         foo_template = double(BD::DeploymentPlan::Template, :properties => foo_p)
 
         @plan.stub(:properties).and_return(props)

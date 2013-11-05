@@ -10,7 +10,7 @@ module Bosh::Director
       attr_reader :model
       attr_reader :package_models
 
-      # @param [DeploymentPlan::Release] release Release
+      # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
       def initialize(release, name)
         @release = release

@@ -8,6 +8,7 @@ module Bosh::Stemcell
       @environment = env
       @infrastructure = options.fetch(:infrastructure)
       @operating_system = options.fetch(:operating_system)
+      @agent_name = options.fetch(:agent_name)
 
       @stemcell_version = options.fetch(:stemcell_version)
       @image_create_disk_size = options.fetch(:disk_size, infrastructure.default_disk_size)
@@ -15,8 +16,11 @@ module Bosh::Stemcell
     end
 
     def default
+      stemcell_name = "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}"
+      stemcell_name += "-#{agent_name}_agent" unless agent_name == 'ruby'
+
       {
-        'stemcell_name' => "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}",
+        'stemcell_name' => stemcell_name,
         'stemcell_tgz' => archive_filename.to_s,
         'stemcell_image_name' => stemcell_image_name,
         'stemcell_version' => stemcell_version,
@@ -27,6 +31,7 @@ module Bosh::Stemcell
         'ruby_bin' => ruby_bin,
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
+        'go_agent_src_dir' => File.join(source_root, 'go_agent'),
         'image_create_disk_size' => image_create_disk_size
       }.merge(bosh_micro_options).merge(environment_variables).merge(vsphere_options)
     end
@@ -37,6 +42,7 @@ module Bosh::Stemcell
       :environment,
       :infrastructure,
       :operating_system,
+      :agent_name,
       :stemcell_version,
       :image_create_disk_size,
       :bosh_micro_release_tgz_path
@@ -67,7 +73,7 @@ module Bosh::Stemcell
     end
 
     def archive_filename
-      ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false)
+      ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false, agent_name)
     end
 
     def stemcell_image_name

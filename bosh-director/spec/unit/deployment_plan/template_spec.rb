@@ -4,7 +4,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan::Template do
 
-  # Currently this class is tested mostly in DeploymentPlan::Release spec.
+  # Currently this class is tested mostly in DeploymentPlan::ReleaseVersion spec.
   # In the future these tests can be migrated to here.
 
 end

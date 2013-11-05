@@ -310,10 +310,6 @@ module Bosh::Cli::Command
         header("Building DEV release".make_green)
       end
 
-      if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
-        err("You should use CLI >= #{release.min_cli_version} with this release, you have #{Bosh::Cli::VERSION}")
-      end
-
       header("Building packages")
       packages = build_packages(dry_run, final)
 
@@ -337,7 +333,6 @@ module Bosh::Cli::Command
                 release_builder.tarball_path.make_green)
       end
 
-      release.min_cli_version = Bosh::Cli::VERSION
       release.save_config
 
       release_builder.manifest_path

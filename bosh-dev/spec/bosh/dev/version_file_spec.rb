@@ -5,43 +5,56 @@ module Bosh::Dev
   describe VersionFile do
     around do |example|
       Dir.mktmpdir do |tmpdir|
-        Dir.chdir(tmpdir) do
-          example.call
-        end
+        Dir.chdir(tmpdir) { example.call }
       end
-    end
-
-    before do
-      File.write(VersionFile::BOSH_VERSION_FILE, "1.5.0.pre.3\n")
     end
 
     describe '#initialize' do
-      it 'raises an ArgumentError if version_number is nil' do
-        expect { VersionFile.new(nil) }.to raise_error(ArgumentError, 'Version number must be specified.')
-      end
+      context 'when the BOSH_VERSION file exists' do
+        before { FileUtils.touch(described_class::BOSH_VERSION_FILE) }
 
-      it 'sets #version_number' do
-        expect(VersionFile.new('FAKE_NUMBER').version_number).to eq('FAKE_NUMBER')
+        it 'raises an ArgumentError if version_number is nil' do
+          expect {
+            described_class.new(nil)
+          }.to raise_error(ArgumentError, 'Version number must be specified.')
+        end
+
+        it 'sets #version_number' do
+          number = described_class.new('FAKE_NUMBER').version_number
+          expect(number).to eq('FAKE_NUMBER')
+        end
       end
 
       context 'when the BOSH_VERSION file doest not exist' do
-        before do
-          FileUtils.rm(VersionFile::BOSH_VERSION_FILE)
-        end
-
         it 'raises an error' do
-          expect { VersionFile.new('1234') }.to raise_error('BOSH_VERSION must exist')
+          expect {
+            described_class.new('1234')
+          }.to raise_error('BOSH_VERSION must exist')
         end
       end
     end
 
     describe '#write' do
-      subject { VersionFile.new('1234') }
+      subject { described_class.new('1234') }
 
-      it 'updates BOSH_VERSION with the :version_number' do
-        expect {
-          subject.write
-        }.to change { subject.version }.from('1.5.0.pre.3').to('1.5.0.pre.1234')
+      context 'when existing version ends with an integer' do
+        before { File.write(described_class::BOSH_VERSION_FILE, "1.5.0.pre.3\n") }
+
+        it 'updates BOSH_VERSION with the :version_number' do
+          expect {
+            subject.write
+          }.to change { subject.version }.from('1.5.0.pre.3').to('1.5.0.pre.1234')
+        end
+      end
+
+      context 'when existing version ends with local' do
+        before { File.write(described_class::BOSH_VERSION_FILE, "1.5.0.pre.local\n") }
+
+        it 'updates BOSH_VERSION with the :version_number' do
+          expect {
+            subject.write
+          }.to change { subject.version }.from('1.5.0.pre.local').to('1.5.0.pre.1234')
+        end
       end
     end
   end

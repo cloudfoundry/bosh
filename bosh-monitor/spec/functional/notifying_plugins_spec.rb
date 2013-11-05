@@ -38,7 +38,7 @@ describe 'notifying plugins' do
   end
 
   def fake_director
-    director = stub(Bosh::Monitor::Director, :get_deployments => [])
+    director = double(Bosh::Monitor::Director, :get_deployments => [])
     Bosh::Monitor::Director.stub(:new => director)
   end
 

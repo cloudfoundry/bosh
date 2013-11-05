@@ -231,7 +231,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
       @plan = double(BD::DeploymentPlan, :model => @deployment)
       @job = BD::DeploymentPlan::Job.new(@plan, {})
 
-      @job.release = double(BD::DeploymentPlan::Release)
+      @job.release = double(BD::DeploymentPlan::ReleaseVersion)
       @job.release.should_receive(:name).twice.and_return("hbase-release")
 
       mock_template = double(BD::DeploymentPlan::Template)
@@ -308,7 +308,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
         plan = double(BD::DeploymentPlan, :model => deployment, :name => deployment_name, :canonical_name => deployment_name)
         job = double(BD::DeploymentPlan::Job, :deployment => plan, :spec => job_spec,
                    :canonical_name => 'job', :instances => ['instance0'])
-        release = double(BD::DeploymentPlan::Release, :spec => release_spec)
+        release = double(BD::DeploymentPlan::ReleaseVersion, :spec => release_spec)
         resource_pool = double(BD::DeploymentPlan::ResourcePool, :spec => resource_pool_spec)
 
         network = BD::DeploymentPlan::DynamicNetwork.new(plan, network_spec)

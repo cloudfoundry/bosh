@@ -1,0 +1,4 @@
+site :opscode
+
+cookbook 'golang'
+cookbook 'stemcell-golang', path: 'sites-cookbooks/stemcell-golang'

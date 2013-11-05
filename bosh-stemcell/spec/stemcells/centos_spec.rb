@@ -33,7 +33,7 @@ describe 'CentOs Stemcell' do
       'openssl-devel'  => '1.0.0-27.el6_4.2',
       'lsof'           => '4.82-4.el6.x86_64',
       'quota'          => '3.17-18.el6.x86_64',
-      'rsync'          => '3.0.6-9.el6.x86_64',
+      'rsync'          => '3.0.6-9.el6_4.1.x86_64',
       'strace'         => '4.5.19-1.17.el6.x86_64',
       'iptables'       => '1.4.7-9.el6.x86_64',
       'sysstat'        => '9.0.4-20.el6.x86_64',
@@ -127,6 +127,20 @@ describe 'CentOs Stemcell' do
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
       it { should contain('centos') }
+    end
+  end
+
+  context 'installed by bosh_harden' do
+    describe 'disallow unsafe setuid binaries' do
+      subject { backend.run_command('find / -xdev -perm +6000 -a -type f')[:stdout].split }
+
+      it { should match_array(%w(/bin/su /usr/bin/sudo)) }
+    end
+
+    describe 'disallow root login' do
+      subject { file('/etc/ssh/sshd_config') }
+
+      it { should contain /^PermitRootLogin no$/ }
     end
   end
 end

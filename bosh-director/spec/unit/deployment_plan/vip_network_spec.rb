@@ -4,7 +4,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
   before(:each) do
-    @deployment_plan = stub(:DeploymentPlan)
+    @deployment_plan = double(:DeploymentPlan)
   end
 
   describe :initialize do

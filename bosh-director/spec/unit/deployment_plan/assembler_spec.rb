@@ -4,9 +4,9 @@ module Bosh::Director
   module DeploymentPlan
     describe Assembler do
       before(:each) do
-        @cloud = stub(:Cloud)
+        @cloud = double(:Cloud)
         Config.stub(:cloud).and_return(@cloud)
-        @deployment_plan = stub(:DeploymentPlan)
+        @deployment_plan = double(:DeploymentPlan)
         @assembler = Assembler.new(@deployment_plan)
       end
 
@@ -24,8 +24,8 @@ module Bosh::Director
       end
 
       it 'should bind releases' do
-        r1 = stub(Release)
-        r2 = stub(Release)
+        r1 = double(ReleaseVersion)
+        r2 = double(ReleaseVersion)
 
         plan.should_receive(:releases).and_return([r1, r2])
 
@@ -76,8 +76,8 @@ module Bosh::Director
       end
 
       it 'should bind templates' do
-        r1 = double(Release)
-        r2 = double(Release)
+        r1 = double(ReleaseVersion)
+        r2 = double(ReleaseVersion)
 
         plan.should_receive(:releases).and_return([r1, r2])
 
@@ -126,7 +126,7 @@ module Bosh::Director
         it 'should bind an idle vm' do
           state = { 'resource_pool' => { 'name' => 'baz' } }
           reservations = { 'foo' => 'reservation' }
-          resource_pool = stub(:ResourcePool)
+          resource_pool = double(:ResourcePool)
 
           @deployment_plan.stub(:resource_pool).with('baz').
             and_return(resource_pool)
@@ -158,13 +158,13 @@ module Bosh::Director
 
       describe :bind_idle_vm do
         before(:each) do
-          @network = stub(Network)
+          @network = double(Network)
           @network.stub(:name).and_return('foo')
-          @reservation = stub(:NetworkReservation)
-          @resource_pool = stub(:ResourcePool)
+          @reservation = double(:NetworkReservation)
+          @resource_pool = double(:ResourcePool)
           @resource_pool.stub(:name).and_return('baz')
           @resource_pool.stub(:network).and_return(@network)
-          @idle_vm = stub(:IdleVm)
+          @idle_vm = double(:IdleVm)
           @vm = Models::Vm.make
         end
 
@@ -211,9 +211,9 @@ module Bosh::Director
           state = { 'state' => 'baz' }
           reservations = { 'net' => 'reservation' }
 
-          instance = stub(Instance)
-          resource_pool = stub(:ResourcePool)
-          job = stub(Job)
+          instance = double(Instance)
+          resource_pool = double(:ResourcePool)
+          job = double(Job)
           job.stub(:instance).with(3).and_return(instance)
           job.stub(:resource_pool).and_return(resource_pool)
           @deployment_plan.stub(:job).with('foo').and_return(job)
@@ -232,9 +232,9 @@ module Bosh::Director
           state = { 'state' => 'baz' }
           reservations = { 'net' => 'reservation' }
 
-          instance = stub(Instance)
-          resource_pool = stub(:ResourcePool)
-          job = stub(Job)
+          instance = double(Instance)
+          resource_pool = double(:ResourcePool)
+          job = double(Job)
           job.stub(:instance).with(3).and_return(instance)
           job.stub(:resource_pool).and_return(resource_pool)
           @deployment_plan.stub(:job).with('bar').and_return(job)
@@ -264,8 +264,8 @@ module Bosh::Director
 
       describe :get_network_reservations do
         it 'should reserve all of the networks listed in the state' do
-          foo_network = stub(Network)
-          bar_network = stub(Network)
+          foo_network = double(Network)
+          bar_network = double(Network)
 
           @deployment_plan.stub(:network).with('foo').and_return(foo_network)
           @deployment_plan.stub(:network).with('bar').and_return(bar_network)
@@ -302,7 +302,7 @@ module Bosh::Director
           state = { 'state' => 'baz' }
 
           vm = Models::Vm.make(:agent_id => 'agent-1')
-          client = stub(:AgentClient)
+          client = double(:AgentClient)
           AgentClient.stub(:new).with('agent-1').and_return(client)
 
           client.should_receive(:get_state).and_return(state)
@@ -403,9 +403,9 @@ module Bosh::Director
 
       describe :bind_instance_networks do
         before(:each) do
-          @job_spec = stub(Job)
-          @instance_spec = stub(Instance)
-          @network_spec = stub(Network)
+          @job_spec = double(Job)
+          @instance_spec = double(Instance)
+          @network_spec = double(Network)
 
           @deployment_plan.stub(:jobs).and_return([@job_spec])
           @deployment_plan.stub(:network).with('network-a').
@@ -438,13 +438,13 @@ module Bosh::Director
 
       describe :bind_configuration do
         before(:each) do
-          @template_spec = stub(:TemplateSpec)
-          @job_spec = stub(Job)
+          @template_spec = double(:TemplateSpec)
+          @job_spec = double(Job)
           @deployment_plan.stub(:jobs).and_return([@job_spec])
         end
 
         it 'should bind the configuration hash' do
-          configuration_hasher = stub(:ConfigurationHasher)
+          configuration_hasher = double(:ConfigurationHasher)
           configuration_hasher.should_receive(:hash)
           ConfigurationHasher.stub(:new).with(@job_spec).
             and_return(configuration_hasher)

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Agent
   module Message
     class Apply < Base
@@ -110,7 +108,9 @@ module Bosh::Agent
       end
 
       def apply_job
-        if @new_plan.has_jobs?
+        if @old_plan.has_prepared_spec?(@new_spec)
+          logger.info("New jobs already installed")
+        elsif @new_plan.has_jobs?
           @new_plan.install_jobs
         else
           logger.info("No job")
@@ -118,7 +118,9 @@ module Bosh::Agent
       end
 
       def apply_packages
-        if @new_plan.has_packages?
+        if @old_plan.has_prepared_spec?(@new_spec)
+          logger.info("New packages already installed")
+        elsif @new_plan.has_packages?
           @new_plan.install_packages
         else
           logger.info("No packages")

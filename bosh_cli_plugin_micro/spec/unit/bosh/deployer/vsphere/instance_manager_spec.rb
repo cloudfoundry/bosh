@@ -43,10 +43,7 @@ module Bosh
           deployer.update(stemcell_id, stemcell_archive)
         end
 
-        before do # deployed vm
-          deployer.state.vm_cid = 'VM-CID-UPDATE'
-          deployer.state.stemcell_cid = 'SC-CID-UPDATE'
-        end
+        before { deployer.state.stemcell_cid = 'SC-CID-UPDATE' } # deployed vm
 
         before do # attached disk
           deployer.state.disk_cid = 'fake-disk-cid'
@@ -70,12 +67,70 @@ module Bosh
         def self.it_updates_deployed_instance(stemcell_cid, options = {})
           will_create_stemcell = options[:will_create_stemcell]
 
-          it 'updates deployed instance' do
-            agent.should_receive(:run_task).with(:stop)
-            agent.should_receive(:run_task).with(:unmount_disk, 'fake-disk-cid').and_return({})
-            cloud.should_receive(:detach_disk).with('VM-CID-UPDATE', 'fake-disk-cid')
-            cloud.should_receive(:delete_vm).with('VM-CID-UPDATE')
-            cloud.should_receive(:delete_stemcell).with('SC-CID-UPDATE')
+          context 'when bosh-deployment.yml vm_cid is nil' do
+            before { deployer.state.vm_cid = nil }
+
+            it 'does not stop tasks via the agent, unmount the disk ' +
+                 'detach the disk, delete the vm' do
+              # agent.should_not_receive(:run_task).with(:stop)
+              agent.should_not_receive(:run_task).with(:unmount_disk, anything)
+              cloud.should_not_receive(:detach_disk)
+              cloud.should_not_receive(:delete_vm)
+              perform
+            end
+
+            it 'removes old vm cid from deployed state' do
+              expect { perform }.to change { deployer.state.vm_cid }.from(nil)
+            end
+          end
+
+          context 'when bosh-deployment.yml vm_cid is populated' do
+            before { deployer.state.vm_cid = 'fake-old-vm-cid' }
+
+            it 'stops tasks via the agent, unmount the disk, detach the disk, delete the vm' do
+              agent.should_receive(:run_task).with(:stop)
+              agent.should_receive(:run_task).with(:unmount_disk, 'fake-disk-cid').and_return({})
+              cloud.should_receive(:detach_disk).with('fake-old-vm-cid', 'fake-disk-cid')
+              cloud.should_receive(:delete_vm).with('fake-old-vm-cid')
+              perform
+            end
+
+            it 'removes old vm cid from deployed state' do
+              expect { perform }.to change {
+                deployer.state.vm_cid
+              }.from('fake-old-vm-cid')
+            end
+          end
+
+          context 'when stemcell_cid is nil' do
+            before { deployer.state.stemcell_cid = nil }
+
+            it 'does not delete old stemcell' do
+              cloud.should_not_receive(:delete_stemcell)
+              perform
+            end
+
+            it 'removes stemcell cid from deployed state' do
+              expect { perform }.to change { deployer.state.stemcell_cid }.from(nil)
+            end
+          end
+
+          context 'when stemcell_cid is populated' do
+            before { deployer.state.stemcell_cid = 'fake-old-stemcell-cid' }
+
+            it 'deletes old stemcell' do
+              cloud.should_receive(:delete_stemcell).with('fake-old-stemcell-cid')
+              perform
+            end
+
+            it 'removes old stemcell cid from deployed state' do
+              expect { perform }.to change {
+                deployer.state.stemcell_cid
+              }.from('fake-old-stemcell-cid')
+            end
+          end
+
+          it 'creates stemcell, create vm, attach disk and start tasks via agent' do
             cloud.should_receive(:create_stemcell).and_return('SC-CID') if will_create_stemcell
             cloud.should_receive(:create_vm).and_return('VM-CID')
             cloud.should_receive(:attach_disk).with('VM-CID', 'fake-disk-cid')
@@ -87,7 +142,7 @@ module Bosh
             perform
           end
 
-          it 'saves deployed vm, stemcell cids' do
+          it 'saves deployed vm cid, stemcell cid, disk cid' do
             cloud.stub(create_vm: 'VM-CID')
             perform
             expect(deployer.state.stemcell_cid).to eq(stemcell_cid)
@@ -126,12 +181,11 @@ module Bosh
           end
 
           context 'when the director does not become ready' do
-            it 'does not save newly deployed stemcell sha1' do
+            it 'resets saved stemcell sha1 because next deploy should not be skipped' do
               error = Exception.new('director-ready-error')
               deployer.should_receive(:wait_until_director_ready).and_raise(error)
-              expect {
-                expect { perform }.to raise_error(error) # rescue propagated error
-              }.to_not change { deployer.state.stemcell_sha1 }
+              expect { perform }.to raise_error(error) # rescue propagated error
+              expect(deployer.state.stemcell_sha1).to be_nil
             end
           end
         end
@@ -153,12 +207,11 @@ module Bosh
           end
 
           context 'when the director does not become ready' do
-            it 'does not save newly deployed config sha1' do
+            it 'resets saved config sha1 because next deploy should not be skipped' do
               error = Exception.new('director-ready-error')
               deployer.should_receive(:wait_until_director_ready).and_raise(error)
-              expect {
-                expect { perform }.to raise_error(error) # rescue propagated error
-              }.to_not change { deployer.state.config_sha1 }
+              expect { perform }.to raise_error(error) # rescue propagated error
+              expect(deployer.state.config_sha1).to be_nil
             end
           end
         end
@@ -449,6 +502,41 @@ module Bosh
             expect {
               deployer.destroy
             }.to raise_error(Bosh::Cli::CliError, /Cannot find existing VM/)
+          end
+        end
+      end
+
+      describe '#exists?' do
+        before do
+          deployer.state.vm_cid = nil
+          deployer.state.stemcell_cid = nil
+          deployer.state.disk_cid = nil
+        end
+
+        context 'all deployer resources are nil' do
+          it 'is false' do
+            expect(subject.exists?).to be_false
+          end
+        end
+
+        context 'only vm_cid is populated' do
+          it 'is true' do
+            deployer.state.vm_cid = 'fake-vm-id'
+            expect(subject.exists?).to be_true
+          end
+        end
+
+        context 'only stemcell_cid is populated' do
+          it 'is true' do
+            deployer.state.stemcell_cid = 'fake-stemcell-cid'
+            expect(subject.exists?).to be_true
+          end
+        end
+
+        context 'only disk_cid is populated' do
+          it 'is true' do
+            deployer.state.disk_cid = 'fake-disk-cid'
+            expect(subject.exists?).to be_true
           end
         end
       end

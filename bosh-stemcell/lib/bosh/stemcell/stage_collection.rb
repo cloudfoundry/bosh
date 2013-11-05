@@ -5,8 +5,33 @@ module Bosh::Stemcell
   class StageCollection
 
     def initialize(options)
-      @infrastructure   = options.fetch(:infrastructure)
+      @infrastructure = options.fetch(:infrastructure)
       @operating_system = options.fetch(:operating_system)
+      @agent_name = options.fetch(:agent_name)
+    end
+
+    def all_stages
+      operating_system_stages + agent_stages + infrastructure_stages
+    end
+
+    private
+
+    attr_reader :infrastructure, :operating_system, :agent_name
+
+    def agent_stages
+      case agent_name
+        when 'go'
+          [
+            :bosh_go_agent,
+            #:bosh_micro,
+          ]
+        else
+          [
+            :bosh_ruby,
+            :bosh_agent,
+            :bosh_micro,
+          ]
+      end
     end
 
     def operating_system_stages
@@ -31,26 +56,18 @@ module Bosh::Stemcell
       end
     end
 
-    private
-
-    attr_reader :infrastructure, :operating_system
-
     def hacked_centos_common
       [
         # Bosh steps
         :bosh_users,
         :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
         #:bosh_sysstat,
         #:bosh_sysctl,
-        #:bosh_ntpdate,
+        :bosh_ntpdate,
         :bosh_sudoers,
-        # Micro BOSH
-        :bosh_micro,
         # Install GRUB/kernel/etc
         :system_grub,
-        #:system_kernel,
+      #:system_kernel,
       ]
     end
 
@@ -59,7 +76,7 @@ module Bosh::Stemcell
         #:system_open_vm_tools,
         :system_parameters,
         :bosh_clean,
-        #:bosh_harden,
+        :bosh_harden,
         #:bosh_dpkg_list,
         :image_create,
         :image_install_grub,
@@ -75,14 +92,10 @@ module Bosh::Stemcell
         # Bosh steps
         :bosh_users,
         :bosh_monit,
-        :bosh_ruby,
-        :bosh_agent,
         :bosh_sysstat,
         :bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
-        # Micro BOSH
-        :bosh_micro,
         # Install GRUB/kernel/etc
         :system_grub,
         :system_kernel,

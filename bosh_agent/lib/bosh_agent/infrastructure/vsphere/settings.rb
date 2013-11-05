@@ -71,10 +71,14 @@ module Bosh::Agent
         read_cdrom_byte
       rescue => e
         # Do nothing
-      ensure
+      end
+
+      begin
         # udevadm settle default timeout is 120 seconds
         udevadm_settle_out = udevadm_settle
         @logger.info("udevadm: #{udevadm_settle_out}")
+      rescue
+        raise Bosh::Agent::LoadSettingsError, "udevadm failed: #{e.inspect}"
       end
 
       # Read successfuly from cdrom for 2.5 seconds

@@ -12,18 +12,20 @@ module Bosh::Stemcell
         tarball: 'fake/release.tgz',
         stemcell_version: '007',
         infrastructure: infrastructure,
-        operating_system: operating_system
+        operating_system: operating_system,
+        agent_name: agent_name,
       }
     end
 
     let(:infrastructure) { Infrastructure.for('aws') }
     let(:operating_system) { OperatingSystem.for('ubuntu') }
+    let(:agent_name) { 'ruby' }
     let(:expected_source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
     before do
       ArchiveFilename.stub(:new).
-        with('007', infrastructure, operating_system, 'bosh-stemcell', false).and_return(archive_filename)
+        with('007', infrastructure, operating_system, 'bosh-stemcell', false, agent_name).and_return(archive_filename)
     end
 
     describe '#initialize' do
@@ -108,6 +110,7 @@ module Bosh::Stemcell
             expect(result['ruby_bin']).to eq('fake_ruby_bin')
             expect(result['bosh_release_src_dir']).to eq(File.join(expected_source_root, '/release/src/bosh'))
             expect(result['bosh_agent_src_dir']).to eq(File.join(expected_source_root, 'bosh_agent'))
+            expect(result['go_agent_src_dir']).to eq(File.join(expected_source_root, 'go_agent'))
             expect(result['image_create_disk_size']).to eq(default_disk_size)
             expect(result['bosh_micro_enabled']).to eq('yes')
             expect(result['bosh_micro_package_compiler_path']).to eq(
@@ -146,6 +149,17 @@ module Bosh::Stemcell
               result = stemcell_builder_options.default
 
               expect(result['image_create_disk_size']).to eq(1234)
+            end
+          end
+
+          context 'when go agent is used' do
+            let(:agent_name) { 'go' }
+
+            it 'changes the stemcell_name' do
+              result = stemcell_builder_options.default
+
+              expect(result['stemcell_name']).to eq(
+                "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}-go_agent")
             end
           end
         end

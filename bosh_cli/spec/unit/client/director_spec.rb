@@ -557,7 +557,7 @@ describe Bosh::Cli::Client::Director do
       password = 'pass'
       auth     = 'Basic ' + Base64.encode64("#{user}:#{password}").strip
 
-      ssl_config = stub('ssl_config')
+      ssl_config = double('ssl_config')
       ssl_config.should_receive(:verify_mode=).
         with(OpenSSL::SSL::VERIFY_NONE)
       ssl_config.should_receive(:verify_callback=)

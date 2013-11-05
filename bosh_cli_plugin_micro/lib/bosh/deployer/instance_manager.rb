@@ -71,7 +71,7 @@ module Bosh::Deployer
     end
 
     def exists?
-      state.vm_cid != nil
+      [state.vm_cid, state.stemcell_cid, state.disk_cid].any?
     end
 
     def step(task)
@@ -177,18 +177,28 @@ module Bosh::Deployer
     def update(stemcell_tgz, stemcell_archive)
       result, message = has_pending_changes?(state, stemcell_tgz, stemcell_archive)
       @ui_messager.info(message)
-
       return unless result
 
       renderer.enter_stage('Prepare for update', 5)
-      agent_stop
-      detach_disk(state.disk_cid)
-      delete_vm
+
+      # Reset stemcell and config sha1 before deploying
+      # to make sure that if any step in current deploy fails
+      # subsequent redeploys will not be skipped because sha1s matched
+      reset_saved_fingerprints
+
+      if state.vm_cid
+        agent_stop
+        detach_disk(state.disk_cid)
+        delete_vm
+      end
+
       # Do we always want to delete the stemcell?
       # What if we are redeploying to the same stemcell version just so
       # we can upgrade to a bigger persistent disk.
-      # Perhaps use "--preserve" to skip the delete?
-      delete_stemcell
+      if state.stemcell_cid
+        delete_stemcell
+      end
+
       create(stemcell_tgz, stemcell_archive)
     end
 
@@ -563,6 +573,12 @@ module Bosh::Deployer
       end
 
       [false, :update_no_changes]
+    end
+
+    def reset_saved_fingerprints
+      state.stemcell_sha1 = nil
+      state.config_sha1 = nil
+      save_state
     end
 
     def save_fingerprints(stemcell_tgz, stemcell_archive)

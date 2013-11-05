@@ -37,6 +37,20 @@ module Bosh::Stemcell
           expect(archive_filename.to_s).to eq ('light-FAKE_NAME-007-INFRASTRUCTURE-HYPERVISOR-OPERATING_SYSTEM.tgz')
         end
       end
+
+      context 'when stemcell has ruby agent' do
+        it 'does not include the agent name in the archive name' do
+          archive_filename = ArchiveFilename.new(version, infrastructure, operating_system, 'FAKE_NAME', false, 'ruby')
+          expect(archive_filename.to_s).to eq ('FAKE_NAME-007-INFRASTRUCTURE-HYPERVISOR-OPERATING_SYSTEM.tgz')
+        end
+      end
+
+      context 'when stemcell has go agent' do
+        it 'includes go_agent in the archive name' do
+          archive_filename = ArchiveFilename.new(version, infrastructure, operating_system, 'FAKE_NAME', false, 'go')
+          expect(archive_filename.to_s).to eq ('FAKE_NAME-007-INFRASTRUCTURE-HYPERVISOR-OPERATING_SYSTEM-go_agent.tgz')
+        end
+      end
     end
   end
 end

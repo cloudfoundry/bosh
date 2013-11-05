@@ -5,17 +5,17 @@ require 'spec_helper'
 module Bosh::Director
   describe ResourcePoolUpdater do
     before do
-      @cloud = stub(:Cloud)
+      @cloud = double(:Cloud)
       Config.stub(:cloud).and_return(@cloud)
 
-      @resource_pool = stub(:ResourcePool)
+      @resource_pool = double(:ResourcePool)
       @resource_pool.stub(:name).and_return('large')
       @resource_pool_updater = ResourcePoolUpdater.new(@resource_pool)
     end
 
     describe :create_missing_vms do
       it 'should do nothing when everything is created' do
-        pool = stub(:ThreadPool)
+        pool = double(:ThreadPool)
 
         @resource_pool.stub(:allocated_vms).and_return([])
         @resource_pool.stub(:idle_vms).and_return([])
@@ -25,9 +25,9 @@ module Bosh::Director
       end
 
       it 'should create missing VMs' do
-        pool = stub(:ThreadPool)
+        pool = double(:ThreadPool)
 
-        idle_vm = stub(:IdleVm)
+        idle_vm = double(:IdleVm)
         idle_vm.stub(:vm).and_return(nil)
 
         @resource_pool.stub(:allocated_vms).and_return([])
@@ -42,12 +42,12 @@ module Bosh::Director
 
     describe :create_bound_missing_vms do
       it 'should call create_missing_vms with the right filter' do
-        pool = stub(:ThreadPool)
+        pool = double(:ThreadPool)
 
-        bound_vm = stub(:IdleVm)
+        bound_vm = double(:IdleVm)
         bound_vm.stub(:bound_instance).
-            and_return(stub(DeploymentPlan::Instance))
-        unbound_vm = stub(:IdleVm)
+            and_return(double(DeploymentPlan::Instance))
+        unbound_vm = double(:IdleVm)
         unbound_vm.stub(:bound_instance).and_return(nil)
 
         called = false
@@ -63,14 +63,14 @@ module Bosh::Director
 
     describe :create_missing_vm do
       before do
-        @idle_vm = stub(:IdleVm)
+        @idle_vm = double(:IdleVm)
         @network_settings = {'network' => 'settings'}
         @idle_vm.stub(:network_settings).and_return(@network_settings)
         @deployment = Models::Deployment.make
-        @deployment_plan = stub(:DeploymentPlan)
+        @deployment_plan = double(:DeploymentPlan)
         @deployment_plan.stub(:model).and_return(@deployment)
         @stemcell = Models::Stemcell.make
-        @stemcell_spec = stub(:Stemcell)
+        @stemcell_spec = double(:Stemcell)
         @stemcell_spec.stub(:model).and_return(@stemcell)
         @resource_pool.stub(:deployment_plan).and_return(@deployment_plan)
         @resource_pool.stub(:stemcell).and_return(@stemcell_spec)
@@ -79,7 +79,7 @@ module Bosh::Director
         @environment = {'password' => 'foo'}
         @resource_pool.stub(:env).and_return(@environment)
         @vm = Models::Vm.make(agent_id:  'agent-1', cid:  'vm-1')
-        @vm_creator = stub(:VmCreator)
+        @vm_creator = double(:VmCreator)
         @vm_creator.stub(:create).
             with(@deployment, @stemcell, @cloud_properties, @network_settings,
                  nil, @environment).
@@ -88,7 +88,7 @@ module Bosh::Director
       end
 
       it 'should create a VM' do
-        agent = stub(:AgentClient)
+        agent = double(:AgentClient)
         agent.should_receive(:wait_until_ready)
         agent.should_receive(:get_state).and_return({'state' => 'foo'})
         AgentClient.stub(:new).with('agent-1').and_return(agent)
@@ -101,7 +101,7 @@ module Bosh::Director
       end
 
       it 'should clean up the partially created VM' do
-        agent = stub(:AgentClient)
+        agent = double(:AgentClient)
         agent.should_receive(:wait_until_ready).and_raise('timeout')
         AgentClient.stub(:new).with('agent-1').and_return(agent)
 

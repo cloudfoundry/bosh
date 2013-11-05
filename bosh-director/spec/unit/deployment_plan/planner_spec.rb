@@ -73,7 +73,7 @@ module Bosh::Director
           plan.parse_releases
           plan.releases.size.should == 1
           release = plan.releases[0]
-          release.should be_kind_of(Release)
+          release.should be_kind_of(ReleaseVersion)
           release.name.should == 'foo'
           release.version.should == '23'
           release.spec.should == release_spec
@@ -95,7 +95,7 @@ module Bosh::Director
           plan.releases[0].spec.should == releases_spec[0]
           plan.releases[1].spec.should == releases_spec[1]
           plan.releases.each do |release|
-            release.should be_kind_of(Release)
+            release.should be_kind_of(ReleaseVersion)
           end
 
           plan.release('foo').should == plan.releases[0]

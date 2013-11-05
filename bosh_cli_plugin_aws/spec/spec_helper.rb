@@ -1,7 +1,6 @@
 require "cli"
 require "bosh/cli/commands/aws"
 require "bosh_cli_plugin_aws"
-require 'rspec/fire'
 require 'webmock/rspec'
 
 Dir[File.expand_path("./support/*", File.dirname(__FILE__))].each do |support_file|
@@ -17,8 +16,6 @@ def encoded_credentials(username, password)
 end
 
 RSpec.configure do |config|
-  config.include(RSpec::Fire)
-
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
   config.filter_run :focus

@@ -12,7 +12,7 @@ module Bosh::Director
     let(:deployment_plan) { double('Bosh::Director::DeploymentPlan', model: deployment_model, dns_domain: domain, name: 'deployment') }
     let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: stemcell_model) }
 
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::Release', spec: 'release-spec') }
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: 'release-spec') }
     let(:resource_pool) {
       double('Bosh::Director::DeploymentPlan::ResourcePool',
              stemcell: stemcell,
@@ -130,7 +130,7 @@ module Bosh::Director
         end
       end
 
-      context 'when the vm need to be stopped' do
+      context 'when the job instance needs to be stopped' do
         before do
           subject.stub(:stop)
           subject.stub(:start!)
@@ -139,7 +139,7 @@ module Bosh::Director
           subject.stub(current_state: {'job_state' => 'running'})
         end
 
-        it 'stops the VM' do
+        it 'stops the job' do
           subject.should_receive(:stop)
           subject.update
         end
