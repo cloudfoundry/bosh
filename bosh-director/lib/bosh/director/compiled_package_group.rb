@@ -18,5 +18,7 @@ module Bosh::Director
     def stemcell_sha1
       @stemcell.sha1
     end
+
+    attr_reader :release_version
   end
 end
