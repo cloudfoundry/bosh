@@ -32,7 +32,7 @@ func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	p.fs.Chown(sshPath, username)
 
 	authKeysPath := filepath.Join(sshPath, "authorized_keys")
-	err = p.fs.WriteToFile(authKeysPath, publicKey)
+	_, err = p.fs.WriteToFile(authKeysPath, publicKey)
 	if err != nil {
 		return errors.WrapError(err, "Error creating authorized_keys file")
 	}
@@ -64,14 +64,16 @@ func (p ubuntu) SetupDhcp(networks settings.Networks) (err error) {
 		return
 	}
 
-	err = p.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
+	written, err := p.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
 	if err != nil {
 		return
 	}
 
-	// Ignore errors here, just run the commands
-	p.cmdRunner.RunCommand("pkill", "dhclient3")
-	p.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+	if written {
+		// Ignore errors here, just run the commands
+		p.cmdRunner.RunCommand("pkill", "dhclient3")
+		p.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+	}
 
 	return
 }
@@ -89,5 +91,4 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	rfc3442-classless-static-routes, ntp-servers;
 
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
-{{ end }}
-`
+{{ end }}`

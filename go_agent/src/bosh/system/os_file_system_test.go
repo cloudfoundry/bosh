@@ -76,8 +76,9 @@ func TestWriteToFile(t *testing.T) {
 	_, err := os.Stat(testPath)
 	assert.Error(t, err)
 
-	err = osFs.WriteToFile(testPath, "initial write")
+	written, err := osFs.WriteToFile(testPath, "initial write")
 	assert.NoError(t, err)
+	assert.True(t, written)
 	defer os.Remove(testPath)
 
 	file, err := os.Open(testPath)
@@ -86,13 +87,22 @@ func TestWriteToFile(t *testing.T) {
 
 	assert.Equal(t, readFile(file), "initial write")
 
-	err = osFs.WriteToFile(testPath, "second write")
+	written, err = osFs.WriteToFile(testPath, "second write")
 	assert.NoError(t, err)
+	assert.True(t, written)
 
 	file.Close()
 	file, err = os.Open(testPath)
 	assert.NoError(t, err)
 
+	assert.Equal(t, readFile(file), "second write")
+
+	file.Close()
+	file, err = os.Open(testPath)
+
+	written, err = osFs.WriteToFile(testPath, "second write")
+	assert.NoError(t, err)
+	assert.False(t, written)
 	assert.Equal(t, readFile(file), "second write")
 }
 

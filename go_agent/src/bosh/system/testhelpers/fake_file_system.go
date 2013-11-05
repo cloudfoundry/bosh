@@ -46,10 +46,14 @@ func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 	return
 }
 
-func (fs *FakeFileSystem) WriteToFile(path, content string) (err error) {
+func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err error) {
 	stats := fs.getOrCreateFile(path)
 	stats.CreatedWith = "WriteToFile"
-	stats.Content = content
+
+	if stats.Content != content {
+		stats.Content = content
+		written = true
+	}
 	return
 }
 
