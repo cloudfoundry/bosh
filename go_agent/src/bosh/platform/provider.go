@@ -13,6 +13,7 @@ type provider struct {
 func NewProvider(fs system.FileSystem, cmdRunner system.CmdRunner) (p provider) {
 	p.platforms = map[string]Platform{
 		"ubuntu": newUbuntuPlatform(fs, cmdRunner),
+		"dummy":  newDummyPlatform(),
 	}
 	return
 }

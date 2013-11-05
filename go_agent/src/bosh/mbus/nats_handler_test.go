@@ -62,6 +62,22 @@ func TestNatsHandlerConnectionInfo(t *testing.T) {
 	assert.Equal(t, connInfo.Password, "bar")
 }
 
+func TestNatsHandlerConnectionInfoWithoutUsernameOrPassword(t *testing.T) {
+	_, handler := createNatsClientAndHandler()
+	handler.settings.Mbus = "nats://127.0.0.1:1234"
+
+	_, err := handler.getConnectionInfo()
+	assert.Error(t, err)
+}
+
+func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
+	_, handler := createNatsClientAndHandler()
+	handler.settings.Mbus = "nats://foo@127.0.0.1:1234"
+
+	_, err := handler.getConnectionInfo()
+	assert.Error(t, err)
+}
+
 func createNatsClientAndHandler() (client *fakeyagnats.FakeYagnats, handler natsHandler) {
 	s := settings.Settings{
 		AgentId: "my-agent-id",

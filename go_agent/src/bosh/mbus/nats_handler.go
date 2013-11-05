@@ -13,9 +13,8 @@ import (
 )
 
 type natsHandler struct {
-	client      yagnats.NATSClient
-	settings    settings.Settings
-	keepRunning bool
+	client   yagnats.NATSClient
+	settings settings.Settings
 }
 
 func newNatsHandler(client yagnats.NATSClient, s settings.Settings) (handler natsHandler) {
@@ -26,6 +25,11 @@ func newNatsHandler(client yagnats.NATSClient, s settings.Settings) (handler nat
 
 func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
 	err = h.Start(handlerFunc)
+	if err != nil {
+		return
+	}
+	defer h.Stop()
+
 	h.runUntilInterrupted()
 	return
 }
@@ -65,22 +69,19 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 
 func (h natsHandler) Stop() {
 	h.client.Disconnect()
-	h.keepRunning = false
 }
 
 func (h natsHandler) runUntilInterrupted() {
-	h.keepRunning = true
+	keepRunning := true
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
+
+	for keepRunning {
 		select {
 		case <-c:
-			h.keepRunning = false
+			keepRunning = false
 		}
-	}()
-
-	for h.keepRunning {
 	}
 }
 
@@ -90,7 +91,13 @@ func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err 
 		return
 	}
 
-	password, passwordIsSet := natsUrl.User.Password()
+	user := natsUrl.User
+	if user == nil {
+		err = errors.New("No username or password set for connection")
+		return
+	}
+
+	password, passwordIsSet := user.Password()
 	if !passwordIsSet {
 		err = errors.New("No password set for connection")
 		return
@@ -98,7 +105,7 @@ func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err 
 
 	connInfo = new(yagnats.ConnectionInfo)
 	connInfo.Password = password
-	connInfo.Username = natsUrl.User.Username()
+	connInfo.Username = user.Username()
 	connInfo.Addr = natsUrl.Host
 
 	return
