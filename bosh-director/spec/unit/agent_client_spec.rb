@@ -88,15 +88,16 @@ module Bosh::Director
 
       it 'explicitly defines methods for long running messages (to poll their tasks)' do
         expect(client.methods).to include(
-                                       :apply,
-                                       :compile_package,
-                                       :drain,
-                                       :fetch_logs,
-                                       :migrate_disk,
-                                       :mount_disk,
-                                       :stop,
-                                       :unmount_disk,
-                                     )
+                                    :prepare,
+                                    :apply,
+                                    :compile_package,
+                                    :drain,
+                                    :fetch_logs,
+                                    :migrate_disk,
+                                    :mount_disk,
+                                    :stop,
+                                    :unmount_disk,
+                                  )
       end
     end
 
@@ -122,9 +123,9 @@ module Bosh::Director
                                             { 'crypt_key' => kind_of(String),
                                               'sign_key' => kind_of(String) } } })
         VmCreator.new.create(deployment, stemcell,
-                                             cloud_properties,
-                                             network_settings, Array(99),
-                                             env)
+                             cloud_properties,
+                             network_settings, Array(99),
+                             env)
       end
 
       subject(:client) do

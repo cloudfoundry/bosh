@@ -61,7 +61,9 @@ module Bosh::Director
       {"state" => "done", "value" => msg, "agent_task_id" => nil}
     end
 
-    [ :apply,
+    [
+      :prepare,
+      :apply,
       :compile_package,
       :drain,
       :fetch_logs,
@@ -74,8 +76,7 @@ module Bosh::Director
         task = AgentClient.convert_old_message_to_new(super(*args))
         while task["state"] == "running"
           sleep(DEFAULT_POLL_INTERVAL)
-          task = AgentClient.convert_old_message_to_new(
-              get_task(task["agent_task_id"]))
+          task = AgentClient.convert_old_message_to_new(get_task(task["agent_task_id"]))
         end
         task["value"]
       end
