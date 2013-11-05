@@ -1,9 +1,12 @@
 package platform
 
 import (
+	"bosh/errors"
 	"bosh/settings"
 	"bosh/system"
 	"bytes"
+	"os"
+	"path/filepath"
 	"text/template"
 )
 
@@ -18,7 +21,29 @@ func newUbuntuPlatform(fs system.FileSystem, cmdRunner system.CmdRunner) (p ubun
 	return
 }
 
-func (u ubuntu) SetupDhcp(networks settings.Networks) (err error) {
+func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
+	homeDir, err := p.fs.HomeDir(username)
+	if err != nil {
+		return errors.WrapError(err, "Error finding home dir for user")
+	}
+
+	sshPath := filepath.Join(homeDir, ".ssh")
+	p.fs.MkdirAll(sshPath, os.FileMode(0700))
+	p.fs.Chown(sshPath, username)
+
+	authKeysPath := filepath.Join(sshPath, "authorized_keys")
+	err = p.fs.WriteToFile(authKeysPath, publicKey)
+	if err != nil {
+		return errors.WrapError(err, "Error creating authorized_keys file")
+	}
+
+	p.fs.Chown(authKeysPath, username)
+	p.fs.Chmod(authKeysPath, os.FileMode(0600))
+
+	return
+}
+
+func (p ubuntu) SetupDhcp(networks settings.Networks) (err error) {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
@@ -39,14 +64,14 @@ func (u ubuntu) SetupDhcp(networks settings.Networks) (err error) {
 		return
 	}
 
-	err = u.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
+	err = p.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
 	if err != nil {
 		return
 	}
 
 	// Ignore errors here, just run the commands
-	u.cmdRunner.RunCommand("pkill", "dhclient3")
-	u.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+	p.cmdRunner.RunCommand("pkill", "dhclient3")
+	p.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
 
 	return
 }

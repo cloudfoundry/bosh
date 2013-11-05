@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestAwsGetPublicKey(t *testing.T) {
+func TestAwsSetupSsh(t *testing.T) {
 	expectedKey := "some public key"
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,9 +25,13 @@ func TestAwsGetPublicKey(t *testing.T) {
 
 	aws := newAwsInfrastructure(ts.URL, &FakeDnsResolver{})
 
-	key, err := aws.GetPublicKey()
+	fakeSshSetupDelegate := &FakeSshSetupDelegate{}
+
+	err := aws.SetupSsh(fakeSshSetupDelegate, "vcap")
 	assert.NoError(t, err)
-	assert.Equal(t, key, expectedKey)
+
+	assert.Equal(t, fakeSshSetupDelegate.SetupSshPublicKey, expectedKey)
+	assert.Equal(t, fakeSshSetupDelegate.SetupSshUsername, "vcap")
 }
 
 func TestAwsGetSettingsWhenADnsIsNotProvided(t *testing.T) {
@@ -86,6 +90,19 @@ func TestAwsSetupNetworking(t *testing.T) {
 	aws.SetupNetworking(fakeDelegate, networks)
 
 	assert.Equal(t, fakeDelegate.SetupDhcpNetworks, networks)
+}
+
+// Fake Ssh Setup Delegate
+
+type FakeSshSetupDelegate struct {
+	SetupSshPublicKey string
+	SetupSshUsername  string
+}
+
+func (d *FakeSshSetupDelegate) SetupSsh(publicKey, username string) (err error) {
+	d.SetupSshPublicKey = publicKey
+	d.SetupSshUsername = username
+	return
 }
 
 // Fake Networking Delegate

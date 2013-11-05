@@ -1,19 +1,21 @@
 package testhelpers
 
 import (
-	infrastructure "bosh/infrastructure"
+	"bosh/infrastructure"
 	"bosh/settings"
 )
 
 type FakeInfrastructure struct {
-	PublicKey               string
 	Settings                settings.Settings
+	SetupSshDelegate        infrastructure.SshSetupDelegate
+	SetupSshUsername        string
 	SetupNetworkingDelegate infrastructure.NetworkingDelegate
 	SetupNetworkingNetworks settings.Networks
 }
 
-func (i *FakeInfrastructure) GetPublicKey() (publicKey string, err error) {
-	publicKey = i.PublicKey
+func (i *FakeInfrastructure) SetupSsh(delegate infrastructure.SshSetupDelegate, username string) (err error) {
+	i.SetupSshDelegate = delegate
+	i.SetupSshUsername = username
 	return
 }
 

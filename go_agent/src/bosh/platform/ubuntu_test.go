@@ -4,8 +4,38 @@ import (
 	"bosh/settings"
 	testsys "bosh/system/testhelpers"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"path/filepath"
 	"testing"
 )
+
+func TestSetupSsh(t *testing.T) {
+	fakeFs := &testsys.FakeFileSystem{}
+	fakeFs.HomeDirHomeDir = "/some/home/dir"
+
+	fakeCmdRunner := &testsys.FakeCmdRunner{}
+
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
+	ubuntu.SetupSsh("some public key", "vcap")
+
+	sshDirPath := "/some/home/dir/.ssh"
+	sshDirStat := fakeFs.GetFileTestStat(sshDirPath)
+
+	assert.Equal(t, fakeFs.HomeDirUsername, "vcap")
+
+	assert.NotNil(t, sshDirStat)
+	assert.Equal(t, sshDirStat.CreatedWith, "MkdirAll")
+	assert.Equal(t, sshDirStat.FileMode, os.FileMode(0700))
+	assert.Equal(t, sshDirStat.Username, "vcap")
+
+	authKeysStat := fakeFs.GetFileTestStat(filepath.Join(sshDirPath, "authorized_keys"))
+
+	assert.NotNil(t, authKeysStat)
+	assert.Equal(t, authKeysStat.CreatedWith, "WriteToFile")
+	assert.Equal(t, authKeysStat.FileMode, os.FileMode(0600))
+	assert.Equal(t, authKeysStat.Username, "vcap")
+	assert.Equal(t, authKeysStat.Content, "some public key")
+}
 
 func TestSetupDhcp(t *testing.T) {
 	networks := settings.Networks{

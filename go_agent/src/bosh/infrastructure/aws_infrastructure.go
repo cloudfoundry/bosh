@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"bosh/errors"
 	"bosh/settings"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,18 @@ func newAwsInfrastructure(metadataHost string, resolver dnsResolver) (infrastruc
 	}
 }
 
-func (inf awsInfrastructure) GetPublicKey() (publicKey string, err error) {
+func (inf awsInfrastructure) SetupSsh(delegate SshSetupDelegate, username string) (err error) {
+	publicKey, err := inf.getPublicKey()
+	if err != nil {
+		err = errors.WrapError(err, "Error getting public key")
+		return
+	}
+
+	err = delegate.SetupSsh(publicKey, username)
+	return
+}
+
+func (inf awsInfrastructure) getPublicKey() (publicKey string, err error) {
 	url := fmt.Sprintf("%s/latest/meta-data/public-keys/0/openssh-key", inf.metadataHost)
 
 	resp, err := http.Get(url)
