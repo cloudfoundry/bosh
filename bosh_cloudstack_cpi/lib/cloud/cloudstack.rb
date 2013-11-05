@@ -30,7 +30,6 @@ require "cloud/cloudstack/version"
 require "cloud/cloudstack/network_configurator"
 require "cloud/cloudstack/network"
 require "cloud/cloudstack/dynamic_network"
-require "cloud/cloudstack/manual_network"
 require "cloud/cloudstack/vip_network"
 
 module Bosh
