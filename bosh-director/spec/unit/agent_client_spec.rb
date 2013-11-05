@@ -71,6 +71,35 @@ module Bosh::Director
       end
     end
 
+    describe 'long-runnings messages' do
+      let(:vm) do
+        instance_double('Models::Vm', credentials: nil)
+      end
+
+      subject(:client) do
+        AgentClient.new('fake-agent_id')
+      end
+
+      before do
+        Models::Vm.stub(:find).with(agent_id: 'fake-agent_id').and_return(vm)
+        Config.stub(:nats_rpc)
+        Api::ResourceManager.stub(:new)
+      end
+
+      it 'explicitly defines methods for long running messages (to poll their tasks)' do
+        expect(client.methods).to include(
+                                       :apply,
+                                       :compile_package,
+                                       :drain,
+                                       :fetch_logs,
+                                       :migrate_disk,
+                                       :mount_disk,
+                                       :stop,
+                                       :unmount_disk,
+                                     )
+      end
+    end
+
     describe 'ping <=> pong' do
       let(:stemcell) do
         Models::Stemcell.make(:cid => 'stemcell-id')
