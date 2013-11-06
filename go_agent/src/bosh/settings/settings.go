@@ -2,8 +2,22 @@ package settings
 
 type Settings struct {
 	AgentId  string `json:"agent_id"`
+	Disks    Disks
 	Networks Networks
 	Mbus     string
+}
+
+type Disks struct {
+	System     string
+	Ephemeral  string
+	Persistent map[string]string
+}
+
+func (d Disks) PersistentDiskPath() (path string) {
+	for _, path = range d.Persistent {
+		return
+	}
+	return
 }
 
 type Networks map[string]NetworkSettings

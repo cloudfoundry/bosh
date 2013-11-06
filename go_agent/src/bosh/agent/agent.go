@@ -2,16 +2,22 @@ package agent
 
 import (
 	"bosh/mbus"
+	"bosh/platform"
+	"bosh/settings"
 	"time"
 )
 
 type agent struct {
+	settings          settings.Settings
 	mbusHandler       mbus.Handler
+	platform          platform.Platform
 	heartbeatInterval time.Duration
 }
 
-func New(mbusHandler mbus.Handler) (a agent) {
+func New(s settings.Settings, mbusHandler mbus.Handler, platform platform.Platform) (a agent) {
+	a.settings = s
 	a.mbusHandler = mbusHandler
+	a.platform = platform
 	a.heartbeatInterval = time.Minute
 	return
 }
@@ -43,7 +49,7 @@ func (a agent) generateHeartbeats(heartbeatChan chan mbus.Heartbeat) {
 	for {
 		select {
 		case <-tickChan:
-			heartbeatChan <- mbus.Heartbeat{}
+			heartbeatChan <- getHeartbeat(a.settings, a.platform)
 		}
 	}
 }

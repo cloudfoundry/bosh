@@ -9,11 +9,9 @@ import (
 	"testing"
 )
 
-func TestSetupSsh(t *testing.T) {
-	fakeFs := &testsys.FakeFileSystem{}
+func TestUbuntuSetupSsh(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
 	fakeFs.HomeDirHomeDir = "/some/home/dir"
-
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
 
 	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
 	ubuntu.SetupSsh("some public key", "vcap")
@@ -37,26 +35,24 @@ func TestSetupSsh(t *testing.T) {
 	assert.Equal(t, authKeysStat.Content, "some public key")
 }
 
-func TestSetupDhcp(t *testing.T) {
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
-	testSetupDhcp(t, fakeFs, fakeCmdRunner)
+func TestUbuntuSetupDhcp(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
+	testUbuntuSetupDhcp(t, fakeFs, fakeCmdRunner)
 
 	assert.Equal(t, len(fakeCmdRunner.RunCommands), 2)
 	assert.Equal(t, fakeCmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
 	assert.Equal(t, fakeCmdRunner.RunCommands[1], []string{"/etc/init.d/networking", "restart"})
 }
 
-func TestSetupDhcpWithPreExistingConfiguration(t *testing.T) {
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
+func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
 	fakeFs.WriteToFile("/etc/dhcp3/dhclient.conf", EXPECTED_DHCP_CONFIG)
-	testSetupDhcp(t, fakeFs, fakeCmdRunner)
+	testUbuntuSetupDhcp(t, fakeFs, fakeCmdRunner)
 
 	assert.Equal(t, len(fakeCmdRunner.RunCommands), 0)
 }
 
-func testSetupDhcp(t *testing.T, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner) {
+func testUbuntuSetupDhcp(t *testing.T, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner) {
 	networks := settings.Networks{
 		"bosh": settings.NetworkSettings{
 			Default: []string{"dns"},
@@ -91,3 +87,62 @@ prepend domain-name-servers zz.zz.zz.zz;
 prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
+
+func TestUbuntuGetCpuLoad(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
+
+	load, err := ubuntu.GetCpuLoad()
+	assert.NoError(t, err)
+	assert.True(t, load.One > 0)
+	assert.True(t, load.Five > 0)
+	assert.True(t, load.Fifteen > 0)
+}
+
+func TestUbuntuGetCpuStats(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
+
+	stats, err := ubuntu.GetCpuStats()
+	assert.NoError(t, err)
+	assert.True(t, stats.User > 0)
+	assert.True(t, stats.Sys > 0)
+	assert.True(t, stats.Total > 0)
+}
+
+func TestUbuntuGetMemStats(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
+
+	stats, err := ubuntu.GetMemStats()
+	assert.NoError(t, err)
+	assert.True(t, stats.Total > 0)
+	assert.True(t, stats.Used > 0)
+}
+
+func TestUbuntuGetSwapStats(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
+
+	stats, err := ubuntu.GetSwapStats()
+	assert.NoError(t, err)
+	assert.True(t, stats.Total > 0)
+}
+
+func TestUbuntuGetDiskStats(t *testing.T) {
+	fakeFs, fakeCmdRunner := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner)
+
+	stats, err := ubuntu.GetDiskStats("/")
+	assert.NoError(t, err)
+	assert.True(t, stats.Total > 0)
+	assert.True(t, stats.Used > 0)
+	assert.True(t, stats.InodeTotal > 0)
+	assert.True(t, stats.InodeUsed > 0)
+}
+
+func getUbuntuDependencies() (fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner) {
+	fs = &testsys.FakeFileSystem{}
+	cmdRunner = &testsys.FakeCmdRunner{}
+	return
+}

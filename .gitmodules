@@ -7,3 +7,6 @@
 [submodule "go_agent/src/github.com/cloudfoundry/yagnats"]
 	path = go_agent/src/github.com/cloudfoundry/yagnats
 	url = https://github.com/cloudfoundry/yagnats.git
+[submodule "go_agent/src/github.com/cloudfoundry/gosigar"]
+	path = go_agent/src/github.com/cloudfoundry/gosigar
+	url = https://github.com/cloudfoundry/gosigar.git

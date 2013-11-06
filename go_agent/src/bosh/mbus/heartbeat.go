@@ -6,33 +6,34 @@ const (
 	JobStateRunning JobState = "running"
 )
 
-type MemStat struct {
+type MemStats struct {
 	Percent string `json:"percent,omitempty"`
 	Kb      string `json:"kb,omitempty"`
 }
 
-type DiskStat struct {
+type DiskStats struct {
 	Percent      string `json:"percent,omitempty"`
 	InodePercent string `json:"inode_percent,omitempty"`
 }
 
-type CpuPercent struct {
+type CpuStats struct {
 	User string `json:"user,omitempty"`
 	Sys  string `json:"sys,omitempty"`
 	Wait string `json:"wait,omitempty"`
 }
-type DiskStats struct {
-	System     DiskStat `json:"system"`
-	Ephemeral  DiskStat `json:"ephemeral"`
-	Persistent DiskStat `json:"persistent"`
+
+type Disks struct {
+	System     DiskStats `json:"system"`
+	Ephemeral  DiskStats `json:"ephemeral"`
+	Persistent DiskStats `json:"persistent"`
 }
 
 type Vitals struct {
-	Load []string   `json:"load,omitempty"`
-	Cpu  CpuPercent `json:"cpu"`
-	Mem  MemStat    `json:"mem"`
-	Swap MemStat    `json:"swap"`
-	Disk DiskStats  `json:"disk"`
+	CpuLoad  []string `json:"load,omitempty"`
+	Cpu      CpuStats `json:"cpu"`
+	UsedMem  MemStats `json:"mem"`
+	UsedSwap MemStats `json:"swap"`
+	Disks    Disks    `json:"disk"`
 }
 
 type Heartbeat struct {

@@ -136,6 +136,13 @@ func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip str
 func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expectedSettings settings.Settings) {
 	settingsJson := `{
 		"agent_id": "my-agent-id",
+		"disks": {
+			"ephemeral": "/dev/sdb",
+			"persistent": {
+				"vol-xxxxxx": "/dev/sdf"
+			},
+			"system": "/dev/sda1"
+		},
 		"networks": {
 			"netA": {
 				"default": ["dns", "gateway"],
@@ -160,6 +167,11 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 
 	expectedSettings = settings.Settings{
 		AgentId: "my-agent-id",
+		Disks: settings.Disks{
+			Ephemeral:  "/dev/sdb",
+			Persistent: map[string]string{"vol-xxxxxx": "/dev/sdf"},
+			System:     "/dev/sda1",
+		},
 		Networks: settings.Networks{
 			"netA": settings.NetworkSettings{
 				Default: []string{"dns", "gateway"},

@@ -39,12 +39,12 @@ func (app App) Run(args []string) (err error) {
 	}
 
 	platformProvider := platform.NewProvider(fs, runner)
-	platform, err := platformProvider.Get(opts.PlatformName)
+	p, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return
 	}
 
-	b := bootstrap.New(fs, infrastructure, platform)
+	b := bootstrap.New(fs, infrastructure, p)
 	s, err := b.Run()
 	if err != nil {
 		return
@@ -56,7 +56,7 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
-	a := agent.New(mbusHandler)
+	a := agent.New(s, mbusHandler, p)
 	err = a.Run()
 	return
 }
