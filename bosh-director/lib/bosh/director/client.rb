@@ -2,6 +2,7 @@
 
 module Bosh::Director
   class Client
+    DEFAULT_POLL_INTERVAL = 1.0
 
     attr_accessor :id
 
@@ -25,17 +26,40 @@ module Bosh::Director
       send_message(method_name, *args)
     end
 
-    def send_message(message_name, *args)
-      retries = @retry_methods[message_name] || 0
-      begin
-        handle_method(message_name, args)
-      rescue RpcTimeout
-        if retries > 0
-          retries -= 1
-          retry
-        end
-        raise
-      end
+    def prepare(*args)
+      send_long_running_message(:prepare, *args)
+    end
+
+    def apply(*args)
+      send_long_running_message(:apply, *args)
+    end
+
+    def compile_package(*args)
+      send_long_running_message(:compile_package, *args)
+    end
+
+    def drain(*args)
+      send_long_running_message(:drain, *args)
+    end
+
+    def fetch_logs(*args)
+      send_long_running_message(:fetch_logs, *args)
+    end
+
+    def migrate_disk(*args)
+      send_long_running_message(:migrate_disk, *args)
+    end
+
+    def mount_disk(*args)
+      send_long_running_message(:mount_disk, *args)
+    end
+
+    def unmount_disk(*args)
+      send_long_running_message(:unmount_disk, *args)
+    end
+
+    def stop(*args)
+      send_long_running_message(:stop, *args)
     end
 
     def wait_until_ready(deadline = 600)
@@ -156,5 +180,26 @@ module Bosh::Director
       @resource_manager.delete_resource(blob_id)
     end
 
+    def send_message(message_name, *args)
+      retries = @retry_methods[message_name] || 0
+      begin
+        handle_method(message_name, args)
+      rescue RpcTimeout
+        if retries > 0
+          retries -= 1
+          retry
+        end
+        raise
+      end
+    end
+
+    def send_long_running_message(method_name, *args)
+      task = AgentMessageConverter.convert_old_message_to_new(send_message(method_name, *args))
+      while task['state'] == 'running'
+        sleep(DEFAULT_POLL_INTERVAL)
+        task = AgentMessageConverter.convert_old_message_to_new(get_task(task['agent_task_id']))
+      end
+      task['value']
+    end
   end
 end
