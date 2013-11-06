@@ -202,10 +202,10 @@ module Bosh::CloudStackCloud
           :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(server_name, network_spec))),
         }
 
-        availability_zone = select_availability_zone(disk_locality, resource_pool["availability_zone"] || @default_zone)
+        availability_zone = select_availability_zone(disk_locality, resource_pool["availability_zone"] || @default_zone.name)
         if availability_zone
           selected_zone = compute.zones.find { |zone| zone.name == availability_zone }
-          cloud_error("Availability zone `#{selected_zone.name}' not found") if selected_zone.nil?
+          cloud_error("Availability zone `#{availability_zone}' not found") if selected_zone.nil?
           @logger.debug("Using availability zone: `#{selected_zone.name}' (#{selected_zone.id})")
           server_params[:zone_id] = selected_zone.id
         end
