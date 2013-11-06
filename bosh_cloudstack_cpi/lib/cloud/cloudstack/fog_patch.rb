@@ -50,7 +50,7 @@ module Fog
       class Snapshots < Fog::Collection
         # eliminate exceptions
         def get(snapshot_id)
-          snapshots = service.list_snapshots('id' => snapshot_id)["listsnapshotsresponse"]["snapshot"].first
+          snapshots = service.list_snapshots('id' => snapshot_id)["listsnapshotsresponse"]["snapshot"]
           unless snapshots.nil? || snapshots.empty?
               new(snapshots.first)
           end
