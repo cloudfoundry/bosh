@@ -4,8 +4,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Client do
-
     before do
+      Api::ResourceManager.stub(:new)
       @nats_rpc = instance_double('Bosh::Director::NatsRpc')
       Bosh::Director::Config.stub(:nats_rpc).and_return(@nats_rpc)
     end
