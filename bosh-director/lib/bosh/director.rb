@@ -55,7 +55,6 @@ require 'bosh/director/event_log'
 require 'bosh/director/task_result_file'
 require 'bosh/director/blob_util'
 
-require 'bosh/director/client'
 require 'bosh/director/agent_client'
 require 'cloud'
 require 'bosh/director/compile_task'
