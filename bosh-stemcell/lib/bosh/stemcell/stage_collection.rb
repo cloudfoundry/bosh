@@ -169,6 +169,7 @@ module Bosh::Stemcell
     def warden_stages
       [
         :system_parameters,
+        :base_warden,
         # Finalisation
         :bosh_clean,
         :bosh_harden,
