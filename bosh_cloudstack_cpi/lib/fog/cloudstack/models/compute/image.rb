@@ -79,7 +79,7 @@ module Fog
               'zoneid' => zone_id,
               'isfeatured' => is_featured
           }
-          data = connection.register_template(options)
+          data = service.register_template(options)
           merge_attributes(data['registertemplateresponse']['template'][0])
         end
       end # Server

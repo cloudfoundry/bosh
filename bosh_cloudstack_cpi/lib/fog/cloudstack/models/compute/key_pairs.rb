@@ -10,7 +10,7 @@ module Fog
         model Fog::Compute::Cloudstack::KeyPair
 
         def all
-          data = connection.list_ssh_key_pairs["listsshkeypairsresponse"]["sshkeypair"] || []
+          data = service.list_ssh_key_pairs["listsshkeypairsresponse"]["sshkeypair"] || []
           load(data)
         end
 

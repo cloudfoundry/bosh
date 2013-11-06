@@ -24,8 +24,8 @@ module Fog
           options.merge!('icmptype' => icmp_type) if icmp_type
           options.merge!('icmpcode' => icmp_code) if icmp_code
 
-          data = connection.create_firewall_rule(options)
-          connection.jobs.new(data["createfirewallruleresponse"])
+          data = service.create_firewall_rule(options)
+          service.jobs.new(data["createfirewallruleresponse"])
         end
 
 

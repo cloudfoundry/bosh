@@ -16,13 +16,13 @@ module Fog
               'virtualmachineid'     => self.virtual_machine_id,
               'networkid' => self.network_id,
           }
-          data = connection.enable_static_nat(options)
+          data = service.enable_static_nat(options)
         end
 
         def disable
           requires :ip_address_id
-          data = connection.disable_static_nat(options={'ipaddressid' => self.ip_address_id})
-          connection.jobs.new(data["disablestaticnatresponse"])
+          data = service.disable_static_nat(options={'ipaddressid' => self.ip_address_id})
+          service.jobs.new(data["disablestaticnatresponse"])
         end
 
       end # Nat

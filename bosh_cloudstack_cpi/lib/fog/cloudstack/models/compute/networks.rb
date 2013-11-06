@@ -10,7 +10,7 @@ module Fog
         model Fog::Compute::Cloudstack::Network
 
         def all
-          data = connection.list_networks["listnetworksresponse"]["network"] || []
+          data = service.list_networks["listnetworksresponse"]["network"] || []
           load(data)
         end
 

@@ -31,19 +31,19 @@ module Fog
               'vlan'           => vlan
           }
 
-          data = connection.create_vlan_ip_range(options)
+          data = service.create_vlan_ip_range(options)
           merge_attributes(data['createvlaniprangeresponse']['vlan'])
         end
 
         def delete_vlan_ip_range
           requires :id
-          data = connection.delete_vlan_ip_range(options={'id' => self.id})
+          data = service.delete_vlan_ip_range(options={'id' => self.id})
         end
 
         def list_vlan_ip_ranges
           requires :zone_id
 
-          data = connection.list_vlan_ip_ranges(options={'zoneid' => self.zone_id})
+          data = service.list_vlan_ip_ranges(options={'zoneid' => self.zone_id})
           merge_attributes(data['listvlaniprangesresponse'])
         end
 

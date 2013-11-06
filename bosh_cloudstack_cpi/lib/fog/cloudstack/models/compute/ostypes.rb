@@ -8,7 +8,7 @@ module Fog
 
         model Fog::Compute::Cloudstack::Ostype
         def all(filters={})
-          data = connection.list_os_types(filters)["listostypesresponse"]["ostype"]
+          data = service.list_os_types(filters)["listostypesresponse"]["ostype"]
           load(data)
         end
       end

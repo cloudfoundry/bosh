@@ -12,14 +12,14 @@ module Fog
         def destroy
           requires :name
 
-          connection.delete_ssh_key_pair(name)
+          service.delete_ssh_key_pair(name)
           true
         end
 
         def save
           requires :name
 
-          data = connection.create_ssh_key_pair(name)
+          data = service.create_ssh_key_pair(name)
 
           merge_attributes(data['createsshkeypairresponse']['keypair'])
         end
