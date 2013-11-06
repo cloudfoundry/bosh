@@ -1,9 +1,9 @@
 package agent
 
 import (
-	"bosh/mbus"
-	"bosh/platform"
-	"bosh/settings"
+	boshmbus "bosh/mbus"
+	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 	"fmt"
 )
 
@@ -13,19 +13,19 @@ const (
 	PERSISTENT_DISK_PATH = "/var/vcap/store"
 )
 
-func getHeartbeat(s settings.Settings, p platform.Platform) (hb mbus.Heartbeat) {
-	hb = updateWithCpuLoad(p, hb)
-	hb = updateWithCpuStats(p, hb)
-	hb = updateWithMemStats(p, hb)
-	hb = updateWithSwapStats(p, hb)
-	hb = updateWithDiskStats(s, p, hb)
+func getHeartbeat(settings boshsettings.Settings, platform boshplatform.Platform) (hb boshmbus.Heartbeat) {
+	hb = updateWithCpuLoad(platform, hb)
+	hb = updateWithCpuStats(platform, hb)
+	hb = updateWithMemStats(platform, hb)
+	hb = updateWithSwapStats(platform, hb)
+	hb = updateWithDiskStats(settings, platform, hb)
 	return
 }
 
-func updateWithCpuLoad(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.Heartbeat) {
+func updateWithCpuLoad(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 
-	load, err := p.GetCpuLoad()
+	load, err := platform.GetCpuLoad()
 	if err != nil {
 		return
 	}
@@ -39,9 +39,9 @@ func updateWithCpuLoad(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.H
 	return
 }
 
-func updateWithCpuStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.Heartbeat) {
+func updateWithCpuStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
-	cpuStats, err := p.GetCpuStats()
+	cpuStats, err := platform.GetCpuStats()
 	if err != nil {
 		return
 	}
@@ -50,7 +50,7 @@ func updateWithCpuStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.
 	sys := float64(cpuStats.Sys) / float64(cpuStats.Total) * 100
 	wait := float64(cpuStats.Wait) / float64(cpuStats.Total) * 100
 
-	updatedHb.Vitals.Cpu = mbus.CpuStats{
+	updatedHb.Vitals.Cpu = boshmbus.CpuStats{
 		User: fmt.Sprintf("%.1f", user),
 		Sys:  fmt.Sprintf("%.1f", sys),
 		Wait: fmt.Sprintf("%.1f", wait),
@@ -58,9 +58,9 @@ func updateWithCpuStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.
 	return
 }
 
-func updateWithMemStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.Heartbeat) {
+func updateWithMemStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
-	memStats, err := p.GetMemStats()
+	memStats, err := platform.GetMemStats()
 	if err != nil {
 		return
 	}
@@ -68,16 +68,16 @@ func updateWithMemStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.
 	percent := float64(memStats.Used) / float64(memStats.Total) * 100
 	kb := memStats.Used / 1024
 
-	updatedHb.Vitals.UsedMem = mbus.MemStats{
+	updatedHb.Vitals.UsedMem = boshmbus.MemStats{
 		Percent: fmt.Sprintf("%.0f", percent),
 		Kb:      fmt.Sprintf("%d", kb),
 	}
 	return
 }
 
-func updateWithSwapStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.Heartbeat) {
+func updateWithSwapStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
-	swapStats, err := p.GetSwapStats()
+	swapStats, err := platform.GetSwapStats()
 	if err != nil {
 		return
 	}
@@ -85,31 +85,31 @@ func updateWithSwapStats(p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus
 	percent := float64(swapStats.Used) / float64(swapStats.Total) * 100
 	kb := swapStats.Used / 1024
 
-	updatedHb.Vitals.UsedSwap = mbus.MemStats{
+	updatedHb.Vitals.UsedSwap = boshmbus.MemStats{
 		Percent: fmt.Sprintf("%.0f", percent),
 		Kb:      fmt.Sprintf("%d", kb),
 	}
 	return
 }
 
-func updateWithDiskStats(s settings.Settings, p platform.Platform, hb mbus.Heartbeat) (updatedHb mbus.Heartbeat) {
+func updateWithDiskStats(settings boshsettings.Settings, platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 
-	updatedHb.Vitals.Disks.System = getDiskStats(p, SYSTEM_DISK_PATH)
+	updatedHb.Vitals.Disks.System = getDiskStats(platform, SYSTEM_DISK_PATH)
 
-	if s.Disks.Ephemeral != "" {
-		updatedHb.Vitals.Disks.Ephemeral = getDiskStats(p, EPHEMERAL_DISK_PATH)
+	if settings.Disks.Ephemeral != "" {
+		updatedHb.Vitals.Disks.Ephemeral = getDiskStats(platform, EPHEMERAL_DISK_PATH)
 	}
 
-	if len(s.Disks.Persistent) == 1 {
-		updatedHb.Vitals.Disks.Persistent = getDiskStats(p, PERSISTENT_DISK_PATH)
+	if len(settings.Disks.Persistent) == 1 {
+		updatedHb.Vitals.Disks.Persistent = getDiskStats(platform, PERSISTENT_DISK_PATH)
 	}
 
 	return
 }
 
-func getDiskStats(p platform.Platform, devicePath string) (stats mbus.DiskStats) {
-	diskStats, err := p.GetDiskStats(devicePath)
+func getDiskStats(platform boshplatform.Platform, devicePath string) (stats boshmbus.DiskStats) {
+	diskStats, err := platform.GetDiskStats(devicePath)
 	if err != nil {
 		return
 	}

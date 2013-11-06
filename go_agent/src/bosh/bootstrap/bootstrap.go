@@ -1,11 +1,11 @@
 package bootstrap
 
 import (
-	"bosh/errors"
-	"bosh/infrastructure"
-	"bosh/platform"
-	"bosh/settings"
-	"bosh/system"
+	bosherr "bosh/errors"
+	boshinf "bosh/infrastructure"
+	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 	"encoding/json"
 	"path/filepath"
 )
@@ -16,30 +16,30 @@ const (
 )
 
 type bootstrap struct {
-	fs             system.FileSystem
-	infrastructure infrastructure.Infrastructure
-	platform       platform.Platform
+	fs             boshsys.FileSystem
+	infrastructure boshinf.Infrastructure
+	platform       boshplatform.Platform
 }
 
-func New(fs system.FileSystem, inf infrastructure.Infrastructure, p platform.Platform) (b bootstrap) {
+func New(fs boshsys.FileSystem, inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstrap) {
 	b.fs = fs
 	b.infrastructure = inf
-	b.platform = p
+	b.platform = platform
 	return
 }
 
-func (boot bootstrap) Run() (s settings.Settings, err error) {
+func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 	err = boot.infrastructure.SetupSsh(boot.platform, VCAP_USERNAME)
 	if err != nil {
 		return
 	}
 
-	s, err = boot.fetchSettings()
+	settings, err = boot.fetchSettings()
 	if err != nil {
 		return
 	}
 
-	err = boot.infrastructure.SetupNetworking(boot.platform, s.Networks)
+	err = boot.infrastructure.SetupNetworking(boot.platform, settings.Networks)
 	if err != nil {
 		return
 	}
@@ -47,16 +47,16 @@ func (boot bootstrap) Run() (s settings.Settings, err error) {
 	return
 }
 
-func (boot bootstrap) fetchSettings() (s settings.Settings, err error) {
-	s, err = boot.infrastructure.GetSettings()
+func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error) {
+	settings, err = boot.infrastructure.GetSettings()
 	if err != nil {
-		err = errors.WrapError(err, "Error fetching settings")
+		err = bosherr.WrapError(err, "Error fetching settings")
 		return
 	}
 
-	settingsJson, err := json.Marshal(s)
+	settingsJson, err := json.Marshal(settings)
 	if err != nil {
-		err = errors.WrapError(err, "Error marshalling settings json")
+		err = bosherr.WrapError(err, "Error marshalling settings json")
 		return
 	}
 

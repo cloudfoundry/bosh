@@ -1,12 +1,12 @@
 package app
 
 import (
-	"bosh/agent"
-	"bosh/bootstrap"
-	"bosh/infrastructure"
-	"bosh/mbus"
-	"bosh/platform"
-	"bosh/system"
+	boshagent "bosh/agent"
+	boshboot "bosh/bootstrap"
+	boshinf "bosh/infrastructure"
+	boshmbus "bosh/mbus"
+	boshplatform "bosh/platform"
+	boshsys "bosh/system"
 	"flag"
 	"io/ioutil"
 )
@@ -24,40 +24,40 @@ func New() (app App) {
 }
 
 func (app App) Run(args []string) (err error) {
-	fs := system.OsFileSystem{}
-	runner := system.ExecCmdRunner{}
+	fs := boshsys.OsFileSystem{}
+	runner := boshsys.ExecCmdRunner{}
 
 	opts, err := parseOptions(args)
 	if err != nil {
 		return
 	}
 
-	infProvider := infrastructure.NewProvider()
+	infProvider := boshinf.NewProvider()
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
 		return
 	}
 
-	platformProvider := platform.NewProvider(fs, runner)
-	p, err := platformProvider.Get(opts.PlatformName)
+	platformProvider := boshplatform.NewProvider(fs, runner)
+	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return
 	}
 
-	b := bootstrap.New(fs, infrastructure, p)
-	s, err := b.Run()
+	boot := boshboot.New(fs, infrastructure, platform)
+	settings, err := boot.Run()
 	if err != nil {
 		return
 	}
 
-	mbusHandlerProvider := mbus.NewHandlerProvider(s)
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settings)
 	mbusHandler, err := mbusHandlerProvider.Get()
 	if err != nil {
 		return
 	}
 
-	a := agent.New(s, mbusHandler, p)
-	err = a.Run()
+	agent := boshagent.New(settings, mbusHandler, platform)
+	err = agent.Run()
 	return
 }
 

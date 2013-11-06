@@ -1,7 +1,7 @@
 package mbus
 
 import (
-	"bosh/settings"
+	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,12 +14,12 @@ import (
 
 type natsHandler struct {
 	client   yagnats.NATSClient
-	settings settings.Settings
+	settings boshsettings.Settings
 }
 
-func newNatsHandler(client yagnats.NATSClient, s settings.Settings) (handler natsHandler) {
+func newNatsHandler(client yagnats.NATSClient, settings boshsettings.Settings) (handler natsHandler) {
 	handler.client = client
-	handler.settings = s
+	handler.settings = settings
 	return
 }
 

@@ -1,9 +1,9 @@
 package platform
 
 import (
-	"bosh/errors"
-	"bosh/settings"
-	"bosh/system"
+	bosherr "bosh/errors"
+	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 	"bytes"
 	sigar "github.com/cloudfoundry/gosigar"
 	"os"
@@ -12,20 +12,20 @@ import (
 )
 
 type ubuntu struct {
-	fs        system.FileSystem
-	cmdRunner system.CmdRunner
+	fs        boshsys.FileSystem
+	cmdRunner boshsys.CmdRunner
 }
 
-func newUbuntuPlatform(fs system.FileSystem, cmdRunner system.CmdRunner) (p ubuntu) {
-	p.fs = fs
-	p.cmdRunner = cmdRunner
+func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner) (platform ubuntu) {
+	platform.fs = fs
+	platform.cmdRunner = cmdRunner
 	return
 }
 
 func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {
-		return errors.WrapError(err, "Error finding home dir for user")
+		return bosherr.WrapError(err, "Error finding home dir for user")
 	}
 
 	sshPath := filepath.Join(homeDir, ".ssh")
@@ -35,7 +35,7 @@ func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	authKeysPath := filepath.Join(sshPath, "authorized_keys")
 	_, err = p.fs.WriteToFile(authKeysPath, publicKey)
 	if err != nil {
-		return errors.WrapError(err, "Error creating authorized_keys file")
+		return bosherr.WrapError(err, "Error creating authorized_keys file")
 	}
 
 	p.fs.Chown(authKeysPath, username)
@@ -44,7 +44,7 @@ func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
-func (p ubuntu) SetupDhcp(networks settings.Networks) (err error) {
+func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {

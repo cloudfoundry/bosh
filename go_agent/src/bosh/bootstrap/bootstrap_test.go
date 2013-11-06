@@ -3,7 +3,7 @@ package bootstrap
 import (
 	testinf "bosh/infrastructure/testhelpers"
 	testplatform "bosh/platform/testhelpers"
-	"bosh/settings"
+	boshsettings "bosh/settings"
 	testsys "bosh/system/testhelpers"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ func TestRunSetsUpSsh(t *testing.T) {
 }
 
 func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
-	expectedSettings := settings.Settings{
+	expectedSettings := boshsettings.Settings{
 		AgentId: "123-456-789",
 	}
 
@@ -40,25 +40,25 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 }
 
 func TestRunSetsUpNetworking(t *testing.T) {
-	s := settings.Settings{
-		Networks: settings.Networks{
-			"bosh": settings.NetworkSettings{},
+	settings := boshsettings.Settings{
+		Networks: boshsettings.Networks{
+			"bosh": boshsettings.NetworkSettings{},
 		},
 	}
 
 	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	fakeInfrastructure.Settings = s
+	fakeInfrastructure.Settings = settings
 
 	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, fakeInfrastructure.SetupNetworkingDelegate, fakePlatform)
-	assert.Equal(t, fakeInfrastructure.SetupNetworkingNetworks, s.Networks)
+	assert.Equal(t, fakeInfrastructure.SetupNetworkingNetworks, settings.Networks)
 }
 
-func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, p *testplatform.FakePlatform) {
+func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {
 	fs = &testsys.FakeFileSystem{}
 	inf = &testinf.FakeInfrastructure{}
-	p = &testplatform.FakePlatform{}
+	platform = &testplatform.FakePlatform{}
 	return
 }

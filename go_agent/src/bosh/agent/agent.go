@@ -1,21 +1,21 @@
 package agent
 
 import (
-	"bosh/mbus"
-	"bosh/platform"
-	"bosh/settings"
+	boshmbus "bosh/mbus"
+	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 	"time"
 )
 
 type agent struct {
-	settings          settings.Settings
-	mbusHandler       mbus.Handler
-	platform          platform.Platform
+	settings          boshsettings.Settings
+	mbusHandler       boshmbus.Handler
+	platform          boshplatform.Platform
 	heartbeatInterval time.Duration
 }
 
-func New(s settings.Settings, mbusHandler mbus.Handler, platform platform.Platform) (a agent) {
-	a.settings = s
+func New(settings boshsettings.Settings, mbusHandler boshmbus.Handler, platform boshplatform.Platform) (a agent) {
+	a.settings = settings
 	a.mbusHandler = mbusHandler
 	a.platform = platform
 	a.heartbeatInterval = time.Minute
@@ -24,7 +24,7 @@ func New(s settings.Settings, mbusHandler mbus.Handler, platform platform.Platfo
 
 func (a agent) Run() (err error) {
 	errChan := make(chan error, 1)
-	heartbeatChan := make(chan mbus.Heartbeat, 1)
+	heartbeatChan := make(chan boshmbus.Heartbeat, 1)
 
 	go a.runMbusHandler(errChan)
 	go a.generateHeartbeats(heartbeatChan)
@@ -37,14 +37,14 @@ func (a agent) Run() (err error) {
 }
 
 func (a agent) runMbusHandler(errChan chan error) {
-	handlerFunc := func(req mbus.Request) (resp mbus.Response) {
+	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
 		resp.Value = "pong"
 		return
 	}
 	errChan <- a.mbusHandler.Run(handlerFunc)
 }
 
-func (a agent) generateHeartbeats(heartbeatChan chan mbus.Heartbeat) {
+func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {
 	tickChan := time.Tick(a.heartbeatInterval)
 	for {
 		select {
@@ -54,6 +54,6 @@ func (a agent) generateHeartbeats(heartbeatChan chan mbus.Heartbeat) {
 	}
 }
 
-func (a agent) sendHeartbeats(heartbeatChan chan mbus.Heartbeat, errChan chan error) {
+func (a agent) sendHeartbeats(heartbeatChan chan boshmbus.Heartbeat, errChan chan error) {
 	errChan <- a.mbusHandler.SendPeriodicHeartbeat(heartbeatChan)
 }

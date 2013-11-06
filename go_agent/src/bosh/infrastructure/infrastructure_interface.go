@@ -1,9 +1,9 @@
 package infrastructure
 
-import "bosh/settings"
+import boshsettings "bosh/settings"
 
 type Infrastructure interface {
 	SetupSsh(delegate SshSetupDelegate, username string) (err error)
-	GetSettings() (settings settings.Settings, err error)
-	SetupNetworking(delegate NetworkingDelegate, networks settings.Networks) (err error)
+	GetSettings() (settings boshsettings.Settings, err error)
+	SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error)
 }

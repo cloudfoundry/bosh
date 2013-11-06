@@ -1,6 +1,6 @@
 package platform
 
-import "bosh/settings"
+import boshsettings "bosh/settings"
 
 type dummyPlatform struct {
 }
@@ -13,7 +13,7 @@ func (p dummyPlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupDhcp(networks settings.Networks) (err error) {
+func (p dummyPlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 

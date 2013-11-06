@@ -1,8 +1,8 @@
 package infrastructure
 
 import (
-	"bosh/errors"
-	"bosh/settings"
+	bosherr "bosh/errors"
+	boshsettings "bosh/settings"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -26,7 +26,7 @@ func newAwsInfrastructure(metadataHost string, resolver dnsResolver) (infrastruc
 func (inf awsInfrastructure) SetupSsh(delegate SshSetupDelegate, username string) (err error) {
 	publicKey, err := inf.getPublicKey()
 	if err != nil {
-		err = errors.WrapError(err, "Error getting public key")
+		err = bosherr.WrapError(err, "Error getting public key")
 		return
 	}
 
@@ -52,7 +52,7 @@ func (inf awsInfrastructure) getPublicKey() (publicKey string, err error) {
 	return
 }
 
-func (inf awsInfrastructure) GetSettings() (s settings.Settings, err error) {
+func (inf awsInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
 	instanceId, err := inf.getInstanceId()
 	if err != nil {
 		return
@@ -67,7 +67,7 @@ func (inf awsInfrastructure) GetSettings() (s settings.Settings, err error) {
 	return inf.getSettingsAtUrl(settingsUrl)
 }
 
-func (inf awsInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks settings.Networks) (err error) {
+func (inf awsInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
 	return delegate.SetupDhcp(networks)
 }
 
@@ -151,7 +151,7 @@ type settingsWrapperType struct {
 	Settings string
 }
 
-func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (s settings.Settings, err error) {
+func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings boshsettings.Settings, err error) {
 	wrapperResponse, err := http.Get(settingsUrl)
 	if err != nil {
 		return
@@ -169,6 +169,6 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (s settings.Se
 		return
 	}
 
-	err = json.Unmarshal([]byte(wrapper.Settings), &s)
+	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
 	return
 }

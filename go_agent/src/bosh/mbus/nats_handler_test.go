@@ -1,7 +1,7 @@
 package mbus
 
 import (
-	"bosh/settings"
+	boshsettings "bosh/settings"
 	"github.com/cloudfoundry/yagnats"
 	"github.com/cloudfoundry/yagnats/fakeyagnats"
 	"github.com/stretchr/testify/assert"
@@ -109,12 +109,12 @@ func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
 }
 
 func createNatsClientAndHandler() (client *fakeyagnats.FakeYagnats, handler natsHandler) {
-	s := settings.Settings{
+	settings := boshsettings.Settings{
 		AgentId: "my-agent-id",
 		Mbus:    "nats://foo:bar@127.0.0.1:1234",
 	}
 
 	client = fakeyagnats.New()
-	handler = newNatsHandler(client, s)
+	handler = newNatsHandler(client, settings)
 	return
 }

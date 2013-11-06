@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"bosh/settings"
+	boshsettings "bosh/settings"
 	testsys "bosh/system/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -53,12 +53,12 @@ func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
 }
 
 func testUbuntuSetupDhcp(t *testing.T, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner) {
-	networks := settings.Networks{
-		"bosh": settings.NetworkSettings{
+	networks := boshsettings.Networks{
+		"bosh": boshsettings.NetworkSettings{
 			Default: []string{"dns"},
 			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 		},
-		"vip": settings.NetworkSettings{
+		"vip": boshsettings.NetworkSettings{
 			Default: []string{},
 			Dns:     []string{"aa.aa.aa.aa"},
 		},

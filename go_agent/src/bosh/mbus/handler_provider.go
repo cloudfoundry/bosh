@@ -1,7 +1,7 @@
 package mbus
 
 import (
-	"bosh/settings"
+	boshsettings "bosh/settings"
 	"errors"
 	"fmt"
 	"github.com/cloudfoundry/yagnats"
@@ -9,14 +9,14 @@ import (
 )
 
 type mbusHandlerProvider struct {
-	settings settings.Settings
+	settings boshsettings.Settings
 	handlers map[string]Handler
 }
 
-func NewHandlerProvider(s settings.Settings) (p mbusHandlerProvider) {
-	p.settings = s
+func NewHandlerProvider(settings boshsettings.Settings) (p mbusHandlerProvider) {
+	p.settings = settings
 	p.handlers = map[string]Handler{
-		"nats": newNatsHandler(yagnats.NewClient(), s),
+		"nats": newNatsHandler(yagnats.NewClient(), settings),
 	}
 	return
 }

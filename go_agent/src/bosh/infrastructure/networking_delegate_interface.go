@@ -1,7 +1,7 @@
 package infrastructure
 
-import "bosh/settings"
+import boshsettings "bosh/settings"
 
 type NetworkingDelegate interface {
-	SetupDhcp(networks settings.Networks) (err error)
+	SetupDhcp(networks boshsettings.Networks) (err error)
 }

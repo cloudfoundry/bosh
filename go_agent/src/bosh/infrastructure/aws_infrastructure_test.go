@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"bosh/settings"
+	boshsettings "bosh/settings"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -45,9 +45,9 @@ func TestAwsGetSettingsWhenADnsIsNotProvided(t *testing.T) {
 
 	aws := newAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{})
 
-	s, err := aws.GetSettings()
+	settings, err := aws.GetSettings()
 	assert.NoError(t, err)
-	assert.Equal(t, s, expectedSettings)
+	assert.Equal(t, settings, expectedSettings)
 }
 
 func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
@@ -74,9 +74,9 @@ func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 
 	aws := newAwsInfrastructure(metadataTs.URL, fakeDnsResolver)
 
-	s, err := aws.GetSettings()
+	settings, err := aws.GetSettings()
 	assert.NoError(t, err)
-	assert.Equal(t, s, expectedSettings)
+	assert.Equal(t, settings, expectedSettings)
 	assert.Equal(t, fakeDnsResolver.LookupHostHost, "the.registry.name")
 	assert.Equal(t, fakeDnsResolver.LookupHostDnsServers, []string{"8.8.8.8", "9.9.9.9"})
 }
@@ -85,7 +85,7 @@ func TestAwsSetupNetworking(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
 	aws := newAwsInfrastructure("", fakeDnsResolver)
 	fakeDelegate := &FakeNetworkingDelegate{}
-	networks := settings.Networks{"bosh": settings.NetworkSettings{}}
+	networks := boshsettings.Networks{"bosh": boshsettings.NetworkSettings{}}
 
 	aws.SetupNetworking(fakeDelegate, networks)
 
@@ -108,10 +108,10 @@ func (d *FakeSshSetupDelegate) SetupSsh(publicKey, username string) (err error) 
 // Fake Networking Delegate
 
 type FakeNetworkingDelegate struct {
-	SetupDhcpNetworks settings.Networks
+	SetupDhcpNetworks boshsettings.Networks
 }
 
-func (d *FakeNetworkingDelegate) SetupDhcp(networks settings.Networks) (err error) {
+func (d *FakeNetworkingDelegate) SetupDhcp(networks boshsettings.Networks) (err error) {
 	d.SetupDhcpNetworks = networks
 	return
 }
@@ -133,7 +133,7 @@ func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip str
 
 // Server methods
 
-func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expectedSettings settings.Settings) {
+func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expectedSettings boshsettings.Settings) {
 	settingsJson := `{
 		"agent_id": "my-agent-id",
 		"disks": {
@@ -165,19 +165,19 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 
 	settingsJson = fmt.Sprintf(`{"settings": "%s"}`, settingsJson)
 
-	expectedSettings = settings.Settings{
+	expectedSettings = boshsettings.Settings{
 		AgentId: "my-agent-id",
-		Disks: settings.Disks{
+		Disks: boshsettings.Disks{
 			Ephemeral:  "/dev/sdb",
 			Persistent: map[string]string{"vol-xxxxxx": "/dev/sdf"},
 			System:     "/dev/sda1",
 		},
-		Networks: settings.Networks{
-			"netA": settings.NetworkSettings{
+		Networks: boshsettings.Networks{
+			"netA": boshsettings.NetworkSettings{
 				Default: []string{"dns", "gateway"},
 				Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy"},
 			},
-			"netB": settings.NetworkSettings{
+			"netB": boshsettings.NetworkSettings{
 				Dns: []string{"zz.zz.zz.zz"},
 			},
 		},

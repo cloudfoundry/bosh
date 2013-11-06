@@ -1,47 +1,47 @@
 package testhelpers
 
 import (
-	"bosh/platform"
-	"bosh/settings"
+	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 )
 
 type FakePlatform struct {
-	CpuLoad   platform.CpuLoad
-	CpuStats  platform.CpuStats
-	MemStats  platform.MemStats
-	SwapStats platform.MemStats
-	DiskStats map[string]platform.DiskStats
+	CpuLoad   boshplatform.CpuLoad
+	CpuStats  boshplatform.CpuStats
+	MemStats  boshplatform.MemStats
+	SwapStats boshplatform.MemStats
+	DiskStats map[string]boshplatform.DiskStats
 }
 
 func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupDhcp(networks settings.Networks) (err error) {
+func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
-func (p *FakePlatform) GetCpuLoad() (load platform.CpuLoad, err error) {
+func (p *FakePlatform) GetCpuLoad() (load boshplatform.CpuLoad, err error) {
 	load = p.CpuLoad
 	return
 }
 
-func (p *FakePlatform) GetCpuStats() (stats platform.CpuStats, err error) {
+func (p *FakePlatform) GetCpuStats() (stats boshplatform.CpuStats, err error) {
 	stats = p.CpuStats
 	return
 }
 
-func (p *FakePlatform) GetMemStats() (stats platform.MemStats, err error) {
+func (p *FakePlatform) GetMemStats() (stats boshplatform.MemStats, err error) {
 	stats = p.MemStats
 	return
 }
 
-func (p *FakePlatform) GetSwapStats() (stats platform.MemStats, err error) {
+func (p *FakePlatform) GetSwapStats() (stats boshplatform.MemStats, err error) {
 	stats = p.SwapStats
 	return
 }
 
-func (p *FakePlatform) GetDiskStats(devicePath string) (stats platform.DiskStats, err error) {
+func (p *FakePlatform) GetDiskStats(devicePath string) (stats boshplatform.DiskStats, err error) {
 	stats = p.DiskStats[devicePath]
 	return
 }
