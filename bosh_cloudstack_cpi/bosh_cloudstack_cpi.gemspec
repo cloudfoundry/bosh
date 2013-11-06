@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.bindir       = 'bin'
   s.executables  = %w(bosh_cloudstack_console)
 
-  s.add_dependency 'fog', '~>1.14.0'
+  s.add_dependency 'fog', '~>1.16.0'
   s.add_dependency 'bosh_common', "~>#{version}"
   s.add_dependency 'bosh_cpi', "~>#{version}"
   s.add_dependency 'bosh-registry', "~>#{version}"
