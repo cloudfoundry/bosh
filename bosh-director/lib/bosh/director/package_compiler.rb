@@ -156,7 +156,7 @@ module Bosh::Director
       @logger.info("Configuring compilation VM: #{vm.cid}")
 
       begin
-        agent = AgentClient.new(vm.agent_id)
+        agent = AgentClient.with_defaults(vm.agent_id)
         agent.wait_until_ready
 
         configure_vm(vm, agent, network_settings)

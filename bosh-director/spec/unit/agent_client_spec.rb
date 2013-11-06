@@ -57,7 +57,7 @@ module Bosh::Director
       end
 
       subject(:client) do
-        AgentClient.new('fake-agent_id')
+        AgentClient.with_defaults('fake-agent_id')
       end
 
       before do
@@ -105,7 +105,7 @@ module Bosh::Director
       end
 
       subject(:client) do
-        AgentClient.new(vm.agent_id)
+        AgentClient.with_defaults(vm.agent_id)
       end
 
       it 'should use vm credentials' do

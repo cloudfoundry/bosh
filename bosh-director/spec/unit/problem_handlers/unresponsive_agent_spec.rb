@@ -8,7 +8,7 @@ module Bosh::Director
     def make_handler(vm, cloud, agent, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
       handler.stub(:cloud).and_return(cloud)
-      AgentClient.stub(:new).with(vm.agent_id, anything).and_return(agent)
+      AgentClient.stub(:with_defaults).with(vm.agent_id, anything).and_return(agent)
       handler
     end
 
@@ -107,7 +107,7 @@ module Bosh::Director
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
-          AgentClient.stub(:new).with('agent-222', anything).and_return(fake_new_agent)
+          AgentClient.stub(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
           SecureRandom.stub(uuid: 'agent-222')
         end
 

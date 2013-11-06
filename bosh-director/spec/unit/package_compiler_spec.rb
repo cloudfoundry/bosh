@@ -172,7 +172,7 @@ module Bosh::Director
             with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
             and_return(*vm_cids[6..10])
 
-        AgentClient.should_receive(:new).exactly(11).times.and_return(*agents)
+        AgentClient.should_receive(:with_defaults).exactly(11).times.and_return(*agents)
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
         Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
@@ -316,7 +316,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(*vm_cids)
 
-        AgentClient.should_receive(:new).at_most(3).times.and_return(*agents)
+        AgentClient.should_receive(:with_defaults).at_most(3).times.and_return(*agents)
 
         agents.each do |agent|
           agent.should_receive(:wait_until_ready).at_most(6).times
@@ -385,7 +385,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(vm_cid)
 
-        AgentClient.should_receive(:new).and_return(agent)
+        AgentClient.should_receive(:with_defaults).and_return(agent)
 
         agent.should_receive(:wait_until_ready)
         agent.should_receive(:apply).with(initial_state)
@@ -436,7 +436,7 @@ module Bosh::Director
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient', apply: nil)
           agent.should_receive(:wait_until_ready).and_raise(RpcTimeout)
-          AgentClient.should_receive(:new).and_return(agent)
+          AgentClient.should_receive(:with_defaults).and_return(agent)
 
           # vm is destroyed
           @cloud.should_receive(:delete_vm)
@@ -556,7 +556,7 @@ module Bosh::Director
           compiler.stub(reserve_network: double('network_reservation'))
           client = instance_double('Bosh::Director::AgentClient')
           client.stub(:wait_until_ready).and_raise(RpcTimeout)
-          AgentClient.stub(new: client)
+          AgentClient.stub(with_defaults: client)
 
           reuser.stub(get_vm: nil)
           reuser.stub(get_num_vms: 0)

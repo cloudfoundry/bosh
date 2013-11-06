@@ -31,7 +31,7 @@ module Bosh::Director
       @cloud.should_receive(:detach_disk).exactly(1).times
       @cloud.should_receive(:delete_disk).exactly(1).times
 
-      AgentClient.stub(:new).and_return(agent)
+      AgentClient.stub(:with_defaults).and_return(agent)
 
       2.times do
         disk = Models::PersistentDisk.make(:active => false)

@@ -303,7 +303,7 @@ module Bosh::Director
 
           vm = Models::Vm.make(:agent_id => 'agent-1')
           client = double(:AgentClient)
-          AgentClient.stub(:new).with('agent-1').and_return(client)
+          AgentClient.stub(:with_defaults).with('agent-1').and_return(client)
 
           client.should_receive(:get_state).and_return(state)
           @assembler.should_receive(:verify_state).with(vm, state)

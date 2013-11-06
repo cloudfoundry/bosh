@@ -38,7 +38,7 @@ module Bosh::Director
           raise VmAgentIdMissing, "VM `#{vm.cid}' doesn't have an agent id"
         end
 
-        AgentClient.new(vm.agent_id)
+        AgentClient.with_defaults(vm.agent_id)
       end
 
       def fetch_logs(user, deployment_name, job, index, options = {})

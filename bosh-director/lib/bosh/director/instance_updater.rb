@@ -457,7 +457,7 @@ module Bosh::Director
         if @vm.agent_id.nil?
           raise VmAgentIdMissing, "VM #{@vm.id} is missing agent id"
         end
-        @agent = AgentClient.new(@vm.agent_id)
+        @agent = AgentClient.with_defaults(@vm.agent_id)
       end
     end
 

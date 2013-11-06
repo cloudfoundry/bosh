@@ -54,7 +54,7 @@ module Bosh::Director
       vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                 idle_vm.network_settings, nil, @resource_pool.env)
 
-      agent = AgentClient.new(vm.agent_id)
+      agent = AgentClient.with_defaults(vm.agent_id)
       agent.wait_until_ready
 
       update_state(agent, vm, idle_vm)

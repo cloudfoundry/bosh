@@ -151,7 +151,7 @@ module Bosh::Director
 
     def get_state(vm)
       @logger.debug("Requesting current VM state for: #{vm.agent_id}")
-      agent = AgentClient.new(vm.agent_id)
+      agent = AgentClient.with_defaults(vm.agent_id)
       state = agent.get_state
 
       @logger.debug("Received VM state: #{state.pretty_inspect}")
@@ -392,7 +392,7 @@ module Bosh::Director
 
         idle_vm.vm.update(:apply_spec => state)
 
-        agent = AgentClient.new(idle_vm.vm.agent_id)
+        agent = AgentClient.with_defaults(idle_vm.vm.agent_id)
         agent.apply(state)
         instance.current_state = state
       end

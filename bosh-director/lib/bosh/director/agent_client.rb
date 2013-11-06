@@ -2,7 +2,7 @@ require 'bosh/director/agent_message_converter'
 
 module Bosh::Director
   class AgentClient < Client
-    def initialize(id, options = {})
+    def self.with_defaults(id, options = {})
       defaults = {
         retry_methods: { # in case of timeout errors
                          get_state: 2,
@@ -11,11 +11,9 @@ module Bosh::Director
       }
 
       credentials = Bosh::Director::Models::Vm.find(:agent_id => id).credentials
-      if credentials
-        defaults.merge!(credentials: credentials)
-      end
+      defaults.merge!(credentials: credentials) if credentials
 
-      super('agent', id, defaults.merge(options))
+      Client.new('agent', id, defaults.merge(options))
     end
   end
 end
