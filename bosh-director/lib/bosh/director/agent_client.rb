@@ -31,8 +31,8 @@ module Bosh::Director
       :mount_disk,
       :stop,
       :unmount_disk,
-    ].each do |method|
-      define_method (method) do |*args|
+    ].each do |method_name|
+      define_method (method_name) do |*args|
         task = AgentMessageConverter.convert_old_message_to_new(super(*args))
         while task['state'] == 'running'
           sleep(DEFAULT_POLL_INTERVAL)
