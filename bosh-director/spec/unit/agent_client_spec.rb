@@ -2,7 +2,56 @@ require 'spec_helper'
 
 module Bosh::Director
   describe AgentClient do
-    describe 'long-runnings messages' do
+    shared_examples_for 'a long running message' do |message_name|
+      describe "##{message_name}" do
+        let(:task) do
+          {
+            'agent_task_id' => 'fake-agent_task_id',
+            'state' => 'running',
+            'value' => 'task value'
+          }
+        end
+
+        before do
+          client.stub(send_message: task)
+          client.stub(:get_task) do
+            task['state'] = 'no longer running'
+            task
+          end
+
+          client.stub(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
+        end
+
+        it 'explicitly defines methods for long running messages (to poll)' do
+          expect(client).to respond_to(message_name)
+        end
+
+        it 'decorates the original send_message implementation' do
+          client.public_send(message_name, 'fake', 'args')
+
+          expect(client).to have_received(:send_message).with(message_name, 'fake', 'args')
+        end
+
+        it 'periodically polls the task while it is running' do
+          client.public_send(message_name, 'fake', 'args')
+
+          expect(client).to have_received(:get_task).with('fake-agent_task_id')
+        end
+
+        it 'stops polling once the task is no longer running' do
+          task['state'] = 'something other than running'
+          client.public_send(message_name, 'fake', 'args')
+
+          expect(client).not_to have_received(:get_task)
+        end
+
+        it 'returns the task value' do
+          expect(client.public_send(message_name, 'fake', 'args')).to eq('task value')
+        end
+      end
+    end
+
+    describe 'long running messages' do
       let(:vm) do
         instance_double('Models::Vm', credentials: nil)
       end
@@ -17,19 +66,15 @@ module Bosh::Director
         Api::ResourceManager.stub(:new)
       end
 
-      it 'explicitly defines methods for long running messages (to poll their tasks)' do
-        expect(client.methods).to include(
-                                    :prepare,
-                                    :apply,
-                                    :compile_package,
-                                    :drain,
-                                    :fetch_logs,
-                                    :migrate_disk,
-                                    :mount_disk,
-                                    :stop,
-                                    :unmount_disk,
-                                  )
-      end
+      include_examples 'a long running message', :prepare
+      include_examples 'a long running message', :apply
+      include_examples 'a long running message', :compile_package
+      include_examples 'a long running message', :drain
+      include_examples 'a long running message', :fetch_logs
+      include_examples 'a long running message', :migrate_disk
+      include_examples 'a long running message', :mount_disk
+      include_examples 'a long running message', :stop
+      include_examples 'a long running message', :unmount_disk
     end
 
     describe 'ping <=> pong' do

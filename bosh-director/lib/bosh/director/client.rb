@@ -22,9 +22,13 @@ module Bosh::Director
     end
 
     def method_missing(method_name, *args)
-      retries = @retry_methods[method_name] || 0
+      send_message(method_name, *args)
+    end
+
+    def send_message(message_name, *args)
+      retries = @retry_methods[message_name] || 0
       begin
-        handle_method(method_name, args)
+        handle_method(message_name, args)
       rescue RpcTimeout
         if retries > 0
           retries -= 1
