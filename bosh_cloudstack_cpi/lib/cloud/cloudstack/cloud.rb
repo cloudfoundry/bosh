@@ -87,8 +87,6 @@ module Bosh::CloudStackCloud
       with_thread_name("create_stemcell(#{image_path}...)") do
         creator = StemcellCreator.new(@default_zone, stemcell_properties, self)
 
-        return creator.fake.id if creator.fake?
-
         begin
           # These three variables are used in 'ensure' clause
           instance = nil
@@ -101,7 +99,7 @@ module Bosh::CloudStackCloud
           instance = @compute.servers.get(current_vm_id)
 
           device_name = attach_volume(instance, volume)
-          device_name = find_volume_device(device_name) # required?
+          device_name = find_volume_device(device_name)
 
           logger.info("Creating stemcell with: '#{volume.id}' and '#{stemcell_properties.inspect}'")
           creator.create(volume, device_name, image_path).id
@@ -167,14 +165,15 @@ module Bosh::CloudStackCloud
         network_configurator = NetworkConfigurator.new(network_spec, zone_network_type)
 
         compute_security_groups = with_compute { @compute.security_groups }
-        requested_security_groups = network_configurator.security_groups(@default_security_groups)
+        requested_security_groups =
+          network_configurator.security_groups(@default_security_groups)
         security_groups = []
         compute_security_groups.each do |sg|
           if requested_security_groups.reject! { |request| sg.name == request }
             security_groups << sg
           end
         end
-        cloud_error("Security group `#{sg}' not found") unless requested_security_groups.empty?
+        cloud_error("Security group `#{requested_security_groups.join(', ')}' not found") unless requested_security_groups.empty?
         @logger.debug("Using security groups: `#{security_groups.map { |sg| sg.name }.join(', ')}'")
 
         image = with_compute { @compute.images.find { |i| i.id == stemcell_id } }
@@ -188,40 +187,42 @@ module Bosh::CloudStackCloud
         keyname = resource_pool["key_name"] || @default_key_name
         keypair = with_compute do
           # Shoud be updated with @compute.keys
-          @compute.list_ssh_key_pairs["listsshkeypairsresponse"]["sshkeypair"].find { |k| k["name"] == keyname }
+          @compute.key_pairs.find { |k| k.name == keyname }
         end
         cloud_error("Key-pair `#{keyname}' not found") if keypair.nil?
-        @logger.debug("Using key-pair: `#{keypair["name"]}' (#{keypair["fingerprint"]})")
+        @logger.debug("Using key-pair: `#{keypair.name}' (#{keypair.fingerprint})")
 
         # CloudStack::Compute.server.save is broken and does not support sshkey
         server_params = {
-          "name" => server_name,
-          "templateid" => image.id,
-          "serviceofferingid" => flavor.id,
-          "keypair" => keypair["name"],
-          "securitygroupids" => security_groups.map { |sg| sg.id },
-          "userdata" => Base64.strict_encode64(Yajl::Encoder.encode(user_data(server_name, network_spec))),
+          :name => server_name,
+          :template_id => image.id,
+          :service_offering_id => flavor.id,
+          :key_pair => keypair.name,
+          :security_group_list => security_groups,
+          :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(server_name, network_spec))),
         }
 
         availability_zone = select_availability_zone(disk_locality, resource_pool["availability_zone"] || @default_zone)
-        server_params["zoneid"] = availability_zone.id if availability_zone
+        if availability_zone
+          selected_zone = compute.zones.find { |zone| zone.name == availability_zone }
+          cloud_error("Availability zone `#{selected_zone.name}' not found") if selected_zone.nil?
+          @logger.debug("Using availability zone: `#{selected_zone.name}' (#{selected_zone.id})")
+          server_params[:zone_id] = selected_zone.id
+        end
 
         ephemeral_volume = resource_pool["ephemeral_volume"] || nil
         if ephemeral_volume
-          disk_offering =  @compute.list_disk_offerings["listdiskofferingsresponse"]["diskoffering"]
-                                                     .find { |offer| offer["name"] == ephemeral_volume }
+          disk_offering =  @compute.disk_offerings.find { |offer| offer.name == ephemeral_volume }
           cloud_error("Disk offering `#{ephemeral_volume}' not found") if disk_offering.nil?
-          @logger.debug("Using key-pair: `#{ephemeral_volume}' (#{disk_offering['id']})")
-          server_params["diskofferingid"] = disk_offering["id"]
+          @logger.debug("Using offering for ephemeral volume: `#{ephemeral_volume}' (#{disk_offering.id})")
+          server_params[:disk_offering_id] = disk_offering.id
         end
 
         @logger.debug("Using boot parms: `#{server_params.inspect}'")
-        server_response = with_compute { @compute.deploy_virtual_machine(server_params) }
-        server_job = with_compute { @compute.jobs.get(server_response["deployvirtualmachineresponse"]["jobid"]) }
+        server = with_compute { @compute.servers.create(server_params) }
         @logger.info("Creating new server...")
         begin
-          wait_job(server_job)
-          server = with_compute { @compute.servers.get(server_job.job_result["virtualmachine"]["id"]) }
+          wait_resource(server, :running)
           @logger.info("Server created `#{server.id}'")
         rescue Bosh::Clouds::CloudError => e
           @logger.warn("Failed to create server: #{e.message}")
@@ -329,15 +330,15 @@ module Bosh::CloudStackCloud
 
         # Choose minimum disk offering
         disk_offer = with_compute do
-          @compute.list_disk_offerings["listdiskofferingsresponse"]["diskoffering"]
-            .sort_by { |offer| offer["disksize"] }
-            .find { |offer| offer["disksize"] >= size_gib }
+          @compute.disk_offerings.sort_by { |offer| offer.disk_size }
+                                 .find { |offer| offer.disk_size >= size_gib }
         end
+        cloud_error("No disk offering found for #{size_gib}GB") if disk_offer.nil?
 
         volume_params = {
           :name => "volume-#{generate_unique_name}",
           :zone_id => @default_zone.id,
-          :disk_offering_id => disk_offer["id"]
+          :disk_offering_id => disk_offer.id
         }
 
         if server_id
@@ -439,14 +440,15 @@ module Bosh::CloudStackCloud
     def snapshot_disk(disk_id, metadata)
       with_thread_name("snapshot_disk(#{disk_id})") do
         volume = compute.volumes.get(disk_id)
-        device = device_name(volume.device_id) if volume.device_id
+        cloud_error("Volume `#{disk_id}' not found") unless volume
+        device = volume_device_name(volume.device_id) if volume.device_id
 
         name = [:deployment, :job, :index].collect { |key| metadata[key] }
         name << device.split('/').last if device
 
-        snapshot_response = compute.create_snapshot({:volumeid => volume.id})
-        snapshot_job = compute.jobs.get(snapshot_response["createsnapshotresponse"]["jobid"])
-        snapshot = compute.snapshots.new(wait_job(snapshot_job)["snapshot"])
+        snapshot = @compute.snapshots.new({:volume_id => volume.id})
+        with_compute { snapshot.save(true) }
+        wait_resource(snapshot, :backedup)
         logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
 
         [:agent_id, :instance_id, :director_name, :director_uuid].each do |key|
@@ -462,28 +464,21 @@ module Bosh::CloudStackCloud
     ##
     # Deletes an CloudStack volume snapshot
     #
-    # @param [String] snapshot_id OpenStack snapshot UUID
+    # @param [String] snapshot_id CloudStack snapshot UUID
     # @return [void]
     # @raise [Bosh::Clouds::CloudError] if snapshot is not in available state
     def delete_snapshot(snapshot_id)
       with_thread_name("delete_snapshot(#{snapshot_id})") do
         @logger.info("Deleting snapshot `#{snapshot_id}'...")
-        snapshot = with_compute do
-          begin
-            # XXX Fog does not rescue internal exceptions
-            @compute.snapshots.get(snapshot_id)
-          rescue
-            nil
-          end
-        end
+        snapshot = with_compute { @compute.snapshots.get(snapshot_id) }
+
         if snapshot
           state = snapshot.state
           if state != 'BackedUp'
             cloud_error("Cannot delete snapshot `#{snapshot_id}', state is #{state}")
           end
 
-          response = with_compute { compute.delete_snapshot({:id => snapshot_id}) }
-          job = compute.jobs.get(response["deletesnapshotresponse"]["jobid"])
+          job = with_compute { snapshot.destroy }
           wait_job(job)
         else
           @logger.info("Snapshot `#{snapshot_id}' not found. Skipping.")
@@ -561,7 +556,6 @@ module Bosh::CloudStackCloud
     # @param [Fog::Compute::CloudStack::Volume] volume CloudStack volume
     # @return [void]
     def detach_volume(server, volume)
-      # @TODO server is not needed
       @logger.info("Detaching volume `#{volume.id}' from `#{server.id}'...")
       volume.reload
 
@@ -575,6 +569,21 @@ module Bosh::CloudStackCloud
       end
     end
 
+    def find_volume_device(sd_name)
+      # need also xvd?
+      vd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/vd")
+
+      DEVICE_POLL_TIMEOUT.times do
+        if File.blockdev?(sd_name)
+          return sd_name
+        elsif File.blockdev?(vd_name)
+          return vd_name
+        end
+        sleep(1)
+      end
+
+      cloud_error("Cannot find volume on current instance")
+    end
 
     private
 
@@ -669,7 +678,7 @@ module Bosh::CloudStackCloud
     ##
     # Soft reboots an CloudStack server
     #
-    # @param [Fog::Compute::CloudStack::Server] server OpenStack server
+    # @param [Fog::Compute::CloudStack::Server] server CloudStack server
     # @return [void]
     def soft_reboot(server)
       @logger.info("Soft rebooting server `#{server.id}'...")
@@ -697,23 +706,24 @@ module Bosh::CloudStackCloud
     # @return [String] Device name
     def attach_volume(server, volume)
       @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}'...")
-      device = with_compute do
+      attached_volume = with_compute do
         @compute.volumes.find { |candidate| candidate.id == volume.id && candidate.server_id == server.id }
       end
 
-      if device.nil?
+      device_id = nil
+      if attached_volume.nil?
         @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}'")
-        device_name = ""
         with_compute do
           job = volume.attach(server)
           wait_job(job)
-          device_name = volume_device_name(job.job_result["volume"]["deviceid"])
+          device_id = job.job_result["volume"]["deviceid"]
         end
       else
         @logger.info("Volume `#{volume.id}' is already attached to server `#{server.id}'. Skipping.")
+        device_id = attached_volume.device_id
       end
 
-      device_name
+      volume_device_name(device_id)
     end
 
     ##
@@ -743,7 +753,7 @@ module Bosh::CloudStackCloud
     # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't 
     # change the IP address of a running server, so we need to send the InstanceUpdater a request to do it for us
     def compare_private_ip_addresses(server, specified_ip_address)
-      actual_ip_addresses = with_compute { server.addresses }
+      actual_ip_addresses = with_compute { server.addresses }.map { |address| address.ip_address}
 
       unless specified_ip_address.nil? || actual_ip_addresses.include?(specified_ip_address)
         raise Bosh::Clouds::NotSupported,
@@ -834,25 +844,12 @@ module Bosh::CloudStackCloud
                   "please make sure CPI is running on EC2 instance")
     end
 
-    def find_volume_device(sd_name)
-      # need also xvd?
-      vd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/vd")
-
-      DEVICE_POLL_TIMEOUT.times do
-        if File.blockdev?(sd_name)
-          return sd_name
-        elsif File.blockdev?(vd_name)
-          return vd_name
-        end
-        sleep(1)
-      end
-
-      cloud_error("Cannot find volume on current instance")
-    end
-
-    def volume_device_name(volume_id)
+    def volume_device_name(device_id)
       # assumes device name begins with "dev/sd" and volume_name is numeric
-      "/dev/sd#{('a'..'z').to_a[volume_id]}"
+      cloud_error("Unkown device id given") if device_id.nil?
+      suffix = ('a'..'z').to_a[device_id]
+      cloud_error("too many disks attached") if suffix.nil?
+      "/dev/sd#{suffix}"
     end
 
   end

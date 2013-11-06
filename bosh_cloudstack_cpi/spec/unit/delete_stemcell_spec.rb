@@ -3,13 +3,13 @@
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
 
   it "deletes stemcell" do
     image = double("image", :id => "i-foo", :name => "i-foo", :properties => {})
 
-    cloud = mock_glance do |glance|
-      glance.images.stub(:find_by_id).with("i-foo").and_return(image)
+    cloud = mock_cloud do |compute|
+      compute.images.stub(:get).with("i-foo").and_return(image)
     end
 
     image.should_receive(:destroy)

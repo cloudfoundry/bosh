@@ -3,48 +3,40 @@
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
 
   describe "creating via provider" do
 
     it "can be created using Bosh::Cloud::Provider" do
-      Fog::Compute.stub(:new)
-      Fog::Image.stub(:new)
-      cloud = Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
-      cloud.should be_an_instance_of(Bosh::OpenStackCloud::Cloud)
+      compute = double('compute')
+      Fog::Compute.stub(:new).and_return(compute)
+      zone = double('zone', :network_type => :basic)
+      compute.stub_chain(:zones, :find).and_return(zone)
+      cloud = Bosh::Clouds::Provider.create(:cloudstack, mock_cloud_options)
+      cloud.should be_an_instance_of(Bosh::CloudStackCloud::Cloud)
     end
 
     it "raises ArgumentError on initializing with blank options" do
-    	options = Hash.new("options")
-    	expect { 
-    		Bosh::OpenStackCloud::Cloud.new(options)
-    	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
+      options = Hash.new("options")
+      expect {
+        Bosh::CloudStackCloud::Cloud.new(options)
+      }.to raise_error(ArgumentError, /Invalid CloudStack configuration/)
     end
 
     it "raises ArgumentError on initializing with non Hash options" do
-    	options = "this is a string"
-    	expect { 
-    		Bosh::OpenStackCloud::Cloud.new(options)
-    	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
-    end
-    
-    it "raises a CloudError exception if cannot connect to the OpenStack Compute API" do
-      Fog::Compute.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
-      Fog::Image.stub(:new)
+      options = "this is a string"
       expect {
-        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
-      }.to raise_error(Bosh::Clouds::CloudError,
-                       "Unable to connect to the OpenStack Compute API. Check task debug log for details.")
+        Bosh::CloudStackCloud::Cloud.new(options)
+      }.to raise_error(ArgumentError, /Invalid CloudStack configuration/)
     end
 
-    it "raises a CloudError exception if cannot connect to the OpenStack Image Service API" do
-      Fog::Compute.stub(:new)
-      Fog::Image.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
+    it "raises a CloudError exception if cannot connect to the CloudStack Compute API" do
+      Fog::Compute.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
       expect {
-        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+        Bosh::Clouds::Provider.create(:cloudstack, mock_cloud_options)
       }.to raise_error(Bosh::Clouds::CloudError,
-                       "Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
+                       "Unable to connect to the CloudStack Compute API. Check task debug log for details.")
     end
-    
+
   end
 end

@@ -23,35 +23,23 @@ module Bosh::CloudStackCloud
       volume.reload
       cloud.detach_volume(volume.server, volume)
 
-      snapshot_response = volume.service.create_snapshot({:volumeid => volume.id})
-      snapshot_job = volume.service.jobs.get(snapshot_response["createsnapshotresponse"]["jobid"])
-      wait_job(snapshot_job)
+      snapshot = volume.service.snapshots.create({:volume_id => volume.id})
+      wait_resource(snapshot, :backedup)
 
-      params = image_params(snapshot_job.job_result["snapshot"]["id"])
+      # TODO create fog model
+      params = image_params(snapshot.id, volume.service)
       template_response = volume.service.create_template(params)
       template_job = volume.service.jobs.get(template_response["createtemplateresponse"]["jobid"])
       wait_job(template_job)
 
+      image = volume.service.images.get(template_job.job_result["template"]["id"])
       TagManager.tag(
-        volume.service.images.get(template_job.job_result["template"]["id"]),
+        image,
         'Name',
         params[:displaytext])
-      image = volume.service.images.get(template_job.job_result["template"]["id"])
       image
     end
 
-
-    def fake?
-      stemcell_properties.has_key?('ami')
-    end
-
-    def fake
-      id = stemcell_properties['ami'][region.name]
-
-      raise Bosh::Clouds::CloudError, "Stemcell does not contain an AMI for this region (#{region.name})" unless id
-
-      Stemcell.find(region, id)
-    end
 
     # This method tries to execute the helper script stemcell-copy
     # as root using sudo, since it needs to write to the ebs_volume.
@@ -90,17 +78,16 @@ module Bosh::CloudStackCloud
       nil
     end
 
-    def image_params(snapshot_id)
+    def image_params(snapshot_id, compute)
       architecture_bit = {"x86" => "32", "x86_64" => "64"}[stemcell_properties["architecture"]]
-      os_type = cloud.compute.list_os_types["listostypesresponse"]["ostype"].find do |os_type|
-        os_type["description"] == "Ubuntu 10.04 (64-bit)"
-#        os_type["description"].match(/Other Ubuntu \(#{architecture_bit}-bit\)/i)
+      ostype = compute.ostypes.find do |ostype|
+        ostype.description == "Ubuntu 10.04 (64-bit)"
       end
 
       params = {
           :displaytext => "#{stemcell_properties["name"]} #{stemcell_properties["version"]}",
           :name => "BOSH-#{SecureRandom.hex(8)}", # less than 32 characters
-          :ostypeid => os_type["id"],
+          :ostypeid => ostype.id,
           :snapshotid => snapshot_id,
       }
 

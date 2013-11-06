@@ -3,20 +3,20 @@
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
   let(:server) { double("server", :id => "i-foobar") }
 
   before :each do
-    @cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-foobar").and_return(server)
+    @cloud = mock_cloud do |compute|
+      compute.servers.should_receive(:get).with("i-foobar").and_return(server)
     end
   end
 
   it "should set metadata" do
     metadata = {:job => "job", :index => "index"}
 
-    Bosh::OpenStackCloud::TagManager.should_receive(:tag).with(server, :job, "job")
-    Bosh::OpenStackCloud::TagManager.should_receive(:tag).with(server, :index, "index")
+    Bosh::CloudStackCloud::TagManager.should_receive(:tag).with(server, :job, "job")
+    Bosh::CloudStackCloud::TagManager.should_receive(:tag).with(server, :index, "index")
 
     @cloud.set_vm_metadata("i-foobar", metadata)
   end

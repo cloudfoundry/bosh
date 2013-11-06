@@ -3,21 +3,22 @@
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
 
   before(:each) do
      @registry = mock_registry
    end
 
-  it "deletes an OpenStack server" do
+  it "deletes an CloudStack server" do
     server = double("server", :id => "i-foobar", :name => "i-foobar")
+    job = generate_job
 
-    cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-foobar").and_return(server)
+    cloud = mock_cloud do |compute|
+      compute.servers.should_receive(:get).with("i-foobar").and_return(server)
     end
 
-    server.should_receive(:destroy).and_return(true)
-    cloud.should_receive(:wait_resource).with(server, [:terminated, :deleted], :state, true)
+    server.should_receive(:destroy).and_return(job)
+    cloud.should_receive(:wait_job).with(job)
 
     @registry.should_receive(:delete_settings).with("i-foobar")
 

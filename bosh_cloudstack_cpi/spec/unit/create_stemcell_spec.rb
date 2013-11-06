@@ -1,172 +1,69 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-# Copyright (c) 2012 Piston Cloud Computing, Inc.
+# Copyright (c) 2009-2012 VMware, Inc.
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
+  before { @tmp_dir = Dir.mktmpdir }
+  after { FileUtils.rm_rf(@tmp_dir) }
 
-  let(:image) { double("image", :id => "i-bar", :name => "i-bar") }
-  let(:unique_name) { SecureRandom.uuid }
-  
-  before :each do
-    @tmp_dir = Dir.mktmpdir
-  end
+  describe "Volume based flow" do
+    let(:creator) { double(Bosh::CloudStackCloud::StemcellCreator) }
 
-  describe "Image upload based flow" do
+    before { Bosh::CloudStackCloud::StemcellCreator.stub(:new => creator) }
 
-    it "creates stemcell using a stemcell file" do
-      image_params = {
-        :name => "BOSH-#{unique_name}",
-        :disk_format => "qcow2",
-        :container_format => "bare",
-        :location => "#{@tmp_dir}/root.img",
-        :is_public => false
-      }
-
-      cloud = mock_glance do |glance|
-        glance.images.should_receive(:create).with(image_params).and_return(image)
-      end
-
-      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      cloud.should_receive(:wait_resource).with(image, :active)
-
-      sc_id = cloud.create_stemcell("/tmp/foo", {
-        "container_format" => "bare",
-        "disk_format" => "qcow2"
-      })
-
-      sc_id.should == "i-bar"
-    end
-
-    it "creates stemcell using a remote stemcell file" do
-      image_params = {
-        :name => "BOSH-#{unique_name}",
-        :disk_format => "qcow2",
-        :container_format => "bare",
-        :copy_from => "http://cloud-images.ubuntu.com/bosh/root.img",
-        :is_public => false
-      }
-
-      cloud = mock_glance do |glance|
-        glance.images.should_receive(:create).with(image_params).and_return(image)
-      end
-
-      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_not_receive(:unpack_image)
-      cloud.should_receive(:wait_resource).with(image, :active)
-
-      sc_id = cloud.create_stemcell("/tmp/foo", {
-        "container_format" => "bare",
-        "disk_format" => "qcow2",
-        "image_location" => "http://cloud-images.ubuntu.com/bosh/root.img"
-      })
-
-      sc_id.should == "i-bar"
-    end
-    
-    it "sets image properties from cloud_properties" do
-      image_params = {
-        :name => "BOSH-#{unique_name}",
-        :disk_format => "qcow2",
-        :container_format => "bare",
-        :location => "#{@tmp_dir}/root.img",
-        :is_public => false,
-        :properties => {
-          :name => "bosh-stemcell",
-          :version => "x.y.z",
-          :os_type => "linux",
-          :os_distro => "ubuntu",
-          :architecture => "x86_64",
-          :auto_disk_config => "true"
+    context "real stemcell" do
+      let(:stemcell_properties) do
+        {
+          "root_device_name" => "/dev/sda1",
+          "architecture" => "x86_64",
+          "name" => "stemcell-name",
+          "version" => "1.2.3"
         }
-      }
-
-      cloud = mock_glance do |glance|
-        glance.images.should_receive(:create).with(image_params).and_return(image)
       end
 
-      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      cloud.should_receive(:wait_resource).with(image, :active)
+      let(:volume) { double("volume", :id => "vol-xxxxxxxx", :reload => true, :server_id => nil) }
+      let(:stemcell) { double("stemcell", :id => "ami-xxxxxxxx") }
+      let(:server) { double("server", :id => "s-xxxxxxxx") }
 
-      sc_id = cloud.create_stemcell("/tmp/foo", {
-        "name" => "bosh-stemcell",
-        "version" => "x.y.z",
-        "os_type" => "linux",
-        "os_distro" => "ubuntu",
-        "architecture" => "x86_64",
-        "auto_disk_config" => "true",
-        "foo" => "bar",
-        "container_format" => "bare",
-        "disk_format" => "qcow2",
-      })
+      it "should create a stemcell" do
+        cloud = mock_cloud do |compute|
+          compute.volumes.stub(:get).with("vol-xxxxxxxx").and_return(volume)
+          compute.volumes.stub(:find).and_return(nil)
+          compute.servers.stub(:get).with("s-xxxxxxxx").and_return(server)
+        end
 
-      sc_id.should == "i-bar"
+        cloud.should_receive(:current_vm_id).twice.and_return("s-xxxxxxxx")
+
+        cloud.should_receive(:create_disk).with(2048, "s-xxxxxxxx").and_return("vol-xxxxxxxx")
+        cloud.should_receive(:attach_volume).with(server, volume).and_return("/dev/sdh")
+        cloud.should_receive(:find_volume_device).with("/dev/sdh").and_return("/dev/vdh")
+
+        creator.should_receive(:create).with(volume, "/dev/vdh", "/tmp/foo").and_return(stemcell)
+
+        cloud.should_receive(:detach_volume).with(server, volume)
+        cloud.should_receive(:delete_disk).with("vol-xxxxxxxx")
+
+        cloud.create_stemcell("/tmp/foo", stemcell_properties).should == "ami-xxxxxxxx"
+      end
     end
 
-    it "sets stemcell visibility to public when required" do
-      image_params = {
-        :name => "BOSH-#{unique_name}",
-        :disk_format => "qcow2",
-        :container_format => "bare",
-        :location => "#{@tmp_dir}/root.img",
-        :is_public => true,
-      }
+    describe "#find_volume_device" do
+      it "should locate volume on the current instance and return the device name" do
+        cloud = mock_cloud
 
-      cloud_options = mock_cloud_options
-      cloud_options["openstack"]["stemcell_public_visibility"] = true
-      cloud = mock_glance(cloud_options) do |glance|
-        glance.images.should_receive(:create).with(image_params).and_return(image)
+        File.stub(:blockdev?).with("/dev/sdf").and_return(true)
+
+        cloud.find_volume_device("/dev/sdf").should == "/dev/sdf"
       end
 
-      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      cloud.should_receive(:wait_resource).with(image, :active)
+      it "should locate volume on the current instance and return the virtual device name" do
+        cloud = mock_cloud
 
-      sc_id = cloud.create_stemcell("/tmp/foo", {
-        "container_format" => "bare",
-        "disk_format" => "qcow2",
-      })
+        File.stub(:blockdev?).with("/dev/sdf").and_return(false)
+        File.stub(:blockdev?).with("/dev/vdf").and_return(true)
 
-      sc_id.should == "i-bar"
-    end    
-    
-    it "should throw an error for non existent root image in stemcell archive" do  
-      result = Bosh::Exec::Result.new("cmd", "output", 0)
-      Bosh::Exec.should_receive(:sh).and_return(result)
-
-      cloud = mock_glance
-      
-      File.stub(:exists?).and_return(false)
-      
-      expect {
-        cloud.create_stemcell("/tmp/foo", {
-          "container_format" => "bare",
-          "disk_format" => "qcow2"
-        })
-      }.to raise_exception(Bosh::Clouds::CloudError, "Root image is missing from stemcell archive")
-    end
-
-    it "should fail if cannot extract root image" do
-      result = Bosh::Exec::Result.new("cmd", "output", 1)
-      Bosh::Exec.should_receive(:sh).and_return(result)
-
-      cloud = mock_glance
-
-      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
-
-      expect {
-        cloud.create_stemcell("/tmp/foo", {
-          "container_format" => "ami",
-          "disk_format" => "ami"
-        })
-      }.to raise_exception(Bosh::Clouds::CloudError, 
-                           "Extracting stemcell root image failed. Check task debug log for details.")
+        cloud.find_volume_device("/dev/sdf").should == "/dev/vdf"
+      end
     end
   end
 end

@@ -16,7 +16,7 @@ module Bosh::CloudStackCloud
     #
     # @param [Hash] spec Raw network spec passed by director
     # @param Symbol zone_network_type CloudStack zone network type, :basic or :advanced
-    def initialize(spec, zone_network_type)
+    def initialize(spec, zone_network_type = :advanced)
       unless spec.is_a?(Hash)
         raise ArgumentError, "Invalid spec, Hash expected, #{spec.class} provided"
       end
@@ -88,7 +88,17 @@ module Bosh::CloudStackCloud
     #
     # @return [String] private ip address
     def private_ip
-      @network.private_ip
+      nil
+    end
+
+    ##
+    # Returns the nics for this network configuration
+    #
+    # @return [Array] nics
+    def nics
+      nic = {}
+      nic["net_id"] = @net_id if @net_id
+      nic.any? ? [nic] : []
     end
 
     private

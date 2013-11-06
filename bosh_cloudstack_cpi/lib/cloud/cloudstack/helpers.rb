@@ -24,19 +24,38 @@ module Bosh::CloudStackCloud
       retries = 0
       begin
         yield
-      rescue Excon::Errors::RequestEntityTooLarge => e
-        cloud_error("Something strange", e)
       rescue Excon::Errors::BadRequest => e
-        cloud_error("Something strange", e)
+        badrequest = parse_api_response(e.response, "badRequest")
+        details = badrequest.nil? ? "" : " (#{badrequest["message"]})"
+        cloud_error("CloudStack API Bad Request#{details}. Check task debug log for details.", e)
       rescue Excon::Errors::InternalServerError => e
         unless retries >= MAX_RETRIES
           retries += 1
-          @logger.debug("Compute API Internal Server error, retrying (#{retries})") if @logger
+          @logger.debug("CloudStack API Internal Server error, retrying (#{retries})") if @logger
           sleep(DEFAULT_RETRY_TIMEOUT)
           retry
         end
-        cloud_error("Compute API Internal Server error. Check task debug log for details.", e)
+        cloud_error("CloudStack API Internal Server error. Check task debug log for details.", e)
       end
+    end
+
+    ##
+    # Parses and look ups for keys in an CloudStack response
+    #
+    # @param [Excon::Response] response Response from CloudStack API
+    # @param [Array<String>] keys Keys to look up in response
+    # @return [Hash] Contents at the first key found, or nil if not found
+    def parse_api_response(response, *keys)
+      unless response.body.empty?
+        begin
+          body = JSON.parse(response.body)
+          key = keys.detect { |k| body.has_key?(k)}
+          return body[key] if key
+        rescue JSON::ParserError
+          # do nothing
+        end
+      end
+      nil
     end
 
     ##

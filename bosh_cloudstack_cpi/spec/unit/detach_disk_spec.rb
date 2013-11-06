@@ -3,25 +3,25 @@
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
 
   before(:each) do
     @registry = mock_registry
   end
 
-  it "detaches an OpenStack volume from a server" do
+  it "detaches an CloudStack volume from a server" do
     server = double("server", :id => "i-test", :name => "i-test")
-    volume = double("volume", :id => "v-foobar")
-    volume_attachments = [{"volumeId" => "v-foobar"}, {"volumeId" => "v-barfoo"}]
+    volume = double("volume", :id => "v-foobar", :server_id => "i-test")
+    job = generate_job
 
-    cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.volumes.should_receive(:get).with("v-foobar").and_return(volume)
+    cloud = mock_cloud do |compute|
+      compute.servers.should_receive(:get).with("i-test").and_return(server)
+      compute.volumes.should_receive(:get).with("v-foobar").and_return(volume)
     end
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_receive(:detach).with(server.id, "v-foobar").and_return(true)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    volume.should_receive(:reload)
+    volume.should_receive(:detach).and_return(job)
+    cloud.should_receive(:wait_job).with(job)
 
     old_settings = {
       "foo" => "bar",
@@ -50,15 +50,15 @@ describe Bosh::OpenStackCloud::Cloud do
 
   it "bypasses the detaching process when volume is not attached to a server" do
     server = double("server", :id => "i-test", :name => "i-test")
-    volume = double("volume", :id => "v-barfoo")
-    volume_attachments = [{"volumeId" => "v-foobar"}]
+    volume = double("volume", :id => "v-barfoo", :server_id => nil)
+    job = generate_job
 
-    cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.volumes.should_receive(:get).with("v-barfoo").and_return(volume)
+    cloud = mock_cloud do |compute|
+      compute.servers.should_receive(:get).with("i-test").and_return(server)
+      compute.volumes.should_receive(:get).with("v-barfoo").and_return(volume)
     end
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
+    volume.should_receive(:reload)
     volume.should_not_receive(:detach)
 
     old_settings = {

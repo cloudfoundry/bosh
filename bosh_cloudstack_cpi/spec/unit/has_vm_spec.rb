@@ -3,36 +3,29 @@
 
 require "spec_helper"
 
-describe Bosh::OpenStackCloud::Cloud do
+describe Bosh::CloudStackCloud::Cloud do
 
-  it "has_vm? returns true if OpenStack server exists" do
-    server = double("server", :id => "i-foobar", :state => :active)
-    cloud = mock_cloud(mock_cloud_options) do |openstack|
-      openstack.servers.stub(:get).with("i-foobar").and_return(server)
+  it "has_vm? returns true if CloudStack server exists" do
+    server = double("server", :id => "i-foobar", :state => 'Ready')
+    cloud = mock_cloud do |compute|
+      compute.servers.stub(:get).with("i-foobar").and_return(server)
     end
     cloud.has_vm?("i-foobar").should be_true
   end
 
-  it "has_vm? returns false if OpenStack server doesn't exists" do
-    cloud = mock_cloud(mock_cloud_options) do |openstack|
-      openstack.servers.stub(:get).with("i-foobar").and_return(nil)
+  it "has_vm? returns false if CloudStack server doesn't exists" do
+    cloud = mock_cloud do |compute|
+      compute.servers.stub(:get).with("i-foobar").and_return(nil)
     end
     cloud.has_vm?("i-foobar").should be_false
   end
 
-  it "has_vm? returns false if OpenStack server state is :terminated" do
-    server = double("server", :id => "i-foobar", :state => :terminated)
-    cloud = mock_cloud(mock_cloud_options) do |openstack|
-      openstack.servers.stub(:get).with("i-foobar").and_return(server)
+  it "has_vm? returns false if CloudStack server state is 'Destroyed'" do
+    server = double("server", :id => "i-foobar", :state => 'Destroyed')
+    cloud = mock_cloud do |compute|
+      compute.servers.stub(:get).with("i-foobar").and_return(server)
     end
     cloud.has_vm?("i-foobar").should be_false
   end
 
-  it "has_vm? returns false if OpenStack server state is :deleted" do
-    server = double("server", :id => "i-foobar", :state => :deleted)
-    cloud = mock_cloud(mock_cloud_options) do |openstack|
-      openstack.servers.stub(:get).with("i-foobar").and_return(server)
-    end
-    cloud.has_vm?("i-foobar").should be_false
-  end
 end

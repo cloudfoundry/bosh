@@ -2,7 +2,6 @@
 
 module Bosh::CloudStackCloud
   class TagManager
-
     MAX_TAG_KEY_LENGTH = 255
     MAX_TAG_VALUE_LENGTH = 255
 
@@ -14,9 +13,14 @@ module Bosh::CloudStackCloud
         Fog::Compute::Cloudstack::Snapshot => "snapshot",
       }
 
+      unless resource_types.include?(taggable.class)
+        raise Bosh::Clouds::CloudError, "Resource type `#{taggable.class}' is not supported"
+      end
+
       return if key.nil? || value.nil?
       trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
       trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
+      # TODO create Tag model
       taggable.service.create_tags({
           "tags[0].key"   => trimmed_key,
           "tags[0].value" => trimmed_value,

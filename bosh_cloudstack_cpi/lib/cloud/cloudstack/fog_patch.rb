@@ -28,6 +28,37 @@ module Fog
       collection :ostypes
       model :firewall
       collection :firewalls
+
+      require ('fog/cloudstack/models/compute/disk_offering')
+      class DiskOffering < Fog::Model
+        # fix attribute name typo
+        attribute :display_text,    :aliases => 'displaytext'
+        attribute :disk_size,    :aliases => 'disksize'
+      end
+
+      require ('fog/cloudstack/models/compute/snapshot')
+      class Snapshot < Fog::Model
+        # return job
+        def destroy
+          requires :id
+          data = service.delete_snapshot('id' => id)
+          service.jobs.new(data["deletesnapshotresponse"])
+        end
+      end
+
+      require ('fog/cloudstack/models/compute/snapshots')
+      class Snapshots < Fog::Collection
+        # eliminate exceptions
+        def get(snapshot_id)
+          snapshots = service.list_snapshots('id' => snapshot_id)["listsnapshotsresponse"]["snapshot"].first
+          unless snapshots.nil? || snapshots.empty?
+              new(snapshots.first)
+          end
+        rescue Fog::Compute::Cloudstack::BadRequest
+          nil
+        end
+      end
+
     end
   end
 end

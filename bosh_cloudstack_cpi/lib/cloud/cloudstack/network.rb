@@ -28,9 +28,9 @@ module Bosh::CloudStackCloud
     ##
     # Configures given server
     #
-    # @param [Fog::Compute::OpenStack] openstack Fog OpenStack Compute client
-    # @param [Fog::Compute::OpenStack::Server] server OpenStack server to configure
-    def configure(openstack, server)
+    # @param [Fog::Compute::OpenStack] openstack Fog CloudStack Compute client
+    # @param [Fog::Compute::OpenStack::Server] server CloudStack server to configure
+    def configure(compute, server)
       cloud_error("`configure' not implemented by #{self.class}")
     end
 
