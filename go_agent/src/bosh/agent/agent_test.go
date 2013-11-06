@@ -5,6 +5,7 @@ import (
 	testmbus "bosh/mbus/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestRunHandlesAMessage(t *testing.T) {
@@ -24,4 +25,15 @@ func assertResponseForRequest(t *testing.T, req mbus.Request, expectedResp mbus.
 	resp := handler.Func(req)
 
 	assert.Equal(t, resp, expectedResp)
+}
+
+func TestRunSetsUpHeartbeats(t *testing.T) {
+	handler := &testmbus.FakeHandler{}
+	agent := New(handler)
+	agent.heartbeatInterval = time.Millisecond
+	err := agent.Run()
+	assert.NoError(t, err)
+
+	hb := <-handler.HeartbeatChan
+	assert.IsType(t, mbus.Heartbeat{}, hb)
 }

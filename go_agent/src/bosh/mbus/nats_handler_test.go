@@ -51,6 +51,36 @@ func TestNatsHandlerStart(t *testing.T) {
 	assert.Equal(t, message.Payload, `{"value":"expected value"}`)
 }
 
+func TestNatsSendPeriodicHeartbeat(t *testing.T) {
+	heartbeatChan := make(chan Heartbeat, 1)
+	client, handler := createNatsClientAndHandler()
+
+	errChan := make(chan error, 1)
+
+	go func() {
+		errChan <- handler.SendPeriodicHeartbeat(heartbeatChan)
+	}()
+
+	heartbeatChan <- Heartbeat{Job: "foo", Index: 0}
+
+	close(heartbeatChan)
+
+	var err error
+	select {
+	case err = <-errChan:
+	}
+	assert.NoError(t, err)
+
+	assert.Equal(t, len(client.PublishedMessages), 1)
+	messages := client.PublishedMessages["hm.agent.heartbeat.my-agent-id"]
+
+	assert.Equal(t, len(messages), 1)
+	message := messages[0]
+
+	expectedJson := `{"job":"foo","index":0,"job_state":"","vitals":{"cpu":{},"mem":{},"swap":{},"disk":{"system":{},"ephemeral":{},"persistent":{}}}}`
+	assert.Equal(t, message.Payload, expectedJson)
+}
+
 func TestNatsHandlerConnectionInfo(t *testing.T) {
 	_, handler := createNatsClientAndHandler()
 

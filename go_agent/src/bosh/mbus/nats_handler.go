@@ -71,6 +71,32 @@ func (h natsHandler) Stop() {
 	h.client.Disconnect()
 }
 
+func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error) {
+	connProvider, err := h.getConnectionInfo()
+	if err != nil {
+		return
+	}
+
+	err = h.client.Connect(connProvider)
+	if err != nil {
+		return
+	}
+
+	heartbeatSubject := fmt.Sprintf("hm.agent.heartbeat.%s", h.settings.AgentId)
+
+	var heartbeatBytes []byte
+	for heartbeat := range heartbeatChan {
+		heartbeatBytes, err = json.Marshal(heartbeat)
+		if err != nil {
+			return
+		}
+
+		h.client.Publish(heartbeatSubject, string(heartbeatBytes))
+	}
+
+	return
+}
+
 func (h natsHandler) runUntilInterrupted() {
 	keepRunning := true
 
