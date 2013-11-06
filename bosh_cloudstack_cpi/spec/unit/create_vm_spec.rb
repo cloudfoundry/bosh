@@ -30,8 +30,8 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
       :name => "vm-#{unique_name}",
       :template_id => "sc-id",
       :service_offering_id => "f-test",
-      :key_pair => "test_key",
-      :security_group_list => security_groups,
+      :key_name => "test_key",
+      :security_groups => security_groups,
       :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(unique_name, nameserver, false))),
       :zone_id => "foobar-1a"
     }

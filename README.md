@@ -18,6 +18,10 @@ Working on merging source code from ZJU-SEL and NTT.
 
 You need a VM on the CloudStack domain where you install a BOSH instance using this CPI. This VM is so-called "inception" server. Intall BOSH CLI and BOSH Deployer gems and run all operations on the VM.
 
+### Set up sudo
+
+The user you use as a
+
 ### Why do I need an inception server?
 
 NTT CloudStack CPI creates stemcells, which are VM templates, by copying pre-composed disk images to data volumes which automatically attached by BOSH Deployer. This procedure is same as that of the AWS CPI and requires that the VM where BOSH Deployer works is running on the same domain where you want to deploy your BOSH instance.
@@ -70,7 +74,7 @@ You can generate a stemcell for CloudStack using the `release:create_dev_releas`
 E.g.:
 
 ```sh
-CANDIDATE_BUILD_NUMBER=3939 bundle exec rake release:create_dev_release && sudo env PATH=$PATH CANDIDATE_BUILD_NUMBER=3939 bundle exec rake "local:build_stemcell[cloudstack,ubuntu]"
+CANDIDATE_BUILD_NUMBER=3 bundle exec rake release:create_dev_release && sudo env PATH=$PATH CANDIDATE_BUILD_NUMBER=3 bundle exec rake "local:build_stemcell[cloudstack,ubuntu]"
 ```
 
-`CANDIDATE_BUILD_NUMBER` is any number which you like.
+`CANDIDATE_BUILD_NUMBER` is any number (>= 3) which you like.

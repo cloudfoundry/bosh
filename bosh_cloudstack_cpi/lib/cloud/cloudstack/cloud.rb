@@ -197,7 +197,7 @@ module Bosh::CloudStackCloud
           :name => server_name,
           :template_id => image.id,
           :service_offering_id => flavor.id,
-          :key_pair => keypair.name,
+          :key_name => keypair.name,
           :security_groups => security_groups,
           :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(server_name, network_spec))),
         }
