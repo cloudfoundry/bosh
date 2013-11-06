@@ -11,7 +11,7 @@ module Bosh::Director
     attr_reader :current_state
 
     # @params [DeploymentPlan::Instance] instance
-    def initialize(instance, event_ticker = nil)
+    def initialize(instance, event_ticker)
       @cloud = Config.cloud
       @logger = Config.logger
       @ticker = event_ticker
@@ -40,7 +40,7 @@ module Bosh::Director
     end
 
     def report_progress
-      @ticker.advance(100.0 / update_steps()) if @ticker
+      @ticker.advance(100.0 / update_steps())
     end
 
     def update_steps

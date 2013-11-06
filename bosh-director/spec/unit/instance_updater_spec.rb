@@ -70,7 +70,10 @@ module Bosh::Director
 
     let(:agent_client) { double('Bosh::Director::AgentClient') }
 
-    subject { described_class.new(instance) }
+    subject do
+      ticker = double('ticker', advance: nil)
+      described_class.new(instance, ticker)
+    end
 
     before do
       Bosh::Director::Config.stub(:cloud).and_return(cloud)
