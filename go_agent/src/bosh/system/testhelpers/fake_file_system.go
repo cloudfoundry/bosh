@@ -1,6 +1,9 @@
 package testhelpers
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 type FakeFileSystem struct {
 	Files map[string]*FakeFileStats
@@ -54,6 +57,16 @@ func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err e
 	if stats.Content != content {
 		stats.Content = content
 		written = true
+	}
+	return
+}
+
+func (fs *FakeFileSystem) ReadFile(path string) (content string, err error) {
+	stats := fs.GetFileTestStat(path)
+	if stats != nil {
+		content = stats.Content
+	} else {
+		err = errors.New("File not found")
 	}
 	return
 }

@@ -106,6 +106,18 @@ func TestWriteToFile(t *testing.T) {
 	assert.Equal(t, readFile(file), "second write")
 }
 
+func TestReadFile(t *testing.T) {
+	osFs := OsFileSystem{}
+	testPath := filepath.Join(os.TempDir(), "ReadFileTestFile")
+
+	osFs.WriteToFile(testPath, "some contents")
+	defer os.Remove(testPath)
+
+	content, err := osFs.ReadFile(testPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "some contents", content)
+}
+
 func TestFileExists(t *testing.T) {
 	osFs := OsFileSystem{}
 	testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")

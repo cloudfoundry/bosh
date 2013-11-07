@@ -48,7 +48,7 @@ func (fs OsFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 }
 
 func (fs OsFileSystem) WriteToFile(path, content string) (written bool, err error) {
-	if filesAreIdentical(content, path) {
+	if fs.filesAreIdentical(content, path) {
 		return
 	}
 
@@ -67,6 +67,22 @@ func (fs OsFileSystem) WriteToFile(path, content string) (written bool, err erro
 	return
 }
 
+func (fs OsFileSystem) ReadFile(path string) (content string, err error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return
+	}
+
+	content = string(bytes)
+	return
+}
+
 func (fs OsFileSystem) FileExists(path string) bool {
 	_, err := os.Stat(path)
 	if err != nil {
@@ -79,23 +95,17 @@ func (fs OsFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return os.Symlink(oldPath, newPath)
 }
 
-func filesAreIdentical(newContent, filePath string) bool {
-	existingFile, err := os.Open(filePath)
-	if err != nil {
-		return false
-	}
-	defer existingFile.Close()
-
+func (fs OsFileSystem) filesAreIdentical(newContent, filePath string) bool {
 	newBytes := []byte(newContent)
-	existingStat, err := existingFile.Stat()
+	existingStat, err := os.Stat(filePath)
 	if err != nil || int64(len(newBytes)) != existingStat.Size() {
 		return false
 	}
 
-	existingBytes, err := ioutil.ReadAll(existingFile)
+	existingContent, err := fs.ReadFile(filePath)
 	if err != nil {
 		return false
 	}
 
-	return newContent == string(existingBytes)
+	return newContent == existingContent
 }

@@ -8,10 +8,10 @@ type ubuntuDiskManager struct {
 	mounter     Mounter
 }
 
-func NewUbuntuDiskManager(runner boshsys.CmdRunner) (manager ubuntuDiskManager) {
+func NewUbuntuDiskManager(runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager ubuntuDiskManager) {
 	manager.partitioner = NewSfdiskPartitioner(runner)
 	manager.formatter = NewLinuxFormatter(runner)
-	manager.mounter = NewLinuxMounter(runner)
+	manager.mounter = NewLinuxMounter(runner, fs)
 	return
 }
 

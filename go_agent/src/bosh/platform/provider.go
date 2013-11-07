@@ -13,7 +13,7 @@ type provider struct {
 
 func NewProvider(fs boshsys.FileSystem) (p provider) {
 	runner := boshsys.ExecCmdRunner{}
-	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(runner)
+	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(runner, fs)
 
 	p.platforms = map[string]Platform{
 		"ubuntu": newUbuntuPlatform(fs, runner, ubuntuDiskManager),
