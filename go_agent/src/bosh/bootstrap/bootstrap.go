@@ -44,6 +44,12 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
+	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(VCAP_BASE_DIR, "data"))
+	if err != nil {
+		return
+	}
+
+	err = boot.fs.Symlink(filepath.Join(VCAP_BASE_DIR, "data", "sys"), filepath.Join(VCAP_BASE_DIR, "sys"))
 	return
 }
 

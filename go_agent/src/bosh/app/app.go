@@ -6,6 +6,7 @@ import (
 	boshinf "bosh/infrastructure"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
+	boshdisk "bosh/platform/disk"
 	boshsys "bosh/system"
 	"flag"
 	"io/ioutil"
@@ -26,6 +27,7 @@ func New() (app App) {
 func (app App) Run(args []string) (err error) {
 	fs := boshsys.OsFileSystem{}
 	runner := boshsys.ExecCmdRunner{}
+	partitioner := boshdisk.NewSfdiskPartitioner(runner)
 
 	opts, err := parseOptions(args)
 	if err != nil {
@@ -38,7 +40,7 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
-	platformProvider := boshplatform.NewProvider(fs, runner)
+	platformProvider := boshplatform.NewProvider(fs, runner, partitioner)
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return

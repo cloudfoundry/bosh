@@ -42,3 +42,13 @@ func TestRunCommandWithCmdNotFound(t *testing.T) {
 	assert.Empty(t, stderr)
 	assert.Empty(t, stdout)
 }
+
+func TestRunCommandWithInput(t *testing.T) {
+	runner := ExecCmdRunner{}
+
+	stdout, stderr, err := runner.RunCommandWithInput("foo\nbar\nbaz", "grep", "ba")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "bar\nbaz\n", stdout)
+	assert.Empty(t, stderr)
+}

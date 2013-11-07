@@ -56,6 +56,28 @@ func TestRunSetsUpNetworking(t *testing.T) {
 	assert.Equal(t, fakeInfrastructure.SetupNetworkingNetworks, settings.Networks)
 }
 
+func TestRunSetsUpEphemeralDisk(t *testing.T) {
+	settings := boshsettings.Settings{
+		Disks: boshsettings.Disks{
+			Ephemeral: "/dev/sda",
+		},
+	}
+
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = settings
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
+	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathMountPoint, "/var/vcap/data")
+
+	sysSymlinkStats := fakeFs.GetFileTestStat("/var/vcap/sys")
+	assert.NotNil(t, sysSymlinkStats)
+	assert.Equal(t, "Symlink", sysSymlinkStats.CreatedWith)
+	assert.Equal(t, "/var/vcap/data/sys", sysSymlinkStats.SymlinkTarget)
+}
+
 func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {
 	fs = &testsys.FakeFileSystem{}
 	inf = &testinf.FakeInfrastructure{}

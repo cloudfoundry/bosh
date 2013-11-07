@@ -8,4 +8,6 @@ type FileSystem interface {
 	Chown(path, username string) (err error)
 	Chmod(path string, perm os.FileMode) (err error)
 	WriteToFile(path, content string) (written bool, err error)
+	FileExists(path string) bool
+	Symlink(oldPath, newPath string) (err error)
 }

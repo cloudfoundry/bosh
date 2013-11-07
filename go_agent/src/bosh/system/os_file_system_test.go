@@ -20,8 +20,8 @@ func TestHomeDir(t *testing.T) {
 func TestMkdirAll(t *testing.T) {
 	osFs := OsFileSystem{}
 	tmpPath := os.TempDir()
-	testPath := filepath.Join(tmpPath, "foo", "bar", "baz")
-	defer os.RemoveAll(filepath.Join(tmpPath, "foo"))
+	testPath := filepath.Join(tmpPath, "MkdirAllTestDir", "bar", "baz")
+	defer os.RemoveAll(filepath.Join(tmpPath, "MkdirAllTestDir"))
 
 	_, err := os.Stat(testPath)
 	assert.Error(t, err)
@@ -40,7 +40,7 @@ func TestMkdirAll(t *testing.T) {
 
 func TestChown(t *testing.T) {
 	osFs := OsFileSystem{}
-	testPath := filepath.Join(os.TempDir(), "foo")
+	testPath := filepath.Join(os.TempDir(), "ChownTestDir")
 
 	err := os.Mkdir(testPath, os.FileMode(0700))
 	assert.NoError(t, err)
@@ -53,7 +53,7 @@ func TestChown(t *testing.T) {
 
 func TestChmod(t *testing.T) {
 	osFs := OsFileSystem{}
-	testPath := filepath.Join(os.TempDir(), "foo")
+	testPath := filepath.Join(os.TempDir(), "ChmodTestDir")
 
 	_, err := os.Create(testPath)
 	assert.NoError(t, err)
@@ -71,7 +71,7 @@ func TestChmod(t *testing.T) {
 
 func TestWriteToFile(t *testing.T) {
 	osFs := OsFileSystem{}
-	testPath := filepath.Join(os.TempDir(), "foo")
+	testPath := filepath.Join(os.TempDir(), "WriteToFileTestFile")
 
 	_, err := os.Stat(testPath)
 	assert.Error(t, err)
@@ -104,6 +104,38 @@ func TestWriteToFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, written)
 	assert.Equal(t, readFile(file), "second write")
+}
+
+func TestFileExists(t *testing.T) {
+	osFs := OsFileSystem{}
+	testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")
+
+	assert.False(t, osFs.FileExists(testPath))
+
+	osFs.WriteToFile(testPath, "initial write")
+	defer os.Remove(testPath)
+
+	assert.True(t, osFs.FileExists(testPath))
+}
+
+func TestSymlink(t *testing.T) {
+	osFs := OsFileSystem{}
+	filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
+	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestSymlink")
+
+	osFs.WriteToFile(filePath, "some content")
+	defer os.Remove(filePath)
+
+	osFs.Symlink(filePath, symlinkPath)
+	defer os.Remove(symlinkPath)
+
+	symlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, os.ModeSymlink, os.ModeSymlink&symlinkStats.Mode())
+
+	symlinkFile, err := os.Open(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
 func readFile(file *os.File) string {

@@ -10,10 +10,11 @@ type FakeFileSystem struct {
 }
 
 type FakeFileStats struct {
-	FileMode    os.FileMode
-	Username    string
-	CreatedWith string
-	Content     string
+	FileMode      os.FileMode
+	Username      string
+	CreatedWith   string
+	Content       string
+	SymlinkTarget string
 }
 
 func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {
@@ -54,6 +55,17 @@ func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err e
 		stats.Content = content
 		written = true
 	}
+	return
+}
+
+func (fs *FakeFileSystem) FileExists(path string) bool {
+	return fs.GetFileTestStat(path) != nil
+}
+
+func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
+	stats := fs.getOrCreateFile(newPath)
+	stats.CreatedWith = "Symlink"
+	stats.SymlinkTarget = oldPath
 	return
 }
 

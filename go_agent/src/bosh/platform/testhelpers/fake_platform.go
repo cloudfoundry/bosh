@@ -6,6 +6,9 @@ import (
 )
 
 type FakePlatform struct {
+	SetupEphemeralDiskWithPathDevicePath string
+	SetupEphemeralDiskWithPathMountPoint string
+
 	CpuLoad   boshplatform.CpuLoad
 	CpuStats  boshplatform.CpuStats
 	MemStats  boshplatform.MemStats
@@ -18,6 +21,12 @@ func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
 }
 
 func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
+	return
+}
+
+func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
+	p.SetupEphemeralDiskWithPathDevicePath = devicePath
+	p.SetupEphemeralDiskWithPathMountPoint = mountPoint
 	return
 }
 

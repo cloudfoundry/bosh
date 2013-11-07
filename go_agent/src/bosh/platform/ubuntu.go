@@ -2,23 +2,33 @@ package platform
 
 import (
 	bosherr "bosh/errors"
+	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"bytes"
+	"errors"
+	"fmt"
 	sigar "github.com/cloudfoundry/gosigar"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"text/template"
+	"time"
 )
 
 type ubuntu struct {
-	fs        boshsys.FileSystem
-	cmdRunner boshsys.CmdRunner
+	fs              boshsys.FileSystem
+	cmdRunner       boshsys.CmdRunner
+	partitioner     boshdisk.Partitioner
+	diskWaitTimeout time.Duration
 }
 
-func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner) (platform ubuntu) {
+func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, partitioner boshdisk.Partitioner) (platform ubuntu) {
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
+	platform.partitioner = partitioner
+	platform.diskWaitTimeout = 3 * time.Minute
 	return
 }
 
@@ -93,6 +103,110 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
+
+func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
+	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+
+	realPath, err := p.getRealDevicePath(devicePath)
+	if err != nil {
+		return
+	}
+
+	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
+	if err != nil {
+		return
+	}
+
+	partitions := []boshdisk.Partition{
+		{SizeInBlocks: swapSize, Type: boshdisk.PartitionTypeSwap},
+		{SizeInBlocks: linuxSize, Type: boshdisk.PartitionTypeLinux},
+	}
+
+	p.partitioner.Partition(realPath, partitions)
+
+	swapDevicePath := realPath + "1"
+	dataDevicePath := realPath + "2"
+	p.cmdRunner.RunCommand("mkswap", swapDevicePath)
+	p.cmdRunner.RunCommand("mke2fs", "-t", "ext4", "-j", dataDevicePath)
+
+	p.cmdRunner.RunCommand("swapon", swapDevicePath)
+	p.cmdRunner.RunCommand("mount", dataDevicePath, mountPoint)
+
+	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "log"), os.FileMode(0750))
+	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "run"), os.FileMode(0750))
+	return
+}
+
+func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
+	stopAfter := time.Now().Add(p.diskWaitTimeout)
+
+	realPath, found := p.findPossibleDevice(devicePath)
+	for !found {
+		if time.Now().After(stopAfter) {
+			err = errors.New(fmt.Sprintf("Timed out getting real device path for %s", devicePath))
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+		realPath, found = p.findPossibleDevice(devicePath)
+	}
+
+	return
+}
+
+func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bool) {
+	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
+
+	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
+	for _, prefix := range possiblePrefixes {
+		path := prefix + pathSuffix
+		if p.fs.FileExists(path) {
+			realPath = path
+			found = true
+			return
+		}
+	}
+	return
+}
+
+func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
+	memStats, err := p.GetMemStats()
+	if err != nil {
+		return
+	}
+
+	blockSizeInBytes := uint64(512)
+	totalMemInKb := memStats.Total
+	totalMemInBlocks := totalMemInKb * uint64(1024) / blockSizeInBytes
+
+	diskSizeInBlocks, err := p.getBlockDeviceSizeInBlocks(devicePath)
+	if err != nil {
+		return
+	}
+
+	if totalMemInBlocks > diskSizeInBlocks/2 {
+		swapSize = diskSizeInBlocks / 2
+	} else {
+		swapSize = totalMemInBlocks
+	}
+
+	linuxSize = diskSizeInBlocks - swapSize
+	return
+}
+
+func (p ubuntu) getBlockDeviceSizeInBlocks(devicePath string) (size uint64, err error) {
+	stdout, _, err := p.cmdRunner.RunCommand("sfdisk", "-s", devicePath)
+	if err != nil {
+		return
+	}
+
+	intSize, err := strconv.Atoi(stdout)
+	if err != nil {
+		return
+	}
+
+	size = uint64(intSize)
+	return
+}
 
 func (p ubuntu) GetCpuLoad() (load CpuLoad, err error) {
 	l := sigar.LoadAverage{}

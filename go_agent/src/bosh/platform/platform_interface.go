@@ -5,6 +5,7 @@ import boshsettings "bosh/settings"
 type Platform interface {
 	SetupSsh(publicKey, username string) (err error)
 	SetupDhcp(networks boshsettings.Networks) (err error)
+	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
 	GetCpuLoad() (load CpuLoad, err error)
 	GetCpuStats() (stats CpuStats, err error)
 	GetMemStats() (stats MemStats, err error)

@@ -67,6 +67,18 @@ func (fs OsFileSystem) WriteToFile(path, content string) (written bool, err erro
 	return
 }
 
+func (fs OsFileSystem) FileExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return !os.IsNotExist(err)
+	}
+	return true
+}
+
+func (fs OsFileSystem) Symlink(oldPath, newPath string) (err error) {
+	return os.Symlink(oldPath, newPath)
+}
+
 func filesAreIdentical(newContent, filePath string) bool {
 	existingFile, err := os.Open(filePath)
 	if err != nil {

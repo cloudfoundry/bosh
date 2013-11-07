@@ -17,6 +17,10 @@ func (p dummyPlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
+	return
+}
+
 func (p dummyPlatform) GetCpuLoad() (load CpuLoad, err error) {
 	return
 }
