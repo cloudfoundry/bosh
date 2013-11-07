@@ -80,7 +80,7 @@ module Bosh::WardenCloud
     private
 
     def mount_entry(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+      `mount`.lines.select { |l| l.match(/#{partition}/) }.first
     end
 
     # Retry the umount for GUARD_RETRIES +1  times
