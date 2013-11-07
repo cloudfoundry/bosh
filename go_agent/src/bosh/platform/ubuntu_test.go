@@ -1,6 +1,7 @@
 package platform
 
 import (
+	boshdisk "bosh/platform/disk"
 	testdisk "bosh/platform/disk/testhelpers"
 	boshsettings "bosh/settings"
 	testsys "bosh/system/testhelpers"
@@ -13,10 +14,10 @@ import (
 )
 
 func TestUbuntuSetupSsh(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
 	fakeFs.HomeDirHomeDir = "/some/home/dir"
 
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 	ubuntu.SetupSsh("some public key", "vcap")
 
 	sshDirPath := "/some/home/dir/.ssh"
@@ -39,8 +40,8 @@ func TestUbuntuSetupSsh(t *testing.T) {
 }
 
 func TestUbuntuSetupDhcp(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
-	testUbuntuSetupDhcp(t, fakeFs, fakeCmdRunner, fakePartitioner)
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
+	testUbuntuSetupDhcp(t, fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 
 	assert.Equal(t, len(fakeCmdRunner.RunCommands), 2)
 	assert.Equal(t, fakeCmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
@@ -48,14 +49,14 @@ func TestUbuntuSetupDhcp(t *testing.T) {
 }
 
 func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
 	fakeFs.WriteToFile("/etc/dhcp3/dhclient.conf", EXPECTED_DHCP_CONFIG)
-	testUbuntuSetupDhcp(t, fakeFs, fakeCmdRunner, fakePartitioner)
+	testUbuntuSetupDhcp(t, fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 
 	assert.Equal(t, len(fakeCmdRunner.RunCommands), 0)
 }
 
-func testUbuntuSetupDhcp(t *testing.T, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner, fakePartitioner *testdisk.FakePartitioner) {
+func testUbuntuSetupDhcp(t *testing.T, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner, fakePartitioner *testdisk.FakePartitioner, fakeFormatter *testdisk.FakeFormatter) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.NetworkSettings{
 			Default: []string{"dns"},
@@ -67,7 +68,7 @@ func testUbuntuSetupDhcp(t *testing.T, fakeFs *testsys.FakeFileSystem, fakeCmdRu
 		},
 	}
 
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 	ubuntu.SetupDhcp(networks)
 
 	dhcpConfig := fakeFs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
@@ -92,9 +93,9 @@ prepend domain-name-servers xx.xx.xx.xx;
 `
 
 func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
 	fakePartitioner.GetDeviceSizeInBlocksSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 
 	fakeFs.WriteToFile("/dev/xvda", "")
 
@@ -114,11 +115,17 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, "swap", swapPartition.Type)
 	assert.Equal(t, "linux", ext4Partition.Type)
 
-	assert.Equal(t, 4, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"mkswap", "/dev/xvda1"}, fakeCmdRunner.RunCommands[0])
-	assert.Equal(t, []string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}, fakeCmdRunner.RunCommands[1])
-	assert.Equal(t, []string{"swapon", "/dev/xvda1"}, fakeCmdRunner.RunCommands[2])
-	assert.Equal(t, []string{"mount", "/dev/xvda2", "/data-dir"}, fakeCmdRunner.RunCommands[3])
+	assert.Equal(t, 2, len(fakeFormatter.FormatPartitionPaths))
+	assert.Equal(t, "/dev/xvda1", fakeFormatter.FormatPartitionPaths[0])
+	assert.Equal(t, "/dev/xvda2", fakeFormatter.FormatPartitionPaths[1])
+
+	assert.Equal(t, 2, len(fakeFormatter.FormatFsTypes))
+	assert.Equal(t, boshdisk.FileSystemSwap, fakeFormatter.FormatFsTypes[0])
+	assert.Equal(t, boshdisk.FileSystemExt4, fakeFormatter.FormatFsTypes[1])
+
+	assert.Equal(t, 2, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"swapon", "/dev/xvda1"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"mount", "/dev/xvda2", "/data-dir"}, fakeCmdRunner.RunCommands[1])
 
 	sysLogStats := fakeFs.GetFileTestStat("/data-dir/sys/log")
 	assert.NotNil(t, sysLogStats)
@@ -132,8 +139,8 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 }
 
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 
 	fakeFs.WriteToFile("/dev/xvda", "")
 	fakeFs.WriteToFile("/dev/vda", "")
@@ -144,8 +151,8 @@ func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 }
 
 func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 
 	time.AfterFunc(time.Second, func() {
 		fakeFs.WriteToFile("/dev/xvda", "")
@@ -157,8 +164,8 @@ func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
 }
 
 func TestUbuntuGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 	ubuntu.diskWaitTimeout = time.Second
 
 	time.AfterFunc(2*time.Second, func() {
@@ -192,12 +199,12 @@ func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmall
 }
 
 func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, diskSizeInBlocks, expectedSwap uint64) {
-	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
+	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuDependencies()
 	fakePartitioner.GetDeviceSizeInBlocksSizes = map[string]uint64{
 		"/dev/hda": diskSizeInBlocks,
 	}
 
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
 
 	swapSize, linuxSize, err := ubuntu.calculateEphemeralDiskPartitionSizes("/dev/hda")
 
@@ -206,9 +213,10 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, diskSizeInBloc
 	assert.Equal(t, diskSizeInBlocks-expectedSwap, linuxSize)
 }
 
-func getUbuntuDependencies() (fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner, diskPartitioner *testdisk.FakePartitioner) {
+func getUbuntuDependencies() (fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner, diskPartitioner *testdisk.FakePartitioner, diskFormatter *testdisk.FakeFormatter) {
 	fs = &testsys.FakeFileSystem{}
 	cmdRunner = &testsys.FakeCmdRunner{}
 	diskPartitioner = &testdisk.FakePartitioner{}
+	diskFormatter = &testdisk.FakeFormatter{}
 	return
 }

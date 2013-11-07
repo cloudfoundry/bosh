@@ -11,9 +11,13 @@ type provider struct {
 	platforms map[string]Platform
 }
 
-func NewProvider(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, partitioner boshdisk.Partitioner) (p provider) {
+func NewProvider(fs boshsys.FileSystem) (p provider) {
+	runner := boshsys.ExecCmdRunner{}
+	partitioner := boshdisk.NewSfdiskPartitioner(runner)
+	formatter := boshdisk.NewLinuxFormatter(runner)
+
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(fs, cmdRunner, partitioner),
+		"ubuntu": newUbuntuPlatform(fs, runner, partitioner, formatter),
 		"dummy":  newDummyPlatform(),
 	}
 	return

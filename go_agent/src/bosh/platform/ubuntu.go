@@ -19,13 +19,15 @@ type ubuntu struct {
 	fs              boshsys.FileSystem
 	cmdRunner       boshsys.CmdRunner
 	partitioner     boshdisk.Partitioner
+	formatter       boshdisk.Formatter
 	diskWaitTimeout time.Duration
 }
 
-func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, partitioner boshdisk.Partitioner) (platform ubuntu) {
+func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, partitioner boshdisk.Partitioner, formatter boshdisk.Formatter) (platform ubuntu) {
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
 	platform.partitioner = partitioner
+	platform.formatter = formatter
 	platform.diskWaitTimeout = 3 * time.Minute
 	return
 }
@@ -122,13 +124,13 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 
 	p.partitioner.Partition(realPath, partitions)
 
-	swapDevicePath := realPath + "1"
-	dataDevicePath := realPath + "2"
-	p.cmdRunner.RunCommand("mkswap", swapDevicePath)
-	p.cmdRunner.RunCommand("mke2fs", "-t", "ext4", "-j", dataDevicePath)
+	swapPartitionPath := realPath + "1"
+	dataPartitionPath := realPath + "2"
+	p.formatter.Format(swapPartitionPath, boshdisk.FileSystemSwap)
+	p.formatter.Format(dataPartitionPath, boshdisk.FileSystemExt4)
 
-	p.cmdRunner.RunCommand("swapon", swapDevicePath)
-	p.cmdRunner.RunCommand("mount", dataDevicePath, mountPoint)
+	p.cmdRunner.RunCommand("swapon", swapPartitionPath)
+	p.cmdRunner.RunCommand("mount", dataPartitionPath, mountPoint)
 
 	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "log"), os.FileMode(0750))
 	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "run"), os.FileMode(0750))
