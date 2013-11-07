@@ -71,8 +71,6 @@ describe 'Ubuntu Stemcell' do
       'sudo'                 => '1.7.2p1-1ubuntu5.6',
       'uuid-dev'             => '2.17.2-0ubuntu1.10.04.2',
       'libgcrypt11-dev'      => '1.4.4-5ubuntu2.2',
-      'python-docutils'      => '0.6-3',
-      'libgnutls-dev'        => '2.8.5-2ubuntu0.4',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }

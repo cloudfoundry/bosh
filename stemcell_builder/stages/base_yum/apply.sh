@@ -43,3 +43,6 @@ run_in_chroot $chroot "
   rpm -i /rpmbuild/RPMS/${runit_version}.rpm
 "
 #/runit
+
+# rsyslog config
+cp -f $assets_dir/rsyslog.conf $chroot/etc/rsyslog.conf
