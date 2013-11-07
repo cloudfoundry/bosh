@@ -9,8 +9,9 @@ module Bosh::Director
     end
 
     describe '#perform' do
-      subject(:import_job) { described_class.new(export_path: exported_tar, blobstore_client: blobstore_client) }
+      subject(:import_job) { described_class.new(export_dir, blobstore_client: blobstore_client) }
 
+      let(:export_dir) { '/tmp/export/dir' }
       let(:exported_tar) { asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz') }
       let(:export) { instance_double('Bosh::Director::CompiledPackage::CompiledPackagesExport') }
       let(:blobstore_client) { double('blobstore client') }
@@ -60,7 +61,8 @@ module Bosh::Director
       let!(:release) { Bosh::Director::Models::Release.make(name: manifest['release_name']) }
 
       before do
-        Bosh::Director::CompiledPackage::CompiledPackagesExport.stub(:new).with(file: exported_tar).and_return(export)
+        Bosh::Director::CompiledPackage::CompiledPackagesExport.stub(:new).with(
+          file: '/tmp/export/dir/compiled_packages_export.tgz').and_return(export)
         export.stub(:extract).and_yield(manifest, [package1, package2])
         blobstore_client.stub(:create_file).with('blob-id1', '/tmp/blob1')
         blobstore_client.stub(:create_file).with('blob-id2', '/tmp/blob2')
@@ -68,6 +70,10 @@ module Bosh::Director
 
         release_version.add_package(package_model1)
         release_version.add_package(package_model2)
+
+        File.stub(:open).with('/tmp/blob1')
+        File.stub(:open).with('/tmp/blob2')
+        FileUtils.stub(:rm_rf)
       end
 
       context 'when there is one Release and one ReleaseVersion' do
@@ -77,8 +83,12 @@ module Bosh::Director
         end
 
         it 'adds the compiled package blobs to the blobstore' do
-          blobstore_client.should_receive(:create_file).with('blob-id1', '/tmp/blob1')
-          blobstore_client.should_receive(:create_file).with('blob-id2', '/tmp/blob2')
+          f1 = double
+          f2 = double
+          File.stub(:open).with('/tmp/blob1').and_yield(f1)
+          File.stub(:open).with('/tmp/blob2').and_yield(f2)
+          blobstore_client.should_receive(:create).with(f1, 'blob-id1')
+          blobstore_client.should_receive(:create).with(f2, 'blob-id2')
 
           import_job.perform
         end
@@ -91,6 +101,11 @@ module Bosh::Director
 
           imported_package2 = find_compiled_package(package_model2, stemcell.id, [package_model1])
           expect(imported_package2).to_not be_nil
+        end
+
+        it 'cleans up the temp dir' do
+          expect(FileUtils).to receive(:rm_rf).with(export_dir)
+          import_job.perform
         end
       end
 
@@ -139,6 +154,15 @@ module Bosh::Director
 
           imported_package2 = find_compiled_package(package_model2, stemcell.id, [package_model1])
           expect(imported_package2).to_not be_nil
+        end
+      end
+
+      context 'when an exception is raised in perform' do
+        it 'cleans up the temp dir' do
+          export.stub(:extract).and_raise(StandardError, 'fff')
+          expect(FileUtils).to receive(:rm_rf).with(export_dir)
+
+          expect { import_job.perform }.to raise_error(StandardError, 'fff')
         end
       end
 

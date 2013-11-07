@@ -1,4 +1,5 @@
 require 'json'
+require 'tempfile'
 require 'bosh/director/api/controllers/base_controller'
 require 'bosh/director/api/stemcell_manager'
 require 'bosh/director/compiled_package_group'
@@ -30,13 +31,16 @@ module Bosh::Director
       end
 
       post '/compiled_package_groups/import', consumes: [:tgz] do
-        tempfile = Tempfile.new('compiled_package_import')
-        while buf = request.body.read(8192)
-          tempfile.write(buf)
+        tempdir = Dir.mktmpdir
+        export_path = File.join(tempdir, 'compiled_packages_export.tgz')
+        # the job is responsible for cleaning this up
+        File.open(export_path, 'w') do |f|
+          while buf = request.body.read(4096)
+            f.write(buf)
+          end
         end
 
-        task = JobQueue.new.enqueue(@user, Jobs::ImportCompiledPackages, 'import compiled packages',
-                                    [{export_path: tempfile.path}])
+        task = JobQueue.new.enqueue(@user, Jobs::ImportCompiledPackages, 'import compiled packages', [tempdir])
         redirect "/tasks/#{task.id}"
       end
 

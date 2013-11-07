@@ -144,22 +144,20 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         it 'writes the compiled packages export file' do
-          tempfile = StringIO.new
-          tempfile.stub(:path)
-          Tempfile.stub(:new).and_return(tempfile)
-
-          task = instance_double('Bosh::Director::Models::Task', id: 1)
-          JobQueue.stub_chain(:new, :enqueue).and_return(task)
+          tempdir = Dir.mktmpdir
+          Dir.stub(:mktmpdir).and_return(tempdir)
 
           perform
 
-          tempfile.rewind
-          expect(tempfile.read).to eq(tar_data)
+          export_path = File.join(tempdir, 'compiled_packages_export.tgz')
+
+          expect(File.read(export_path)).to eq('tar data')
+          FileUtils.rm_r(tempdir)
         end
 
         it 'enqueues a task' do
-          tempfile = instance_double('Tempfile', path: '/tmp/path', write: nil)
-          Tempfile.stub(:new).and_return(tempfile)
+          File.stub(:open)
+          Dir.stub(:mktmpdir).and_return('/tmp/path')
 
           task = instance_double('Bosh::Director::Models::Task', id: 1)
 
@@ -167,7 +165,8 @@ module Bosh::Director
           JobQueue.stub(new: job_queue)
 
           expect(job_queue).to receive(:enqueue).with('admin', Jobs::ImportCompiledPackages, 'import compiled packages',
-                                                      [{export_path: '/tmp/path'}]).and_return(task)
+                                                      ['/tmp/path']).and_return(task)
+
           perform
         end
 
