@@ -20,14 +20,16 @@ type ubuntu struct {
 	cmdRunner       boshsys.CmdRunner
 	partitioner     boshdisk.Partitioner
 	formatter       boshdisk.Formatter
+	mounter         boshdisk.Mounter
 	diskWaitTimeout time.Duration
 }
 
-func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, partitioner boshdisk.Partitioner, formatter boshdisk.Formatter) (platform ubuntu) {
+func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, diskManager boshdisk.Manager) (platform ubuntu) {
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
-	platform.partitioner = partitioner
-	platform.formatter = formatter
+	platform.partitioner = diskManager.GetPartitioner()
+	platform.formatter = diskManager.GetFormatter()
+	platform.mounter = diskManager.GetMounter()
 	platform.diskWaitTimeout = 3 * time.Minute
 	return
 }
@@ -129,8 +131,8 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 	p.formatter.Format(swapPartitionPath, boshdisk.FileSystemSwap)
 	p.formatter.Format(dataPartitionPath, boshdisk.FileSystemExt4)
 
-	p.cmdRunner.RunCommand("swapon", swapPartitionPath)
-	p.cmdRunner.RunCommand("mount", dataPartitionPath, mountPoint)
+	p.mounter.SwapOn(swapPartitionPath)
+	p.mounter.Mount(dataPartitionPath, mountPoint)
 
 	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "log"), os.FileMode(0750))
 	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "run"), os.FileMode(0750))

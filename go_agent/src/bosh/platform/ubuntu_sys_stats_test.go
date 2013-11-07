@@ -8,8 +8,8 @@ import (
 )
 
 func TestUbuntuGetCpuLoad(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuSysStatsDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
+	fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuSysStatsDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakeDiskManager)
 
 	load, err := ubuntu.GetCpuLoad()
 	assert.NoError(t, err)
@@ -19,8 +19,8 @@ func TestUbuntuGetCpuLoad(t *testing.T) {
 }
 
 func TestUbuntuGetCpuStats(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuSysStatsDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
+	fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuSysStatsDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakeDiskManager)
 
 	stats, err := ubuntu.GetCpuStats()
 	assert.NoError(t, err)
@@ -30,8 +30,8 @@ func TestUbuntuGetCpuStats(t *testing.T) {
 }
 
 func TestUbuntuGetMemStats(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuSysStatsDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
+	fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuSysStatsDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakeDiskManager)
 
 	stats, err := ubuntu.GetMemStats()
 	assert.NoError(t, err)
@@ -40,8 +40,8 @@ func TestUbuntuGetMemStats(t *testing.T) {
 }
 
 func TestUbuntuGetSwapStats(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuSysStatsDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
+	fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuSysStatsDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakeDiskManager)
 
 	stats, err := ubuntu.GetSwapStats()
 	assert.NoError(t, err)
@@ -49,8 +49,8 @@ func TestUbuntuGetSwapStats(t *testing.T) {
 }
 
 func TestUbuntuGetDiskStats(t *testing.T) {
-	fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter := getUbuntuSysStatsDependencies()
-	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner, fakeFormatter)
+	fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuSysStatsDependencies()
+	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakeDiskManager)
 
 	stats, err := ubuntu.GetDiskStats("/")
 	assert.NoError(t, err)
@@ -60,15 +60,9 @@ func TestUbuntuGetDiskStats(t *testing.T) {
 	assert.True(t, stats.InodeUsed > 0)
 }
 
-func getUbuntuSysStatsDependencies() (
-	fs *testsys.FakeFileSystem,
-	runner *testsys.FakeCmdRunner,
-	partitioner *testdisk.FakePartitioner,
-	formatter *testdisk.FakeFormatter) {
-
+func getUbuntuSysStatsDependencies() (fs *testsys.FakeFileSystem, runner *testsys.FakeCmdRunner, diskManager testdisk.FakeDiskManager) {
 	fs = &testsys.FakeFileSystem{}
 	runner = &testsys.FakeCmdRunner{}
-	partitioner = &testdisk.FakePartitioner{}
-	formatter = &testdisk.FakeFormatter{}
+	diskManager = testdisk.NewFakeDiskManager(runner)
 	return
 }
