@@ -8,8 +8,12 @@ module Bosh::Agent
         @network = network
       end
 
-      def mount_persistent_disk(cid)
-        @disk.mount_persistent_disk(cid)
+      def mount_persistent_disk(cid, options={})
+        @disk.mount_persistent_disk(cid, options)
+      end
+
+      def mount_partition(partition, mount_point)
+        @disk.mount_partition(partition, mount_point)
       end
 
       def update_logging(spec)
@@ -26,6 +30,10 @@ module Bosh::Agent
 
       def get_data_disk_device_name
         @disk.get_data_disk_device_name
+      end
+
+      def is_disk_blockdev?
+        @disk.is_disk_blockdev?
       end
 
       def setup_networking

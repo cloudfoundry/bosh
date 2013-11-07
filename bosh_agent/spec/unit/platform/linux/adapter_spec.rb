@@ -12,7 +12,7 @@ module Bosh::Agent
       describe 'Method delegation' do
         context 'Disk' do
           it 'delegates mount_persistent_disk to @disk' do
-            disk.should_receive(:mount_persistent_disk).with(1)
+            disk.should_receive(:mount_persistent_disk).with(1, {})
             platform.mount_persistent_disk(1)
           end
           it 'delegates lookup_disk_by_cid to @disk' do
@@ -23,6 +23,11 @@ module Bosh::Agent
           it 'delegates get_data_disk_device_name to @disk' do
             disk.should_receive(:get_data_disk_device_name)
             platform.get_data_disk_device_name
+          end
+
+          it 'delegates mount_partition to @disk' do
+            disk.should_receive(:mount_partition).with('/dev/sda1', '/var/vcap/store')
+            platform.mount_partition('/dev/sda1', '/var/vcap/store')
           end
         end
 

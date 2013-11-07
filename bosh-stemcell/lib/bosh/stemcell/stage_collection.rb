@@ -51,6 +51,8 @@ module Bosh::Stemcell
           openstack_stages
         when Infrastructure::Vsphere then
           operating_system.instance_of?(OperatingSystem::Centos) ? hacked_centos_vsphere : vsphere_stages
+        when Infrastructure::Warden then
+          warden_stages
       end
     end
 
@@ -159,6 +161,21 @@ module Bosh::Stemcell
         :image_vsphere_vmx,
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
+        # Final stemcell
+        :stemcell
+      ]
+    end
+
+    def warden_stages
+      [
+        :system_parameters,
+        :base_warden,
+        # Finalisation
+        :bosh_clean,
+        :bosh_harden,
+        :bosh_dpkg_list,
+        # Image copy
+        :bosh_copy_root,
         # Final stemcell
         :stemcell
       ]

@@ -24,7 +24,10 @@ module Bosh::Agent
     attr_reader :shell_runner
 
     def build_command_line_options(options_hash)
-      command_options = { read_only: '-o ro' }
+      command_options = {
+          bind_mount: '--bind',
+          read_only: '-o ro'
+      }
       commands = []
 
       command_options.each do |key,value|

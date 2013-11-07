@@ -22,7 +22,7 @@ module Bosh::Agent
         let(:mounter) { instance_double('Bosh::Agent::Mounter', mount: nil) }
 
         let(:logger) { instance_double('Logger', info: nil) }
-        let(:platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter', lookup_disk_by_cid: '/dev/sda') }
+        let(:platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter', lookup_disk_by_cid: '/dev/sda', is_disk_blockdev?: true) }
 
         before { stub_const('Bosh::Agent::DiskUtil', disk_util) }
         let(:disk_util) { class_double('Bosh::Agent::DiskUtil') }
@@ -59,6 +59,7 @@ module Bosh::Agent
 
           it 'does not partition the disk' do
             Bosh::Agent::Util.should_not_receive(:partition_disk)
+            platform.should_receive(:mount_partition).with("/dev/sda1", "/var/vcap/store")
             mount_disk_handler.mount
           end
         end
@@ -67,6 +68,7 @@ module Bosh::Agent
           before do
             disk_util.stub(ensure_no_partition?: true)
             File.stub(:blockdev?).with('/dev/sda1').and_return(false)
+            platform.should_receive(:mount_partition).with("/dev/sda1", "/var/vcap/store")
           end
 
           it 'partitions the disk' do
@@ -86,18 +88,27 @@ module Bosh::Agent
 
         context 'not mount a disk for migration' do
           it 'mounts to /var/vcap/store' do
-            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store')
+            platform.should_receive(:mount_partition).with("/dev/sda1", "/var/vcap/store")
             mount_disk_handler.mount
 
             expect(File.directory?('/var/vcap/store')).to be_true
           end
         end
 
+        context 'bind mount directory as persistent disk for warden cpi' do
+          it 'mounts to /var/vcap/store' do
+            platform.stub(:is_disk_blockdev?).and_return(false)
+            platform.should_receive(:mount_partition).with("/dev/sda", "/var/vcap/store")
+            mount_disk_handler.mount
+            expect(File.directory?('/var/vcap/store')).to be_true
+          end
+        end
+
         context 'fails to mount a disk' do
           it 'passes through error from Mounter' do
-            mounter.stub(:mount).and_raise(Bosh::Agent::MessageHandlerError,
+            platform.stub(:mount_partition).and_raise(Bosh::Agent::MessageHandlerError,
                                            "Failed to mount: '/dev/sda1' '/var/vcap/store' Exit status: 1 Output: FAIL")
-            mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store')
+            platform.should_receive(:mount_partition).with("/dev/sda1", "/var/vcap/store")
             expect {
               mount_disk_handler.mount
             }.to raise_error(Bosh::Agent::MessageHandlerError,

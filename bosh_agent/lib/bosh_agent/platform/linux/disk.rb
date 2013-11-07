@@ -5,6 +5,7 @@ module Bosh::Agent
     include Bosh::Exec
 
     VSPHERE_DATA_DISK = "/dev/sdb"
+    WARDEN_DATA_DISK = "/dev/invalid" # Warden doesn't use any data disk
     DEV_PATH_TIMEOUT=180
     DISK_RETRY_MAX_DEFAULT = 30
 
@@ -21,9 +22,36 @@ module Bosh::Agent
     def mount_persistent_disk(cid, options={})
       FileUtils.mkdir_p(@store_dir)
       disk = lookup_disk_by_cid(cid)
-      partition = "#{disk}1"
-      if File.blockdev?(partition) && !mount_exists?(partition)
-        mounter.mount(partition, @store_dir, options)
+      partition = is_disk_blockdev?? "#{disk}1" : "#{disk}"
+      mount_partition(partition, @store_dir, options)
+    end
+
+    def is_disk_blockdev?
+      case @config.infrastructure_name
+        when "vsphere", "aws", "openstack"
+          true
+        when "warden"
+          false
+        else
+          raise Bosh::Agent::FatalError, "call is_disk_blockdev failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
+      end
+    end
+
+    def mount_partition(partition, mount_point, options={})
+      infra_option = {}
+      case @config.infrastructure_name
+        when "vsphere", "aws", "openstack"
+          nil
+        when "warden"
+          infra_option = { bind_mount: true }
+        else
+          raise Bosh::Agent::FatalError, "call is_disk_blockdev failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
+      end
+
+      proceed_mount = is_disk_blockdev?? File.blockdev?(partition) : true
+
+      if proceed_mount && !mount_exists?(partition)
+        mounter.mount(partition, mount_point, options.merge(infra_option))
       end
     end
 
@@ -40,6 +68,8 @@ module Bosh::Agent
             return nil
           end
           get_available_path(dev_path)
+        when "warden"
+          WARDEN_DATA_DISK
         else
           raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
@@ -59,6 +89,9 @@ module Bosh::Agent
         when "aws", "openstack"
           # AWS & OpenStack pass in the device name
           get_available_path(disk_id)
+        when "warden"
+          # Warden directly stores the device path
+          disk_id
         else
           raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
@@ -111,7 +144,7 @@ module Bosh::Agent
     end
 
     def mount_exists?(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+      `mount`.lines.select { |l| l.match(/#{partition}/) }.first
     end
 
     private

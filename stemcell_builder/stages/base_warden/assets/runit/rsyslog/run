@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Copyright (c) 2009-2012 VMware, Inc.
+
+set -e
+
+. /etc/default/rsyslog
+exec /usr/sbin/rsyslogd -n $RSYSLOGD_OPTIONS

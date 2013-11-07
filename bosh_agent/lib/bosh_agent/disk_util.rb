@@ -10,7 +10,7 @@ module Bosh::Agent
       end
 
       def mount_entry(partition)
-        File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+        `mount`.lines.select { |l| l.match(/#{partition}/) }.first
       end
 
       GUARD_RETRIES = 600

@@ -3,6 +3,8 @@ require 'spec_helper'
 describe Bosh::Agent::Message::UnmountDisk do
   it 'should unmount disk' do
     platform = double(:platform)
+    platform.stub(:is_disk_blockdev?).and_return(true)
+
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
     Bosh::Agent::DiskUtil.stub(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
@@ -13,8 +15,24 @@ describe Bosh::Agent::Message::UnmountDisk do
     handler.unmount(["4"]).should == { :message => "Unmounted /dev/sdy1 on /foomount"}
   end
 
+  it 'should unmount bind mounted directory for warden-cpi' do
+    platform = double(:platform)
+    platform.stub(:is_disk_blockdev?).and_return(false)
+
+    Bosh::Agent::Config.stub(:platform).and_return(platform)
+    platform.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
+    Bosh::Agent::DiskUtil.stub(:mount_entry).and_return('/dev/sdy /foomount fstype')
+
+    handler = Bosh::Agent::Message::UnmountDisk.new
+    Bosh::Agent::DiskUtil.stub(:umount_guard)
+
+    handler.unmount(["4"]).should == { :message => "Unmounted /dev/sdy on /foomount"}
+  end
+
   it "should fall through if mount is not present" do
     platform = double(:platform)
+    platform.stub(:is_disk_blockdev?).and_return(true)
+
     Bosh::Agent::Config.stub(:platform).and_return(platform)
     platform.stub(:lookup_disk_by_cid).and_return("/dev/sdx")
     Bosh::Agent::DiskUtil.stub(:mount_entry).and_return(nil)

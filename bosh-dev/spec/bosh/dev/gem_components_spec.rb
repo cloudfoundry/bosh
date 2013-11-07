@@ -45,6 +45,7 @@ module Bosh::Dev
         GemComponent.should_receive(:new).with('bosh_openstack_cpi', version_file.version)
         GemComponent.should_receive(:new).with('bosh-registry', version_file.version)
         GemComponent.should_receive(:new).with('bosh_vsphere_cpi', version_file.version)
+        GemComponent.should_receive(:new).with('bosh_warden_cpi', version_file.version)
         GemComponent.should_receive(:new).with('bosh-director', version_file.version)
         GemComponent.should_receive(:new).with('bosh-monitor', version_file.version)
         GemComponent.should_receive(:new).with('bosh-release', version_file.version)
@@ -81,6 +82,7 @@ module Bosh::Dev
           bosh_openstack_cpi
           bosh-registry
           bosh_vsphere_cpi
+          bosh_warden_cpi
           bosh-director
           bosh-monitor
           bosh-release
