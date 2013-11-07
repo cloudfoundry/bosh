@@ -125,5 +125,73 @@ module Bosh::Director
         end
       end
     end
+
+    describe 'POST', '/compiled_package_groups/import' do
+      let(:tar_data) { 'tar data' }
+
+      def perform
+        post '/compiled_package_groups/import', tar_data, {'CONTENT_TYPE' => 'application/x-compressed'}
+      end
+
+      before do
+        test_config = Psych.load(spec_asset('test-director-config.yml'))
+        Config.configure(test_config)
+      end
+
+      context 'authenticated access' do
+        let(:tar_data) { 'tar data' }
+
+        before { authorize 'admin', 'admin' }
+
+        it 'writes the compiled packages export file' do
+          tempfile = StringIO.new
+          tempfile.stub(:path)
+          Tempfile.stub(:new).and_return(tempfile)
+
+          task = instance_double('Bosh::Director::Models::Task', id: 1)
+          JobQueue.stub_chain(:new, :enqueue).and_return(task)
+
+          perform
+
+          tempfile.rewind
+          expect(tempfile.read).to eq(tar_data)
+        end
+
+        it 'enqueues a task' do
+          tempfile = instance_double('Tempfile', path: '/tmp/path', write: nil)
+          Tempfile.stub(:new).and_return(tempfile)
+
+          task = instance_double('Bosh::Director::Models::Task', id: 1)
+
+          job_queue = instance_double('Bosh::Director::JobQueue')
+          JobQueue.stub(new: job_queue)
+
+          expect(job_queue).to receive(:enqueue).with('admin', Jobs::ImportCompiledPackages, 'import compiled packages',
+                                                      [{export_path: '/tmp/path'}]).and_return(task)
+          perform
+        end
+
+        it 'returns a task' do
+          perform
+          expect_redirect_to_queued_task(last_response)
+        end
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'unauthenticated access' do
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+    end
   end
 end
