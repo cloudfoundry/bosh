@@ -4,7 +4,6 @@ import (
 	testdisk "bosh/platform/disk/testhelpers"
 	boshsettings "bosh/settings"
 	testsys "bosh/system/testhelpers"
-	"fmt"
 	sigar "github.com/cloudfoundry/gosigar"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -94,9 +93,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 
 func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
-	fakeCmdRunner.CommandResults = map[string][]string{
-		"sfdisk -s /dev/xvda": []string{fmt.Sprintf("%d", 1024*1024*1024), ""},
-	}
+	fakePartitioner.GetDeviceSizeInBlocksSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
 	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)
 
 	fakeFs.WriteToFile("/dev/xvda", "")
@@ -117,12 +114,11 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, "swap", swapPartition.Type)
 	assert.Equal(t, "linux", ext4Partition.Type)
 
-	assert.Equal(t, 5, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"sfdisk", "-s", "/dev/xvda"}, fakeCmdRunner.RunCommands[0])
-	assert.Equal(t, []string{"mkswap", "/dev/xvda1"}, fakeCmdRunner.RunCommands[1])
-	assert.Equal(t, []string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}, fakeCmdRunner.RunCommands[2])
-	assert.Equal(t, []string{"swapon", "/dev/xvda1"}, fakeCmdRunner.RunCommands[3])
-	assert.Equal(t, []string{"mount", "/dev/xvda2", "/data-dir"}, fakeCmdRunner.RunCommands[4])
+	assert.Equal(t, 4, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"mkswap", "/dev/xvda1"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}, fakeCmdRunner.RunCommands[1])
+	assert.Equal(t, []string{"swapon", "/dev/xvda1"}, fakeCmdRunner.RunCommands[2])
+	assert.Equal(t, []string{"mount", "/dev/xvda2", "/data-dir"}, fakeCmdRunner.RunCommands[3])
 
 	sysLogStats := fakeFs.GetFileTestStat("/data-dir/sys/log")
 	assert.NotNil(t, sysLogStats)
@@ -197,8 +193,8 @@ func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmall
 
 func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, diskSizeInBlocks, expectedSwap uint64) {
 	fakeFs, fakeCmdRunner, fakePartitioner := getUbuntuDependencies()
-	fakeCmdRunner.CommandResults = map[string][]string{
-		"sfdisk -s /dev/hda": []string{fmt.Sprintf("%d", diskSizeInBlocks), ""},
+	fakePartitioner.GetDeviceSizeInBlocksSizes = map[string]uint64{
+		"/dev/hda": diskSizeInBlocks,
 	}
 
 	ubuntu := newUbuntuPlatform(fakeFs, fakeCmdRunner, fakePartitioner)

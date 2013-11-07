@@ -3,6 +3,7 @@ package disk
 import (
 	boshsys "bosh/system"
 	"fmt"
+	"strconv"
 )
 
 type sfdiskPartitioner struct {
@@ -33,5 +34,20 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	}
 
 	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uB", devicePath)
+	return
+}
+
+func (p sfdiskPartitioner) GetDeviceSizeInBlocks(devicePath string) (size uint64, err error) {
+	stdout, _, err := p.cmdRunner.RunCommand("sfdisk", "-s", devicePath)
+	if err != nil {
+		return
+	}
+
+	intSize, err := strconv.Atoi(stdout)
+	if err != nil {
+		return
+	}
+
+	size = uint64(intSize)
 	return
 }

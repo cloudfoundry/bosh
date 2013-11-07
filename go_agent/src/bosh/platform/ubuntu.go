@@ -11,7 +11,6 @@ import (
 	sigar "github.com/cloudfoundry/gosigar"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -178,7 +177,7 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 	totalMemInKb := memStats.Total
 	totalMemInBlocks := totalMemInKb * uint64(1024) / blockSizeInBytes
 
-	diskSizeInBlocks, err := p.getBlockDeviceSizeInBlocks(devicePath)
+	diskSizeInBlocks, err := p.partitioner.GetDeviceSizeInBlocks(devicePath)
 	if err != nil {
 		return
 	}
@@ -190,21 +189,6 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 	}
 
 	linuxSize = diskSizeInBlocks - swapSize
-	return
-}
-
-func (p ubuntu) getBlockDeviceSizeInBlocks(devicePath string) (size uint64, err error) {
-	stdout, _, err := p.cmdRunner.RunCommand("sfdisk", "-s", devicePath)
-	if err != nil {
-		return
-	}
-
-	intSize, err := strconv.Atoi(stdout)
-	if err != nil {
-		return
-	}
-
-	size = uint64(intSize)
 	return
 }
 

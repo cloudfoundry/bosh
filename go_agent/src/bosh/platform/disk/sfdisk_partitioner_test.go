@@ -21,3 +21,16 @@ func TestSfdiskPartition(t *testing.T) {
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommandsWithInput))
 	assert.Equal(t, []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uB", "/dev/sda"}, fakeCmdRunner.RunCommandsWithInput[0])
 }
+
+func TestSfdiskGetDeviceSizeInBlocks(t *testing.T) {
+	fakeCmdRunner := &testsys.FakeCmdRunner{}
+	fakeCmdRunner.CommandResults = map[string][]string{
+		"sfdisk -s /dev/sda": []string{"1234", ""},
+	}
+	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
+
+	size, err := partitioner.GetDeviceSizeInBlocks("/dev/sda")
+	assert.NoError(t, err)
+
+	assert.Equal(t, uint64(1234), size)
+}

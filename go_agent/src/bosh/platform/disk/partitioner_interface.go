@@ -14,4 +14,5 @@ type Partition struct {
 
 type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
+	GetDeviceSizeInBlocks(devicePath string) (size uint64, err error)
 }
