@@ -52,11 +52,23 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 	}
 
 	agent := New(settings, handler, platform)
-	agent.heartbeatInterval = time.Millisecond
+	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
 
-	hb := <-handler.HeartbeatChan
+	var hb boshmbus.Heartbeat
+
+	select {
+	case hb = <-handler.HeartbeatChan:
+	case <-time.After(time.Millisecond):
+		t.Errorf("Did not receive an initial heartbeat in time")
+	}
+
+	select {
+	case hb = <-handler.HeartbeatChan:
+	case <-time.After(100 * time.Millisecond):
+		t.Errorf("Did not receive a second heartbeat in time")
+	}
 
 	assert.Equal(t, []string{"1.00", "5.00", "15.00"}, hb.Vitals.CpuLoad)
 
