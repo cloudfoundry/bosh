@@ -84,6 +84,10 @@ func (p sfdiskPartitioner) getPartitions(devicePath string) (partitions []Partit
 	}
 
 	allLines := strings.Split(stdout, "\n")
+	if len(allLines) < 4 {
+		return
+	}
+
 	partitionLines := allLines[3 : len(allLines)-1]
 
 	for _, partitionLine := range partitionLines {
