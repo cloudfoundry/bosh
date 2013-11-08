@@ -136,18 +136,42 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 		{SizeInBlocks: linuxSize, Type: boshdisk.PartitionTypeLinux},
 	}
 
-	p.partitioner.Partition(realPath, partitions)
+	err = p.partitioner.Partition(realPath, partitions)
+	if err != nil {
+	    return
+	}
 
 	swapPartitionPath := realPath + "1"
 	dataPartitionPath := realPath + "2"
-	p.formatter.Format(swapPartitionPath, boshdisk.FileSystemSwap)
-	p.formatter.Format(dataPartitionPath, boshdisk.FileSystemExt4)
+	err = p.formatter.Format(swapPartitionPath, boshdisk.FileSystemSwap)
+	if err != nil {
+		return
+	}
 
-	p.mounter.SwapOn(swapPartitionPath)
-	p.mounter.Mount(dataPartitionPath, mountPoint)
+	err = p.formatter.Format(dataPartitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		return
+	}
 
-	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "log"), os.FileMode(0750))
-	p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "run"), os.FileMode(0750))
+	err = p.mounter.SwapOn(swapPartitionPath)
+	if err != nil {
+		return
+	}
+
+	err = p.mounter.Mount(dataPartitionPath, mountPoint)
+	if err != nil {
+		return
+	}
+
+	err = p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "log"), os.FileMode(0750))
+	if err != nil {
+		return
+	}
+
+	err = p.fs.MkdirAll(filepath.Join(mountPoint, "sys", "run"), os.FileMode(0750))
+	if err != nil {
+		return
+	}
 	return
 }
 
