@@ -7,6 +7,7 @@ import (
 )
 
 type FakePlatform struct {
+	SetupRuntimeConfigurationWasInvoked  bool
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
 	FakeStatsCollector                   *teststats.FakeStatsCollector
@@ -14,6 +15,11 @@ type FakePlatform struct {
 
 func NewFakePlatform() (platform FakePlatform) {
 	platform.FakeStatsCollector = &teststats.FakeStatsCollector{}
+	return
+}
+
+func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
+	p.SetupRuntimeConfigurationWasInvoked = true
 	return
 }
 

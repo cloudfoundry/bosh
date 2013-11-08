@@ -13,6 +13,17 @@ import (
 	"time"
 )
 
+func TestSetupRuntimeConfiguration(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.SetupRuntimeConfiguration()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"bosh-agent-rc"}, fakeCmdRunner.RunCommands[0])
+}
+
 func TestUbuntuSetupSsh(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 	fakeFs.HomeDirHomeDir = "/some/home/dir"

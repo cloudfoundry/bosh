@@ -10,6 +10,14 @@ import (
 	"testing"
 )
 
+func TestRunSetsUpRuntimeConfiguration(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.True(t, fakePlatform.SetupRuntimeConfigurationWasInvoked)
+}
+
 func TestRunSetsUpSsh(t *testing.T) {
 	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
@@ -71,11 +79,6 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathMountPoint, "/var/vcap/data")
-
-	sysSymlinkStats := fakeFs.GetFileTestStat("/var/vcap/sys")
-	assert.NotNil(t, sysSymlinkStats)
-	assert.Equal(t, "Symlink", sysSymlinkStats.CreatedWith)
-	assert.Equal(t, "/var/vcap/data/sys", sysSymlinkStats.SymlinkTarget)
 }
 
 func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {

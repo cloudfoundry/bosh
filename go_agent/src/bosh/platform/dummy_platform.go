@@ -12,6 +12,10 @@ func newDummyPlatform() (p dummyPlatform) {
 	return
 }
 
+func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }

@@ -29,6 +29,11 @@ func New(fs boshsys.FileSystem, inf boshinf.Infrastructure, platform boshplatfor
 }
 
 func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
+	err = boot.platform.SetupRuntimeConfiguration()
+	if err != nil {
+		return
+	}
+
 	err = boot.infrastructure.SetupSsh(boot.platform, VCAP_USERNAME)
 	if err != nil {
 		return
@@ -45,11 +50,6 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 	}
 
 	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(VCAP_BASE_DIR, "data"))
-	if err != nil {
-		return
-	}
-
-	err = boot.fs.Symlink(filepath.Join(VCAP_BASE_DIR, "data", "sys"), filepath.Join(VCAP_BASE_DIR, "sys"))
 	return
 }
 

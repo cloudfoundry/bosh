@@ -2,4 +2,4 @@
 
 set -e
 
-$(dirname $0)/go build -o out/agent bosh/main
+$(dirname $0)/go build -o out/bosh-agent bosh/main

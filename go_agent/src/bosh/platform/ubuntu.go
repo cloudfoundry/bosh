@@ -41,6 +41,11 @@ func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }
 
+func (p ubuntu) SetupRuntimeConfiguration() (err error) {
+	_, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
+	return
+}
+
 func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {

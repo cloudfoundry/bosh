@@ -22,5 +22,25 @@ cd $assets_dir/go_agent
 
 bin/build
 
-mv out/agent $chroot/var/vcap/bosh/bin/bosh-agent
+mv out/bosh-agent $chroot/var/vcap/bosh/bin/
+cp src/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
+chmod +x $chroot/var/vcap/bosh/bin/bosh-agent-rc
+
+# setup additional permissions
+
+run_in_chroot $chroot "
+echo 'vcap' > /etc/cron.allow
+echo 'vcap' > /etc/at.allow
+
+chmod 0770 /var/lock
+chown root:vcap /var/lock
+
+chmod 0640 /etc/cron.allow
+chown root:vcap /etc/cron.allow
+
+chmod 0640 /etc/at.allow
+chown root:vcap /etc/at.allow
+
+ln -nsf data/sys /var/vcap/sys
+"
