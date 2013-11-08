@@ -8,6 +8,9 @@ module Bosh::Cli::Command
     def perform(exported_tar_path)
       auth_required
 
+      unless File.exist?(exported_tar_path)
+        raise Bosh::Cli::CliError, 'Archive does not exist'
+      end
       client = Bosh::Cli::Client::CompiledPackagesClient.new(director)
       client.import(exported_tar_path)
     end
