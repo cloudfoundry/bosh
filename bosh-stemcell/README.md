@@ -24,10 +24,13 @@ From a fresh copy of the bosh repo:
 
 #### Build the stemcell from inside the VM
 
+Substitute *\<current_build\>* with the current build number, which can be found by looking at 
+[bosh artifacts](http://bosh_artifacts.cfapps.io)
+
     vagrant ssh -c '
       cd /bosh
       bundle install --local
-      CANDIDATE_BUILD_NUMBER=1045 http_proxy=http://localhost:3142/ bundle exec rake ci:build_stemcell[vsphere,centos]
+      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake ci:build_stemcell[vsphere,centos]
     ' local
 
 # Run the stemcell locally with Fusion
