@@ -2,7 +2,7 @@ package agent
 
 import (
 	boshmbus "bosh/mbus"
-	boshplatform "bosh/platform"
+	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	"fmt"
 )
@@ -13,16 +13,16 @@ const (
 	PERSISTENT_DISK_PATH = "/var/vcap/store"
 )
 
-func getHeartbeat(settings boshsettings.Settings, platform boshplatform.Platform) (hb boshmbus.Heartbeat) {
-	hb = updateWithCpuLoad(platform, hb)
-	hb = updateWithCpuStats(platform, hb)
-	hb = updateWithMemStats(platform, hb)
-	hb = updateWithSwapStats(platform, hb)
-	hb = updateWithDiskStats(settings, platform, hb)
+func getHeartbeat(settings boshsettings.Settings, collector boshstats.StatsCollector) (hb boshmbus.Heartbeat) {
+	hb = updateWithCpuLoad(collector, hb)
+	hb = updateWithCpuStats(collector, hb)
+	hb = updateWithMemStats(collector, hb)
+	hb = updateWithSwapStats(collector, hb)
+	hb = updateWithDiskStats(settings, collector, hb)
 	return
 }
 
-func updateWithCpuLoad(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithCpuLoad(platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 
 	load, err := platform.GetCpuLoad()
@@ -39,7 +39,7 @@ func updateWithCpuLoad(platform boshplatform.Platform, hb boshmbus.Heartbeat) (u
 	return
 }
 
-func updateWithCpuStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithCpuStats(platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 	cpuStats, err := platform.GetCpuStats()
 	if err != nil {
@@ -58,7 +58,7 @@ func updateWithCpuStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (
 	return
 }
 
-func updateWithMemStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithMemStats(platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 	memStats, err := platform.GetMemStats()
 	if err != nil {
@@ -75,7 +75,7 @@ func updateWithMemStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (
 	return
 }
 
-func updateWithSwapStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithSwapStats(platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 	swapStats, err := platform.GetSwapStats()
 	if err != nil {
@@ -92,7 +92,7 @@ func updateWithSwapStats(platform boshplatform.Platform, hb boshmbus.Heartbeat) 
 	return
 }
 
-func updateWithDiskStats(settings boshsettings.Settings, platform boshplatform.Platform, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithDiskStats(settings boshsettings.Settings, platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 
 	updatedHb.Vitals.Disks.System = getDiskStats(platform, SYSTEM_DISK_PATH)
@@ -108,7 +108,7 @@ func updateWithDiskStats(settings boshsettings.Settings, platform boshplatform.P
 	return
 }
 
-func getDiskStats(platform boshplatform.Platform, devicePath string) (stats boshmbus.DiskStats) {
+func getDiskStats(platform boshstats.StatsCollector, devicePath string) (stats boshmbus.DiskStats) {
 	diskStats, err := platform.GetDiskStats(devicePath)
 	if err != nil {
 		return

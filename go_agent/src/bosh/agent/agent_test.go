@@ -3,7 +3,8 @@ package agent
 import (
 	boshmbus "bosh/mbus"
 	testmbus "bosh/mbus/testhelpers"
-	boshplatform "bosh/platform"
+	boshstats "bosh/platform/stats"
+	teststats "bosh/platform/stats/testhelpers"
 	testplatform "bosh/platform/testhelpers"
 	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
@@ -39,15 +40,15 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		Persistent: map[string]string{"vol-xxxx": "/dev/sdf"},
 	}
 
-	platform = &testplatform.FakePlatform{
-		CpuLoad:   boshplatform.CpuLoad{One: 1.0, Five: 5.0, Fifteen: 15.0},
-		CpuStats:  boshplatform.CpuStats{User: 55, Sys: 44, Wait: 11, Total: 1000},
-		MemStats:  boshplatform.MemStats{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
-		SwapStats: boshplatform.MemStats{Used: 10 * 1024 * 1024, Total: 100 * 1024 * 1024},
-		DiskStats: map[string]boshplatform.DiskStats{
-			"/":               boshplatform.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
-			"/var/vcap/data":  boshplatform.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
-			"/var/vcap/store": boshplatform.DiskStats{Used: 0, Total: 100, InodeUsed: 0, InodeTotal: 1000},
+	platform.FakeStatsCollector = &teststats.FakeStatsCollector{
+		CpuLoad:   boshstats.CpuLoad{One: 1.0, Five: 5.0, Fifteen: 15.0},
+		CpuStats:  boshstats.CpuStats{User: 55, Sys: 44, Wait: 11, Total: 1000},
+		MemStats:  boshstats.MemStats{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
+		SwapStats: boshstats.MemStats{Used: 10 * 1024 * 1024, Total: 100 * 1024 * 1024},
+		DiskStats: map[string]boshstats.DiskStats{
+			"/":               boshstats.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
+			"/var/vcap/data":  boshstats.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
+			"/var/vcap/store": boshstats.DiskStats{Used: 0, Total: 100, InodeUsed: 0, InodeTotal: 1000},
 		},
 	}
 
@@ -101,11 +102,11 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		System: "/dev/sda1",
 	}
 
-	platform = &testplatform.FakePlatform{
-		DiskStats: map[string]boshplatform.DiskStats{
-			"/":               boshplatform.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
-			"/var/vcap/data":  boshplatform.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
-			"/var/vcap/store": boshplatform.DiskStats{Used: 0, Total: 100, InodeUsed: 0, InodeTotal: 1000},
+	platform.FakeStatsCollector = &teststats.FakeStatsCollector{
+		DiskStats: map[string]boshstats.DiskStats{
+			"/":               boshstats.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
+			"/var/vcap/data":  boshstats.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
+			"/var/vcap/store": boshstats.DiskStats{Used: 0, Total: 100, InodeUsed: 0, InodeTotal: 1000},
 		},
 	}
 
@@ -126,6 +127,8 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 func getAgentDependencies() (settings boshsettings.Settings, handler *testmbus.FakeHandler, platform *testplatform.FakePlatform) {
 	settings = boshsettings.Settings{}
 	handler = &testmbus.FakeHandler{}
-	platform = &testplatform.FakePlatform{}
+	platform = &testplatform.FakePlatform{
+		FakeStatsCollector: &teststats.FakeStatsCollector{},
+	}
 	return
 }

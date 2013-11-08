@@ -2,6 +2,7 @@ package platform
 
 import (
 	boshdisk "bosh/platform/disk"
+	boshstats "bosh/platform/stats"
 	boshsys "bosh/system"
 	"errors"
 	"fmt"
@@ -14,9 +15,10 @@ type provider struct {
 func NewProvider(fs boshsys.FileSystem) (p provider) {
 	runner := boshsys.ExecCmdRunner{}
 	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(runner, fs)
+	sigarStatsCollector := boshstats.NewSigarStatsCollector()
 
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(fs, runner, ubuntuDiskManager),
+		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager),
 		"dummy":  newDummyPlatform(),
 	}
 	return

@@ -1,8 +1,15 @@
-package platform
+package stats
 
 import sigar "github.com/cloudfoundry/gosigar"
 
-func (p ubuntu) GetCpuLoad() (load CpuLoad, err error) {
+type sigarStatsCollector struct {
+}
+
+func NewSigarStatsCollector() (collector sigarStatsCollector) {
+	return
+}
+
+func (s sigarStatsCollector) GetCpuLoad() (load CpuLoad, err error) {
 	l := sigar.LoadAverage{}
 	err = l.Get()
 	if err != nil {
@@ -16,7 +23,7 @@ func (p ubuntu) GetCpuLoad() (load CpuLoad, err error) {
 	return
 }
 
-func (p ubuntu) GetCpuStats() (stats CpuStats, err error) {
+func (s sigarStatsCollector) GetCpuStats() (stats CpuStats, err error) {
 	cpu := sigar.Cpu{}
 	err = cpu.Get()
 	if err != nil {
@@ -31,7 +38,7 @@ func (p ubuntu) GetCpuStats() (stats CpuStats, err error) {
 	return
 }
 
-func (p ubuntu) GetMemStats() (stats MemStats, err error) {
+func (s sigarStatsCollector) GetMemStats() (stats MemStats, err error) {
 	mem := sigar.Mem{}
 	err = mem.Get()
 	if err != nil {
@@ -44,7 +51,7 @@ func (p ubuntu) GetMemStats() (stats MemStats, err error) {
 	return
 }
 
-func (p ubuntu) GetSwapStats() (stats MemStats, err error) {
+func (s sigarStatsCollector) GetSwapStats() (stats MemStats, err error) {
 	swap := sigar.Swap{}
 	err = swap.Get()
 	if err != nil {
@@ -57,7 +64,7 @@ func (p ubuntu) GetSwapStats() (stats MemStats, err error) {
 	return
 }
 
-func (p ubuntu) GetDiskStats(mountedPath string) (stats DiskStats, err error) {
+func (s sigarStatsCollector) GetDiskStats(mountedPath string) (stats DiskStats, err error) {
 	fsUsage := sigar.FileSystemUsage{}
 	err = fsUsage.Get(mountedPath)
 	if err != nil {

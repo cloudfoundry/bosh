@@ -1,4 +1,4 @@
-package platform
+package stats
 
 type CpuLoad struct {
 	One     float64
@@ -23,4 +23,12 @@ type DiskStats struct {
 	Total      uint64
 	InodeUsed  uint64
 	InodeTotal uint64
+}
+
+type StatsCollector interface {
+	GetCpuLoad() (load CpuLoad, err error)
+	GetCpuStats() (stats CpuStats, err error)
+	GetMemStats() (stats MemStats, err error)
+	GetSwapStats() (stats MemStats, err error)
+	GetDiskStats(devicePath string) (stats DiskStats, err error)
 }

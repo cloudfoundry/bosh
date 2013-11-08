@@ -1,6 +1,9 @@
 package platform
 
-import boshsettings "bosh/settings"
+import (
+	boshstats "bosh/platform/stats"
+	boshsettings "bosh/settings"
+)
 
 type dummyPlatform struct {
 }
@@ -21,22 +24,6 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 	return
 }
 
-func (p dummyPlatform) GetCpuLoad() (load CpuLoad, err error) {
-	return
-}
-
-func (p dummyPlatform) GetCpuStats() (stats CpuStats, err error) {
-	return
-}
-
-func (p dummyPlatform) GetMemStats() (stats MemStats, err error) {
-	return
-}
-
-func (p dummyPlatform) GetSwapStats() (stats MemStats, err error) {
-	return
-}
-
-func (p dummyPlatform) GetDiskStats(devicePath string) (stats DiskStats, err error) {
-	return
+func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
+	return boshstats.NewDummyStatsCollector()
 }

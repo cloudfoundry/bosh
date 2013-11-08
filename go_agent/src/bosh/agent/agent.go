@@ -46,11 +46,11 @@ func (a agent) runMbusHandler(errChan chan error) {
 
 func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {
 	tickChan := time.Tick(a.heartbeatInterval)
-	heartbeatChan <- getHeartbeat(a.settings, a.platform)
+	heartbeatChan <- getHeartbeat(a.settings, a.platform.GetStatsCollector())
 	for {
 		select {
 		case <-tickChan:
-			heartbeatChan <- getHeartbeat(a.settings, a.platform)
+			heartbeatChan <- getHeartbeat(a.settings, a.platform.GetStatsCollector())
 		}
 	}
 }

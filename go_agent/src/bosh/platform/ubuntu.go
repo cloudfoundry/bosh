@@ -3,6 +3,7 @@ package platform
 import (
 	bosherr "bosh/errors"
 	boshdisk "bosh/platform/disk"
+	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"bytes"
@@ -16,6 +17,7 @@ import (
 )
 
 type ubuntu struct {
+	collector       boshstats.StatsCollector
 	fs              boshsys.FileSystem
 	cmdRunner       boshsys.CmdRunner
 	partitioner     boshdisk.Partitioner
@@ -24,7 +26,8 @@ type ubuntu struct {
 	diskWaitTimeout time.Duration
 }
 
-func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, diskManager boshdisk.Manager) (platform ubuntu) {
+func newUbuntuPlatform(collector boshstats.StatsCollector, fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, diskManager boshdisk.Manager) (platform ubuntu) {
+	platform.collector = collector
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
 	platform.partitioner = diskManager.GetPartitioner()
@@ -32,6 +35,10 @@ func newUbuntuPlatform(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, diskM
 	platform.mounter = diskManager.GetMounter()
 	platform.diskWaitTimeout = 3 * time.Minute
 	return
+}
+
+func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
+	return p.collector
 }
 
 func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
@@ -171,7 +178,7 @@ func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bo
 }
 
 func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
-	memStats, err := p.GetMemStats()
+	memStats, err := p.collector.GetMemStats()
 	if err != nil {
 		return
 	}
