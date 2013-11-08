@@ -150,6 +150,62 @@ func TestSymlink(t *testing.T) {
 	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
+func TestSymlinkWhenLinkAlreadyExistsAndLinksToTheIntendedPath(t *testing.T) {
+	osFs := OsFileSystem{}
+	filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
+	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
+
+	osFs.WriteToFile(filePath, "some content")
+	defer os.Remove(filePath)
+
+	osFs.Symlink(filePath, symlinkPath)
+	defer os.Remove(symlinkPath)
+
+	firstSymlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+
+	err = osFs.Symlink(filePath, symlinkPath)
+	assert.NoError(t, err)
+
+	secondSymlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, firstSymlinkStats.ModTime(), secondSymlinkStats.ModTime())
+}
+
+func TestSymlinkWhenLinkAlreadyExistsAndDoesNotLinkToTheIntendedPath(t *testing.T) {
+	osFs := OsFileSystem{}
+	filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
+	otherFilePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1OtherFile")
+	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
+
+	osFs.WriteToFile(filePath, "some content")
+	defer os.Remove(filePath)
+
+	osFs.WriteToFile(otherFilePath, "other content")
+	defer os.Remove(otherFilePath)
+
+	osFs.Symlink(otherFilePath, symlinkPath)
+	defer os.Remove(symlinkPath)
+
+	err := osFs.Symlink(filePath, symlinkPath)
+	assert.Error(t, err)
+}
+
+func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
+	osFs := OsFileSystem{}
+	filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
+	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
+
+	osFs.WriteToFile(filePath, "some content")
+	defer os.Remove(filePath)
+
+	osFs.WriteToFile(symlinkPath, "some other content")
+	defer os.Remove(symlinkPath)
+
+	err := osFs.Symlink(filePath, symlinkPath)
+	assert.Error(t, err)
+}
+
 func readFile(file *os.File) string {
 	buf := &bytes.Buffer{}
 	_, err := io.Copy(buf, file)

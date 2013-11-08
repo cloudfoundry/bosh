@@ -1,9 +1,11 @@
 package system
 
 import (
+	bosherr "bosh/errors"
 	"io/ioutil"
 	"os"
 	osuser "os/user"
+	"path/filepath"
 	"strconv"
 )
 
@@ -92,6 +94,21 @@ func (fs OsFileSystem) FileExists(path string) bool {
 }
 
 func (fs OsFileSystem) Symlink(oldPath, newPath string) (err error) {
+	actualOldPath, err := filepath.EvalSymlinks(oldPath)
+	if err != nil {
+		return
+	}
+
+	existingTargetedPath, err := filepath.EvalSymlinks(newPath)
+	if err == nil {
+		if existingTargetedPath == actualOldPath {
+			return
+		} else {
+			return bosherr.New("Error creating symlink %s to %s, it already links to %s",
+				newPath, oldPath, existingTargetedPath)
+		}
+	}
+
 	return os.Symlink(oldPath, newPath)
 }
 
