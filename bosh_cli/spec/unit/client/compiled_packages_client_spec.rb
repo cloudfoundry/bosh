@@ -24,4 +24,20 @@ describe  Bosh::Cli::Client::CompiledPackagesClient do
       expect(client.export('release-name', 'release-version', 'stemcell-name', 'stemcell-version')).to eq('/downloaded-file-path')
     end
   end
+
+  describe '#import' do
+    it 'delegates to the cli director to post the file' do
+      director.stub(:upload_and_track)
+      client.import('/exported/compiled/packages.tgz')
+
+      expect(director).to have_received(:upload_and_track).with(
+        :post,
+        '/compiled_package_groups/import',
+        '/exported/compiled/packages.tgz',
+        {
+          content_type: 'application/x-compressed'
+        },
+      )
+    end
+  end
 end
