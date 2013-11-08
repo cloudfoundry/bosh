@@ -48,7 +48,7 @@ func (p sfdiskPartitioner) GetDeviceSizeInBlocks(devicePath string) (size uint64
 		return
 	}
 
-	intSize, err := strconv.Atoi(stdout)
+	intSize, err := strconv.Atoi(strings.Trim(stdout, "\n"))
 	if err != nil {
 		return
 	}

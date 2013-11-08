@@ -51,9 +51,9 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	fakeCmdRunner := &testsys.FakeCmdRunner{}
 	fakeCmdRunner.CommandResults = map[string][]string{
 		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP, ""},
-		"sfdisk -s /dev/sda1": []string{"512", ""},
-		"sfdisk -s /dev/sda2": []string{"1024", ""},
-		"sfdisk -s /dev/sda3": []string{"512", ""},
+		"sfdisk -s /dev/sda1": []string{"512\n", ""},
+		"sfdisk -s /dev/sda2": []string{"1024\n", ""},
+		"sfdisk -s /dev/sda3": []string{"512\n", ""},
 	}
 
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
