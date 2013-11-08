@@ -20,6 +20,8 @@ module Bosh::Director
         export = Bosh::Director::CompiledPackage::CompiledPackagesExport.new(file: export_path)
 
         export.extract do |manifest, packages|
+          packages.each { |p| p.check_blob_sha }
+
           packages.each do |package|
             File.open(package.blob_path) do |f|
               blobstore_client.create(f, package.blobstore_id)

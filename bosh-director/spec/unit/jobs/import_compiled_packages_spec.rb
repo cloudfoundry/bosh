@@ -23,7 +23,8 @@ module Bosh::Director
                         blob_path: '/tmp/blob1',
                         package_fingerprint: 'package-fingerprint1',
                         stemcell_sha1: 'stemcell-sha1',
-                        sha1: 'test-sha1-1'
+                        sha1: 'test-sha1-1',
+                        check_blob_sha: nil
         )
       end
 
@@ -34,7 +35,8 @@ module Bosh::Director
                         blob_path: '/tmp/blob2',
                         package_fingerprint: 'package-fingerprint2',
                         stemcell_sha1: 'stemcell-sha1',
-                        sha1: 'test-sha1-2'
+                        sha1: 'test-sha1-2',
+                        check_blob_sha: nil
         )
       end
 
@@ -79,6 +81,13 @@ module Bosh::Director
       context 'when there is one Release and one ReleaseVersion' do
         it 'extracts the export' do
           expect(export).to receive(:extract)
+          import_job.perform
+        end
+
+        it 'checks the blob integrity' do
+          package1.should_receive(:check_blob_sha)
+          package2.should_receive(:check_blob_sha)
+
           import_job.perform
         end
 
