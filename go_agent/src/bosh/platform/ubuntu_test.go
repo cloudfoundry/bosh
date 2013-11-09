@@ -109,7 +109,7 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	fakePartitioner := fakeDiskManager.FakePartitioner
 	fakeMounter := fakeDiskManager.FakeMounter
 
-	fakePartitioner.GetDeviceSizeInBlocksSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
+	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
 
 	fakeFs.WriteToFile("/dev/xvda", "")
@@ -196,31 +196,29 @@ func TestUbuntuGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
 }
 
 func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskIsBiggerThanTwiceTheMemory(t *testing.T) {
-	totalMemInKb := uint64(1024 * 1024)
-	totalMemInBlocks := totalMemInKb * uint64(1024/512)
+	totalMemInMb := uint64(1024)
 
-	diskSizeInBlocks := totalMemInBlocks*2 + 1
-	expectedSwap := totalMemInBlocks
-	testUbuntuCalculateEphemeralDiskPartitionSizes(t, totalMemInKb, diskSizeInBlocks, expectedSwap)
+	diskSizeInMb := totalMemInMb*2 + 64
+	expectedSwap := totalMemInMb
+	testUbuntuCalculateEphemeralDiskPartitionSizes(t, totalMemInMb, diskSizeInMb, expectedSwap)
 }
 
 func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmaller(t *testing.T) {
-	totalMemInKb := uint64(1024 * 1024)
-	totalMemInBlocks := totalMemInKb * uint64(1024/512)
+	totalMemInMb := uint64(1024)
 
-	diskSizeInBlocks := totalMemInBlocks*2 - 1
-	expectedSwap := diskSizeInBlocks / 2
-	testUbuntuCalculateEphemeralDiskPartitionSizes(t, totalMemInKb, diskSizeInBlocks, expectedSwap)
+	diskSizeInMb := totalMemInMb*2 - 64
+	expectedSwap := diskSizeInMb / 2
+	testUbuntuCalculateEphemeralDiskPartitionSizes(t, totalMemInMb, diskSizeInMb, expectedSwap)
 }
 
-func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInKb, diskSizeInBlocks, expectedSwap uint64) {
+func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 
-	fakeStats.MemStats.Total = totalMemInKb
+	fakeStats.MemStats.Total = totalMemInMb * uint64(1024)
 
 	fakePartitioner := fakeDiskManager.FakePartitioner
-	fakePartitioner.GetDeviceSizeInBlocksSizes = map[string]uint64{
-		"/dev/hda": diskSizeInBlocks,
+	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
+		"/dev/hda": diskSizeInMb,
 	}
 
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
@@ -229,7 +227,7 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInKb, 
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSwap, swapSize)
-	assert.Equal(t, diskSizeInBlocks-expectedSwap, linuxSize)
+	assert.Equal(t, diskSizeInMb-expectedSwap, linuxSize)
 }
 
 func getUbuntuDependencies() (collector *teststats.FakeStatsCollector, fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner, fakeDiskManager testdisk.FakeDiskManager) {

@@ -5,9 +5,9 @@ import (
 )
 
 type FakePartitioner struct {
-	GetDeviceSizeInBlocksSizes map[string]uint64
-	PartitionDevicePath        string
-	PartitionPartitions        []boshdisk.Partition
+	GetDeviceSizeInMbSizes map[string]uint64
+	PartitionDevicePath    string
+	PartitionPartitions    []boshdisk.Partition
 }
 
 func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) (err error) {
@@ -16,7 +16,7 @@ func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Par
 	return
 }
 
-func (p *FakePartitioner) GetDeviceSizeInBlocks(devicePath string) (size uint64, err error) {
-	size = p.GetDeviceSizeInBlocksSizes[devicePath]
+func (p *FakePartitioner) GetDeviceSizeInMb(devicePath string) (size uint64, err error) {
+	size = p.GetDeviceSizeInMbSizes[devicePath]
 	return
 }

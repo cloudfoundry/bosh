@@ -9,11 +9,11 @@ const (
 )
 
 type Partition struct {
-	SizeInBlocks uint64
-	Type         PartitionType
+	SizeInMb uint64
+	Type     PartitionType
 }
 
 type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
-	GetDeviceSizeInBlocks(devicePath string) (size uint64, err error)
+	GetDeviceSizeInMb(devicePath string) (size uint64, err error)
 }

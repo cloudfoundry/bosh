@@ -14,15 +14,15 @@ func TestSfdiskPartition(t *testing.T) {
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
 
 	partitions := []Partition{
-		{Type: PartitionTypeSwap, SizeInBlocks: 512},
-		{Type: PartitionTypeLinux, SizeInBlocks: 1024},
-		{Type: PartitionTypeLinux, SizeInBlocks: 512},
+		{Type: PartitionTypeSwap, SizeInMb: 512},
+		{Type: PartitionTypeLinux, SizeInMb: 1024},
+		{Type: PartitionTypeLinux, SizeInMb: 512},
 	}
 
 	partitioner.Partition("/dev/sda", partitions)
 
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommandsWithInput))
-	assert.Equal(t, []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uB", "/dev/sda"}, fakeCmdRunner.RunCommandsWithInput[0])
+	assert.Equal(t, []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}, fakeCmdRunner.RunCommandsWithInput[0])
 }
 
 const DEVSDA_SFDISK_EMPTY_DUMP = `# partition table of /dev/sda
@@ -42,15 +42,15 @@ func TestSfdiskPartitionWithNoPartitionTable(t *testing.T) {
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
 
 	partitions := []Partition{
-		{Type: PartitionTypeSwap, SizeInBlocks: 512},
-		{Type: PartitionTypeLinux, SizeInBlocks: 1024},
-		{Type: PartitionTypeLinux, SizeInBlocks: 512},
+		{Type: PartitionTypeSwap, SizeInMb: 512},
+		{Type: PartitionTypeLinux, SizeInMb: 1024},
+		{Type: PartitionTypeLinux, SizeInMb: 512},
 	}
 
 	partitioner.Partition("/dev/sda", partitions)
 
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommandsWithInput))
-	assert.Equal(t, []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uB", "/dev/sda"}, fakeCmdRunner.RunCommandsWithInput[0])
+	assert.Equal(t, []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}, fakeCmdRunner.RunCommandsWithInput[0])
 }
 
 const DEVSDA_SFDISK_NOTABLE_DUMP_STDERR = `
@@ -58,34 +58,34 @@ sfdisk: ERROR: sector 0 does not have an msdos signature
  /dev/sda: unrecognized partition table type
 No partitions found`
 
-func TestSfdiskGetDeviceSizeInBlocks(t *testing.T) {
+func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 	fakeCmdRunner := &testsys.FakeCmdRunner{}
 	fakeCmdRunner.CommandResults = map[string][]string{
-		"sfdisk -s /dev/sda": []string{"1234", ""},
+		"sfdisk -s /dev/sda": []string{"40960000\n", ""}, // 41943040000
 	}
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
 
-	size, err := partitioner.GetDeviceSizeInBlocks("/dev/sda")
+	size, err := partitioner.GetDeviceSizeInMb("/dev/sda")
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint64(1234), size)
+	assert.Equal(t, uint64(40000), size)
 }
 
 func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	fakeCmdRunner := &testsys.FakeCmdRunner{}
 	fakeCmdRunner.CommandResults = map[string][]string{
 		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP, ""},
-		"sfdisk -s /dev/sda1": []string{"512\n", ""},
-		"sfdisk -s /dev/sda2": []string{"1024\n", ""},
-		"sfdisk -s /dev/sda3": []string{"512\n", ""},
+		"sfdisk -s /dev/sda1": []string{"524288\n", ""},
+		"sfdisk -s /dev/sda2": []string{"1048576\n", ""},
+		"sfdisk -s /dev/sda3": []string{"524288\n", ""},
 	}
 
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
 
 	partitions := []Partition{
-		{Type: PartitionTypeSwap, SizeInBlocks: 512},
-		{Type: PartitionTypeLinux, SizeInBlocks: 1024},
-		{Type: PartitionTypeLinux, SizeInBlocks: 512},
+		{Type: PartitionTypeSwap, SizeInMb: 512},
+		{Type: PartitionTypeLinux, SizeInMb: 1024},
+		{Type: PartitionTypeLinux, SizeInMb: 512},
 	}
 
 	partitioner.Partition("/dev/sda", partitions)

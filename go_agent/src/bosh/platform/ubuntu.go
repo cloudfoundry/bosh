@@ -132,13 +132,13 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 	}
 
 	partitions := []boshdisk.Partition{
-		{SizeInBlocks: swapSize, Type: boshdisk.PartitionTypeSwap},
-		{SizeInBlocks: linuxSize, Type: boshdisk.PartitionTypeLinux},
+		{SizeInMb: swapSize, Type: boshdisk.PartitionTypeSwap},
+		{SizeInMb: linuxSize, Type: boshdisk.PartitionTypeLinux},
 	}
 
 	err = p.partitioner.Partition(realPath, partitions)
 	if err != nil {
-	    return
+		return
 	}
 
 	swapPartitionPath := realPath + "1"
@@ -212,21 +212,19 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 		return
 	}
 
-	blockSizeInBytes := uint64(512)
-	totalMemInKb := memStats.Total
-	totalMemInBlocks := totalMemInKb * uint64(1024) / blockSizeInBytes
+	totalMemInMb := memStats.Total / uint64(1024)
 
-	diskSizeInBlocks, err := p.partitioner.GetDeviceSizeInBlocks(devicePath)
+	diskSizeInMb, err := p.partitioner.GetDeviceSizeInMb(devicePath)
 	if err != nil {
 		return
 	}
 
-	if totalMemInBlocks > diskSizeInBlocks/2 {
-		swapSize = diskSizeInBlocks / 2
+	if totalMemInMb > diskSizeInMb/2 {
+		swapSize = diskSizeInMb / 2
 	} else {
-		swapSize = totalMemInBlocks
+		swapSize = totalMemInMb
 	}
 
-	linuxSize = diskSizeInBlocks - swapSize
+	linuxSize = diskSizeInMb - swapSize
 	return
 }

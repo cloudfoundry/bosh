@@ -29,7 +29,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	sfdiskInput := ""
 	for index, partition := range partitions {
 		sfdiskPartitionType := sfdiskPartitionTypes[partition.Type]
-		partitionSize := fmt.Sprintf("%d", partition.SizeInBlocks)
+		partitionSize := fmt.Sprintf("%d", partition.SizeInMb)
 
 		if index == len(partitions)-1 {
 			partitionSize = ""
@@ -38,11 +38,11 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
 
-	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uB", devicePath)
+	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	return
 }
 
-func (p sfdiskPartitioner) GetDeviceSizeInBlocks(devicePath string) (size uint64, err error) {
+func (p sfdiskPartitioner) GetDeviceSizeInMb(devicePath string) (size uint64, err error) {
 	stdout, _, err := p.cmdRunner.RunCommand("sfdisk", "-s", devicePath)
 	if err != nil {
 		return
@@ -53,7 +53,7 @@ func (p sfdiskPartitioner) GetDeviceSizeInBlocks(devicePath string) (size uint64
 		return
 	}
 
-	size = uint64(intSize)
+	size = uint64(intSize) / uint64(1024)
 	return
 }
 
@@ -95,9 +95,9 @@ func (p sfdiskPartitioner) getPartitions(devicePath string) (partitions []Partit
 		partition := Partition{Type: partitionType}
 
 		if partition.Type != PartitionTypeEmpty {
-			size, err := p.GetDeviceSizeInBlocks(partitionPath)
+			size, err := p.GetDeviceSizeInMb(partitionPath)
 			if err == nil {
-				partition.SizeInBlocks = size
+				partition.SizeInMb = size
 			}
 		}
 
