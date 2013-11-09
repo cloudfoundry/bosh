@@ -3,6 +3,8 @@ package disk
 import (
 	testsys "bosh/system/testhelpers"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"log"
 	"testing"
 )
 
@@ -12,6 +14,7 @@ func TestSfdiskPartition(t *testing.T) {
 		"sfdisk -d /dev/sda": []string{DEVSDA_SFDISK_EMPTY_DUMP, ""},
 	}
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
+	partitioner.logger = nullLogger()
 
 	partitions := []Partition{
 		{Type: PartitionTypeSwap, SizeInMb: 512},
@@ -40,6 +43,7 @@ func TestSfdiskPartitionWithNoPartitionTable(t *testing.T) {
 		"sfdisk -d /dev/sda": []string{"", DEVSDA_SFDISK_NOTABLE_DUMP_STDERR},
 	}
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
+	partitioner.logger = nullLogger()
 
 	partitions := []Partition{
 		{Type: PartitionTypeSwap, SizeInMb: 512},
@@ -64,6 +68,7 @@ func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 		"sfdisk -s /dev/sda": []string{"40960000\n", ""}, // 41943040000
 	}
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
+	partitioner.logger = nullLogger()
 
 	size, err := partitioner.GetDeviceSizeInMb("/dev/sda")
 	assert.NoError(t, err)
@@ -81,6 +86,7 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	}
 
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
+	partitioner.logger = nullLogger()
 
 	partitions := []Partition{
 		{Type: PartitionTypeSwap, SizeInMb: 512},
@@ -91,6 +97,10 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	partitioner.Partition("/dev/sda", partitions)
 
 	assert.Equal(t, 0, len(fakeCmdRunner.RunCommandsWithInput))
+}
+
+func nullLogger() *log.Logger {
+	return log.New(ioutil.Discard, "", 0)
 }
 
 const DEVSDA_SFDISK_DUMP = `# partition table of /dev/sda

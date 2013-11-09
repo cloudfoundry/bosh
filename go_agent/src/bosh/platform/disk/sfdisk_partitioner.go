@@ -3,21 +3,26 @@ package disk
 import (
 	boshsys "bosh/system"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 )
 
 type sfdiskPartitioner struct {
 	cmdRunner boshsys.CmdRunner
+	logger    *log.Logger
 }
 
 func NewSfdiskPartitioner(cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartitioner) {
 	partitioner.cmdRunner = cmdRunner
+	partitioner.logger = log.New(os.Stdout, "sfdiskPartitioner: ", log.LstdFlags)
 	return
 }
 
 func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) (err error) {
 	if p.diskMatchesPartitions(devicePath, partitions) {
+		p.logger.Printf("%s partitioned as expected, skipping", devicePath)
 		return
 	}
 
@@ -37,6 +42,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
+	p.logger.Printf("paritioning %s with '%s", devicePath, sfdiskInput)
 
 	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	return
