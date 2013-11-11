@@ -29,6 +29,21 @@ func (m linuxMounter) Mount(partitionPath, mountPoint string) (err error) {
 }
 
 func (m linuxMounter) SwapOn(partitionPath string) (err error) {
+	out, _, _ := m.runner.RunCommand("swapon", "-s")
+
+	for i, swapOnLines := range strings.Split(out, "\n") {
+		swapOnFields := strings.Fields(swapOnLines)
+
+		switch {
+		case i == 0:
+			continue
+		case len(swapOnFields) == 0:
+			continue
+		case swapOnFields[0] == partitionPath:
+			return
+		}
+	}
+
 	_, _, err = m.runner.RunCommand("swapon", partitionPath)
 	return
 }

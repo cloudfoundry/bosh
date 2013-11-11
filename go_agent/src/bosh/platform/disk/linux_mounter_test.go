@@ -53,13 +53,49 @@ func TestLinuxMountWhenAnotherDiskIsAlreadyMountedToMountPoint(t *testing.T) {
 
 func TestLinuxSwapOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
+	runner.CommandResults = map[string][]string{
+		"swapon -s": []string{"Filename				Type		Size	Used	Priority\n", ""},
+	}
 
 	mounter := NewLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
 
-	assert.Equal(t, 1, len(runner.RunCommands))
-	assert.Equal(t, []string{"swapon", "/dev/swap"}, runner.RunCommands[0])
+	assert.Equal(t, 2, len(runner.RunCommands))
+	assert.Equal(t, []string{"swapon", "/dev/swap"}, runner.RunCommands[1])
 }
+
+func TestLinuxSwapOnWhenAlreadyOn(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	runner.CommandResults = map[string][]string{
+		"swapon -s": []string{SWAPON_USAGE_OUTPUT, ""},
+	}
+
+	mounter := NewLinuxMounter(runner, fs)
+	mounter.SwapOn("/dev/swap")
+	assert.Equal(t, 1, len(runner.RunCommands))
+	assert.Equal(t, []string{"swapon", "-s"}, runner.RunCommands[0])
+}
+
+const SWAPON_USAGE_OUTPUT = `Filename				Type		Size	Used	Priority
+/dev/swap                              partition	78180316	0	-1
+`
+
+func TestLinuxSwapOnWhenAlreadyOnOtherDevice(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	runner.CommandResults = map[string][]string{
+		"swapon -s": []string{SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE, ""},
+	}
+
+	mounter := NewLinuxMounter(runner, fs)
+	mounter.SwapOn("/dev/swap")
+	assert.Equal(t, 2, len(runner.RunCommands))
+	assert.Equal(t, []string{"swapon", "-s"}, runner.RunCommands[0])
+	assert.Equal(t, []string{"swapon", "/dev/swap"}, runner.RunCommands[1])
+}
+
+const SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE = `Filename				Type		Size	Used	Priority
+/dev/swap2                              partition	78180316	0	-1
+`
 
 func getLinuxMounterDependencies() (runner *testsys.FakeCmdRunner, fs *testsys.FakeFileSystem) {
 	runner = &testsys.FakeCmdRunner{}
