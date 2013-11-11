@@ -60,6 +60,11 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
+	err = boot.platform.SetTimeWithNtpServers(settings.Ntp, filepath.Join(VCAP_BASE_DIR, "/bosh/etc/ntpserver"))
+	if err != nil {
+		return
+	}
+
 	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(VCAP_BASE_DIR, "data"))
 	return
 }

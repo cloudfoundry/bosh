@@ -13,6 +13,8 @@ type FakePlatform struct {
 	SetupEphemeralDiskWithPathMountPoint string
 	FakeStatsCollector                   *teststats.FakeStatsCollector
 	UserPasswords                        map[string]string
+	SetTimeWithNtpServersServers         []string
+	SetTimeWithNtpServersServersFilePath string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -52,5 +54,11 @@ func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 
 func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	p.UserPasswords[user] = encryptedPwd
+	return
+}
+
+func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
+	p.SetTimeWithNtpServersServers = servers
+	p.SetTimeWithNtpServersServersFilePath = serversFilePath
 	return
 }

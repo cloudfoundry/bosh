@@ -117,6 +117,19 @@ func TestRunDoesNotSetPasswordIfNotProvided(t *testing.T) {
 	assert.Equal(t, 0, len(fakePlatform.UserPasswords))
 }
 
+func TestRunSetsTime(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings.Ntp = []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.Equal(t, 2, len(fakePlatform.SetTimeWithNtpServersServers))
+	assert.Equal(t, "0.north-america.pool.ntp.org", fakePlatform.SetTimeWithNtpServersServers[0])
+	assert.Equal(t, "1.north-america.pool.ntp.org", fakePlatform.SetTimeWithNtpServersServers[1])
+	assert.Equal(t, "/var/vcap/bosh/etc/ntpserver", fakePlatform.SetTimeWithNtpServersServersFilePath)
+}
+
 func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {
 	fs = &testsys.FakeFileSystem{}
 	inf = &testinf.FakeInfrastructure{}

@@ -36,6 +36,10 @@ func (p dummyPlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	return
 }

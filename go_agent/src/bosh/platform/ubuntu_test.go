@@ -140,6 +140,30 @@ prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
 
+func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, "/var/vcap/bosh/etc/ntpserver")
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"ntpdate", "0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, fakeCmdRunner.RunCommands[0])
+
+	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
+	assert.Equal(t, "WriteToFile", ntpConfig.CreatedWith)
+}
+
+func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	ubuntu.SetTimeWithNtpServers([]string{}, "/foo/bar")
+	assert.Equal(t, 0, len(fakeCmdRunner.RunCommands))
+
+	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	assert.Nil(t, ntpConfig)
+}
+
 func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 	fakeFormatter := fakeDiskManager.FakeFormatter

@@ -5,6 +5,7 @@ type Settings struct {
 	Disks    Disks
 	Env      Env
 	Networks Networks
+	Ntp      []string
 	Mbus     string
 }
 

@@ -157,6 +157,20 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
+func (p ubuntu) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
+	if len(servers) == 0 {
+		return
+	}
+
+	_, _, err = p.cmdRunner.RunCommand("ntpdate", servers...)
+	if err != nil {
+		return
+	}
+
+	_, err = p.fs.WriteToFile(serversFilePath, strings.Join(servers, " "))
+	return
+}
+
 func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
