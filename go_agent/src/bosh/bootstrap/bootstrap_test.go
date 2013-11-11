@@ -47,6 +47,18 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 	assert.Equal(t, settingsFileStat.Content, string(settingsJson))
 }
 
+func TestRunSetsUpHostname(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = boshsettings.Settings{
+		AgentId: "foo-bar-baz-123",
+	}
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.Equal(t, fakePlatform.SetupHostnameHostname, "foo-bar-baz-123")
+}
+
 func TestRunSetsUpNetworking(t *testing.T) {
 	settings := boshsettings.Settings{
 		Networks: boshsettings.Networks{

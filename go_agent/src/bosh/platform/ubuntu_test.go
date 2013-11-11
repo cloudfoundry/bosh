@@ -50,6 +50,34 @@ func TestUbuntuSetupSsh(t *testing.T) {
 	assert.Equal(t, authKeysStat.Content, "some public key")
 }
 
+func TestUbuntuSetupHostname(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	ubuntu.SetupHostname("foobar.local")
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"hostname", "foobar.local"}, fakeCmdRunner.RunCommands[0])
+
+	hostnameFileContent, err := fakeFs.ReadFile("/etc/hostname")
+	assert.NoError(t, err)
+	assert.Equal(t, "foobar.local", hostnameFileContent)
+
+	hostsFileContent, err := fakeFs.ReadFile("/etc/hosts")
+	assert.NoError(t, err)
+	assert.Equal(t, EXPECTED_ETC_HOSTS, hostsFileContent)
+}
+
+const EXPECTED_ETC_HOSTS = `127.0.0.1 localhost foobar.local
+
+# The following lines are desirable for IPv6 capable hosts
+::1 localhost ip6-localhost ip6-loopback foobar.local
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+`
+
 func TestUbuntuSetupDhcp(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 	testUbuntuSetupDhcp(t, fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)

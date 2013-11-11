@@ -44,6 +44,11 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
+	err = boot.platform.SetupHostname(settings.AgentId)
+	if err != nil {
+		return
+	}
+
 	err = boot.infrastructure.SetupNetworking(boot.platform, settings.Networks)
 	if err != nil {
 		return

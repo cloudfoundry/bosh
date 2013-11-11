@@ -68,6 +68,40 @@ func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
+func (p ubuntu) SetupHostname(hostname string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("hostname", hostname)
+	if err != nil {
+		return
+	}
+
+	_, err = p.fs.WriteToFile("/etc/hostname", hostname)
+	if err != nil {
+		return
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	t := template.Must(template.New("etc-hosts").Parse(ETC_HOSTS_TEMPLATE))
+
+	err = t.Execute(buffer, hostname)
+	if err != nil {
+		return
+	}
+
+	_, err = p.fs.WriteToFile("/etc/hosts", buffer.String())
+	return
+}
+
+const ETC_HOSTS_TEMPLATE = `127.0.0.1 localhost {{ . }}
+
+# The following lines are desirable for IPv6 capable hosts
+::1 localhost ip6-localhost ip6-loopback {{ . }}
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+`
+
 func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")

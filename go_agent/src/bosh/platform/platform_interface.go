@@ -6,9 +6,10 @@ import (
 )
 
 type Platform interface {
+	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	SetupRuntimeConfiguration() (err error)
 	SetupSsh(publicKey, username string) (err error)
+	SetupHostname(hostname string) (err error)
 	SetupDhcp(networks boshsettings.Networks) (err error)
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
-	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 }

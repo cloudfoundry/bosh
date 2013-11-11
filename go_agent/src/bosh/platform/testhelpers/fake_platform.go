@@ -8,6 +8,7 @@ import (
 
 type FakePlatform struct {
 	SetupRuntimeConfigurationWasInvoked  bool
+	SetupHostnameHostname                string
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
 	FakeStatsCollector                   *teststats.FakeStatsCollector
@@ -18,16 +19,21 @@ func NewFakePlatform() (platform FakePlatform) {
 	return
 }
 
+func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
+	return p.FakeStatsCollector
+}
+
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
 	p.SetupRuntimeConfigurationWasInvoked = true
 	return
 }
 
-func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
-	return p.FakeStatsCollector
+func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
+	return
 }
 
-func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
+func (p *FakePlatform) SetupHostname(hostname string) (err error) {
+	p.SetupHostnameHostname = hostname
 	return
 }
 
