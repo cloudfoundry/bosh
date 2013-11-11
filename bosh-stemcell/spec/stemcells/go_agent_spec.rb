@@ -13,15 +13,15 @@ describe 'Stemcell with Go Agent' do
     end
 
     {
-      '/var/lock' => {mode: '770', owner: 'root', group: 'vcap'},
-      '/etc/cron.allow' => {mode: '640', owner: 'root', group: 'vcap'},
-      '/etc/at.allow' => {mode: '640', owner: 'root', group: 'vcap'},
+        '/var/lock' => { mode: '770', owner: 'root', group: 'vcap' },
+        '/etc/cron.allow' => { mode: '640', owner: 'root', group: 'vcap' },
+        '/etc/at.allow' => { mode: '640', owner: 'root', group: 'vcap' },
     }.each do |file_name, properties|
 
       describe file(file_name) do
-        it { should be_mode(properties[:mode])}
-        it { should be_owned_by(properties[:owner])}
-        it { should be_grouped_into(properties[:group])}
+        it { should be_mode(properties[:mode]) }
+        it { should be_owned_by(properties[:owner]) }
+        it { should be_grouped_into(properties[:group]) }
       end
     end
 
@@ -34,7 +34,7 @@ describe 'Stemcell with Go Agent' do
     end
 
     describe file('/var/vcap/sys') do
-      it { should be_linked_to('data/sys')}
+      it { should be_linked_to('data/sys') }
     end
   end
 end
