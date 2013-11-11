@@ -2,6 +2,7 @@ package disk
 
 import (
 	testsys "bosh/system/testhelpers"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"log"
@@ -65,7 +66,7 @@ No partitions found`
 func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 	fakeCmdRunner := &testsys.FakeCmdRunner{}
 	fakeCmdRunner.CommandResults = map[string][]string{
-		"sfdisk -s /dev/sda": []string{"40960000\n", ""}, // 41943040000
+		"sfdisk -s /dev/sda": []string{fmt.Sprintf("%d\n", 40000*1024), ""},
 	}
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
 	partitioner.logger = nullLogger()
@@ -80,9 +81,9 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	fakeCmdRunner := &testsys.FakeCmdRunner{}
 	fakeCmdRunner.CommandResults = map[string][]string{
 		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP, ""},
-		"sfdisk -s /dev/sda1": []string{"524288\n", ""},
-		"sfdisk -s /dev/sda2": []string{"1048576\n", ""},
-		"sfdisk -s /dev/sda3": []string{"524288\n", ""},
+		"sfdisk -s /dev/sda1": []string{fmt.Sprintf("%d\n", 525*1024), ""},
+		"sfdisk -s /dev/sda2": []string{fmt.Sprintf("%d\n", 1020*1024), ""},
+		"sfdisk -s /dev/sda3": []string{fmt.Sprintf("%d\n", 500*1024), ""},
 	}
 
 	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
