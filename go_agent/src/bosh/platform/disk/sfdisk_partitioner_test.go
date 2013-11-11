@@ -10,12 +10,10 @@ import (
 )
 
 func TestSfdiskPartition(t *testing.T) {
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
-	fakeCmdRunner.CommandResults = map[string][]string{
+	cmdResults := map[string][]string{
 		"sfdisk -d /dev/sda": []string{DEVSDA_SFDISK_EMPTY_DUMP, ""},
 	}
-	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
-	partitioner.logger = nullLogger()
+	fakeCmdRunner, partitioner := createSfdiskPartitionerForTests(cmdResults)
 
 	partitions := []Partition{
 		{Type: PartitionTypeSwap, SizeInMb: 512},
@@ -39,12 +37,10 @@ unit: sectors
 `
 
 func TestSfdiskPartitionWithNoPartitionTable(t *testing.T) {
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
-	fakeCmdRunner.CommandResults = map[string][]string{
+	cmdResults := map[string][]string{
 		"sfdisk -d /dev/sda": []string{"", DEVSDA_SFDISK_NOTABLE_DUMP_STDERR},
 	}
-	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
-	partitioner.logger = nullLogger()
+	fakeCmdRunner, partitioner := createSfdiskPartitionerForTests(cmdResults)
 
 	partitions := []Partition{
 		{Type: PartitionTypeSwap, SizeInMb: 512},
@@ -64,12 +60,10 @@ sfdisk: ERROR: sector 0 does not have an msdos signature
 No partitions found`
 
 func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
-	fakeCmdRunner.CommandResults = map[string][]string{
+	cmdResults := map[string][]string{
 		"sfdisk -s /dev/sda": []string{fmt.Sprintf("%d\n", 40000*1024), ""},
 	}
-	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
-	partitioner.logger = nullLogger()
+	_, partitioner := createSfdiskPartitionerForTests(cmdResults)
 
 	size, err := partitioner.GetDeviceSizeInMb("/dev/sda")
 	assert.NoError(t, err)
@@ -78,16 +72,13 @@ func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 }
 
 func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
-	fakeCmdRunner := &testsys.FakeCmdRunner{}
-	fakeCmdRunner.CommandResults = map[string][]string{
+	cmdResults := map[string][]string{
 		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP, ""},
 		"sfdisk -s /dev/sda1": []string{fmt.Sprintf("%d\n", 525*1024), ""},
 		"sfdisk -s /dev/sda2": []string{fmt.Sprintf("%d\n", 1020*1024), ""},
 		"sfdisk -s /dev/sda3": []string{fmt.Sprintf("%d\n", 500*1024), ""},
 	}
-
-	partitioner := NewSfdiskPartitioner(fakeCmdRunner)
-	partitioner.logger = nullLogger()
+	fakeCmdRunner, partitioner := createSfdiskPartitionerForTests(cmdResults)
 
 	partitions := []Partition{
 		{Type: PartitionTypeSwap, SizeInMb: 512},
@@ -100,8 +91,11 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	assert.Equal(t, 0, len(fakeCmdRunner.RunCommandsWithInput))
 }
 
-func nullLogger() *log.Logger {
-	return log.New(ioutil.Discard, "", 0)
+func createSfdiskPartitionerForTests(cmdResults map[string][]string) (cmdRunner *testsys.FakeCmdRunner, partitioner sfdiskPartitioner) {
+	cmdRunner = &testsys.FakeCmdRunner{CommandResults: cmdResults}
+	partitioner = NewSfdiskPartitioner(cmdRunner)
+	partitioner.logger = log.New(ioutil.Discard, "", 0)
+	return
 }
 
 const DEVSDA_SFDISK_DUMP = `# partition table of /dev/sda

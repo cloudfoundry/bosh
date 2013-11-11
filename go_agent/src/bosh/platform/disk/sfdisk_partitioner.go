@@ -22,7 +22,7 @@ func NewSfdiskPartitioner(cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartit
 
 func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) (err error) {
 	if p.diskMatchesPartitions(devicePath, partitions) {
-		p.logger.Printf("%s partitioned as expected, skipping", devicePath)
+		p.logger.Printf("%s already partitioned as expected, skipping", devicePath)
 		return
 	}
 
@@ -42,7 +42,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
-	p.logger.Printf("paritioning %s with '%s", devicePath, sfdiskInput)
+	p.logger.Printf("Partitioning %s with %s", devicePath, sfdiskInput)
 
 	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	return
