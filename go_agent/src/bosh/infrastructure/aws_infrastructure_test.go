@@ -143,6 +143,11 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 			},
 			"system": "/dev/sda1"
 		},
+		"env": {
+			"bosh": {
+				"password": "some encrypted password"
+			}
+		},
 		"networks": {
 			"netA": {
 				"default": ["dns", "gateway"],
@@ -171,6 +176,11 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 			Ephemeral:  "/dev/sdb",
 			Persistent: map[string]string{"vol-xxxxxx": "/dev/sdf"},
 			System:     "/dev/sda1",
+		},
+		Env: boshsettings.Env{
+			Bosh: boshsettings.BoshEnv{
+				Password: "some encrypted password",
+			},
 		},
 		Networks: boshsettings.Networks{
 			"netA": boshsettings.NetworkSettings{

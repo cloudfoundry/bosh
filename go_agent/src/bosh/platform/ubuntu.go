@@ -68,6 +68,11 @@ func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
+func (p ubuntu) SetUserPassword(user, encryptedPwd string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("usermod", "-p", encryptedPwd, user)
+	return
+}
+
 func (p ubuntu) SetupHostname(hostname string) (err error) {
 	_, _, err = p.cmdRunner.RunCommand("hostname", hostname)
 	if err != nil {

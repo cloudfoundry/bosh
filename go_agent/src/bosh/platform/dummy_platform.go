@@ -24,6 +24,10 @@ func (p dummyPlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupHostname(hostname string) (err error) {
 	return
 }

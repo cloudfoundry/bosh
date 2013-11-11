@@ -93,9 +93,33 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathMountPoint, "/var/vcap/data")
 }
 
+func TestRunSetsRootAndVcapPasswords(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings.Env.Bosh.Password = "some-encrypted-password"
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.Equal(t, 2, len(fakePlatform.UserPasswords))
+	assert.Equal(t, "some-encrypted-password", fakePlatform.UserPasswords["root"])
+	assert.Equal(t, "some-encrypted-password", fakePlatform.UserPasswords["vcap"])
+}
+
+func TestRunDoesNotSetPasswordIfNotProvided(t *testing.T) {
+	settings := boshsettings.Settings{}
+
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = settings
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot.Run()
+
+	assert.Equal(t, 0, len(fakePlatform.UserPasswords))
+}
+
 func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {
 	fs = &testsys.FakeFileSystem{}
 	inf = &testinf.FakeInfrastructure{}
-	platform = &testplatform.FakePlatform{}
+	platform = testplatform.NewFakePlatform()
 	return
 }

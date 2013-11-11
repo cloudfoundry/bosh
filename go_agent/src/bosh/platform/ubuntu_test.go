@@ -50,6 +50,15 @@ func TestUbuntuSetupSsh(t *testing.T) {
 	assert.Equal(t, authKeysStat.Content, "some public key")
 }
 
+func TestUbuntuSetUserPassword(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	ubuntu.SetUserPassword("my-user", "my-encrypted-password")
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"usermod", "-p", "my-encrypted-password", "my-user"}, fakeCmdRunner.RunCommands[0])
+}
+
 func TestUbuntuSetupHostname(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)

@@ -3,8 +3,21 @@ package settings
 type Settings struct {
 	AgentId  string `json:"agent_id"`
 	Disks    Disks
+	Env      Env
 	Networks Networks
 	Mbus     string
+}
+
+type Env struct {
+	Bosh BoshEnv `json:"bosh"`
+}
+
+func (e Env) GetPassword() string {
+	return e.Bosh.Password
+}
+
+type BoshEnv struct {
+	Password string
 }
 
 type Disks struct {

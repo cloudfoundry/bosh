@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	ROOT_USERNAME = "root"
 	VCAP_USERNAME = "vcap"
 	VCAP_BASE_DIR = "/var/vcap"
 )
@@ -44,6 +45,11 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
+	err = boot.setUserPasswords(settings)
+	if err != nil {
+		return
+	}
+
 	err = boot.platform.SetupHostname(settings.AgentId)
 	if err != nil {
 		return
@@ -72,5 +78,20 @@ func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error
 	}
 
 	boot.fs.WriteToFile(filepath.Join(VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
+	return
+}
+
+func (boot bootstrap) setUserPasswords(settings boshsettings.Settings) (err error) {
+	password := settings.Env.GetPassword()
+	if password == "" {
+		return
+	}
+
+	err = boot.platform.SetUserPassword(ROOT_USERNAME, settings.Env.GetPassword())
+	if err != nil {
+		return
+	}
+
+	err = boot.platform.SetUserPassword(VCAP_USERNAME, settings.Env.GetPassword())
 	return
 }
