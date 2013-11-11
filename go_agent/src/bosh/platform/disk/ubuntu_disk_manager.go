@@ -10,7 +10,7 @@ type ubuntuDiskManager struct {
 
 func NewUbuntuDiskManager(runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager ubuntuDiskManager) {
 	manager.partitioner = NewSfdiskPartitioner(runner)
-	manager.formatter = NewLinuxFormatter(runner)
+	manager.formatter = NewLinuxFormatter(runner, fs)
 	manager.mounter = NewLinuxMounter(runner, fs)
 	return
 }

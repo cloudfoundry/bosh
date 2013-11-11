@@ -8,10 +8,12 @@ import (
 
 type linuxFormatter struct {
 	runner boshsys.CmdRunner
+	fs     boshsys.FileSystem
 }
 
-func NewLinuxFormatter(runner boshsys.CmdRunner) (formatter linuxFormatter) {
+func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (formatter linuxFormatter) {
 	formatter.runner = runner
+	formatter.fs = fs
 	return
 }
 
@@ -24,7 +26,11 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 	case FileSystemSwap:
 		_, _, err = f.runner.RunCommand("mkswap", partitionPath)
 	case FileSystemExt4:
-		_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", partitionPath)
+		if f.fs.FileExists("/sys/fs/ext4/features/lazy_itable_init") {
+			_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", partitionPath)
+		} else {
+			_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", partitionPath)
+		}
 	}
 	return
 }
