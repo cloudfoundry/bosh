@@ -1,5 +1,5 @@
 out
 pkg
 
-.idea
-*.iml
+.idea/workspace.xml
+.idea/tasks.xml
