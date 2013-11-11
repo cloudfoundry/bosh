@@ -246,7 +246,7 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 		return
 	}
 
-	totalMemInMb := memStats.Total / uint64(1024)
+	totalMemInMb := memStats.Total / uint64(1024*1024)
 
 	diskSizeInMb, err := p.partitioner.GetDeviceSizeInMb(devicePath)
 	if err != nil {

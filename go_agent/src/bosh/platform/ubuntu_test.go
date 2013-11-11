@@ -242,7 +242,7 @@ func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmall
 func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 
-	fakeStats.MemStats.Total = totalMemInMb * uint64(1024)
+	fakeStats.MemStats.Total = totalMemInMb * uint64(1024*1024)
 
 	fakePartitioner := fakeDiskManager.FakePartitioner
 	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
