@@ -1,6 +1,7 @@
 package agent
 
 import (
+	boshtask "bosh/agent/task"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -11,13 +12,15 @@ type agent struct {
 	settings          boshsettings.Settings
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
+	taskService       boshtask.Service
 	heartbeatInterval time.Duration
 }
 
-func New(settings boshsettings.Settings, mbusHandler boshmbus.Handler, platform boshplatform.Platform) (a agent) {
+func New(settings boshsettings.Settings, mbusHandler boshmbus.Handler, platform boshplatform.Platform, taskService boshtask.Service) (a agent) {
 	a.settings = settings
 	a.mbusHandler = mbusHandler
 	a.platform = platform
+	a.taskService = taskService
 	a.heartbeatInterval = time.Minute
 	return
 }
@@ -38,7 +41,17 @@ func (a agent) Run() (err error) {
 
 func (a agent) runMbusHandler(errChan chan error) {
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
-		resp.Value = "pong"
+		switch req.Method {
+		case "ping":
+			resp.Value = "pong"
+		case "apply":
+			task := a.taskService.StartTask(func() (err error) {
+				return
+			})
+			resp.AgentTaskId = task.Id
+			resp.State = string(task.State)
+		}
+
 		return
 	}
 	errChan <- a.mbusHandler.Run(handlerFunc)

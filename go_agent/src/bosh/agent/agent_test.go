@@ -1,6 +1,8 @@
 package agent
 
 import (
+	boshtask "bosh/agent/task"
+	testtask "bosh/agent/task/testhelpers"
 	boshmbus "bosh/mbus"
 	testmbus "bosh/mbus/testhelpers"
 	boshstats "bosh/platform/stats"
@@ -12,16 +14,28 @@ import (
 	"time"
 )
 
-func TestRunHandlesAMessage(t *testing.T) {
+func TestRunHandlesAPingMessage(t *testing.T) {
 	req := boshmbus.Request{Method: "ping"}
 	expectedResp := boshmbus.Response{Value: "pong"}
 
 	assertResponseForRequest(t, req, expectedResp)
 }
 
+func TestRunHandlesAnApplyMessage(t *testing.T) {
+	req := boshmbus.Request{Method: "apply", Args: []string{""}}
+	expectedResp := boshmbus.Response{State: "running", AgentTaskId: "some-task-id"}
+
+	assertResponseForRequest(t, req, expectedResp)
+}
+
 func assertResponseForRequest(t *testing.T, req boshmbus.Request, expectedResp boshmbus.Response) {
-	settings, handler, platform := getAgentDependencies()
-	agent := New(settings, handler, platform)
+	settings, handler, platform, taskService := getAgentDependencies()
+	taskService.StartTaskStartedTask = boshtask.Task{
+		Id:    "some-task-id",
+		State: "running",
+	}
+
+	agent := New(settings, handler, platform, taskService)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -33,7 +47,7 @@ func assertResponseForRequest(t *testing.T, req boshmbus.Request, expectedResp b
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {
-	settings, handler, platform := getAgentDependencies()
+	settings, handler, platform, taskService := getAgentDependencies()
 	settings.Disks = boshsettings.Disks{
 		System:     "/dev/sda1",
 		Ephemeral:  "/dev/sdb",
@@ -52,7 +66,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, handler, platform)
+	agent := New(settings, handler, platform, taskService)
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -97,7 +111,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 }
 
 func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
-	settings, handler, platform := getAgentDependencies()
+	settings, handler, platform, taskService := getAgentDependencies()
 	settings.Disks = boshsettings.Disks{
 		System: "/dev/sda1",
 	}
@@ -110,7 +124,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, handler, platform)
+	agent := New(settings, handler, platform, taskService)
 	agent.heartbeatInterval = time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -124,11 +138,12 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 	}, hb.Vitals.Disks)
 }
 
-func getAgentDependencies() (settings boshsettings.Settings, handler *testmbus.FakeHandler, platform *testplatform.FakePlatform) {
+func getAgentDependencies() (settings boshsettings.Settings, handler *testmbus.FakeHandler, platform *testplatform.FakePlatform, taskService *testtask.FakeService) {
 	settings = boshsettings.Settings{}
 	handler = &testmbus.FakeHandler{}
 	platform = &testplatform.FakePlatform{
 		FakeStatsCollector: &teststats.FakeStatsCollector{},
 	}
+	taskService = &testtask.FakeService{}
 	return
 }
