@@ -1,6 +1,7 @@
 package agent
 
 import (
+	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
@@ -13,14 +14,22 @@ type agent struct {
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
 	taskService       boshtask.Service
+	actionFactory     boshaction.Factory
 	heartbeatInterval time.Duration
 }
 
-func New(settings boshsettings.Settings, mbusHandler boshmbus.Handler, platform boshplatform.Platform, taskService boshtask.Service) (a agent) {
+func New(
+	settings boshsettings.Settings,
+	mbusHandler boshmbus.Handler,
+	platform boshplatform.Platform,
+	taskService boshtask.Service,
+	actionFactory boshaction.Factory) (a agent) {
+
 	a.settings = settings
 	a.mbusHandler = mbusHandler
 	a.platform = platform
 	a.taskService = taskService
+	a.actionFactory = actionFactory
 	a.heartbeatInterval = time.Minute
 	return
 }
@@ -46,6 +55,8 @@ func (a agent) runMbusHandler(errChan chan error) {
 			resp.Value = "pong"
 		case "apply":
 			task := a.taskService.StartTask(func() (err error) {
+				action := a.actionFactory.Create(req.Method)
+				err = action.Run(req.Args)
 				return
 			})
 			resp.AgentTaskId = task.Id

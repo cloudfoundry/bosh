@@ -2,6 +2,7 @@ package app
 
 import (
 	boshagent "bosh/agent"
+	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
 	boshboot "bosh/bootstrap"
 	boshinf "bosh/infrastructure"
@@ -57,7 +58,8 @@ func (app App) Run(args []string) (err error) {
 	}
 
 	tasksService := boshtask.NewAsyncTaskService()
-	agent := boshagent.New(settings, mbusHandler, platform, tasksService)
+	actionFactory := boshaction.NewFactory()
+	agent := boshagent.New(settings, mbusHandler, platform, tasksService, actionFactory)
 	err = agent.Run()
 	return
 }

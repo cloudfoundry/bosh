@@ -1,6 +1,7 @@
 package agent
 
 import (
+	testaction "bosh/agent/action/testhelpers"
 	boshtask "bosh/agent/task"
 	testtask "bosh/agent/task/testhelpers"
 	boshmbus "bosh/mbus"
@@ -9,6 +10,7 @@ import (
 	teststats "bosh/platform/stats/testhelpers"
 	testplatform "bosh/platform/testhelpers"
 	boshsettings "bosh/settings"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -25,17 +27,21 @@ func TestRunHandlesAnApplyMessage(t *testing.T) {
 	req := boshmbus.Request{Method: "apply", Args: []string{""}}
 	expectedResp := boshmbus.Response{State: "running", AgentTaskId: "some-task-id"}
 
-	assertResponseForRequest(t, req, expectedResp)
+	assertResponseForRequestWithTask(t, req, expectedResp)
 }
 
-func assertResponseForRequest(t *testing.T, req boshmbus.Request, expectedResp boshmbus.Response) {
-	settings, handler, platform, taskService := getAgentDependencies()
+func assertResponseForRequest(t *testing.T,
+	req boshmbus.Request, expectedResp boshmbus.Response) (taskService *testtask.FakeService, actionFactory *testaction.FakeFactory) {
+
+	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
+	actionFactory.CreateAction = &testaction.TestAction{Err: errors.New("Some error message")}
+
 	taskService.StartTaskStartedTask = boshtask.Task{
 		Id:    "some-task-id",
 		State: "running",
 	}
 
-	agent := New(settings, handler, platform, taskService)
+	agent := New(settings, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -44,10 +50,22 @@ func assertResponseForRequest(t *testing.T, req boshmbus.Request, expectedResp b
 	resp := handler.Func(req)
 
 	assert.Equal(t, resp, expectedResp)
+	return
+}
+
+func assertResponseForRequestWithTask(t *testing.T, req boshmbus.Request, expectedResp boshmbus.Response) {
+	taskService, actionFactory := assertResponseForRequest(t, req, expectedResp)
+
+	err := taskService.StartTaskFunc()
+	assert.Error(t, err)
+	assert.Equal(t, "Some error message", err.Error())
+
+	createdAction := actionFactory.CreateAction
+	assert.Equal(t, req.Args, createdAction.RunArgs)
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {
-	settings, handler, platform, taskService := getAgentDependencies()
+	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 	settings.Disks = boshsettings.Disks{
 		System:     "/dev/sda1",
 		Ephemeral:  "/dev/sdb",
@@ -66,7 +84,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, handler, platform, taskService)
+	agent := New(settings, handler, platform, taskService, actionFactory)
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -111,7 +129,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 }
 
 func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
-	settings, handler, platform, taskService := getAgentDependencies()
+	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 	settings.Disks = boshsettings.Disks{
 		System: "/dev/sda1",
 	}
@@ -124,7 +142,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, handler, platform, taskService)
+	agent := New(settings, handler, platform, taskService, actionFactory)
 	agent.heartbeatInterval = time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -138,12 +156,19 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 	}, hb.Vitals.Disks)
 }
 
-func getAgentDependencies() (settings boshsettings.Settings, handler *testmbus.FakeHandler, platform *testplatform.FakePlatform, taskService *testtask.FakeService) {
+func getAgentDependencies() (
+	settings boshsettings.Settings,
+	handler *testmbus.FakeHandler,
+	platform *testplatform.FakePlatform,
+	taskService *testtask.FakeService,
+	actionFactory *testaction.FakeFactory) {
+
 	settings = boshsettings.Settings{}
 	handler = &testmbus.FakeHandler{}
 	platform = &testplatform.FakePlatform{
 		FakeStatsCollector: &teststats.FakeStatsCollector{},
 	}
 	taskService = &testtask.FakeService{}
+	actionFactory = &testaction.FakeFactory{}
 	return
 }

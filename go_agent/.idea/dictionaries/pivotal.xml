@@ -6,6 +6,7 @@
       <w>boshstats</w>
       <w>boshsys</w>
       <w>partitioner</w>
+      <w>testaction</w>
       <w>testmbus</w>
       <w>testplatform</w>
       <w>teststats</w>
