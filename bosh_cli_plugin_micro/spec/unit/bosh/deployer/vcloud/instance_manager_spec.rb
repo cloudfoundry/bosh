@@ -60,7 +60,7 @@ describe Bosh::Deployer::InstanceManager do
         Timeout.timeout(5) do
           @deployer.create(BOSH_STEMCELL_TGZ, nil)
         end
-      }.to_not raise_error(TimeoutError)
+      }.to_not raise_error
 
       @deployer.state.stemcell_cid.should == 'SC-CID-CREATE'
       @deployer.state.vm_cid.should == 'VM-CID-CREATE'

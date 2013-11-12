@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class CliError < StandardError
     attr_reader :exit_code
@@ -33,8 +31,6 @@ module Bosh::Cli
 
   class CliExit              < CliError; error_code(400); end
   class GracefulExit         < CliExit;  error_code(401); end
-
-  class CacheDirectoryError  < CliError; error_code(301); end
 
   class InvalidPackage       < CliError; error_code(500); end
   class InvalidJob           < CliError; error_code(501); end

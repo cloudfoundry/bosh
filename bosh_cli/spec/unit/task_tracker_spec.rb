@@ -1,14 +1,10 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::TaskTracker do
 
   before(:each) do
-    @cache = double("cache")
     @director = double("director", :uuid => "deadbeef",
                      :get_time_difference => 0.5)
-    Bosh::Cli::Config.cache = @cache
   end
 
   def make_tracker(task_id, options)
@@ -20,8 +16,6 @@ describe Bosh::Cli::TaskTracker do
   it "tracks director task event log" do
     tracker = make_tracker("42", {})
     @director.should_receive(:get_time_difference).and_return(0.5)
-
-    @cache.should_receive(:read).with("task/deadbeef/42/event").and_return(nil)
 
     @director.should_receive(:get_task_state).with("42").
       and_return("queued", "queued", "processing", "processing", "done")
@@ -35,23 +29,9 @@ describe Bosh::Cli::TaskTracker do
     @director.should_receive(:get_task_output).with("42", 12, "event").
       and_return(["z", 13])
 
-    @cache.should_receive(:write).
-      with("task/deadbeef/42/event", "foo\nbar\nbaz\n")
-
     tracker.should_receive(:sleep).with(1).exactly(4).times
 
     tracker.track.should == :done
-  end
-
-  it "used cached task result if available" do
-    tracker = make_tracker("42", { :log_type => "debug" })
-
-    @cache.should_receive(:read).with("task/deadbeef/42/debug").
-      and_return("foo\nbar\nbaz\n")
-
-    @director.should_receive(:get_task_state).with("42").and_return("cancelled")
-
-    tracker.track.should == :cancelled
   end
 
   it "uses appropriate renderer" do
@@ -60,8 +40,6 @@ describe Bosh::Cli::TaskTracker do
       with("foobar").and_return(renderer)
 
     tracker = make_tracker("42", { :log_type => "foobar" })
-
-    @cache.should_receive(:read).with("task/deadbeef/42/foobar").and_return(nil)
 
     @director.should_receive(:get_task_state).with("42").
       and_return("queued", "processing", "done")
@@ -81,16 +59,12 @@ describe Bosh::Cli::TaskTracker do
 
     tracker.should_receive(:sleep).with(1).exactly(2).times
 
-    @cache.should_receive(:write).
-      with("task/deadbeef/42/foobar", "foo\nbar\nbaz\n")
-
     tracker.track.should == :done
   end
 
   it "treats error and cancelled states as finished states" do
     %w(error cancelled).each do |state|
-      tracker = make_tracker("42", { :log_type => "foobar",
-                                     :use_cache => false })
+      tracker = make_tracker("42", { :log_type => "foobar" })
 
       @director.should_receive(:get_task_state).with("42").
         and_return("queued", "processing", state)
@@ -108,8 +82,7 @@ describe Bosh::Cli::TaskTracker do
   end
 
   it "prompts for task cancel on interrupt (if in interactive mode)" do
-    tracker = make_tracker("42", { :log_type => "foobar",
-                                   :use_cache => false })
+    tracker = make_tracker("42", { :log_type => "foobar" })
 
     tracker.stub(:interactive?).and_return(true)
 

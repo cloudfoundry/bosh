@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli::Command
   class Task < Base
 
@@ -8,7 +6,6 @@ module Bosh::Cli::Command
     # bosh task
     usage  "task"
     desc   "Show task status and start tracking its output"
-    option "--no-cache", "Don't cache output locally"
     option "--event", "Track event log"
     option "--cpi", "Track CPI log"
     option "--debug", "Track debug log"
@@ -18,7 +15,6 @@ module Bosh::Cli::Command
     def track(task_id = nil)
       auth_required
       use_filter = !options.key?(:no_filter)
-      use_cache = !options.key?(:no_cache)
       raw_output = options[:raw]
 
       log_type = "event"
@@ -50,7 +46,6 @@ module Bosh::Cli::Command
 
       track_options = {
         :log_type => log_type,
-        :use_cache => use_cache,
         :raw_output => raw_output
       }
 

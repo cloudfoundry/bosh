@@ -4,9 +4,8 @@ module Bosh::Cli
 
     attr_reader :stemcell_file, :manifest
 
-    def initialize(tarball_path, cache)
+    def initialize(tarball_path)
       @stemcell_file = File.expand_path(tarball_path, Dir.pwd)
-      @cache = cache
     end
 
     def perform_validation(options = {})
@@ -17,51 +16,41 @@ module Bosh::Cli
         File.exists?(@stemcell_file) && File.readable?(@stemcell_file)
       end
 
-      cache_key = "%s_%s" % [@stemcell_file, File.mtime(@stemcell_file)]
+      say("Verifying tarball...")
 
-      manifest_yaml = @cache.read(cache_key)
+      stemcell_mf = "stemcell.MF"
 
-      if manifest_yaml
-        say("Using cached manifest...")
-      else
-        say("Manifest not found in cache, verifying tarball...")
-
-        stemcell_mf = "stemcell.MF"
-
-        tar = nil
-        step("Read tarball",
-             "Cannot read tarball #{@stemcell_file}", :fatal) do
-          tgz = Zlib::GzipReader.new(File.open(@stemcell_file))
-          tar = Minitar.open(tgz)
-          !!tar
-        end
-
-        manifest = false
-        image = false
-        tar.each do |entry|
-          if entry.full_name == stemcell_mf
-            tar.extract_entry(tmp_dir, entry)
-            manifest = true
-          elsif entry.full_name == "image"
-            image = true
-          end
-        end
-
-        step("Manifest exists", "Cannot find stemcell manifest", :fatal) do
-          manifest
-        end
-
-        step("Stemcell image file",
-             "Stemcell image file is missing", :fatal) do
-          image
-        end
-
-        manifest_file = File.expand_path(stemcell_mf, tmp_dir)
-
-        say("Writing manifest to cache...")
-        manifest_yaml = File.read(manifest_file)
-        @cache.write(cache_key, manifest_yaml)
+      tar = nil
+      step("Read tarball",
+           "Cannot read tarball #{@stemcell_file}", :fatal) do
+        tgz = Zlib::GzipReader.new(File.open(@stemcell_file))
+        tar = Minitar.open(tgz)
+        !!tar
       end
+
+      manifest = false # assign false because we return something truthy
+
+      image = false
+      tar.each do |entry|
+        if entry.full_name == stemcell_mf
+          tar.extract_entry(tmp_dir, entry)
+          manifest = true
+        elsif entry.full_name == "image"
+          image = true
+        end
+      end
+
+      step("Manifest exists", "Cannot find stemcell manifest", :fatal) do
+        manifest
+      end
+
+      step("Stemcell image file",
+           "Stemcell image file is missing", :fatal) do
+        image
+      end
+
+      manifest_file = File.expand_path(stemcell_mf, tmp_dir)
+      manifest_yaml = File.read(manifest_file)
 
       manifest = Psych.load(manifest_yaml)
 

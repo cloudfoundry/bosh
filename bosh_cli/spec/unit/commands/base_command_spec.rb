@@ -4,7 +4,6 @@ describe Bosh::Cli::Command::Base do
   before do
     @runner = double(Bosh::Cli::Runner)
     @config_file = File.join(Dir.mktmpdir, 'bosh_config')
-    @cache_dir = Dir.mktmpdir
   end
 
   def add_config(object)

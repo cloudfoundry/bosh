@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class ParseTreeNode < Hash
     attr_accessor :command
@@ -36,7 +34,6 @@ module Bosh::Cli
       parse_global_options
 
       Config.interactive = !@options[:non_interactive]
-      Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir])
       Config.poll_interval = @options[:poll_interval]
 
       load_plugins
@@ -112,9 +109,7 @@ module Bosh::Cli
       opts.on("-c", "--config FILE", config_desc) do |file|
         @options[:config] = file
       end
-      opts.on("-C", "--cache-dir DIR", "Override cache directory") do |dir|
-        @options[:cache_dir] = dir
-      end
+
       opts.on("--[no-]color", "Toggle colorized output") do |v|
         Config.colorize = v
       end

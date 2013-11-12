@@ -17,7 +17,7 @@ module Bosh::Cli::Command
     usage "verify stemcell"
     desc "Verify stemcell"
     def verify(tarball_path)
-      stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
+      stemcell = Bosh::Cli::Stemcell.new(tarball_path)
 
       nl
       say("Verifying stemcell...")
@@ -43,28 +43,28 @@ module Bosh::Cli::Command
 
       stemcell_type = stemcell_location =~ /^#{URI::regexp}$/ ? "remote" : "local"
       if stemcell_type == "local"
-        stemcell = Bosh::Cli::Stemcell.new(stemcell_location, cache)
-  
+        stemcell = Bosh::Cli::Stemcell.new(stemcell_location)
+
         nl
         say("Verifying stemcell...")
         stemcell.validate
         nl
-  
+
         unless stemcell.valid?
           err("Stemcell is invalid, please fix, verify and upload again")
         end
-  
+
         say("Checking if stemcell already exists...")
         name = stemcell.manifest["name"]
         version = stemcell.manifest["version"]
-  
+
         if exists?(name, version)
           err("Stemcell `#{name}/#{version}' already exists, " +
                 "increment the version if it has changed")
         else
           say("No")
         end
-        
+
         stemcell_location = stemcell.stemcell_file
 
         nl

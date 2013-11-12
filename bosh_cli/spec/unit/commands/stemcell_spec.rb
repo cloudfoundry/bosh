@@ -8,12 +8,10 @@ describe Bosh::Cli::Command::Stemcell do
   let(:stemcell_archive) { spec_asset("valid_stemcell.tgz") }
   let(:stemcell_manifest) { {'name' => 'ubuntu-stemcell', 'version' => 1} }
   let(:stemcell) { double('stemcell', :manifest => stemcell_manifest) }
-  let(:cache) { double('cache') }
 
   before do
     command.stub(:director).and_return(director)
     Bosh::Cli::Stemcell.stub(:new).and_return(stemcell)
-    Bosh::Cli::Config.cache = cache
   end
 
   describe 'upload stemcell' do
@@ -23,8 +21,6 @@ describe Bosh::Cli::Command::Stemcell do
       before do
         command.stub(:logged_in? => true)
         command.options[:target] = 'http://bosh-target.example.com'
-        cache.stub(:read).and_return(nil)
-        cache.stub(:write)
       end
 
       context 'local stemcell' do

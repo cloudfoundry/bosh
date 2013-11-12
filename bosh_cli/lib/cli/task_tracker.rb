@@ -24,10 +24,8 @@ module Bosh
         default_log_type = @quiet ? "none" : "event"
 
         @log_type = options[:log_type] || default_log_type
-        @use_cache = options.key?(:use_cache) ? @options[:use_cache] : true
 
         @output = nil
-        @cache = Config.cache
         @task = Bosh::Cli::DirectorTask.new(@director, @task_id, @log_type)
 
         if options[:renderer]
@@ -49,19 +47,10 @@ module Bosh
         nl
         @renderer.time_adjustment = @director.get_time_difference
         say("Director task #{@task_id.to_s.make_yellow}")
-
-        cached_output = get_cached_task_output
-        if cached_output
-          task_status = @task.state.to_sym
-          output_received(cached_output)
-          @renderer.refresh
-        else
-          task_status = poll
-        end
+        task_status = poll
 
         print_task_summary(task_status)
 
-        save_task_output unless cached_output
         task_status
       end
 
@@ -160,21 +149,6 @@ module Bosh
       def interactive?
         Bosh::Cli::Config.interactive
       end
-
-      def get_cached_task_output
-        return nil unless @use_cache
-        @cache.read(task_cache_key)
-      end
-
-      def save_task_output
-        return nil unless @output && @use_cache
-        @cache.write(task_cache_key, @output)
-      end
-
-      def task_cache_key
-        "task/#{@director.uuid}/#{@task_id}/#{@log_type}"
-      end
-
     end
   end
 end

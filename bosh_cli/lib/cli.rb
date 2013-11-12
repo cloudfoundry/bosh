@@ -1,9 +1,6 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh
   module Cli
     DEFAULT_CONFIG_PATH = File.expand_path('~/.bosh_config')
-    DEFAULT_CACHE_DIR = File.expand_path('~/.bosh_cache')
   end
 end
 
@@ -50,7 +47,6 @@ require 'cli/dependency_helper'
 require 'cli/deployment_manifest'
 require 'cli/deployment_helper'
 require 'cli/validation'
-require 'cli/cache'
 require 'cli/stemcell'
 require 'cli/client/director'
 require 'cli/director_task'
