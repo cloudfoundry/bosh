@@ -2,9 +2,14 @@
   <dictionary name="pivotal">
     <words>
       <w>boshdisk</w>
+      <w>boshsettings</w>
       <w>boshstats</w>
       <w>boshsys</w>
       <w>partitioner</w>
+      <w>testmbus</w>
+      <w>testplatform</w>
+      <w>teststats</w>
+      <w>testtask</w>
       <w>ubuntu</w>
     </words>
   </dictionary>
