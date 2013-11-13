@@ -130,6 +130,39 @@ func TestRunSetsTime(t *testing.T) {
 	assert.Equal(t, boshsettings.VCAP_BASE_DIR+"/bosh/etc/ntpserver", fakePlatform.SetTimeWithNtpServersServersFilePath)
 }
 
+func TestRunStartsMonit(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+
+	boot.Run()
+
+	assert.True(t, fakePlatform.StartMonitStarted)
+}
+
+func TestRunSetsUpMonitUserIfFileDoesNotExist(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+
+	boot.Run()
+
+	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	assert.NotNil(t, monitUserFileStats)
+	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
+}
+
+func TestRunSkipsSetsUpMonitUserIfFileDoesExist(t *testing.T) {
+	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
+
+	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+
+	boot.Run()
+
+	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	assert.NotNil(t, monitUserFileStats)
+	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
+}
+
 func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {
 	fs = &testsys.FakeFileSystem{}
 	inf = &testinf.FakeInfrastructure{}

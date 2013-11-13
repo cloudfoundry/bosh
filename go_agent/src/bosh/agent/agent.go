@@ -35,6 +35,12 @@ func New(
 }
 
 func (a agent) Run() (err error) {
+
+	err = a.platform.StartMonit()
+	if err != nil {
+		return
+	}
+
 	errChan := make(chan error, 1)
 	heartbeatChan := make(chan boshmbus.Heartbeat, 1)
 

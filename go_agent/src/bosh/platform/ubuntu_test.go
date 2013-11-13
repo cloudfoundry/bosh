@@ -291,6 +291,16 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, 
 	assert.Equal(t, diskSizeInMb-expectedSwap, linuxSize)
 }
 
+func TestStartMonit(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.StartMonit()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
+}
+
 func getUbuntuDependencies() (collector *teststats.FakeStatsCollector, fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner, fakeDiskManager testdisk.FakeDiskManager) {
 	collector = &teststats.FakeStatsCollector{}
 	fs = &testsys.FakeFileSystem{}

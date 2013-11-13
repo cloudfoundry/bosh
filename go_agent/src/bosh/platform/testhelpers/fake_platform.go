@@ -12,6 +12,7 @@ type FakePlatform struct {
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
 	FakeStatsCollector                   *teststats.FakeStatsCollector
+	StartMonitStarted                    bool
 	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
@@ -49,6 +50,11 @@ func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
 	p.SetupEphemeralDiskWithPathMountPoint = mountPoint
+	return
+}
+
+func (p *FakePlatform) StartMonit() (err error) {
+	p.StartMonitStarted = true
 	return
 }
 

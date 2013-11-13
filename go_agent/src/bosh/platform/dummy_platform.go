@@ -43,3 +43,7 @@ func (p dummyPlatform) SetTimeWithNtpServers(servers []string, serversFilePath s
 func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	return
 }
+
+func (p dummyPlatform) StartMonit() (err error) {
+	return
+}

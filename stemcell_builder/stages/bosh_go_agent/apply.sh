@@ -11,11 +11,16 @@ source $base_dir/lib/prelude_bosh.bash
 
 mkdir -p $chroot/etc/sv
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent
+cp -a $dir/assets/runit/monit $chroot/etc/sv/monit
+mkdir -p $chroot/var/vcap/monit/svlog
 
 # runit
 run_in_bosh_chroot $chroot "
 chmod +x /etc/sv/agent/run /etc/sv/agent/log/run
 ln -s /etc/sv/agent /etc/service/agent
+
+chmod +x /etc/sv/monit/run /etc/sv/monit/log/run
+ln -s /etc/sv/monit /etc/service/monit
 "
 
 cd $assets_dir/go_agent

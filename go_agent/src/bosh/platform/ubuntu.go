@@ -228,6 +228,11 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 	return
 }
 
+func (p ubuntu) StartMonit() (err error) {
+	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
+	return
+}
+
 func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 

@@ -1,7 +1,4 @@
 #!/bin/bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
-
 set -e
 
 export PATH=/var/vcap/bosh/bin:$PATH

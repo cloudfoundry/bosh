@@ -14,4 +14,5 @@ type Platform interface {
 	SetupDhcp(networks boshsettings.Networks) (err error)
 	SetTimeWithNtpServers(servers []string, serversFilePath string) (err error)
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
+	StartMonit() (err error)
 }

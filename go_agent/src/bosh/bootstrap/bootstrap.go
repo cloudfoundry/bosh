@@ -60,6 +60,19 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 	}
 
 	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(boshsettings.VCAP_BASE_DIR, "data"))
+	if err != nil {
+		return
+	}
+
+	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")
+	if !boot.fs.FileExists(monitUserFilePath) {
+		_, err = boot.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
+		if err != nil {
+			return
+		}
+	}
+
+	err = boot.platform.StartMonit()
 	return
 }
 
