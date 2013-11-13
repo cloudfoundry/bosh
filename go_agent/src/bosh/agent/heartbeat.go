@@ -9,8 +9,8 @@ import (
 
 const (
 	SYSTEM_DISK_PATH     = "/"
-	EPHEMERAL_DISK_PATH  = "/var/vcap/data"
-	PERSISTENT_DISK_PATH = "/var/vcap/store"
+	EPHEMERAL_DISK_PATH  = boshsettings.VCAP_BASE_DIR + "/data"
+	PERSISTENT_DISK_PATH = boshsettings.VCAP_BASE_DIR + "/store"
 )
 
 func getHeartbeat(settings boshsettings.Settings, collector boshstats.StatsCollector) (hb boshmbus.Heartbeat) {

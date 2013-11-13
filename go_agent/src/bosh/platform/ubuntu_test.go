@@ -160,7 +160,7 @@ func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) 
 	ubuntu.SetTimeWithNtpServers([]string{}, "/foo/bar")
 	assert.Equal(t, 0, len(fakeCmdRunner.RunCommands))
 
-	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	ntpConfig := fakeFs.GetFileTestStat("/foo/bar")
 	assert.Nil(t, ntpConfig)
 }
 

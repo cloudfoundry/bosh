@@ -1,5 +1,11 @@
 package settings
 
+const (
+	ROOT_USERNAME = "root"
+	VCAP_USERNAME = "vcap"
+	VCAP_BASE_DIR = "/var/vcap"
+)
+
 type Settings struct {
 	AgentId  string `json:"agent_id"`
 	Disks    Disks

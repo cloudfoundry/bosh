@@ -1,12 +1,14 @@
 package action
 
+import boshsys "bosh/system"
+
 type concreteFactory struct {
 	availableActions map[string]Action
 }
 
-func NewFactory() (factory concreteFactory) {
+func NewFactory(fs boshsys.FileSystem) (factory concreteFactory) {
 	factory.availableActions = map[string]Action{
-		"apply": newApply(),
+		"apply": newApply(fs),
 	}
 
 	return

@@ -58,7 +58,7 @@ func (app App) Run(args []string) (err error) {
 	}
 
 	tasksService := boshtask.NewAsyncTaskService()
-	actionFactory := boshaction.NewFactory()
+	actionFactory := boshaction.NewFactory(fs)
 	agent := boshagent.New(settings, mbusHandler, platform, tasksService, actionFactory)
 	err = agent.Run()
 	return

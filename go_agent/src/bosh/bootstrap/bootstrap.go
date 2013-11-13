@@ -10,12 +10,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	ROOT_USERNAME = "root"
-	VCAP_USERNAME = "vcap"
-	VCAP_BASE_DIR = "/var/vcap"
-)
-
 type bootstrap struct {
 	fs             boshsys.FileSystem
 	infrastructure boshinf.Infrastructure
@@ -35,7 +29,7 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
-	err = boot.infrastructure.SetupSsh(boot.platform, VCAP_USERNAME)
+	err = boot.infrastructure.SetupSsh(boot.platform, boshsettings.VCAP_USERNAME)
 	if err != nil {
 		return
 	}
@@ -60,12 +54,12 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
-	err = boot.platform.SetTimeWithNtpServers(settings.Ntp, filepath.Join(VCAP_BASE_DIR, "/bosh/etc/ntpserver"))
+	err = boot.platform.SetTimeWithNtpServers(settings.Ntp, filepath.Join(boshsettings.VCAP_BASE_DIR, "/bosh/etc/ntpserver"))
 	if err != nil {
 		return
 	}
 
-	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(VCAP_BASE_DIR, "data"))
+	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(boshsettings.VCAP_BASE_DIR, "data"))
 	return
 }
 
@@ -82,7 +76,7 @@ func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error
 		return
 	}
 
-	boot.fs.WriteToFile(filepath.Join(VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
+	boot.fs.WriteToFile(filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
 	return
 }
 
@@ -92,11 +86,11 @@ func (boot bootstrap) setUserPasswords(settings boshsettings.Settings) (err erro
 		return
 	}
 
-	err = boot.platform.SetUserPassword(ROOT_USERNAME, settings.Env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.ROOT_USERNAME, settings.Env.GetPassword())
 	if err != nil {
 		return
 	}
 
-	err = boot.platform.SetUserPassword(VCAP_USERNAME, settings.Env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.VCAP_USERNAME, settings.Env.GetPassword())
 	return
 }
