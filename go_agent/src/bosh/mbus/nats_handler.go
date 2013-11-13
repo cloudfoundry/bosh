@@ -53,6 +53,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		if err != nil {
 			return
 		}
+		req.payload = natsMsg.Payload
 
 		resp := handlerFunc(req)
 

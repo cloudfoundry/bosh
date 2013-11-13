@@ -62,7 +62,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 		case "apply":
 			task := a.taskService.StartTask(func() (err error) {
 				action := a.actionFactory.Create(req.Method)
-				err = action.Run(req.Args)
+				err = action.Run(req.GetPayload())
 				return
 			})
 			resp.AgentTaskId = task.Id

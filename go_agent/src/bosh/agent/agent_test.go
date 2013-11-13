@@ -17,14 +17,14 @@ import (
 )
 
 func TestRunHandlesAPingMessage(t *testing.T) {
-	req := boshmbus.Request{Method: "ping"}
+	req := boshmbus.NewRequest("reply to me!", "ping", "some payload")
 	expectedResp := boshmbus.Response{Value: "pong"}
 
 	assertResponseForRequest(t, req, expectedResp)
 }
 
 func TestRunHandlesAnApplyMessage(t *testing.T) {
-	req := boshmbus.Request{Method: "apply", Args: []string{""}}
+	req := boshmbus.NewRequest("reply to me!", "apply", "some payload")
 	expectedResp := boshmbus.Response{State: "running", AgentTaskId: "some-task-id"}
 
 	assertResponseForRequestWithTask(t, req, expectedResp)
@@ -34,7 +34,7 @@ func assertResponseForRequest(t *testing.T,
 	req boshmbus.Request, expectedResp boshmbus.Response) (taskService *testtask.FakeService, actionFactory *testaction.FakeFactory) {
 
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
-	actionFactory.CreateAction = &testaction.TestAction{Err: errors.New("Some error message")}
+	actionFactory.CreateAction = &testaction.TestAction{RunErr: errors.New("Some error message")}
 
 	taskService.StartTaskStartedTask = boshtask.Task{
 		Id:    "some-task-id",
@@ -56,12 +56,17 @@ func assertResponseForRequest(t *testing.T,
 func assertResponseForRequestWithTask(t *testing.T, req boshmbus.Request, expectedResp boshmbus.Response) {
 	taskService, actionFactory := assertResponseForRequest(t, req, expectedResp)
 
+	// Test the task
 	err := taskService.StartTaskFunc()
 	assert.Error(t, err)
 	assert.Equal(t, "Some error message", err.Error())
 
+	// Action is created with request's method
+	assert.Equal(t, req.Method, actionFactory.CreateMethod)
+
+	// Action gets run with given payload
 	createdAction := actionFactory.CreateAction
-	assert.Equal(t, req.Args, createdAction.RunArgs)
+	assert.Equal(t, "some payload", createdAction.RunPayload)
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {

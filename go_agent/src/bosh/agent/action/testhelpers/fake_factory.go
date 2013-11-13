@@ -14,11 +14,11 @@ func (f *FakeFactory) Create(method string) (action boshaction.Action) {
 }
 
 type TestAction struct {
-	Err     error
-	RunArgs []string
+	RunErr     error
+	RunPayload string
 }
 
-func (a *TestAction) Run(args []string) (err error) {
-	a.RunArgs = args
-	return a.Err
+func (a *TestAction) Run(payload string) (err error) {
+	a.RunPayload = payload
+	return a.RunErr
 }

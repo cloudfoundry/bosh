@@ -28,17 +28,18 @@ func TestNatsHandlerStart(t *testing.T) {
 	assert.Equal(t, len(subscriptions), 1)
 
 	// test subscription callback
+	expectedPayload := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 	subscription := client.Subscriptions["agent.my-agent-id"][0]
 	subscription.Callback(&yagnats.Message{
 		Subject: "agent.my-agent-id",
-		Payload: `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`,
+		Payload: expectedPayload,
 	})
 
 	// request received
 	assert.Equal(t, receivedRequest, Request{
 		ReplyTo: "reply to me!",
 		Method:  "ping",
-		Args:    []string{"foo", "bar"},
+		payload: expectedPayload,
 	})
 
 	// response sent

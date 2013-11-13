@@ -3,6 +3,8 @@ package action
 import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
+	"encoding/json"
+	"errors"
 	"path/filepath"
 )
 
@@ -15,10 +17,28 @@ func newApply(fs boshsys.FileSystem) (apply applyAction) {
 	return
 }
 
-func (a applyAction) Run(args []string) (err error) {
-	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "/bosh/spec.json")
-	spec := args[0]
+func (a applyAction) Run(payloadString string) (err error) {
+	type payloadType struct {
+		Arguments []interface{}
+	}
 
-	_, err = a.fs.WriteToFile(specFilePath, spec)
+	var payload payloadType
+	err = json.Unmarshal([]byte(payloadString), &payload)
+	if err != nil {
+		return
+	}
+
+	if len(payload.Arguments) == 0 {
+		err = errors.New("Not enough arguments, expected 1")
+		return
+	}
+
+	spec, err := json.Marshal(payload.Arguments[0])
+	if err != nil {
+		return
+	}
+
+	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "/bosh/spec.json")
+	_, err = a.fs.WriteToFile(specFilePath, string(spec))
 	return
 }
