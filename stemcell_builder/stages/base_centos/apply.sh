@@ -24,6 +24,7 @@ INSTALL_YUM
 run_in_chroot $chroot "
 rpm --force --nodeps --install file:///centosmirror/centos/6.4/base/x86_64/Packages/centos-release-6-4.el6.centos.10.x86_64.rpm
 rpm --force --nodeps --install file:///centosmirror/epel/6/x86_64/epel-release-6-8.noarch.rpm
+rpm --rebuilddb
 "
 
 custom_yum
