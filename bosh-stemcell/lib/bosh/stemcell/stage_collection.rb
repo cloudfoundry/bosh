@@ -169,10 +169,10 @@ module Bosh::Stemcell
     def cloudstack_stages
       [
         # Misc
+        :system_kernel_cloudstack,
         :system_cloudstack_network,
         :system_cloudstack_clock,
         :system_cloudstack_modules,
-#        :system_cloudstack_sshkey_script,
         :system_parameters,
         # Finalisation,
         :bosh_clean,
@@ -182,7 +182,6 @@ module Bosh::Stemcell
         # Image/bootloader
         :image_create,
         :image_install_grub,
-#        :image_cloudstack_qcow2,
         :image_cloudstack_prepare_stemcell,
         # Final stemcell
         :stemcell_cloudstack
