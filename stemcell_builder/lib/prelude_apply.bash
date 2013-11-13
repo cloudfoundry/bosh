@@ -52,6 +52,9 @@ function cleanup_build_artifacts {
   [[ -f $chroot/tmp/$(basename $CUSTOM_YUM_CONF) ]] && rm -v ${chroot}/tmp/$(basename $CUSTOM_YUM_CONF)
   rm -vrf $chroot/tmp/*
   umount $chroot/centosmirror && rm -rfv $chroot/mnt
-  rm -v $chroot/etc/yum.repos.d/bosh_stemcell_local.repo
-  tar -xvf /tmp/factory_yum.repos.d.tar -C $chroot/etc/yum.repos.d
+  if [ -f $chroot/etc/yum.repos.d/bosh_stemcell_local.repo ]
+  then
+    rm -vf $chroot/etc/yum.repos.d/bosh_stemcell_local.repo
+    tar -xvf /tmp/factory_yum.repos.d.tar -C $chroot/etc/yum.repos.d
+  fi
 }
