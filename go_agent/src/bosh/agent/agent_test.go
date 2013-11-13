@@ -17,14 +17,14 @@ import (
 )
 
 func TestRunHandlesAPingMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "ping", "some payload")
+	req := boshmbus.NewRequest("reply to me!", "ping", []byte("some payload"))
 	expectedResp := boshmbus.Response{Value: "pong"}
 
 	assertResponseForRequest(t, req, expectedResp)
 }
 
 func TestRunHandlesAnApplyMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "apply", "some payload")
+	req := boshmbus.NewRequest("reply to me!", "apply", []byte("some payload"))
 	expectedResp := boshmbus.Response{State: "running", AgentTaskId: "some-task-id"}
 
 	assertResponseForRequestWithTask(t, req, expectedResp)
@@ -66,7 +66,7 @@ func assertResponseForRequestWithTask(t *testing.T, req boshmbus.Request, expect
 
 	// Action gets run with given payload
 	createdAction := actionFactory.CreateAction
-	assert.Equal(t, "some payload", createdAction.RunPayload)
+	assert.Equal(t, []byte("some payload"), createdAction.RunPayload)
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {

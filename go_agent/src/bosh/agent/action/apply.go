@@ -17,13 +17,13 @@ func newApply(fs boshsys.FileSystem) (apply applyAction) {
 	return
 }
 
-func (a applyAction) Run(payloadString string) (err error) {
+func (a applyAction) Run(payloadBytes []byte) (err error) {
 	type payloadType struct {
 		Arguments []interface{}
 	}
 
 	var payload payloadType
-	err = json.Unmarshal([]byte(payloadString), &payload)
+	err = json.Unmarshal(payloadBytes, &payload)
 	if err != nil {
 		return
 	}

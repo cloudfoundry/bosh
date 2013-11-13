@@ -9,7 +9,7 @@ import (
 
 func TestRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 	fakeFs := &testsys.FakeFileSystem{}
-	payload := `{"method":"apply","reply_to":"foo","arguments":[{"deployment":"dummy-damien"}]}`
+	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{"deployment":"dummy-damien"}]}`)
 
 	apply := newApply(fakeFs)
 	err := apply.Run(payload)
@@ -22,7 +22,7 @@ func TestRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 
 func TestRunErrsWithZeroArguments(t *testing.T) {
 	fakeFs := &testsys.FakeFileSystem{}
-	payload := `{"method":"apply","reply_to":"foo","arguments":[]}`
+	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[]}`)
 
 	apply := newApply(fakeFs)
 	err := apply.Run(payload)

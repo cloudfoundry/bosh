@@ -28,7 +28,7 @@ func TestNatsHandlerStart(t *testing.T) {
 	assert.Equal(t, len(subscriptions), 1)
 
 	// test subscription callback
-	expectedPayload := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
+	expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
 	subscription := client.Subscriptions["agent.my-agent-id"][0]
 	subscription.Callback(&yagnats.Message{
 		Subject: "agent.my-agent-id",
@@ -49,7 +49,7 @@ func TestNatsHandlerStart(t *testing.T) {
 	assert.Equal(t, len(messages), 1)
 	message := messages[0]
 
-	assert.Equal(t, `{"value":"expected value"}`, message.Payload)
+	assert.Equal(t, []byte(`{"value":"expected value"}`), message.Payload)
 }
 
 func TestNatsHandlerRespondingWithTaskIdAndState(t *testing.T) {
@@ -64,7 +64,7 @@ func TestNatsHandlerRespondingWithTaskIdAndState(t *testing.T) {
 	subscription := client.Subscriptions["agent.my-agent-id"][0]
 	subscription.Callback(&yagnats.Message{
 		Subject: "agent.my-agent-id",
-		Payload: `{"method":"apply","arguments":["foo","bar"], "reply_to": "reply to me!"}`,
+		Payload: []byte(`{"method":"apply","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 	})
 
 	// response sent
@@ -74,7 +74,7 @@ func TestNatsHandlerRespondingWithTaskIdAndState(t *testing.T) {
 	assert.Equal(t, len(messages), 1)
 	message := messages[0]
 
-	assert.Equal(t, `{"state":"some-state","agent_task_id":"some-task-id"}`, message.Payload)
+	assert.Equal(t, []byte(`{"state":"some-state","agent_task_id":"some-task-id"}`), message.Payload)
 }
 
 func TestNatsSendPeriodicHeartbeat(t *testing.T) {
@@ -104,7 +104,7 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	message := messages[0]
 
 	expectedJson := `{"job":"foo","index":0,"job_state":"","vitals":{"cpu":{},"mem":{},"swap":{},"disk":{"system":{},"ephemeral":{},"persistent":{}}}}`
-	assert.Equal(t, message.Payload, expectedJson)
+	assert.Equal(t, []byte(expectedJson), message.Payload)
 }
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {

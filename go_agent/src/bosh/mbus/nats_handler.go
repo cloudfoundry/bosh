@@ -49,7 +49,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
 		req := Request{}
-		err := json.Unmarshal([]byte(natsMsg.Payload), &req)
+		err := json.Unmarshal(natsMsg.Payload, &req)
 		if err != nil {
 			return
 		}
@@ -62,7 +62,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 			return
 		}
 
-		h.client.Publish(req.ReplyTo, string(respBytes))
+		h.client.Publish(req.ReplyTo, respBytes)
 	})
 
 	return
@@ -92,7 +92,7 @@ func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err er
 			return
 		}
 
-		h.client.Publish(heartbeatSubject, string(heartbeatBytes))
+		h.client.Publish(heartbeatSubject, heartbeatBytes)
 	}
 
 	return

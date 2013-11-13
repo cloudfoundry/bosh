@@ -1,6 +1,6 @@
 package mbus
 
-func NewRequest(replyTo, method, payload string) Request {
+func NewRequest(replyTo, method string, payload []byte) Request {
 	return Request{
 		ReplyTo: replyTo,
 		Method:  method,
@@ -11,9 +11,9 @@ func NewRequest(replyTo, method, payload string) Request {
 type Request struct {
 	ReplyTo string `json:"reply_to"`
 	Method  string
-	payload string
+	payload []byte
 }
 
-func (r Request) GetPayload() string {
+func (r Request) GetPayload() []byte {
 	return r.payload
 }
