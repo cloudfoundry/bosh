@@ -8,6 +8,10 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
+# requreid by stemcell-copy-cloudstack.sh
+pkg_mgr install parted
+
+# workaorund for a kernel bug
 if [ $DISTRIB_CODENAME == "lucid" ]
 then
   pkg_mgr install wireless-crda

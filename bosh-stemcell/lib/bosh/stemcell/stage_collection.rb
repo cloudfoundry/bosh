@@ -169,7 +169,7 @@ module Bosh::Stemcell
     def cloudstack_stages
       [
         # Misc
-        :system_kernel_cloudstack,
+        :system_appendix_cloudstack,
         :system_cloudstack_network,
         :system_cloudstack_clock,
         :system_cloudstack_modules,

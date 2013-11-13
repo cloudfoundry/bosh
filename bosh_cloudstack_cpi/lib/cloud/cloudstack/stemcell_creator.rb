@@ -50,15 +50,15 @@ module Bosh::CloudStackCloud
     # password.
     #
     def copy_root_image
-      stemcell_copy = find_in_path("stemcell-copy")
+      stemcell_copy = find_in_path("stemcell-copy-cloudstack")
       if stemcell_copy
-        logger.debug("copying stemcell using stemcell-copy script")
+        logger.debug("copying stemcell using stemcell-copy-cloudstack script")
         # note that is is a potentially dangerous operation, but as the
         # stemcell-copy script sets PATH to a sane value this is safe
         command = "sudo -n #{stemcell_copy} #{image_path} #{device} 2>&1"
       else
         logger.info("falling back to using included copy stemcell")
-        included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy.sh", __FILE__)
+        included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy-cloudstack.sh", __FILE__)
         command = "sudo -n #{included_stemcell_copy} #{image_path} #{device} 2>&1"
       end
 
