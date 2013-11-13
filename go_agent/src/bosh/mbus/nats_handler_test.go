@@ -52,31 +52,6 @@ func TestNatsHandlerStart(t *testing.T) {
 	assert.Equal(t, []byte(`{"value":"expected value"}`), message.Payload)
 }
 
-func TestNatsHandlerRespondingWithTaskIdAndState(t *testing.T) {
-	client, handler := createNatsClientAndHandler()
-
-	handler.Start(func(req Request) (resp Response) {
-		return Response{AgentTaskId: "some-task-id", State: "some-state"}
-	})
-	defer handler.Stop()
-
-	// test subscription callback
-	subscription := client.Subscriptions["agent.my-agent-id"][0]
-	subscription.Callback(&yagnats.Message{
-		Subject: "agent.my-agent-id",
-		Payload: []byte(`{"method":"apply","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
-	})
-
-	// response sent
-	assert.Equal(t, len(client.PublishedMessages), 1)
-	messages := client.PublishedMessages["reply to me!"]
-
-	assert.Equal(t, len(messages), 1)
-	message := messages[0]
-
-	assert.Equal(t, []byte(`{"state":"some-state","agent_task_id":"some-task-id"}`), message.Payload)
-}
-
 func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	heartbeatChan := make(chan Heartbeat, 1)
 	client, handler := createNatsClientAndHandler()

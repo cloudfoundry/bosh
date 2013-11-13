@@ -6,6 +6,9 @@ import (
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -18,8 +21,7 @@ type agent struct {
 	heartbeatInterval time.Duration
 }
 
-func New(
-	settings boshsettings.Settings,
+func New(settings boshsettings.Settings,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,
 	taskService boshtask.Service,
@@ -67,11 +69,49 @@ func (a agent) runMbusHandler(errChan chan error) {
 			})
 			resp.AgentTaskId = task.Id
 			resp.State = string(task.State)
+		case "get_task":
+			resp = a.handleGetTask(req)
 		}
 
 		return
 	}
 	errChan <- a.mbusHandler.Run(handlerFunc)
+}
+
+func (a agent) handleGetTask(req boshmbus.Request) (resp boshmbus.Response) {
+	taskId, err := parseTaskId(req.GetPayload())
+	if err != nil {
+		resp.Exception = fmt.Sprintf("Error finding task, %s", err.Error())
+		return
+	}
+
+	task, found := a.taskService.FindTask(taskId)
+	if !found {
+		resp.Exception = fmt.Sprintf("Task with id %s could not be found", taskId)
+		return
+	}
+
+	resp.AgentTaskId = task.Id
+	resp.State = string(task.State)
+	return
+}
+
+func parseTaskId(payloadBytes []byte) (taskId string, err error) {
+	var payload struct {
+		Arguments []string
+	}
+	err = json.Unmarshal(payloadBytes, &payload)
+	if err != nil {
+		return
+	}
+
+	if len(payload.Arguments) == 0 {
+		err = errors.New("not enough arguments")
+		return
+	}
+
+	taskId = payload.Arguments[0]
+	return
 }
 
 func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {
