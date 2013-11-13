@@ -61,7 +61,7 @@ module Bosh::Cli::Command
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']
 
-          row = [job, vm['job_state'], vm['resource_pool'], ips]
+          row = [job, colorize_state(vm['job_state']), vm['resource_pool'], ips]
 
           if options[:details]
             row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active']
@@ -110,5 +110,17 @@ module Bosh::Cli::Command
       say('VMs total: %d' % vms.size)
     end
 
+    def colorize_state(state_label)
+      case state_label
+      when "failing"
+        state_label.make_red
+      when "unknown", "starting"
+        state_label.make_yellow
+      when "running"
+        state_label.make_green
+      else
+        state_label
+      end
+    end
   end
 end
