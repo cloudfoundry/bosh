@@ -84,7 +84,7 @@ module Bat
     end
 
     def dns?
-      info['features'] && info['features']['dns']
+      info['features'] && info['features']['dns']['status']
     end
 
     def bosh_tld
