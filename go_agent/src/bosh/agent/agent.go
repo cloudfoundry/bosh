@@ -72,7 +72,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 				AgentTaskId: task.Id,
 				State:       string(task.State),
 			}
-		case "get_task", "ping":
+		case "get_task", "ping", "get_state":
 			action := a.actionFactory.Create(req.Method)
 			value, err := action.Run(req.GetPayload())
 			if err != nil {

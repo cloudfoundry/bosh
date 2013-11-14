@@ -7,8 +7,8 @@ import (
 )
 
 func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
-	fs, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(fs, taskService)
+	settings, fs, taskService := getFakeFactoryDependencies()
+	factory := NewFactory(settings, fs, taskService)
 	apply := factory.Create("apply")
 
 	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{"deployment":"dummy-damien"}]}`)
@@ -21,8 +21,8 @@ func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 }
 
 func TestApplyRunErrsWithZeroArguments(t *testing.T) {
-	fs, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(fs, taskService)
+	settings, fs, taskService := getFakeFactoryDependencies()
+	factory := NewFactory(settings, fs, taskService)
 	apply := factory.Create("apply")
 
 	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[]}`)

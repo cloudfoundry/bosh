@@ -13,6 +13,7 @@ type Settings struct {
 	Networks Networks
 	Ntp      []string
 	Mbus     string
+	Vm       Vm
 }
 
 type Env struct {
@@ -31,6 +32,10 @@ type Disks struct {
 	System     string
 	Ephemeral  string
 	Persistent map[string]string
+}
+
+type Vm struct {
+	Name string `json:"name"`
 }
 
 func (d Disks) PersistentDiskPath() (path string) {

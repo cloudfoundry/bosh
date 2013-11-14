@@ -27,6 +27,11 @@ func TestRunHandlesGetTaskMessage(t *testing.T) {
 	assertRequestIsProcessedSynchronously(t, req)
 }
 
+func TestRunHandlesGetStateMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "get_state", []byte(`{}`))
+	assertRequestIsProcessedSynchronously(t, req)
+}
+
 func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 

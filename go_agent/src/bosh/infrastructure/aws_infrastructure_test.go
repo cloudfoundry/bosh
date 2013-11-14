@@ -166,7 +166,10 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 		"ntp": [
 			"0.north-america.pool.ntp.org",
 			"1.north-america.pool.ntp.org"
-		]
+		],
+		"vm": {
+			"name": "vm-abc-def"
+		}
 	}`
 	settingsJson = strings.Replace(settingsJson, `"`, `\"`, -1)
 	settingsJson = strings.Replace(settingsJson, "\n", "", -1)
@@ -199,6 +202,9 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 		Ntp: []string{
 			"0.north-america.pool.ntp.org",
 			"1.north-america.pool.ntp.org",
+		},
+		Vm: boshsettings.Vm{
+			Name: "vm-abc-def",
 		},
 	}
 
