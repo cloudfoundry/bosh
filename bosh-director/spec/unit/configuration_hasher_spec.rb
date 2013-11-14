@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::ConfigurationHasher do
+  let(:instance_class) { Struct.new(:index, :spec, :configuration_hash, :template_hashes) }
+
   it 'should hash a simple job' do
     template = Bosh::Director::Models::Template.make(blobstore_id: 'b_id')
 
@@ -18,25 +20,21 @@ describe Bosh::Director::ConfigurationHasher do
                            name: 'router',
                            download_blob: tmp_file.path)
 
-    instance_spec = double('instance_spec',
-                           index: 0,
-                           spec: {
-                             'job' => { 'name' => 'foo' },
-                             'test' => 'spec',
-                             'properties' => { 'foo' => 'bar' },
-                             'index' => 0
-                           })
+    instance_spec = {
+      'job' => { 'name' => 'foo' },
+      'test' => 'spec',
+      'properties' => { 'foo' => 'bar' },
+      'index' => 0
+    }
+    instance = instance_class.new(0, instance_spec, nil, nil)
 
-    job_spec = double('job_spec', name: 'foo', instances: [instance_spec], templates: [template_spec])
-
-
-    instance_spec.should_receive(:configuration_hash=).
-      with('d4b58a62d2102a315f27bf8c41b4dfef672f785b')
-    instance_spec.should_receive(:template_hashes=).with(
-      { 'router' => 'd4b58a62d2102a315f27bf8c41b4dfef672f785b' })
+    job_spec = double('job_spec', name: 'foo', instances: [instance], templates: [template_spec])
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
     configuration_hasher.hash
+
+    expect(instance.configuration_hash).to eq('d4b58a62d2102a315f27bf8c41b4dfef672f785b')
+    expect(instance.template_hashes).to eq('router' => 'd4b58a62d2102a315f27bf8c41b4dfef672f785b')
   end
 
   it 'should correctly hash a job with two templates and two instances' do
@@ -65,42 +63,31 @@ describe Bosh::Director::ConfigurationHasher do
                             name: 'dashboard',
                             download_blob: tmp_file2.path)
 
-    instance_spec = double('instance_spec',
-                           index: 0,
-                           spec: {
-                             'job' => { 'name' => 'foo' },
-                             'test' => 'spec',
-                             'properties' => { 'foo' => 'bar' },
-                             'index' => 0
-                           })
+    instance_spec = {
+      'job' => { 'name' => 'foo' },
+      'test' => 'spec',
+      'properties' => { 'foo' => 'bar' },
+      'index' => 0
+    }
+    instance = instance_class.new(0, instance_spec, nil, nil)
 
-    instance_spec2 = double('instance_spec',
-                            index: 1,
-                            spec: {
-                              'job' => { 'name' => 'foo' },
-                              'test' => 'spec',
-                              'properties' => { 'foo' => 'bar' },
-                              'index' => 1
-                            })
-    job_spec = double('job_spec',
-                      name: 'foo',
-                      instances: [instance_spec, instance_spec2],
-                      templates: [template_spec, template_spec2])
+    instance_spec2 = {
+      'job' => { 'name' => 'foo' },
+      'test' => 'spec',
+      'properties' => { 'foo' => 'bar' },
+      'index' => 1
+    }
+    instance2 = instance_class.new(0, instance_spec2, nil, nil)
 
-    instance_spec.should_receive(:configuration_hash=).with(
-      '9a01d5eaef2466439cf5f47c817917869bf7382b')
-    instance_spec.should_receive(:template_hashes=).with(
-      { 'dashboard' => 'b22dc37828aa4596f715a4d1d9a77bc999fb0f68',
-        'router' => 'cdb03dd7e933d087030dc734d7515c8715dfadc0' })
-
-    instance_spec2.should_receive(:configuration_hash=).with(
-      '1ac87f1ff406553944d7bf1e3dc2ad224d50cc80')
-    instance_spec2.should_receive(:template_hashes=).with(
-      { 'dashboard' => 'a06db619abd6eaa32a5ec848894486f162ede0ad',
-        'router' => '924386b29900dccb55b7a559ce24b9c3c1c9eff0' })
+    job_spec = double('job_spec', name: 'foo', instances: [instance, instance2], templates: [template_spec, template_spec2])
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
     configuration_hasher.hash
+
+    expect(instance.configuration_hash).to eq('9a01d5eaef2466439cf5f47c817917869bf7382b')
+    expect(instance.template_hashes).to eq('dashboard' => 'b22dc37828aa4596f715a4d1d9a77bc999fb0f68', 'router' => 'cdb03dd7e933d087030dc734d7515c8715dfadc0')
+    expect(instance2.configuration_hash).to eq('1ac87f1ff406553944d7bf1e3dc2ad224d50cc80')
+    expect(instance2.template_hashes).to eq('dashboard' => 'a06db619abd6eaa32a5ec848894486f162ede0ad', 'router' => '924386b29900dccb55b7a559ce24b9c3c1c9eff0')
   end
 
   it 'should expose the job context to the templates' do
@@ -120,28 +107,21 @@ describe Bosh::Director::ConfigurationHasher do
                            name: 'router',
                            download_blob: tmp_file.path)
 
-    instance_spec = double('instance_spec',
-                           index: 0,
-                           spec: {
-                             'job' => { 'name' => 'foo' },
-                             'test' => 'spec',
-                             'properties' => { 'foo' => 'bar' },
-                             'index' => 0
-                           })
+    instance_spec = {
+      'job' => { 'name' => 'foo' },
+      'test' => 'spec',
+      'properties' => { 'foo' => 'bar' },
+      'index' => 0
+    }
+    instance = instance_class.new(0, instance_spec, nil, nil)
 
-    job_spec = double('job_spec',
-                      name: 'foo',
-                      instances: [instance_spec],
-                      templates: [template_spec])
-
-
-    instance_spec.should_receive(:configuration_hash=).
-      with('1ec0fb915dd041e4e121ccd1464b88a9aed1ee60')
-    instance_spec.should_receive(:template_hashes=).with(
-      { 'router' => '1ec0fb915dd041e4e121ccd1464b88a9aed1ee60' })
+    job_spec = double('job_spec', name: 'foo', instances: [instance], templates: [template_spec])
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
     configuration_hasher.hash
+
+    expect(instance.configuration_hash).to eq('1ec0fb915dd041e4e121ccd1464b88a9aed1ee60')
+    expect(instance.template_hashes).to eq('router' => '1ec0fb915dd041e4e121ccd1464b88a9aed1ee60')
   end
 
   it 'should give helpful error messages when rendering monit template' do
@@ -163,19 +143,16 @@ describe Bosh::Director::ConfigurationHasher do
                            name: 'router',
                            download_blob: tmp_file.path)
 
-    instance_spec = double('instance_spec',
-                           index: 0,
-                           spec: {
-                             'job' => { 'name' => 'foo' },
-                             'test' => 'spec',
-                             'properties' => { 'foo' => 'bar' },
-                             'index' => 0
-                           })
+    instance_spec = {
+      'job' => { 'name' => 'foo' },
+      'test' => 'spec',
+      'properties' => { 'foo' => 'bar' },
+      'index' => 0
+    }
+    instance = instance_class.new(0, instance_spec, nil, nil)
 
-    job_spec = double('job_spec',
-                      name: 'foo',
-                      instances: [instance_spec],
-                      templates: [template_spec])
+
+    job_spec = double('job_spec', name: 'foo', instances: [instance], templates: [template_spec])
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
     expect {
@@ -201,19 +178,15 @@ describe Bosh::Director::ConfigurationHasher do
                            name: 'router',
                            download_blob: tmp_file.path)
 
-    instance_spec = double('instance_spec',
-                           index: 0,
-                           spec: {
-                             'job' => { 'name' => 'foo' },
-                             'test' => 'spec',
-                             'properties' => { 'foo' => 'bar' },
-                             'index' => 0
-                           })
+    instance_spec = {
+      'job' => { 'name' => 'foo' },
+      'test' => 'spec',
+      'properties' => { 'foo' => 'bar' },
+      'index' => 0
+    }
+    instance = instance_class.new(0, instance_spec, nil, nil)
 
-    job_spec = double('job_spec',
-                      name: 'foo',
-                      instances: [instance_spec],
-                      templates: [template_spec])
+    job_spec = double('job_spec', name: 'foo', instances: [instance], templates: [template_spec])
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
     expect {
