@@ -30,12 +30,11 @@ module Bosh::Cli
     end
 
     subject(:public_stemcell_presenter) do
-      PublicStemcellPresenter.new(ui)
+      PublicStemcellPresenter.new(ui, public_stemcell_index)
     end
 
     before do
       DownloadWithProgress.stub(:new).and_return(download_with_progress)
-      PublicStemcellIndex.stub(:download).with(ui).and_return(public_stemcell_index)
       PublicStemcell.any_instance.stub(sha1: 'stemcell-sha1')
     end
 

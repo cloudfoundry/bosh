@@ -3,9 +3,9 @@ require 'cli/download_with_progress'
 
 module Bosh::Cli
   class PublicStemcellPresenter
-    def initialize(ui)
+    def initialize(ui, public_stemcell_index)
       @ui = ui
-      @public_stemcell_index = PublicStemcellIndex.download(@ui)
+      @public_stemcell_index = public_stemcell_index
     end
 
     def list(options)
