@@ -56,7 +56,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		req.payload = natsMsg.Payload
 
 		resp := handlerFunc(req)
-		respBytes, err := resp.ToJson()
+		respBytes, err := json.Marshal(resp)
 
 		h.client.Publish(req.ReplyTo, respBytes)
 	})

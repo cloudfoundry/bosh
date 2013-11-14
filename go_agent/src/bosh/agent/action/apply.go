@@ -17,7 +17,7 @@ func newApply(fs boshsys.FileSystem) (apply applyAction) {
 	return
 }
 
-func (a applyAction) Run(payloadBytes []byte) (err error) {
+func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	type payloadType struct {
 		Arguments []interface{}
 	}

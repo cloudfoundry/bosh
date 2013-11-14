@@ -15,10 +15,13 @@ func (f *FakeFactory) Create(method string) (action boshaction.Action) {
 
 type TestAction struct {
 	RunErr     error
+	RunValue   interface{}
 	RunPayload []byte
 }
 
-func (a *TestAction) Run(payload []byte) (err error) {
+func (a *TestAction) Run(payload []byte) (value interface{}, err error) {
 	a.RunPayload = payload
-	return a.RunErr
+	value = a.RunValue
+	err = a.RunErr
+	return
 }

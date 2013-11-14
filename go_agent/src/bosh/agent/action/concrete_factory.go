@@ -1,14 +1,19 @@
 package action
 
-import boshsys "bosh/system"
+import (
+	boshtask "bosh/agent/task"
+	boshsys "bosh/system"
+)
 
 type concreteFactory struct {
 	availableActions map[string]Action
 }
 
-func NewFactory(fs boshsys.FileSystem) (factory concreteFactory) {
+func NewFactory(fs boshsys.FileSystem, taskService boshtask.Service) (factory concreteFactory) {
 	factory.availableActions = map[string]Action{
-		"apply": newApply(fs),
+		"apply":    newApply(fs),
+		"ping":     newPing(),
+		"get_task": newGetTask(taskService),
 	}
 
 	return

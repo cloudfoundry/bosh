@@ -6,9 +6,6 @@ import (
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -56,62 +53,38 @@ func (a agent) Run() (err error) {
 	return
 }
 
+type TaskValue struct {
+	AgentTaskId string `json:"agent_task_id"`
+	State       string `json:"state"`
+}
+
 func (a agent) runMbusHandler(errChan chan error) {
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
 		switch req.Method {
-		case "ping":
-			resp.Value = "pong"
 		case "apply":
 			task := a.taskService.StartTask(func() (err error) {
 				action := a.actionFactory.Create(req.Method)
-				err = action.Run(req.GetPayload())
+				_, err = action.Run(req.GetPayload())
 				return
 			})
-			resp.AgentTaskId = task.Id
-			resp.State = string(task.State)
-		case "get_task":
-			resp = a.handleGetTask(req)
+
+			resp.Value = TaskValue{
+				AgentTaskId: task.Id,
+				State:       string(task.State),
+			}
+		case "get_task", "ping":
+			action := a.actionFactory.Create(req.Method)
+			value, err := action.Run(req.GetPayload())
+			if err != nil {
+				resp.Exception = err.Error()
+				return
+			}
+			resp.Value = value
 		}
 
 		return
 	}
 	errChan <- a.mbusHandler.Run(handlerFunc)
-}
-
-func (a agent) handleGetTask(req boshmbus.Request) (resp boshmbus.Response) {
-	taskId, err := parseTaskId(req.GetPayload())
-	if err != nil {
-		resp.Exception = fmt.Sprintf("Error finding task, %s", err.Error())
-		return
-	}
-
-	task, found := a.taskService.FindTask(taskId)
-	if !found {
-		resp.Exception = fmt.Sprintf("Task with id %s could not be found", taskId)
-		return
-	}
-
-	resp.AgentTaskId = task.Id
-	resp.State = string(task.State)
-	return
-}
-
-func parseTaskId(payloadBytes []byte) (taskId string, err error) {
-	var payload struct {
-		Arguments []string
-	}
-	err = json.Unmarshal(payloadBytes, &payload)
-	if err != nil {
-		return
-	}
-
-	if len(payload.Arguments) == 0 {
-		err = errors.New("not enough arguments")
-		return
-	}
-
-	taskId = payload.Arguments[0]
-	return
 }
 
 func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {

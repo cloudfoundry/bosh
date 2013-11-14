@@ -10,75 +10,30 @@ import (
 	teststats "bosh/platform/stats/testhelpers"
 	testplatform "bosh/platform/testhelpers"
 	boshsettings "bosh/settings"
+	"encoding/json"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func TestRunHandlesAPingMessage(t *testing.T) {
-	taskService := &testtask.FakeService{}
+func TestRunHandlesPingMessage(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me!", "ping", []byte("some payload"))
-	expectedResp := boshmbus.Response{Value: "pong"}
-
-	assertResponseForRequest(t, taskService, req, expectedResp)
-}
-
-func TestRunHandlesAnApplyMessage(t *testing.T) {
-	taskService := &testtask.FakeService{
-		StartTaskStartedTask: boshtask.Task{
-			Id:    "some-task-id",
-			State: "running",
-		},
-	}
-
-	req := boshmbus.NewRequest("reply to me!", "apply", []byte("some payload"))
-	expectedResp := boshmbus.Response{State: "running", AgentTaskId: "some-task-id"}
-
-	assertResponseForRequestWithTask(t, taskService, req, expectedResp)
+	assertRequestIsProcessedSynchronously(t, req)
 }
 
 func TestRunHandlesGetTaskMessage(t *testing.T) {
-	taskService := &testtask.FakeService{
-		Tasks: map[string]boshtask.Task{
-			"57": boshtask.Task{Id: "found-57-task-id", State: boshtask.TaskStateFailed},
-		},
-	}
-
 	req := boshmbus.NewRequest("reply to me!", "get_task", []byte(`{"arguments":["57"]}`))
-	expectedResp := boshmbus.Response{State: boshtask.TaskStateFailed, AgentTaskId: "found-57-task-id"}
-
-	assertResponseForRequest(t, taskService, req, expectedResp)
+	assertRequestIsProcessedSynchronously(t, req)
 }
 
-func TestRunHandlesGetTaskMessageWhenTaskIsNotFound(t *testing.T) {
-	taskService := &testtask.FakeService{
-		Tasks: map[string]boshtask.Task{},
+func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
+	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
+
+	// when action is successful
+	actionFactory.CreateAction = &testaction.TestAction{
+		RunValue: "some value",
 	}
-
-	req := boshmbus.NewRequest("reply to me!", "get_task", []byte(`{"arguments":["57"]}`))
-	expectedResp := boshmbus.Response{Exception: "Task with id 57 could not be found"}
-
-	assertResponseForRequest(t, taskService, req, expectedResp)
-}
-
-func TestRunHandlesGetTaskMessageWhenPayloadDoesNotHaveTaskId(t *testing.T) {
-	taskService := &testtask.FakeService{
-		Tasks: map[string]boshtask.Task{},
-	}
-
-	req := boshmbus.NewRequest("reply to me!", "get_task", []byte(`{"arguments":[]}`))
-	expectedResp := boshmbus.Response{Exception: "Error finding task, not enough arguments"}
-
-	assertResponseForRequest(t, taskService, req, expectedResp)
-}
-
-func assertResponseForRequest(t *testing.T, taskService *testtask.FakeService,
-	req boshmbus.Request, expectedResp boshmbus.Response) (actionFactory *testaction.FakeFactory) {
-
-	settings, handler, platform, _, actionFactory := getAgentDependencies()
-
-	actionFactory.CreateAction = &testaction.TestAction{RunErr: errors.New("Some error message")}
 
 	agent := New(settings, handler, platform, taskService, actionFactory)
 
@@ -87,27 +42,48 @@ func assertResponseForRequest(t *testing.T, taskService *testtask.FakeService,
 	assert.True(t, handler.ReceivedRun)
 
 	resp := handler.Func(req)
+	assert.Equal(t, req.Method, actionFactory.CreateMethod)
+	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
+	assert.Equal(t, boshmbus.Response{Value: "some value"}, resp)
 
-	assert.Equal(t, resp, expectedResp)
-	return
+	// when action returns an error
+	actionFactory.CreateAction = &testaction.TestAction{
+		RunErr: errors.New("some error"),
+	}
+
+	agent = New(settings, handler, platform, taskService, actionFactory)
+	agent.Run()
+
+	resp = handler.Func(req)
+	assert.Equal(t, boshmbus.Response{Exception: "some error"}, resp)
 }
 
-func assertResponseForRequestWithTask(t *testing.T, taskService *testtask.FakeService,
-	req boshmbus.Request, expectedResp boshmbus.Response) {
+func TestRunHandlesApplyMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "apply", []byte("some payload"))
+	assertRequestIsProcessedAsynchronously(t, req)
+}
 
-	actionFactory := assertResponseForRequest(t, taskService, req, expectedResp)
+func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) {
+	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
-	// Test the task
-	err := taskService.StartTaskFunc()
-	assert.Error(t, err)
-	assert.Equal(t, "Some error message", err.Error())
+	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
+	actionFactory.CreateAction = new(testaction.TestAction)
 
-	// Action is created with request's method
+	agent := New(settings, handler, platform, taskService, actionFactory)
+
+	err := agent.Run()
+	assert.NoError(t, err)
+	assert.True(t, handler.ReceivedRun)
+
+	resp := handler.Func(req)
+	assert.Equal(t, boshmbus.Response{Value: TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}}, resp)
+
+	valueBytes, _ := json.Marshal(resp.Value)
+	assert.Equal(t, `{"agent_task_id":"found-57-id","state":"done"}`, string(valueBytes))
+
+	taskService.StartTaskFunc()
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
-
-	// Action gets run with given payload
-	createdAction := actionFactory.CreateAction
-	assert.Equal(t, []byte("some payload"), createdAction.RunPayload)
+	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {
