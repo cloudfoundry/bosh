@@ -1,4 +1,5 @@
 # encoding: UTF-8
+# encoding is needed for correctly comparing expected ERB below
 require 'spec_helper'
 
 module Bosh::Director
