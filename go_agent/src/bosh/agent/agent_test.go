@@ -17,6 +17,22 @@ import (
 	"time"
 )
 
+func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me", "gibberish", []byte{})
+
+	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
+	agent := New(settings, handler, platform, taskService, actionFactory)
+
+	err := agent.Run()
+	assert.NoError(t, err)
+	assert.True(t, handler.ReceivedRun)
+
+	resp := handler.Func(req)
+
+	respBytes, _ := json.Marshal(resp)
+	assert.Equal(t, `{"exception":{"message":"unknown message gibberish"}}`, string(respBytes))
+}
+
 func TestRunHandlesPingMessage(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me!", "ping", []byte("some payload"))
 	assertRequestIsProcessedSynchronously(t, req)

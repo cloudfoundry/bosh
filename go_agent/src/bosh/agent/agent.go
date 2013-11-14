@@ -80,6 +80,8 @@ func (a agent) runMbusHandler(errChan chan error) {
 				return
 			}
 			resp = boshmbus.NewValueResponse(value)
+		default:
+			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
 		}
 
 		return
