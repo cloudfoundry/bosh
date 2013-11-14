@@ -82,11 +82,11 @@ describe Bosh::CloudStackCloud::StemcellCreator do
       creator.find_in_path("program-that-doesnt-exist").should be_nil
     end
 
-    it "should find stemcell-copy" do
+    it "should find stemcell-copy-cloudstack" do
       creator = described_class.new(cloud.compute.zones.first, stemcell_properties, cloud)
       path = ENV["PATH"]
       path += ":#{File.expand_path('../../assets', __FILE__)}"
-      creator.find_in_path("stemcell-copy", path).should_not be_nil
+      creator.find_in_path("stemcell-copy-cloudstack", path).should_not be_nil
     end
   end
 
@@ -99,10 +99,10 @@ describe Bosh::CloudStackCloud::StemcellCreator do
     end
 
     it 'should call stemcell-copy found in the PATH' do
-      creator.stub(:find_in_path => '/path/to/stemcell-copy')
+      creator.stub(:find_in_path => '/path/to/stemcell-copy-cloudstack')
       result = double('result', :output => 'output')
 
-      cmd = 'sudo -n /path/to/stemcell-copy /path/to/image /dev/volume 2>&1'
+      cmd = 'sudo -n /path/to/stemcell-copy-cloudstack /path/to/image /dev/volume 2>&1'
       creator.should_receive(:sh).with(cmd).and_return(result)
 
       creator.copy_root_image
@@ -112,7 +112,7 @@ describe Bosh::CloudStackCloud::StemcellCreator do
       creator.stub(:find_in_path => nil)
       result = double('result', :output => 'output')
 
-      stemcell_copy = File.expand_path("../../../../bosh_cloudstack_cpi/scripts/stemcell-copy.sh", __FILE__)
+      stemcell_copy = File.expand_path("../../../../bosh_cloudstack_cpi/scripts/stemcell-copy-cloudstack.sh", __FILE__)
       cmd = "sudo -n #{stemcell_copy} /path/to/image /dev/volume 2>&1"
       creator.should_receive(:sh).with(cmd).and_return(result)
 

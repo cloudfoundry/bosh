@@ -65,7 +65,7 @@ module Bosh::CloudStackCloud
       result = sh(command)
       logger.debug("stemcell copy output:\n#{result.output}")
     rescue Bosh::Exec::Error => e
-      raise Bosh::Clouds::CloudError, "Unable to copy stemcell root image: #{e.message}"
+      raise Bosh::Clouds::CloudError, "Unable to copy stemcell root image: #{e.message};  #{e.output}"
     end
 
     # checks if the stemcell-copy script can be found in

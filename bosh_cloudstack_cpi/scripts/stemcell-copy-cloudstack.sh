@@ -37,8 +37,8 @@ fi
 tar -xzf ${IMAGE} -O root.img | dd bs=1M of=${OUTPUT}
 
 # expand the primary partition
-start_sector=`fdisk -l ${OUTPUT} | egrep "^${OUTPUT}1" | awk '{print $2}'`
-disk_size=`fdisk -l ${OUTPUT} | egrep '^[[:digit:]]+ heads, [[:digit:]]+ sectors/track, [[:digit:]]+ cylinders, total [[:digit:]]+ sectors$' | awk '{print $8}'`
+start_sector=`fdisk -u s -l ${OUTPUT} | egrep "^${OUTPUT}1" | awk '{print $2}'`
+disk_size=`blockdev --getsize ${OUTPUT}`
 if [ -z ${start_sector} ] || [ -z ${disk_size} ]; then
     echo "ERROR: faild to extract disk information"
     exit 1
