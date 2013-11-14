@@ -14,8 +14,11 @@ module Bosh::Cli
     end
 
     def sha1?(sha1)
-      file_sha1 = Digest::SHA1.file(@filename).hexdigest
-      file_sha1 == sha1
+      self.sha1 == sha1
+    end
+
+    def sha1
+      Digest::SHA1.file(@filename).hexdigest
     end
 
     private
