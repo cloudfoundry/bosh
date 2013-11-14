@@ -15,7 +15,7 @@ func TestNatsHandlerStart(t *testing.T) {
 
 	handler.Start(func(req Request) (resp Response) {
 		receivedRequest = req
-		return Response{Value: "expected value"}
+		return NewValueResponse("expected value")
 	})
 	defer handler.Stop()
 

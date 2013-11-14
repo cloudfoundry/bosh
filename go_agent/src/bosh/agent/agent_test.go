@@ -49,7 +49,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	resp := handler.Func(req)
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
 	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
-	assert.Equal(t, boshmbus.Response{Value: "some value"}, resp)
+	assert.Equal(t, boshmbus.NewValueResponse("some value"), resp)
 
 	// when action returns an error
 	actionFactory.CreateAction = &testaction.TestAction{
@@ -60,7 +60,8 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	agent.Run()
 
 	resp = handler.Func(req)
-	assert.Equal(t, boshmbus.Response{Exception: "some error"}, resp)
+	respBytes, _ := json.Marshal(resp)
+	assert.Equal(t, `{"exception":{"message":"some error"}}`, string(respBytes))
 }
 
 func TestRunHandlesApplyMessage(t *testing.T) {
@@ -81,10 +82,10 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	assert.True(t, handler.ReceivedRun)
 
 	resp := handler.Func(req)
-	assert.Equal(t, boshmbus.Response{Value: TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}}, resp)
+	assert.Equal(t, boshmbus.NewValueResponse(TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}), resp)
 
-	valueBytes, _ := json.Marshal(resp.Value)
-	assert.Equal(t, `{"agent_task_id":"found-57-id","state":"done"}`, string(valueBytes))
+	valueBytes, _ := json.Marshal(resp)
+	assert.Equal(t, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`, string(valueBytes))
 
 	taskService.StartTaskFunc()
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)

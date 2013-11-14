@@ -68,18 +68,18 @@ func (a agent) runMbusHandler(errChan chan error) {
 				return
 			})
 
-			resp.Value = TaskValue{
+			resp = boshmbus.NewValueResponse(TaskValue{
 				AgentTaskId: task.Id,
 				State:       string(task.State),
-			}
+			})
 		case "get_task", "ping", "get_state":
 			action := a.actionFactory.Create(req.Method)
 			value, err := action.Run(req.GetPayload())
 			if err != nil {
-				resp.Exception = err.Error()
+				resp = boshmbus.NewExceptionResponse(err.Error())
 				return
 			}
-			resp.Value = value
+			resp = boshmbus.NewValueResponse(value)
 		}
 
 		return
