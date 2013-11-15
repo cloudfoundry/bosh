@@ -1,13 +1,11 @@
 package action
 
 import (
-	bosherrors "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path/filepath"
 )
 
 type sshAction struct {
@@ -22,45 +20,23 @@ func newSsh(settings boshsettings.Settings, platform boshplatform.Platform) (act
 }
 
 func (a sshAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	cmd, user, pwd, key, err := extractPayloadData(payloadBytes)
+	cmd, params, err := extractCommand(payloadBytes)
 	if err != nil {
 		return
 	}
 
-	boshSshPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh_ssh")
-	err = a.platform.CreateUser(user, pwd, boshSshPath)
-	if err != nil {
-		err = bosherrors.WrapError(err, "Error creating user")
-		return
+	switch cmd {
+	case "setup":
+		return a.setupSsh(params)
+	case "cleanup":
+		return a.cleanupSsh(params)
 	}
 
-	err = a.platform.AddUserToGroups(user, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP})
-	if err != nil {
-		err = bosherrors.WrapError(err, "Error adding user to groups")
-		return
-	}
-
-	err = a.platform.SetupSsh(key, user)
-	if err != nil {
-		err = bosherrors.WrapError(err, "Error setting ssh public key")
-		return
-	}
-
-	defaultIp, found := a.settings.Networks.DefaultIp()
-	if !found {
-		err = errors.New("No default ip could be found")
-		return
-	}
-
-	value = map[string]string{
-		"command": cmd,
-		"status":  "success",
-		"ip":      defaultIp,
-	}
+	err = errors.New("Unknown command for SSH method")
 	return
 }
 
-func extractPayloadData(payloadBytes []byte) (cmd, user, pwd, key string, err error) {
+func extractCommand(payloadBytes []byte) (cmd string, params map[string]interface{}, err error) {
 	var payload struct {
 		Arguments []interface{}
 	}
@@ -77,31 +53,20 @@ func extractPayloadData(payloadBytes []byte) (cmd, user, pwd, key string, err er
 		return
 	}
 
-	params, ok := payload.Arguments[1].(map[string]interface{})
+	params, ok = payload.Arguments[1].(map[string]interface{})
 	if !ok {
 		err = payloadErr("params")
 		return
 	}
 
-	user, err = extractParam(params, "user")
-	if err != nil {
-		return
-	}
-
-	pwd, err = extractParam(params, "password")
-	if err != nil {
-		return
-	}
-
-	key, err = extractParam(params, "public_key")
 	return
 }
 
 func payloadErr(attr string) error {
-	return errors.New("Error parsing command in payload arguments")
+	return errors.New(fmt.Sprintf("Error parsing %s in payload", attr))
 }
 
-func extractParam(params map[string]interface{}, name string) (val string, err error) {
+func extractStringParam(params map[string]interface{}, name string) (val string, err error) {
 	if params[name] == nil {
 		return
 	}

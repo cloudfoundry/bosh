@@ -26,7 +26,6 @@ func TestSshSetupWithoutDefaultIp(t *testing.T) {
 	factory := NewFactory(settings, fs, platform, taskService)
 	sshAction := factory.Create("ssh")
 
-	// set user, pwd, public_key with invalid values
 	payload := `{"arguments":["setup",{"user":"some-user","password":"some-pwd","public_key":"some-key"}]}`
 
 	_, err := sshAction.Run([]byte(payload))
