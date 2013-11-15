@@ -25,14 +25,7 @@ func TestSetupRuntimeConfiguration(t *testing.T) {
 }
 
 func TestUbuntuCreateUser(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
-
-	err := ubuntu.CreateUser("foo-user", "bar-pwd", "/some/path/to/home")
-	assert.NoError(t, err)
-
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	useradd := []string{
+	expectedUseradd := []string{
 		"useradd",
 		"-m",
 		"-b", "/some/path/to/home",
@@ -41,7 +34,30 @@ func TestUbuntuCreateUser(t *testing.T) {
 		"foo-user",
 	}
 
-	assert.Equal(t, useradd, fakeCmdRunner.RunCommands[0])
+	testUbuntuCreateUserWithPassword(t, "bar-pwd", expectedUseradd)
+}
+
+func TestUbuntuCreateUserWithAnEmptyPassword(t *testing.T) {
+	expectedUseradd := []string{
+		"useradd",
+		"-m",
+		"-b", "/some/path/to/home",
+		"-s", "/bin/bash",
+		"foo-user",
+	}
+
+	testUbuntuCreateUserWithPassword(t, "", expectedUseradd)
+}
+
+func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.CreateUser("foo-user", password, "/some/path/to/home")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, expectedUseradd, fakeCmdRunner.RunCommands[0])
 }
 
 func TestAddUserToGroups(t *testing.T) {

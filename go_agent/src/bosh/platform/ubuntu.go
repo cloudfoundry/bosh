@@ -47,7 +47,15 @@ func (p ubuntu) SetupRuntimeConfiguration() (err error) {
 }
 
 func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("useradd", "-m", "-b", basePath, "-s", "/bin/bash", "-p", password, username)
+	args := []string{"-m", "-b", basePath, "-s", "/bin/bash"}
+
+	if password != "" {
+		args = append(args, "-p", password)
+	}
+
+	args = append(args, username)
+
+	_, _, err = p.cmdRunner.RunCommand("useradd", args...)
 	return
 }
 
