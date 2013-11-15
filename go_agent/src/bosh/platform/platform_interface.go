@@ -10,6 +10,7 @@ type Platform interface {
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)
 	AddUserToGroups(username string, groups []string) (err error)
+	DeleteEphemeralUsersMatching(regex string) (err error)
 	SetupSsh(publicKey, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)

@@ -28,6 +28,10 @@ func (p dummyPlatform) AddUserToGroups(username string, groups []string) (err er
 	return
 }
 
+func (p dummyPlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }

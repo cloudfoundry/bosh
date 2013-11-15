@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -47,6 +48,8 @@ func (p ubuntu) SetupRuntimeConfiguration() (err error) {
 }
 
 func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
+	p.fs.MkdirAll(basePath, os.FileMode(0755))
+
 	args := []string{"-m", "-b", basePath, "-s", "/bin/bash"}
 
 	if password != "" {
@@ -61,6 +64,46 @@ func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
 
 func (p ubuntu) AddUserToGroups(username string, groups []string) (err error) {
 	_, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
+	return
+}
+
+func (p ubuntu) DeleteEphemeralUsersMatching(reg string) (err error) {
+	compiledReg, err := regexp.Compile(reg)
+	if err != nil {
+		return
+	}
+
+	matchingUsers, err := p.findEphemeralUsersMatching(compiledReg)
+	if err != nil {
+		return
+	}
+
+	for _, user := range matchingUsers {
+		p.deleteUser(user)
+	}
+	return
+}
+
+func (p ubuntu) deleteUser(user string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
+	return
+}
+
+func (p ubuntu) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []string, err error) {
+	passwd, err := p.fs.ReadFile("/etc/passwd")
+	if err != nil {
+		return
+	}
+
+	for _, line := range strings.Split(passwd, "\n") {
+		user := strings.Split(line, ":")[0]
+		matchesPrefix := strings.HasPrefix(user, boshsettings.EPHEMERAL_USER_PREFIX)
+		matchesReg := reg.MatchString(user)
+
+		if matchesPrefix && matchesReg {
+			matchingUsers = append(matchingUsers, user)
+		}
+	}
 	return
 }
 

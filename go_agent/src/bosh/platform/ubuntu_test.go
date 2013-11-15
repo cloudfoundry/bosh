@@ -6,6 +6,7 @@ import (
 	teststats "bosh/platform/stats/testhelpers"
 	boshsettings "bosh/settings"
 	testsys "bosh/system/testhelpers"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
@@ -56,6 +57,10 @@ func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUse
 	err := ubuntu.CreateUser("foo-user", password, "/some/path/to/home")
 	assert.NoError(t, err)
 
+	basePathStat := fakeFs.GetFileTestStat("/some/path/to/home")
+	assert.Equal(t, "MkdirAll", basePathStat.CreatedWith)
+	assert.Equal(t, os.FileMode(0755), basePathStat.FileMode)
+
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
 	assert.Equal(t, expectedUseradd, fakeCmdRunner.RunCommands[0])
 }
@@ -71,6 +76,29 @@ func TestAddUserToGroups(t *testing.T) {
 
 	usermod := []string{"usermod", "-G", "group1,group2,group3", "foo-user"}
 	assert.Equal(t, usermod, fakeCmdRunner.RunCommands[0])
+}
+
+func TestDeleteUsersWithPrefixAndRegex(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+
+	passwdFile := fmt.Sprintf(`%sfoo:...
+%sbar:...
+foo:...
+bar:...
+foobar:...
+%sfoobar:...`,
+		boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX,
+	)
+
+	fakeFs.WriteToFile("/etc/passwd", passwdFile)
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.DeleteEphemeralUsersMatching("bar$")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"userdel", "-r", "bosh_bar"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"userdel", "-r", "bosh_foobar"}, fakeCmdRunner.RunCommands[1])
 }
 
 func TestUbuntuSetupSsh(t *testing.T) {

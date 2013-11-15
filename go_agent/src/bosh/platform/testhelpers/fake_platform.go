@@ -13,6 +13,7 @@ type FakePlatform struct {
 	CreateUserPassword                   string
 	CreateUserBasePath                   string
 	AddUserToGroupsGroups                map[string][]string
+	DeleteEphemeralUsersMatchingRegex    string
 	SetupSshPublicKeys                   map[string]string
 	SetupHostnameHostname                string
 	SetupEphemeralDiskWithPathDevicePath string
@@ -50,6 +51,11 @@ func (p *FakePlatform) CreateUser(username, password, basePath string) (err erro
 
 func (p *FakePlatform) AddUserToGroups(username string, groups []string) (err error) {
 	p.AddUserToGroupsGroups[username] = groups
+	return
+}
+
+func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
+	p.DeleteEphemeralUsersMatchingRegex = regex
 	return
 }
 
