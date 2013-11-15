@@ -47,11 +47,11 @@ module Bosh::Director
         end
       end
 
-      context 'when job has multiple job_templates sorted by name' do
+      context 'when job has multiple job_templates' do
         let(:templates) { [double('template1', name: 'b'), double('template2', name: 'a')] }
         let(:expected_rendered_templates) { [
-          instance_double('Bosh::Director::RenderedJobTemplate', name: 'a'),
-          instance_double('Bosh::Director::RenderedJobTemplate', name: 'b'),
+          double('rendered job template1'),
+          double('rendered job template2'),
         ] }
         let(:job_template_renderer2) { instance_double('Bosh::Director::JobTemplateRenderer') }
 
@@ -60,8 +60,8 @@ module Bosh::Director
           job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)
           job_template_loader.stub(:process).with(templates[1]).and_return(job_template_renderer2)
 
-          job_template_renderer.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[1])
-          job_template_renderer2.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[0])
+          job_template_renderer.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[0])
+          job_template_renderer2.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[1])
         end
 
         it 'returns the rendered templates for an instance' do
