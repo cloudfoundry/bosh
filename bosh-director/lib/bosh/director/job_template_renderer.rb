@@ -1,3 +1,5 @@
+require 'bosh/director/rendered_job_template'
+
 module Bosh::Director
   class JobTemplateRenderer
 
@@ -43,6 +45,4 @@ module Bosh::Director
       raise JobTemplateBindingFailed, "#{message}"
     end
   end
-
-  RenderedJobTemplate = Struct.new(:name, :monit, :templates)
 end
