@@ -11,6 +11,8 @@ module Bosh::Dev::VSphere
       let(:logger) { instance_double('Logger', info: nil) }
       let(:cloud) { instance_double('VSphereCloud::Cloud') }
       let(:sequel_klass) { class_double('Sequel::Model').as_stubbed_const }
+      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil) }
+      let(:vm2) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil) }
 
       let(:config) { { 'cloud' => { 'properties' => 'fake config' } } }
       let(:manifest) { instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest') }
@@ -27,9 +29,6 @@ module Bosh::Dev::VSphere
 
       context 'when get_vms returns vms' do
         it 'kills vms that are in that folder' do
-          vm = instance_double('VimSdk::Vim::VirtualMachine', cid: '123', destroy: nil)
-          vm2 = instance_double('VimSdk::Vim::VirtualMachine', cid: '456', destroy: nil)
-
           vm.should_receive(:destroy)
           vm2.should_receive(:destroy)
 
@@ -42,6 +41,18 @@ module Bosh::Dev::VSphere
       context 'when no vms are found in the folder' do
         it 'finishes without complaining' do
           cloud.stub(get_vms: [])
+          micro_bosh_deployment_cleaner.clean
+        end
+      end
+
+      context 'when destruction fails' do
+        it 'logs a failure but doesn\'t stop' do
+          vm.stub(:destroy).and_raise
+
+          cloud.stub(get_vms: [vm])
+
+          logger.should_receive(:info).with("Destruction of #{vm.inspect} failed, continuing")
+
           micro_bosh_deployment_cleaner.clean
         end
       end

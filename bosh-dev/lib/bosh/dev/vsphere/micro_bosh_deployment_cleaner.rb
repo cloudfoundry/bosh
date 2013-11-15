@@ -23,7 +23,11 @@ module Bosh::Dev::VSphere
         @logger.info('Terminating instances')
 
         old_vms.each do |vm|
-          vm.destroy
+          begin
+            vm.destroy
+          rescue
+            @logger.info("Destruction of #{vm.inspect} failed, continuing")
+          end
         end
       end
     end
