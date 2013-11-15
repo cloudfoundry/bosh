@@ -39,7 +39,7 @@ module Bosh::Dev::VSphere
 
         microbosh_deployment_cleaner = instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentCleaner')
         Bosh::Dev::VSphere::MicroBoshDeploymentCleaner
-          .should_receive(:new)
+          .should_receive(:new).with(microbosh_deployment_manifest)
           .and_return(microbosh_deployment_cleaner)
 
         director_uuid = instance_double('Bosh::Dev::Bat::DirectorUuid')

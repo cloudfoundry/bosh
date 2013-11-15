@@ -1,6 +1,7 @@
 require 'json'
 require 'membrane'
 require 'ruby_vim_sdk'
+require 'cloud'
 require 'cloud/vsphere/client'
 require 'cloud/vsphere/config'
 require 'cloud/vsphere/lease_updater'
@@ -1121,6 +1122,18 @@ module VSphereCloud
         raise TimeoutException if Time.now - started > timeout
         sleep(1.0)
       end
+    end
+
+    def get_vms
+      vm_objects = []
+      with_thread_name("get_vms") do
+        @resources.datacenters.each_value do |datacenter|
+          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.mob}")
+
+          vm_objects += client.get_property(datacenter.vm_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
+        end
+      end
+      vm_objects
     end
   end
 end
