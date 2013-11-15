@@ -3,7 +3,8 @@ module Bosh::Director
 
     attr_reader :monit_template, :templates
 
-    def initialize(monit_template, templates)
+    def initialize(name, monit_template, templates)
+      @name = name
       @monit_template = monit_template
       @templates = templates
       @logger = Config.logger
@@ -14,13 +15,17 @@ module Bosh::Director
 
       monit = render_erb(job_name, monit_template, template_context, instance.index)
       rendered_templates = {}
-      templates.keys.sort.each do |name|
-        rendered_templates[name] = render_erb(job_name, templates[name], template_context, instance.index)
+      templates.keys.sort.each do |src_name|
+        rendered_templates[src_name] = render_erb(job_name, templates[src_name], template_context, instance.index)
       end
-      return RenderedJobTemplate.new(monit, rendered_templates)
+      return RenderedJobTemplate.new(name, monit, rendered_templates)
     end
 
     private
+
+    private
+
+    attr_reader :name
 
     def render_erb(job_name, template, template_context, index)
       template.result(template_context.get_binding)
@@ -39,5 +44,5 @@ module Bosh::Director
     end
   end
 
-  RenderedJobTemplate = Struct.new(:monit, :templates)
+  RenderedJobTemplate = Struct.new(:name, :monit, :templates)
 end

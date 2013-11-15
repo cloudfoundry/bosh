@@ -8,7 +8,7 @@ module Bosh::Director
       let(:fake_templates) { { 'fake-template' => fake_template } }
       let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', spec: {}, index: 1) }
 
-      subject(:job_template_renderer) { JobTemplateRenderer.new(monit_template, fake_templates) }
+      subject(:job_template_renderer) { JobTemplateRenderer.new('template-name', monit_template, fake_templates) }
 
       before do
         monit_template.filename = 'monit-filename'

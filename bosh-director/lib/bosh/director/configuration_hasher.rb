@@ -1,20 +1,20 @@
 require 'bosh/director/job_template_loader'
+require 'bosh/director/job_instance_renderer'
 
 module Bosh::Director
   class ConfigurationHasher
     # @param [DeploymentPlan::Job]
     def initialize(job)
       @job = job
-      @job_template_loader = JobTemplateLoader.new
     end
 
     def hash
-      job_renders = @job.templates.sort { |x, y| x.name <=> y.name }.map do |job_template|
-        [job_template.name, @job_template_loader.process(job_template)]
-      end
+      job_template_loader = JobTemplateLoader.new
+      job_instance_renderer = JobInstanceRenderer.new(@job, job_template_loader)
 
       @job.instances.each do |instance|
-        instance_digest, template_digests = render_digest(instance, job_renders)
+        rendered_job_templates = job_instance_renderer.render(instance)
+        instance_digest, template_digests = render_digest(rendered_job_templates)
         instance.configuration_hash = instance_digest.hexdigest
         instance.template_hashes = template_digests
       end
@@ -22,22 +22,20 @@ module Bosh::Director
 
     private
 
-    def render_digest(instance, job_renderers)
+    def render_digest(rendered_job_templates)
       instance_digest = Digest::SHA1.new
       template_digests = {}
-      job_renderers.each do |job_template_name, template_renderer|
-        rendered_template = template_renderer.render(@job.name, instance)
-
+      rendered_job_templates.each do |rendered_job_template|
         bound_templates = ''
-        bound_templates << rendered_template.monit
+        bound_templates << rendered_job_template.monit
 
-        template_renderer.templates.keys.sort.each do |template_name|
-          bound_templates << rendered_template.templates[template_name]
+        rendered_job_template.templates.keys.sort.each do |src_name|
+          bound_templates << rendered_job_template.templates[src_name]
           instance_digest << bound_templates
 
           template_digest = Digest::SHA1.new
           template_digest << bound_templates
-          template_digests[job_template_name] = template_digest.hexdigest
+          template_digests[rendered_job_template.name] = template_digest.hexdigest
         end
       end
       return instance_digest, template_digests
