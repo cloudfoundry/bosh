@@ -7,11 +7,16 @@ import (
 )
 
 type FakePlatform struct {
+	FakeStatsCollector                   *teststats.FakeStatsCollector
 	SetupRuntimeConfigurationWasInvoked  bool
+	CreateUserUsername                   string
+	CreateUserPassword                   string
+	CreateUserBasePath                   string
+	AddUserToGroupsGroups                map[string][]string
+	SetupSshPublicKeys                   map[string]string
 	SetupHostnameHostname                string
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
-	FakeStatsCollector                   *teststats.FakeStatsCollector
 	StartMonitStarted                    bool
 	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
@@ -21,6 +26,8 @@ type FakePlatform struct {
 func NewFakePlatform() (platform *FakePlatform) {
 	platform = new(FakePlatform)
 	platform.FakeStatsCollector = &teststats.FakeStatsCollector{}
+	platform.AddUserToGroupsGroups = make(map[string][]string)
+	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
 	return
 }
@@ -34,7 +41,20 @@ func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
+func (p *FakePlatform) CreateUser(username, password, basePath string) (err error) {
+	p.CreateUserUsername = username
+	p.CreateUserPassword = password
+	p.CreateUserBasePath = basePath
+	return
+}
+
+func (p *FakePlatform) AddUserToGroups(username string, groups []string) (err error) {
+	p.AddUserToGroupsGroups[username] = groups
+	return
+}
+
 func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
+	p.SetupSshPublicKeys[username] = publicKey
 	return
 }
 

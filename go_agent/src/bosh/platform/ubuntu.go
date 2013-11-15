@@ -46,6 +46,16 @@ func (p ubuntu) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
+func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("useradd", "-m", "-b", basePath, "-s", "/bin/bash", "-p", password, username)
+	return
+}
+
+func (p ubuntu) AddUserToGroups(username string, groups []string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
+	return
+}
+
 func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {

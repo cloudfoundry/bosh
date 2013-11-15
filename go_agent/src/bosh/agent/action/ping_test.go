@@ -6,8 +6,8 @@ import (
 )
 
 func TestPingRunReturnsPong(t *testing.T) {
-	settings, fs, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, fs, taskService)
+	settings, fs, platform, taskService := getFakeFactoryDependencies()
+	factory := NewFactory(settings, fs, platform, taskService)
 	ping := factory.Create("ping")
 
 	pong, err := ping.Run([]byte{})

@@ -61,6 +61,14 @@ type TaskValue struct {
 func (a agent) runMbusHandler(errChan chan error) {
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
 		switch req.Method {
+		case "get_task", "ping", "get_state", "ssh":
+			action := a.actionFactory.Create(req.Method)
+			value, err := action.Run(req.GetPayload())
+			if err != nil {
+				resp = boshmbus.NewExceptionResponse(err.Error())
+				return
+			}
+			resp = boshmbus.NewValueResponse(value)
 		case "apply":
 			task := a.taskService.StartTask(func() (err error) {
 				action := a.actionFactory.Create(req.Method)
@@ -72,14 +80,6 @@ func (a agent) runMbusHandler(errChan chan error) {
 				AgentTaskId: task.Id,
 				State:       string(task.State),
 			})
-		case "get_task", "ping", "get_state":
-			action := a.actionFactory.Create(req.Method)
-			value, err := action.Run(req.GetPayload())
-			if err != nil {
-				resp = boshmbus.NewExceptionResponse(err.Error())
-				return
-			}
-			resp = boshmbus.NewValueResponse(value)
 		default:
 			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
 		}

@@ -151,6 +151,7 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 		"networks": {
 			"netA": {
 				"default": ["dns", "gateway"],
+				"ip": "ww.ww.ww.ww",
 				"dns": [
 					"xx.xx.xx.xx",
 					"yy.yy.yy.yy"
@@ -192,6 +193,7 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 		Networks: boshsettings.Networks{
 			"netA": boshsettings.NetworkSettings{
 				Default: []string{"dns", "gateway"},
+				Ip:      "ww.ww.ww.ww",
 				Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy"},
 			},
 			"netB": boshsettings.NetworkSettings{

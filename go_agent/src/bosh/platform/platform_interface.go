@@ -8,6 +8,8 @@ import (
 type Platform interface {
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	SetupRuntimeConfiguration() (err error)
+	CreateUser(username, password, basePath string) (err error)
+	AddUserToGroups(username string, groups []string) (err error)
 	SetupSsh(publicKey, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)

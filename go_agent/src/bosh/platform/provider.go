@@ -13,7 +13,10 @@ type provider struct {
 }
 
 func NewProvider(fs boshsys.FileSystem) (p provider) {
+	// There is a reason the runner is not injected.
+	// Other entities should not use a runner, they should go through the platform
 	runner := boshsys.ExecCmdRunner{}
+
 	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(runner, fs)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
 

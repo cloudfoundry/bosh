@@ -4,6 +4,7 @@ const (
 	ROOT_USERNAME = "root"
 	VCAP_USERNAME = "vcap"
 	VCAP_BASE_DIR = "/var/vcap"
+	ADMIN_GROUP   = "admin"
 )
 
 type Settings struct {
@@ -50,6 +51,7 @@ type Networks map[string]NetworkSettings
 type NetworkSettings struct {
 	Default []string
 	Dns     []string
+	Ip      string
 }
 
 func (n Networks) DefaultNetworkFor(category string) (settings NetworkSettings, found bool) {
@@ -73,6 +75,22 @@ func (n Networks) DefaultNetworkFor(category string) (settings NetworkSettings, 
 		}
 	}
 
+	return
+}
+
+func (n Networks) DefaultIp() (ip string, found bool) {
+	for _, networkSettings := range n {
+		if ip == "" {
+			ip = networkSettings.Ip
+		}
+		if len(networkSettings.Default) > 0 {
+			ip = networkSettings.Ip
+		}
+	}
+
+	if ip != "" {
+		found = true
+	}
 	return
 }
 

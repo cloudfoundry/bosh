@@ -20,6 +20,14 @@ func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
+func (p dummyPlatform) CreateUser(username, password, basePath string) (err error) {
+	return
+}
+
+func (p dummyPlatform) AddUserToGroups(username string, groups []string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }

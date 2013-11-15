@@ -24,6 +24,39 @@ func TestSetupRuntimeConfiguration(t *testing.T) {
 	assert.Equal(t, []string{"bosh-agent-rc"}, fakeCmdRunner.RunCommands[0])
 }
 
+func TestUbuntuCreateUser(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.CreateUser("foo-user", "bar-pwd", "/some/path/to/home")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	useradd := []string{
+		"useradd",
+		"-m",
+		"-b", "/some/path/to/home",
+		"-s", "/bin/bash",
+		"-p", "bar-pwd",
+		"foo-user",
+	}
+
+	assert.Equal(t, useradd, fakeCmdRunner.RunCommands[0])
+}
+
+func TestAddUserToGroups(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+
+	usermod := []string{"usermod", "-G", "group1,group2,group3", "foo-user"}
+	assert.Equal(t, usermod, fakeCmdRunner.RunCommands[0])
+}
+
 func TestUbuntuSetupSsh(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 	fakeFs.HomeDirHomeDir = "/some/home/dir"

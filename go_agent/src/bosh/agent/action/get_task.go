@@ -17,8 +17,8 @@ func newGetTask(taskService boshtask.Service) (getTask getTaskAction) {
 	return
 }
 
-func (a getTaskAction) Run(payload []byte) (value interface{}, err error) {
-	taskId, err := parseTaskId(payload)
+func (a getTaskAction) Run(payloadBytes []byte) (value interface{}, err error) {
+	taskId, err := parseTaskId(payloadBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Error finding task")
 		return

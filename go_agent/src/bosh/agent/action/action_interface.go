@@ -1,5 +1,5 @@
 package action
 
 type Action interface {
-	Run(payload []byte) (value interface{}, err error)
+	Run(payloadBytes []byte) (value interface{}, err error)
 }
