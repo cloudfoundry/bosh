@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'common/exec'
+require 'tmpdir'
 
 describe Bosh::Agent::Util do
   before do
@@ -11,41 +12,83 @@ describe Bosh::Agent::Util do
   let(:httpclient) { instance_double('HTTPClient') }
 
   describe '#unpack_blob' do
-    it 'should unpack a blob' do
-      response = double('response')
-      response.stub(:status).and_return(200)
+    let(:response) { double('fake-response', status: 200) }
+    let(:install_dir) { File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2') }
+    let(:expected_sha1) { Digest::SHA1.hexdigest(dummy_package_data) }
 
-      get_args = ['/resources/some_blobstore_id', {}, {}]
+    before { httpclient.stub(:get).and_yield(dummy_package_data).and_return(response) }
+
+    it 'tries to download blob with given blob_id' do
       httpclient
         .should_receive(:get)
-        .with(*get_args)
+        .with('/resources/some_blobstore_id', {}, {})
         .and_yield(dummy_package_data)
         .and_return(response)
-
-      install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
-      blobstore_id = 'some_blobstore_id'
-      sha1 = Digest::SHA1.hexdigest(dummy_package_data)
-
-      Bosh::Agent::Util.unpack_blob(blobstore_id, sha1, install_dir)
+      Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
     end
 
-    it "should raise an exception when sha1 is doesn't match blob data" do
-      response = double('response')
-      response.stub(:status).and_return(200)
+    context 'when blob download succeeds' do
+      before { response.stub(:status).and_return(200) }
 
-      get_args = ['/resources/some_blobstore_id', {}, {}]
-      httpclient
-        .should_receive(:get)
-        .with(*get_args)
-        .at_least(:once)
-        .and_yield(dummy_package_data)
-        .and_return(response)
+      context 'when blob content has expected sha1' do
+        context 'when unpacking succeeds' do
+          it 'cleans up temporary install directory before unpacking into it' do
+            FileUtils.should_receive(:rm_rf).with("#{install_dir}-bosh-agent-unpack")
+            Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
+          end
 
-      install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
+          it 'unpacks a blob into given directory' do
+            Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
+            expect(Dir["#{install_dir}/*"]).to match_array([
+              File.join(install_dir, 'dummy-0.0.1.tar.gz'),
+              File.join(install_dir, 'packaging'),
+            ])
+          end
+        end
 
-      expect {
-        Bosh::Agent::Util.unpack_blob('some_blobstore_id', 'bogus_sha1', install_dir)
-      }.to raise_error(Bosh::Agent::MessageHandlerError, /sha1 mismatch/)
+        context 'when unpacking fails' do
+          before { Bosh::Agent::Util.stub(:`).with(/tar/) { `false` } }
+
+          it 'raises an exception' do
+            expect {
+              Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
+            }.to raise_error(Bosh::Agent::MessageHandlerError, /Failed to unpack blob/)
+          end
+
+          it 'does not leave given directory' do
+            expect {
+              Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
+            }.to raise_error
+            expect(Dir.exist?(install_dir)).to be_false
+          end
+        end
+      end
+
+      context 'when blob content does not have expected sha1' do
+        it 'raises an exception' do
+          expect {
+            Bosh::Agent::Util.unpack_blob('some_blobstore_id', 'bogus_sha1', install_dir)
+          }.to raise_error(Bosh::Agent::MessageHandlerError, /sha1 mismatch/)
+        end
+
+        it 'does not leave given directory' do
+          expect {
+            Bosh::Agent::Util.unpack_blob('some_blobstore_id', 'bogus_sha1', install_dir)
+          }.to raise_error
+          expect(Dir.exist?(install_dir)).to be_false
+        end
+      end
+    end
+
+    context 'when blob download fails' do
+      before { response.stub(:status).and_return(500) }
+
+      it 'does not leave given directory' do
+        expect {
+          Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
+        }.to raise_error
+        expect(Dir.exist?(install_dir)).to be_false
+      end
     end
   end
 
@@ -136,5 +179,35 @@ describe Bosh::Agent::Util do
     expect(network_info).to have_key('ip')
     expect(network_info).to have_key('netmask')
     expect(network_info).to have_key('gateway')
+  end
+
+  describe '.create_symlink' do
+    before do
+      @workspace = Dir.mktmpdir
+      @old_name = File.join(@workspace, 'old')
+      @new_name = File.join(@workspace, 'new')
+      FileUtils.mkpath(@old_name)
+    end
+    after { FileUtils.rm_r(@workspace) }
+
+    context 'when destination does not exist' do
+      it 'creates a symlink at dst pointing to src' do
+        expect {
+          Bosh::Agent::Util.create_symlink(@old_name, @new_name)
+        }.to change { File.symlink?(@new_name) }.from(false).to(true)
+        File.readlink(@new_name).should eq(@old_name)
+      end
+    end
+
+    context 'when destination exist and points to a directory' do
+      # This is what FileUtils#ln_sf SHOULD do but sadly does not
+      it 'replaces the existing link' do
+        second_target = File.join(@workspace, 'jazz')
+        Bosh::Agent::Util.create_symlink(@old_name, @new_name)
+        Bosh::Agent::Util.create_symlink(second_target, @new_name)
+
+        expect(File.readlink(@new_name)).not_to eq(@old_name)
+      end
+    end
   end
 end

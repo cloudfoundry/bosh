@@ -24,7 +24,7 @@ module Bosh::Dev
     private
 
     def updated_version_string
-      version.gsub(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{version_number}\n")
+      version.gsub(/^([\d\.]+\.pre)\.(local|\d+)$/, "\\1.#{version_number}\n")
     end
   end
 end

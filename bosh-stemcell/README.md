@@ -11,6 +11,8 @@ Tools for creating stemcells
 0. Add instructions to set BOSH_AWS_... environment variables
 0. Install the vagrant plugins we use:
 
+        vagrant plugin install vagrant-berkshelf
+        vagrant plugin install vagrant-omnibus
         vagrant plugin install vagrant-aws       --plugin-version 0.3.0
 
 #### Bring up the vagrant stemcell building VM
@@ -24,10 +26,13 @@ From a fresh copy of the bosh repo:
 
 #### Build the stemcell from inside the VM
 
+Substitute *\<current_build\>* with the current build number, which can be found by looking at 
+[bosh artifacts](http://bosh_artifacts.cfapps.io)
+
     vagrant ssh -c '
       cd /bosh
       bundle install --local
-      CANDIDATE_BUILD_NUMBER=1045 http_proxy=http://localhost:3142/ bundle exec rake ci:build_stemcell[vsphere,centos]
+      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake ci:build_stemcell[vsphere,centos]
     ' local
 
 # Run the stemcell locally with Fusion

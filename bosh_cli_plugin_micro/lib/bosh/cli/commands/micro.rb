@@ -160,7 +160,7 @@ module Bosh::Cli::Command
       confirm_deployment("#{confirmation} #{desc}")
 
       if is_tgz?(stemcell)
-        stemcell_file = Bosh::Cli::Stemcell.new(stemcell, cache)
+        stemcell_file = Bosh::Cli::Stemcell.new(stemcell)
 
         say("\nVerifying stemcell...")
         stemcell_file.validate

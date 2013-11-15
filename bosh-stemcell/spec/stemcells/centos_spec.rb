@@ -33,7 +33,7 @@ describe 'CentOs Stemcell' do
       'openssl-devel'  => '1.0.0-27.el6_4.2',
       'lsof'           => '4.82-4.el6.x86_64',
       'quota'          => '3.17-18.el6.x86_64',
-      'rsync'          => '3.0.6-9.el6.x86_64',
+      'rsync'          => '3.0.6-9.el6_4.1.x86_64',
       'strace'         => '4.5.19-1.17.el6.x86_64',
       'iptables'       => '1.4.7-9.el6.x86_64',
       'sysstat'        => '9.0.4-20.el6.x86_64',

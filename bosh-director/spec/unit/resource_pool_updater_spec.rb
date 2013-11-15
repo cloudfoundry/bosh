@@ -46,7 +46,7 @@ module Bosh::Director
 
         bound_vm = double(:IdleVm)
         bound_vm.stub(:bound_instance).
-            and_return(stub(DeploymentPlan::Instance))
+            and_return(double(DeploymentPlan::Instance))
         unbound_vm = double(:IdleVm)
         unbound_vm.stub(:bound_instance).and_return(nil)
 
@@ -91,7 +91,7 @@ module Bosh::Director
         agent = double(:AgentClient)
         agent.should_receive(:wait_until_ready)
         agent.should_receive(:get_state).and_return({'state' => 'foo'})
-        AgentClient.stub(:new).with('agent-1').and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
         @resource_pool_updater.should_receive(:update_state).with(agent, @vm, @idle_vm)
         @idle_vm.should_receive(:vm=).with(@vm)
@@ -103,7 +103,7 @@ module Bosh::Director
       it 'should clean up the partially created VM' do
         agent = double(:AgentClient)
         agent.should_receive(:wait_until_ready).and_raise('timeout')
-        AgentClient.stub(:new).with('agent-1').and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
         @cloud.should_receive(:delete_vm).with('vm-1')
 

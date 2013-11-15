@@ -141,7 +141,6 @@ describe 'AWS Bootstrap commands' do
           to_return(:status => 200, :body => '{"uuid": "1234abc"}')
 
       Bosh::Cli::Config.output = File.open('/dev/null', 'w')
-      Bosh::Cli::Config.cache = Bosh::Cli::Cache.new(Dir.mktmpdir)
 
       aws.options[:username] = 'bosh_user'
       aws.options[:password] = 'bosh_password'

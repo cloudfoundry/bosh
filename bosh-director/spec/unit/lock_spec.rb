@@ -17,8 +17,8 @@ module Bosh::Director
         timestamp.should be_within(2.0).of(started + 10)
       end
 
-      redis.should_receive(:watch).with('foo').any_number_of_times
-      redis.should_receive(:multi).any_number_of_times.and_yield
+      redis.stub(:watch).with('foo')
+      redis.stub(:multi).and_yield
 
       redis.stub(:get).with('foo').and_return do
         stored_value
@@ -48,7 +48,7 @@ module Bosh::Director
       Config.stub(:redis).and_return(redis)
 
       stored_value = nil
-      redis.should_receive(:setnx).with('foo', anything).any_number_of_times.
+      redis.stub(:setnx).with('foo', anything).
         and_return do |_, value|
         timestamp = value.split(':')[0].to_f
         timestamp.should be_within(2.0).of(Time.now.to_f + 10)
@@ -60,12 +60,10 @@ module Bosh::Director
         end
       end
 
-      redis.should_receive(:watch).with('foo').any_number_of_times
-      redis.should_receive(:multi).any_number_of_times.and_yield
+      redis.stub(:watch).with('foo')
+      redis.stub(:multi).and_yield
 
-      redis.should_receive(:get).with('foo').any_number_of_times.and_return do
-        stored_value
-      end
+      redis.stub(:get).with('foo').and_return { stored_value }
 
       redis.should_receive(:set).with('foo', anything()) do |_, value|
         stored_value = value
@@ -93,7 +91,7 @@ module Bosh::Director
       Config.stub(:redis).and_return(redis)
 
       stored_value = nil
-      redis.should_receive(:setnx).with('foo', anything).any_number_of_times.
+      redis.stub(:setnx).with('foo', anything).
         and_return do |_, value|
         timestamp = value.split(':')[0].to_f
         timestamp.should be_within(2.0).of(Time.now.to_f + 10)
@@ -105,10 +103,10 @@ module Bosh::Director
         end
       end
 
-      redis.should_receive(:watch).with('foo').any_number_of_times
-      redis.should_receive(:multi).any_number_of_times.and_yield
+      redis.stub(:watch).with('foo')
+      redis.stub(:multi).and_yield
 
-      redis.should_receive(:get).with('foo').any_number_of_times.and_return do
+      redis.stub(:get).with('foo').and_return do
         stored_value
       end
 

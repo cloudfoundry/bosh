@@ -2,9 +2,9 @@ require 'spec_helper'
 
 module Bosh::Cli
   describe VmState do
-    let(:director) { stub(Client::Director) }
+    let(:director) { double(Client::Director) }
     let(:command) do
-      stub(Command::Base,
+      double(Command::Base,
            interactive?: true,
            confirmed?: true,
            nl: nil,

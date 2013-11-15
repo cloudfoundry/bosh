@@ -41,7 +41,7 @@ module IntegrationExampleGroup
     failure_expected = options.fetch(:failure_expected, false)
     work_dir = options.fetch(:work_dir, BOSH_WORK_DIR)
     Dir.chdir(work_dir) do
-      command = "bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}"
+      command = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
       output = `#{command} 2>&1`
       if $?.exitstatus != 0 && !failure_expected
         puts command
@@ -53,7 +53,7 @@ module IntegrationExampleGroup
 
   def run_bosh_cck_ignore_errors(num_errors)
     resolution_selections = "1\n"*num_errors + "yes"
-    output = `echo "#{resolution_selections}" | bosh -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} cloudcheck`
+    output = `echo "#{resolution_selections}" | bosh -c #{BOSH_CONFIG} cloudcheck`
     if $?.exitstatus != 0
       puts output
     end

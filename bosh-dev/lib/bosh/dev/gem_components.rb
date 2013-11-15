@@ -64,6 +64,7 @@ module Bosh::Dev
     def stage_with_dependencies
       FileUtils.rm_rf 'pkg'
 
+      components.each { |component| component.update_version }
       components.each { |component| component.build_release_gem }
 
       FileUtils.mkdir_p "/tmp/all_the_gems/#{Process.pid}"

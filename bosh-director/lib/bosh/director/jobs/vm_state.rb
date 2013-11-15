@@ -44,7 +44,7 @@ module Bosh::Director
         index = nil
 
         begin
-          agent = AgentClient.new(vm.agent_id, :timeout => TIMEOUT)
+          agent = AgentClient.with_defaults(vm.agent_id, :timeout => TIMEOUT)
           agent_state = agent.get_state(@format)
           agent_state["networks"].each_value do |network|
             ips << network["ip"]

@@ -48,8 +48,8 @@ describe Bosh::Cli::Runner do
     end
 
     describe 'loading gem plugins' do
-      let(:spec_1) { mock }
-      let(:spec_2) { mock }
+      let(:spec_1) { double }
+      let(:spec_2) { double }
 
       before do
         FileUtils.mkdir_p('gems/bosh/cli/commands')

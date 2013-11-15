@@ -30,7 +30,7 @@ module Bosh::Director
       it 'should detach and delete disk if there is a disk' do
         agent = double('agent')
 
-        AgentClient.stub(:new).with('agent-1').and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
         vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-1')
 
@@ -54,7 +54,7 @@ module Bosh::Director
       it 'should only delete the VM if there is no disk' do
         agent = double('agent')
 
-        AgentClient.stub(:new).with('agent-1').and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
         vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-1')
         instance = Models::Instance.make(vm: vm)
@@ -147,7 +147,7 @@ module Bosh::Director
       it 'should delete all the associated instances, VMs, disks and problems' do
         agent = double('agent')
 
-        AgentClient.stub(:new).with('agent-1').and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
         stemcell = Models::Stemcell.make
         deployment = Models::Deployment.make(name: 'test_deployment')

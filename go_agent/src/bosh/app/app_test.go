@@ -14,3 +14,13 @@ func TestParseOptionsParsesTheInfrastructure(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, opts.InfrastructureName, "")
 }
+
+func TestParseOptionsParsesThePlatform(t *testing.T) {
+	opts, err := parseOptions([]string{"bosh-agent", "-P", "baz"})
+	assert.NoError(t, err)
+	assert.Equal(t, opts.PlatformName, "baz")
+
+	opts, err = parseOptions([]string{"bosh-agent"})
+	assert.NoError(t, err)
+	assert.Equal(t, opts.PlatformName, "")
+}

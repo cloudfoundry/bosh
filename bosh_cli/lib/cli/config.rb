@@ -17,9 +17,6 @@ module Bosh::Cli
       # @return [Boolean] Is CLI being used interactively?
       attr_accessor :interactive
 
-      # @return [Bosh::Cli::Cache] CLI cache (to save task logs etc.)
-      attr_accessor :cache
-
       # @return [Integer] CLI polling interval
       attr_accessor :poll_interval
     end
@@ -28,7 +25,6 @@ module Bosh::Cli
     @colorize = true
     @output = nil
     @interactive = false
-    @cache = nil
 
     # Register command with BOSH CLI
     # @param [Bosh::Cli::CommandDefinition] command

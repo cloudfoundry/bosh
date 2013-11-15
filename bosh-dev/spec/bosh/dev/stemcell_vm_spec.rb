@@ -49,30 +49,54 @@ module Bosh::Dev
         vm.publish
       end
 
-      it 'publishes a stemcell inside the VM' do
-        Rake::FileUtilsExt.should_receive(:sh) do |cmd|
-          actual = strip_heredoc(cmd)
+      describe 'publishing the stemcell inside the VM' do
+        def expected_cmd(rake_task_args)
+          strip_heredoc(<<-BASH)
+                time vagrant ssh -c "
+                  set -eu
+                  cd /bosh
+                  bundle install --local
 
-          expected = strip_heredoc(<<-BASH)
-            time vagrant ssh -c "
-              set -eu
-              cd /bosh
-              bundle install --local
+                  export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
+                  export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
+                  export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
+                  export AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'
+                  export AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT'
 
-              export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
-              export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
-              export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
-              export AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'
-              export AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT'
-
-              time bundle exec rake ci:publish_stemcell[fake-infrastructure_name,fake-operating_system_name]
-            " remote
+                  time bundle exec rake ci:publish_stemcell[#{rake_task_args}]
+                " remote
           BASH
-
-          expect(actual).to include(expected)
         end
 
-        vm.publish
+        context 'with the ruby agent' do
+          it 'publishes a stemcell inside the VM' do
+            Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+              actual = strip_heredoc(cmd)
+              expected = expected_cmd('fake-infrastructure_name,fake-operating_system_name')
+
+              expect(actual).to include(expected)
+            end
+
+            vm.publish
+          end
+        end
+
+        context 'with the go agent' do
+          before do
+            options.merge!(agent_name: 'go')
+          end
+
+          it 'publishes a stemcell inside the VM' do
+            Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+              actual = strip_heredoc(cmd)
+              expected = expected_cmd('fake-infrastructure_name,fake-operating_system_name,go')
+
+              expect(actual).to include(expected)
+            end
+
+            vm.publish
+          end
+        end
       end
 
       it 'cleans up the VM even if something fails' do

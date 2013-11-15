@@ -10,3 +10,6 @@ source $base_dir/lib/prelude_bosh.bash
 
 # Clear src directory
 rm -rf $chroot/$bosh_dir/src
+
+cleanup_build_artifacts
+

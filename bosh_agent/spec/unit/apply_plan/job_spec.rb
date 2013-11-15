@@ -70,6 +70,26 @@ describe Bosh::Agent::ApplyPlan::Job do
     end
   end
 
+  describe '#prepare_for_install' do
+    subject(:job) { make_job(JOB_NAME, valid_spec["name"], valid_spec, config_binding) }
+    let(:config_binding) { Bosh::Agent::Util.config_binding("properties" => { "foo" => "bar" }) }
+
+    context 'when fetching jobs succeeds' do
+      it 'downloads (but does not symlink) jobs and does not raise any error' do
+        job.should_receive(:fetch_bits)
+        expect { job.prepare_for_install }.to_not raise_error
+      end
+    end
+
+    context 'when fetching jobs fails' do
+      it 'raises installation error' do
+        error = Exception.new('error')
+        job.should_receive(:fetch_bits).and_raise(error)
+        expect { job.prepare_for_install }.to raise_error(error)
+      end
+    end
+  end
+
   describe "installation" do
     it "fetches job template, binds configuration" do
       config = {

@@ -108,7 +108,7 @@ module Bosh::Director
 
           if vm && vm.agent_id
             ignoring_errors_when_forced do
-              agent = AgentClient.new(vm.agent_id)
+              agent = AgentClient.with_defaults(vm.agent_id)
               agent.stop
             end
           end
@@ -117,7 +117,7 @@ module Bosh::Director
             if disk.active && vm && vm.cid && disk.disk_cid
               if vm.agent_id
                 ignoring_errors_when_forced do
-                  agent = AgentClient.new(vm.agent_id)
+                  agent = AgentClient.with_defaults(vm.agent_id)
                   agent.unmount_disk(disk.disk_cid)
                 end
               end

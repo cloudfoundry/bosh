@@ -82,7 +82,7 @@ module Bosh::Director
 
         Models::PersistentDisk.make(instance_id: instance.id, active: true)
 
-        AgentClient.stub(:new).with('agent-1', anything).and_return(unresponsive_agent)
+        AgentClient.stub(:with_defaults).with('agent-1', anything).and_return(unresponsive_agent)
         unresponsive_agent.should_receive(:get_state).and_raise(RpcTimeout)
 
         # for unresponsive agents pick up VM id from the DB
@@ -104,7 +104,7 @@ module Bosh::Director
         Models::PersistentDisk.make(instance_id: instance.id, active: true)
 
         agent = double('agent')
-        AgentClient.stub(:new).with('agent', anything).and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent', anything).and_return(agent)
 
         good_state = {
           'deployment' => 'mycloud',
@@ -128,7 +128,7 @@ module Bosh::Director
         Models::PersistentDisk.make(instance_id: instance.id, active: true)
 
         agent = double('agent')
-        AgentClient.stub(:new).with('agent', anything).and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent', anything).and_return(agent)
 
         good_state = {
           'deployment' => 'mycloud',
@@ -157,7 +157,7 @@ module Bosh::Director
         Models::PersistentDisk.make(instance_id: instance.id, active: true)
 
         agent = double('agent')
-        AgentClient.stub(:new).with('agent', anything).and_return(agent)
+        AgentClient.stub(:with_defaults).with('agent', anything).and_return(agent)
 
         good_state = {
           'deployment' => 'mycloud',
@@ -190,8 +190,8 @@ module Bosh::Director
         agent_1 = double('agent-1')
         agent_2 = double('agent-2')
 
-        AgentClient.stub(:new).with('agent-1', anything).and_return(agent_1)
-        AgentClient.stub(:new).with('agent-2', anything).and_return(agent_2)
+        AgentClient.stub(:with_defaults).with('agent-1', anything).and_return(agent_1)
+        AgentClient.stub(:with_defaults).with('agent-2', anything).and_return(agent_2)
 
         good_state_1 = {
           'deployment' => 'mycloud',
@@ -233,9 +233,9 @@ module Bosh::Director
         agent_1 = double('agent-1')
         agent_2 = double('agent-2')
 
-        AgentClient.stub(:new).with('agent-1', anything).
+        AgentClient.stub(:with_defaults).with('agent-1', anything).
           and_return(agent_1)
-        AgentClient.stub(:new).with('agent-2', anything).
+        AgentClient.stub(:with_defaults).with('agent-2', anything).
           and_return(agent_2)
 
         good_state_1 = {
@@ -292,9 +292,9 @@ module Bosh::Director
           unresponsive_agent2 = double(AgentClient)
           responsive_agent = double(AgentClient)
 
-          AgentClient.stub(:new).with('agent-0', anything).and_return(unresponsive_agent1)
-          AgentClient.stub(:new).with('agent-1', anything).and_return(unresponsive_agent2)
-          AgentClient.stub(:new).with('agent-2', anything).and_return(responsive_agent)
+          AgentClient.stub(:with_defaults).with('agent-0', anything).and_return(unresponsive_agent1)
+          AgentClient.stub(:with_defaults).with('agent-1', anything).and_return(unresponsive_agent2)
+          AgentClient.stub(:with_defaults).with('agent-2', anything).and_return(responsive_agent)
 
           # Unresponsive agent
           unresponsive_agent1.stub(:get_state).and_raise(RpcTimeout)
@@ -386,9 +386,9 @@ module Bosh::Director
         agent_1 = double('agent-1')
         agent_2 = double('agent-2')
         agent_3 = double('agent-3')
-        AgentClient.stub(:new).with('agent-1', anything).and_return(agent_1)
-        AgentClient.stub(:new).with('agent-2', anything).and_return(agent_2)
-        AgentClient.stub(:new).with('agent-3', anything).and_return(agent_3)
+        AgentClient.stub(:with_defaults).with('agent-1', anything).and_return(agent_1)
+        AgentClient.stub(:with_defaults).with('agent-2', anything).and_return(agent_2)
+        AgentClient.stub(:with_defaults).with('agent-3', anything).and_return(agent_3)
 
         # valid idle resource pool VM
         agent_1.should_receive(:get_state).and_return({'deployment' => 'mycloud'})
@@ -433,7 +433,7 @@ module Bosh::Director
 
         out_of_sync_agent = double('out_of_sync_agent-id')
 
-        AgentClient.stub(:new).with('out-of-sync-agent-id', anything).and_return(out_of_sync_agent)
+        AgentClient.stub(:with_defaults).with('out-of-sync-agent-id', anything).and_return(out_of_sync_agent)
 
         out_of_sync_state = {
           'deployment' => 'mycloud',

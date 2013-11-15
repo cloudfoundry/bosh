@@ -11,10 +11,6 @@ describe Bosh::Agent::ApplyPlan::Helpers do
       @blobstore_id = 'baz'
       @checksum     = 'quux'
     end
-
-    def test_fetch_bits
-      fetch_bits
-    end
   end
 
   subject { HelperTester.new(spec) }
@@ -57,14 +53,78 @@ describe Bosh::Agent::ApplyPlan::Helpers do
   end
 
   describe '#fetch_bits' do
-    it 'executes the correct commands' do
-      FileUtils.should_receive(:mkdir_p).with('/tmp/packages/2')
-      FileUtils.should_receive(:mkdir_p).with('/tmp/packages/latest')
-      Bosh::Agent::Util.should_receive(:unpack_blob).with('baz', 'quux', '/tmp/packages/2/foo')
-      Bosh::Agent::Util.should_receive(:create_symlink).with('/tmp/packages/2/foo', '/tmp/packages/latest/bar')
+    install_path = '/tmp/packages/2/foo'
 
-      subject.test_fetch_bits
+    before { Bosh::Agent::Util.stub(:unpack_blob) }
+    before { FileUtils.stub(:mv) }
+
+    context 'when unpacked blob already exists' do
+      before { Dir.stub(:exist?).with(install_path).and_return(true) }
+
+      it 'does not re-download and unpacks blob' do
+        Bosh::Agent::Util.should_not_receive(:unpack_blob)
+        subject.send(:fetch_bits)
+      end
+    end
+
+    context 'when unpacked blob does not exist' do
+      before { Dir.stub(:exist?).with(install_path).and_return(false) }
+
+      it 'downloads and unpacks blob into install path' do
+        Bosh::Agent::Util.should_receive(:unpack_blob).with('baz', 'quux', install_path)
+        subject.send(:fetch_bits)
+      end
     end
   end
 
+  describe '#fetch_bits_and_symlink' do
+    install_path = '/tmp/packages/2/foo'
+    link_path = '/tmp/packages/latest/bar'
+
+    before { Bosh::Agent::Util.stub(:unpack_blob) }
+    before { Bosh::Agent::Util.stub(:create_symlink) }
+    before { FileUtils.stub(:mv) }
+
+    context 'when unpacked blob already exists' do
+      before { Dir.stub(:exist?).with(install_path).and_return(true) }
+
+      it 'does not re-download and unpacks blob' do
+        Bosh::Agent::Util.should_not_receive(:unpack_blob)
+        subject.send(:fetch_bits_and_symlink)
+      end
+
+      it 'relinks unpacked blob to install path' do
+        Bosh::Agent::Util.should_receive(:create_symlink).with(install_path, link_path)
+        subject.send(:fetch_bits_and_symlink)
+      end
+    end
+
+    context 'when unpacked blob does not exist' do
+      before { Dir.stub(:exist?).with(install_path).and_return(false) }
+
+      it 'downloads and unpacks blob into install path' do
+        Bosh::Agent::Util.should_receive(:unpack_blob).with('baz', 'quux', install_path)
+        subject.send(:fetch_bits_and_symlink)
+      end
+
+      context 'when download/unpack of blob succeeds' do
+        before { Bosh::Agent::Util.stub(:unpack_blob).and_return(nil) }
+
+        it 'relinks unpacked blob to install path' do
+          Bosh::Agent::Util.should_receive(:create_symlink).with(install_path, link_path)
+          subject.send(:fetch_bits_and_symlink)
+        end
+      end
+
+      context 'when download/unpack of blob fails' do
+        before { Bosh::Agent::Util.stub(:unpack_blob).and_raise(error) }
+        let(:error) { Exception.new('error') }
+
+        it 'does not relink unpacked blob' do
+          Bosh::Agent::Util.should_not_receive(:create_symlink)
+          expect { subject.send(:fetch_bits_and_symlink) }.to raise_error(error)
+        end
+      end
+    end
+  end
 end

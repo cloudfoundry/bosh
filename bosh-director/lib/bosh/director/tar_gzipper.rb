@@ -38,6 +38,7 @@ module Bosh::Director
     end
 
     private
+
     def tar(base_dir, dest, sources)
       out, err, status = Open3.capture3('tar', '-C', base_dir, '-czf', dest, *sources)
       raise("tar exited #{status.exitstatus}, output: '#{out}', error: '#{err}'") unless status.success?

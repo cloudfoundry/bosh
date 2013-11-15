@@ -8,48 +8,41 @@ module Bosh::Director
   describe Api::Controllers::CompiledPackagesController do
     include Rack::Test::Methods
 
-    subject(:app) { Api::Controllers::CompiledPackagesController } # "app" is a Rack::Test hook
+    subject(:app) { described_class } # "app" is a Rack::Test hook
 
-    before do
-      Api::ResourceManager.stub(:new)
-    end
+    before { Api::ResourceManager.stub(:new) }
 
-
-    describe 'GET', '/stemcells/:stemcell_name/:stemcell_version/releases/:release/:release_version/compiled_packages' do
-      context 'unauthenticated access' do
-        it 'returns 401' do
-          get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
-          expect(last_response.status).to eq(401)
-        end
-      end
-
-      context 'accessing with invalid credentials' do
-        it 'returns 401' do
-          authorize 'invalid-user', 'invalid-password'
-
-          get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
-          expect(last_response.status).to eq(401)
-        end
+    describe 'POST', '/compiled_package_groups/export' do
+      def perform
+        params = {
+          stemcell_name:    'bosh-stemcell',
+          stemcell_version: '123',
+          release_name:     'cf-release',
+          release_version:  '456',
+        }
+        post '/compiled_package_groups/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
       end
 
       context 'authenticated access' do
-        before do
-          authorize 'admin', 'admin'
-
-          Models::Stemcell.make(name: 'bosh-stemcell', version: '123')
-          release = Models::Release.make(name: 'cf-release')
-          Models::ReleaseVersion.make(release: release, version: '456')
-        end
+        before { authorize 'admin', 'admin' }
 
         context 'when the specified stemcell and release exist' do
-          let(:package_group) { instance_double('Bosh::Director::CompiledPackageGroup') }
-          let(:exporter) do
-            double = instance_double('Bosh::Director::CompiledPackagesExporter')
-            double.stub(:export) { |path| FileUtils.touch(path) }
-            double
+          before do
+            Models::Stemcell.make(name: 'bosh-stemcell', version: '123')
+            release = Models::Release.make(name: 'cf-release')
+            Models::ReleaseVersion.make(release: release, version: '456')
           end
+
+          let(:package_group) { instance_double('Bosh::Director::CompiledPackageGroup') }
+
+          let(:exporter) do
+            instance_double('Bosh::Director::CompiledPackagesExporter').tap do |cpe|
+              cpe.stub(:export) { |path| FileUtils.touch(path) }
+            end
+          end
+
+          before { StaleFileKiller.stub(new: killer) }
+          let(:killer) { instance_double('Bosh::Director::StaleFileKiller', kill: nil) }
 
           before do
             CompiledPackageGroup.stub(:new).and_return(package_group)
@@ -60,21 +53,19 @@ module Bosh::Director
           end
 
           it 'sets the mime type to application/x-compressed' do
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
-            expect(last_response.status).to eq(200)
+            perform
+            expect(last_response).to be_ok
             expect(last_response.content_type).to eq('application/x-compressed')
           end
 
           it 'creates a tarball with CompiledPackagesExporter and returns it' do
             expect(exporter).to receive(:export).with(anything) { |f| File.write(f, 'fake tgz content') }
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-
+            perform
             expect(last_response.body).to eq('fake tgz content')
           end
 
           it 'creates the output directory' do
-            get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
+            perform
             File.should be_directory(File.join(Dir.tmpdir, 'compiled_packages'))
           end
 
@@ -84,26 +75,120 @@ module Bosh::Director
             timestamp = Time.new
             output_path = File.join(output_dir, "compiled_packages_#{timestamp.to_f}.tar.gz")
             expect(exporter).to receive(:export).with(output_path)
-            Timecop.freeze(timestamp) do
-              get '/stemcells/bosh-stemcell/123/releases/cf-release/456/compiled_packages'
-            end
+            Timecop.freeze(timestamp) { perform }
+          end
+
+          it 'cleans up the stale exported packages with a StaleFileKiller' do
+            output_dir = File.join(Dir.tmpdir, 'compiled_packages')
+            StaleFileKiller.should_receive(:new).with(output_dir).and_return(killer)
+
+            perform
+            expect(killer).to have_received(:kill)
           end
         end
 
         context 'when the stemcell does not exist' do
-          it 'returns a 404' do
-            get '/stemcells/invalid-stemcell/123/releases/cf-release/456/compiled_packages'
+          before do
+            release = Models::Release.make(name: 'cf-release')
+            Models::ReleaseVersion.make(release: release, version: '456')
+          end
 
-            expect(last_response.status).to eq(404)
+          it 'returns a 404' do
+            perform
+            expect(last_response).to be_not_found
           end
         end
 
         context 'when the release does not exist' do
-          it 'returns a 404' do
-            get '/stemcells/bosh-stemcell/123/releases/invalid-release/456/compiled_packages'
+          before { Models::Stemcell.make(name: 'bosh-stemcell', version: '123') }
 
-            expect(last_response.status).to eq(404)
+          it 'returns a 404' do
+            perform
+            expect(last_response).to be_not_found
           end
+        end
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'unauthenticated access' do
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+    end
+
+    describe 'POST', '/compiled_package_groups/import' do
+      let(:tar_data) { 'tar data' }
+
+      def perform
+        post '/compiled_package_groups/import', tar_data, {'CONTENT_TYPE' => 'application/x-compressed'}
+      end
+
+      before do
+        test_config = Psych.load(spec_asset('test-director-config.yml'))
+        Config.configure(test_config)
+      end
+
+      context 'authenticated access' do
+        let(:tar_data) { 'tar data' }
+
+        before { authorize 'admin', 'admin' }
+
+        it 'writes the compiled packages export file' do
+          tempdir = Dir.mktmpdir
+          Dir.stub(:mktmpdir).and_return(tempdir)
+
+          perform
+
+          export_path = File.join(tempdir, 'compiled_packages_export.tgz')
+
+          expect(File.read(export_path)).to eq('tar data')
+          FileUtils.rm_r(tempdir)
+        end
+
+        it 'enqueues a task' do
+          File.stub(:open)
+          Dir.stub(:mktmpdir).and_return('/tmp/path')
+
+          task = instance_double('Bosh::Director::Models::Task', id: 1)
+
+          job_queue = instance_double('Bosh::Director::JobQueue')
+          JobQueue.stub(new: job_queue)
+
+          expect(job_queue).to receive(:enqueue).with('admin', Jobs::ImportCompiledPackages, 'import compiled packages',
+                                                      ['/tmp/path']).and_return(task)
+
+          perform
+        end
+
+        it 'returns a task' do
+          perform
+          expect_redirect_to_queued_task(last_response)
+        end
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'unauthenticated access' do
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
         end
       end
     end

@@ -464,12 +464,13 @@ module Bosh::Director
       end
 
       it 'does not whine when it has a foo.monit file' do
+        blobstore.stub(:create).and_return('fake-blobstore-id')
         @job_no_monit =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, monit_file: 'foo.monit')
 
         File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
 
-        lambda { @job.create_job(@job_attrs) }.should_not raise_error(JobMissingMonit)
+        expect { @job.create_job(@job_attrs) }.to_not raise_error
       end
 
       it 'whines on missing template' do

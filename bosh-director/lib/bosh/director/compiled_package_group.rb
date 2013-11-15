@@ -6,7 +6,7 @@ module Bosh::Director
     end
 
     def compiled_packages
-      @release_version.packages.map do |package|
+      @compiled_packages ||= @release_version.packages.map do |package|
         Models::CompiledPackage[
           :package_id => package.id,
           :stemcell_id => @stemcell.id,
@@ -18,5 +18,7 @@ module Bosh::Director
     def stemcell_sha1
       @stemcell.sha1
     end
+
+    attr_reader :release_version
   end
 end

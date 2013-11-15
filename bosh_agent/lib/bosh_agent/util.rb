@@ -31,16 +31,22 @@ module Bosh::Agent
             raise Bosh::Agent::MessageHandlerError.new(e.inspect)
           end
 
-          logger.info("Creating '#{install_path}'")
-          FileUtils.mkdir_p(install_path)
+          partial_install_path = "#{install_path}-bosh-agent-unpack"
+          logger.info("Creating '#{partial_install_path}'")
+          FileUtils.rm_rf(partial_install_path)
+          FileUtils.mkdir_p(partial_install_path)
 
-          logger.info("Installing to '#{install_path}'")
-          Dir.chdir(install_path) do
+          logger.info("Installing to '#{partial_install_path}'")
+          Dir.chdir(partial_install_path) do
             output = `tar --no-same-owner -zxvf #{tf.path} 2>&1`
             unless $?.exitstatus == 0
-              raise Bosh::Agent::MessageHandlerError.new("Failed to unpack blob", output)
+              raise Bosh::Agent::MessageHandlerError.new('Failed to unpack blob', output)
             end
           end
+
+          # Only move contents of the blob to install path at the end
+          # to avoid corrupted package directory
+          FileUtils.mv(partial_install_path, install_path)
         rescue Exception => e
           logger.info("Failure unpacking blob: #{e.inspect} #{e.backtrace}")
           raise e

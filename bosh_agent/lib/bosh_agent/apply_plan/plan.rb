@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Agent
   module ApplyPlan
     class Plan
@@ -90,7 +88,6 @@ module Bosh::Agent
           job.configure(job_index)
         end
       end
-
     end
   end
 end

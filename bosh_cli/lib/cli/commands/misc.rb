@@ -137,18 +137,6 @@ module Bosh::Cli::Command
       say("You are no longer logged in to `#{target}'".make_yellow)
     end
 
-    # bosh purge
-    usage "purge"
-    desc  "Purge local manifest cache"
-    def purge_cache
-      if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
-        err("Cache directory overriden, please remove manually")
-      else
-        FileUtils.rm_rf(cache.cache_dir)
-        say("Purged cache".make_green)
-      end
-    end
-
     # bosh target
     usage "target"
     desc  "Choose director to talk to (optionally creating an alias). " +

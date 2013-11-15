@@ -43,7 +43,7 @@ module Bosh::Director
         Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
         SecureRandom.stub(uuid: 'agent-222')
-        AgentClient.stub(:new).with('agent-222', anything).and_return(fake_new_agent)
+        AgentClient.stub(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
 
         fake_new_agent.should_receive(:wait_until_ready).ordered
         fake_new_agent.should_receive(:apply).with(spec).ordered

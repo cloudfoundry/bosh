@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bosh/app"
+	boshapp "bosh/app"
 	"fmt"
 	"os"
 )
 
 func main() {
-	a := app.New()
-	err := a.Run(os.Args)
+	app := boshapp.New()
+	err := app.Run(os.Args)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error()+"\n")

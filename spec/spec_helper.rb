@@ -23,8 +23,6 @@ SANDBOX_DIR = Dir.mktmpdir
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
 TEST_RELEASE_DIR = File.join(SANDBOX_DIR, "test_release")
 
-BOSH_CACHE_DIR = File.join(SANDBOX_DIR, "cache")
-
 BOSH_WORK_TEMPLATE  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_WORK_DIR  = File.join(SANDBOX_DIR, "bosh_work_dir")
 

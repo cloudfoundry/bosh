@@ -19,7 +19,7 @@ module Bosh::Director
     it 'parses agent info into vm_state' do
       Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1', timeout: 5).and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
       agent_state = {'vm_cid' => 'vm-1',
                      'networks' => {'test' => {'ip' => '1.1.1.1'}},
                      'agent_id' => 'agent-1',
@@ -45,7 +45,7 @@ module Bosh::Director
     it 'parses agent info into vm_state with vitals' do
       Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1', timeout: 5).and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
 
       agent_state = {'vm_cid' => 'vm-1',
                      'networks' => {'test' => {'ip' => '1.1.1.1'}},
@@ -93,7 +93,7 @@ module Bosh::Director
                                content: '1.1.1.1', 
                                ttl: 14400)
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1', timeout: 5).and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
       agent_state = {'vm_cid' => 'vm-1',
                      'networks' => {'test' => {'ip' => '1.1.1.1'}},
                      'agent_id' => 'agent-1',
@@ -119,7 +119,7 @@ module Bosh::Director
     it 'should handle unresponsive agents' do
       Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1', timeout: 5).and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
       agent.should_receive(:get_state).and_raise(RpcTimeout)
 
       @result_file.should_receive(:write).with do |agent_status|
@@ -142,7 +142,7 @@ module Bosh::Director
                               resurrection_paused: true)
       Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1', timeout: 5).and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
 
       agent_state = {'vm_cid' => 'vm-1',
                      'networks' => {'test' => {'ip' => '1.1.1.1'}},

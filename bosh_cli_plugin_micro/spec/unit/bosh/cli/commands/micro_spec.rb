@@ -220,7 +220,6 @@ module Bosh::Cli::Command
       @cmd = Bosh::Cli::Command::Micro.new(nil)
       @cmd.add_option(:non_interactive, true)
       @cmd.add_option(:config, nil)
-      @cmd.add_option(:cache_dir, nil)
 
       @manifest_path = spec_asset('deployment.MF')
       @manifest_yaml = {
@@ -329,7 +328,7 @@ module Bosh::Cli::Command
 
     describe 'deploying/updating with --update-if-exists flag' do
       let(:deployer) do
-        mock(
+        double(
           Bosh::Deployer::InstanceManager,
           :renderer= => nil,
           :discover_bosh_ip => nil,

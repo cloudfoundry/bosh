@@ -1,6 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Agent::ApplyPlan::Plan do
 
@@ -67,10 +65,7 @@ describe Bosh::Agent::ApplyPlan::Plan do
   end
 
   describe "operations" do
-
-    let(:plan) do
-      make_plan(valid_spec)
-    end
+    let(:plan) { make_plan(valid_spec) }
 
     it "installs job" do
       plan.jobs.length.should == 1
@@ -92,7 +87,5 @@ describe Bosh::Agent::ApplyPlan::Plan do
       plan.jobs[0].should_receive(:configure).with(0)
       plan.configure_jobs
     end
-
   end
-
 end

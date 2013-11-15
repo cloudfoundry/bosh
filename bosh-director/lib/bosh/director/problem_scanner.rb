@@ -149,7 +149,7 @@ module Bosh::Director
         mounted_disk_cid = instance.persistent_disk_cid if instance
       end
 
-      agent = AgentClient.new(vm.agent_id, agent_options)
+      agent = AgentClient.with_defaults(vm.agent_id, agent_options)
       begin
         state = agent.get_state
 

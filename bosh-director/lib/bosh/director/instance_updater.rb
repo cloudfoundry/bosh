@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh/director/instance_preparer'
 
 module Bosh::Director
   class InstanceUpdater
@@ -11,7 +11,7 @@ module Bosh::Director
     attr_reader :current_state
 
     # @params [DeploymentPlan::Instance] instance
-    def initialize(instance, event_ticker = nil)
+    def initialize(instance, event_ticker)
       @cloud = Config.cloud
       @logger = Config.logger
       @ticker = event_ticker
@@ -40,7 +40,7 @@ module Bosh::Director
     end
 
     def report_progress
-      @ticker.advance(100.0 / update_steps()) if @ticker
+      @ticker.advance(100.0 / update_steps())
     end
 
     def update_steps
@@ -58,6 +58,7 @@ module Bosh::Director
         return
       end
 
+      step { InstancePreparer.new(@instance, agent).prepare }
       step { stop }
       step { take_snapshot }
 
@@ -456,7 +457,7 @@ module Bosh::Director
         if @vm.agent_id.nil?
           raise VmAgentIdMissing, "VM #{@vm.id} is missing agent id"
         end
-        @agent = AgentClient.new(@vm.agent_id)
+        @agent = AgentClient.with_defaults(@vm.agent_id)
       end
     end
 

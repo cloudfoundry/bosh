@@ -26,7 +26,7 @@ module Bosh::Director
       job = make_job(instance.id)
 
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1').and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
       agent.should_receive(:fetch_logs).and_return('blobstore_id' => 'blobstore-id')
 
       job.should_receive(:with_deployment_lock).with(@deployment).and_yield
@@ -50,7 +50,7 @@ module Bosh::Director
       job = make_job(instance.id)
 
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1').and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
       agent.should_receive(:fetch_logs).and_return('blobstore_id' => 'deadbeef')
 
       job.should_receive(:with_deployment_lock).with(@deployment).and_yield
@@ -69,7 +69,7 @@ module Bosh::Director
       job.bundle_lifetime = 0.01
 
       agent = double('agent')
-      AgentClient.stub(:new).with('agent-1').and_return(agent)
+      AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
       agent.should_receive(:fetch_logs).once.
         and_return('blobstore_id' => 'deadbeef1')
 

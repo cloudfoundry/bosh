@@ -90,21 +90,6 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("verify stemcell #{stemcell_filename}", failure_expected: true).should =~ failure
   end
 
-  it 'uses cache when verifying stemcell for the second time', no_reset: true do
-    stemcell_filename = spec_asset('valid_stemcell.tgz')
-    run_1 = run_bosh("verify stemcell #{stemcell_filename}")
-    run_2 = run_bosh("verify stemcell #{stemcell_filename}")
-
-    run_1.should =~ /Manifest not found in cache, verifying tarball/
-    run_1.should =~ /Writing manifest to cache/
-
-    run_2.should =~ /Using cached manifest/
-  end
-
-  it 'does not allow purging when using non-default directory', no_reset: true do
-    run_bosh('purge', failure_expected: true).should =~ regexp('please remove manually')
-  end
-
   it 'verifies a sample valid release', no_reset: true do
     release_filename = spec_asset('valid_release.tgz')
     out = run_bosh("verify release #{release_filename}")
