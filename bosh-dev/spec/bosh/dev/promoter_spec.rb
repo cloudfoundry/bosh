@@ -37,7 +37,7 @@ module Bosh::Dev
 
     context 'when the current sha has never been promoted' do
       before do
-        promoter.stub(:system).with('git fetch --tags && git tag --points-at HEAD | grep stable-').and_return(false)
+        promoter.stub(:system).with('git fetch --tags && git tag --contains HEAD | grep stable-').and_return(false)
       end
 
       it 'promotes artifacts' do
@@ -61,7 +61,7 @@ module Bosh::Dev
 
     context 'when the current sha has been promoted before' do
       before do
-        promoter.stub(:system).with('git fetch --tags && git tag --points-at HEAD | grep stable-').and_return(true)
+        promoter.stub(:system).with('git fetch --tags && git tag --contains HEAD | grep stable-').and_return(true)
       end
 
       it 'skips promoting anything' do

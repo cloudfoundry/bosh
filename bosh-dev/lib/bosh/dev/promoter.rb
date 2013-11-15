@@ -14,7 +14,7 @@ module Bosh::Dev
 
     def promote
       Rake::FileUtilsExt.sh('git fetch --tags')
-      if system('git fetch --tags && git tag --points-at HEAD | grep stable-')
+      if system('git fetch --tags && git tag --contains HEAD | grep stable-')
         @logger.info('Skipping promotion since an existing stable tag was found')
       else
         build = Bosh::Dev::Build.candidate
