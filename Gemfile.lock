@@ -400,6 +400,7 @@ GEM
     trollop (1.16.2)
     tzinfo (1.0.1)
     uuidtools (2.1.4)
+    vcr (2.7.0)
     vegas (0.1.11)
       rack (>= 1.0.0)
     webmock (1.11.0)
@@ -459,4 +460,5 @@ DEPENDENCIES
   simplecov-rcov
   sqlite3
   timecop
+  vcr
   webmock
