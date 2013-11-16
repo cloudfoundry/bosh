@@ -20,14 +20,16 @@ module Bosh::Cli
       def variety
         name.gsub(version.to_s, '')
       end
+
+      def url
+        "#{PublicStemcells::PUBLIC_STEMCELLS_BASE_URL}/#{@stemcell_key}"
+      end
     end
 
-    def initialize
-      @stemcell_url = 'https://bosh-jenkins-artifacts.s3.amazonaws.com'
-    end
+    PUBLIC_STEMCELLS_BASE_URL = 'https://bosh-jenkins-artifacts.s3.amazonaws.com'
 
     def all
-      response = HTTPClient.new.get(@stemcell_url)
+      response = HTTPClient.new.get(PUBLIC_STEMCELLS_BASE_URL)
       doc = REXML::Document.new(response.body)
       stemcell_keys = REXML::XPath.match(doc, "/ListBucketResult/Contents/Key[text()[starts-with(.,'bosh-stemcell/') and not(contains(.,'latest'))]]").map(&:text)
       stemcell_keys.map { |stemcell_key| PublicStemcell.new(stemcell_key) }
