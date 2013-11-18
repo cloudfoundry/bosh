@@ -1,7 +1,7 @@
 package action
 
-func (a sshAction) cleanupSsh(params map[string]interface{}) (value interface{}, err error) {
-	userRegex, err := extractStringParam(params, "user_regex")
+func (a sshAction) cleanupSsh(params sshParams) (value interface{}, err error) {
+	userRegex, err := params.getUserRegex()
 	if err != nil {
 		return
 	}

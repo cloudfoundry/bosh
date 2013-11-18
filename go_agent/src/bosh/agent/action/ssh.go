@@ -36,7 +36,7 @@ func (a sshAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	return
 }
 
-func extractCommand(payloadBytes []byte) (cmd string, params map[string]interface{}, err error) {
+func extractCommand(payloadBytes []byte) (cmd string, params sshParams, err error) {
 	var payload struct {
 		Arguments []interface{}
 	}
@@ -53,7 +53,8 @@ func extractCommand(payloadBytes []byte) (cmd string, params map[string]interfac
 		return
 	}
 
-	params, ok = payload.Arguments[1].(map[string]interface{})
+	paramsMap, ok := payload.Arguments[1].(map[string]interface{})
+	params = sshParams(paramsMap)
 	if !ok {
 		err = payloadErr("params")
 		return
@@ -64,16 +65,4 @@ func extractCommand(payloadBytes []byte) (cmd string, params map[string]interfac
 
 func payloadErr(attr string) error {
 	return errors.New(fmt.Sprintf("Error parsing %s in payload", attr))
-}
-
-func extractStringParam(params map[string]interface{}, name string) (val string, err error) {
-	if params[name] == nil {
-		return
-	}
-
-	val, ok := params[name].(string)
-	if !ok {
-		err = payloadErr(name)
-	}
-	return
 }

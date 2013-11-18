@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 )
 
-func (a sshAction) setupSsh(params map[string]interface{}) (value interface{}, err error) {
-	user, pwd, key, err := extractSshSetupData(params)
+func (a sshAction) setupSsh(params sshParams) (value interface{}, err error) {
+	user, pwd, key, err := params.getSshSetupData()
 	if err != nil {
 		return
 	}
@@ -43,20 +43,5 @@ func (a sshAction) setupSsh(params map[string]interface{}) (value interface{}, e
 		"status":  "success",
 		"ip":      defaultIp,
 	}
-	return
-}
-
-func extractSshSetupData(params map[string]interface{}) (user, pwd, key string, err error) {
-	user, err = extractStringParam(params, "user")
-	if err != nil {
-		return
-	}
-
-	pwd, err = extractStringParam(params, "password")
-	if err != nil {
-		return
-	}
-
-	key, err = extractStringParam(params, "public_key")
 	return
 }
