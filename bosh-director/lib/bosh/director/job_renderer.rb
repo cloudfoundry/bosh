@@ -3,18 +3,17 @@ require 'bosh/director/job_instance_renderer'
 require 'bosh/director/rendered_job_instance_hasher'
 
 module Bosh::Director
-  class ConfigurationHasher
+  class JobRenderer
     # @param [DeploymentPlan::Job]
     def initialize(job)
       @job = job
+      job_template_loader = JobTemplateLoader.new
+      @instance_renderer = JobInstanceRenderer.new(@job, job_template_loader)
     end
 
-    def hash
-      job_template_loader = JobTemplateLoader.new
-      job_instance_renderer = JobInstanceRenderer.new(@job, job_template_loader)
-
+    def render_job_instances
       @job.instances.each do |instance|
-        rendered_templates = job_instance_renderer.render(instance)
+        rendered_templates = @instance_renderer.render(instance)
         hasher = RenderedJobInstanceHasher.new(rendered_templates)
         instance.configuration_hash = hasher.configuration_hash
         instance.template_hashes = hasher.template_hashes

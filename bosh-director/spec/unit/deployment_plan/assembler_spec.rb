@@ -444,9 +444,9 @@ module Bosh::Director
         end
 
         it 'should bind the configuration hash' do
-          configuration_hasher = double(:ConfigurationHasher)
-          configuration_hasher.should_receive(:hash)
-          ConfigurationHasher.stub(:new).with(@job_spec).
+          configuration_hasher = double(:JobRenderer)
+          configuration_hasher.should_receive(:render_job_instances)
+          JobRenderer.stub(:new).with(@job_spec).
             and_return(configuration_hasher)
           @assembler.bind_configuration
         end

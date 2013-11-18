@@ -322,7 +322,7 @@ module Bosh::Director
     # @return [void]
     def bind_configuration
       @deployment_plan.jobs.each do |job|
-        ConfigurationHasher.new(job).hash
+        JobRenderer.new(job).render_job_instances
       end
     end
 
