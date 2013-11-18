@@ -2,7 +2,7 @@ package action
 
 import (
 	boshtask "bosh/agent/task"
-	"encoding/json"
+	boshassert "bosh/assert"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -22,8 +22,7 @@ func TestGetTaskRunReturns(t *testing.T) {
 	taskValue, err := getTask.Run([]byte(`{"arguments":["57"]}`))
 	assert.NoError(t, err)
 
-	taskBytes, _ := json.Marshal(taskValue)
-	assert.Equal(t, `{"agent_task_id":"found-57-id","state":"failed"}`, string(taskBytes))
+	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"failed"}`)
 }
 
 func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {

@@ -1,8 +1,8 @@
 package action
 
 import (
+	boshassert "bosh/assert"
 	boshsettings "bosh/settings"
-	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -21,9 +21,6 @@ func TestGetState(t *testing.T) {
 	state, err := getStateAction.Run([]byte(`{"arguments":[]}`))
 	assert.NoError(t, err)
 
-	stateBytes, err := json.Marshal(state)
-	assert.NoError(t, err)
-
 	expectedJson := map[string]interface{}{
 		"agent_id":      "my-agent-id",
 		"job_state":     "unknown",
@@ -32,6 +29,5 @@ func TestGetState(t *testing.T) {
 		"vm":            map[string]string{"name": "vm-abc-def"},
 	}
 
-	expectedBytes, _ := json.Marshal(expectedJson)
-	assert.Equal(t, string(expectedBytes), string(stateBytes))
+	boshassert.MatchesJsonMap(t, state, expectedJson)
 }

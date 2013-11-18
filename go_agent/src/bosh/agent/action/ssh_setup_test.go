@@ -1,8 +1,8 @@
 package action
 
 import (
+	boshassert "bosh/assert"
 	boshsettings "bosh/settings"
-	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -78,16 +78,11 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	assert.Equal(t, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP}, platform.AddUserToGroupsGroups[expectedUser])
 	assert.Equal(t, expectedKey, platform.SetupSshPublicKeys[expectedUser])
 
-	// assert on the response
-	responseBytes, err := json.Marshal(response)
-	assert.NoError(t, err)
-
 	expectedJson := map[string]interface{}{
 		"command": "setup",
 		"status":  "success",
 		"ip":      "ww.xx.yy.zz",
 	}
 
-	expectedBytes, _ := json.Marshal(expectedJson)
-	assert.Equal(t, string(expectedBytes), string(responseBytes))
+	boshassert.MatchesJsonMap(t, response, expectedJson)
 }

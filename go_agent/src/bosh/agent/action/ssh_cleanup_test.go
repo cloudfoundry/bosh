@@ -1,7 +1,7 @@
 package action
 
 import (
-	"encoding/json"
+	boshassert "bosh/assert"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -20,13 +20,10 @@ func TestSshCleanup(t *testing.T) {
 	assert.Equal(t, "^foobar.*", platform.DeleteEphemeralUsersMatchingRegex)
 
 	// assert on the response
-	responseBytes, err := json.Marshal(response)
-	assert.NoError(t, err)
 
 	expectedJson := map[string]interface{}{
 		"command": "cleanup",
 		"status":  "success",
 	}
-	expectedBytes, _ := json.Marshal(expectedJson)
-	assert.Equal(t, string(expectedBytes), string(responseBytes))
+	boshassert.MatchesJsonMap(t, response, expectedJson)
 }

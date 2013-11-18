@@ -4,13 +4,13 @@ import (
 	fakeaction "bosh/agent/action/fakes"
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"
+	boshassert "bosh/assert"
 	boshmbus "bosh/mbus"
 	fakembus "bosh/mbus/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
-	"encoding/json"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,8 +29,7 @@ func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 
 	resp := handler.Func(req)
 
-	respBytes, _ := json.Marshal(resp)
-	assert.Equal(t, `{"exception":{"message":"unknown message gibberish"}}`, string(respBytes))
+	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"unknown message gibberish"}}`)
 }
 
 func TestRunHandlesPingMessage(t *testing.T) {
@@ -81,8 +80,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	agent.Run()
 
 	resp = handler.Func(req)
-	respBytes, _ := json.Marshal(resp)
-	assert.Equal(t, `{"exception":{"message":"some error"}}`, string(respBytes))
+	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"some error"}}`)
 }
 
 func TestRunHandlesApplyMessage(t *testing.T) {
@@ -105,8 +103,7 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	resp := handler.Func(req)
 	assert.Equal(t, boshmbus.NewValueResponse(TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}), resp)
 
-	valueBytes, _ := json.Marshal(resp)
-	assert.Equal(t, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`, string(valueBytes))
+	boshassert.MatchesJsonString(t, resp, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`)
 
 	taskService.StartTaskFunc()
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
