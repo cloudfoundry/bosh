@@ -10,14 +10,12 @@ describe Bosh::Cli::Command::LogManagement do
 
   let(:manifest) do
     {
-        'name' => deployment,
-        'uuid' => 'totally-and-universally-unique',
-        'jobs' => [
-            {
-                'name' => 'dea',
-                'instances' => 5
-            }
-        ]
+      'name' => deployment,
+      'uuid' => 'totally-and-universally-unique',
+      'jobs' => [{
+        'name' => 'dea',
+        'instances' => 5
+      }]
     }
   end
 
@@ -27,11 +25,10 @@ describe Bosh::Cli::Command::LogManagement do
     command.stub(director: director)
     command.stub(prepare_deployment_manifest: manifest)
     command.stub(:say)
-
     director.stub(fetch_logs: 'resource-id', download_resource: '/tmp/resource')
-
-    FileUtils.stub(:mv)
   end
+
+  before { FileUtils.stub(:mv) }
 
   describe 'fetching logs' do
     it 'requires that a bosh deployment is targeted' do
@@ -50,17 +47,13 @@ describe Bosh::Cli::Command::LogManagement do
     end
 
     context 'when a deployment is targeted' do
-      before do
-        command.stub(target: 'http://bosh.example.com:25555')
-      end
+      before { command.stub(target: 'http://bosh.example.com:25555') }
 
       it_behaves_like 'a command which requires user is logged in',
                       ->(command) { command.fetch_logs('dea', '6') }
 
       context 'when logged in' do
-        before do
-          command.stub(:logged_in? => true)
-        end
+        before { command.stub(:logged_in? => true) }
 
         it 'does not allow --only and --all together' do
           command.options[:only] = %w(cloud_controller uaa)
@@ -72,9 +65,7 @@ describe Bosh::Cli::Command::LogManagement do
         end
 
         context 'when fetching agent logs' do
-          before do
-            command.options[:agent] = true
-          end
+          before { command.options[:agent] = true }
 
           it 'does not allow --agent and --job together' do
             command.options[:job] = true
@@ -106,9 +97,7 @@ describe Bosh::Cli::Command::LogManagement do
         end
 
         context 'when fetching job logs' do
-          before do
-            command.options[:job] = true
-          end
+          before { command.options[:job] = true }
 
           it 'successfully retrieves the log resource id' do
             director.should_receive(:fetch_logs).with(deployment, job, index, 'job', nil).and_return('resource_id')
@@ -174,14 +163,12 @@ describe Bosh::Cli::Command::LogManagement do
           context 'when we do not specify the job index and it is unique' do
             let(:manifest) do
               {
-                  'name' => deployment,
-                  'uuid' => 'totally-and-universally-unique',
-                  'jobs' => [
-                      {
-                          'name' => 'dea',
-                          'instances' => 1
-                      }
-                  ]
+                'name' => deployment,
+                'uuid' => 'totally-and-universally-unique',
+                'jobs' => [{
+                  'name' => 'dea',
+                  'instances' => 1
+                }]
               }
             end
 
@@ -198,14 +185,12 @@ describe Bosh::Cli::Command::LogManagement do
           context 'when we do not specify the job index and it is not' do
             let(:manifest) do
               {
-                  'name' => deployment,
-                  'uuid' => 'totally-and-universally-unique',
-                  'jobs' => [
-                      {
-                          'name' => 'dea',
-                          'instances' => 52735
-                      }
-                  ]
+                'name' => deployment,
+                'uuid' => 'totally-and-universally-unique',
+                'jobs' => [{
+                  'name' => 'dea',
+                  'instances' => 52735
+                }]
               }
             end
 
