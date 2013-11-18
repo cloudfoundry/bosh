@@ -1,22 +1,21 @@
 require 'spec_helper'
+require 'bosh/dev/deployments_repository'
 require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev::Aws
   describe DeploymentAccount do
-    let(:shell) { instance_double('Bosh::Core::Shell') }
-    subject(:account) { DeploymentAccount.new('fake-a1', deployments_repository) }
+    subject(:account) { described_class.new('fake-a1', deployments_repository) }
 
     let(:deployments_repository) do
       instance_double(
-        'Bosh::Dev::Aws::DeploymentsRepository',
+        'Bosh::Dev::DeploymentsRepository',
         path: '/tmp/deployments-repo',
         clone_or_update!: nil,
       )
     end
 
-    before do
-      Bosh::Core::Shell.stub(new: shell)
-    end
+    before { Bosh::Core::Shell.stub(new: shell) }
+    let(:shell) { instance_double('Bosh::Core::Shell') }
 
     describe '#initialize' do
       before do
@@ -40,6 +39,5 @@ module Bosh::Dev::Aws
         account.run_with_env('bosh aws create')
       end
     end
-
   end
 end

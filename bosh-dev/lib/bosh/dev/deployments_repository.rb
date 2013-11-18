@@ -1,9 +1,9 @@
 require 'fileutils'
-require 'bosh/dev/aws'
+require 'bosh/dev'
 require 'bosh/core/shell'
 require 'bosh/dev/git_repo_updater'
 
-module Bosh::Dev::Aws
+module Bosh::Dev
   class DeploymentsRepository
     def initialize(env, options = {})
       @env = env

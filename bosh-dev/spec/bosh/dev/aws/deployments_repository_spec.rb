@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'bosh/dev/aws/deployments_repository'
+require 'bosh/dev/deployments_repository'
 
-module Bosh::Dev::Aws
+module Bosh::Dev
   describe DeploymentsRepository do
     include FakeFS::SpecHelpers
 

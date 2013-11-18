@@ -1,14 +1,14 @@
+require 'bosh/stemcell/archive'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
 require 'bosh/dev/artifacts_downloader'
+require 'bosh/dev/deployments_repository'
 require 'bosh/dev/aws/deployment_account'
-require 'bosh/dev/aws/deployments_repository'
-require 'bosh/stemcell/archive'
 
 module Bosh::Dev
   class AutomatedDeployer
     def self.for_environment(micro_target, bosh_target, build_number, environment)
-      deployments_repository = Aws::DeploymentsRepository.new(ENV, path_root: '/tmp')
+      deployments_repository = DeploymentsRepository.new(ENV, path_root: '/tmp')
       deployment_account = Aws::DeploymentAccount.new(environment, deployments_repository)
       new(
         micro_target,

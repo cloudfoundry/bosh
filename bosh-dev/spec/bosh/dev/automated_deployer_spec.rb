@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/automated_deployer'
-require 'bosh/dev/aws/deployments_repository'
+require 'bosh/dev/deployments_repository'
 
 module Bosh::Dev
   describe AutomatedDeployer do
@@ -14,8 +14,8 @@ module Bosh::Dev
           .should_receive(:new)
         .and_return(downloader)
 
-        deployments_repository = instance_double('Bosh::Dev::Aws::DeploymentsRepository')
-        class_double('Bosh::Dev::Aws::DeploymentsRepository')
+        deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
+        class_double('Bosh::Dev::DeploymentsRepository')
           .as_stubbed_const
           .should_receive(:new)
           .with(env, path_root: '/tmp')
@@ -74,7 +74,7 @@ module Bosh::Dev
 
       let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
-      let(:deployments_repository) { instance_double('Bosh::Dev::Aws::DeploymentsRepository') }
+      let(:deployments_repository) { instance_double('Bosh::Dev::DeploymentsRepository') }
 
       before { Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive) }
       let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }

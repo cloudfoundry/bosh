@@ -1,5 +1,4 @@
 require 'bosh/core/shell'
-require 'bosh/dev/aws/deployments_repository'
 
 module Bosh::Dev
   module Aws
