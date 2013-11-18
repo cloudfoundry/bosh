@@ -58,7 +58,7 @@ func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUse
 	assert.NoError(t, err)
 
 	basePathStat := fakeFs.GetFileTestStat("/some/path/to/home")
-	assert.Equal(t, "MkdirAll", basePathStat.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, basePathStat.FileType)
 	assert.Equal(t, os.FileMode(0755), basePathStat.FileMode)
 
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
@@ -114,14 +114,14 @@ func TestUbuntuSetupSsh(t *testing.T) {
 	assert.Equal(t, fakeFs.HomeDirUsername, "vcap")
 
 	assert.NotNil(t, sshDirStat)
-	assert.Equal(t, sshDirStat.CreatedWith, "MkdirAll")
+	assert.Equal(t, fakesys.FakeFileTypeDir, sshDirStat.FileType)
 	assert.Equal(t, sshDirStat.FileMode, os.FileMode(0700))
 	assert.Equal(t, sshDirStat.Username, "vcap")
 
 	authKeysStat := fakeFs.GetFileTestStat(filepath.Join(sshDirPath, "authorized_keys"))
 
 	assert.NotNil(t, authKeysStat)
-	assert.Equal(t, authKeysStat.CreatedWith, "WriteToFile")
+	assert.Equal(t, authKeysStat.FileType, fakesys.FakeFileTypeFile)
 	assert.Equal(t, authKeysStat.FileMode, os.FileMode(0600))
 	assert.Equal(t, authKeysStat.Username, "vcap")
 	assert.Equal(t, authKeysStat.Content, "some public key")
@@ -227,7 +227,7 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 
 	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
 	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
-	assert.Equal(t, "WriteToFile", ntpConfig.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeFile, ntpConfig.FileType)
 }
 
 func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
@@ -256,7 +256,7 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.NoError(t, err)
 
 	dataDir := fakeFs.GetFileTestStat("/data-dir")
-	assert.Equal(t, "MkdirAll", dataDir.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, dataDir.FileType)
 	assert.Equal(t, os.FileMode(0750), dataDir.FileMode)
 
 	assert.Equal(t, "/dev/xvda", fakePartitioner.PartitionDevicePath)
@@ -286,12 +286,12 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 
 	sysLogStats := fakeFs.GetFileTestStat("/data-dir/sys/log")
 	assert.NotNil(t, sysLogStats)
-	assert.Equal(t, "MkdirAll", sysLogStats.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, sysLogStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysLogStats.FileMode)
 
 	sysRunStats := fakeFs.GetFileTestStat("/data-dir/sys/run")
 	assert.NotNil(t, sysRunStats)
-	assert.Equal(t, "MkdirAll", sysRunStats.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, sysRunStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 

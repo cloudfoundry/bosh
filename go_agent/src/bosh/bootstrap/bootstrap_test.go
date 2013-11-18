@@ -43,7 +43,7 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, settingsFileStat)
-	assert.Equal(t, settingsFileStat.CreatedWith, "WriteToFile")
+	assert.Equal(t, settingsFileStat.FileType, fakesys.FakeFileTypeFile)
 	assert.Equal(t, settingsFileStat.Content, string(settingsJson))
 }
 

@@ -5,6 +5,14 @@ import (
 	"os"
 )
 
+type FakeFileType string
+
+const (
+	FakeFileTypeFile    FakeFileType = "file"
+	FakeFileTypeSymlink              = "symlink"
+	FakeFileTypeDir                  = "dir"
+)
+
 type FakeFileSystem struct {
 	Files map[string]*FakeFileStats
 
@@ -15,9 +23,9 @@ type FakeFileSystem struct {
 type FakeFileStats struct {
 	FileMode      os.FileMode
 	Username      string
-	CreatedWith   string
 	Content       string
 	SymlinkTarget string
+	FileType      FakeFileType
 }
 
 func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {
@@ -34,7 +42,7 @@ func (fs *FakeFileSystem) HomeDir(username string) (homeDir string, err error) {
 func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
 	stats := fs.getOrCreateFile(path)
 	stats.FileMode = perm
-	stats.CreatedWith = "MkdirAll"
+	stats.FileType = FakeFileTypeDir
 	return
 }
 
@@ -52,7 +60,7 @@ func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 
 func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err error) {
 	stats := fs.getOrCreateFile(path)
-	stats.CreatedWith = "WriteToFile"
+	stats.FileType = FakeFileTypeFile
 
 	if stats.Content != content {
 		stats.Content = content
@@ -77,7 +85,7 @@ func (fs *FakeFileSystem) FileExists(path string) bool {
 
 func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	stats := fs.getOrCreateFile(newPath)
-	stats.CreatedWith = "Symlink"
+	stats.FileType = FakeFileTypeSymlink
 	stats.SymlinkTarget = oldPath
 	return
 }
