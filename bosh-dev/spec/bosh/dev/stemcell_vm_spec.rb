@@ -52,19 +52,19 @@ module Bosh::Dev
       describe 'publishing the stemcell inside the VM' do
         def expected_cmd(rake_task_args)
           strip_heredoc(<<-BASH)
-                time vagrant ssh -c "
-                  set -eu
-                  cd /bosh
-                  bundle install --local
+            time vagrant ssh -c "
+              set -eu
+              cd /bosh
+              bundle install --local
 
-                  export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
-                  export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
-                  export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
-                  export AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'
-                  export AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT'
+              export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
+              export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
+              export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
+              export AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'
+              export AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT='fake-AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT'
 
-                  time bundle exec rake ci:publish_stemcell[#{rake_task_args}]
-                " remote
+              time bundle exec rake ci:publish_stemcell[#{rake_task_args}]
+            " remote
           BASH
         end
 
