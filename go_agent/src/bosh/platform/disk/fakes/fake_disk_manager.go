@@ -1,4 +1,4 @@
-package testhelpers
+package fakes
 
 import (
 	boshdisk "bosh/platform/disk"

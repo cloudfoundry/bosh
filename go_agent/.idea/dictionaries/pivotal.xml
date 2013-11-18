@@ -1,16 +1,18 @@
 <component name="ProjectDictionaryState">
   <dictionary name="pivotal">
     <words>
+      <w>boshassert</w>
       <w>boshdisk</w>
       <w>boshsettings</w>
       <w>boshstats</w>
       <w>boshsys</w>
+      <w>fakeaction</w>
+      <w>fakembus</w>
+      <w>fakeplatform</w>
+      <w>fakestats</w>
+      <w>fakesys</w>
+      <w>faketask</w>
       <w>partitioner</w>
-      <w>testaction</w>
-      <w>testmbus</w>
-      <w>testplatform</w>
-      <w>teststats</w>
-      <w>testtask</w>
       <w>ubuntu</w>
     </words>
   </dictionary>

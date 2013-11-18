@@ -1,14 +1,14 @@
 package disk
 
 import (
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestLinuxFormatWhenUsingSwapFs(t *testing.T) {
-	fakeRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
+	fakeRunner := &fakesys.FakeCmdRunner{}
+	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.CommandResults = map[string][]string{
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext4" yyyy zzzz`, ""},
 	}
@@ -21,8 +21,8 @@ func TestLinuxFormatWhenUsingSwapFs(t *testing.T) {
 }
 
 func TestLinuxFormatWhenUsingSwapFsAndPartitionIsSwap(t *testing.T) {
-	fakeRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
+	fakeRunner := &fakesys.FakeCmdRunner{}
+	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.CommandResults = map[string][]string{
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="swap" yyyy zzzz`, ""},
 	}
@@ -35,8 +35,8 @@ func TestLinuxFormatWhenUsingSwapFsAndPartitionIsSwap(t *testing.T) {
 }
 
 func TestLinuxFormatWhenUsingExt4FsWithLazyItableSupport(t *testing.T) {
-	fakeRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
+	fakeRunner := &fakesys.FakeCmdRunner{}
+	fakeFs := &fakesys.FakeFileSystem{}
 	fakeFs.WriteToFile("/sys/fs/ext4/features/lazy_itable_init", "")
 	fakeRunner.CommandResults = map[string][]string{
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext2" yyyy zzzz`, ""},
@@ -50,8 +50,8 @@ func TestLinuxFormatWhenUsingExt4FsWithLazyItableSupport(t *testing.T) {
 }
 
 func TestLinuxFormatWhenUsingExt4FsWithoutLazyItableSupport(t *testing.T) {
-	fakeRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
+	fakeRunner := &fakesys.FakeCmdRunner{}
+	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.CommandResults = map[string][]string{
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext2" yyyy zzzz`, ""},
 	}
@@ -64,8 +64,8 @@ func TestLinuxFormatWhenUsingExt4FsWithoutLazyItableSupport(t *testing.T) {
 }
 
 func TestLinuxFormatWhenUsingExt4FsAndPartitionIsExt4(t *testing.T) {
-	fakeRunner := &testsys.FakeCmdRunner{}
-	fakeFs := &testsys.FakeFileSystem{}
+	fakeRunner := &fakesys.FakeCmdRunner{}
+	fakeFs := &fakesys.FakeFileSystem{}
 
 	fakeRunner.CommandResults = map[string][]string{
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext4" yyyy zzzz`, ""},

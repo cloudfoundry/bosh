@@ -2,10 +2,10 @@ package platform
 
 import (
 	boshdisk "bosh/platform/disk"
-	testdisk "bosh/platform/disk/testhelpers"
-	teststats "bosh/platform/stats/testhelpers"
+	fakedisk "bosh/platform/disk/fakes"
+	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -181,7 +181,7 @@ func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
 	assert.Equal(t, len(fakeCmdRunner.RunCommands), 0)
 }
 
-func testUbuntuSetupDhcp(t *testing.T, fakeStats *teststats.FakeStatsCollector, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner, fakeDiskManager testdisk.FakeDiskManager) {
+func testUbuntuSetupDhcp(t *testing.T, fakeStats *fakestats.FakeStatsCollector, fakeFs *fakesys.FakeFileSystem, fakeCmdRunner *fakesys.FakeCmdRunner, fakeDiskManager fakedisk.FakeDiskManager) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.NetworkSettings{
 			Default: []string{"dns"},
@@ -378,10 +378,10 @@ func TestStartMonit(t *testing.T) {
 	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
 }
 
-func getUbuntuDependencies() (collector *teststats.FakeStatsCollector, fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner, fakeDiskManager testdisk.FakeDiskManager) {
-	collector = &teststats.FakeStatsCollector{}
-	fs = &testsys.FakeFileSystem{}
-	cmdRunner = &testsys.FakeCmdRunner{}
-	fakeDiskManager = testdisk.NewFakeDiskManager(cmdRunner)
+func getUbuntuDependencies() (collector *fakestats.FakeStatsCollector, fs *fakesys.FakeFileSystem, cmdRunner *fakesys.FakeCmdRunner, fakeDiskManager fakedisk.FakeDiskManager) {
+	collector = &fakestats.FakeStatsCollector{}
+	fs = &fakesys.FakeFileSystem{}
+	cmdRunner = &fakesys.FakeCmdRunner{}
+	fakeDiskManager = fakedisk.NewFakeDiskManager(cmdRunner)
 	return
 }

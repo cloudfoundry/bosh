@@ -1,10 +1,10 @@
 package bootstrap
 
 import (
-	testinf "bosh/infrastructure/testhelpers"
-	testplatform "bosh/platform/testhelpers"
+	fakeinf "bosh/infrastructure/fakes"
+	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -163,9 +163,9 @@ func TestRunSkipsSetsUpMonitUserIfFileDoesExist(t *testing.T) {
 	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
 }
 
-func getBootstrapDependencies() (fs *testsys.FakeFileSystem, inf *testinf.FakeInfrastructure, platform *testplatform.FakePlatform) {
-	fs = &testsys.FakeFileSystem{}
-	inf = &testinf.FakeInfrastructure{}
-	platform = testplatform.NewFakePlatform()
+func getBootstrapDependencies() (fs *fakesys.FakeFileSystem, inf *fakeinf.FakeInfrastructure, platform *fakeplatform.FakePlatform) {
+	fs = &fakesys.FakeFileSystem{}
+	inf = &fakeinf.FakeInfrastructure{}
+	platform = fakeplatform.NewFakePlatform()
 	return
 }

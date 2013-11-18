@@ -1,16 +1,16 @@
 package action
 
 import (
-	testtask "bosh/agent/task/testhelpers"
-	testplatform "bosh/platform/testhelpers"
+	faketask "bosh/agent/task/fakes"
+	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 )
 
-func getFakeFactoryDependencies() (settings boshsettings.Settings, fs *testsys.FakeFileSystem, platform *testplatform.FakePlatform, taskService *testtask.FakeService) {
+func getFakeFactoryDependencies() (settings boshsettings.Settings, fs *fakesys.FakeFileSystem, platform *fakeplatform.FakePlatform, taskService *faketask.FakeService) {
 	settings = boshsettings.Settings{}
-	fs = &testsys.FakeFileSystem{}
-	platform = testplatform.NewFakePlatform()
-	taskService = &testtask.FakeService{}
+	fs = &fakesys.FakeFileSystem{}
+	platform = fakeplatform.NewFakePlatform()
+	taskService = &faketask.FakeService{}
 	return
 }

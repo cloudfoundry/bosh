@@ -1,14 +1,14 @@
 package agent
 
 import (
-	testaction "bosh/agent/action/testhelpers"
+	fakeaction "bosh/agent/action/fakes"
 	boshtask "bosh/agent/task"
-	testtask "bosh/agent/task/testhelpers"
+	faketask "bosh/agent/task/fakes"
 	boshmbus "bosh/mbus"
-	testmbus "bosh/mbus/testhelpers"
+	fakembus "bosh/mbus/fakes"
+	fakeplatform "bosh/platform/fakes"
 	boshstats "bosh/platform/stats"
-	teststats "bosh/platform/stats/testhelpers"
-	testplatform "bosh/platform/testhelpers"
+	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
@@ -57,7 +57,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	// when action is successful
-	actionFactory.CreateAction = &testaction.TestAction{
+	actionFactory.CreateAction = &fakeaction.TestAction{
 		RunValue: "some value",
 	}
 
@@ -73,7 +73,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	assert.Equal(t, boshmbus.NewValueResponse("some value"), resp)
 
 	// when action returns an error
-	actionFactory.CreateAction = &testaction.TestAction{
+	actionFactory.CreateAction = &fakeaction.TestAction{
 		RunErr: errors.New("some error"),
 	}
 
@@ -94,7 +94,7 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
-	actionFactory.CreateAction = new(testaction.TestAction)
+	actionFactory.CreateAction = new(fakeaction.TestAction)
 
 	agent := New(settings, handler, platform, taskService, actionFactory)
 
@@ -121,7 +121,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		Persistent: map[string]string{"vol-xxxx": "/dev/sdf"},
 	}
 
-	platform.FakeStatsCollector = &teststats.FakeStatsCollector{
+	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
 		CpuLoad:   boshstats.CpuLoad{One: 1.0, Five: 5.0, Fifteen: 15.0},
 		CpuStats:  boshstats.CpuStats{User: 55, Sys: 44, Wait: 11, Total: 1000},
 		MemStats:  boshstats.MemStats{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
@@ -183,7 +183,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		System: "/dev/sda1",
 	}
 
-	platform.FakeStatsCollector = &teststats.FakeStatsCollector{
+	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
 		DiskStats: map[string]boshstats.DiskStats{
 			"/":               boshstats.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
 			"/var/vcap/data":  boshstats.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
@@ -207,17 +207,17 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 
 func getAgentDependencies() (
 	settings boshsettings.Settings,
-	handler *testmbus.FakeHandler,
-	platform *testplatform.FakePlatform,
-	taskService *testtask.FakeService,
-	actionFactory *testaction.FakeFactory) {
+	handler *fakembus.FakeHandler,
+	platform *fakeplatform.FakePlatform,
+	taskService *faketask.FakeService,
+	actionFactory *fakeaction.FakeFactory) {
 
 	settings = boshsettings.Settings{}
-	handler = &testmbus.FakeHandler{}
-	platform = &testplatform.FakePlatform{
-		FakeStatsCollector: &teststats.FakeStatsCollector{},
+	handler = &fakembus.FakeHandler{}
+	platform = &fakeplatform.FakePlatform{
+		FakeStatsCollector: &fakestats.FakeStatsCollector{},
 	}
-	taskService = &testtask.FakeService{}
-	actionFactory = &testaction.FakeFactory{}
+	taskService = &faketask.FakeService{}
+	actionFactory = &fakeaction.FakeFactory{}
 	return
 }

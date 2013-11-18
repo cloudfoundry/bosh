@@ -1,13 +1,13 @@
-package testhelpers
+package fakes
 
 import (
 	boshstats "bosh/platform/stats"
-	teststats "bosh/platform/stats/testhelpers"
+	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
 )
 
 type FakePlatform struct {
-	FakeStatsCollector                   *teststats.FakeStatsCollector
+	FakeStatsCollector                   *fakestats.FakeStatsCollector
 	SetupRuntimeConfigurationWasInvoked  bool
 	CreateUserUsername                   string
 	CreateUserPassword                   string
@@ -26,7 +26,7 @@ type FakePlatform struct {
 
 func NewFakePlatform() (platform *FakePlatform) {
 	platform = new(FakePlatform)
-	platform.FakeStatsCollector = &teststats.FakeStatsCollector{}
+	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)

@@ -1,4 +1,4 @@
-package testhelpers
+package fakes
 
 import boshaction "bosh/agent/action"
 

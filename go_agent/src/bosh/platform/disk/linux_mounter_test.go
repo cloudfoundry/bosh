@@ -1,7 +1,7 @@
 package disk
 
 import (
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -97,8 +97,8 @@ const SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE = `Filename				Type		Size	Used	Prior
 /dev/swap2                              partition	78180316	0	-1
 `
 
-func getLinuxMounterDependencies() (runner *testsys.FakeCmdRunner, fs *testsys.FakeFileSystem) {
-	runner = &testsys.FakeCmdRunner{}
-	fs = &testsys.FakeFileSystem{}
+func getLinuxMounterDependencies() (runner *fakesys.FakeCmdRunner, fs *fakesys.FakeFileSystem) {
+	runner = &fakesys.FakeCmdRunner{}
+	fs = &fakesys.FakeFileSystem{}
 	return
 }
