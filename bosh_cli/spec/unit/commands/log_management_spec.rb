@@ -134,22 +134,26 @@ describe Bosh::Cli::Command::LogManagement do
           end
 
           it 'downloads the file and moves it to a timestamped file' do
-            time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+            Timecop.freeze do
+              time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
 
-            director.stub(fetch_logs: 'resource-id')
-            director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-            FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.#{index}.#{time}.tgz")
-            command.fetch_logs(job, index)
+              director.stub(fetch_logs: 'resource-id')
+              director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
+              FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.#{index}.#{time}.tgz")
+              command.fetch_logs(job, index)
+            end
           end
 
           it 'downloads the file and moves it to a timestamped file to a different dir' do
-            command.options[:dir] = '/woah-now'
-            time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+            Timecop.freeze do
+              command.options[:dir] = '/woah-now'
+              time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
 
-            director.stub(fetch_logs: 'resource-id')
-            director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-            FileUtils.should_receive(:mv).with('/wonderful/path', "/woah-now/#{job}.#{index}.#{time}.tgz")
-            command.fetch_logs(job, index)
+              director.stub(fetch_logs: 'resource-id')
+              director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
+              FileUtils.should_receive(:mv).with('/wonderful/path', "/woah-now/#{job}.#{index}.#{time}.tgz")
+              command.fetch_logs(job, index)
+            end
           end
 
           it 'tells the user if the logs could not be downloaded' do
@@ -173,12 +177,13 @@ describe Bosh::Cli::Command::LogManagement do
             end
 
             it 'does all the same things' do
-              time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
-
-              director.stub(fetch_logs: 'resource-id')
-              director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-              FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.0.#{time}.tgz")
-              command.fetch_logs(job)
+              Timecop.freeze do
+                time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+                director.stub(fetch_logs: 'resource-id')
+                director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
+                FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.0.#{time}.tgz")
+                command.fetch_logs(job)
+              end
             end
           end
 
