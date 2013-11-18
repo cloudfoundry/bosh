@@ -10,9 +10,9 @@ func TestUbuntuGetCpuLoad(t *testing.T) {
 
 	load, err := collector.GetCpuLoad()
 	assert.NoError(t, err)
-	assert.True(t, load.One > 0)
-	assert.True(t, load.Five > 0)
-	assert.True(t, load.Fifteen > 0)
+	assert.True(t, load.One >= 0)
+	assert.True(t, load.Five >= 0)
+	assert.True(t, load.Fifteen >= 0)
 }
 
 func TestUbuntuGetCpuStats(t *testing.T) {
