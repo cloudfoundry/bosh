@@ -28,8 +28,11 @@ Vagrant.configure('2') do |config|
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
-    sudo mkdir -p /mnt/stemcells
-    sudo chown -R ubuntu /mnt/stemcells
+    mkdir -p /mnt/stemcells
+    chown -R ubuntu /mnt/stemcells
+    mkdir -p /bosh/tmp
+    git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
+    chown -R ubuntu:ubuntu /bosh
     BASH
   end
 
@@ -46,5 +49,5 @@ Vagrant.configure('2') do |config|
     }
   end
 
-  config.vm.synced_folder '../', '/bosh'
+  config.vm.synced_folder '../.git', '/bosh/.git'
 end
