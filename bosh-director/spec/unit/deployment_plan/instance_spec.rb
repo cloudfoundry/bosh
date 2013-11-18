@@ -1,6 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Instance do
 
@@ -113,23 +111,23 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
   end
 
-  describe "binding unallocated VM" do
+  describe 'binding unallocated VM' do
     before(:each) do
-      @deployment = make_deployment("mycloud")
+      @deployment = make_deployment('mycloud')
       @plan = double(BD::DeploymentPlan, :model => @deployment)
       @job = double(BD::DeploymentPlan::Job, :deployment => @plan)
-      @job.stub(:name).and_return("dea")
-      @job.stub(:instance_state).with(2).and_return("started")
+      @job.stub(:name).and_return('dea')
+      @job.stub(:instance_state).with(2).and_return('started')
       @instance = make(@job, 2)
     end
 
-    it "binds a VM from job resource pool (real VM exists)" do
-      net = double(BD::DeploymentPlan::Network, :name => "net_a")
+    it 'binds a VM from job resource pool (real VM exists)' do
+      net = double(BD::DeploymentPlan::Network, :name => 'net_a')
       rp = double(BD::DeploymentPlan::ResourcePool, :network => net)
       @job.stub(:resource_pool).and_return(rp)
 
-      old_ip = NetAddr::CIDR.create("10.0.0.5").to_i
-      idle_vm_ip = NetAddr::CIDR.create("10.0.0.3").to_i
+      old_ip = NetAddr::CIDR.create('10.0.0.5').to_i
+      idle_vm_ip = NetAddr::CIDR.create('10.0.0.3').to_i
 
       old_reservation = BD::NetworkReservation.new_dynamic(old_ip)
       idle_vm_reservation = BD::NetworkReservation.new_dynamic(idle_vm_ip)
@@ -140,7 +138,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
 
       rp.should_receive(:allocate_vm).and_return(idle_vm)
 
-      @instance.add_network_reservation("net_a", old_reservation)
+      @instance.add_network_reservation('net_a', old_reservation)
       @instance.bind_unallocated_vm
 
       @instance.model.should_not be_nil
@@ -150,12 +148,12 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
 
     it "binds a VM from job resource pool (real VM doesn't exist)" do
-      net = double(BD::DeploymentPlan::Network, :name => "net_a")
+      net = double(BD::DeploymentPlan::Network, :name => 'net_a')
       rp = double(BD::DeploymentPlan::ResourcePool, :network => net)
       @job.stub(:resource_pool).and_return(rp)
 
-      old_ip = NetAddr::CIDR.create("10.0.0.5").to_i
-      idle_vm_ip = NetAddr::CIDR.create("10.0.0.3").to_i
+      old_ip = NetAddr::CIDR.create('10.0.0.5').to_i
+      idle_vm_ip = NetAddr::CIDR.create('10.0.0.3').to_i
 
       old_reservation = BD::NetworkReservation.new_dynamic(old_ip)
       idle_vm_reservation = BD::NetworkReservation.new_dynamic(idle_vm_ip)
@@ -167,7 +165,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
       rp.should_receive(:allocate_vm).and_return(idle_vm)
       net.should_receive(:release).with(idle_vm_reservation)
 
-      @instance.add_network_reservation("net_a", old_reservation)
+      @instance.add_network_reservation('net_a', old_reservation)
       @instance.bind_unallocated_vm
 
       @instance.model.should_not be_nil
@@ -177,16 +175,16 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
   end
 
-  describe "syncing state" do
+  describe 'syncing state' do
     before(:each) do
-      @deployment = make_deployment("mycloud")
+      @deployment = make_deployment('mycloud')
       @plan = double(BD::DeploymentPlan, :model => @deployment)
       @job = double(BD::DeploymentPlan::Job, :deployment => @plan)
-      @job.stub(:name).and_return("dea")
+      @job.stub(:name).and_return('dea')
     end
 
-    it "deployment plan -> DB" do
-      @job.stub(:instance_state).with(3).and_return("stopped")
+    it 'deployment plan -> DB' do
+      @job.stub(:instance_state).with(3).and_return('stopped')
       instance = make(@job, 3)
 
       expect {
@@ -194,25 +192,25 @@ describe Bosh::Director::DeploymentPlan::Instance do
       }.to raise_error(BD::DirectorError, /model is not bound/)
 
       instance.bind_model
-      instance.model.state.should == "started"
+      instance.model.state.should == 'started'
       instance.sync_state_with_db
-      instance.state.should == "stopped"
-      instance.model.state.should == "stopped"
+      instance.state.should == 'stopped'
+      instance.model.state.should == 'stopped'
     end
 
-    it "DB -> deployment plan" do
+    it 'DB -> deployment plan' do
       @job.stub(:instance_state).with(3).and_return(nil)
       instance = make(@job, 3)
 
       instance.bind_model
-      instance.model.update(:state => "stopped")
+      instance.model.update(:state => 'stopped')
 
       instance.sync_state_with_db
-      instance.model.state.should == "stopped"
-      instance.state.should == "stopped"
+      instance.model.state.should == 'stopped'
+      instance.state.should == 'stopped'
     end
 
-    it "needs to find state in order to sync it" do
+    it 'needs to find state in order to sync it' do
       @job.stub(:instance_state).with(3).and_return(nil)
       instance = make(@job, 3)
 
@@ -225,37 +223,37 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
   end
 
-  describe "updating deployment" do
-    it "needs to smartly compare specs before deciding to update a job" do
-      @deployment = make_deployment("mycloud")
+  describe 'updating deployment' do
+    it 'needs to smartly compare specs before deciding to update a job' do
+      @deployment = make_deployment('mycloud')
       @plan = double(BD::DeploymentPlan, :model => @deployment)
       @job = BD::DeploymentPlan::Job.new(@plan, {})
 
       @job.release = double(BD::DeploymentPlan::ReleaseVersion)
-      @job.release.should_receive(:name).twice.and_return("hbase-release")
+      @job.release.should_receive(:name).twice.and_return('hbase-release')
 
       mock_template = double(BD::DeploymentPlan::Template)
       mock_template.should_receive(:name).exactly(4).times.and_return(
-        "hbase_slave")
-      mock_template.should_receive(:version).exactly(4).times.and_return("2")
+        'hbase_slave')
+      mock_template.should_receive(:version).exactly(4).times.and_return('2')
       mock_template.should_receive(:sha1).exactly(4).times.and_return(
-        "24aeaf29768a100d500615dc02ae6126e019f99f")
+        '24aeaf29768a100d500615dc02ae6126e019f99f')
       mock_template.should_receive(:blobstore_id).exactly(4).times.and_return(
-        "4ec237cb-5f07-4658-aabe-787c82f39c76")
+        '4ec237cb-5f07-4658-aabe-787c82f39c76')
       mock_template.should_receive(:logs).exactly(4).times
 
       @job.templates = [mock_template]
-      @job.should_receive(:instance_state).and_return("some_state")
+      @job.should_receive(:instance_state).and_return('some_state')
       instance = make(@job, 0)
-      @job.stub(:name).and_return("dea")
+      @job.stub(:name).and_return('dea')
       instance.current_state = {
-        "job" => {
-          "name" => "hbase_slave",
-          "release" => "hbase-release",
-          "template" => "hbase_slave",
-          "version" => "0.9-dev",
-          "sha1" => "a8ab636b7c340f98891178096a44c09487194f03",
-          "blobstore_id" => "e2e4e58e-a40e-43ec-bac5-fc50457d5563"
+        'job' => {
+          'name' => 'hbase_slave',
+          'release' => 'hbase-release',
+          'template' => 'hbase_slave',
+          'version' => '0.9-dev',
+          'sha1' => 'a8ab636b7c340f98891178096a44c09487194f03',
+          'blobstore_id' => 'e2e4e58e-a40e-43ec-bac5-fc50457d5563'
         }
       }
       instance.job_changed?.should == true
@@ -263,30 +261,30 @@ describe Bosh::Director::DeploymentPlan::Instance do
       (@job.spec == instance.current_state).should == false
     end
 
-    describe "changes" do
-      it "detects resource pool change when instance VM env changes" do
-        deployment = make_deployment("mycloud")
+    describe 'changes' do
+      it 'detects resource pool change when instance VM env changes' do
+        deployment = make_deployment('mycloud')
 
         resource_pool = double(BD::DeploymentPlan::ResourcePool)
-        resource_pool.stub(:spec).and_return("foo" => "bar")
-        resource_pool.stub(:env).and_return("key" => "value")
+        resource_pool.stub(:spec).and_return('foo' => 'bar')
+        resource_pool.stub(:env).and_return('key' => 'value')
 
         plan = double(BD::DeploymentPlan, :model => deployment)
         plan.stub(:recreate).and_return(false)
 
         job = BD::DeploymentPlan::Job.new(plan, {})
-        job.stub(:instance_state).with(0).and_return("started")
+        job.stub(:instance_state).with(0).and_return('started')
         job.stub(:resource_pool).and_return(resource_pool)
 
         instance_model = BD::Models::Instance.make
-        instance_model.vm.update(:env => {"key" => "value"})
+        instance_model.vm.update(:env => { 'key' => 'value' })
 
         instance = make(job, 0)
-        instance.current_state = {"resource_pool" => {"foo" => "bar"}}
+        instance.current_state = { 'resource_pool' => { 'foo' => 'bar' }}
         instance.use_model(instance_model)
 
         instance.resource_pool_changed?.should be_false
-        instance_model.vm.update(:env => {"key" => "value2"})
+        instance_model.vm.update(:env => { 'key' => 'value2' })
 
         instance.resource_pool_changed?.should be_true
       end
