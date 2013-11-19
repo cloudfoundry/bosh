@@ -1,8 +1,9 @@
 namespace :cd do
   desc 'Redeploy full BOSH'
   task :deploy, [
-    :infrastructure_name,
     :build_number,
+    :infrastructure_name,
+    :operating_system_name,
     :micro_target,
     :bosh_target,
     :environment_name,

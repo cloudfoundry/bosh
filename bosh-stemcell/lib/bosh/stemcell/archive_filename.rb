@@ -12,10 +12,14 @@ module Bosh::Stemcell
     # rubocop:enable ParameterLists
 
     def to_s
-      stemcell_filename_parts = [name, version, infrastructure.name, infrastructure.hypervisor, operating_system.name]
-
+      stemcell_filename_parts = [
+        name,
+        version,
+        infrastructure.name,
+        infrastructure.hypervisor,
+        operating_system.name,
+      ]
       stemcell_filename_parts << "#{agent_name}_agent" unless agent_name == 'ruby'
-
       "#{stemcell_filename_parts.join('-')}.tgz"
     end
 

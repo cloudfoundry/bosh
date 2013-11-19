@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/dev/build'
 require 'bosh/dev/automated_deployer'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployment_account'
@@ -13,27 +14,43 @@ module Bosh::Dev
           .with('fake-infrastructure-name')
           .and_return(builder)
 
+        infrastructure = instance_double('Bosh::Stemcell::Infrastructure')
+        Bosh::Stemcell::Infrastructure
+          .should_receive(:for)
+          .with('fake-infrastructure-name')
+          .and_return(infrastructure)
+
+        operating_system = instance_double('Bosh::Stemcell::OperatingSystem')
+        Bosh::Stemcell::OperatingSystem
+          .should_receive(:for)
+          .with('fake-operating-system-name')
+          .and_return(operating_system)
+
         deployer = instance_double('Bosh::Dev::AutomatedDeployer')
         builder.should_receive(:build).with(
+          'fake-build-number',
+          infrastructure,
+          operating_system,
           'fake-micro-target',
           'fake-bosh-target',
-          'fake-build-number',
           'fake-environment-name',
           'fake-deployment-name',
         ).and_return(deployer)
 
         rake_args = Struct.new(
+          :build_number,
           :infrastructure_name,
+          :operating_system_name,
           :micro_target,
           :bosh_target,
-          :build_number,
           :environment_name,
           :deployment_name,
         ).new(
+          'fake-build-number',
           'fake-infrastructure-name',
+          'fake-operating-system-name',
           'fake-micro-target',
           'fake-bosh-target',
-          'fake-build-number',
           'fake-environment-name',
           'fake-deployment-name',
         )
@@ -61,17 +78,33 @@ module Bosh::Dev
     describe '#deploy' do
       subject(:deployer) do
         described_class.new(
+          'fake-build-number',
+          infrastructure,
+          operating_system,
           micro_target,
           bosh_target,
-          build_number,
           deployment_account,
           artifacts_downloader,
         )
       end
 
+      let(:infrastructure) do
+        instance_double(
+          'Bosh::Stemcell::Infrastructure',
+          name: 'fake-infrastructure-name',
+          hypervisor: 'fake-infrastructure-hypervisor',
+        )
+      end
+
+      let(:operating_system) do
+        instance_double(
+          'Bosh::Stemcell::OperatingSystem',
+          name: 'fake-os-name',
+        )
+      end
+
       let(:micro_target) { 'https://micro.target.example.com:25555' }
       let(:bosh_target) { 'https://bosh.target.example.com:25555' }
-      let(:build_number) { '123' }
 
       let(:deployment_account) do
         instance_double(
@@ -83,8 +116,6 @@ module Bosh::Dev
       end
 
       let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
-      let(:stemcell_path) { '/tmp/stemcell.tgz' }
-      let(:release_path) { '/tmp/release.tgz' }
 
       before do
         Bosh::Dev::DirectorClient.stub(:new).with(
@@ -110,13 +141,18 @@ module Bosh::Dev
         instance_double('Bosh::Dev::DirectorClient', upload_stemcell: nil, upload_release: nil, deploy: nil)
       end
 
-      before do
-        artifacts_downloader.stub(:download_release).with(build_number).and_return(release_path)
-        artifacts_downloader.stub(:download_stemcell).with(build_number).and_return(stemcell_path)
-      end
-
       it 'prepare deployment account and then follows the normal deploy procedure' do
         expect(deployment_account).to receive(:prepare).with(no_args)
+
+        artifacts_downloader
+          .should_receive(:download_release)
+          .with('fake-build-number')
+          .and_return('/tmp/release.tgz')
+
+        artifacts_downloader
+          .should_receive(:download_stemcell)
+          .with('fake-build-number', infrastructure, operating_system, false, Dir.pwd)
+          .and_return('/tmp/stemcell.tgz')
 
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')
         Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
