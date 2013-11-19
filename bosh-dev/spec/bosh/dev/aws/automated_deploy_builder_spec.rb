@@ -13,12 +13,15 @@ module Bosh::Dev::Aws
 
         deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
         Bosh::Dev::Aws::DeploymentAccount.should_receive(:new).with(
-          'fake-environment',
+          'fake-environment-name',
           deployments_repository,
         ).and_return(deployment_account)
 
         artifacts_downloader = instance_double('Bosh::Dev::ArtifactsDownloader')
-        Bosh::Dev::ArtifactsDownloader.should_receive(:new).with(no_args).and_return(artifacts_downloader)
+        Bosh::Dev::ArtifactsDownloader
+          .should_receive(:new)
+          .with(no_args)
+          .and_return(artifacts_downloader)
 
         automated_deployer = instance_double('Bosh::Dev::AutomatedDeployer')
         Bosh::Dev::AutomatedDeployer.should_receive(:new).with(
@@ -33,7 +36,8 @@ module Bosh::Dev::Aws
           'fake-micro-target',
           'fake-bosh-target',
           'fake-build-number',
-          'fake-environment',
+          'fake-environment-name',
+          'fake-deployment-name',
         )).to eq(automated_deployer)
       end
     end

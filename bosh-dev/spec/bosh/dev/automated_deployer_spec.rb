@@ -5,6 +5,59 @@ require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev
   describe AutomatedDeployer do
+    describe '.for_rake_args' do
+      it 'returns automated deployer builder for rake arguments' do
+        builder = instance_double('Bosh::Dev::Aws::AutomatedDeployBuilder')
+        described_class
+          .should_receive(:builder_for_infrastructure_name)
+          .with('fake-infrastructure-name')
+          .and_return(builder)
+
+        deployer = instance_double('Bosh::Dev::AutomatedDeployer')
+        builder.should_receive(:build).with(
+          'fake-micro-target',
+          'fake-bosh-target',
+          'fake-build-number',
+          'fake-environment-name',
+          'fake-deployment-name',
+        ).and_return(deployer)
+
+        rake_args = Struct.new(
+          :infrastructure_name,
+          :micro_target,
+          :bosh_target,
+          :build_number,
+          :environment_name,
+          :deployment_name,
+        ).new(
+          'fake-infrastructure-name',
+          'fake-micro-target',
+          'fake-bosh-target',
+          'fake-build-number',
+          'fake-environment-name',
+          'fake-deployment-name',
+        )
+
+        expect(described_class.for_rake_args(rake_args)).to eq(deployer)
+      end
+    end
+
+    describe '.builder_for_infrastructure_name' do
+      context 'when infrastructure name is aws' do
+        it 'returns aws builder' do
+          expect(described_class.builder_for_infrastructure_name('aws'))
+            .to be_an_instance_of(Bosh::Dev::Aws::AutomatedDeployBuilder)
+        end
+      end
+
+      context 'when infrastructure name is vsphere' do
+        it 'returns vsphere builder' do
+          expect(described_class.builder_for_infrastructure_name('vsphere'))
+            .to be_an_instance_of(Bosh::Dev::VSphere::AutomatedDeployBuilder)
+        end
+      end
+    end
+
     describe '#deploy' do
       subject(:deployer) do
         described_class.new(

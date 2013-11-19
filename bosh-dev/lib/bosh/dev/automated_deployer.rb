@@ -1,9 +1,28 @@
 require 'bosh/stemcell/archive'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
+require 'bosh/dev/aws/automated_deploy_builder'
+require 'bosh/dev/vsphere/automated_deploy_builder'
 
 module Bosh::Dev
   class AutomatedDeployer
+    def self.for_rake_args(args)
+      builder = builder_for_infrastructure_name(args.infrastructure_name)
+      builder.build(
+        args.micro_target,
+        args.bosh_target,
+        args.build_number,
+        args.environment_name,
+        args.deployment_name,
+      )
+    end
+
+    def self.builder_for_infrastructure_name(name)
+      { 'aws'     => Bosh::Dev::Aws::AutomatedDeployBuilder.new,
+        'vsphere' => Bosh::Dev::VSphere::AutomatedDeployBuilder.new,
+      }[name]
+    end
+
     # rubocop:disable ParameterLists
     def initialize(
       micro_target,

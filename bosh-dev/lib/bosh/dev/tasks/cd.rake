@@ -1,15 +1,15 @@
 namespace :cd do
-  desc 'Automate deploying a built Bosh to '
-  task :deploy, [:build_number, :micro_target, :bosh_target, :environment] do |_, args|
-    require 'bosh/dev/aws/automated_deploy_builder'
-
-    deployer = Bosh::Dev::Aws::AutomatedDeployBuilder.new.build(
-      args.micro_target,
-      args.bosh_target,
-      args.build_number,
-      args.environment,
-    )
-    deployer.migrate
+  desc 'Redeploy full BOSH'
+  task :deploy, [
+    :infrastructure_name,
+    :build_number,
+    :micro_target,
+    :bosh_target,
+    :environment_name,
+    :deployment_name,
+  ] do |_, args|
+    require 'bosh/dev/automated_deployer'
+    deployer = Bosh::Dev::AutomatedDeployer.for_rake_args(args)
     deployer.deploy
   end
 end
