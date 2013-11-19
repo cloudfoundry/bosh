@@ -162,4 +162,12 @@ describe 'Ubuntu Stemcell' do
       it { should contain /^PermitRootLogin no$/ }
     end
   end
+
+  context 'installed by system-aws-network' do
+    describe file('/etc/network/interfaces') do
+      it { should be_file }
+      it { should contain 'auto eth0' }
+      it { should contain 'iface eth0 inet dhcp' }
+    end
+  end
 end
