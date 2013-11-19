@@ -35,11 +35,7 @@ module Bosh::Cli
       download_with_progress = DownloadWithProgress.new(stemcell.size, stemcell.url)
       download_with_progress.perform
 
-      if download_with_progress.sha1?(stemcell.sha1)
-        @ui.say('Download complete'.make_green)
-      else
-        @ui.err("The downloaded file sha1 `#{download_with_progress.sha1}' does not match the expected sha1 `#{stemcell.sha1}'")
-      end
+      @ui.say('Download complete'.make_green)
     end
 
     private

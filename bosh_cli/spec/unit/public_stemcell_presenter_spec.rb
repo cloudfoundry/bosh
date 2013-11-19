@@ -35,7 +35,6 @@ module Bosh::Cli
 
     before do
       DownloadWithProgress.stub(:new).and_return(download_with_progress)
-      PublicStemcell.any_instance.stub(sha1: 'stemcell-sha1')
     end
 
     describe '#list' do
@@ -97,6 +96,12 @@ module Bosh::Cli
         expect(download_with_progress).to have_received(:perform)
       end
 
+      it 'reports success' do
+        public_stemcell_presenter.download('stable.tgz')
+
+        expect(ui).to have_received(:say).with(/Download complete/)
+      end
+
       context 'when the specified stemcell is not in the index' do
         it 'reports an error' do
           expect {
@@ -116,28 +121,6 @@ module Bosh::Cli
           public_stemcell_presenter.download('stable.tgz')
 
           expect(ui).to have_received(:confirmed?).with(/Overwrite existing file/)
-        end
-      end
-
-      context 'when the sha1 of the downloaded stemcell matches the sha1 in the index' do
-        it 'reports success' do
-          public_stemcell_presenter.download('stable.tgz')
-
-          expect(ui).to have_received(:say).with(/Download complete/)
-        end
-      end
-
-      context 'when the sha1 of the downloaded stemcell does not match the sha1 in the index' do
-        before do
-          download_with_progress.stub(sha1?: false)
-        end
-
-        it 'reports an error' do
-          expect {
-            public_stemcell_presenter.download('stable.tgz')
-          }.to raise_error
-
-          expect(ui).to have_received(:err).with(/does not match the expected sha1/)
         end
       end
     end
