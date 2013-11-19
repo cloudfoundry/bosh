@@ -1,42 +1,18 @@
 require 'httpclient'
 require 'rexml/document'
 
+require 'cli/public_stemcell'
+
 module Bosh::Cli
   class PublicStemcells
-    class PublicStemcell
-      attr_reader :size
-
-      def initialize(key, size)
-        @key = key
-        @size = size
-      end
-
-      def name
-        File.basename(@key)
-      end
-
-      def version
-        version_digits = @key.gsub(/[^\d]/, '')
-        version_digits.to_i
-      end
-
-      def variety
-        name.gsub(version.to_s, '')
-      end
-
-      def url
-        "#{PublicStemcells::PUBLIC_STEMCELLS_BASE_URL}/#{@key}"
-      end
-    end
-
     PUBLIC_STEMCELLS_BASE_URL = 'https://bosh-jenkins-artifacts.s3.amazonaws.com'
 
     def has_stemcell?(stemcell_filename)
-      all.any? { | stemcell| stemcell.name == stemcell_filename }
+      all.any? { |stemcell| stemcell.name == stemcell_filename }
     end
 
     def find(stemcell_filename)
-      all.detect { | stemcell| stemcell.name == stemcell_filename }
+      all.detect { |stemcell| stemcell.name == stemcell_filename }
     end
 
     def all

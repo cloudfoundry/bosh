@@ -17,7 +17,7 @@ module Bosh::Cli
         public_stemcells.find('bosh-stemcell-1001-aws-xen-ubuntu.tgz')
       end
 
-      it { should be_a(PublicStemcells::PublicStemcell) }
+      it { should be_a(PublicStemcell) }
       its(:name) { should eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
       its(:size) { should eq(384139128) }
     end
@@ -69,16 +69,5 @@ module Bosh::Cli
         expect(list_of_stemcells).not_to include('latest')
       end
     end
-  end
-
-  describe PublicStemcells::PublicStemcell do
-    subject(:public_stemcell) do
-      PublicStemcells::PublicStemcell.new('bosh-stemcell/aws/bosh-stemcell-1341-aws-xen-ubuntu.tgz', 383487957)
-    end
-
-    its(:name) { should eq('bosh-stemcell-1341-aws-xen-ubuntu.tgz') }
-    its(:version) { should eq(1341) }
-    its(:url) { should eq('https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-stemcell/aws/bosh-stemcell-1341-aws-xen-ubuntu.tgz')}
-    its(:size) { should eq(383487957)}
   end
 end

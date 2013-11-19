@@ -15,11 +15,11 @@ module Bosh::Cli
     end
 
     let(:recent_stemcell) do
-      PublicStemcells::PublicStemcell.new('foobar-456.tgz', 1111111)
+      PublicStemcell.new('foobar-456.tgz', 1111111)
     end
 
     let(:older_stemcell) do
-      PublicStemcells::PublicStemcell.new('foobar-123.tgz', 2222222)
+      PublicStemcell.new('foobar-123.tgz', 2222222)
     end
 
     let(:public_stemcell_index) do
