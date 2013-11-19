@@ -29,7 +29,7 @@ module Bosh::Cli
     end
 
     def recent
-      stemcell_varietes = all.group_by(&:variety).values
+      stemcell_varietes = all.reject(&:legacy?).group_by(&:variety).values
       stemcell_varietes.map { |stemcells| stemcells.sort_by(&:version).last }
     end
   end

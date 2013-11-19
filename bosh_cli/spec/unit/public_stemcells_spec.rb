@@ -28,7 +28,7 @@ module Bosh::Cli
       end
 
       it 'returns all promoted bosh-stemcells' do
-        expect(list_of_stemcells).to have(557).stemcells
+        expect(list_of_stemcells).to have(573).stemcells
       end
 
       it 'returns the most recent aws stemcells' do
@@ -45,6 +45,10 @@ module Bosh::Cli
         expect(list_of_stemcells).to include('bosh-stemcell-1341-vsphere-esxi-centos.tgz')
       end
 
+      it 'returns legacy stemcells' do
+        expect(list_of_stemcells).to include('bosh-stemcell-aws-0.6.4.tgz')
+      end
+
       it 'excludes stemcells with "latest" as their version because these keep changing' do
         expect(list_of_stemcells).not_to include('latest')
       end
@@ -55,13 +59,13 @@ module Bosh::Cli
         public_stemcells.recent.map(&:name)
       end
 
-      it 'returns the most recent of each variety of stemcell' do
+      it 'returns the most recent of each variety of stemcell, except legacy stemcells' do
         expect(list_of_stemcells).to eq %w[
-                                          bosh-stemcell-1341-aws-xen-ubuntu.tgz
-                                          light-bosh-stemcell-1341-aws-xen-ubuntu.tgz
-                                          bosh-stemcell-1341-openstack-kvm-ubuntu.tgz
-                                          bosh-stemcell-1341-vsphere-esxi-ubuntu.tgz
-                                          bosh-stemcell-1341-vsphere-esxi-centos.tgz
+                                          bosh-stemcell-1365-aws-xen-ubuntu.tgz
+                                          light-bosh-stemcell-1365-aws-xen-ubuntu.tgz
+                                          bosh-stemcell-1365-openstack-kvm-ubuntu.tgz
+                                          bosh-stemcell-1365-vsphere-esxi-ubuntu.tgz
+                                          bosh-stemcell-1365-vsphere-esxi-centos.tgz
                                         ]
       end
 

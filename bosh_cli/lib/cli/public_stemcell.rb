@@ -23,5 +23,9 @@ module Bosh::Cli
     def url
       "#{PublicStemcells::PUBLIC_STEMCELLS_BASE_URL}/#{@key}"
     end
+
+    def legacy?
+      @key.include?('legacy')
+    end
   end
 end
