@@ -26,14 +26,14 @@ module Bosh::Dev::Aws
           .with(be_an_instance_of(Bosh::Dev::DownloadAdapter), be_an_instance_of(Logger))
           .and_return(artifacts_downloader)
 
-        automated_deployer = instance_double('Bosh::Dev::AutomatedDeployer')
-        Bosh::Dev::AutomatedDeployer.should_receive(:new).with(
+        automated_deploy = instance_double('Bosh::Dev::AutomatedDeploy')
+        Bosh::Dev::AutomatedDeploy.should_receive(:new).with(
           build_target,
           'fake-micro-target',
           'fake-bosh-target',
           deployment_account,
           artifacts_downloader,
-        ).and_return(automated_deployer)
+        ).and_return(automated_deploy)
 
         expect(subject.build(
           build_target,
@@ -41,7 +41,7 @@ module Bosh::Dev::Aws
           'fake-bosh-target',
           'fake-environment-name',
           'fake-deployment-name',
-        )).to eq(automated_deployer)
+        )).to eq(automated_deploy)
       end
     end
   end

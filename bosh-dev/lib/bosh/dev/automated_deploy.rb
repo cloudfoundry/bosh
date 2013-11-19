@@ -6,7 +6,7 @@ require 'bosh/dev/aws/automated_deploy_builder'
 require 'bosh/dev/vsphere/automated_deploy_builder'
 
 module Bosh::Dev
-  class AutomatedDeployer
+  class AutomatedDeploy
     def self.for_rake_args(args)
       build_target = BuildTarget.from_names(
         args.build_number,

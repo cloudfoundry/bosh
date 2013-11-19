@@ -1,7 +1,7 @@
 require 'logger'
 require 'bosh/dev/aws'
 require 'bosh/dev/download_adapter'
-require 'bosh/dev/automated_deployer'
+require 'bosh/dev/automated_deploy'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/deployments_repository'
 require 'bosh/dev/aws/deployment_account'
@@ -17,7 +17,7 @@ module Bosh::Dev::Aws
       download_adapter = Bosh::Dev::DownloadAdapter.new(logger)
       artifacts_downloader = Bosh::Dev::ArtifactsDownloader.new(download_adapter, logger)
 
-      Bosh::Dev::AutomatedDeployer.new(
+      Bosh::Dev::AutomatedDeploy.new(
         build_target,
         micro_target,
         bosh_target,

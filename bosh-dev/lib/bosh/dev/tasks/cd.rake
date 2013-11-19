@@ -9,8 +9,8 @@ namespace :cd do
     :environment_name,
     :deployment_name,
   ] do |_, args|
-    require 'bosh/dev/automated_deployer'
-    deployer = Bosh::Dev::AutomatedDeployer.for_rake_args(args)
+    require 'bosh/dev/automated_deploy'
+    deployer = Bosh::Dev::AutomatedDeploy.for_rake_args(args)
     deployer.deploy
   end
 end

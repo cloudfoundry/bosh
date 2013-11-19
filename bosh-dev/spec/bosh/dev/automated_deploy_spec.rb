@@ -1,10 +1,10 @@
 require 'spec_helper'
-require 'bosh/dev/automated_deployer'
+require 'bosh/dev/automated_deploy'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev
-  describe AutomatedDeployer do
+  describe AutomatedDeploy do
     describe '.for_rake_args' do
       it 'returns automated deployer builder for rake arguments' do
         builder = instance_double('Bosh::Dev::Aws::AutomatedDeployBuilder')
@@ -19,7 +19,7 @@ module Bosh::Dev
           .with('fake-build-number', 'fake-infrastructure-name', 'fake-operating-system-name')
           .and_return(build_target)
 
-        deployer = instance_double('Bosh::Dev::AutomatedDeployer')
+        deployer = instance_double('Bosh::Dev::AutomatedDeploy')
         builder.should_receive(:build).with(
           build_target,
           'fake-micro-target',
