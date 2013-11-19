@@ -7,10 +7,10 @@ module Bosh::Director
     end
 
     def render(instance)
-      job.templates.map { |template|
+      job.templates.map do |template|
         job_template_renderer = job_template_renderers[template.name]
         job_template_renderer.render(job.name, instance)
-      }
+      end
     end
 
     private

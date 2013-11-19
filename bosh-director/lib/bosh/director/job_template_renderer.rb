@@ -20,7 +20,8 @@ module Bosh::Director
       templates.keys.sort.each do |src_name|
         rendered_templates[src_name] = render_erb(job_name, templates[src_name], template_context, instance.index)
       end
-      return RenderedJobTemplate.new(name, monit, rendered_templates)
+
+      RenderedJobTemplate.new(name, monit, rendered_templates)
     end
 
     private
@@ -34,7 +35,7 @@ module Bosh::Director
     rescue Exception => e
       @logger.debug(e.inspect)
       job_desc = "#{job_name}/#{index}"
-      line_index = e.backtrace.index{ |l| l.include?(template.filename) }
+      line_index = e.backtrace.index { |l| l.include?(template.filename) }
       line = line_index ? e.backtrace[line_index] : '(unknown):(unknown)'
       template_name, line = line.split(':')
 
@@ -42,6 +43,7 @@ module Bosh::Director
         "for `#{job_desc}' (line #{line}: #{e})"
 
       @logger.debug("#{message}\n#{e.backtrace.join("\n")}")
+
       raise JobTemplateBindingFailed, "#{message}"
     end
   end
