@@ -33,6 +33,13 @@ module Bosh::Cli
       it 'excludes stemcells with "latest" as their version because these keep changing' do
         expect(list_of_stemcells).not_to include('latest')
       end
+
+      it 'brings over the size from the stemcell list' do
+        some_public_stemcell = public_stemcells.all.first
+
+        expect(some_public_stemcell.name).to eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz')
+        expect(some_public_stemcell.size).to eq(384139128)
+      end
     end
 
     describe '#recent' do
@@ -58,11 +65,12 @@ module Bosh::Cli
 
   describe PublicStemcells::PublicStemcell do
     subject(:public_stemcell) do
-      PublicStemcells::PublicStemcell.new('bosh-stemcell/aws/bosh-stemcell-1341-aws-xen-ubuntu.tgz')
+      PublicStemcells::PublicStemcell.new('bosh-stemcell/aws/bosh-stemcell-1341-aws-xen-ubuntu.tgz', 383487957)
     end
 
     its(:name) { should eq('bosh-stemcell-1341-aws-xen-ubuntu.tgz') }
     its(:version) { should eq(1341) }
     its(:url) { should eq('https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-stemcell/aws/bosh-stemcell-1341-aws-xen-ubuntu.tgz')}
+    its(:size) { should eq(383487957)}
   end
 end
