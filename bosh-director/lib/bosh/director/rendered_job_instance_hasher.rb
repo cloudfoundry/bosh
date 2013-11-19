@@ -10,8 +10,8 @@ module Bosh::Director
         bound_templates = ''
         bound_templates << rendered_job_template.monit
 
-        rendered_job_template.templates.keys.sort.each do |src_name|
-          bound_templates << rendered_job_template.templates[src_name]
+        rendered_job_template.templates.sort { |x, y| x.src_name <=> y.src_name }.each do |template_file|
+          bound_templates << template_file.contents
           instance_digest << bound_templates
         end
       end

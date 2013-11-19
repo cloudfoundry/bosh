@@ -1,6 +1,7 @@
 require 'bosh/director/rendered_job_template'
 
 module Bosh::Director
+  RenderedFileTemplate = Struct.new(:src_name, :dest_name, :contents)
   class JobTemplateRenderer
 
     attr_reader :monit_template, :templates
@@ -16,9 +17,10 @@ module Bosh::Director
       template_context = Bosh::Common::TemplateEvaluationContext.new(instance.spec)
 
       monit = render_erb(job_name, monit_template, template_context, instance.index)
-      rendered_templates = {}
-      templates.keys.sort.each do |src_name|
-        rendered_templates[src_name] = render_erb(job_name, templates[src_name], template_context, instance.index)
+
+      rendered_templates = templates.map do |template_file|
+        file_contents = render_erb(job_name, template_file.erb_file, template_context, instance.index)
+        RenderedFileTemplate.new(template_file.src_name, template_file.dest_name, file_contents)
       end
 
       RenderedJobTemplate.new(name, monit, rendered_templates)

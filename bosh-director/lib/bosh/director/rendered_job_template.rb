@@ -11,8 +11,8 @@ module Bosh::Director
     def template_hash
       template_digest = Digest::SHA1.new
       template_digest << monit
-      templates.keys.sort.each do |src_name|
-        template_digest << templates[src_name]
+      templates.sort { |x, y| x.src_name <=> y.src_name }.each do |template_file|
+        template_digest << template_file.contents
       end
 
       template_digest.hexdigest

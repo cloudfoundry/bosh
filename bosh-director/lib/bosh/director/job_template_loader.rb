@@ -1,6 +1,8 @@
 require 'bosh/director/job_template_renderer'
 
 module Bosh::Director
+  SrcFileTemplate = Struct.new(:src_name, :dest_name, :erb_file)
+
   class JobTemplateLoader
     def process(job_template)
       template_dir = extract_template(job_template)
@@ -9,14 +11,12 @@ module Bosh::Director
       monit_template = erb(File.join(template_dir, 'monit'))
       monit_template.filename = File.join(job_template.name, 'monit')
 
-      templates = {}
+      templates = []
 
-      if manifest['templates']
-        manifest['templates'].each_key do |template_name|
-          template = erb(File.join(template_dir, 'templates', template_name))
-          template.filename = File.join(job_template.name, template_name)
-          templates[template_name] = template
-        end
+      manifest.fetch('templates', {}).each_pair do |src_name, dest_name|
+        erb_file = erb(File.join(template_dir, 'templates', src_name))
+        erb_file.filename = File.join(job_template.name, src_name)
+        templates << SrcFileTemplate.new(src_name, dest_name, erb_file)
       end
 
       JobTemplateRenderer.new(job_template.name, monit_template, templates)

@@ -9,17 +9,23 @@ module Bosh::Director
           RenderedJobTemplate.new(
             'template-name1',
             'monit file contents 1',
-            {
-              'template-file1' => 'template file contents 1',
-            }
+            [
+              instance_double('Bosh::Director::RenderedFileTemplate',
+                              src_name: 'template-file1',
+                              contents: 'template file contents 1')
+            ]
           ),
           RenderedJobTemplate.new(
             'template-name2',
             'monit file contents 2',
-            {
-              'template-file2' => 'template file contents 2',
-              'template-file3' => 'template file contents 3',
-            }
+            [
+              instance_double('Bosh::Director::RenderedFileTemplate',
+                              src_name: 'template-file3',
+                              contents: 'template file contents 3'),
+              instance_double('Bosh::Director::RenderedFileTemplate',
+                              src_name: 'template-file2',
+                              contents: 'template file contents 2'),
+            ]
           ),
         ]
       }
@@ -37,7 +43,7 @@ module Bosh::Director
           instance_double('Bosh::Director:RenderedJobTemplate', name: 'template-name2', template_hash: 'hash2'),
         ]
       }
-      subject(:hasher) { RenderedJobInstanceHasher.new(rendered_templates)}
+      subject(:hasher) { RenderedJobInstanceHasher.new(rendered_templates) }
       it 'returns a hash of job template names to sha1 checksums of the rendered job template files' do
         expect(hasher.template_hashes).to eq('template-name1' => 'hash1', 'template-name2' => 'hash2')
       end

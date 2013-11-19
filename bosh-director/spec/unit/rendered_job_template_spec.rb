@@ -5,10 +5,10 @@ module Bosh::Director
   describe RenderedJobTemplate do
     describe '#template_hash' do
       let(:unordered_templates) do
-        {
-          'foo.erb' => 'rendered foo erb',
-          'bar.erb' => 'rendered bar erb',
-        }
+        [
+          instance_double('Bosh::Director::RenderedFileTemplate', src_name: 'foo.erb', contents: 'rendered foo erb'),
+          instance_double('Bosh::Director::RenderedFileTemplate', src_name: 'bar.erb', contents: 'rendered bar erb'),
+        ]
       end
       subject(:template) { described_class.new('template name', 'monit file', unordered_templates) }
 
