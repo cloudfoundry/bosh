@@ -1,28 +1,18 @@
 require 'bosh/stemcell/archive'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
-require 'bosh/dev/artifacts_downloader'
-require 'bosh/dev/deployments_repository'
-require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev
   class AutomatedDeployer
-    def self.for_environment(micro_target, bosh_target, build_number, environment)
-      deployments_repository = DeploymentsRepository.new(ENV, path_root: '/tmp')
-      deployment_account = Aws::DeploymentAccount.new(environment, deployments_repository)
-      new(
-        micro_target,
-        bosh_target,
-        build_number,
-        deployment_account,
-        ArtifactsDownloader.new,
-        deployments_repository
-      )
-    end
-
     # rubocop:disable ParameterLists
-    def initialize(micro_target, bosh_target, build_number, deployment_account, artifacts_downloader,
-      deployments_repository)
+    def initialize(
+      micro_target,
+      bosh_target,
+      build_number,
+      deployment_account,
+      artifacts_downloader,
+      deployments_repository
+    )
       @micro_target = micro_target
       @bosh_target = bosh_target
       @build_number = build_number
@@ -30,6 +20,7 @@ module Bosh::Dev
       @artifacts_downloader = artifacts_downloader
       @deployments_repository = deployments_repository
     end
+    # rubocop:enable ParameterLists
 
     def deploy
       stemcell_path = artifacts_downloader.download_stemcell(build_number)

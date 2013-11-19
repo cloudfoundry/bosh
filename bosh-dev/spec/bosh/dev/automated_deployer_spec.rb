@@ -1,55 +1,14 @@
 require 'spec_helper'
 require 'bosh/dev/automated_deployer'
+require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/deployments_repository'
+require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev
   describe AutomatedDeployer do
-    describe '.for_environment' do
-      it 'builds an automated deployer' do
-        stub_const('ENV', env = double('ENV'))
-
-        downloader = instance_double('Bosh::Dev::ArtifactsDownloader')
-        class_double('Bosh::Dev::ArtifactsDownloader')
-          .as_stubbed_const
-          .should_receive(:new)
-        .and_return(downloader)
-
-        deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
-        class_double('Bosh::Dev::DeploymentsRepository')
-          .as_stubbed_const
-          .should_receive(:new)
-          .with(env, path_root: '/tmp')
-          .and_return(deployments_repository)
-
-        deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
-        class_double('Bosh::Dev::Aws::DeploymentAccount')
-          .as_stubbed_const
-          .should_receive(:new)
-          .with('environment', deployments_repository)
-          .and_return(deployment_account)
-
-        deployer = instance_double('Bosh::Dev::AutomatedDeployer')
-        described_class.should_receive(:new).with(
-          'micro-target',
-          'bosh-target',
-          'build-number',
-          deployment_account,
-          downloader,
-          deployments_repository
-        ).and_return(deployer)
-
-        expect(described_class.for_environment(
-          'micro-target',
-          'bosh-target',
-          'build-number',
-          'environment',
-        )).to eq(deployer)
-      end
-    end
-
     describe '#deploy' do
       subject(:deployer) do
-        AutomatedDeployer.new(
+        described_class.new(
           micro_target,
           bosh_target,
           build_number,
