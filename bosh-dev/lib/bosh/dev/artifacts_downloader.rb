@@ -1,3 +1,4 @@
+require 'logger'
 require 'bosh/dev'
 require 'bosh/dev/download_adapter'
 
