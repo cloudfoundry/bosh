@@ -32,7 +32,7 @@ module Bosh::Cli
       end
 
       stemcell = @public_stemcell_index.find(stemcell_name)
-      download_with_progress = DownloadWithProgress.new(stemcell.size, stemcell.url)
+      download_with_progress = DownloadWithProgress.new(stemcell.url, stemcell.size)
       download_with_progress.perform
 
       @ui.say('Download complete'.make_green)

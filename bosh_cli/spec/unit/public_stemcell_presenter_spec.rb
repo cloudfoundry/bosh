@@ -92,7 +92,7 @@ module Bosh::Cli
       it 'downloads a stemcell from the public stemcell index, reporting progress along the way' do
         public_stemcell_presenter.download('stable.tgz')
 
-        expect(DownloadWithProgress).to have_received(:new).with(123, 'http://example.com/stable.tgz')
+        expect(DownloadWithProgress).to have_received(:new).with('http://example.com/stable.tgz', 123)
         expect(download_with_progress).to have_received(:perform)
       end
 
