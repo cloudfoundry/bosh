@@ -39,7 +39,7 @@ module Bosh::Stemcell
         when OperatingSystem::Centos then
           [:base_centos, :base_yum] + hacked_centos_common
         when OperatingSystem::Ubuntu then
-          [:base_debootstrap, :base_apt] + common_stages
+          [:base_debootstrap, :base_apt, :bosh_dpkg_list] + common_stages
       end
     end
 
@@ -75,7 +75,6 @@ module Bosh::Stemcell
         :system_parameters,
         :bosh_clean,
         :bosh_harden,
-        #:bosh_dpkg_list,
         :image_create,
         :image_install_grub,
         :image_vsphere_vmx,
@@ -111,7 +110,6 @@ module Bosh::Stemcell
         :bosh_clean,
         :bosh_harden,
         :bosh_harden_ssh,
-        :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
         :image_install_grub,
@@ -133,7 +131,6 @@ module Bosh::Stemcell
         :bosh_clean,
         :bosh_harden,
         :bosh_harden_ssh,
-        :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
         :image_install_grub,
@@ -152,7 +149,6 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
-        :bosh_dpkg_list,
         # Image/bootloader
         :image_create,
         :image_install_grub,
