@@ -146,7 +146,7 @@ module Bosh::Dev
 
         artifacts_downloader
           .should_receive(:download_release)
-          .with('fake-build-number')
+          .with('fake-build-number', Dir.pwd)
           .and_return('/tmp/release.tgz')
 
         artifacts_downloader

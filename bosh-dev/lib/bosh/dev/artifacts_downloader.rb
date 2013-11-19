@@ -6,32 +6,40 @@ module Bosh::Dev
     def initialize(download_adapter, logger)
       @download_adapter = download_adapter
       @logger = logger
-      @stemcell_name = 'bosh-stemcell'
       @bucket_base_url = 'http://s3.amazonaws.com/bosh-jenkins-artifacts'
     end
 
-    def download_release(build_number)
-      remote_path = "http://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-#{build_number}.tgz"
-      @download_adapter.download(remote_path, "bosh-#{build_number}.tgz")
+    def download_release(build_number, output_dir)
+      file_name = "bosh-#{build_number}.tgz"
+
+      remote_uri = [@bucket_base_url, 'release', file_name].join('/')
+
+      local_path = File.join(output_dir, file_name)
+
+      @download_adapter.download(remote_uri, local_path)
     end
 
     def download_stemcell(build_number, infrastructure, operating_system, light, output_dir)
+      stemcell_name = 'bosh-stemcell'
+
       file_name = Bosh::Stemcell::ArchiveFilename.new(
         build_number.to_s,
         infrastructure,
         operating_system,
-        @stemcell_name,
+        stemcell_name,
         light,
       ).to_s
 
       remote_uri = [
         @bucket_base_url,
-        @stemcell_name,
+        stemcell_name,
         infrastructure.name,
         file_name,
       ].join('/')
 
-      @download_adapter.download(remote_uri, File.join(output_dir, file_name))
+      local_path = File.join(output_dir, file_name)
+
+      @download_adapter.download(remote_uri, local_path)
     end
   end
 end

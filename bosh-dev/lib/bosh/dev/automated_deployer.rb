@@ -53,7 +53,7 @@ module Bosh::Dev
       stemcell_archive = Bosh::Stemcell::Archive.new(stemcell_path)
       micro_director_client.upload_stemcell(stemcell_archive)
 
-      release_path = @artifacts_downloader.download_release(@build_number)
+      release_path = @artifacts_downloader.download_release(@build_number, Dir.pwd)
       micro_director_client.upload_release(release_path)
 
       manifest_path = @deployment_account.manifest_path

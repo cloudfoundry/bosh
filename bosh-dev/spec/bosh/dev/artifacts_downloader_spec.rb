@@ -12,11 +12,16 @@ module Bosh::Dev
 
     describe '#download_release' do
       it 'downloads a release and returns path' do
+        expected_remote_path = 'http://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-fake-build-number.tgz'
+        expected_local_path = 'fake-output-dir/bosh-fake-build-number.tgz'
+
         download_adapter
           .should_receive(:download)
-          .with('http://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-123.tgz', 'bosh-123.tgz')
-          .and_return(File.join(Dir.pwd, 'where-it-was-written-to'))
-        expect(artifacts_downloader.download_release('123')).to eq File.join(Dir.pwd, 'where-it-was-written-to')
+          .with(expected_remote_path, expected_local_path)
+          .and_return('returned-path')
+
+        returned_path = artifacts_downloader.download_release('fake-build-number', 'fake-output-dir')
+        expect(returned_path).to eq('returned-path')
       end
     end
 
