@@ -43,6 +43,7 @@ module Bosh::Stemcell
 
     let(:aws_infrastructure_stages) {
       [
+        :system_aws_network,
         :system_aws_clock,
         :system_aws_modules,
         :system_parameters,

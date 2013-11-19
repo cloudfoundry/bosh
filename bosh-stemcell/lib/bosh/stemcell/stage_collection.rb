@@ -103,6 +103,7 @@ module Bosh::Stemcell
     def aws_stages
       [
         # Misc
+        :system_aws_network,
         :system_aws_clock,
         :system_aws_modules,
         :system_parameters,
