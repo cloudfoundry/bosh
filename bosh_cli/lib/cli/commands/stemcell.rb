@@ -102,7 +102,6 @@ module Bosh::Cli
     usage 'public stemcells'
     desc 'Show the list of publicly available stemcells for download.'
     option '--full', 'show the full download url'
-    option '--tags tag1,tag2...', Array, 'filter by tag'
     option '--all', 'show all stemcells'
     def list_public
       public_stemcell_index = PublicStemcellIndex.download(self)

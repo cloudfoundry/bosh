@@ -59,20 +59,6 @@ module Bosh::Cli
         end
       end
 
-      context 'when :tags are specified' do
-        it 'only lists a table of public stemcells matching all specified tags' do
-          public_stemcell_presenter.list(tags: %w(foo))
-
-          expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+
-| Name       |
-+------------+
-| foobar.tgz |
-+------------+
-          TABLE
-        end
-      end
-
       context 'when :all is specified' do
         it 'lists  a table of all public stemcells, even those not tagged "stable"' do
           public_stemcell_presenter.list(all: true)
