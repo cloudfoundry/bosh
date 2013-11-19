@@ -73,12 +73,12 @@ module Bosh::Cli
         instance_double('Bosh::Cli::PublicStemcellPresenter', list: nil)
       end
 
-      let(:public_stemcell_index) do
-        instance_double('Bosh::Cli::PublicStemcellIndex')
+      let(:public_stemcells) do
+        instance_double('Bosh::Cli::PublicStemcells')
       end
 
       before do
-        PublicStemcellIndex.stub(:download).and_return(public_stemcell_index)
+        PublicStemcells.stub(:new).and_return(public_stemcells)
         PublicStemcellPresenter.stub(:new).and_return(public_stemcell_presenter)
       end
 
@@ -90,11 +90,10 @@ module Bosh::Cli
         expect(public_stemcell_presenter).to have_received(:list).with(command.options)
       end
 
-      it 'properly wires a stemcell index with a presenter' do
+      it 'properly wires a stemcell list with a presenter' do
         command.list_public
 
-        expect(PublicStemcellIndex).to have_received(:download).with(command)
-        expect(PublicStemcellPresenter).to have_received(:new).with(command, public_stemcell_index)
+        expect(PublicStemcellPresenter).to have_received(:new).with(command, public_stemcells)
       end
     end
 
@@ -103,12 +102,12 @@ module Bosh::Cli
         instance_double('Bosh::Cli::PublicStemcellPresenter', download: nil)
       end
 
-      let(:public_stemcell_index) do
-        instance_double('Bosh::Cli::PublicStemcellIndex')
+      let(:public_stemcells) do
+        instance_double('Bosh::Cli::PublicStemcells')
       end
 
       before do
-        PublicStemcellIndex.stub(:download).and_return(public_stemcell_index)
+        PublicStemcells.stub(:new).and_return(public_stemcells)
         PublicStemcellPresenter.stub(:new).and_return(public_stemcell_presenter)
       end
 
@@ -118,11 +117,10 @@ module Bosh::Cli
         expect(public_stemcell_presenter).to have_received(:download).with('stemcell.tgz')
       end
 
-      it 'properly wires a stemcell index with a presenter' do
+      it 'properly wires a stemcell list with a presenter' do
         command.download_public('stemcell.tgz')
 
-        expect(PublicStemcellIndex).to have_received(:download).with(command)
-        expect(PublicStemcellPresenter).to have_received(:new).with(command, public_stemcell_index)
+        expect(PublicStemcellPresenter).to have_received(:new).with(command, public_stemcells)
       end
     end
   end

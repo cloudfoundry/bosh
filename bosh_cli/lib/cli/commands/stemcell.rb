@@ -1,5 +1,5 @@
 require 'cli/public_stemcell_presenter'
-require 'cli/public_stemcell_index'
+require 'cli/public_stemcells'
 
 module Bosh::Cli
   class Command::Stemcell < Command::Base
@@ -104,16 +104,16 @@ module Bosh::Cli
     option '--full', 'show the full download url'
     option '--all', 'show all stemcells'
     def list_public
-      public_stemcell_index = PublicStemcellIndex.download(self)
-      public_stemcells_presenter = PublicStemcellPresenter.new(self, public_stemcell_index)
+      public_stemcells = PublicStemcells.new
+      public_stemcells_presenter = PublicStemcellPresenter.new(self, public_stemcells)
       public_stemcells_presenter.list(options)
     end
 
     usage 'download public stemcell'
     desc 'Downloads a stemcell from the public blobstore'
     def download_public(stemcell_filename)
-      public_stemcell_index = PublicStemcellIndex.download(self)
-      public_stemcells_presenter = PublicStemcellPresenter.new(self, public_stemcell_index)
+      public_stemcells = PublicStemcells.new
+      public_stemcells_presenter = PublicStemcellPresenter.new(self, public_stemcells)
       public_stemcells_presenter.download(stemcell_filename)
     end
 

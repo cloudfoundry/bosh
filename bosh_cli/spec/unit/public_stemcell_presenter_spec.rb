@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'cli/public_stemcell_presenter'
+require 'cli/public_stemcells'
 
 module Bosh::Cli
   describe PublicStemcellPresenter do
@@ -13,20 +14,18 @@ module Bosh::Cli
       instance_double('Bosh::Cli::DownloadWithProgress', perform: nil, sha1?: true, sha1: 'download-sha1')
     end
 
-    let(:public_stemcell_index) do
-      PublicStemcellIndex.new(
-        'stable.tgz' => {
-          'url' => 'http://example.com/stable.tgz',
-          'size' => 123,
-          'tags' => %w[stable]
-        },
+    let(:recent_stemcell) do
+      PublicStemcells::PublicStemcell.new('foobar-456.tgz', 1111111)
+    end
 
-        'foobar.tgz' => {
-          'url' => 'http://example.com/foobar.tgz',
-          'size' => 456,
-          'tags' => %w[foo bar]
-        }
-      )
+    let(:older_stemcell) do
+      PublicStemcells::PublicStemcell.new('foobar-123.tgz', 2222222)
+    end
+
+    let(:public_stemcell_index) do
+      stemcells = PublicStemcells.new
+      stemcells.stub(all: [recent_stemcell, older_stemcell])
+      stemcells
     end
 
     subject(:public_stemcell_presenter) do
@@ -45,30 +44,30 @@ module Bosh::Cli
       end
 
       context 'by default' do
-        it 'only lists a table of public stemcells tagged "stable"' do
+        it 'only lists a table of most recent public stemcells' do
           public_stemcell_presenter.list({})
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+
-| Name       |
-+------------+
-| stable.tgz |
-+------------+
++----------------+
+| Name           |
++----------------+
+| foobar-456.tgz |
++----------------+
           TABLE
         end
       end
 
       context 'when :all is specified' do
-        it 'lists  a table of all public stemcells, even those not tagged "stable"' do
+        it 'lists  a table of all public stemcells' do
           public_stemcell_presenter.list(all: true)
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+
-| Name       |
-+------------+
-| foobar.tgz |
-| stable.tgz |
-+------------+
++----------------+
+| Name           |
++----------------+
+| foobar-456.tgz |
+| foobar-123.tgz |
++----------------+
           TABLE
         end
       end
@@ -78,11 +77,11 @@ module Bosh::Cli
           public_stemcell_presenter.list(full: true)
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+-------------------------------+
-| Name       | Url                           |
-+------------+-------------------------------+
-| stable.tgz | http://example.com/stable.tgz |
-+------------+-------------------------------+
++----------------+----------------------------------------------------------------+
+| Name           | Url                                                            |
++----------------+----------------------------------------------------------------+
+| foobar-456.tgz | https://bosh-jenkins-artifacts.s3.amazonaws.com/foobar-456.tgz |
++----------------+----------------------------------------------------------------+
           TABLE
         end
       end
@@ -90,14 +89,14 @@ module Bosh::Cli
 
     describe '#download' do
       it 'downloads a stemcell from the public stemcell index, reporting progress along the way' do
-        public_stemcell_presenter.download('stable.tgz')
+        public_stemcell_presenter.download('foobar-456.tgz')
 
-        expect(DownloadWithProgress).to have_received(:new).with('http://example.com/stable.tgz', 123)
+        expect(DownloadWithProgress).to have_received(:new).with('https://bosh-jenkins-artifacts.s3.amazonaws.com/foobar-456.tgz', recent_stemcell.size)
         expect(download_with_progress).to have_received(:perform)
       end
 
       it 'reports success' do
-        public_stemcell_presenter.download('stable.tgz')
+        public_stemcell_presenter.download('foobar-456.tgz')
 
         expect(ui).to have_received(:say).with(/Download complete/)
       end
@@ -105,20 +104,20 @@ module Bosh::Cli
       context 'when the specified stemcell is not in the index' do
         it 'reports an error' do
           expect {
-            public_stemcell_presenter.download('missing.tgz')
+            public_stemcell_presenter.download('missing-123.tgz')
           }.to raise_error
 
-          expect(ui).to have_received(:err).with(/'missing.tgz' not found/)
+          expect(ui).to have_received(:err).with(/'missing-123.tgz' not found/)
         end
       end
 
       context 'when the specified stemcell has been previously downloaded' do
         before do
-          File.stub(:exists?).with('stable.tgz').and_return(true)
+          File.stub(:exists?).with('foobar-456.tgz').and_return(true)
         end
 
         it 'confirms the user wishes to overwrite the existing file' do
-          public_stemcell_presenter.download('stable.tgz')
+          public_stemcell_presenter.download('foobar-456.tgz')
 
           expect(ui).to have_received(:confirmed?).with(/Overwrite existing file/)
         end

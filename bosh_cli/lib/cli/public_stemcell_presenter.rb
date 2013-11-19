@@ -1,11 +1,10 @@
-require 'cli/public_stemcell_index'
 require 'cli/download_with_progress'
 
 module Bosh::Cli
   class PublicStemcellPresenter
-    def initialize(ui, public_stemcell_index)
+    def initialize(ui, public_stemcells)
       @ui = ui
-      @public_stemcell_index = public_stemcell_index
+      @public_stemcells = public_stemcells
     end
 
     def list(options)
@@ -23,15 +22,15 @@ module Bosh::Cli
     end
 
     def download(stemcell_name)
-      unless @public_stemcell_index.has_stemcell?(stemcell_name)
-        @ui.err("'#{stemcell_name}' not found in '#{@public_stemcell_index.names.join(',')}'.")
+      unless @public_stemcells.has_stemcell?(stemcell_name)
+        @ui.err("'#{stemcell_name}' not found.")
       end
 
       if File.exists?(stemcell_name) && !@ui.confirmed?("Overwrite existing file `#{stemcell_name}'?")
         @ui.err("File `#{stemcell_name}' already exists")
       end
 
-      stemcell = @public_stemcell_index.find(stemcell_name)
+      stemcell = @public_stemcells.find(stemcell_name)
       download_with_progress = DownloadWithProgress.new(stemcell.url, stemcell.size)
       download_with_progress.perform
 
@@ -41,7 +40,7 @@ module Bosh::Cli
     private
 
     def stemcell_for(options)
-      options[:all] ? @public_stemcell_index.all : @public_stemcell_index.stable
+      options[:all] ? @public_stemcells.all : @public_stemcells.recent
     end
   end
 end
