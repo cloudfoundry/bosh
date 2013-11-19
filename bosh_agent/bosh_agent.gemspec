@@ -31,7 +31,8 @@ Gem::Specification.new do |s|
   s.add_dependency          'bosh_common',      "~>#{version}"
   s.add_dependency          'blobstore_client', "~>#{version}"
 
-  s.add_development_dependency  'rspec-fire'
+  s.add_development_dependency 'fakefs'
+  s.add_development_dependency 'rspec-fire'
 
   s.files                   = `git ls-files -- lib/*`.split("\n") + %w(CHANGELOG)
   s.require_paths           = %w(lib)
