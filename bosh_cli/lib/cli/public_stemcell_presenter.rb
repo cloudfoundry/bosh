@@ -13,11 +13,11 @@ module Bosh::Cli
       requested_tags = options[:tags] || %w(stable)
 
       stemcells_table = @ui.table do |t|
-        t.headings = full ? %w(Name Url Tags) : %w(Name Tags)
+        t.headings = full ? %w(Name Url) : %w(Name)
 
         @public_stemcell_index.each do |stemcell|
           if options[:all] || stemcell.tagged?(requested_tags)
-            t << (full ? [stemcell.name, stemcell.url, stemcell.tag_names] : [stemcell.name, stemcell.tag_names])
+            t << (full ? [stemcell.name, stemcell.url] : [stemcell.name])
           end
         end
       end

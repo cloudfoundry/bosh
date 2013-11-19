@@ -50,11 +50,11 @@ module Bosh::Cli
           public_stemcell_presenter.list({})
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+--------+
-| Name       | Tags   |
-+------------+--------+
-| stable.tgz | stable |
-+------------+--------+
++------------+
+| Name       |
++------------+
+| stable.tgz |
++------------+
           TABLE
         end
       end
@@ -64,11 +64,11 @@ module Bosh::Cli
           public_stemcell_presenter.list(tags: %w(foo))
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+----------+
-| Name       | Tags     |
-+------------+----------+
-| foobar.tgz | foo, bar |
-+------------+----------+
++------------+
+| Name       |
++------------+
+| foobar.tgz |
++------------+
           TABLE
         end
       end
@@ -78,12 +78,12 @@ module Bosh::Cli
           public_stemcell_presenter.list(all: true)
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+----------+
-| Name       | Tags     |
-+------------+----------+
-| foobar.tgz | foo, bar |
-| stable.tgz | stable   |
-+------------+----------+
++------------+
+| Name       |
++------------+
+| foobar.tgz |
+| stable.tgz |
++------------+
           TABLE
         end
       end
@@ -93,11 +93,11 @@ module Bosh::Cli
           public_stemcell_presenter.list(full: true)
 
           expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+------------+-------------------------------+--------+
-| Name       | Url                           | Tags   |
-+------------+-------------------------------+--------+
-| stable.tgz | http://example.com/stable.tgz | stable |
-+------------+-------------------------------+--------+
++------------+-------------------------------+
+| Name       | Url                           |
++------------+-------------------------------+
+| stable.tgz | http://example.com/stable.tgz |
++------------+-------------------------------+
           TABLE
         end
       end
