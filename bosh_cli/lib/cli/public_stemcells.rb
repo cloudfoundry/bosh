@@ -31,6 +31,14 @@ module Bosh::Cli
 
     PUBLIC_STEMCELLS_BASE_URL = 'https://bosh-jenkins-artifacts.s3.amazonaws.com'
 
+    def has_stemcell?(stemcell_filename)
+      all.any? { | stemcell| stemcell.name == stemcell_filename }
+    end
+
+    def find(stemcell_filename)
+      all.detect { | stemcell| stemcell.name == stemcell_filename }
+    end
+
     def all
       response = HTTPClient.new.get(PUBLIC_STEMCELLS_BASE_URL)
       doc = REXML::Document.new(response.body)

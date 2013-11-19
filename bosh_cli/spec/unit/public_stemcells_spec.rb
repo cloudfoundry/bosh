@@ -7,6 +7,21 @@ module Bosh::Cli
       PublicStemcells.new
     end
 
+    describe '#has_stemcell?' do
+      it { should have_stemcell('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
+      it { should_not have_stemcell('bosh-stemcell-1001-aws-xen-solaris.tgz') }
+    end
+
+    describe '#find' do
+      subject(:find) do
+        public_stemcells.find('bosh-stemcell-1001-aws-xen-ubuntu.tgz')
+      end
+
+      it { should be_a(PublicStemcells::PublicStemcell) }
+      its(:name) { should eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
+      its(:size) { should eq(384139128) }
+    end
+
     describe '#all' do
       subject(:list_of_stemcells) do
         public_stemcells.all.map(&:name)
@@ -32,13 +47,6 @@ module Bosh::Cli
 
       it 'excludes stemcells with "latest" as their version because these keep changing' do
         expect(list_of_stemcells).not_to include('latest')
-      end
-
-      it 'brings over the size from the stemcell list' do
-        some_public_stemcell = public_stemcells.all.first
-
-        expect(some_public_stemcell.name).to eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz')
-        expect(some_public_stemcell.size).to eq(384139128)
       end
     end
 
