@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/dev/build'
 require 'bosh/dev/automated_deployer'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployment_account'
@@ -14,23 +13,15 @@ module Bosh::Dev
           .with('fake-infrastructure-name')
           .and_return(builder)
 
-        infrastructure = instance_double('Bosh::Stemcell::Infrastructure')
-        Bosh::Stemcell::Infrastructure
-          .should_receive(:for)
-          .with('fake-infrastructure-name')
-          .and_return(infrastructure)
-
-        operating_system = instance_double('Bosh::Stemcell::OperatingSystem')
-        Bosh::Stemcell::OperatingSystem
-          .should_receive(:for)
-          .with('fake-operating-system-name')
-          .and_return(operating_system)
+        build_target = instance_double('Bosh::Dev::BuildTarget')
+        Bosh::Dev::BuildTarget
+          .should_receive(:from_names)
+          .with('fake-build-number', 'fake-infrastructure-name', 'fake-operating-system-name')
+          .and_return(build_target)
 
         deployer = instance_double('Bosh::Dev::AutomatedDeployer')
         builder.should_receive(:build).with(
-          'fake-build-number',
-          infrastructure,
-          operating_system,
+          build_target,
           'fake-micro-target',
           'fake-bosh-target',
           'fake-environment-name',
@@ -78,13 +69,20 @@ module Bosh::Dev
     describe '#deploy' do
       subject(:deployer) do
         described_class.new(
-          'fake-build-number',
-          infrastructure,
-          operating_system,
+          build_target,
           micro_target,
           bosh_target,
           deployment_account,
           artifacts_downloader,
+        )
+      end
+
+      let(:build_target) do
+        instance_double(
+          'Bosh::Dev::BuildTarget',
+          build_number: 'fake-build-number',
+          infrastructure: infrastructure,
+          operating_system: operating_system,
         )
       end
 
@@ -151,7 +149,7 @@ module Bosh::Dev
 
         artifacts_downloader
           .should_receive(:download_stemcell)
-          .with('fake-build-number', infrastructure, operating_system, false, Dir.pwd)
+          .with(build_target, Dir.pwd)
           .and_return('/tmp/stemcell.tgz')
 
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')

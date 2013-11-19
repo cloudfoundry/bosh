@@ -1,4 +1,5 @@
 require 'bosh/stemcell/archive'
+require 'bosh/dev/build_target'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
 require 'bosh/dev/aws/automated_deploy_builder'
@@ -7,11 +8,15 @@ require 'bosh/dev/vsphere/automated_deploy_builder'
 module Bosh::Dev
   class AutomatedDeployer
     def self.for_rake_args(args)
+      build_target = BuildTarget.from_names(
+        args.build_number,
+        args.infrastructure_name,
+        args.operating_system_name,
+      )
+
       builder = builder_for_infrastructure_name(args.infrastructure_name)
       builder.build(
-        args.build_number,
-        Bosh::Stemcell::Infrastructure.for(args.infrastructure_name),
-        Bosh::Stemcell::OperatingSystem.for(args.operating_system_name),
+        build_target,
         args.micro_target,
         args.bosh_target,
         args.environment_name,
@@ -25,35 +30,29 @@ module Bosh::Dev
       }[name]
     end
 
-    # rubocop:disable ParameterLists
     def initialize(
-      build_number,
-      infrastructure,
-      operating_system,
+      build_target,
       micro_target,
       bosh_target,
       deployment_account,
       artifacts_downloader
     )
-      @build_number = build_number
-      @infrastructure = infrastructure
-      @operating_system = operating_system
+      @build_target = build_target
       @micro_target = micro_target
       @bosh_target = bosh_target
       @deployment_account = deployment_account
       @artifacts_downloader = artifacts_downloader
     end
-    # rubocop:enable ParameterLists
 
     def deploy
       @deployment_account.prepare
 
-      stemcell_path = @artifacts_downloader.download_stemcell(
-        @build_number, @infrastructure, @operating_system, false, Dir.pwd)
+      stemcell_path = @artifacts_downloader.download_stemcell(@build_target, Dir.pwd)
       stemcell_archive = Bosh::Stemcell::Archive.new(stemcell_path)
       micro_director_client.upload_stemcell(stemcell_archive)
 
-      release_path = @artifacts_downloader.download_release(@build_number, Dir.pwd)
+      release_path = @artifacts_downloader.download_release(
+        @build_target.build_number, Dir.pwd)
       micro_director_client.upload_release(release_path)
 
       manifest_path = @deployment_account.manifest_path

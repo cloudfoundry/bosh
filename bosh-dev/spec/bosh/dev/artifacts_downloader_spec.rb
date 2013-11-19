@@ -1,6 +1,7 @@
 require 'logger'
 require 'spec_helper'
 require 'bosh/dev/build'
+require 'bosh/dev/build_target'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/artifacts_downloader'
 
@@ -26,6 +27,16 @@ module Bosh::Dev
     end
 
     describe '#download_stemcell' do
+      let(:build_target) do
+        instance_double(
+          'Bosh::Dev::BuildTarget',
+          build_number: 'fake-build-number',
+          infrastructure: infrastructure,
+          operating_system: operating_system,
+          infrastructure_light?: true,
+        )
+      end
+
       let(:infrastructure) do
         instance_double(
           'Bosh::Stemcell::Infrastructure',
@@ -45,7 +56,7 @@ module Bosh::Dev
         expected_name = [
           'light',
           'bosh-stemcell',
-          'fake-number',
+          'fake-build-number',
           'fake-infrastructure-name',
           'fake-infrastructure-hypervisor',
           'fake-os-name.tgz',
@@ -66,9 +77,7 @@ module Bosh::Dev
           .with(expected_remote_path, expected_local_path)
           .and_return('returned-path')
 
-        returned_path = artifacts_downloader.download_stemcell(
-          'fake-number', infrastructure, operating_system, true, 'fake-output-dir')
-
+        returned_path = artifacts_downloader.download_stemcell(build_target, 'fake-output-dir')
         expect(returned_path).to eq('returned-path')
       end
     end

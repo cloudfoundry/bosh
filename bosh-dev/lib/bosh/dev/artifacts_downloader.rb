@@ -19,21 +19,21 @@ module Bosh::Dev
       @download_adapter.download(remote_uri, local_path)
     end
 
-    def download_stemcell(build_number, infrastructure, operating_system, light, output_dir)
+    def download_stemcell(build_target, output_dir)
       stemcell_name = 'bosh-stemcell'
 
       file_name = Bosh::Stemcell::ArchiveFilename.new(
-        build_number.to_s,
-        infrastructure,
-        operating_system,
+        build_target.build_number.to_s,
+        build_target.infrastructure,
+        build_target.operating_system,
         stemcell_name,
-        light,
+        build_target.infrastructure_light?,
       ).to_s
 
       remote_uri = [
         @bucket_base_url,
         stemcell_name,
-        infrastructure.name,
+        build_target.infrastructure.name,
         file_name,
       ].join('/')
 

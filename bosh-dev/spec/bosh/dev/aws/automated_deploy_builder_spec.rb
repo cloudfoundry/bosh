@@ -1,14 +1,12 @@
 require 'spec_helper'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
+require 'bosh/dev/build_target'
 require 'bosh/dev/aws/automated_deploy_builder'
 
 module Bosh::Dev::Aws
   describe AutomatedDeployBuilder do
     describe '#build' do
       it 'builds runner' do
-        infrastructure = instance_double('Bosh::Stemcell::Infrastructure')
-        operating_system = instance_double('Bosh::Stemcell::OperatingSystem')
+        build_target = instance_double('Bosh::Dev::BuildTarget')
 
         deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
         Bosh::Dev::DeploymentsRepository
@@ -30,9 +28,7 @@ module Bosh::Dev::Aws
 
         automated_deployer = instance_double('Bosh::Dev::AutomatedDeployer')
         Bosh::Dev::AutomatedDeployer.should_receive(:new).with(
-          'fake-build-number',
-          infrastructure,
-          operating_system,
+          build_target,
           'fake-micro-target',
           'fake-bosh-target',
           deployment_account,
@@ -40,9 +36,7 @@ module Bosh::Dev::Aws
         ).and_return(automated_deployer)
 
         expect(subject.build(
-          'fake-build-number',
-          infrastructure,
-          operating_system,
+          build_target,
           'fake-micro-target',
           'fake-bosh-target',
           'fake-environment-name',
