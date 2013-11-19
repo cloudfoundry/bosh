@@ -112,6 +112,18 @@ func (fs OsFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return os.Symlink(oldPath, newPath)
 }
 
+func (fs OsFileSystem) TempDir() (tmpDir string) {
+	return os.TempDir()
+}
+
+func (fs OsFileSystem) RemoveAll(fileOrDir string) {
+	os.RemoveAll(fileOrDir)
+}
+
+func (fs OsFileSystem) Open(path string) (file *os.File, err error) {
+	return os.Open(path)
+}
+
 func (fs OsFileSystem) filesAreIdentical(newContent, filePath string) bool {
 	newBytes := []byte(newContent)
 	existingStat, err := os.Stat(filePath)

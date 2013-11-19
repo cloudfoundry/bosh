@@ -5,6 +5,7 @@ import (
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -376,6 +377,50 @@ func TestStartMonit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
 	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
+}
+
+func TestCompressFilesInDir(t *testing.T) {
+	fakeStats, _, _, fakeDiskManager := getUbuntuDependencies()
+	osFs := boshsys.OsFileSystem{}
+	execCmdRunner := boshsys.ExecCmdRunner{}
+
+	tmpDir := filepath.Join(os.TempDir(), "TestCompressFilesInDir")
+	err := osFs.MkdirAll(tmpDir, os.ModePerm)
+
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	ubuntu := newUbuntuPlatform(fakeStats, osFs, execCmdRunner, fakeDiskManager)
+
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	fixturesDir := filepath.Join(pwd, "..", "..", "..", "fixtures", "test_get_files_in_dir")
+
+	tgz, err := ubuntu.CompressFilesInDir(fixturesDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
+	assert.NoError(t, err)
+
+	defer os.Remove(tgz.Name())
+
+	_, _, err = execCmdRunner.RunCommand("tar", "xzf", tgz.Name(), "-C", tmpDir)
+	assert.NoError(t, err)
+
+	content, err := osFs.ReadFile(tmpDir + "/app.stdout.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is app stdout")
+
+	content, err = osFs.ReadFile(tmpDir + "/app.stderr.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is app stderr")
+
+	content, err = osFs.ReadFile(tmpDir + "/other_logs/other_app.stdout.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is other app stdout")
+
+	content, err = osFs.ReadFile(tmpDir + "/other_logs/other_app.stderr.log")
+	assert.Error(t, err)
+
+	content, err = osFs.ReadFile(tmpDir + "/../some.config")
+	assert.Error(t, err)
 }
 
 func getUbuntuDependencies() (collector *fakestats.FakeStatsCollector, fs *fakesys.FakeFileSystem, cmdRunner *fakesys.FakeCmdRunner, fakeDiskManager fakedisk.FakeDiskManager) {

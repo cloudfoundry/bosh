@@ -9,8 +9,8 @@ import (
 )
 
 func TestSshSetupWithInvalidPayload(t *testing.T) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, fs, platform, taskService)
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 	sshAction := factory.Create("ssh")
 
 	// set user, pwd, public_key with invalid values
@@ -22,8 +22,8 @@ func TestSshSetupWithInvalidPayload(t *testing.T) {
 }
 
 func TestSshSetupWithoutDefaultIp(t *testing.T) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, fs, platform, taskService)
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 	sshAction := factory.Create("ssh")
 
 	payload := `{"arguments":["setup",{"user":"some-user","password":"some-pwd","public_key":"some-key"}]}`
@@ -42,13 +42,13 @@ func TestSshSetupWithoutPassword(t *testing.T) {
 }
 
 func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 
 	settings.Networks = map[string]boshsettings.NetworkSettings{
 		"default": {Ip: "ww.xx.yy.zz"},
 	}
 
-	factory := NewFactory(settings, fs, platform, taskService)
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 	sshAction := factory.Create("ssh")
 
 	expectedUser := "some-user"

@@ -294,6 +294,89 @@ func (p ubuntu) StartMonit() (err error) {
 	return
 }
 
+func (p ubuntu) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+	tmpDir := p.fs.TempDir()
+	tgzDir := filepath.Join(tmpDir, "BoshAgentTarball")
+	err = p.fs.MkdirAll(tgzDir, os.ModePerm)
+	if err != nil {
+		return
+	}
+	defer p.fs.RemoveAll(tgzDir)
+
+	filesToCopy, err := p.findFilesMatchingFilters(dir, filters)
+	if err != nil {
+		return
+	}
+
+	for _, file := range filesToCopy {
+		file = filepath.Clean(file)
+		if !strings.HasPrefix(file, dir) {
+			continue
+		}
+
+		relativePath := strings.Replace(file, dir, "", 1)
+		dst := filepath.Join(tgzDir, relativePath)
+
+		err = p.fs.MkdirAll(filepath.Dir(dst), os.ModePerm)
+		if err != nil {
+			return
+		}
+
+		// Golang does not have a way of copying files and preserving file info...
+		_, _, err = p.cmdRunner.RunCommand("cp", "-p", file, dst)
+		if err != nil {
+			return
+		}
+	}
+
+	tarballPath := filepath.Join(tmpDir, "files.tgz")
+	os.Chdir(tgzDir)
+	_, _, err = p.cmdRunner.RunCommand("tar", "czf", tarballPath, ".")
+	if err != nil {
+		return
+	}
+
+	tarball, err = p.fs.Open(tarballPath)
+	return
+}
+
+func (p ubuntu) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
+	for _, filter := range filters {
+		var newFiles []string
+
+		newFiles, err = p.findFilesMatchingFilter(filepath.Join(dir, filter))
+		if err != nil {
+			return
+		}
+
+		files = append(files, newFiles...)
+	}
+
+	return
+}
+
+func (p ubuntu) findFilesMatchingFilter(filter string) (files []string, err error) {
+	files, err = filepath.Glob(filter)
+	if err != nil {
+		return
+	}
+
+	// Ruby Dir.glob will include *.log when looking for **/*.log
+	// Golang implementation will not do it automatically
+	if strings.Contains(filter, "**/*") {
+		var extraFiles []string
+
+		updatedFilter := strings.Replace(filter, "**/*", "*", 1)
+		extraFiles, err = p.findFilesMatchingFilter(updatedFilter)
+		if err != nil {
+			return
+		}
+
+		files = append(files, extraFiles...)
+	}
+	return
+}
+
 func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 

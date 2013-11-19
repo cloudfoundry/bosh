@@ -11,4 +11,7 @@ type FileSystem interface {
 	ReadFile(path string) (content string, err error)
 	FileExists(path string) bool
 	Symlink(oldPath, newPath string) (err error)
+	TempDir() (tmpDir string)
+	RemoveAll(fileOrDir string)
+	Open(path string) (file *os.File, err error)
 }

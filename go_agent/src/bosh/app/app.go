@@ -4,6 +4,7 @@ import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
+	boshblobstore "bosh/blobstore"
 	boshboot "bosh/bootstrap"
 	boshinf "bosh/infrastructure"
 	boshmbus "bosh/mbus"
@@ -57,8 +58,15 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
+	blobstoreProvider := boshblobstore.NewProvider()
+	blobstore, err := blobstoreProvider.Get(settings.Blobstore)
+	if err != nil {
+		return
+	}
+
 	taskService := boshtask.NewAsyncTaskService()
-	actionFactory := boshaction.NewFactory(settings, fs, platform, taskService)
+	actionFactory := boshaction.NewFactory(settings, fs, platform, blobstore, taskService)
+
 	agent := boshagent.New(settings, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()
 	return

@@ -8,13 +8,13 @@ import (
 )
 
 func TestGetState(t *testing.T) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 
 	fs.WriteToFile(boshsettings.VCAP_BASE_DIR+"/bosh/spec.json", `{"key":"value"}`)
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	factory := NewFactory(settings, fs, platform, taskService)
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 
 	getStateAction := factory.Create("get_state")
 

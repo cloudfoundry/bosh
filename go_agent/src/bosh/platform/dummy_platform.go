@@ -3,6 +3,7 @@ package platform
 import (
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	"os"
 )
 
 type dummyPlatform struct {
@@ -57,5 +58,9 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 }
 
 func (p dummyPlatform) StartMonit() (err error) {
+	return
+}
+
+func (p dummyPlatform) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
 	return
 }

@@ -3,6 +3,7 @@ package fakes
 import (
 	"errors"
 	"os"
+	"strings"
 )
 
 type FakeFileType string
@@ -18,6 +19,8 @@ type FakeFileSystem struct {
 
 	HomeDirUsername string
 	HomeDirHomeDir  string
+
+	FilesToOpen map[string]*os.File
 }
 
 type FakeFileStats struct {
@@ -87,6 +90,29 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	stats := fs.getOrCreateFile(newPath)
 	stats.FileType = FakeFileTypeSymlink
 	stats.SymlinkTarget = oldPath
+	return
+}
+
+func (fs *FakeFileSystem) TempDir() (tmpDir string) {
+	return os.TempDir()
+}
+
+func (fs *FakeFileSystem) RemoveAll(fileOrDir string) {
+	filesToRemove := []string{}
+
+	for name, _ := range fs.Files {
+		if strings.HasPrefix(name, fileOrDir) {
+			filesToRemove = append(filesToRemove, name)
+		}
+	}
+
+	for _, name := range filesToRemove {
+		delete(fs.Files, name)
+	}
+}
+
+func (fs *FakeFileSystem) Open(path string) (file *os.File, err error) {
+	file = fs.FilesToOpen[path]
 	return
 }
 

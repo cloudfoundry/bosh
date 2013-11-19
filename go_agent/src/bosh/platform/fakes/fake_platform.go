@@ -4,6 +4,7 @@ import (
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	"os"
 )
 
 type FakePlatform struct {
@@ -22,6 +23,9 @@ type FakePlatform struct {
 	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
+	CompressFilesInDirTarball            *os.File
+	CompressFilesInDirDir                string
+	CompressFilesInDirFilters            []string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -92,5 +96,13 @@ func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
 	p.SetTimeWithNtpServersServers = servers
 	p.SetTimeWithNtpServersServersFilePath = serversFilePath
+	return
+}
+
+func (p *FakePlatform) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+	p.CompressFilesInDirDir = dir
+	p.CompressFilesInDirFilters = filters
+
+	tarball = p.CompressFilesInDirTarball
 	return
 }

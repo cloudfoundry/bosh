@@ -3,6 +3,7 @@ package platform
 import (
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	"os"
 )
 
 type Platform interface {
@@ -18,4 +19,5 @@ type Platform interface {
 	SetTimeWithNtpServers(servers []string, serversFilePath string) (err error)
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
 	StartMonit() (err error)
+	CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error)
 }

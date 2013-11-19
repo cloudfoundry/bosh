@@ -136,6 +136,15 @@ func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip str
 func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expectedSettings boshsettings.Settings) {
 	settingsJson := `{
 		"agent_id": "my-agent-id",
+		"blobstore": {
+			"options": {
+				"bucket_name": "george",
+				"encryption_key": "optional encryption key",
+				"access_key_id": "optional access key id",
+				"secret_access_key": "optional secret access key"
+			},
+			"provider": "s3"
+		},
 		"disks": {
 			"ephemeral": "/dev/sdb",
 			"persistent": {
@@ -180,6 +189,15 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 
 	expectedSettings = boshsettings.Settings{
 		AgentId: "my-agent-id",
+		Blobstore: boshsettings.Blobstore{
+			Options: map[string]string{
+				"bucket_name":       "george",
+				"encryption_key":    "optional encryption key",
+				"access_key_id":     "optional access key id",
+				"secret_access_key": "optional secret access key",
+			},
+			Type: boshsettings.BlobstoreTypeS3,
+		},
 		Disks: boshsettings.Disks{
 			Ephemeral:  "/dev/sdb",
 			Persistent: map[string]string{"vol-xxxxxx": "/dev/sdf"},

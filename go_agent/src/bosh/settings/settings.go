@@ -9,25 +9,25 @@ const (
 )
 
 type Settings struct {
-	AgentId  string `json:"agent_id"`
-	Disks    Disks
-	Env      Env
-	Networks Networks
-	Ntp      []string
-	Mbus     string
-	Vm       Vm
+	AgentId   string `json:"agent_id"`
+	Blobstore Blobstore
+	Disks     Disks
+	Env       Env
+	Networks  Networks
+	Ntp       []string
+	Mbus      string
+	Vm        Vm
 }
 
-type Env struct {
-	Bosh BoshEnv `json:"bosh"`
-}
+type BlobstoreType string
 
-func (e Env) GetPassword() string {
-	return e.Bosh.Password
-}
+const (
+	BlobstoreTypeS3 BlobstoreType = "s3"
+)
 
-type BoshEnv struct {
-	Password string
+type Blobstore struct {
+	Type    BlobstoreType `json:"provider"`
+	Options map[string]string
 }
 
 type Disks struct {
@@ -45,6 +45,18 @@ func (d Disks) PersistentDiskPath() (path string) {
 		return
 	}
 	return
+}
+
+type Env struct {
+	Bosh BoshEnv `json:"bosh"`
+}
+
+func (e Env) GetPassword() string {
+	return e.Bosh.Password
+}
+
+type BoshEnv struct {
+	Password string
 }
 
 type Networks map[string]NetworkSettings

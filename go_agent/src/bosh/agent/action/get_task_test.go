@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetTaskRunReturns(t *testing.T) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 	taskService.Tasks = map[string]boshtask.Task{
 		"57": boshtask.Task{
 			Id:    "found-57-id",
@@ -16,7 +16,7 @@ func TestGetTaskRunReturns(t *testing.T) {
 		},
 	}
 
-	factory := NewFactory(settings, fs, platform, taskService)
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 	getTask := factory.Create("get_task")
 
 	taskValue, err := getTask.Run([]byte(`{"arguments":["57"]}`))
@@ -26,10 +26,10 @@ func TestGetTaskRunReturns(t *testing.T) {
 }
 
 func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 	taskService.Tasks = map[string]boshtask.Task{}
 
-	factory := NewFactory(settings, fs, platform, taskService)
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 	getTask := factory.Create("get_task")
 
 	_, err := getTask.Run([]byte(`{"arguments":["57"]}`))
@@ -38,10 +38,10 @@ func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {
 }
 
 func TestGetTaskRunWhenPayloadDoesNotHaveTaskId(t *testing.T) {
-	settings, fs, platform, taskService := getFakeFactoryDependencies()
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 	taskService.Tasks = map[string]boshtask.Task{}
 
-	factory := NewFactory(settings, fs, platform, taskService)
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
 	getTask := factory.Create("get_task")
 
 	_, err := getTask.Run([]byte(`{"arguments":[]}`))
