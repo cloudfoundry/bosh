@@ -37,5 +37,13 @@ module Bosh::Cli
     def each
       names.map { |stemcell_name| yield find(stemcell_name) }
     end
+
+    def all
+      names.map { |stemcell_name| find(stemcell_name) }
+    end
+
+    def stable
+      all.select { |stemcell| stemcell.tagged?(%w(stable))  }
+    end
   end
 end

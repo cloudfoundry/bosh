@@ -13,10 +13,8 @@ module Bosh::Cli
       stemcells_table = @ui.table do |t|
         t.headings = full ? %w(Name Url) : %w(Name)
 
-        @public_stemcell_index.each do |stemcell|
-          if options[:all] || stemcell.tagged?(%w(stable))
-            t << (full ? [stemcell.name, stemcell.url] : [stemcell.name])
-          end
+        stemcell_for(options).each do |stemcell|
+          t << (full ? [stemcell.name, stemcell.url] : [stemcell.name])
         end
       end
 
@@ -42,6 +40,12 @@ module Bosh::Cli
       else
         @ui.err("The downloaded file sha1 `#{download_with_progress.sha1}' does not match the expected sha1 `#{stemcell.sha1}'")
       end
+    end
+
+    private
+
+    def stemcell_for(options)
+      options[:all] ? @public_stemcell_index.all : @public_stemcell_index.stable
     end
   end
 end
