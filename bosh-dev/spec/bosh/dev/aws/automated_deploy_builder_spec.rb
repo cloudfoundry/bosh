@@ -27,7 +27,6 @@ module Bosh::Dev::Aws
           'fake-build-number',
           deployment_account,
           artifacts_downloader,
-          deployments_repository,
         ).and_return(automated_deployer)
 
         expect(subject.build(

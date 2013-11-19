@@ -16,7 +16,6 @@ module Bosh::Dev::Aws
         build_number,
         deployment_account,
         Bosh::Dev::ArtifactsDownloader.new,
-        deployments_repository,
       )
     end
   end

@@ -1,7 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/automated_deployer'
 require 'bosh/dev/artifacts_downloader'
-require 'bosh/dev/deployments_repository'
 require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev
@@ -14,7 +13,6 @@ module Bosh::Dev
           build_number,
           deployment_account,
           artifacts_downloader,
-          deployments_repository
         )
       end
 
@@ -32,15 +30,8 @@ module Bosh::Dev
       end
 
       let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
-
-      let(:deployments_repository) { instance_double('Bosh::Dev::DeploymentsRepository') }
-
-      before { Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive) }
-      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake_stemcell', version: '1', path: stemcell_path) }
-
       let(:stemcell_path) { '/tmp/stemcell.tgz' }
       let(:release_path) { '/tmp/release.tgz' }
-      let(:repository_path) { '/tmp/repo' }
 
       before do
         Bosh::Dev::DirectorClient.stub(:new).with(
@@ -69,27 +60,20 @@ module Bosh::Dev
       before do
         artifacts_downloader.stub(:download_release).with(build_number).and_return(release_path)
         artifacts_downloader.stub(:download_stemcell).with(build_number).and_return(stemcell_path)
-
-        Bosh::Stemcell::Archive.stub(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
       end
 
-      it 'follows the normal deploy procedure' do
+      it 'prepare deployment account and then follows the normal deploy procedure' do
+        expect(deployment_account).to receive(:prepare).with(no_args)
+
+        stemcell_archive = instance_double('Bosh::Stemcell::Archive')
         Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+
         micro_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
         micro_director_client.should_receive(:upload_release).with('/tmp/release.tgz')
         micro_director_client.should_receive(:deploy).with('/path/to/manifest.yml')
         bosh_director_client.should_receive(:upload_stemcell).with(stemcell_archive)
 
         deployer.deploy
-      end
-
-      describe '#migrate' do
-        it 'runs AWS migrations' do
-          deployment_account.should_receive(:run_with_env).with('bosh aws create --trace')
-          deployments_repository.should_receive(:push)
-          deployer.migrate
-        end
-
       end
     end
   end

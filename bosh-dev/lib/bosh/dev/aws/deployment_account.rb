@@ -21,8 +21,9 @@ module Bosh::Dev::Aws
       @bosh_password ||= shell.run(". #{deployment_bosh_environment_path} && echo $BOSH_PASSWORD").chomp
     end
 
-    def run_with_env(command)
-      shell.run(". #{deployment_bosh_environment_path} && #{command}")
+    def prepare
+      shell.run(". #{deployment_bosh_environment_path} && bosh aws create --trace")
+      deployments_repository.push
     end
 
     private

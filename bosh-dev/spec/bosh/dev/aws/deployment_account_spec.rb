@@ -33,10 +33,11 @@ module Bosh::Dev::Aws
       end
     end
 
-    describe '#run_with_env' do
-      it 'runs the command with the environment variables set' do
-        shell.should_receive(:run).with('. /tmp/deployments-repo/fake-a1/bosh_environment && bosh aws create')
-        account.run_with_env('bosh aws create')
+    describe '#prepare' do
+      it 'runs AWS migrations and pushes changes to deployments repo' do
+        shell.should_receive(:run).with('. /tmp/deployments-repo/fake-a1/bosh_environment && bosh aws create --trace')
+        deployments_repository.should_receive(:push)
+        account.prepare
       end
     end
   end
