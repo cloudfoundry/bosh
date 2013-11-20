@@ -14,12 +14,12 @@ type concreteFactory struct {
 
 func NewFactory(settings boshsettings.Settings, fs boshsys.FileSystem, platform boshplatform.Platform, blobstore boshblobstore.Blobstore, taskService boshtask.Service) (factory concreteFactory) {
 	factory.availableActions = map[string]Action{
-		"apply":     newApply(fs),
-		"ping":      newPing(),
-		"get_task":  newGetTask(taskService),
-		"get_state": newGetState(settings, fs),
-		"ssh":       newSsh(settings, platform),
-		"logs":      newLogs(platform, blobstore),
+		"apply":      newApply(fs),
+		"ping":       newPing(),
+		"get_task":   newGetTask(taskService),
+		"get_state":  newGetState(settings, fs),
+		"ssh":        newSsh(settings, platform),
+		"fetch_logs": newLogs(platform, blobstore),
 	}
 
 	return

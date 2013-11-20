@@ -89,7 +89,7 @@ func TestRunHandlesApplyMessage(t *testing.T) {
 }
 
 func TestRunHandlesLogsMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "logs", []byte("some payload"))
+	req := boshmbus.NewRequest("reply to me!", "fetch_logs", []byte("some payload"))
 	assertRequestIsProcessedAsynchronously(t, req)
 }
 

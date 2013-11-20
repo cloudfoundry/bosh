@@ -30,7 +30,7 @@ func testLogs(t *testing.T, payload string, expectedFilters []string) {
 	assert.NoError(t, err)
 
 	factory := NewFactory(settings, fs, platform, blobstore, taskService)
-	logsAction := factory.Create("logs")
+	logsAction := factory.Create("fetch_logs")
 	logs, err := logsAction.Run([]byte(payload))
 	assert.NoError(t, err)
 
@@ -46,7 +46,7 @@ func testLogs(t *testing.T, payload string, expectedFilters []string) {
 func TestLogsWhenArgumentsAreMissing(t *testing.T) {
 	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 	factory := NewFactory(settings, fs, platform, blobstore, taskService)
-	logsAction := factory.Create("logs")
+	logsAction := factory.Create("fetch_logs")
 
 	_, err := logsAction.Run([]byte(`{"arguments":["agent"]}`))
 

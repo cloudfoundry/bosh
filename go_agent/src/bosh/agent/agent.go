@@ -70,7 +70,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 				return
 			}
 			resp = boshmbus.NewValueResponse(value)
-		case "apply", "logs":
+		case "apply", "fetch_logs":
 			task := a.taskService.StartTask(func() (value interface{}, err error) {
 				action := a.actionFactory.Create(req.Method)
 				value, err = action.Run(req.GetPayload())
