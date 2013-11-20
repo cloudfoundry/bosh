@@ -21,7 +21,6 @@ require 'yaml'
 require 'time'
 require 'zlib'
 
-require 'common/runs_commands'
 require 'common/exec'
 require 'common/properties'
 
