@@ -37,7 +37,7 @@ dns:
     connection_options:
       max_connections: 32
       pool_timeout: 10
-blobstore:
+blobstore: &director_blobstore
   provider: simple
   options:
     endpoint: http://127.0.0.1:<%= blobstore_port %>
@@ -48,11 +48,7 @@ backup_destination:
   options:
     blobstore_path: <%= sandbox_root %>/backup_destination
 compiled_package_cache:
-  provider: simple
-  options:
-    endpoint: http://127.0.0.1:<%= blobstore_port %>
-    user: bs_admin
-    password: bs_pass
+  <<: *director_blobstore
 scan_and_fix:
   auto_fix_stateful_nodes: <%= director_fix_stateful_nodes || false %>
 snapshots:
@@ -64,11 +60,7 @@ cloud:
     dir: <%= cloud_storage_dir %>
     agent:
       blobstore:
-        provider: simple
-        options:
-          endpoint: http://127.0.0.1:<%= blobstore_port %>
-          user: bs_admin
-          password: bs_pass
+        <<: *director_blobstore
       server:
         host: 127.0.0.1
         password:
