@@ -1,5 +1,5 @@
 script: 'bundle exec rake --trace $TASKS'
-bundler_args: "--local --without development"
+bundler_args: "--local"
 rvm:
   - ruby-1.9.3
   - ruby-2.0.0
