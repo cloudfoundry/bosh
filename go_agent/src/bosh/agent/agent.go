@@ -70,9 +70,9 @@ func (a agent) runMbusHandler(errChan chan error) {
 			}
 			resp = boshmbus.NewValueResponse(value)
 		case "apply", "logs":
-			task := a.taskService.StartTask(func() (err error) {
+			task := a.taskService.StartTask(func() (value interface{}, err error) {
 				action := a.actionFactory.Create(req.Method)
-				_, err = action.Run(req.GetPayload())
+				value, err = action.Run(req.GetPayload())
 				return
 			})
 

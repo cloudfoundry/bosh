@@ -9,21 +9,22 @@ import (
 )
 
 func TestRunningASuccessfulTask(t *testing.T) {
-	testRunningTask(t, TaskStateDone, nil)
+	testRunningTask(t, TaskStateDone, 123, nil)
 }
 
 func TestRunningAFailingTask(t *testing.T) {
-	testRunningTask(t, TaskStateFailed, errors.New("Oops"))
+	testRunningTask(t, TaskStateFailed, nil, errors.New("Oops"))
 }
 
-func testRunningTask(t *testing.T, expectedState TaskState, withErr error) {
+func testRunningTask(t *testing.T, expectedState TaskState, withValue interface{}, withErr error) {
 	service := NewAsyncTaskService()
 
 	taskIsFinished := false
 
-	task := service.StartTask(func() (err error) {
+	task := service.StartTask(func() (value interface{}, err error) {
 		for !taskIsFinished {
 		}
+		value = withValue
 		err = withErr
 		return
 	})
@@ -40,10 +41,11 @@ func testRunningTask(t *testing.T, expectedState TaskState, withErr error) {
 		updatedTask, _ = service.FindTask(task.Id)
 	}
 	assert.Equal(t, expectedState, updatedTask.State)
+	assert.Equal(t, withValue, updatedTask.Value)
 }
 
 func TestStartTaskGeneratesTaskId(t *testing.T) {
-	var taskFunc = func() (err error) {
+	var taskFunc = func() (value interface{}, err error) {
 		return
 	}
 
@@ -52,5 +54,38 @@ func TestStartTaskGeneratesTaskId(t *testing.T) {
 	for expectedTaskId := 1; expectedTaskId < 20; expectedTaskId++ {
 		task := service.StartTask(taskFunc)
 		assert.Equal(t, fmt.Sprintf("%d", expectedTaskId), task.Id)
+	}
+}
+
+func TestProcessingManyTasksSimultaneously(t *testing.T) {
+	taskFunc := func() (value interface{}, err error) {
+		time.Sleep(10 * time.Millisecond)
+		return
+	}
+
+	service := NewAsyncTaskService()
+	ids := []string{}
+
+	for id := 1; id < 200; id++ {
+		ids = append(ids, fmt.Sprintf("%d", id))
+		go service.StartTask(taskFunc)
+	}
+
+	for {
+		allDone := true
+
+		for _, id := range ids {
+			task, _ := service.FindTask(id)
+			if task.State != TaskStateDone {
+				allDone = false
+				break
+			}
+		}
+
+		if allDone {
+			break
+		}
+
+		time.Sleep(200 * time.Millisecond)
 	}
 }

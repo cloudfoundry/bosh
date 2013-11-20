@@ -97,7 +97,7 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
-	actionFactory.CreateAction = new(fakeaction.TestAction)
+	actionFactory.CreateAction = &fakeaction.TestAction{RunValue: "some-task-result-value"}
 
 	agent := New(settings, handler, platform, taskService, actionFactory)
 
@@ -110,7 +110,10 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 
 	boshassert.MatchesJsonString(t, resp, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`)
 
-	taskService.StartTaskFunc()
+	value, err := taskService.StartTaskFunc()
+	assert.NoError(t, err)
+	assert.Equal(t, "some-task-result-value", value)
+
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
 	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
 }
