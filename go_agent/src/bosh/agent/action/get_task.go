@@ -31,13 +31,15 @@ func (a getTaskAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	}
 
 	type valueType struct {
-		AgentTaskId string `json:"agent_task_id"`
-		State       string `json:"state"`
+		AgentTaskId string      `json:"agent_task_id"`
+		State       string      `json:"state"`
+		Value       interface{} `json:"value,omitempty"`
 	}
 
 	value = valueType{
 		AgentTaskId: task.Id,
 		State:       string(task.State),
+		Value:       task.Value,
 	}
 	return
 }

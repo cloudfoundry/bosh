@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestGetTaskRunReturns(t *testing.T) {
+func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
 	taskService.Tasks = map[string]boshtask.Task{
 		"57": boshtask.Task{
@@ -23,6 +23,25 @@ func TestGetTaskRunReturns(t *testing.T) {
 	assert.NoError(t, err)
 
 	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"failed"}`)
+}
+
+func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {
+	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
+	taskService.Tasks = map[string]boshtask.Task{
+		"57": boshtask.Task{
+			Id:    "found-57-id",
+			State: boshtask.TaskStateDone,
+			Value: "some-task-value",
+		},
+	}
+
+	factory := NewFactory(settings, fs, platform, blobstore, taskService)
+	getTask := factory.Create("get_task")
+
+	taskValue, err := getTask.Run([]byte(`{"arguments":["57"]}`))
+	assert.NoError(t, err)
+
+	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"done","value":"some-task-value"}`)
 }
 
 func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {

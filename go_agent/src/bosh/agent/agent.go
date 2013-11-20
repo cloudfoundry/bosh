@@ -64,6 +64,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 		case "get_task", "ping", "get_state", "ssh":
 			action := a.actionFactory.Create(req.Method)
 			value, err := action.Run(req.GetPayload())
+
 			if err != nil {
 				resp = boshmbus.NewExceptionResponse(err.Error())
 				return
