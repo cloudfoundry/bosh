@@ -76,4 +76,27 @@ describe Bosh::CloudStackCloud::Cloud do
 
     cloud.attach_disk("i-test", "v-foobar")
   end
+
+  it "should skip device_id: 3 and allign device file name" do
+    job = generate_job
+    job.should_receive(:job_result).and_return({"volume" => {"deviceid" => 5}})
+
+    volume.should_receive(:attach).with(server).and_return(job)
+    cloud.should_receive(:wait_job).with(job)
+
+    old_settings = { "foo" => "bar" }
+    new_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "v-foobar" => "/dev/sde"
+        }
+      }
+    }
+
+    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
+    @registry.should_receive(:update_settings).with("i-test", new_settings)
+
+    cloud.attach_disk("i-test", "v-foobar")
+  end
 end

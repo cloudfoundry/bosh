@@ -716,14 +716,24 @@ module Bosh::CloudStackCloud
         with_compute do
           job = volume.attach(server)
           wait_job(job)
-          device_id = job.job_result["volume"]["deviceid"]
+          device_id = job.job_result["volume"]["deviceid"].to_i
         end
       else
         @logger.info("Volume `#{volume.id}' is already attached to server `#{server.id}'. Skipping.")
-        device_id = attached_volume.device_id
+        device_id = attached_volume.device_id.to_i
       end
 
-      volume_device_name(device_id)
+      if device_id > 3
+        # device_id 3 is skipped by CloudStack
+        # https://github.com/apache/cloudstack/blob/4.2/server/src/com/cloud/storage/VolumeManagerImpl.java#L2671
+        aligned_device_id = device_id - 1
+      else
+        aligned_device_id = device_id
+      end
+
+      device_name = volume_device_name(aligned_device_id)
+      @logger.info("Volume `#{volume.id}' attached to server `#{server.id}' with device_id `#{device_id}' and device name `#{device_name}'")
+      device_name
     end
 
     ##
