@@ -56,7 +56,7 @@ module Bosh::OpenStackCloud
         @openstack = Fog::Compute.new(openstack_params)
       rescue Exception => e
         @logger.error(e)
-        cloud_error("Unable to connect to the OpenStack Compute API. Check task debug log for details.")  
+        cloud_error("Unable to connect to the OpenStack Compute API. Check task debug log for details.")
       end
 
       glance_params = {
@@ -106,15 +106,15 @@ module Bosh::OpenStackCloud
               :container_format => cloud_properties["container_format"],
               :is_public => @stemcell_public_visibility.nil? ? false : @stemcell_public_visibility,
             }
-            
+
             image_properties = {}
             vanilla_options = ["name", "version", "os_type", "os_distro", "architecture", "auto_disk_config"]
             vanilla_options.reject{ |o| cloud_properties[o].nil? }.each do |key|
               image_properties[key.to_sym] = cloud_properties[key]
-            end            
+            end
             image_params[:properties] = image_properties unless image_properties.empty?
-            
-            # If image_location is set in cloud properties, then pass the copy-from parm. Then Glance will fetch it 
+
+            # If image_location is set in cloud properties, then pass the copy-from parm. Then Glance will fetch it
             # from the remote location on a background job and store it in its repository.
             # Otherwise, unpack image to temp directory and upload to Glance the root image.
             if cloud_properties["image_location"]
@@ -126,13 +126,13 @@ module Bosh::OpenStackCloud
               image_params[:location] = File.join(tmp_dir, "root.img")
             end
 
-            # Upload image using Glance service            
+            # Upload image using Glance service
             @logger.debug("Using image parms: `#{image_params.inspect}'")
             image = with_openstack { @glance.images.create(image_params) }
-            
+
             @logger.info("Creating new image `#{image.id}'...")
             wait_resource(image, :active)
-            
+
             image.id.to_s
           end
         rescue => e
@@ -330,7 +330,7 @@ module Bosh::OpenStackCloud
         compare_security_groups(server, network_configurator.security_groups(@default_security_groups))
 
         compare_private_ip_addresses(server, network_configurator.private_ip)
-        
+
         network_configurator.configure(@openstack, server)
 
         update_agent_settings(server) do |settings|
@@ -461,7 +461,7 @@ module Bosh::OpenStackCloud
 
         devices = []
         volume.attachments.each { |attachment| devices << attachment["device"] unless attachment.empty? }
-       
+
         description = [:deployment, :job, :index].collect { |key| metadata[key] }
         description << devices.first.split('/').last unless devices.empty?
         snapshot_params = {
@@ -613,12 +613,12 @@ module Bosh::OpenStackCloud
     end
 
     ##
-    # Generates initial agent settings. These settings will be read by Bosh Agent from Bosh Registry on a target 
+    # Generates initial agent settings. These settings will be read by Bosh Agent from Bosh Registry on a target
     # server. Disk conventions in Bosh Agent for OpenStack are:
     # - system disk: /dev/sda
     # - ephemeral disk: /dev/sdb
     # - persistent disks: /dev/sdc through /dev/sdz
-    # As some kernels remap device names (from sd* to vd* or xvd*), Bosh Agent will lookup for the proper device name 
+    # As some kernels remap device names (from sd* to vd* or xvd*), Bosh Agent will lookup for the proper device name
     #
     # @param [String] server_name Name of the OpenStack server (will be picked
     #   up by agent to fetch registry settings)
@@ -692,13 +692,13 @@ module Bosh::OpenStackCloud
       volume_attachments = with_openstack { server.volume_attachments }
       device = volume_attachments.find { |a| a["volumeId"] == volume.id }
 
-      if device.nil?                
+      if device.nil?
         device_name = select_device_name(volume_attachments, first_device_name_letter(server))
         cloud_error("Server has too many disks attached") if device_name.nil?
 
         @logger.info("Attaching volume `#{volume.id}' to server `#{server.id}', device name is `#{device_name}'")
         with_openstack { volume.attach(server.id, device_name) }
-        wait_resource(volume, :"in-use")        
+        wait_resource(volume, :"in-use")
       else
         device_name = device["device"]
         @logger.info("Volume `#{volume.id}' is already attached to server `#{server.id}' in `#{device_name}'. Skipping.")
@@ -715,7 +715,7 @@ module Bosh::OpenStackCloud
     # @return [String] First available device name or nil is none is available
     def select_device_name(volume_attachments, first_device_name_letter)
       (first_device_name_letter.."z").each do |char|
-        # Some kernels remap device names (from sd* to vd* or xvd*). 
+        # Some kernels remap device names (from sd* to vd* or xvd*).
         device_names = ["/dev/sd#{char}", "/dev/vd#{char}", "/dev/xvd#{char}"]
         # Bosh Agent will lookup for the proper device name if we set it initially to sd*.
         return "/dev/sd#{char}" if volume_attachments.select { |v| device_names.include?( v["device"]) }.empty?
@@ -765,7 +765,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Server] server OpenStack server
     # @param [Array] specified_sg_names Security groups specified at the network spec
     # @return [void]
-    # @raise [Bosh::Clouds:NotSupported] If the security groups change, we need to recreate the VM as you can't 
+    # @raise [Bosh::Clouds:NotSupported] If the security groups change, we need to recreate the VM as you can't
     # change the security group of a running server, so we need to send the InstanceUpdater a request to do it for us
     def compare_security_groups(server, specified_sg_names)
       actual_sg_names = with_openstack { server.security_groups }.collect { |sg| sg.name }
@@ -783,7 +783,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Server] server OpenStack server
     # @param [String] specified_ip_address IP address specified at the network spec (if Manual network)
     # @return [void]
-    # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't 
+    # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't
     # change the IP address of a running server, so we need to send the InstanceUpdater a request to do it for us
     def compare_private_ip_addresses(server, specified_ip_address)
       actual_ip_addresses = with_openstack { server.private_ip_addresses }
