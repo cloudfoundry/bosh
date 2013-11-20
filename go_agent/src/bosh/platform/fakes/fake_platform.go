@@ -4,10 +4,14 @@ import (
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
+	fakesys "bosh/system/fakes"
 	"os"
 )
 
 type FakePlatform struct {
+	Fs *fakesys.FakeFileSystem
+
 	FakeStatsCollector                   *fakestats.FakeStatsCollector
 	SetupRuntimeConfigurationWasInvoked  bool
 	CreateUserUsername                   string
@@ -34,7 +38,12 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
+	platform.Fs = &fakesys.FakeFileSystem{}
 	return
+}
+
+func (p *FakePlatform) GetFs() (fs boshsys.FileSystem) {
+	return p.Fs
 }
 
 func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {

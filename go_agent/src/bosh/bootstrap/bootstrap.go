@@ -16,10 +16,10 @@ type bootstrap struct {
 	platform       boshplatform.Platform
 }
 
-func New(fs boshsys.FileSystem, inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstrap) {
-	b.fs = fs
+func New(inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstrap) {
 	b.infrastructure = inf
 	b.platform = platform
+	b.fs = platform.GetFs()
 	return
 }
 

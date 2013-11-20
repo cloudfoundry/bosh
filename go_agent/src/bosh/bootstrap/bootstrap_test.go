@@ -11,16 +11,16 @@ import (
 )
 
 func TestRunSetsUpRuntimeConfiguration(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.True(t, fakePlatform.SetupRuntimeConfigurationWasInvoked)
 }
 
 func TestRunSetsUpSsh(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, fakeInfrastructure.SetupSshDelegate, fakePlatform)
@@ -32,13 +32,13 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 		AgentId: "123-456-789",
 	}
 
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings = expectedSettings
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
-	settingsFileStat := fakeFs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/settings.json")
+	settingsFileStat := fakePlatform.Fs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/settings.json")
 	settingsJson, err := json.Marshal(expectedSettings)
 	assert.NoError(t, err)
 
@@ -48,12 +48,12 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 }
 
 func TestRunSetsUpHostname(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings = boshsettings.Settings{
 		AgentId: "foo-bar-baz-123",
 	}
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, fakePlatform.SetupHostnameHostname, "foo-bar-baz-123")
@@ -66,10 +66,10 @@ func TestRunSetsUpNetworking(t *testing.T) {
 		},
 	}
 
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, fakeInfrastructure.SetupNetworkingDelegate, fakePlatform)
@@ -83,10 +83,10 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 		},
 	}
 
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
@@ -94,10 +94,10 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 }
 
 func TestRunSetsRootAndVcapPasswords(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings.Env.Bosh.Password = "some-encrypted-password"
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, 2, len(fakePlatform.UserPasswords))
@@ -108,20 +108,20 @@ func TestRunSetsRootAndVcapPasswords(t *testing.T) {
 func TestRunDoesNotSetPasswordIfNotProvided(t *testing.T) {
 	settings := boshsettings.Settings{}
 
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, 0, len(fakePlatform.UserPasswords))
 }
 
 func TestRunSetsTime(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings.Ntp = []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 	boot.Run()
 
 	assert.Equal(t, 2, len(fakePlatform.SetTimeWithNtpServersServers))
@@ -131,8 +131,8 @@ func TestRunSetsTime(t *testing.T) {
 }
 
 func TestRunStartsMonit(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform)
 
 	boot.Run()
 
@@ -140,31 +140,30 @@ func TestRunStartsMonit(t *testing.T) {
 }
 
 func TestRunSetsUpMonitUserIfFileDoesNotExist(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform)
 
 	boot.Run()
 
-	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	monitUserFileStats := fakePlatform.Fs.GetFileTestStat("/var/vcap/monit/monit.user")
 	assert.NotNil(t, monitUserFileStats)
 	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
 }
 
 func TestRunSkipsSetsUpMonitUserIfFileDoesExist(t *testing.T) {
-	fakeFs, fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakePlatform.Fs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
 
-	boot := New(fakeFs, fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform)
 
 	boot.Run()
 
-	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	monitUserFileStats := fakePlatform.Fs.GetFileTestStat("/var/vcap/monit/monit.user")
 	assert.NotNil(t, monitUserFileStats)
 	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
 }
 
-func getBootstrapDependencies() (fs *fakesys.FakeFileSystem, inf *fakeinf.FakeInfrastructure, platform *fakeplatform.FakePlatform) {
-	fs = &fakesys.FakeFileSystem{}
+func getBootstrapDependencies() (inf *fakeinf.FakeInfrastructure, platform *fakeplatform.FakePlatform) {
 	inf = &fakeinf.FakeInfrastructure{}
 	platform = fakeplatform.NewFakePlatform()
 	return

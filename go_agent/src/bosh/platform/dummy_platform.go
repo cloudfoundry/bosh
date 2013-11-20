@@ -3,6 +3,8 @@ package platform
 import (
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
+	fakesys "bosh/system/fakes"
 	"os"
 )
 
@@ -11,6 +13,10 @@ type dummyPlatform struct {
 
 func newDummyPlatform() (p dummyPlatform) {
 	return
+}
+
+func (p dummyPlatform) GetFs() (fs boshsys.FileSystem) {
+	return &fakesys.FakeFileSystem{}
 }
 
 func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {

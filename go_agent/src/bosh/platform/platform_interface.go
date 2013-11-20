@@ -3,10 +3,12 @@ package platform
 import (
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 	"os"
 )
 
 type Platform interface {
+	GetFs() (fs boshsys.FileSystem)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)

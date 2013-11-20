@@ -38,6 +38,10 @@ func newUbuntuPlatform(collector boshstats.StatsCollector, fs boshsys.FileSystem
 	return
 }
 
+func (p ubuntu) GetFs() (fs boshsys.FileSystem) {
+	return p.fs
+}
+
 func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }

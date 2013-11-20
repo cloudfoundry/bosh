@@ -5,14 +5,15 @@ import (
 	boshblobstore "bosh/blobstore"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	boshsys "bosh/system"
 )
 
 type concreteFactory struct {
 	availableActions map[string]Action
 }
 
-func NewFactory(settings boshsettings.Settings, fs boshsys.FileSystem, platform boshplatform.Platform, blobstore boshblobstore.Blobstore, taskService boshtask.Service) (factory concreteFactory) {
+func NewFactory(settings boshsettings.Settings, platform boshplatform.Platform, blobstore boshblobstore.Blobstore, taskService boshtask.Service) (factory concreteFactory) {
+	fs := platform.GetFs()
+
 	factory.availableActions = map[string]Action{
 		"apply":      newApply(fs),
 		"ping":       newPing(),

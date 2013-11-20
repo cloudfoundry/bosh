@@ -9,7 +9,6 @@ import (
 	boshinf "bosh/infrastructure"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
-	boshsys "bosh/system"
 	"flag"
 	"io/ioutil"
 )
@@ -27,8 +26,6 @@ func New() (app App) {
 }
 
 func (app App) Run(args []string) (err error) {
-	fs := boshsys.OsFileSystem{}
-
 	opts, err := parseOptions(args)
 	if err != nil {
 		return
@@ -40,13 +37,13 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
-	platformProvider := boshplatform.NewProvider(fs)
+	platformProvider := boshplatform.NewProvider()
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return
 	}
 
-	boot := boshboot.New(fs, infrastructure, platform)
+	boot := boshboot.New(infrastructure, platform)
 	settings, err := boot.Run()
 	if err != nil {
 		return
@@ -65,7 +62,7 @@ func (app App) Run(args []string) (err error) {
 	}
 
 	taskService := boshtask.NewAsyncTaskService()
-	actionFactory := boshaction.NewFactory(settings, fs, platform, blobstore, taskService)
+	actionFactory := boshaction.NewFactory(settings, platform, blobstore, taskService)
 
 	agent := boshagent.New(settings, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()

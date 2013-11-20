@@ -7,8 +7,8 @@ import (
 )
 
 func TestSshCleanup(t *testing.T) {
-	settings, fs, platform, blobstore, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, fs, platform, blobstore, taskService)
+	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
+	factory := NewFactory(settings, platform, blobstore, taskService)
 	sshAction := factory.Create("ssh")
 
 	payload := `{"arguments":["cleanup",{"user_regex":"^foobar.*"}]}`
