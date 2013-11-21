@@ -846,7 +846,7 @@ module Bosh::CloudStackCloud
 
         client = HTTPClient.new
         client.connect_timeout = METADATA_TIMEOUT
-        uri = "http://#{metadata_server}/latest/meta-data/instance-id/"
+        uri = "http://#{metadata_server}/latest/instance-id"
 
         response = client.get(uri)
         unless response.status == 200
