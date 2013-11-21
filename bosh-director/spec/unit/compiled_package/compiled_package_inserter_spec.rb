@@ -1,10 +1,12 @@
 require 'spec_helper'
 require 'bosh/director/compiled_package/compiled_package_inserter'
+require 'fileutils'
+require 'fakefs/spec_helpers'
 
 module Bosh::Director::CompiledPackage
   describe CompiledPackageInserter do
-
-    subject(:inserter) { described_class.new }
+    let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
+    subject(:inserter) { described_class.new(blobstore_client) }
 
     let!(:release) { Bosh::Director::Models::Release.make }
     let!(:release_version) { Bosh::Director::Models::ReleaseVersion.make(release: release) }
@@ -26,15 +28,40 @@ module Bosh::Director::CompiledPackage
       dep2.add_release_version(release_version)
     end
 
+    include FakeFS::SpecHelpers
+    before { FileUtils.touch('/path_to_extracted_blob') }
+
+    it 'creates a blob in the blobstore' do
+      compiled_package = instance_double(
+        'Bosh::Director::CompiledPackage::CompiledPackage',
+        package_name: 'package1',
+        package_fingerprint: 'fingerprint1',
+        sha1: 'compiled-package-sha1',
+        stemcell_sha1: 'stemcell-sha1',
+        blobstore_id: 'blobstore_id1',
+        blob_path: '/path_to_extracted_blob',
+      )
+
+      f = double('blob file')
+      File.stub(:open).with('/path_to_extracted_blob').and_yield(f)
+      blobstore_client.should_receive(:create).with(f, 'blobstore_id1')
+
+      inserter.insert(compiled_package, release_version)
+    end
+
     it 'inserts a compiled package in the database' do
+      blobstore_client.stub(:create)
       compiled_package = instance_double('Bosh::Director::CompiledPackage::CompiledPackage',
                                          package_name: 'package1',
                                          package_fingerprint: 'fingerprint1',
                                          sha1: 'compiled-package-sha1',
                                          stemcell_sha1: 'stemcell-sha1',
-                                         blobstore_id: 'blobstore_id1')
+                                         blobstore_id: 'blobstore_id1',
+                                         blob_path: '/path_to_extracted_blob',
+      )
       inserter.insert(compiled_package, release_version)
 
+      # pull the last package added to the DB in order to exercise save()
       retrieved_package = Bosh::Director::Models::CompiledPackage.order(:id).last
 
       expect(retrieved_package.blobstore_id).to eq('blobstore_id1')
