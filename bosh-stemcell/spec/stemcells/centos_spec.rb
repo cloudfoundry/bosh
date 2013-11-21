@@ -144,17 +144,17 @@ describe 'CentOs Stemcell' do
     end
   end
 
-  context 'installed by system-aws-network' do
+  context 'installed by system-aws-network', exclude_on_vsphere: true do
     describe file('/etc/sysconfig/network') do
-      xit { should be_file }
-      xit { should contain 'NETWORKING=yes' }
+      it { should be_file }
+      it { should contain 'NETWORKING=yes' }
     end
 
     describe file('/etc/sysconfig/network-scripts/ifcfg-eth0') do
-      xit { should be_file }
-      xit { should contain 'DEVICE=eth0' }
-      xit { should contain 'BOOTPROTO=dhcp' }
-      xit { should contain 'ONBOOT=yes' }
+      it { should be_file }
+      it { should contain 'DEVICE=eth0' }
+      it { should contain 'BOOTPROTO=dhcp' }
+      it { should contain 'ONBOOT=yes' }
     end
   end
 end
