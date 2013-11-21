@@ -248,6 +248,20 @@ module Bosh::CloudStackCloud
         @logger.info("Deleting server `#{server_id}'...")
         server = with_compute { @compute.servers.get(server_id) }
         if server
+          settings = @registry.read_settings(server.name)
+          ephemeral_volume_id = settings["disks"]["ephemeral"]
+          volume = with_compute { @compute.volumes.get(ephemeral_volume_id) }
+
+          if volume
+            # Detach and delete ephemeral disk
+            begin
+              detach_volume(server, volume)
+            rescue Bosh::Clouds::CloudError => e
+              @logger.info("Volume has been detached already")
+            end
+            delete_disk(volume.id)
+          end
+
           job = with_compute { server.destroy }
           wait_job(job)
 
