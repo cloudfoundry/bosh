@@ -28,6 +28,8 @@ namespace :ci do
   task :build_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
     require 'bosh/dev/stemcell_builder'
 
+    RSpec.configure { |c| c.filter_run_excluding :exclude_on_vsphere => true } if args.infrastructure_name == 'vsphere'
+
     stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
       args.infrastructure_name, args.operating_system_name, args.agent_name)
     stemcell_file = stemcell_builder.build_stemcell
@@ -41,6 +43,8 @@ namespace :ci do
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
+
+    RSpec.configure { |c| c.filter_run_excluding :exclude_on_vsphere => true } if args.infrastructure_name == 'vsphere'
 
     stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
       args.infrastructure_name, args.operating_system_name, args.agent_name)
