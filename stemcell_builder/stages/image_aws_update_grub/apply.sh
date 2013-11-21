@@ -22,13 +22,6 @@ image_mount_point=${work}/mnt
 mkdir -p ${image_mount_point}
 mount ${loopback_dev} ${image_mount_point}
 
-# Regenerate menu.lst
-run_in_chroot ${image_mount_point} "
-sed -i -e 's/^# defoptions=.*/# defoptions=console=hvc0/' /boot/grub/menu.lst # Pass virtual console device to kernel
-update-grub
-rm -f /boot/grub/menu.lst~
-"
-
 # Unmount partition
 for try in $(seq 0 9); do
   sleep $try
