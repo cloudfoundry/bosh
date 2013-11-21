@@ -64,8 +64,8 @@ describe 'CentOs Stemcell' do
       'glibc-static'   => '2.12-1.107.el6_4.5.x86_64',
       'runit'          => '2.1.1-6.el6.x86_64',
       'sudo'           => '1.8.6p3-7.el6.x86_64',
-      'rsyslog'        => '7.4.6-1.el6.x86_64',
-      'rsyslog-relp'   => '7.4.6-1.el6.x86_64',
+      'rsyslog'        => '5.8.10-7.el6_4.x86_64',
+      'rsyslog-relp'   => '5.8.10-7.el6_4.x86_64',
       'nc'             => '1.84-22.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
@@ -141,12 +141,6 @@ describe 'CentOs Stemcell' do
       subject { file('/etc/ssh/sshd_config') }
 
       it { should contain /^PermitRootLogin no$/ }
-    end
-  end
-
-  context 'rsyslog repo' do
-    describe file('/etc/yum.repos.d/rsyslog.repo') do
-      it { should contain('rsyslog_v7') }
     end
   end
 end

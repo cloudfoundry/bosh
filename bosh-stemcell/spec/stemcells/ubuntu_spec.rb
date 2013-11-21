@@ -14,43 +14,7 @@ describe 'Ubuntu Stemcell' do
 
   context 'installed by base_debootstrap' do
     {
-      'adduser' => '3.112ubuntu1',
-      'apt' => '0.7.25.3ubuntu9.14',
-      'apt-utils' => '0.7.25.3ubuntu9.14',
-      'bzip2' => '1.0.5-4ubuntu0.2',
-      'console-setup' => '1.34ubuntu15',
-      'dash' => '0.5.5.1-3ubuntu2',
-      'debconf' => '1.5.28ubuntu4',
-      'dhcp3-client' => '3.1.3-2ubuntu3.5',
-      'eject' => '2.1.5+deb1+cvs20081104-7',
-      'gnupg' => '1.4.10-2ubuntu1.4',
-      'ifupdown' => '0.6.8ubuntu29.2',
-      'initramfs-tools' => '0.92bubuntu78',
-      'iproute' => '20091226-1',
-      'iputils-ping' => '3:20071127-2ubuntu1',
-      'kbd' => '1.15-1ubuntu3',
-      'less' => '436-1',
-      'locales' => '2.11+git20100304-3',
-      'lsb-release' => '4.0-0ubuntu8.1',
-      'makedev' => '2.3.1-89ubuntu1',
-      'mawk' => '1.3.3-15ubuntu2',
-      'module-init-tools' => '3.11.1-2ubuntu1',
-      'net-tools' => '1.60-23ubuntu2',
-      'netbase' => '4.35ubuntu3',
-      'netcat-openbsd' => '1.89-3ubuntu2',
-      'ntpdate' => '1:4.2.4p8+dfsg-1ubuntu2.1',
-      'passwd' => '1:4.1.4.2-1ubuntu2.2',
-      'procps' => '1:3.2.8-1ubuntu4.3',
-      'python' => '2.6.5-0ubuntu1.1',
-      'sudo' => '1.7.2p1-1ubuntu5.6',
-      'tasksel' => '2.73ubuntu26',
-      'tzdata' => '2013g-0ubuntu0.10.04',
-      'ubuntu-keyring' => '2010.11.09',
-      'udev' => '151-12.3',
-      'upstart' => '0.6.5-8',
-      'ureadahead' => '0.100.0-4.1.3',
-      'vim-tiny' => '2:7.2.330-1ubuntu3.1',
-      'whiptail' => '0.52.10-5ubuntu1'
+      'ubuntu-minimal' => '1.197',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -113,8 +77,8 @@ describe 'Ubuntu Stemcell' do
       'debhelper'            => '7.4.15ubuntu1',
       'runit'                => '2.0.0-1ubuntu4',
       'sudo'                 => '1.7.2p1-1ubuntu5.6',
-      'uuid-dev'             => '2.17.2-0ubuntu1.10.04.2',
-      'libgcrypt11-dev'      => '1.4.4-5ubuntu2.2',
+      'rsyslog'              => '4.2.0-2ubuntu8.1',
+      'rsyslog-relp'         => '4.2.0-2ubuntu8.1',
     }.each do |pkg, version|
       describe package(pkg) do
         it { should be_installed.with_version(version) }
@@ -196,12 +160,6 @@ describe 'Ubuntu Stemcell' do
       subject { file('/etc/ssh/sshd_config') }
 
       it { should contain /^PermitRootLogin no$/ }
-    end
-  end
-
-  context 'installed by rsyslog' do
-    describe file('/etc/init/rsyslog.conf') do
-      it { should contain('/usr/local/sbin/rsyslogd') }
     end
   end
 end
