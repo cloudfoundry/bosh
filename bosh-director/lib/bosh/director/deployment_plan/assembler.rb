@@ -378,22 +378,26 @@ module Bosh::Director
 
     # @param [DeploymentPlan::Instance]
     def bind_instance_vm(instance)
-      job = instance.job
-      idle_vm = instance.idle_vm
+      @event_log.track("#{instance.job.name}/#{instance.index}") do
+        idle_vm = instance.idle_vm
 
-      instance.model.update(:vm => idle_vm.vm)
-
-      @event_log.track("#{job.name}/#{instance.index}") do
         # Apply the assignment to the VM
-        state = idle_vm.current_state
-        state["job"] = job.spec
-        state["index"] = instance.index
-        state["release"] = job.release.spec
-
-        idle_vm.vm.update(:apply_spec => state)
-
         agent = AgentClient.with_defaults(idle_vm.vm.agent_id)
+        state = idle_vm.current_state
+        state['job'] = instance.job.spec
+        state['index'] = instance.index
+        state['release'] = instance.job.release.spec
         agent.apply(state)
+
+        # Our assumption here is that director database access
+        # is much less likely to fail than VM agent communication
+        # so we only update database after we see a successful agent apply.
+        # If database update fails subsequent deploy will try to
+        # assign a new VM to this instance which is ok.
+        idle_vm.vm.db.transaction do
+          idle_vm.vm.update(:apply_spec => state)
+          instance.model.update(:vm => idle_vm.vm)
+        end
         instance.current_state = state
       end
     end
