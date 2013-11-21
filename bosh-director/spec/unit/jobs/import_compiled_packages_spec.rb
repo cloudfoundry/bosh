@@ -12,7 +12,8 @@ module Bosh::Director
     describe '#perform' do
       include FakeFS::SpecHelpers
 
-      subject(:import_job) { described_class.new(export_dir, blobstore_client: blobstore_client) }
+      subject(:import_job) { described_class.new(export_dir) }
+      before { Bosh::Director::App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client) }
 
       let(:export_dir) { '/tmp/export/dir' }
       let(:exported_tar) { asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz') }

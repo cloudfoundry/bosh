@@ -10,10 +10,10 @@ module Bosh::Director
         :import_compiled_packages
       end
 
-      def initialize(export_dir, options={})
+      def initialize(export_dir)
         @export_dir = export_dir
 
-        @blobstore_client = options.fetch(:blobstore_client) { Bosh::Director::App.instance.blobstores.blobstore }
+        @blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
       end
 
       def perform
