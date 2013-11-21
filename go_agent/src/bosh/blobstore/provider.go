@@ -12,6 +12,7 @@ type provider struct {
 func NewProvider() (p provider) {
 	p.blobstores = map[boshsettings.BlobstoreType]Blobstore{
 		boshsettings.BlobstoreTypeS3: newS3Blobstore(),
+		boshsettings.BlobstoreTypeDummy: newDummyBlobstore(),
 	}
 	return
 }
