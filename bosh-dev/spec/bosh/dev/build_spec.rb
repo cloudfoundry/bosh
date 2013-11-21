@@ -86,11 +86,11 @@ module Bosh::Dev
     end
 
     describe '#upload' do
-      let(:release) { double(tarball: 'release-tarball.tgz') }
+      let(:release) { double(tarball_path: 'release-tarball.tgz') }
       let(:io) { double }
 
       it 'uploads the release with its build number' do
-        File.stub(:open).with(release.tarball) { io }
+        File.stub(:open).with(release.tarball_path) { io }
         upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
         subject.upload_release(release)
       end
@@ -333,7 +333,7 @@ module Bosh::Dev
 
     describe '#release_tarball_path' do
       it 'returns the path to new microbosh release' do
-        micro_bosh_release = instance_double('Bosh::Dev::MicroBoshRelease', tarball: 'tarball-path')
+        micro_bosh_release = instance_double('Bosh::Dev::MicroBoshRelease', tarball_path: 'tarball-path')
         Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release)
         expect(subject.release_tarball_path).to eq('tarball-path')
       end

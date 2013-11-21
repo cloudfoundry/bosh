@@ -5,7 +5,7 @@ module Bosh::Dev
   describe MicroBoshRelease do
     include FakeFS::SpecHelpers
 
-    describe '#tarball' do
+    describe '#tarball_path' do
       before do
         FileUtils.mkdir_p('release/config')
         FileUtils.mkdir_p('release/dev_releases')
@@ -19,7 +19,7 @@ module Bosh::Dev
           FileUtils.touch('dev_releases/bosh-just-created.tgz')
         end
 
-        expect(subject.tarball).to include('bosh-dev/lib/bosh/dev/../../../../release/dev_releases/bosh-just-created.tgz')
+        expect(subject.tarball_path).to include('bosh-dev/lib/bosh/dev/../../../../release/dev_releases/bosh-just-created.tgz')
       end
     end
   end

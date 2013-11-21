@@ -2,7 +2,7 @@ require 'rake'
 
 module Bosh::Dev
   class MicroBoshRelease
-    def tarball
+    def tarball_path
       Dir.chdir('release') do
         FileUtils.cp('config/bosh-dev-template.yml', 'config/dev.yml')
         Rake::FileUtilsExt.sh('bosh create release --force --with-tarball')
