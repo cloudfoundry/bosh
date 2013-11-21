@@ -251,6 +251,14 @@ module Bosh::CloudStackCloud
           job = with_compute { server.destroy }
           wait_job(job)
 
+          settings = @registry.read_settings(server.name)
+          ephemeral_volume_id = settings["disks"]["ephemeral"]
+          volume = with_compute { @compute.volumes.get(ephemeral_volume_id) }
+          if volume
+            # Delete ephemeral volume
+            delete_disk(volume.id)
+          end
+
           @logger.info("Deleting settings for server `#{server.id}'...")
           @registry.delete_settings(server.name)
         else
