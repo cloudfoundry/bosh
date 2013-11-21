@@ -53,10 +53,8 @@ libxml2 libxml2-dev libxslt1.1 libxslt1-dev zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb tripwire libcap2-bin libcap2-dev libbz2-dev \
-libyaml-dev cmake uuid-dev libgcrypt-dev"
+libyaml-dev cmake rsyslog-relp"
 pkg_mgr install $debs
-
-pkg_mgr remove rsyslog
 
 # Lifted from bosh_debs
 pkg_mgr install "scsitools mg htop module-assistant debhelper runit"
