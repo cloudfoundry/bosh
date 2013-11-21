@@ -1,5 +1,6 @@
+env = ENV.to_hash
+
 Vagrant.configure('2') do |config|
-  env = ENV.to_hash
   config.vm.box = 'bosh-stemcell'
   config.ssh.username = 'ubuntu'
 
@@ -28,12 +29,12 @@ Vagrant.configure('2') do |config|
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
-    mkdir -p /mnt/stemcells
-    chown -R ubuntu /mnt/stemcells
-    mkdir -p /bosh/tmp
-    git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
-    (cd /bosh && git submodule update --init --recursive)
-    chown -R ubuntu:ubuntu /bosh
+      mkdir -p /mnt/stemcells
+      chown -R ubuntu /mnt/stemcells
+      mkdir -p /bosh/tmp
+      git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
+      (cd /bosh && git submodule update --init --recursive)
+      chown -R ubuntu:ubuntu /bosh
     BASH
   end
 
