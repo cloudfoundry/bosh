@@ -21,10 +21,11 @@ module Bosh::Director
 
         export.extract do |manifest, packages|
           release_name = manifest.fetch('release_name')
-          release_version = manifest.fetch('release_version')
+          release_version_version = manifest.fetch('release_version')
 
           release = Bosh::Director::Models::Release[name: release_name]
-          release_version = Bosh::Director::Models::ReleaseVersion[release_id: release.id, version: release_version]
+
+          release_version = Bosh::Director::Models::ReleaseVersion[version: release_version_version, release: release]
           inserter = Bosh::Director::CompiledPackage::CompiledPackageInserter.new(@blobstore_client)
 
           packages.each { |p| p.check_blob_sha }

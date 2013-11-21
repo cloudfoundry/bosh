@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/director/jobs/import_compiled_packages'
+require 'fakefs/spec_helpers'
 
 module Bosh::Director
   describe Jobs::ImportCompiledPackages do
@@ -9,6 +10,8 @@ module Bosh::Director
     end
 
     describe '#perform' do
+      include FakeFS::SpecHelpers
+
       subject(:import_job) { described_class.new(export_dir, blobstore_client: blobstore_client) }
 
       let(:export_dir) { '/tmp/export/dir' }
@@ -50,35 +53,59 @@ module Bosh::Director
 
       let(:package_model1) do
         Bosh::Director::Models::Package.make(
-          name: package1.name, fingerprint: package1.package_fingerprint)
+          release: release,
+          name: package1.name,
+          fingerprint: package1.package_fingerprint,
+        )
       end
 
       let(:package_model2) do
         Bosh::Director::Models::Package.make(
-          name: package2.name, fingerprint: package2.package_fingerprint,
+          release: release,
+          name: package2.name,
+          fingerprint: package2.package_fingerprint,
           dependency_set_json: Yajl::Encoder.encode([package1.name]))
       end
 
       let!(:stemcell) { Bosh::Director::Models::Stemcell.make(sha1: package1.stemcell_sha1) }
-      let!(:release) { Bosh::Director::Models::Release.make(name: manifest['release_name']) }
+      let(:release) do
+        Bosh::Director::Models::Release.make(name: manifest['release_name'])
+      end
+      let(:inserter) { instance_double('Bosh::Director::CompiledPackage::CompiledPackageInserter') }
+
+      let(:release_version) do
+        Bosh::Director::Models::ReleaseVersion.make(
+          release: release,
+          version: manifest['release_version'],
+        )
+      end
 
       before do
+
         Bosh::Director::CompiledPackage::CompiledPackagesExport.stub(:new).with(
           file: '/tmp/export/dir/compiled_packages_export.tgz').and_return(export)
         export.stub(:extract).and_yield(manifest, [package1, package2])
-        blobstore_client.stub(:create_file).with('blob-id1', '/tmp/blob1')
-        blobstore_client.stub(:create_file).with('blob-id2', '/tmp/blob2')
-        release_version = Bosh::Director::Models::ReleaseVersion.make(release_id: release.id, version: manifest['release_version'])
 
-        release_version.add_package(package_model1)
-        release_version.add_package(package_model2)
-
-        File.stub(:open).with('/tmp/blob1')
-        File.stub(:open).with('/tmp/blob2')
-        FileUtils.stub(:rm_rf)
+        FileUtils.mkpath(export_dir)
       end
 
       context 'when there is one Release and one ReleaseVersion' do
+        before do
+          release_version.add_package(package_model1)
+          release_version.add_package(package_model2)
+
+          Bosh::Director::CompiledPackage::CompiledPackageInserter.stub(new: inserter)
+          inserter.stub(:insert)
+        end
+
+        it 'creates a CompiledPackageInserter' do
+          expect(Bosh::Director::CompiledPackage::CompiledPackageInserter).to receive(:new).with(blobstore_client)
+
+          import_job.perform
+          expect(inserter).to have_received(:insert).with(package1, release_version)
+          expect(inserter).to have_received(:insert).with(package2, release_version)
+        end
+
         it 'extracts the export' do
           expect(export).to receive(:extract)
           import_job.perform
@@ -91,87 +118,38 @@ module Bosh::Director
           import_job.perform
         end
 
-        it 'adds the compiled package blobs to the blobstore' do
-          f1 = double
-          f2 = double
-          File.stub(:open).with('/tmp/blob1').and_yield(f1)
-          File.stub(:open).with('/tmp/blob2').and_yield(f2)
-          blobstore_client.should_receive(:create).with(f1, 'blob-id1')
-          blobstore_client.should_receive(:create).with(f2, 'blob-id2')
-
-          import_job.perform
-        end
-
-        it 'adds the compiled packages to the database' do
-          import_job.perform
-
-          imported_package1 = find_compiled_package(package_model1, stemcell.id, [])
-          expect(imported_package1).to_not be_nil
-
-          imported_package2 = find_compiled_package(package_model2, stemcell.id, [package_model1])
-          expect(imported_package2).to_not be_nil
-        end
-
         it 'cleans up the temp dir' do
           expect(FileUtils).to receive(:rm_rf).with(export_dir)
           import_job.perform
         end
       end
 
-      context 'when there are multiple Releases' do
+      context 'when there are multiple release versions' do
         before do
-          Bosh::Director::Models::Release.make(name: 'another_release')
+          Bosh::Director::CompiledPackage::CompiledPackageInserter.stub(new: inserter)
+          inserter.stub(:insert)
+
+          Bosh::Director::Models::Release.make(
+            name: 'another_release',
+          ).add_version(version: 'test-release-version')
+
+          release_version.add_package(package_model1)
+          release_version.add_package(package_model2)
         end
 
-        it 'adds the compiled package blobs to the database' do
+        it 'inserts each package with the inserter' do
           import_job.perform
 
-          imported_package1 = find_compiled_package(package_model1, stemcell.id, [])
-          expect(imported_package1).to_not be_nil
-
-          imported_package2 = find_compiled_package(package_model2, stemcell.id, [package_model1])
-          expect(imported_package2).to_not be_nil
-        end
-      end
-
-      context 'when there are multiple ReleaseVersions' do
-        before do
-          Bosh::Director::Models::ReleaseVersion.make(release_id: release.id, version: 'another_release_version')
-        end
-
-        it 'adds the compiled package blobs to the database' do
-          import_job.perform
-
-          imported_package1 = find_compiled_package(package_model1, stemcell.id, [])
-          expect(imported_package1).to_not be_nil
-
-          imported_package2 = find_compiled_package(package_model2, stemcell.id, [package_model1])
-          expect(imported_package2).to_not be_nil
-        end
-      end
-
-      context 'when there are multiple versions of a Package' do
-        before do
-          Bosh::Director::Models::Package.make(name: package1.name, fingerprint: 'another_fingerprint')
-        end
-
-        it 'adds the compiled package blobs to the database' do
-          import_job.perform
-
-          imported_package1 = find_compiled_package(package_model1, stemcell.id, [])
-          expect(imported_package1).to_not be_nil
-
-          imported_package2 = find_compiled_package(package_model2, stemcell.id, [package_model1])
-          expect(imported_package2).to_not be_nil
+          expect(inserter).to have_received(:insert).with(package1, release_version)
         end
       end
 
       context 'when an exception is raised in perform' do
         it 'cleans up the temp dir' do
           export.stub(:extract).and_raise(StandardError, 'fff')
-          expect(FileUtils).to receive(:rm_rf).with(export_dir)
 
           expect { import_job.perform }.to raise_error(StandardError, 'fff')
+          expect(File.exist?(export_dir)).to eq(false)
         end
       end
 
