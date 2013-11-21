@@ -32,7 +32,7 @@ module Bosh::Stemcell
     let(:version) { '007' }
 
     before do
-      Infrastructure.stub(:for).with('vsphere').and_return(infrastructure)
+      Infrastructure.stub(:for).with(infrastructure.name).and_return(infrastructure)
       OperatingSystem.stub(:for).with(operating_system.name).and_return(operating_system)
       StageCollection.stub(:new).with(
         infrastructure: infrastructure,
@@ -203,25 +203,15 @@ module Bosh::Stemcell
           [
             "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
             "STEMCELL_IMAGE=#{File.join(root_dir, 'work', 'work', 'fake-root-disk-image.raw')}",
-            'bundle exec rspec -fd',
+            "bundle exec rspec -fd#{additional_rspec_options}",
             "spec/stemcells/#{operating_system.name}_spec.rb",
             "spec/stemcells/#{agent_name}_agent_spec.rb",
             "spec/stemcells/#{infrastructure.name}_spec.rb",
           ].join(' ')
         end
+        let(:additional_rspec_options) { '' }
 
-        it 'calls #configure_and_apply' do
-          stage_runner.should_receive(:configure_and_apply).
-            with(%w(FAKE_OS_STAGES FAKE_INFRASTRUCTURE_STAGES)).ordered
-          stemcell_builder_command.should_receive(:system).
-            with(expected_rspec_command).ordered
-
-          stemcell_builder_command.build
-        end
-
-        context 'with CentOS' do
-          let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Centos', name: 'centos') }
-
+        shared_examples_for 'a builder that calls #configure_and_apply correctly' do
           it 'calls #configure_and_apply' do
             stage_runner.should_receive(:configure_and_apply).
               with(%w(FAKE_OS_STAGES FAKE_INFRASTRUCTURE_STAGES)).ordered
@@ -229,6 +219,88 @@ module Bosh::Stemcell
               with(expected_rspec_command).ordered
 
             stemcell_builder_command.build
+          end
+        end
+
+        context 'with CentOS' do
+          let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Centos', name: 'centos') }
+
+          context 'on AWS' do
+            let(:infrastructure) do
+              instance_double(
+                'Bosh::Stemcell::Infrastructure::Aws',
+                name: 'aws',
+                hypervisor: 'xen'
+              )
+            end
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+
+          context 'on vSphere' do
+            let(:infrastructure) do
+              instance_double(
+                'Bosh::Stemcell::Infrastructure::Vsphere',
+                name: 'vsphere',
+                hypervisor: 'esxi'
+              )
+            end
+            let(:additional_rspec_options) { ' --tag ~exclude_on_vsphere' }
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+
+          context 'on OpenStack' do
+            let(:infrastructure) do
+              instance_double(
+                'Bosh::Stemcell::Infrastructure::OpenStack',
+                name: 'aws',
+                hypervisor: 'kvm'
+              )
+            end
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+        end
+
+        context 'with Ubuntu' do
+          let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
+
+          context 'on AWS' do
+            let(:infrastructure) do
+              instance_double(
+                'Bosh::Stemcell::Infrastructure::Aws',
+                name: 'aws',
+                hypervisor: 'xen'
+              )
+            end
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+
+          context 'on vSphere' do
+            let(:infrastructure) do
+              instance_double(
+                'Bosh::Stemcell::Infrastructure::Vsphere',
+                name: 'vsphere',
+                hypervisor: 'esxi'
+              )
+            end
+            let(:additional_rspec_options) { ' --tag ~exclude_on_vsphere' }
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+
+          context 'on OpenStack' do
+            let(:infrastructure) do
+              instance_double(
+                'Bosh::Stemcell::Infrastructure::OpenStack',
+                name: 'aws',
+                hypervisor: 'kvm'
+              )
+            end
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
           end
         end
       end
