@@ -144,7 +144,7 @@ describe 'CentOs Stemcell' do
     end
   end
 
-  context 'installed by system-aws-network', :exclude_on_vsphere => true do
+  context 'installed by system-aws-network' do
     describe file('/etc/sysconfig/network') do
       xit { should be_file }
       xit { should contain 'NETWORKING=yes' }
