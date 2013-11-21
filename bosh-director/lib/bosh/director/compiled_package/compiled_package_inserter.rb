@@ -18,12 +18,12 @@ module Bosh::Director::CompiledPackage
       ]
 
         oid = File.open(compiled_package.blob_path) do |f|
-          @blobstore_client.create(f, compiled_package.blobstore_id)
+          @blobstore_client.create(f)
         end
 
         begin
           Bosh::Director::Models::CompiledPackage.create(
-            blobstore_id: compiled_package.blobstore_id,
+            blobstore_id: oid,
             package: package,
             stemcell: stemcell,
             sha1: compiled_package.sha1,
