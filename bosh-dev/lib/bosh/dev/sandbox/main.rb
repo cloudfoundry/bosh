@@ -1,3 +1,4 @@
+require 'logger'
 require 'benchmark'
 require 'securerandom'
 require 'bosh/dev/sandbox/service'
@@ -7,6 +8,8 @@ require 'bosh/dev/sandbox/postgresql'
 
 module Bosh::Dev::Sandbox
   class Main
+    ASSETS_DIR = File.expand_path('../../../../../../spec/assets', __FILE__)
+
     DIRECTOR_UUID = 'deadbeef'
 
     DIRECTOR_CONFIG = 'director_test.yml'
@@ -32,8 +35,8 @@ module Bosh::Dev::Sandbox
     attr_reader :blobstore_storage_dir
     attr_accessor :director_fix_stateful_nodes
 
-    def initialize
-      @logger = Logger.new(STDOUT)
+    def initialize(logger = Logger.new(STDOUT))
+      @logger = logger
       @name = SecureRandom.hex(6)
 
       @logs_path = sandbox_path('logs')
@@ -149,6 +152,20 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(director_tmp_path)
       FileUtils.rm_rf(agent_tmp_path)
       FileUtils.rm_rf(blobstore_storage_dir)
+    end
+
+    def run
+      start
+      @logger.info('Sandbox running, type ctrl+c to stop')
+
+      loop { sleep 60 }
+
+    # rubocop:disable HandleExceptions
+    rescue Interrupt
+    # rubocop:enable HandleExceptions
+    ensure
+      stop
+      @logger.info('Stopped sandbox')
     end
 
     def nats_port
