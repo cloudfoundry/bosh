@@ -5,7 +5,7 @@ require 'bosh/dev/light_stemcell_pointer'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
-require 'bosh/dev/micro_bosh_release'
+require 'bosh/dev/bosh_release'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
@@ -115,7 +115,7 @@ module Bosh::Dev
 
     class Local < self
       def release_tarball_path
-        release = MicroBoshRelease.new
+        release = BoshRelease.new
         release.tarball_path
       end
 

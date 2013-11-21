@@ -333,8 +333,8 @@ module Bosh::Dev
 
     describe '#release_tarball_path' do
       it 'returns the path to new microbosh release' do
-        micro_bosh_release = instance_double('Bosh::Dev::MicroBoshRelease', tarball_path: 'tarball-path')
-        Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release)
+        micro_bosh_release = instance_double('Bosh::Dev::BoshRelease', tarball_path: 'tarball-path')
+        Bosh::Dev::BoshRelease.stub(new: micro_bosh_release)
         expect(subject.release_tarball_path).to eq('tarball-path')
       end
     end

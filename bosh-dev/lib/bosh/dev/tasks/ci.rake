@@ -19,9 +19,9 @@ namespace :ci do
   desc 'Publish CI pipeline MicroBOSH release to S3'
   task publish_microbosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
-    require 'bosh/dev/micro_bosh_release'
+    require 'bosh/dev/bosh_release'
     build = Bosh::Dev::Build.candidate
-    build.upload_release(Bosh::Dev::MicroBoshRelease.new)
+    build.upload_release(Bosh::Dev::BoshRelease.new)
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'

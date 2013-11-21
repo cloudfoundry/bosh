@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'bosh/dev/micro_bosh_release'
+require 'bosh/dev/bosh_release'
 
 module Bosh::Dev
-  describe MicroBoshRelease do
+  describe BoshRelease do
     include FakeFS::SpecHelpers
 
     describe '#tarball_path' do

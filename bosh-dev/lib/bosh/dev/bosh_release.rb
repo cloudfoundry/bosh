@@ -1,7 +1,7 @@
 require 'rake'
 
 module Bosh::Dev
-  class MicroBoshRelease
+  class BoshRelease
     def tarball_path
       Dir.chdir('release') do
         FileUtils.cp('config/bosh-dev-template.yml', 'config/dev.yml')
