@@ -1,4 +1,5 @@
 require 'yajl'
+require 'bosh/dev/sandbox/main'
 
 module IntegrationExampleGroup
   def deploy_simple(options={})
@@ -60,7 +61,7 @@ module IntegrationExampleGroup
   end
 
   def current_sandbox
-    @current_sandbox = Thread.current[:sandbox] || Bosh::Spec::Sandbox.new
+    @current_sandbox = Thread.current[:sandbox] || Bosh::Dev::Sandbox::Main.new
     Thread.current[:sandbox] = @current_sandbox
   end
 
