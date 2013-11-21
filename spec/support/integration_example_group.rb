@@ -44,8 +44,7 @@ module IntegrationExampleGroup
       command = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
       output = `#{command} 2>&1`
       if $?.exitstatus != 0 && !failure_expected
-        puts command
-        puts output
+        raise "ERROR: #{command} failed with #{output}"
       end
       output
     end
@@ -73,8 +72,9 @@ module IntegrationExampleGroup
     out.gsub(/^\s*/, '').gsub(/\s*$/, '')
   end
 
+  # forcefully suppress raising on error...caller beware
   def expect_output(cmd, expected_output)
-    format_output(run_bosh(cmd)).should == format_output(expected_output)
+    format_output(run_bosh(cmd, :failure_expected => true)).should == format_output(expected_output)
   end
 
   def get_vms
