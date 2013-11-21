@@ -75,6 +75,27 @@ module Bosh::Director::CompiledPackage
 
         inserter.insert(compiled_package, release_version)
       end
+
+      context 'when the database fails after creating the blob' do
+        before do
+          blobstore_client.stub(
+            create: 'object_id_from_blobstore_client',
+            delete: nil,
+          )
+          Bosh::Director::Models::CompiledPackage.stub(:create).and_raise 'database error'
+        end
+
+        it 'should delete the blob if ' do
+          inserter.insert(compiled_package, release_version) rescue RuntimeError; nil
+          expect(blobstore_client).to have_received(:delete).with('object_id_from_blobstore_client')
+        end
+
+        it 'should propagate the exception' do
+          expect {
+            inserter.insert(compiled_package, release_version)
+          }.to raise_error 'database error'
+        end
+      end
     end
 
     context 'when the compiled package has been inserted before' do

@@ -16,18 +16,24 @@ module Bosh::Director::CompiledPackage
         stemcell: stemcell,
         dependency_key: release_version.package_dependency_key(package.name),
       ]
-        File.open(compiled_package.blob_path) do |f|
+
+        oid = File.open(compiled_package.blob_path) do |f|
           @blobstore_client.create(f, compiled_package.blobstore_id)
         end
 
-        Bosh::Director::Models::CompiledPackage.create(
-          blobstore_id: compiled_package.blobstore_id,
-          package: package,
-          stemcell: stemcell,
-          sha1: compiled_package.sha1,
-          dependency_key: release_version.package_dependency_key(package.name),
-          build: Bosh::Director::Models::CompiledPackage.generate_build_number(package, stemcell),
-        )
+        begin
+          Bosh::Director::Models::CompiledPackage.create(
+            blobstore_id: compiled_package.blobstore_id,
+            package: package,
+            stemcell: stemcell,
+            sha1: compiled_package.sha1,
+            dependency_key: release_version.package_dependency_key(package.name),
+            build: Bosh::Director::Models::CompiledPackage.generate_build_number(package, stemcell),
+          )
+        rescue
+          @blobstore_client.delete(oid)
+          raise
+        end
       end
 
     end
