@@ -8,7 +8,9 @@ require 'bosh/dev/sandbox/postgresql'
 
 module Bosh::Dev::Sandbox
   class Main
-    ASSETS_DIR = File.expand_path('../../../../../../spec/assets', __FILE__)
+    REPO_ROOT = File.expand_path('../../../../../', File.dirname(__FILE__))
+
+    ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
     DIRECTOR_UUID = 'deadbeef'
 
@@ -24,7 +26,7 @@ module Bosh::Dev::Sandbox
     HM_CONFIG = 'health_monitor.yml'
     HM_CONF_TEMPLATE = File.join(ASSETS_DIR, 'health_monitor.yml.erb')
 
-    DIRECTOR_PATH = File.expand_path('../../../../../../bosh-director', __FILE__)
+    DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
     MIGRATIONS_PATH = File.join(DIRECTOR_PATH, 'db', 'migrations')
 
     attr_reader :name
