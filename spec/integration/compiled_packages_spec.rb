@@ -54,6 +54,29 @@ describe 'compiled_packages' do
     expect(deploy_output).to_not include('Compiling packages')
   end
 
+  it 'allows the user to import compiled packages after a previously successful import' do
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+    run_bosh('login admin admin')
+
+    deployment_manifest = yaml_file(
+        'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
+    run_bosh("deployment #{deployment_manifest.path}")
+
+    stemcell_path = spec_asset('valid_stemcell.tgz')
+    run_bosh("upload stemcell #{stemcell_path}")
+
+    release_path = create_release
+    run_bosh("upload release #{release_path}")
+
+    test_export = spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')
+    run_bosh("import compiled_packages #{test_export}")
+
+    expect{ run_bosh("import compiled_packages #{test_export}") }.to_not raise_error
+
+    deploy_output = run_bosh('deploy')
+    expect(deploy_output).to_not include('Compiling packages')
+  end
+
   def create_release
     release_file = 'dev_releases/bosh-release-0.1-dev.tgz'
     Dir.chdir(TEST_RELEASE_DIR) do
