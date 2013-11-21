@@ -13,7 +13,7 @@ func TestLinuxFormatWhenUsingSwapFs(t *testing.T) {
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext4" yyyy zzzz`, ""},
 	}
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+	formatter := newLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda1", FileSystemSwap)
 
 	assert.Equal(t, 2, len(fakeRunner.RunCommands))
@@ -27,7 +27,7 @@ func TestLinuxFormatWhenUsingSwapFsAndPartitionIsSwap(t *testing.T) {
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="swap" yyyy zzzz`, ""},
 	}
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+	formatter := newLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda1", FileSystemSwap)
 
 	assert.Equal(t, 1, len(fakeRunner.RunCommands))
@@ -42,7 +42,7 @@ func TestLinuxFormatWhenUsingExt4FsWithLazyItableSupport(t *testing.T) {
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext2" yyyy zzzz`, ""},
 	}
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+	formatter := newLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda2", FileSystemExt4)
 
 	assert.Equal(t, 2, len(fakeRunner.RunCommands))
@@ -56,7 +56,7 @@ func TestLinuxFormatWhenUsingExt4FsWithoutLazyItableSupport(t *testing.T) {
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext2" yyyy zzzz`, ""},
 	}
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+	formatter := newLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda2", FileSystemExt4)
 
 	assert.Equal(t, 2, len(fakeRunner.RunCommands))
@@ -71,7 +71,7 @@ func TestLinuxFormatWhenUsingExt4FsAndPartitionIsExt4(t *testing.T) {
 		"blkid -p /dev/xvda1": []string{`xxxxx TYPE="ext4" yyyy zzzz`, ""},
 	}
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+	formatter := newLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda1", FileSystemExt4)
 
 	assert.Equal(t, 1, len(fakeRunner.RunCommands))

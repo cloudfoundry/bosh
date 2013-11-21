@@ -3,8 +3,8 @@ package stats
 type dummyStatsCollector struct {
 }
 
-func NewDummyStatsCollector() (collector dummyStatsCollector) {
-	return
+func NewDummyStatsCollector() (collector StatsCollector) {
+	return dummyStatsCollector{}
 }
 
 func (p dummyStatsCollector) GetCpuLoad() (load CpuLoad, err error) {

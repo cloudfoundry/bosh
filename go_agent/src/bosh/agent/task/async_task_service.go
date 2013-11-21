@@ -11,14 +11,17 @@ type asyncTaskService struct {
 	taskSem      chan func()
 }
 
-func NewAsyncTaskService() (service asyncTaskService) {
-	service.currentTasks = make(map[string]Task)
-	service.taskChan = make(chan Task)
-	service.taskSem = make(chan func())
+func NewAsyncTaskService() (service Service) {
+	s := asyncTaskService{
+		currentTasks: make(map[string]Task),
+		taskChan:     make(chan Task),
+		taskSem:      make(chan func()),
+	}
 
-	go service.processTasks()
-	go service.processSemFuncs()
-	return
+	go s.processTasks()
+	go s.processSemFuncs()
+
+	return s
 }
 
 func (service asyncTaskService) StartTask(taskFunc TaskFunc) (task Task) {

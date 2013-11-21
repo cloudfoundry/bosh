@@ -8,14 +8,18 @@ import (
 	"strings"
 )
 
-type ExecCmdRunner struct {
+type execCmdRunner struct {
 }
 
-func (run ExecCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
+func NewExecCmdRunner() (cmRunner CmdRunner) {
+	return execCmdRunner{}
+}
+
+func (run execCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
 	return runCmd(cmdName, args, nil)
 }
 
-func (run ExecCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (stdout, stderr string, err error) {
+func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (stdout, stderr string, err error) {
 	return runCmd(cmdName, args, func(cmd *exec.Cmd) {
 		cmd.Stdin = strings.NewReader(input)
 	})

@@ -381,8 +381,8 @@ func TestStartMonit(t *testing.T) {
 
 func TestCompressFilesInDir(t *testing.T) {
 	fakeStats, _, _, fakeDiskManager := getUbuntuDependencies()
-	osFs := boshsys.OsFileSystem{}
-	execCmdRunner := boshsys.ExecCmdRunner{}
+	osFs := boshsys.NewOsFileSystem()
+	execCmdRunner := boshsys.NewExecCmdRunner()
 
 	tmpDir := filepath.Join(os.TempDir(), "TestCompressFilesInDir")
 	err := osFs.MkdirAll(tmpDir, os.ModePerm)

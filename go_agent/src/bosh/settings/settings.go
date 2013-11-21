@@ -22,8 +22,8 @@ type Settings struct {
 type BlobstoreType string
 
 const (
-	BlobstoreTypeS3 BlobstoreType = "s3"
-	BlobstoreTypeDummy = "dummy"
+	BlobstoreTypeS3    BlobstoreType = "s3"
+	BlobstoreTypeDummy               = "dummy"
 )
 
 type Blobstore struct {

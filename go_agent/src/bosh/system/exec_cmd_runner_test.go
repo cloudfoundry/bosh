@@ -6,7 +6,7 @@ import (
 )
 
 func TestRunCommand(t *testing.T) {
-	runner := ExecCmdRunner{}
+	runner := NewExecCmdRunner()
 
 	stdout, stderr, err := runner.RunCommand("echo", "Hello World!")
 	assert.NoError(t, err)
@@ -15,7 +15,7 @@ func TestRunCommand(t *testing.T) {
 }
 
 func TestRunCommandWithErrorOutput(t *testing.T) {
-	runner := ExecCmdRunner{}
+	runner := NewExecCmdRunner()
 
 	stdout, stderr, err := runner.RunCommand("sh", "-c", "echo error-output >&2")
 	assert.NoError(t, err)
@@ -24,7 +24,7 @@ func TestRunCommandWithErrorOutput(t *testing.T) {
 }
 
 func TestRunCommandWithError(t *testing.T) {
-	runner := ExecCmdRunner{}
+	runner := NewExecCmdRunner()
 
 	stdout, stderr, err := runner.RunCommand("false")
 	assert.Error(t, err)
@@ -34,7 +34,7 @@ func TestRunCommandWithError(t *testing.T) {
 }
 
 func TestRunCommandWithCmdNotFound(t *testing.T) {
-	runner := ExecCmdRunner{}
+	runner := NewExecCmdRunner()
 
 	stdout, stderr, err := runner.RunCommand("something that does not exist")
 	assert.Error(t, err)
@@ -44,7 +44,7 @@ func TestRunCommandWithCmdNotFound(t *testing.T) {
 }
 
 func TestRunCommandWithInput(t *testing.T) {
-	runner := ExecCmdRunner{}
+	runner := NewExecCmdRunner()
 
 	stdout, stderr, err := runner.RunCommandWithInput("foo\nbar\nbaz", "grep", "ba")
 

@@ -11,7 +11,7 @@ type linuxFormatter struct {
 	fs     boshsys.FileSystem
 }
 
-func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (formatter linuxFormatter) {
+func newLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (formatter linuxFormatter) {
 	formatter.runner = runner
 	formatter.fs = fs
 	return

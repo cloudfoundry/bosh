@@ -13,7 +13,7 @@ import (
 	"io/ioutil"
 )
 
-type App struct {
+type app struct {
 }
 
 type options struct {
@@ -21,11 +21,11 @@ type options struct {
 	PlatformName       string
 }
 
-func New() (app App) {
+func New() (app app) {
 	return
 }
 
-func (app App) Run(args []string) (err error) {
+func (app app) Run(args []string) (err error) {
 	opts, err := parseOptions(args)
 	if err != nil {
 		return

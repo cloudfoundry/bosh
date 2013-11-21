@@ -10,8 +10,8 @@ type valueResponse struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-func NewValueResponse(value interface{}) (resp valueResponse) {
-	resp.Value = value
+func NewValueResponse(value interface{}) (resp Response) {
+	resp = valueResponse{Value: value}
 	return
 }
 
@@ -24,9 +24,10 @@ type exceptionResponse struct {
 	} `json:"exception"`
 }
 
-func NewExceptionResponse(msg string, args ...interface{}) (resp exceptionResponse) {
-	resp.Exception.Message = fmt.Sprintf(msg, args...)
-	return
+func NewExceptionResponse(msg string, args ...interface{}) (resp Response) {
+	r := exceptionResponse{}
+	r.Exception.Message = fmt.Sprintf(msg, args...)
+	return r
 }
 
 func (r exceptionResponse) responseInterfaceFunc() {
