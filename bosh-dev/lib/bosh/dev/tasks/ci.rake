@@ -16,8 +16,8 @@ namespace :ci do
     gems_generator.generate_and_upload
   end
 
-  desc 'Publish CI pipeline MicroBOSH release to S3'
-  task publish_microbosh_release: [:publish_pipeline_gems] do
+  desc 'Publish CI pipeline BOSH release to S3'
+  task publish_bosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
     require 'bosh/dev/bosh_release'
     build = Bosh::Dev::Build.candidate
