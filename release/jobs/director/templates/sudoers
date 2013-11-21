@@ -1,1 +1,2 @@
 vcap ALL= NOPASSWD: /var/vcap/jobs/director/bin/stemcell-copy
+vcap ALL= NOPASSWD: /var/vcap/jobs/director/bin/stemcell-copy-cloudstack

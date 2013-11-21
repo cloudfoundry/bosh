@@ -1,0 +1,13 @@
+---
+cloudstack:
+  endpoint: http://127.0.0.1:5000/client
+  api_key: foo
+  secret_api_key: bar
+  default_zone: zone0
+  default_key_name: default
+  default_security_groups: ["default"]
+
+registry:
+  endpoint: http://127.0.0.1:25695
+  user: admin
+  password: admin

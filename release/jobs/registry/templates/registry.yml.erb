@@ -41,4 +41,12 @@ cloud:
     endpoint_type: <%= endpoint_type %>
     <% end %>
 <% end %>
+<% if_p('cloudstack.endpoint', 'cloudstack.api_key', 'cloudstack.secret_access_key') do |endpoint, api_key, secret_access_key| %>
+  plugin: cloudstack <% plugin = 'cloudstack' %>
+  cloudstack:
+    endpoint: <%= endpoint %>
+    api_key: <%= api_key %>
+    secret_access_key: <%= secret_access_key %>
+<% end %>
+
 <% raise 'Could not find cloud plugin' if plugin.nil? %>

@@ -7,6 +7,7 @@ templates:
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
+  stemcell-copy-cloudstack.sh: bin/stemcell-copy-cloudstack
   task_logrotate.sh: bin/task_logrotate
   task_logrotate.cron: config/task_logrotate.cron
   director.pem.erb: config/ssl/director.pem
@@ -277,8 +278,26 @@ properties:
     default: false
   openstack.default_key_name:
     description: Default OpenStack keypair to use when spinning up new vms
+  cloudstack.endpoint:
+    description: CloudStack Endpoint URL
   openstack.default_security_groups:
     description: Default OpenStack security groups to use when spinning up new vms
+  cloudstack.api_key:
+    description: CloudStack API key
+  cloudstack.secret_access_key:
+    description: Cloudstack secret access key
+  cloudstack.state_timeout:
+    description: Timeout (in seconds) for CloudStack resources desired state (optional, by default 300)
+    default: 300
+  cloudstack.stemcell_public_visibility:
+    description: Set public visibility for stemcells (optional, false by default)
+    default: false
+  cloudstack.default_key_name:
+    description: Default CloudStack keypair to use when spinning up new vms
+  cloudstack.default_security_groups:
+    description: Default CloudStack security groups to use when spinning up new vms
+  cloudstack.default_zone:
+    description: Default CloudStack zone to use when spinning up new vms
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:

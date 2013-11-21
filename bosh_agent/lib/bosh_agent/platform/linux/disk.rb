@@ -31,7 +31,7 @@ module Bosh::Agent
       case @config.infrastructure_name
         when "vsphere"
           VSPHERE_DATA_DISK
-        when "aws", "openstack"
+        when "aws", "openstack", "cloudstack"
           settings = @config.settings
           dev_path = settings['disks']['ephemeral']
           unless dev_path
@@ -56,7 +56,7 @@ module Bosh::Agent
         when "vsphere"
           # VSphere passes in scsi disk id
           get_available_scsi_path(disk_id)
-        when "aws", "openstack"
+        when "aws", "openstack", "cloudstack"
           # AWS & OpenStack pass in the device name
           get_available_path(disk_id)
         else
