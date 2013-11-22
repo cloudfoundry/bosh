@@ -17,6 +17,7 @@ module Bosh::CloudStackCloud
     attr_accessor :logger
     attr_reader :metadata_server
     attr_reader :zone_network_type
+    attr_reader :state_timeout
 
     ##
     # Creates a new BOSH CloudStack CPI

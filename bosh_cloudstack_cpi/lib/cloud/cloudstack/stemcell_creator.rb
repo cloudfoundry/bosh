@@ -10,6 +10,7 @@ module Bosh::CloudStackCloud
       @zone = zone
       @stemcell_properties = stemcell_properties
       @cloud = cloud
+      @state_timeout = cloud.state_timeout
     end
 
     def create(volume, device, image_path)
