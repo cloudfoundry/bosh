@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -65,6 +63,10 @@ module Bosh::Director
         domain = double('domain', id:  0)
         @deployment_plan.should_receive(:dns_domain).and_return(domain)
         @cloud.should_receive(:delete_vm).with(vm.cid)
+
+        job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
+        RenderedJobTemplatesCleaner.stub(:new).with(instance).and_return(job_templates_cleaner)
+        job_templates_cleaner.should_receive(:clean_all)
 
         @deleter.delete_instance(instance)
 

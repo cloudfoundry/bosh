@@ -16,6 +16,14 @@ module Bosh::Director
       end
     end
 
+    def clean_all
+      archives = Models::RenderedTemplatesArchive.filter(instance: instance_model)
+      archives.each do |archive|
+        blobstore.delete(archive.blob_id)
+        archive.delete
+      end
+    end
+
     private
 
     attr_reader :instance_model, :blobstore
