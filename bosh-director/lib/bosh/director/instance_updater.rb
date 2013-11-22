@@ -1,4 +1,5 @@
 require 'bosh/director/instance_preparer'
+require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   class InstanceUpdater
@@ -77,6 +78,8 @@ module Bosh::Director
       VmMetadataUpdater.build.update(@vm, {})
 
       step { apply_state(@instance.spec) }
+
+      RenderedJobTemplatesCleaner.new(@instance).clean
 
       start! if need_start?
 

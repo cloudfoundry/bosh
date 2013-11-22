@@ -118,12 +118,26 @@ module Bosh::Director
         end
       end
 
-      let(:preparer) do
-        instance_double('Bosh::Director::InstancePreparer', prepare: nil)
-      end
+      before { Bosh::Director::InstancePreparer.stub(:new).with(instance, agent_client).and_return(preparer) }
+      let(:preparer) { instance_double('Bosh::Director::InstancePreparer', prepare: nil) }
 
-      before do
-        Bosh::Director::InstancePreparer.stub(:new).with(instance, agent_client).and_return(preparer)
+      before { Bosh::Director::RenderedJobTemplatesCleaner.stub(:new).with(instance).and_return(templates_cleaner) }
+      let(:templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner', clean: nil) }
+
+      context 'when instance is not detached' do
+        before do
+          subject.stub(:stop)
+          subject.stub(:start!)
+          subject.stub(:apply_state)
+          subject.stub(:wait_until_running)
+          subject.stub(current_state: {'job_state' => 'running'})
+        end
+
+        it 'cleans up rendered job templates after apply' do
+          subject.should_receive(:apply_state).ordered
+          templates_cleaner.should_receive(:clean).ordered
+          subject.update
+        end
       end
 
       context 'with only a dns change' do

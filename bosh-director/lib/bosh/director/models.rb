@@ -18,6 +18,7 @@ require 'bosh/director/models/user'
 require 'bosh/director/models/vm'
 require 'bosh/director/models/persistent_disk'
 require 'bosh/director/models/director_attribute'
+require 'bosh/director/models/rendered_templates_archive'
 
 module Bosh::Director
   module Models

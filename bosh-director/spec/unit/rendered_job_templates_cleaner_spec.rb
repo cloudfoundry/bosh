@@ -7,7 +7,7 @@ module Bosh::Director
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
     let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
 
-    describe '#cleanup' do
+    describe '#clean' do
       before { instance.stub(model: instance_model) }
       let(:instance_model) { Models::Instance.make }
 
@@ -30,14 +30,14 @@ module Bosh::Director
       end
 
       it 'removes stale templates for the current instance from the blobstore' do
-        rendered_job_templates.cleanup
+        rendered_job_templates.clean
         expect(blobstore).to have_received(:delete).with('fake-stale-blob-id')
         expect(blobstore).to_not have_received(:delete).with('fake-latest-blob-id')
       end
 
       it 'removes stale templates for the current instance from the database' do
         expect {
-          rendered_job_templates.cleanup
+          rendered_job_templates.clean
         }.to change {
           instance.model.refresh.rendered_templates_archives.map(&:blob_id)
         }.to(['fake-latest-blob-id'])
@@ -54,7 +54,7 @@ module Bosh::Director
         )
 
         expect {
-          rendered_job_templates.cleanup
+          rendered_job_templates.clean
         }.not_to change {
           other_instance_model.refresh.rendered_templates_archives.count
         }.from(1)
