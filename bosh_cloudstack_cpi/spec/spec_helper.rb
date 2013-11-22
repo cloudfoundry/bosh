@@ -62,7 +62,8 @@ def mock_cloud(options = nil)
   snapshots = double('snapshots')
   key_pairs = double('key_pairs')
   security_groups = double('security_groups')
-  zones = [double('foobar-1a', :name => mock_cloud_options['cloudstack']['default_zone'], :id => 'foobar-1a', :network_type => 'Basic')]
+  zones = [double('foobar-1a', :name => mock_cloud_options['cloudstack']['default_zone'], :id => 'foobar-1a', :network_type => 'Basic', :security_groups_enabled => true),
+           double('foobar-2a', :name => "foobar-2a", :id => 'foobar-2a', :network_type => 'Advanced', :security_groups_enabled => false)]
   disk_offerings = [double('disk_offer1', :name => 'disk_offer-10000', :id => 'disk_offer1', :disk_size => 10000)]
   networks = double('networks')
   jobs = double('jobs')

@@ -25,7 +25,7 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
     }
   end
 
-  def server_params(unique_name, security_groups = [], nics = [], nameserver = nil)
+  def server_params(unique_name, security_groups = [], nics = [], nameserver = nil, zone_id = "foobar-1a")
     {
       :name => "vm-#{unique_name}",
       :template_id => "sc-id",
@@ -33,7 +33,7 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
       :key_name => "test_key",
       :security_groups => security_groups,
       :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(unique_name, nameserver, false))),
-      :zone_id => "foobar-1a"
+      :zone_id => zone_id
     }
   end
 
@@ -144,6 +144,37 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
     # TODO
   end
 
+  it "skips assiging security groups when the feature is disabled" do
+    network_spec = dynamic_network_spec
+    network_spec["cloud_properties"] = {}
+
+    cloud = mock_cloud do |compute|
+      params = server_params(unique_name, [], [], nil, "foobar-2a")
+      params.delete(:security_groups)
+      compute.servers.should_receive(:create).
+          with(params).and_return(server)
+      compute.should_receive(:security_groups).and_return(security_groups)
+      compute.images.should_receive(:find).and_return(image)
+      compute.flavors.should_receive(:find).and_return(flavor)
+      compute.key_pairs.should_receive(:find).and_return(key_pair)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(server, :running)
+
+    @registry.should_receive(:update_settings).
+        with("i-test", agent_settings(unique_name, network_spec))
+
+    spec = resource_pool_spec
+    spec["availability_zone"] = "foobar-2a"
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            spec,
+                            { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+    vm_id.should == "i-test"
+  end
+
   it "raises a Retryable Error when cannot create an CloudStack server" do
     cloud = mock_cloud do |compute|
       compute.servers.should_receive(:create).and_return(server)
@@ -165,7 +196,10 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
 
   it "raises an error when a security group doesn't exist" do
     cloud = mock_cloud do |compute|
+      compute.images.should_receive(:find).and_return(image)
+      compute.flavors.should_receive(:find).and_return(flavor)
       compute.should_receive(:security_groups).and_return([])
+      compute.key_pairs.should_receive(:find).and_return(key_pair)
     end
 
     expect {
@@ -188,6 +222,28 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
       cloud.create_vm("agent-id", "sc-id", spec, { "network_a" => dynamic_network_spec },
                       nil, { "test_env" => "value" })
     }.to raise_error(Bosh::Clouds::CloudError, "Disk offering `foobar-offering' not found")
+  end
+
+
+  it "raises an error when security groups given and feature is disabled" do
+    network_spec = dynamic_network_spec
+
+    cloud = mock_cloud do |compute|
+      compute.should_receive(:security_groups).and_return(security_groups)
+      compute.images.should_receive(:find).and_return(image)
+      compute.flavors.should_receive(:find).and_return(flavor)
+      compute.key_pairs.should_receive(:find).and_return(key_pair)
+    end
+
+    spec = resource_pool_spec
+    spec["availability_zone"] = "foobar-2a"
+
+    expect {
+      cloud.create_vm("agent-id", "sc-id",
+                       spec,
+                       { "network_a" => network_spec },
+                       nil, { "test_env" => "value" })
+    }.to raise_error(Bosh::Clouds::CloudError, "Cannot use security groups `default' becuase security groups are disabled for zone `foobar-2a'")
   end
 
   def volume(zone)

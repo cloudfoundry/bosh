@@ -164,18 +164,6 @@ module Bosh::CloudStackCloud
 
         network_configurator = NetworkConfigurator.new(network_spec, zone_network_type)
 
-        compute_security_groups = with_compute { @compute.security_groups }
-        requested_security_groups =
-          network_configurator.security_groups(@default_security_groups)
-        security_groups = []
-        compute_security_groups.each do |sg|
-          if requested_security_groups.reject! { |request| sg.name == request }
-            security_groups << sg
-          end
-        end
-        cloud_error("Security group `#{requested_security_groups.join(', ')}' not found") unless requested_security_groups.empty?
-        @logger.debug("Using security groups: `#{security_groups.map { |sg| sg.name }.join(', ')}'")
-
         image = with_compute { @compute.images.find { |i| i.id == stemcell_id } }
         cloud_error("Image `#{stemcell_id}' not found") if image.nil?
         @logger.debug("Using image: `#{stemcell_id}'")
@@ -198,7 +186,6 @@ module Bosh::CloudStackCloud
           :template_id => image.id,
           :service_offering_id => flavor.id,
           :key_name => keypair.name,
-          :security_groups => security_groups,
           :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(server_name, network_spec))),
         }
 
@@ -208,6 +195,27 @@ module Bosh::CloudStackCloud
           cloud_error("Availability zone `#{availability_zone}' not found") if selected_zone.nil?
           @logger.debug("Using availability zone: `#{selected_zone.name}' (#{selected_zone.id})")
           server_params[:zone_id] = selected_zone.id
+        end
+
+        compute_security_groups = with_compute { @compute.security_groups }
+        requested_security_groups =
+          network_configurator.security_groups(@default_security_groups)
+        security_groups = []
+        compute_security_groups.each do |sg|
+          if requested_security_groups.reject! { |request| sg.name == request }
+            security_groups << sg
+          end
+        end
+        cloud_error("Security group `#{requested_security_groups.join(', ')}' not found") unless requested_security_groups.empty?
+
+        if selected_zone.security_groups_enabled
+          @logger.debug("Using security groups: `#{security_groups.map { |sg| sg.name }.join(', ')}'")
+          server_params[:security_groups] = security_groups
+        else
+          unless security_groups.empty?
+            cloud_error("Cannot use security groups `#{security_groups.map { |sg| sg.name }.join(', ')}' becuase security groups are disabled for zone `#{selected_zone.name}'")
+          end
+          @logger.debug("Security group for zone `#{selected_zone.name}' is disabled")
         end
 
         ephemeral_volume = resource_pool["ephemeral_volume"] || nil
