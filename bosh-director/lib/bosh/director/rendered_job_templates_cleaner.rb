@@ -8,6 +8,8 @@ module Bosh::Director
     def clean
       instance_archives = Models::RenderedTemplatesArchive.filter(instance: instance_model)
       current_archive = instance_archives.reverse_order(:created_at).first
+      return unless current_archive
+
       instance_archives.exclude(id: current_archive.id).each do |archive|
         blobstore.delete(archive.blob_id)
         archive.delete

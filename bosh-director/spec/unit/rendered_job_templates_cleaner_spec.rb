@@ -10,51 +10,59 @@ module Bosh::Director
     describe '#clean' do
       before { allow(blobstore).to receive(:delete) }
 
-      before do
-        Models::RenderedTemplatesArchive.create(
-          blob_id: 'fake-latest-blob-id',
-          instance: instance_model,
-          created_at: Time.new(2013, 02, 01),
-          checksum: 'current-fake-checksum',
-        )
-
-        Models::RenderedTemplatesArchive.create(
-          blob_id: 'fake-stale-blob-id',
-          instance: instance_model,
-          created_at: Time.new(2013, 01, 01),
-          checksum: 'stale-fake-checksum',
-        )
+      context 'when instance model has no associated rendered templates archives' do
+        it 'does nothing' do
+          expect { rendered_job_templates.clean }.to_not raise_error
+        end
       end
 
-      it 'removes stale templates for the current instance from the blobstore' do
-        rendered_job_templates.clean
-        expect(blobstore).to have_received(:delete).with('fake-stale-blob-id')
-        expect(blobstore).to_not have_received(:delete).with('fake-latest-blob-id')
-      end
+      context 'when instance model has multiple associated rendered templates archives' do
+        before do
+          Models::RenderedTemplatesArchive.create(
+            blob_id: 'fake-latest-blob-id',
+            instance: instance_model,
+            created_at: Time.new(2013, 02, 01),
+            checksum: 'current-fake-checksum',
+          )
 
-      it 'removes stale templates for the current instance from the database' do
-        expect {
+          Models::RenderedTemplatesArchive.create(
+            blob_id: 'fake-stale-blob-id',
+            instance: instance_model,
+            created_at: Time.new(2013, 01, 01),
+            checksum: 'stale-fake-checksum',
+          )
+        end
+
+        it 'removes stale templates for the current instance from the blobstore' do
           rendered_job_templates.clean
-        }.to change {
-          instance_model.refresh.rendered_templates_archives.map(&:blob_id)
-        }.to(['fake-latest-blob-id'])
-      end
+          expect(blobstore).to have_received(:delete).with('fake-stale-blob-id')
+          expect(blobstore).to_not have_received(:delete).with('fake-latest-blob-id')
+        end
 
-      it 'does not affect rendered templates belonging to another instance' do
-        other_instance_model = Models::Instance.make
+        it 'removes stale templates for the current instance from the database' do
+          expect {
+            rendered_job_templates.clean
+          }.to change {
+            instance_model.refresh.rendered_templates_archives.map(&:blob_id)
+          }.to(['fake-latest-blob-id'])
+        end
 
-        Models::RenderedTemplatesArchive.create(
-          blob_id: 'fake-other-latest-blob-id',
-          instance: other_instance_model,
-          created_at: Time.new(1990, 01, 01),
-          checksum: 'fake-other-fake-checksum',
-        )
+        it 'does not affect rendered templates belonging to another instance' do
+          other_instance_model = Models::Instance.make
 
-        expect {
-          rendered_job_templates.clean
-        }.not_to change {
-          other_instance_model.refresh.rendered_templates_archives.count
-        }.from(1)
+          Models::RenderedTemplatesArchive.create(
+            blob_id: 'fake-other-latest-blob-id',
+            instance: other_instance_model,
+            created_at: Time.new(1990, 01, 01),
+            checksum: 'fake-other-fake-checksum',
+          )
+
+          expect {
+            rendered_job_templates.clean
+          }.not_to change {
+            other_instance_model.refresh.rendered_templates_archives.count
+          }.from(1)
+        end
       end
     end
   end
