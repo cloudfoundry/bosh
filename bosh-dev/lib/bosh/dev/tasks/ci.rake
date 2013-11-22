@@ -34,13 +34,28 @@ namespace :ci do
     Bosh::Dev::BoshReleasePublisher.setup_for(build).publish
   end
 
-  desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
-  task :build_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
+  def build_light_stemcell(stemcell_filename)
+    stemcell = Bosh::Stemcell::Archive.new(stemcell_filename)
+    light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell)
+    light_stemcell.write_archive
+  end
+
+  task :build_light_stemcell, [:stemcell_path] do |_,args|
+    require 'bosh/stemcell/aws/light_stemcell'
+    build_light_stemcell(args.stemcell_path)
+  end
+
+  def build_stemcell(infrastructure_name, operating_system_name, agent_name)
     require 'bosh/dev/stemcell_builder'
 
     stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
-      args.infrastructure_name, args.operating_system_name, args.agent_name)
-    stemcell_file = stemcell_builder.build_stemcell
+      infrastructure_name, operating_system_name, agent_name)
+    stemcell_builder.build_stemcell
+  end
+
+  desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
+  task :build_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
+    stemcell_file = build_stemcell(args.infrastructure_name, args.operating_system_name, args.agent_name)
 
     mkdir_p('tmp')
     cp(stemcell_file, File.join('tmp', File.basename(stemcell_file)))
@@ -49,12 +64,9 @@ namespace :ci do
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and publish to S3'
   task :publish_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
     require 'bosh/dev/build'
-    require 'bosh/dev/stemcell_builder'
     require 'bosh/dev/stemcell_publisher'
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
-      args.infrastructure_name, args.operating_system_name, args.agent_name)
-    stemcell_file = stemcell_builder.build_stemcell
+    stemcell_file = build_stemcell(args.infrastructure_name, args.operating_system_name, args.agent_name)
 
     stemcell_publisher = Bosh::Dev::StemcellPublisher.for_candidate_build
     stemcell_publisher.publish(stemcell_file)
