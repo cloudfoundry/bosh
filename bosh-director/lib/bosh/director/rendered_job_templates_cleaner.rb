@@ -1,8 +1,8 @@
 require 'bosh/director/models/rendered_templates_archive'
 
 module Bosh::Director
-  class RenderedJobTemplates
-    def initialize(instance, blobstore)
+  class RenderedJobTemplatesCleaner
+    def initialize(instance, blobstore = Bosh::Blobstore::NullBlobstoreClient.new)
       @instance = instance
       @blobstore = blobstore
     end
