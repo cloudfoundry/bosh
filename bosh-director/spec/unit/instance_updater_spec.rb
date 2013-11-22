@@ -121,7 +121,7 @@ module Bosh::Director
       before { Bosh::Director::InstancePreparer.stub(:new).with(instance, agent_client).and_return(preparer) }
       let(:preparer) { instance_double('Bosh::Director::InstancePreparer', prepare: nil) }
 
-      before { Bosh::Director::RenderedJobTemplatesCleaner.stub(:new).with(instance).and_return(templates_cleaner) }
+      before { Bosh::Director::RenderedJobTemplatesCleaner.stub(:new).with(instance_model).and_return(templates_cleaner) }
       let(:templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner', clean: nil) }
 
       context 'when instance is not detached' do

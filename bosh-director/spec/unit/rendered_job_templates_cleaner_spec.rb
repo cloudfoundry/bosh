@@ -3,14 +3,11 @@ require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   describe RenderedJobTemplatesCleaner do
-    subject(:rendered_job_templates) { described_class.new(instance, blobstore) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+    subject(:rendered_job_templates) { described_class.new(instance_model, blobstore) }
+    let(:instance_model) { Models::Instance.make }
     let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
 
     describe '#clean' do
-      before { instance.stub(model: instance_model) }
-      let(:instance_model) { Models::Instance.make }
-
       before { allow(blobstore).to receive(:delete) }
 
       before do
@@ -39,7 +36,7 @@ module Bosh::Director
         expect {
           rendered_job_templates.clean
         }.to change {
-          instance.model.refresh.rendered_templates_archives.map(&:blob_id)
+          instance_model.refresh.rendered_templates_archives.map(&:blob_id)
         }.to(['fake-latest-blob-id'])
       end
 

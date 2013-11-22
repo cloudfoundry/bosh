@@ -79,7 +79,7 @@ module Bosh::Director
 
       step { apply_state(@instance.spec) }
 
-      RenderedJobTemplatesCleaner.new(@instance).clean
+      RenderedJobTemplatesCleaner.new(@instance.model).clean
 
       start! if need_start?
 

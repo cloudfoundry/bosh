@@ -1,12 +1,12 @@
 module Bosh::Director
   class RenderedJobTemplatesCleaner
-    def initialize(instance, blobstore = Bosh::Blobstore::NullBlobstoreClient.new)
-      @instance = instance
+    def initialize(instance_model, blobstore = Bosh::Blobstore::NullBlobstoreClient.new)
+      @instance_model = instance_model
       @blobstore = blobstore
     end
 
     def clean
-      instance_archives = Models::RenderedTemplatesArchive.filter(instance: instance.model)
+      instance_archives = Models::RenderedTemplatesArchive.filter(instance: instance_model)
       current_archive = instance_archives.reverse_order(:created_at).first
       instance_archives.exclude(id: current_archive.id).each do |archive|
         blobstore.delete(archive.blob_id)
@@ -16,6 +16,6 @@ module Bosh::Director
 
     private
 
-    attr_reader :instance, :blobstore
+    attr_reader :instance_model, :blobstore
   end
 end
