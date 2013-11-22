@@ -2,14 +2,19 @@ require 'rake'
 
 module Bosh::Dev
   class BoshRelease
+    def self.build
+      new(BoshCliSession.new)
+    end
+
+    def initialize(cli_session)
+      @cli_session = cli_session
+    end
+
     def tarball_path
       Dir.chdir('release') do
-        FileUtils.cp('config/bosh-dev-template.yml', 'config/dev.yml')
-        Rake::FileUtilsExt.sh('bosh create release --force --with-tarball')
+        output = @cli_session.run_bosh('create release --force --with-tarball')
+        output.scan(/Release tarball\s+\(.+\):\s+(.+)$/).first.first
       end
-
-      release_tarball = Dir.glob('release/dev_releases/bosh*.tgz').max_by { |f| File.mtime(f) }
-      File.join(File.expand_path(File.dirname(__FILE__)), '..', '..', '..', '..', release_tarball)
     end
   end
 end

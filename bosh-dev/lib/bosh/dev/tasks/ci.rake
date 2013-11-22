@@ -21,7 +21,7 @@ namespace :ci do
     require 'bosh/dev/build'
     require 'bosh/dev/bosh_release'
     build = Bosh::Dev::Build.candidate
-    build.upload_release(Bosh::Dev::BoshRelease.new)
+    build.upload_release(Bosh::Dev::BoshRelease.build)
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'

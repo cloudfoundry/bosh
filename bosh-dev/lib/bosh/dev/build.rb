@@ -115,7 +115,7 @@ module Bosh::Dev
 
     class Local < self
       def release_tarball_path
-        release = BoshRelease.new
+        release = BoshRelease.build
         release.tarball_path
       end
 
