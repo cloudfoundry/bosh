@@ -35,13 +35,8 @@ module Bosh::Director
           end
 
           context 'and agent responds with an error' do
-            let(:error) do
-              RpcRemoteException.new('something else went wrong')
-            end
-
-            before do
-              agent_client.stub(:prepare).and_raise(error)
-            end
+            before { agent_client.stub(:prepare).and_raise(error) }
+            let(:error) { RpcRemoteException.new('something else went wrong') }
 
             it 'propagates the error' do
               expect { preparer.prepare }.to raise_error(error)
@@ -50,13 +45,8 @@ module Bosh::Director
         end
 
         context "when agent does not know how to respond to 'prepare'" do
-          let(:error) do
-            RpcRemoteException.new('unknown message {"method"=>"prepare", "blah"=>"blah"}')
-          end
-
-          before do
-            agent_client.stub(:prepare).and_raise(error)
-          end
+          before { agent_client.stub(:prepare).and_raise(error) }
+          let(:error) { RpcRemoteException.new('unknown message {"method"=>"prepare", "blah"=>"blah"}') }
 
           it 'tolerates the error since prepare message is an optimization and old agents might not know it' do
             expect { preparer.prepare }.not_to raise_error
