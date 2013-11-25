@@ -66,11 +66,8 @@ module Bosh::Dev
       )
     end
 
-    before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
-    let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
-
     subject(:build) { Build::Candidate.new('123', download_adapter) }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     before(:all) { Fog.mock! }
     after(:all) { Fog.unmock! }
@@ -88,6 +85,9 @@ module Bosh::Dev
     describe '#upload' do
       let(:release) { double(tarball_path: 'release-tarball.tgz') }
       let(:io) { double }
+
+      before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
 
       it 'uploads the release with its build number' do
         File.stub(:open).with(release.tarball_path) { io }
@@ -107,6 +107,9 @@ module Bosh::Dev
       let(:dst) { 'dest_dir' }
       let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
       let(:logger) { instance_double('Logger').as_null_object }
+
+      before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
 
       before do
         FileUtils.mkdir_p(src)
@@ -153,7 +156,6 @@ module Bosh::Dev
       end
 
       before do
-        UploadAdapter.unstub(:new)
         Rake::FileUtilsExt.stub(:sh)
         Bosh::Stemcell::Archive.stub(new: stemcell)
         PromotableArtifacts.stub(new: promotable_artifacts)
@@ -173,8 +175,6 @@ module Bosh::Dev
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
 
       before do
-        Bosh::Dev::UploadAdapter.unstub(:new)
-
         FileUtils.mkdir('/tmp')
         File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
         Logger.stub(new: logger)
@@ -299,7 +299,7 @@ module Bosh::Dev
 
   describe Build::Candidate do
     subject(:build) { Build::Candidate.new('123', download_adapter) }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
@@ -326,7 +326,7 @@ module Bosh::Dev
 
   describe Build::Local do
     subject { described_class.new('build-number', download_adapter) }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     before(:all) { Fog.mock! }
     after(:all) { Fog.unmock! }
