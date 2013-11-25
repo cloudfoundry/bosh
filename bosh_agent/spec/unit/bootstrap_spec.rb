@@ -293,7 +293,7 @@ describe Bosh::Agent::Bootstrap do
         it "creates a data/sys/#{dir} directory" do
           path = "/tmp/somedir/data/sys/#{dir}"
           @processor.setup_data_sys
-          expect(File.directory?(path)).to be_true
+          expect(File.directory?(path)).to be(true)
           expect(File.stat(path).gid).to eq(42)
           expect(File.stat(path).mode).to eq(canary_dir_mode)
         end

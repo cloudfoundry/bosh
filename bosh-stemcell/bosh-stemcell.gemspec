@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'fakefs'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rspec-fire'
+  spec.add_development_dependency 'rspec-its'
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'serverspec'
   spec.add_development_dependency 'foodcritic'

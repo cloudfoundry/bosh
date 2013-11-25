@@ -1,9 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require 'spec_helper'
 require 'fileutils'
 
 describe Bosh::Agent::Message::Drain do
-
   def set_state(state)
     state_file = Tempfile.new('agent-state')
     state_file.write(Psych.dump(state))
@@ -11,8 +9,8 @@ describe Bosh::Agent::Message::Drain do
     Bosh::Agent::Config.state = Bosh::Agent::State.new(state_file.path)
   end
 
-  before(:each) do
-    @nats = mock
+  before do
+    @nats = double
 
     Bosh::Agent::Config.logger   = Logger.new(StringIO.new)
     Bosh::Agent::Config.nats     = @nats

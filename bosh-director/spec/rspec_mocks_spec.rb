@@ -2,7 +2,7 @@ require 'spec_helper'
 
 class ClassToStub; end
 
-describe 'instance_double (Rspec::Fire::FireObjectDouble)' do
+describe 'instance_double' do
   describe '#initialize' do
     context 'when trying to stub non-existent method' do
       it 'raises an error' do

@@ -46,13 +46,15 @@ group :development, :test do
   gemspec path: 'bosh-dev'
   gemspec path: 'bosh-stemcell'
 
+  gem 'rspec'
+  gem 'rspec-its'
+  gem 'rspec-fire'
+  gem 'rspec-instafail'
+
   gem 'rubocop', require: false
   gem 'parallel_tests'
   gem 'rack-test'
   gem 'ci_reporter'
-  gem 'rspec'
-  gem 'rspec-fire'
-  gem 'rspec-instafail'
   gem 'webmock'
   gem 'fakefs'
   gem 'simplecov'

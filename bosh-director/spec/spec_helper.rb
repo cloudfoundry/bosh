@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 $: << File.expand_path('..', __FILE__)
 
 require 'digest/sha1'
@@ -10,14 +9,15 @@ require 'tmpdir'
 require 'zlib'
 
 require 'archive/tar/minitar'
-require 'machinist/sequel'
 require 'rspec'
+require 'rspec/its'
+require 'machinist/sequel'
 require 'sham'
 require 'support/job_example_group'
-require 'support/rspec_fire'
 require 'support/task_helpers'
 
 RSpec.configure do |config|
+  config.deprecation_stream = StringIO.new
   config.include Bosh::Director::Test::TaskHelpers
 end
 
@@ -430,5 +430,3 @@ module ReleaseHelper
 
   module_function :create_release_tarball
 end
-
-

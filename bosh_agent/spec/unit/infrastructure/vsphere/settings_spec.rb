@@ -38,11 +38,11 @@ eos
     
     settings.cdrom_retry_wait = 0.1
 
-    settings.stub!(:mount_cdrom)
-    settings.stub!(:umount_cdrom)
-    settings.stub!(:eject_cdrom)
-    settings.stub!(:udevadm_settle)
-    settings.stub!(:read_cdrom_byte)
+    settings.stub(:mount_cdrom)
+    settings.stub(:umount_cdrom)
+    settings.stub(:eject_cdrom)
+    settings.stub(:udevadm_settle)
+    settings.stub(:read_cdrom_byte)
 
     settings.read_cdrom_byte
   end

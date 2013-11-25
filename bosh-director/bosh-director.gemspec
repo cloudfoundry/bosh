@@ -46,6 +46,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'fakefs'
   s.add_development_dependency 'machinist', '~>1.0'
   s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
   s.add_development_dependency 'rspec-fire'
 
   s.bindir      = 'bin'

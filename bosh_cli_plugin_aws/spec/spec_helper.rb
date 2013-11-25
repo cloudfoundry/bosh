@@ -1,11 +1,11 @@
-require "cli"
-require "bosh/cli/commands/aws"
-require "bosh_cli_plugin_aws"
+require 'rspec'
+require 'rspec/its'
 require 'webmock/rspec'
+require 'cli'
+require 'bosh/cli/commands/aws'
+require 'bosh_cli_plugin_aws'
 
-Dir[File.expand_path("./support/*", File.dirname(__FILE__))].each do |support_file|
-  require support_file
-end
+Dir[File.expand_path('../support/*', __FILE__)].each { |f| require(f) }
 
 def asset(filename)
   File.join(File.dirname(__FILE__), 'assets', filename)
@@ -16,9 +16,7 @@ def encoded_credentials(username, password)
 end
 
 RSpec.configure do |config|
-  config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
-
   config.order = 'random'
 end
