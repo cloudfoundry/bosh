@@ -22,7 +22,7 @@ module Bosh::Director
 
       let(:package1) do
         instance_double('Bosh::Director::CompiledPackage::CompiledPackage',
-                        name: 'package1',
+                        package_name: 'package1',
                         blobstore_id: 'blob-id1',
                         blob_path: '/tmp/blob1',
                         package_fingerprint: 'package-fingerprint1',
@@ -34,7 +34,7 @@ module Bosh::Director
 
       let(:package2) do
         instance_double('Bosh::Director::CompiledPackage::CompiledPackage',
-                        name: 'package2',
+                        package_name: 'package2',
                         blobstore_id: 'blob-id2',
                         blob_path: '/tmp/blob2',
                         package_fingerprint: 'package-fingerprint2',
@@ -55,7 +55,7 @@ module Bosh::Director
       let(:package_model1) do
         Bosh::Director::Models::Package.make(
           release: release,
-          name: package1.name,
+          name: package1.package_name,
           fingerprint: package1.package_fingerprint,
         )
       end
@@ -63,9 +63,9 @@ module Bosh::Director
       let(:package_model2) do
         Bosh::Director::Models::Package.make(
           release: release,
-          name: package2.name,
+          name: package2.package_name,
           fingerprint: package2.package_fingerprint,
-          dependency_set_json: Yajl::Encoder.encode([package1.name]))
+          dependency_set_json: Yajl::Encoder.encode([package1.package_name]))
       end
 
       let!(:stemcell) { Bosh::Director::Models::Stemcell.make(sha1: package1.stemcell_sha1) }
