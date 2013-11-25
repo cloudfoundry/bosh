@@ -15,7 +15,7 @@ describe Bosh::Director::NatsRpc do
 
     it "should publish a message to the client" do
       @nats.should_receive(:subscribe).with("director.123.>")
-      @nats.should_receive(:publish).with do |subject, payload|
+      @nats.should_receive(:publish) do |subject, payload|
         subject.should eql("test_client")
         Yajl::Parser.parse(payload).
             should eql({"method" => "a", "arguments" => [5],

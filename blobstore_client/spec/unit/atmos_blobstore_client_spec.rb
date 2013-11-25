@@ -68,7 +68,7 @@ module Bosh::Blobstore
       data = 'some content'
       object = double('object')
 
-      atmos.should_receive(:create).with do |opt|
+      atmos.should_receive(:create) do |opt|
         opt[:data].read.should eql data
         opt[:length].should eql data.length
       end.and_return(object)

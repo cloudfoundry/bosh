@@ -13,7 +13,7 @@ module Bosh::Agent
         response.stub(:code).and_return("200")
         response.stub(:body).and_return(File.read(File.expand_path("../../assets/monit_status.xml", __FILE__)))
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request["authorization"].should be_nil
         }.and_return(response)
 
@@ -29,7 +29,7 @@ module Bosh::Agent
         response.stub(:code).and_return("200")
         response.stub(:body).and_return(File.read(File.expand_path("../../assets/monit_status.xml", __FILE__)))
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request["authorization"].should == "Basic dXNlcjpwYXNzd29yZA=="
         }.and_return(response)
 
@@ -45,7 +45,7 @@ module Bosh::Agent
         response.stub(:code).and_return("200")
         response.stub(:body).and_return(File.read(File.expand_path("../../assets/monit_status.xml", __FILE__)))
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request.method.should == "GET"
           request.path.should == "/_status2?format=xml"
         }.and_return(response)
@@ -65,7 +65,7 @@ module Bosh::Agent
         response.stub(:code).and_return("200")
         response.stub(:body).and_return(File.read(File.expand_path("../../assets/monit_status_without_servicegroups.xml", __FILE__)))
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request.method.should == "GET"
           request.path.should == "/_status2?format=xml"
         }.and_return(response)
@@ -148,7 +148,7 @@ module Bosh::Agent
         response = double("response")
         response.stub(:code).and_return("200")
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request["authorization"].should be_nil
         }.and_return(response)
 
@@ -163,7 +163,7 @@ module Bosh::Agent
         response = double("response")
         response.stub(:code).and_return("200")
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request["authorization"].should == "Basic dXNlcjpwYXNzd29yZA=="
         }.and_return(response)
 
@@ -178,7 +178,7 @@ module Bosh::Agent
         response = double("response")
         response.stub(:code).and_return("200")
 
-        http_client.should_receive(:request).with { |request|
+        http_client.should_receive(:request) { |request|
           request.method.should == "POST"
           request.path.should == "/test"
           request["content-type"].should == "application/x-www-form-urlencoded"

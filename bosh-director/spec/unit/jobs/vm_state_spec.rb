@@ -27,7 +27,7 @@ module Bosh::Director
                      'resource_pool' => {'name' => 'test_resource_pool'}}
       agent.should_receive(:get_state).and_return(agent_state)
 
-      @result_file.should_receive(:write).with do |agent_status|
+      @result_file.should_receive(:write) do |agent_status|
         status = JSON.parse(agent_status)
         status['ips'].should == ['1.1.1.1']
         status['dns'].should be_empty
@@ -64,7 +64,7 @@ module Bosh::Director
       }
       agent.should_receive(:get_state).and_return(agent_state)
 
-      @result_file.should_receive(:write).with do |agent_status|
+      @result_file.should_receive(:write) do |agent_status|
         status = JSON.parse(agent_status)
         status['ips'].should == ['1.1.1.1']
         status['dns'].should be_empty
@@ -101,7 +101,7 @@ module Bosh::Director
                      'resource_pool' => {'name' => 'test_resource_pool'}}
       agent.should_receive(:get_state).and_return(agent_state)
 
-      @result_file.should_receive(:write).with do |agent_status|
+      @result_file.should_receive(:write) do |agent_status|
         status = JSON.parse(agent_status)
         status['ips'].should == ['1.1.1.1']
         status['dns'].should == ['index.job.network.deployment.microbosh']
@@ -122,7 +122,7 @@ module Bosh::Director
       AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
       agent.should_receive(:get_state).and_raise(RpcTimeout)
 
-      @result_file.should_receive(:write).with do |agent_status|
+      @result_file.should_receive(:write) do |agent_status|
         status = JSON.parse(agent_status)
         status['vm_cid'].should == 'vm-1'
         status['agent_id'].should == 'agent-1'
@@ -165,7 +165,7 @@ module Bosh::Director
 
       job = Jobs::VmState.new(@deployment.id, 'full')
 
-      @result_file.should_receive(:write).with do |agent_status|
+      @result_file.should_receive(:write) do |agent_status|
         status = JSON.parse(agent_status)
         expect(status['resurrection_paused']).to be(true)
       end

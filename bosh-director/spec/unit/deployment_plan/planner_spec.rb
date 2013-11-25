@@ -179,7 +179,7 @@ module Bosh::Director
         it 'should delegate to CompilationConfig' do
           received_plan = nil
           CompilationConfig.
-            should_receive(:new).with do |deployment_plan, spec|
+            should_receive(:new) do |deployment_plan, spec|
             received_plan = deployment_plan
             spec.should == { 'foo' => 'bar' }
           end
@@ -198,7 +198,7 @@ module Bosh::Director
 
       describe :parse_update do
         it 'should delegate to UpdateConfig' do
-          UpdateConfig.should_receive(:new).with do |spec|
+          UpdateConfig.should_receive(:new) do |spec|
             spec.should == { 'foo' => 'bar' }
           end
           plan = Planner.new({ 'update' => { 'foo' => 'bar' } })

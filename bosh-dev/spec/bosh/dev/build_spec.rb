@@ -120,7 +120,7 @@ module Bosh::Dev
       end
 
       it 'recursively uploads a directory into base_dir' do
-        upload_adapter.should_receive(:upload).with do |options|
+        upload_adapter.should_receive(:upload) do |options|
           key = options.fetch(:key)
           body = options.fetch(:body)
           public = options.fetch(:public)

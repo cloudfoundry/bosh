@@ -8,7 +8,7 @@ module Bosh::Director::CompiledPackage
     describe '#extract' do
 
       it 'extracts the tar to a temporary directory' do
-        exec = instance_double('Bosh::Exec')
+        exec = class_double('Bosh::Exec')
         export = described_class.new(file: exported_tar, exec: exec)
 
         YAML.stub(:load_file).with('/fake/temp/dir/compiled_packages.MF').and_return('compiled_packages' => [])

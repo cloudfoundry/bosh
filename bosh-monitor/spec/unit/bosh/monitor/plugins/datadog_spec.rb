@@ -104,7 +104,7 @@ describe Bhm::Plugins::DataDog do
 
       time = Time.now.to_i - 10
       fake_event = double("Datadog Event")
-      Dogapi::Event.should_receive(:new).with do |msg, options|
+      Dogapi::Event.should_receive(:new) do |msg, options|
         msg.should == "Everything is down"
         options[:msg_title].should == "Test Alert"
         options[:date_happened].should == time
@@ -121,7 +121,7 @@ describe Bhm::Plugins::DataDog do
     it "sends datadog a low priority event for warning alerts" do
       EM.should_receive(:defer).and_yield
 
-      Dogapi::Event.should_receive(:new).with do |_, options|
+      Dogapi::Event.should_receive(:new) do |_, options|
         options[:priority].should == "low"
       end
 

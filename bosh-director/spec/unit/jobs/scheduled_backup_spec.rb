@@ -26,7 +26,7 @@ describe Bosh::Director::Jobs::ScheduledBackup do
     end
 
     it 'pushes a backup to the destination blobstore' do
-      backup_destination.should_receive(:create).with do |backup_file, file_name|
+      backup_destination.should_receive(:create) do |backup_file, file_name|
         expect(backup_file.path).to eq 'backup_dest'
         expect(file_name).to eq 'backup-2013-07-02T09:55:40Z.tgz'
       end
