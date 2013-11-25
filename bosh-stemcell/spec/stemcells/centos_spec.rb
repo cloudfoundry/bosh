@@ -148,13 +148,17 @@ describe 'CentOs Stemcell' do
     describe file('/etc/sysconfig/network') do
       it { should be_file }
       it { should contain 'NETWORKING=yes' }
+      it { should contain 'NETWORKING_IPV6=no' }
+      it { should contain 'HOSTNAME=localhost.localdomain' }
+      it { should contain 'NOZEROCONF=yes' }
     end
 
     describe file('/etc/sysconfig/network-scripts/ifcfg-eth0') do
       it { should be_file }
       it { should contain 'DEVICE=eth0' }
       it { should contain 'BOOTPROTO=dhcp' }
-      it { should contain 'ONBOOT=yes' }
+      it { should contain 'ONBOOT=on' }
+      it { should contain 'TYPE="Ethernet"' }
     end
   end
 
