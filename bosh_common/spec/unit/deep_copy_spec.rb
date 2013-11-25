@@ -10,7 +10,7 @@ module Bosh::Common
             level3: 'foo'
           }
         },
-        object: stub('fake object')
+        object: double('fake object')
       }
 
       dup = DeepCopy.copy(deeply_nested_hash)

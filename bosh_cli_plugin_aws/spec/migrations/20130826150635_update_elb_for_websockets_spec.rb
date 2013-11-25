@@ -10,8 +10,8 @@ describe UpdateElbForWebsockets do
     receipt = YAML.load_file(asset "test-output.yml")
     subject.stub(load_receipt: receipt)
 
-    mock_vpc = mock(Bosh::Aws::VPC)
-    mock_sg = mock(AWS::EC2::SecurityGroup)
+    mock_vpc = double(Bosh::Aws::VPC)
+    mock_sg = double(AWS::EC2::SecurityGroup)
 
     Bosh::Aws::VPC.stub(:find).with(ec2, receipt['vpc']['id']).and_return(mock_vpc)
     mock_vpc.stub(:security_group_by_name).with('web').and_return(mock_sg)
@@ -19,7 +19,7 @@ describe UpdateElbForWebsockets do
     UpdateElbForWebsockets::WebSocketElbHelpers.should_receive(:authorize_ingress).with(mock_sg, {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"}).and_return(true)
     UpdateElbForWebsockets::WebSocketElbHelpers.should_receive(:record_ingress).with(receipt, 'web', {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"})
 
-    mock_elb = mock(AWS::ELB::LoadBalancer)
+    mock_elb = double(AWS::ELB::LoadBalancer)
     elb.stub(:find_by_name).and_return(mock_elb)
 
     params = {port: 443, protocol: :https}
@@ -61,7 +61,7 @@ describe UpdateElbForWebsockets do
       @receipt = YAML.load_file(asset "test-output.yml")
       subject.stub(load_receipt: @receipt)
 
-      @mock_vpc = mock(Bosh::Aws::VPC)
+      @mock_vpc = double(Bosh::Aws::VPC)
       Bosh::Aws::VPC.stub(:find).with(ec2, @receipt['vpc']['id']).and_return(@mock_vpc)
     end
 
@@ -75,7 +75,7 @@ describe UpdateElbForWebsockets do
       end
 
       it "returns the security group with that name" do
-        mock_sg = mock(AWS::EC2::SecurityGroup)
+        mock_sg = double(AWS::EC2::SecurityGroup)
         @mock_vpc.stub(:security_group_by_name).with('web').and_return(mock_sg)
 
         expect(UpdateElbForWebsockets::WebSocketElbHelpers.find_security_group_by_name(ec2, @receipt['vpc']['id'], 'web')).to eq mock_sg
@@ -83,7 +83,7 @@ describe UpdateElbForWebsockets do
     end
 
     describe ".authorize_ingress" do
-      let(:security_group) { mock(AWS::EC2::SecurityGroup) }
+      let(:security_group) { double(AWS::EC2::SecurityGroup) }
 
       it "authorizes the ingress through the security group" do
         security_group.should_receive(:authorize_ingress).with("protocol", 4443, "sources")
@@ -125,11 +125,11 @@ describe UpdateElbForWebsockets do
     end
 
     describe ".find_server_certificate_from_listeners" do
-      let(:mock_elb) { mock(AWS::ELB::LoadBalancer, name: "cfrouter") }
-      let(:mock_listener) { mock(AWS::ELB::Listener) }
+      let(:mock_elb) { double(AWS::ELB::LoadBalancer, name: "cfrouter") }
+      let(:mock_listener) { double(AWS::ELB::Listener) }
 
       it "should find a certificate from listeners with given elb and params" do
-        mock_certificate = mock(AWS::IAM::ServerCertificate)
+        mock_certificate = double(AWS::IAM::ServerCertificate)
         mock_elb.should_receive(:listeners).and_return([mock_listener])
         mock_listener.should_receive(:port).and_return(443)
         mock_listener.should_receive(:protocol).and_return(:https)
@@ -161,8 +161,8 @@ describe UpdateElbForWebsockets do
 
     describe ".create_listener" do
       it "creates a listener on given ELB with specified params" do
-        mock_elb = mock(AWS::ELB::LoadBalancer, name: "cfrouter")
-        mock_listeners = mock(AWS::ELB::ListenerCollection)
+        mock_elb = double(AWS::ELB::LoadBalancer, name: "cfrouter")
+        mock_listeners = double(AWS::ELB::ListenerCollection)
         params = {port: 4443, protocol: :ssl, instance_port: 80, instance_protocol: :tcp, server_certificate: 'foo'}
 
         mock_elb.should_receive(:listeners).and_return(mock_listeners)
