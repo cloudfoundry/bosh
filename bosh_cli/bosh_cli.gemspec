@@ -1,5 +1,4 @@
 # -*- encoding: utf-8 -*-
-# Copyright (c) 2009-2012 VMware, Inc.
 version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|

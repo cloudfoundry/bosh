@@ -87,6 +87,7 @@ describe 'AWS Bootstrap commands' do
           Bosh::Aws::MicroBoshBootstrap.should_receive(:new) do |_, options|
             options[:hm_director_user].should == 'hm'
             options[:hm_director_password].should == 'some_password'
+            fake_bootstrap
           end
           aws.bootstrap_micro
         end

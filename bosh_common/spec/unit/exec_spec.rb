@@ -1,5 +1,3 @@
-# Copyright (c) 2012 VMware, Inc.
-
 require "spec_helper"
 require "common/exec"
 
@@ -46,30 +44,25 @@ describe Bosh::Exec do
         Bosh::Exec.sh("ls /asdasd 2>&1", opts).failed?.should be(true)
       end
     end
-
   end
 
   context "missing command" do
     it "should raise error by default" do
       expect {
         Bosh::Exec.sh("/asdasd 2>&1", opts)
-      }.to raise_error Bosh::Exec::Error
+      }.to raise_error(Bosh::Exec::Error)
     end
 
     it "should not raise error when requested" do
       opts[:on_error] = :return
-      expect {
-        Bosh::Exec.sh("/asdasd 2>&1", opts)
-      }.to_not raise_error Bosh::Exec::Error
+      expect { Bosh::Exec.sh("/asdasd 2>&1", opts) }.to_not raise_error
     end
 
     it "should execute block when requested" do
       opts[:yield] = :on_false
       expect {
-      Bosh::Exec.sh("/asdasd 2>&1", opts) do
-        raise "foo"
-      end
-      }.to raise_error "foo"
+        Bosh::Exec.sh("/asdasd 2>&1", opts) { raise "foo" }
+      }.to raise_error("foo")
     end
 
   end

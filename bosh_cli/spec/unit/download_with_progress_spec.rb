@@ -18,7 +18,6 @@ module Bosh::Cli
       let(:progess_bar) do
         instance_double('ProgressBar',
                         file_transfer_mode: nil,
-                        write: nil,
                         inc: nil,
                         finish: nil)
       end
