@@ -534,7 +534,7 @@ module Bosh::Director
           )
         end
 
-        let(:release)  { instance_double('Bosh::Director::DeploymentPlan::Release',  spec: 'fake-release-spec') }
+        let(:release)  { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  spec: 'fake-release-spec') }
 
         let(:instance_model) { Models::Instance.make(vm: nil) }
 

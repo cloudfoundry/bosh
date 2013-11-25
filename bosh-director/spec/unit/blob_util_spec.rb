@@ -55,7 +55,7 @@ module Bosh::Director
       end
 
       it 'returns the compiled package model if the compiled package was in the global cache' do
-        mock_compiled_package = instance_double('Models::CompiledPackage')
+        mock_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage')
         Models::CompiledPackage.should_receive(:create) do |&block|
           cp = double
           cp.should_receive(:package=).with(package)
