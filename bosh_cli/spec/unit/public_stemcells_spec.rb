@@ -3,9 +3,7 @@ require 'cli/public_stemcells'
 
 module Bosh::Cli
   describe PublicStemcells, vcr: { cassette_name: 'promoted-stemcells' } do
-    subject(:public_stemcells) do
-      PublicStemcells.new
-    end
+    subject(:public_stemcells) { PublicStemcells.new }
 
     describe '#has_stemcell?' do
       it { should have_stemcell('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
@@ -13,9 +11,7 @@ module Bosh::Cli
     end
 
     describe '#find' do
-      subject(:find) do
-        public_stemcells.find('bosh-stemcell-1001-aws-xen-ubuntu.tgz')
-      end
+      subject(:find) { public_stemcells.find('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
 
       it { should be_a(PublicStemcell) }
       its(:name) { should eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
@@ -23,12 +19,10 @@ module Bosh::Cli
     end
 
     describe '#all' do
-      subject(:list_of_stemcells) do
-        public_stemcells.all.map(&:name)
-      end
+      subject(:list_of_stemcells) { public_stemcells.all.map(&:name) }
 
       it 'returns all promoted bosh-stemcells' do
-        expect(list_of_stemcells).to have(573).stemcells
+        expect(list_of_stemcells.size).to eq(573)
       end
 
       it 'returns the most recent aws stemcells' do
