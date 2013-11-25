@@ -6,6 +6,7 @@ require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/dev/bosh_release'
+require 'bosh/dev/uri_provider'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
@@ -72,7 +73,7 @@ module Bosh::Dev
       filename   = Bosh::Stemcell::ArchiveFilename.new(
         number.to_s, infrastructure, operating_system, name, light).to_s
       remote_dir = File.join(number.to_s, name, infrastructure.name)
-      download_adapter.download(uri(remote_dir, filename), File.join(output_directory, filename))
+      download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), File.join(output_directory, filename))
       filename
     end
 
@@ -108,11 +109,6 @@ module Bosh::Dev
       "release/#{promotable_artifacts.release_file}"
     end
 
-    def uri(remote_directory_path, file_name)
-      remote_file_path = File.join(remote_directory_path, file_name)
-      URI.parse("http://bosh-ci-pipeline.s3.amazonaws.com/#{remote_file_path}")
-    end
-
     class Local < self
       def release_tarball_path
         release = BoshRelease.build
@@ -132,7 +128,7 @@ module Bosh::Dev
         remote_dir = File.join(number.to_s, 'release')
         filename = promotable_artifacts.release_file
         downloaded_release_path = "tmp/#{promotable_artifacts.release_file}"
-        download_adapter.download(uri(remote_dir, filename), downloaded_release_path)
+        download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), downloaded_release_path)
         downloaded_release_path
       end
     end

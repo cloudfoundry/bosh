@@ -1,4 +1,5 @@
 require 'rake'
+require 'bosh/dev/bosh_cli_session'
 
 module Bosh::Dev
   class ReleaseCreator
