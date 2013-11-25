@@ -28,7 +28,7 @@ module Bosh::Agent
       #
       # @return [String] OpenSSH key
       def get_openssh_key
-        get_uri(META_DATA_URI + "/meta-data/public-keys/0/openssh-key")
+        get_uri(META_DATA_URI + "/public-keys")
       rescue LoadSettingsError => e
         logger.info("Failed to get OpenSSH public key from CloudStack meta data endpoint: #{e.message}")
         user_data = parse_user_data(get_user_data_from_file)
