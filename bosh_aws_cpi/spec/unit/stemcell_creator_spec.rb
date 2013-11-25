@@ -28,7 +28,7 @@ describe Bosh::AwsCloud::StemcellCreator do
       creator = described_class.new(region, stemcell_properties)
       Bosh::AwsCloud::ResourceWait.stub(:for_snapshot).with(snapshot: snapshot, state: :completed)
       Bosh::AwsCloud::ResourceWait.stub(:for_image).with(image: image, state: :available)
-      region.stub_chain(:images, :create => image)
+      region.stub_chain(:images, :create).and_return(image)
 
       creator.should_receive(:copy_root_image)
       volume.should_receive(:create_snapshot).and_return(snapshot)

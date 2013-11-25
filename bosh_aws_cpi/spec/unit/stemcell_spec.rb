@@ -91,7 +91,7 @@ describe Bosh::AwsCloud::Stemcell do
     let(:region) do
       region = double("region")
       region.stub(:images => {'ami-exists' => fake_aws_ami})
-      region.stub_chain(:snapshots, :[] => snapshot)
+      region.stub_chain(:snapshots, :[]).and_return(snapshot)
       region
     end
 
