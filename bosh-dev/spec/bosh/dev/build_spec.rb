@@ -153,7 +153,7 @@ module Bosh::Dev
       end
 
       before do
-        UploadAdapter.unstub!(:new)
+        UploadAdapter.unstub(:new)
         Rake::FileUtilsExt.stub(:sh)
         Bosh::Stemcell::Archive.stub(new: stemcell)
         PromotableArtifacts.stub(new: promotable_artifacts)
@@ -173,7 +173,7 @@ module Bosh::Dev
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
 
       before do
-        Bosh::Dev::UploadAdapter.unstub!(:new)
+        Bosh::Dev::UploadAdapter.unstub(:new)
 
         FileUtils.mkdir('/tmp')
         File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
