@@ -1,11 +1,11 @@
 require 'bosh/dev/aws'
-require 'bosh/dev/aws/deployments_repository'
+require 'bosh/dev/deployments_repository'
 
 module Bosh::Dev::Aws
   class Receipts
     def initialize(env)
       @env = env
-      @deployments_repository = DeploymentsRepository.new(env)
+      @deployments_repository = Bosh::Dev::DeploymentsRepository.new(env)
     end
 
     def vpc_outfile_path

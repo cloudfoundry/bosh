@@ -44,9 +44,10 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'bosh_vcloud_cpi', '~> 0.4.9'
 
+  s.add_development_dependency 'fakefs'
+  s.add_development_dependency 'machinist', '~>1.0'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rspec-fire'
-  s.add_development_dependency 'machinist', '~>1.0'
 
   s.bindir      = 'bin'
   s.executables << 'bosh-director'

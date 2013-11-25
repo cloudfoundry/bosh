@@ -1,7 +1,7 @@
 package disk
 
 import (
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -91,9 +91,9 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	assert.Equal(t, 0, len(fakeCmdRunner.RunCommandsWithInput))
 }
 
-func createSfdiskPartitionerForTests(cmdResults map[string][]string) (cmdRunner *testsys.FakeCmdRunner, partitioner sfdiskPartitioner) {
-	cmdRunner = &testsys.FakeCmdRunner{CommandResults: cmdResults}
-	partitioner = NewSfdiskPartitioner(cmdRunner)
+func createSfdiskPartitionerForTests(cmdResults map[string][]string) (cmdRunner *fakesys.FakeCmdRunner, partitioner sfdiskPartitioner) {
+	cmdRunner = &fakesys.FakeCmdRunner{CommandResults: cmdResults}
+	partitioner = newSfdiskPartitioner(cmdRunner)
 	partitioner.logger = log.New(ioutil.Discard, "", 0)
 	return
 }

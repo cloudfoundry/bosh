@@ -19,14 +19,14 @@ module Bosh::Dev
         [ -e .vagrant/machines/remote/aws/id ] && vagrant destroy #{vm_name} --force
         vagrant up #{vm_name} --provider #{provider}
 
-        time vagrant ssh -c "
+        vagrant ssh -c "
           set -eu
           cd /bosh
           bundle install --local
 
           #{exports.join("\n          ")}
 
-          time bundle exec rake ci:publish_stemcell[#{rake_task_args}]
+          bundle exec rake ci:publish_stemcell[#{rake_task_args}]
         " #{vm_name}
       BASH
     ensure

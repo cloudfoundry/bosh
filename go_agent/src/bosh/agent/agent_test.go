@@ -1,16 +1,16 @@
 package agent
 
 import (
-	testaction "bosh/agent/action/testhelpers"
+	fakeaction "bosh/agent/action/fakes"
 	boshtask "bosh/agent/task"
-	testtask "bosh/agent/task/testhelpers"
+	faketask "bosh/agent/task/fakes"
+	boshassert "bosh/assert"
 	boshmbus "bosh/mbus"
-	testmbus "bosh/mbus/testhelpers"
+	fakembus "bosh/mbus/fakes"
+	fakeplatform "bosh/platform/fakes"
 	boshstats "bosh/platform/stats"
-	teststats "bosh/platform/stats/testhelpers"
-	testplatform "bosh/platform/testhelpers"
+	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
-	"encoding/json"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,8 +29,7 @@ func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 
 	resp := handler.Func(req)
 
-	respBytes, _ := json.Marshal(resp)
-	assert.Equal(t, `{"exception":{"message":"unknown message gibberish"}}`, string(respBytes))
+	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"unknown message gibberish"}}`)
 }
 
 func TestRunHandlesPingMessage(t *testing.T) {
@@ -48,11 +47,16 @@ func TestRunHandlesGetStateMessage(t *testing.T) {
 	assertRequestIsProcessedSynchronously(t, req)
 }
 
+func TestRunHandlesSshMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "ssh", []byte(`{"arguments":["setup",{"user":"foo","password":"bar"}]}`))
+	assertRequestIsProcessedSynchronously(t, req)
+}
+
 func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	// when action is successful
-	actionFactory.CreateAction = &testaction.TestAction{
+	actionFactory.CreateAction = &fakeaction.TestAction{
 		RunValue: "some value",
 	}
 
@@ -68,7 +72,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	assert.Equal(t, boshmbus.NewValueResponse("some value"), resp)
 
 	// when action returns an error
-	actionFactory.CreateAction = &testaction.TestAction{
+	actionFactory.CreateAction = &fakeaction.TestAction{
 		RunErr: errors.New("some error"),
 	}
 
@@ -76,8 +80,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	agent.Run()
 
 	resp = handler.Func(req)
-	respBytes, _ := json.Marshal(resp)
-	assert.Equal(t, `{"exception":{"message":"some error"}}`, string(respBytes))
+	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"some error"}}`)
 }
 
 func TestRunHandlesApplyMessage(t *testing.T) {
@@ -85,11 +88,16 @@ func TestRunHandlesApplyMessage(t *testing.T) {
 	assertRequestIsProcessedAsynchronously(t, req)
 }
 
+func TestRunHandlesLogsMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "fetch_logs", []byte("some payload"))
+	assertRequestIsProcessedAsynchronously(t, req)
+}
+
 func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) {
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
-	actionFactory.CreateAction = new(testaction.TestAction)
+	actionFactory.CreateAction = &fakeaction.TestAction{RunValue: "some-task-result-value"}
 
 	agent := New(settings, handler, platform, taskService, actionFactory)
 
@@ -100,10 +108,12 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	resp := handler.Func(req)
 	assert.Equal(t, boshmbus.NewValueResponse(TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}), resp)
 
-	valueBytes, _ := json.Marshal(resp)
-	assert.Equal(t, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`, string(valueBytes))
+	boshassert.MatchesJsonString(t, resp, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`)
 
-	taskService.StartTaskFunc()
+	value, err := taskService.StartTaskFunc()
+	assert.NoError(t, err)
+	assert.Equal(t, "some-task-result-value", value)
+
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
 	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
 }
@@ -116,7 +126,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		Persistent: map[string]string{"vol-xxxx": "/dev/sdf"},
 	}
 
-	platform.FakeStatsCollector = &teststats.FakeStatsCollector{
+	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
 		CpuLoad:   boshstats.CpuLoad{One: 1.0, Five: 5.0, Fifteen: 15.0},
 		CpuStats:  boshstats.CpuStats{User: 55, Sys: 44, Wait: 11, Total: 1000},
 		MemStats:  boshstats.MemStats{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
@@ -178,7 +188,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		System: "/dev/sda1",
 	}
 
-	platform.FakeStatsCollector = &teststats.FakeStatsCollector{
+	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
 		DiskStats: map[string]boshstats.DiskStats{
 			"/":               boshstats.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
 			"/var/vcap/data":  boshstats.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
@@ -202,17 +212,17 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 
 func getAgentDependencies() (
 	settings boshsettings.Settings,
-	handler *testmbus.FakeHandler,
-	platform *testplatform.FakePlatform,
-	taskService *testtask.FakeService,
-	actionFactory *testaction.FakeFactory) {
+	handler *fakembus.FakeHandler,
+	platform *fakeplatform.FakePlatform,
+	taskService *faketask.FakeService,
+	actionFactory *fakeaction.FakeFactory) {
 
 	settings = boshsettings.Settings{}
-	handler = &testmbus.FakeHandler{}
-	platform = &testplatform.FakePlatform{
-		FakeStatsCollector: &teststats.FakeStatsCollector{},
+	handler = &fakembus.FakeHandler{}
+	platform = &fakeplatform.FakePlatform{
+		FakeStatsCollector: &fakestats.FakeStatsCollector{},
 	}
-	taskService = &testtask.FakeService{}
-	actionFactory = &testaction.FakeFactory{}
+	taskService = &faketask.FakeService{}
+	actionFactory = &fakeaction.FakeFactory{}
 	return
 }

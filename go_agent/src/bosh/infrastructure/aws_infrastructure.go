@@ -16,11 +16,10 @@ type awsInfrastructure struct {
 	resolver     dnsResolver
 }
 
-func newAwsInfrastructure(metadataHost string, resolver dnsResolver) (infrastructure Infrastructure) {
-	return awsInfrastructure{
-		metadataHost: metadataHost,
-		resolver:     resolver,
-	}
+func newAwsInfrastructure(metadataHost string, resolver dnsResolver) (infrastructure awsInfrastructure) {
+	infrastructure.metadataHost = metadataHost
+	infrastructure.resolver = resolver
+	return
 }
 
 func (inf awsInfrastructure) SetupSsh(delegate SshSetupDelegate, username string) (err error) {

@@ -5,7 +5,14 @@ module Bosh::Director
     describe '#render' do
       let(:monit_template) { ERB.new('monit file') }
       let(:fake_template) { ERB.new('test template') }
-      let(:fake_templates) { { 'fake-template' => fake_template } }
+      let(:fake_templates) do
+        [
+          instance_double('Bosh::Director::SrcFileTemplate',
+                          src_name: 'fake-template-src-name',
+                          dest_name: 'fake-template-dest-name',
+                          erb_file: fake_template)
+        ]
+      end
       let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', spec: {}, index: 1) }
 
       subject(:job_template_renderer) { JobTemplateRenderer.new('template-name', monit_template, fake_templates) }
@@ -19,7 +26,10 @@ module Bosh::Director
         rendered_templates = job_template_renderer.render('foo', instance)
 
         expect(rendered_templates.monit).to eq('monit file')
-        expect(rendered_templates.templates['fake-template']).to eq('test template')
+        rendered_file_template = rendered_templates.templates.first
+        expect(rendered_file_template.src_name).to eq('fake-template-src-name')
+        expect(rendered_file_template.dest_name).to eq('fake-template-dest-name')
+        expect(rendered_file_template.contents).to eq('test template')
       end
 
       context 'when there is an error during erb rendering' do

@@ -12,7 +12,8 @@ module Bosh::Cli::Command
         raise Bosh::Cli::CliError, 'Archive does not exist'
       end
       client = Bosh::Cli::Client::CompiledPackagesClient.new(director)
-      client.import(exported_tar_path)
+      status, task_id = client.import(exported_tar_path)
+      task_report(status, task_id)
     end
   end
 end

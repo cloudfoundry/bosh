@@ -279,7 +279,7 @@ module Bosh::Cli::Command
       else
         say("Using remote release `#{release_location}'")
         status, task_id = director.upload_remote_release(release_location)
-        task_report(status, task_id, "Release uploaded")                
+        task_report(status, task_id, "Release uploaded")
       end
     end
     

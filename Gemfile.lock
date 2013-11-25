@@ -418,6 +418,7 @@ GEM
       thread_safe (~> 0.1)
     unicode (0.4.4)
     uuidtools (2.1.4)
+    vcr (2.7.0)
     vegas (0.1.11)
       rack (>= 1.0.0)
     webmock (1.11.0)
@@ -478,4 +479,5 @@ DEPENDENCIES
   simplecov-rcov
   sqlite3
   timecop
+  vcr
   webmock

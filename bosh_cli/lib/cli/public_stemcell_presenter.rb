@@ -1,24 +1,19 @@
-require 'cli/public_stemcell_index'
 require 'cli/download_with_progress'
 
 module Bosh::Cli
   class PublicStemcellPresenter
-    def initialize(ui)
+    def initialize(ui, public_stemcells)
       @ui = ui
-      @public_stemcell_index = PublicStemcellIndex.download(@ui)
+      @public_stemcells = public_stemcells
     end
 
     def list(options)
       full = !!options[:full]
-      requested_tags = options[:tags] || %w(stable)
-
       stemcells_table = @ui.table do |t|
-        t.headings = full ? %w(Name Url Tags) : %w(Name Tags)
+        t.headings = full ? %w(Name Url) : %w(Name)
 
-        @public_stemcell_index.each do |stemcell|
-          if options[:all] || stemcell.tagged?(requested_tags)
-            t << (full ? [stemcell.name, stemcell.url, stemcell.tag_names] : [stemcell.name, stemcell.tag_names])
-          end
+        stemcell_for(options).each do |stemcell|
+          t << (full ? [stemcell.name, stemcell.url] : [stemcell.name])
         end
       end
 
@@ -27,23 +22,25 @@ module Bosh::Cli
     end
 
     def download(stemcell_name)
-      unless @public_stemcell_index.has_stemcell?(stemcell_name)
-        @ui.err("'#{stemcell_name}' not found in '#{@public_stemcell_index.names.join(',')}'.")
+      unless @public_stemcells.has_stemcell?(stemcell_name)
+        @ui.err("'#{stemcell_name}' not found.")
       end
 
       if File.exists?(stemcell_name) && !@ui.confirmed?("Overwrite existing file `#{stemcell_name}'?")
         @ui.err("File `#{stemcell_name}' already exists")
       end
 
-      stemcell = @public_stemcell_index.find(stemcell_name)
-      download_with_progress = DownloadWithProgress.new(stemcell.size, stemcell.url)
+      stemcell = @public_stemcells.find(stemcell_name)
+      download_with_progress = DownloadWithProgress.new(stemcell.url, stemcell.size)
       download_with_progress.perform
 
-      if download_with_progress.sha1?(stemcell.sha1)
-        @ui.say('Download complete'.make_green)
-      else
-        @ui.err("The downloaded file sha1 `#{download_with_progress.sha1}' does not match the expected sha1 `#{stemcell.sha1}'")
-      end
+      @ui.say('Download complete'.make_green)
+    end
+
+    private
+
+    def stemcell_for(options)
+      options[:all] ? @public_stemcells.all : @public_stemcells.recent
     end
   end
 end

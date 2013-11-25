@@ -76,11 +76,15 @@ module Bosh::Stemcell
       [
         "cd #{File.expand_path('../../..', File.dirname(__FILE__))};",
         "STEMCELL_IMAGE=#{image_file_path}",
-        'bundle exec rspec -fd',
+        "bundle exec rspec -fd#{exclude_exclusions}",
         "spec/stemcells/#{operating_system.name}_spec.rb",
         "spec/stemcells/#{agent_name}_agent_spec.rb",
         "spec/stemcells/#{infrastructure.name}_spec.rb",
       ].join(' ')
+    end
+
+    def exclude_exclusions
+      infrastructure.name == 'vsphere' ? ' --tag ~exclude_on_vsphere' : ''
     end
 
     def image_file_path

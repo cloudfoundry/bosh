@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -37,12 +38,76 @@ func newUbuntuPlatform(collector boshstats.StatsCollector, fs boshsys.FileSystem
 	return
 }
 
+func (p ubuntu) GetFs() (fs boshsys.FileSystem) {
+	return p.fs
+}
+
 func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }
 
 func (p ubuntu) SetupRuntimeConfiguration() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
+	return
+}
+
+func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
+	p.fs.MkdirAll(basePath, os.FileMode(0755))
+
+	args := []string{"-m", "-b", basePath, "-s", "/bin/bash"}
+
+	if password != "" {
+		args = append(args, "-p", password)
+	}
+
+	args = append(args, username)
+
+	_, _, err = p.cmdRunner.RunCommand("useradd", args...)
+	return
+}
+
+func (p ubuntu) AddUserToGroups(username string, groups []string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
+	return
+}
+
+func (p ubuntu) DeleteEphemeralUsersMatching(reg string) (err error) {
+	compiledReg, err := regexp.Compile(reg)
+	if err != nil {
+		return
+	}
+
+	matchingUsers, err := p.findEphemeralUsersMatching(compiledReg)
+	if err != nil {
+		return
+	}
+
+	for _, user := range matchingUsers {
+		p.deleteUser(user)
+	}
+	return
+}
+
+func (p ubuntu) deleteUser(user string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
+	return
+}
+
+func (p ubuntu) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []string, err error) {
+	passwd, err := p.fs.ReadFile("/etc/passwd")
+	if err != nil {
+		return
+	}
+
+	for _, line := range strings.Split(passwd, "\n") {
+		user := strings.Split(line, ":")[0]
+		matchesPrefix := strings.HasPrefix(user, boshsettings.EPHEMERAL_USER_PREFIX)
+		matchesReg := reg.MatchString(user)
+
+		if matchesPrefix && matchesReg {
+			matchingUsers = append(matchingUsers, user)
+		}
+	}
 	return
 }
 
@@ -230,6 +295,89 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 
 func (p ubuntu) StartMonit() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
+	return
+}
+
+func (p ubuntu) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+	tmpDir := p.fs.TempDir()
+	tgzDir := filepath.Join(tmpDir, "BoshAgentTarball")
+	err = p.fs.MkdirAll(tgzDir, os.ModePerm)
+	if err != nil {
+		return
+	}
+	defer p.fs.RemoveAll(tgzDir)
+
+	filesToCopy, err := p.findFilesMatchingFilters(dir, filters)
+	if err != nil {
+		return
+	}
+
+	for _, file := range filesToCopy {
+		file = filepath.Clean(file)
+		if !strings.HasPrefix(file, dir) {
+			continue
+		}
+
+		relativePath := strings.Replace(file, dir, "", 1)
+		dst := filepath.Join(tgzDir, relativePath)
+
+		err = p.fs.MkdirAll(filepath.Dir(dst), os.ModePerm)
+		if err != nil {
+			return
+		}
+
+		// Golang does not have a way of copying files and preserving file info...
+		_, _, err = p.cmdRunner.RunCommand("cp", "-p", file, dst)
+		if err != nil {
+			return
+		}
+	}
+
+	tarballPath := filepath.Join(tmpDir, "files.tgz")
+	os.Chdir(tgzDir)
+	_, _, err = p.cmdRunner.RunCommand("tar", "czf", tarballPath, ".")
+	if err != nil {
+		return
+	}
+
+	tarball, err = p.fs.Open(tarballPath)
+	return
+}
+
+func (p ubuntu) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
+	for _, filter := range filters {
+		var newFiles []string
+
+		newFiles, err = p.findFilesMatchingFilter(filepath.Join(dir, filter))
+		if err != nil {
+			return
+		}
+
+		files = append(files, newFiles...)
+	}
+
+	return
+}
+
+func (p ubuntu) findFilesMatchingFilter(filter string) (files []string, err error) {
+	files, err = filepath.Glob(filter)
+	if err != nil {
+		return
+	}
+
+	// Ruby Dir.glob will include *.log when looking for **/*.log
+	// Golang implementation will not do it automatically
+	if strings.Contains(filter, "**/*") {
+		var extraFiles []string
+
+		updatedFilter := strings.Replace(filter, "**/*", "*", 1)
+		extraFiles, err = p.findFilesMatchingFilter(updatedFilter)
+		if err != nil {
+			return
+		}
+
+		files = append(files, extraFiles...)
+	}
 	return
 }
 

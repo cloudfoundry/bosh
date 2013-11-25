@@ -1,7 +1,7 @@
 package disk
 
 import (
-	testsys "bosh/system/testhelpers"
+	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -10,7 +10,7 @@ func TestLinuxMount(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "")
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.NoError(t, err)
@@ -22,7 +22,7 @@ func TestLinuxMountWhenDiskIsAlreadyMountedToTheGoodMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/foo /mnt/foo\n/dev/bar /mnt/bar")
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.NoError(t, err)
@@ -33,7 +33,7 @@ func TestLinuxMountWhenDiskIsAlreadyMountedToTheWrongMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/foo /mnt/foobarbaz\n/dev/bar /mnt/bar")
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.Error(t, err)
@@ -44,7 +44,7 @@ func TestLinuxMountWhenAnotherDiskIsAlreadyMountedToMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/baz /mnt/foo\n/dev/bar /mnt/bar")
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.Error(t, err)
@@ -57,7 +57,7 @@ func TestLinuxSwapOn(t *testing.T) {
 		"swapon -s": []string{"Filename				Type		Size	Used	Priority\n", ""},
 	}
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
 
 	assert.Equal(t, 2, len(runner.RunCommands))
@@ -70,7 +70,7 @@ func TestLinuxSwapOnWhenAlreadyOn(t *testing.T) {
 		"swapon -s": []string{SWAPON_USAGE_OUTPUT, ""},
 	}
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
 	assert.Equal(t, 1, len(runner.RunCommands))
 	assert.Equal(t, []string{"swapon", "-s"}, runner.RunCommands[0])
@@ -86,7 +86,7 @@ func TestLinuxSwapOnWhenAlreadyOnOtherDevice(t *testing.T) {
 		"swapon -s": []string{SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE, ""},
 	}
 
-	mounter := NewLinuxMounter(runner, fs)
+	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
 	assert.Equal(t, 2, len(runner.RunCommands))
 	assert.Equal(t, []string{"swapon", "-s"}, runner.RunCommands[0])
@@ -97,8 +97,8 @@ const SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE = `Filename				Type		Size	Used	Prior
 /dev/swap2                              partition	78180316	0	-1
 `
 
-func getLinuxMounterDependencies() (runner *testsys.FakeCmdRunner, fs *testsys.FakeFileSystem) {
-	runner = &testsys.FakeCmdRunner{}
-	fs = &testsys.FakeFileSystem{}
+func getLinuxMounterDependencies() (runner *fakesys.FakeCmdRunner, fs *fakesys.FakeFileSystem) {
+	runner = &fakesys.FakeCmdRunner{}
+	fs = &fakesys.FakeFileSystem{}
 	return
 }

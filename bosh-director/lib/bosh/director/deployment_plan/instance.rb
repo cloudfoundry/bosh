@@ -59,12 +59,12 @@ module Bosh::Director
 
         # Expanding virtual states
         case @state
-          when "recreate"
+          when 'recreate'
             @recreate = true
-            @state = "started"
-          when "restart"
+            @state = 'started'
+          when 'restart'
             @restart = true
-            @state = "started"
+            @state = 'started'
         end
       end
 
@@ -76,7 +76,7 @@ module Bosh::Director
       # @return [void]
       def use_model(model)
         if @model
-          raise DirectorError, "Instance model is already bound"
+          raise DirectorError, 'Instance model is already bound'
         end
         @model = model
       end
@@ -183,7 +183,7 @@ module Bosh::Director
       # @return [Integer] persistent disk size
       def disk_size
         if @model.nil?
-          current_state["persistent_disk"].to_i
+          current_state['persistent_disk'].to_i
         elsif @model.persistent_disk
           @model.persistent_disk.size
         else
@@ -197,7 +197,7 @@ module Bosh::Director
         dns_record_info = {}
         network_settings.each do |network_name, network|
           name = dns_record_name(network_name)
-          dns_record_info[name] = network["ip"]
+          dns_record_info[name] = network['ip']
         end
         dns_record_info
       end
@@ -205,20 +205,20 @@ module Bosh::Director
       ##
       # @return [String] dns record name
       def dns_record_name(network_name)
-        [index, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join(".")  
+        [index, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
       end
 
       ##
       # @return [Boolean] returns true if the persistent disk is attached to the
       #   VM
       def disk_currently_attached?
-        current_state["persistent_disk"].to_i > 0
+        current_state['persistent_disk'].to_i > 0
       end
 
       ##
       # @return [Boolean] returns true if the network configuration changed
       def networks_changed?
-        network_settings != @current_state["networks"]
+        network_settings != @current_state['networks']
       end
 
       ##
@@ -229,7 +229,7 @@ module Bosh::Director
           return true
         end
 
-        if @job.resource_pool.spec != @current_state["resource_pool"]
+        if @job.resource_pool.spec != @current_state['resource_pool']
           return true
         end
 
@@ -252,7 +252,7 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected configuration hash
       #   differs from the one provided by the VM
       def configuration_changed?
-        configuration_hash != @current_state["configuration_hash"]
+        configuration_hash != @current_state['configuration_hash']
       end
 
       ##
@@ -260,11 +260,11 @@ module Bosh::Director
       #   from the one provided by the VM
       def job_changed?
         job_spec = @job.spec
-        if job_spec != @current_state["job"]
+        if job_spec != @current_state['job']
           # The agent job spec could be in legacy form.  job_spec cannot be,
           # though, because we got it from the spec function in job.rb which
           # automatically makes it non-legacy.
-          return job_spec != Job.convert_from_legacy_spec(@current_state["job"])
+          return job_spec != Job.convert_from_legacy_spec(@current_state['job'])
         end
         return false
       end
@@ -273,7 +273,7 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected packaged of the running
       #   instance differ from the ones provided by the VM
       def packages_changed?
-        @job.package_spec != @current_state["packages"]
+        @job.package_spec != @current_state['packages']
       end
 
       ##
@@ -289,7 +289,7 @@ module Bosh::Director
       def dns_changed?
         if Config.dns_enabled?
           dns_record_info.any? do |name, ip|
-            Models::Dns::Record.find(:name => name, :type => "A",
+            Models::Dns::Record.find(:name => name, :type => 'A',
                                      :content => ip).nil?
           end
         else
@@ -306,9 +306,9 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected job state differs from
       #   the one provided by the VM
       def state_changed?
-        @state == "detached" ||
-          @state == "started" && @current_state["job_state"] != "running" ||
-          @state == "stopped" && @current_state["job_state"] == "running"
+        @state == 'detached' ||
+          @state == 'started' && @current_state['job_state'] != 'running' ||
+          @state == 'stopped' && @current_state['job_state'] == 'running'
       end
 
       ##
@@ -323,7 +323,7 @@ module Bosh::Director
       #   differences
       def changes
         changes = Set.new
-        unless @state == "detached" && @current_state.nil?
+        unless @state == 'detached' && @current_state.nil?
           changes << :restart if @restart
           changes << :resource_pool if resource_pool_changed?
           changes << :network if networks_changed?
@@ -344,21 +344,21 @@ module Bosh::Director
       # @return [Hash<String, Object>] instance spec
       def spec
         spec = {
-          "deployment" => @job.deployment.name,
-          "release" => job.release.spec,
-          "job" => job.spec,
-          "index" => index,
-          "networks" => network_settings,
-          "resource_pool" => job.resource_pool.spec,
-          "packages" => job.package_spec,
-          "persistent_disk" => job.persistent_disk,
-          "configuration_hash" => configuration_hash,
-          "properties" => job.properties,
-          "dns_domain_name" => dns_domain_name
+          'deployment' => @job.deployment.name,
+          'release' => job.release.spec,
+          'job' => job.spec,
+          'index' => index,
+          'networks' => network_settings,
+          'resource_pool' => job.resource_pool.spec,
+          'packages' => job.package_spec,
+          'persistent_disk' => job.persistent_disk,
+          'configuration_hash' => configuration_hash,
+          'properties' => job.properties,
+          'dns_domain_name' => dns_domain_name
         }
 
         if template_hashes
-          spec["template_hashes"] = template_hashes
+          spec['template_hashes'] = template_hashes
         end
 
         spec
@@ -368,17 +368,17 @@ module Bosh::Director
       # @return [Models::Instance]
       def find_or_create_model
         if @job.deployment.model.nil?
-          raise DirectorError, "Deployment model is not bound"
+          raise DirectorError, 'Deployment model is not bound'
         end
 
         conditions = {
-          :deployment_id => @job.deployment.model.id,
-          :job => @job.name,
-          :index => @index
+          deployment_id: @job.deployment.model.id,
+          job: @job.name,
+          index: @index
         }
 
         Models::Instance.find_or_create(conditions) do |model|
-          model.state = "started"
+          model.state = 'started'
         end
       end
 

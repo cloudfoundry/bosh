@@ -143,4 +143,18 @@ describe 'CentOs Stemcell' do
       it { should contain /^PermitRootLogin no$/ }
     end
   end
+
+  context 'installed by system-aws-network', exclude_on_vsphere: true do
+    describe file('/etc/sysconfig/network') do
+      it { should be_file }
+      it { should contain 'NETWORKING=yes' }
+    end
+
+    describe file('/etc/sysconfig/network-scripts/ifcfg-eth0') do
+      it { should be_file }
+      it { should contain 'DEVICE=eth0' }
+      it { should contain 'BOOTPROTO=dhcp' }
+      it { should contain 'ONBOOT=yes' }
+    end
+  end
 end

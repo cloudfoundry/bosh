@@ -88,7 +88,6 @@ describe 'deployment integrations' do
 
   context 'canceling a deploy job' do
     it 'should spawn a job and then successfully cancel it' do
-      pending 'hangs when canceling during or before package compilation'
       deploy_result = deploy_simple(no_track: true)
 
       task_id = get_task_id(deploy_result, 'running')

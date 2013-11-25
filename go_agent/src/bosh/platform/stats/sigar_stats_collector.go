@@ -5,8 +5,8 @@ import sigar "github.com/cloudfoundry/gosigar"
 type sigarStatsCollector struct {
 }
 
-func NewSigarStatsCollector() (collector sigarStatsCollector) {
-	return
+func NewSigarStatsCollector() (collector StatsCollector) {
+	return sigarStatsCollector{}
 }
 
 func (s sigarStatsCollector) GetCpuLoad() (load CpuLoad, err error) {

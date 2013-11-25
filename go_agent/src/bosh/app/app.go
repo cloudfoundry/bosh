@@ -4,16 +4,16 @@ import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
+	boshblobstore "bosh/blobstore"
 	boshboot "bosh/bootstrap"
 	boshinf "bosh/infrastructure"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
-	boshsys "bosh/system"
 	"flag"
 	"io/ioutil"
 )
 
-type App struct {
+type app struct {
 }
 
 type options struct {
@@ -21,13 +21,11 @@ type options struct {
 	PlatformName       string
 }
 
-func New() (app App) {
+func New() (app app) {
 	return
 }
 
-func (app App) Run(args []string) (err error) {
-	fs := boshsys.OsFileSystem{}
-
+func (app app) Run(args []string) (err error) {
 	opts, err := parseOptions(args)
 	if err != nil {
 		return
@@ -39,13 +37,13 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
-	platformProvider := boshplatform.NewProvider(fs)
+	platformProvider := boshplatform.NewProvider()
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return
 	}
 
-	boot := boshboot.New(fs, infrastructure, platform)
+	boot := boshboot.New(infrastructure, platform)
 	settings, err := boot.Run()
 	if err != nil {
 		return
@@ -57,8 +55,15 @@ func (app App) Run(args []string) (err error) {
 		return
 	}
 
+	blobstoreProvider := boshblobstore.NewProvider()
+	blobstore, err := blobstoreProvider.Get(settings.Blobstore)
+	if err != nil {
+		return
+	}
+
 	taskService := boshtask.NewAsyncTaskService()
-	actionFactory := boshaction.NewFactory(settings, fs, taskService)
+	actionFactory := boshaction.NewFactory(settings, platform, blobstore, taskService)
+
 	agent := boshagent.New(settings, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()
 	return

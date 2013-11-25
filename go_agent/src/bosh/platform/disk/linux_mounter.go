@@ -12,7 +12,7 @@ type linuxMounter struct {
 	fs     boshsys.FileSystem
 }
 
-func NewLinuxMounter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (mounter linuxMounter) {
+func newLinuxMounter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (mounter linuxMounter) {
 	mounter.runner = runner
 	mounter.fs = fs
 	return

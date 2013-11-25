@@ -2,10 +2,12 @@ package platform
 
 import (
 	boshdisk "bosh/platform/disk"
-	testdisk "bosh/platform/disk/testhelpers"
-	teststats "bosh/platform/stats/testhelpers"
+	fakedisk "bosh/platform/disk/fakes"
+	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
-	testsys "bosh/system/testhelpers"
+	boshsys "bosh/system"
+	fakesys "bosh/system/fakes"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
@@ -24,6 +26,82 @@ func TestSetupRuntimeConfiguration(t *testing.T) {
 	assert.Equal(t, []string{"bosh-agent-rc"}, fakeCmdRunner.RunCommands[0])
 }
 
+func TestUbuntuCreateUser(t *testing.T) {
+	expectedUseradd := []string{
+		"useradd",
+		"-m",
+		"-b", "/some/path/to/home",
+		"-s", "/bin/bash",
+		"-p", "bar-pwd",
+		"foo-user",
+	}
+
+	testUbuntuCreateUserWithPassword(t, "bar-pwd", expectedUseradd)
+}
+
+func TestUbuntuCreateUserWithAnEmptyPassword(t *testing.T) {
+	expectedUseradd := []string{
+		"useradd",
+		"-m",
+		"-b", "/some/path/to/home",
+		"-s", "/bin/bash",
+		"foo-user",
+	}
+
+	testUbuntuCreateUserWithPassword(t, "", expectedUseradd)
+}
+
+func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.CreateUser("foo-user", password, "/some/path/to/home")
+	assert.NoError(t, err)
+
+	basePathStat := fakeFs.GetFileTestStat("/some/path/to/home")
+	assert.Equal(t, fakesys.FakeFileTypeDir, basePathStat.FileType)
+	assert.Equal(t, os.FileMode(0755), basePathStat.FileMode)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, expectedUseradd, fakeCmdRunner.RunCommands[0])
+}
+
+func TestAddUserToGroups(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+
+	usermod := []string{"usermod", "-G", "group1,group2,group3", "foo-user"}
+	assert.Equal(t, usermod, fakeCmdRunner.RunCommands[0])
+}
+
+func TestDeleteUsersWithPrefixAndRegex(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
+
+	passwdFile := fmt.Sprintf(`%sfoo:...
+%sbar:...
+foo:...
+bar:...
+foobar:...
+%sfoobar:...`,
+		boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX,
+	)
+
+	fakeFs.WriteToFile("/etc/passwd", passwdFile)
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager)
+
+	err := ubuntu.DeleteEphemeralUsersMatching("bar$")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"userdel", "-r", "bosh_bar"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"userdel", "-r", "bosh_foobar"}, fakeCmdRunner.RunCommands[1])
+}
+
 func TestUbuntuSetupSsh(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager := getUbuntuDependencies()
 	fakeFs.HomeDirHomeDir = "/some/home/dir"
@@ -37,14 +115,14 @@ func TestUbuntuSetupSsh(t *testing.T) {
 	assert.Equal(t, fakeFs.HomeDirUsername, "vcap")
 
 	assert.NotNil(t, sshDirStat)
-	assert.Equal(t, sshDirStat.CreatedWith, "MkdirAll")
+	assert.Equal(t, fakesys.FakeFileTypeDir, sshDirStat.FileType)
 	assert.Equal(t, sshDirStat.FileMode, os.FileMode(0700))
 	assert.Equal(t, sshDirStat.Username, "vcap")
 
 	authKeysStat := fakeFs.GetFileTestStat(filepath.Join(sshDirPath, "authorized_keys"))
 
 	assert.NotNil(t, authKeysStat)
-	assert.Equal(t, authKeysStat.CreatedWith, "WriteToFile")
+	assert.Equal(t, authKeysStat.FileType, fakesys.FakeFileTypeFile)
 	assert.Equal(t, authKeysStat.FileMode, os.FileMode(0600))
 	assert.Equal(t, authKeysStat.Username, "vcap")
 	assert.Equal(t, authKeysStat.Content, "some public key")
@@ -104,7 +182,7 @@ func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
 	assert.Equal(t, len(fakeCmdRunner.RunCommands), 0)
 }
 
-func testUbuntuSetupDhcp(t *testing.T, fakeStats *teststats.FakeStatsCollector, fakeFs *testsys.FakeFileSystem, fakeCmdRunner *testsys.FakeCmdRunner, fakeDiskManager testdisk.FakeDiskManager) {
+func testUbuntuSetupDhcp(t *testing.T, fakeStats *fakestats.FakeStatsCollector, fakeFs *fakesys.FakeFileSystem, fakeCmdRunner *fakesys.FakeCmdRunner, fakeDiskManager fakedisk.FakeDiskManager) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.NetworkSettings{
 			Default: []string{"dns"},
@@ -150,7 +228,7 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 
 	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
 	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
-	assert.Equal(t, "WriteToFile", ntpConfig.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeFile, ntpConfig.FileType)
 }
 
 func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
@@ -179,7 +257,7 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.NoError(t, err)
 
 	dataDir := fakeFs.GetFileTestStat("/data-dir")
-	assert.Equal(t, "MkdirAll", dataDir.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, dataDir.FileType)
 	assert.Equal(t, os.FileMode(0750), dataDir.FileMode)
 
 	assert.Equal(t, "/dev/xvda", fakePartitioner.PartitionDevicePath)
@@ -209,12 +287,12 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 
 	sysLogStats := fakeFs.GetFileTestStat("/data-dir/sys/log")
 	assert.NotNil(t, sysLogStats)
-	assert.Equal(t, "MkdirAll", sysLogStats.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, sysLogStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysLogStats.FileMode)
 
 	sysRunStats := fakeFs.GetFileTestStat("/data-dir/sys/run")
 	assert.NotNil(t, sysRunStats)
-	assert.Equal(t, "MkdirAll", sysRunStats.CreatedWith)
+	assert.Equal(t, fakesys.FakeFileTypeDir, sysRunStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 
@@ -301,10 +379,54 @@ func TestStartMonit(t *testing.T) {
 	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
 }
 
-func getUbuntuDependencies() (collector *teststats.FakeStatsCollector, fs *testsys.FakeFileSystem, cmdRunner *testsys.FakeCmdRunner, fakeDiskManager testdisk.FakeDiskManager) {
-	collector = &teststats.FakeStatsCollector{}
-	fs = &testsys.FakeFileSystem{}
-	cmdRunner = &testsys.FakeCmdRunner{}
-	fakeDiskManager = testdisk.NewFakeDiskManager(cmdRunner)
+func TestCompressFilesInDir(t *testing.T) {
+	fakeStats, _, _, fakeDiskManager := getUbuntuDependencies()
+	osFs := boshsys.NewOsFileSystem()
+	execCmdRunner := boshsys.NewExecCmdRunner()
+
+	tmpDir := filepath.Join(os.TempDir(), "TestCompressFilesInDir")
+	err := osFs.MkdirAll(tmpDir, os.ModePerm)
+
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	ubuntu := newUbuntuPlatform(fakeStats, osFs, execCmdRunner, fakeDiskManager)
+
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	fixturesDir := filepath.Join(pwd, "..", "..", "..", "fixtures", "test_get_files_in_dir")
+
+	tgz, err := ubuntu.CompressFilesInDir(fixturesDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
+	assert.NoError(t, err)
+
+	defer os.Remove(tgz.Name())
+
+	_, _, err = execCmdRunner.RunCommand("tar", "xzf", tgz.Name(), "-C", tmpDir)
+	assert.NoError(t, err)
+
+	content, err := osFs.ReadFile(tmpDir + "/app.stdout.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is app stdout")
+
+	content, err = osFs.ReadFile(tmpDir + "/app.stderr.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is app stderr")
+
+	content, err = osFs.ReadFile(tmpDir + "/other_logs/other_app.stdout.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is other app stdout")
+
+	content, err = osFs.ReadFile(tmpDir + "/other_logs/other_app.stderr.log")
+	assert.Error(t, err)
+
+	content, err = osFs.ReadFile(tmpDir + "/../some.config")
+	assert.Error(t, err)
+}
+
+func getUbuntuDependencies() (collector *fakestats.FakeStatsCollector, fs *fakesys.FakeFileSystem, cmdRunner *fakesys.FakeCmdRunner, fakeDiskManager fakedisk.FakeDiskManager) {
+	collector = &fakestats.FakeStatsCollector{}
+	fs = &fakesys.FakeFileSystem{}
+	cmdRunner = &fakesys.FakeCmdRunner{}
+	fakeDiskManager = fakedisk.NewFakeDiskManager(cmdRunner)
 	return
 }

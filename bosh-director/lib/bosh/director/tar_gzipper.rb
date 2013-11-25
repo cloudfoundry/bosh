@@ -3,8 +3,6 @@ require 'open3'
 
 module Bosh::Director
   class TarGzipper
-    include Bosh::RunsCommands
-
     # @param [String] base_dir the directory from which the tar command is run
     # @param [String, Array] sources the relative paths to include
     # @param [String] dest the destination filename for the tgz output

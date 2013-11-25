@@ -17,7 +17,7 @@ func newGetState(settings boshsettings.Settings, fs boshsys.FileSystem) (action 
 	return
 }
 
-func (a getStateAction) Run(payload []byte) (value interface{}, err error) {
+func (a getStateAction) Run([]byte) (value interface{}, err error) {
 	content, err := a.fs.ReadFile(boshsettings.VCAP_BASE_DIR + "/bosh/spec.json")
 	if err != nil {
 		return

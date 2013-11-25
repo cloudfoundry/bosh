@@ -1,6 +1,6 @@
 package task
 
-type TaskFunc func() (err error)
+type TaskFunc func() (value interface{}, err error)
 
 type TaskState string
 
@@ -14,4 +14,5 @@ type Task struct {
 	taskFunc TaskFunc
 	Id       string
 	State    TaskState
+	Value    interface{}
 }

@@ -5,6 +5,7 @@ module Bosh::Director::Models
     many_to_one :deployment
     many_to_one :vm
     one_to_many :persistent_disks
+    one_to_many :rendered_templates_archives
 
     def validate
       validates_presence [:deployment_id, :job, :index, :state]

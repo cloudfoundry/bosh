@@ -56,3 +56,46 @@ func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsNotFound(t *testing.T)
 	_, found := networks.DefaultNetworkFor("dns")
 	assert.False(t, found)
 }
+
+func TestDefaultIpWithTwoNetworks(t *testing.T) {
+	networks := Networks{
+		"bosh": NetworkSettings{
+			Ip: "xx.xx.xx.xx",
+		},
+		"vip": NetworkSettings{
+			Ip: "aa.aa.aa.aa",
+		},
+	}
+
+	ip, found := networks.DefaultIp()
+	assert.True(t, found)
+	assert.Equal(t, "xx.xx.xx.xx", ip)
+}
+
+func TestDefaultIpWithTwoNetworksOnlyWithDefaults(t *testing.T) {
+	networks := Networks{
+		"bosh": NetworkSettings{
+			Ip: "xx.xx.xx.xx",
+		},
+		"vip": NetworkSettings{
+			Ip:      "aa.aa.aa.aa",
+			Default: []string{"dns"},
+		},
+	}
+
+	ip, found := networks.DefaultIp()
+	assert.True(t, found)
+	assert.Equal(t, "aa.aa.aa.aa", ip)
+}
+
+func TestDefaultIpWhenNoneSpecified(t *testing.T) {
+	networks := Networks{
+		"bosh": NetworkSettings{},
+		"vip": NetworkSettings{
+			Default: []string{"dns"},
+		},
+	}
+
+	_, found := networks.DefaultIp()
+	assert.False(t, found)
+}

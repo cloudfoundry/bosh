@@ -12,7 +12,7 @@ module Bosh::Dev::Sandbox
       Dir.chdir(@director_dir) do
         output = `bin/bosh-director-migrate -c #{@director_config_path}`
         unless $?.exitstatus == 0
-          @logger.info("Failed to run migration: \n#{output}")
+          @logger.info("Failed to run migrations: \n#{output}")
           exit 1
         end
       end

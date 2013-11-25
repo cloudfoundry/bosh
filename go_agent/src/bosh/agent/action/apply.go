@@ -18,11 +18,9 @@ func newApply(fs boshsys.FileSystem) (apply applyAction) {
 }
 
 func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	type payloadType struct {
+	var payload struct {
 		Arguments []interface{}
 	}
-
-	var payload payloadType
 	err = json.Unmarshal(payloadBytes, &payload)
 	if err != nil {
 		return
