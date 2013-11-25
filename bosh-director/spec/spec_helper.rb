@@ -12,12 +12,11 @@ require 'archive/tar/minitar'
 require 'rspec'
 require 'machinist/sequel'
 require 'sham'
-require 'rspec/fire'
 require 'support/job_example_group'
 require 'support/task_helpers'
+require 'support/rspec_fire'
 
 RSpec.configure do |config|
-  config.include(RSpec::Fire)
   config.include Bosh::Director::Test::TaskHelpers
 end
 
