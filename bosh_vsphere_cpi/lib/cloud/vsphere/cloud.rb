@@ -1128,7 +1128,7 @@ module VSphereCloud
       vm_objects = []
       with_thread_name("get_vms") do
         @resources.datacenters.each_value do |datacenter|
-          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.mob}")
+          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.name}")
 
           vm_objects += client.get_property(datacenter.vm_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
         end

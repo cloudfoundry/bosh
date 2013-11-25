@@ -402,7 +402,7 @@ describe VSphereCloud::Cloud do
     let(:resources) { double('fake resources', datacenters: {key: datacenter}) }
 
     let(:datacenter) { double('fake datacenter', name: 'fake datacenter', vm_folder: vm_folder) }
-    let(:vm_folder) { double('fake vm folder', mob: ['fake mob']) }
+    let(:vm_folder) { double('fake vm folder', name: 'fake vm folder name', mob: ['fake mob']) }
     let(:client) { double('fake client') }
     let(:vms) { ['fake vm 1', 'fake vm 2'] }
 
@@ -422,7 +422,7 @@ describe VSphereCloud::Cloud do
       let(:resources) { double('fake resources', datacenters: {key1: datacenter, key2: datacenter2}) }
 
       let(:datacenter2) { double('another fake datacenter', name: 'fake datacenter 2', vm_folder: vm_folder2) }
-      let(:vm_folder2) { double('another fake vm folder', mob: ['another fake mob']) }
+      let(:vm_folder2) { double('another fake vm folder', name: 'another fake vm folder name', mob: ['another fake mob']) }
       let(:vms2) { ['fake vm 3', 'fake vm 4'] }
 
       it 'returns all vms in vm_folder of all datacenters' do
