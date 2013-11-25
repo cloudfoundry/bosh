@@ -14,7 +14,7 @@ module Bosh::Blobstore
 
     before { HTTPClient.stub(new: http_client) }
     let(:http_client) { double('http-client', ssl_config: http_client_ssl_opt) }
-    let(:http_client_ssl_opt) { double('http-client-ssl-opts', 'verify_mode=' => nil) }
+    let(:http_client_ssl_opt) { double('http-client-ssl-opts', :verify_mode= => nil) }
 
     it_implements_base_client_interface
 
