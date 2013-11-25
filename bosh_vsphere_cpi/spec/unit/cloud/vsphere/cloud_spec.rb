@@ -110,14 +110,14 @@ describe VSphereCloud::Cloud do
     context 'the vm is found' do
       it 'returns true' do
         vsphere_cloud.should_receive(:get_vm_by_cid).with(vm_id)
-        expect(vsphere_cloud.has_vm?(vm_id)).to be_true
+        expect(vsphere_cloud.has_vm?(vm_id)).to be(true)
       end
     end
 
     context 'the vm is not found' do
       it 'returns false' do
         vsphere_cloud.should_receive(:get_vm_by_cid).with(vm_id).and_raise(Bosh::Clouds::VMNotFound)
-        expect(vsphere_cloud.has_vm?(vm_id)).to be_false
+        expect(vsphere_cloud.has_vm?(vm_id)).to be(false)
       end
     end
   end

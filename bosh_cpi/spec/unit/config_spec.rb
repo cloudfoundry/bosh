@@ -14,6 +14,6 @@ describe Bosh::Clouds::Config do
   end
 
   it 'should configure a task_checkpoint' do
-    Bosh::Clouds::Config.respond_to?(:task_checkpoint).should be_true
+    Bosh::Clouds::Config.respond_to?(:task_checkpoint).should be(true)
   end
 end

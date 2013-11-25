@@ -20,7 +20,7 @@ module Bosh
     #     result = Bosh::Exec::Result.new(cmd, "bin etc var", "", 0)
     #     Bosh::Exec.should_receive(:sh).with(cmd).and_return(result)
     #     result = Bosh::Exec.sh(cmd)
-    #     result.success?.should be_true
+    #     result.success?.should be(true)
     #   end
     #
     # @note As commands are executed using %x{...} you need to append 2>&1 to

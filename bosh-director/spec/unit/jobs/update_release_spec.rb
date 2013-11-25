@@ -67,7 +67,7 @@ module Bosh::Director
 
           rv.should_not be_nil
           rv.commit_hash.should == '12345678'
-          rv.uncommitted_changes.should be_true
+          rv.uncommitted_changes.should be(true)
         end
 
         it 'sets default commit_hash and uncommitted_changes flag if missing' do
@@ -83,7 +83,7 @@ module Bosh::Director
 
           rv.should_not be_nil
           rv.commit_hash.should == 'unknown'
-          rv.uncommitted_changes.should be_false
+          rv.uncommitted_changes.should be(false)
         end
       end
 

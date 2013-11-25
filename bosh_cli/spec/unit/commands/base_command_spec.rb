@@ -84,10 +84,10 @@ describe Bosh::Cli::Command::Base do
 
   it 'has logged_in? helper' do
     cmd = make
-    cmd.logged_in?.should be_false
+    cmd.logged_in?.should be(false)
     cmd.add_option(:username, 'foo')
-    cmd.logged_in?.should be_false
+    cmd.logged_in?.should be(false)
     cmd.add_option(:password, 'bar')
-    cmd.logged_in?.should be_true
+    cmd.logged_in?.should be(true)
   end
 end

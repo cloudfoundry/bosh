@@ -17,7 +17,7 @@ describe Bosh::Deployer::Config do
 
     properties = Bosh::Deployer::Config.cloud_options['properties']
     properties['agent'].should be_kind_of(Hash)
-    properties['agent']['mbus'].start_with?('https://').should be_true
+    properties['agent']['mbus'].start_with?('https://').should be(true)
     properties['agent']['blobstore'].should be_kind_of(Hash)
   end
 

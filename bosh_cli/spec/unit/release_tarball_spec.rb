@@ -18,9 +18,9 @@ describe Bosh::Cli::ReleaseTarball do
       tarball.skipped.should == 1
 
       repacked_tarball = Bosh::Cli::ReleaseTarball.new(repacked_tarball_path)
-      repacked_tarball.valid?.should be_false
+      repacked_tarball.valid?.should be(false)
       repacked_tarball.reset_validation
-      repacked_tarball.valid?(:allow_sparse => true).should be_true
+      repacked_tarball.valid?(:allow_sparse => true).should be(true)
     end
   end
 end

@@ -281,7 +281,7 @@ module Bosh::Director
         context 'when canary is set to true' do
           it 'updates the instance to be a canary' do
             subject.update(:canary => true)
-            expect(subject.canary?).to be_true
+            expect(subject.canary?).to be(true)
           end
 
           it_updates_vm_metadata
@@ -290,7 +290,7 @@ module Bosh::Director
         context 'when canary is not passed in' do
           it 'defaults the instance to not be a canary' do
             subject.update
-            expect(subject.canary?).to be_false
+            expect(subject.canary?).to be(false)
           end
 
           it_updates_vm_metadata
@@ -841,36 +841,36 @@ module Bosh::Director
       context 'when the resource pool has changed' do
         let(:resource_pool_changed) { true }
 
-        its(:shutting_down?) { should be_true }
+        its(:shutting_down?) { should be(true) }
       end
       context 'when the persistent disks have changed' do
         let(:persistent_disk_changed) { true }
 
-        its(:shutting_down?) { should be_true }
+        its(:shutting_down?) { should be(true) }
       end
 
       context 'when the networks have changed' do
         let(:networks_changed) { true }
 
-        its(:shutting_down?) { should be_true }
+        its(:shutting_down?) { should be(true) }
       end
 
       context 'when the target state is detached' do
         let(:state) { 'detached' }
 
-        its(:shutting_down?) { should be_true }
+        its(:shutting_down?) { should be(true) }
       end
 
       context 'when the target state is stopped' do
         let(:state) { 'stopped' }
 
-        its(:shutting_down?) { should be_true }
+        its(:shutting_down?) { should be(true) }
       end
 
       context 'when the target state is started' do
         let(:state) { 'started' }
 
-        its(:shutting_down?) { should be_false }
+        its(:shutting_down?) { should be(false) }
       end
     end
 

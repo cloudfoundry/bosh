@@ -125,7 +125,7 @@ module Bosh::Dev
           body = options.fetch(:body)
           public = options.fetch(:public)
 
-          expect(public).to eq(true)
+          expect(public).to be(true)
 
           case key
             when '123/dest_dir/foo/bar.txt'

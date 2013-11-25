@@ -89,7 +89,7 @@ module Bosh::Director
 
             body = Yajl::Parser.parse(last_response.body)
 
-            body.kind_of?(Array).should be_true
+            body.kind_of?(Array).should be(true)
             body.size.should == 10
 
             response_collection = body.map do |e|

@@ -66,7 +66,7 @@ describe Bosh::Cli::Command::Base do
       @director.should_receive(:password=).with('pass')
       @cmd.set_target('test')
       @cmd.login('user', 'pass')
-      @cmd.logged_in?.should be_true
+      @cmd.logged_in?.should be(true)
       @cmd.username.should == 'user'
       @cmd.password.should == 'pass'
     end
@@ -77,7 +77,7 @@ describe Bosh::Cli::Command::Base do
       @director.should_receive(:password=).with('pass')
       @cmd.set_target('test')
       @cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
-      @cmd.logged_in?.should be_true
+      @cmd.logged_in?.should be(true)
       @cmd.username.should == 'user'
       @cmd.password.should == 'pass'
       config_file = File.read(File.expand_path(@config))
@@ -93,7 +93,7 @@ describe Bosh::Cli::Command::Base do
       @director.should_receive(:password=).with('pass')
       @cmd.login('user', 'pass')
       @cmd.logout
-      @cmd.logged_in?.should be_false
+      @cmd.logged_in?.should be(false)
     end
 
     it 'respects director checks option when logging in' do
@@ -105,7 +105,7 @@ describe Bosh::Cli::Command::Base do
       @director.should_receive(:user=).with('user')
       @director.should_receive(:password=).with('pass')
       @cmd.login('user', 'pass')
-      @cmd.logged_in?.should be_true
+      @cmd.logged_in?.should be(true)
       @cmd.username.should == 'user'
       @cmd.password.should == 'pass'
     end

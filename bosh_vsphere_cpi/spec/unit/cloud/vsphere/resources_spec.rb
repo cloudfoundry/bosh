@@ -76,7 +76,7 @@ describe VSphereCloud::Resources do
       cluster.stub(:persistent).with("baz").and_return(datastore)
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
-      resources.validate_persistent_datastore("foo", "baz").should be_true
+      resources.validate_persistent_datastore("foo", "baz").should be(true)
     end
 
     it "should return false if the provided datastore is not persistent" do
@@ -86,7 +86,7 @@ describe VSphereCloud::Resources do
       cluster.stub(:persistent).with("baz").and_return(nil)
       resources = VSphereCloud::Resources.new
       resources.stub(:datacenters).and_return({"foo" => dc})
-      resources.validate_persistent_datastore("foo", "baz").should be_false
+      resources.validate_persistent_datastore("foo", "baz").should be(false)
     end
   end
 

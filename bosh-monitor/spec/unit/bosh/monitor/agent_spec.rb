@@ -13,28 +13,28 @@ describe Bhm::Agent do
   it "knows if it is timed out" do
     now = Time.now
     agent = make_agent("007")
-    agent.timed_out?.should be_false
+    agent.timed_out?.should be(false)
 
     Time.stub(:now).and_return(now + 344)
-    agent.timed_out?.should be_false
+    agent.timed_out?.should be(false)
 
     Time.stub(:now).and_return(now + 345)
-    agent.timed_out?.should be_true
+    agent.timed_out?.should be(true)
   end
 
   it "knows if it is rogue if it isn't associated with deployment for :rogue_agent_alert seconds" do
     now = Time.now
     agent = make_agent("007")
-    agent.rogue?.should be_false
+    agent.rogue?.should be(false)
 
     Time.stub(:now).and_return(now + 124)
-    agent.rogue?.should be_false
+    agent.rogue?.should be(false)
 
     Time.stub(:now).and_return(now + 125)
-    agent.rogue?.should be_true
+    agent.rogue?.should be(true)
 
     agent.deployment = "mycloud"
-    agent.rogue?.should be_false
+    agent.rogue?.should be(false)
   end
 
   it "has name that depends on the currently known state" do

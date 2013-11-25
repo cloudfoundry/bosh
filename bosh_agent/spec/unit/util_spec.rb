@@ -59,7 +59,7 @@ describe Bosh::Agent::Util do
             expect {
               Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
             }.to raise_error
-            expect(Dir.exist?(install_dir)).to be_false
+            expect(Dir.exist?(install_dir)).to be(false)
           end
         end
       end
@@ -75,7 +75,7 @@ describe Bosh::Agent::Util do
           expect {
             Bosh::Agent::Util.unpack_blob('some_blobstore_id', 'bogus_sha1', install_dir)
           }.to raise_error
-          expect(Dir.exist?(install_dir)).to be_false
+          expect(Dir.exist?(install_dir)).to be(false)
         end
       end
     end
@@ -87,7 +87,7 @@ describe Bosh::Agent::Util do
         expect {
           Bosh::Agent::Util.unpack_blob('some_blobstore_id', expected_sha1, install_dir)
         }.to raise_error
-        expect(Dir.exist?(install_dir)).to be_false
+        expect(Dir.exist?(install_dir)).to be(false)
       end
     end
   end
@@ -114,7 +114,7 @@ describe Bosh::Agent::Util do
 
     hook_file = File.join(job_bin_dir, 'post-install')
 
-    File.exists?(hook_file).should be_false
+    File.exists?(hook_file).should be(false)
     expect(Bosh::Agent::Util.run_hook('post-install', job_name)).to be_nil
 
     File.open(hook_file, 'w') do |fh|

@@ -46,28 +46,28 @@ describe Bosh::Cli::HashChangeset do
 
     mc = changeset(m1, m2)
 
-    mc[:foo][:bar].changed?.should be_true
+    mc[:foo][:bar].changed?.should be(true)
     mc[:foo][:bar].old.should == 1
     mc[:foo][:bar].new.should == 2
 
-    mc[:foo][:baz].changed?.should be_true
+    mc[:foo][:baz].changed?.should be(true)
     mc[:foo][:baz].old.should == "purr"
     mc[:foo][:baz].new.should == "meow"
 
-    mc[:foo][:nc].changed?.should be_false
-    mc[:foo][:nc].same?.should be_true
+    mc[:foo][:nc].changed?.should be(false)
+    mc[:foo][:nc].same?.should be(true)
     mc[:foo][:nc].old.should == "nc"
     mc[:foo][:nc].new.should == "nc"
 
-    mc[:foo][:properties][:a].changed?.should be_true
-    mc[:foo][:properties][:b].removed?.should be_true
-    mc[:foo][:properties][:c].mismatch?.should be_true
-    mc[:foo][:properties][:d].added?.should be_true
+    mc[:foo][:properties][:a].changed?.should be(true)
+    mc[:foo][:properties][:b].removed?.should be(true)
+    mc[:foo][:properties][:c].mismatch?.should be(true)
+    mc[:foo][:properties][:d].added?.should be(true)
 
-    mc[:foo][:arr].changed?.should be_true
-    mc[:arr].same?.should be_true
+    mc[:foo][:arr].changed?.should be(true)
+    mc[:arr].same?.should be(true)
 
-    mc[:zb].mismatch?.should be_true
+    mc[:zb].mismatch?.should be(true)
   end
 
 end

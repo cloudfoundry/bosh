@@ -58,9 +58,9 @@ describe Bosh::Agent::ApplyPlan::Plan do
         package.should be_kind_of Bosh::Agent::ApplyPlan::Package
       end
 
-      plan.has_jobs?.should be_true
-      plan.has_packages?.should be_true
-      plan.configured?.should be_true
+      plan.has_jobs?.should be(true)
+      plan.has_packages?.should be(true)
+      plan.configured?.should be(true)
     end
   end
 

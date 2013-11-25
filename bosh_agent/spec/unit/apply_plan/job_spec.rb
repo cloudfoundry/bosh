@@ -65,8 +65,8 @@ describe Bosh::Agent::ApplyPlan::Job do
       job.link_path.should == link_path
       job.template.should == 'postgres'
 
-      File.exists?(install_path).should be_false
-      File.exists?(link_path).should be_false
+      File.exists?(install_path).should be(false)
+      File.exists?(link_path).should be(false)
     end
   end
 
@@ -123,11 +123,11 @@ describe Bosh::Agent::ApplyPlan::Job do
 
       job.install
 
-      File.exists?(job.install_path).should be_true
-      File.exists?(job.link_path).should be_true
+      File.exists?(job.install_path).should be(true)
+      File.exists?(job.link_path).should be(true)
 
       bin_dir = File.join(job.install_path, "bin")
-      File.directory?(bin_dir).should be_true
+      File.directory?(bin_dir).should be(true)
 
       File.read(File.join(job.install_path, "bin", "foo")).
         should == "value1"
@@ -327,8 +327,8 @@ describe Bosh::Agent::ApplyPlan::Job do
       monit_file = File.join(job.install_path, "0003_ccdb.postgres.monitrc")
       monit_link = File.join(@base_dir, "monit", "job", "0003_ccdb.postgres.monitrc")
 
-      File.exists?(monit_file).should be_true
-      File.exists?(monit_link).should be_true
+      File.exists?(monit_file).should be(true)
+      File.exists?(monit_link).should be(true)
       File.read(monit_file).should == "check process ccdb mode manual bar"
 
       extra_monit_file = File.join(job.install_path,
@@ -336,8 +336,8 @@ describe Bosh::Agent::ApplyPlan::Job do
       extra_monit_link = File.join(@base_dir, "monit", "job",
                                    "0003_ccdb.postgres_extra.monitrc")
 
-      File.exists?(extra_monit_file).should be_true
-      File.exists?(extra_monit_link).should be_true
+      File.exists?(extra_monit_file).should be(true)
+      File.exists?(extra_monit_link).should be(true)
       File.read(extra_monit_file).
         should == "check process ccdb_extra mode manual"
 

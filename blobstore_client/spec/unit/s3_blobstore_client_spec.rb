@@ -216,13 +216,13 @@ module Bosh::Blobstore
       it 'should return true if the object already exists' do
         client.should_receive(:get_object_from_s3).with('fake-oid').and_return(blob)
         blob.should_receive(:exists?).and_return(true)
-        client.exists?('fake-oid').should be_true
+        client.exists?('fake-oid').should be(true)
       end
 
       it 'should return false if the object does not exist' do
         client.should_receive(:get_object_from_s3).with('fake-oid').and_return(blob)
         blob.should_receive(:exists?).and_return(false)
-        client.exists?('fake-oid').should be_false
+        client.exists?('fake-oid').should be(false)
       end
 
       context 'without folder options' do

@@ -23,12 +23,12 @@ describe Bosh::AwsCloud::NetworkConfigurator do
   describe "#vpc?" do
     it "should be true for a manual network" do
       nc = Bosh::AwsCloud::NetworkConfigurator.new("network1" => manual)
-      nc.vpc?.should be_true
+      nc.vpc?.should be(true)
     end
 
     it "should be false for a dynamic network" do
       nc = Bosh::AwsCloud::NetworkConfigurator.new("network1" => dynamic)
-      nc.vpc?.should be_false
+      nc.vpc?.should be(false)
     end
 
   end

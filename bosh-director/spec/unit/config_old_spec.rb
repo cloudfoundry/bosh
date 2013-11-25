@@ -80,7 +80,7 @@ describe Bosh::Director::Config do
       end
 
       it "uses package cache" do
-        described_class.use_compiled_package_cache?.should be_true
+        described_class.use_compiled_package_cache?.should be(true)
       end
 
       it "returns a compiled package cache blobstore" do
@@ -96,7 +96,7 @@ describe Bosh::Director::Config do
 
       it "returns false for use_compiled_package_cache?" do
         described_class.configure(test_config)
-        described_class.use_compiled_package_cache?.should be_false
+        described_class.use_compiled_package_cache?.should be(false)
       end
 
       it "returns nil for compiled_package_cache" do
@@ -220,7 +220,7 @@ describe Bosh::Director::Config do
         end
 
         it 'deletes state.json' do
-          expect(File.exist?(state_json)).to be_false
+          expect(File.exist?(state_json)).to be(false)
         end
       end
 

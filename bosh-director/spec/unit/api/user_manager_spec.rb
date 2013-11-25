@@ -11,20 +11,20 @@ module Bosh::Director
     describe :authenticate do
       it 'should accept default username/password when no other accounts are present' do
         Models::User.all.should be_empty
-        @user_manager.authenticate('admin', 'admin').should be_true
+        @user_manager.authenticate('admin', 'admin').should be(true)
       end
 
       it 'should not accept the default username/password when other accounts are present' do
         Models::User.make
-        @user_manager.authenticate('admin', 'admin').should be_false
+        @user_manager.authenticate('admin', 'admin').should be(false)
       end
 
       it 'should authenticate normal users' do
         Models::User.make(username: 'foo', password: BCrypt::Password.create('bar'))
         Models::User.make(username: 'bad', password: BCrypt::Password.create('test'))
 
-        @user_manager.authenticate('foo', 'bar').should be_true
-        @user_manager.authenticate('bad', 'Test').should be_false
+        @user_manager.authenticate('foo', 'bar').should be(true)
+        @user_manager.authenticate('bad', 'Test').should be(false)
       end
     end
 

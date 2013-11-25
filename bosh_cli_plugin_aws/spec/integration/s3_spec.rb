@@ -15,11 +15,11 @@ describe "S3 buckets integration test", s3_credentials: true do
 
   context "buckets" do
     it "creates, lists, copies, and deletes buckets" do
-      s3.bucket_exists?(bucket_name).should be_false
+      s3.bucket_exists?(bucket_name).should be(false)
       s3.create_bucket(bucket_name)
       s3.create_bucket(another_bucket_name)
 
-      s3.bucket_exists?(bucket_name).should be_true
+      s3.bucket_exists?(bucket_name).should be(true)
       s3.bucket_names.should include(bucket_name)
 
       s3.fetch_object_contents(bucket_name, "file.txt").should be_nil
@@ -53,7 +53,7 @@ describe "S3 buckets integration test", s3_credentials: true do
         sleep 0.5
       end
 
-      bucket_exists.should be_false
+      bucket_exists.should be(false)
 
       s3.bucket_names.should_not include(bucket_name)
     end

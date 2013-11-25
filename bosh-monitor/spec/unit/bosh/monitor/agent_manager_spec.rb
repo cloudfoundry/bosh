@@ -62,7 +62,7 @@ describe Bhm::AgentManager do
     end
 
     it "can start managing agent" do
-      manager.add_agent("mycloud", {"agent_id" => "007", "job" => "zb", "index" => "0"}).should be_true
+      manager.add_agent("mycloud", {"agent_id" => "007", "job" => "zb", "index" => "0"}).should be(true)
       manager.agents_count.should == 1
     end
 
@@ -113,14 +113,14 @@ describe Bhm::AgentManager do
     end
 
     it "refuses to register agents with malformed director vm data" do
-      manager.add_agent("mycloud", {"job" => "zb", "index" => "0"}).should be_false # no agent_id
-      manager.add_agent("mycloud", ["zb"]).should be_false # not a Hash
+      manager.add_agent("mycloud", {"job" => "zb", "index" => "0"}).should be(false) # no agent_id
+      manager.add_agent("mycloud", ["zb"]).should be(false) # not a Hash
     end
 
     it "can analyze agent" do
-      manager.analyze_agent("007").should be_false # No such agent yet
+      manager.analyze_agent("007").should be(false) # No such agent yet
       manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
-      manager.analyze_agent("007").should be_true
+      manager.analyze_agent("007").should be(true)
     end
 
     it "can analyze all agents" do

@@ -51,7 +51,7 @@ module Bosh::Blobstore
 
         object.should_receive(:exists?).and_return(true)
 
-        client.exists?('id').should be_true
+        client.exists?('id').should be(true)
       end
 
       it 'should return false if the object does not exist' do
@@ -60,7 +60,7 @@ module Bosh::Blobstore
 
         object.should_receive(:exists?).and_return(false)
 
-        client.exists?('id').should be_false
+        client.exists?('id').should be(false)
       end
     end
 

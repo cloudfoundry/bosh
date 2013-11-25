@@ -39,7 +39,7 @@ describe 'migrations:aws:new' do
   it 'generates migration from the template with the correct timestamped filename' do
     subject.invoke(name)
 
-    File.exists?("#{@tempdir}/#{timestamp_string}_#{name}.rb").should be_true
+    File.exists?("#{@tempdir}/#{timestamp_string}_#{name}.rb").should be(true)
     File.read("#{@tempdir}/#{timestamp_string}_#{name}.rb").should == <<-H
 class CoolMigration < Bosh::Aws::Migration
   def execute
@@ -52,7 +52,7 @@ end
   it 'generates the spec template for the migration' do
     subject.invoke(name)
 
-    File.exists?("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb").should be_true
+    File.exists?("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb").should be(true)
     File.read("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb").should == <<-H
 require 'spec_helper'
 require '#{timestamp_string}_#{name}'

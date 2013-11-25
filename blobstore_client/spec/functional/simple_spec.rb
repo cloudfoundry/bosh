@@ -49,14 +49,14 @@ module Bosh::Blobstore
     let(:blob_store_client) { described_class.new({ endpoint: 'http://localhost:9590', user: 'bs_admin', password: 'bs_pass' }) }
 
     it 'not find a non existing object' do
-      blob_store_client.exists?('unknown_resource').should be_false
+      blob_store_client.exists?('unknown_resource').should be(false)
     end
 
     it 'should find an existing object' do
       blob_id = blob_store_client.create('existing_resource', 'id')
 
-      blob_store_client.exists?(blob_id).should be_true
-      blob_store_client.exists?('id').should be_true
+      blob_store_client.exists?(blob_id).should be(true)
+      blob_store_client.exists?('id').should be(true)
     end
 
     it 'should get an existing object' do
@@ -73,7 +73,7 @@ module Bosh::Blobstore
       blob_id = blob_store_client.create('existing_resource')
       blob_store_client.delete(blob_id)
 
-      blob_store_client.exists?(blob_id).should be_false
+      blob_store_client.exists?(blob_id).should be(false)
     end
 
   end

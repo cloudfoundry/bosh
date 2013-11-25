@@ -429,14 +429,14 @@ describe Bosh::Cli::Client::Director do
       @director.stub(:get).
         with('/info', 'application/json').
         and_return([401, 'Not authorized'])
-      @director.exists?.should be_true
+      @director.exists?.should be(true)
     end
 
     it 'considers target valid if it responds with 200' do
       @director.stub(:get).
         with('/info', 'application/json').
         and_return([200, JSON.generate('name' => 'Director is your friend')])
-      @director.exists?.should be_true
+      @director.exists?.should be(true)
     end
   end
 
@@ -546,7 +546,7 @@ describe Bosh::Cli::Client::Director do
                                :payload      => f })
       @director.upload_and_track(:put, '/stuff', file,
                                  :content_type => 'application/x-compressed')
-      f.progress_bar.finished?.should be_true
+      f.progress_bar.finished?.should be(true)
     end
   end
 

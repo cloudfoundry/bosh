@@ -18,7 +18,7 @@ describe Bosh::Aws::RDS do
           with(:db_subnet_group_name => "subnetgroup").
           and_raise AWS::RDS::Errors::DBSubnetGroupNotFoundFault
 
-      rds.subnet_group_exists?("subnetgroup").should be_false
+      rds.subnet_group_exists?("subnetgroup").should be(false)
     end
 
     it "should return true if the db subnet group exists" do
@@ -26,7 +26,7 @@ describe Bosh::Aws::RDS do
           with(:db_subnet_group_name => "subnetgroup").
           and_return("not_used")
 
-      rds.subnet_group_exists?("subnetgroup").should be_true
+      rds.subnet_group_exists?("subnetgroup").should be(true)
     end
   end
 

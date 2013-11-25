@@ -67,8 +67,8 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage deployment process' do
       deployment_manifest = yaml_file(
         'simple', Bosh::Spec::Deployments.simple_manifest)
 
-      expect(File.exists?(release_filename)).to be_true
-      expect(File.exists?(deployment_manifest.path)).to be_true
+      expect(File.exists?(release_filename)).to be(true)
+      expect(File.exists?(deployment_manifest.path)).to be(true)
 
       run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh("deployment #{deployment_manifest.path}")

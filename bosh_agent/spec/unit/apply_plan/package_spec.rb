@@ -60,8 +60,8 @@ describe Bosh::Agent::ApplyPlan::Package do
       subject.install_path.should == install_path
       subject.link_path.should == link_path
 
-      File.exists?(install_path).should be_false
-      File.exists?(link_path).should be_false
+      File.exists?(install_path).should be(false)
+      File.exists?(link_path).should be(false)
     end
   end
 
@@ -92,8 +92,8 @@ describe Bosh::Agent::ApplyPlan::Package do
 
       subject.install_for_job(job)
 
-      File.exists?(subject.install_path).should be_true
-      File.exists?(subject.link_path).should be_true
+      File.exists?(subject.install_path).should be(true)
+      File.exists?(subject.link_path).should be(true)
 
       File.realpath(subject.link_path).
         should == File.realpath(subject.install_path)

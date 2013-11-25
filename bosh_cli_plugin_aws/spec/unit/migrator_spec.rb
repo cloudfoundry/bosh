@@ -177,7 +177,7 @@ describe Bosh::Aws::Migrator do
       end
 
       it 'should need a migration if S3 file is missing' do
-        subject.needs_migration?.should be_true
+        subject.needs_migration?.should be(true)
       end
 
       it "should need a migration if S3 file has migrations, but not all" do
@@ -186,7 +186,7 @@ describe Bosh::Aws::Migrator do
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations[0..5].collect{|m|m.to_hash}))
 
-        subject.needs_migration?.should be_true
+        subject.needs_migration?.should be(true)
       end
 
       it 'should not need a migration if S3 file has all the migrations' do
@@ -195,7 +195,7 @@ describe Bosh::Aws::Migrator do
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations.collect{|m|m.to_hash}))
 
-        subject.needs_migration?.should be_false
+        subject.needs_migration?.should be(false)
       end
     end
   end

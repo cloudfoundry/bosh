@@ -141,7 +141,7 @@ module BoshStringExtensions
   end
 
   def bosh_valid_id?
-    self =~ Bosh::Cli::Config::VALID_ID
+    !!(self =~ Bosh::Cli::Config::VALID_ID)
   end
 
   def truncate(limit = 30)

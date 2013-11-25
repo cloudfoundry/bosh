@@ -198,7 +198,7 @@ end
 
 RSpec::Matchers.define :have_flag_set do |method_name|
   match do |actual|
-    actual.send(method_name).should be_true
+    actual.send(method_name).should be(true)
   end
 
   failure_message_for_should do |_|

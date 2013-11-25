@@ -71,7 +71,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
     update_stemcell_job.perform
 
-    File.exist?(@stemcell_file.path).should be_false
+    File.exist?(@stemcell_file.path).should be(false)
   end
 
   it "should fail if the stemcell exists" do

@@ -330,9 +330,9 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'generates an updated manifest for bosh' do
-        File.exist?('deployments/bosh/bosh.yml').should be_false
+        File.exist?('deployments/bosh/bosh.yml').should be(false)
         aws.bootstrap_bosh
-        File.exist?('deployments/bosh/bosh.yml').should be_true
+        File.exist?('deployments/bosh/bosh.yml').should be(true)
       end
 
       it 'runs deployment diff' do

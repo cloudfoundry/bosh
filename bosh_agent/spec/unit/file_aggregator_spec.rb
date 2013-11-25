@@ -41,7 +41,7 @@ describe Bosh::Agent::FileAggregator do
 
     tarball_path = aggregator.generate_tarball
 
-    File.exists?(tarball_path).should be_true
+    File.exists?(tarball_path).should be(true)
 
     out_dir = File.join(@dir, "out")
     FileUtils.mkdir_p(out_dir)
@@ -49,12 +49,12 @@ describe Bosh::Agent::FileAggregator do
 
     Dir.chdir(out_dir) do
       `tar xzf #{File.basename(tarball_path)}`
-      File.directory?("foo").should be_true
-      File.directory?("bar").should be_true
-      File.directory?("baz").should be_true
+      File.directory?("foo").should be(true)
+      File.directory?("bar").should be(true)
+      File.directory?("baz").should be(true)
 
       files.each_with_index do |path, index|
-        File.exists?(path).should be_true
+        File.exists?(path).should be(true)
         File.read(path).should == "test#{index+1}\n"
       end
     end
@@ -70,13 +70,13 @@ describe Bosh::Agent::FileAggregator do
     tarball1 = aggregator.generate_tarball
     tarball2 = aggregator.generate_tarball
 
-    File.exists?(File.dirname(tarball1)).should be_true
-    File.exists?(File.dirname(tarball2)).should be_true
+    File.exists?(File.dirname(tarball1)).should be(true)
+    File.exists?(File.dirname(tarball2)).should be(true)
 
     aggregator.cleanup
 
-    File.exists?(File.dirname(tarball1)).should be_false
-    File.exists?(File.dirname(tarball2)).should be_false
+    File.exists?(File.dirname(tarball1)).should be(false)
+    File.exists?(File.dirname(tarball2)).should be(false)
   end
 
 end

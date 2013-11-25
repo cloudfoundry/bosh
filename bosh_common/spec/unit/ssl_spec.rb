@@ -59,7 +59,7 @@ describe Bosh::Ssl::Certificate do
           key.to_s.should include('BEGIN RSA PRIVATE KEY')
           certificate.to_s.should include('BEGIN CERTIFICATE')
 
-          certificate.verify(key).should be_true
+          certificate.verify(key).should be(true)
         end
 
         it 'sets the subject from the domain we ask for' do

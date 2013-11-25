@@ -184,13 +184,13 @@ describe Bosh::Deployer::InstanceManager do
   internal_to Bosh::Deployer::InstanceManager::Aws do
     it 'should not find bosh-registry' do
       path = '/usr/bin:/bin'
-      @deployer.has_bosh_registry?(path).should be_false
+      @deployer.has_bosh_registry?(path).should be(false)
     end
 
     it 'should find find bosh-registry' do
       path = ENV['PATH']
       path += ":#{File.dirname(spec_asset('bosh-registry'))}"
-      @deployer.has_bosh_registry?(path).should be_true
+      @deployer.has_bosh_registry?(path).should be(true)
     end
   end
 end

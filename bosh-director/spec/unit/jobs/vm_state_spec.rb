@@ -167,7 +167,7 @@ module Bosh::Director
 
       @result_file.should_receive(:write).with do |agent_status|
         status = JSON.parse(agent_status)
-        expect(status['resurrection_paused']).to be_true
+        expect(status['resurrection_paused']).to be(true)
       end
 
       job.perform

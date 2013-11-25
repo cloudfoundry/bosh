@@ -249,10 +249,10 @@ module Bosh::Director::DeploymentPlan
           instance.current_state = { 'resource_pool' => { 'foo' => 'bar' } }
           instance.use_model(instance_model)
 
-          instance.resource_pool_changed?.should be_false
+          instance.resource_pool_changed?.should be(false)
           instance_model.vm.update(env: { 'key' => 'value2' })
 
-          instance.resource_pool_changed?.should be_true
+          instance.resource_pool_changed?.should be(true)
         end
       end
 

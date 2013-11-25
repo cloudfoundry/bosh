@@ -70,7 +70,7 @@ module Bosh::Director
             put '/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 200
             instances.each do |instance|
-              expect(instance.reload.resurrection_paused).to be_true
+              expect(instance.reload.resurrection_paused).to be(true)
             end
           end
         end

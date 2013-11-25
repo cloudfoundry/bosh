@@ -515,28 +515,28 @@ module Bosh
 
         context 'all deployer resources are nil' do
           it 'is false' do
-            expect(subject.exists?).to be_false
+            expect(subject.exists?).to be(false)
           end
         end
 
         context 'only vm_cid is populated' do
           it 'is true' do
             deployer.state.vm_cid = 'fake-vm-id'
-            expect(subject.exists?).to be_true
+            expect(subject.exists?).to be(true)
           end
         end
 
         context 'only stemcell_cid is populated' do
           it 'is true' do
             deployer.state.stemcell_cid = 'fake-stemcell-cid'
-            expect(subject.exists?).to be_true
+            expect(subject.exists?).to be(true)
           end
         end
 
         context 'only disk_cid is populated' do
           it 'is true' do
             deployer.state.disk_cid = 'fake-disk-cid'
-            expect(subject.exists?).to be_true
+            expect(subject.exists?).to be(true)
           end
         end
       end

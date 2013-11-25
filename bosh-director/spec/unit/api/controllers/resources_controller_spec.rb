@@ -78,10 +78,10 @@ module Bosh::Director
 
           resouce_manager.should_receive(:get_resource_path).with('deadbeef').and_return(tmp_file)
 
-          File.exists?(tmp_file).should be_true
+          File.exists?(tmp_file).should be(true)
           get '/resources/deadbeef'
           last_response.body.should == 'some data'
-          File.exists?(tmp_file).should be_false
+          File.exists?(tmp_file).should be(false)
         end
       end
 

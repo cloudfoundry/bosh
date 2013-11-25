@@ -26,7 +26,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       FileUtils.rm_rf('dev_releases')
 
       run_bosh('create release --with-tarball', work_dir: Dir.pwd)
-      expect(File.exists?(release_1)).to be_true
+      expect(File.exists?(release_1)).to be(true)
     end
 
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
@@ -39,7 +39,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
         FileUtils.touch(new_file)
 
         run_bosh('create release --force --with-tarball', work_dir: Dir.pwd)
-        expect(File.exists?(release_2)).to be_true
+        expect(File.exists?(release_2)).to be(true)
       ensure
         FileUtils.rm_rf(new_file)
       end
@@ -70,7 +70,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
       run_bosh('create release', work_dir: Dir.pwd)
-      expect(File.exists?(release_1)).to be_true
+      expect(File.exists?(release_1)).to be(true)
 
       run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh('login admin admin')
@@ -83,7 +83,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
         `git add .`
         `git commit -m 'second dev release'`
         run_bosh('create release', work_dir: Dir.pwd)
-        expect(File.exists?(release_2)).to be_true
+        expect(File.exists?(release_2)).to be(true)
       ensure
         FileUtils.rm_rf(new_file)
       end

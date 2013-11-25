@@ -28,7 +28,7 @@ module Bosh::Dev
         expect(build_target.build_number).to eq('fake-build-number')
         expect(build_target.infrastructure).to eq(infrastructure)
         expect(build_target.operating_system).to eq(operating_system)
-        expect(build_target.infrastructure_light?).to eq(false)
+        expect(build_target.infrastructure_light?).to be(false)
       end
     end
   end

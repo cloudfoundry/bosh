@@ -27,7 +27,7 @@ describe Bosh::Cli::ReleaseBuilder do
                                       "bosh_release-0.1-dev.tgz")
 
     builder.tarball_path.should == expected_tarball_path
-    File.file?(expected_tarball_path).should be_true
+    File.file?(expected_tarball_path).should be(true)
   end
 
   it 'should include git hash and uncommitted change state in manifest' do
@@ -37,7 +37,7 @@ describe Bosh::Cli::ReleaseBuilder do
 
     manifest = Psych.load_file(builder.manifest_path)
     manifest['commit_hash'].should == '12345678'
-    manifest['uncommitted_changes'].should be_true
+    manifest['uncommitted_changes'].should be(true)
   end
 
   it "doesn't build a new release if nothing has changed" do
@@ -47,10 +47,10 @@ describe Bosh::Cli::ReleaseBuilder do
 
     File.file?(File.join(@release_dir, "dev_releases",
                          "bosh_release-0.1-dev.tgz")).
-        should be_true
+        should be(true)
     File.file?(File.join(@release_dir, "dev_releases",
                          "bosh_release-0.2-dev.tgz")).
-        should be_false
+        should be(false)
   end
 
   it "has a list of jobs affected by building this release" do

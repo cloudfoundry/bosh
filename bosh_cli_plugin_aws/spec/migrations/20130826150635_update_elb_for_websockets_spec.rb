@@ -87,12 +87,12 @@ describe UpdateElbForWebsockets do
 
       it "authorizes the ingress through the security group" do
         security_group.should_receive(:authorize_ingress).with("protocol", 4443, "sources")
-        expect(UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")).to be_true
+        expect(UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")).to be(true)
       end
 
       it "does not error if ingress rule already exists" do
         security_group.should_receive(:authorize_ingress).with("protocol", 4443, "sources").and_raise(AWS::EC2::Errors::InvalidPermission::Duplicate)
-        expect(UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")).to be_false
+        expect(UpdateElbForWebsockets::WebSocketElbHelpers.authorize_ingress(security_group, 'protocol' => "protocol", 'ports' => "4443", 'sources' => "sources")).to be(false)
       end
     end
 

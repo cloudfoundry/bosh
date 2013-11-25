@@ -11,14 +11,14 @@ module Bosh::Director
     describe '#mark_in_use' do
       context 'in use' do
         it 'should return false if marked for use again' do
-          vm_data.mark_in_use.should be_true
-          vm_data.mark_in_use.should be_false
+          vm_data.mark_in_use.should be(true)
+          vm_data.mark_in_use.should be(false)
         end
       end
 
       context 'not in use' do
         it 'should return true if marked for use' do
-          vm_data.mark_in_use.should be_true
+          vm_data.mark_in_use.should be(true)
         end
       end
     end
@@ -28,7 +28,7 @@ module Bosh::Director
         it 'should set in_use to false' do
           vm_data.mark_in_use
           vm_data.release
-          vm_data.in_use?.should be_false
+          vm_data.in_use?.should be(false)
         end
       end
 
@@ -41,13 +41,13 @@ module Bosh::Director
       context 'in use' do
         it 'should return true' do
           vm_data.mark_in_use
-          vm_data.in_use?.should be_true
+          vm_data.in_use?.should be(true)
         end
       end
 
       context 'not in use' do
         it 'should return false' do
-          vm_data.in_use?.should be_false
+          vm_data.in_use?.should be(false)
         end
       end
     end

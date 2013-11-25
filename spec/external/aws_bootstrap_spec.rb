@@ -80,7 +80,7 @@ describe 'bosh_cli_plugin_aws_external' do
 
         subnet.route_table.routes.any? do |route|
           route.instance && route.instance.private_ip_address == "10.10.0.10"
-        end.should be_true
+        end.should be(true)
       end
 
       [bosh_rds1_subnet, cf_rds1_subnet, cf_elb1_subnet, services_rds1_subnet].each do |subnet|

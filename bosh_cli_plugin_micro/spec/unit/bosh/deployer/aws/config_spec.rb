@@ -17,7 +17,7 @@ describe Bosh::Deployer::Config do
 
     properties = Bosh::Deployer::Config.cloud_options['properties']
     properties['agent'].should be_kind_of(Hash)
-    properties['agent']['mbus'].start_with?('https://').should be_true
+    properties['agent']['mbus'].start_with?('https://').should be(true)
     properties['agent']['blobstore'].should be_kind_of(Hash)
   end
 
@@ -74,9 +74,9 @@ describe Bosh::Deployer::Config do
     config['dir'] = @dir
     Bosh::Deployer::Config.configure(config)
     cloud = Bosh::Deployer::Config.cloud
-    cloud.respond_to?(:ec2).should be_true
+    cloud.respond_to?(:ec2).should be(true)
     cloud.ec2.should be_kind_of(AWS::EC2)
-    cloud.respond_to?(:registry).should be_true
+    cloud.respond_to?(:registry).should be(true)
     cloud.registry.should be_kind_of(Bosh::Registry::Client)
   end
 end

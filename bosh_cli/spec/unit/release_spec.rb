@@ -69,7 +69,7 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for deprecated options" do
       r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
-      r.has_blobstore_secret?.should be_true
+      r.has_blobstore_secret?.should be(true)
     end
 
     it "should merge s3 secrets into options" do
@@ -85,7 +85,7 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for s3 options" do
       r = Bosh::Cli::Release.new(spec_asset("config/s3"))
-      r.has_blobstore_secret?.should be_true
+      r.has_blobstore_secret?.should be(true)
     end
 
     it "should merge atmos secrets into options" do
@@ -100,7 +100,7 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for atmos options" do
       r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
-      r.has_blobstore_secret?.should be_true
+      r.has_blobstore_secret?.should be(true)
     end
 
     it "should merge swift (HP) secrets into options" do
@@ -121,7 +121,7 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for swift (HP) options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-hp"))
-      r.has_blobstore_secret?.should be_true
+      r.has_blobstore_secret?.should be(true)
     end
 
     it "should merge swift (OpenStack) secrets into options" do
@@ -143,7 +143,7 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for swift (OpenStack) options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-openstack"))
-      r.has_blobstore_secret?.should be_true
+      r.has_blobstore_secret?.should be(true)
     end
 
     it "should merge swift (Rackspace) secrets into options" do
@@ -163,7 +163,7 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for swift (Rackspace) options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
-      r.has_blobstore_secret?.should be_true
+      r.has_blobstore_secret?.should be(true)
     end
 
     it "should not throw an error when merging empty secrets into options" do

@@ -150,7 +150,7 @@ module Bosh::Director
           export.stub(:extract).and_raise(StandardError, 'fff')
 
           expect { import_job.perform }.to raise_error(StandardError, 'fff')
-          expect(File.exist?(export_dir)).to eq(false)
+          expect(File.exist?(export_dir)).to be(false)
         end
       end
 

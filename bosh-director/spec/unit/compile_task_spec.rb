@@ -42,12 +42,12 @@ module Bosh::Director
         compiled_package = Models::CompiledPackage.make(:package => package)
 
         task = make(package, stemcell)
-        task.ready_to_compile?.should be_true
-        task.compiled?.should be_false
+        task.ready_to_compile?.should be(true)
+        task.compiled?.should be(false)
 
         task.use_compiled_package(compiled_package)
-        task.compiled?.should be_true
-        task.ready_to_compile?.should be_false # Already compiled!
+        task.compiled?.should be(true)
+        task.ready_to_compile?.should be(false) # Already compiled!
       end
 
       it 'is ready to compile when all dependencies are compiled' do
@@ -65,12 +65,12 @@ module Bosh::Director
         task.add_dependency(dep1_task)
         task.add_dependency(dep2_task)
 
-        task.all_dependencies_compiled?.should be_false
+        task.all_dependencies_compiled?.should be(false)
         dep1_task.use_compiled_package(compiled_package)
-        task.all_dependencies_compiled?.should be_false
+        task.all_dependencies_compiled?.should be(false)
         dep2_task.use_compiled_package(compiled_package)
-        task.all_dependencies_compiled?.should be_true
-        task.ready_to_compile?.should be_true
+        task.all_dependencies_compiled?.should be(true)
+        task.ready_to_compile?.should be(true)
       end
     end
 

@@ -48,7 +48,7 @@ describe Bosh::Director::NatsRpc do
         called = true
       end
 
-      called.should be_true
+      called.should be(true)
     end
 
     it "should fire once even if two messages were received" do
@@ -98,7 +98,7 @@ describe Bosh::Director::NatsRpc do
       request_id.should eql("req1")
       nats_rpc.cancel_request("req1")
       subscribe_callback.call("", nil, "director.123.req1")
-      called.should be_false
+      called.should be(false)
     end
 
   end

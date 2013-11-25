@@ -28,7 +28,7 @@ describe Bosh::Cli::Config do
     cfg.set_deployment("test2")
     cfg.save
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].has_key?("localhost:8080").should be_true
+    yaml_file["deployment"].has_key?("localhost:8080").should be(true)
     yaml_file["deployment"]["localhost:8080"].should == "test2"
   end
 
@@ -41,7 +41,7 @@ describe Bosh::Cli::Config do
     yaml_file["deployment"].should == "test"
     cfg.deployment.should == "test"
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].has_key?("localhost:8080").should be_true
+    yaml_file["deployment"].has_key?("localhost:8080").should be(true)
     yaml_file["deployment"]["localhost:8080"].should == "test"
   end
 
@@ -57,8 +57,8 @@ describe Bosh::Cli::Config do
 
     # Test that the file is written correctly.
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].has_key?("localhost:1").should be_true
-    yaml_file["deployment"].has_key?("localhost:2").should be_true
+    yaml_file["deployment"].has_key?("localhost:1").should be(true)
+    yaml_file["deployment"].has_key?("localhost:2").should be(true)
     yaml_file["deployment"]["localhost:1"].should == "/path/to/deploy/1"
     yaml_file["deployment"]["localhost:2"].should == "/path/to/deploy/2"
 

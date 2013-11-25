@@ -42,7 +42,7 @@ describe Bosh::Registry::Client do
           { :body => settings_json, :header => header }
       ).and_return(response)
 
-      expect(subject.update_settings('id', settings)).to be_true
+      expect(subject.update_settings('id', settings)).to be(true)
     end
   end
 
@@ -87,7 +87,7 @@ describe Bosh::Registry::Client do
           { :header => header }
       ).and_return(response)
 
-      expect(subject.delete_settings('id')).to be_true
+      expect(subject.delete_settings('id')).to be(true)
     end
   end
 

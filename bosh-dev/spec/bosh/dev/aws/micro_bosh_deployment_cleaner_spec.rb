@@ -77,11 +77,11 @@ module Bosh::Dev::Aws
           retryable.should_receive(:retryer) do |&blk|
             instance1.stub(status: :terminated)
             instance2.stub(status: :shutting_down)
-            blk.call.should be_false
+            blk.call.should be(false)
 
             instance1.stub(status: :terminated)
             instance2.stub(status: :terminated)
-            blk.call.should be_true
+            blk.call.should be(true)
           end
 
           instance1.stub(status: :running)

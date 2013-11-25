@@ -89,7 +89,7 @@ module Bosh::Agent
             mounter.should_receive(:mount).with('/dev/sda1', '/var/vcap/store')
             mount_disk_handler.mount
 
-            expect(File.directory?('/var/vcap/store')).to be_true
+            expect(File.directory?('/var/vcap/store')).to be(true)
           end
         end
 

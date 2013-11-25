@@ -130,7 +130,7 @@ describe Bat::Release do
     it 'returns true if the other object is a Release with the same #name and any common #versions' do
       equal_release = Bat::Release.new(release_name, release_versions.sample(1))
 
-      expect(release == equal_release).to eq(true)
+      expect(release == equal_release).to be(true)
     end
   end
 end
