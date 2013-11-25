@@ -114,3 +114,8 @@ genisoimage/cdrkit-1.1.11.tar.gz:
   sha: !binary |-
     M2Y3ZGRjMDZkYjAyNzI5NDJlMWE0Y2Q5OGMzYzk2NDYyZGY3NzM4Nw==
   size: 1445133
+ruby/ruby-1.9.3-p484.tar.gz:
+  object_id: e2ef4d3e-59bd-4c7c-aba2-e9df6d2a9c7e
+  sha: !binary |-
+    NmFlODBmNDI0OTY4YjVjZTY2MWVlOWIyYmVlMWMyMWFkYzllZTY3Yw==
+  size: 12576996

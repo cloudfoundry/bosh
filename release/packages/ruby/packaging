@@ -1,9 +1,9 @@
 set -e
 
-tar xzf ruby/ruby-1.9.3-p327.tar.gz
+tar xzf ruby/ruby-1.9.3-p484.tar.gz
 (
   set -e
-  cd ruby-1.9.3-p327
+  cd ruby-1.9.3-p484
   ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc
   make
   make install
