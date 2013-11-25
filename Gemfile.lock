@@ -346,6 +346,7 @@ GEM
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-fire (1.2.0)
       rspec (~> 2.11)
+    rspec-instafail (0.2.4)
     rspec-mocks (2.14.4)
     rubocop (0.10.0)
       backports (~> 3.3.3)
@@ -451,6 +452,7 @@ DEPENDENCIES
   rest-client
   rspec
   rspec-fire
+  rspec-instafail
   rubocop
   ruby_gntp
   rugged
