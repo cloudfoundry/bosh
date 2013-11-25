@@ -39,7 +39,7 @@ module Bosh::Dev
 
       let(:infrastructure) do
         instance_double(
-          'Bosh::Stemcell::Infrastructure',
+          'Bosh::Stemcell::Infrastructure::Base',
           name: 'fake-infrastructure-name',
           hypervisor: 'fake-infrastructure-hypervisor',
         )
@@ -47,7 +47,7 @@ module Bosh::Dev
 
       let(:operating_system) do
         instance_double(
-          'Bosh::Stemcell::OperatingSystem',
+          'Bosh::Stemcell::OperatingSystem::Base',
           name: 'fake-os-name',
         )
       end
