@@ -6,14 +6,12 @@ module Bosh::Dev
     def initialize(download_adapter, logger)
       @download_adapter = download_adapter
       @logger = logger
-      @bucket_base_url = 'http://s3.amazonaws.com/bosh-jenkins-artifacts'
     end
 
     def download_release(build_number, output_dir)
       file_name = "bosh-#{build_number}.tgz"
 
-      remote_uri = [@bucket_base_url, 'release', file_name].join('/')
-
+      remote_uri = Bosh::Dev::UriProvider.artifacts_uri('release', file_name)
       local_path = File.join(output_dir, file_name)
 
       @download_adapter.download(remote_uri, local_path)
@@ -30,13 +28,7 @@ module Bosh::Dev
         build_target.infrastructure_light?,
       ).to_s
 
-      remote_uri = [
-        @bucket_base_url,
-        stemcell_name,
-        build_target.infrastructure.name,
-        file_name,
-      ].join('/')
-
+      remote_uri = Bosh::Dev::UriProvider.artifacts_uri("#{stemcell_name}/#{build_target.infrastructure.name}", file_name)
       local_path = File.join(output_dir, file_name)
 
       @download_adapter.download(remote_uri, local_path)
