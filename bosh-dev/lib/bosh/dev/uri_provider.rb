@@ -2,6 +2,7 @@ module Bosh::Dev
   class UriProvider
     PIPELINE_BUCKET  = 'bosh-ci-pipeline'
     ARTIFACTS_BUCKET = 'bosh-jenkins-artifacts'
+    RELEASE_PATCHES_BUCKET = 'bosh-jenkins-release-patches'
 
     def self.pipeline_uri(remote_directory_path, file_name)
       uri(PIPELINE_BUCKET, remote_directory_path, file_name)
@@ -17,6 +18,10 @@ module Bosh::Dev
 
     def self.artifacts_s3_path(remote_directory_path, file_name)
       s3_path(ARTIFACTS_BUCKET, remote_directory_path, file_name)
+    end
+
+    def self.release_patches_uri(remote_directory_path, file_name)
+      uri(RELEASE_PATCHES_BUCKET, remote_directory_path, file_name)
     end
 
     private
