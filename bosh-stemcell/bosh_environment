@@ -1,0 +1,26 @@
+# Uncomment to use development bosh
+# export PATH=~/workspace/bosh/bin:$PATH
+# export BAT_BOSH_BIN='bosh'
+
+export BOSH_AWS_ACCESS_KEY_ID=AKIAIYR6WYL4HWULOSQA
+export BOSH_AWS_SECRET_ACCESS_KEY=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
+
+export BOSH_DEPLOYMENT_NAME=dolores
+export BOSH_VPC_SUBDOMAIN=$BOSH_DEPLOYMENT_NAME
+export BOSH_VPC_PRIMARY_AZ=us-east-1b
+export BOSH_VPC_SECONDARY_AZ=us-east-1c
+
+export BOSH_VPC_SUBNET_ID=subnet-917686f0 # Associated with Bosh instance for SSH access
+export BOSH_JUMPBOX_SECURITY_GROUP=sg-0b812164 # "bosh" VPC security group
+export BOSH_KEYPAIR_NAME=bosh # For Jumpbox
+export USER_KEYS_DIR=$HOME/.ssh
+
+export BAT_DEBUG=true
+export BAT_FAIL_FAST=true
+export BAT_FAST=true
+export BAT_DEPLOYMENT_SPEC=~/workspace/deployments-aws/$BOSH_DEPLOYMENT_NAME/bat.yml
+export BAT_DIRECTOR=$(dig micro.$BOSH_DEPLOYMENT_NAME.cf-app.com +short)
+export BAT_DNS_HOST=$(dig micro.$BOSH_DEPLOYMENT_NAME.cf-app.com +short)
+
+export BAT_VCAP_PASSWORD=c1oudc0w
+export BAT_VCAP_PRIVATE_KEY=$HOME/.ssh/id_rsa_bosh
