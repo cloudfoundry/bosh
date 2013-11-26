@@ -30,7 +30,6 @@ module Bosh::Dev
 
     def tarball_path
       @release_creator.create({})
-      @release_creator.create(final: true)
     end
   end
 end

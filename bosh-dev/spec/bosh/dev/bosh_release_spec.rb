@@ -12,8 +12,7 @@ module Bosh::Dev
     describe '#tarball_path' do
       it 'creates dev and then final release' do
         release_creator.should_receive(:create).with({}).ordered.and_return('fake-dev-tarball-path')
-        release_creator.should_receive(:create).with(final: true).ordered.and_return('fake-final-tarball-path')
-        subject.tarball_path.should == 'fake-final-tarball-path'
+        subject.tarball_path.should == 'fake-dev-tarball-path'
       end
     end
   end
