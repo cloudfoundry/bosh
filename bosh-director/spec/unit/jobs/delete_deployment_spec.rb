@@ -4,6 +4,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DeleteDeployment do
+    subject(:job) { Jobs::DeleteDeployment.new('test_deployment', job_options) }
+    let(:job_options) { {} }
+
     describe 'Resque job class expectations' do
       let(:job_type) { :delete_deployment }
       it_behaves_like 'a Resque job'
@@ -13,7 +16,6 @@ module Bosh::Director
       before do
         @cloud = double('cloud')
         Config.stub(:cloud).and_return(@cloud)
-        @job = Jobs::DeleteDeployment.new('test_deployment')
       end
 
       it "should delete the disk if it's not attached to the VM" do
@@ -22,7 +24,7 @@ module Bosh::Director
 
         @cloud.should_receive(:delete_disk).with('disk-cid')
 
-        @job.delete_instance(instance)
+        job.delete_instance(instance)
 
         Models::Instance[instance.id].should be_nil
       end
@@ -44,9 +46,9 @@ module Bosh::Director
         @cloud.should_receive(:detach_disk).with('vm-cid', 'disk-cid')
         @cloud.should_receive(:delete_disk).with('disk-cid')
 
-        @job.should_receive(:delete_vm).with(vm)
+        job.should_receive(:delete_vm).with(vm)
 
-        @job.delete_instance(instance)
+        job.delete_instance(instance)
 
         Models::Instance[instance.id].should be_nil
       end
@@ -61,9 +63,9 @@ module Bosh::Director
 
         agent.should_receive(:stop)
 
-        @job.should_receive(:delete_vm).with(vm)
+        job.should_receive(:delete_vm).with(vm)
 
-        @job.delete_instance(instance)
+        job.delete_instance(instance)
 
         Models::Instance[instance.id].should be_nil
       end
@@ -71,7 +73,7 @@ module Bosh::Director
       it 'should only delete the model if there is no VM' do
         instance = Models::Instance.make(vm: nil)
 
-        @job.delete_instance(instance)
+        job.delete_instance(instance)
 
         Models::Instance[instance.id].should be_nil
       end
@@ -99,7 +101,7 @@ module Bosh::Director
         @cloud.should_receive(:delete_snapshot).with('snap1a')
         @cloud.should_receive(:delete_disk).with('disk-cid')
 
-        @job.delete_instance(instance)
+        job.delete_instance(instance)
 
         Models::Instance[instance.id].should be_nil
       end
@@ -117,6 +119,37 @@ module Bosh::Director
 
         Models::Instance[instance.id].should be_nil
       end
+
+      describe 'deleting job templates' do
+        let(:instance) { Models::Instance.make(vm: nil) }
+
+        before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance).and_return(job_templates_cleaner) }
+        let(:job_templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner') }
+
+        it 'deletes rendered job templates before deleting an instance' do
+          expect(job_templates_cleaner).to receive(:clean_all).with(no_args).ordered
+          expect(instance).to receive(:destroy).ordered
+          job.delete_instance(instance)
+        end
+
+        context 'when deletion fails with some error' do
+          before { allow(job_templates_cleaner).to receive(:clean_all).and_raise(error) }
+          let(:error) { RuntimeError.new('error') }
+
+          context 'when force option is not specified' do
+            it 'does not ignore errors and re-raises them' do
+              expect { job.delete_instance(instance) }.to raise_error(error)
+            end
+          end
+
+          context 'when force option is specified' do
+            it 'ignores errors raised when deleting rendered job templates' do
+              job_options.merge!('force' => true)
+              expect { job.delete_instance(instance) }.to_not raise_error
+            end
+          end
+        end
+      end
     end
 
     describe 'delete_vm' do
@@ -131,7 +164,7 @@ module Bosh::Director
 
         @cloud.should_receive(:delete_vm).with('vm-cid')
 
-        @job.delete_vm(vm)
+        job.delete_vm(vm)
 
         Models::Vm[vm.id].should be_nil
       end
@@ -167,8 +200,8 @@ module Bosh::Director
         agent.should_receive(:stop)
         agent.should_receive(:unmount_disk).with('disk-cid')
 
-        @job.should_receive(:with_deployment_lock).with('test_deployment').and_yield
-        @job.perform
+        job.should_receive(:with_deployment_lock).with('test_deployment').and_yield
+        job.perform
 
         Models::Deployment[deployment.id].should be_nil
 
@@ -182,7 +215,7 @@ module Bosh::Director
       end
 
       it 'should fail if the deployment is not found' do
-        lambda { @job.perform }.should raise_exception DeploymentNotFound
+        lambda { job.perform }.should raise_exception DeploymentNotFound
       end
     end
   end

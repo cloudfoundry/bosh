@@ -144,6 +144,10 @@ module Bosh::Director
             disk.destroy
           end
 
+          ignoring_errors_when_forced do
+            RenderedJobTemplatesCleaner.new(instance).clean_all
+          end
+
           instance.destroy
 
           delete_vm(vm) if vm

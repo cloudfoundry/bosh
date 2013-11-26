@@ -66,7 +66,7 @@ module Bosh::Director
 
         job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
         RenderedJobTemplatesCleaner.stub(:new).with(instance).and_return(job_templates_cleaner)
-        job_templates_cleaner.should_receive(:clean_all)
+        job_templates_cleaner.should_receive(:clean_all).with(no_args)
 
         @deleter.delete_instance(instance)
 
