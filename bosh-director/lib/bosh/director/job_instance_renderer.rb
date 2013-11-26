@@ -1,6 +1,5 @@
 module Bosh::Director
   class JobInstanceRenderer
-
     def initialize(job, job_template_loader)
       @job = job
       @job_template_loader = job_template_loader

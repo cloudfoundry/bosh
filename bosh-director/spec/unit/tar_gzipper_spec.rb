@@ -10,7 +10,6 @@ describe Bosh::Director::TarGzipper do
   let(:errored_retval) { ['stdout string', 'a stderr message', double('Status', success?: false, exitstatus: 5)] }
   let(:success_retval) { ['', '', double('Status', success?: true)] }
 
-
   before do
     path = File.join(base_dir, '1', '2')
     FileUtils.mkdir_p(path)
