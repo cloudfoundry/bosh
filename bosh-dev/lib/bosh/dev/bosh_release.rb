@@ -11,7 +11,7 @@ module Bosh::Dev
       is_final = !!options[:final]
 
       Dir.chdir('release') do
-        output = @cli_session.run_bosh("create release #{'--final ' if is_final}--with-tarball")
+        output = @cli_session.run_bosh("create release --force #{'--final ' if is_final}--with-tarball")
         output.scan(/Release tarball\s+\(.+\):\s+(.+)$/).first.first
       end
     end

@@ -51,7 +51,7 @@ module Bosh::Dev
         it 'creates a new final release tarball' do
           cli_session
             .should_receive(:run_bosh)
-            .with('create release --final --with-tarball')
+            .with('create release --force --final --with-tarball')
             .and_return(create_release_output)
           expect(subject.create(options)).to eq('/tmp/project-release/releases/dummy-3.tgz')
         end
@@ -61,7 +61,7 @@ module Bosh::Dev
         it 'creates a new dev release tarball' do
           cli_session
             .should_receive(:run_bosh)
-            .with('create release --with-tarball')
+            .with('create release --force --with-tarball')
             .and_return(create_release_output)
           expect(subject.create(options)).to eq('/tmp/project-release/releases/dummy-3.tgz')
         end
