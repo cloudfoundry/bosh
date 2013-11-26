@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   # DeploymentPlan::Assembler is used to populate deployment plan with information
   # about existing deployment and information from director DB
@@ -15,6 +13,7 @@ module Bosh::Director
       @logger = Config.logger
       @event_log = Config.event_log
       @stemcell_manager = Api::StemcellManager.new
+      @blobstore = App.instance.blobstores.blobstore
     end
 
     # Binds deployment DB record to a plan
@@ -322,7 +321,7 @@ module Bosh::Director
     # @return [void]
     def bind_configuration
       @deployment_plan.jobs.each do |job|
-        JobRenderer.new(job).render_job_instances
+        JobRenderer.new(job).render_job_instances(@blobstore)
       end
     end
 

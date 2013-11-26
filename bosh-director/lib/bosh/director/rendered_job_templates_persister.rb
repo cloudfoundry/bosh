@@ -1,11 +1,10 @@
 require 'tempfile'
 require 'bosh/director/rendered_templates_writer'
 require 'bosh/director/compressed_rendered_job_templates'
-require 'blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   class RenderedJobTemplatesPersister
-    def initialize(blobstore = Bosh::Blobstore::NullBlobstoreClient.new)
+    def initialize(blobstore)
       @blobstore = blobstore
     end
 

@@ -12,7 +12,7 @@ module Bosh::Director
       @instance_renderer = JobInstanceRenderer.new(@job, job_template_loader)
     end
 
-    def render_job_instances
+    def render_job_instances(blobstore)
       @job.instances.each do |instance|
         rendered_templates = @instance_renderer.render(instance)
 
@@ -20,7 +20,7 @@ module Bosh::Director
         instance.configuration_hash = hasher.configuration_hash
         instance.template_hashes = hasher.template_hashes
 
-        persister = RenderedJobTemplatesPersister.new
+        persister = RenderedJobTemplatesPersister.new(blobstore)
         persister.persist(instance, rendered_templates)
       end
     end

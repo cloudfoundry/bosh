@@ -3,20 +3,18 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Assembler do
-      before(:each) do
+      before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
+      before do
         @cloud = double(:Cloud)
         Config.stub(:cloud).and_return(@cloud)
         @deployment_plan = double(:DeploymentPlan)
         @assembler = Assembler.new(@deployment_plan)
       end
 
-      let(:plan) do
-        double(DeploymentPlan)
-      end
-
-      let(:compiler) do
-        Assembler.new(plan)
-      end
+      let(:plan) { double(DeploymentPlan) }
+      let(:compiler) { Assembler.new(plan) }
 
       it 'should bind deployment' do
         plan.should_receive(:bind_model)
@@ -436,18 +434,14 @@ module Bosh::Director
         end
       end
 
-      describe :bind_configuration do
-        before(:each) do
-          @template_spec = double(:TemplateSpec)
-          @job_spec = double(Job)
-          @deployment_plan.stub(:jobs).and_return([@job_spec])
-        end
+      describe '#bind_configuration' do
+        before { allow(@deployment_plan).to receive(:jobs).and_return([job]) }
+        let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
 
-        it 'should bind the configuration hash' do
-          configuration_hasher = double(:JobRenderer)
-          configuration_hasher.should_receive(:render_job_instances)
-          JobRenderer.stub(:new).with(@job_spec).
-            and_return(configuration_hasher)
+        it 'renders job templates for all instances' do
+          job_renderer = instance_double('Bosh::Director::JobRenderer')
+          allow(JobRenderer).to receive(:new).with(job).and_return(job_renderer)
+          expect(job_renderer).to receive(:render_job_instances).with(blobstore)
           @assembler.bind_configuration
         end
       end
