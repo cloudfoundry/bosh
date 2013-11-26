@@ -123,6 +123,14 @@ module Bosh::Director::Models
     data_json   { "{}" }
     state       { "open" }
   end
+
+  RenderedTemplatesArchive.blueprint do
+    instance     { Instance.make }
+    blobstore_id { Sham.blobstore_id }
+    sha1         { Sham.sha1 }
+    content_sha1 { Sham.sha1 }
+    created_at   { Time.now }
+  end
 end
 
 module Bosh::Director::Models::Dns

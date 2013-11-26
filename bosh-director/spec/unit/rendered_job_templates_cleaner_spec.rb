@@ -22,18 +22,16 @@ module Bosh::Director
 
       context 'when instance model has multiple associated rendered templates archives' do
         before do
-          Models::RenderedTemplatesArchive.create(
-            blob_id: 'fake-latest-blob-id',
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-latest-blob-id',
             instance: instance_model,
             created_at: Time.new(2013, 02, 01),
-            checksum: 'current-fake-checksum',
           )
 
-          Models::RenderedTemplatesArchive.create(
-            blob_id: 'fake-stale-blob-id',
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-stale-blob-id',
             instance: instance_model,
             created_at: Time.new(2013, 01, 01),
-            checksum: 'stale-fake-checksum',
           )
         end
 
@@ -47,18 +45,16 @@ module Bosh::Director
           expect {
             perform
           }.to change {
-            instance_model.refresh.rendered_templates_archives.map(&:blob_id)
+            instance_model.refresh.rendered_templates_archives.map(&:blobstore_id)
           }.to(['fake-latest-blob-id'])
         end
 
         it 'does not affect rendered templates belonging to another instance' do
           other_instance_model = Models::Instance.make
 
-          Models::RenderedTemplatesArchive.create(
-            blob_id: 'fake-other-latest-blob-id',
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-other-latest-blob-id',
             instance: other_instance_model,
-            created_at: Time.new(1990, 01, 01),
-            checksum: 'fake-other-fake-checksum',
           )
 
           expect {
@@ -85,18 +81,16 @@ module Bosh::Director
 
       context 'when instance model has multiple associated rendered templates archives' do
         before do
-          Models::RenderedTemplatesArchive.create(
-            blob_id: 'fake-latest-blob-id',
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-latest-blob-id',
             instance: instance_model,
             created_at: Time.new(2013, 02, 01),
-            checksum: 'current-fake-checksum',
           )
 
-          Models::RenderedTemplatesArchive.create(
-            blob_id: 'fake-stale-blob-id',
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-stale-blob-id',
             instance: instance_model,
             created_at: Time.new(2013, 01, 01),
-            checksum: 'stale-fake-checksum',
           )
         end
 
@@ -115,11 +109,8 @@ module Bosh::Director
         it 'does not affect rendered templates belonging to another instance' do
           other_instance_model = Models::Instance.make
 
-          Models::RenderedTemplatesArchive.create(
-            blob_id: 'fake-other-latest-blob-id',
+          Models::RenderedTemplatesArchive.make(
             instance: other_instance_model,
-            created_at: Time.new(1990, 01, 01),
-            checksum: 'fake-other-fake-checksum',
           )
 
           expect {

@@ -11,7 +11,7 @@ module Bosh::Director
       return unless current_archive
 
       instance_archives.exclude(id: current_archive.id).each do |archive|
-        blobstore.delete(archive.blob_id)
+        blobstore.delete(archive.blobstore_id)
         archive.delete
       end
     end
@@ -19,7 +19,7 @@ module Bosh::Director
     def clean_all
       archives = Models::RenderedTemplatesArchive.filter(instance: instance_model)
       archives.each do |archive|
-        blobstore.delete(archive.blob_id)
+        blobstore.delete(archive.blobstore_id)
         archive.delete
       end
     end
