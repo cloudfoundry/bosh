@@ -8,8 +8,6 @@ module Bosh::Dev
     let(:light_stemcell) { instance_double('Bosh::Stemcell::Archive') }
     let(:build) { instance_double('Bosh::Dev::Build', number: 123, light_stemcell: light_stemcell) }
 
-    its(:destination) { should eq('s3://bosh-jenkins-artifacts') }
-    its(:source) { should eq('s3://bosh-ci-pipeline/123/') }
     its(:release_file) { should eq('bosh-123.tgz') }
 
     describe '#commands' do

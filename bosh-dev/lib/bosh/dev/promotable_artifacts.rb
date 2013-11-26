@@ -14,14 +14,6 @@ module Bosh::Dev
       artifacts << light_stemcell_pointer
     end
 
-    def source
-      "s3://bosh-ci-pipeline/#{build.number}/"
-    end
-
-    def destination
-      's3://bosh-jenkins-artifacts'
-    end
-
     def release_file
       "bosh-#{build.number}.tgz"
     end
@@ -36,19 +28,22 @@ module Bosh::Dev
 
     def gem_artifacts
       gem_components = GemComponents.new(build.number)
+      source = Bosh::Dev::UriProvider.pipeline_s3_path("#{build.number}", '')
       gem_components.components.map { |component| GemArtifact.new(component, source, build.number) }
     end
 
     def release_artifacts
-      commands = ["s3cmd --verbose cp #{File.join(source, 'release', release_file)} #{File.join(destination, 'release', release_file)}"]
+      source = Bosh::Dev::UriProvider.pipeline_s3_path("#{build.number}/release", release_file)
+      destination =  Bosh::Dev::UriProvider.artifacts_s3_path('release', release_file)
+      commands = ["s3cmd --verbose cp #{source} #{destination}"]
       commands.map { |command| PromotableArtifact.new(command) }
     end
 
     def stemcell_artifacts
       stemcell_artifacts = StemcellArtifacts.all(build.number)
       commands = stemcell_artifacts.list.map do |stemcell_archive_filename|
-        from = File.join(source, stemcell_archive_filename.to_s)
-        to = File.join(destination, stemcell_archive_filename.to_s)
+        from = Bosh::Dev::UriProvider.pipeline_s3_path("#{build.number}", stemcell_archive_filename.to_s)
+        to = Bosh::Dev::UriProvider.artifacts_s3_path('', stemcell_archive_filename.to_s)
         "s3cmd --verbose cp #{from} #{to}"
       end
 
