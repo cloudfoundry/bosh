@@ -2,10 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceDeleter do
-    before(:each) do
+    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
+    before do
       @cloud = double('cloud')
       Config.stub(:cloud).and_return(@cloud)
-
       @deployment_plan = double('deployment_plan')
       @deleter = InstanceDeleter.new(@deployment_plan)
     end
@@ -59,8 +61,8 @@ module Bosh::Director
         @cloud.should_receive(:delete_vm).with(vm.cid)
 
         job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
-        RenderedJobTemplatesCleaner.stub(:new).with(instance).and_return(job_templates_cleaner)
-        job_templates_cleaner.should_receive(:clean_all).with(no_args)
+        allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner)
+        expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
         @deleter.delete_instance(instance)
 

@@ -5,7 +5,7 @@ module Bosh::Director
   describe RenderedJobTemplatesCleaner do
     subject(:rendered_job_templates) { described_class.new(instance_model, blobstore) }
     let(:instance_model) { Models::Instance.make }
-    let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     describe '#clean' do
       before { allow(blobstore).to receive(:delete) }

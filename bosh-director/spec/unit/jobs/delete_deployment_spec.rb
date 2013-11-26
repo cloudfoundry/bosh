@@ -2,11 +2,14 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DeleteDeployment do
-    subject(:job) { Jobs::DeleteDeployment.new('test_deployment', job_options) }
+    subject(:job) { described_class.new('test_deployment', job_options) }
     let(:job_options) { {} }
 
     before { allow(Config).to receive(:cloud).and_return(cloud) }
     let(:cloud) { instance_double('Bosh::Cloud') }
+
+    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     describe 'Resque job class expectations' do
       let(:job_type) { :delete_deployment }
@@ -114,7 +117,7 @@ module Bosh::Director
       describe 'deleting job templates' do
         let(:instance) { Models::Instance.make(vm: nil) }
 
-        before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance).and_return(job_templates_cleaner) }
+        before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner) }
         let(:job_templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner') }
 
         it 'deletes rendered job templates before deleting an instance' do

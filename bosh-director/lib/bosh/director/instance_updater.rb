@@ -16,6 +16,7 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @ticker = event_ticker
+      @blobstore = App.instance.blobstores.blobstore
 
       @instance = instance
       @job = instance.job
@@ -79,7 +80,7 @@ module Bosh::Director
 
       step { apply_state(@instance.spec) }
 
-      RenderedJobTemplatesCleaner.new(@instance.model).clean
+      RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
 
       start! if need_start?
 

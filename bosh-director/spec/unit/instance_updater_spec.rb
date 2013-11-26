@@ -7,6 +7,9 @@ module Bosh::Director
       described_class.new(instance, ticker)
     end
 
+    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
     let(:deployment_model) { Models::Deployment.make }
     let(:vm_model) { Models::Vm.make(deployment: deployment_model) }
     let(:persistent_disk_model) { Models::PersistentDisk.make(instance: instance_model) }
@@ -120,10 +123,10 @@ module Bosh::Director
         end
       end
 
-      before { Bosh::Director::InstancePreparer.stub(:new).with(instance, agent_client).and_return(preparer) }
+      before { allow(InstancePreparer).to receive(:new).with(instance, agent_client).and_return(preparer) }
       let(:preparer) { instance_double('Bosh::Director::InstancePreparer', prepare: nil) }
 
-      before { Bosh::Director::RenderedJobTemplatesCleaner.stub(:new).with(instance_model).and_return(templates_cleaner) }
+      before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance_model, blobstore).and_return(templates_cleaner) }
       let(:templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner', clean: nil) }
 
       context 'when instance is not detached' do

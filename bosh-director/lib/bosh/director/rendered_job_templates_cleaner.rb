@@ -1,6 +1,6 @@
 module Bosh::Director
   class RenderedJobTemplatesCleaner
-    def initialize(instance_model, blobstore = Bosh::Blobstore::NullBlobstoreClient.new)
+    def initialize(instance_model, blobstore)
       @instance_model = instance_model
       @blobstore = blobstore
     end

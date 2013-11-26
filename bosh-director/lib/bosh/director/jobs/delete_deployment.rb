@@ -16,6 +16,7 @@ module Bosh::Director
         @keep_snapshots = options["keep_snapshots"]
         @cloud = Config.cloud
         @deployment_manager = Api::DeploymentManager.new
+        @blobstore = App.instance.blobstores.blobstore
       end
 
       def perform
@@ -143,7 +144,7 @@ module Bosh::Director
           end
 
           ignoring_errors_when_forced do
-            RenderedJobTemplatesCleaner.new(instance).clean_all
+            RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
           end
 
           instance.destroy

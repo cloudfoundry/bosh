@@ -8,6 +8,7 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @event_log = Config.event_log
+      @blobstore = App.instance.blobstores.blobstore
     end
 
     # Deletes a list of instances
@@ -37,7 +38,7 @@ module Bosh::Director
         delete_persistent_disks(instance.persistent_disks)
         delete_dns(instance.job, instance.index)
 
-        RenderedJobTemplatesCleaner.new(instance).clean_all
+        RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
 
         vm.db.transaction do
           instance.destroy
