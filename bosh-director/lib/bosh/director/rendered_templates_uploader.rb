@@ -9,8 +9,12 @@ module Bosh::Director
     end
 
     def upload(rendered_job_templates)
-      compressed_archive = CompressedRenderedJobTemplates.new(rendered_job_templates)
+      file = Tempfile.new('compressed-rendered-job-templates')
+      compressed_archive = CompressedRenderedJobTemplates.new(file.path)
+      compressed_archive.write(rendered_job_templates)
       @blobstore.create(compressed_archive.contents)
+    ensure
+      file.close!
     end
   end
 end
