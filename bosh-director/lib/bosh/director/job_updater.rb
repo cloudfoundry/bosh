@@ -1,9 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
-
   class JobUpdater
-
     # @param [Bosh::Director::DeploymentPlan] deployment_plan
     # @param [DeploymentPlan::Job] job
     def initialize(deployment_plan, job)
@@ -20,11 +16,9 @@ module Bosh::Director
 
       return if unneeded_instances.empty?
 
-      @event_log.begin_stage("Deleting unneeded instances",
-                             unneeded_instances.size, [@job.name])
-      InstanceDeleter.new(@deployment_plan).
-        delete_instances(unneeded_instances,
-                         :max_threads => @job.update.max_in_flight)
+      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
+      deleter = InstanceDeleter.new(@deployment_plan)
+      deleter.delete_instances(unneeded_instances, max_threads: @job.update.max_in_flight)
 
       @logger.info("Deleted no longer needed instances")
     end

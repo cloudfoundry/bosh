@@ -2,6 +2,11 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceUpdater do
+    subject do
+      ticker = double('ticker', advance: nil)
+      described_class.new(instance, ticker)
+    end
+
     let(:deployment_model) { Models::Deployment.make }
     let(:vm_model) { Models::Vm.make(deployment: deployment_model) }
     let(:persistent_disk_model) { Models::PersistentDisk.make(instance: instance_model) }
@@ -13,22 +18,24 @@ module Bosh::Director
     let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: stemcell_model) }
 
     let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: 'release-spec') }
-    let(:resource_pool) {
+    let(:resource_pool) do
       double('Bosh::Director::DeploymentPlan::ResourcePool',
              stemcell: stemcell,
              cloud_properties: double('CloudProperties'),
              env: {},
              spec: 'deployment-plan-spec',
              release: release)
-    }
+    end
 
-    let(:update_config) {
+    let(:update_config) do
       instance_double('Bosh::Director::DeploymentPlan::UpdateConfig',
                       min_update_watch_time: 0.01,
                       max_update_watch_time: 0.02,
                       min_canary_watch_time: 0.03,
-                      max_canary_watch_time: 0.04) }
-    let(:job) {
+                      max_canary_watch_time: 0.04)
+    end
+
+    let(:job) do
       instance_double('Bosh::Director::DeploymentPlan::Job',
                       deployment: deployment_plan,
                       resource_pool: resource_pool,
@@ -36,7 +43,7 @@ module Bosh::Director
                       name: 'test-job',
                       spec: 'job-spec',
                       release: release)
-    }
+    end
     let(:state) { 'started' }
     let(:changes) { Set.new }
     let(:instance_spec) { Psych.load_file(asset('basic_instance_spec.yml')) }
@@ -48,7 +55,7 @@ module Bosh::Director
     let(:dns_changed) { false }
     let(:disk_currently_attached) { false }
     let(:disk_size) { 0 }
-    let(:instance) {
+    let(:instance) do
       double('Bosh::Director::DeploymentPlan::Instance',
              job: job,
              index: 0,
@@ -65,15 +72,10 @@ module Bosh::Director
              disk_currently_attached?: disk_currently_attached,
              network_settings: double('NetworkSettings'),
              disk_size: disk_size)
-    }
+    end
     let(:cloud) { double('cloud') }
 
     let(:agent_client) { double('Bosh::Director::AgentClient') }
-
-    subject do
-      ticker = double('ticker', advance: nil)
-      described_class.new(instance, ticker)
-    end
 
     before do
       Bosh::Director::Config.stub(:cloud).and_return(cloud)

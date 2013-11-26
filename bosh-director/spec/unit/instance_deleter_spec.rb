@@ -21,10 +21,7 @@ module Bosh::Director
         pool.stub(:wrap).and_yield(pool)
         pool.stub(:process).and_yield
 
-        5.times do |index|
-          @deleter.should_receive(:delete_instance).with(instances[index])
-        end
-
+        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index]) }
         @deleter.delete_instances(instances)
       end
 
@@ -37,16 +34,13 @@ module Bosh::Director
         pool.stub(:wrap).and_yield(pool)
         pool.stub(:process).and_yield
 
-        5.times do |index|
-          @deleter.should_receive(:delete_instance).with(instances[index])
-        end
-
+        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index]) }
         @deleter.delete_instances(instances, max_threads: 2)
       end
     end
 
-    describe :delete_instance do
-      it 'should delete a single instance' do
+    describe '#delete_instance' do
+      it 'deletes a single instance' do
         vm = Models::Vm.make
         instance = Models::Instance.make(vm: vm, job: 'test', index: 5)
         disk = Models::PersistentDisk.make
@@ -109,22 +103,14 @@ module Bosh::Director
         agent.should_receive(:drain).with('shutdown').and_return(-2)
         lambda { @deleter.drain('some_agent_id') }.should raise_error(TaskCancelled)
       end
-
     end
 
     describe :delete_persistent_disks do
       it 'should delete the persistent disks' do
         persistent_disks = [Models::PersistentDisk.make(active:  true), Models::PersistentDisk.make(active:  false)]
-
-        persistent_disks.each do |disk|
-          @cloud.should_receive(:delete_disk).with(disk.disk_cid)
-        end
-
+        persistent_disks.each { |disk| @cloud.should_receive(:delete_disk).with(disk.disk_cid) }
         @deleter.delete_persistent_disks(persistent_disks)
-
-        persistent_disks.each do |disk|
-          Models::PersistentDisk[disk.id].should == nil
-        end
+        persistent_disks.each { |disk| Models::PersistentDisk[disk.id].should == nil }
       end
 
       it 'should ignore errors to inactive persistent disks' do
@@ -162,9 +148,7 @@ module Bosh::Director
       context 'with one disk' do
         it 'should delete all snapshots for an instance' do
           snapshots = [snapshot1, snapshot2]
-
           Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
-
           @deleter.delete_snapshots(instance)
         end
       end
@@ -173,11 +157,10 @@ module Bosh::Director
         let(:disk2) { Models::PersistentDisk.make(instance: instance) }
         let(:disk3) { Models::PersistentDisk.make(instance: instance) }
         let(:snapshot3) { Models::Snapshot.make(persistent_disk: disk2) }
+
         it 'should delete all snapshots for an instance' do
           snapshots = [snapshot1, snapshot2, snapshot3]
-
           Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
-
           @deleter.delete_snapshots(instance)
         end
       end

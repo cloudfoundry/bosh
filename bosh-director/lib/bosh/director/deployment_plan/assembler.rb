@@ -425,8 +425,7 @@ module Bosh::Director
       unneeded_instances = @deployment_plan.unneeded_instances
       return if unneeded_instances.empty?
 
-      @event_log.begin_stage("Deleting unneeded instances",
-                             unneeded_instances.size)
+      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size)
       InstanceDeleter.new(@deployment_plan).delete_instances(unneeded_instances)
       @logger.info("Deleted no longer needed instances")
     end

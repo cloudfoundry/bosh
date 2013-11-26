@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
