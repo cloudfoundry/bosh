@@ -1,7 +1,7 @@
 require 'bosh/director/job_template_loader'
 require 'bosh/director/job_instance_renderer'
 require 'bosh/director/rendered_job_instance_hasher'
-require 'bosh/director/rendered_templates_persister'
+require 'bosh/director/rendered_job_templates_persister'
 
 module Bosh::Director
   class JobRenderer
