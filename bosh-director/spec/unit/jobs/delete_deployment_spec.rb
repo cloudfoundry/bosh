@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -7,25 +5,21 @@ module Bosh::Director
     subject(:job) { Jobs::DeleteDeployment.new('test_deployment', job_options) }
     let(:job_options) { {} }
 
+    before { allow(Config).to receive(:cloud).and_return(cloud) }
+    let(:cloud) { instance_double('Bosh::Cloud') }
+
     describe 'Resque job class expectations' do
       let(:job_type) { :delete_deployment }
       it_behaves_like 'a Resque job'
     end
 
     describe 'delete_instance' do
-      before do
-        @cloud = double('cloud')
-        Config.stub(:cloud).and_return(@cloud)
-      end
+      let(:instance) { Models::Instance.make(vm: nil) }
 
       it "should delete the disk if it's not attached to the VM" do
-        instance = Models::Instance.make(vm: nil)
         Models::PersistentDisk.make(disk_cid: 'disk-cid', instance_id: instance.id)
-
-        @cloud.should_receive(:delete_disk).with('disk-cid')
-
+        cloud.should_receive(:delete_disk).with('disk-cid')
         job.delete_instance(instance)
-
         Models::Instance[instance.id].should be_nil
       end
 
@@ -43,8 +37,8 @@ module Bosh::Director
         agent.should_receive(:stop)
         agent.should_receive(:unmount_disk).with('disk-cid')
 
-        @cloud.should_receive(:detach_disk).with('vm-cid', 'disk-cid')
-        @cloud.should_receive(:delete_disk).with('disk-cid')
+        cloud.should_receive(:detach_disk).with('vm-cid', 'disk-cid')
+        cloud.should_receive(:delete_disk).with('disk-cid')
 
         job.should_receive(:delete_vm).with(vm)
 
@@ -70,21 +64,20 @@ module Bosh::Director
         Models::Instance[instance.id].should be_nil
       end
 
-      it 'should only delete the model if there is no VM' do
-        instance = Models::Instance.make(vm: nil)
-
+      it 'deletes the model if there is no VM' do
+        instance.update(vm: nil)
         job.delete_instance(instance)
-
         Models::Instance[instance.id].should be_nil
       end
 
       it 'should ignore cpi errors if forced' do
         vm = Models::Vm.make(cid: 'vm-cid')
-        instance = Models::Instance.make(vm: vm)
+        instance.update(vm: vm)
+
         Models::PersistentDisk.make(disk_cid: 'disk-cid', instance_id: instance.id)
 
-        @cloud.should_receive(:detach_disk).with('vm-cid', 'disk-cid').and_raise('ERROR')
-        @cloud.should_receive(:delete_disk).with('disk-cid').and_raise('ERROR')
+        cloud.should_receive(:detach_disk).with('vm-cid', 'disk-cid').and_raise('ERROR')
+        cloud.should_receive(:delete_disk).with('disk-cid').and_raise('ERROR')
 
         job = Jobs::DeleteDeployment.new('test_deployment', 'force' => true)
         job.should_receive(:delete_vm).with(vm)
@@ -94,12 +87,11 @@ module Bosh::Director
       end
 
       it 'should delete the snapshots' do
-        instance = Models::Instance.make(vm: nil)
         disk = Models::PersistentDisk.make(disk_cid: 'disk-cid', instance_id: instance.id)
         Models::Snapshot.make(snapshot_cid: 'snap1a', persistent_disk_id: disk.id)
 
-        @cloud.should_receive(:delete_snapshot).with('snap1a')
-        @cloud.should_receive(:delete_disk).with('disk-cid')
+        cloud.should_receive(:delete_snapshot).with('snap1a')
+        cloud.should_receive(:delete_disk).with('disk-cid')
 
         job.delete_instance(instance)
 
@@ -107,12 +99,11 @@ module Bosh::Director
       end
 
       it 'should not delete the snapshots if keep_snapshots is set' do
-        instance = Models::Instance.make(vm: nil)
         disk = Models::PersistentDisk.make(disk_cid: 'disk-cid', instance_id: instance.id)
         Models::Snapshot.make(snapshot_cid: 'snap1a', persistent_disk_id: disk.id)
 
-        @cloud.should_not_receive(:delete_snapshot)
-        @cloud.should_receive(:delete_disk).with('disk-cid')
+        cloud.should_not_receive(:delete_snapshot)
+        cloud.should_receive(:delete_disk).with('disk-cid')
 
         job = Jobs::DeleteDeployment.new('test_deployment', 'keep_snapshots' => true)
         job.delete_instance(instance)
@@ -152,32 +143,48 @@ module Bosh::Director
       end
     end
 
-    describe 'delete_vm' do
-      before do
-        @cloud = double('cloud')
-        Config.stub(:cloud).and_return(@cloud)
-        @job = Jobs::DeleteDeployment.new('test_deployment')
+    describe '#delete_vm' do
+      context 'when cid of the vm is not specified' do
+        let!(:vm) { Models::Vm.make(cid: nil) }
+
+        it 'only deletes vm from the database' do
+          expect {
+            job.delete_vm(vm)
+          }.to change { Models::Vm[vm.id] }.from(vm).to(nil)
+        end
       end
 
-      it 'should delete the VM and the model' do
-        vm = Models::Vm.make(cid: 'vm-cid')
+      context 'when cid of the vm is specified' do
+        let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid') }
 
-        @cloud.should_receive(:delete_vm).with('vm-cid')
+        it 'deletes VM from the cloud and then deletes vm from the database' do
+          expect(cloud).to receive(:delete_vm).with('fake-vm-cid').ordered
+          expect(vm).to receive(:destroy).with(no_args).ordered
+          job.delete_vm(vm)
+        end
 
-        job.delete_vm(vm)
+        context 'when deletion vm from the cloud fails with some error' do
+          before { allow(cloud).to receive(:delete_vm).and_raise(error) }
+          let(:error) { RuntimeError.new('error') }
 
-        Models::Vm[vm.id].should be_nil
+          context 'when force option is not specified' do
+            it 'does not ignore errors and re-raises them' do
+              expect { job.delete_vm(vm) }.to raise_error(error)
+            end
+          end
+
+          context 'when force option is specified' do
+            it 'ignores errors raised' do
+              job_options.merge!('force' => true)
+              expect { job.delete_vm(vm) }.to_not raise_error
+            end
+          end
+        end
       end
     end
 
     describe 'perform' do
-      before do
-        @cloud = double('cloud')
-        Config.stub(:cloud).and_return(@cloud)
-        @job = Jobs::DeleteDeployment.new('test_deployment')
-      end
-
-      it 'should delete all the associated instances, VMs, disks and problems' do
+      it 'deletes all the associated instances, VMs, disks and problems' do
         agent = double('agent')
 
         AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
@@ -193,9 +200,9 @@ module Bosh::Director
         problem = Models::DeploymentProblem.make(deployment: deployment)
         disk = Models::PersistentDisk.make(instance: instance, disk_cid: 'disk-cid')
 
-        @cloud.stub(:delete_vm)
-        @cloud.stub(:delete_disk)
-        @cloud.stub(:detach_disk)
+        cloud.stub(:delete_vm)
+        cloud.stub(:delete_disk)
+        cloud.stub(:detach_disk)
 
         agent.should_receive(:stop)
         agent.should_receive(:unmount_disk).with('disk-cid')

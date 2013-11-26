@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class DeleteDeployment < BaseJob
@@ -164,7 +162,6 @@ module Bosh::Director
             @cloud.delete_vm(vm.cid)
           end
         end
-
         vm.destroy
       end
 
