@@ -9,7 +9,7 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
 # Ruby
-ruby_basename=ruby-1.9.3-p327
+ruby_basename=ruby-1.9.3-p484
 ruby_archive=$ruby_basename.tar.gz
 
 mkdir -p $chroot/$bosh_dir/src
