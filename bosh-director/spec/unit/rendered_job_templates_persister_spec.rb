@@ -18,7 +18,67 @@ module Bosh::Director
         )
       end
       let(:instance_model) { Models::Instance.make }
+      let(:rendered_job_templates) { [ instance_double('Bosh::Director::RenderedJobTemplate') ] }
 
+      context 'when instance does not have any rendered job templates archives' do
+        before { instance_model.rendered_templates_archives_dataset.delete }
+
+        it 'persists new archive' do
+          expect(persister).to receive(:persist_without_checking).with(instance, rendered_job_templates)
+          perform
+        end
+      end
+
+      context 'when instance has rendered job templates archives' do
+        before do
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-latest-blob-id',
+            instance: instance_model,
+            content_sha1: 'fake-latest-content-sha1',
+            created_at: Time.new(2013, 02, 01),
+          )
+
+          Models::RenderedTemplatesArchive.make(
+            blobstore_id: 'fake-stale-blob-id',
+            instance: instance_model,
+            content_sha1: 'fake-stale-content-sha1',
+            created_at: Time.new(2013, 01, 01),
+          )
+        end
+
+        context 'when instance\'s latest (based on created_at) rendered job template archive has matching content_sha1' do
+          before { allow(instance).to receive(:configuration_hash).and_return('fake-latest-content-sha1') }
+
+          it 'does not persist new archive' do
+            expect(persister).to_not receive(:persist_without_checking)
+            perform
+          end
+        end
+
+        context 'when instance\'s latest (based on created_at) rendered job template archive does have matching content_sha1' do
+          before { allow(instance).to receive(:configuration_hash).and_return('fake-latest-non-matching-content-sha1') }
+
+          it 'persists new archive' do
+            expect(persister).to receive(:persist_without_checking).with(instance, rendered_job_templates)
+            perform
+          end
+        end
+      end
+    end
+
+    describe '#persist_without_checking' do
+      def perform
+        persister.persist_without_checking(instance, rendered_job_templates)
+      end
+
+      let(:instance) do
+        instance_double(
+          'Bosh::Director::DeploymentPlan::Instance',
+          model: instance_model,
+          configuration_hash: 'fake-content-sha1',
+        )
+      end
+      let(:instance_model) { Models::Instance.make }
       let(:rendered_job_templates) { [ instance_double('Bosh::Director::RenderedJobTemplate') ] }
 
       before { allow(CompressedRenderedJobTemplates).to receive(:new).and_return(compressed_archive) }

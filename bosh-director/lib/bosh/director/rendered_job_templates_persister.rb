@@ -9,6 +9,15 @@ module Bosh::Director
     end
 
     def persist(instance, rendered_job_templates)
+      instance_archives = Models::RenderedTemplatesArchive.filter(instance: instance.model)
+      current_archive = instance_archives.reverse_order(:created_at).first
+
+      if !current_archive || current_archive.content_sha1 != instance.configuration_hash
+        persist_without_checking(instance, rendered_job_templates)
+      end
+    end
+
+    def persist_without_checking(instance, rendered_job_templates)
       file = Tempfile.new('compressed-rendered-job-templates')
 
       compressed_archive = CompressedRenderedJobTemplates.new(file.path)
