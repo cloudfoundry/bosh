@@ -29,6 +29,11 @@ module Fog
       model :firewall
       collection :firewalls
 
+      require ('fog/cloudstack/models/compute/volume')
+      class Volume < Fog::Model
+        attribute :device_id, :aliases => 'deviceid'
+      end
+
       require ('fog/cloudstack/models/compute/disk_offering')
       class DiskOffering < Fog::Model
         # fix attribute name typo
