@@ -9,10 +9,11 @@ module Bosh::Dev::VSphere
       let(:folder_object) { double('fake folder object') }
       let(:folder) { instance_double('VSphereCloud::Resources::Folder', mob: folder_object) }
       let(:logger) { instance_double('Logger', info: nil) }
-      let(:cloud) { instance_double('VSphereCloud::Cloud') }
+      let(:cloud) { instance_double('VSphereCloud::Cloud', client: client) }
+      let(:client) { double('fake client') }
       let(:sequel_klass) { class_double('Sequel::Model').as_stubbed_const }
-      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil) }
-      let(:vm2) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil) }
+      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 1') }
+      let(:vm2) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 2') }
 
       let(:config) { { 'cloud' => { 'properties' => 'fake config' } } }
       let(:manifest) { instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest') }
@@ -28,7 +29,13 @@ module Bosh::Dev::VSphere
       subject(:micro_bosh_deployment_cleaner) { described_class.new(manifest) }
 
       context 'when get_vms returns vms' do
-        it 'kills vms that are in that folder' do
+        it 'kills vms that are in subfolders of that folder' do
+          client.should_receive(:power_off_vm).with(vm)
+          client.should_receive(:power_off_vm).with(vm2)
+
+          cloud.should_receive(:wait_until_off).with(vm, 15)
+          cloud.should_receive(:wait_until_off).with(vm2, 15)
+
           vm.should_receive(:destroy)
           vm2.should_receive(:destroy)
 
@@ -47,7 +54,7 @@ module Bosh::Dev::VSphere
 
       context 'when destruction fails' do
         it 'logs a failure but doesn\'t stop' do
-          vm.stub(:destroy).and_raise
+          client.stub(:power_off_vm).and_raise
 
           cloud.stub(get_vms: [vm])
 
