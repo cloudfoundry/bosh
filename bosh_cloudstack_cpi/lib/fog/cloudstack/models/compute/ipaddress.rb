@@ -10,7 +10,7 @@ module Fog
         def associate
           requires :network_id
 
-          data = service.acquire_ip_address(options={'networkid' => self.network_id})
+          data = service.associate_ip_address(options={'networkid' => self.associated_network_id})
           merge_attributes(data['associateipaddressresponse'])
           service.jobs.new(data["associateipaddressresponse"])
         end

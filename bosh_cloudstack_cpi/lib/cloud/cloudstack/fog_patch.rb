@@ -5,6 +5,7 @@ module Fog
       request :delete_tags
       request :list_tags
       request :create_template
+      request :associate_ip_address
       request :disassociate_ip_address
       request :create_vlan_ip_range
       request :delete_vlan_ip_range
