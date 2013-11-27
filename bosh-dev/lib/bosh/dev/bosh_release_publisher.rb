@@ -17,7 +17,7 @@ module Bosh
       def publish
         release = Bosh::Dev::BoshRelease.build
         @build.upload_release(release)
-        changes = Bosh::Dev::ReleaseChanges.new(@build.number, @uploader, @downloader)
+        changes = Bosh::Dev::ReleaseChangeStager.new(@build.number, @uploader, @downloader)
         changes.stage
       end
     end

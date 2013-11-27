@@ -2,7 +2,7 @@ require 'logger'
 require 'bosh/dev/build'
 require 'bosh/dev/git_promoter'
 require 'bosh/dev/git_tagger'
-require 'bosh/dev/release_changes'
+require 'bosh/dev/release_change_stager'
 
 module Bosh::Dev
   class Promoter

@@ -2,7 +2,7 @@ require 'bosh/core/shell'
 require 'bosh/dev/uri_provider'
 
 module Bosh::Dev
-  class ReleaseChanges
+  class ReleaseChangeStager
     def initialize(build_number, upload_adapter, download_adapter)
       @build_number = build_number
       @upload_adapter = upload_adapter

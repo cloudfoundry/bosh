@@ -1,15 +1,15 @@
 require 'spec_helper'
 require 'bosh/dev/upload_adapter'
 require 'bosh/dev/download_adapter'
-require 'bosh/dev/release_changes'
+require 'bosh/dev/release_change_stager'
 
 module Bosh::Dev
-  describe ReleaseChanges do
+  describe ReleaseChangeStager do
     let!(:patch_file) { Tempfile.new("#{build_number}-final-release") }
     before { Tempfile.stub(new: patch_file) }
 
     let(:build_number) { rand(1000) }
-    let(:release_changes) { Bosh::Dev::ReleaseChanges.new(build_number, upload_adapter, download_adapter) }
+    let(:release_changes) { Bosh::Dev::ReleaseChangeStager.new(build_number, upload_adapter, download_adapter) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
     let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
     let(:shell) { instance_double('Bosh::Core::Shell') }
