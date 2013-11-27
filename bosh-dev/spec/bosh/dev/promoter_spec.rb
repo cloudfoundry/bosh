@@ -19,7 +19,6 @@ module Bosh::Dev
       GitTagger.stub(:new).with(logger).and_return(git_tagger)
 
       Rake::FileUtilsExt.stub(:sh)
-      promoter.stub(:system)
     end
 
     subject(:promoter) do
@@ -30,6 +29,7 @@ module Bosh::Dev
     end
 
     it 'fetches new tags created since the last time the build ran' do
+      promoter.stub(:system)
       Rake::FileUtilsExt.should_receive(:sh).with('git fetch --tags')
 
       promoter.promote
@@ -37,7 +37,7 @@ module Bosh::Dev
 
     context 'when the current sha has never been promoted' do
       before do
-        promoter.stub(:system).with('git fetch --tags && git tag --contains HEAD | grep stable-').and_return(false)
+        promoter.stub(:system).with("git fetch --tags && git tag --contains #{candidate_sha} | grep stable-").and_return(false)
       end
 
       it 'promotes artifacts' do
@@ -61,7 +61,7 @@ module Bosh::Dev
 
     context 'when the current sha has been promoted before' do
       before do
-        promoter.stub(:system).with('git fetch --tags && git tag --contains HEAD | grep stable-').and_return(true)
+        promoter.stub(:system).with("git fetch --tags && git tag --contains #{candidate_sha} | grep stable-").and_return(true)
       end
 
       it 'skips promoting anything' do
