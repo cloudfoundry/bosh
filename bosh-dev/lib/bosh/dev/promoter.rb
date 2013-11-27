@@ -6,11 +6,20 @@ require 'bosh/dev/release_changes'
 
 module Bosh::Dev
   class Promoter
-    def initialize(options)
-      @candidate_build_number = options.fetch(:candidate_build_number)
-      @candidate_sha = options.fetch(:candidate_sha)
-      @stable_branch = options.fetch(:stable_branch)
-      @logger = options.fetch(:logger)
+    def self.build(args)
+      new(
+        args.fetch(:candidate_build_number),
+        args.fetch(:candidate_sha),
+        args.fetch(:stable_branch),
+        Logger.new(STDERR),
+      )
+    end
+
+    def initialize(candidate_build_number, candidate_sha, stable_branch, logger)
+      @candidate_build_number = candidate_build_number
+      @candidate_sha = candidate_sha
+      @stable_branch = stable_branch
+      @logger = logger
     end
 
     def promote

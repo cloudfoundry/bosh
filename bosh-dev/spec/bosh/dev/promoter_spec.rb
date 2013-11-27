@@ -3,6 +3,29 @@ require 'bosh/dev/promoter'
 
 module Bosh::Dev
   describe Promoter do
+    describe '.build' do
+      it 'constructs a promoter, injects the logger' do
+        promoter = double('promoter')
+        logger = double('logger')
+        Logger.stub(:new).with(STDERR).and_return(logger)
+
+        expect(Bosh::Dev::Promoter).to receive(:new).with(
+                                         321,
+                                         'deadbeef',
+                                         'stable',
+                                         logger,
+                                       ).and_return(promoter)
+
+        expect(
+          Bosh::Dev::Promoter.build(
+            candidate_build_number: 321,
+            candidate_sha: 'deadbeef',
+            stable_branch: 'stable',
+          )
+        ).to eq(promoter)
+      end
+    end
+
     describe '#promote' do
       let(:candidate_build_number) { 'fake-candidate_build_number' }
       let(:candidate_sha) { 'fake-candidate_sha' }
@@ -23,10 +46,12 @@ module Bosh::Dev
       end
 
       subject(:promoter) do
-        Promoter.new(candidate_build_number: candidate_build_number,
-                     candidate_sha: candidate_sha,
-                     stable_branch: stable_branch,
-                     logger: logger)
+        Promoter.new(
+          candidate_build_number,
+          candidate_sha,
+          stable_branch,
+          logger,
+        )
       end
 
       it 'fetches new tags created since the last time the build ran' do

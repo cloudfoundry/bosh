@@ -77,9 +77,7 @@ namespace :ci do
     require 'logger'
     require 'bosh/dev/promoter'
 
-    logger = Logger.new(STDERR)
-
-    promoter = Bosh::Dev::Promoter.new(args.to_hash.merge(logger: logger))
+    promoter = Bosh::Dev::Promoter.build(args.to_hash)
     promoter.promote
   end
 end
