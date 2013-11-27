@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
-    ##
     # Represents a single job instance.
     class Instance
       include DnsHelper
@@ -19,8 +16,11 @@ module Bosh::Director
       # @return [String] Checksum all of the configuration templates
       attr_accessor :configuration_hash
 
-      # @return [Hash] A hash of template SHA1 hashes.
+      # @return [Hash] A hash of template SHA1 hashes
       attr_accessor :template_hashes
+
+      # @return [DeploymentPlan::RenderedTemplatesArchive]
+      attr_accessor :rendered_templates_archive
 
       # @return [Hash<String, NetworkReservation>] network reservations
       attr_accessor :network_reservations
@@ -359,6 +359,13 @@ module Bosh::Director
 
         if template_hashes
           spec['template_hashes'] = template_hashes
+        end
+
+        # Ruby BOSH Agent does not look at 'rendered_templates_archive'
+        # since it renders job templates and then compares template hashes.
+        # Go BOSH Agent has no ability to render ERB so pre-rendered templates are provided.
+        if rendered_templates_archive
+          spec['rendered_templates_archive'] = rendered_templates_archive.spec
         end
 
         spec

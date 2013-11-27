@@ -9,10 +9,15 @@ module Bosh::Director
     end
 
     def persist(instance, rendered_job_templates)
-      current_archive = instance.model.latest_rendered_templates_archive
-      if !current_archive || current_archive.content_sha1 != instance.configuration_hash
-        persist_without_checking(instance, rendered_job_templates)
+      archive_model = instance.model.latest_rendered_templates_archive
+
+      if !archive_model || archive_model.content_sha1 != instance.configuration_hash
+        archive_model = persist_without_checking(instance, rendered_job_templates)
       end
+
+      instance.rendered_templates_archive =
+        DeploymentPlan::RenderedTemplatesArchive.new(
+          archive_model.blobstore_id, archive_model.sha1)
     end
 
     def persist_without_checking(instance, rendered_job_templates)
