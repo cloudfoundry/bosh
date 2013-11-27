@@ -4,7 +4,7 @@ module Fog
       class Network < Fog::Model
         identity  :id
         attribute :name
-
+        attribute :services,                   :type => :array, :aliases => 'service'
       end
     end
   end
