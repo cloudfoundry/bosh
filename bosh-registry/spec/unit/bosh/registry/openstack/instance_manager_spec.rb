@@ -3,26 +3,25 @@
 require "spec_helper"
 
 describe Bosh::Registry::InstanceManager do
-  before(:each) do
-    @compute = double(Fog::Compute)
-    Fog::Compute.stub(:new).and_return(@compute)
-  end
-
-  let(:manager) do
-    config = valid_config
-    config["cloud"] = {
+  let(:connection_options) { nil }
+  let(:config) {
+    valid_config.merge({'cloud' => {
       "plugin" => "openstack",
       "openstack" => {
         "auth_url" => "http://127.0.0.1:5000/v2.0",
         "username" => "foo",
         "api_key" => "bar",
         "tenant" => "foo",
-        "region" => ""
+        "region" => "",
+        'connection_options' => connection_options,
       }
-    }
+    }})
+  }
+  let(:manager) do
     Bosh::Registry.configure(config)
     Bosh::Registry.instance_manager
   end
+  let(:compute) { double('Fog::Compute') }
 
   def create_instance(params)
     Bosh::Registry::Models::RegistryInstance.create(params)
@@ -38,7 +37,44 @@ describe Bosh::Registry::InstanceManager do
     instance.should_receive(:floating_ip_addresses).and_return([floating_ip])
   end
 
+  describe :openstack do
+    let(:openstack_compute) {
+      {
+        :provider => 'OpenStack',
+        :openstack_auth_url => 'http://127.0.0.1:5000/v2.0/tokens',
+        :openstack_username => 'foo',
+        :openstack_api_key => 'bar',
+        :openstack_tenant => 'foo',
+        :openstack_region => '',
+        :openstack_endpoint_type => nil,
+        :connection_options => connection_options,
+      }
+    }
+
+    it 'should create a Fog::Compute connection' do
+      Fog::Compute.should_receive(:new).with(openstack_compute).and_return(@compute)
+      expect(manager.openstack).to eql(@compute)
+    end
+
+    context 'with connection options' do
+      let(:connection_options) {
+        JSON.generate({
+          'ssl_verify_peer' => false,
+        })
+      }
+
+      it 'should add optional options to the Fog::Compute connection' do
+        Fog::Compute.should_receive(:new).with(openstack_compute).and_return(@compute)
+        expect(manager.openstack).to eql(@compute)
+      end
+    end
+  end
+
   describe "reading settings" do
+    before(:each) do
+      Fog::Compute.stub(:new).and_return(@compute)
+    end
+
     it "returns settings after verifying IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
       actual_ip_is("10.0.0.1", nil)

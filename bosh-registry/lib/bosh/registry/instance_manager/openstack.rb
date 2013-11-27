@@ -24,7 +24,8 @@ module Bosh::Registry
           :openstack_api_key => @openstack_properties["api_key"],
           :openstack_tenant => @openstack_properties["tenant"],
           :openstack_region => @openstack_properties["region"],
-          :openstack_endpoint_type => @openstack_properties["endpoint_type"]
+          :openstack_endpoint_type => @openstack_properties["endpoint_type"],
+          :connection_options => @openstack_properties['connection_options']
         }
       end
 
