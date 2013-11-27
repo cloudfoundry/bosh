@@ -1,23 +1,23 @@
 require 'bosh/dev/build'
+require 'bosh/dev/release_change_stager'
+require 'bosh/dev/upload_adapter'
 
 module Bosh
   module Dev
     class BoshReleasePublisher
       def self.setup_for(build)
-        logger = Logger.new(STDERR)
-        new(build, UploadAdapter.new(logger), DownloadAdapter.new(logger))
+        new(build, UploadAdapter.new)
       end
 
-      def initialize(build, uploader, downloader)
+      def initialize(build, uploader)
         @build = build
         @uploader = uploader
-        @downloader = downloader
       end
 
       def publish
-        release = Bosh::Dev::BoshRelease.build
+        release = BoshRelease.build
         @build.upload_release(release)
-        changes = Bosh::Dev::ReleaseChangeStager.new(@build.number, @uploader, @downloader)
+        changes = ReleaseChangeStager.new(Dir.pwd, @build.number, @uploader)
         changes.stage
       end
     end
