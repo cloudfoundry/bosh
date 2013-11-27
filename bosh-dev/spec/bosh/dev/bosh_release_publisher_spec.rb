@@ -27,7 +27,6 @@ describe Bosh::Dev::BoshReleasePublisher do
       release_changes = instance_double('Bosh::Dev::ReleaseChanges')
       Bosh::Dev::ReleaseChanges.stub(:new).with(candidate_build.number, upload_adapter, download_adapter).and_return(release_changes)
 
-
       candidate_build.should_receive(:upload_release).ordered.with(release)
       release_changes.should_receive(:stage).ordered.with(no_args)
 
