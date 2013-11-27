@@ -6,26 +6,17 @@ module Bosh::Director
     end
 
     def clean
-      instance_archives = Models::RenderedTemplatesArchive.filter(instance: instance_model)
-      current_archive = instance_archives.reverse_order(:created_at).first
-      return unless current_archive
-
-      instance_archives.exclude(id: current_archive.id).each do |archive|
-        blobstore.delete(archive.blobstore_id)
+      @instance_model.stale_rendered_templates_archives.each do |archive|
+        @blobstore.delete(archive.blobstore_id)
         archive.delete
       end
     end
 
     def clean_all
-      archives = Models::RenderedTemplatesArchive.filter(instance: instance_model)
-      archives.each do |archive|
-        blobstore.delete(archive.blobstore_id)
+      @instance_model.rendered_templates_archives.each do |archive|
+        @blobstore.delete(archive.blobstore_id)
         archive.delete
       end
     end
-
-    private
-
-    attr_reader :instance_model, :blobstore
   end
 end
