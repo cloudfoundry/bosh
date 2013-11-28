@@ -11,10 +11,9 @@ A CPI for CloudStack from NTT & ZJU-SEL
 
 ## Known Limitations
 
-* Advanced Zone support is not verified yet
-* Ephemeral volumes are not deleted even after VMs are deleted
 * Tested with CloudStack 4.0.0 with KVM
 
+See also [the issue page](https://github.com/cloudfoundry-community/bosh-cloudstack-cpi/issues) for other known issues.
 
 
 ## How to Deploy Cloud Foundry on CloudStack
