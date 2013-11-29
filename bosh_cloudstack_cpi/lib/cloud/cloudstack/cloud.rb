@@ -16,7 +16,6 @@ module Bosh::CloudStackCloud
     attr_reader :registry
     attr_accessor :logger
     attr_reader :metadata_server
-    attr_reader :zone_network_type
     attr_reader :state_timeout
 
     ##
@@ -38,7 +37,7 @@ module Bosh::CloudStackCloud
       @fog_properties = @options["cloudstack"]
 
       @default_key_name = @fog_properties["default_key_name"]
-      @default_security_groups = @fog_properties["default_security_groups"]
+      @default_security_groups = @fog_properties["default_security_groups"] || []
       @state_timeout = @fog_properties["state_timeout"]
       @stemcell_public_visibility = @fog_properties["stemcell_public_visibility"]
 
@@ -62,7 +61,6 @@ module Bosh::CloudStackCloud
 
       @default_zone = @compute.zones.find { |zone| zone.name == @fog_properties["default_zone"] }
       cloud_error("Unable to find the zone named #{@fog_properties["default_zone"]}.") if @default_zone.nil?
-      @zone_network_type = @default_zone.network_type.downcase.to_sym
       @metadata_server = @fog_properties["metadata_server"] ||
         %x[grep dhcp-server-identifier /var/lib/dhclient/* /var/lib/dhcp3/* /var/lib/dhcp/* 2>/dev/null | tail -1 | awk '{print $NF}' | tr -d '\;'].strip
 
@@ -163,7 +161,6 @@ module Bosh::CloudStackCloud
         @logger.info("Creating new server...")
         server_name = "vm-#{generate_unique_name}"
 
-        network_configurator = NetworkConfigurator.new(network_spec, zone_network_type)
 
         image = with_compute { @compute.images.find { |i| i.id == stemcell_id } }
         cloud_error("Image `#{stemcell_id}' not found") if image.nil?
@@ -198,6 +195,8 @@ module Bosh::CloudStackCloud
           server_params[:zone_id] = selected_zone.id
         end
 
+        network_configurator = NetworkConfigurator.new(network_spec, selected_zone.network_type.downcase.to_sym)
+
         compute_security_groups = with_compute { @compute.security_groups }
         requested_security_groups =
           network_configurator.security_groups(@default_security_groups)
@@ -225,6 +224,16 @@ module Bosh::CloudStackCloud
           cloud_error("Disk offering `#{ephemeral_volume}' not found") if disk_offering.nil?
           @logger.debug("Using offering for ephemeral volume: `#{ephemeral_volume}' (#{disk_offering.id})")
           server_params[:disk_offering_id] = disk_offering.id
+        end
+
+        network_name = network_configurator.network_name
+        if network_name
+          network = @compute.networks.find { |network| network.name == network_name }
+          if network
+            server_params[:network_ids] = [network.id]
+          else
+            cloud_error("Network `#{network_name}' not found")
+          end
         end
 
         @logger.debug("Using boot parms: `#{server_params.inspect}'")
@@ -323,9 +332,10 @@ module Bosh::CloudStackCloud
       with_thread_name("configure_networks(#{server_id}, ...)") do
         @logger.info("Configuring `#{server_id}' to use the following " \
                      "network settings: #{network_spec.pretty_inspect}")
-        network_configurator = NetworkConfigurator.new(network_spec, zone_network_type)
-
         server = with_compute { @compute.servers.get(server_id) }
+        zone = with_compute { @compute.zones.get(server.zone_id) }
+        network_configurator = NetworkConfigurator.new(network_spec, zone.network_type.downcase.to_sym)
+
         cloud_error("Server `#{server_id}' not found") unless server
 
         compare_security_groups(server, network_configurator.security_groups(@default_security_groups))

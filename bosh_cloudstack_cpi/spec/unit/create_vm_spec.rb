@@ -26,15 +26,16 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
   end
 
   def server_params(unique_name, security_groups = [], nics = [], nameserver = nil, zone_id = "foobar-1a")
-    {
+    params = {
       :name => "vm-#{unique_name}",
       :template_id => "sc-id",
       :service_offering_id => "f-test",
       :key_name => "test_key",
-      :security_groups => security_groups,
       :user_data => Base64.strict_encode64(Yajl::Encoder.encode(user_data(unique_name, nameserver, false))),
       :zone_id => zone_id
     }
+    params[:security_groups] = security_groups if security_groups
+    params
   end
 
   def user_data(unique_name, nameserver = nil, openssh = false)
@@ -140,8 +141,97 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
     vm_id.should == "i-test"
   end
 
+  it "creates an CloudStack server with network name" do
+    network_spec = dynamic_network_spec
+    network_spec["cloud_properties"] = {
+      "network_name" => "netname-2"
+    }
+
+    cloud = mock_cloud do |compute|
+      server_params = server_params(unique_name, [], [])
+      server_params[:network_ids] = ["netid-2"]
+      compute.servers.should_receive(:create).
+          with(server_params).and_return(server)
+      compute.should_receive(:security_groups).and_return(security_groups)
+      compute.images.should_receive(:find).and_return(image)
+      compute.flavors.should_receive(:find).and_return(flavor)
+      compute.key_pairs.should_receive(:find).and_return(key_pair)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(server, :running)
+
+    @registry.should_receive(:update_settings).
+        with("i-test", agent_settings(unique_name, network_spec))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            resource_pool_spec,
+                            { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+    vm_id.should == "i-test"
+  end
+
+  it "should raise an error when network does not exist" do
+    network_spec = dynamic_network_spec
+    network_spec["cloud_properties"] = {
+      "network_name" => "netname-missing"
+    }
+
+    cloud = mock_cloud do |compute|
+      compute.should_receive(:security_groups).and_return(security_groups)
+      compute.images.should_receive(:find).and_return(image)
+      compute.flavors.should_receive(:find).and_return(flavor)
+      compute.key_pairs.should_receive(:find).and_return(key_pair)
+    end
+
+    expect {
+      cloud.create_vm("agent-id", "sc-id",
+                      resource_pool_spec,
+                      { "network_a" => network_spec },
+                      nil, { "test_env" => "value" })
+    }.to raise_error Bosh::Clouds::CloudError, "Network `netname-missing' not found"
+  end
+
+
   it "associates server with floating ip if vip network is provided" do
-    # TODO
+    network_spec_dynamic = dynamic_network_spec
+    network_spec_dynamic["cloud_properties"] = {} # remove security group
+    network_spec_vip = vip_network_spec
+    network_spec_vip["cloud_properties"] ||= {}
+    network_spec = { "network_a" => network_spec_dynamic, "network_b" => network_spec_vip }
+
+    cloud = mock_cloud do |compute|
+      compute.servers.should_receive(:create).
+          with(server_params(unique_name, nil, [], nil, "foobar-2a")).and_return(server)
+      compute.should_receive(:security_groups).and_return(security_groups)
+      compute.images.should_receive(:find).and_return(image)
+      compute.flavors.should_receive(:find).and_return(flavor)
+      compute.key_pairs.should_receive(:find).and_return(key_pair)
+    end
+
+    configurator = double("configurator")
+    Bosh::CloudStackCloud::NetworkConfigurator.should_receive(:new)
+      .with(network_spec, :advanced)
+      .and_return(configurator)
+    configurator.should_receive(:security_groups).with([]).and_return([])
+    configurator.should_receive(:network_name)
+    configurator.should_receive(:configure)
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(server, :running)
+
+    agent_setting = agent_settings(unique_name)
+    agent_setting["networks"] = network_spec
+    @registry.should_receive(:update_settings).with("i-test", agent_setting)
+
+
+    spec = resource_pool_spec
+    spec['availability_zone'] = 'foobar-2a'
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            spec,
+                            network_spec,
+                            nil, { "test_env" => "value" })
+    vm_id.should == "i-test"
   end
 
   it "skips assiging security groups when the feature is disabled" do

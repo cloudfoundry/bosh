@@ -58,14 +58,14 @@ def mock_cloud(options = nil)
   images = double('images')
   flavors = double('flavors')
   volumes = double('volumes')
-  addresses = double('addresses')
+  ipaddresses = [double('address', :id => 'foobar-ip1', :ip_address => "10.0.0.1", :virtual_machine_id => nil)]
   snapshots = double('snapshots')
   key_pairs = double('key_pairs')
   security_groups = double('security_groups')
   zones = [double('foobar-1a', :name => mock_cloud_options['cloudstack']['default_zone'], :id => 'foobar-1a', :network_type => 'Basic', :security_groups_enabled => true),
            double('foobar-2a', :name => "foobar-2a", :id => 'foobar-2a', :network_type => 'Advanced', :security_groups_enabled => false)]
   disk_offerings = [double('disk_offer1', :name => 'disk_offer-10000', :id => 'disk_offer1', :disk_size => 10000)]
-  networks = double('networks')
+  networks = [double('net-1', :name => 'netname-1', :id => 'netid-1'), double('net-2', :name => 'netname-2', :id => 'netid-2')]
   jobs = double('jobs')
 
   compute = double(Fog::Compute)
@@ -74,7 +74,7 @@ def mock_cloud(options = nil)
   compute.stub(:images).and_return(images)
   compute.stub(:flavors).and_return(flavors)
   compute.stub(:volumes).and_return(volumes)
-  compute.stub(:addresses).and_return(addresses)
+  compute.stub(:ipaddresses).and_return(ipaddresses)
   compute.stub(:snapshots).and_return(snapshots)
   compute.stub(:key_pairs).and_return(key_pairs)
   compute.stub(:security_groups).and_return(security_groups)

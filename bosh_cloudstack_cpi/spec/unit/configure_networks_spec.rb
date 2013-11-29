@@ -11,15 +11,15 @@ describe Bosh::CloudStackCloud::Cloud do
 
   it "configures the network when using dynamic network" do
     address = double("address")
-    server = double("server", :id => "i-test", :name => "i-test", :addresses => [address])
+    server = double("server", :id => "i-test", :name => "i-test", :addresses => [address], :zone_id => 'foobar-1a')
     security_group = double("security_groups", :name => "default")
 
     server.should_receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |compute|
       compute.servers.should_receive(:get).with("i-test").and_return(server)
+      compute.zones.should_receive(:get).with("foobar-1a").and_return(compute.zones[0])
     end
-    cloud.should_receive(:zone_network_type).and_return(:basic)
     address.should_receive(:ip_address).and_return("10.10.10.1")
 
     network_spec = { "net_a" => dynamic_network_spec }
@@ -34,15 +34,15 @@ describe Bosh::CloudStackCloud::Cloud do
 
   it "forces recreation when security groups differ" do
     address = double("address")
-    server = double("server", :id => "i-test", :name => "i-test", :addresses => [address])
+    server = double("server", :id => "i-test", :name => "i-test", :addresses => [address], :zone_id => 'foobar-2a')
     security_group = double("security_groups", :name => "newgroups")
 
     server.should_receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |compute|
       compute.servers.should_receive(:get).with("i-test").and_return(server)
+      compute.zones.should_receive(:get).with("foobar-2a").and_return(compute.zones[1])
     end
-    cloud.should_receive(:zone_network_type).and_return(:advanced)
 
     expect {
       cloud.configure_networks("i-test", combined_network_spec)
@@ -59,11 +59,9 @@ describe Bosh::CloudStackCloud::Cloud do
 
  def mock_cloud_advanced
    mock_cloud do |compute|
-     compute.stub(:zones).and_return(
-       [double('foobar-1a',
-               :name => mock_cloud_options['cloudstack']['default_zone'],
-               :id => 'foobar-1a-id',
-               :network_type => 'Advanced')])
+     compute.zones.stub(:get).with("foobar-2a").and_return(compute.zones[1])
+     compute.stub_chain(:servers, :get).with("i-test").and_return(
+       double("server", :id => "i-test", :name => "i-test", :addresses => [double("address")], :zone_id => 'foobar-2a'))
    end
  end
 

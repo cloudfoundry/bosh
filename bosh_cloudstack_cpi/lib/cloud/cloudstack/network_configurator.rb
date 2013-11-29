@@ -11,6 +11,8 @@ module Bosh::CloudStackCloud
   class NetworkConfigurator
     include Helpers
 
+    attr_reader :network_name
+
     ##
     # Creates new network spec
     #
@@ -25,7 +27,7 @@ module Bosh::CloudStackCloud
       @network = nil
       @vip_network = nil
       @security_groups = []
-      @net_id = nil
+      @network_name = nil
       @zone_network_type = zone_network_type
 
       spec.each_pair do |name, network_spec|
@@ -36,16 +38,17 @@ module Bosh::CloudStackCloud
             cloud_error("Must have exactly one dynamic network per instance") if @network
             @network = DynamicNetwork.new(name, network_spec)
             @security_groups += extract_security_groups(network_spec)
-            @net_id = extract_net_id(network_spec)
+            @network_name = extract_network_name(network_spec)
 
           when "vip"
             cloud_error("More than one vip network") if @vip_network
             cloud_error("Vip network is not supported in a basic network") if @zone_network_type == :basic
+            cloud_error("Vip network cannot have a network name") if extract_network_name(network_spec)
             @vip_network = VipNetwork.new(name, network_spec)
             @security_groups += extract_security_groups(network_spec)
 
           else
-            cloud_error("Invalid network type `#{network_type}': OpenStack " \
+            cloud_error("Invalid network type `#{network_type}': CloudStack " \
                         "CPI can only handle `dynamic' or `vip' " \
                         "network types")
         end
@@ -97,7 +100,7 @@ module Bosh::CloudStackCloud
     # @return [Array] nics
     def nics
       nic = {}
-      nic["net_id"] = @net_id if @net_id
+      nic["network_name"] = @network_name if @network_name
       nic.any? ? [nic] : []
     end
 
@@ -127,11 +130,11 @@ module Bosh::CloudStackCloud
     #
     # @param [Hash] network_spec Network specification
     # @return [Hash] network ID
-    def extract_net_id(network_spec)
+    def extract_network_name(network_spec)
       if network_spec && network_spec["cloud_properties"]
         cloud_properties = network_spec["cloud_properties"]
-        if cloud_properties && cloud_properties.has_key?("net_id")
-          return cloud_properties["net_id"]
+        if cloud_properties && cloud_properties.has_key?("network_name")
+          return cloud_properties["network_name"]
         end
       end
       nil

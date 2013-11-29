@@ -10,9 +10,9 @@ describe Bosh::CloudStackCloud::NetworkConfigurator do
     spec["cloud_properties"]["security_groups"] = security_groups
   end
 
-  def set_nics(spec, net_id)
+  def set_network(spec, network_name)
     spec["cloud_properties"] ||= {}
-    spec["cloud_properties"]["net_id"] = net_id
+    spec["cloud_properties"]["network_name"] = network_name
   end
 
   it "should raise an error if the spec isn't a hash" do
@@ -60,35 +60,26 @@ describe Bosh::CloudStackCloud::NetworkConfigurator do
     end
   end
 
-  describe "private_ip" do
-    it "should not extract private ip address for dynamic network" do
+  describe "network name" do
+    it "should be extracted from dynamic network" do
       spec = {}
       spec["network_a"] = dynamic_network_spec
-      spec["network_a"]["ip"] = "10.0.0.1"
+      set_network(spec["network_a"], "name_a")
 
       nc = Bosh::CloudStackCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should be_nil
+      nc.network_name.should == "name_a"
+    end
+
+    it "should not be contained in vip network" do
+      spec = {}
+      spec["network_a"] = dynamic_network_spec
+      spec["network_b"] = vip_network_spec
+      set_network(spec["network_b"], "invalid")
+
+      expect {
+        nc = Bosh::CloudStackCloud::NetworkConfigurator.new(spec)
+      }.to raise_error Bosh::Clouds::CloudError, "Vip network cannot have a network name"
     end
   end
 
-  describe "nics" do
-    it "should extract net_id from dynamic network" do
-      spec = {}
-      spec["network_a"] = dynamic_network_spec
-      set_nics(spec["network_a"], "foo")
-
-      nc = Bosh::CloudStackCloud::NetworkConfigurator.new(spec)
-      nc.nics.should == [{ "net_id" => "foo" }]
-    end
-
-    it "should not extract ip address for dynamic network" do
-      spec = {}
-      spec["network_a"] = dynamic_network_spec
-      spec["network_a"]["ip"] = "10.0.0.1"
-      set_nics(spec["network_a"], "foo")
-
-      nc = Bosh::CloudStackCloud::NetworkConfigurator.new(spec)
-      nc.nics.should == [{ "net_id" => "foo" }]
-    end
-  end
 end
