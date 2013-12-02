@@ -236,7 +236,7 @@ func (p ubuntu) SetupLogrotate(groupName, basePath, size string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/logrotate.d/"+groupName, buffer.String())
+	_, err = p.fs.WriteToFile(filepath.Join("/etc/logrotate.d", groupName), buffer.String())
 	if err != nil {
 		return
 	}
