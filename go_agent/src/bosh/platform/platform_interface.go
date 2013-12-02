@@ -9,6 +9,7 @@ import (
 
 type Platform interface {
 	GetFs() (fs boshsys.FileSystem)
+	GetRunner() (runner boshsys.CmdRunner)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)

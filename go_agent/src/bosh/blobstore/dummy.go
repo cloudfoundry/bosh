@@ -9,7 +9,8 @@ func newDummyBlobstore() (blobstore dummy) {
 	return
 }
 
-func (blobstore dummy) SetOptions(opts map[string]string) (err error) {
+func (blobstore dummy) ApplyOptions(opts map[string]string) (updated Blobstore, err error) {
+	updated = blobstore
 	return
 }
 

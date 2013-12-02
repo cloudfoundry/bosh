@@ -42,6 +42,10 @@ func (p ubuntu) GetFs() (fs boshsys.FileSystem) {
 	return p.fs
 }
 
+func (p ubuntu) GetRunner() (runner boshsys.CmdRunner) {
+	return p.cmdRunner
+}
+
 func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }

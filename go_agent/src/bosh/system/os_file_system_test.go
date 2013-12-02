@@ -71,7 +71,7 @@ func TestChmod(t *testing.T) {
 
 func TestWriteToFile(t *testing.T) {
 	osFs := NewOsFileSystem()
-	testPath := filepath.Join(os.TempDir(), "WriteToFileTestFile")
+	testPath := filepath.Join(os.TempDir(), "subDir", "WriteToFileTestFile")
 
 	_, err := os.Stat(testPath)
 	assert.Error(t, err)

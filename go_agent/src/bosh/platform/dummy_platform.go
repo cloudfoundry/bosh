@@ -19,6 +19,10 @@ func (p dummyPlatform) GetFs() (fs boshsys.FileSystem) {
 	return &fakesys.FakeFileSystem{}
 }
 
+func (p dummyPlatform) GetRunner() (runner boshsys.CmdRunner) {
+	return &fakesys.FakeCmdRunner{}
+}
+
 func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
 	return boshstats.NewDummyStatsCollector()
 }

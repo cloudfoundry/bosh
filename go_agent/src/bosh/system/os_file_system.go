@@ -58,6 +58,11 @@ func (fs osFileSystem) WriteToFile(path, content string) (written bool, err erro
 		return
 	}
 
+	err = fs.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err != nil {
+		return
+	}
+
 	file, err := os.Create(path)
 	if err != nil {
 		return

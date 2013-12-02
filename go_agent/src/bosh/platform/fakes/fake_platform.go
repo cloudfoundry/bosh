@@ -10,7 +10,8 @@ import (
 )
 
 type FakePlatform struct {
-	Fs *fakesys.FakeFileSystem
+	Fs     *fakesys.FakeFileSystem
+	Runner *fakesys.FakeCmdRunner
 
 	FakeStatsCollector                  *fakestats.FakeStatsCollector
 	SetupRuntimeConfigurationWasInvoked bool
@@ -49,11 +50,16 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
 	platform.Fs = &fakesys.FakeFileSystem{}
+	platform.Runner = &fakesys.FakeCmdRunner{}
 	return
 }
 
 func (p *FakePlatform) GetFs() (fs boshsys.FileSystem) {
 	return p.Fs
+}
+
+func (p *FakePlatform) GetRunner() (runner boshsys.CmdRunner) {
+	return p.Runner
 }
 
 func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {

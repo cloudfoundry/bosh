@@ -60,7 +60,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	blobstoreProvider := boshblobstore.NewProvider()
+	blobstoreProvider := boshblobstore.NewProvider(platform)
 	blobstore, err := blobstoreProvider.Get(settings.Blobstore)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blobstore")
