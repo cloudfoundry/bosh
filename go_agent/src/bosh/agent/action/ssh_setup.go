@@ -1,7 +1,7 @@
 package action
 
 import (
-	bosherrors "bosh/errors"
+	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 	"errors"
 	"path/filepath"
@@ -16,19 +16,19 @@ func (a sshAction) setupSsh(params sshParams) (value interface{}, err error) {
 	boshSshPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh_ssh")
 	err = a.platform.CreateUser(user, pwd, boshSshPath)
 	if err != nil {
-		err = bosherrors.WrapError(err, "Error creating user")
+		err = bosherr.WrapError(err, "Creating user")
 		return
 	}
 
 	err = a.platform.AddUserToGroups(user, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP})
 	if err != nil {
-		err = bosherrors.WrapError(err, "Error adding user to groups")
+		err = bosherr.WrapError(err, "Adding user to groups")
 		return
 	}
 
 	err = a.platform.SetupSsh(key, user)
 	if err != nil {
-		err = bosherrors.WrapError(err, "Error setting ssh public key")
+		err = bosherr.WrapError(err, "Setting ssh public key")
 		return
 	}
 

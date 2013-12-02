@@ -12,6 +12,7 @@ import (
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -80,7 +81,8 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	agent.Run()
 
 	resp = handler.Func(req)
-	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"some error"}}`)
+	expectedJson := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: some error\"}}", req.Method)
+	boshassert.MatchesJsonString(t, resp, expectedJson)
 }
 
 func TestRunHandlesApplyMessage(t *testing.T) {

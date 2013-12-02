@@ -1,11 +1,11 @@
 package action
 
 import (
+	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
-	"fmt"
 )
 
 type sshAction struct {
@@ -22,6 +22,7 @@ func newSsh(settings boshsettings.Settings, platform boshplatform.Platform) (act
 func (a sshAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	cmd, params, err := extractCommand(payloadBytes)
 	if err != nil {
+		err = bosherr.WrapError(err, "Extracting ssh command")
 		return
 	}
 
@@ -43,7 +44,7 @@ func extractCommand(payloadBytes []byte) (cmd string, params sshParams, err erro
 
 	err = json.Unmarshal(payloadBytes, &payload)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Error parsing payload: %s", err.Error()))
+		err = bosherr.WrapError(err, "Parsing payload")
 		return
 	}
 
@@ -64,5 +65,5 @@ func extractCommand(payloadBytes []byte) (cmd string, params sshParams, err erro
 }
 
 func payloadErr(attr string) error {
-	return errors.New(fmt.Sprintf("Error parsing %s in payload", attr))
+	return bosherr.New("Parsing %s in payload", attr)
 }

@@ -3,7 +3,6 @@ package system
 import (
 	bosherr "bosh/errors"
 	"bytes"
-	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -40,7 +39,7 @@ func runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, std
 
 	err = cmd.Start()
 	if err != nil {
-		err = bosherr.WrapError(err, fmt.Sprintf("Error starting command %s", cmdString))
+		err = bosherr.WrapError(err, "Starting command %s", cmdString)
 		return
 	}
 
@@ -48,8 +47,7 @@ func runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, std
 	stdout = string(stdoutWriter.Bytes())
 	stderr = string(stderrWriter.Bytes())
 	if err != nil {
-		err = bosherr.WrapError(err, fmt.Sprintf("Error running command: '%s', stdout: '%s', stderr: '%s'",
-			cmdString, stdout, stderr))
+		err = bosherr.WrapError(err, "Running command: '%s', stdout: '%s', stderr: '%s'", cmdString, stdout, stderr)
 	}
 	return
 }

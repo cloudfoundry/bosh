@@ -18,7 +18,7 @@ func TestSshSetupWithInvalidPayload(t *testing.T) {
 
 	_, err := sshAction.Run([]byte(payload))
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Error parsing")
+	assert.Contains(t, err.Error(), "Parsing user")
 }
 
 func TestSshSetupWithoutDefaultIp(t *testing.T) {

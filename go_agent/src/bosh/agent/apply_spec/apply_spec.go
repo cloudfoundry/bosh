@@ -1,7 +1,7 @@
 package apply_spec
 
 import (
-	bosherrors "bosh/errors"
+	bosherr "bosh/errors"
 	"encoding/json"
 )
 
@@ -22,13 +22,13 @@ type logging struct {
 func NewApplySpecFromData(data interface{}) (as *ApplySpec, err error) {
 	marshaledData, err := json.Marshal(data)
 	if err != nil {
-		err = bosherrors.WrapError(err, "Failed to interpret apply spec")
+		err = bosherr.WrapError(err, "Failed to interpret apply spec")
 		return
 	}
 
 	err = json.Unmarshal(marshaledData, &as)
 	if err != nil {
-		err = bosherrors.WrapError(err, "Failed to interpret apply spec")
+		err = bosherr.WrapError(err, "Failed to interpret apply spec")
 		return
 	}
 

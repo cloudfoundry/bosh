@@ -2,7 +2,7 @@ package action
 
 import (
 	apply_spec "bosh/agent/apply_spec"
-	bosherrors "bosh/errors"
+	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -28,6 +28,7 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	}
 	err = json.Unmarshal(payloadBytes, &payload)
 	if err != nil {
+		err = bosherr.WrapError(err, "Unmarshalling payload")
 		return
 	}
 
@@ -47,16 +48,20 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 		applySpec.MaxLogFileSize(),
 	)
 	if err != nil {
-		err = bosherrors.WrapError(err, "Logrotate setup failed")
+		err = bosherr.WrapError(err, "Logrotate setup failed")
 		return
 	}
 
 	spec, err := json.Marshal(payload.Arguments[0])
 	if err != nil {
+		err = bosherr.WrapError(err, "Marshalling apply spec")
 		return
 	}
 
 	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "/bosh/spec.json")
 	_, err = a.fs.WriteToFile(specFilePath, string(spec))
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing spec to disk")
+	}
 	return
 }

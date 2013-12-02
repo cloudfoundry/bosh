@@ -1,8 +1,7 @@
 package infrastructure
 
 import (
-	"errors"
-	"fmt"
+	bosherr "bosh/errors"
 )
 
 type provider struct {
@@ -21,7 +20,7 @@ func (p provider) Get(name string) (inf Infrastructure, err error) {
 	inf, found := p.infrastructures[name]
 
 	if !found {
-		err = errors.New(fmt.Sprintf("Infrastructure %s could not be found", name))
+		err = bosherr.New("Infrastructure %s could not be found", name)
 	}
 	return
 }

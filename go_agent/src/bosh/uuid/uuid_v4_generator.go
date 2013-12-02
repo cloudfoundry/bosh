@@ -1,6 +1,9 @@
 package uuid
 
-import gouuid "github.com/nu7hatch/gouuid"
+import (
+	bosherr "bosh/errors"
+	gouuid "github.com/nu7hatch/gouuid"
+)
 
 type uuidV4Generator struct {
 }
@@ -12,6 +15,7 @@ func NewGenerator() (gen Generator) {
 func (gen uuidV4Generator) Generate() (uuidStr string, err error) {
 	uuid, err := gouuid.NewV4()
 	if err != nil {
+		err = bosherr.WrapError(err, "Generating V4 uuid")
 		return
 	}
 

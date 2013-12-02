@@ -66,5 +66,5 @@ func TestGetTaskRunWhenPayloadDoesNotHaveTaskId(t *testing.T) {
 
 	_, err := getTask.Run([]byte(`{"arguments":[]}`))
 	assert.Error(t, err)
-	assert.Equal(t, "Error finding task: not enough arguments", err.Error())
+	assert.Equal(t, "Error finding task: Not enough arguments", err.Error())
 }

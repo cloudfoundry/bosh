@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	bosherr "bosh/errors"
 	"bytes"
 	"errors"
 	"fmt"
@@ -39,13 +40,14 @@ func lookupHostWithDnsServer(dnsServer string, host string) (ipString string, er
 	)
 
 	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to dig")
 		return
 	}
 
 	ipString = strings.Split(stdout, "\n")[0]
 	ip := net.ParseIP(ipString)
 	if ip == nil {
-		err = errors.New("Error resolving host")
+		err = errors.New("Resolving host")
 	}
 	return
 }
@@ -59,8 +61,16 @@ func runCommand(cmdName string, args ...string) (stdout, stderr string, err erro
 	cmd.Stderr = stderrWriter
 
 	err = cmd.Start()
+	if err != nil {
+		err = bosherr.WrapError(err, "Starting dig command")
+		return
+	}
 
 	err = cmd.Wait()
+	if err != nil {
+		err = bosherr.WrapError(err, "Waiting for dig command")
+		return
+	}
 	stdout = string(stdoutWriter.Bytes())
 	stderr = string(stderrWriter.Bytes())
 	return

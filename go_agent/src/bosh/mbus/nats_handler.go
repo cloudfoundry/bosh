@@ -1,6 +1,7 @@
 package mbus
 
 import (
+	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
@@ -26,6 +27,7 @@ func newNatsHandler(client yagnats.NATSClient, settings boshsettings.Settings) (
 func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
 	err = h.Start(handlerFunc)
 	if err != nil {
+		err = bosherr.WrapError(err, "Starting nats handler")
 		return
 	}
 	defer h.Stop()
@@ -37,11 +39,13 @@ func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
 func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting connection info")
 		return
 	}
 
 	err = h.client.Connect(connProvider)
 	if err != nil {
+		err = bosherr.WrapError(err, "Connecting")
 		return
 	}
 
@@ -51,12 +55,17 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		req := Request{}
 		err := json.Unmarshal(natsMsg.Payload, &req)
 		if err != nil {
+			err = bosherr.WrapError(err, "Unmarshalling JSON payload")
 			return
 		}
 		req.payload = natsMsg.Payload
 
 		resp := handlerFunc(req)
 		respBytes, err := json.Marshal(resp)
+		if err != nil {
+			err = bosherr.WrapError(err, "Marshalling JSON response")
+			return
+		}
 
 		h.client.Publish(req.ReplyTo, respBytes)
 	})
@@ -71,11 +80,13 @@ func (h natsHandler) Stop() {
 func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error) {
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting connection info")
 		return
 	}
 
 	err = h.client.Connect(connProvider)
 	if err != nil {
+		err = bosherr.WrapError(err, "Connecting")
 		return
 	}
 
@@ -85,6 +96,7 @@ func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err er
 	for heartbeat := range heartbeatChan {
 		heartbeatBytes, err = json.Marshal(heartbeat)
 		if err != nil {
+			err = bosherr.WrapError(err, "Marshalling heartbeat")
 			return
 		}
 
@@ -111,6 +123,7 @@ func (h natsHandler) runUntilInterrupted() {
 func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
 	natsUrl, err := url.Parse(h.settings.Mbus)
 	if err != nil {
+		err = bosherr.WrapError(err, "Parsing Nats URL")
 		return
 	}
 

@@ -11,7 +11,7 @@ func main() {
 	err := app.Run(os.Args)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error()+"\n")
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
 		os.Exit(1)
 	}
 }

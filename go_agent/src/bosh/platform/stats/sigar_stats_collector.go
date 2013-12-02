@@ -1,6 +1,9 @@
 package stats
 
-import sigar "github.com/cloudfoundry/gosigar"
+import (
+	bosherr "bosh/errors"
+	sigar "github.com/cloudfoundry/gosigar"
+)
 
 type sigarStatsCollector struct {
 }
@@ -27,6 +30,7 @@ func (s sigarStatsCollector) GetCpuStats() (stats CpuStats, err error) {
 	cpu := sigar.Cpu{}
 	err = cpu.Get()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting Sigar Cpu")
 		return
 	}
 
@@ -42,6 +46,7 @@ func (s sigarStatsCollector) GetMemStats() (stats MemStats, err error) {
 	mem := sigar.Mem{}
 	err = mem.Get()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting Sigar Mem")
 		return
 	}
 
@@ -55,6 +60,7 @@ func (s sigarStatsCollector) GetSwapStats() (stats MemStats, err error) {
 	swap := sigar.Swap{}
 	err = swap.Get()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting Sigar Swap")
 		return
 	}
 
@@ -68,6 +74,7 @@ func (s sigarStatsCollector) GetDiskStats(mountedPath string) (stats DiskStats, 
 	fsUsage := sigar.FileSystemUsage{}
 	err = fsUsage.Get(mountedPath)
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting Sigar File System Usage")
 		return
 	}
 

@@ -3,6 +3,7 @@ package agent
 import (
 	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
+	bosherr "bosh/errors"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -66,6 +67,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 			value, err := action.Run(req.GetPayload())
 
 			if err != nil {
+				err = bosherr.WrapError(err, "Action Failed %s", req.Method)
 				resp = boshmbus.NewExceptionResponse(err.Error())
 				return
 			}

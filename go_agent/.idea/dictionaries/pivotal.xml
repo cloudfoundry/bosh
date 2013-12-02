@@ -4,6 +4,8 @@
       <w>async</w>
       <w>boshassert</w>
       <w>boshdisk</w>
+      <w>bosherr</w>
+      <w>boshinf</w>
       <w>boshsettings</w>
       <w>boshstats</w>
       <w>boshsys</w>

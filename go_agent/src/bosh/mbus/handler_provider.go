@@ -1,9 +1,8 @@
 package mbus
 
 import (
+	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
-	"errors"
-	"fmt"
 	"github.com/cloudfoundry/yagnats"
 	"net/url"
 )
@@ -24,13 +23,14 @@ func NewHandlerProvider(settings boshsettings.Settings) (p mbusHandlerProvider) 
 func (p mbusHandlerProvider) Get() (handler Handler, err error) {
 	mbusUrl, err := url.Parse(p.settings.Mbus)
 	if err != nil {
+		err = bosherr.WrapError(err, "Parsing handler URL")
 		return
 	}
 
 	handler, found := p.handlers[mbusUrl.Scheme]
 
 	if !found {
-		err = errors.New(fmt.Sprintf("Message Bus Handler with scheme %s could not be found", mbusUrl.Scheme))
+		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusUrl.Scheme)
 	}
 	return
 }
