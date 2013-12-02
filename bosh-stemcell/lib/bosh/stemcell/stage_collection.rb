@@ -24,6 +24,7 @@ module Bosh::Stemcell
           [
             :bosh_go_agent,
             #:bosh_micro,
+            :aws_cli,
           ]
         else
           [
