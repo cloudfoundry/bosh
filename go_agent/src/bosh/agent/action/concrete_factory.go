@@ -16,7 +16,7 @@ func NewFactory(settings boshsettings.Settings, platform boshplatform.Platform, 
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"apply":      newApply(fs),
+			"apply":      newApply(fs, platform),
 			"ping":       newPing(),
 			"get_task":   newGetTask(taskService),
 			"get_state":  newGetState(settings, fs),

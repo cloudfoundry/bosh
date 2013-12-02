@@ -1,6 +1,7 @@
 package action
 
 import (
+	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
@@ -9,11 +10,13 @@ import (
 )
 
 type applyAction struct {
-	fs boshsys.FileSystem
+	fs       boshsys.FileSystem
+	platform boshplatform.Platform
 }
 
-func newApply(fs boshsys.FileSystem) (apply applyAction) {
-	apply.fs = fs
+func newApply(fs boshsys.FileSystem, platform boshplatform.Platform) (action applyAction) {
+	action.fs = fs
+	action.platform = platform
 	return
 }
 
@@ -28,6 +31,12 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 
 	if len(payload.Arguments) == 0 {
 		err = errors.New("Not enough arguments, expected 1")
+		return
+	}
+
+	err = a.platform.SetupLogrotate(boshsettings.VCAP_USERNAME, boshsettings.VCAP_BASE_DIR, "50M")
+	if err != nil {
+		err = errors.New("Logrotate setup failed: " + err.Error())
 		return
 	}
 

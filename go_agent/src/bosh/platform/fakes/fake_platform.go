@@ -12,15 +12,19 @@ import (
 type FakePlatform struct {
 	Fs *fakesys.FakeFileSystem
 
-	FakeStatsCollector                   *fakestats.FakeStatsCollector
-	SetupRuntimeConfigurationWasInvoked  bool
-	CreateUserUsername                   string
-	CreateUserPassword                   string
-	CreateUserBasePath                   string
-	AddUserToGroupsGroups                map[string][]string
-	DeleteEphemeralUsersMatchingRegex    string
-	SetupSshPublicKeys                   map[string]string
-	SetupHostnameHostname                string
+	FakeStatsCollector                  *fakestats.FakeStatsCollector
+	SetupRuntimeConfigurationWasInvoked bool
+	CreateUserUsername                  string
+	CreateUserPassword                  string
+	CreateUserBasePath                  string
+	AddUserToGroupsGroups               map[string][]string
+	DeleteEphemeralUsersMatchingRegex   string
+	SetupSshPublicKeys                  map[string]string
+	SetupHostnameHostname               string
+
+	SetupLogrotateErr  error
+	SetupLogrotateArgs SetupLogrotateArgs
+
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
 	StartMonitStarted                    bool
@@ -30,6 +34,12 @@ type FakePlatform struct {
 	CompressFilesInDirTarball            *os.File
 	CompressFilesInDirDir                string
 	CompressFilesInDirFilters            []string
+}
+
+type SetupLogrotateArgs struct {
+	GroupName string
+	BasePath  string
+	Size      string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -83,6 +93,17 @@ func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 }
 
 func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
+	return
+}
+
+func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
+	p.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
+
+	if p.SetupLogrotateErr != nil {
+		err = p.SetupLogrotateErr
+		return
+	}
+
 	return
 }
 

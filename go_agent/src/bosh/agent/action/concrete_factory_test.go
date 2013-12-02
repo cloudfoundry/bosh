@@ -11,8 +11,8 @@ func getFakeFactoryDependencies() (
 	settings boshsettings.Settings,
 	platform *fakeplatform.FakePlatform,
 	blobstore *fakeblobstore.FakeBlobstore,
-	taskService *faketask.FakeService) {
-
+	taskService *faketask.FakeService,
+) {
 	settings = boshsettings.Settings{}
 	platform = fakeplatform.NewFakePlatform()
 	blobstore = &fakeblobstore.FakeBlobstore{}
