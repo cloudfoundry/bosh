@@ -2,6 +2,7 @@ package action
 
 import (
 	boshblobstore "bosh/blobstore"
+	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	"encoding/json"
@@ -23,6 +24,7 @@ func newLogs(platform boshplatform.Platform, blobstore boshblobstore.Blobstore) 
 func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	filters, err := extractFilters(payloadBytes)
 	if err != nil {
+		err = bosherr.WrapError(err, "Extracting filters from payload")
 		return
 	}
 
@@ -33,11 +35,13 @@ func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error)
 	logsDir := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
 	tarball, err := action.platform.CompressFilesInDir(logsDir, filters)
 	if err != nil {
+		err = bosherr.WrapError(err, "Making logs tarball")
 		return
 	}
 
 	blobId, err := action.blobstore.Create(tarball)
 	if err != nil {
+		err = bosherr.WrapError(err, "Create file on blobstore")
 		return
 	}
 
@@ -52,6 +56,7 @@ func extractFilters(payloadBytes []byte) (filters []string, err error) {
 	payload := payloadType{}
 	err = json.Unmarshal(payloadBytes, &payload)
 	if err != nil {
+		err = bosherr.WrapError(err, "Unmarshalling payload")
 		return
 	}
 

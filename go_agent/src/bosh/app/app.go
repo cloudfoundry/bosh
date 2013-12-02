@@ -6,6 +6,7 @@ import (
 	boshtask "bosh/agent/task"
 	boshblobstore "bosh/blobstore"
 	boshboot "bosh/bootstrap"
+	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
@@ -34,30 +35,35 @@ func (app app) Run(args []string) (err error) {
 	infProvider := boshinf.NewProvider()
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting infrastructure")
 		return
 	}
 
 	platformProvider := boshplatform.NewProvider()
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting platform")
 		return
 	}
 
 	boot := boshboot.New(infrastructure, platform)
 	settings, err := boot.Run()
 	if err != nil {
+		err = bosherr.WrapError(err, "Running bootstrap")
 		return
 	}
 
 	mbusHandlerProvider := boshmbus.NewHandlerProvider(settings)
 	mbusHandler, err := mbusHandlerProvider.Get()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting mbus handler")
 		return
 	}
 
 	blobstoreProvider := boshblobstore.NewProvider()
 	blobstore, err := blobstoreProvider.Get(settings.Blobstore)
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting blobstore")
 		return
 	}
 
@@ -66,6 +72,9 @@ func (app app) Run(args []string) (err error) {
 
 	agent := boshagent.New(settings, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()
+	if err != nil {
+		err = bosherr.WrapError(err, "Running agent")
+	}
 	return
 }
 

@@ -13,6 +13,7 @@ func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 		"57": boshtask.Task{
 			Id:    "found-57-id",
 			State: boshtask.TaskStateFailed,
+			Error: "Oops we failed...",
 		},
 	}
 
@@ -22,7 +23,7 @@ func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 	taskValue, err := getTask.Run([]byte(`{"arguments":["57"]}`))
 	assert.NoError(t, err)
 
-	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"failed"}`)
+	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"failed","exception":"Oops we failed..."}`)
 }
 
 func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {

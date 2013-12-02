@@ -1,7 +1,7 @@
 package blobstore
 
 import (
-	bosherror "bosh/errors"
+	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 )
 
@@ -21,10 +21,14 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 	blobstore, found := p.blobstores[settings.Type]
 
 	if !found {
-		err = bosherror.New("Blobstore %s could not be found", settings.Type)
+		err = bosherr.New("Blobstore %s could not be found", settings.Type)
 		return
 	}
 
 	err = blobstore.SetOptions(settings.Options)
+	if err != nil {
+		err = bosherr.WrapError(err, "Applying Options")
+		return
+	}
 	return
 }
