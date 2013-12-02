@@ -28,14 +28,24 @@ func TestApplyRunSetsUpLogrotation(t *testing.T) {
 	factory := NewFactory(settings, platform, blobstore, taskService)
 	apply := factory.Create("apply")
 
-	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{}]}`)
+	payload := []byte(`{
+		"method":"apply",
+		"reply_to":"foo",
+		"arguments":[{
+			"properties":{
+				"logging":{
+					"max_log_file_size":"fake-size"
+				}
+			}
+		}]
+	}`)
 	_, err := apply.Run(payload)
 	assert.NoError(t, err)
 
 	assert.Equal(t, platform.SetupLogrotateArgs, fakeplatform.SetupLogrotateArgs{
 		GroupName: boshsettings.VCAP_USERNAME,
 		BasePath:  boshsettings.VCAP_BASE_DIR,
-		Size:      "50M",
+		Size:      "fake-size",
 	})
 }
 

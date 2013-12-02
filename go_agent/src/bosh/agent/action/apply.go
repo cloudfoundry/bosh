@@ -1,6 +1,8 @@
 package action
 
 import (
+	apply_spec "bosh/agent/apply_spec"
+	bosherrors "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -34,9 +36,18 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 		return
 	}
 
-	err = a.platform.SetupLogrotate(boshsettings.VCAP_USERNAME, boshsettings.VCAP_BASE_DIR, "50M")
+	applySpec, err := apply_spec.NewApplySpecFromData(payload.Arguments[0])
 	if err != nil {
-		err = errors.New("Logrotate setup failed: " + err.Error())
+		return
+	}
+
+	err = a.platform.SetupLogrotate(
+		boshsettings.VCAP_USERNAME,
+		boshsettings.VCAP_BASE_DIR,
+		applySpec.MaxLogFileSize(),
+	)
+	if err != nil {
+		err = bosherrors.WrapError(err, "Logrotate setup failed")
 		return
 	}
 
