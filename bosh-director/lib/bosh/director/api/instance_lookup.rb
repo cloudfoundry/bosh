@@ -14,6 +14,9 @@ module Bosh::Director
       def by_attributes(deployment_name, job_name, job_index)
         deployment = DeploymentLookup.new.by_name(deployment_name)
 
+        # Postgres cannot coerce an empty string to integer, and fails on Models::Instance.find
+        job_index = nil if job_index.is_a?(String) && job_index.empty?
+
         filter = {
           deployment_id: deployment.id,
           job: job_name,

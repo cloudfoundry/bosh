@@ -172,5 +172,35 @@ module Bosh::Director
 
       job.perform
     end
+
+    describe '#process_vm' do
+      context 'when job index is an empty string' do
+        let(:filter_attributes) { { deployment_id: 1, job: 'fake job', index: '' } }
+
+        let(:vm) { instance_double('Bosh::Director::Models::Vm', agent_id: 'fake agent', cid: nil) }
+        let(:instance) { instance_double('Bosh::Director::Models::Instance', deployment: @deployment, resurrection_paused: true) }
+
+        it 'does not raise' do
+          Models::Instance.stub(:find).and_return(instance)
+          Models::Instance.stub(:find).with(filter_attributes).and_raise(PG::Error, 'ERROR: invalid input syntax for integer: ""')
+
+          agent = double('agent')
+          AgentClient.stub(:with_defaults).with('fake agent', timeout: 5).and_return(agent)
+
+          agent_state = { 'vm_cid' => 'fake vm',
+                          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+                          'agent_id' => 'fake agent',
+                          'index' => '',
+                          'job' => { 'name' => 'fake job' },
+          }
+
+          agent.should_receive(:get_state).and_return(agent_state)
+
+          job = Jobs::VmState.new(@deployment.id, 'full')
+
+          expect { job.process_vm(vm) }.to_not raise_error
+        end
+      end
+    end
   end
 end

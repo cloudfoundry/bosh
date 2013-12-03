@@ -4,17 +4,18 @@ $: << File.expand_path('..', __FILE__)
 require 'digest/sha1'
 require 'fileutils'
 require 'logger'
+require 'pg'
+require 'tempfile'
 require 'tmpdir'
 require 'zlib'
-require 'tempfile'
 
 require 'archive/tar/minitar'
-require 'rspec'
 require 'machinist/sequel'
+require 'rspec'
 require 'sham'
 require 'support/job_example_group'
-require 'support/task_helpers'
 require 'support/rspec_fire'
+require 'support/task_helpers'
 
 RSpec.configure do |config|
   config.include Bosh::Director::Test::TaskHelpers
