@@ -62,6 +62,8 @@ func (service asyncTaskService) FindTask(id string) (task Task, found bool) {
 }
 
 func (service asyncTaskService) processSemFuncs() {
+	defer boshlog.HandlePanic("Task Service Process Sem Funcs")
+
 	for {
 		do := <-service.taskSem
 		do()
@@ -69,6 +71,8 @@ func (service asyncTaskService) processSemFuncs() {
 }
 
 func (service asyncTaskService) processTasks() {
+	defer boshlog.HandlePanic("Task Service Process Tasks")
+
 	for {
 		task := <-service.taskChan
 

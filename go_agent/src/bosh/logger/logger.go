@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 )
 
 type LogLevel int
@@ -49,6 +50,28 @@ func Error(tag, msg string, args ...interface{}) {
 
 	msg = fmt.Sprintf("ERROR - %s", msg)
 	getErrLogger(tag).Printf(msg, args...)
+}
+
+func HandlePanic(tag string) {
+	panic := recover()
+
+	if panic != nil {
+		var msg string
+
+		switch obj := panic.(type) {
+		case string:
+			msg = obj
+		case fmt.Stringer:
+			msg = obj.String()
+		case error:
+			msg = obj.Error()
+		default:
+			msg = fmt.Sprintf("%#v", obj)
+		}
+
+		Error(tag, "Panic: %s\n********************\n%s\n********************", msg, debug.Stack())
+		os.Exit(2)
+	}
 }
 
 func resetLoggers() {
