@@ -94,7 +94,9 @@ func TestDecompressFileToDirReturnsError(t *testing.T) {
 	// propagates errors raised when untarring
 	err := dc.DecompressFileToDir(fixtureSrcTgz(t), nonExistentDstDir)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "could not chdir")
+
+	// path is in the error message
+	assert.Contains(t, err.Error(), nonExistentDstDir)
 }
 
 func createdTmpDir(t *testing.T, fs boshsys.FileSystem) (dstDir string) {
