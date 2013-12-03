@@ -1,4 +1,4 @@
-package apply_spec
+package applyspec
 
 import (
 	"github.com/stretchr/testify/assert"

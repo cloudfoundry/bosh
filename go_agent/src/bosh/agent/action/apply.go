@@ -1,7 +1,7 @@
 package action
 
 import (
-	apply_spec "bosh/agent/apply_spec"
+	boshspec "bosh/agent/applyspec"
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -37,7 +37,7 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 		return
 	}
 
-	applySpec, err := apply_spec.NewApplySpecFromData(payload.Arguments[0])
+	applySpec, err := boshspec.NewApplySpecFromData(payload.Arguments[0])
 	if err != nil {
 		return
 	}
