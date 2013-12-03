@@ -24,3 +24,7 @@ func (s *JobSpec) JobTemplateSpecsAsJobs() []Job {
 	}
 	return jobs
 }
+
+func (s *JobSpec) IsEmpty() bool {
+	return len(s.Name) == 0
+}

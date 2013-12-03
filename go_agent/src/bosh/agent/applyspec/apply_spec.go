@@ -51,6 +51,9 @@ func (s *ApplySpec) Jobs() []Job {
 	if len(s.JobSpec.JobTemplateSpecs) > 0 {
 		return s.JobSpec.JobTemplateSpecsAsJobs()
 	}
+	if s.JobSpec.IsEmpty() {
+		return []Job{}
+	}
 	return []Job{s.JobSpec.AsJob()}
 }
 

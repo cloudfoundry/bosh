@@ -103,6 +103,12 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 	}, spec.Jobs())
 }
 
+func TestJobsWhenNoJobsSpecified(t *testing.T) {
+	spec, err := NewApplySpecFromData(map[string]interface{}{})
+	assert.NoError(t, err)
+	assert.Equal(t, []Job{}, spec.Jobs())
+}
+
 func TestPackages(t *testing.T) {
 	spec, err := NewApplySpecFromData(
 		map[string]interface{}{
@@ -125,4 +131,10 @@ func TestPackages(t *testing.T) {
 			BlobstoreId: "fake-package1-blobstore-id",
 		},
 	}, spec.Packages())
+}
+
+func TestPackagesWhenNoPackagesSpecified(t *testing.T) {
+	spec, err := NewApplySpecFromData(map[string]interface{}{})
+	assert.NoError(t, err)
+	assert.Equal(t, []Package{}, spec.Packages())
 }
