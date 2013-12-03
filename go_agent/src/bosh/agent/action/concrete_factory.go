@@ -22,6 +22,7 @@ func NewFactory(settings boshsettings.Settings, platform boshplatform.Platform, 
 			"get_state":  newGetState(settings, fs),
 			"ssh":        newSsh(settings, platform),
 			"fetch_logs": newLogs(platform, blobstore),
+			"start": 	  newStart(),
 		},
 	}
 	return

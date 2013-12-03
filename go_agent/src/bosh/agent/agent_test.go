@@ -38,6 +38,11 @@ func TestRunHandlesPingMessage(t *testing.T) {
 	assertRequestIsProcessedSynchronously(t, req)
 }
 
+func TestRunHandlesStartMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "start", []byte("some payload"))
+	assertRequestIsProcessedSynchronously(t, req)
+}
+
 func TestRunHandlesGetTaskMessage(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me!", "get_task", []byte(`{"arguments":["57"]}`))
 	assertRequestIsProcessedSynchronously(t, req)

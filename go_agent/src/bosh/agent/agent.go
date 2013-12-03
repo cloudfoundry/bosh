@@ -62,7 +62,7 @@ type TaskValue struct {
 func (a agent) runMbusHandler(errChan chan error) {
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
 		switch req.Method {
-		case "get_task", "ping", "get_state", "ssh":
+		case "get_task", "ping", "get_state", "ssh", "start":
 			action := a.actionFactory.Create(req.Method)
 			value, err := action.Run(req.GetPayload())
 
