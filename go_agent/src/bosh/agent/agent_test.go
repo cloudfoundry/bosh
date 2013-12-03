@@ -100,6 +100,11 @@ func TestRunHandlesLogsMessage(t *testing.T) {
 	assertRequestIsProcessedAsynchronously(t, req)
 }
 
+func TestRunHandlesStopMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "stop", []byte("some payload"))
+	assertRequestIsProcessedAsynchronously(t, req)
+}
+
 func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) {
 	settings, handler, platform, taskService, actionFactory := getAgentDependencies()
 
