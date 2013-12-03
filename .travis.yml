@@ -2,9 +2,10 @@ script: 'bundle exec rake --trace $TASKS'
 
 # this is required by the go agent
 before_install: 'sudo apt-get update'
-install: 'sudo apt-get install dnsutils'
+install:
+  - 'sudo apt-get install dnsutils'
+  - 'bundle install --local --without development'
 
-bundler_args: '--local --without development'
 rvm:
   - ruby-1.9.3
   - ruby-2.0.0
