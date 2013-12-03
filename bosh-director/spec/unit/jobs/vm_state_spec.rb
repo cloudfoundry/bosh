@@ -20,11 +20,11 @@ module Bosh::Director
       Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
       agent = double('agent')
       AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
-      agent_state = {'vm_cid' => 'vm-1',
-                     'networks' => {'test' => {'ip' => '1.1.1.1'}},
-                     'agent_id' => 'agent-1',
-                     'job_state' => 'running',
-                     'resource_pool' => {'name' => 'test_resource_pool'}}
+      agent_state = { 'vm_cid' => 'vm-1',
+                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+                      'agent_id' => 'agent-1',
+                      'job_state' => 'running',
+                      'resource_pool' => { 'name' => 'test_resource_pool' } }
       agent.should_receive(:get_state).and_return(agent_state)
 
       @result_file.should_receive(:write) do |agent_status|
@@ -47,20 +47,20 @@ module Bosh::Director
       agent = double('agent')
       AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
 
-      agent_state = {'vm_cid' => 'vm-1',
-                     'networks' => {'test' => {'ip' => '1.1.1.1'}},
-                     'agent_id' => 'agent-1',
-                     'job_state' => 'running',
-                     'resource_pool' => {'name' => 'test_resource_pool'},
-                     'vitals' => {
-                       'load' => ['1', '5', '15'],
-                       'cpu' => {'user' => 'u', 'sys' => 's', 'wait' => 'w'},
-                       'mem' => {'percent' => 'p', 'kb' => 'k'},
-                       'swap' => {'percent' => 'p', 'kb' => 'k'},
-                       'disk' => {'system' => {'percent' => 'p'},
-                                  'ephemeral' => {'percent' => 'p'}
-                       }
-                     }
+      agent_state = { 'vm_cid' => 'vm-1',
+                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+                      'agent_id' => 'agent-1',
+                      'job_state' => 'running',
+                      'resource_pool' => { 'name' => 'test_resource_pool' },
+                      'vitals' => {
+                        'load' => ['1', '5', '15'],
+                        'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
+                        'mem' => { 'percent' => 'p', 'kb' => 'k' },
+                        'swap' => { 'percent' => 'p', 'kb' => 'k' },
+                        'disk' => { 'system' => { 'percent' => 'p' },
+                                    'ephemeral' => { 'percent' => 'p' }
+                        }
+                      }
       }
       agent.should_receive(:get_state).and_return(agent_state)
 
@@ -73,11 +73,11 @@ module Bosh::Director
         status['job_state'].should == 'running'
         status['resource_pool'].should == 'test_resource_pool'
         status['vitals']['load'].should == ['1', '5', '15']
-        status['vitals']['cpu'].should == {'user' => 'u', 'sys' => 's', 'wait' => 'w'}
-        status['vitals']['mem'].should == {'percent' => 'p', 'kb' => 'k'}
-        status['vitals']['swap'].should == {'percent' => 'p', 'kb' => 'k'}
-        status['vitals']['disk'].should == {'system' => {'percent' => 'p'},
-                                            'ephemeral' => {'percent' => 'p'}}
+        status['vitals']['cpu'].should == { 'user' => 'u', 'sys' => 's', 'wait' => 'w' }
+        status['vitals']['mem'].should == { 'percent' => 'p', 'kb' => 'k' }
+        status['vitals']['swap'].should == { 'percent' => 'p', 'kb' => 'k' }
+        status['vitals']['disk'].should == { 'system' => { 'percent' => 'p' },
+                                             'ephemeral' => { 'percent' => 'p' } }
       end
 
       job = Jobs::VmState.new(@deployment.id, 'full')
@@ -87,18 +87,18 @@ module Bosh::Director
     it 'should return DNS A records if they exist' do
       Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
       domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
-      Models::Dns::Record.make(domain: domain, 
+      Models::Dns::Record.make(domain: domain,
                                name: 'index.job.network.deployment.microbosh',
-                               type: 'A', 
-                               content: '1.1.1.1', 
+                               type: 'A',
+                               content: '1.1.1.1',
                                ttl: 14400)
       agent = double('agent')
       AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
-      agent_state = {'vm_cid' => 'vm-1',
-                     'networks' => {'test' => {'ip' => '1.1.1.1'}},
-                     'agent_id' => 'agent-1',
-                     'job_state' => 'running',
-                     'resource_pool' => {'name' => 'test_resource_pool'}}
+      agent_state = { 'vm_cid' => 'vm-1',
+                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+                      'agent_id' => 'agent-1',
+                      'job_state' => 'running',
+                      'resource_pool' => { 'name' => 'test_resource_pool' } }
       agent.should_receive(:get_state).and_return(agent_state)
 
       @result_file.should_receive(:write) do |agent_status|
@@ -144,22 +144,22 @@ module Bosh::Director
       agent = double('agent')
       AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
 
-      agent_state = {'vm_cid' => 'vm-1',
-                     'networks' => {'test' => {'ip' => '1.1.1.1'}},
-                     'agent_id' => 'agent-1',
-                     'index' => 0,
-                     'job' => {'name' => 'dea'},
-                     'job_state' => 'running',
-                     'resource_pool' => {'name' => 'test_resource_pool'},
-                     'vitals' => {
-                       'load' => ['1', '5', '15'],
-                       'cpu' => {'user' => 'u', 'sys' => 's', 'wait' => 'w'},
-                       'mem' => {'percent' => 'p', 'kb' => 'k'},
-                       'swap' => {'percent' => 'p', 'kb' => 'k'},
-                       'disk' => {'system' => {'percent' => 'p'},
-                                  'ephemeral' => {'percent' => 'p'}
-                       }
-                     }
+      agent_state = { 'vm_cid' => 'vm-1',
+                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+                      'agent_id' => 'agent-1',
+                      'index' => 0,
+                      'job' => { 'name' => 'dea' },
+                      'job_state' => 'running',
+                      'resource_pool' => { 'name' => 'test_resource_pool' },
+                      'vitals' => {
+                        'load' => ['1', '5', '15'],
+                        'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
+                        'mem' => { 'percent' => 'p', 'kb' => 'k' },
+                        'swap' => { 'percent' => 'p', 'kb' => 'k' },
+                        'disk' => { 'system' => { 'percent' => 'p' },
+                                    'ephemeral' => { 'percent' => 'p' }
+                        }
+                      }
       }
       agent.should_receive(:get_state).and_return(agent_state)
 
