@@ -102,3 +102,27 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 		},
 	}, spec.Jobs())
 }
+
+func TestPackages(t *testing.T) {
+	spec, err := NewApplySpecFromData(
+		map[string]interface{}{
+			"packages": []interface{}{
+				map[string]interface{}{
+					"name":         "fake-package1-name",
+					"version":      "fake-package1-version",
+					"sha1":         "fake-package1-sha1",
+					"blobstore_id": "fake-package1-blobstore-id",
+				},
+			},
+		},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, []Package{
+		Package{
+			Name:        "fake-package1-name",
+			Version:     "fake-package1-version",
+			Sha1:        "fake-package1-sha1",
+			BlobstoreId: "fake-package1-blobstore-id",
+		},
+	}, spec.Packages())
+}

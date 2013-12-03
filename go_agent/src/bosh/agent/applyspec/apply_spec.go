@@ -8,6 +8,7 @@ import (
 type ApplySpec struct {
 	PropertiesSpec PropertiesSpec `json:"properties"`
 	JobSpec        JobSpec        `json:"job"`
+	PackageSpecs   []PackageSpec  `json:"packages"`
 }
 
 // Currently uses json.Unmarshal to interpret data into structs.
@@ -51,6 +52,14 @@ func (s *ApplySpec) Jobs() []Job {
 		return s.JobSpec.JobTemplateSpecsAsJobs()
 	}
 	return []Job{s.JobSpec.AsJob()}
+}
+
+func (s *ApplySpec) Packages() []Package {
+	packages := make([]Package, 0)
+	for _, value := range s.PackageSpecs {
+		packages = append(packages, value.AsPackage())
+	}
+	return packages
 }
 
 type PropertiesSpec struct {
