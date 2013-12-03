@@ -3,7 +3,7 @@ package action
 import (
 	boshblobstore "bosh/blobstore"
 	bosherr "bosh/errors"
-	boshplatform "bosh/platform"
+	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
@@ -11,12 +11,12 @@ import (
 )
 
 type logsAction struct {
-	platform  boshplatform.Platform
-	blobstore boshblobstore.Blobstore
+	compressor boshdisk.Compressor
+	blobstore  boshblobstore.Blobstore
 }
 
-func newLogs(platform boshplatform.Platform, blobstore boshblobstore.Blobstore) (action logsAction) {
-	action.platform = platform
+func newLogs(compressor boshdisk.Compressor, blobstore boshblobstore.Blobstore) (action logsAction) {
+	action.compressor = compressor
 	action.blobstore = blobstore
 	return
 }
@@ -33,7 +33,7 @@ func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error)
 	}
 
 	logsDir := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
-	tarball, err := action.platform.CompressFilesInDir(logsDir, filters)
+	tarball, err := action.compressor.CompressFilesInDir(logsDir, filters)
 	if err != nil {
 		err = bosherr.WrapError(err, "Making logs tarball")
 		return

@@ -25,7 +25,9 @@ func testLogs(t *testing.T, payload string, expectedFilters []string) {
 	var err error
 
 	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	platform.CompressFilesInDirTarball, err = os.Open("logs_test.go")
+	compressor := platform.FakeCompressor
+
+	compressor.CompressFilesInDirTarball, err = os.Open("logs_test.go")
 	blobstore.CreateBlobId = "my-blob-id"
 	assert.NoError(t, err)
 
@@ -34,11 +36,12 @@ func testLogs(t *testing.T, payload string, expectedFilters []string) {
 	logs, err := logsAction.Run([]byte(payload))
 	assert.NoError(t, err)
 
-	assert.Equal(t, filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log"), platform.CompressFilesInDirDir)
-	assert.Equal(t, expectedFilters, platform.CompressFilesInDirFilters)
+	expectedPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
+	assert.Equal(t, expectedPath, compressor.CompressFilesInDirDir)
+	assert.Equal(t, expectedFilters, compressor.CompressFilesInDirFilters)
 
 	// The log file is used when calling blobstore.Create
-	assert.Equal(t, platform.CompressFilesInDirTarball, blobstore.CreateFile)
+	assert.Equal(t, compressor.CompressFilesInDirTarball, blobstore.CreateFile)
 
 	boshassert.MatchesJsonString(t, logs, `{"blobstore_id":"my-blob-id"}`)
 }

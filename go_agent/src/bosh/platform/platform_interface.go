@@ -1,16 +1,17 @@
 package platform
 
 import (
+	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
-	"os"
 )
 
 type Platform interface {
 	GetFs() (fs boshsys.FileSystem)
 	GetRunner() (runner boshsys.CmdRunner)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
+	GetCompressor() (compressor boshdisk.Compressor)
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)
 	AddUserToGroups(username string, groups []string) (err error)
@@ -23,5 +24,4 @@ type Platform interface {
 	SetTimeWithNtpServers(servers []string, serversFilePath string) (err error)
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
 	StartMonit() (err error)
-	CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error)
 }

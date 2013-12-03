@@ -56,6 +56,10 @@ func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }
 
+func (p ubuntu) GetCompressor() (runner boshdisk.Compressor) {
+	return p.compressor
+}
+
 func (p ubuntu) SetupRuntimeConfiguration() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
 	if err != nil {
@@ -390,100 +394,6 @@ func (p ubuntu) StartMonit() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sv")
-	}
-	return
-}
-
-func (p ubuntu) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
-	tmpDir := p.fs.TempDir()
-	tgzDir := filepath.Join(tmpDir, "BoshAgentTarball")
-	err = p.fs.MkdirAll(tgzDir, os.ModePerm)
-	if err != nil {
-		err = bosherr.WrapError(err, "Making tarball dir")
-		return
-	}
-	defer p.fs.RemoveAll(tgzDir)
-
-	filesToCopy, err := p.findFilesMatchingFilters(dir, filters)
-	if err != nil {
-		err = bosherr.WrapError(err, "Finding files to compress")
-		return
-	}
-
-	for _, file := range filesToCopy {
-		file = filepath.Clean(file)
-		if !strings.HasPrefix(file, dir) {
-			continue
-		}
-
-		relativePath := strings.Replace(file, dir, "", 1)
-		dst := filepath.Join(tgzDir, relativePath)
-
-		err = p.fs.MkdirAll(filepath.Dir(dst), os.ModePerm)
-		if err != nil {
-			err = bosherr.WrapError(err, "Making directory for file")
-			return
-		}
-
-		// Golang does not have a way of copying files and preserving file info...
-		_, _, err = p.cmdRunner.RunCommand("cp", "-p", file, dst)
-		if err != nil {
-			err = bosherr.WrapError(err, "Shelling out to cp")
-			return
-		}
-	}
-
-	tarballPath := filepath.Join(tmpDir, "files.tgz")
-	os.Chdir(tgzDir)
-	_, _, err = p.cmdRunner.RunCommand("tar", "czf", tarballPath, ".")
-	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to tar")
-		return
-	}
-
-	tarball, err = p.fs.Open(tarballPath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Opening tarball")
-	}
-	return
-}
-
-func (p ubuntu) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
-	for _, filter := range filters {
-		var newFiles []string
-
-		newFiles, err = p.findFilesMatchingFilter(filepath.Join(dir, filter))
-		if err != nil {
-			err = bosherr.WrapError(err, "Finding files matching filter: %s", filter)
-			return
-		}
-
-		files = append(files, newFiles...)
-	}
-
-	return
-}
-
-func (p ubuntu) findFilesMatchingFilter(filter string) (files []string, err error) {
-	files, err = filepath.Glob(filter)
-	if err != nil {
-		err = bosherr.WrapError(err, "Globing filter %s", filter)
-		return
-	}
-
-	// Ruby Dir.glob will include *.log when looking for **/*.log
-	// Golang implementation will not do it automatically
-	if strings.Contains(filter, "**/*") {
-		var extraFiles []string
-
-		updatedFilter := strings.Replace(filter, "**/*", "*", 1)
-		extraFiles, err = p.findFilesMatchingFilter(updatedFilter)
-		if err != nil {
-			err = bosherr.WrapError(err, "Recursing into filter %s", updatedFilter)
-			return
-		}
-
-		files = append(files, extraFiles...)
 	}
 	return
 }

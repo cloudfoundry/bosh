@@ -1,15 +1,15 @@
 package platform
 
 import (
+	boshdisk "bosh/platform/disk"
+	fakedisk "bosh/platform/disk/fakes"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"os"
 )
 
-type dummyPlatform struct {
-}
+type dummyPlatform struct{}
 
 func newDummyPlatform() (p dummyPlatform) {
 	return
@@ -25,6 +25,10 @@ func (p dummyPlatform) GetRunner() (runner boshsys.CmdRunner) {
 
 func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
 	return boshstats.NewDummyStatsCollector()
+}
+
+func (p dummyPlatform) GetCompressor() (compressor boshdisk.Compressor) {
+	return &fakedisk.FakeCompressor{}
 }
 
 func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
@@ -72,9 +76,5 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 }
 
 func (p dummyPlatform) StartMonit() (err error) {
-	return
-}
-
-func (p dummyPlatform) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
 	return
 }

@@ -1,19 +1,21 @@
 package fakes
 
 import (
+	boshdisk "bosh/platform/disk"
+	fakedisk "bosh/platform/disk/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"os"
 )
 
 type FakePlatform struct {
-	Fs     *fakesys.FakeFileSystem
-	Runner *fakesys.FakeCmdRunner
+	FakeStatsCollector *fakestats.FakeStatsCollector
+	Fs                 *fakesys.FakeFileSystem
+	Runner             *fakesys.FakeCmdRunner
+	FakeCompressor     *fakedisk.FakeCompressor
 
-	FakeStatsCollector                  *fakestats.FakeStatsCollector
 	SetupRuntimeConfigurationWasInvoked bool
 	CreateUserUsername                  string
 	CreateUserPassword                  string
@@ -32,9 +34,6 @@ type FakePlatform struct {
 	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
-	CompressFilesInDirTarball            *os.File
-	CompressFilesInDirDir                string
-	CompressFilesInDirFilters            []string
 }
 
 type SetupLogrotateArgs struct {
@@ -51,6 +50,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.UserPasswords = make(map[string]string)
 	platform.Fs = &fakesys.FakeFileSystem{}
 	platform.Runner = &fakesys.FakeCmdRunner{}
+	platform.FakeCompressor = &fakedisk.FakeCompressor{}
 	return
 }
 
@@ -64,6 +64,10 @@ func (p *FakePlatform) GetRunner() (runner boshsys.CmdRunner) {
 
 func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
 	return p.FakeStatsCollector
+}
+
+func (p *FakePlatform) GetCompressor() (compressor boshdisk.Compressor) {
+	return p.FakeCompressor
 }
 
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
@@ -132,13 +136,5 @@ func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
 	p.SetTimeWithNtpServersServers = servers
 	p.SetTimeWithNtpServersServersFilePath = serversFilePath
-	return
-}
-
-func (p *FakePlatform) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
-	p.CompressFilesInDirDir = dir
-	p.CompressFilesInDirFilters = filters
-
-	tarball = p.CompressFilesInDirTarball
 	return
 }

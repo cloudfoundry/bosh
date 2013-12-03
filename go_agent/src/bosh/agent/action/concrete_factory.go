@@ -11,8 +11,15 @@ type concreteFactory struct {
 	availableActions map[string]Action
 }
 
-func NewFactory(settings boshsettings.Settings, platform boshplatform.Platform, blobstore boshblobstore.Blobstore, taskService boshtask.Service) (factory Factory) {
+func NewFactory(
+	settings boshsettings.Settings,
+	platform boshplatform.Platform,
+	blobstore boshblobstore.Blobstore,
+	taskService boshtask.Service,
+) (factory Factory) {
+
 	fs := platform.GetFs()
+	compressor := platform.GetCompressor()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -21,7 +28,7 @@ func NewFactory(settings boshsettings.Settings, platform boshplatform.Platform, 
 			"get_task":   newGetTask(taskService),
 			"get_state":  newGetState(settings, fs),
 			"ssh":        newSsh(settings, platform),
-			"fetch_logs": newLogs(platform, blobstore),
+			"fetch_logs": newLogs(compressor, blobstore),
 			"start":      newStart(),
 			"stop":       newStop(),
 			"drain":      newDrain(),

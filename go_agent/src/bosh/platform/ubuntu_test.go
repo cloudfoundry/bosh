@@ -187,7 +187,7 @@ func testUbuntuSetupDhcp(
 	fakeFs *fakesys.FakeFileSystem,
 	fakeCmdRunner *fakesys.FakeCmdRunner,
 	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor fakedisk.FakeCompressor,
+	fakeCompressor *fakedisk.FakeCompressor,
 ) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.NetworkSettings{
@@ -412,7 +412,7 @@ func getUbuntuDependencies() (
 	fs *fakesys.FakeFileSystem,
 	cmdRunner *fakesys.FakeCmdRunner,
 	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor fakedisk.FakeCompressor,
+	fakeCompressor *fakedisk.FakeCompressor,
 ) {
 	collector = &fakestats.FakeStatsCollector{}
 	fs = &fakesys.FakeFileSystem{}
