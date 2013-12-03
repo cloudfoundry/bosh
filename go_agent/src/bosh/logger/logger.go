@@ -13,46 +13,50 @@ const (
 	LEVEL_DEBUG LogLevel = 0
 	LEVEL_INFO  LogLevel = 1
 	LEVEL_ERROR LogLevel = 2
+	LEVEL_NONE  LogLevel = 99
 )
 
-var (
-	Level     LogLevel
-	outLogger *log.Logger
-	errLogger *log.Logger
-)
-
-func init() {
-	resetLoggers()
+type Logger struct {
+	level LogLevel
+	out   *log.Logger
+	err   *log.Logger
 }
 
-func Debug(tag, msg string, args ...interface{}) {
-	if Level > LEVEL_DEBUG {
+func NewLogger(level LogLevel) (l Logger) {
+	l.level = level
+	l.out = log.New(os.Stdout, "", log.LstdFlags)
+	l.err = log.New(os.Stderr, "", log.LstdFlags)
+	return
+}
+
+func (l Logger) Debug(tag, msg string, args ...interface{}) {
+	if l.level > LEVEL_DEBUG {
 		return
 	}
 
 	msg = fmt.Sprintf("DEBUG - %s", msg)
-	getOutLogger(tag).Printf(msg, args...)
+	l.getOutLogger(tag).Printf(msg, args...)
 }
 
-func Info(tag, msg string, args ...interface{}) {
-	if Level > LEVEL_INFO {
+func (l Logger) Info(tag, msg string, args ...interface{}) {
+	if l.level > LEVEL_INFO {
 		return
 	}
 
 	msg = fmt.Sprintf("INFO - %s", msg)
-	getOutLogger(tag).Printf(msg, args...)
+	l.getOutLogger(tag).Printf(msg, args...)
 }
 
-func Error(tag, msg string, args ...interface{}) {
-	if Level > LEVEL_ERROR {
+func (l Logger) Error(tag, msg string, args ...interface{}) {
+	if l.level > LEVEL_ERROR {
 		return
 	}
 
 	msg = fmt.Sprintf("ERROR - %s", msg)
-	getErrLogger(tag).Printf(msg, args...)
+	l.getErrLogger(tag).Printf(msg, args...)
 }
 
-func HandlePanic(tag string) {
+func (l Logger) HandlePanic(tag string) {
 	panic := recover()
 
 	if panic != nil {
@@ -69,25 +73,20 @@ func HandlePanic(tag string) {
 			msg = fmt.Sprintf("%#v", obj)
 		}
 
-		Error(tag, "Panic: %s\n********************\n%s\n********************", msg, debug.Stack())
+		l.Error(tag, "Panic: %s\n********************\n%s\n********************", msg, debug.Stack())
 		os.Exit(2)
 	}
 }
 
-func resetLoggers() {
-	outLogger = log.New(os.Stdout, "", log.LstdFlags)
-	errLogger = log.New(os.Stderr, "", log.LstdFlags)
+func (l Logger) getOutLogger(tag string) (logger *log.Logger) {
+	return l.updateLogger(l.out, tag)
 }
 
-func getOutLogger(tag string) (logger *log.Logger) {
-	return updateLogger(outLogger, tag)
+func (l Logger) getErrLogger(tag string) (logger *log.Logger) {
+	return l.updateLogger(l.err, tag)
 }
 
-func getErrLogger(tag string) (logger *log.Logger) {
-	return updateLogger(errLogger, tag)
-}
-
-func updateLogger(logger *log.Logger, tag string) *log.Logger {
+func (l Logger) updateLogger(logger *log.Logger, tag string) *log.Logger {
 	prefix := fmt.Sprintf("[%s] ", tag)
 	logger.SetPrefix(prefix)
 	return logger

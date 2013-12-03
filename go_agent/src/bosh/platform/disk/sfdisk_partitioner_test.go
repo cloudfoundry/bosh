@@ -92,8 +92,8 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 
 func createSfdiskPartitionerForTests(cmdResults map[string][]string) (cmdRunner *fakesys.FakeCmdRunner, partitioner sfdiskPartitioner) {
 	cmdRunner = &fakesys.FakeCmdRunner{CommandResults: cmdResults}
-	partitioner = newSfdiskPartitioner(cmdRunner)
-	boshlog.Level = 99
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	partitioner = newSfdiskPartitioner(logger, cmdRunner)
 	return
 }
 

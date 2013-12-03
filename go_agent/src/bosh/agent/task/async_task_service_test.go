@@ -1,6 +1,7 @@
 package task
 
 import (
+	boshlog "bosh/logger"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func TestRunningAFailingTask(t *testing.T) {
 }
 
 func testRunningTask(t *testing.T, expectedState TaskState, withValue interface{}, withErr error) {
-	service := NewAsyncTaskService()
+	service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
 
 	taskIsFinished := false
 
@@ -55,7 +56,7 @@ func TestStartTaskGeneratesTaskId(t *testing.T) {
 		return
 	}
 
-	service := NewAsyncTaskService()
+	service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
 
 	for expectedTaskId := 1; expectedTaskId < 20; expectedTaskId++ {
 		task := service.StartTask(taskFunc)
@@ -69,7 +70,7 @@ func TestProcessingManyTasksSimultaneously(t *testing.T) {
 		return
 	}
 
-	service := NewAsyncTaskService()
+	service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
 	ids := []string{}
 
 	for id := 1; id < 200; id++ {

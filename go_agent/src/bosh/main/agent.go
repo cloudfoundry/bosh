@@ -7,13 +7,14 @@ import (
 )
 
 func main() {
-	defer boshlog.HandlePanic("Main")
+	logger := boshlog.NewLogger(boshlog.LEVEL_DEBUG)
+	defer logger.HandlePanic("Main")
 
-	app := boshapp.New()
+	app := boshapp.New(logger)
 	err := app.Run(os.Args)
 
 	if err != nil {
-		boshlog.Error("Main", err.Error())
+		logger.Error("Main", err.Error())
 		os.Exit(1)
 	}
 }

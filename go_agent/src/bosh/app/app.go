@@ -16,6 +16,7 @@ import (
 )
 
 type app struct {
+	logger boshlog.Logger
 }
 
 type options struct {
@@ -23,26 +24,25 @@ type options struct {
 	PlatformName       string
 }
 
-func New() (app app) {
+func New(logger boshlog.Logger) (app app) {
+	app.logger = logger
 	return
 }
 
 func (app app) Run(args []string) (err error) {
-	boshlog.Level = boshlog.LEVEL_DEBUG
-
 	opts, err := parseOptions(args)
 	if err != nil {
 		return
 	}
 
-	infProvider := boshinf.NewProvider()
+	infProvider := boshinf.NewProvider(app.logger)
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting infrastructure")
 		return
 	}
 
-	platformProvider := boshplatform.NewProvider()
+	platformProvider := boshplatform.NewProvider(app.logger)
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting platform")
@@ -70,10 +70,10 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	taskService := boshtask.NewAsyncTaskService()
+	taskService := boshtask.NewAsyncTaskService(app.logger)
 	actionFactory := boshaction.NewFactory(settings, platform, blobstore, taskService)
 
-	agent := boshagent.New(settings, mbusHandler, platform, taskService, actionFactory)
+	agent := boshagent.New(settings, app.logger, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")

@@ -9,24 +9,25 @@ import (
 )
 
 type execCmdRunner struct {
+	logger boshlog.Logger
 }
 
-func NewExecCmdRunner() (cmRunner CmdRunner) {
-	return execCmdRunner{}
+func NewExecCmdRunner(logger boshlog.Logger) (cmRunner CmdRunner) {
+	return execCmdRunner{logger}
 }
 
 func (run execCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
-	return runCmd(cmdName, args, nil)
+	return run.runCmd(cmdName, args, nil)
 }
 
 func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (stdout, stderr string, err error) {
-	return runCmd(cmdName, args, func(cmd *exec.Cmd) {
+	return run.runCmd(cmdName, args, func(cmd *exec.Cmd) {
 		cmd.Stdin = strings.NewReader(input)
 	})
 }
 
-func runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, stderr string, err error) {
-	boshlog.Debug("Cmd Runner", "Running command: %s %s", cmdName, strings.Join(args, " "))
+func (run execCmdRunner) runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, stderr string, err error) {
+	run.logger.Debug("Cmd Runner", "Running command: %s %s", cmdName, strings.Join(args, " "))
 
 	cmd := exec.Command(cmdName, args...)
 	cmdString := strings.Join(append([]string{cmdName}, args...), " ")
@@ -50,9 +51,9 @@ func runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, std
 	stdout = string(stdoutWriter.Bytes())
 	stderr = string(stderrWriter.Bytes())
 
-	boshlog.Debug("Cmd Runner", "Stdout: %s", stdout)
-	boshlog.Debug("Cmd Runner", "Stderr: %s", stderr)
-	boshlog.Debug("Cmd Runner", "Successful: %t", err == nil)
+	run.logger.Debug("Cmd Runner", "Stdout: %s", stdout)
+	run.logger.Debug("Cmd Runner", "Stderr: %s", stderr)
+	run.logger.Debug("Cmd Runner", "Successful: %t", err == nil)
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Running command: '%s', stdout: '%s', stderr: '%s'", cmdString, stdout, stderr)

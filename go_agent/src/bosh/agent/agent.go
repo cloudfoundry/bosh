@@ -13,6 +13,7 @@ import (
 
 type agent struct {
 	settings          boshsettings.Settings
+	logger            boshlog.Logger
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
 	taskService       boshtask.Service
@@ -21,12 +22,14 @@ type agent struct {
 }
 
 func New(settings boshsettings.Settings,
+	logger boshlog.Logger,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,
 	taskService boshtask.Service,
 	actionFactory boshaction.Factory) (a agent) {
 
 	a.settings = settings
+	a.logger = logger
 	a.mbusHandler = mbusHandler
 	a.platform = platform
 	a.taskService = taskService
@@ -61,7 +64,7 @@ type TaskValue struct {
 }
 
 func (a agent) runMbusHandler(errChan chan error) {
-	defer boshlog.HandlePanic("Agent Message Bus Handler")
+	defer a.logger.HandlePanic("Agent Message Bus Handler")
 
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
 		switch req.Method {
@@ -72,7 +75,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 			if err != nil {
 				err = bosherr.WrapError(err, "Action Failed %s", req.Method)
 				resp = boshmbus.NewExceptionResponse(err.Error())
-				boshlog.Error("Agent", err.Error())
+				a.logger.Error("Agent", err.Error())
 				return
 			}
 			resp = boshmbus.NewValueResponse(value)
@@ -89,7 +92,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 			})
 		default:
 			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
-			boshlog.Error("Agent", "Unknown action %s", req.Method)
+			a.logger.Error("Agent", "Unknown action %s", req.Method)
 		}
 
 		return
@@ -104,7 +107,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 }
 
 func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {
-	defer boshlog.HandlePanic("Agent Generate Heartbeats")
+	defer a.logger.HandlePanic("Agent Generate Heartbeats")
 
 	tickChan := time.Tick(a.heartbeatInterval)
 	heartbeatChan <- getHeartbeat(a.settings, a.platform.GetStatsCollector())
@@ -117,7 +120,7 @@ func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {
 }
 
 func (a agent) sendHeartbeats(heartbeatChan chan boshmbus.Heartbeat, errChan chan error) {
-	defer boshlog.HandlePanic("Agent Send Heartbeats")
+	defer a.logger.HandlePanic("Agent Send Heartbeats")
 
 	err := a.mbusHandler.SendPeriodicHeartbeat(heartbeatChan)
 	if err != nil {
