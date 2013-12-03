@@ -5,6 +5,16 @@ namespace :ci do
 
     desc 'Meta task to run spec:integration'
     task integration: %w(spec:integration)
+
+    desc 'Task that installs a go binary locally and runs go agent tests'
+    task :go_agent_tests do
+      mkdir = 'mkdir -p tmp'
+      curl = 'curl https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz > tmp/go.tgz'
+      untar = 'tar xzf tmp/go.tgz -C tmp'
+      go_tests = 'PATH=`pwd`/tmp/go/bin:$PATH go_agent/bin/test'
+
+      exec "#{mkdir} && #{curl} && #{untar} && #{go_tests}"
+    end
   end
 
   desc 'Publish CI pipeline gems to S3'
