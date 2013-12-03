@@ -21,7 +21,7 @@ module Bosh::Dev
         download_adapter.stub(:download)
         shell.stub(:run)
         patch_uri = 'http://www.example.com/tmp/build_patches/build_number.patch'
-        Bosh::Dev::UriProvider.stub(:release_patches_uri).with('tmp/build_patches', "#{build_number}-final-release.patch").and_return(patch_uri)
+        Bosh::Dev::UriProvider.stub(:release_patches_uri).with('', "#{build_number}-final-release.patch").and_return(patch_uri)
         download_adapter.should_receive(:download).with(patch_uri, patch_file.path)
 
         release_changes.promote

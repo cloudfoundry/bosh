@@ -9,7 +9,7 @@ module Bosh::Dev
     end
 
     def promote
-      patch_uri = Bosh::Dev::UriProvider.release_patches_uri('tmp/build_patches', "#{@build_number}-final-release.patch")
+      patch_uri = Bosh::Dev::UriProvider.release_patches_uri('', "#{@build_number}-final-release.patch")
       patch_file = Tempfile.new('1234-final-release')
       @download_adapter.download(patch_uri, patch_file.path)
 
