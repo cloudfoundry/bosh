@@ -1,8 +1,11 @@
 require 'logger'
+require 'bosh/core/shell'
 require 'bosh/dev/build'
+require 'bosh/dev/download_adapter'
 require 'bosh/dev/git_promoter'
 require 'bosh/dev/git_tagger'
-require 'bosh/dev/release_change_stager'
+require 'bosh/dev/git_promoter'
+require 'bosh/dev/release_change_promoter'
 
 module Bosh::Dev
   class Promoter
@@ -35,7 +38,26 @@ module Bosh::Dev
 
         tagger = Bosh::Dev::GitTagger.new(@logger)
         tagger.tag_and_push(@candidate_sha, @candidate_build_number)
+
+        # we actually push commits after the tagging in order to prevent untested code from
+        # leaking into the tag
+        commit_final_release
       end
+    end
+
+    private
+
+    def commit_final_release
+      shell = Bosh::Core::Shell.new
+      download_adapter = DownloadAdapter.new(@logger)
+
+      shell.run('git pull')
+
+      release_change_promoter = ReleaseChangePromoter.new(@candidate_build_number, download_adapter)
+      release_change_promoter.promote
+
+      # assume we are pushing to the 'develop' branch as we only have the concept of a candidate SHA
+      shell.run('git push origin develop')
     end
   end
 end
