@@ -1,0 +1,17 @@
+-------- @callgraph callgraph --------
+
+Below is a call graph of the entire program.
+The numbered nodes form a spanning tree.
+Non-numbered nodes indicate back- or cross-edges to the node whose
+ number follows in parentheses.
+
+0	<root>
+1	    main.init
+2	    main.main
+3	        main.call
+4	            main.A
+5	            main.B
+6	        main.call2
+7	            func@31.8
+8	        main.nop
+

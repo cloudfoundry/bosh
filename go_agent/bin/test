@@ -11,7 +11,7 @@ $(dirname $0)/go test -i bosh/...
 let "result+=$?"
 
 echo -e "\n Testing packages:"
-$(dirname $0)/go test bosh/... -parallel 4$@
+$(dirname $0)/go test bosh/... -parallel 4 $@
 let "result+=$?"
 
 echo -e "\n Vetting packages for potential issues..."
