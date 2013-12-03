@@ -13,7 +13,7 @@ type provider struct {
 }
 
 func NewProvider(logger boshlog.Logger) (p provider) {
-	fs := boshsys.NewOsFileSystem()
+	fs := boshsys.NewOsFileSystem(logger)
 
 	// There is a reason the runner is not injected.
 	// Other entities should not use a runner, they should go through the platform

@@ -124,7 +124,9 @@ func fixtureSrcTgz(t *testing.T) (srcTgz *os.File) {
 }
 
 func getCompressorDependencies() (fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner) {
-	fs = boshsys.NewOsFileSystem()
-	cmdRunner = boshsys.NewExecCmdRunner(boshlog.NewLogger(boshlog.LEVEL_NONE))
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+
+	fs = boshsys.NewOsFileSystem(logger)
+	cmdRunner = boshsys.NewExecCmdRunner(logger)
 	return
 }

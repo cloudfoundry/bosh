@@ -2,6 +2,7 @@ package system
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	"io/ioutil"
 	"os"
 	osuser "os/user"
@@ -10,27 +11,39 @@ import (
 )
 
 type osFileSystem struct {
+	logger boshlog.Logger
+	logTag string
 }
 
-func NewOsFileSystem() (fs FileSystem) {
-	return osFileSystem{}
+func NewOsFileSystem(logger boshlog.Logger) (fs FileSystem) {
+	return osFileSystem{
+		logger: logger,
+		logTag: "File System",
+	}
 }
 
 func (fs osFileSystem) HomeDir(username string) (homeDir string, err error) {
+	fs.logger.Debug(fs.logTag, "Getting HomeDir for %s", username)
+
 	user, err := osuser.Lookup(username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking up user %s", username)
 		return
 	}
 	homeDir = user.HomeDir
+
+	fs.logger.Debug(fs.logTag, "HomeDir is %s", homeDir)
 	return
 }
 
 func (fs osFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
+	fs.logger.Debug(fs.logTag, "Making dir %s with perm %d", path, perm)
 	return os.MkdirAll(path, perm)
 }
 
 func (fs osFileSystem) Chown(path, username string) (err error) {
+	fs.logger.Debug(fs.logTag, "Chown %s to user %s", path, username)
+
 	user, err := osuser.Lookup(username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking up user %s", username)
@@ -58,10 +71,13 @@ func (fs osFileSystem) Chown(path, username string) (err error) {
 }
 
 func (fs osFileSystem) Chmod(path string, perm os.FileMode) (err error) {
+	fs.logger.Debug(fs.logTag, "Chmod %s to %d", path, perm)
 	return os.Chmod(path, perm)
 }
 
 func (fs osFileSystem) WriteToFile(path, content string) (written bool, err error) {
+	fs.logger.Debug(fs.logTag, "Writing to file %s\n********************\n%s\n********************", path, content)
+
 	if fs.filesAreIdentical(content, path) {
 		return
 	}
@@ -90,6 +106,8 @@ func (fs osFileSystem) WriteToFile(path, content string) (written bool, err erro
 }
 
 func (fs osFileSystem) ReadFile(path string) (content string, err error) {
+	fs.logger.Debug(fs.logTag, "Reading file %s", path)
+
 	file, err := os.Open(path)
 	if err != nil {
 		err = bosherr.WrapError(err, "Opening file %s", path)
@@ -104,10 +122,14 @@ func (fs osFileSystem) ReadFile(path string) (content string, err error) {
 	}
 
 	content = string(bytes)
+
+	fs.logger.Debug(fs.logTag, "Read content:\n********************\n%s\n********************", content)
 	return
 }
 
 func (fs osFileSystem) FileExists(path string) bool {
+	fs.logger.Debug(fs.logTag, "Checking if file exists %s", path)
+
 	_, err := os.Stat(path)
 	if err != nil {
 		return !os.IsNotExist(err)
@@ -116,6 +138,8 @@ func (fs osFileSystem) FileExists(path string) bool {
 }
 
 func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
+	fs.logger.Debug(fs.logTag, "Symlinking oldPath %s with newPath %s", oldPath, newPath)
+
 	actualOldPath, err := filepath.EvalSymlinks(oldPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Evaluating symlinks for %s", oldPath)
@@ -136,14 +160,17 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 }
 
 func (fs osFileSystem) TempDir() (tmpDir string) {
+	fs.logger.Debug(fs.logTag, "Getting temp dir")
 	return os.TempDir()
 }
 
 func (fs osFileSystem) RemoveAll(fileOrDir string) {
+	fs.logger.Debug(fs.logTag, "Remove all %s", fileOrDir)
 	os.RemoveAll(fileOrDir)
 }
 
 func (fs osFileSystem) Open(path string) (file *os.File, err error) {
+	fs.logger.Debug(fs.logTag, "Open %s", path)
 	return os.Open(path)
 }
 
