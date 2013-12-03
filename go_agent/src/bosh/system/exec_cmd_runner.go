@@ -2,6 +2,7 @@ package system
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	"bytes"
 	"os/exec"
 	"strings"
@@ -25,6 +26,8 @@ func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...stri
 }
 
 func runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, stderr string, err error) {
+	boshlog.Debug("Cmd Runner", "Running command: %s %s", cmdName, strings.Join(args, " "))
+
 	cmd := exec.Command(cmdName, args...)
 	cmdString := strings.Join(append([]string{cmdName}, args...), " ")
 
@@ -46,6 +49,11 @@ func runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, std
 	err = cmd.Wait()
 	stdout = string(stdoutWriter.Bytes())
 	stderr = string(stderrWriter.Bytes())
+
+	boshlog.Debug("Cmd Runner", "Stdout: %s", stdout)
+	boshlog.Debug("Cmd Runner", "Stderr: %s", stderr)
+	boshlog.Debug("Cmd Runner", "Successful: %t", err == nil)
+
 	if err != nil {
 		err = bosherr.WrapError(err, "Running command: '%s', stdout: '%s', stderr: '%s'", cmdString, stdout, stderr)
 	}

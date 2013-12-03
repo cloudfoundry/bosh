@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	"bytes"
 	"errors"
 	"fmt"
@@ -53,6 +54,7 @@ func lookupHostWithDnsServer(dnsServer string, host string) (ipString string, er
 }
 
 func runCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
+	boshlog.Debug("Dig Dns Resolver", "Running command: %s %s", cmdName, strings.Join(args, " "))
 	cmd := exec.Command(cmdName, args...)
 
 	stdoutWriter := bytes.NewBufferString("")
@@ -67,11 +69,15 @@ func runCommand(cmdName string, args ...string) (stdout, stderr string, err erro
 	}
 
 	err = cmd.Wait()
-	if err != nil {
-		err = bosherr.WrapError(err, "Waiting for dig command")
-		return
-	}
 	stdout = string(stdoutWriter.Bytes())
 	stderr = string(stderrWriter.Bytes())
+
+	boshlog.Debug("Cmd Runner", "Stdout: %s", stdout)
+	boshlog.Debug("Cmd Runner", "Stderr: %s", stderr)
+	boshlog.Debug("Cmd Runner", "Successful: %t", err == nil)
+
+	if err != nil {
+		err = bosherr.WrapError(err, "Waiting for dig command")
+	}
 	return
 }
