@@ -1,11 +1,10 @@
 package disk
 
 import (
+	boshlog "bosh/logger"
 	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"log"
 	"testing"
 )
 
@@ -94,7 +93,7 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 func createSfdiskPartitionerForTests(cmdResults map[string][]string) (cmdRunner *fakesys.FakeCmdRunner, partitioner sfdiskPartitioner) {
 	cmdRunner = &fakesys.FakeCmdRunner{CommandResults: cmdResults}
 	partitioner = newSfdiskPartitioner(cmdRunner)
-	partitioner.logger = log.New(ioutil.Discard, "", 0)
+	boshlog.Level = 99
 	return
 }
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	boshapp "bosh/app"
-	"fmt"
+	"bosh/logger"
 	"os"
 )
 
@@ -11,7 +11,7 @@ func main() {
 	err := app.Run(os.Args)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
+		logger.Error("Main", err.Error())
 		os.Exit(1)
 	}
 }

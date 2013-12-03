@@ -8,6 +8,7 @@ import (
 	boshboot "bosh/bootstrap"
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
+	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
 	"flag"
@@ -27,6 +28,8 @@ func New() (app app) {
 }
 
 func (app app) Run(args []string) (err error) {
+	boshlog.Level = boshlog.LEVEL_DEBUG
+
 	opts, err := parseOptions(args)
 	if err != nil {
 		return

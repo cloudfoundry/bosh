@@ -4,6 +4,7 @@ import (
 	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -69,6 +70,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 			if err != nil {
 				err = bosherr.WrapError(err, "Action Failed %s", req.Method)
 				resp = boshmbus.NewExceptionResponse(err.Error())
+				boshlog.Error("Agent", err.Error())
 				return
 			}
 			resp = boshmbus.NewValueResponse(value)
@@ -85,6 +87,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 			})
 		default:
 			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
+			boshlog.Error("Agent", "Unknown action %s", req.Method)
 		}
 
 		return

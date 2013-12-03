@@ -1,8 +1,8 @@
 package task
 
 import (
+	boshlog "bosh/logger"
 	"fmt"
-	"os"
 )
 
 // Access to the currentTasks map should always be performed in the semaphore
@@ -78,7 +78,7 @@ func (service asyncTaskService) processTasks() {
 			task.Error = err.Error()
 			task.State = TaskStateFailed
 
-			fmt.Fprintf(os.Stderr, "Failed processing task #%s got: %s\n", task.Id, err.Error())
+			boshlog.Error("Task Service", "Failed processing task #%s got: %s", task.Id, err.Error())
 		} else {
 			task.Value = value
 			task.State = TaskStateDone
