@@ -9,44 +9,116 @@ import (
 )
 
 func TestCompressFilesInDir(t *testing.T) {
+	cmdRunner := boshsys.NewExecCmdRunner()
 	fs := boshsys.NewOsFileSystem()
+	dc := NewCompressor(cmdRunner, fs)
 
-	tmpDir := filepath.Join(os.TempDir(), "TestCompressFilesInDir")
-	err := fs.MkdirAll(tmpDir, os.ModePerm)
-	assert.NoError(t, err)
-
-	defer os.RemoveAll(tmpDir)
-
-	execCmdRunner := boshsys.NewExecCmdRunner()
-	dc := NewCompressor(execCmdRunner, fs)
-
-	pwd, err := os.Getwd()
-	assert.NoError(t, err)
-
-	fixturesDir := filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
-	tgz, err := dc.CompressFilesInDir(fixturesDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
+	srcDir := fixtureSrcDir(t)
+	tgz, err := dc.CompressFilesInDir(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
 	assert.NoError(t, err)
 
 	defer os.Remove(tgz.Name())
 
-	_, _, err = execCmdRunner.RunCommand("tar", "xzf", tgz.Name(), "-C", tmpDir)
+	dstDir := createdTmpDir(t, fs)
+	defer os.RemoveAll(dstDir)
+
+	_, _, err = cmdRunner.RunCommand("tar", "xzf", tgz.Name(), "-C", dstDir)
 	assert.NoError(t, err)
 
-	content, err := fs.ReadFile(tmpDir + "/app.stdout.log")
+	// regular files
+	content, err := fs.ReadFile(dstDir + "/app.stdout.log")
 	assert.NoError(t, err)
 	assert.Contains(t, content, "this is app stdout")
 
-	content, err = fs.ReadFile(tmpDir + "/app.stderr.log")
+	content, err = fs.ReadFile(dstDir + "/app.stderr.log")
 	assert.NoError(t, err)
 	assert.Contains(t, content, "this is app stderr")
 
-	content, err = fs.ReadFile(tmpDir + "/other_logs/other_app.stdout.log")
+	// file in a directory
+	content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stdout.log")
 	assert.NoError(t, err)
 	assert.Contains(t, content, "this is other app stdout")
 
-	content, err = fs.ReadFile(tmpDir + "/other_logs/other_app.stderr.log")
+	// file that is not matching filter
+	content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stderr.log")
 	assert.Error(t, err)
 
-	content, err = fs.ReadFile(tmpDir + "/../some.config")
+	content, err = fs.ReadFile(dstDir + "/../some.config")
 	assert.Error(t, err)
+}
+
+func TestDecompressFileToDir(t *testing.T) {
+	fs := boshsys.NewOsFileSystem()
+	dstDir := createdTmpDir(t, fs)
+	defer os.RemoveAll(dstDir)
+
+	cmdRunner := boshsys.NewExecCmdRunner()
+	dc := NewCompressor(cmdRunner, fs)
+
+	err := dc.DecompressFileToDir(fixtureSrcTgz(t), dstDir)
+	assert.NoError(t, err)
+
+	// regular files
+	content, err := fs.ReadFile(dstDir + "/not-nested-file")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "not-nested-file")
+
+	// nested directory with a file
+	content, err = fs.ReadFile(dstDir + "/dir/nested-file")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "nested-file")
+
+	// nested directory with a file inside another directory
+	content, err = fs.ReadFile(dstDir + "/dir/nested-dir/double-nested-file")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "double-nested-file")
+
+	// directory without a file (empty)
+	content, err = fs.ReadFile(dstDir + "/empty-dir")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "is a directory")
+
+	// nested directory without a file (empty) inside another directory
+	content, err = fs.ReadFile(dstDir + "/dir/empty-nested-dir")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "is a directory")
+}
+
+func TestDecompressFileToDirReturnsError(t *testing.T) {
+	nonExistentDstDir := filepath.Join(os.TempDir(), "TestDecompressFileToDirReturnsError")
+
+	cmdRunner := boshsys.NewExecCmdRunner()
+	fs := boshsys.NewOsFileSystem()
+	dc := NewCompressor(cmdRunner, fs)
+
+	// propagates errors raised when untarring
+	err := dc.DecompressFileToDir(fixtureSrcTgz(t), nonExistentDstDir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "could not chdir")
+}
+
+func createdTmpDir(t *testing.T, fs boshsys.FileSystem) (dstDir string) {
+	dstDir = filepath.Join(os.TempDir(), "TestCompressor")
+	err := fs.MkdirAll(dstDir, os.ModePerm)
+	assert.NoError(t, err)
+
+	return
+}
+
+func fixtureSrcDir(t *testing.T) (srcDir string) {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+
+	srcDir = filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
+	return
+}
+
+func fixtureSrcTgz(t *testing.T) (srcTgz *os.File) {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+
+	srcTgz, err = os.Open(filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz"))
+	assert.NoError(t, err)
+
+	return
 }

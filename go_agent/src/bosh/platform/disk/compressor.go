@@ -55,13 +55,21 @@ func (c compressor) CompressFilesInDir(dir string, filters []string) (tarball *o
 	}
 
 	tarballPath := filepath.Join(tmpDir, "files.tgz")
-	os.Chdir(tgzDir)
-	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, ".")
+	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", tgzDir, ".")
 	if err != nil {
 		return
 	}
 
 	tarball, err = c.fs.Open(tarballPath)
+	return
+}
+
+func (c compressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
+	_, _, err = c.cmdRunner.RunCommand("tar", "xzf", tarball.Name(), "-C", dir)
+	if err != nil {
+		return
+	}
+
 	return
 }
 
