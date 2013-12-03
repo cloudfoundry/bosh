@@ -17,12 +17,12 @@ func NewProvider() (p provider) {
 	// There is a reason the runner is not injected.
 	// Other entities should not use a runner, they should go through the platform
 	runner := boshsys.NewExecCmdRunner()
-
-	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(runner, fs)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
+	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(runner, fs)
+	compressor := boshdisk.NewCompressor(runner, fs)
 
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager),
+		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, compressor),
 		"dummy":  newDummyPlatform(),
 	}
 	return

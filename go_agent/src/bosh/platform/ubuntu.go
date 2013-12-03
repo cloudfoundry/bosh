@@ -22,16 +22,24 @@ type ubuntu struct {
 	partitioner     boshdisk.Partitioner
 	formatter       boshdisk.Formatter
 	mounter         boshdisk.Mounter
+	compressor      boshdisk.Compressor
 	diskWaitTimeout time.Duration
 }
 
-func newUbuntuPlatform(collector boshstats.StatsCollector, fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, diskManager boshdisk.Manager) (platform ubuntu) {
+func newUbuntuPlatform(
+	collector boshstats.StatsCollector,
+	fs boshsys.FileSystem,
+	cmdRunner boshsys.CmdRunner,
+	diskManager boshdisk.Manager,
+	compressor boshdisk.Compressor,
+) (platform ubuntu) {
 	platform.collector = collector
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
 	platform.partitioner = diskManager.GetPartitioner()
 	platform.formatter = diskManager.GetFormatter()
 	platform.mounter = diskManager.GetMounter()
+	platform.compressor = compressor
 	platform.diskWaitTimeout = 3 * time.Minute
 	return
 }
