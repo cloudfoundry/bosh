@@ -56,7 +56,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settings)
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settings, app.logger)
 	mbusHandler, err := mbusHandlerProvider.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mbus handler")
