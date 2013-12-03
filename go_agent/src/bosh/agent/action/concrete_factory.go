@@ -24,6 +24,7 @@ func NewFactory(settings boshsettings.Settings, platform boshplatform.Platform, 
 			"fetch_logs": newLogs(platform, blobstore),
 			"start":      newStart(),
 			"stop":       newStop(),
+			"drain":      newDrain(),
 		},
 	}
 	return
