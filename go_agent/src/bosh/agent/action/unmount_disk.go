@@ -4,7 +4,6 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	"encoding/json"
 	"fmt"
 )
 
@@ -20,26 +19,13 @@ func newUnmountDisk(settings boshsettings.Settings, platform boshplatform.Platfo
 }
 
 func (a unmountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	type payloadType struct {
-		Arguments []string
-	}
-
-	payload := payloadType{}
-	err = json.Unmarshal(payloadBytes, &payload)
+	diskParams, err := NewDiskParams(a.settings, payloadBytes)
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload")
 		return
 	}
 
-	if len(payload.Arguments) != 1 {
-		err = bosherr.New("Invalid payload missing volume id.")
-		return
-	}
-
-	volumeId := payload.Arguments[0]
-	devicePath, found := a.settings.Disks.Persistent[volumeId]
-	if !found {
-		err = bosherr.New("Invalid payload volume id does not match")
+	devicePath, err := diskParams.GetDevicePath()
+	if err != nil {
 		return
 	}
 
