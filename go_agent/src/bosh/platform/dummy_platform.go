@@ -79,6 +79,10 @@ func (p dummyPlatform) MountPersistentDisk(devicePath, mountPoint string) (err e
 	return
 }
 
+func (p dummyPlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+	return
+}
+
 func (p dummyPlatform) StartMonit() (err error) {
 	return
 }

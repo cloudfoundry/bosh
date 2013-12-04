@@ -37,6 +37,9 @@ type FakePlatform struct {
 
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
+
+	UnmountPersistentDiskDidUnmount bool
+	UnmountPersistentDiskDevicePath string
 }
 
 type SetupLogrotateArgs struct {
@@ -129,6 +132,12 @@ func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	p.MountPersistentDiskDevicePath = devicePath
 	p.MountPersistentDiskMountPoint = mountPoint
+	return
+}
+
+func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+	p.UnmountPersistentDiskDevicePath = devicePath
+	didUnmount = p.UnmountPersistentDiskDidUnmount
 	return
 }
 

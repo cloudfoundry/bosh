@@ -359,6 +359,29 @@ func TestUbuntuMountPersistentDisk(t *testing.T) {
 	assert.Equal(t, "/dev/vdf1", fakeMounter.MountPartitionPaths[0])
 }
 
+func TestUbuntuUnmountPersistentDiskWhenNotMounted(t *testing.T) {
+	testUbuntuUnmountPersistentDisk(t, false)
+}
+
+func TestUbuntuUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
+	testUbuntuUnmountPersistentDisk(t, true)
+}
+
+func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	fakeMounter := fakeDiskManager.FakeMounter
+	fakeMounter.UnmountDidUnmount = !isMounted
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/dev/vdx", "")
+
+	didUnmount, err := ubuntu.UnmountPersistentDisk("/dev/sdx")
+	assert.NoError(t, err)
+	assert.Equal(t, didUnmount, !isMounted)
+	assert.Equal(t, "/dev/vdx1", fakeMounter.UnmountPartitionPath)
+}
+
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)

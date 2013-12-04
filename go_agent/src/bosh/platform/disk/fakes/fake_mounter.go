@@ -4,6 +4,9 @@ type FakeMounter struct {
 	MountPartitionPaths  []string
 	MountMountPoints     []string
 	SwapOnPartitionPaths []string
+
+	UnmountPartitionPath string
+	UnmountDidUnmount    bool
 }
 
 func (m *FakeMounter) Mount(partitionPath, mountPoint string) (err error) {
@@ -14,5 +17,11 @@ func (m *FakeMounter) Mount(partitionPath, mountPoint string) (err error) {
 
 func (m *FakeMounter) SwapOn(partitionPath string) (err error) {
 	m.SwapOnPartitionPaths = append(m.SwapOnPartitionPaths, partitionPath)
+	return
+}
+
+func (m *FakeMounter) Unmount(partitionPath string) (didUnmount bool, err error) {
+	m.UnmountPartitionPath = partitionPath
+	didUnmount = m.UnmountDidUnmount
 	return
 }

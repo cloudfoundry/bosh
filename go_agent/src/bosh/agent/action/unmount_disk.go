@@ -5,21 +5,21 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	"encoding/json"
-	"path/filepath"
+	"fmt"
 )
 
-type mountDiskAction struct {
+type unmountDiskAction struct {
 	settings boshsettings.Settings
 	platform boshplatform.Platform
 }
 
-func newMountDisk(settings boshsettings.Settings, platform boshplatform.Platform) (mountDisk mountDiskAction) {
-	mountDisk.settings = settings
-	mountDisk.platform = platform
+func newUnmountDisk(settings boshsettings.Settings, platform boshplatform.Platform) (unmountDisk unmountDiskAction) {
+	unmountDisk.settings = settings
+	unmountDisk.platform = platform
 	return
 }
 
-func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
+func (a unmountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	type payloadType struct {
 		Arguments []string
 	}
@@ -35,6 +35,7 @@ func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error)
 		err = bosherr.New("Invalid payload missing volume id.")
 		return
 	}
+
 	volumeId := payload.Arguments[0]
 	devicePath, found := a.settings.Disks.Persistent[volumeId]
 	if !found {
@@ -42,12 +43,22 @@ func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error)
 		return
 	}
 
-	err = a.platform.MountPersistentDisk(devicePath, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+	didUnmount, err := a.platform.UnmountPersistentDisk(devicePath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Mounting persistent disk")
+		err = bosherr.WrapError(err, "Unmounting persistent disk")
 		return
 	}
 
-	value = make(map[string]string)
+	msg := fmt.Sprintf("Partition of %s is not mounted", devicePath)
+
+	if didUnmount {
+		msg = fmt.Sprintf("Unmounted partition of %s", devicePath)
+	}
+
+	type valueType struct {
+		Message string `json:"message"`
+	}
+
+	value = valueType{Message: msg}
 	return
 }

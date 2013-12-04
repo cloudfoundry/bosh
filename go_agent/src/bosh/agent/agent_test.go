@@ -116,6 +116,11 @@ func TestRunHandlesMountDiskMessage(t *testing.T) {
 	assertRequestIsProcessedAsynchronously(t, req)
 }
 
+func TestRunHandlesUnmountDiskMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "unmount_disk", []byte("some payload"))
+	assertRequestIsProcessedAsynchronously(t, req)
+}
+
 func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) {
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
 

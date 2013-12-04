@@ -4,6 +4,7 @@ import (
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestLinuxMount(t *testing.T) {
@@ -53,9 +54,7 @@ func TestLinuxMountWhenAnotherDiskIsAlreadyMountedToMountPoint(t *testing.T) {
 
 func TestLinuxSwapOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
-	runner.CommandResults = map[string][]string{
-		"swapon -s": []string{"Filename				Type		Size	Used	Priority\n", ""},
-	}
+	runner.AddCmdResult("swapon -s", []string{"Filename				Type		Size	Used	Priority\n", ""})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
@@ -66,9 +65,7 @@ func TestLinuxSwapOn(t *testing.T) {
 
 func TestLinuxSwapOnWhenAlreadyOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
-	runner.CommandResults = map[string][]string{
-		"swapon -s": []string{SWAPON_USAGE_OUTPUT, ""},
-	}
+	runner.AddCmdResult("swapon -s", []string{SWAPON_USAGE_OUTPUT, ""})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
@@ -82,9 +79,7 @@ const SWAPON_USAGE_OUTPUT = `Filename				Type		Size	Used	Priority
 
 func TestLinuxSwapOnWhenAlreadyOnOtherDevice(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
-	runner.CommandResults = map[string][]string{
-		"swapon -s": []string{SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE, ""},
-	}
+	runner.AddCmdResult("swapon -s", []string{SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE, ""})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
@@ -96,6 +91,68 @@ func TestLinuxSwapOnWhenAlreadyOnOtherDevice(t *testing.T) {
 const SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE = `Filename				Type		Size	Used	Priority
 /dev/swap2                              partition	78180316	0	-1
 `
+
+func TestLinuxUnmountWhenPartitionIsMounted(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	mounter := newLinuxMounter(runner, fs)
+	didUnmount, err := mounter.Unmount("/dev/xvdb2")
+	assert.NoError(t, err)
+	assert.True(t, didUnmount)
+
+	assert.Equal(t, 1, len(runner.RunCommands))
+	assert.Equal(t, []string{"umount", "/dev/xvdb2"}, runner.RunCommands[0])
+}
+
+func TestLinuxUnmountWhenPartitionIsNotMounted(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	mounter := newLinuxMounter(runner, fs)
+	didUnmount, err := mounter.Unmount("/dev/xvdb3")
+	assert.NoError(t, err)
+	assert.False(t, didUnmount)
+
+	assert.Equal(t, 0, len(runner.RunCommands))
+}
+
+func TestLinuxUnmountWhenItFailsSeveralTimes(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
+	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
+	runner.AddCmdResult("umount /dev/xvdb2", []string{"", ""})
+
+	mounter := newLinuxMounter(runner, fs)
+	mounter.unmountRetrySleep = 1 * time.Millisecond
+
+	didUnmount, err := mounter.Unmount("/dev/xvdb2")
+	assert.NoError(t, err)
+	assert.True(t, didUnmount)
+
+	assert.Equal(t, 3, len(runner.RunCommands))
+	assert.Equal(t, []string{"umount", "/dev/xvdb2"}, runner.RunCommands[0])
+	assert.Equal(t, []string{"umount", "/dev/xvdb2"}, runner.RunCommands[1])
+	assert.Equal(t, []string{"umount", "/dev/xvdb2"}, runner.RunCommands[2])
+}
+
+func TestLinuxUnmountWhenItFailsTooManyTimes(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
+	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
+
+	mounter := newLinuxMounter(runner, fs)
+	mounter.maxUnmountRetries = 2
+	mounter.unmountRetrySleep = 1 * time.Millisecond
+
+	_, err := mounter.Unmount("/dev/xvdb2")
+	assert.Error(t, err)
+	assert.Equal(t, 2, len(runner.RunCommands))
+}
 
 func getLinuxMounterDependencies() (runner *fakesys.FakeCmdRunner, fs *fakesys.FakeFileSystem) {
 	runner = &fakesys.FakeCmdRunner{}

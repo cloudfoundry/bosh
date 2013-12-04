@@ -424,6 +424,16 @@ func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	return
 }
 
+func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+	realPath, err := p.getRealDevicePath(devicePath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	return p.mounter.Unmount(realPath + "1")
+}
+
 func (p ubuntu) StartMonit() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {
