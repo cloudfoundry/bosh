@@ -21,6 +21,9 @@ type FakeFileSystem struct {
 	HomeDirHomeDir  string
 
 	FilesToOpen map[string]*os.File
+
+	MkdirAllError error
+	SymlinkError  error
 }
 
 type FakeFileStats struct {
@@ -43,9 +46,13 @@ func (fs *FakeFileSystem) HomeDir(username string) (homeDir string, err error) {
 }
 
 func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
-	stats := fs.getOrCreateFile(path)
-	stats.FileMode = perm
-	stats.FileType = FakeFileTypeDir
+	if fs.MkdirAllError == nil {
+		stats := fs.getOrCreateFile(path)
+		stats.FileMode = perm
+		stats.FileType = FakeFileTypeDir
+	}
+
+	err = fs.MkdirAllError
 	return
 }
 
@@ -87,9 +94,14 @@ func (fs *FakeFileSystem) FileExists(path string) bool {
 }
 
 func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
-	stats := fs.getOrCreateFile(newPath)
-	stats.FileType = FakeFileTypeSymlink
-	stats.SymlinkTarget = oldPath
+	if fs.SymlinkError == nil {
+		stats := fs.getOrCreateFile(newPath)
+		stats.FileType = FakeFileTypeSymlink
+		stats.SymlinkTarget = oldPath
+		return
+	}
+
+	err = fs.SymlinkError
 	return
 }
 
