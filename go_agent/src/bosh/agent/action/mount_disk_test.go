@@ -22,6 +22,24 @@ func TestMountDisk(t *testing.T) {
 	assert.Equal(t, platform.MountPersistentDiskMountPoint, "/var/vcap/store")
 }
 
+func TestMountDiskWhenStoreAlreadyMounted(t *testing.T) {
+	settings := boshsettings.Settings{}
+	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
+	platform, mountDisk := buildMountDiskAction(settings)
+
+	platform.IsMountPointResult = true
+
+	payload := `{"arguments":["vol-123"]}`
+	result, err := mountDisk.Run([]byte(payload))
+	assert.NoError(t, err)
+	boshassert.MatchesJsonString(t, result, "{}")
+
+	assert.Equal(t, platform.IsMountPointPath, "/var/vcap/store")
+
+	assert.Equal(t, platform.MountPersistentDiskDevicePath, "/dev/sdf")
+	assert.Equal(t, platform.MountPersistentDiskMountPoint, "/var/vcap/store_migration_target")
+}
+
 func TestMountDiskWithMissingVolumeId(t *testing.T) {
 	settings := boshsettings.Settings{}
 	_, mountDisk := buildMountDiskAction(settings)

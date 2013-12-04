@@ -82,33 +82,37 @@ func (m linuxMounter) Unmount(partitionPath string) (didUnmount bool, err error)
 	return
 }
 
-func (m linuxMounter) isMounted(partitionPath string) (isMounted bool, err error) {
-	return m.searchMountFields(func(mountFields []string) (found bool, err error) {
-		mountedDevicePath := mountFields[0]
-		if mountedDevicePath == partitionPath {
+func (m linuxMounter) IsMountPoint(path string) (result bool, err error) {
+	return m.searchMounts(func(_, mountedMountPoint string) (found bool, err error) {
+		if mountedMountPoint == path {
 			return true, nil
 		}
+		return
+	})
+}
 
+func (m linuxMounter) isMounted(partitionPath string) (isMounted bool, err error) {
+	return m.searchMounts(func(mountedPartitionPath, _ string) (found bool, err error) {
+		if mountedPartitionPath == partitionPath {
+			return true, nil
+		}
 		return
 	})
 }
 
 func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (shouldMount bool, err error) {
-	isMounted, err := m.searchMountFields(func(mountFields []string) (found bool, err error) {
-		mountedDevicePath := mountFields[0]
-		mountedMountPoint := mountFields[1]
-
+	isMounted, err := m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
 		switch {
-		case mountedDevicePath == partitionPath && mountedMountPoint == mountPoint:
+		case mountedPartitionPath == partitionPath && mountedMountPoint == mountPoint:
 			found = true
 			return
-		case mountedDevicePath == partitionPath && mountedMountPoint != mountPoint:
+		case mountedPartitionPath == partitionPath && mountedMountPoint != mountPoint:
 			err = errors.New(fmt.Sprintf("Device %s is already mounted to %s, can't mount to %s",
-				mountedDevicePath, mountedMountPoint, mountPoint))
+				mountedPartitionPath, mountedMountPoint, mountPoint))
 			return
 		case mountedMountPoint == mountPoint:
 			err = errors.New(fmt.Sprintf("Device %s is already mounted to %s, can't mount %s",
-				mountedDevicePath, mountedMountPoint, partitionPath))
+				mountedPartitionPath, mountedMountPoint, partitionPath))
 			return
 		}
 
@@ -122,7 +126,7 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (shouldMount
 	return
 }
 
-func (m linuxMounter) searchMountFields(mountFieldsFunc func([]string) (bool, error)) (found bool, err error) {
+func (m linuxMounter) searchMounts(mountFieldsFunc func(string, string) (bool, error)) (found bool, err error) {
 	mountInfo, err := m.fs.ReadFile("/proc/mounts")
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading /proc/mounts")
@@ -135,8 +139,10 @@ func (m linuxMounter) searchMountFields(mountFieldsFunc func([]string) (bool, er
 		}
 
 		mountFields := strings.Fields(mountEntry)
+		mountedPartitionPath := mountFields[0]
+		mountedMountPoint := mountFields[1]
 
-		found, err = mountFieldsFunc(mountFields)
+		found, err = mountFieldsFunc(mountedPartitionPath, mountedMountPoint)
 		if found || err != nil {
 			return
 		}

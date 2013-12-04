@@ -29,7 +29,18 @@ func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error)
 		return
 	}
 
-	err = a.platform.MountPersistentDisk(devicePath, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+	mountPoint := filepath.Join(boshsettings.VCAP_BASE_DIR, "store")
+
+	isMountPoint, err := a.platform.IsMountPoint(mountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Checking mount point")
+		return
+	}
+	if isMountPoint {
+		mountPoint = filepath.Join(boshsettings.VCAP_BASE_DIR, "store_migration_target")
+	}
+
+	err = a.platform.MountPersistentDisk(devicePath, mountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Mounting persistent disk")
 		return

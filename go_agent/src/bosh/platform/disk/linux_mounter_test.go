@@ -154,6 +154,21 @@ func TestLinuxUnmountWhenItFailsTooManyTimes(t *testing.T) {
 	assert.Equal(t, 2, len(runner.RunCommands))
 }
 
+func TestIsMountPoint(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	mounter := newLinuxMounter(runner, fs)
+
+	isMountPoint, err := mounter.IsMountPoint("/var/vcap/data")
+	assert.NoError(t, err)
+	assert.True(t, isMountPoint)
+
+	isMountPoint, err = mounter.IsMountPoint("/var/vcap/store")
+	assert.NoError(t, err)
+	assert.False(t, isMountPoint)
+}
+
 func getLinuxMounterDependencies() (runner *fakesys.FakeCmdRunner, fs *fakesys.FakeFileSystem) {
 	runner = &fakesys.FakeCmdRunner{}
 	fs = &fakesys.FakeFileSystem{}

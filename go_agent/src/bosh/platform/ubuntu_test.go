@@ -340,7 +340,7 @@ func TestUbuntuMountPersistentDisk(t *testing.T) {
 
 	mountPoint := fakeFs.GetFileTestStat("/mnt/point")
 	assert.Equal(t, fakesys.FakeFileTypeDir, mountPoint.FileType)
-	assert.Equal(t, os.FileMode(0750), mountPoint.FileMode)
+	assert.Equal(t, os.FileMode(0700), mountPoint.FileMode)
 
 	partition := fakePartitioner.PartitionPartitions[0]
 	assert.Equal(t, "/dev/vdf", fakePartitioner.PartitionDevicePath)

@@ -25,3 +25,7 @@ func (m *FakeMounter) Unmount(partitionPath string) (didUnmount bool, err error)
 	didUnmount = m.UnmountDidUnmount
 	return
 }
+
+func (m *FakeMounter) IsMountPoint(path string) (result bool, err error) {
+	return
+}

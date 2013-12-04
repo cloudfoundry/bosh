@@ -391,7 +391,7 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 }
 
 func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
-	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
 
 	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
@@ -432,6 +432,10 @@ func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	}
 
 	return p.mounter.Unmount(realPath + "1")
+}
+
+func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
+	return p.mounter.IsMountPoint(path)
 }
 
 func (p ubuntu) StartMonit() (err error) {
