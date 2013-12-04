@@ -22,6 +22,7 @@ func TestNewFactory(t *testing.T) {
 		"stop",
 		"drain",
 		"mount_disk",
+		"unmount_disk",
 	}
 
 	_, _, factory := buildFactory()
