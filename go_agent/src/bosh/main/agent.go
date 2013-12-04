@@ -2,12 +2,15 @@ package main
 
 import (
 	boshapp "bosh/app"
-	"bosh/logger"
+	boshlog "bosh/logger"
 	"os"
 )
 
 func main() {
-	app := boshapp.New()
+	logger := boshlog.NewLogger(boshlog.LEVEL_DEBUG)
+	defer logger.HandlePanic("Main")
+
+	app := boshapp.New(logger)
 	err := app.Run(os.Args)
 
 	if err != nil {

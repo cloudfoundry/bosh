@@ -2,6 +2,7 @@ package mbus
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	"github.com/cloudfoundry/yagnats"
 	"net/url"
@@ -12,10 +13,10 @@ type mbusHandlerProvider struct {
 	handlers map[string]Handler
 }
 
-func NewHandlerProvider(settings boshsettings.Settings) (p mbusHandlerProvider) {
+func NewHandlerProvider(settings boshsettings.Settings, logger boshlog.Logger) (p mbusHandlerProvider) {
 	p.settings = settings
 	p.handlers = map[string]Handler{
-		"nats": newNatsHandler(yagnats.NewClient(), settings),
+		"nats": newNatsHandler(settings, logger, yagnats.NewClient()),
 	}
 	return
 }

@@ -2,15 +2,18 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 )
 
 type provider struct {
 	infrastructures map[string]Infrastructure
 }
 
-func NewProvider() (p provider) {
+func NewProvider(logger boshlog.Logger) (p provider) {
+	digDnsResolver := digDnsResolver{logger: logger}
+
 	p.infrastructures = map[string]Infrastructure{
-		"aws":   newAwsInfrastructure("http://169.254.169.254", digDnsResolver{}),
+		"aws":   newAwsInfrastructure("http://169.254.169.254", digDnsResolver),
 		"dummy": newDummyInfrastructure(),
 	}
 	return

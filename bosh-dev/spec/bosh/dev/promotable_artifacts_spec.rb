@@ -10,7 +10,7 @@ module Bosh::Dev
 
     its(:release_file) { should eq('bosh-123.tgz') }
 
-    describe '#commands' do
+    describe '#all' do
       let(:stemcell_artifacts) { instance_double('Bosh::Dev::StemcellArtifacts', list: archive_filenames) }
       let(:archive_filenames) do
         [

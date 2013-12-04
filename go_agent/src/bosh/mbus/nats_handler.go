@@ -2,6 +2,7 @@ package mbus
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
@@ -14,13 +15,15 @@ import (
 )
 
 type natsHandler struct {
-	client   yagnats.NATSClient
 	settings boshsettings.Settings
+	logger   boshlog.Logger
+	client   yagnats.NATSClient
 }
 
-func newNatsHandler(client yagnats.NATSClient, settings boshsettings.Settings) (handler natsHandler) {
-	handler.client = client
+func newNatsHandler(settings boshsettings.Settings, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
 	handler.settings = settings
+	handler.logger = logger
+	handler.client = client
 	return
 }
 
@@ -60,12 +63,18 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		}
 		req.payload = natsMsg.Payload
 
+		h.logger.Info("NATS Handler", "Received request with action %s", req.Method)
+		h.logger.Debug("NATS Handler", "Payload \n********************\n%s\n********************", req.payload)
+
 		resp := handlerFunc(req)
 		respBytes, err := json.Marshal(resp)
 		if err != nil {
 			err = bosherr.WrapError(err, "Marshalling JSON response")
 			return
 		}
+
+		h.logger.Info("NATS Handler", "Responding")
+		h.logger.Debug("NATS Handler", "Payload \n********************\n%s\n********************", respBytes)
 
 		h.client.Publish(req.ReplyTo, respBytes)
 	})
@@ -99,6 +108,9 @@ func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err er
 			err = bosherr.WrapError(err, "Marshalling heartbeat")
 			return
 		}
+
+		h.logger.Info("NATS Handler", "Sending heartbeat")
+		h.logger.Debug("NATS Handler", "Payload \n********************\n%s\n********************", heartbeatBytes)
 
 		h.client.Publish(heartbeatSubject, heartbeatBytes)
 	}

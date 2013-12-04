@@ -57,6 +57,7 @@ group :development, :test do
   gem 'fakefs'
   gem 'simplecov'
   gem 'simplecov-rcov'
+  gem 'vcr'
 
   # for director
   gem 'machinist', '~>1.0'

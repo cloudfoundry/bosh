@@ -10,11 +10,13 @@ import (
 )
 
 type sfdiskPartitioner struct {
+	logger    boshlog.Logger
 	cmdRunner boshsys.CmdRunner
 	logTag    string
 }
 
-func newSfdiskPartitioner(cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartitioner) {
+func newSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartitioner) {
+	partitioner.logger = logger
 	partitioner.cmdRunner = cmdRunner
 	partitioner.logTag = "SfdiskPartitioner"
 	return
@@ -22,7 +24,7 @@ func newSfdiskPartitioner(cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartit
 
 func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) (err error) {
 	if p.diskMatchesPartitions(devicePath, partitions) {
-		boshlog.Info(p.logTag, "%s already partitioned as expected, skipping", devicePath)
+		p.logger.Info(p.logTag, "%s already partitioned as expected, skipping", devicePath)
 		return
 	}
 
@@ -42,7 +44,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
-	boshlog.Info(p.logTag, "Partitioning %s with %s", devicePath, sfdiskInput)
+	p.logger.Info(p.logTag, "Partitioning %s with %s", devicePath, sfdiskInput)
 
 	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	if err != nil {

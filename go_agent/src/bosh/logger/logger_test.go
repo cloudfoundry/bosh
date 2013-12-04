@@ -15,7 +15,8 @@ func expectedLogFormat(tag, msg string) string {
 
 func TestInfo(t *testing.T) {
 	stdout, _ := captureOutputs(func() {
-		Info("TAG", "some %s info to log", "awesome")
+		logger := NewLogger(LEVEL_INFO)
+		logger.Info("TAG", "some %s info to log", "awesome")
 	})
 
 	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "INFO - some awesome info to log"))
@@ -24,7 +25,8 @@ func TestInfo(t *testing.T) {
 
 func TestDebug(t *testing.T) {
 	stdout, _ := captureOutputs(func() {
-		Debug("TAG", "some %s info to log", "awesome")
+		logger := NewLogger(LEVEL_DEBUG)
+		logger.Debug("TAG", "some %s info to log", "awesome")
 	})
 
 	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some awesome info to log"))
@@ -33,7 +35,8 @@ func TestDebug(t *testing.T) {
 
 func TestError(t *testing.T) {
 	_, stderr := captureOutputs(func() {
-		Error("TAG", "some %s info to log", "awesome")
+		logger := NewLogger(LEVEL_ERROR)
+		logger.Error("TAG", "some %s info to log", "awesome")
 	})
 
 	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some awesome info to log"))
@@ -41,12 +44,11 @@ func TestError(t *testing.T) {
 }
 
 func TestLogLevelDebug(t *testing.T) {
-	Level = LEVEL_DEBUG
-
 	stdout, stderr := captureOutputs(func() {
-		Debug("DEBUG", "some debug log")
-		Info("INFO", "some info log")
-		Error("ERROR", "some error log")
+		logger := NewLogger(LEVEL_DEBUG)
+		logger.Debug("DEBUG", "some debug log")
+		logger.Info("INFO", "some info log")
+		logger.Error("ERROR", "some error log")
 	})
 
 	assert.Contains(t, string(stdout), "DEBUG")
@@ -55,12 +57,11 @@ func TestLogLevelDebug(t *testing.T) {
 }
 
 func TestLogLevelInfo(t *testing.T) {
-	Level = LEVEL_INFO
-
 	stdout, stderr := captureOutputs(func() {
-		Debug("DEBUG", "some debug log")
-		Info("INFO", "some info log")
-		Error("ERROR", "some error log")
+		logger := NewLogger(LEVEL_INFO)
+		logger.Debug("DEBUG", "some debug log")
+		logger.Info("INFO", "some info log")
+		logger.Error("ERROR", "some error log")
 	})
 
 	assert.NotContains(t, string(stdout), "DEBUG")
@@ -69,12 +70,11 @@ func TestLogLevelInfo(t *testing.T) {
 }
 
 func TestLogLevelError(t *testing.T) {
-	Level = LEVEL_ERROR
-
 	stdout, stderr := captureOutputs(func() {
-		Debug("DEBUG", "some debug log")
-		Info("INFO", "some info log")
-		Error("ERROR", "some error log")
+		logger := NewLogger(LEVEL_ERROR)
+		logger.Debug("DEBUG", "some debug log")
+		logger.Info("INFO", "some info log")
+		logger.Error("ERROR", "some error log")
 	})
 
 	assert.NotContains(t, string(stdout), "DEBUG")
@@ -92,7 +92,6 @@ func captureOutputs(f func()) (stdout, stderr []byte) {
 	os.Stdout = wOut
 	os.Stderr = wErr
 
-	resetLoggers()
 	f()
 
 	outC := make(chan []byte)

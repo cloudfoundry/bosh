@@ -29,9 +29,9 @@ namespace :ci do
   desc 'Publish CI pipeline BOSH release to S3'
   task publish_bosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
-    require 'bosh/dev/bosh_release'
+    require 'bosh/dev/bosh_release_publisher'
     build = Bosh::Dev::Build.candidate
-    build.upload_release(Bosh::Dev::BoshRelease.build)
+    Bosh::Dev::BoshReleasePublisher.setup_for(build).publish
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
@@ -77,9 +77,7 @@ namespace :ci do
     require 'logger'
     require 'bosh/dev/promoter'
 
-    logger = Logger.new(STDERR)
-
-    promoter = Bosh::Dev::Promoter.new(args.to_hash.merge(logger: logger))
+    promoter = Bosh::Dev::Promoter.build(args.to_hash)
     promoter.promote
   end
 end

@@ -1,6 +1,7 @@
 package disk
 
 import (
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -9,8 +10,7 @@ import (
 )
 
 func TestCompressFilesInDir(t *testing.T) {
-	cmdRunner := boshsys.NewExecCmdRunner()
-	fs := boshsys.NewOsFileSystem()
+	fs, cmdRunner := getCompressorDependencies()
 	dc := NewCompressor(cmdRunner, fs)
 
 	srcDir := fixtureSrcDir(t)
@@ -48,11 +48,10 @@ func TestCompressFilesInDir(t *testing.T) {
 }
 
 func TestDecompressFileToDir(t *testing.T) {
-	fs := boshsys.NewOsFileSystem()
+	fs, cmdRunner := getCompressorDependencies()
 	dstDir := createdTmpDir(t, fs)
 	defer os.RemoveAll(dstDir)
 
-	cmdRunner := boshsys.NewExecCmdRunner()
 	dc := NewCompressor(cmdRunner, fs)
 
 	err := dc.DecompressFileToDir(fixtureSrcTgz(t), dstDir)
@@ -87,8 +86,7 @@ func TestDecompressFileToDir(t *testing.T) {
 func TestDecompressFileToDirReturnsError(t *testing.T) {
 	nonExistentDstDir := filepath.Join(os.TempDir(), "TestDecompressFileToDirReturnsError")
 
-	cmdRunner := boshsys.NewExecCmdRunner()
-	fs := boshsys.NewOsFileSystem()
+	fs, cmdRunner := getCompressorDependencies()
 	dc := NewCompressor(cmdRunner, fs)
 
 	// propagates errors raised when untarring
@@ -122,5 +120,13 @@ func fixtureSrcTgz(t *testing.T) (srcTgz *os.File) {
 	srcTgz, err = os.Open(filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz"))
 	assert.NoError(t, err)
 
+	return
+}
+
+func getCompressorDependencies() (fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner) {
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+
+	fs = boshsys.NewOsFileSystem(logger)
+	cmdRunner = boshsys.NewExecCmdRunner(logger)
 	return
 }

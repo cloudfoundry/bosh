@@ -31,4 +31,18 @@ describe Bosh::Dev::UriProvider do
       end
     end
   end
+
+  describe '.release_patches_uri' do
+    context 'when a remote directory path is provided' do
+      it 'returns a uri object relative to the Bosh release patches base URI' do
+        Bosh::Dev::UriProvider.release_patches_uri('foo/bar', 'baz.bat').should == URI('http://bosh-jenkins-release-patches.s3.amazonaws.com/foo/bar/baz.bat')
+      end
+    end
+
+    context 'when the remote directory path is empty' do
+      it 'returns a uri object relative to the Bosh release patches base URI' do
+        Bosh::Dev::UriProvider.release_patches_uri('', 'baz.bat').should == URI('http://bosh-jenkins-release-patches.s3.amazonaws.com/baz.bat')
+      end
+    end
+  end
 end

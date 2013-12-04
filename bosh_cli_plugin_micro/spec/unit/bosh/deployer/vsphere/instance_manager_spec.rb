@@ -242,6 +242,13 @@ module Bosh
             it_keeps_config_sha1 'fake-config-sha1'
           end
 
+          context 'with no vm_cid but existing disk_id and same config' do
+            before { deployer.state.vm_cid = nil }
+            it_updates_deployed_instance 'fake-stemcell-cid', will_create_stemcell: true
+            it_updates_stemcell_sha1 'fake-stemcell-sha1'
+            it_keeps_config_sha1 'fake-config-sha1'
+          end
+
           context 'with a different stemcell (determined via sha1 difference) and same config' do
             before { deployer.state.stemcell_sha1 = 'fake-different-stemcell-sha1' }
             before { deployer.state.config_sha1 = 'fake-config-sha1' }
