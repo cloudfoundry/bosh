@@ -77,38 +77,48 @@ module Bosh::Director
         end
 
         describe 'listing stemcells' do
-          it 'has API call that returns a list of stemcells in JSON' do
-            stemcells = (1..10).map do |i|
-              Models::Stemcell.
+          context 'stemcells exist' do
+            let(:stemcells) do
+              (1..10).map do |i|
+                Models::Stemcell.
                   create(:name => "stemcell-#{i}", :version => i,
                          :cid => rand(25000 * i))
+              end
             end
 
-            get '/stemcells', {}, {}
-            last_response.status.should == 200
+            it 'has API call that returns a list of stemcells in JSON' do
+              stemcells.each { |s| s.stub(:deployments).and_return([]) }
 
-            body = Yajl::Parser.parse(last_response.body)
+              get '/stemcells', {}, {}
+              last_response.status.should == 200
 
-            body.kind_of?(Array).should be(true)
-            body.size.should == 10
+              body = Yajl::Parser.parse(last_response.body)
 
-            response_collection = body.map do |e|
-              [e['name'], e['version'], e['cid']]
+              body.kind_of?(Array).should be(true)
+              body.size.should == 10
+
+              response_collection = body.map do |e|
+                [e['name'], e['version'], e['cid'], e['deployments']]
+              end
+
+              expected_collection = stemcells.sort_by { |e| e.name }.map do |e|
+                [e.name.to_s, e.version.to_s, e.cid.to_s, e.deployments]
+              end
+
+              response_collection.should == expected_collection
             end
-
-            expected_collection = stemcells.sort_by { |e| e.name }.map do |e|
-              [e.name.to_s, e.version.to_s, e.cid.to_s]
-            end
-
-            response_collection.should == expected_collection
           end
 
-          it 'returns empty collection if there are no stemcells' do
-            get '/stemcells', {}, {}
-            last_response.status.should == 200
+          context 'there are no stemcells' do
+            let(:stemcells) { [] }
 
-            body = Yajl::Parser.parse(last_response.body)
-            body.should == []
+            it 'returns empty collection if there are no stemcells' do
+              get '/stemcells', {}, {}
+              last_response.status.should == 200
+
+              body = Yajl::Parser.parse(last_response.body)
+              body.should == []
+            end
           end
         end
       end
