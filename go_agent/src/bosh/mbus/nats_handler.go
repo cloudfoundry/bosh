@@ -64,7 +64,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		req.payload = natsMsg.Payload
 
 		h.logger.Info("NATS Handler", "Received request with action %s", req.Method)
-		h.logger.Debug("NATS Handler", "Payload \n********************\n%s\n********************", req.payload)
+		h.logger.DebugWithDetails("NATS Handler", "Payload", req.payload)
 
 		resp := handlerFunc(req)
 		respBytes, err := json.Marshal(resp)
@@ -74,7 +74,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		}
 
 		h.logger.Info("NATS Handler", "Responding")
-		h.logger.Debug("NATS Handler", "Payload \n********************\n%s\n********************", respBytes)
+		h.logger.DebugWithDetails("NATS Handler", "Payload", respBytes)
 
 		h.client.Publish(req.ReplyTo, respBytes)
 	})
@@ -110,7 +110,7 @@ func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err er
 		}
 
 		h.logger.Info("NATS Handler", "Sending heartbeat")
-		h.logger.Debug("NATS Handler", "Payload \n********************\n%s\n********************", heartbeatBytes)
+		h.logger.DebugWithDetails("NATS Handler", "Payload", heartbeatBytes)
 
 		h.client.Publish(heartbeatSubject, heartbeatBytes)
 	}

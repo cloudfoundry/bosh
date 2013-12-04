@@ -33,6 +33,18 @@ func TestDebug(t *testing.T) {
 	assert.True(t, matcher.Match(stdout))
 }
 
+func TestDebugWithDetails(t *testing.T) {
+	stdout, _ := captureOutputs(func() {
+		logger := NewLogger(LEVEL_DEBUG)
+		logger.DebugWithDetails("TAG", "some info to log", "awesome")
+	})
+
+	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some info to log"))
+	assert.True(t, matcher.Match(stdout))
+
+	assert.Contains(t, string(stdout), "\n********************\nawesome\n********************")
+}
+
 func TestError(t *testing.T) {
 	_, stderr := captureOutputs(func() {
 		logger := NewLogger(LEVEL_ERROR)
@@ -41,6 +53,18 @@ func TestError(t *testing.T) {
 
 	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some awesome info to log"))
 	assert.True(t, matcher.Match(stderr))
+}
+
+func TestErrorWithDetails(t *testing.T) {
+	_, stderr := captureOutputs(func() {
+		logger := NewLogger(LEVEL_ERROR)
+		logger.ErrorWithDetails("TAG", "some error to log", "awesome")
+	})
+
+	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some error to log"))
+	assert.True(t, matcher.Match(stderr))
+
+	assert.Contains(t, string(stderr), "\n********************\nawesome\n********************")
 }
 
 func TestLogLevelDebug(t *testing.T) {

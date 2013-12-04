@@ -76,7 +76,7 @@ func (fs osFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 }
 
 func (fs osFileSystem) WriteToFile(path, content string) (written bool, err error) {
-	fs.logger.Debug(fs.logTag, "Writing to file %s\n********************\n%s\n********************", path, content)
+	fs.logger.DebugWithDetails(fs.logTag, "Writing to file %s", path, content)
 
 	if fs.filesAreIdentical(content, path) {
 		return
@@ -123,7 +123,7 @@ func (fs osFileSystem) ReadFile(path string) (content string, err error) {
 
 	content = string(bytes)
 
-	fs.logger.Debug(fs.logTag, "Read content:\n********************\n%s\n********************", content)
+	fs.logger.DebugWithDetails(fs.logTag, "Read content", content)
 	return
 }
 

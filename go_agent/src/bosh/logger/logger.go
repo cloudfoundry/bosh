@@ -38,6 +38,12 @@ func (l Logger) Debug(tag, msg string, args ...interface{}) {
 	l.getOutLogger(tag).Printf(msg, args...)
 }
 
+// This will automatically change the format of the message to insert a block of text after the log
+func (l Logger) DebugWithDetails(tag, msg string, args ...interface{}) {
+	msg = msg + "\n********************\n%s\n********************"
+	l.Debug(tag, msg, args...)
+}
+
 func (l Logger) Info(tag, msg string, args ...interface{}) {
 	if l.level > LEVEL_INFO {
 		return
@@ -54,6 +60,12 @@ func (l Logger) Error(tag, msg string, args ...interface{}) {
 
 	msg = fmt.Sprintf("ERROR - %s", msg)
 	l.getErrLogger(tag).Printf(msg, args...)
+}
+
+// This will automatically change the format of the message to insert a block of text after the log
+func (l Logger) ErrorWithDetails(tag, msg string, args ...interface{}) {
+	msg = msg + "\n********************\n%s\n********************"
+	l.Error(tag, msg, args...)
 }
 
 func (l Logger) HandlePanic(tag string) {
@@ -73,7 +85,7 @@ func (l Logger) HandlePanic(tag string) {
 			msg = fmt.Sprintf("%#v", obj)
 		}
 
-		l.Error(tag, "Panic: %s\n********************\n%s\n********************", msg, debug.Stack())
+		l.ErrorWithDetails(tag, "Panic: %s", msg, debug.Stack())
 		os.Exit(2)
 	}
 }
