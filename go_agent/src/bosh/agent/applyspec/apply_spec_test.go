@@ -87,15 +87,16 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 				"version":      "fake-job-legacy-version",
 				"sha1":         "fake-job-legacy-sha1",
 				"blobstore_id": "fake-job-legacy-blobstore-id",
-				"release":      "fake-job-release",
-				"template":     "fake-job-template",
+				"release":      "fake-job-legacy-release",
+				"template":     "fake-job-legacy-template",
 			},
 		},
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, []Job{
 		Job{
-			Name:        "fake-job-legacy-name",
+			// template is used as a job name to be backwards compatible
+			Name:        "fake-job-legacy-template",
 			Version:     "fake-job-legacy-version",
 			Sha1:        "fake-job-legacy-sha1",
 			BlobstoreId: "fake-job-legacy-blobstore-id",

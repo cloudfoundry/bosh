@@ -2,6 +2,7 @@ package applyspec
 
 type JobSpec struct {
 	Name             string            `json:"name"`
+	Template         string            `json:"template"`
 	Version          string            `json:"version"`
 	Sha1             string            `json:"sha1"`
 	BlobstoreId      string            `json:"blobstore_id"`
@@ -10,7 +11,7 @@ type JobSpec struct {
 
 func (s *JobSpec) AsJob() Job {
 	return Job{
-		Name:        s.Name,
+		Name:        s.Template,
 		Version:     s.Version,
 		Sha1:        s.Sha1,
 		BlobstoreId: s.BlobstoreId,
@@ -26,5 +27,5 @@ func (s *JobSpec) JobTemplateSpecsAsJobs() []Job {
 }
 
 func (s *JobSpec) IsEmpty() bool {
-	return len(s.Name) == 0
+	return len(s.Template) == 0
 }

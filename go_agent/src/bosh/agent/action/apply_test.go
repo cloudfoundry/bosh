@@ -31,7 +31,7 @@ func TestApplyRunApplierToMakeChanges(t *testing.T) {
 		"reply_to":"foo",
 		"arguments":[{
 			"job":{
-				"name":"fake-job-name"
+				"template":"fake-job-template"
 			},
 			"packages":[{
 				"name":"fake-package-name"
@@ -42,7 +42,7 @@ func TestApplyRunApplierToMakeChanges(t *testing.T) {
 	_, err := action.Run(payload)
 	assert.NoError(t, err)
 
-	expectedJob := boshas.Job{Name: "fake-job-name"}
+	expectedJob := boshas.Job{Name: "fake-job-template"}
 	assert.Equal(t, []boshas.Job{expectedJob}, applier.AppliedJobs)
 
 	expectedPackage := boshas.Package{Name: "fake-package-name"}
