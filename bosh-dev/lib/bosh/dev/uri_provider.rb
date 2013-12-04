@@ -27,7 +27,13 @@ module Bosh::Dev
     private
 
     def self.uri(bucket, remote_directory_path, file_name)
-      remote_file_path = File.join(remote_directory_path, file_name)
+      parts = []
+      unless remote_directory_path.nil? || remote_directory_path.empty?
+        parts << remote_directory_path
+      end
+      parts << file_name
+
+      remote_file_path = parts.join('/')
       URI.parse("http://#{bucket}.s3.amazonaws.com/#{remote_file_path}")
     end
 
