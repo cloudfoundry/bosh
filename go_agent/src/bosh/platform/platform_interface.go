@@ -23,5 +23,6 @@ type Platform interface {
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string, serversFilePath string) (err error)
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
+	MountPersistentDisk(devicePath, mountPoint string) (err error)
 	StartMonit() (err error)
 }

@@ -75,6 +75,10 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 	return
 }
 
+func (p dummyPlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+	return
+}
+
 func (p dummyPlatform) StartMonit() (err error) {
 	return
 }

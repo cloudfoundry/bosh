@@ -73,7 +73,6 @@ func (p sfdiskPartitioner) GetDeviceSizeInMb(devicePath string) (size uint64, er
 func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsToMatch []Partition) (result bool) {
 	existingPartitions, err := p.getPartitions(devicePath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting device partitions")
 		return
 	}
 
@@ -81,7 +80,16 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 		return
 	}
 
+	remainingDiskSpace, err := p.GetDeviceSizeInMb(devicePath)
+	if err != nil {
+		return
+	}
+
 	for index, partitionToMatch := range partitionsToMatch {
+		if index == len(partitionsToMatch)-1 {
+			partitionToMatch.SizeInMb = remainingDiskSpace
+		}
+
 		existingPartition := existingPartitions[index]
 		switch {
 		case existingPartition.Type != partitionToMatch.Type:
@@ -89,6 +97,8 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 		case notWithinDelta(existingPartition.SizeInMb, partitionToMatch.SizeInMb, 20):
 			return
 		}
+
+		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInMb
 	}
 
 	return true

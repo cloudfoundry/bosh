@@ -32,6 +32,7 @@ func NewFactory(
 			"start":      newStart(),
 			"stop":       newStop(),
 			"drain":      newDrain(),
+			"mount_disk": newMountDisk(settings, platform),
 		},
 	}
 	return

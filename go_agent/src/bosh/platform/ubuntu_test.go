@@ -325,6 +325,40 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 
+func TestUbuntuMountPersistentDisk(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	fakeFormatter := fakeDiskManager.FakeFormatter
+	fakePartitioner := fakeDiskManager.FakePartitioner
+	fakeMounter := fakeDiskManager.FakeMounter
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/dev/vdf", "")
+
+	err := ubuntu.MountPersistentDisk("/dev/sdf", "/mnt/point")
+	assert.NoError(t, err)
+
+	mountPoint := fakeFs.GetFileTestStat("/mnt/point")
+	assert.Equal(t, fakesys.FakeFileTypeDir, mountPoint.FileType)
+	assert.Equal(t, os.FileMode(0750), mountPoint.FileMode)
+
+	partition := fakePartitioner.PartitionPartitions[0]
+	assert.Equal(t, "/dev/vdf", fakePartitioner.PartitionDevicePath)
+	assert.Equal(t, 1, len(fakePartitioner.PartitionPartitions))
+	assert.Equal(t, "linux", partition.Type)
+
+	assert.Equal(t, 1, len(fakeFormatter.FormatPartitionPaths))
+	assert.Equal(t, "/dev/vdf1", fakeFormatter.FormatPartitionPaths[0])
+
+	assert.Equal(t, 1, len(fakeFormatter.FormatFsTypes))
+	assert.Equal(t, boshdisk.FileSystemExt4, fakeFormatter.FormatFsTypes[0])
+
+	assert.Equal(t, 1, len(fakeMounter.MountMountPoints))
+	assert.Equal(t, "/mnt/point", fakeMounter.MountMountPoints[0])
+	assert.Equal(t, 1, len(fakeMounter.MountPartitionPaths))
+	assert.Equal(t, "/dev/vdf1", fakeMounter.MountPartitionPaths[0])
+}
+
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)

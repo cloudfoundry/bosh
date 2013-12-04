@@ -390,6 +390,40 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 	return
 }
 
+func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+
+	realPath, err := p.getRealDevicePath(devicePath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	partitions := []boshdisk.Partition{
+		{Type: boshdisk.PartitionTypeLinux},
+	}
+
+	err = p.partitioner.Partition(realPath, partitions)
+	if err != nil {
+		err = bosherr.WrapError(err, "Partitioning disk")
+		return
+	}
+
+	partitionPath := realPath + "1"
+	err = p.formatter.Format(partitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		err = bosherr.WrapError(err, "Formatting partition with ext4")
+		return
+	}
+
+	err = p.mounter.Mount(partitionPath, mountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Mounting partition")
+		return
+	}
+	return
+}
+
 func (p ubuntu) StartMonit() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {

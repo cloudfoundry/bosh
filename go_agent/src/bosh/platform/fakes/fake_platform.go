@@ -34,6 +34,9 @@ type FakePlatform struct {
 	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
+
+	MountPersistentDiskDevicePath string
+	MountPersistentDiskMountPoint string
 }
 
 type SetupLogrotateArgs struct {
@@ -120,6 +123,12 @@ func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err err
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
 	p.SetupEphemeralDiskWithPathMountPoint = mountPoint
+	return
+}
+
+func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+	p.MountPersistentDiskDevicePath = devicePath
+	p.MountPersistentDiskMountPoint = mountPoint
 	return
 }
 
