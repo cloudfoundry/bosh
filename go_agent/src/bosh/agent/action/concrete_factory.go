@@ -1,6 +1,7 @@
 package action
 
 import (
+	boshas "bosh/agent/applyspec"
 	boshtask "bosh/agent/task"
 	boshblobstore "bosh/blobstore"
 	boshplatform "bosh/platform"
@@ -11,17 +12,20 @@ type concreteFactory struct {
 	availableActions map[string]Action
 }
 
-func NewFactory(settings boshsettings.Settings,
+func NewFactory(
+	settings boshsettings.Settings,
 	platform boshplatform.Platform,
 	blobstore boshblobstore.Blobstore,
-	taskService boshtask.Service) (factory Factory) {
+	taskService boshtask.Service,
+	applier boshas.Applier,
+) (factory Factory) {
 
 	fs := platform.GetFs()
 	compressor := platform.GetCompressor()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"apply":        newApply(fs, platform),
+			"apply":        newApply(applier, fs, platform),
 			"ping":         newPing(),
 			"get_task":     newGetTask(taskService),
 			"get_state":    newGetState(settings, fs),

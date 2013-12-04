@@ -2,6 +2,7 @@ package action
 
 import (
 	boshspec "bosh/agent/applyspec"
+	boshas "bosh/agent/applyspec"
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -12,11 +13,13 @@ import (
 )
 
 type applyAction struct {
+	applier  boshas.Applier
 	fs       boshsys.FileSystem
 	platform boshplatform.Platform
 }
 
-func newApply(fs boshsys.FileSystem, platform boshplatform.Platform) (action applyAction) {
+func newApply(applier boshas.Applier, fs boshsys.FileSystem, platform boshplatform.Platform) (action applyAction) {
+	action.applier = applier
 	action.fs = fs
 	action.platform = platform
 	return
@@ -39,6 +42,12 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 
 	applySpec, err := boshspec.NewApplySpecFromData(payload.Arguments[0])
 	if err != nil {
+		return
+	}
+
+	err = a.applier.Apply(applySpec.Jobs(), applySpec.Packages())
+	if err != nil {
+		err = bosherr.WrapError(err, "Applying")
 		return
 	}
 

@@ -6,3 +6,11 @@ type Package struct {
 	Sha1        string
 	BlobstoreId string
 }
+
+func (s Package) BundleName() string {
+	return s.Name
+}
+
+func (s Package) BundleVersion() string {
+	return s.Version
+}
