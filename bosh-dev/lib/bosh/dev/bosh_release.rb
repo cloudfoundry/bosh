@@ -1,4 +1,5 @@
 require 'bosh/dev/bosh_cli_session'
+require 'bosh/dev/release_creator'
 
 module Bosh::Dev
   class BoshRelease
