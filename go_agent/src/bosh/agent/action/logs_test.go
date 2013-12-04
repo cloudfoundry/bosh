@@ -2,6 +2,8 @@ package action
 
 import (
 	boshassert "bosh/assert"
+	fakeblobstore "bosh/blobstore/fakes"
+	fakedisk "bosh/platform/disk/fakes"
 	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -22,18 +24,13 @@ func TestLogsWithoutFilters(t *testing.T) {
 }
 
 func testLogs(t *testing.T, payload string, expectedFilters []string) {
+	compressor, blobstore, action := buildLogsAction()
+
 	var err error
-
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	compressor := platform.FakeCompressor
-
 	compressor.CompressFilesInDirTarball, err = os.Open("logs_test.go")
 	blobstore.CreateBlobId = "my-blob-id"
-	assert.NoError(t, err)
 
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	logsAction := factory.Create("fetch_logs")
-	logs, err := logsAction.Run([]byte(payload))
+	logs, err := action.Run([]byte(payload))
 	assert.NoError(t, err)
 
 	expectedPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
@@ -47,12 +44,15 @@ func testLogs(t *testing.T, payload string, expectedFilters []string) {
 }
 
 func TestLogsWhenArgumentsAreMissing(t *testing.T) {
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	logsAction := factory.Create("fetch_logs")
-
-	_, err := logsAction.Run([]byte(`{"arguments":["agent"]}`))
-
+	_, _, action := buildLogsAction()
+	_, err := action.Run([]byte(`{"arguments":["agent"]}`))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Not enough arguments in payload")
+}
+
+func buildLogsAction() (*fakedisk.FakeCompressor, *fakeblobstore.FakeBlobstore, logsAction) {
+	compressor := fakedisk.NewFakeCompressor()
+	blobstore := &fakeblobstore.FakeBlobstore{}
+	action := newLogs(compressor, blobstore)
+	return compressor, blobstore, action
 }

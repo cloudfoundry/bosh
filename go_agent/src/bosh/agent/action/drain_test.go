@@ -6,11 +6,8 @@ import (
 )
 
 func TestDrainRunReturns0(t *testing.T) {
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	drain := factory.Create("drain")
-
-	drainStatus, err := drain.Run([]byte{})
+	action := newDrain()
+	drainStatus, err := action.Run([]byte{})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, drainStatus)
 }

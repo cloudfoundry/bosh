@@ -3,15 +3,17 @@ package action
 import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
+	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestMountDisk(t *testing.T) {
-	platform, mountDisk := createMountDisk()
+	settings := boshsettings.Settings{}
+	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
+	platform, mountDisk := buildMountDiskAction(settings)
 
 	payload := `{"arguments":["vol-123"]}`
-
 	result, err := mountDisk.Run([]byte(payload))
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, result, "{}")
@@ -21,28 +23,26 @@ func TestMountDisk(t *testing.T) {
 }
 
 func TestMountDiskWithMissingVolumeId(t *testing.T) {
-	_, mountDisk := createMountDisk()
+	settings := boshsettings.Settings{}
+	_, mountDisk := buildMountDiskAction(settings)
 
 	payload := `{"arguments":[]}`
-
 	_, err := mountDisk.Run([]byte(payload))
 	assert.Error(t, err)
 }
 
 func TestMountDiskWhenDevicePathNotFound(t *testing.T) {
-	_, mountDisk := createMountDisk()
+	settings := boshsettings.Settings{}
+	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
+	_, mountDisk := buildMountDiskAction(settings)
 
 	payload := `{"arguments":["vol-456"]}`
-
 	_, err := mountDisk.Run([]byte(payload))
 	assert.Error(t, err)
 }
 
-func createMountDisk() (platform *fakeplatform.FakePlatform, mountDisk Action) {
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
-
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	mountDisk = factory.Create("mount_disk")
-	return
+func buildMountDiskAction(settings boshsettings.Settings) (*fakeplatform.FakePlatform, mountDiskAction) {
+	platform := fakeplatform.NewFakePlatform()
+	action := newMountDisk(settings, platform)
+	return platform, action
 }

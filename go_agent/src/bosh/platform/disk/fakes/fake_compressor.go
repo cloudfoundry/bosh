@@ -8,8 +8,8 @@ type FakeCompressor struct {
 	CompressFilesInDirFilters []string
 }
 
-func NewFakeCompressor() (fc *FakeCompressor) {
-	return
+func NewFakeCompressor() *FakeCompressor {
+	return &FakeCompressor{}
 }
 
 func (fc *FakeCompressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
