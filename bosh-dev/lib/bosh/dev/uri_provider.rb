@@ -28,9 +28,7 @@ module Bosh::Dev
 
     def self.uri(bucket, remote_directory_path, file_name)
       parts = []
-      unless remote_directory_path.nil? || remote_directory_path.empty?
-        parts << remote_directory_path
-      end
+      parts << remote_directory_path unless remote_directory_path.nil? || remote_directory_path.empty?
       parts << file_name
 
       remote_file_path = parts.join('/')

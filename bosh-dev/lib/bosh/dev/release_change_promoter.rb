@@ -16,7 +16,7 @@ module Bosh::Dev
       shell = Bosh::Core::Shell.new
 
       shell.run("git apply #{patch_file.path}")
-      shell.run("git add -A :/")
+      shell.run('git add -A :/')
       shell.run("git commit -m 'Adding final release for build #{@build_number}'")
     end
   end

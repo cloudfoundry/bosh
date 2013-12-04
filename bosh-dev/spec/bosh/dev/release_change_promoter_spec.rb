@@ -31,7 +31,7 @@ module Bosh::Dev
         download_adapter.stub(:download).and_return(patch_file.path)
 
         shell.should_receive(:run).with("git apply #{patch_file.path}").ordered
-        shell.should_receive(:run).with("git add -A :/").ordered
+        shell.should_receive(:run).with('git add -A :/').ordered
         shell.should_receive(:run).with("git commit -m 'Adding final release for build #{build_number}'").ordered
 
         release_changes.promote

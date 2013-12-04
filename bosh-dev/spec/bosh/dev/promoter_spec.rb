@@ -90,7 +90,6 @@ module Bosh::Dev
 
         it 'commits a record of the final release to the git repo' do
 
-
           release_change_promoter = instance_double('Bosh::Dev::ReleaseChangePromoter')
           Bosh::Dev::ReleaseChangePromoter.stub(:new).with(candidate_build_number, download_adapter).and_return(
             release_change_promoter)
