@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'cloud/aws/stemcell_finder'
 
 module Bosh::AwsCloud
 
@@ -80,7 +81,7 @@ module Bosh::AwsCloud
     def create_vm(agent_id, stemcell_id, resource_pool, network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         # do this early to fail fast
-        stemcell = Stemcell.find(region, stemcell_id)
+        stemcell = StemcellFinder.find_by_region_and_id(region, stemcell_id)
 
         begin
           instance_manager = InstanceManager.new(region, registry, az_selector)
@@ -417,7 +418,7 @@ module Bosh::AwsCloud
     # @param [String] stemcell_id EC2 AMI name of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
-        stemcell = Stemcell.find(region, stemcell_id)
+        stemcell = StemcellFinder.find_by_region_and_id(region, stemcell_id)
         stemcell.delete
       end
     end
