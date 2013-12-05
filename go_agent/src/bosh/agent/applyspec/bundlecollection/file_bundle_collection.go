@@ -25,9 +25,9 @@ func NewFileBundleCollection(name, path string, fs boshsys.FileSystem) *FileBund
 func (s *FileBundleCollection) Install(bundle Bundle) (string, error) {
 	path := s.buildInstallPath(bundle)
 
-	err := s.fs.MkdirAll(path, os.ModeDir)
+	err := s.fs.MkdirAll(path, os.FileMode(0755))
 	if err != nil {
-		return "", bosherr.WrapError(err, "failed to install")
+		return "", bosherr.WrapError(err, "failed to create install dir")
 	}
 
 	return path, nil
@@ -41,7 +41,12 @@ func (s *FileBundleCollection) Enable(bundle Bundle) error {
 	}
 
 	enablePath := s.buildEnablePath(bundle)
-	err := s.fs.Symlink(installPath, enablePath)
+	err := s.fs.MkdirAll(filepath.Dir(enablePath), os.FileMode(0755))
+	if err != nil {
+		return bosherr.WrapError(err, "failed to create enable dir")
+	}
+
+	err = s.fs.Symlink(installPath, enablePath)
 	if err != nil {
 		return bosherr.WrapError(err, "failed to enable")
 	}

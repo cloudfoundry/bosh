@@ -4,20 +4,27 @@ import (
 	fakesys "bosh/system/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
 const expectedInstallPath = "/fake-collection-path/data/fake-collection-name/fake-bundle-name/fake-bundle-version"
 const expectedEnablePath = "/fake-collection-path/fake-collection-name/fake-bundle-name"
+const expectedEnableDirname = "/fake-collection-path/fake-collection-name"
 
 func TestInstall(t *testing.T) {
 	fs, fileCollection, bundle := buildFileBundleCollection()
 
-	// directory is created
 	path, err := fileCollection.Install(bundle)
 	assert.NoError(t, err)
 	assert.Equal(t, path, expectedInstallPath)
 	assert.True(t, fs.FileExists(expectedInstallPath))
+
+	// directory is created with proper permissions
+	fileStats := fs.GetFileTestStat(expectedInstallPath)
+	assert.NotNil(t, fileStats)
+	assert.Equal(t, fakesys.FakeFileTypeDir, fileStats.FileType)
+	assert.Equal(t, os.FileMode(0755), fileStats.FileMode)
 
 	// check idempotency
 	_, err = fileCollection.Install(bundle)
@@ -29,7 +36,6 @@ func TestInstallErrsWhenBundleCannotBeInstalled(t *testing.T) {
 
 	fs.MkdirAllError = errors.New("fake-mkdirall-error")
 
-	// directory is created
 	_, err := fileCollection.Install(bundle)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-mkdirall-error")
@@ -50,6 +56,12 @@ func TestEnableSucceedsWhenBundleIsInstalled(t *testing.T) {
 	assert.Equal(t, fakesys.FakeFileTypeSymlink, fileStats.FileType)
 	assert.Equal(t, expectedInstallPath, fileStats.SymlinkTarget)
 
+	// enable directory is created
+	fileStats = fs.GetFileTestStat(expectedEnableDirname)
+	assert.NotNil(t, fileStats)
+	assert.Equal(t, fakesys.FakeFileTypeDir, fileStats.FileType)
+	assert.Equal(t, os.FileMode(0755), fileStats.FileMode)
+
 	// check idempotency
 	err = fileCollection.Enable(bundle)
 	assert.NoError(t, err)
@@ -65,6 +77,19 @@ func TestEnableErrsWhenBundleIsNotInstalled(t *testing.T) {
 	// symlink does not exist
 	fileStats := fs.GetFileTestStat(expectedEnablePath)
 	assert.Nil(t, fileStats)
+}
+
+func TestEnableErrsWhenCannotCreateEnableDir(t *testing.T) {
+	fs, fileCollection, bundle := buildFileBundleCollection()
+
+	_, err := fileCollection.Install(bundle)
+	assert.NoError(t, err)
+
+	fs.MkdirAllError = errors.New("fake-mkdirall-error")
+
+	err = fileCollection.Enable(bundle)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fake-mkdirall-error")
 }
 
 func TestEnableErrsWhenBundleCannotBeEnabled(t *testing.T) {
