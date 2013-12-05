@@ -30,15 +30,16 @@ module Bosh::Dev
       if system("git fetch --tags && git tag --contains #{@candidate_sha} | grep stable-")
         @logger.info('Skipping promotion since an existing stable tag was found')
       else
-        build = Bosh::Dev::Build.candidate
+        build = Build.candidate
         build.promote_artifacts
 
-        final_release_sha = commit_final_release
+        release_promoter = ReleaseChangePromoter.new(@candidate_build_number, @candidate_sha, DownloadAdapter.new(@logger))
+        final_release_sha = release_promoter.promote
 
-        promoter = Bosh::Dev::GitPromoter.new(@logger)
+        promoter = GitPromoter.new(@logger)
         promoter.promote(final_release_sha, @stable_branch)
 
-        tagger = Bosh::Dev::GitTagger.new(@logger)
+        tagger = GitTagger.new(@logger)
         tagger.tag_and_push(final_release_sha, @candidate_build_number)
 
         merge_release_into_develop
@@ -46,18 +47,6 @@ module Bosh::Dev
     end
 
     private
-
-    def commit_final_release
-      shell = Bosh::Core::Shell.new
-      download_adapter = DownloadAdapter.new(@logger)
-
-      shell.run("git checkout #{@candidate_sha}")
-
-      release_change_promoter = ReleaseChangePromoter.new(@candidate_build_number, download_adapter)
-      release_change_promoter.promote
-
-      shell.run('git rev-parse HEAD')
-    end
 
     def merge_release_into_develop
       shell = Bosh::Core::Shell.new

@@ -3,8 +3,9 @@ require 'bosh/dev/uri_provider'
 
 module Bosh::Dev
   class ReleaseChangePromoter
-    def initialize(build_number, downloader)
+    def initialize(build_number, candidate_sha, downloader)
       @build_number = build_number
+      @candidate_sha = candidate_sha
       @download_adapter = downloader
     end
 
@@ -15,9 +16,13 @@ module Bosh::Dev
 
       shell = Bosh::Core::Shell.new
 
+      shell.run("git checkout #{@candidate_sha}")
+
       shell.run("git apply #{patch_file.path}")
       shell.run('git add -A :/')
       shell.run("git commit -m 'Adding final release for build #{@build_number}'")
+
+      shell.run('git rev-parse HEAD')
     end
   end
 end
