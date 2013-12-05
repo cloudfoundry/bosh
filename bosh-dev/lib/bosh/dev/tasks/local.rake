@@ -2,11 +2,16 @@ namespace :local do
   desc 'build a Stemcell locally'
   task :build_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
     require 'bosh/dev/build'
-    require 'bosh/dev/micro_bosh_release'
+    require 'bosh/dev/bosh_cli_session'
     require 'bosh/dev/stemcell_builder'
 
     build = Bosh::Dev::Build.candidate
-    release_tarball_path = Bosh::Dev::MicroBoshRelease.new.tarball
+    bosh_cli_session = Bosh::Dev::BoshCliSession.new
+    release_tarball_path =
+      Dir.chdir('release') do
+        output = bosh_cli_session.run_bosh('create release --force --with-tarball')
+        output.scan(/Release tarball\s+\(.+\):\s+(.+)$/).first.first
+      end
 
     Bosh::Stemcell::BuilderCommand.new(
         ENV,

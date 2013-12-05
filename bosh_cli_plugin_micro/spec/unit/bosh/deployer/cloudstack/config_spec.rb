@@ -18,7 +18,7 @@ describe Bosh::Deployer::Config do
 
     properties = Bosh::Deployer::Config.cloud_options['properties']
     properties['agent'].should be_kind_of(Hash)
-    properties['agent']['mbus'].start_with?('https://').should be_true
+    properties['agent']['mbus'].start_with?('https://').should be(true)
     properties['agent']['blobstore'].should be_kind_of(Hash)
   end
 
@@ -78,8 +78,8 @@ describe Bosh::Deployer::Config do
     compute.stub(:zones).and_return([double('foo-zone', name: 'foo-zone', id: 'foo-zone-id')])
     Fog::Compute.stub(:new).and_return(compute)
     cloud = Bosh::Deployer::Config.cloud
-    cloud.respond_to?(:compute).should be_true
-    cloud.respond_to?(:registry).should be_true
+    cloud.respond_to?(:compute).should be(true)
+    cloud.respond_to?(:registry).should be(true)
     cloud.registry.should be_kind_of(Bosh::Registry::Client)
   end
 end
