@@ -20,7 +20,7 @@ func NewProvider(logger boshlog.Logger) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
 	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(logger, runner, fs)
-	compressor := boshdisk.NewCompressor(runner, fs)
+	compressor := boshdisk.NewTarballCompressor(runner, fs)
 
 	p.platforms = map[string]Platform{
 		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, compressor),

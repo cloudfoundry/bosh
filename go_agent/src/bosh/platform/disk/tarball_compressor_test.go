@@ -11,7 +11,7 @@ import (
 
 func TestCompressFilesInDir(t *testing.T) {
 	fs, cmdRunner := getCompressorDependencies()
-	dc := NewCompressor(cmdRunner, fs)
+	dc := NewTarballCompressor(cmdRunner, fs)
 
 	srcDir := fixtureSrcDir(t)
 	tgz, err := dc.CompressFilesInDir(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
@@ -52,7 +52,7 @@ func TestDecompressFileToDir(t *testing.T) {
 	dstDir := createdTmpDir(t, fs)
 	defer os.RemoveAll(dstDir)
 
-	dc := NewCompressor(cmdRunner, fs)
+	dc := NewTarballCompressor(cmdRunner, fs)
 
 	err := dc.DecompressFileToDir(fixtureSrcTgz(t), dstDir)
 	assert.NoError(t, err)
@@ -87,7 +87,7 @@ func TestDecompressFileToDirReturnsError(t *testing.T) {
 	nonExistentDstDir := filepath.Join(os.TempDir(), "TestDecompressFileToDirReturnsError")
 
 	fs, cmdRunner := getCompressorDependencies()
-	dc := NewCompressor(cmdRunner, fs)
+	dc := NewTarballCompressor(cmdRunner, fs)
 
 	// propagates errors raised when untarring
 	err := dc.DecompressFileToDir(fixtureSrcTgz(t), nonExistentDstDir)
