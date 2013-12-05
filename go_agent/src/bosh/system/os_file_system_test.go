@@ -185,11 +185,22 @@ func TestSymlinkWhenLinkAlreadyExistsAndDoesNotLinkToTheIntendedPath(t *testing.
 	osFs.WriteToFile(otherFilePath, "other content")
 	defer os.Remove(otherFilePath)
 
-	osFs.Symlink(otherFilePath, symlinkPath)
+	err := osFs.Symlink(otherFilePath, symlinkPath)
+	assert.NoError(t, err)
+
+	// Repoints symlink to new destination
+	err = osFs.Symlink(filePath, symlinkPath)
+	assert.NoError(t, err)
+
 	defer os.Remove(symlinkPath)
 
-	err := osFs.Symlink(filePath, symlinkPath)
-	assert.Error(t, err)
+	symlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, os.ModeSymlink, os.ModeSymlink&symlinkStats.Mode())
+
+	symlinkFile, err := os.Open(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
 func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
@@ -203,8 +214,19 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 	osFs.WriteToFile(symlinkPath, "some other content")
 	defer os.Remove(symlinkPath)
 
+	// Repoints symlink to new destination
 	err := osFs.Symlink(filePath, symlinkPath)
-	assert.Error(t, err)
+	assert.NoError(t, err)
+
+	defer os.Remove(symlinkPath)
+
+	symlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, os.ModeSymlink, os.ModeSymlink&symlinkStats.Mode())
+
+	symlinkFile, err := os.Open(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
 func createOsFs() (fs FileSystem) {

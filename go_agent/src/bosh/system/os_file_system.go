@@ -151,8 +151,11 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 		if existingTargetedPath == actualOldPath {
 			return
 		} else {
-			return bosherr.New("Error creating symlink %s to %s, it already links to %s",
-				newPath, oldPath, existingTargetedPath)
+			err = os.Remove(newPath)
+			if err != nil {
+				err = bosherr.WrapError(err, "Failed to delete symlimk at %s", newPath)
+				return
+			}
 		}
 	}
 
