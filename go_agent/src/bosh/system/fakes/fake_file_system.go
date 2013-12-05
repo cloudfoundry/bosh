@@ -24,6 +24,9 @@ type FakeFileSystem struct {
 
 	MkdirAllError error
 	SymlinkError  error
+
+	TempFileError  error
+	ReturnTempFile *os.File
 }
 
 type FakeFileStats struct {
@@ -103,6 +106,23 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 
 	err = fs.SymlinkError
 	return
+}
+
+func (fs *FakeFileSystem) TempFile() (file *os.File, err error) {
+	if fs.TempFileError != nil {
+		return nil, fs.TempFileError
+	}
+	if fs.ReturnTempFile != nil {
+		return fs.ReturnTempFile, nil
+	} else {
+		file, err = os.Open("/dev/null")
+
+		// Make sure to record a reference for FileExist, etc. to work
+		stats := fs.getOrCreateFile(file.Name())
+		stats.FileType = FakeFileTypeFile
+
+		return
+	}
 }
 
 func (fs *FakeFileSystem) TempDir() (tmpDir string) {

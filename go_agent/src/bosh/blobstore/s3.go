@@ -67,6 +67,26 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 	return
 }
 
+func (blobstore s3) Get(blobId string) (file *os.File, err error) {
+	file, err = blobstore.fs.TempFile()
+	if err != nil {
+		return
+	}
+
+	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, file.Name())
+	if err != nil {
+		blobstore.fs.RemoveAll(file.Name())
+		file = nil
+	}
+
+	return
+}
+
+func (blobstore s3) CleanUp(file *os.File) (err error) {
+	blobstore.fs.RemoveAll(file.Name())
+	return
+}
+
 func (blobstore s3) Create(file *os.File) (blobId string, err error) {
 	filePath, err := filepath.Abs(file.Name())
 	if err != nil {
