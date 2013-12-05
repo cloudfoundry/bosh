@@ -23,7 +23,7 @@ func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me", "gibberish", []byte{})
 
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -67,7 +67,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 		RunValue: "some value",
 	}
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -83,7 +83,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 		RunErr: errors.New("some error"),
 	}
 
-	agent = New(settings, logger, handler, platform, taskService, actionFactory)
+	agent = New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
 	agent.Run()
 
 	resp = handler.Func(req)
@@ -127,7 +127,7 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
 	actionFactory.CreateAction = &fakeaction.TestAction{RunValue: "some-task-result-value"}
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -166,7 +166,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -224,7 +224,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
 	agent.heartbeatInterval = time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)

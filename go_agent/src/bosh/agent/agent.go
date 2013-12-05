@@ -12,7 +12,7 @@ import (
 )
 
 type agent struct {
-	settings          boshsettings.Settings
+	settings          boshsettings.DiskSettings
 	logger            boshlog.Logger
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
@@ -22,7 +22,7 @@ type agent struct {
 }
 
 func New(
-	settings boshsettings.Settings,
+	settings boshsettings.DiskSettings,
 	logger boshlog.Logger,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,

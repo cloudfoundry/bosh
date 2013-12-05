@@ -80,7 +80,7 @@ func (app app) Run(args []string) (err error) {
 
 	actionFactory := boshaction.NewFactory(settingsProvider, platform, blobstore, taskService, applier)
 
-	agent := boshagent.New(settings, app.logger, mbusHandler, platform, taskService, actionFactory)
+	agent := boshagent.New(settingsProvider, app.logger, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")
