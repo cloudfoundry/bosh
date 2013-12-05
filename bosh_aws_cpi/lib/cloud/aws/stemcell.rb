@@ -42,9 +42,9 @@ module Bosh::AwsCloud
     end
 
     def memoize_snapshots
-      # .to_h is used as the AWS API documentation isn't trustworthy:
+      # .to_hash is used as the AWS API documentation isn't trustworthy:
       # it says block_device_mappings retruns a Hash, but in reality it flattens it!
-      ami.block_device_mappings.to_h.each do |device, map|
+      ami.block_device_mappings.to_hash.each do |device, map|
         snapshot_id = map[:snapshot_id]
         if id
           logger.debug("queuing snapshot '#{snapshot_id}' for deletion")
