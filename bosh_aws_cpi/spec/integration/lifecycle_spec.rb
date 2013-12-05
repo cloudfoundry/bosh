@@ -59,6 +59,26 @@ describe Bosh::AwsCloud::Cloud do
       }
     end
 
+    describe 'VM lifecycle with light stemcells' do
+      it 'excercises vm lifecycle with light stemcell' do
+        expect {
+          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => 'ami-809a48e9' } })
+          instance_id = cpi.create_vm(
+            nil,
+            stemcell_id,
+            { 'instance_type' => 'm1.small' },
+            network_spec,
+            [],
+            {}
+          )
+          vm_metadata = { delete_me: 'please', example: example.full_description }
+          cpi.set_vm_metadata(instance_id, vm_metadata)
+          cpi.delete_vm(instance_id)
+          cpi.delete_stemcell(stemcell_id)
+        }.not_to raise_error
+      end
+    end
+
     context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
         @instance_id = cpi.create_vm(
