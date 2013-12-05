@@ -26,15 +26,15 @@ func NewFactory(
 	factory = concreteFactory{
 		availableActions: map[string]Action{
 			"apply":        newApply(applier, fs, platform),
-			"ping":         newPing(),
+			"drain":        newDrain(),
+			"fetch_logs":   newLogs(compressor, blobstore),
 			"get_task":     newGetTask(taskService),
 			"get_state":    newGetState(settings, fs),
+			"mount_disk":   newMountDisk(settings, platform),
+			"ping":         newPing(),
 			"ssh":          newSsh(settings, platform),
-			"fetch_logs":   newLogs(compressor, blobstore),
 			"start":        newStart(),
 			"stop":         newStop(),
-			"drain":        newDrain(),
-			"mount_disk":   newMountDisk(settings, platform),
 			"unmount_disk": newUnmountDisk(settings, platform),
 		},
 	}
