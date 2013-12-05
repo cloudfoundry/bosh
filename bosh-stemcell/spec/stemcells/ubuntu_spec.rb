@@ -75,10 +75,10 @@ describe 'Ubuntu Stemcell' do
       'dnsutils'             => '1:9.7.0.dfsg.P1-1ubuntu0.10',
       'tcpdump'              => '4.0.0-6ubuntu3',
       'iputils-arping'       => '3:20071127-2ubuntu1',
-      'curl'                 => '7.19.7-1ubuntu1.3',
+      'curl'                 => '7.19.7-1ubuntu1.4',
       'wget'                 => '1.12-1.1ubuntu2.1',
-      'libcurl3'             => '7.19.7-1ubuntu1.3',
-      'libcurl4-openssl-dev' => '7.19.7-1ubuntu1.3', # installed because of 'libcurl3-dev'
+      'libcurl3'             => '7.19.7-1ubuntu1.4',
+      'libcurl4-openssl-dev' => '7.19.7-1ubuntu1.4', # installed because of 'libcurl3-dev'
       'bison'                => '1:2.4.1.dfsg-3',
       'libreadline6-dev'     => '6.1-1',
       'libxml2'              => '2.7.6.dfsg-1ubuntu1.10',
