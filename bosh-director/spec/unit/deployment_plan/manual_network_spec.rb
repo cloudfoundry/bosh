@@ -9,7 +9,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   describe :initialize do
     it 'should parse subnets' do
       received_network = nil
-      BD::DeploymentPlan::NetworkSubnet.stub(:new).with do |network, spec|
+      BD::DeploymentPlan::NetworkSubnet.stub(:new) do |network, spec|
         received_network = network
         spec.should == {'foz' => 'baz'}
       end

@@ -226,10 +226,10 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
       apply_message.apply
 
       bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'bin')
-      expect(File.directory?(bin_dir)).to be_true
+      expect(File.directory?(bin_dir)).to be(true)
 
       bin_file = File.join(bin_dir, 'my_sinatra_app')
-      expect(File.executable?(bin_file)).to be_true
+      expect(File.executable?(bin_file)).to be(true)
     end
   end
 
@@ -258,7 +258,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
       apply_message.apply
 
       monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0000_hubba.hubba_hubba.monitrc')
-      expect(File.exist?(monitrc)).to be_true
+      expect(File.exist?(monitrc)).to be(true)
     end
   end
 

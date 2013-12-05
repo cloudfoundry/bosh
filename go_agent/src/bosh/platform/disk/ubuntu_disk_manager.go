@@ -1,6 +1,9 @@
 package disk
 
-import boshsys "bosh/system"
+import (
+	boshlog "bosh/logger"
+	boshsys "bosh/system"
+)
 
 type ubuntuDiskManager struct {
 	partitioner Partitioner
@@ -8,9 +11,9 @@ type ubuntuDiskManager struct {
 	mounter     Mounter
 }
 
-func NewUbuntuDiskManager(runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
+func NewUbuntuDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
 	return ubuntuDiskManager{
-		partitioner: newSfdiskPartitioner(runner),
+		partitioner: newSfdiskPartitioner(logger, runner),
 		formatter:   newLinuxFormatter(runner, fs),
 		mounter:     newLinuxMounter(runner, fs),
 	}

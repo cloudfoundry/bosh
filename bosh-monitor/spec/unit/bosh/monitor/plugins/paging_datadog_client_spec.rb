@@ -27,7 +27,7 @@ describe PagingDatadogClient do
     describe "unmodified calls" do
       it "doesn't modify the #emit_points calls and passes them through" do
         paging_client.emit_points("fake.metric", [Time.now.to_i, 25], {})
-        wrapped_client.emit_points_called?.should be_true
+        wrapped_client.emit_points_called?.should be(true)
       end
     end
 

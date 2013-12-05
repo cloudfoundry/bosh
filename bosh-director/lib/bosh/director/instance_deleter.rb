@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
@@ -10,6 +8,7 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @event_log = Config.event_log
+      @blobstore = App.instance.blobstores.blobstore
     end
 
     # Deletes a list of instances
@@ -38,6 +37,8 @@ module Bosh::Director
         delete_snapshots(instance)
         delete_persistent_disks(instance.persistent_disks)
         delete_dns(instance.job, instance.index)
+
+        RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
 
         vm.db.transaction do
           instance.destroy

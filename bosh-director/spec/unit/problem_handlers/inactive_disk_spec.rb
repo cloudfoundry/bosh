@@ -75,7 +75,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       @handler.apply_resolution(:activate_disk)
       @disk.reload
 
-      @disk.active.should be_true
+      @disk.active.should be(true)
     end
   end
 

@@ -51,7 +51,7 @@ module Bosh::Director
       it 'should send an alert on the message bus' do
         exception = Bosh::Clouds::CloudError.new('a helpful message')
 
-        nats.should_receive(:publish).with do |subject, message|
+        nats.should_receive(:publish) do |subject, message|
           expect(subject).to eq 'hm.director.alert'
           payload = JSON.parse(message)
           expect(payload['summary']).to include 'a helpful message'
@@ -71,7 +71,7 @@ module Bosh::Director
         Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
         Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
 
-        Bosh::Director::Config.logger.should_receive(:error).with do |message|
+        Bosh::Director::Config.logger.should_receive(:error) do |message|
           expect(message).to include("#{instance1.job}/#{instance1.index}")
           expect(message).to include(instance1.vm.cid)
           expect(message).to include('a helpful message')

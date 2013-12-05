@@ -10,3 +10,6 @@
 [submodule "go_agent/src/github.com/cloudfoundry/gosigar"]
 	path = go_agent/src/github.com/cloudfoundry/gosigar
 	url = https://github.com/cloudfoundry/gosigar.git
+[submodule "go_agent/src/github.com/nu7hatch/gouuid"]
+	path = go_agent/src/github.com/nu7hatch/gouuid
+	url = https://github.com/nu7hatch/gouuid.git

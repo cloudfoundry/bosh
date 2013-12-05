@@ -47,7 +47,7 @@ describe Bosh::OpenStackCloud::Cloud do
   after do
     if @server_id
       cpi.delete_vm(@server_id)
-      cpi.has_vm?(@server_id).should be_false
+      cpi.has_vm?(@server_id).should be(false)
     end
   end
 
@@ -66,7 +66,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
     @server_id.should_not be_nil
 
-    cpi.has_vm?(@server_id).should be_true
+    cpi.has_vm?(@server_id).should be(true)
 
     metadata = {:deployment => 'deployment', :job => "openstack_cpi_spec", :index => "0"}
     cpi.set_vm_metadata(@server_id, metadata)

@@ -129,7 +129,7 @@ describe Bosh::Agent::Platform::Linux::Network do
     context "when there's a single network" do
       it "sets network settings" do
         network_wrapper.setup_dhcp_from_settings
-        network_wrapper.wrote_dhcp_conf.should be_true
+        network_wrapper.wrote_dhcp_conf.should be(true)
         network_wrapper.dns.should == ["172.30.22.153", "172.30.22.154"]
       end
     end
@@ -139,7 +139,7 @@ describe Bosh::Agent::Platform::Linux::Network do
         Bosh::Agent::Config.settings["networks"].merge!(partial_settings["networks"])
         Bosh::Agent::Config.settings["networks"]["network_a"].delete("default")
         network_wrapper.setup_dhcp_from_settings
-        network_wrapper.wrote_dhcp_conf.should be_true
+        network_wrapper.wrote_dhcp_conf.should be(true)
         network_wrapper.dns.should == ["1.2.3.4", "5.6.7.8"]
       end
     end
@@ -178,7 +178,7 @@ describe Bosh::Agent::Platform::Linux::Network do
 
     it "should delegate updating the network interface files to the platform implementation" do
       network_wrapper.setup_networking
-      network_wrapper.wrote_network_interfaces.should be_true
+      network_wrapper.wrote_network_interfaces.should be(true)
     end
 
     it "should update the resolv.conf file" do
@@ -198,7 +198,7 @@ describe Bosh::Agent::Platform::Linux::Network do
       Bosh::Agent::Config.settings = partial_settings
 
       network_wrapper.setup_networking
-      network_wrapper.wrote_dhcp_conf.should be_true
+      network_wrapper.wrote_dhcp_conf.should be(true)
     end
   end
 
@@ -210,7 +210,7 @@ describe Bosh::Agent::Platform::Linux::Network do
       Bosh::Agent::Config.settings = partial_settings
 
       network_wrapper.setup_networking
-      network_wrapper.wrote_dhcp_conf.should be_true
+      network_wrapper.wrote_dhcp_conf.should be(true)
     end
   end
 end

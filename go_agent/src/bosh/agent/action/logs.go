@@ -2,7 +2,8 @@ package action
 
 import (
 	boshblobstore "bosh/blobstore"
-	boshplatform "bosh/platform"
+	bosherr "bosh/errors"
+	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
@@ -10,12 +11,12 @@ import (
 )
 
 type logsAction struct {
-	platform  boshplatform.Platform
-	blobstore boshblobstore.Blobstore
+	compressor boshdisk.Compressor
+	blobstore  boshblobstore.Blobstore
 }
 
-func newLogs(platform boshplatform.Platform, blobstore boshblobstore.Blobstore) (action logsAction) {
-	action.platform = platform
+func newLogs(compressor boshdisk.Compressor, blobstore boshblobstore.Blobstore) (action logsAction) {
+	action.compressor = compressor
 	action.blobstore = blobstore
 	return
 }
@@ -23,6 +24,7 @@ func newLogs(platform boshplatform.Platform, blobstore boshblobstore.Blobstore) 
 func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	filters, err := extractFilters(payloadBytes)
 	if err != nil {
+		err = bosherr.WrapError(err, "Extracting filters from payload")
 		return
 	}
 
@@ -31,13 +33,15 @@ func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error)
 	}
 
 	logsDir := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
-	tarball, err := action.platform.CompressFilesInDir(logsDir, filters)
+	tarball, err := action.compressor.CompressFilesInDir(logsDir, filters)
 	if err != nil {
+		err = bosherr.WrapError(err, "Making logs tarball")
 		return
 	}
 
 	blobId, err := action.blobstore.Create(tarball)
 	if err != nil {
+		err = bosherr.WrapError(err, "Create file on blobstore")
 		return
 	}
 
@@ -52,6 +56,7 @@ func extractFilters(payloadBytes []byte) (filters []string, err error) {
 	payload := payloadType{}
 	err = json.Unmarshal(payloadBytes, &payload)
 	if err != nil {
+		err = bosherr.WrapError(err, "Unmarshalling payload")
 		return
 	}
 

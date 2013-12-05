@@ -15,7 +15,7 @@ describe Bhm::Plugins::Nats do
   end
 
   it "doesn't start if event loop isn't running" do
-    @plugin.run.should be_false
+    @plugin.run.should be(false)
   end
 
   it "publishes events to NATS" do

@@ -6,13 +6,17 @@ module ConfigSupport
       before { environment.delete(key) }
 
       it "raises an error" do
-        expect { config.configuration }.to raise_error(Bosh::Aws::ConfigurationInvalid, "Missing ENV variable #{key}")
+        expect {
+          config.configuration
+        }.to raise_error(Bosh::Aws::ConfigurationInvalid, "Missing ENV variable #{key}")
       end
     end
 
     context "when #{key} is present" do
       it "does not raise an error" do
-        expect { config.configuration }.not_to raise_error(Bosh::Aws::ConfigurationInvalid, "Missing ENV variable #{key}")
+        expect {
+          config.configuration
+        }.not_to raise_error
       end
     end
   end
@@ -47,25 +51,19 @@ describe Bosh::Aws::AwsConfig do
         it "does not validate the presence of BOSH_CACHE_SECRET_ACCESS_KEY" do
           environment.delete('BOSH_CACHE_ACCESS_KEY_ID')
           environment.delete('BOSH_CACHE_SECRET_ACCESS_KEY')
-
-          expect { config.validate! }.not_to raise_error(Bosh::Aws::ConfigurationInvalid, "Missing ENV variable BOSH_CACHE_SECRET_ACCESS_KEY")
+          expect { config.configuration }.not_to raise_error
         end
       end
 
       context "package cache configuration enabled" do
-        before do
-          environment["BOSH_CACHE_ACCESS_KEY_ID"] = "cache_access_key"
-        end
-
+        before { environment["BOSH_CACHE_ACCESS_KEY_ID"] = "cache_access_key" }
         it_needs_env "BOSH_CACHE_SECRET_ACCESS_KEY"
       end
     end
 
     describe "rendering the configuration yaml" do
       describe "invalid configuration" do
-        before do
-          environment.delete("BOSH_AWS_ACCESS_KEY_ID")
-        end
+        before { environment.delete("BOSH_AWS_ACCESS_KEY_ID") }
 
         it "does not render the hash" do
           expect { config.configuration }.to raise_error(Bosh::Aws::ConfigurationInvalid)

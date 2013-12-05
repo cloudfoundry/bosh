@@ -69,6 +69,8 @@ module Bosh::Cli
 
       print_info(manifest)
       @manifest = manifest
+
+      true
     ensure
       FileUtils.rm_rf(tmp_dir)
     end

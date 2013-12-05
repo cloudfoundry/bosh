@@ -23,12 +23,12 @@ describe Bhm::Plugins::Pagerduty do
       "http_proxy"  => "http://nowhere.com:3128"
     }
 
-    Bhm::Plugins::Pagerduty.new(valid_options).validate_options.should be_true
-    Bhm::Plugins::Pagerduty.new(invalid_options).validate_options.should be_false
+    Bhm::Plugins::Pagerduty.new(valid_options).validate_options.should be(true)
+    Bhm::Plugins::Pagerduty.new(invalid_options).validate_options.should be(false)
   end
 
   it "doesn't start if event loop isn't running" do
-    @plugin.run.should be_false
+    @plugin.run.should be(false)
   end
 
   it "sends events to Pagerduty" do

@@ -18,18 +18,18 @@ describe Bosh::Director::Api::ApiHelper do
     it "should return true if there is available disk space" do
       @stat.should_receive(:block_size).and_return(1024)
       @stat.should_receive(:blocks_available).and_return(1024)
-      check_available_disk_space(@tmpdir, 1048).should be_true
+      check_available_disk_space(@tmpdir, 1048).should be(true)
     end
 
     it "should return false if there is no available disk space" do
       @stat.should_receive(:block_size).and_return(1024)
       @stat.should_receive(:blocks_available).and_return(1)
-      check_available_disk_space(@tmpdir, 1048).should be_false
+      check_available_disk_space(@tmpdir, 1048).should be(false)
     end
 
     it "should return false if there is an exception when checking dir stats"do
       @stat.should_receive(:block_size).and_raise(Errno::EACCES)
-      check_available_disk_space(@tmpdir, 1048).should be_false
+      check_available_disk_space(@tmpdir, 1048).should be(false)
     end
   end
 

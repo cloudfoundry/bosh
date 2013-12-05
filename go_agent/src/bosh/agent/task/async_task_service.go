@@ -1,18 +1,23 @@
 package task
 
-import "fmt"
+import (
+	boshlog "bosh/logger"
+	"fmt"
+)
 
 // Access to the currentTasks map should always be performed in the semaphore
 // Use the taskSem channel for that
 
 type asyncTaskService struct {
+	logger       boshlog.Logger
 	currentTasks map[string]Task
 	taskChan     chan Task
 	taskSem      chan func()
 }
 
-func NewAsyncTaskService() (service Service) {
+func NewAsyncTaskService(logger boshlog.Logger) (service Service) {
 	s := asyncTaskService{
+		logger:       logger,
 		currentTasks: make(map[string]Task),
 		taskChan:     make(chan Task),
 		taskSem:      make(chan func()),
@@ -59,6 +64,8 @@ func (service asyncTaskService) FindTask(id string) (task Task, found bool) {
 }
 
 func (service asyncTaskService) processSemFuncs() {
+	defer service.logger.HandlePanic("Task Service Process Sem Funcs")
+
 	for {
 		do := <-service.taskSem
 		do()
@@ -66,13 +73,18 @@ func (service asyncTaskService) processSemFuncs() {
 }
 
 func (service asyncTaskService) processTasks() {
+	defer service.logger.HandlePanic("Task Service Process Tasks")
+
 	for {
 		task := <-service.taskChan
 
 		value, err := task.taskFunc()
 
 		if err != nil {
+			task.Error = err.Error()
 			task.State = TaskStateFailed
+
+			service.logger.Error("Task Service", "Failed processing task #%s got: %s", task.Id, err.Error())
 		} else {
 			task.Value = value
 			task.State = TaskStateDone

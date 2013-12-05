@@ -94,7 +94,7 @@ module Bosh::Director
                        :index => '0', :state => 'started')
             put '/deployments/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 200
-            expect(instance.reload.resurrection_paused).to be_true
+            expect(instance.reload.resurrection_paused).to be(true)
           end
 
           it "doesn't like invalid indices" do
@@ -176,7 +176,7 @@ module Bosh::Director
             last_response.status.should == 200
 
             body = Yajl::Parser.parse(last_response.body)
-            body.kind_of?(Array).should be_true
+            body.kind_of?(Array).should be(true)
             body.size.should == num_dummies
 
             expected_collection = deployments.sort_by { |e| e.name }.map { |e|

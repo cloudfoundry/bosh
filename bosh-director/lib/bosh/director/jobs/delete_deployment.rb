@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class DeleteDeployment < BaseJob
@@ -18,6 +16,7 @@ module Bosh::Director
         @keep_snapshots = options["keep_snapshots"]
         @cloud = Config.cloud
         @deployment_manager = Api::DeploymentManager.new
+        @blobstore = App.instance.blobstores.blobstore
       end
 
       def perform
@@ -144,6 +143,10 @@ module Bosh::Director
             disk.destroy
           end
 
+          ignoring_errors_when_forced do
+            RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
+          end
+
           instance.destroy
 
           delete_vm(vm) if vm
@@ -160,7 +163,6 @@ module Bosh::Director
             @cloud.delete_vm(vm.cid)
           end
         end
-
         vm.destroy
       end
 

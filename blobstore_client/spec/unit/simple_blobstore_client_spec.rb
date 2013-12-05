@@ -100,14 +100,14 @@ module Bosh::Blobstore
           response.stub(status: 200)
 
           httpclient.should_receive(:head).with('http://localhost/resources/foobar', header: {}).and_return(response)
-          client.exists?('foobar').should be_true
+          client.exists?('foobar').should be(true)
         end
 
         it 'should return false for an object that does not exist' do
           response.stub(status: 404)
 
           httpclient.should_receive(:head).with('http://localhost/resources/doesntexist', header: {}).and_return(response)
-          client.exists?('doesntexist').should be_false
+          client.exists?('doesntexist').should be(false)
         end
 
         it 'should raise a BlobstoreError if response status is neither 200 nor 404' do

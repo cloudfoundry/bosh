@@ -33,15 +33,15 @@ describe Bosh::Agent::Message::CompilePackage do
 
     package_file = File.join(@handler.compile_base, "tmp",
                              @handler.blobstore_id)
-    File.exist?(package_file).should be_false
+    File.exist?(package_file).should be(false)
     @handler.get_source_package
-    File.exist?(package_file).should be_true
+    File.exist?(package_file).should be(true)
 
     compile_dir = File.join(@handler.compile_base, @handler.package_name)
-    File.directory?(compile_dir).should be_false
+    File.directory?(compile_dir).should be(false)
     @handler.unpack_source_package
-    File.directory?(compile_dir).should be_true
-    File.exist?(File.join(compile_dir, "packaging")).should be_true
+    File.directory?(compile_dir).should be(true)
+    File.exist?(File.join(compile_dir, "packaging")).should be(true)
   end
 
   it "should compile a package" do
@@ -53,7 +53,7 @@ describe Bosh::Agent::Message::CompilePackage do
     @handler.compile
     dummy_file = File.join(@handler.install_base, @handler.package_name,
                            @handler.package_version.to_s, "dummy.txt")
-    File.exist?(dummy_file).should be_true
+    File.exist?(dummy_file).should be(true)
   end
 
   it "should fail packaging script returns a non-zero exit code" do

@@ -22,17 +22,17 @@ describe 'initialization', :skip_task_check do
       end
 
       it 'should have a readable stemcell' do
-        File.exist?(stemcell.to_path).should be_true
+        File.exist?(stemcell.to_path).should be(true)
       end
 
       it 'should have readable releases' do
-        File.exist?(release.to_path).should be_true
+        File.exist?(release.to_path).should be(true)
       end
 
       it 'should have a readable deployment' do
         load_deployment_spec
         with_deployment do |deployment|
-          File.exists?(deployment.to_path).should be_true
+          File.exists?(deployment.to_path).should be(true)
         end
       end
     end

@@ -23,7 +23,7 @@ describe Bhm::Plugins::Resurrector do
 
   context 'when the event machine reactor is not running' do
     it 'should not start' do
-      plugin.run.should be_false
+      plugin.run.should be(false)
     end
   end
 

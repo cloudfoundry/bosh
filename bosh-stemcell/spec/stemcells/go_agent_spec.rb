@@ -2,14 +2,12 @@ require 'spec_helper'
 
 describe 'Stemcell with Go Agent' do
   describe 'installed by bosh_go_agent' do
-    describe file('/var/vcap/bosh/bin/bosh-agent') do
-      it { should be_file }
-      it { should be_executable }
-    end
 
-    describe file('/var/vcap/bosh/bin/bosh-agent-rc') do
-      it { should be_file }
-      it { should be_executable }
+    %w(bosh-agent bosh-agent-rc s3).each do |binary|
+      describe file("/var/vcap/bosh/bin/#{binary}") do
+        it { should be_file }
+        it { should be_executable }
+      end
     end
 
     {

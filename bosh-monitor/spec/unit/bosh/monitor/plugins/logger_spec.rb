@@ -9,7 +9,7 @@ describe Bhm::Plugins::Logger do
   end
 
   it "validates options" do
-    @plugin.validate_options.should be_true
+    @plugin.validate_options.should be(true)
   end
 
   it "writes events to log" do

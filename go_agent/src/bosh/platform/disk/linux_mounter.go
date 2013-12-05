@@ -1,6 +1,7 @@
 package disk
 
 import (
+	bosherr "bosh/errors"
 	boshsys "bosh/system"
 	"errors"
 	"fmt"
@@ -20,11 +21,19 @@ func newLinuxMounter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (mounter l
 
 func (m linuxMounter) Mount(partitionPath, mountPoint string) (err error) {
 	shouldMount, err := m.shouldMount(partitionPath, mountPoint)
-	if !shouldMount || err != nil {
+	if !shouldMount {
+		return
+	}
+
+	if err != nil {
+		err = bosherr.WrapError(err, "Checking whether partition should be mounted")
 		return
 	}
 
 	_, _, err = m.runner.RunCommand("mount", partitionPath, mountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to mount")
+	}
 	return
 }
 
@@ -45,12 +54,16 @@ func (m linuxMounter) SwapOn(partitionPath string) (err error) {
 	}
 
 	_, _, err = m.runner.RunCommand("swapon", partitionPath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to swapon")
+	}
 	return
 }
 
 func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (shouldMount bool, err error) {
 	mountInfo, err := m.fs.ReadFile("/proc/mounts")
 	if err != nil {
+		err = bosherr.WrapError(err, "Reading /proc/mounts")
 		return
 	}
 

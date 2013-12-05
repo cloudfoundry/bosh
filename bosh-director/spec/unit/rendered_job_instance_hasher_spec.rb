@@ -39,8 +39,8 @@ module Bosh::Director
     describe '#template_hashes' do
       let(:rendered_templates) {
         [
-          instance_double('Bosh::Director:RenderedJobTemplate', name: 'template-name1', template_hash: 'hash1'),
-          instance_double('Bosh::Director:RenderedJobTemplate', name: 'template-name2', template_hash: 'hash2'),
+          instance_double('Bosh::Director::RenderedJobTemplate', name: 'template-name1', template_hash: 'hash1'),
+          instance_double('Bosh::Director::RenderedJobTemplate', name: 'template-name2', template_hash: 'hash2'),
         ]
       }
       subject(:hasher) { RenderedJobInstanceHasher.new(rendered_templates) }

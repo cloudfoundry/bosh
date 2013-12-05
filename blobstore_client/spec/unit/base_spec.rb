@@ -32,8 +32,8 @@ describe Bosh::Blobstore::BaseClient do
 
   describe '#get' do
     it 'allows to pass options optionally' do
-      expect { subject.get('id', 'file')     }.to_not raise_error(ArgumentError)
-      expect { subject.get('id', 'file', {}) }.to_not raise_error(ArgumentError)
+      expect { subject.get('id', 'file')     }.to raise_error(Bosh::Blobstore::NotImplemented)
+      expect { subject.get('id', 'file', {}) }.to raise_error(Bosh::Blobstore::NotImplemented)
     end
 
     it 'should raise a NotImplemented exception' do

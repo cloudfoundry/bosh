@@ -147,17 +147,21 @@ describe Bosh::Aws::ELB do
         it 'throws an error' do
           fake_aws_iam.should_receive(:server_certificates).and_return(certificates)
 
-          certificates.should_receive(:upload).any_number_of_times.and_raise(AWS::IAM::Errors::MalformedCertificate)
+          allow(certificates).to receive(:upload).and_raise(AWS::IAM::Errors::MalformedCertificate)
 
-          expect do
-            elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
-                                             'security_group' => 'security_group_name',
-                                             'https' => true,
-                                             'ssl_cert' => cert_name,
-                                             'dns_record' => 'myapp',
-                                             'domain' => 'dev102.cf.com' }, certs)
-          end.to raise_error(Bosh::Aws::ELB::BadCertificateError,
-                             /Unable to upload ELB SSL Certificate.*BEGIN CERTIFICATE/m)
+          expect {
+            elb.create('my elb name', vpc, {
+              'subnets' => %w(sub_name1 sub_name2),
+              'security_group' => 'security_group_name',
+              'https' => true,
+              'ssl_cert' => cert_name,
+              'dns_record' => 'myapp',
+              'domain' => 'dev102.cf.com'
+            }, certs)
+          }.to raise_error(
+            Bosh::Aws::ELB::BadCertificateError,
+            /Unable to upload ELB SSL Certificate.*BEGIN CERTIFICATE/m
+          )
         end
       end
     end

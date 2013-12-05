@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director::Models
   class Instance < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :deployment
@@ -24,6 +22,19 @@ module Bosh::Director::Models
       disk = persistent_disk
       return disk.disk_cid if disk
       nil
+    end
+
+    def latest_rendered_templates_archive
+      rendered_templates_archives_dataset.order(:created_at).last
+    end
+
+    def stale_rendered_templates_archives
+      stale_archives = rendered_templates_archives_dataset
+      if latest = latest_rendered_templates_archive
+        stale_archives.exclude(id: latest.id)
+      else
+        stale_archives
+      end
     end
   end
 end

@@ -210,7 +210,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
   it "generates tarball" do
     add_files("src", %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
     builder = make_builder("bar", %w(foo/**/* baz))
-    builder.generate_tarball.should be_true
+    builder.generate_tarball.should be(true)
   end
 
   it "can point to either dev or a final version of a package" do
@@ -251,28 +251,28 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder = make_builder("bar", globs)
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_false
+        should be(false)
     builder.build
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_true
+        should be(true)
 
     builder = make_builder("bar", globs)
     builder.build
     v1_fingerprint = builder.fingerprint
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_true
+        should be(true)
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").
-        should be_false
+        should be(false)
 
     add_file("src", "foo/3.rb")
     builder = make_builder("bar", globs)
     builder.build
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_true
+        should be(true)
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").
-        should be_true
+        should be(true)
 
     remove_file("src", "foo/3.rb")
     builder = make_builder("bar", globs)
@@ -282,11 +282,11 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.fingerprint.should == v1_fingerprint
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_true
+        should be(true)
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").
-        should be_true
+        should be(true)
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.3-dev.tgz").
-        should be_false
+        should be(false)
 
     # Now add packaging
     add_file("packages", "bar/packaging", "make install")
@@ -300,16 +300,16 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.build
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.3-dev.tgz").
-        should be_true
+        should be(true)
 
     # And remove all
     builder = make_builder("bar", globs)
     builder.build
     builder.version.should == "0.4-dev"
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.4-dev.tgz").
-        should be_true
+        should be(true)
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.5-dev.tgz").
-        should be_false
+        should be(false)
   end
 
   it "stops if pre_packaging fails" do
@@ -467,13 +467,13 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     builder.version.should == "0.1-dev"
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_false
+        should be(false)
 
     builder.dry_run = false
     builder.reload.build
     builder.version.should == "0.1-dev"
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_true
+        should be(true)
 
     blobstore = double("blobstore")
     blobstore.should_not_receive(:create)
@@ -491,9 +491,9 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder2.build
     builder2.version.should == "0.2-dev"
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").
-        should be_true
+        should be(true)
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").
-        should be_false
+        should be(false)
   end
 
   it "uses blobs directory to look up files as well" do
@@ -583,7 +583,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     add_file("blobs", "test/foo/NOTICE.txt", "NOTICE contents")
 
     File.directory?(File.join(@release_dir, "src", "test", "foo")).
-      should be_true
+      should be(true)
 
     fp2 = make_builder("A", %w(test/**/*)).fingerprint
 

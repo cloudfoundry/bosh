@@ -23,12 +23,12 @@ describe Bhm::Plugins::Tsdb do
       "host" => "localhost"
     }
 
-    Bhm::Plugins::Tsdb.new(valid_options).validate_options.should be_true
-    Bhm::Plugins::Tsdb.new(invalid_options).validate_options.should be_false
+    Bhm::Plugins::Tsdb.new(valid_options).validate_options.should be(true)
+    Bhm::Plugins::Tsdb.new(invalid_options).validate_options.should be(false)
   end
 
   it "doesn't start if event loop isn't running" do
-    @plugin.run.should be_false
+    @plugin.run.should be(false)
   end
 
   it "sends event metrics to TSDB" do

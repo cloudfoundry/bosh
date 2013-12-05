@@ -124,7 +124,7 @@ module Bosh::Blobstore
             files.should_receive(:head).with('object_id').and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be_true
+            @client.exists?(oid).should be(true)
           end
 
           it "should return false if object doesn't exists" do
@@ -134,7 +134,7 @@ module Bosh::Blobstore
             files.should_receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be_false
+            @client.exists?(oid).should be(false)
           end
         end
       end
@@ -180,7 +180,7 @@ module Bosh::Blobstore
           it 'should raise a BlobstoreError exception' do
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
 
-            expect { @client.exists?(oid).should be_true }.to raise_error(BlobstoreError)
+            expect { @client.exists?(oid).should be(true) }.to raise_error(BlobstoreError)
           end
         end
       end
@@ -260,7 +260,7 @@ module Bosh::Blobstore
             files.should_receive(:head).with('object_id').and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be_true
+            @client.exists?(oid).should be(true)
           end
 
           it "should return false if object doesn't exists" do
@@ -270,7 +270,7 @@ module Bosh::Blobstore
             files.should_receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be_false
+            @client.exists?(oid).should be(false)
           end
         end
       end
@@ -316,7 +316,7 @@ module Bosh::Blobstore
           it 'should raise a BlobstoreError exception' do
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
 
-            expect { @client.exists?(oid).should be_true }.to raise_error(BlobstoreError)
+            expect { @client.exists?(oid).should be(true) }.to raise_error(BlobstoreError)
           end
         end
       end
@@ -396,7 +396,7 @@ module Bosh::Blobstore
             files.should_receive(:head).with('object_id').and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be_true
+            @client.exists?(oid).should be(true)
           end
 
           it "should return false if object doesn't exists" do
@@ -406,7 +406,7 @@ module Bosh::Blobstore
             files.should_receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be_false
+            @client.exists?(oid).should be(false)
           end
         end
       end
@@ -452,7 +452,7 @@ module Bosh::Blobstore
           it 'should raise a BlobstoreError exception' do
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
 
-            expect { @client.exists?(oid).should be_true }.to raise_error(BlobstoreError)
+            expect { @client.exists?(oid).should be(true) }.to raise_error(BlobstoreError)
           end
         end
       end

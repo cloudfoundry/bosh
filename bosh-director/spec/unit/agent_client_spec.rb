@@ -53,7 +53,7 @@ module Bosh::Director
 
     describe 'long running messages' do
       let(:vm) do
-        instance_double('Models::Vm', credentials: nil)
+        instance_double('Bosh::Director::Models::Vm', credentials: nil)
       end
 
       subject(:client) do

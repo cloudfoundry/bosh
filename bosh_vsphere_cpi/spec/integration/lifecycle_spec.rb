@@ -71,7 +71,7 @@ describe VSphereCloud::Cloud do
     )
 
     @vm_id.should_not be_nil
-    cpi.has_vm?(@vm_id).should be_true
+    cpi.has_vm?(@vm_id).should be(true)
 
     metadata = {deployment: 'deployment', job: 'cpi_spec', index: '0'}
     cpi.set_vm_metadata(@vm_id, metadata)

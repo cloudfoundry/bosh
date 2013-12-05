@@ -157,7 +157,7 @@ module Bosh::Director
             expect(described_class.take_snapshot(@instance, {:clean => true})).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
-            expect(snapshot.clean).to be_true
+            expect(snapshot.clean).to be(true)
           end
         end
 

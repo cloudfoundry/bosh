@@ -40,7 +40,7 @@ module Bosh::Director
         ran_once = true
       end
 
-      ran_once.should be_true
+      ran_once.should be(true)
     end
 
     it 'should not let two clients to acquire the same lock at the same time' do
@@ -83,7 +83,7 @@ module Bosh::Director
         lambda { lock_b.lock {} }.should raise_exception(Lock::TimeoutError)
       end
 
-      ran_once.should be_true
+      ran_once.should be(true)
     end
 
     it 'should return immediately with lock busy if try lock fails to get lock' do
@@ -124,7 +124,7 @@ module Bosh::Director
         lambda { lock_b.lock {} }.should raise_exception(Lock::TimeoutError)
       end
 
-      ran_once.should be_true
+      ran_once.should be(true)
     end
   end
 end

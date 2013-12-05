@@ -49,7 +49,7 @@ def make_cloud(options = nil)
 end
 
 def mock_registry(endpoint = 'http://registry:3333')
-  registry = mock('registry', :endpoint => endpoint)
+  registry = double('registry', :endpoint => endpoint)
   Bosh::Registry::Client.stub(:new).and_return(registry)
   registry
 end

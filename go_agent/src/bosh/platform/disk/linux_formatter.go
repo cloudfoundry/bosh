@@ -1,6 +1,7 @@
 package disk
 
 import (
+	bosherr "bosh/errors"
 	boshsys "bosh/system"
 	"fmt"
 	"strings"
@@ -25,11 +26,18 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 	switch fsType {
 	case FileSystemSwap:
 		_, _, err = f.runner.RunCommand("mkswap", partitionPath)
+		if err != nil {
+			err = bosherr.WrapError(err, "Shelling out to mkswap")
+		}
+
 	case FileSystemExt4:
 		if f.fs.FileExists("/sys/fs/ext4/features/lazy_itable_init") {
 			_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", partitionPath)
 		} else {
 			_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", partitionPath)
+		}
+		if err != nil {
+			err = bosherr.WrapError(err, "Shelling out to mke2fs")
 		}
 	}
 	return

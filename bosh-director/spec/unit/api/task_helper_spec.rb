@@ -25,7 +25,7 @@ module Bosh::Director
 
       it 'should create the task output file' do
         task = TaskHelperClass.new.create_task(user.username, type, description)
-        expect(File.exists?(File.join(tmpdir, 'tasks', task.id.to_s, 'debug'))).to be_true
+        expect(File.exists?(File.join(tmpdir, 'tasks', task.id.to_s, 'debug'))).to be(true)
       end
 
       it 'should create a new task model' do

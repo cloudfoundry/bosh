@@ -38,9 +38,9 @@ module Bosh::Director
         let(:deployment) { instance_double('Bosh::Director::Models::Deployment', id: 1, name: 'foobar') }
         let(:job_name) { 'my_job' }
         let(:job_index) { '6' }
+        let(:filter_attributes) { { deployment_id: deployment.id, job: job_name, index: job_index } }
 
         before do
-          filter_attributes = { deployment_id: deployment.id, job: job_name, index: job_index }
           Models::Instance.stub(:find).with(filter_attributes).and_return(instance)
           deployment_lookup.stub(:by_name).with(deployment.name).and_return(deployment)
         end
@@ -56,6 +56,20 @@ module Bosh::Director
             expect {
               instance_lookup.by_attributes(deployment.name, job_name, job_index)
             }.to raise_error(InstanceNotFound, "`#{deployment.name}/#{job_name}/#{job_index}' doesn't exist")
+          end
+        end
+
+        context 'when attributes are are empty strings' do
+          let(:filter_attributes) { { deployment_id: anything, job: '', index: '' } }
+          before do
+            Models::Instance.stub(:find).and_return(instance)
+            Models::Instance.stub(:find).with(filter_attributes).and_raise(PG::Error, 'ERROR: invalid input syntax for integer: ""')
+
+            deployment_lookup.stub(:by_name).with('').and_return(deployment)
+          end
+
+          it 'does not raise' do
+            expect { instance_lookup.by_attributes('foobar', '', '') }.to_not raise_error
           end
         end
       end

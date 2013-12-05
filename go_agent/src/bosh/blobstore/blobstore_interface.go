@@ -3,6 +3,6 @@ package blobstore
 import "os"
 
 type Blobstore interface {
-	SetOptions(opts map[string]string) (err error)
+	ApplyOptions(opts map[string]string) (updated Blobstore, err error)
 	Create(file *os.File) (blobId string, err error)
 }

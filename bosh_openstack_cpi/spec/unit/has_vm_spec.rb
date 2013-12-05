@@ -10,14 +10,14 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud = mock_cloud(mock_cloud_options) do |openstack|
       openstack.servers.stub(:get).with("i-foobar").and_return(server)
     end
-    cloud.has_vm?("i-foobar").should be_true
+    cloud.has_vm?("i-foobar").should be(true)
   end
 
   it "has_vm? returns false if OpenStack server doesn't exists" do
     cloud = mock_cloud(mock_cloud_options) do |openstack|
       openstack.servers.stub(:get).with("i-foobar").and_return(nil)
     end
-    cloud.has_vm?("i-foobar").should be_false
+    cloud.has_vm?("i-foobar").should be(false)
   end
 
   it "has_vm? returns false if OpenStack server state is :terminated" do
@@ -25,7 +25,7 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud = mock_cloud(mock_cloud_options) do |openstack|
       openstack.servers.stub(:get).with("i-foobar").and_return(server)
     end
-    cloud.has_vm?("i-foobar").should be_false
+    cloud.has_vm?("i-foobar").should be(false)
   end
 
   it "has_vm? returns false if OpenStack server state is :deleted" do
@@ -33,6 +33,6 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud = mock_cloud(mock_cloud_options) do |openstack|
       openstack.servers.stub(:get).with("i-foobar").and_return(server)
     end
-    cloud.has_vm?("i-foobar").should be_false
+    cloud.has_vm?("i-foobar").should be(false)
   end
 end

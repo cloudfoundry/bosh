@@ -1,6 +1,7 @@
 package system
 
 import (
+	boshlog "bosh/logger"
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestHomeDir(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 
 	homeDir, err := osFs.HomeDir("root")
 	assert.NoError(t, err)
@@ -18,7 +19,7 @@ func TestHomeDir(t *testing.T) {
 }
 
 func TestMkdirAll(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	tmpPath := os.TempDir()
 	testPath := filepath.Join(tmpPath, "MkdirAllTestDir", "bar", "baz")
 	defer os.RemoveAll(filepath.Join(tmpPath, "MkdirAllTestDir"))
@@ -39,7 +40,7 @@ func TestMkdirAll(t *testing.T) {
 }
 
 func TestChown(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	testPath := filepath.Join(os.TempDir(), "ChownTestDir")
 
 	err := os.Mkdir(testPath, os.FileMode(0700))
@@ -52,7 +53,7 @@ func TestChown(t *testing.T) {
 }
 
 func TestChmod(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	testPath := filepath.Join(os.TempDir(), "ChmodTestDir")
 
 	_, err := os.Create(testPath)
@@ -70,8 +71,8 @@ func TestChmod(t *testing.T) {
 }
 
 func TestWriteToFile(t *testing.T) {
-	osFs := NewOsFileSystem()
-	testPath := filepath.Join(os.TempDir(), "WriteToFileTestFile")
+	osFs := createOsFs()
+	testPath := filepath.Join(os.TempDir(), "subDir", "WriteToFileTestFile")
 
 	_, err := os.Stat(testPath)
 	assert.Error(t, err)
@@ -107,7 +108,7 @@ func TestWriteToFile(t *testing.T) {
 }
 
 func TestReadFile(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	testPath := filepath.Join(os.TempDir(), "ReadFileTestFile")
 
 	osFs.WriteToFile(testPath, "some contents")
@@ -119,7 +120,7 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestFileExists(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")
 
 	assert.False(t, osFs.FileExists(testPath))
@@ -131,7 +132,7 @@ func TestFileExists(t *testing.T) {
 }
 
 func TestSymlink(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
 	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestSymlink")
 
@@ -151,7 +152,7 @@ func TestSymlink(t *testing.T) {
 }
 
 func TestSymlinkWhenLinkAlreadyExistsAndLinksToTheIntendedPath(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
 	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
 
@@ -173,7 +174,7 @@ func TestSymlinkWhenLinkAlreadyExistsAndLinksToTheIntendedPath(t *testing.T) {
 }
 
 func TestSymlinkWhenLinkAlreadyExistsAndDoesNotLinkToTheIntendedPath(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
 	otherFilePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1OtherFile")
 	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
@@ -192,7 +193,7 @@ func TestSymlinkWhenLinkAlreadyExistsAndDoesNotLinkToTheIntendedPath(t *testing.
 }
 
 func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
-	osFs := NewOsFileSystem()
+	osFs := createOsFs()
 	filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
 	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
 
@@ -204,6 +205,12 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 
 	err := osFs.Symlink(filePath, symlinkPath)
 	assert.Error(t, err)
+}
+
+func createOsFs() (fs FileSystem) {
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	fs = NewOsFileSystem(logger)
+	return
 }
 
 func readFile(file *os.File) string {

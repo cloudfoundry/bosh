@@ -18,7 +18,6 @@ module Bosh::Cli
       let(:progess_bar) do
         instance_double('ProgressBar',
                         file_transfer_mode: nil,
-                        write: nil,
                         inc: nil,
                         finish: nil)
       end
@@ -66,13 +65,13 @@ module Bosh::Cli
       context 'when the sha1 matches the downloaded file' do
         let(:expected_sha1) { 'bar-sha1' }
 
-        it { should be_true }
+        it { should be(true) }
       end
 
       context 'when the sha1 does not match the downloaded file' do
         let(:expected_sha1) { 'baaaar-sha1' }
 
-        it { should be_false }
+        it { should be(false) }
       end
     end
   end

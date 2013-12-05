@@ -15,16 +15,16 @@ describe Bosh::Cli::VersionsIndex do
   end
 
   it "only creates directory structure on writes to index" do
-    File.exists?(@index_file).should be_false
-    @index.version_exists?(1).should be_false
+    File.exists?(@index_file).should be(false)
+    @index.version_exists?(1).should be(false)
     @index["deadbeef"].should be_nil
     @index.latest_version.should be_nil
-    File.exists?(@index_file).should be_false
+    File.exists?(@index_file).should be(false)
 
     @index.add_version("deadcafe",
                        { "version" => 2 },
                        get_tmp_file_path("payload2"))
-    File.exists?(@index_file).should be_true
+    File.exists?(@index_file).should be(true)
   end
 
   it "chokes on malformed index file" do
@@ -59,9 +59,9 @@ describe Bosh::Cli::VersionsIndex do
         item1.merge("sha1" => Digest::SHA1.hexdigest("payload1"))
     @index["deadcafe"].should ==
         item2.merge("sha1" => Digest::SHA1.hexdigest("payload2"))
-    @index.version_exists?(1).should be_true
-    @index.version_exists?(2).should be_true
-    @index.version_exists?(3).should be_false
+    @index.version_exists?(1).should be(true)
+    @index.version_exists?(2).should be(true)
+    @index.version_exists?(3).should be(false)
 
     @index.filename(1).should == File.join(@dir, "1.tgz")
     @index.filename(2).should == File.join(@dir, "2.tgz")

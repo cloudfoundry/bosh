@@ -105,7 +105,7 @@ module Bosh::Agent
       response = double("response")
       response.stub(:code).and_return("200")
 
-      http_client.should_receive(:request).with { |request|
+      http_client.should_receive(:request) { |request|
         request["authorization"].should == "Basic dmNhcDpmb29iYXI="
       }.and_return(response)
 

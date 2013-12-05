@@ -35,7 +35,7 @@ module Bosh::Director
       id = blobstore.create('some data')
       path = manager.get_resource_path(id)
 
-      File.exists?(path).should be_true
+      File.exists?(path).should be(true)
       File.read(path).should == 'some data'
     end
 

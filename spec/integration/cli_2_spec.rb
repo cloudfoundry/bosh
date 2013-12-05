@@ -120,10 +120,10 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
       FileUtils.touch(new_file)
       run_bosh('create release --force', work_dir: Dir.pwd)
       FileUtils.rm_rf(new_file)
-      expect(File.exists?(release_1)).to be_true
+      expect(File.exists?(release_1)).to be(true)
       release_manifest = Psych.load_file(release_1)
       expect(release_manifest['commit_hash']).to eq commit_hash
-      expect(release_manifest['uncommitted_changes']).to be_true
+      expect(release_manifest['uncommitted_changes']).to be(true)
 
       run_bosh("target http://localhost:#{current_sandbox.director_port}")
       run_bosh('login admin admin')

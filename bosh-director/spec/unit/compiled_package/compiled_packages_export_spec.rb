@@ -8,7 +8,7 @@ module Bosh::Director::CompiledPackage
     describe '#extract' do
 
       it 'extracts the tar to a temporary directory' do
-        exec = instance_double('Bosh::Exec')
+        exec = class_double('Bosh::Exec')
         export = described_class.new(file: exported_tar, exec: exec)
 
         YAML.stub(:load_file).with('/fake/temp/dir/compiled_packages.MF').and_return('compiled_packages' => [])
@@ -70,9 +70,9 @@ module Bosh::Director::CompiledPackage
 
         export = described_class.new(file: exported_tar)
 
-        export.extract(tempdir) { expect(Dir.exist?(tempdir)).to be_true }
+        export.extract(tempdir) { expect(Dir.exist?(tempdir)).to be(true) }
 
-        expect(Dir.exist?(tempdir)).to be_false
+        expect(Dir.exist?(tempdir)).to be(false)
       end
 
     end

@@ -66,6 +66,10 @@ module Bosh::AwsCloud
       new.for_resource(resource: image, errors: ignored_errors, target_state: target_state, state_method: :state) do |current_state|
         current_state == target_state
       end
+    rescue AWS::Core::Resource::NotFound
+      # if an AMI is deleted, AWS can reap the object and the reference is no longer found,
+      # so consider this exception a success condition if we are deleting
+      raise unless target_state == :deleted
     end
 
     def self.for_volume(args)

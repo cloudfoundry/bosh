@@ -20,7 +20,7 @@ describe Bosh::Cli::Stemcell do
       end
 
       it 'reports a valid stemcell' do
-        expect(subject.perform_validation).to be_true
+        expect(subject.perform_validation).to be(true)
       end
     end
 

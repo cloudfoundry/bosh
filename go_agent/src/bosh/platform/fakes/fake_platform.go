@@ -1,35 +1,48 @@
 package fakes
 
 import (
+	boshdisk "bosh/platform/disk"
+	fakedisk "bosh/platform/disk/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"os"
 )
 
 type FakePlatform struct {
-	Fs *fakesys.FakeFileSystem
+	FakeStatsCollector *fakestats.FakeStatsCollector
+	Fs                 *fakesys.FakeFileSystem
+	Runner             *fakesys.FakeCmdRunner
+	FakeCompressor     *fakedisk.FakeCompressor
 
-	FakeStatsCollector                   *fakestats.FakeStatsCollector
-	SetupRuntimeConfigurationWasInvoked  bool
-	CreateUserUsername                   string
-	CreateUserPassword                   string
-	CreateUserBasePath                   string
-	AddUserToGroupsGroups                map[string][]string
-	DeleteEphemeralUsersMatchingRegex    string
-	SetupSshPublicKeys                   map[string]string
-	SetupHostnameHostname                string
+	SetupRuntimeConfigurationWasInvoked bool
+	CreateUserUsername                  string
+	CreateUserPassword                  string
+	CreateUserBasePath                  string
+	AddUserToGroupsGroups               map[string][]string
+	DeleteEphemeralUsersMatchingRegex   string
+	SetupSshPublicKeys                  map[string]string
+	SetupHostnameHostname               string
+
+	SetupLogrotateErr  error
+	SetupLogrotateArgs SetupLogrotateArgs
+
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
 	StartMonitStarted                    bool
 	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
-	CompressFilesInDirTarball            *os.File
-	CompressFilesInDirDir                string
-	CompressFilesInDirFilters            []string
+
+	MountPersistentDiskDevicePath string
+	MountPersistentDiskMountPoint string
+}
+
+type SetupLogrotateArgs struct {
+	GroupName string
+	BasePath  string
+	Size      string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -39,6 +52,8 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
 	platform.Fs = &fakesys.FakeFileSystem{}
+	platform.Runner = &fakesys.FakeCmdRunner{}
+	platform.FakeCompressor = &fakedisk.FakeCompressor{}
 	return
 }
 
@@ -46,8 +61,16 @@ func (p *FakePlatform) GetFs() (fs boshsys.FileSystem) {
 	return p.Fs
 }
 
+func (p *FakePlatform) GetRunner() (runner boshsys.CmdRunner) {
+	return p.Runner
+}
+
 func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
 	return p.FakeStatsCollector
+}
+
+func (p *FakePlatform) GetCompressor() (compressor boshdisk.Compressor) {
+	return p.FakeCompressor
 }
 
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
@@ -86,9 +109,26 @@ func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
+func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
+	p.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
+
+	if p.SetupLogrotateErr != nil {
+		err = p.SetupLogrotateErr
+		return
+	}
+
+	return
+}
+
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
 	p.SetupEphemeralDiskWithPathMountPoint = mountPoint
+	return
+}
+
+func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+	p.MountPersistentDiskDevicePath = devicePath
+	p.MountPersistentDiskMountPoint = mountPoint
 	return
 }
 
@@ -105,13 +145,5 @@ func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
 	p.SetTimeWithNtpServersServers = servers
 	p.SetTimeWithNtpServersServersFilePath = serversFilePath
-	return
-}
-
-func (p *FakePlatform) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
-	p.CompressFilesInDirDir = dir
-	p.CompressFilesInDirFilters = filters
-
-	tarball = p.CompressFilesInDirTarball
 	return
 }

@@ -1,6 +1,7 @@
 package mbus
 
 import (
+	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	"github.com/cloudfoundry/yagnats"
 	"github.com/cloudfoundry/yagnats/fakeyagnats"
@@ -115,7 +116,8 @@ func createNatsClientAndHandler() (client *fakeyagnats.FakeYagnats, handler nats
 		Mbus:    "nats://foo:bar@127.0.0.1:1234",
 	}
 
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	client = fakeyagnats.New()
-	handler = newNatsHandler(client, settings)
+	handler = newNatsHandler(settings, logger, client)
 	return
 }

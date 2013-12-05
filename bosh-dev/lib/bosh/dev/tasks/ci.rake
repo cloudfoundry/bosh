@@ -5,6 +5,16 @@ namespace :ci do
 
     desc 'Meta task to run spec:integration'
     task integration: %w(spec:integration)
+
+    desc 'Task that installs a go binary locally and runs go agent tests'
+    task :go_agent_tests do
+      mkdir = 'mkdir -p tmp'
+      curl = 'curl https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz > tmp/go.tgz'
+      untar = 'tar xzf tmp/go.tgz -C tmp'
+      go_tests = 'PATH=`pwd`/tmp/go/bin:$PATH go_agent/bin/test'
+
+      exec "#{mkdir} && #{curl} && #{untar} && #{go_tests}"
+    end
   end
 
   desc 'Publish CI pipeline gems to S3'
@@ -16,12 +26,12 @@ namespace :ci do
     gems_generator.generate_and_upload
   end
 
-  desc 'Publish CI pipeline MicroBOSH release to S3'
-  task publish_microbosh_release: [:publish_pipeline_gems] do
+  desc 'Publish CI pipeline BOSH release to S3'
+  task publish_bosh_release: [:publish_pipeline_gems] do
     require 'bosh/dev/build'
-    require 'bosh/dev/micro_bosh_release'
+    require 'bosh/dev/bosh_release_publisher'
     build = Bosh::Dev::Build.candidate
-    build.upload_release(Bosh::Dev::MicroBoshRelease.new)
+    Bosh::Dev::BoshReleasePublisher.setup_for(build).publish
   end
 
   desc 'Build a stemcell for the given :infrastructure, and :operating_system and copy to ./tmp/'
@@ -67,9 +77,7 @@ namespace :ci do
     require 'logger'
     require 'bosh/dev/promoter'
 
-    logger = Logger.new(STDERR)
-
-    promoter = Bosh::Dev::Promoter.new(args.to_hash.merge(logger: logger))
+    promoter = Bosh::Dev::Promoter.build(args.to_hash)
     promoter.promote
   end
 end

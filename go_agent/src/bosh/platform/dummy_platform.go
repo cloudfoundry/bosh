@@ -1,15 +1,15 @@
 package platform
 
 import (
+	boshdisk "bosh/platform/disk"
+	fakedisk "bosh/platform/disk/fakes"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"os"
 )
 
-type dummyPlatform struct {
-}
+type dummyPlatform struct{}
 
 func newDummyPlatform() (p dummyPlatform) {
 	return
@@ -19,8 +19,16 @@ func (p dummyPlatform) GetFs() (fs boshsys.FileSystem) {
 	return &fakesys.FakeFileSystem{}
 }
 
+func (p dummyPlatform) GetRunner() (runner boshsys.CmdRunner) {
+	return &fakesys.FakeCmdRunner{}
+}
+
 func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
 	return boshstats.NewDummyStatsCollector()
+}
+
+func (p dummyPlatform) GetCompressor() (compressor boshdisk.Compressor) {
+	return &fakedisk.FakeCompressor{}
 }
 
 func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
@@ -55,6 +63,10 @@ func (p dummyPlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
 	return
 }
@@ -63,10 +75,10 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string)
 	return
 }
 
-func (p dummyPlatform) StartMonit() (err error) {
+func (p dummyPlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	return
 }
 
-func (p dummyPlatform) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+func (p dummyPlatform) StartMonit() (err error) {
 	return
 }

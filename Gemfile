@@ -53,10 +53,12 @@ group :development, :test do
   gem 'ci_reporter'
   gem 'rspec'
   gem 'rspec-fire'
+  gem 'rspec-instafail'
   gem 'webmock'
   gem 'fakefs'
   gem 'simplecov'
   gem 'simplecov-rcov'
+  gem 'vcr'
 
   # for director
   gem 'machinist', '~>1.0'

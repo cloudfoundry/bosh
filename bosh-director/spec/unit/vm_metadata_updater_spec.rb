@@ -48,7 +48,7 @@ describe Bosh::Director::VmMetadataUpdater do
 
       context 'when vm has an instance' do
         before { vm.stub(instance: instance) }
-        let(:instance) { instance_double('Instance', job: 'job-value', index: 'index-value') }
+        let(:instance) { instance_double('Bosh::Director::Models::Instance', job: 'job-value', index: 'index-value') }
 
         it 'updates vm metadata with deployment specific metadata' do
           cloud.should_receive(:set_vm_metadata)

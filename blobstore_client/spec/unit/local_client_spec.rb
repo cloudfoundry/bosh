@@ -22,7 +22,7 @@ module Bosh::Blobstore
 
       LocalClient.new('blobstore_path' => dir)
 
-      File.directory?(dir).should be_true
+      File.directory?(dir).should be(true)
     end
 
     describe 'operations' do
@@ -34,12 +34,12 @@ module Bosh::Blobstore
           end
 
           client = LocalClient.new(@options)
-          client.exists?('foo').should be_true
+          client.exists?('foo').should be(true)
         end
 
         it "should return false if the object doesn't exists" do
           client = LocalClient.new(@options)
-          client.exists?('foo').should be_false
+          client.exists?('foo').should be(false)
         end
       end
 
@@ -102,7 +102,7 @@ module Bosh::Blobstore
           string = 'foobar'
           id = client.create(string)
           client.delete(id)
-          File.exist?(File.join(@tmp, id)).should_not be_true
+          File.exist?(File.join(@tmp, id)).should be(false)
         end
 
         it 'should raise NotFound error when trying to delete a missing id' do

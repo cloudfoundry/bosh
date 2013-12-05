@@ -13,12 +13,12 @@ module Bosh::Dev
 
     describe '#download_release' do
       it 'downloads a release and returns path' do
-        expected_remote_path = 'http://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-fake-build-number.tgz'
+        expected_remote_uri = URI('http://bosh-jenkins-artifacts.s3.amazonaws.com/release/bosh-fake-build-number.tgz')
         expected_local_path = 'fake-output-dir/bosh-fake-build-number.tgz'
 
         download_adapter
           .should_receive(:download)
-          .with(expected_remote_path, expected_local_path)
+          .with(expected_remote_uri, expected_local_path)
           .and_return('returned-path')
 
         returned_path = artifacts_downloader.download_release('fake-build-number', 'fake-output-dir')
@@ -39,7 +39,7 @@ module Bosh::Dev
 
       let(:infrastructure) do
         instance_double(
-          'Bosh::Stemcell::Infrastructure',
+          'Bosh::Stemcell::Infrastructure::Base',
           name: 'fake-infrastructure-name',
           hypervisor: 'fake-infrastructure-hypervisor',
         )
@@ -47,7 +47,7 @@ module Bosh::Dev
 
       let(:operating_system) do
         instance_double(
-          'Bosh::Stemcell::OperatingSystem',
+          'Bosh::Stemcell::OperatingSystem::Base',
           name: 'fake-os-name',
         )
       end
@@ -62,19 +62,12 @@ module Bosh::Dev
           'fake-os-name.tgz',
         ].join('-')
 
-        expected_remote_path = [
-          'http://s3.amazonaws.com',
-          'bosh-jenkins-artifacts',
-          'bosh-stemcell',
-          'fake-infrastructure-name',
-          expected_name,
-        ].join('/')
-
+        expected_remote_uri = URI("http://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-stemcell/fake-infrastructure-name/#{expected_name}")
         expected_local_path = "fake-output-dir/#{expected_name}"
 
         download_adapter
           .should_receive(:download)
-          .with(expected_remote_path, expected_local_path)
+          .with(expected_remote_uri, expected_local_path)
           .and_return('returned-path')
 
         returned_path = artifacts_downloader.download_stemcell(build_target, 'fake-output-dir')

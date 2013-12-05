@@ -4,7 +4,7 @@ describe Bosh::Monitor::DirectorMonitor do
   let(:nats) { double("nats client") }
   let(:event_processor) { double(Bosh::Monitor::EventProcessor) }
   let(:logger) { double(Logging) }
-  let(:config) { stub(:nats => nats, :event_processor => event_processor, :logger => logger)}
+  let(:config) { double('config', nats: nats, event_processor: event_processor, logger: logger) }
 
   subject(:monitor) { described_class.new(config) }
 

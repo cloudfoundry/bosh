@@ -12,7 +12,7 @@ describe Bhm::Plugins::Base do
       plugin.process("foo")
     }.should raise_error(Bhm::FatalError, "`process' method is not implemented in `Bosh::Monitor::Plugins::Base'")
 
-    plugin.validate_options.should be_true
+    plugin.validate_options.should be(true)
     plugin.options.should == {}
     plugin.event_kinds.should == []
   end

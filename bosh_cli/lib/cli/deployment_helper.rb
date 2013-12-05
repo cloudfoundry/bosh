@@ -231,7 +231,7 @@ module Bosh::Cli
 
     def job_unique_in_deployment?(job_name)
       job = find_job(job_name)
-      job.fetch('instances') == 1 if job
+      job ? job.fetch('instances') == 1 : false
     end
 
     def job_exists_in_deployment?(job_name)

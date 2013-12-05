@@ -329,11 +329,21 @@ module Bosh
       describe '#create' do
         let(:spec) { Psych.load_file(spec_asset('apply_spec.yml')) }
         let(:director_http_response) { double('Response', status: 200, body: '') }
+
         let(:director_http_client) do
           instance_double(
             'HTTPClient',
             get: director_http_response,
+            ssl_config: ssl_config,
           ).as_null_object
+        end
+
+        let(:ssl_config) do
+          instance_double(
+            'HTTPClient::SSLConfig',
+            :verify_mode= => nil,
+            :verify_callback= => nil,
+          )
         end
 
         def perform
@@ -515,28 +525,28 @@ module Bosh
 
         context 'all deployer resources are nil' do
           it 'is false' do
-            expect(subject.exists?).to be_false
+            expect(subject.exists?).to be(false)
           end
         end
 
         context 'only vm_cid is populated' do
           it 'is true' do
             deployer.state.vm_cid = 'fake-vm-id'
-            expect(subject.exists?).to be_true
+            expect(subject.exists?).to be(true)
           end
         end
 
         context 'only stemcell_cid is populated' do
           it 'is true' do
             deployer.state.stemcell_cid = 'fake-stemcell-cid'
-            expect(subject.exists?).to be_true
+            expect(subject.exists?).to be(true)
           end
         end
 
         context 'only disk_cid is populated' do
           it 'is true' do
             deployer.state.disk_cid = 'fake-disk-cid'
-            expect(subject.exists?).to be_true
+            expect(subject.exists?).to be(true)
           end
         end
       end

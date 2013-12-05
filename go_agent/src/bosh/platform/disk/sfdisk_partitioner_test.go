@@ -1,11 +1,10 @@
 package disk
 
 import (
+	boshlog "bosh/logger"
 	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"log"
 	"testing"
 )
 
@@ -74,6 +73,7 @@ func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	cmdResults := map[string][]string{
 		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP, ""},
+		"sfdisk -s /dev/sda":  []string{fmt.Sprintf("%d\n", 2048*1024), ""},
 		"sfdisk -s /dev/sda1": []string{fmt.Sprintf("%d\n", 525*1024), ""},
 		"sfdisk -s /dev/sda2": []string{fmt.Sprintf("%d\n", 1020*1024), ""},
 		"sfdisk -s /dev/sda3": []string{fmt.Sprintf("%d\n", 500*1024), ""},
@@ -91,10 +91,49 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	assert.Equal(t, 0, len(fakeCmdRunner.RunCommandsWithInput))
 }
 
+func TestSfdiskPartitionWithLastPartitionNotMatchingSize(t *testing.T) {
+	cmdResults := map[string][]string{
+		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP_ONE_PARTITION, ""},
+		"sfdisk -s /dev/sda":  []string{fmt.Sprintf("%d\n", 2048*1024), ""},
+		"sfdisk -s /dev/sda1": []string{fmt.Sprintf("%d\n", 1024*1024), ""},
+		"sfdisk -s /dev/sda2": []string{fmt.Sprintf("%d\n", 512*1024), ""},
+	}
+	fakeCmdRunner, partitioner := createSfdiskPartitionerForTests(cmdResults)
+
+	partitions := []Partition{
+		{Type: PartitionTypeLinux, SizeInMb: 1024},
+		{Type: PartitionTypeLinux},
+	}
+
+	partitioner.Partition("/dev/sda", partitions)
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommandsWithInput))
+	assert.Equal(t, []string{",1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}, fakeCmdRunner.RunCommandsWithInput[0])
+}
+
+func TestSfdiskPartitionWithLastPartitionFillingDisk(t *testing.T) {
+	cmdResults := map[string][]string{
+		"sfdisk -d /dev/sda":  []string{DEVSDA_SFDISK_DUMP_ONE_PARTITION, ""},
+		"sfdisk -s /dev/sda":  []string{fmt.Sprintf("%d\n", 2048*1024), ""},
+		"sfdisk -s /dev/sda1": []string{fmt.Sprintf("%d\n", 1024*1024), ""},
+		"sfdisk -s /dev/sda2": []string{fmt.Sprintf("%d\n", 1024*1024), ""},
+	}
+	fakeCmdRunner, partitioner := createSfdiskPartitionerForTests(cmdResults)
+
+	partitions := []Partition{
+		{Type: PartitionTypeLinux, SizeInMb: 1024},
+		{Type: PartitionTypeLinux},
+	}
+
+	partitioner.Partition("/dev/sda", partitions)
+
+	assert.Equal(t, 0, len(fakeCmdRunner.RunCommandsWithInput))
+}
+
 func createSfdiskPartitionerForTests(cmdResults map[string][]string) (cmdRunner *fakesys.FakeCmdRunner, partitioner sfdiskPartitioner) {
 	cmdRunner = &fakesys.FakeCmdRunner{CommandResults: cmdResults}
-	partitioner = newSfdiskPartitioner(cmdRunner)
-	partitioner.logger = log.New(ioutil.Discard, "", 0)
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	partitioner = newSfdiskPartitioner(logger, cmdRunner)
 	return
 }
 
@@ -104,5 +143,14 @@ unit: sectors
 /dev/sda1 : start=        1, size= xxxx, Id=82
 /dev/sda2 : start=     xxxx, size= xxxx, Id=83
 /dev/sda3 : start=     xxxx, size= xxxx, Id=83
+/dev/sda4 : start=        0, size=    0, Id= 0
+`
+
+const DEVSDA_SFDISK_DUMP_ONE_PARTITION = `# partition table of /dev/sda
+unit: sectors
+
+/dev/sda1 : start=        1, size= xxxx, Id=83
+/dev/sda2 : start=     xxxx, size= xxxx, Id=83
+/dev/sda3 : start=        0, size=    0, Id= 0
 /dev/sda4 : start=        0, size=    0, Id= 0
 `

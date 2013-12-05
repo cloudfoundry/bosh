@@ -14,7 +14,7 @@ module Bosh::Blobstore
 
     before { HTTPClient.stub(new: http_client) }
     let(:http_client) { double('http-client', ssl_config: http_client_ssl_opt) }
-    let(:http_client_ssl_opt) { double('http-client-ssl-opts', 'verify_mode=' => nil) }
+    let(:http_client_ssl_opt) { double('http-client-ssl-opts', :verify_mode= => nil) }
 
     it_implements_base_client_interface
 
@@ -51,7 +51,7 @@ module Bosh::Blobstore
 
         object.should_receive(:exists?).and_return(true)
 
-        client.exists?('id').should be_true
+        client.exists?('id').should be(true)
       end
 
       it 'should return false if the object does not exist' do
@@ -60,7 +60,7 @@ module Bosh::Blobstore
 
         object.should_receive(:exists?).and_return(false)
 
-        client.exists?('id').should be_false
+        client.exists?('id').should be(false)
       end
     end
 
@@ -68,7 +68,7 @@ module Bosh::Blobstore
       data = 'some content'
       object = double('object')
 
-      atmos.should_receive(:create).with do |opt|
+      atmos.should_receive(:create) do |opt|
         opt[:data].read.should eql data
         opt[:length].should eql data.length
       end.and_return(object)

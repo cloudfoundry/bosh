@@ -14,7 +14,7 @@ module Bosh::Director
 
         problem_scanner.reset
 
-        Models::DeploymentProblem.any?(&:open?).should be_false
+        Models::DeploymentProblem.any?(&:open?).should be(false)
         Models::DeploymentProblem[problem.id].state.should == 'closed'
       end
 

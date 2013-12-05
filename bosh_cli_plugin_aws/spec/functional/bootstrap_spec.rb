@@ -84,9 +84,10 @@ describe 'AWS Bootstrap commands' do
         it 'passes the generated hm user to the new microbosh bootstrapper' do
           SecureRandom.stub(:base64).and_return('some_password')
           fake_bootstrap.stub(:create_user)
-          Bosh::Aws::MicroBoshBootstrap.should_receive(:new).with do |_, options|
+          Bosh::Aws::MicroBoshBootstrap.should_receive(:new) do |_, options|
             options[:hm_director_user].should == 'hm'
             options[:hm_director_password].should == 'some_password'
+            fake_bootstrap
           end
           aws.bootstrap_micro
         end
@@ -330,9 +331,9 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'generates an updated manifest for bosh' do
-        File.exist?('deployments/bosh/bosh.yml').should be_false
+        File.exist?('deployments/bosh/bosh.yml').should be(false)
         aws.bootstrap_bosh
-        File.exist?('deployments/bosh/bosh.yml').should be_true
+        File.exist?('deployments/bosh/bosh.yml').should be(true)
       end
 
       it 'runs deployment diff' do

@@ -49,7 +49,9 @@ module Bosh::Director
           agent_state["networks"].each_value do |network|
             ips << network["ip"]
           end
-          index = agent_state["index"]
+
+          index = get_index(agent_state)
+
           job_name = agent_state["job"]["name"] if agent_state["job"]
           job_state = agent_state["job_state"]
           if agent_state["resource_pool"]
@@ -83,6 +85,16 @@ module Bosh::Director
           :vitals => job_vitals,
           :resurrection_paused => instance ? instance.resurrection_paused  : nil,
         }
+      end
+
+      private
+
+      def get_index(agent_state)
+        index = agent_state["index"]
+        # Postgres cannot coerce an empty string to integer, and fails on Models::Instance.find
+        index = nil if index.is_a?(String) && index.empty?
+
+        index
       end
     end
   end

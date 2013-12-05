@@ -1,5 +1,3 @@
-# Copyright (c) 2012 VMware, Inc.
-
 require "spec_helper"
 require "common/exec"
 
@@ -10,7 +8,7 @@ describe Bosh::Exec do
 
     context "executes successfully" do
       it "should not fail" do
-        Bosh::Exec.sh("ls /", opts).failed?.should be_false
+        Bosh::Exec.sh("ls /", opts).failed?.should be(false)
       end
 
       it "should execute block" do
@@ -18,7 +16,7 @@ describe Bosh::Exec do
         Bosh::Exec.sh("ls /", opts) do
           block = true
         end
-        block.should be_true
+        block.should be(true)
       end
     end
 
@@ -38,38 +36,33 @@ describe Bosh::Exec do
         Bosh::Exec.sh("ls /asdasd 2>&1", opts) do
           block = true
         end
-        block.should be_true
+        block.should be(true)
       end
 
       it "should return result" do
         opts[:on_error] = :return
-        Bosh::Exec.sh("ls /asdasd 2>&1", opts).failed?.should be_true
+        Bosh::Exec.sh("ls /asdasd 2>&1", opts).failed?.should be(true)
       end
     end
-
   end
 
   context "missing command" do
     it "should raise error by default" do
       expect {
         Bosh::Exec.sh("/asdasd 2>&1", opts)
-      }.to raise_error Bosh::Exec::Error
+      }.to raise_error(Bosh::Exec::Error)
     end
 
     it "should not raise error when requested" do
       opts[:on_error] = :return
-      expect {
-        Bosh::Exec.sh("/asdasd 2>&1", opts)
-      }.to_not raise_error Bosh::Exec::Error
+      expect { Bosh::Exec.sh("/asdasd 2>&1", opts) }.to_not raise_error
     end
 
     it "should execute block when requested" do
       opts[:yield] = :on_false
       expect {
-      Bosh::Exec.sh("/asdasd 2>&1", opts) do
-        raise "foo"
-      end
-      }.to raise_error "foo"
+        Bosh::Exec.sh("/asdasd 2>&1", opts) { raise "foo" }
+      }.to raise_error("foo")
     end
 
   end
@@ -80,13 +73,13 @@ describe Bosh::Exec do
       result = Bosh::Exec::Result.new(cmd, "output", 0)
       Bosh::Exec.should_receive(:sh).with(cmd).and_return(result)
       result = Bosh::Exec.sh(cmd)
-      result.success?.should be_true
+      result.success?.should be(true)
     end
   end
 
   context "module" do
     it "should be possible to invoke as a module" do
-      Bosh::Exec.sh("ls /").success?.should be_true
+      Bosh::Exec.sh("ls /").success?.should be(true)
     end
   end
 
@@ -104,11 +97,11 @@ describe Bosh::Exec do
 
     it "should add instance method" do
       inc = IncludeTest.new
-      inc.run.success?.should be_true
+      inc.run.success?.should be(true)
     end
 
     it "should add class method" do
-      IncludeTest.run.success?.should be_true
+      IncludeTest.run.success?.should be(true)
     end
   end
 end

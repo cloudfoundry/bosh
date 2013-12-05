@@ -110,14 +110,14 @@ describe VSphereCloud::Cloud do
     context 'the vm is found' do
       it 'returns true' do
         vsphere_cloud.should_receive(:get_vm_by_cid).with(vm_id)
-        expect(vsphere_cloud.has_vm?(vm_id)).to be_true
+        expect(vsphere_cloud.has_vm?(vm_id)).to be(true)
       end
     end
 
     context 'the vm is not found' do
       it 'returns false' do
         vsphere_cloud.should_receive(:get_vm_by_cid).with(vm_id).and_raise(Bosh::Clouds::VMNotFound)
-        expect(vsphere_cloud.has_vm?(vm_id)).to be_false
+        expect(vsphere_cloud.has_vm?(vm_id)).to be(false)
       end
     end
   end
@@ -402,19 +402,14 @@ describe VSphereCloud::Cloud do
     let(:resources) { double('fake resources', datacenters: {key: datacenter}) }
 
     let(:datacenter) { double('fake datacenter', name: 'fake datacenter', vm_folder: vm_folder) }
-    let(:vm_folder) { double('fake vm folder', mob: ['fake mob']) }
-    let(:client) { double('fake client') }
+    let(:vm_folder) { double('fake vm folder', name: 'fake vm folder name', mob: vm_folder_mob) }
+    let(:vm_folder_mob) { double('fake folder mob', child_entity: [subfolder]) }
+    let(:subfolder) { double('fake subfolder', child_entity: vms) }
     let(:vms) { ['fake vm 1', 'fake vm 2'] }
 
-    before do
-      client.stub(:get_property).with(vm_folder.mob, VimSdk::Vim::Folder, 'childEntity', ensure_all: true).
-        and_return(vms)
-    end
+    before { VSphereCloud::Resources.stub(:new).and_return(resources) }
 
     it 'returns all vms in vm_folder of datacenter' do
-      VSphereCloud::Resources.stub(:new).and_return(resources)
-      VSphereCloud::Config.stub(:client).and_return(client)
-
       expect(vsphere_cloud.get_vms).to eq(['fake vm 1', 'fake vm 2'])
     end
 
@@ -422,16 +417,12 @@ describe VSphereCloud::Cloud do
       let(:resources) { double('fake resources', datacenters: {key1: datacenter, key2: datacenter2}) }
 
       let(:datacenter2) { double('another fake datacenter', name: 'fake datacenter 2', vm_folder: vm_folder2) }
-      let(:vm_folder2) { double('another fake vm folder', mob: ['another fake mob']) }
+      let(:vm_folder2) { double('another fake vm folder', name: 'another fake vm folder name', mob: vm_folder2_mob) }
+      let(:vm_folder2_mob) { double('another fake folder mob', child_entity: [subfolder2]) }
+      let(:subfolder2) { double('another fake subfolder', child_entity: vms2) }
       let(:vms2) { ['fake vm 3', 'fake vm 4'] }
 
       it 'returns all vms in vm_folder of all datacenters' do
-        VSphereCloud::Resources.stub(:new).and_return(resources)
-        VSphereCloud::Config.stub(:client).and_return(client)
-
-        client.stub(:get_property).with(vm_folder2.mob, VimSdk::Vim::Folder, 'childEntity', ensure_all: true).
-          and_return(vms2)
-
         expect(vsphere_cloud.get_vms).to eq(['fake vm 1', 'fake vm 2', 'fake vm 3', 'fake vm 4'])
       end
     end

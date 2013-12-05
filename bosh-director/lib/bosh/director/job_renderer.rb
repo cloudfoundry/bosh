@@ -1,7 +1,7 @@
 require 'bosh/director/job_template_loader'
 require 'bosh/director/job_instance_renderer'
 require 'bosh/director/rendered_job_instance_hasher'
-require 'bosh/director/rendered_templates_uploader'
+require 'bosh/director/rendered_job_templates_persister'
 
 module Bosh::Director
   class JobRenderer
@@ -12,16 +12,16 @@ module Bosh::Director
       @instance_renderer = JobInstanceRenderer.new(@job, job_template_loader)
     end
 
-    def render_job_instances
+    def render_job_instances(blobstore)
       @job.instances.each do |instance|
         rendered_templates = @instance_renderer.render(instance)
-
-        uploader = RenderedTemplatesUploader.new
-        uploader.upload(rendered_templates)
 
         hasher = RenderedJobInstanceHasher.new(rendered_templates)
         instance.configuration_hash = hasher.configuration_hash
         instance.template_hashes = hasher.template_hashes
+
+        persister = RenderedJobTemplatesPersister.new(blobstore)
+        persister.persist(instance, rendered_templates)
       end
     end
   end

@@ -74,7 +74,7 @@ module Bosh::Blobstore
         end
 
         it 'allows checking for existance' do
-          expect(subject.exists?('test')).to be_true
+          expect(subject.exists?('test')).to be(true)
         end
       end
 
@@ -107,7 +107,7 @@ module Bosh::Blobstore
         end
 
         it 'allows checking for existance' do
-          expect(subject.exists?('test')).to be_true
+          expect(subject.exists?('test')).to be(true)
         end
       end
 

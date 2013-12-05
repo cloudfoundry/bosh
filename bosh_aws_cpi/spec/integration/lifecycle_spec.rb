@@ -73,7 +73,7 @@ describe Bosh::AwsCloud::Cloud do
         expect(@instance_id).not_to be_nil
 
         # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to eq(true)
+        expect(cpi.has_vm?(@instance_id)).to be(true)
 
         vm_metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
         cpi.set_vm_metadata(@instance_id, vm_metadata)
@@ -129,7 +129,7 @@ describe Bosh::AwsCloud::Cloud do
         expect(@instance_id).not_to be_nil
 
         # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to eq(true)
+        expect(cpi.has_vm?(@instance_id)).to be(true)
 
         metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
         cpi.set_vm_metadata(@instance_id, metadata)
@@ -148,7 +148,7 @@ describe Bosh::AwsCloud::Cloud do
         expect(@instance_id).not_to be_nil
 
         # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to eq(true)
+        expect(cpi.has_vm?(@instance_id)).to be(true)
 
         metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
         cpi.set_vm_metadata(@instance_id, metadata)
@@ -192,7 +192,7 @@ describe Bosh::AwsCloud::Cloud do
         expect(@instance_id).not_to be_nil
 
         # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to eq(true)
+        expect(cpi.has_vm?(@instance_id)).to be(true)
 
         metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
         cpi.set_vm_metadata(@instance_id, metadata)

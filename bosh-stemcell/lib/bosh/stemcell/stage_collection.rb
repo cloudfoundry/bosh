@@ -24,6 +24,7 @@ module Bosh::Stemcell
           [
             :bosh_go_agent,
             #:bosh_micro,
+            :aws_cli,
           ]
         else
           [
@@ -95,6 +96,7 @@ module Bosh::Stemcell
         :bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
+        :rsyslog,
         # Install GRUB/kernel/etc
         :system_grub,
         :system_kernel,

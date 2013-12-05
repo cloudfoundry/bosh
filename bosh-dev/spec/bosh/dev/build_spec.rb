@@ -66,11 +66,8 @@ module Bosh::Dev
       )
     end
 
-    before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
-    let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
-
     subject(:build) { Build::Candidate.new('123', download_adapter) }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     before(:all) { Fog.mock! }
     after(:all) { Fog.unmock! }
@@ -86,11 +83,14 @@ module Bosh::Dev
     end
 
     describe '#upload' do
-      let(:release) { double(tarball: 'release-tarball.tgz') }
+      let(:release) { double(tarball_path: 'release-tarball.tgz') }
       let(:io) { double }
 
+      before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
+
       it 'uploads the release with its build number' do
-        File.stub(:open).with(release.tarball) { io }
+        File.stub(:open).with(release.tarball_path) { io }
         upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
         subject.upload_release(release)
       end
@@ -108,6 +108,9 @@ module Bosh::Dev
       let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
       let(:logger) { instance_double('Logger').as_null_object }
 
+      before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
+
       before do
         FileUtils.mkdir_p(src)
         Dir.chdir(src) do
@@ -120,12 +123,12 @@ module Bosh::Dev
       end
 
       it 'recursively uploads a directory into base_dir' do
-        upload_adapter.should_receive(:upload).with do |options|
+        upload_adapter.should_receive(:upload) do |options|
           key = options.fetch(:key)
           body = options.fetch(:body)
           public = options.fetch(:public)
 
-          expect(public).to eq(true)
+          expect(public).to be(true)
 
           case key
             when '123/dest_dir/foo/bar.txt'
@@ -153,7 +156,6 @@ module Bosh::Dev
       end
 
       before do
-        UploadAdapter.unstub!(:new)
         Rake::FileUtilsExt.stub(:sh)
         Bosh::Stemcell::Archive.stub(new: stemcell)
         PromotableArtifacts.stub(new: promotable_artifacts)
@@ -173,8 +175,6 @@ module Bosh::Dev
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
 
       before do
-        Bosh::Dev::UploadAdapter.unstub!(:new)
-
         FileUtils.mkdir('/tmp')
         File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
         Logger.stub(new: logger)
@@ -299,7 +299,7 @@ module Bosh::Dev
 
   describe Build::Candidate do
     subject(:build) { Build::Candidate.new('123', download_adapter) }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
@@ -326,15 +326,15 @@ module Bosh::Dev
 
   describe Build::Local do
     subject { described_class.new('build-number', download_adapter) }
-    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     before(:all) { Fog.mock! }
     after(:all) { Fog.unmock! }
 
     describe '#release_tarball_path' do
       it 'returns the path to new microbosh release' do
-        micro_bosh_release = instance_double('Bosh::Dev::MicroBoshRelease', tarball: 'tarball-path')
-        Bosh::Dev::MicroBoshRelease.stub(new: micro_bosh_release)
+        micro_bosh_release = instance_double('Bosh::Dev::BoshRelease', tarball_path: 'tarball-path')
+        Bosh::Dev::BoshRelease.stub(new: micro_bosh_release)
         expect(subject.release_tarball_path).to eq('tarball-path')
       end
     end

@@ -273,11 +273,11 @@ describe Bosh::Cli::DeploymentHelper do
     end
 
     it 'should return true if job exists in deployment' do
-      tester.job_exists_in_deployment?('job1').should be_true
+      tester.job_exists_in_deployment?('job1').should be(true)
     end
 
     it 'should return false if job does not exists in deployment' do
-      tester.job_exists_in_deployment?('job2').should be_false
+      tester.job_exists_in_deployment?('job2').should be(false)
     end
   end
 
@@ -304,17 +304,17 @@ describe Bosh::Cli::DeploymentHelper do
 
     context 'when the job is in the manifest' do
       it 'should return true if only one instance of job in deployment' do
-        expect(tester.job_unique_in_deployment?('job1')).to be_true
+        expect(tester.job_unique_in_deployment?('job1')).to be(true)
       end
 
       it 'should return false if more than one instance of job in deployment' do
-        expect(tester.job_unique_in_deployment?('job2')).to be_false
+        expect(tester.job_unique_in_deployment?('job2')).to be(false)
       end
     end
 
     context 'when the job is not in the manifest' do
       it 'should return false' do
-        expect(tester.job_unique_in_deployment?('job3')).to be_false
+        expect(tester.job_unique_in_deployment?('job3')).to be(false)
       end
     end
   end

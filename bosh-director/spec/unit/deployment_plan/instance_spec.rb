@@ -249,10 +249,10 @@ module Bosh::Director::DeploymentPlan
           instance.current_state = { 'resource_pool' => { 'foo' => 'bar' } }
           instance.use_model(instance_model)
 
-          instance.resource_pool_changed?.should be_false
+          instance.resource_pool_changed?.should be(false)
           instance_model.vm.update(env: { 'key' => 'value2' })
 
-          instance.resource_pool_changed?.should be_true
+          instance.resource_pool_changed?.should be(true)
         end
       end
 
@@ -301,18 +301,34 @@ module Bosh::Director::DeploymentPlan
           expect(spec['job']).to eq(job_spec)
           expect(spec['index']).to eq(index)
           expect(spec['networks']).to include(network_name)
+
           expect_dns_name = "#{index}.#{job.canonical_name}.#{network_name}.#{plan.canonical_name}.#{domain_name}"
           expect(spec['networks'][network_name]).to include(
-                                                      'type' => 'dynamic',
-                                                      'cloud_properties' => network_spec['cloud_properties'],
-                                                      'dns_record_name' => expect_dns_name
-                                                    )
+            'type' => 'dynamic',
+            'cloud_properties' => network_spec['cloud_properties'],
+            'dns_record_name' => expect_dns_name
+          )
+
           expect(spec['resource_pool']).to eq(resource_pool_spec)
           expect(spec['packages']).to eq(packages)
           expect(spec['persistent_disk']).to eq(0)
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)
           expect(spec['dns_domain_name']).to eq(domain_name)
+        end
+
+        it 'includes rendered_templates_archive key after rendered templates were archived' do
+          instance.rendered_templates_archive =
+            RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
+
+          expect(instance.spec['rendered_templates_archive']).to eq(
+            'blobstore_id' => 'fake-blobstore-id',
+            'sha1' => 'fake-sha1',
+          )
+        end
+
+        it 'does not include rendered_templates_archive key before rendered templates were archived' do
+          expect(instance.spec).to_not have_key('rendered_templates_archive')
         end
       end
     end

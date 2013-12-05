@@ -1,6 +1,9 @@
 package fakes
 
-import "os"
+import (
+	boshblobstore "bosh/blobstore"
+	"os"
+)
 
 type FakeBlobstore struct {
 	Options      map[string]string
@@ -8,8 +11,9 @@ type FakeBlobstore struct {
 	CreateBlobId string
 }
 
-func (bs *FakeBlobstore) SetOptions(opts map[string]string) (err error) {
+func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblobstore.Blobstore, err error) {
 	bs.Options = opts
+	updated = bs
 	return
 }
 

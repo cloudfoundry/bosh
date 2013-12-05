@@ -7,13 +7,13 @@ module Bosh::Dev
   describe BuildTarget do
     describe '.from_names' do
       it 'returns target with proper build, infrastructure, and operating_system' do
-        infrastructure = instance_double('Bosh::Stemcell::Infrastructure')
+        infrastructure = instance_double('Bosh::Stemcell::Infrastructure::Base')
         Bosh::Stemcell::Infrastructure
           .should_receive(:for)
           .with('fake-infrastructure-name')
           .and_return(infrastructure)
 
-        operating_system = instance_double('Bosh::Stemcell::OperatingSystem')
+        operating_system = instance_double('Bosh::Stemcell::OperatingSystem::Base')
         Bosh::Stemcell::OperatingSystem
           .should_receive(:for)
           .with('fake-operating-system-name')
@@ -28,7 +28,7 @@ module Bosh::Dev
         expect(build_target.build_number).to eq('fake-build-number')
         expect(build_target.infrastructure).to eq(infrastructure)
         expect(build_target.operating_system).to eq(operating_system)
-        expect(build_target.infrastructure_light?).to eq(false)
+        expect(build_target.infrastructure_light?).to be(false)
       end
     end
   end

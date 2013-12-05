@@ -119,8 +119,8 @@ describe Bosh::Retryable do
   it 'should pass error to sleep callback proc' do
     count = 0
     sleep_cb = lambda { |retries, error|
-      error.is_a?(ArgumentError).should be_true if retries == 1
-      error.is_a?(RuntimeError).should be_true if retries == 2
+      error.is_a?(ArgumentError).should be(true) if retries == 1
+      error.is_a?(RuntimeError).should be(true) if retries == 2
     }
 
     described_class.new(tries: 3, on: [ArgumentError, RuntimeError], sleep: sleep_cb).retryer do |tries|

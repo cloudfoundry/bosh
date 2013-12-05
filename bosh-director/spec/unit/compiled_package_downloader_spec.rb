@@ -40,7 +40,7 @@ module Bosh::Director
       it 'returns download dir' do
         download_dir = downloader.download
         expect(download_dir).to be_a(String)
-        expect(Dir.exists?(download_dir)).to be_true
+        expect(Dir.exists?(download_dir)).to be(true)
       end
 
       it 'downloads blobs using blobstore client' do
@@ -53,8 +53,8 @@ module Bosh::Director
 
       it 'creates blobs files under the blobs subdirectory' do
         download_dir = downloader.download
-        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'fake-compiled-package1-blobstore-id'))).to be_true
-        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'fake-compiled-package2-blobstore-id'))).to be_true
+        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'fake-compiled-package1-blobstore-id'))).to be(true)
+        expect(File.exist?(File.join(download_dir, 'compiled_packages', 'blobs', 'fake-compiled-package2-blobstore-id'))).to be(true)
       end
     end
 

@@ -2,6 +2,7 @@ package action
 
 import (
 	boshassert "bosh/assert"
+	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -9,26 +10,22 @@ import (
 )
 
 func TestSshSetupWithInvalidPayload(t *testing.T) {
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	sshAction := factory.Create("ssh")
+	settings := boshsettings.Settings{}
+	_, action := buildSshActionSetup(settings)
 
 	// set user, pwd, public_key with invalid values
 	payload := `{"arguments":["setup",{"user":123,"password":456,"public_key":789}]}`
-
-	_, err := sshAction.Run([]byte(payload))
+	_, err := action.Run([]byte(payload))
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Error parsing")
+	assert.Contains(t, err.Error(), "Parsing user")
 }
 
 func TestSshSetupWithoutDefaultIp(t *testing.T) {
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	sshAction := factory.Create("ssh")
+	settings := boshsettings.Settings{}
+	_, action := buildSshActionSetup(settings)
 
 	payload := `{"arguments":["setup",{"user":"some-user","password":"some-pwd","public_key":"some-key"}]}`
-
-	_, err := sshAction.Run([]byte(payload))
+	_, err := action.Run([]byte(payload))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "No default ip")
 }
@@ -42,14 +39,12 @@ func TestSshSetupWithoutPassword(t *testing.T) {
 }
 
 func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
-	settings, platform, blobstore, taskService := getFakeFactoryDependencies()
-
+	settings := boshsettings.Settings{}
 	settings.Networks = map[string]boshsettings.NetworkSettings{
 		"default": {Ip: "ww.xx.yy.zz"},
 	}
 
-	factory := NewFactory(settings, platform, blobstore, taskService)
-	sshAction := factory.Create("ssh")
+	platform, action := buildSshActionSetup(settings)
 
 	expectedUser := "some-user"
 	expectedKey := "some public key content"
@@ -68,7 +63,7 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 
 	boshSshPath := "/var/vcap/bosh_ssh"
 
-	response, err := sshAction.Run([]byte(payload))
+	response, err := action.Run([]byte(payload))
 	assert.NoError(t, err)
 
 	// assert on user and ssh setup
@@ -85,4 +80,10 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	}
 
 	boshassert.MatchesJsonMap(t, response, expectedJson)
+}
+
+func buildSshActionSetup(settings boshsettings.Settings) (*fakeplatform.FakePlatform, sshAction) {
+	platform := fakeplatform.NewFakePlatform()
+	action := newSsh(settings, platform)
+	return platform, action
 }

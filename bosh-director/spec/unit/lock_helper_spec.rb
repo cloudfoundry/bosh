@@ -27,7 +27,7 @@ module Bosh::Director
         @test_instance.with_deployment_lock(deployment) do
           called = true
         end
-        called.should be_true
+        called.should be(true)
       end
 
       it 'should support a deployment name' do
@@ -40,7 +40,7 @@ module Bosh::Director
         @test_instance.with_deployment_lock('bar', timeout: 5) do
           called = true
         end
-        called.should be_true
+        called.should be(true)
       end
 
       it 'should fail for other types' do
@@ -60,7 +60,7 @@ module Bosh::Director
         @test_instance.with_release_lock('bar', timeout: 5) do
           called = true
         end
-        called.should be_true
+        called.should be(true)
       end
     end
 
@@ -90,7 +90,7 @@ module Bosh::Director
         @test_instance.with_release_locks(deployment_plan, timeout: 5) do
           called = true
         end
-        called.should be_true
+        called.should be(true)
       end
     end
 
@@ -105,7 +105,7 @@ module Bosh::Director
         @test_instance.with_stemcell_lock('foo', '1.0', timeout: 5) do
           called = true
         end
-        called.should be_true
+        called.should be(true)
       end
     end
 
@@ -120,7 +120,7 @@ module Bosh::Director
         @test_instance.with_compile_lock(3, 4) do
           called = true
         end
-        called.should be_true
+        called.should be(true)
       end
     end
   end

@@ -62,10 +62,10 @@ module Bosh::Dev
       end
 
       it 'expands the path to the .gem dir since File.exists? does not like "~" in the path' do
-        File.should_receive(:exists?) do |path|
+        expect(File).to receive(:exists?) do |path|
           expect(path).not_to include('~')
           path != "tmp/gems-1234/#{component.dot_gem}"
-        end.any_number_of_times
+        end.at_least(1)
 
         gem_artifact.promote
       end

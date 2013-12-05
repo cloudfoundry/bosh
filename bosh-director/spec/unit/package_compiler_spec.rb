@@ -9,7 +9,7 @@ module Bosh::Director
     end
 
     let(:thread_pool) do
-      thread_pool = instance_double('ThreadPool')
+      thread_pool = instance_double('Bosh::Director::ThreadPool')
       thread_pool.stub(:wrap).and_yield(thread_pool)
       thread_pool.stub(:process).and_yield
       thread_pool.stub(:working?).and_return(false)
@@ -260,7 +260,7 @@ module Bosh::Director
         )
 
         network = double('network', name: 'network_name')
-        compilation_config = instance_double('Bosh::Director::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
+        compilation_config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
                                     reuse_compilation_vms: true)
         release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion',
                                                 dependencies: [], package_dependency_key: 'fake-dependency-key', package_cache_key: 'fake-cache-key')

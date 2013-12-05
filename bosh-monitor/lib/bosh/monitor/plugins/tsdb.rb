@@ -3,10 +3,7 @@ module Bosh::Monitor
     class Tsdb < Base
 
       def validate_options
-        options.kind_of?(Hash) &&
-          options["host"] &&
-          options["port"] &&
-          true
+        !!(options.kind_of?(Hash) && options["host"] && options["port"])
       end
 
       def run

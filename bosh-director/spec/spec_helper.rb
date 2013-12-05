@@ -4,20 +4,20 @@ $: << File.expand_path('..', __FILE__)
 require 'digest/sha1'
 require 'fileutils'
 require 'logger'
+require 'pg'
+require 'tempfile'
 require 'tmpdir'
 require 'zlib'
-require 'tempfile'
 
 require 'archive/tar/minitar'
-require 'rspec'
 require 'machinist/sequel'
+require 'rspec'
 require 'sham'
-require 'rspec/fire'
 require 'support/job_example_group'
+require 'support/rspec_fire'
 require 'support/task_helpers'
 
 RSpec.configure do |config|
-  config.include(RSpec::Fire)
   config.include Bosh::Director::Test::TaskHelpers
 end
 
@@ -198,7 +198,7 @@ end
 
 RSpec::Matchers.define :have_flag_set do |method_name|
   match do |actual|
-    actual.send(method_name).should be_true
+    actual.send(method_name).should be(true)
   end
 
   failure_message_for_should do |_|

@@ -1125,15 +1125,20 @@ module VSphereCloud
     end
 
     def get_vms
-      vm_objects = []
+      subfolders = []
+      vms = []
       with_thread_name("get_vms") do
         @resources.datacenters.each_value do |datacenter|
-          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.mob}")
-
-          vm_objects += client.get_property(datacenter.vm_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
+          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.name}")
+          subfolders += datacenter.vm_folder.mob.child_entity
         end
       end
-      vm_objects
+
+      subfolders.each do |folder|
+        vms += folder.child_entity
+      end
+
+      vms
     end
   end
 end
