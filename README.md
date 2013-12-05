@@ -22,6 +22,16 @@ gem install bosh_cli_plugin_micro --pre
 gem install bosh_cli_plugin_aws --pre
 ```
 
+## Using BOSH CLI and plugins from Git
+
+```
+bundle install --binstubs
+export PATH=$(pwd)/bin:$PATH
+which bosh
+```
+
+The `bosh` CLI is now in your `$PATH`, including the `bosh micro` plugin, from the git source; rather than any rubygems you have installed.
+
 # Cloud Foundry Resources
 
 _Cloud Foundry Open Source Platform as a Service_
