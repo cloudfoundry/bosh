@@ -131,6 +131,9 @@ module Bosh::Cli
       let(:buffer) { StringIO.new }
 
       before do
+        command.stub(:logged_in? => true)
+        command.options[:target] = 'http://bosh-target.example.com'
+
         director.stub(:list_stemcells).and_return(stemcells)
         Bosh::Cli::Config.output = buffer
       end
