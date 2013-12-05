@@ -17,8 +17,9 @@ func NewProvider(platform boshplatform.Platform) (p provider) {
 	uuidGen := boshuuid.NewGenerator()
 
 	p.blobstores = map[boshsettings.BlobstoreType]Blobstore{
-		boshsettings.BlobstoreTypeS3:    newS3Blobstore(fs, runner, uuidGen),
+		boshsettings.BlobstoreTypeDav:   newDummyBlobstore(),
 		boshsettings.BlobstoreTypeDummy: newDummyBlobstore(),
+		boshsettings.BlobstoreTypeS3:    newS3Blobstore(fs, runner, uuidGen),
 	}
 	return
 }
