@@ -9,10 +9,6 @@ module Bosh::Agent
 
       HTTP_API_TIMEOUT     = 300
       HTTP_CONNECT_TIMEOUT = 30
-      META_DATA_URI = "http://" +
-        %x[grep dhcp-server-identifier /var/lib/dhclient/* /var/lib/dhcp3/* /var/lib/dhcp/* 2>/dev/null | tail -1 | awk '{print $NF}' | tr -d '\;'].strip +
-        "/latest"
-      USER_DATA_FILE = File.join(File::SEPARATOR, "var", BOSH_APP_USER, "bosh", "user_data.json")
 
       ##
       # Returns the logger.
@@ -28,7 +24,7 @@ module Bosh::Agent
       #
       # @return [String] OpenSSH key
       def get_openssh_key
-        get_uri(META_DATA_URI + "/public-keys")
+        get_uri(meta_data_uri + "/public-keys")
       rescue LoadSettingsError => e
         logger.info("Failed to get OpenSSH public key from CloudStack meta data endpoint: #{e.message}")
         user_data = parse_user_data(get_user_data_from_file)
@@ -62,6 +58,12 @@ module Bosh::Agent
         settings
       rescue Yajl::ParseError => e
         raise LoadSettingsError, "Cannot parse settings from Bosh registry, got #{raw_response} - #{e.message}"
+      end
+
+      def meta_data_uri
+        @@meta_data_uri ||= "http://" +
+          %x[grep dhcp-server-identifier /var/lib/dhclient/* /var/lib/dhcp3/* /var/lib/dhcp/* 2>/dev/null | tail -1 | awk '{print $NF}' | tr -d '\;'].strip +
+          "/latest"
       end
 
       ##
@@ -154,24 +156,13 @@ module Bosh::Agent
       def get_user_data
         return @user_data if @user_data
         begin
-          raw_user_data = get_uri(META_DATA_URI + "/user-data")
+          raw_user_data = get_uri(meta_data_uri + "/user-data")
         rescue LoadSettingsError => e
           logger.info("Failed to get user data from CloudStack user data endpoint: #{e.message}")
-          raw_user_data = get_user_data_from_file
         end
 
         logger.info("CloudStack user data: #{raw_user_data.inspect}")
         @user_data = parse_user_data(raw_user_data)
-      end
-
-      ##
-      # Gets the CloudStack user data from the injected user data file.
-      #
-      # @return [String] CloudStack user data
-      def get_user_data_from_file
-        File.read(USER_DATA_FILE)
-      rescue SystemCallError => e
-        raise LoadSettingsError, "Failed to get user data from CloudStack injected user data file: #{e.message}"
       end
 
       ##

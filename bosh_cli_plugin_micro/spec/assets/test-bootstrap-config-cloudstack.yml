@@ -1,0 +1,24 @@
+---
+name: bosh-bootstrap-cloudstack
+
+network:
+  type: dynamic
+
+env:
+  bosh:
+    password: $6$salt$password
+
+cloud:
+  plugin: cloudstack
+  properties:
+    cloudstack:
+      endpoint: http://api.endpoint/client/
+      api_key: foo-key
+      secret_access_key: foo-secret
+      default_key_name: foo-key
+      default_security_groups: ["quick-start-1"]
+      default_zone: foo-zone
+    registry:
+      endpoint: http://admin:admin@10.176.194.184:25695
+      user: admin
+      password: admin

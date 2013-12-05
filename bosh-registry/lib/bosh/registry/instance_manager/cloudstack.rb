@@ -58,7 +58,9 @@ module Bosh::Registry
           raise ConnectionError, "Unable to connect to CloudStack API: #{e.message}"
         end
         raise InstanceNotFound, "Instance `#{instance_id}' not found" unless instance
-        return instance.nics.map { |nic| nic["ipaddress"] }.compact
+        private_ips = instance.nics.map { |nic| nic["ipaddress"] }
+        floating_ips = cloudstack.ipaddresses.select { |ip| ip.virtual_machine_id == instance_id }.map { |ip| ip.ip_address }
+        return (private_ips + floating_ips).compact
       end
 
     end
