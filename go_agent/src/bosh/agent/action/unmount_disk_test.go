@@ -62,5 +62,5 @@ func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk Ac
 			Persistent: map[string]string{"vol-123": "/dev/sdf"},
 		},
 	}
-	return newUnmountDisk(settings, platform)
+	return newUnmountDisk(boshsettings.NewProvider(settings), platform)
 }

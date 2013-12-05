@@ -7,7 +7,7 @@ import (
 )
 
 type diskParams struct {
-	settings boshsettings.Settings
+	settings boshsettings.DiskSettings
 	payload  diskPayloadType
 }
 
@@ -15,7 +15,7 @@ type diskPayloadType struct {
 	Arguments []string
 }
 
-func NewDiskParams(settings boshsettings.Settings, payloadBytes []byte) (p diskParams, err error) {
+func NewDiskParams(settings boshsettings.DiskSettings, payloadBytes []byte) (p diskParams, err error) {
 	p.settings = settings
 
 	err = json.Unmarshal(payloadBytes, &p.payload)
@@ -33,7 +33,8 @@ func (p diskParams) GetDevicePath() (devicePath string, err error) {
 	}
 
 	volumeId := p.payload.Arguments[0]
-	devicePath, found := p.settings.Disks.Persistent[volumeId]
+	disks := p.settings.GetDisks()
+	devicePath, found := disks.Persistent[volumeId]
 	if !found {
 		err = bosherr.New("Invalid payload volume id does not match")
 	}

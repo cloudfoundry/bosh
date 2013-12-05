@@ -83,14 +83,14 @@ func TestNewFactoryUnmountDisk(t *testing.T) {
 }
 
 func buildFactory() (
-	settings boshsettings.Settings,
+	settings *boshsettings.Provider,
 	platform *fakeplatform.FakePlatform,
 	blobstore *fakeblobstore.FakeBlobstore,
 	taskService *faketask.FakeService,
 	applier *fakeas.FakeApplier,
 	factory Factory) {
 
-	settings = boshsettings.Settings{}
+	settings = boshsettings.NewProvider(boshsettings.Settings{})
 	platform = fakeplatform.NewFakePlatform()
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	taskService = &faketask.FakeService{}

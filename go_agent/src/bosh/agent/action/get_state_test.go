@@ -33,5 +33,5 @@ func TestGetStateRun(t *testing.T) {
 
 func buildGetStateAction(settings boshsettings.Settings) (boshsys.FileSystem, getStateAction) {
 	platform := fakeplatform.NewFakePlatform()
-	return platform.Fs, newGetState(settings, platform.Fs)
+	return platform.Fs, newGetState(boshsettings.NewProvider(settings), platform.Fs)
 }

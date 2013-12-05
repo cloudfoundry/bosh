@@ -25,6 +25,6 @@ func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
 
 func buildSshActionCleanup(settings boshsettings.Settings) (*fakeplatform.FakePlatform, sshAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := newSsh(settings, platform)
+	action := newSsh(boshsettings.NewProvider(settings), platform)
 	return platform, action
 }

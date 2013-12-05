@@ -62,7 +62,7 @@ func TestRunSetsUpHostname(t *testing.T) {
 func TestRunSetsUpNetworking(t *testing.T) {
 	settings := boshsettings.Settings{
 		Networks: boshsettings.Networks{
-			"bosh": boshsettings.NetworkSettings{},
+			"bosh": boshsettings.Network{},
 		},
 	}
 

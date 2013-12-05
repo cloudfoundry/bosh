@@ -8,11 +8,11 @@ import (
 )
 
 type mountDiskAction struct {
-	settings boshsettings.Settings
+	settings boshsettings.DiskSettings
 	platform boshplatform.Platform
 }
 
-func newMountDisk(settings boshsettings.Settings, platform boshplatform.Platform) (mountDisk mountDiskAction) {
+func newMountDisk(settings boshsettings.DiskSettings, platform boshplatform.Platform) (mountDisk mountDiskAction) {
 	mountDisk.settings = settings
 	mountDisk.platform = platform
 	return

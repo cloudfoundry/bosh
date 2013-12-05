@@ -9,11 +9,11 @@ import (
 )
 
 type sshAction struct {
-	settings boshsettings.Settings
+	settings boshsettings.NetworkSettings
 	platform boshplatform.Platform
 }
 
-func newSsh(settings boshsettings.Settings, platform boshplatform.Platform) (action sshAction) {
+func newSsh(settings boshsettings.NetworkSettings, platform boshplatform.Platform) (action sshAction) {
 	action.settings = settings
 	action.platform = platform
 	return

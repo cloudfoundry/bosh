@@ -190,11 +190,11 @@ func testUbuntuSetupDhcp(
 	fakeCompressor *fakedisk.FakeCompressor,
 ) {
 	networks := boshsettings.Networks{
-		"bosh": boshsettings.NetworkSettings{
+		"bosh": boshsettings.Network{
 			Default: []string{"dns"},
 			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 		},
-		"vip": boshsettings.NetworkSettings{
+		"vip": boshsettings.Network{
 			Default: []string{},
 			Dns:     []string{"aa.aa.aa.aa"},
 		},

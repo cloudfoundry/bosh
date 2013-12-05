@@ -78,7 +78,7 @@ func (app app) Run(args []string) (err error) {
 
 	applier := boshas.NewApplierProvider(platform.GetFs()).Get()
 
-	actionFactory := boshaction.NewFactory(settings, platform, blobstore, taskService, applier)
+	actionFactory := boshaction.NewFactory(settingsProvider, platform, blobstore, taskService, applier)
 
 	agent := boshagent.New(settings, app.logger, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()

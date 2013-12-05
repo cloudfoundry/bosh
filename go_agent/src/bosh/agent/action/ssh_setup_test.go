@@ -40,7 +40,7 @@ func TestSshSetupWithoutPassword(t *testing.T) {
 
 func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	settings := boshsettings.Settings{}
-	settings.Networks = map[string]boshsettings.NetworkSettings{
+	settings.Networks = map[string]boshsettings.Network{
 		"default": {Ip: "ww.xx.yy.zz"},
 	}
 
@@ -84,6 +84,6 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 
 func buildSshActionSetup(settings boshsettings.Settings) (*fakeplatform.FakePlatform, sshAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := newSsh(settings, platform)
+	action := newSsh(boshsettings.NewProvider(settings), platform)
 	return platform, action
 }

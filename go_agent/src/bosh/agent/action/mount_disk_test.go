@@ -61,6 +61,6 @@ func TestMountDiskWhenDevicePathNotFound(t *testing.T) {
 
 func buildMountDiskAction(settings boshsettings.Settings) (*fakeplatform.FakePlatform, mountDiskAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := newMountDisk(settings, platform)
+	action := newMountDisk(boshsettings.NewProvider(settings), platform)
 	return platform, action
 }

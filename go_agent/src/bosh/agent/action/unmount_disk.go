@@ -8,11 +8,11 @@ import (
 )
 
 type unmountDiskAction struct {
-	settings boshsettings.Settings
+	settings boshsettings.DiskSettings
 	platform boshplatform.Platform
 }
 
-func newUnmountDisk(settings boshsettings.Settings, platform boshplatform.Platform) (unmountDisk unmountDiskAction) {
+func newUnmountDisk(settings boshsettings.DiskSettings, platform boshplatform.Platform) (unmountDisk unmountDiskAction) {
 	unmountDisk.settings = settings
 	unmountDisk.platform = platform
 	return
