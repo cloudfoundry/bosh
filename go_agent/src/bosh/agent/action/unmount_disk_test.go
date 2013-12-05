@@ -4,6 +4,7 @@ import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -57,10 +58,10 @@ func TestUnmountDiskWhenDevicePathNotFound(t *testing.T) {
 }
 
 func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk Action) {
-	settings := boshsettings.Settings{
+	settings := &fakesettings.FakeDiskSettings{
 		Disks: boshsettings.Disks{
 			Persistent: map[string]string{"vol-123": "/dev/sdf"},
 		},
 	}
-	return newUnmountDisk(boshsettings.NewProvider(settings), platform)
+	return newUnmountDisk(settings, platform)
 }

@@ -12,6 +12,7 @@ import (
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me", "gibberish", []byte{})
 
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
-	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -67,7 +68,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 		RunValue: "some value",
 	}
 
-	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -83,7 +84,7 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 		RunErr: errors.New("some error"),
 	}
 
-	agent = New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
+	agent = New(settings, logger, handler, platform, taskService, actionFactory)
 	agent.Run()
 
 	resp = handler.Func(req)
@@ -127,7 +128,7 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
 	actionFactory.CreateAction = &fakeaction.TestAction{RunValue: "some-task-result-value"}
 
-	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -166,7 +167,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		},
 	}
 
-	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -224,7 +225,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		},
 	}
 
-	agent := New(boshsettings.NewProvider(settings), logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 	agent.heartbeatInterval = time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -239,14 +240,14 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 }
 
 func getAgentDependencies() (
-	settings boshsettings.Settings,
+	settings *fakesettings.FakeDiskSettings,
 	logger boshlog.Logger,
 	handler *fakembus.FakeHandler,
 	platform *fakeplatform.FakePlatform,
 	taskService *faketask.FakeService,
 	actionFactory *fakeaction.FakeFactory) {
 
-	settings = boshsettings.Settings{}
+	settings = &fakesettings.FakeDiskSettings{}
 	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 	handler = &fakembus.FakeHandler{}
 	platform = &fakeplatform.FakePlatform{
