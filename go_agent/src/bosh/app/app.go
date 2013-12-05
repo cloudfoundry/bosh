@@ -73,7 +73,7 @@ func (app app) Run(args []string) (err error) {
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
-	applier := boshas.NewApplierProvider(platform.GetFs()).Get()
+	applier := boshas.NewApplierProvider(platform, blobstore).Get()
 
 	actionFactory := boshaction.NewFactory(settingsProvider, platform, blobstore, taskService, applier)
 
