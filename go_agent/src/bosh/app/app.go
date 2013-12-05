@@ -12,7 +12,6 @@ import (
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
-	boshsettings "bosh/settings"
 	"flag"
 	"io/ioutil"
 )
@@ -52,13 +51,11 @@ func (app app) Run(args []string) (err error) {
 	}
 
 	boot := boshboot.New(infrastructure, platform)
-	settings, err := boot.Run()
+	settingsProvider, err := boot.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running bootstrap")
 		return
 	}
-
-	settingsProvider := boshsettings.NewProvider(settings)
 
 	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsProvider, app.logger)
 	mbusHandler, err := mbusHandlerProvider.Get()
@@ -68,7 +65,7 @@ func (app app) Run(args []string) (err error) {
 	}
 
 	blobstoreProvider := boshblobstore.NewProvider(platform)
-	blobstore, err := blobstoreProvider.Get(settings.Blobstore)
+	blobstore, err := blobstoreProvider.Get(settingsProvider.GetBlobstore())
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blobstore")
 		return

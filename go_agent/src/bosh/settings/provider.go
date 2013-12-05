@@ -28,6 +28,10 @@ type NetworkSettings interface {
 	GetDefaultIp() (ip string, found bool)
 }
 
+func (provider *Provider) GetBlobstore() Blobstore {
+	return provider.settings.Blobstore
+}
+
 func (provider *Provider) GetAgentId() string {
 	return provider.settings.AgentId
 }

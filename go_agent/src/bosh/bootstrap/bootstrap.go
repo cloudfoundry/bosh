@@ -23,7 +23,7 @@ func New(inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstra
 	return
 }
 
-func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
+func (boot bootstrap) Run() (settingsProvider *boshsettings.Provider, err error) {
 	err = boot.platform.SetupRuntimeConfiguration()
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up runtime configuration")
@@ -36,11 +36,12 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
-	settings, err = boot.fetchSettings()
+	settings, err := boot.fetchSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings")
 		return
 	}
+	settingsProvider = boshsettings.NewProvider(settings)
 
 	err = boot.setUserPasswords(settings)
 	if err != nil {
