@@ -5,6 +5,7 @@ require 'bosh/dev/download_adapter'
 require 'bosh/dev/git_promoter'
 require 'bosh/dev/git_tagger'
 require 'bosh/dev/git_promoter'
+require 'bosh/dev/git_branch_merger'
 require 'bosh/dev/release_change_promoter'
 
 module Bosh::Dev
@@ -42,18 +43,9 @@ module Bosh::Dev
         tagger = GitTagger.new(@logger)
         tagger.tag_and_push(final_release_sha, @candidate_build_number)
 
-        merge_release_into_develop
+        git_branch_merger = GitBranchMerger.new
+        git_branch_merger.merge('develop', "Merge final release for build #{@candidate_build_number} to develop")
       end
-    end
-
-    private
-
-    def merge_release_into_develop
-      shell = Bosh::Core::Shell.new
-      shell.run('git fetch origin develop')
-
-      shell.run("git merge origin/develop -m 'Merge final release for build #{@candidate_build_number} to develop'")
-      shell.run('git push origin HEAD:develop')
     end
   end
 end

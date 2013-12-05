@@ -36,7 +36,7 @@ module Bosh::Dev
       let(:build) { instance_double('Bosh::Dev::Build', promote_artifacts: nil) }
       let(:git_promoter) { instance_double('Bosh::Dev::GitPromoter', promote: nil) }
       let(:git_tagger) { instance_double('Bosh::Dev::GitTagger', tag_and_push: nil) }
-      let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
+      let(:git_branch_merger) { instance_double('Bosh::Dev::GitBranchMerger', merge: nil)}
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
       let(:release_change_promoter) { instance_double('Bosh::Dev::ReleaseChangePromoter', promote: nil) }
 
@@ -45,9 +45,9 @@ module Bosh::Dev
         Build.stub(:candidate).and_return(build)
         GitPromoter.stub(:new).with(logger).and_return(git_promoter)
         GitTagger.stub(:new).with(logger).and_return(git_tagger)
+        GitBranchMerger.stub(:new).and_return(git_branch_merger)
 
         Rake::FileUtilsExt.stub(:sh)
-        Bosh::Core::Shell.stub(:new).and_return(shell)
         Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
         Bosh::Dev::ReleaseChangePromoter.stub(:new).with(candidate_build_number, candidate_sha, download_adapter).and_return(
           release_change_promoter)
@@ -97,10 +97,8 @@ module Bosh::Dev
         end
 
         it 'commits a record of the final release to the git repo' do
-          expect(release_change_promoter).to receive(:promote)
-          expect(shell).to receive(:run).with('git fetch origin develop').ordered
-          expect(shell).to receive(:run).with("git merge origin/develop -m 'Merge final release for build #{candidate_build_number} to develop'")
-          expect(shell).to receive(:run).with('git push origin HEAD:develop').ordered
+          expect(release_change_promoter).to receive(:promote).ordered
+          expect(git_branch_merger).to receive(:merge).with('develop', "Merge final release for build #{candidate_build_number} to develop").ordered
 
           promoter.promote
         end
