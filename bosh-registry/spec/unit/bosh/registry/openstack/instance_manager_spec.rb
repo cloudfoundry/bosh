@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 
 require "spec_helper"
+require 'json'
 
 describe Bosh::Registry::InstanceManager do
   let(:connection_options) { nil }
@@ -31,7 +32,7 @@ describe Bosh::Registry::InstanceManager do
     servers = double("servers")
     instance = double("instance")
 
-    @compute.should_receive(:servers).and_return(servers)
+    compute.should_receive(:servers).and_return(servers)
     servers.should_receive(:find).and_return(instance)
     instance.should_receive(:private_ip_addresses).and_return([private_ip])
     instance.should_receive(:floating_ip_addresses).and_return([floating_ip])
@@ -52,8 +53,8 @@ describe Bosh::Registry::InstanceManager do
     }
 
     it 'should create a Fog::Compute connection' do
-      Fog::Compute.should_receive(:new).with(openstack_compute).and_return(@compute)
-      expect(manager.openstack).to eql(@compute)
+      Fog::Compute.should_receive(:new).with(openstack_compute).and_return(compute)
+      expect(manager.openstack).to eql(compute)
     end
 
     context 'with connection options' do
@@ -64,15 +65,15 @@ describe Bosh::Registry::InstanceManager do
       }
 
       it 'should add optional options to the Fog::Compute connection' do
-        Fog::Compute.should_receive(:new).with(openstack_compute).and_return(@compute)
-        expect(manager.openstack).to eql(@compute)
+        Fog::Compute.should_receive(:new).with(openstack_compute).and_return(compute)
+        expect(manager.openstack).to eql(compute)
       end
     end
   end
 
   describe "reading settings" do
     before(:each) do
-      Fog::Compute.stub(:new).and_return(@compute)
+      Fog::Compute.stub(:new).and_return(compute)
     end
 
     it "returns settings after verifying IP address" do
@@ -99,14 +100,14 @@ describe Bosh::Registry::InstanceManager do
 
     it 'it should create a new fog connection if there is an Unauthorized error' do
       create_instance(:instance_id => 'foo', :settings => 'bar')
-      @compute.should_receive(:servers).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
+      compute.should_receive(:servers).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       actual_ip_is('10.0.0.1', nil)
       manager.read_settings('foo', '10.0.0.1').should == 'bar'
     end
 
     it 'it should raise a ConnectionError if there is a persistent Unauthorized error' do
       create_instance(:instance_id => 'foo', :settings => 'bar')
-      @compute.should_receive(:servers).twice.and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
+      compute.should_receive(:servers).twice.and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       expect {
         manager.read_settings('foo', '10.0.0.1').should == 'bar'
       }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized') 
