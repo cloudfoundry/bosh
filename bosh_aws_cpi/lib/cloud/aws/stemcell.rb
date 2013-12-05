@@ -37,6 +37,10 @@ module Bosh::AwsCloud
       ami.id
     end
 
+    def image_id
+      ami.id
+    end
+
     def root_device_name
       ami.root_device_name
     end

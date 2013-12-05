@@ -6,7 +6,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:registry) { double("registry") }
   let(:region) { double("region") }
   let(:availability_zone_selector) { double("availability zone selector") }
-  let(:stemcell) { double("stemcell", root_device_name: "root name") }
+  let(:stemcell) { double("stemcell", root_device_name: "root name", image_id: stemcell_id) }
   let(:instance_manager) { double("instance manager") }
   let(:instance) { double("instance", id: "expected instance id", status: :running) }
   let(:network_configurator) { double("network configurator") }
@@ -70,6 +70,23 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
     resource_pool.stub(:[]).and_return(false)
     cloud.stub(:task_checkpoint)
+  end
+
+  it 'passes the image_id of the stemcell to an InstanceManager in order to create a VM' do
+    network_configurator.stub(:configure)
+    registry.stub(:update_settings)
+
+    stemcell.should_receive(:image_id).with(no_args).and_return('ami-1234')
+    instance_manager.should_receive(:create).with(
+      anything,
+      'ami-1234',
+      anything,
+      anything,
+      anything,
+      anything,
+      anything,
+    ).and_return(instance)
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "expected instance id"
   end
 
   it "should create an EC2 instance and return its id" do

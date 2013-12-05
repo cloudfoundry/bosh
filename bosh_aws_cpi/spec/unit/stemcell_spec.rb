@@ -17,6 +17,16 @@ describe Bosh::AwsCloud::Stemcell do
     end
   end
 
+  describe "#image_id" do
+    let(:fake_aws_ami) { double("image", id: "my-id") }
+    let(:region) { double("region") }
+
+    it "returns the id of the ami object" do
+      stemcell = described_class.new(region, fake_aws_ami)
+      stemcell.image_id.should eq('my-id')
+    end
+  end
+
   describe "#delete" do
     let(:fake_aws_ami) { double("image", exists?: true, id: "ami-xxxxxxxx") }
     let(:region) { double("region", images: {'ami-exists' => fake_aws_ami}) }
@@ -66,7 +76,7 @@ describe Bosh::AwsCloud::Stemcell do
   end
 
   describe "#memoize_snapshots" do
-    let(:fake_aws_object) { double("fake", :to_h => {
+    let(:fake_aws_object) { double("fake", :to_hash => {
         "/dev/foo" => {:snapshot_id => 'snap-xxxxxxxx'}
     })}
     let(:fake_aws_ami) do

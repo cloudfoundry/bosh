@@ -85,7 +85,7 @@ module Bosh::AwsCloud
         begin
           instance_manager = InstanceManager.new(region, registry, az_selector)
           instance = instance_manager.
-              create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, options)
+              create(agent_id, stemcell.image_id, resource_pool, network_spec, (disk_locality || []), environment, options)
 
           logger.info("Creating new instance '#{instance.id}'")
 
