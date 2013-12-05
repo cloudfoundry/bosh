@@ -1,6 +1,9 @@
 package fakes
 
-import bc "bosh/agent/applyspec/bundlecollection"
+import (
+	bc "bosh/agent/applyspec/bundlecollection"
+	"errors"
+)
 
 type FakeBundleCollection struct {
 	installedBundles []bc.Bundle
@@ -18,6 +21,11 @@ func NewFakeBundleCollection() *FakeBundleCollection {
 }
 
 func (s *FakeBundleCollection) Install(bundle bc.Bundle) (string, error) {
+	err := s.checkBundle(bundle)
+	if err != nil {
+		return "", err
+	}
+
 	if s.InstallError != nil {
 		return "", s.InstallError
 	}
@@ -30,6 +38,11 @@ func (s *FakeBundleCollection) IsInstalled(bundle bc.Bundle) bool {
 }
 
 func (s *FakeBundleCollection) Enable(bundle bc.Bundle) error {
+	err := s.checkBundle(bundle)
+	if err != nil {
+		return err
+	}
+
 	if s.EnableError != nil {
 		return s.EnableError
 	}
@@ -39,6 +52,16 @@ func (s *FakeBundleCollection) Enable(bundle bc.Bundle) error {
 
 func (s *FakeBundleCollection) IsEnabled(bundle bc.Bundle) bool {
 	return s.checkExists(s.enabledBundles, bundle)
+}
+
+func (s *FakeBundleCollection) checkBundle(bundle bc.Bundle) error {
+	if len(bundle.BundleName()) == 0 {
+		return errors.New("missing bundle name")
+	}
+	if len(bundle.BundleVersion()) == 0 {
+		return errors.New("missing bundle version")
+	}
+	return nil
 }
 
 func (s *FakeBundleCollection) checkExists(collection []bc.Bundle, bundle bc.Bundle) bool {

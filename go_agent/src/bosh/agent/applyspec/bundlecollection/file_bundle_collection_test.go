@@ -31,6 +31,24 @@ func TestInstall(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestInstallErrsWhenBundleIsMissingInfo(t *testing.T) {
+	_, fileCollection, _ := buildFileBundleCollection()
+
+	_, err := fileCollection.Install(testBundle{
+		Name:    "",
+		Version: "fake-bundle-version",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "missing bundle name")
+
+	_, err = fileCollection.Install(testBundle{
+		Name:    "fake-bundle-name",
+		Version: "",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "missing bundle version")
+}
+
 func TestInstallErrsWhenBundleCannotBeInstalled(t *testing.T) {
 	fs, fileCollection, bundle := buildFileBundleCollection()
 
@@ -65,6 +83,24 @@ func TestEnableSucceedsWhenBundleIsInstalled(t *testing.T) {
 	// check idempotency
 	err = fileCollection.Enable(bundle)
 	assert.NoError(t, err)
+}
+
+func TestEnableErrsWhenBundleIsMissingInfo(t *testing.T) {
+	_, fileCollection, _ := buildFileBundleCollection()
+
+	err := fileCollection.Enable(testBundle{
+		Name:    "",
+		Version: "fake-bundle-version",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "missing bundle name")
+
+	err = fileCollection.Enable(testBundle{
+		Name:    "fake-bundle-name",
+		Version: "",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "missing bundle version")
 }
 
 func TestEnableErrsWhenBundleIsNotInstalled(t *testing.T) {
