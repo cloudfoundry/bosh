@@ -63,6 +63,8 @@ else
   exit 2
 fi
 
+if [ -f ${image_mount_point}/etc/debian_version ] # Ubuntu
+then
 cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
 default=0
 timeout=1
@@ -71,6 +73,22 @@ title ${os_name} (${kernel_version})
   kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} selinux=0
   initrd /boot/${initrd_file}
 GRUB_CONF
+elif [ -f ${image_mount_point}/etc/centos-release ] # Centos
+then
+# We need to set xen_blkfront.sda_is_xvda=1 to force CentOS to
+# have device mapping consistant with Ubuntu.
+cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
+default=0
+timeout=1
+title ${os_name} (${kernel_version})
+  root (hd0,0)
+  kernel /boot/vmlinuz-${kernel_version} xen_blkfront.sda_is_xvda=1 ro root=UUID=${uuid} selinux=0
+  initrd /boot/${initrd_file}
+GRUB_CONF
+else
+  echo "Unknown OS, exiting"
+  exit 2
+fi
 
 run_in_chroot ${image_mount_point} "rm -f /boot/grub/menu.lst"
 run_in_chroot ${image_mount_point} "ln -s ./grub.conf /boot/grub/menu.lst"
