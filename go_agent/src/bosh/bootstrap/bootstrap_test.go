@@ -49,6 +49,28 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 	assert.Equal(t, settingsProvider.GetAgentId(), "123-456-789")
 }
 
+func TestRunDoesNotFetchSettingsIfTheyAreOnTheDisk(t *testing.T) {
+	infSettings := boshsettings.Settings{AgentId: "xxx-xxx-xxx"}
+	expectedSettings := boshsettings.Settings{AgentId: "123-456-789"}
+
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = infSettings
+
+	existingSettingsBytes, _ := json.Marshal(expectedSettings)
+	fakePlatform.GetFs().WriteToFile("/var/vcap/bosh/settings.json", string(existingSettingsBytes))
+
+	boot := New(fakeInfrastructure, fakePlatform)
+	settingsProvider, err := boot.Run()
+	assert.NoError(t, err)
+
+	settingsFileStat := fakePlatform.Fs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/settings.json")
+
+	assert.NotNil(t, settingsFileStat)
+	assert.Equal(t, settingsFileStat.FileType, fakesys.FakeFileTypeFile)
+	assert.Equal(t, settingsFileStat.Content, string(existingSettingsBytes))
+	assert.Equal(t, settingsProvider.GetAgentId(), "123-456-789")
+}
+
 func TestRunSetsUpHostname(t *testing.T) {
 	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
 	fakeInfrastructure.Settings = boshsettings.Settings{

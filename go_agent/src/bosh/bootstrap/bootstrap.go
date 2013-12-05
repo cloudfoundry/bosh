@@ -91,6 +91,14 @@ func (boot bootstrap) Run() (settingsProvider *boshsettings.Provider, err error)
 }
 
 func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error) {
+	settingsPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json")
+
+	existingSettingsJson, readError := boot.platform.GetFs().ReadFile(settingsPath)
+	if readError == nil {
+		err = json.Unmarshal([]byte(existingSettingsJson), &settings)
+		return
+	}
+
 	settings, err = boot.infrastructure.GetSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings from infrastructure")
@@ -103,7 +111,7 @@ func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error
 		return
 	}
 
-	boot.fs.WriteToFile(filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
+	boot.fs.WriteToFile(settingsPath, string(settingsJson))
 	return
 }
 
