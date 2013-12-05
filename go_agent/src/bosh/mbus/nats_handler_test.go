@@ -10,7 +10,11 @@ import (
 )
 
 func TestNatsHandlerStart(t *testing.T) {
-	client, handler := createNatsClientAndHandler()
+	settings := boshsettings.Settings{
+		AgentId: "my-agent-id",
+		Mbus:    "nats://foo:bar@127.0.0.1:1234",
+	}
+	client, handler := buildNatsClientAndHandler(settings)
 
 	var receivedRequest Request
 
@@ -55,7 +59,11 @@ func TestNatsHandlerStart(t *testing.T) {
 
 func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	heartbeatChan := make(chan Heartbeat, 1)
-	client, handler := createNatsClientAndHandler()
+	settings := boshsettings.Settings{
+		AgentId: "my-agent-id",
+		Mbus:    "nats://foo:bar@127.0.0.1:1234",
+	}
+	client, handler := buildNatsClientAndHandler(settings)
 
 	errChan := make(chan error, 1)
 
@@ -84,7 +92,8 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 }
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {
-	_, handler := createNatsClientAndHandler()
+	settings := boshsettings.Settings{Mbus: "nats://foo:bar@127.0.0.1:1234"}
+	_, handler := buildNatsClientAndHandler(settings)
 
 	connInfo, err := handler.getConnectionInfo()
 	assert.NoError(t, err)
@@ -95,29 +104,24 @@ func TestNatsHandlerConnectionInfo(t *testing.T) {
 }
 
 func TestNatsHandlerConnectionInfoWithoutUsernameOrPassword(t *testing.T) {
-	_, handler := createNatsClientAndHandler()
-	handler.settings.Mbus = "nats://127.0.0.1:1234"
+	settings := boshsettings.Settings{Mbus: "nats://127.0.0.1:1234"}
+	_, handler := buildNatsClientAndHandler(settings)
 
 	_, err := handler.getConnectionInfo()
 	assert.Error(t, err)
 }
 
 func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
-	_, handler := createNatsClientAndHandler()
-	handler.settings.Mbus = "nats://foo@127.0.0.1:1234"
+	settings := boshsettings.Settings{Mbus: "nats://foo@127.0.0.1:1234"}
+	_, handler := buildNatsClientAndHandler(settings)
 
 	_, err := handler.getConnectionInfo()
 	assert.Error(t, err)
 }
 
-func createNatsClientAndHandler() (client *fakeyagnats.FakeYagnats, handler natsHandler) {
-	settings := boshsettings.Settings{
-		AgentId: "my-agent-id",
-		Mbus:    "nats://foo:bar@127.0.0.1:1234",
-	}
-
+func buildNatsClientAndHandler(settings boshsettings.Settings) (client *fakeyagnats.FakeYagnats, handler natsHandler) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	client = fakeyagnats.New()
-	handler = newNatsHandler(settings, logger, client)
+	handler = newNatsHandler(boshsettings.NewProvider(settings), logger, client)
 	return
 }

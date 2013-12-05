@@ -12,6 +12,7 @@ import (
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 	"flag"
 	"io/ioutil"
 )
@@ -57,7 +58,9 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settings, app.logger)
+	settingsProvider := boshsettings.NewProvider(settings)
+
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsProvider, app.logger)
 	mbusHandler, err := mbusHandlerProvider.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mbus handler")
