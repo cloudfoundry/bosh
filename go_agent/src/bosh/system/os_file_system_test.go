@@ -37,6 +37,10 @@ func TestMkdirAll(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, stat.IsDir())
 	assert.Equal(t, stat.Mode().Perm(), fileMode)
+
+	// check idempotency
+	err = osFs.MkdirAll(testPath, fileMode)
+	assert.NoError(t, err)
 }
 
 func TestChown(t *testing.T) {
