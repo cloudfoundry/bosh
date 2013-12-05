@@ -1,5 +1,6 @@
 require 'open3'
 require 'bosh/dev'
+require 'bosh/core/shell'
 
 module Bosh::Dev
   class GitTagger
@@ -19,6 +20,10 @@ module Bosh::Dev
 
       stdout, stderr, status = Open3.capture3('git', 'push', 'origin', '--tags')
       raise "Failed to push tags: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+    end
+
+    def stable_tag_for?(subject_sha)
+      !!Bosh::Core::Shell.new.run("git fetch --tags && git tag --contains #{subject_sha} | grep stable-").match(/stable/)
     end
   end
 end

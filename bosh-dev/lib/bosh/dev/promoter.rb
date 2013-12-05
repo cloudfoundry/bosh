@@ -27,8 +27,9 @@ module Bosh::Dev
     end
 
     def promote
-      Rake::FileUtilsExt.sh('git fetch --tags')
-      if system("git fetch --tags && git tag --contains #{@candidate_sha} | grep stable-")
+      tagger = GitTagger.new(@logger)
+
+      if tagger.stable_tag_for?(@candidate_sha)
         @logger.info('Skipping promotion since an existing stable tag was found')
       else
         build = Build.candidate
@@ -40,7 +41,6 @@ module Bosh::Dev
         promoter = GitPromoter.new(@logger)
         promoter.promote(final_release_sha, @stable_branch)
 
-        tagger = GitTagger.new(@logger)
         tagger.tag_and_push(final_release_sha, @candidate_build_number)
 
         git_branch_merger = GitBranchMerger.new

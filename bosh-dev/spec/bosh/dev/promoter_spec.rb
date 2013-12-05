@@ -35,8 +35,8 @@ module Bosh::Dev
       let(:logger) { instance_double('Logger', info: nil) }
       let(:build) { instance_double('Bosh::Dev::Build', promote_artifacts: nil) }
       let(:git_promoter) { instance_double('Bosh::Dev::GitPromoter', promote: nil) }
-      let(:git_tagger) { instance_double('Bosh::Dev::GitTagger', tag_and_push: nil) }
-      let(:git_branch_merger) { instance_double('Bosh::Dev::GitBranchMerger', merge: nil)}
+      let(:git_tagger) { instance_double('Bosh::Dev::GitTagger', tag_and_push: nil, stable_tag_for?: nil) }
+      let(:git_branch_merger) { instance_double('Bosh::Dev::GitBranchMerger', merge: nil) }
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
       let(:release_change_promoter) { instance_double('Bosh::Dev::ReleaseChangePromoter', promote: nil) }
 
@@ -47,7 +47,6 @@ module Bosh::Dev
         GitTagger.stub(:new).with(logger).and_return(git_tagger)
         GitBranchMerger.stub(:new).and_return(git_branch_merger)
 
-        Rake::FileUtilsExt.stub(:sh)
         Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
         Bosh::Dev::ReleaseChangePromoter.stub(:new).with(candidate_build_number, candidate_sha, download_adapter).and_return(
           release_change_promoter)
@@ -63,16 +62,9 @@ module Bosh::Dev
         )
       end
 
-      it 'fetches new tags created since the last time the build ran' do
-        promoter.stub(:system)
-        Rake::FileUtilsExt.should_receive(:sh).with('git fetch --tags')
-
-        promoter.promote
-      end
-
       context 'when the current sha has never been promoted' do
         before do
-          promoter.stub(:system).with("git fetch --tags && git tag --contains #{candidate_sha} | grep stable-").and_return(false)
+          git_tagger.stub(:stable_tag_for?).with(candidate_sha).and_return(false)
         end
 
         it 'promotes artifacts' do
@@ -106,7 +98,7 @@ module Bosh::Dev
 
       context 'when the current sha has been promoted before' do
         before do
-          promoter.stub(:system).with("git fetch --tags && git tag --contains #{candidate_sha} | grep stable-").and_return(true)
+          git_tagger.stub(:stable_tag_for?).with(candidate_sha).and_return(true)
         end
 
         it 'skips promoting anything' do
