@@ -48,18 +48,7 @@ describe 'director.yml.erb.erb' do
             'connection_options' => {},
           },
           'auto_fix_stateful_nodes' => true
-        },
-        'vcenter' => {
-          'address' => 'vcenter.address',
-          'user' => 'user',
-          'password' => 'vcenter.password',
-          'datacenters' => [
-            {
-              'name' => 'vcenter.datacenters.first.name',
-              'clusters' => ['cluster1']
-            },
-          ],
-        },
+        }
       }
     }
   end
@@ -70,51 +59,106 @@ describe 'director.yml.erb.erb' do
     File.read(erb_yaml_path)
   end
 
-  context 'when vcenter.address begins with a bang and contains quotes' do
+  context 'vsphere' do
+
     before do
-      deployment_manifest_fragment['properties']['vcenter']['address'] = "!vcenter.address''"
+      deployment_manifest_fragment['properties']['vcenter'] = {
+        'address' => 'vcenter.address',
+        'user' => 'user',
+        'password' => 'vcenter.password',
+        'datacenters' => [
+          {
+            'name' => 'vcenter.datacenters.first.name',
+            'clusters' => ['cluster1']
+          },
+        ] }
+
     end
 
-    it 'renders vcenter address correctly' do
-      spec = deployment_manifest_fragment
+    context 'when vcenter.address begins with a bang and contains quotes' do
+      before do
+        deployment_manifest_fragment['properties']['vcenter']['address'] = "!vcenter.address''"
+      end
 
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+      it 'renders vcenter address correctly' do
+        spec = deployment_manifest_fragment
 
-      parsed = YAML.load(rendered_yaml)
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
 
-      expect(parsed['cloud']['properties']['vcenters'][0]['host']).to eq("!vcenter.address''")
+        parsed = YAML.load(rendered_yaml)
+
+        expect(parsed['cloud']['properties']['vcenters'][0]['host']).to eq("!vcenter.address''")
+      end
+    end
+
+    context 'when vcenter.user begins with a bang and contains quotes' do
+      before do
+        deployment_manifest_fragment['properties']['vcenter']['user'] = "!vcenter.user''"
+      end
+
+      it 'renders vcenter user correctly' do
+        spec = deployment_manifest_fragment
+
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+        parsed = YAML.load(rendered_yaml)
+
+        expect(parsed['cloud']['properties']['vcenters'][0]['user']).to eq("!vcenter.user''")
+      end
+    end
+
+    context 'when vcenter.password begins with a bang and contains quotes' do
+      before do
+        deployment_manifest_fragment['properties']['vcenter']['password'] = "!vcenter.password''"
+      end
+
+      it 'renders vcenter password correctly' do
+        spec = deployment_manifest_fragment
+
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+        parsed = YAML.load(rendered_yaml)
+
+        expect(parsed['cloud']['properties']['vcenters'][0]['password']).to eq("!vcenter.password''")
+      end
     end
   end
 
-  context 'when vcenter.user begins with a bang and contains quotes' do
+  context 'openstack' do
     before do
-      deployment_manifest_fragment['properties']['vcenter']['user'] = "!vcenter.user''"
+      deployment_manifest_fragment['properties']['openstack'] = {
+        'auth_url' => 'auth_url',
+        'username' => 'username',
+        'api_key' => 'api_key',
+        'tenant' => 'tenant',
+        'default_key_name' => 'default_key_name',
+        'default_security_groups' => 'default_security_groups'
+      }
+      deployment_manifest_fragment['properties']['registry'] = {
+        'address' => 'address',
+        'http' => {
+          'port' => 'port',
+          'user' => 'user',
+          'password' => 'password'
+        }
+      }
     end
 
-    it 'renders vcenter user correctly' do
-      spec = deployment_manifest_fragment
+    context 'when openstack connection options exist' do
+      before do
+        deployment_manifest_fragment['properties']['openstack']['connection_options'] = {
+          'option1' => 'true', 'option2' => 'false' }
+      end
 
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+      it 'renders openstack connection options correctly' do
+        spec = deployment_manifest_fragment
 
-      parsed = YAML.load(rendered_yaml)
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
 
-      expect(parsed['cloud']['properties']['vcenters'][0]['user']).to eq("!vcenter.user''")
-    end
-  end
-
-  context 'when vcenter.password begins with a bang and contains quotes' do
-    before do
-      deployment_manifest_fragment['properties']['vcenter']['password'] = "!vcenter.password''"
-    end
-
-    it 'renders vcenter password correctly' do
-      spec = deployment_manifest_fragment
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['cloud']['properties']['vcenters'][0]['password']).to eq("!vcenter.password''")
+        parsed = YAML.load(rendered_yaml)
+        expect(parsed['cloud']['properties']['openstack']['connection_options']).to eq(
+          { 'option1' => 'true', 'option2' => 'false' })
+      end
     end
   end
 end
