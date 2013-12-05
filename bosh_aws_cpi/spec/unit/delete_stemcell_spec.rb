@@ -5,9 +5,10 @@ require "spec_helper"
 describe Bosh::AwsCloud::Cloud do
   it "should delete the stemcell" do
     stemcell = double(Bosh::AwsCloud::Stemcell)
-    Bosh::AwsCloud::Stemcell.stub(:find => stemcell)
 
-    cloud = mock_cloud
+    cloud = mock_cloud do |_, region|
+      Bosh::AwsCloud::Stemcell.stub(:find).with(region, "ami-xxxxxxxx").and_return(stemcell)
+    end
 
     stemcell.should_receive(:delete)
 
