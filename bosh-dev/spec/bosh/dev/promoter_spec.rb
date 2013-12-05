@@ -30,6 +30,7 @@ module Bosh::Dev
       let(:candidate_build_number) { 'fake-candidate_build_number' }
       let(:candidate_sha) { 'fake-candidate_sha' }
       let(:stable_branch) { 'fake-stable_branch' }
+      let(:final_release_sha) { 'fake-final-release-sha' }
 
       let(:logger) { instance_double('Logger', info: nil) }
       let(:build) { instance_double('Bosh::Dev::Build', promote_artifacts: nil) }
@@ -47,6 +48,7 @@ module Bosh::Dev
         Rake::FileUtilsExt.stub(:sh)
         Bosh::Core::Shell.stub(:new).and_return(shell)
         Bosh::Dev::DownloadAdapter.stub(:new).and_return(download_adapter)
+        shell.stub(:run).with('git rev-parse HEAD').and_return(final_release_sha)
       end
 
       subject(:promoter) do
@@ -77,26 +79,27 @@ module Bosh::Dev
         end
 
         it 'promotes the candidate sha to the nominated stable branch (master by default)' do
-          git_promoter.should_receive(:promote).with(candidate_sha, stable_branch)
+          git_promoter.should_receive(:promote).with(final_release_sha, stable_branch)
 
           promoter.promote
         end
 
         it 'creates a new stable tag against the candidate sha' do
-          git_tagger.should_receive(:tag_and_push).with(candidate_sha, candidate_build_number)
+          git_tagger.should_receive(:tag_and_push).with(final_release_sha, candidate_build_number)
 
           promoter.promote
         end
 
         it 'commits a record of the final release to the git repo' do
-
           release_change_promoter = instance_double('Bosh::Dev::ReleaseChangePromoter')
           Bosh::Dev::ReleaseChangePromoter.stub(:new).with(candidate_build_number, download_adapter).and_return(
             release_change_promoter)
 
-          expect(shell).to receive(:run).with('git pull').ordered
+          expect(shell).to receive(:run).with("git checkout #{candidate_sha}").ordered
           expect(release_change_promoter).to receive(:promote)
-          expect(shell).to receive(:run).with('git push origin develop').ordered
+          expect(shell).to receive(:run).with('git fetch origin develop').ordered
+          expect(shell).to receive(:run).with("git merge origin/develop -m 'Merge final release for build #{candidate_build_number} to develop'")
+          expect(shell).to receive(:run).with('git push origin HEAD:develop').ordered
 
           promoter.promote
         end

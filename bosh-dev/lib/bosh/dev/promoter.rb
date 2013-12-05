@@ -33,15 +33,15 @@ module Bosh::Dev
         build = Bosh::Dev::Build.candidate
         build.promote_artifacts
 
+        final_release_sha = commit_final_release
+
         promoter = Bosh::Dev::GitPromoter.new(@logger)
-        promoter.promote(@candidate_sha, @stable_branch)
+        promoter.promote(final_release_sha, @stable_branch)
 
         tagger = Bosh::Dev::GitTagger.new(@logger)
-        tagger.tag_and_push(@candidate_sha, @candidate_build_number)
+        tagger.tag_and_push(final_release_sha, @candidate_build_number)
 
-        # we actually push commits after the tagging in order to prevent untested code from
-        # leaking into the tag
-        commit_final_release
+        merge_release_into_develop
       end
     end
 
@@ -51,13 +51,20 @@ module Bosh::Dev
       shell = Bosh::Core::Shell.new
       download_adapter = DownloadAdapter.new(@logger)
 
-      shell.run('git pull')
+      shell.run("git checkout #{@candidate_sha}")
 
       release_change_promoter = ReleaseChangePromoter.new(@candidate_build_number, download_adapter)
       release_change_promoter.promote
 
-      # assume we are pushing to the 'develop' branch as we only have the concept of a candidate SHA
-      shell.run('git push origin develop')
+      shell.run('git rev-parse HEAD')
+    end
+
+    def merge_release_into_develop
+      shell = Bosh::Core::Shell.new
+      shell.run('git fetch origin develop')
+
+      shell.run("git merge origin/develop -m 'Merge final release for build #{@candidate_build_number} to develop'")
+      shell.run('git push origin HEAD:develop')
     end
   end
 end
