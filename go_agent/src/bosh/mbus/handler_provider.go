@@ -9,11 +9,11 @@ import (
 )
 
 type mbusHandlerProvider struct {
-	settings boshsettings.MbusSettings
+	settings boshsettings.Service
 	handlers map[string]Handler
 }
 
-func NewHandlerProvider(settings boshsettings.MbusSettings, logger boshlog.Logger) (p mbusHandlerProvider) {
+func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger) (p mbusHandlerProvider) {
 	p.settings = settings
 	p.handlers = map[string]Handler{
 		"nats": newNatsHandler(settings, logger, yagnats.NewClient()),

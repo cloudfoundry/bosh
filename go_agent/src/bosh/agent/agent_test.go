@@ -245,14 +245,14 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 }
 
 func getAgentDependencies() (
-	settings *fakesettings.FakeDiskSettings,
+	settings *fakesettings.FakeSettingsService,
 	logger boshlog.Logger,
 	handler *fakembus.FakeHandler,
 	platform *fakeplatform.FakePlatform,
 	taskService *faketask.FakeService,
 	actionFactory *fakeaction.FakeFactory) {
 
-	settings = &fakesettings.FakeDiskSettings{}
+	settings = &fakesettings.FakeSettingsService{}
 	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 	handler = &fakembus.FakeHandler{}
 	platform = &fakeplatform.FakePlatform{

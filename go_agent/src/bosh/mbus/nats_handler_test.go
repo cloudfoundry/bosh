@@ -3,6 +3,7 @@ package mbus
 import (
 	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"github.com/cloudfoundry/yagnats"
 	"github.com/cloudfoundry/yagnats/fakeyagnats"
 	"github.com/stretchr/testify/assert"
@@ -10,9 +11,9 @@ import (
 )
 
 func TestNatsHandlerStart(t *testing.T) {
-	settings := boshsettings.Settings{
+	settings := &fakesettings.FakeSettingsService{
 		AgentId: "my-agent-id",
-		Mbus:    "nats://foo:bar@127.0.0.1:1234",
+		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
 	}
 	client, handler := buildNatsClientAndHandler(settings)
 
@@ -59,9 +60,9 @@ func TestNatsHandlerStart(t *testing.T) {
 
 func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	heartbeatChan := make(chan Heartbeat, 1)
-	settings := boshsettings.Settings{
+	settings := &fakesettings.FakeSettingsService{
 		AgentId: "my-agent-id",
-		Mbus:    "nats://foo:bar@127.0.0.1:1234",
+		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
 	}
 	client, handler := buildNatsClientAndHandler(settings)
 
@@ -92,7 +93,7 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 }
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {
-	settings := boshsettings.Settings{Mbus: "nats://foo:bar@127.0.0.1:1234"}
+	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
 	connInfo, err := handler.getConnectionInfo()
@@ -104,7 +105,7 @@ func TestNatsHandlerConnectionInfo(t *testing.T) {
 }
 
 func TestNatsHandlerConnectionInfoWithoutUsernameOrPassword(t *testing.T) {
-	settings := boshsettings.Settings{Mbus: "nats://127.0.0.1:1234"}
+	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
 	_, err := handler.getConnectionInfo()
@@ -112,16 +113,16 @@ func TestNatsHandlerConnectionInfoWithoutUsernameOrPassword(t *testing.T) {
 }
 
 func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
-	settings := boshsettings.Settings{Mbus: "nats://foo@127.0.0.1:1234"}
+	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
 	_, err := handler.getConnectionInfo()
 	assert.Error(t, err)
 }
 
-func buildNatsClientAndHandler(settings boshsettings.Settings) (client *fakeyagnats.FakeYagnats, handler natsHandler) {
+func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler natsHandler) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	client = fakeyagnats.New()
-	handler = newNatsHandler(boshsettings.NewProvider(settings), logger, client)
+	handler = newNatsHandler(settings, logger, client)
 	return
 }

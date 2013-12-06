@@ -13,7 +13,7 @@ const (
 	PERSISTENT_DISK_PATH = boshsettings.VCAP_BASE_DIR + "/store"
 )
 
-func getHeartbeat(settings boshsettings.DiskSettings, collector boshstats.StatsCollector) (hb boshmbus.Heartbeat) {
+func getHeartbeat(settings boshsettings.Service, collector boshstats.StatsCollector) (hb boshmbus.Heartbeat) {
 	hb = updateWithCpuLoad(collector, hb)
 	hb = updateWithCpuStats(collector, hb)
 	hb = updateWithMemStats(collector, hb)
@@ -92,7 +92,7 @@ func updateWithSwapStats(platform boshstats.StatsCollector, hb boshmbus.Heartbea
 	return
 }
 
-func updateWithDiskStats(settings boshsettings.DiskSettings, platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithDiskStats(settings boshsettings.Service, platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 
 	updatedHb.Vitals.Disks.System = getDiskStats(platform, SYSTEM_DISK_PATH)

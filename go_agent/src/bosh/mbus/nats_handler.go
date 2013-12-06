@@ -15,12 +15,12 @@ import (
 )
 
 type natsHandler struct {
-	settings boshsettings.MbusSettings
+	settings boshsettings.Service
 	logger   boshlog.Logger
 	client   yagnats.NATSClient
 }
 
-func newNatsHandler(settings boshsettings.MbusSettings, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
+func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
 	handler.settings = settings
 	handler.logger = logger
 	handler.client = client

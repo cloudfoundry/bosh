@@ -6,11 +6,11 @@ import (
 )
 
 type migrateDiskAction struct {
-	settings boshsettings.DiskSettings
+	settings boshsettings.Service
 	platform boshplatform.Platform
 }
 
-func newMigrateDisk(settings boshsettings.DiskSettings, platform boshplatform.Platform) (action migrateDiskAction) {
+func newMigrateDisk(settings boshsettings.Service, platform boshplatform.Platform) (action migrateDiskAction) {
 	action.settings = settings
 	action.platform = platform
 	return

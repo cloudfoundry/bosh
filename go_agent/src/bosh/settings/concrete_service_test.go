@@ -7,24 +7,24 @@ import (
 
 func TestGetAgentId(t *testing.T) {
 	settings := Settings{AgentId: "some-agent-id"}
-	assert.Equal(t, NewProvider(settings).GetAgentId(), "some-agent-id")
+	assert.Equal(t, NewService(settings, nil).GetAgentId(), "some-agent-id")
 }
 
 func TestGetVm(t *testing.T) {
 	vm := Vm{Name: "some-vm-id"}
 	settings := Settings{Vm: vm}
-	assert.Equal(t, NewProvider(settings).GetVm(), vm)
+	assert.Equal(t, NewService(settings, nil).GetVm(), vm)
 }
 
 func TestGetMbusUrl(t *testing.T) {
 	settings := Settings{Mbus: "nats://user:pwd@some-ip:some-port"}
-	assert.Equal(t, NewProvider(settings).GetMbusUrl(), "nats://user:pwd@some-ip:some-port")
+	assert.Equal(t, NewService(settings, nil).GetMbusUrl(), "nats://user:pwd@some-ip:some-port")
 }
 
 func TestGetDisks(t *testing.T) {
 	disks := Disks{System: "foo", Ephemeral: "bar"}
 	settings := Settings{Disks: disks}
-	assert.Equal(t, NewProvider(settings).GetDisks(), disks)
+	assert.Equal(t, NewService(settings, nil).GetDisks(), disks)
 }
 
 func TestGetDefaultIp(t *testing.T) {
@@ -32,7 +32,7 @@ func TestGetDefaultIp(t *testing.T) {
 		"bosh": Network{Ip: "xx.xx.xx.xx"},
 	}
 	settings := Settings{Networks: networks}
-	ip, found := NewProvider(settings).GetDefaultIp()
+	ip, found := NewService(settings, nil).GetDefaultIp()
 	assert.True(t, found)
 	assert.Equal(t, ip, "xx.xx.xx.xx")
 }

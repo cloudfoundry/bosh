@@ -13,7 +13,7 @@ type concreteFactory struct {
 }
 
 func NewFactory(
-	settings *boshsettings.Provider,
+	settings boshsettings.Service,
 	platform boshplatform.Platform,
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,

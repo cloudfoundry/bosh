@@ -21,7 +21,7 @@ func TestMigrateDiskActionRun(t *testing.T) {
 
 func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action migrateDiskAction) {
 	platform = fakeplatform.NewFakePlatform()
-	settings := &fakesettings.FakeDiskSettings{}
+	settings := &fakesettings.FakeSettingsService{}
 	action = newMigrateDisk(settings, platform)
 	return
 }

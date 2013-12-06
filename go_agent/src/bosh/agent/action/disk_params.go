@@ -7,7 +7,7 @@ import (
 )
 
 type diskParams struct {
-	settings boshsettings.DiskSettings
+	settings boshsettings.Service
 	payload  diskPayloadType
 }
 
@@ -15,7 +15,7 @@ type diskPayloadType struct {
 	Arguments []string
 }
 
-func NewDiskParams(settings boshsettings.DiskSettings, payloadBytes []byte) (p diskParams, err error) {
+func NewDiskParams(settings boshsettings.Service, payloadBytes []byte) (p diskParams, err error) {
 	p.settings = settings
 
 	err = json.Unmarshal(payloadBytes, &p.payload)

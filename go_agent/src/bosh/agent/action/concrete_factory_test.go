@@ -5,7 +5,7 @@ import (
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakeplatform "bosh/platform/fakes"
-	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -91,14 +91,14 @@ func TestNewFactoryUnmountDisk(t *testing.T) {
 }
 
 func buildFactory() (
-	settings *boshsettings.Provider,
+	settings *fakesettings.FakeSettingsService,
 	platform *fakeplatform.FakePlatform,
 	blobstore *fakeblobstore.FakeBlobstore,
 	taskService *faketask.FakeService,
 	applier *fakeappl.FakeApplier,
 	factory Factory) {
 
-	settings = boshsettings.NewProvider(boshsettings.Settings{})
+	settings = &fakesettings.FakeSettingsService{}
 	platform = fakeplatform.NewFakePlatform()
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	taskService = &faketask.FakeService{}

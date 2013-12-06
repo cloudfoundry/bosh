@@ -8,11 +8,11 @@ import (
 )
 
 type getStateAction struct {
-	settings boshsettings.VmSettings
+	settings boshsettings.Service
 	fs       boshsys.FileSystem
 }
 
-func newGetState(settings boshsettings.VmSettings, fs boshsys.FileSystem) (action getStateAction) {
+func newGetState(settings boshsettings.Service, fs boshsys.FileSystem) (action getStateAction) {
 	action.settings = settings
 	action.fs = fs
 	return

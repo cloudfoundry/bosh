@@ -23,7 +23,7 @@ func New(inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstra
 	return
 }
 
-func (boot bootstrap) Run() (settingsProvider *boshsettings.Provider, err error) {
+func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 	err = boot.platform.SetupRuntimeConfiguration()
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up runtime configuration")
@@ -36,12 +36,12 @@ func (boot bootstrap) Run() (settingsProvider *boshsettings.Provider, err error)
 		return
 	}
 
-	settings, err := boot.fetchSettings()
+	settings, err := boot.fetchInitialSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings")
 		return
 	}
-	settingsProvider = boshsettings.NewProvider(settings)
+	settingsService = boshsettings.NewService(settings, boot.infrastructure.GetSettings)
 
 	err = boot.setUserPasswords(settings)
 	if err != nil {
@@ -90,7 +90,7 @@ func (boot bootstrap) Run() (settingsProvider *boshsettings.Provider, err error)
 	return
 }
 
-func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error) {
+func (boot bootstrap) fetchInitialSettings() (settings boshsettings.Settings, err error) {
 	settingsPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json")
 
 	existingSettingsJson, readError := boot.platform.GetFs().ReadFile(settingsPath)

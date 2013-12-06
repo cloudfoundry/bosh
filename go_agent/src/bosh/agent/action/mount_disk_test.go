@@ -9,7 +9,7 @@ import (
 )
 
 func TestMountDisk(t *testing.T) {
-	settings := &fakesettings.FakeDiskSettings{}
+	settings := &fakesettings.FakeSettingsService{}
 	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 	platform, mountDisk := buildMountDiskAction(settings)
 
@@ -23,7 +23,7 @@ func TestMountDisk(t *testing.T) {
 }
 
 func TestMountDiskWhenStoreAlreadyMounted(t *testing.T) {
-	settings := &fakesettings.FakeDiskSettings{}
+	settings := &fakesettings.FakeSettingsService{}
 	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 	platform, mountDisk := buildMountDiskAction(settings)
 
@@ -41,7 +41,7 @@ func TestMountDiskWhenStoreAlreadyMounted(t *testing.T) {
 }
 
 func TestMountDiskWithMissingVolumeId(t *testing.T) {
-	settings := &fakesettings.FakeDiskSettings{}
+	settings := &fakesettings.FakeSettingsService{}
 	_, mountDisk := buildMountDiskAction(settings)
 
 	payload := `{"arguments":[]}`
@@ -50,7 +50,7 @@ func TestMountDiskWithMissingVolumeId(t *testing.T) {
 }
 
 func TestMountDiskWhenDevicePathNotFound(t *testing.T) {
-	settings := &fakesettings.FakeDiskSettings{}
+	settings := &fakesettings.FakeSettingsService{}
 	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 	_, mountDisk := buildMountDiskAction(settings)
 
@@ -59,7 +59,7 @@ func TestMountDiskWhenDevicePathNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func buildMountDiskAction(settings *fakesettings.FakeDiskSettings) (*fakeplatform.FakePlatform, mountDiskAction) {
+func buildMountDiskAction(settings *fakesettings.FakeSettingsService) (*fakeplatform.FakePlatform, mountDiskAction) {
 	platform := fakeplatform.NewFakePlatform()
 	action := newMountDisk(settings, platform)
 	return platform, action

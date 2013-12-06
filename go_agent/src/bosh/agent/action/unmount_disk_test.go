@@ -58,7 +58,7 @@ func TestUnmountDiskWhenDevicePathNotFound(t *testing.T) {
 }
 
 func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk Action) {
-	settings := &fakesettings.FakeDiskSettings{
+	settings := &fakesettings.FakeSettingsService{
 		Disks: boshsettings.Disks{
 			Persistent: map[string]string{"vol-123": "/dev/sdf"},
 		},
