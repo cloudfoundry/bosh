@@ -33,9 +33,13 @@ describe Bosh::Registry::InstanceManager do
     @compute.should_receive(:servers).and_return(servers)
     servers.should_receive(:find).and_return(instance)
     instance.should_receive(:nics).and_return([{'ipaddress' => private_ip}])
-    floating_ips = []
-    floating_ips << double('floating_ip', :virtual_machine_id => instance_id, :ip_address => floating_ip) if floating_ip
-    @compute.should_receive(:ipaddresses).and_return(floating_ips)
+    if floating_ip
+      floating_ips = {"publicipaddress" => [{"virtualmachineid" => instance_id, "ipaddress" => floating_ip}]}
+    else
+      floating_ips = {}
+    end
+    @compute.should_receive(:list_public_ip_addresses)
+      .and_return({"listpublicipaddressesresponse" => floating_ips})
   end
 
   describe "reading settings" do
