@@ -11,6 +11,10 @@ type FakeCmdRunner struct {
 	RunCommandsWithInput [][]string
 }
 
+func NewFakeCmdRunner() *FakeCmdRunner {
+	return &FakeCmdRunner{}
+}
+
 func (runner *FakeCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
 	runCmd := append([]string{cmdName}, args...)
 	runner.RunCommands = append(runner.RunCommands, runCmd)

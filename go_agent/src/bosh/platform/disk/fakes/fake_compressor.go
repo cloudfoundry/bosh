@@ -6,6 +6,10 @@ type FakeCompressor struct {
 	CompressFilesInDirTarball *os.File
 	CompressFilesInDirDir     string
 	CompressFilesInDirFilters []string
+
+	DecompressFileToDirTarball *os.File
+	DecompressFileToDirDir     string
+	DecompressFileToDirError   error
 }
 
 func NewFakeCompressor() *FakeCompressor {
@@ -17,5 +21,13 @@ func (fc *FakeCompressor) CompressFilesInDir(dir string, filters []string) (tarb
 	fc.CompressFilesInDirFilters = filters
 
 	tarball = fc.CompressFilesInDirTarball
+	return
+}
+
+func (fc *FakeCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
+	fc.DecompressFileToDirTarball = tarball
+	fc.DecompressFileToDirDir = dir
+
+	err = fc.DecompressFileToDirError
 	return
 }

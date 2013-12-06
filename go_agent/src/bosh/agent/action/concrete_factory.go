@@ -3,7 +3,7 @@ package action
 import (
 	boshas "bosh/agent/applyspec"
 	boshtask "bosh/agent/task"
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -15,7 +15,7 @@ type concreteFactory struct {
 func NewFactory(
 	settings *boshsettings.Provider,
 	platform boshplatform.Platform,
-	blobstore boshblobstore.Blobstore,
+	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
 	applier boshas.Applier,
 ) (factory Factory) {

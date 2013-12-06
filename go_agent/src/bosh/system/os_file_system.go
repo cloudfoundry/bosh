@@ -162,6 +162,11 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return os.Symlink(oldPath, newPath)
 }
 
+func (fs osFileSystem) TempFile() (file *os.File, err error) {
+	fs.logger.Debug(fs.logTag, "Creating temp file")
+	return ioutil.TempFile("", "OsFileSystemTempFile")
+}
+
 func (fs osFileSystem) TempDir() (tmpDir string) {
 	fs.logger.Debug(fs.logTag, "Getting temp dir")
 	return os.TempDir()

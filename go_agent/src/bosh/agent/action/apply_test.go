@@ -1,8 +1,8 @@
 package action
 
 import (
-	boshas "bosh/agent/applyspec"
 	fakeas "bosh/agent/applyspec/fakes"
+	models "bosh/agent/applyspec/models"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
@@ -42,11 +42,11 @@ func TestApplyRunApplierToMakeChanges(t *testing.T) {
 	_, err := action.Run(payload)
 	assert.NoError(t, err)
 
-	expectedJob := boshas.Job{Name: "fake-job-template"}
-	assert.Equal(t, []boshas.Job{expectedJob}, applier.AppliedJobs)
+	expectedJob := models.Job{Name: "fake-job-template"}
+	assert.Equal(t, []models.Job{expectedJob}, applier.AppliedJobs)
 
-	expectedPackage := boshas.Package{Name: "fake-package-name"}
-	assert.Equal(t, []boshas.Package{expectedPackage}, applier.AppliedPackages)
+	expectedPackage := models.Package{Name: "fake-package-name"}
+	assert.Equal(t, []models.Package{expectedPackage}, applier.AppliedPackages)
 }
 
 func TestApplyRunErrsWhenApplierFails(t *testing.T) {

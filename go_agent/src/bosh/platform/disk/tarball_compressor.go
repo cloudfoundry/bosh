@@ -7,18 +7,18 @@ import (
 	"strings"
 )
 
-type compressor struct {
+type tarballCompressor struct {
 	cmdRunner boshsys.CmdRunner
 	fs        boshsys.FileSystem
 }
 
-func NewCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c compressor) {
+func NewTarballCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c tarballCompressor) {
 	c.cmdRunner = cmdRunner
 	c.fs = fs
 	return
 }
 
-func (c compressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
 	tmpDir := c.fs.TempDir()
 	tgzDir := filepath.Join(tmpDir, "BoshAgentTarball")
 	err = c.fs.MkdirAll(tgzDir, os.ModePerm)
@@ -64,8 +64,8 @@ func (c compressor) CompressFilesInDir(dir string, filters []string) (tarball *o
 	return
 }
 
-func (c compressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
-	_, _, err = c.cmdRunner.RunCommand("tar", "xzf", tarball.Name(), "-C", dir)
+func (c tarballCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
+	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarball.Name(), "-C", dir)
 	if err != nil {
 		return
 	}
@@ -73,7 +73,7 @@ func (c compressor) DecompressFileToDir(tarball *os.File, dir string) (err error
 	return
 }
 
-func (c compressor) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
+func (c tarballCompressor) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
 	for _, filter := range filters {
 		var newFiles []string
 
@@ -88,7 +88,7 @@ func (c compressor) findFilesMatchingFilters(dir string, filters []string) (file
 	return
 }
 
-func (c compressor) findFilesMatchingFilter(filter string) (files []string, err error) {
+func (c tarballCompressor) findFilesMatchingFilter(filter string) (files []string, err error) {
 	files, err = filepath.Glob(filter)
 	if err != nil {
 		return

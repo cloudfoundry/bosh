@@ -20,5 +20,6 @@ type FileSystem interface {
 	// to make newPath a symlink to the file at oldPath.
 	Symlink(oldPath, newPath string) (err error)
 
+	TempFile() (file *os.File, err error)
 	TempDir() (tmpDir string)
 }

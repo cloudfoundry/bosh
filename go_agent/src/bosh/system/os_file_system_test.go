@@ -233,6 +233,24 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
+func TestTempFile(t *testing.T) {
+	osFs := createOsFs()
+
+	file1, err := osFs.TempFile()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, file1)
+
+	defer os.Remove(file1.Name())
+
+	file2, err := osFs.TempFile()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, file2)
+
+	defer os.Remove(file2.Name())
+
+	assert.NotEqual(t, file1.Name(), file2.Name())
+}
+
 func createOsFs() (fs FileSystem) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	fs = NewOsFileSystem(logger)

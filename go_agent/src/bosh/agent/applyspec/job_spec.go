@@ -1,5 +1,7 @@
 package applyspec
 
+import models "bosh/agent/applyspec/models"
+
 type JobSpec struct {
 	Name             string            `json:"name"`
 	Template         string            `json:"template"`
@@ -9,8 +11,8 @@ type JobSpec struct {
 	JobTemplateSpecs []JobTemplateSpec `json:"templates"`
 }
 
-func (s *JobSpec) AsJob() Job {
-	return Job{
+func (s *JobSpec) AsJob() models.Job {
+	return models.Job{
 		Name:        s.Template,
 		Version:     s.Version,
 		Sha1:        s.Sha1,
@@ -18,8 +20,8 @@ func (s *JobSpec) AsJob() Job {
 	}
 }
 
-func (s *JobSpec) JobTemplateSpecsAsJobs() []Job {
-	jobs := make([]Job, 0)
+func (s *JobSpec) JobTemplateSpecsAsJobs() []models.Job {
+	jobs := make([]models.Job, 0)
 	for _, value := range s.JobTemplateSpecs {
 		jobs = append(jobs, value.AsJob())
 	}

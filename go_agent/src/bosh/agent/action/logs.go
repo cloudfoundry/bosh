@@ -1,7 +1,7 @@
 package action
 
 import (
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
@@ -12,10 +12,10 @@ import (
 
 type logsAction struct {
 	compressor boshdisk.Compressor
-	blobstore  boshblobstore.Blobstore
+	blobstore  boshblob.Blobstore
 }
 
-func newLogs(compressor boshdisk.Compressor, blobstore boshblobstore.Blobstore) (action logsAction) {
+func newLogs(compressor boshdisk.Compressor, blobstore boshblob.Blobstore) (action logsAction) {
 	action.compressor = compressor
 	action.blobstore = blobstore
 	return

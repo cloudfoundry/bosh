@@ -1,21 +1,30 @@
 package applyspec
 
 import (
-	boshbc "bosh/agent/applyspec/bundlecollection"
-	fakesys "bosh/system/fakes"
+	bc "bosh/agent/applyspec/bundlecollection"
+	pa "bosh/agent/applyspec/packageapplier"
+	fakeblob "bosh/blobstore/fakes"
+	fakeplatform "bosh/platform/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
-	fs := &fakesys.FakeFileSystem{}
+	platform := fakeplatform.NewFakePlatform()
+	blobstore := fakeblob.NewFakeBlobstore()
 
-	expectedApplier := NewConcreteApplier(
-		boshbc.NewFileBundleCollection("jobs", "/var/vcap", fs),
-		boshbc.NewFileBundleCollection("packages", "/var/vcap", fs),
+	expectedPackageApplier := pa.NewConcretePackageApplier(
+		bc.NewFileBundleCollection("packages", "/var/vcap", platform.GetFs()),
+		blobstore,
+		platform.GetCompressor(),
 	)
 
-	provider := NewApplierProvider(fs)
+	expectedApplier := NewConcreteApplier(
+		bc.NewFileBundleCollection("jobs", "/var/vcap", platform.GetFs()),
+		expectedPackageApplier,
+	)
+
+	provider := NewApplierProvider(platform, blobstore)
 	applier := provider.Get()
 	assert.Equal(t, expectedApplier, applier)
 }

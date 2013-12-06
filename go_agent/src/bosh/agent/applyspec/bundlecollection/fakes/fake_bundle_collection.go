@@ -9,8 +9,10 @@ type FakeBundleCollection struct {
 	installedBundles []bc.Bundle
 	enabledBundles   []bc.Bundle
 
+	InstallPath  string
 	InstallError error
-	EnableError  error
+
+	EnableError error
 }
 
 func NewFakeBundleCollection() *FakeBundleCollection {
@@ -30,7 +32,7 @@ func (s *FakeBundleCollection) Install(bundle bc.Bundle) (string, error) {
 		return "", s.InstallError
 	}
 	s.installedBundles = append(s.installedBundles, bundle)
-	return "some-path", nil
+	return s.InstallPath, nil
 }
 
 func (s *FakeBundleCollection) IsInstalled(bundle bc.Bundle) bool {
