@@ -51,16 +51,6 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 		return
 	}
 
-	err = a.platform.SetupLogrotate(
-		boshsettings.VCAP_USERNAME,
-		boshsettings.VCAP_BASE_DIR,
-		applySpec.MaxLogFileSize(),
-	)
-	if err != nil {
-		err = bosherr.WrapError(err, "Logrotate setup failed")
-		return
-	}
-
 	spec, err := json.Marshal(payload.Arguments[0])
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling apply spec")

@@ -5,20 +5,25 @@ import (
 	bc "bosh/agent/applier/bundlecollection"
 	models "bosh/agent/applier/models"
 	pa "bosh/agent/applier/packageapplier"
+	bosherr "bosh/errors"
+	boshsettings "bosh/settings"
 )
 
 type concreteApplier struct {
-	jobsBc         bc.BundleCollection
-	packageApplier pa.PackageApplier
+	jobsBc            bc.BundleCollection
+	packageApplier    pa.PackageApplier
+	logrotateDelegate LogrotateDelegate
 }
 
 func NewConcreteApplier(
 	jobsBc bc.BundleCollection,
 	packageApplier pa.PackageApplier,
+	logrotateDelegate LogrotateDelegate,
 ) *concreteApplier {
 	return &concreteApplier{
-		jobsBc:         jobsBc,
-		packageApplier: packageApplier,
+		jobsBc:            jobsBc,
+		packageApplier:    packageApplier,
+		logrotateDelegate: logrotateDelegate,
 	}
 }
 
@@ -37,7 +42,7 @@ func (s *concreteApplier) Apply(applySpec as.ApplySpec) error {
 		}
 	}
 
-	return nil
+	return s.setUpLogrotate(applySpec)
 }
 
 func (s *concreteApplier) applyJob(job models.Job) error {
@@ -52,4 +57,16 @@ func (s *concreteApplier) applyJob(job models.Job) error {
 	}
 
 	return nil
+}
+
+func (s *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) error {
+	err := s.logrotateDelegate.SetupLogrotate(
+		boshsettings.VCAP_USERNAME,
+		boshsettings.VCAP_BASE_DIR,
+		applySpec.MaxLogFileSize(),
+	)
+	if err != nil {
+		err = bosherr.WrapError(err, "Logrotate setup failed")
+	}
+	return err
 }

@@ -22,6 +22,7 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 	expectedApplier := NewConcreteApplier(
 		bc.NewFileBundleCollection("jobs", "/var/vcap", platform.GetFs()),
 		expectedPackageApplier,
+		platform,
 	)
 
 	provider := NewApplierProvider(platform, blobstore)

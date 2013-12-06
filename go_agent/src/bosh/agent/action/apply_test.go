@@ -59,42 +59,6 @@ func TestApplyRunErrsWhenApplierFails(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
-func TestApplyRunSetsUpLogrotation(t *testing.T) {
-	_, _, platform, action := buildApplyAction()
-
-	payload := []byte(`{
-		"method":"apply",
-		"reply_to":"foo",
-		"arguments":[{
-			"properties":{
-				"logging":{
-					"max_log_file_size":"fake-size"
-				}
-			}
-		}]
-	}`)
-	_, err := action.Run(payload)
-	assert.NoError(t, err)
-
-	assert.Equal(t, platform.SetupLogrotateArgs, fakeplatform.SetupLogrotateArgs{
-		GroupName: boshsettings.VCAP_USERNAME,
-		BasePath:  boshsettings.VCAP_BASE_DIR,
-		Size:      "fake-size",
-	})
-}
-
-func TestApplyRunErrsIfSetupLogrotateFails(t *testing.T) {
-	_, _, platform, action := buildApplyAction()
-
-	platform.SetupLogrotateErr = errors.New("fake-msg")
-
-	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{}]}`)
-	_, err := action.Run(payload)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Logrotate setup failed: fake-msg")
-}
-
 func TestApplyRunErrsWithZeroArguments(t *testing.T) {
 	_, _, _, action := buildApplyAction()
 

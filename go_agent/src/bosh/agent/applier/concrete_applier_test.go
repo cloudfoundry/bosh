@@ -5,13 +5,15 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
+	fakeplatform "bosh/platform/fakes"
+	boshsettings "bosh/settings"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestApplyInstallsAndEnablesJobs(t *testing.T) {
-	jobsBc, _, applier := buildApplier()
+	jobsBc, _, _, applier := buildApplier()
 	job := buildJob()
 
 	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
@@ -21,7 +23,7 @@ func TestApplyInstallsAndEnablesJobs(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobInstallFails(t *testing.T) {
-	jobsBc, _, applier := buildApplier()
+	jobsBc, _, _, applier := buildApplier()
 	job := buildJob()
 
 	jobsBc.InstallError = errors.New("fake-install-error")
@@ -32,7 +34,7 @@ func TestApplyErrsWhenJobInstallFails(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobEnableFails(t *testing.T) {
-	jobsBc, _, applier := buildApplier()
+	jobsBc, _, _, applier := buildApplier()
 	job := buildJob()
 
 	jobsBc.EnableError = errors.New("fake-enable-error")
@@ -43,7 +45,7 @@ func TestApplyErrsWhenJobEnableFails(t *testing.T) {
 }
 
 func TestApplyAppliesPackages(t *testing.T) {
-	_, packageApplier, applier := buildApplier()
+	_, packageApplier, _, applier := buildApplier()
 
 	pkg1 := buildPackage()
 	pkg2 := buildPackage()
@@ -54,7 +56,7 @@ func TestApplyAppliesPackages(t *testing.T) {
 }
 
 func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
-	_, packageApplier, applier := buildApplier()
+	_, packageApplier, _, applier := buildApplier()
 	pkg := buildPackage()
 
 	packageApplier.ApplyError = errors.New("fake-apply-error")
@@ -64,15 +66,39 @@ func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
+func TestApplySetsUpLogrotation(t *testing.T) {
+	_, _, platform, applier := buildApplier()
+
+	err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
+	assert.NoError(t, err)
+	assert.Equal(t, platform.SetupLogrotateArgs, fakeplatform.SetupLogrotateArgs{
+		GroupName: boshsettings.VCAP_USERNAME,
+		BasePath:  boshsettings.VCAP_BASE_DIR,
+		Size:      "fake-size",
+	})
+}
+
+func TestApplyErrsIfSetupLogrotateFails(t *testing.T) {
+	_, _, platform, applier := buildApplier()
+
+	platform.SetupLogrotateErr = errors.New("fake-msg")
+
+	err := applier.Apply(&fakeas.FakeApplySpec{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Logrotate setup failed: fake-msg")
+}
+
 func buildApplier() (
 	*fakebc.FakeBundleCollection,
 	*fakepa.FakePackageApplier,
+	*fakeplatform.FakePlatform,
 	Applier,
 ) {
 	jobsBc := fakebc.NewFakeBundleCollection()
 	packageApplier := fakepa.NewFakePackageApplier()
-	applier := NewConcreteApplier(jobsBc, packageApplier)
-	return jobsBc, packageApplier, applier
+	platform := fakeplatform.NewFakePlatform()
+	applier := NewConcreteApplier(jobsBc, packageApplier, platform)
+	return jobsBc, packageApplier, platform, applier
 }
 
 func buildJob() models.Job {
