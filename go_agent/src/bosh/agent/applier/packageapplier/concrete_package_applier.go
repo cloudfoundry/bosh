@@ -31,7 +31,7 @@ func (s *concretePackageApplier) Apply(pkg models.Package) error {
 		return err
 	}
 
-	file, err := s.blobstore.Get(pkg.BlobstoreId)
+	file, err := s.blobstore.Get(pkg.Source.BlobstoreId)
 	if err != nil {
 		return err
 	}

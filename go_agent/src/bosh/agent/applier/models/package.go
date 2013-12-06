@@ -1,10 +1,9 @@
 package models
 
 type Package struct {
-	Name        string
-	Version     string
-	Sha1        string
-	BlobstoreId string
+	Name    string
+	Version string
+	Source  Source
 }
 
 func (s Package) BundleName() string {

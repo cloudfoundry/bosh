@@ -10,6 +10,8 @@ type V1ApplySpec struct {
 	PropertiesSpec PropertiesSpec `json:"properties"`
 	JobSpec        JobSpec        `json:"job"`
 	PackageSpecs   []PackageSpec  `json:"packages"`
+
+	RenderedTemplatesArchiveSpec []RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }
 
 type PropertiesSpec struct {
@@ -18,6 +20,11 @@ type PropertiesSpec struct {
 
 type LoggingSpec struct {
 	MaxLogFileSize string `json:"max_log_file_size"`
+}
+
+type RenderedTemplatesArchiveSpec struct {
+	Sha1        string `json:"sha1"`
+	BlobstoreId string `json:"blobstore_id"`
 }
 
 // Currently uses json.Unmarshal to interpret data into structs.

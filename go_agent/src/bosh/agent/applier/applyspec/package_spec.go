@@ -11,9 +11,11 @@ type PackageSpec struct {
 
 func (s *PackageSpec) AsPackage() models.Package {
 	return models.Package{
-		Name:        s.Name,
-		Version:     s.Version,
-		Sha1:        s.Sha1,
-		BlobstoreId: s.BlobstoreId,
+		Name:    s.Name,
+		Version: s.Version,
+		Source: models.Source{
+			Sha1:        s.Sha1,
+			BlobstoreId: s.BlobstoreId,
+		},
 	}
 }

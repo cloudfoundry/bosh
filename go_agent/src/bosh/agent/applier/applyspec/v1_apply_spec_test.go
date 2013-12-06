@@ -30,10 +30,12 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []models.Job{
 		models.Job{
-			Name:        "fake-job1-name",
-			Version:     "fake-job1-version",
-			Sha1:        "fake-job1-sha1",
-			BlobstoreId: "fake-job1-blobstore-id",
+			Name:    "fake-job1-name",
+			Version: "fake-job1-version",
+			Source: models.Source{
+				Sha1:        "fake-job1-sha1",
+				BlobstoreId: "fake-job1-blobstore-id",
+			},
 		},
 	}, spec.Jobs())
 }
@@ -55,10 +57,12 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 	assert.Equal(t, []models.Job{
 		models.Job{
 			// template is used as a job name to be backwards compatible
-			Name:        "fake-job-legacy-template",
-			Version:     "fake-job-legacy-version",
-			Sha1:        "fake-job-legacy-sha1",
-			BlobstoreId: "fake-job-legacy-blobstore-id",
+			Name:    "fake-job-legacy-template",
+			Version: "fake-job-legacy-version",
+			Source: models.Source{
+				Sha1:        "fake-job-legacy-sha1",
+				BlobstoreId: "fake-job-legacy-blobstore-id",
+			},
 		},
 	}, spec.Jobs())
 }
@@ -85,10 +89,12 @@ func TestPackages(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []models.Package{
 		models.Package{
-			Name:        "fake-package1-name",
-			Version:     "fake-package1-version",
-			Sha1:        "fake-package1-sha1",
-			BlobstoreId: "fake-package1-blobstore-id",
+			Name:    "fake-package1-name",
+			Version: "fake-package1-version",
+			Source: models.Source{
+				Sha1:        "fake-package1-sha1",
+				BlobstoreId: "fake-package1-blobstore-id",
+			},
 		},
 	}, spec.Packages())
 }

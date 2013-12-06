@@ -13,10 +13,12 @@ type JobSpec struct {
 
 func (s *JobSpec) AsJob() models.Job {
 	return models.Job{
-		Name:        s.Template,
-		Version:     s.Version,
-		Sha1:        s.Sha1,
-		BlobstoreId: s.BlobstoreId,
+		Name:    s.Template,
+		Version: s.Version,
+		Source: models.Source{
+			Sha1:        s.Sha1,
+			BlobstoreId: s.BlobstoreId,
+		},
 	}
 }
 

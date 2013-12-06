@@ -1,10 +1,9 @@
 package models
 
 type Job struct {
-	Name        string
-	Version     string
-	Sha1        string
-	BlobstoreId string
+	Name    string
+	Version string
+	Source  Source
 }
 
 func (s Job) BundleName() string {

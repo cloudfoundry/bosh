@@ -46,7 +46,7 @@ func TestApplyErrsWhenPackageEnableFails(t *testing.T) {
 func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
 	_, blobstore, _, applier := buildPackageApplier()
 	pkg := buildPackage()
-	pkg.BlobstoreId = "fake-blobstore-id"
+	pkg.Source.BlobstoreId = "fake-blobstore-id"
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
