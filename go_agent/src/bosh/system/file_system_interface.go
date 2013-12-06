@@ -21,6 +21,12 @@ type FileSystem interface {
 	// to make newPath a symlink to the file at oldPath.
 	Symlink(oldPath, newPath string) (err error)
 
+	// Copies contents of one directory into another directory.
+	// Both directories need to exist before copy can succeed.
+	// Overwrites files in the dstPath but does not remove
+	// files from dstPath that are not found in srcPath (= adds/overwrites).
+	CopyDirEntries(srcPath, dstPath string) (err error)
+
 	// Returns *unique* temporary file/dir with a custom prefix
 	TempFile(prefix string) (file *os.File, err error)
 	TempDir(prefix string) (path string, err error)

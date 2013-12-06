@@ -26,8 +26,15 @@ type FakeFileSystem struct {
 	MkdirAllError error
 	SymlinkError  error
 
+	CopyDirEntriesError   error
+	CopyDirEntriesSrcPath string
+	CopyDirEntriesDstPath string
+
 	TempFileError  error
 	ReturnTempFile *os.File
+
+	TempDirDir   string
+	TempDirError error
 }
 
 type FakeFileStats struct {
@@ -36,6 +43,10 @@ type FakeFileStats struct {
 	Content       string
 	SymlinkTarget string
 	FileType      FakeFileType
+}
+
+func NewFakeFileSystem() *FakeFileSystem {
+	return &FakeFileSystem{}
 }
 
 func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {
@@ -109,6 +120,27 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return
 }
 
+func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
+	if fs.CopyDirEntriesError != nil {
+		return fs.CopyDirEntriesError
+	}
+
+	srcStat := fs.GetFileTestStat(srcPath)
+	if srcStat == nil {
+		return errors.New("srcPath does not exist")
+	}
+
+	dstStat := fs.GetFileTestStat(dstPath)
+	if dstStat == nil {
+		return errors.New("dstPath does not exist")
+	}
+
+	fs.CopyDirEntriesSrcPath = srcPath
+	fs.CopyDirEntriesDstPath = dstPath
+
+	return
+}
+
 func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	if fs.TempFileError != nil {
 		return nil, fs.TempFileError
@@ -129,19 +161,28 @@ func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	}
 }
 
-func (fs *FakeFileSystem) TempDir(prefix string) (path string, err error) {
-	uuid, err := gouuid.NewV4()
-	if err != nil {
-		return
+func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
+	if fs.TempDirError != nil {
+		return "", fs.TempDirError
 	}
 
-	path = uuid.String()
+	var path string
+	if len(fs.TempDirDir) > 0 {
+		path = fs.TempDirDir
+	} else {
+		uuid, err := gouuid.NewV4()
+		if err != nil {
+			return "", err
+		}
+
+		path = uuid.String()
+	}
 
 	// Make sure to record a reference for FileExist, etc. to work
 	stats := fs.getOrCreateFile(path)
 	stats.FileType = FakeFileTypeDir
 
-	return
+	return path, nil
 }
 
 func (fs *FakeFileSystem) RemoveAll(path string) {
