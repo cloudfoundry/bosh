@@ -6,48 +6,6 @@ import (
 	"testing"
 )
 
-func TestMaxLogFileSize(t *testing.T) {
-	// No 'properties'
-	spec, err := NewV1ApplySpecFromData(
-		map[string]interface{}{},
-	)
-	assert.NoError(t, err)
-	assert.Equal(t, "50M", spec.MaxLogFileSize())
-
-	// No 'logging' in properties
-	spec, err = NewV1ApplySpecFromData(
-		map[string]interface{}{
-			"properties": map[string]interface{}{},
-		},
-	)
-	assert.NoError(t, err)
-	assert.Equal(t, "50M", spec.MaxLogFileSize())
-
-	// No 'max_log_file_size' in logging
-	spec, err = NewV1ApplySpecFromData(
-		map[string]interface{}{
-			"properties": map[string]interface{}{
-				"logging": map[string]interface{}{},
-			},
-		},
-	)
-	assert.NoError(t, err)
-	assert.Equal(t, "50M", spec.MaxLogFileSize())
-
-	// Specified 'max_log_file_size'
-	spec, err = NewV1ApplySpecFromData(
-		map[string]interface{}{
-			"properties": map[string]interface{}{
-				"logging": map[string]interface{}{
-					"max_log_file_size": "fake-size",
-				},
-			},
-		},
-	)
-	assert.NoError(t, err)
-	assert.Equal(t, "fake-size", spec.MaxLogFileSize())
-}
-
 func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 	spec, err := NewV1ApplySpecFromData(
 		map[string]interface{}{
@@ -139,4 +97,46 @@ func TestPackagesWhenNoPackagesSpecified(t *testing.T) {
 	spec, err := NewV1ApplySpecFromData(map[string]interface{}{})
 	assert.NoError(t, err)
 	assert.Equal(t, []models.Package{}, spec.Packages())
+}
+
+func TestMaxLogFileSize(t *testing.T) {
+	// No 'properties'
+	spec, err := NewV1ApplySpecFromData(
+		map[string]interface{}{},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, "50M", spec.MaxLogFileSize())
+
+	// No 'logging' in properties
+	spec, err = NewV1ApplySpecFromData(
+		map[string]interface{}{
+			"properties": map[string]interface{}{},
+		},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, "50M", spec.MaxLogFileSize())
+
+	// No 'max_log_file_size' in logging
+	spec, err = NewV1ApplySpecFromData(
+		map[string]interface{}{
+			"properties": map[string]interface{}{
+				"logging": map[string]interface{}{},
+			},
+		},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, "50M", spec.MaxLogFileSize())
+
+	// Specified 'max_log_file_size'
+	spec, err = NewV1ApplySpecFromData(
+		map[string]interface{}{
+			"properties": map[string]interface{}{
+				"logging": map[string]interface{}{
+					"max_log_file_size": "fake-size",
+				},
+			},
+		},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, "fake-size", spec.MaxLogFileSize())
 }

@@ -48,14 +48,6 @@ func NewV1ApplySpecFromJson(dataAsJson []byte) (as V1ApplySpec, err error) {
 	return
 }
 
-func (s V1ApplySpec) MaxLogFileSize() string {
-	fileSize := s.PropertiesSpec.LoggingSpec.MaxLogFileSize
-	if len(fileSize) > 0 {
-		return fileSize
-	}
-	return "50M"
-}
-
 func (s V1ApplySpec) Jobs() []models.Job {
 	if len(s.JobSpec.JobTemplateSpecs) > 0 {
 		return s.JobSpec.JobTemplateSpecsAsJobs()
@@ -72,4 +64,12 @@ func (s V1ApplySpec) Packages() []models.Package {
 		packages = append(packages, value.AsPackage())
 	}
 	return packages
+}
+
+func (s V1ApplySpec) MaxLogFileSize() string {
+	fileSize := s.PropertiesSpec.LoggingSpec.MaxLogFileSize
+	if len(fileSize) > 0 {
+		return fileSize
+	}
+	return "50M"
 }
