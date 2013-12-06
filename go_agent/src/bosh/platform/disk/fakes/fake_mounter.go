@@ -1,17 +1,38 @@
 package fakes
 
 type FakeMounter struct {
-	MountPartitionPaths  []string
-	MountMountPoints     []string
+	MountPartitionPaths []string
+	MountMountPoints    []string
+	MountMountOptions   [][]string
+
+	RemountAsReadonlyPath string
+
+	RemountFromMountPoint string
+	RemountToMountPoint   string
+	RemountMountOptions   []string
+
 	SwapOnPartitionPaths []string
 
 	UnmountPartitionPath string
 	UnmountDidUnmount    bool
 }
 
-func (m *FakeMounter) Mount(partitionPath, mountPoint string) (err error) {
+func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) (err error) {
 	m.MountPartitionPaths = append(m.MountPartitionPaths, partitionPath)
 	m.MountMountPoints = append(m.MountMountPoints, mountPoint)
+	m.MountMountOptions = append(m.MountMountOptions, mountOptions)
+	return
+}
+
+func (m *FakeMounter) RemountAsReadonly(mountPoint string) (err error) {
+	m.RemountAsReadonlyPath = mountPoint
+	return
+}
+
+func (m *FakeMounter) Remount(fromMountPoint, toMountPoint string, mountOptions ...string) (err error) {
+	m.RemountFromMountPoint = fromMountPoint
+	m.RemountToMountPoint = toMountPoint
+	m.RemountMountOptions = mountOptions
 	return
 }
 

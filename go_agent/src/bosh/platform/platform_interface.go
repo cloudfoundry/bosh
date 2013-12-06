@@ -25,6 +25,7 @@ type Platform interface {
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
 	MountPersistentDisk(devicePath, mountPoint string) (err error)
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
+	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	IsMountPoint(path string) (result bool, err error)
 	StartMonit() (err error)
 }

@@ -7,6 +7,7 @@ import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -436,6 +437,35 @@ func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 
 func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
 	return p.mounter.IsMountPoint(path)
+}
+
+func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
+	err = p.mounter.RemountAsReadonly(fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Remounting persistent disk as readonly")
+		return
+	}
+
+	// Golang does not implement a file copy that would allow us to preserve dates...
+	// So we have to shell out to tar to perform the copy instead of delegating to the FileSystem
+	tarCopy := fmt.Sprintf("(tar -C %s -cf - .) | (tar -C %s -xpf -)", fromMountPoint, toMountPoint)
+	_, _, err = p.cmdRunner.RunCommand("sh", "-c", tarCopy)
+	if err != nil {
+		err = bosherr.WrapError(err, "Copying files from old disk to new disk")
+		return
+	}
+
+	_, err = p.mounter.Unmount(fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Unmounting old persistent disk")
+		return
+	}
+
+	err = p.mounter.Remount(toMountPoint, fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Remounting new disk on original mountpoint")
+	}
+	return
 }
 
 func (p ubuntu) StartMonit() (err error) {

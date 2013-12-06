@@ -24,7 +24,7 @@ func newLinuxMounter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (mounter l
 	return
 }
 
-func (m linuxMounter) Mount(partitionPath, mountPoint string) (err error) {
+func (m linuxMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) (err error) {
 	shouldMount, err := m.shouldMount(partitionPath, mountPoint)
 	if !shouldMount {
 		return
@@ -35,10 +35,34 @@ func (m linuxMounter) Mount(partitionPath, mountPoint string) (err error) {
 		return
 	}
 
-	_, _, err = m.runner.RunCommand("mount", partitionPath, mountPoint)
+	mountArgs := []string{partitionPath, mountPoint}
+	mountArgs = append(mountArgs, mountOptions...)
+
+	_, _, err = m.runner.RunCommand("mount", mountArgs...)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to mount")
 	}
+	return
+}
+
+func (m linuxMounter) RemountAsReadonly(mountPoint string) (err error) {
+	return m.Remount(mountPoint, mountPoint, "-o", "ro")
+}
+
+func (m linuxMounter) Remount(fromMountPoint, toMountPoint string, mountOptions ...string) (err error) {
+	partitionPath, found, err := m.findDeviceMatchingMountPoint(fromMountPoint)
+	if err != nil || !found {
+		err = bosherr.New("Error finding device for mount point %s", fromMountPoint)
+		return
+	}
+
+	_, err = m.Unmount(fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Unmounting %s", fromMountPoint)
+		return
+	}
+
+	err = m.Mount(partitionPath, toMountPoint, mountOptions...)
 	return
 }
 
@@ -65,17 +89,17 @@ func (m linuxMounter) SwapOn(partitionPath string) (err error) {
 	return
 }
 
-func (m linuxMounter) Unmount(partitionPath string) (didUnmount bool, err error) {
-	isMounted, err := m.isMounted(partitionPath)
+func (m linuxMounter) Unmount(partitionOrMountPoint string) (didUnmount bool, err error) {
+	isMounted, err := m.isMounted(partitionOrMountPoint)
 	if err != nil || !isMounted {
 		return
 	}
 
-	_, _, err = m.runner.RunCommand("umount", partitionPath)
+	_, _, err = m.runner.RunCommand("umount", partitionOrMountPoint)
 
 	for i := 1; i < m.maxUnmountRetries && err != nil; i++ {
 		time.Sleep(m.unmountRetrySleep)
-		_, _, err = m.runner.RunCommand("umount", partitionPath)
+		_, _, err = m.runner.RunCommand("umount", partitionOrMountPoint)
 	}
 
 	didUnmount = err == nil
@@ -91,11 +115,24 @@ func (m linuxMounter) IsMountPoint(path string) (result bool, err error) {
 	})
 }
 
-func (m linuxMounter) isMounted(partitionPath string) (isMounted bool, err error) {
-	return m.searchMounts(func(mountedPartitionPath, _ string) (found bool, err error) {
-		if mountedPartitionPath == partitionPath {
+func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (devicePath string, found bool, err error) {
+	found, err = m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
+		if mountedMountPoint == mountPoint {
+			devicePath = mountedPartitionPath
 			return true, nil
 		}
+
+		return
+	})
+	return
+}
+
+func (m linuxMounter) isMounted(partitionOrMountPoint string) (isMounted bool, err error) {
+	return m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
+		if mountedPartitionPath == partitionOrMountPoint || mountedMountPoint == partitionOrMountPoint {
+			return true, nil
+		}
+
 		return
 	})
 }

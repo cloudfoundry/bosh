@@ -4,7 +4,6 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	"path/filepath"
 )
 
 type mountDiskAction struct {
@@ -29,7 +28,7 @@ func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error)
 		return
 	}
 
-	mountPoint := filepath.Join(boshsettings.VCAP_BASE_DIR, "store")
+	mountPoint := a.settings.GetStoreMountPoint()
 
 	isMountPoint, err := a.platform.IsMountPoint(mountPoint)
 	if err != nil {
@@ -37,7 +36,7 @@ func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error)
 		return
 	}
 	if isMountPoint {
-		mountPoint = filepath.Join(boshsettings.VCAP_BASE_DIR, "store_migration_target")
+		mountPoint = a.settings.GetStoreMigrationMountPoint()
 	}
 
 	err = a.platform.MountPersistentDisk(devicePath, mountPoint)

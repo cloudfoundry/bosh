@@ -1,5 +1,7 @@
 package settings
 
+import "path/filepath"
+
 type Provider struct {
 	settings Settings
 }
@@ -22,6 +24,8 @@ type MbusSettings interface {
 
 type DiskSettings interface {
 	GetDisks() Disks
+	GetStoreMountPoint() string
+	GetStoreMigrationMountPoint() string
 }
 
 type NetworkSettings interface {
@@ -46,6 +50,14 @@ func (provider *Provider) GetMbusUrl() string {
 
 func (provider *Provider) GetDisks() Disks {
 	return provider.settings.Disks
+}
+
+func (provider *Provider) GetStoreMountPoint() string {
+	return filepath.Join(VCAP_BASE_DIR, "store")
+}
+
+func (provider *Provider) GetStoreMigrationMountPoint() string {
+	return filepath.Join(VCAP_BASE_DIR, "store_migration_target")
 }
 
 func (provider *Provider) GetDefaultIp() (ip string, found bool) {

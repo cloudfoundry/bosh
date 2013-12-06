@@ -30,6 +30,7 @@ func NewFactory(
 			"fetch_logs":   newLogs(compressor, blobstore),
 			"get_task":     newGetTask(taskService),
 			"get_state":    newGetState(settings, fs),
+			"migrate_disk": newMigrateDisk(settings, platform),
 			"mount_disk":   newMountDisk(settings, platform),
 			"ping":         newPing(),
 			"ssh":          newSsh(settings, platform),

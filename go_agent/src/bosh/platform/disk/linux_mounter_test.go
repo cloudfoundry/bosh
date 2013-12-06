@@ -52,6 +52,52 @@ func TestLinuxMountWhenAnotherDiskIsAlreadyMountedToMountPoint(t *testing.T) {
 	assert.Equal(t, 0, len(runner.RunCommands))
 }
 
+// For testing remount and remount as readonly we need to change the /proc/mounts file
+// as the partition gets unmounted then remounted
+//
+type fsWithChangingFile struct {
+	procMounts []string
+	*fakesys.FakeFileSystem
+}
+
+func (fs *fsWithChangingFile) ReadFile(path string) (content string, err error) {
+	if path == "/proc/mounts" {
+		content = fs.procMounts[0]
+		fs.procMounts = fs.procMounts[1:]
+	}
+	return
+}
+
+func TestRemountAsReadonly(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+
+	procMounts := []string{"/dev/baz /mnt/bar ext4", "/dev/baz /mnt/bar ext4", ""}
+
+	mounter := newLinuxMounter(runner, &fsWithChangingFile{procMounts, fs})
+
+	err := mounter.RemountAsReadonly("/mnt/bar")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(runner.RunCommands))
+	assert.Equal(t, []string{"umount", "/mnt/bar"}, runner.RunCommands[0])
+	assert.Equal(t, []string{"mount", "/dev/baz", "/mnt/bar", "-o", "ro"}, runner.RunCommands[1])
+}
+
+func TestRemount(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+
+	procMounts := []string{"/dev/baz /mnt/foo ext4", "/dev/baz /mnt/foo ext4", ""}
+
+	mounter := newLinuxMounter(runner, &fsWithChangingFile{procMounts, fs})
+
+	err := mounter.Remount("/mnt/foo", "/mnt/bar")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(runner.RunCommands))
+	assert.Equal(t, []string{"umount", "/mnt/foo"}, runner.RunCommands[0])
+	assert.Equal(t, []string{"mount", "/dev/baz", "/mnt/bar"}, runner.RunCommands[1])
+}
+
 func TestLinuxSwapOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	runner.AddCmdResult("swapon -s", []string{"Filename				Type		Size	Used	Priority\n", ""})
@@ -105,7 +151,20 @@ func TestLinuxUnmountWhenPartitionIsMounted(t *testing.T) {
 	assert.Equal(t, []string{"umount", "/dev/xvdb2"}, runner.RunCommands[0])
 }
 
-func TestLinuxUnmountWhenPartitionIsNotMounted(t *testing.T) {
+func TestLinuxUnmountWhenMountPointIsMounted(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	mounter := newLinuxMounter(runner, fs)
+	didUnmount, err := mounter.Unmount("/var/vcap/data")
+	assert.NoError(t, err)
+	assert.True(t, didUnmount)
+
+	assert.Equal(t, 1, len(runner.RunCommands))
+	assert.Equal(t, []string{"umount", "/var/vcap/data"}, runner.RunCommands[0])
+}
+
+func TestLinuxUnmountWhenPartitionOrMountPointIsNotMounted(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 

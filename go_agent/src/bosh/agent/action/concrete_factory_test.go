@@ -17,6 +17,7 @@ func TestNewFactory(t *testing.T) {
 		"fetch_logs",
 		"get_task",
 		"get_state",
+		"migrate_disk",
 		"mount_disk",
 		"ping",
 		"ssh",
@@ -59,6 +60,13 @@ func TestNewFactoryGetState(t *testing.T) {
 	action := factory.Create("get_state")
 	assert.NotNil(t, action)
 	assert.Equal(t, newGetState(settings, platform.GetFs()), action)
+}
+
+func TestNewFactoryMigrateDisk(t *testing.T) {
+	settings, platform, _, _, _, factory := buildFactory()
+	action := factory.Create("migrate_disk")
+	assert.NotNil(t, action)
+	assert.Equal(t, newMigrateDisk(settings, platform), action)
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
