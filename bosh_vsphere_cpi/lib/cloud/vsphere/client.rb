@@ -155,8 +155,11 @@ module VSphereCloud
     def power_on_vm(datacenter, vm)
       task = datacenter.power_on_vm([vm], nil)
       result = wait_for_task(task)
-      if result.attempted.nil?
-        raise "Could not power on VM: #{result.not_attempted.msg}"
+
+      raise "Recommendations were detected, you may be running in Manual DRS mode. Aborting." if result.recommendations.any?
+
+      if result.attempted.empty?
+        raise "Could not power on VM: #{result.not_attempted.map(&:msg).join(', ')}"
       else
         task = result.attempted.first.task
         wait_for_task(task)
