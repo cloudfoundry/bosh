@@ -1,5 +1,7 @@
 package applyspec
 
+import models "bosh/agent/applyspec/models"
+
 type Applier interface {
-	Apply(jobs []Job, packages []Package) error
+	Apply(jobs []models.Job, packages []models.Package) error
 }

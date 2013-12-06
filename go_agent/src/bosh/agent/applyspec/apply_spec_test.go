@@ -1,6 +1,7 @@
 package applyspec
 
 import (
+	models "bosh/agent/applyspec/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -69,8 +70,8 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err)
-	assert.Equal(t, []Job{
-		Job{
+	assert.Equal(t, []models.Job{
+		models.Job{
 			Name:        "fake-job1-name",
 			Version:     "fake-job1-version",
 			Sha1:        "fake-job1-sha1",
@@ -93,8 +94,8 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err)
-	assert.Equal(t, []Job{
-		Job{
+	assert.Equal(t, []models.Job{
+		models.Job{
 			// template is used as a job name to be backwards compatible
 			Name:        "fake-job-legacy-template",
 			Version:     "fake-job-legacy-version",
@@ -107,7 +108,7 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 func TestJobsWhenNoJobsSpecified(t *testing.T) {
 	spec, err := NewApplySpecFromData(map[string]interface{}{})
 	assert.NoError(t, err)
-	assert.Equal(t, []Job{}, spec.Jobs())
+	assert.Equal(t, []models.Job{}, spec.Jobs())
 }
 
 func TestPackages(t *testing.T) {
@@ -124,8 +125,8 @@ func TestPackages(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err)
-	assert.Equal(t, []Package{
-		Package{
+	assert.Equal(t, []models.Package{
+		models.Package{
 			Name:        "fake-package1-name",
 			Version:     "fake-package1-version",
 			Sha1:        "fake-package1-sha1",
@@ -137,5 +138,5 @@ func TestPackages(t *testing.T) {
 func TestPackagesWhenNoPackagesSpecified(t *testing.T) {
 	spec, err := NewApplySpecFromData(map[string]interface{}{})
 	assert.NoError(t, err)
-	assert.Equal(t, []Package{}, spec.Packages())
+	assert.Equal(t, []models.Package{}, spec.Packages())
 }

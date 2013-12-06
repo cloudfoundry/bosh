@@ -1,7 +1,8 @@
 package applyspec
 
 import (
-	boshbc "bosh/agent/applyspec/bundlecollection"
+	bc "bosh/agent/applyspec/bundlecollection"
+	pa "bosh/agent/applyspec/packageapplier"
 	boshblobstore "bosh/blobstore"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -19,11 +20,17 @@ func NewApplierProvider(platform boshplatform.Platform, blobstore boshblobstore.
 }
 
 func (p ApplierProvider) Get() (applier Applier) {
-	jobsBc := boshbc.NewFileBundleCollection(
+	jobsBc := bc.NewFileBundleCollection(
 		"jobs", boshsettings.VCAP_BASE_DIR, p.platform.GetFs())
 
-	packagesBc := boshbc.NewFileBundleCollection(
+	packagesBc := bc.NewFileBundleCollection(
 		"packages", boshsettings.VCAP_BASE_DIR, p.platform.GetFs())
 
-	return NewConcreteApplier(jobsBc, packagesBc, p.blobstore, p.platform.GetCompressor())
+	packageApplier := pa.NewConcretePackageApplier(
+		packagesBc,
+		p.blobstore,
+		p.platform.GetCompressor(),
+	)
+
+	return NewConcreteApplier(jobsBc, packageApplier)
 }

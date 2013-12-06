@@ -1,5 +1,7 @@
 package applyspec
 
+import models "bosh/agent/applyspec/models"
+
 type JobTemplateSpec struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
@@ -7,8 +9,8 @@ type JobTemplateSpec struct {
 	BlobstoreId string `json:"blobstore_id"`
 }
 
-func (s *JobTemplateSpec) AsJob() Job {
-	return Job{
+func (s *JobTemplateSpec) AsJob() models.Job {
+	return models.Job{
 		Name:        s.Name,
 		Version:     s.Version,
 		Sha1:        s.Sha1,

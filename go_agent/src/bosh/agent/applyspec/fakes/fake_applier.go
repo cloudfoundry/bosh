@@ -1,10 +1,10 @@
 package fakes
 
-import boshas "bosh/agent/applyspec"
+import models "bosh/agent/applyspec/models"
 
 type FakeApplier struct {
-	AppliedJobs     []boshas.Job
-	AppliedPackages []boshas.Package
+	AppliedJobs     []models.Job
+	AppliedPackages []models.Package
 	ApplyError      error
 }
 
@@ -12,7 +12,7 @@ func NewFakeApplier() *FakeApplier {
 	return &FakeApplier{}
 }
 
-func (s *FakeApplier) Apply(jobs []boshas.Job, packages []boshas.Package) error {
+func (s *FakeApplier) Apply(jobs []models.Job, packages []models.Package) error {
 	if s.ApplyError != nil {
 		return s.ApplyError
 	}

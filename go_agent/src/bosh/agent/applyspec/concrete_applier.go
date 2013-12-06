@@ -2,41 +2,35 @@ package applyspec
 
 import (
 	bc "bosh/agent/applyspec/bundlecollection"
-	boshblobstore "bosh/blobstore"
-	boshdisk "bosh/platform/disk"
+	models "bosh/agent/applyspec/models"
+	pa "bosh/agent/applyspec/packageapplier"
 )
 
 type concreteApplier struct {
-	jobsBc     bc.BundleCollection
-	packagesBc bc.BundleCollection
-	blobstore  boshblobstore.Blobstore
-	compressor boshdisk.Compressor
+	jobsBc         bc.BundleCollection
+	packageApplier pa.PackageApplier
 }
 
 func NewConcreteApplier(
 	jobsBc bc.BundleCollection,
-	packagesBc bc.BundleCollection,
-	blobstore boshblobstore.Blobstore,
-	compressor boshdisk.Compressor,
+	packageApplier pa.PackageApplier,
 ) *concreteApplier {
 	return &concreteApplier{
-		jobsBc:     jobsBc,
-		packagesBc: packagesBc,
-		blobstore:  blobstore,
-		compressor: compressor,
+		jobsBc:         jobsBc,
+		packageApplier: packageApplier,
 	}
 }
 
-func (s *concreteApplier) Apply(jobs []Job, packages []Package) error {
+func (s *concreteApplier) Apply(jobs []models.Job, packages []models.Package) error {
 	for _, job := range jobs {
-		err := s.applyBundle(s.jobsBc, job)
+		err := s.applyJob(job)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, pkg := range packages {
-		err := s.applyPackage(pkg)
+		err := s.packageApplier.Apply(pkg)
 		if err != nil {
 			return err
 		}
@@ -45,34 +39,13 @@ func (s *concreteApplier) Apply(jobs []Job, packages []Package) error {
 	return nil
 }
 
-func (s *concreteApplier) applyPackage(pkg Package) (err error) {
-	packageDir, err := s.packagesBc.Install(pkg)
-	if err != nil {
-		return
-	}
-
-	file, err := s.blobstore.Get(pkg.BlobstoreId)
-	if err != nil {
-		return
-	}
-
-	defer s.blobstore.CleanUp(file)
-
-	err = s.compressor.DecompressFileToDir(file, packageDir)
-	if err != nil {
-		return
-	}
-
-	return s.packagesBc.Enable(pkg)
-}
-
-func (s *concreteApplier) applyBundle(collection bc.BundleCollection, bundle bc.Bundle) error {
-	_, err := collection.Install(bundle)
+func (s *concreteApplier) applyJob(job models.Job) error {
+	_, err := s.jobsBc.Install(job)
 	if err != nil {
 		return err
 	}
 
-	err = collection.Enable(bundle)
+	err = s.jobsBc.Enable(job)
 	if err != nil {
 		return err
 	}

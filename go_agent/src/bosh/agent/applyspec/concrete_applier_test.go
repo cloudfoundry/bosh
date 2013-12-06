@@ -2,153 +2,82 @@ package applyspec
 
 import (
 	fakebc "bosh/agent/applyspec/bundlecollection/fakes"
-	fakeblob "bosh/blobstore/fakes"
-	fakedisk "bosh/platform/disk/fakes"
+	models "bosh/agent/applyspec/models"
+	fakepa "bosh/agent/applyspec/packageapplier/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
 func TestApplyInstallsAndEnablesJobs(t *testing.T) {
-	jobsBc, _, _, _, applier := buildApplier()
+	jobsBc, _, applier := buildApplier()
 	job := buildJob()
 
-	err := applier.Apply([]Job{job}, []Package{})
+	err := applier.Apply([]models.Job{job}, []models.Package{})
 	assert.NoError(t, err)
 	assert.True(t, jobsBc.IsInstalled(job))
 	assert.True(t, jobsBc.IsEnabled(job))
 }
 
 func TestApplyErrsWhenJobInstallFails(t *testing.T) {
-	jobsBc, _, _, _, applier := buildApplier()
+	jobsBc, _, applier := buildApplier()
 	job := buildJob()
 
 	jobsBc.InstallError = errors.New("fake-install-error")
 
-	err := applier.Apply([]Job{job}, []Package{})
+	err := applier.Apply([]models.Job{job}, []models.Package{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-install-error")
 }
 
 func TestApplyErrsWhenJobEnableFails(t *testing.T) {
-	jobsBc, _, _, _, applier := buildApplier()
+	jobsBc, _, applier := buildApplier()
 	job := buildJob()
 
 	jobsBc.EnableError = errors.New("fake-enable-error")
 
-	err := applier.Apply([]Job{job}, []Package{})
+	err := applier.Apply([]models.Job{job}, []models.Package{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-enable-error")
 }
 
-func TestApplyInstallsAndEnablesPackages(t *testing.T) {
-	_, packagesBc, _, _, applier := buildApplier()
-	pkg := buildPackage()
+func TestApplyAppliesPackages(t *testing.T) {
+	_, packageApplier, applier := buildApplier()
 
-	err := applier.Apply([]Job{}, []Package{pkg})
+	pkg1 := buildPackage()
+	pkg2 := buildPackage()
+
+	err := applier.Apply([]models.Job{}, []models.Package{pkg1, pkg2})
 	assert.NoError(t, err)
-	assert.True(t, packagesBc.IsInstalled(pkg))
-	assert.True(t, packagesBc.IsEnabled(pkg))
+	assert.Equal(t, packageApplier.AppliedPackages, []models.Package{pkg1, pkg2})
 }
 
-func TestApplyErrsWhenPackageInstallFails(t *testing.T) {
-	_, packagesBc, _, _, applier := buildApplier()
+func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
+	_, packageApplier, applier := buildApplier()
 	pkg := buildPackage()
 
-	packagesBc.InstallError = errors.New("fake-install-error")
+	packageApplier.ApplyError = errors.New("fake-apply-error")
 
-	err := applier.Apply([]Job{}, []Package{pkg})
+	err := applier.Apply([]models.Job{}, []models.Package{pkg})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-install-error")
-}
-
-func TestApplyErrsWhenPackageEnableFails(t *testing.T) {
-	_, packagesBc, _, _, applier := buildApplier()
-	pkg := buildPackage()
-
-	packagesBc.EnableError = errors.New("fake-enable-error")
-
-	err := applier.Apply([]Job{}, []Package{pkg})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-enable-error")
-}
-
-func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
-	_, _, blobstore, _, applier := buildApplier()
-	pkg := buildPackage()
-	pkg.BlobstoreId = "fake-blobstore-id"
-
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
-	blobstore.GetFile = file
-
-	err = applier.Apply([]Job{}, []Package{pkg})
-	assert.NoError(t, err)
-	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobId)
-	assert.Equal(t, file, blobstore.CleanUpFile)
-}
-
-func TestApplyErrsWhenPackageDownloadErrs(t *testing.T) {
-	_, _, blobstore, _, applier := buildApplier()
-	pkg := buildPackage()
-
-	blobstore.GetError = errors.New("fake-get-error")
-
-	err := applier.Apply([]Job{}, []Package{pkg})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-get-error")
-}
-
-func TestApplyDecompressesPackageToInstallPath(t *testing.T) {
-	_, packagesBc, blobstore, compressor, applier := buildApplier()
-	pkg := buildPackage()
-
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
-	packagesBc.InstallPath = "fake-install-path"
-	blobstore.GetFile = file
-
-	err = applier.Apply([]Job{}, []Package{pkg})
-	assert.NoError(t, err)
-	assert.Equal(t, file, compressor.DecompressFileToDirTarball)
-	assert.Equal(t, "fake-install-path", compressor.DecompressFileToDirDir)
-}
-
-func TestApplyErrsWhenPackageDecompressErrs(t *testing.T) {
-	_, _, _, compressor, applier := buildApplier()
-	pkg := buildPackage()
-
-	compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
-
-	err := applier.Apply([]Job{}, []Package{pkg})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-decompress-error")
+	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
 func buildApplier() (
 	*fakebc.FakeBundleCollection,
-	*fakebc.FakeBundleCollection,
-	*fakeblob.FakeBlobstore,
-	*fakedisk.FakeCompressor,
+	*fakepa.FakePackageApplier,
 	Applier,
 ) {
 	jobsBc := fakebc.NewFakeBundleCollection()
-	packagesBc := fakebc.NewFakeBundleCollection()
-	blobstore := fakeblob.NewFakeBlobstore()
-	compressor := fakedisk.NewFakeCompressor()
-	applier := NewConcreteApplier(jobsBc, packagesBc, blobstore, compressor)
-	return jobsBc, packagesBc, blobstore, compressor, applier
+	packageApplier := fakepa.NewFakePackageApplier()
+	applier := NewConcreteApplier(jobsBc, packageApplier)
+	return jobsBc, packageApplier, applier
 }
 
-func buildJob() Job {
-	return Job{Name: "fake-job-name", Version: "fake-version-name"}
+func buildJob() models.Job {
+	return models.Job{Name: "fake-job-name", Version: "fake-version-name"}
 }
 
-func buildPackage() Package {
-	return Package{Name: "fake-package-name", Version: "fake-package-name"}
+func buildPackage() models.Package {
+	return models.Package{Name: "fake-package-name", Version: "fake-package-name"}
 }

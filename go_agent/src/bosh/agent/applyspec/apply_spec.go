@@ -1,6 +1,7 @@
 package applyspec
 
 import (
+	models "bosh/agent/applyspec/models"
 	bosherr "bosh/errors"
 	"encoding/json"
 )
@@ -47,18 +48,18 @@ func (s *ApplySpec) MaxLogFileSize() string {
 	return "50M"
 }
 
-func (s *ApplySpec) Jobs() []Job {
+func (s *ApplySpec) Jobs() []models.Job {
 	if len(s.JobSpec.JobTemplateSpecs) > 0 {
 		return s.JobSpec.JobTemplateSpecsAsJobs()
 	}
 	if s.JobSpec.IsEmpty() {
-		return []Job{}
+		return []models.Job{}
 	}
-	return []Job{s.JobSpec.AsJob()}
+	return []models.Job{s.JobSpec.AsJob()}
 }
 
-func (s *ApplySpec) Packages() []Package {
-	packages := make([]Package, 0)
+func (s *ApplySpec) Packages() []models.Package {
+	packages := make([]models.Package, 0)
 	for _, value := range s.PackageSpecs {
 		packages = append(packages, value.AsPackage())
 	}

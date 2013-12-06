@@ -1,16 +1,16 @@
-package applyspec
+package models
 
-type Job struct {
+type Package struct {
 	Name        string
 	Version     string
 	Sha1        string
 	BlobstoreId string
 }
 
-func (s Job) BundleName() string {
+func (s Package) BundleName() string {
 	return s.Name
 }
 
-func (s Job) BundleVersion() string {
+func (s Package) BundleVersion() string {
 	return s.Version
 }
