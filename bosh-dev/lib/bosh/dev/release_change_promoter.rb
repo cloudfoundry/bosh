@@ -18,6 +18,10 @@ module Bosh::Dev
 
       shell.run("git checkout #{@candidate_sha}")
 
+      # Remove any artifacts from Jenkins setup
+      shell.run('git checkout .')
+      shell.run('git clean --force')
+
       shell.run("git apply #{patch_file.path}")
       shell.run('git add -A :/')
       shell.run("git commit -m 'Adding final release for build #{@build_number}'")

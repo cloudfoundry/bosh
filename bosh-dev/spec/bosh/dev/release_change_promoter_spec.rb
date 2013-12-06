@@ -34,6 +34,8 @@ module Bosh::Dev
         download_adapter.stub(:download).and_return(patch_file.path)
 
         expect(shell).to receive(:run).with("git checkout #{candidate_sha}").ordered
+        expect(shell).to receive(:run).with('git checkout .').ordered
+        expect(shell).to receive(:run).with('git clean --force').ordered
         expect(shell).to receive(:run).with("git apply #{patch_file.path}").ordered
         expect(shell).to receive(:run).with('git add -A :/').ordered
         expect(shell).to receive(:run).with("git commit -m 'Adding final release for build #{build_number}'").ordered
