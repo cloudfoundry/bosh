@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	"os"
 )
 
@@ -22,7 +22,7 @@ func NewFakeBlobstore() *FakeBlobstore {
 	return &FakeBlobstore{}
 }
 
-func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblobstore.Blobstore, err error) {
+func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblob.Blobstore, err error) {
 	bs.Options = opts
 	updated = bs
 	return

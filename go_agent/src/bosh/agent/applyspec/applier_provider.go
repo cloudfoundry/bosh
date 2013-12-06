@@ -3,17 +3,17 @@ package applyspec
 import (
 	bc "bosh/agent/applyspec/bundlecollection"
 	pa "bosh/agent/applyspec/packageapplier"
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
 
 type ApplierProvider struct {
 	platform  boshplatform.Platform
-	blobstore boshblobstore.Blobstore
+	blobstore boshblob.Blobstore
 }
 
-func NewApplierProvider(platform boshplatform.Platform, blobstore boshblobstore.Blobstore) (p ApplierProvider) {
+func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore) (p ApplierProvider) {
 	p.platform = platform
 	p.blobstore = blobstore
 	return

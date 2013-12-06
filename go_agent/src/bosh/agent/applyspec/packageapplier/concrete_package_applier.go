@@ -3,19 +3,19 @@ package packageapplier
 import (
 	bc "bosh/agent/applyspec/bundlecollection"
 	models "bosh/agent/applyspec/models"
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	boshdisk "bosh/platform/disk"
 )
 
 type concretePackageApplier struct {
 	packagesBc bc.BundleCollection
-	blobstore  boshblobstore.Blobstore
+	blobstore  boshblob.Blobstore
 	compressor boshdisk.Compressor
 }
 
 func NewConcretePackageApplier(
 	packagesBc bc.BundleCollection,
-	blobstore boshblobstore.Blobstore,
+	blobstore boshblob.Blobstore,
 	compressor boshdisk.Compressor,
 ) *concretePackageApplier {
 	return &concretePackageApplier{

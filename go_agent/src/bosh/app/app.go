@@ -5,7 +5,7 @@ import (
 	boshaction "bosh/agent/action"
 	boshas "bosh/agent/applyspec"
 	boshtask "bosh/agent/task"
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
@@ -64,7 +64,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	blobstoreProvider := boshblobstore.NewProvider(platform)
+	blobstoreProvider := boshblob.NewProvider(platform)
 	blobstore, err := blobstoreProvider.Get(settingsProvider.GetBlobstore())
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blobstore")
