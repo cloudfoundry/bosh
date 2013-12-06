@@ -88,6 +88,8 @@ module VSphereCloud
                                    cluster.datacenter.template_folder.mob)
           @logger.info('Waiting for NFC lease')
           state = wait_for_nfc_lease(lease)
+
+          raise_nfc_lease_error(lease) if state == Vim::HttpNfcLease::State::ERROR
           raise "Could not acquire HTTP NFC lease (state is: #{state})" unless state == Vim::HttpNfcLease::State::READY
 
           @logger.info('Uploading')
@@ -1139,6 +1141,13 @@ module VSphereCloud
       end
 
       vms
+    end
+
+    private
+
+    def raise_nfc_lease_error(lease)
+      error_message = client.get_property(lease, Vim::HttpNfcLease, 'error').msg
+      raise "Could not acquire HTTP NFC lease, message is:  #{error_message}"
     end
   end
 end
