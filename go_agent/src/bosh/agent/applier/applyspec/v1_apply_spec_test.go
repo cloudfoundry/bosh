@@ -69,8 +69,8 @@ func TestJobsWhenNoJobsSpecified(t *testing.T) {
 func TestPackages(t *testing.T) {
 	spec, err := NewV1ApplySpecFromData(
 		map[string]interface{}{
-			"packages": []interface{}{
-				map[string]interface{}{
+			"packages": map[string]interface{}{
+				"fake-package1-name-key": map[string]interface{}{
 					"name":         "fake-package1-name",
 					"version":      "fake-package1-version",
 					"sha1":         "fake-package1-sha1",

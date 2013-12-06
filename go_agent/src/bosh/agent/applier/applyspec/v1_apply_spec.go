@@ -7,9 +7,9 @@ import (
 )
 
 type V1ApplySpec struct {
-	PropertiesSpec PropertiesSpec `json:"properties"`
-	JobSpec        JobSpec        `json:"job"`
-	PackageSpecs   []PackageSpec  `json:"packages"`
+	PropertiesSpec PropertiesSpec         `json:"properties"`
+	JobSpec        JobSpec                `json:"job"`
+	PackageSpecs   map[string]PackageSpec `json:"packages"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }

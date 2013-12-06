@@ -27,10 +27,7 @@ func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 func TestApplyRunRunsApplierWithApplySpec(t *testing.T) {
 	applier, _, _, action := buildApplyAction()
 
-	applySpecPayload := []byte(`{
-		"job":      {"template": "fake-job-template"},
-		"packages": [{"name": "fake-package-name"}]
-	}`)
+	applySpecPayload := []byte(`{"job": {"template": "fake-job-template"}}`)
 
 	expectedApplySpec, err := boshas.NewV1ApplySpecFromJson(applySpecPayload)
 	assert.NoError(t, err)
