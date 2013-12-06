@@ -1,6 +1,6 @@
 package applyspec
 
-import models "bosh/agent/applyspec/models"
+import models "bosh/agent/applier/models"
 
 type JobSpec struct {
 	Name             string            `json:"name"`

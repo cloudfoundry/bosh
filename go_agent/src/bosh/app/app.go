@@ -3,7 +3,7 @@ package app
 import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
-	boshas "bosh/agent/applyspec"
+	boshas "bosh/agent/applier"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"

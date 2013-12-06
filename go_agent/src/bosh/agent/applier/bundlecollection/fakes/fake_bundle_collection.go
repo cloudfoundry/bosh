@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	bc "bosh/agent/applyspec/bundlecollection"
+	bc "bosh/agent/applier/bundlecollection"
 	"errors"
 )
 

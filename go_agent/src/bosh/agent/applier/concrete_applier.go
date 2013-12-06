@@ -1,9 +1,10 @@
-package applyspec
+package applier
 
 import (
-	bc "bosh/agent/applyspec/bundlecollection"
-	models "bosh/agent/applyspec/models"
-	pa "bosh/agent/applyspec/packageapplier"
+	as "bosh/agent/applier/applyspec"
+	bc "bosh/agent/applier/bundlecollection"
+	models "bosh/agent/applier/models"
+	pa "bosh/agent/applier/packageapplier"
 )
 
 type concreteApplier struct {
@@ -21,15 +22,15 @@ func NewConcreteApplier(
 	}
 }
 
-func (s *concreteApplier) Apply(jobs []models.Job, packages []models.Package) error {
-	for _, job := range jobs {
+func (s *concreteApplier) Apply(applySpec as.ApplySpec) error {
+	for _, job := range applySpec.Jobs() {
 		err := s.applyJob(job)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, pkg := range packages {
+	for _, pkg := range applySpec.Packages() {
 		err := s.packageApplier.Apply(pkg)
 		if err != nil {
 			return err

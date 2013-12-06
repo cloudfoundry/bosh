@@ -1,7 +1,7 @@
 package action
 
 import (
-	boshas "bosh/agent/applyspec"
+	boshappl "bosh/agent/applier"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	boshplatform "bosh/platform"
@@ -17,7 +17,7 @@ func NewFactory(
 	platform boshplatform.Platform,
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
-	applier boshas.Applier,
+	applier boshappl.Applier,
 ) (factory Factory) {
 
 	fs := platform.GetFs()

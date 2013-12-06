@@ -1,12 +1,13 @@
 package action
 
 import (
-	fakeas "bosh/agent/applyspec/fakes"
-	models "bosh/agent/applyspec/models"
+	boshas "bosh/agent/applier/applyspec"
+	fakeappl "bosh/agent/applier/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -23,30 +24,28 @@ func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 	assert.Equal(t, `{"deployment":"dummy-damien"}`, stats.Content)
 }
 
-func TestApplyRunApplierToMakeChanges(t *testing.T) {
+func TestApplyRunRunsApplierWithApplySpec(t *testing.T) {
 	applier, _, _, action := buildApplyAction()
 
-	payload := []byte(`{
-		"method":"apply",
-		"reply_to":"foo",
-		"arguments":[{
-			"job":{
-				"template":"fake-job-template"
-			},
-			"packages":[{
-				"name":"fake-package-name"
-			}]
-		}]
+	applySpecPayload := []byte(`{
+		"job":      {"template": "fake-job-template"},
+		"packages": [{"name": "fake-package-name"}]
 	}`)
 
-	_, err := action.Run(payload)
+	expectedApplySpec, err := boshas.NewV1ApplySpecFromJson(applySpecPayload)
 	assert.NoError(t, err)
 
-	expectedJob := models.Job{Name: "fake-job-template"}
-	assert.Equal(t, []models.Job{expectedJob}, applier.AppliedJobs)
+	payload := []byte(
+		fmt.Sprintf(`{
+			"method":    "apply",
+			"reply_to":  "foo",
+			"arguments": [%s]
+		}`, applySpecPayload),
+	)
 
-	expectedPackage := models.Package{Name: "fake-package-name"}
-	assert.Equal(t, []models.Package{expectedPackage}, applier.AppliedPackages)
+	_, err = action.Run(payload)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedApplySpec, applier.ApplyApplySpec)
 }
 
 func TestApplyRunErrsWhenApplierFails(t *testing.T) {
@@ -106,8 +105,8 @@ func TestApplyRunErrsWithZeroArguments(t *testing.T) {
 	assert.Contains(t, err.Error(), "Not enough arguments")
 }
 
-func buildApplyAction() (*fakeas.FakeApplier, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform, applyAction) {
-	applier := fakeas.NewFakeApplier()
+func buildApplyAction() (*fakeappl.FakeApplier, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform, applyAction) {
+	applier := fakeappl.NewFakeApplier()
 	platform := fakeplatform.NewFakePlatform()
 	fs := platform.Fs
 	action := newApply(applier, fs, platform)

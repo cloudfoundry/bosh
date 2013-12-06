@@ -1,7 +1,7 @@
 package action
 
 import (
-	fakeas "bosh/agent/applyspec/fakes"
+	fakeappl "bosh/agent/applier/fakes"
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakeplatform "bosh/platform/fakes"
@@ -87,14 +87,14 @@ func buildFactory() (
 	platform *fakeplatform.FakePlatform,
 	blobstore *fakeblobstore.FakeBlobstore,
 	taskService *faketask.FakeService,
-	applier *fakeas.FakeApplier,
+	applier *fakeappl.FakeApplier,
 	factory Factory) {
 
 	settings = boshsettings.NewProvider(boshsettings.Settings{})
 	platform = fakeplatform.NewFakePlatform()
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	taskService = &faketask.FakeService{}
-	applier = &fakeas.FakeApplier{}
+	applier = fakeappl.NewFakeApplier()
 
 	factory = NewFactory(settings, platform, blobstore, taskService, applier)
 	return

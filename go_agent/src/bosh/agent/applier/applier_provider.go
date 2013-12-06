@@ -1,8 +1,8 @@
-package applyspec
+package applier
 
 import (
-	bc "bosh/agent/applyspec/bundlecollection"
-	pa "bosh/agent/applyspec/packageapplier"
+	bc "bosh/agent/applier/bundlecollection"
+	pa "bosh/agent/applier/packageapplier"
 	boshblob "bosh/blobstore"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"

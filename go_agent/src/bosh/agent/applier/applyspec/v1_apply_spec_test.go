@@ -1,21 +1,21 @@
 package applyspec
 
 import (
-	models "bosh/agent/applyspec/models"
+	models "bosh/agent/applier/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestMaxLogFileSize(t *testing.T) {
 	// No 'properties'
-	spec, err := NewApplySpecFromData(
+	spec, err := NewV1ApplySpecFromData(
 		map[string]interface{}{},
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, "50M", spec.MaxLogFileSize())
 
 	// No 'logging' in properties
-	spec, err = NewApplySpecFromData(
+	spec, err = NewV1ApplySpecFromData(
 		map[string]interface{}{
 			"properties": map[string]interface{}{},
 		},
@@ -24,7 +24,7 @@ func TestMaxLogFileSize(t *testing.T) {
 	assert.Equal(t, "50M", spec.MaxLogFileSize())
 
 	// No 'max_log_file_size' in logging
-	spec, err = NewApplySpecFromData(
+	spec, err = NewV1ApplySpecFromData(
 		map[string]interface{}{
 			"properties": map[string]interface{}{
 				"logging": map[string]interface{}{},
@@ -35,7 +35,7 @@ func TestMaxLogFileSize(t *testing.T) {
 	assert.Equal(t, "50M", spec.MaxLogFileSize())
 
 	// Specified 'max_log_file_size'
-	spec, err = NewApplySpecFromData(
+	spec, err = NewV1ApplySpecFromData(
 		map[string]interface{}{
 			"properties": map[string]interface{}{
 				"logging": map[string]interface{}{
@@ -49,7 +49,7 @@ func TestMaxLogFileSize(t *testing.T) {
 }
 
 func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
-	spec, err := NewApplySpecFromData(
+	spec, err := NewV1ApplySpecFromData(
 		map[string]interface{}{
 			"job": map[string]interface{}{
 				"name":         "fake-job-legacy-name",
@@ -81,7 +81,7 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 }
 
 func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
-	spec, err := NewApplySpecFromData(
+	spec, err := NewV1ApplySpecFromData(
 		map[string]interface{}{
 			"job": map[string]interface{}{
 				"name":         "fake-job-legacy-name",
@@ -106,13 +106,13 @@ func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
 }
 
 func TestJobsWhenNoJobsSpecified(t *testing.T) {
-	spec, err := NewApplySpecFromData(map[string]interface{}{})
+	spec, err := NewV1ApplySpecFromData(map[string]interface{}{})
 	assert.NoError(t, err)
 	assert.Equal(t, []models.Job{}, spec.Jobs())
 }
 
 func TestPackages(t *testing.T) {
-	spec, err := NewApplySpecFromData(
+	spec, err := NewV1ApplySpecFromData(
 		map[string]interface{}{
 			"packages": []interface{}{
 				map[string]interface{}{
@@ -136,7 +136,7 @@ func TestPackages(t *testing.T) {
 }
 
 func TestPackagesWhenNoPackagesSpecified(t *testing.T) {
-	spec, err := NewApplySpecFromData(map[string]interface{}{})
+	spec, err := NewV1ApplySpecFromData(map[string]interface{}{})
 	assert.NoError(t, err)
 	assert.Equal(t, []models.Package{}, spec.Packages())
 }

@@ -1,8 +1,8 @@
 package packageapplier
 
 import (
-	bc "bosh/agent/applyspec/bundlecollection"
-	models "bosh/agent/applyspec/models"
+	bc "bosh/agent/applier/bundlecollection"
+	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	boshdisk "bosh/platform/disk"
 )

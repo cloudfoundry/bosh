@@ -1,8 +1,8 @@
 package packageapplier
 
 import (
-	fakebc "bosh/agent/applyspec/bundlecollection/fakes"
-	models "bosh/agent/applyspec/models"
+	fakebc "bosh/agent/applier/bundlecollection/fakes"
+	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
 	fakedisk "bosh/platform/disk/fakes"
 	"errors"

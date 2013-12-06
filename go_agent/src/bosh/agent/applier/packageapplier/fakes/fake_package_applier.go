@@ -1,6 +1,6 @@
 package fakes
 
-import models "bosh/agent/applyspec/models"
+import models "bosh/agent/applier/models"
 
 type FakePackageApplier struct {
 	AppliedPackages []models.Package
