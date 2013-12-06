@@ -15,7 +15,7 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 				"sha1":         "fake-job-legacy-sha1",
 				"blobstore_id": "fake-job-legacy-blobstore-id",
 				"templates": []interface{}{
-					map[string]interface{}{
+					map[string]string{
 						"name":         "fake-job1-name",
 						"version":      "fake-job1-version",
 						"sha1":         "fake-job1-sha1",
@@ -25,6 +25,10 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 				"release":  "fake-job-release",
 				"template": "fake-job-template",
 			},
+			"rendered_templates_archive": map[string]string{
+				"sha1":         "fake-rendered-templates-archive-sha1",
+				"blobstore_id": "fake-rendered-templates-archive-blobstore-id",
+			},
 		},
 	)
 	assert.NoError(t, err)
@@ -33,35 +37,8 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 			Name:    "fake-job1-name",
 			Version: "fake-job1-version",
 			Source: models.Source{
-				Sha1:        "fake-job1-sha1",
-				BlobstoreId: "fake-job1-blobstore-id",
-			},
-		},
-	}, spec.Jobs())
-}
-
-func TestJobsWithoutSpecifiedJobTemplates(t *testing.T) {
-	spec, err := NewV1ApplySpecFromData(
-		map[string]interface{}{
-			"job": map[string]interface{}{
-				"name":         "fake-job-legacy-name",
-				"version":      "fake-job-legacy-version",
-				"sha1":         "fake-job-legacy-sha1",
-				"blobstore_id": "fake-job-legacy-blobstore-id",
-				"release":      "fake-job-legacy-release",
-				"template":     "fake-job-legacy-template",
-			},
-		},
-	)
-	assert.NoError(t, err)
-	assert.Equal(t, []models.Job{
-		models.Job{
-			// template is used as a job name to be backwards compatible
-			Name:    "fake-job-legacy-template",
-			Version: "fake-job-legacy-version",
-			Source: models.Source{
-				Sha1:        "fake-job-legacy-sha1",
-				BlobstoreId: "fake-job-legacy-blobstore-id",
+				Sha1:        "fake-rendered-templates-archive-sha1",
+				BlobstoreId: "fake-rendered-templates-archive-blobstore-id",
 			},
 		},
 	}, spec.Jobs())

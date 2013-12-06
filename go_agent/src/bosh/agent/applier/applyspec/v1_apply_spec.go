@@ -11,7 +11,7 @@ type V1ApplySpec struct {
 	JobSpec        JobSpec        `json:"job"`
 	PackageSpecs   []PackageSpec  `json:"packages"`
 
-	RenderedTemplatesArchiveSpec []RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
+	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }
 
 type PropertiesSpec struct {
@@ -20,11 +20,6 @@ type PropertiesSpec struct {
 
 type LoggingSpec struct {
 	MaxLogFileSize string `json:"max_log_file_size"`
-}
-
-type RenderedTemplatesArchiveSpec struct {
-	Sha1        string `json:"sha1"`
-	BlobstoreId string `json:"blobstore_id"`
 }
 
 // Currently uses json.Unmarshal to interpret data into structs.
@@ -55,14 +50,14 @@ func NewV1ApplySpecFromJson(dataAsJson []byte) (as V1ApplySpec, err error) {
 	return
 }
 
+// BOSH Director provides a single tarball with all job templates pre-rendered
 func (s V1ApplySpec) Jobs() []models.Job {
-	if len(s.JobSpec.JobTemplateSpecs) > 0 {
-		return s.JobSpec.JobTemplateSpecsAsJobs()
+	jobsWithSource := []models.Job{}
+	for _, j := range s.JobSpec.JobTemplateSpecsAsJobs() {
+		j.Source = s.RenderedTemplatesArchiveSpec.AsSource()
+		jobsWithSource = append(jobsWithSource, j)
 	}
-	if s.JobSpec.IsEmpty() {
-		return []models.Job{}
-	}
-	return []models.Job{s.JobSpec.AsJob()}
+	return jobsWithSource
 }
 
 func (s V1ApplySpec) Packages() []models.Package {
