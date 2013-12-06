@@ -2,6 +2,7 @@
 # Copyright (c) 2012-2013 ZJU Software Engineering Laboratory
 # Copyright (c) 2013 Nippon Telegraph and Telephone Corporation
 
+
 module Bosh::Registry
 
   class InstanceManager
@@ -59,7 +60,16 @@ module Bosh::Registry
         end
         raise InstanceNotFound, "Instance `#{instance_id}' not found" unless instance
         private_ips = instance.nics.map { |nic| nic["ipaddress"] }
-        floating_ips = cloudstack.ipaddresses.select { |ip| ip.virtual_machine_id == instance_id }.map { |ip| ip.ip_address }
+        # TODO: Update if Fog gem has been updated 
+        floating_ips_response = cloudstack.list_public_ip_addresses["listpublicipaddressesresponse"]
+        if floating_ips_response.empty?
+          floating_ips = []
+        else
+          floating_ips = floating_ips_response["publicipaddress"]
+            .select { |ip| ip["virtualmachineid"] == instance_id }
+            .map { |ip| ip["ipaddress"] }
+        end
+
         return (private_ips + floating_ips).compact
       end
 
