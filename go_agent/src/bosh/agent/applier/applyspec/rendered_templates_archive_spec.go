@@ -7,9 +7,10 @@ type RenderedTemplatesArchiveSpec struct {
 	BlobstoreId string `json:"blobstore_id"`
 }
 
-func (s RenderedTemplatesArchiveSpec) AsSource() models.Source {
+func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
 	return models.Source{
-		Sha1:        s.Sha1,
-		BlobstoreId: s.BlobstoreId,
+		Sha1:          s.Sha1,
+		BlobstoreId:   s.BlobstoreId,
+		PathInArchive: job.Name,
 	}
 }

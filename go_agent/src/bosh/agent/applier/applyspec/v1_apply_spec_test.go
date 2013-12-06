@@ -21,6 +21,12 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 						"sha1":         "fake-job1-sha1",
 						"blobstore_id": "fake-job1-blobstore-id",
 					},
+					map[string]string{
+						"name":         "fake-job2-name",
+						"version":      "fake-job2-version",
+						"sha1":         "fake-job2-sha1",
+						"blobstore_id": "fake-job2-blobstore-id",
+					},
 				},
 				"release":  "fake-job-release",
 				"template": "fake-job-template",
@@ -37,8 +43,18 @@ func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 			Name:    "fake-job1-name",
 			Version: "fake-job1-version",
 			Source: models.Source{
-				Sha1:        "fake-rendered-templates-archive-sha1",
-				BlobstoreId: "fake-rendered-templates-archive-blobstore-id",
+				Sha1:          "fake-rendered-templates-archive-sha1",
+				BlobstoreId:   "fake-rendered-templates-archive-blobstore-id",
+				PathInArchive: "fake-job1-name",
+			},
+		},
+		models.Job{
+			Name:    "fake-job2-name",
+			Version: "fake-job2-version",
+			Source: models.Source{
+				Sha1:          "fake-rendered-templates-archive-sha1",
+				BlobstoreId:   "fake-rendered-templates-archive-blobstore-id",
+				PathInArchive: "fake-job2-name",
 			},
 		},
 	}, spec.Jobs())
