@@ -44,9 +44,11 @@ describe 'with release, stemcell and deployment' do
         }.map { |k, v| "--#{k} '#{v}'" }.join(' ')
 
         # Note gateway_host + ip: ...fingerprint does not match for "micro.ci2.cf-app.com,54.208.15.101" (Net::SSH::HostKeyMismatch)
+        # rubocop:disable IfUnlessModifier
         if File.exist?(File.expand_path('~/.ssh/known_hosts'))
           Bosh::Exec.sh("ssh-keygen -R '#{bosh_director},#{static_ip}'")
         end
+        # rubocop:enable IfUnlessModifier
       end
 
       bosh_safe("ssh batlight 0 'uname -a' #{bosh_ssh_options}").should succeed_with /Linux/
