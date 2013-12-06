@@ -65,7 +65,7 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 }
 
 func (c tarballCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
-	_, _, err = c.cmdRunner.RunCommand("tar", "xzf", tarball.Name(), "-C", dir)
+	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarball.Name(), "-C", dir)
 	if err != nil {
 		return
 	}

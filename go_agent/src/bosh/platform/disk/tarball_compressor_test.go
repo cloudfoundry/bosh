@@ -3,6 +3,7 @@ package disk
 import (
 	boshlog "bosh/logger"
 	boshsys "bosh/system"
+	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
@@ -49,10 +50,10 @@ func TestCompressFilesInDir(t *testing.T) {
 
 func TestDecompressFileToDir(t *testing.T) {
 	fs, cmdRunner := getCompressorDependencies()
+	dc := NewTarballCompressor(cmdRunner, fs)
+
 	dstDir := createdTmpDir(t, fs)
 	defer os.RemoveAll(dstDir)
-
-	dc := NewTarballCompressor(cmdRunner, fs)
 
 	err := dc.DecompressFileToDir(fixtureSrcTgz(t), dstDir)
 	assert.NoError(t, err)
@@ -92,41 +93,54 @@ func TestDecompressFileToDirReturnsError(t *testing.T) {
 	// propagates errors raised when untarring
 	err := dc.DecompressFileToDir(fixtureSrcTgz(t), nonExistentDstDir)
 	assert.Error(t, err)
-
-	// path is in the error message
-	assert.Contains(t, err.Error(), nonExistentDstDir)
+	assert.Contains(t, err.Error(), nonExistentDstDir) // path in error
 }
 
-func createdTmpDir(t *testing.T, fs boshsys.FileSystem) (dstDir string) {
-	dstDir = filepath.Join(os.TempDir(), "TestCompressor")
+func TestDecompressFileToDirUsesNoSameOwnerOption(t *testing.T) {
+	fs, _ := getCompressorDependencies()
+	cmdRunner := fakesys.NewFakeCmdRunner()
+	dc := NewTarballCompressor(cmdRunner, fs)
+
+	dstDir := createdTmpDir(t, fs)
+	defer os.RemoveAll(dstDir)
+
+	tarball := fixtureSrcTgz(t)
+	err := dc.DecompressFileToDir(tarball, dstDir)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(cmdRunner.RunCommands))
+	assert.Equal(t, []string{
+		"tar", "--no-same-owner",
+		"-xzvf", tarball.Name(),
+		"-C", dstDir,
+	}, cmdRunner.RunCommands[0])
+}
+
+func createdTmpDir(t *testing.T, fs boshsys.FileSystem) string {
+	dstDir := filepath.Join(os.TempDir(), "TestCompressor")
 	err := fs.MkdirAll(dstDir, os.ModePerm)
 	assert.NoError(t, err)
-
-	return
+	return dstDir
 }
 
-func fixtureSrcDir(t *testing.T) (srcDir string) {
+func fixtureSrcDir(t *testing.T) string {
+	pwd, err := os.Getwd()
+	assert.NoError(t, err)
+	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
+}
+
+func fixtureSrcTgz(t *testing.T) *os.File {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
 
-	srcDir = filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
-	return
+	srcTgz, err := os.Open(filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz"))
+	assert.NoError(t, err)
+	return srcTgz
 }
 
-func fixtureSrcTgz(t *testing.T) (srcTgz *os.File) {
-	pwd, err := os.Getwd()
-	assert.NoError(t, err)
-
-	srcTgz, err = os.Open(filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz"))
-	assert.NoError(t, err)
-
-	return
-}
-
-func getCompressorDependencies() (fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner) {
+func getCompressorDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-
-	fs = boshsys.NewOsFileSystem(logger)
-	cmdRunner = boshsys.NewExecCmdRunner(logger)
-	return
+	fs := boshsys.NewOsFileSystem(logger)
+	cmdRunner := boshsys.NewExecCmdRunner(logger)
+	return fs, cmdRunner
 }
