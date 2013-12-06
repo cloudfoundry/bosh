@@ -2,6 +2,7 @@ package fakes
 
 import (
 	"errors"
+	gouuid "github.com/nu7hatch/gouuid"
 	"os"
 	"strings"
 )
@@ -18,7 +19,7 @@ type FakeFileSystem struct {
 	Files map[string]*FakeFileStats
 
 	HomeDirUsername string
-	HomeDirHomeDir  string
+	HomeDirHomePath string
 
 	FilesToOpen map[string]*os.File
 
@@ -42,9 +43,9 @@ func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {
 	return
 }
 
-func (fs *FakeFileSystem) HomeDir(username string) (homeDir string, err error) {
+func (fs *FakeFileSystem) HomeDir(username string) (path string, err error) {
 	fs.HomeDirUsername = username
-	homeDir = fs.HomeDirHomeDir
+	path = fs.HomeDirHomePath
 	return
 }
 
@@ -108,7 +109,7 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return
 }
 
-func (fs *FakeFileSystem) TempFile() (file *os.File, err error) {
+func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	if fs.TempFileError != nil {
 		return nil, fs.TempFileError
 	}
@@ -116,6 +117,9 @@ func (fs *FakeFileSystem) TempFile() (file *os.File, err error) {
 		return fs.ReturnTempFile, nil
 	} else {
 		file, err = os.Open("/dev/null")
+		if err != nil {
+			return
+		}
 
 		// Make sure to record a reference for FileExist, etc. to work
 		stats := fs.getOrCreateFile(file.Name())
@@ -125,15 +129,26 @@ func (fs *FakeFileSystem) TempFile() (file *os.File, err error) {
 	}
 }
 
-func (fs *FakeFileSystem) TempDir() (tmpDir string) {
-	return os.TempDir()
+func (fs *FakeFileSystem) TempDir(prefix string) (path string, err error) {
+	uuid, err := gouuid.NewV4()
+	if err != nil {
+		return
+	}
+
+	path = uuid.String()
+
+	// Make sure to record a reference for FileExist, etc. to work
+	stats := fs.getOrCreateFile(path)
+	stats.FileType = FakeFileTypeDir
+
+	return
 }
 
-func (fs *FakeFileSystem) RemoveAll(fileOrDir string) {
+func (fs *FakeFileSystem) RemoveAll(path string) {
 	filesToRemove := []string{}
 
 	for name, _ := range fs.Files {
-		if strings.HasPrefix(name, fileOrDir) {
+		if strings.HasPrefix(name, path) {
 			filesToRemove = append(filesToRemove, name)
 		}
 	}

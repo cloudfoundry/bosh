@@ -19,9 +19,7 @@ func NewTarballCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c
 }
 
 func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
-	tmpDir := c.fs.TempDir()
-	tgzDir := filepath.Join(tmpDir, "BoshAgentTarball")
-	err = c.fs.MkdirAll(tgzDir, os.ModePerm)
+	tgzDir, err := c.fs.TempDir("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		return
 	}
@@ -54,13 +52,16 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 		}
 	}
 
-	tarballPath := filepath.Join(tmpDir, "files.tgz")
-	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", tgzDir, ".")
+	tarball, err = c.fs.TempFile("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		return
 	}
 
-	tarball, err = c.fs.Open(tarballPath)
+	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarball.Name(), "-C", tgzDir, ".")
+	if err != nil {
+		return
+	}
+
 	return
 }
 

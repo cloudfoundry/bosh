@@ -68,7 +68,7 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 }
 
 func (blobstore s3) Get(blobId string) (file *os.File, err error) {
-	file, err = blobstore.fs.TempFile()
+	file, err = blobstore.fs.TempFile("bosh-blobstore-s3-Get")
 	if err != nil {
 		return
 	}

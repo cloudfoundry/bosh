@@ -236,19 +236,37 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 func TestTempFile(t *testing.T) {
 	osFs := createOsFs()
 
-	file1, err := osFs.TempFile()
+	file1, err := osFs.TempFile("fake-prefix")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, file1)
 
 	defer os.Remove(file1.Name())
 
-	file2, err := osFs.TempFile()
+	file2, err := osFs.TempFile("fake-prefix")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, file2)
 
 	defer os.Remove(file2.Name())
 
 	assert.NotEqual(t, file1.Name(), file2.Name())
+}
+
+func TestTempDir(t *testing.T) {
+	osFs := createOsFs()
+
+	path1, err := osFs.TempDir("fake-prefix")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, path1)
+
+	defer os.Remove(path1)
+
+	path2, err := osFs.TempDir("fake-prefix")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, path2)
+
+	defer os.Remove(path2)
+
+	assert.NotEqual(t, path1, path2)
 }
 
 func createOsFs() (fs FileSystem) {

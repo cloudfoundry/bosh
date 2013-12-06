@@ -38,7 +38,7 @@ func TestGet(t *testing.T) {
 	fs, runner, uuidGen := getS3BlobstoreDependencies()
 	blobstore := newS3Blobstore(fs, runner, uuidGen)
 
-	tempFile, err := fs.TempFile()
+	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGet")
 	assert.NoError(t, err)
 
 	fs.ReturnTempFile = tempFile
@@ -77,7 +77,7 @@ func TestGetErrsWhenS3CliErrs(t *testing.T) {
 	fs, runner, uuidGen := getS3BlobstoreDependencies()
 	blobstore := newS3Blobstore(fs, runner, uuidGen)
 
-	tempFile, err := fs.TempFile()
+	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGetErrsWhenS3CliErrs")
 	assert.NoError(t, err)
 
 	fs.ReturnTempFile = tempFile
@@ -103,7 +103,7 @@ func TestCleanUp(t *testing.T) {
 	fs, runner, uuidGen := getS3BlobstoreDependencies()
 	blobstore := newS3Blobstore(fs, runner, uuidGen)
 
-	file, err := fs.TempFile()
+	file, err := fs.TempFile("bosh-blobstore-s3-TestCleanUp")
 	assert.NoError(t, err)
 
 	defer fs.RemoveAll(file.Name())

@@ -103,7 +103,7 @@ foobar:...
 
 func TestUbuntuSetupSsh(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeFs.HomeDirHomeDir = "/some/home/dir"
+	fakeFs.HomeDirHomePath = "/some/home/dir"
 
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 	ubuntu.SetupSsh("some public key", "vcap")
