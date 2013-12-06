@@ -23,7 +23,7 @@ module Bosh::Dev
     end
 
     def stable_tag_for?(subject_sha)
-      !!Bosh::Core::Shell.new.run("git fetch --tags && git tag --contains #{subject_sha} | grep stable-").match(/stable/)
+      !!Bosh::Core::Shell.new.run("git fetch --tags && git tag --contains #{subject_sha}").match(/stable-/)
     end
   end
 end

@@ -91,13 +91,13 @@ module Bosh::Dev
       end
 
       it 'returns true when there is a stable tag for the given sha' do
-        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha} | grep stable-").and_return('stable')
+        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha}").and_return('stable-123')
 
         expect(git_tagger.stable_tag_for?(subject_sha)).to eq(true)
       end
 
       it 'returns false when there is not a stable tag for the given sha' do
-        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha} | grep stable-").and_return('')
+        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha}").and_return('')
 
         expect(git_tagger.stable_tag_for?(subject_sha)).to eq(false)
       end
