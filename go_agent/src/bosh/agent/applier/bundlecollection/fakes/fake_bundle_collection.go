@@ -2,6 +2,7 @@ package fakes
 
 import (
 	bc "bosh/agent/applier/bundlecollection"
+	boshsys "bosh/system"
 	"errors"
 )
 
@@ -9,6 +10,7 @@ type FakeBundleCollection struct {
 	installedBundles []bc.Bundle
 	enabledBundles   []bc.Bundle
 
+	InstallFs    boshsys.FileSystem
 	InstallPath  string
 	InstallError error
 
@@ -22,17 +24,17 @@ func NewFakeBundleCollection() *FakeBundleCollection {
 	}
 }
 
-func (s *FakeBundleCollection) Install(bundle bc.Bundle) (string, error) {
+func (s *FakeBundleCollection) Install(bundle bc.Bundle) (boshsys.FileSystem, string, error) {
 	err := s.checkBundle(bundle)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	if s.InstallError != nil {
-		return "", s.InstallError
+		return nil, "", s.InstallError
 	}
 	s.installedBundles = append(s.installedBundles, bundle)
-	return s.InstallPath, nil
+	return s.InstallFs, s.InstallPath, nil
 }
 
 func (s *FakeBundleCollection) IsInstalled(bundle bc.Bundle) bool {

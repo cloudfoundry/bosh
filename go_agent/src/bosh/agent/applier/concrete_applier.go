@@ -46,7 +46,7 @@ func (s *concreteApplier) Apply(applySpec as.ApplySpec) error {
 }
 
 func (s *concreteApplier) applyJob(job models.Job) error {
-	_, err := s.jobsBc.Install(job)
+	_, _, err := s.jobsBc.Install(job)
 	if err != nil {
 		return err
 	}

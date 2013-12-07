@@ -22,19 +22,19 @@ func NewFileBundleCollection(name, path string, fs boshsys.FileSystem) *FileBund
 }
 
 // Installed into {{ path }}/data/{{ name }}/{{ bundle.BundleName }}/{{ bundle.BundleVersion }}
-func (s *FileBundleCollection) Install(bundle Bundle) (string, error) {
+func (s *FileBundleCollection) Install(bundle Bundle) (boshsys.FileSystem, string, error) {
 	err := s.checkBundle(bundle)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	path := s.buildInstallPath(bundle)
 	err = s.fs.MkdirAll(path, os.FileMode(0755))
 	if err != nil {
-		return "", bosherr.WrapError(err, "failed to create install dir")
+		return nil, "", bosherr.WrapError(err, "failed to create install dir")
 	}
 
-	return path, nil
+	return s.fs, path, nil
 }
 
 // Symlinked from {{ path }}/{{ name }}/{{ bundle.BundleName }} to installed path

@@ -26,7 +26,7 @@ func NewConcretePackageApplier(
 }
 
 func (s *concretePackageApplier) Apply(pkg models.Package) error {
-	packageDir, err := s.packagesBc.Install(pkg)
+	_, packageDir, err := s.packagesBc.Install(pkg)
 	if err != nil {
 		return err
 	}
