@@ -1,16 +1,16 @@
 PATH
   remote: agent_client
   specs:
-    agent_client (1.5.0.pre.1492)
+    agent_client (1.5.0.pre.1504)
       httpclient (= 2.2.4)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: blobstore_client
   specs:
-    blobstore_client (1.5.0.pre.1492)
+    blobstore_client (1.5.0.pre.1504)
       aws-sdk (= 1.8.5)
-      bosh_common (~> 1.5.0.pre.1492)
+      bosh_common (~> 1.5.0.pre.1504)
       fog (~> 1.14.0)
       httpclient (= 2.2.4)
       multi_json (~> 1.1)
@@ -19,7 +19,7 @@ PATH
 PATH
   remote: bosh-core
   specs:
-    bosh-core (1.5.0.pre.1492)
+    bosh-core (1.5.0.pre.1504)
       gibberish (~> 1.2.0)
       yajl-ruby (~> 1.1.0)
 
@@ -38,16 +38,16 @@ PATH
 PATH
   remote: bosh-director
   specs:
-    bosh-director (1.5.0.pre.1492)
+    bosh-director (1.5.0.pre.1504)
       bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 1.5.0.pre.1492)
-      bosh-core (~> 1.5.0.pre.1492)
-      bosh_aws_cpi (~> 1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
-      bosh_cpi (~> 1.5.0.pre.1492)
-      bosh_openstack_cpi (~> 1.5.0.pre.1492)
+      blobstore_client (~> 1.5.0.pre.1504)
+      bosh-core (~> 1.5.0.pre.1504)
+      bosh_aws_cpi (~> 1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
+      bosh_cpi (~> 1.5.0.pre.1504)
+      bosh_openstack_cpi (~> 1.5.0.pre.1504)
       bosh_vcloud_cpi (~> 0.4.9)
-      bosh_vsphere_cpi (~> 1.5.0.pre.1492)
+      bosh_vsphere_cpi (~> 1.5.0.pre.1504)
       eventmachine (~> 0.12.9)
       fog (~> 1.14.0)
       httpclient (= 2.2.4)
@@ -67,7 +67,7 @@ PATH
 PATH
   remote: bosh-monitor
   specs:
-    bosh-monitor (1.5.0.pre.1492)
+    bosh-monitor (1.5.0.pre.1504)
       aws-sdk (= 1.8.5)
       dogapi (~> 1.6.0)
       em-http-request (~> 0.3.0)
@@ -82,7 +82,7 @@ PATH
 PATH
   remote: bosh-registry
   specs:
-    bosh-registry (1.5.0.pre.1492)
+    bosh-registry (1.5.0.pre.1504)
       aws-sdk (= 1.8.5)
       fog (~> 1.14.0)
       sequel (~> 3.43.0)
@@ -93,26 +93,26 @@ PATH
 PATH
   remote: bosh-release
   specs:
-    bosh-release (1.5.0.pre.1492)
-      agent_client (~> 1.5.0.pre.1492)
-      blobstore_client (~> 1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
+    bosh-release (1.5.0.pre.1504)
+      agent_client (~> 1.5.0.pre.1504)
+      blobstore_client (~> 1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
       trollop (~> 1.16)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh-stemcell
   specs:
-    bosh-stemcell (1.5.0.pre.1492)
-      bosh_aws_cpi (~> 1.5.0.pre.1492)
+    bosh-stemcell (1.5.0.pre.1504)
+      bosh_aws_cpi (~> 1.5.0.pre.1504)
 
 PATH
   remote: bosh_agent
   specs:
-    bosh_agent (1.5.0.pre.1492)
-      blobstore_client (~> 1.5.0.pre.1492)
-      bosh-core (~> 1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
+    bosh_agent (1.5.0.pre.1504)
+      blobstore_client (~> 1.5.0.pre.1504)
+      bosh-core (~> 1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
       crack (~> 0.3.2)
       httpclient (= 2.2.4)
       nats (~> 0.4.28)
@@ -126,20 +126,20 @@ PATH
 PATH
   remote: bosh_aws_cpi
   specs:
-    bosh_aws_cpi (1.5.0.pre.1492)
+    bosh_aws_cpi (1.5.0.pre.1504)
       aws-sdk (= 1.8.5)
-      bosh-registry (~> 1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
-      bosh_cpi (~> 1.5.0.pre.1492)
+      bosh-registry (~> 1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
+      bosh_cpi (~> 1.5.0.pre.1504)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
 
 PATH
   remote: bosh_cli
   specs:
-    bosh_cli (1.5.0.pre.1492)
-      blobstore_client (~> 1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
+    bosh_cli (1.5.0.pre.1504)
+      blobstore_client (~> 1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
       json_pure (~> 1.7)
@@ -154,45 +154,45 @@ PATH
 PATH
   remote: bosh_cli_plugin_aws
   specs:
-    bosh_cli_plugin_aws (1.5.0.pre.1492)
-      bosh-stemcell (~> 1.5.0.pre.1492)
-      bosh_aws_cpi (~> 1.5.0.pre.1492)
-      bosh_cli (~> 1.5.0.pre.1492)
-      bosh_cli_plugin_micro (~> 1.5.0.pre.1492)
+    bosh_cli_plugin_aws (1.5.0.pre.1504)
+      bosh-stemcell (~> 1.5.0.pre.1504)
+      bosh_aws_cpi (~> 1.5.0.pre.1504)
+      bosh_cli (~> 1.5.0.pre.1504)
+      bosh_cli_plugin_micro (~> 1.5.0.pre.1504)
 
 PATH
   remote: bosh_cli_plugin_micro
   specs:
-    bosh_cli_plugin_micro (1.5.0.pre.1492)
-      agent_client (~> 1.5.0.pre.1492)
-      bosh-registry (~> 1.5.0.pre.1492)
-      bosh-stemcell (~> 1.5.0.pre.1492)
-      bosh_aws_cpi (~> 1.5.0.pre.1492)
-      bosh_cli (~> 1.5.0.pre.1492)
-      bosh_cpi (~> 1.5.0.pre.1492)
-      bosh_openstack_cpi (~> 1.5.0.pre.1492)
+    bosh_cli_plugin_micro (1.5.0.pre.1504)
+      agent_client (~> 1.5.0.pre.1504)
+      bosh-registry (~> 1.5.0.pre.1504)
+      bosh-stemcell (~> 1.5.0.pre.1504)
+      bosh_aws_cpi (~> 1.5.0.pre.1504)
+      bosh_cli (~> 1.5.0.pre.1504)
+      bosh_cpi (~> 1.5.0.pre.1504)
+      bosh_openstack_cpi (~> 1.5.0.pre.1504)
       bosh_vcloud_cpi (~> 0.4.9)
-      bosh_vsphere_cpi (~> 1.5.0.pre.1492)
+      bosh_vsphere_cpi (~> 1.5.0.pre.1504)
       sqlite3 (~> 1.3.7)
 
 PATH
   remote: bosh_common
   specs:
-    bosh_common (1.5.0.pre.1492)
+    bosh_common (1.5.0.pre.1504)
 
 PATH
   remote: bosh_cpi
   specs:
-    bosh_cpi (1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
+    bosh_cpi (1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
 
 PATH
   remote: bosh_openstack_cpi
   specs:
-    bosh_openstack_cpi (1.5.0.pre.1492)
-      bosh-registry (~> 1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
-      bosh_cpi (~> 1.5.0.pre.1492)
+    bosh_openstack_cpi (1.5.0.pre.1504)
+      bosh-registry (~> 1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
+      bosh_cpi (~> 1.5.0.pre.1504)
       fog (~> 1.14.0)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
@@ -200,16 +200,16 @@ PATH
 PATH
   remote: bosh_vsphere_cpi
   specs:
-    bosh_vsphere_cpi (1.5.0.pre.1492)
-      bosh_common (~> 1.5.0.pre.1492)
-      bosh_cpi (~> 1.5.0.pre.1492)
+    bosh_vsphere_cpi (1.5.0.pre.1504)
+      bosh_common (~> 1.5.0.pre.1504)
+      bosh_cpi (~> 1.5.0.pre.1504)
       membrane (~> 0.0.2)
       sequel (~> 3.43.0)
 
 PATH
   remote: simple_blobstore_server
   specs:
-    simple_blobstore_server (1.5.0.pre.1492)
+    simple_blobstore_server (1.5.0.pre.1504)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
 
