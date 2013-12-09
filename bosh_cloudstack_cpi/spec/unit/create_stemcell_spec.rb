@@ -22,7 +22,7 @@ describe Bosh::CloudStackCloud::Cloud do
       end
 
       let(:volume) { double("volume", :id => "vol-xxxxxxxx", :reload => true, :server_id => nil) }
-      let(:stemcell) { double("stemcell", :id => "ami-xxxxxxxx") }
+      let(:stemcell) { double("stemcell", :id => "ami-xxxxxxxx", :zone_name => 'foobar-1a', :zone_id => 'foobar-1a') }
       let(:server) { double("server", :id => "s-xxxxxxxx") }
 
       it "should create a stemcell" do
@@ -39,6 +39,8 @@ describe Bosh::CloudStackCloud::Cloud do
         cloud.should_receive(:find_volume_device).with("/dev/sdh").and_return("/dev/vdh")
 
         creator.should_receive(:create).with(volume, "/dev/vdh", "/tmp/foo").and_return(stemcell)
+        stemcell.should_receive(:copy)
+        cloud.stub(:wait_job)
 
         cloud.should_receive(:detach_volume).with(server, volume)
         cloud.should_receive(:delete_disk).with("vol-xxxxxxxx")

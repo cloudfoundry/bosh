@@ -101,8 +101,15 @@ module Bosh::CloudStackCloud
           device_name = find_volume_device(device_name)
 
           logger.info("Creating stemcell with: '#{volume.id}' and '#{stemcell_properties.inspect}'")
-          creator.create(volume, device_name, image_path).id
+          image = creator.create(volume, device_name, image_path)
 
+          @compute.zones.reject { |zone| zone.id == @default_zone.id }.each do |zone|
+            @logger.debug("Copying Stemcell `#{image.id}' from zone `#{image.zone_name}' (#{image.zone_id}) to zone `#{zone.name}' (#{zone.id})")
+            copy_job = image.copy(zone)
+            wait_job(copy_job)
+          end
+
+          image.id
         rescue => e
           @logger.error(e)
           raise e
@@ -128,12 +135,10 @@ module Bosh::CloudStackCloud
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
         @logger.info("Deleting stemcell `#{stemcell_id}'...")
-        image = with_compute { @compute.images.get(stemcell_id) }
-        if image
+        images = with_compute { @compute.images.select { |image| image.id == stemcell_id } }
+        images.each do |image|
           with_compute { image.destroy }
           @logger.info("Stemcell `#{stemcell_id}' is now deleted")
-        else
-          @logger.info("Stemcell `#{stemcell_id}' not found. Skipping.")
         end
       end
     end

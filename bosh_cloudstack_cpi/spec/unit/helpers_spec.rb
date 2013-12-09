@@ -7,6 +7,7 @@ describe Bosh::CloudStackCloud::Helpers do
   before(:each) do
     @cloud = mock_cloud
     Bosh::Clouds::Config.stub(:task_checkpoint)
+    stub_const('Fog::Compute::Cloudstack::Job', double("job_lass"))
   end
 
   describe "wait_resource" do
@@ -15,6 +16,7 @@ describe Bosh::CloudStackCloud::Helpers do
       resource.stub(:id).and_return("foobar")
       resource.stub(:reload).and_return(@cloud)
       resource.stub(:status).and_return(:start)
+      resource.stub(:instance_of?).and_return(false)
       @cloud.stub(:sleep)
 
       expect {
@@ -24,6 +26,7 @@ describe Bosh::CloudStackCloud::Helpers do
 
     it "should not time out" do
       resource = double("resource")
+      resource.stub(:instance_of?).and_return(false)
       resource.stub(:id).and_return("foobar")
       resource.stub(:reload).and_return(@cloud)
       resource.stub(:status).and_return(:start, :stop)
@@ -34,6 +37,7 @@ describe Bosh::CloudStackCloud::Helpers do
 
     it "should accept an Array of target states" do
       resource = double("resource")
+      resource.stub(:instance_of?).and_return(false)
       resource.stub(:id).and_return("foobar")
       resource.stub(:reload).and_return(@cloud)
       resource.stub(:status).and_return(:start, :stop)

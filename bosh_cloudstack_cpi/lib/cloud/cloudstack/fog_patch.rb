@@ -12,6 +12,7 @@ module Fog
       request :list_vlan_ip_ranges
       request :enable_static_nat
       request :disable_static_nat
+      request :copy_template
 
       model :nat
       collection :nats
@@ -62,6 +63,17 @@ module Fog
           end
         rescue Fog::Compute::Cloudstack::BadRequest
           nil
+        end
+      end
+
+
+      require ('fog/cloudstack/models/compute/image')
+      class Image < Fog::Model
+        def copy(to_zone)
+          requires :id
+          requires :zone_id
+          data = service.copy_template('id' => id, 'sourcezoneid' => zone_id, 'destzoneid' => to_zone.id)
+          service.jobs.new(data["copytemplateresponse"])
         end
       end
 
