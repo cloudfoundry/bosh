@@ -220,9 +220,41 @@ describe Bosh::AwsCloud::ResourceWait do
   describe '.sleep_callback' do
     it 'returns seconds to sleep interval capped at 32 seconds' do
       scb = described_class.sleep_callback('fake-time-test', 10)
-      expected_times = [1,2,4,8,16,32,32,32,32,32,32]
+      expected_times = [1, 2, 4, 8, 16, 32, 32, 32, 32, 32, 32]
       returned_times = (0..10).map { |try_number| scb.call(try_number, nil) }
       expect(returned_times).to eq(expected_times)
+    end
+  end
+
+  describe '#for_resource' do
+    let(:args) do
+      {
+        resource: double('fake-resource', status: nil),
+        description: 'description',
+        target_state: 'fake-target-state',
+      }
+    end
+
+    context 'when tries option is passed' do
+      before { args[:tries] = 5 }
+
+      it 'attempts passed number of times' do
+        actual_attempts = 0
+        expect {
+          subject.for_resource(args) { actual_attempts += 1; false }
+        }.to raise_error
+        expect(actual_attempts).to eq(5)
+      end
+    end
+
+    context 'when tries option is not passed' do
+      it 'attempts DEFAULT_TRIES times to wait for ~25 minutes' do
+        actual_attempts = 0
+        expect {
+          subject.for_resource(args) { actual_attempts += 1; false }
+        }.to raise_error
+        expect(actual_attempts).to eq(54)
+      end
     end
   end
 end

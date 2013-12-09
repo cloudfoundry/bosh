@@ -6,7 +6,7 @@ module Bosh::AwsCloud
 
     # a sane amount of retries on AWS (~25 minutes),
     # as things can take anywhere between a minute and forever
-    DEFAULT_TRIES = 12
+    DEFAULT_TRIES = 54
     MAX_SLEEP_EXPONENT = 5
 
     def self.for_instance(args)
@@ -151,7 +151,7 @@ module Bosh::AwsCloud
       @started_at = Time.now
     end
 
-    def for_resource(args)
+    def for_resource(args, &blk)
       resource = args.fetch(:resource)
       state_method = args.fetch(:state_method, :status)
       errors = args.fetch(:errors, [])
@@ -166,22 +166,22 @@ module Bosh::AwsCloud
       end
 
       state = nil
-      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do
+      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
         Bosh::AwsCloud::ResourceWait.task_checkpoint
 
         state = resource.method(state_method).call
-
         if state == :error || state == :failed
           raise Bosh::Clouds::CloudError, "#{desc} state is #{state}, expected #{target_state}, took #{time_passed}s"
         end
 
         # the yielded block should return true if we have reached the target state
-        yield state
+        blk.call(state)
       end
 
       Bosh::AwsCloud::ResourceWait.logger.info("#{desc} is now #{state}, took #{time_passed}s")
     rescue Bosh::Common::RetryCountExceeded => e
-      Bosh::AwsCloud::ResourceWait.logger.error("Timed out waiting for #{desc} state is #{state}, expected to be #{target_state}, took #{time_passed}s")
+      Bosh::AwsCloud::ResourceWait.logger.error(
+        "Timed out waiting for #{desc} state is #{state}, expected to be #{target_state}, took #{time_passed}s")
       raise e
     end
 
