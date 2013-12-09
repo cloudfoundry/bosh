@@ -1,13 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::AwsCloud::ResourceWait do
+  before { Kernel.stub(:sleep) }
+  before { described_class.stub(:task_checkpoint) }
 
-  before do
-    Kernel.stub(:sleep)
-    described_class.stub(:task_checkpoint)
-  end
-
-  describe '#for_instance' do
+  describe '.for_instance' do
     let(:instance) { double(AWS::EC2::Instance, id: 'i-1234') }
 
     context 'deletion' do
@@ -21,7 +18,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
 
     context 'creation' do
-      context "when EC2 fails to find an instance" do
+      context 'when EC2 fails to find an instance' do
         it 'should wait until the state is running' do
           instance.should_receive(:status).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
           instance.should_receive(:status).and_return(:pending)
@@ -31,7 +28,7 @@ describe Bosh::AwsCloud::ResourceWait do
         end
       end
 
-      context "when resource is not found" do
+      context 'when resource is not found' do
         it 'should wait until the state is running' do
           instance.should_receive(:status).and_raise(AWS::Core::Resource::NotFound)
           instance.should_receive(:status).and_return(:pending)
@@ -53,7 +50,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_attachment' do
+  describe '.for_attachment' do
     let(:volume) { double(AWS::EC2::Volume, id: 'vol-1234') }
     let(:instance) { double(AWS::EC2::Instance, id: 'i-5678') }
     let(:attachment) { double(AWS::EC2::Attachment, volume: volume, instance: instance, device: '/dev/sda1') }
@@ -91,7 +88,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_volume' do
+  describe '.for_volume' do
     let(:volume) { double(AWS::EC2::Volume, id: 'v-123') }
 
     context 'creation' do
@@ -101,7 +98,6 @@ describe Bosh::AwsCloud::ResourceWait do
 
         described_class.for_volume(volume: volume, state: :available)
       end
-      #:error
 
       it 'should raise an error on error state' do
         volume.should_receive(:status).and_return(:creating)
@@ -130,8 +126,9 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_snapshot' do
+  describe '.for_snapshot' do
     let(:snapshot) { double(AWS::EC2::Snapshot, id: 'snap-123') }
+
     context 'creation' do
       it 'should wait until the state is completed' do
         snapshot.should_receive(:status).and_return(:pending)
@@ -151,7 +148,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_image' do
+  describe '.for_image' do
     let(:image) { double(AWS::EC2::Image, id: 'ami-123') }
 
     context 'creation' do
@@ -191,7 +188,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_subnet' do
+  describe '.for_subnet' do
     let(:subnet) { double(AWS::EC2::Subnet, id: 'subnet-123') }
 
     context 'creation' do
@@ -204,14 +201,14 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe "catching errors" do
-    it "should raise an error if the retry count is exceeded" do
-      resource = double("resource", status: :bar)
+  describe 'catching errors' do
+    it 'raises an error if the retry count is exceeded' do
+      resource = double('resource', status: :bar)
       resource_arguments = {
-          resource: resource,
-          tries: 1,
-          description: "description",
-          target_state: :foo
+        resource: resource,
+        tries: 1,
+        description: 'description',
+        target_state: :foo
       }
 
       expect {
