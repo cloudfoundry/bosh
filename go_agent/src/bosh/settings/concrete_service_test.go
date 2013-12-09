@@ -1,9 +1,40 @@
 package settings
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestRefresh(t *testing.T) {
+	var fetcher = func() (settings Settings, err error) {
+		settings = Settings{AgentId: "some-new-agent-id"}
+		return
+	}
+
+	settings := Settings{AgentId: "some-agent-id"}
+	service := NewService(settings, fetcher)
+	err := service.Refresh()
+
+	assert.NoError(t, err)
+	assert.Equal(t, service.GetAgentId(), "some-new-agent-id")
+}
+
+func TestRefreshOnError(t *testing.T) {
+	var fetcher = func() (settings Settings, err error) {
+		settings = Settings{AgentId: "some-new-agent-id"}
+		err = errors.New("Error fetching settings!")
+		return
+	}
+
+	settings := Settings{AgentId: "some-old-agent-id"}
+	service := NewService(settings, fetcher)
+	err := service.Refresh()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Error fetching settings!")
+	assert.Equal(t, service.GetAgentId(), "some-old-agent-id")
+}
 
 func TestGetAgentId(t *testing.T) {
 	settings := Settings{AgentId: "some-agent-id"}

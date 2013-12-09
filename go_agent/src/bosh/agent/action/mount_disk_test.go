@@ -18,6 +18,8 @@ func TestMountDisk(t *testing.T) {
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, result, "{}")
 
+	assert.True(t, settings.SettingsWereRefreshed)
+
 	assert.Equal(t, platform.MountPersistentDiskDevicePath, "/dev/sdf")
 	assert.Equal(t, platform.MountPersistentDiskMountPoint, "/var/vcap/store")
 }

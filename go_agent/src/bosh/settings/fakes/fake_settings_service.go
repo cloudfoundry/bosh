@@ -6,12 +6,19 @@ import (
 )
 
 type FakeSettingsService struct {
+	SettingsWereRefreshed bool
+
 	Blobstore boshsettings.Blobstore
 	AgentId   string
 	Vm        boshsettings.Vm
 	MbusUrl   string
 	Disks     boshsettings.Disks
 	DefaultIp string
+}
+
+func (service *FakeSettingsService) Refresh() (err error) {
+	service.SettingsWereRefreshed = true
+	return
 }
 
 func (service *FakeSettingsService) GetBlobstore() boshsettings.Blobstore {

@@ -1,6 +1,9 @@
 package settings
 
-import "path/filepath"
+import (
+	bosherr "bosh/errors"
+	"path/filepath"
+)
 
 type SettingsFetcher func() (settings Settings, err error)
 
@@ -14,6 +17,17 @@ func NewService(initialSettings Settings, settingsFetcher SettingsFetcher) (serv
 		settings:        initialSettings,
 		settingsFetcher: settingsFetcher,
 	}
+}
+
+func (service *concreteService) Refresh() (err error) {
+	newSettings, err := service.settingsFetcher()
+	if err != nil {
+		err = bosherr.WrapError(err, "Invoking settings fetcher")
+		return
+	}
+
+	service.settings = newSettings
+	return
 }
 
 func (service *concreteService) GetBlobstore() Blobstore {
