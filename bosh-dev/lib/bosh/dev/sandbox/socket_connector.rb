@@ -10,7 +10,7 @@ module Bosh::Dev::Sandbox
       @logger = logger
     end
 
-    def try_to_connect(remaining_attempts = 20)
+    def try_to_connect(remaining_attempts = 40)
       remaining_attempts -= 1
       Timeout.timeout(1) { TCPSocket.new(@host, @port).close }
     rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT
