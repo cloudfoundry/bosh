@@ -235,6 +235,19 @@ describe Bosh::AwsCloud::ResourceWait do
       }
     end
 
+    it 'uses Bosh::Retryable with sleep_callback sleep setting' do
+      sleep_cb = double('fake-sleep-callback')
+      described_class.stub(:sleep_callback).and_return(sleep_cb)
+
+      retryable = double('Bosh::Retryable', retryer: nil)
+      Bosh::Retryable
+        .should_receive(:new)
+        .with(hash_including(sleep: sleep_cb))
+        .and_return(retryable)
+
+      subject.for_resource(args)
+    end
+
     context 'when tries option is passed' do
       before { args[:tries] = 5 }
 

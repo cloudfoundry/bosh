@@ -166,7 +166,7 @@ module Bosh::AwsCloud
       end
 
       state = nil
-      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
+      Bosh::Retryable.new(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb).retryer do
         Bosh::AwsCloud::ResourceWait.task_checkpoint
 
         state = resource.method(state_method).call
