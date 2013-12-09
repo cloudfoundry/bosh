@@ -2,14 +2,17 @@ package fakes
 
 import "os"
 
+type DecompressFileToDirCallBackFunc func()
+
 type FakeCompressor struct {
 	CompressFilesInDirTarball *os.File
 	CompressFilesInDirDir     string
 	CompressFilesInDirFilters []string
 
-	DecompressFileToDirTarball *os.File
-	DecompressFileToDirDir     string
-	DecompressFileToDirError   error
+	DecompressFileToDirTarball  *os.File
+	DecompressFileToDirDir      string
+	DecompressFileToDirError    error
+	DecompressFileToDirCallBack DecompressFileToDirCallBackFunc
 }
 
 func NewFakeCompressor() *FakeCompressor {
@@ -27,6 +30,10 @@ func (fc *FakeCompressor) CompressFilesInDir(dir string, filters []string) (tarb
 func (fc *FakeCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
 	fc.DecompressFileToDirTarball = tarball
 	fc.DecompressFileToDirDir = dir
+
+	if fc.DecompressFileToDirCallBack != nil {
+		fc.DecompressFileToDirCallBack()
+	}
 
 	err = fc.DecompressFileToDirError
 	return

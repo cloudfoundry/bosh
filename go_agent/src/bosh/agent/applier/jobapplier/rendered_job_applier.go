@@ -5,6 +5,7 @@ import (
 	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	boshdisk "bosh/platform/disk"
+	"path/filepath"
 )
 
 type renderedJobApplier struct {
@@ -48,7 +49,7 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 		return err
 	}
 
-	err = fs.CopyDirEntries(tmpDir, jobDir)
+	err = fs.CopyDirEntries(filepath.Join(tmpDir, job.Source.PathInArchive), jobDir)
 	if err != nil {
 		return err
 	}

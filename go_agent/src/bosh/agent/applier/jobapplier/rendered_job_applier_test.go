@@ -9,38 +9,39 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestApplyInstallsAndEnablesJob(t *testing.T) {
 	jobsBc, _, _, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
 	jobsBc.InstallFs = fs
 	jobsBc.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
-	err := applier.Apply(pkg)
+	err := applier.Apply(job)
 	assert.NoError(t, err)
-	assert.True(t, jobsBc.IsInstalled(pkg))
-	assert.True(t, jobsBc.IsEnabled(pkg))
+	assert.True(t, jobsBc.IsInstalled(job))
+	assert.True(t, jobsBc.IsEnabled(job))
 }
 
 func TestApplyErrsWhenJobInstallFails(t *testing.T) {
 	jobsBc, _, _, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	jobsBc.InstallError = errors.New("fake-install-error")
 
-	err := applier.Apply(pkg)
+	err := applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-install-error")
 }
 
 func TestApplyErrsWhenJobEnableFails(t *testing.T) {
 	jobsBc, _, _, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
 	jobsBc.InstallFs = fs
@@ -49,15 +50,15 @@ func TestApplyErrsWhenJobEnableFails(t *testing.T) {
 
 	jobsBc.EnableError = errors.New("fake-enable-error")
 
-	err := applier.Apply(pkg)
+	err := applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-enable-error")
 }
 
 func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 	jobsBc, blobstore, _, applier := buildJobApplier()
-	pkg := buildJob()
-	pkg.Source.BlobstoreId = "fake-blobstore-id"
+	job := buildJob()
+	job.Source.BlobstoreId = "fake-blobstore-id"
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -70,7 +71,7 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	err = applier.Apply(pkg)
+	err = applier.Apply(job)
 	assert.NoError(t, err)
 	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobId)
 	assert.Equal(t, file, blobstore.CleanUpFile)
@@ -78,18 +79,18 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 
 func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
 	_, blobstore, _, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	blobstore.GetError = errors.New("fake-get-error")
 
-	err := applier.Apply(pkg)
+	err := applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-get-error")
 }
 
 func TestApplyDecompressesJobToTmpPath(t *testing.T) {
 	jobsBc, blobstore, compressor, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -105,7 +106,7 @@ func TestApplyDecompressesJobToTmpPath(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	err = applier.Apply(pkg)
+	err = applier.Apply(job)
 	assert.NoError(t, err)
 	assert.Equal(t, file, compressor.DecompressFileToDirTarball)
 	assert.Equal(t, "fake-tmp-dir", compressor.DecompressFileToDirDir)
@@ -113,7 +114,7 @@ func TestApplyDecompressesJobToTmpPath(t *testing.T) {
 
 func TestApplyErrsWhenTempDirErrs(t *testing.T) {
 	jobsBc, blobstore, _, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -125,28 +126,29 @@ func TestApplyErrsWhenTempDirErrs(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	err = applier.Apply(pkg)
+	err = applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-filesystem-tempdir-error")
 }
 
 func TestApplyErrsWhenJobDecompressErrs(t *testing.T) {
 	jobsBc, _, compressor, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
 	fs := fakesys.NewFakeFileSystem()
 	jobsBc.InstallFs = fs
 
-	err := applier.Apply(pkg)
+	err := applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-decompress-error")
 }
 
 func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
-	jobsBc, blobstore, _, applier := buildJobApplier()
-	pkg := buildJob()
+	jobsBc, blobstore, compressor, applier := buildJobApplier()
+	job := buildJob()
+	job.Source.PathInArchive = "fake-path-in-archive"
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -162,15 +164,19 @@ func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	err = applier.Apply(pkg)
+	compressor.DecompressFileToDirCallBack = func() {
+		fs.MkdirAll(filepath.Join("fake-tmp-dir", "fake-path-in-archive"), os.FileMode(0))
+	}
+
+	err = applier.Apply(job)
 	assert.NoError(t, err)
-	assert.Equal(t, "fake-tmp-dir", fs.CopyDirEntriesSrcPath)
+	assert.Equal(t, "fake-tmp-dir/fake-path-in-archive", fs.CopyDirEntriesSrcPath)
 	assert.Equal(t, "fake-install-dir", fs.CopyDirEntriesDstPath)
 }
 
 func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 	jobsBc, blobstore, _, applier := buildJobApplier()
-	pkg := buildJob()
+	job := buildJob()
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -184,7 +190,7 @@ func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	err = applier.Apply(pkg)
+	err = applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-copy-dir-entries-error")
 }
