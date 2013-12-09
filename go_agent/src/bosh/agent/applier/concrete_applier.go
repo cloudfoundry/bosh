@@ -2,26 +2,25 @@ package applier
 
 import (
 	as "bosh/agent/applier/applyspec"
-	bc "bosh/agent/applier/bundlecollection"
-	models "bosh/agent/applier/models"
+	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 )
 
 type concreteApplier struct {
-	jobsBc            bc.BundleCollection
+	jobApplier        ja.JobApplier
 	packageApplier    pa.PackageApplier
 	logrotateDelegate LogrotateDelegate
 }
 
 func NewConcreteApplier(
-	jobsBc bc.BundleCollection,
+	jobApplier ja.JobApplier,
 	packageApplier pa.PackageApplier,
 	logrotateDelegate LogrotateDelegate,
 ) *concreteApplier {
 	return &concreteApplier{
-		jobsBc:            jobsBc,
+		jobApplier:        jobApplier,
 		packageApplier:    packageApplier,
 		logrotateDelegate: logrotateDelegate,
 	}
@@ -29,7 +28,7 @@ func NewConcreteApplier(
 
 func (s *concreteApplier) Apply(applySpec as.ApplySpec) error {
 	for _, job := range applySpec.Jobs() {
-		err := s.applyJob(job)
+		err := s.jobApplier.Apply(job)
 		if err != nil {
 			return err
 		}
@@ -43,20 +42,6 @@ func (s *concreteApplier) Apply(applySpec as.ApplySpec) error {
 	}
 
 	return s.setUpLogrotate(applySpec)
-}
-
-func (s *concreteApplier) applyJob(job models.Job) error {
-	_, _, err := s.jobsBc.Install(job)
-	if err != nil {
-		return err
-	}
-
-	err = s.jobsBc.Enable(job)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) error {

@@ -2,6 +2,7 @@ package applier
 
 import (
 	bc "bosh/agent/applier/bundlecollection"
+	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	fakeblob "bosh/blobstore/fakes"
 	fakeplatform "bosh/platform/fakes"
@@ -19,8 +20,14 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 		platform.GetCompressor(),
 	)
 
-	expectedApplier := NewConcreteApplier(
+	expectedJobApplier := ja.NewRenderedJobApplier(
 		bc.NewFileBundleCollection("jobs", "/var/vcap", platform.GetFs()),
+		blobstore,
+		platform.GetCompressor(),
+	)
+
+	expectedApplier := NewConcreteApplier(
+		expectedJobApplier,
 		expectedPackageApplier,
 		platform,
 	)

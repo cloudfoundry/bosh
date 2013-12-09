@@ -2,7 +2,7 @@ package applier
 
 import (
 	fakeas "bosh/agent/applier/applyspec/fakes"
-	fakebc "bosh/agent/applier/bundlecollection/fakes"
+	fakeja "bosh/agent/applier/jobapplier/fakes"
 	models "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
 	fakeplatform "bosh/platform/fakes"
@@ -12,36 +12,24 @@ import (
 	"testing"
 )
 
-func TestApplyInstallsAndEnablesJobs(t *testing.T) {
-	jobsBc, _, _, applier := buildApplier()
+func TestApplyAppliesJobs(t *testing.T) {
+	jobApplier, _, _, applier := buildApplier()
 	job := buildJob()
 
 	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 	assert.NoError(t, err)
-	assert.True(t, jobsBc.IsInstalled(job))
-	assert.True(t, jobsBc.IsEnabled(job))
+	assert.Equal(t, jobApplier.AppliedJobs, []models.Job{job})
 }
 
-func TestApplyErrsWhenJobInstallFails(t *testing.T) {
-	jobsBc, _, _, applier := buildApplier()
+func TestApplyErrsWhenApplyingJobsErrs(t *testing.T) {
+	jobApplier, _, _, applier := buildApplier()
 	job := buildJob()
 
-	jobsBc.InstallError = errors.New("fake-install-error")
+	jobApplier.ApplyError = errors.New("fake-apply-job-error")
 
 	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-install-error")
-}
-
-func TestApplyErrsWhenJobEnableFails(t *testing.T) {
-	jobsBc, _, _, applier := buildApplier()
-	job := buildJob()
-
-	jobsBc.EnableError = errors.New("fake-enable-error")
-
-	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-enable-error")
+	assert.Contains(t, err.Error(), "fake-apply-job-error")
 }
 
 func TestApplyAppliesPackages(t *testing.T) {
@@ -59,11 +47,11 @@ func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
 	_, packageApplier, _, applier := buildApplier()
 	pkg := buildPackage()
 
-	packageApplier.ApplyError = errors.New("fake-apply-error")
+	packageApplier.ApplyError = errors.New("fake-apply-package-error")
 
 	err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake-apply-error")
+	assert.Contains(t, err.Error(), "fake-apply-package-error")
 }
 
 func TestApplySetsUpLogrotation(t *testing.T) {
@@ -89,16 +77,16 @@ func TestApplyErrsIfSetupLogrotateFails(t *testing.T) {
 }
 
 func buildApplier() (
-	*fakebc.FakeBundleCollection,
+	*fakeja.FakeJobApplier,
 	*fakepa.FakePackageApplier,
 	*fakeplatform.FakePlatform,
 	Applier,
 ) {
-	jobsBc := fakebc.NewFakeBundleCollection()
+	jobApplier := fakeja.NewFakeJobApplier()
 	packageApplier := fakepa.NewFakePackageApplier()
 	platform := fakeplatform.NewFakePlatform()
-	applier := NewConcreteApplier(jobsBc, packageApplier, platform)
-	return jobsBc, packageApplier, platform, applier
+	applier := NewConcreteApplier(jobApplier, packageApplier, platform)
+	return jobApplier, packageApplier, platform, applier
 }
 
 func buildJob() models.Job {

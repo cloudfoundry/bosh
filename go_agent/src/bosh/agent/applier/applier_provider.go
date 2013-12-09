@@ -2,6 +2,7 @@ package applier
 
 import (
 	bc "bosh/agent/applier/bundlecollection"
+	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	boshblob "bosh/blobstore"
 	boshplatform "bosh/platform"
@@ -23,6 +24,12 @@ func (p ApplierProvider) Get() (applier Applier) {
 	jobsBc := bc.NewFileBundleCollection(
 		"jobs", boshsettings.VCAP_BASE_DIR, p.platform.GetFs())
 
+	jobApplier := ja.NewRenderedJobApplier(
+		jobsBc,
+		p.blobstore,
+		p.platform.GetCompressor(),
+	)
+
 	packagesBc := bc.NewFileBundleCollection(
 		"packages", boshsettings.VCAP_BASE_DIR, p.platform.GetFs())
 
@@ -32,5 +39,5 @@ func (p ApplierProvider) Get() (applier Applier) {
 		p.platform.GetCompressor(),
 	)
 
-	return NewConcreteApplier(jobsBc, packageApplier, p.platform)
+	return NewConcreteApplier(jobApplier, packageApplier, p.platform)
 }
