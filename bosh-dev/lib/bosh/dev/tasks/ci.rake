@@ -34,6 +34,7 @@ namespace :ci do
     Bosh::Dev::BoshReleasePublisher.setup_for(build).publish
   end
 
+  desc 'Create light stemcell from existing stemcell'
   def build_light_stemcell(stemcell_filename)
     stemcell = Bosh::Stemcell::Archive.new(stemcell_filename)
     light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell)
