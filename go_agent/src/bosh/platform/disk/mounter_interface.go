@@ -7,4 +7,5 @@ type Mounter interface {
 	SwapOn(partitionPath string) (err error)
 	Unmount(partitionPath string) (didUnmount bool, err error)
 	IsMountPoint(path string) (result bool, err error)
+	IsMounted(devicePathOrMountPoint string) (result bool, err error)
 }

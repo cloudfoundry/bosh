@@ -49,6 +49,8 @@ type FakePlatform struct {
 	IsMountPointResult bool
 	IsMountPointPath   string
 
+	MountedDevicePaths []string
+
 	StartMonitStarted bool
 }
 
@@ -172,6 +174,15 @@ func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 func (p *FakePlatform) IsMountPoint(path string) (result bool, err error) {
 	p.IsMountPointPath = path
 	result = p.IsMountPointResult
+	return
+}
+
+func (p *FakePlatform) IsDevicePathMounted(path string) (result bool, err error) {
+	for _, mountedPath := range p.MountedDevicePaths {
+		if mountedPath == path {
+			return true, nil
+		}
+	}
 	return
 }
 

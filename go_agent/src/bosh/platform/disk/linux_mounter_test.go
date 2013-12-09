@@ -228,6 +228,24 @@ func TestIsMountPoint(t *testing.T) {
 	assert.False(t, isMountPoint)
 }
 
+func TestIsMounted(t *testing.T) {
+	runner, fs := getLinuxMounterDependencies()
+	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+
+	mounter := newLinuxMounter(runner, fs)
+	isMounted, err := mounter.IsMounted("/dev/xvdb2")
+	assert.NoError(t, err)
+	assert.True(t, isMounted)
+
+	isMounted, err = mounter.IsMounted("/var/vcap/data")
+	assert.NoError(t, err)
+	assert.True(t, isMounted)
+
+	isMounted, err = mounter.IsMounted("/var/foo")
+	assert.NoError(t, err)
+	assert.False(t, isMounted)
+}
+
 func getLinuxMounterDependencies() (runner *fakesys.FakeCmdRunner, fs *fakesys.FakeFileSystem) {
 	runner = &fakesys.FakeCmdRunner{}
 	fs = &fakesys.FakeFileSystem{}

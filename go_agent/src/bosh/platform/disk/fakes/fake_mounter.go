@@ -15,6 +15,9 @@ type FakeMounter struct {
 
 	UnmountPartitionPath string
 	UnmountDidUnmount    bool
+
+	IsMountedDevicePathOrMountPoint string
+	IsMountedResult                 bool
 }
 
 func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) (err error) {
@@ -48,5 +51,11 @@ func (m *FakeMounter) Unmount(partitionPath string) (didUnmount bool, err error)
 }
 
 func (m *FakeMounter) IsMountPoint(path string) (result bool, err error) {
+	return
+}
+
+func (m *FakeMounter) IsMounted(devicePathOrMountPoint string) (result bool, err error) {
+	m.IsMountedDevicePathOrMountPoint = devicePathOrMountPoint
+	result = m.IsMountedResult
 	return
 }

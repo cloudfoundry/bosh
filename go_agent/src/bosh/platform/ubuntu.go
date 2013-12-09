@@ -468,6 +468,16 @@ func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err 
 	return
 }
 
+func (p ubuntu) IsDevicePathMounted(path string) (result bool, err error) {
+	realPath, err := p.getRealDevicePath(path)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	return p.mounter.IsMounted(realPath + "1")
+}
+
 func (p ubuntu) StartMonit() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {

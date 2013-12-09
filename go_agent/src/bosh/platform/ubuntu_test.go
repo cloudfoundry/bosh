@@ -472,6 +472,21 @@ func TestUbuntuMigratePersistentDisk(t *testing.T) {
 	assert.Equal(t, fakeMounter.RemountToMountPoint, "/from/path")
 }
 
+func TestIsDevicePathMounted(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+
+	fakeFs.WriteToFile("/dev/xvda", "")
+	fakeMounter := fakeDiskManager.FakeMounter
+	fakeMounter.IsMountedResult = true
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	result, err := ubuntu.IsDevicePathMounted("/dev/sda")
+	assert.NoError(t, err)
+	assert.True(t, result)
+	assert.Equal(t, fakeMounter.IsMountedDevicePathOrMountPoint, "/dev/xvda1")
+}
+
 func TestStartMonit(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)

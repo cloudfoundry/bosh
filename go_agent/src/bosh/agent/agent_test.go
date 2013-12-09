@@ -60,6 +60,11 @@ func TestRunHandlesSshMessage(t *testing.T) {
 	assertRequestIsProcessedSynchronously(t, req)
 }
 
+func TestRunHandlesListDiskMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "list_disk", []byte("some payload"))
+	assertRequestIsProcessedSynchronously(t, req)
+}
+
 func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
 

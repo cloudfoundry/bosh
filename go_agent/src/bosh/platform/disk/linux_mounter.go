@@ -90,7 +90,7 @@ func (m linuxMounter) SwapOn(partitionPath string) (err error) {
 }
 
 func (m linuxMounter) Unmount(partitionOrMountPoint string) (didUnmount bool, err error) {
-	isMounted, err := m.isMounted(partitionOrMountPoint)
+	isMounted, err := m.IsMounted(partitionOrMountPoint)
 	if err != nil || !isMounted {
 		return
 	}
@@ -127,7 +127,7 @@ func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (devicePat
 	return
 }
 
-func (m linuxMounter) isMounted(partitionOrMountPoint string) (isMounted bool, err error) {
+func (m linuxMounter) IsMounted(partitionOrMountPoint string) (isMounted bool, err error) {
 	return m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
 		if mountedPartitionPath == partitionOrMountPoint || mountedMountPoint == partitionOrMountPoint {
 			return true, nil
