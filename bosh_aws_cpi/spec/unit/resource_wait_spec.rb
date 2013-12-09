@@ -219,4 +219,13 @@ describe Bosh::AwsCloud::ResourceWait do
       }.to raise_error(Bosh::Clouds::CloudError, /Timed out waiting/)
     end
   end
+
+  describe '.sleep_callback' do
+    it 'returns seconds to sleep interval capped at 32 seconds' do
+      scb = described_class.sleep_callback('fake-time-test', 10)
+      expected_times = [1,2,4,8,16,32,32,32,32,32,32]
+      returned_times = (0..10).map { |try_number| scb.call(try_number, nil) }
+      expect(returned_times).to eq(expected_times)
+    end
+  end
 end

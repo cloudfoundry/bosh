@@ -4,8 +4,10 @@ module Bosh::AwsCloud
   class ResourceWait
     include Helpers
 
-    DEFAULT_TRIES = 12 # a sane amount of retries on AWS (~25 minutes), as things can take anywhere between a minute and forevah
-    MAX_SLEEP_EXPONENT = 8
+    # a sane amount of retries on AWS (~25 minutes),
+    # as things can take anywhere between a minute and forever
+    DEFAULT_TRIES = 12
+    MAX_SLEEP_EXPONENT = 5
 
     def self.for_instance(args)
       raise ArgumentError, "args should be a Hash, but `#{args.class}' given" unless args.is_a?(Hash)
@@ -128,6 +130,15 @@ module Bosh::AwsCloud
       end
     end
 
+    def self.sleep_callback(description, tries)
+      lambda do |num_tries, error|
+        sleep_time = 2**[num_tries, MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 32
+        Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
+        Bosh::AwsCloud::ResourceWait.logger.debug("#{description}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
+        sleep_time
+      end
+    end
+
     def self.logger
       Bosh::Clouds::Config.logger
     end
@@ -176,17 +187,6 @@ module Bosh::AwsCloud
 
     def time_passed
       Time.now - @started_at
-    end
-
-    private
-
-    def self.sleep_callback(description, tries)
-      lambda do |num_tries, error|
-        sleep_time = 2**[num_tries, MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
-        Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
-        Bosh::AwsCloud::ResourceWait.logger.debug("#{description}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
-        sleep_time
-      end
     end
   end
 end
