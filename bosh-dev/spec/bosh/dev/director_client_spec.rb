@@ -65,8 +65,8 @@ module Bosh::Dev
     end
 
     describe '#upload_release' do
-      it 'uploads the release using the cli, rebasing assuming this is a dev release' do
-        cli.should_receive(:run_bosh).with('upload release /path/to/fake-release.tgz --rebase', debug_on_fail: true)
+      it 'uploads the release using the cli, skipping if the release already exists' do
+        cli.should_receive(:run_bosh).with('upload release /path/to/fake-release.tgz --skip-if-exists', debug_on_fail: true)
 
         director_client.upload_release('/path/to/fake-release.tgz')
       end
@@ -80,18 +80,6 @@ module Bosh::Dev
         cli.should_receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
 
         director_client.upload_release('/path/to/fake-release.tgz')
-      end
-
-      context 'when the release has previously been uploaded' do
-        it 'should ignore the associated error' do
-          cli.stub(:run_bosh).
-            with(/upload release/, debug_on_fail: true).
-            and_raise('... Error 100: Rebase is attempted without any job or package changes ...')
-
-          expect {
-            director_client.upload_release('/path/to/fake-release.tgz')
-          }.not_to raise_error
-        end
       end
     end
 
