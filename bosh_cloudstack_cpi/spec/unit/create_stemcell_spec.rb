@@ -34,7 +34,7 @@ describe Bosh::CloudStackCloud::Cloud do
 
         cloud.should_receive(:current_vm_id).twice.and_return("s-xxxxxxxx")
 
-        cloud.should_receive(:create_disk).with(2048, "s-xxxxxxxx").and_return("vol-xxxxxxxx")
+        cloud.should_receive(:create_disk).with(10240, "s-xxxxxxxx").and_return("vol-xxxxxxxx")
         cloud.should_receive(:attach_volume).with(server, volume).and_return("/dev/sdh")
         cloud.should_receive(:find_volume_device).with("/dev/sdh").and_return("/dev/vdh")
 

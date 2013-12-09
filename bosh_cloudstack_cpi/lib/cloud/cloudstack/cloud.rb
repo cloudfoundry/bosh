@@ -91,8 +91,8 @@ module Bosh::CloudStackCloud
           instance = nil
           volume = nil
 
-          # 1. Create and mount new EBS volume (2GB default)
-          disk_size = stemcell_properties["disk"] || 2048
+          # 1. Create and mount new EBS volume (10GB default)
+          disk_size = stemcell_properties["disk"] || (1024 * 10)
           volume_id = create_disk(disk_size, current_vm_id)
           volume = @compute.volumes.get(volume_id)
           instance = @compute.servers.get(current_vm_id)
