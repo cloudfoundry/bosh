@@ -13,12 +13,14 @@ import (
 type osFileSystem struct {
 	logger boshlog.Logger
 	logTag string
+	runner CmdRunner
 }
 
-func NewOsFileSystem(logger boshlog.Logger) (fs FileSystem) {
+func NewOsFileSystem(logger boshlog.Logger, runner CmdRunner) (fs FileSystem) {
 	return osFileSystem{
 		logger: logger,
 		logTag: "File System",
+		runner: runner,
 	}
 }
 
@@ -162,8 +164,9 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return os.Symlink(oldPath, newPath)
 }
 
-func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) error {
-	panic("not implemented")
+func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
+	_, _, err = fs.runner.RunCommand("cp", "-r", srcPath+"/", dstPath)
+	return
 }
 
 func (fs osFileSystem) TempFile(prefix string) (file *os.File, err error) {

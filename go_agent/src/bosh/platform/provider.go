@@ -12,12 +12,11 @@ type provider struct {
 	platforms map[string]Platform
 }
 
+// There is a reason the runner is not injected.
+// Other entities should not use a runner, they should go through the platform
 func NewProvider(logger boshlog.Logger) (p provider) {
-	fs := boshsys.NewOsFileSystem(logger)
-
-	// There is a reason the runner is not injected.
-	// Other entities should not use a runner, they should go through the platform
 	runner := boshsys.NewExecCmdRunner(logger)
+	fs := boshsys.NewOsFileSystem(logger, runner)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
 	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(logger, runner, fs)
 	compressor := boshdisk.NewTarballCompressor(runner, fs)
