@@ -101,7 +101,8 @@ module Bosh::CloudStackCloud
         # waiting if we're in these states. Alternatively we could introduce a
         # set of 'loop breaker' states but that doesn't seem very helpful
         # at the moment
-        if state == :error || state == :failed || state == :killed
+        if (state == :error || state == :failed || state == :killed) ||
+           (resource.instance_of?(Fog::Compute::Cloudstack::Job) && state == :"2")
           cloud_error("#{desc} state is #{state}, expected #{target_state.join(", ")}")
         end
 
