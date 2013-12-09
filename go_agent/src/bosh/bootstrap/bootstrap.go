@@ -7,6 +7,7 @@ import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
+	"errors"
 	"path/filepath"
 )
 
@@ -71,6 +72,19 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ephemeral disk")
 		return
+	}
+
+	if len(settings.Disks.Persistent) > 1 {
+		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
+		return
+	}
+
+	for _, devicePath := range settings.Disks.Persistent {
+		err = boot.platform.MountPersistentDisk(devicePath, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+		if err != nil {
+			err = bosherr.WrapError(err, "Mounting persistent disk")
+			return
+		}
 	}
 
 	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")

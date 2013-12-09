@@ -7,6 +7,7 @@ import (
 	fakesys "bosh/system/fakes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 	"testing"
 )
 
@@ -115,6 +116,61 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathMountPoint, boshsettings.VCAP_BASE_DIR+"/data")
+}
+
+func TestRunMountsPersistentDisk(t *testing.T) {
+	settings := boshsettings.Settings{
+		Disks: boshsettings.Disks{
+			Persistent: map[string]string{"vol-123": "/dev/sdb"},
+		},
+	}
+
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = settings
+
+	boot := New(fakeInfrastructure, fakePlatform)
+	_, err := boot.Run()
+
+	assert.NoError(t, err)
+	assert.Equal(t, fakePlatform.MountPersistentDiskDevicePath, "/dev/sdb")
+	assert.Equal(t, fakePlatform.MountPersistentDiskMountPoint, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+}
+
+func TestRunErrorsIfThereIsMoreThanOnePersistentDisk(t *testing.T) {
+	settings := boshsettings.Settings{
+		Disks: boshsettings.Disks{
+			Persistent: map[string]string{
+				"vol-123": "/dev/sdb",
+				"vol-456": "/dev/sdc",
+			},
+		},
+	}
+
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = settings
+
+	boot := New(fakeInfrastructure, fakePlatform)
+	_, err := boot.Run()
+
+	assert.Error(t, err)
+}
+
+func TestRunDoesNotTryToMountWhenNoPersistentDisk(t *testing.T) {
+	settings := boshsettings.Settings{
+		Disks: boshsettings.Disks{
+			Persistent: map[string]string{},
+		},
+	}
+
+	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure.Settings = settings
+
+	boot := New(fakeInfrastructure, fakePlatform)
+	_, err := boot.Run()
+
+	assert.NoError(t, err)
+	assert.Equal(t, fakePlatform.MountPersistentDiskDevicePath, "")
+	assert.Equal(t, fakePlatform.MountPersistentDiskMountPoint, "")
 }
 
 func TestRunSetsRootAndVcapPasswords(t *testing.T) {
