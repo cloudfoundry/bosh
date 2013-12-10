@@ -35,6 +35,9 @@ type FakeFileSystem struct {
 
 	TempDirDir   string
 	TempDirError error
+
+	GlobPattern string
+	GlobPaths   []string
 }
 
 type FakeFileStats struct {
@@ -125,18 +128,18 @@ func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 		return fs.CopyDirEntriesError
 	}
 
-	srcStat := fs.GetFileTestStat(srcPath)
-	if srcStat == nil {
-		return errors.New("srcPath does not exist")
+	filesToCopy := []string{}
+
+	for filePath, _ := range fs.Files {
+		if strings.HasPrefix(filePath, srcPath) {
+			filesToCopy = append(filesToCopy, filePath)
+		}
 	}
 
-	dstStat := fs.GetFileTestStat(dstPath)
-	if dstStat == nil {
-		return errors.New("dstPath does not exist")
+	for _, filePath := range filesToCopy {
+		newPath := strings.Replace(filePath, srcPath, dstPath, 1)
+		fs.Files[newPath] = fs.Files[filePath]
 	}
-
-	fs.CopyDirEntriesSrcPath = srcPath
-	fs.CopyDirEntriesDstPath = dstPath
 
 	return
 }
@@ -201,6 +204,16 @@ func (fs *FakeFileSystem) RemoveAll(path string) {
 
 func (fs *FakeFileSystem) Open(path string) (file *os.File, err error) {
 	file = fs.FilesToOpen[path]
+	return
+}
+
+func (fs *FakeFileSystem) Glob(pattern string) (matches []string, err error) {
+	fs.GlobPattern = pattern
+	if fs.GlobPaths == nil {
+		matches = []string{}
+	} else {
+		matches = fs.GlobPaths
+	}
 	return
 }
 

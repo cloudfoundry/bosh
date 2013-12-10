@@ -9,7 +9,6 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -165,13 +164,56 @@ func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 	blobstore.GetFile = file
 
 	compressor.DecompressFileToDirCallBack = func() {
-		fs.MkdirAll(filepath.Join("fake-tmp-dir", "fake-path-in-archive"), os.FileMode(0))
+		fs.MkdirAll("fake-tmp-dir/fake-path-in-archive", os.FileMode(0))
+		fs.WriteToFile("fake-tmp-dir/fake-path-in-archive/file", "file-contents")
 	}
 
 	err = applier.Apply(job)
 	assert.NoError(t, err)
-	assert.Equal(t, "fake-tmp-dir/fake-path-in-archive", fs.CopyDirEntriesSrcPath)
-	assert.Equal(t, "fake-install-dir", fs.CopyDirEntriesDstPath)
+	fileInArchiveStat := fs.GetFileTestStat("fake-install-dir/file")
+	assert.NotNil(t, fileInArchiveStat)
+	assert.Equal(t, "file-contents", fileInArchiveStat.Content)
+}
+
+func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
+	jobsBc, blobstore, compressor, applier := buildJobApplier()
+	job := buildJob()
+	job.Source.PathInArchive = "fake-path-in-archive"
+
+	file, _ := os.Open("/dev/null")
+	defer file.Close()
+	blobstore.GetFile = file
+
+	fs := fakesys.NewFakeFileSystem()
+	fs.TempDirDir = "fake-tmp-dir"
+
+	jobsBc.InstallFs = fs
+	jobsBc.InstallPath = "fake-install-dir"
+
+	compressor.DecompressFileToDirCallBack = func() {
+		fs.WriteToFile("fake-tmp-dir/fake-path-in-archive/bin/test1", "")
+		fs.WriteToFile("fake-tmp-dir/fake-path-in-archive/bin/test2", "")
+		fs.WriteToFile("fake-tmp-dir/fake-path-in-archive/config/test", "")
+	}
+
+	fs.GlobPaths = []string{"fake-install-dir/bin/test1", "fake-install-dir/bin/test2"}
+
+	err := applier.Apply(job)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "fake-install-dir/bin/*", fs.GlobPattern)
+
+	testBin1Stats := fs.GetFileTestStat("fake-install-dir/bin/test1")
+	assert.NotNil(t, testBin1Stats)
+	assert.Equal(t, 0755, int(testBin1Stats.FileMode))
+
+	testBin2Stats := fs.GetFileTestStat("fake-install-dir/bin/test2")
+	assert.NotNil(t, testBin2Stats)
+	assert.Equal(t, 0755, int(testBin2Stats.FileMode))
+
+	testConfigStats := fs.GetFileTestStat("fake-install-dir/config/test")
+	assert.NotNil(t, testConfigStats)
+	assert.NotEqual(t, 0755, int(testConfigStats.FileMode))
 }
 
 func TestApplyErrsWhenCopyAllErrs(t *testing.T) {

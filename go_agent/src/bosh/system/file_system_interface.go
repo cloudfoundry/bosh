@@ -30,4 +30,6 @@ type FileSystem interface {
 	// Returns *unique* temporary file/dir with a custom prefix
 	TempFile(prefix string) (file *os.File, err error)
 	TempDir(prefix string) (path string, err error)
+
+	Glob(pattern string) (matches []string, err error)
 }

@@ -189,6 +189,11 @@ func (fs osFileSystem) Open(path string) (file *os.File, err error) {
 	return os.Open(path)
 }
 
+func (fs osFileSystem) Glob(pattern string) (matches []string, err error) {
+	fs.logger.Debug(fs.logTag, "Glob '%s'", pattern)
+	return filepath.Glob(pattern)
+}
+
 func (fs osFileSystem) filesAreIdentical(newContent, filePath string) bool {
 	newBytes := []byte(newContent)
 	existingStat, err := os.Stat(filePath)
