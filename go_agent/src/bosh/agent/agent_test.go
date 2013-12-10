@@ -1,10 +1,6 @@
 package agent
 
 import (
-	fakeaction "bosh/agent/action/fakes"
-	boshtask "bosh/agent/task"
-	faketask "bosh/agent/task/fakes"
-	boshassert "bosh/assert"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	fakembus "bosh/mbus/fakes"
@@ -13,101 +9,41 @@ import (
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
-	"errors"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me", "gibberish", []byte{})
-
-	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
-
-	actionFactory.CreateErr = true
-
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
-
-	err := agent.Run()
-	assert.NoError(t, err)
-	assert.True(t, handler.ReceivedRun)
-
-	resp := handler.Func(req)
-
-	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"unknown message gibberish"}}`)
-	assert.Equal(t, actionFactory.CreateMethod, "gibberish")
+type FakeActionDispatcher struct {
+	DispatchReq  boshmbus.Request
+	DispatchResp boshmbus.Response
 }
 
-func TestRunHandlesSynchronousAction(t *testing.T) {
-	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
+func (dispatcher *FakeActionDispatcher) Dispatch(req boshmbus.Request) (resp boshmbus.Response) {
+	dispatcher.DispatchReq = req
+	resp = dispatcher.DispatchResp
+	return
+}
 
-	// when action is successful
-	actionFactory.CreateAction = &fakeaction.TestAction{
-		Asynchronous: false,
-		RunValue:     "some value",
-	}
+func TestRunSetsTheDispatcherAsMessageHandler(t *testing.T) {
+	settings, logger, handler, platform, actionDispatcher := getAgentDependencies()
+	actionDispatcher.DispatchResp = boshmbus.NewValueResponse("pong")
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
-
+	agent := New(settings, logger, handler, platform, actionDispatcher)
 	err := agent.Run()
+
 	assert.NoError(t, err)
 	assert.True(t, handler.ReceivedRun)
 
 	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
-
 	resp := handler.Func(req)
-	assert.Equal(t, req.Method, actionFactory.CreateMethod)
-	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
-	assert.Equal(t, boshmbus.NewValueResponse("some value"), resp)
 
-	// when action returns an error
-	actionFactory.CreateAction = &fakeaction.TestAction{
-		RunErr: errors.New("some error"),
-	}
-
-	agent = New(settings, logger, handler, platform, taskService, actionFactory)
-	agent.Run()
-
-	resp = handler.Func(req)
-	expectedJson := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: some error\"}}", req.Method)
-	boshassert.MatchesJsonString(t, resp, expectedJson)
-	assert.Equal(t, actionFactory.CreateMethod, "some action")
-}
-
-func TestRunHandlesAsynchronousAction(t *testing.T) {
-	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
-
-	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
-	actionFactory.CreateAction = &fakeaction.TestAction{
-		Asynchronous: true,
-		RunValue:     "some-task-result-value",
-	}
-
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
-
-	err := agent.Run()
-	assert.NoError(t, err)
-	assert.True(t, handler.ReceivedRun)
-
-	req := boshmbus.NewRequest("reply to me!", "some async action", []byte("some payload"))
-
-	resp := handler.Func(req)
-	assert.Equal(t, boshmbus.NewValueResponse(TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}), resp)
-
-	boshassert.MatchesJsonString(t, resp, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`)
-
-	value, err := taskService.StartTaskFunc()
-	assert.NoError(t, err)
-	assert.Equal(t, "some-task-result-value", value)
-
-	assert.Equal(t, req.Method, actionFactory.CreateMethod)
-	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
-	assert.Equal(t, actionFactory.CreateMethod, "some async action")
+	assert.Equal(t, actionDispatcher.DispatchReq, req)
+	assert.Equal(t, resp, actionDispatcher.DispatchResp)
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {
-	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
+	settings, logger, handler, platform, actionDispatcher := getAgentDependencies()
 	settings.Disks = boshsettings.Disks{
 		System:     "/dev/sda1",
 		Ephemeral:  "/dev/sdb",
@@ -126,7 +62,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, actionDispatcher)
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -171,7 +107,7 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 }
 
 func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
-	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
+	settings, logger, handler, platform, actionDispatcher := getAgentDependencies()
 	settings.Disks = boshsettings.Disks{
 		System: "/dev/sda1",
 	}
@@ -184,7 +120,7 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 		},
 	}
 
-	agent := New(settings, logger, handler, platform, taskService, actionFactory)
+	agent := New(settings, logger, handler, platform, actionDispatcher)
 	agent.heartbeatInterval = time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
@@ -203,8 +139,7 @@ func getAgentDependencies() (
 	logger boshlog.Logger,
 	handler *fakembus.FakeHandler,
 	platform *fakeplatform.FakePlatform,
-	taskService *faketask.FakeService,
-	actionFactory *fakeaction.FakeFactory) {
+	actionDispatcher *FakeActionDispatcher) {
 
 	settings = &fakesettings.FakeSettingsService{}
 	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
@@ -212,7 +147,6 @@ func getAgentDependencies() (
 	platform = &fakeplatform.FakePlatform{
 		FakeStatsCollector: &fakestats.FakeStatsCollector{},
 	}
-	taskService = &faketask.FakeService{}
-	actionFactory = &fakeaction.FakeFactory{}
+	actionDispatcher = &FakeActionDispatcher{}
 	return
 }

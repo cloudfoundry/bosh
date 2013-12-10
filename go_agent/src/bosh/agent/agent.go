@@ -1,8 +1,6 @@
 package agent
 
 import (
-	boshaction "bosh/agent/action"
-	boshtask "bosh/agent/task"
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
@@ -16,8 +14,7 @@ type agent struct {
 	logger            boshlog.Logger
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
-	taskService       boshtask.Service
-	actionFactory     boshaction.Factory
+	actionDispatcher  ActionDispatcher
 	heartbeatInterval time.Duration
 }
 
@@ -26,16 +23,14 @@ func New(
 	logger boshlog.Logger,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,
-	taskService boshtask.Service,
-	actionFactory boshaction.Factory,
+	actionDispatcher ActionDispatcher,
 ) (a agent) {
 
 	a.settings = settings
 	a.logger = logger
 	a.mbusHandler = mbusHandler
 	a.platform = platform
-	a.taskService = taskService
-	a.actionFactory = actionFactory
+	a.actionDispatcher = actionDispatcher
 	a.heartbeatInterval = time.Minute
 	return
 }
@@ -68,39 +63,7 @@ type TaskValue struct {
 func (a agent) runMbusHandler(errChan chan error) {
 	defer a.logger.HandlePanic("Agent Message Bus Handler")
 
-	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
-		action, err := a.actionFactory.Create(req.Method)
-
-		switch {
-		case err != nil:
-			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
-			a.logger.Error("Agent", "Unknown action %s", req.Method)
-
-		case action.IsAsynchronous():
-			task := a.taskService.StartTask(func() (value interface{}, err error) {
-				value, err = action.Run(req.GetPayload())
-				return
-			})
-			resp = boshmbus.NewValueResponse(TaskValue{
-				AgentTaskId: task.Id,
-				State:       string(task.State),
-			})
-
-		default:
-			value, err := action.Run(req.GetPayload())
-
-			if err != nil {
-				err = bosherr.WrapError(err, "Action Failed %s", req.Method)
-				resp = boshmbus.NewExceptionResponse(err.Error())
-				a.logger.Error("Agent", err.Error())
-				return
-			}
-			resp = boshmbus.NewValueResponse(value)
-		}
-		return
-	}
-
-	err := a.mbusHandler.Run(handlerFunc)
+	err := a.mbusHandler.Run(a.actionDispatcher.Dispatch)
 	if err != nil {
 		err = bosherr.WrapError(err, "Message Bus Handler")
 	}

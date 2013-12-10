@@ -71,13 +71,14 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	taskService := boshtask.NewAsyncTaskService(app.logger)
-
 	applier := boshas.NewApplierProvider(platform, blobstore).Get()
 
+	taskService := boshtask.NewAsyncTaskService(app.logger)
 	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier)
+	actionRunner := boshaction.NewRunner()
+	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 
-	agent := boshagent.New(settingsService, app.logger, mbusHandler, platform, taskService, actionFactory)
+	agent := boshagent.New(settingsService, app.logger, mbusHandler, platform, actionDispatcher)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")
