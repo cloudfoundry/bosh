@@ -87,7 +87,7 @@ func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-get-error")
 }
 
-func TestApplyDecompressesJobToTmpPath(t *testing.T) {
+func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 	jobsBc, blobstore, compressor, applier := buildJobApplier()
 	job := buildJob()
 
@@ -109,6 +109,7 @@ func TestApplyDecompressesJobToTmpPath(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, file, compressor.DecompressFileToDirTarball)
 	assert.Equal(t, "fake-tmp-dir", compressor.DecompressFileToDirDir)
+	assert.Nil(t, fs.GetFileTestStat(fs.TempDirDir))
 }
 
 func TestApplyErrsWhenTempDirErrs(t *testing.T) {

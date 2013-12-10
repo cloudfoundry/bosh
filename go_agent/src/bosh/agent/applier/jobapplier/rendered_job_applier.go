@@ -48,6 +48,7 @@ func (s *renderedJobApplier) Apply(job models.Job) (err error) {
 		err = bosherr.WrapError(err, "Getting temp dir")
 		return
 	}
+	defer fs.RemoveAll(tmpDir)
 
 	err = s.compressor.DecompressFileToDir(file, tmpDir)
 	if err != nil {
