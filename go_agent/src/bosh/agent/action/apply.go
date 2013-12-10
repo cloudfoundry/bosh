@@ -25,6 +25,10 @@ func newApply(applier boshappl.Applier, fs boshsys.FileSystem, platform boshplat
 	return
 }
 
+func (a applyAction) IsAsynchronous() bool {
+	return true
+}
+
 func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	var payload struct {
 		Arguments []interface{}

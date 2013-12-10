@@ -8,6 +8,11 @@ import (
 	"testing"
 )
 
+func TestMigrateDiskShouldBeAsynchronous(t *testing.T) {
+	_, action := buildMigrateDiskAction()
+	assert.True(t, action.IsAsynchronous())
+}
+
 func TestMigrateDiskActionRun(t *testing.T) {
 	platform, action := buildMigrateDiskAction()
 

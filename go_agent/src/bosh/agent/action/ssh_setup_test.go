@@ -10,6 +10,12 @@ import (
 	"testing"
 )
 
+func TestSshShouldBeSynchronous(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	_, action := buildSshActionSetup(settings)
+	assert.False(t, action.IsAsynchronous())
+}
+
 func TestSshSetupWithInvalidPayload(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	_, action := buildSshActionSetup(settings)

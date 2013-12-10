@@ -17,6 +17,10 @@ func newMountDisk(settings boshsettings.Service, platform boshplatform.Platform)
 	return
 }
 
+func (a mountDiskAction) IsAsynchronous() bool {
+	return true
+}
+
 func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	err = a.settings.Refresh()
 	if err != nil {

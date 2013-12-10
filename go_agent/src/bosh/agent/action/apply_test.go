@@ -12,6 +12,11 @@ import (
 	"testing"
 )
 
+func TestApplyShouldBeAsynchronous(t *testing.T) {
+	_, _, _, action := buildApplyAction()
+	assert.True(t, action.IsAsynchronous())
+}
+
 func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 	_, fs, _, action := buildApplyAction()
 

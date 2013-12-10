@@ -4,6 +4,7 @@ import (
 	boshappl "bosh/agent/applier"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
+	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -43,6 +44,10 @@ func NewFactory(
 	return
 }
 
-func (f concreteFactory) Create(method string) (action Action) {
-	return f.availableActions[method]
+func (f concreteFactory) Create(method string) (action Action, err error) {
+	action, found := f.availableActions[method]
+	if !found {
+		err = bosherr.New("Could not create action with method %s", method)
+	}
+	return
 }

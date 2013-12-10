@@ -18,6 +18,10 @@ func newUnmountDisk(settings boshsettings.Service, platform boshplatform.Platfor
 	return
 }
 
+func (a unmountDiskAction) IsAsynchronous() bool {
+	return true
+}
+
 func (a unmountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	diskParams, err := NewDiskParams(a.settings, payloadBytes)
 	if err != nil {

@@ -10,6 +10,12 @@ import (
 	"testing"
 )
 
+func TestGetStateShouldBeSynchronous(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	_, action := buildGetStateAction(settings)
+	assert.False(t, action.IsAsynchronous())
+}
+
 func TestGetStateRun(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	settings.AgentId = "my-agent-id"

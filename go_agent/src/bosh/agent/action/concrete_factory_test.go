@@ -30,70 +30,84 @@ func TestNewFactory(t *testing.T) {
 	_, _, _, _, _, factory := buildFactory()
 
 	for _, actionName := range actions {
-		action := factory.Create(actionName)
+		action, err := factory.Create(actionName)
+		assert.NoError(t, err)
 		assert.NotNil(t, action)
 	}
+
+	action, err := factory.Create("gobberish")
+	assert.Error(t, err)
+	assert.Nil(t, action)
 }
 
 func TestNewFactoryApply(t *testing.T) {
 	_, platform, _, _, applier, factory := buildFactory()
-	action := factory.Create("apply")
+	action, err := factory.Create("apply")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newApply(applier, platform.Fs, platform), action)
 }
 
 func TestNewFactoryFetchLogs(t *testing.T) {
 	_, platform, blobstore, _, _, factory := buildFactory()
-	action := factory.Create("fetch_logs")
+	action, err := factory.Create("fetch_logs")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newLogs(platform.GetCompressor(), blobstore), action)
 }
 
 func TestNewFactoryGetTask(t *testing.T) {
 	_, _, _, taskService, _, factory := buildFactory()
-	action := factory.Create("get_task")
+	action, err := factory.Create("get_task")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newGetTask(taskService), action)
 }
 
 func TestNewFactoryGetState(t *testing.T) {
 	settings, platform, _, _, _, factory := buildFactory()
-	action := factory.Create("get_state")
+	action, err := factory.Create("get_state")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newGetState(settings, platform.GetFs()), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
 	settings, platform, _, _, _, factory := buildFactory()
-	action := factory.Create("list_disk")
+	action, err := factory.Create("list_disk")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newListDisk(settings, platform), action)
 }
 
 func TestNewFactoryMigrateDisk(t *testing.T) {
 	settings, platform, _, _, _, factory := buildFactory()
-	action := factory.Create("migrate_disk")
+	action, err := factory.Create("migrate_disk")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newMigrateDisk(settings, platform), action)
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
 	settings, platform, _, _, _, factory := buildFactory()
-	action := factory.Create("mount_disk")
+	action, err := factory.Create("mount_disk")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newMountDisk(settings, platform), action)
 }
 
 func TestNewFactorySsh(t *testing.T) {
 	settings, platform, _, _, _, factory := buildFactory()
-	action := factory.Create("ssh")
+	action, err := factory.Create("ssh")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newSsh(settings, platform), action)
 }
 
 func TestNewFactoryUnmountDisk(t *testing.T) {
 	settings, platform, _, _, _, factory := buildFactory()
-	action := factory.Create("unmount_disk")
+	action, err := factory.Create("unmount_disk")
+	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newUnmountDisk(settings, platform), action)
 }

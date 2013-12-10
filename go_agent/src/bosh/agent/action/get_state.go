@@ -18,6 +18,10 @@ func newGetState(settings boshsettings.Service, fs boshsys.FileSystem) (action g
 	return
 }
 
+func (a getStateAction) IsAsynchronous() bool {
+	return false
+}
+
 func (a getStateAction) Run([]byte) (value interface{}, err error) {
 	content, err := a.fs.ReadFile(boshsettings.VCAP_BASE_DIR + "/bosh/spec.json")
 	if err != nil {

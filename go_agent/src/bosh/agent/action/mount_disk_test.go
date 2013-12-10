@@ -8,6 +8,12 @@ import (
 	"testing"
 )
 
+func TestMountDiskShouldBeAsynchronous(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	_, action := buildMountDiskAction(settings)
+	assert.True(t, action.IsAsynchronous())
+}
+
 func TestMountDisk(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}

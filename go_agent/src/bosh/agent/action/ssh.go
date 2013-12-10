@@ -19,6 +19,10 @@ func newSsh(settings boshsettings.Service, platform boshplatform.Platform) (acti
 	return
 }
 
+func (a sshAction) IsAsynchronous() bool {
+	return false
+}
+
 func (a sshAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	cmd, params, err := extractCommand(payloadBytes)
 	if err != nil {

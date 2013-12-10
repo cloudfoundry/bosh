@@ -16,6 +16,10 @@ func newGetTask(taskService boshtask.Service) (getTask getTaskAction) {
 	return
 }
 
+func (a getTaskAction) IsAsynchronous() bool {
+	return false
+}
+
 func (a getTaskAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	taskId, err := parseTaskId(payloadBytes)
 	if err != nil {

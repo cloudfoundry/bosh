@@ -9,6 +9,12 @@ import (
 	"testing"
 )
 
+func TestUnmountDiskShouldBeAsynchronous(t *testing.T) {
+	platform := fakeplatform.NewFakePlatform()
+	action := buildUnmountDiskAction(platform)
+	assert.True(t, action.IsAsynchronous())
+}
+
 func TestUnmountDiskWhenTheDiskIsMounted(t *testing.T) {
 	platform := fakeplatform.NewFakePlatform()
 	platform.UnmountPersistentDiskDidUnmount = true

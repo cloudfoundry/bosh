@@ -9,6 +9,13 @@ import (
 	"testing"
 )
 
+func TestListDiskShouldBeSynchronous(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	platform := fakeplatform.NewFakePlatform()
+	action := newListDisk(settings, platform)
+	assert.False(t, action.IsAsynchronous())
+}
+
 func TestListDiskRun(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{
 		Disks: boshsettings.Disks{

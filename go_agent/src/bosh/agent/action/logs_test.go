@@ -11,6 +11,11 @@ import (
 	"testing"
 )
 
+func TestLogsShouldBeAsynchronous(t *testing.T) {
+	_, _, action := buildLogsAction()
+	assert.True(t, action.IsAsynchronous())
+}
+
 func TestLogsWithFilters(t *testing.T) {
 	payload := `{"arguments":["agent", ["**/*.stdout.log", "**/*.stderr.log"]]}`
 	expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}

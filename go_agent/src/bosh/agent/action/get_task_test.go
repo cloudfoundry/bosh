@@ -8,6 +8,11 @@ import (
 	"testing"
 )
 
+func TestGetTaskShouldBeSynchronous(t *testing.T) {
+	_, action := buildGetTaskAction()
+	assert.False(t, action.IsAsynchronous())
+}
+
 func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 	taskService, action := buildGetTaskAction()
 

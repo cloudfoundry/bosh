@@ -21,7 +21,11 @@ func newLogs(compressor boshdisk.Compressor, blobstore boshblob.Blobstore) (acti
 	return
 }
 
-func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error) {
+func (a logsAction) IsAsynchronous() bool {
+	return true
+}
+
+func (a logsAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	filters, err := extractFilters(payloadBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Extracting filters from payload")
@@ -33,13 +37,13 @@ func (action logsAction) Run(payloadBytes []byte) (value interface{}, err error)
 	}
 
 	logsDir := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
-	tarball, err := action.compressor.CompressFilesInDir(logsDir, filters)
+	tarball, err := a.compressor.CompressFilesInDir(logsDir, filters)
 	if err != nil {
 		err = bosherr.WrapError(err, "Making logs tarball")
 		return
 	}
 
-	blobId, err := action.blobstore.Create(tarball)
+	blobId, err := a.blobstore.Create(tarball)
 	if err != nil {
 		err = bosherr.WrapError(err, "Create file on blobstore")
 		return

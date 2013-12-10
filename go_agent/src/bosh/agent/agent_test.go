@@ -24,6 +24,9 @@ func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me", "gibberish", []byte{})
 
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
+
+	actionFactory.CreateErr = true
+
 	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
@@ -33,44 +36,16 @@ func TestRunRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 	resp := handler.Func(req)
 
 	boshassert.MatchesJsonString(t, resp, `{"exception":{"message":"unknown message gibberish"}}`)
+	assert.Equal(t, actionFactory.CreateMethod, "gibberish")
 }
 
-func TestRunHandlesPingMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "ping", []byte("some payload"))
-	assertRequestIsProcessedSynchronously(t, req)
-}
-
-func TestRunHandlesStartMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "start", []byte("some payload"))
-	assertRequestIsProcessedSynchronously(t, req)
-}
-
-func TestRunHandlesGetTaskMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "get_task", []byte(`{"arguments":["57"]}`))
-	assertRequestIsProcessedSynchronously(t, req)
-}
-
-func TestRunHandlesGetStateMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "get_state", []byte(`{}`))
-	assertRequestIsProcessedSynchronously(t, req)
-}
-
-func TestRunHandlesSshMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "ssh", []byte(`{"arguments":["setup",{"user":"foo","password":"bar"}]}`))
-	assertRequestIsProcessedSynchronously(t, req)
-}
-
-func TestRunHandlesListDiskMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "list_disk", []byte("some payload"))
-	assertRequestIsProcessedSynchronously(t, req)
-}
-
-func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
+func TestRunHandlesSynchronousAction(t *testing.T) {
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	// when action is successful
 	actionFactory.CreateAction = &fakeaction.TestAction{
-		RunValue: "some value",
+		Asynchronous: false,
+		RunValue:     "some value",
 	}
 
 	agent := New(settings, logger, handler, platform, taskService, actionFactory)
@@ -78,6 +53,8 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	err := agent.Run()
 	assert.NoError(t, err)
 	assert.True(t, handler.ReceivedRun)
+
+	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
 
 	resp := handler.Func(req)
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
@@ -95,54 +72,25 @@ func assertRequestIsProcessedSynchronously(t *testing.T, req boshmbus.Request) {
 	resp = handler.Func(req)
 	expectedJson := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: some error\"}}", req.Method)
 	boshassert.MatchesJsonString(t, resp, expectedJson)
+	assert.Equal(t, actionFactory.CreateMethod, "some action")
 }
 
-func TestRunHandlesApplyMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "apply", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func TestRunHandlesLogsMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "fetch_logs", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func TestRunHandlesStopMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "stop", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func TestRunHandlesDrainMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "drain", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func TestRunHandlesMountDiskMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "mount_disk", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func TestRunHandlesUnmountDiskMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "unmount_disk", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func TestRunHandlesMigrateDiskMessage(t *testing.T) {
-	req := boshmbus.NewRequest("reply to me!", "migrate_disk", []byte("some payload"))
-	assertRequestIsProcessedAsynchronously(t, req)
-}
-
-func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) {
+func TestRunHandlesAsynchronousAction(t *testing.T) {
 	settings, logger, handler, platform, taskService, actionFactory := getAgentDependencies()
 
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
-	actionFactory.CreateAction = &fakeaction.TestAction{RunValue: "some-task-result-value"}
+	actionFactory.CreateAction = &fakeaction.TestAction{
+		Asynchronous: true,
+		RunValue:     "some-task-result-value",
+	}
 
 	agent := New(settings, logger, handler, platform, taskService, actionFactory)
 
 	err := agent.Run()
 	assert.NoError(t, err)
 	assert.True(t, handler.ReceivedRun)
+
+	req := boshmbus.NewRequest("reply to me!", "some async action", []byte("some payload"))
 
 	resp := handler.Func(req)
 	assert.Equal(t, boshmbus.NewValueResponse(TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}), resp)
@@ -155,6 +103,7 @@ func assertRequestIsProcessedAsynchronously(t *testing.T, req boshmbus.Request) 
 
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
 	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
+	assert.Equal(t, actionFactory.CreateMethod, "some async action")
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {

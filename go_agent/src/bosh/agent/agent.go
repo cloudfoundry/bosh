@@ -69,9 +69,24 @@ func (a agent) runMbusHandler(errChan chan error) {
 	defer a.logger.HandlePanic("Agent Message Bus Handler")
 
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
-		switch req.Method {
-		case "get_task", "ping", "get_state", "ssh", "start", "list_disk":
-			action := a.actionFactory.Create(req.Method)
+		action, err := a.actionFactory.Create(req.Method)
+
+		switch {
+		case err != nil:
+			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
+			a.logger.Error("Agent", "Unknown action %s", req.Method)
+
+		case action.IsAsynchronous():
+			task := a.taskService.StartTask(func() (value interface{}, err error) {
+				value, err = action.Run(req.GetPayload())
+				return
+			})
+			resp = boshmbus.NewValueResponse(TaskValue{
+				AgentTaskId: task.Id,
+				State:       string(task.State),
+			})
+
+		default:
 			value, err := action.Run(req.GetPayload())
 
 			if err != nil {
@@ -81,22 +96,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 				return
 			}
 			resp = boshmbus.NewValueResponse(value)
-		case "apply", "fetch_logs", "stop", "drain", "mount_disk", "unmount_disk", "migrate_disk":
-			task := a.taskService.StartTask(func() (value interface{}, err error) {
-				action := a.actionFactory.Create(req.Method)
-				value, err = action.Run(req.GetPayload())
-				return
-			})
-
-			resp = boshmbus.NewValueResponse(TaskValue{
-				AgentTaskId: task.Id,
-				State:       string(task.State),
-			})
-		default:
-			resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
-			a.logger.Error("Agent", "Unknown action %s", req.Method)
 		}
-
 		return
 	}
 
