@@ -25,6 +25,7 @@ func TestNewFactory(t *testing.T) {
 		"start",
 		"stop",
 		"unmount_disk",
+		"compile_package",
 	}
 
 	_, _, _, _, _, factory := buildFactory()
@@ -110,6 +111,14 @@ func TestNewFactoryUnmountDisk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
 	assert.Equal(t, newUnmountDisk(settings, platform), action)
+}
+
+func TestNewFactoryCompilePackage(t *testing.T) {
+	_, platform, blobstore, _, _, factory := buildFactory()
+	action, err := factory.Create("compile_package")
+	assert.NoError(t, err)
+	assert.NotNil(t, action)
+	assert.Equal(t, newCompilePackage(platform.GetCompressor(), blobstore, platform.GetFs()), action)
 }
 
 func buildFactory() (

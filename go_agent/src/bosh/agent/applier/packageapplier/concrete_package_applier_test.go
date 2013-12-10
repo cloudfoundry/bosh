@@ -56,7 +56,7 @@ func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
 
 	err = applier.Apply(pkg)
 	assert.NoError(t, err)
-	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobId)
+	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
 	assert.Equal(t, file, blobstore.CleanUpFile)
 }
 
@@ -84,8 +84,8 @@ func TestApplyDecompressesPackageToInstallPath(t *testing.T) {
 
 	err = applier.Apply(pkg)
 	assert.NoError(t, err)
-	assert.Equal(t, file, compressor.DecompressFileToDirTarball)
-	assert.Equal(t, "fake-install-path", compressor.DecompressFileToDirDir)
+	assert.Equal(t, file, compressor.DecompressFileToDirTarballs[0])
+	assert.Equal(t, "fake-install-path", compressor.DecompressFileToDirDirs[0])
 }
 
 func TestApplyErrsWhenPackageDecompressErrs(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 type FakeBlobstore struct {
 	Options map[string]string
 
-	GetBlobId string
-	GetFile   *os.File
-	GetError  error
+	GetBlobIds []string
+	GetFile    *os.File
+	GetError   error
 
 	CleanUpFile *os.File
 
@@ -29,7 +29,7 @@ func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblob.
 }
 
 func (bs *FakeBlobstore) Get(blobId string) (file *os.File, err error) {
-	bs.GetBlobId = blobId
+	bs.GetBlobIds = append(bs.GetBlobIds, blobId)
 	file = bs.GetFile
 	err = bs.GetError
 	return

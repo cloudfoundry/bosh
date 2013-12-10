@@ -26,19 +26,20 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"apply":        newApply(applier, fs, platform),
-			"drain":        newDrain(),
-			"fetch_logs":   newLogs(compressor, blobstore),
-			"get_task":     newGetTask(taskService),
-			"get_state":    newGetState(settings, fs),
-			"list_disk":    newListDisk(settings, platform),
-			"migrate_disk": newMigrateDisk(settings, platform),
-			"mount_disk":   newMountDisk(settings, platform),
-			"ping":         newPing(),
-			"ssh":          newSsh(settings, platform),
-			"start":        newStart(),
-			"stop":         newStop(),
-			"unmount_disk": newUnmountDisk(settings, platform),
+			"apply":           newApply(applier, fs, platform),
+			"drain":           newDrain(),
+			"fetch_logs":      newLogs(compressor, blobstore),
+			"get_task":        newGetTask(taskService),
+			"get_state":       newGetState(settings, fs),
+			"list_disk":       newListDisk(settings, platform),
+			"migrate_disk":    newMigrateDisk(settings, platform),
+			"mount_disk":      newMountDisk(settings, platform),
+			"ping":            newPing(),
+			"ssh":             newSsh(settings, platform),
+			"start":           newStart(),
+			"stop":            newStop(),
+			"unmount_disk":    newUnmountDisk(settings, platform),
+			"compile_package": newCompilePackage(compressor, blobstore, fs),
 		},
 	}
 	return

@@ -5,12 +5,11 @@ import "os"
 type DecompressFileToDirCallBackFunc func()
 
 type FakeCompressor struct {
-	CompressFilesInDirTarball *os.File
-	CompressFilesInDirDir     string
-	CompressFilesInDirFilters []string
-
-	DecompressFileToDirTarball  *os.File
-	DecompressFileToDirDir      string
+	CompressFilesInDirTarball   *os.File
+	CompressFilesInDirDir       string
+	CompressFilesInDirFilters   []string
+	DecompressFileToDirTarballs []*os.File
+	DecompressFileToDirDirs     []string
 	DecompressFileToDirError    error
 	DecompressFileToDirCallBack DecompressFileToDirCallBackFunc
 }
@@ -28,8 +27,8 @@ func (fc *FakeCompressor) CompressFilesInDir(dir string, filters []string) (tarb
 }
 
 func (fc *FakeCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
-	fc.DecompressFileToDirTarball = tarball
-	fc.DecompressFileToDirDir = dir
+	fc.DecompressFileToDirTarballs = append(fc.DecompressFileToDirTarballs, tarball)
+	fc.DecompressFileToDirDirs = append(fc.DecompressFileToDirDirs, dir)
 
 	if fc.DecompressFileToDirCallBack != nil {
 		fc.DecompressFileToDirCallBack()

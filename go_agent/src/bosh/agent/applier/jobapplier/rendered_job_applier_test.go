@@ -72,7 +72,7 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 
 	err = applier.Apply(job)
 	assert.NoError(t, err)
-	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobId)
+	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
 	assert.Equal(t, file, blobstore.CleanUpFile)
 }
 
@@ -107,8 +107,8 @@ func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 
 	err = applier.Apply(job)
 	assert.NoError(t, err)
-	assert.Equal(t, file, compressor.DecompressFileToDirTarball)
-	assert.Equal(t, "fake-tmp-dir", compressor.DecompressFileToDirDir)
+	assert.Equal(t, file, compressor.DecompressFileToDirTarballs[0])
+	assert.Equal(t, "fake-tmp-dir", compressor.DecompressFileToDirDirs[0])
 	assert.Nil(t, fs.GetFileTestStat(fs.TempDirDir))
 }
 
