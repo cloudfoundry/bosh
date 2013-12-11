@@ -129,6 +129,12 @@ func (a compilePackageAction) run(bstoreId, sha1, pName, pVer string, deps Depen
 		}
 	}
 
+	_, err = a.compressor.CompressFilesInDir(installPath, []string{"**/*"})
+	if err != nil {
+		bosherr.WrapError(err, "Compressing compiled package")
+		return
+	}
+
 	return
 }
 

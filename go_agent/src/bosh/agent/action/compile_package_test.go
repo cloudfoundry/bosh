@@ -72,10 +72,6 @@ func TestCompilePackageCreatesDependencyInstallDir(t *testing.T) {
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
 }
 
-func TestFoo(t *testing.T) {
-	os.Rename("/tmp/dir1", "/tmp/dir2")
-}
-
 func TestCompilePackageRecreatesDependencyInstallDir(t *testing.T) {
 	_, _, action, fs, _ := buildCompilePackageAction()
 
@@ -186,6 +182,18 @@ func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
 	assert.Empty(t, os.Getenv("GEM_HOME"))
 	assert.Empty(t, os.Getenv("BUNDLE_GEMFILE"))
 	assert.Empty(t, os.Getenv("RUBYOPT"))
+}
+
+func TestCompilePackageCompressesCompiledPackage(t *testing.T) {
+	compressor, _, action, _, _ := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", compressor.CompressFilesInDirDir)
+	assert.Equal(t, []string{"**/*"}, compressor.CompressFilesInDirFilters)
 }
 
 func TestCompilePackageScriptDoesNotExist(t *testing.T) {
