@@ -19,8 +19,7 @@ func TestMountDisk(t *testing.T) {
 	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 	platform, mountDisk := buildMountDiskAction(settings)
 
-	payload := `{"arguments":["vol-123"]}`
-	result, err := mountDisk.Run([]byte(payload))
+	result, err := mountDisk.Run("vol-123")
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, result, "{}")
 
@@ -37,8 +36,7 @@ func TestMountDiskWhenStoreAlreadyMounted(t *testing.T) {
 
 	platform.IsMountPointResult = true
 
-	payload := `{"arguments":["vol-123"]}`
-	result, err := mountDisk.Run([]byte(payload))
+	result, err := mountDisk.Run("vol-123")
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, result, "{}")
 
@@ -48,22 +46,12 @@ func TestMountDiskWhenStoreAlreadyMounted(t *testing.T) {
 	assert.Equal(t, platform.MountPersistentDiskMountPoint, "/var/vcap/store_migration_target")
 }
 
-func TestMountDiskWithMissingVolumeId(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	_, mountDisk := buildMountDiskAction(settings)
-
-	payload := `{"arguments":[]}`
-	_, err := mountDisk.Run([]byte(payload))
-	assert.Error(t, err)
-}
-
 func TestMountDiskWhenDevicePathNotFound(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 	_, mountDisk := buildMountDiskAction(settings)
 
-	payload := `{"arguments":["vol-456"]}`
-	_, err := mountDisk.Run([]byte(payload))
+	_, err := mountDisk.Run("vol-456")
 	assert.Error(t, err)
 }
 

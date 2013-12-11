@@ -10,7 +10,7 @@ func (a startAction) IsAsynchronous() bool {
 	return false
 }
 
-func (s startAction) Run([]byte) (value interface{}, err error) {
+func (s startAction) Run() (value interface{}, err error) {
 	value = "started"
 	return
 }

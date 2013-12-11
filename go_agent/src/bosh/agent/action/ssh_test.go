@@ -5,34 +5,26 @@ import (
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestSshShouldBeSynchronous(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
-	_, action := buildSshActionSetup(settings)
+	_, action := buildSshAction(settings)
 	assert.False(t, action.IsAsynchronous())
-}
-
-func TestSshSetupWithInvalidPayload(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	_, action := buildSshActionSetup(settings)
-
-	// set user, pwd, public_key with invalid values
-	payload := `{"arguments":["setup",{"user":123,"password":456,"public_key":789}]}`
-	_, err := action.Run([]byte(payload))
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Parsing user")
 }
 
 func TestSshSetupWithoutDefaultIp(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
-	_, action := buildSshActionSetup(settings)
+	_, action := buildSshAction(settings)
 
-	payload := `{"arguments":["setup",{"user":"some-user","password":"some-pwd","public_key":"some-key"}]}`
-	_, err := action.Run([]byte(payload))
+	params := sshParams{
+		User:      "some-user",
+		Password:  "some-pwd",
+		PublicKey: "some-key",
+	}
+	_, err := action.Run("setup", params)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "No default ip")
 }
@@ -49,32 +41,24 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	settings := &fakesettings.FakeSettingsService{}
 	settings.DefaultIp = "ww.xx.yy.zz"
 
-	platform, action := buildSshActionSetup(settings)
+	platform, action := buildSshAction(settings)
 
 	expectedUser := "some-user"
 	expectedKey := "some public key content"
 
-	payload := fmt.Sprintf(
-		`{"arguments":["setup",{"user":"%s","password":"%s","public_key":"%s"}]}`,
-		expectedUser, expectedPwd, expectedKey,
-	)
-
-	if expectedPwd == "" {
-		payload = fmt.Sprintf(
-			`{"arguments":["setup",{"user":"%s","public_key":"%s"}]}`,
-			expectedUser, expectedKey,
-		)
+	params := sshParams{
+		User:      expectedUser,
+		PublicKey: expectedKey,
+		Password:  expectedPwd,
 	}
 
-	boshSshPath := "/var/vcap/bosh_ssh"
-
-	response, err := action.Run([]byte(payload))
+	response, err := action.Run("setup", params)
 	assert.NoError(t, err)
 
 	// assert on user and ssh setup
 	assert.Equal(t, expectedUser, platform.CreateUserUsername)
 	assert.Equal(t, expectedPwd, platform.CreateUserPassword)
-	assert.Equal(t, boshSshPath, platform.CreateUserBasePath)
+	assert.Equal(t, "/var/vcap/bosh_ssh", platform.CreateUserBasePath)
 	assert.Equal(t, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP}, platform.AddUserToGroupsGroups[expectedUser])
 	assert.Equal(t, expectedKey, platform.SetupSshPublicKeys[expectedUser])
 
@@ -87,7 +71,22 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	boshassert.MatchesJsonMap(t, response, expectedJson)
 }
 
-func buildSshActionSetup(settings boshsettings.Service) (*fakeplatform.FakePlatform, sshAction) {
+func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	platform, action := buildSshAction(settings)
+
+	params := sshParams{UserRegex: "^foobar.*"}
+	response, err := action.Run("cleanup", params)
+	assert.NoError(t, err)
+	assert.Equal(t, "^foobar.*", platform.DeleteEphemeralUsersMatchingRegex)
+
+	boshassert.MatchesJsonMap(t, response, map[string]interface{}{
+		"command": "cleanup",
+		"status":  "success",
+	})
+}
+
+func buildSshAction(settings boshsettings.Service) (*fakeplatform.FakePlatform, sshAction) {
 	platform := fakeplatform.NewFakePlatform()
 	action := newSsh(settings, platform)
 	return platform, action

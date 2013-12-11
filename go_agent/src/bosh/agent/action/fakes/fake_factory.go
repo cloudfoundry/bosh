@@ -23,9 +23,6 @@ func (f *FakeFactory) Create(method string) (action boshaction.Action, err error
 
 type TestAction struct {
 	Asynchronous bool
-	RunErr       error
-	RunValue     interface{}
-	RunPayload   []byte
 }
 
 func (a *TestAction) IsAsynchronous() bool {
@@ -33,8 +30,5 @@ func (a *TestAction) IsAsynchronous() bool {
 }
 
 func (a *TestAction) Run(payload []byte) (value interface{}, err error) {
-	a.RunPayload = payload
-	value = a.RunValue
-	err = a.RunErr
 	return
 }

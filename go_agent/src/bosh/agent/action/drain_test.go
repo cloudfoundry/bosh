@@ -12,7 +12,7 @@ func TestDrainShouldBeAsynchronous(t *testing.T) {
 
 func TestDrainRunReturns0(t *testing.T) {
 	action := newDrain()
-	drainStatus, err := action.Run([]byte{})
+	drainStatus, err := action.Run()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, drainStatus)
 }

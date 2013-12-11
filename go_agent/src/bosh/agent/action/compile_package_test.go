@@ -18,9 +18,9 @@ func TestCompilePackageShouldBeAsynchronous(t *testing.T) {
 func TestCompilePackageFetchesSourcePackageFromBlobstore(t *testing.T) {
 	_, blobstore, action, _, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "first_dep_blobstore_id", blobstore.GetBlobIds[0])
@@ -31,7 +31,7 @@ func TestCompilePackageFetchesSourcePackageFromBlobstore(t *testing.T) {
 func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
 	compressor, blobstore, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -39,7 +39,7 @@ func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	_, err = action.Run([]byte(payload))
+	_, err = action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, compressor.DecompressFileToDirDirs[0],
@@ -60,12 +60,12 @@ func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
 func TestCompilePackageCreatesDependencyInstallDir(t *testing.T) {
 	_, _, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
@@ -75,7 +75,7 @@ func TestCompilePackageCreatesDependencyInstallDir(t *testing.T) {
 func TestCompilePackageRecreatesDependencyInstallDir(t *testing.T) {
 	_, _, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	err := fs.MkdirAll("/var/vcap/data/packages/first_dep/first_dep_version", os.FileMode(0700))
 	assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestCompilePackageRecreatesDependencyInstallDir(t *testing.T) {
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
 
-	_, err = action.Run([]byte(payload))
+	_, err = action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
@@ -94,7 +94,7 @@ func TestCompilePackageRecreatesDependencyInstallDir(t *testing.T) {
 func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
 	compressor, blobstore, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	file, err := os.Open("/dev/null")
 	assert.NoError(t, err)
@@ -102,7 +102,7 @@ func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
 
 	blobstore.GetFile = file
 
-	_, err = action.Run([]byte(payload))
+	_, err = action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/compile/pkg_name"))
@@ -116,11 +116,11 @@ func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
 func TestCompilePackageCreatesInstallDir(t *testing.T) {
 	_, _, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
@@ -129,7 +129,7 @@ func TestCompilePackageCreatesInstallDir(t *testing.T) {
 func TestCompilePackageRecreatesInstallDir(t *testing.T) {
 	_, _, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	err := fs.MkdirAll("/var/vcap/data/packages/pkg_name/pkg_version", os.FileMode(0700))
 	assert.NoError(t, err)
@@ -139,7 +139,7 @@ func TestCompilePackageRecreatesInstallDir(t *testing.T) {
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
 
-	_, err = action.Run([]byte(payload))
+	_, err = action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
@@ -148,9 +148,9 @@ func TestCompilePackageRecreatesInstallDir(t *testing.T) {
 func TestCompilePackageSymlinksInstallDir(t *testing.T) {
 	_, _, action, fs, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	fileStats := fs.GetFileTestStat("/var/vcap/packages/pkg_name")
@@ -162,7 +162,7 @@ func TestCompilePackageSymlinksInstallDir(t *testing.T) {
 func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
 	_, _, action, _, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	clearEnvVariables()
 
@@ -171,7 +171,7 @@ func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
 	assert.Empty(t, os.Getenv("BOSH_PACKAGE_NAME"))
 	assert.Empty(t, os.Getenv("BOSH_PACKAGE_VERSION"))
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "/var/vcap/data/compile/pkg_name", os.Getenv("BOSH_COMPILE_TARGET"))
@@ -187,9 +187,9 @@ func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
 func TestCompilePackageCompressesCompiledPackage(t *testing.T) {
 	compressor, _, action, _, _ := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", compressor.CompressFilesInDirDir)
@@ -199,9 +199,9 @@ func TestCompilePackageCompressesCompiledPackage(t *testing.T) {
 func TestCompilePackageScriptDoesNotExist(t *testing.T) {
 	_, _, action, _, platform := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Empty(t, platform.Runner.RunCommands)
@@ -210,11 +210,11 @@ func TestCompilePackageScriptDoesNotExist(t *testing.T) {
 func TestCompilePackageScriptExists(t *testing.T) {
 	_, _, action, fs, platform := buildCompilePackageAction()
 
-	payload := getTestPayload()
+	blobId, sha1, name, version, deps := getTestArguments()
 
 	fs.WriteToFile("/var/vcap/data/compile/pkg_name/packaging", "hi")
 
-	_, err := action.Run([]byte(payload))
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, platform.Runner.RunCommands,
@@ -228,31 +228,25 @@ func clearEnvVariables() {
 	os.Setenv("BOSH_PACKAGE_VERSION", "")
 }
 
-func getTestPayload() (payload string) {
-	payload = `
-		{
-			"arguments": [
-				"blobstore_id",
-				"sha1",
-				"pkg_name",
-				"pkg_version",
-				{
-					"first_dep": {
-						"blobstore_id": "first_dep_blobstore_id",
-						"name": "first_dep",
-						"sha1": "first_dep_sha1",
-						"version": "first_dep_version"
-					},
-					"sec_dep": {
-						"blobstore_id": "sec_dep_blobstore_id",
-						"name": "sec_dep",
-						"sha1": "sec_dep_sha1",
-						"version": "sec_dep_version"
-					}
-				}
-			]
-		}
-		`
+func getTestArguments() (blobId, sha1, name, version string, deps Dependencies) {
+	blobId = "blobstore_id"
+	sha1 = "sha1"
+	name = "pkg_name"
+	version = "pkg_version"
+	deps = Dependencies{
+		"first_dep": Dependency{
+			BlobstoreId: "first_dep_blobstore_id",
+			Name:        "first_dep",
+			Sha1:        "first_dep_sha1",
+			Version:     "first_dep_version",
+		},
+		"sec_dep": Dependency{
+			BlobstoreId: "sec_dep_blobstore_id",
+			Name:        "sec_dep",
+			Sha1:        "sec_dep_sha1",
+			Version:     "sec_dep_version",
+		},
+	}
 	return
 }
 

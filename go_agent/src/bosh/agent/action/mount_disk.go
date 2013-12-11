@@ -21,22 +21,17 @@ func (a mountDiskAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a mountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
+func (a mountDiskAction) Run(volumeId string) (value interface{}, err error) {
 	err = a.settings.Refresh()
 	if err != nil {
 		err = bosherr.WrapError(err, "Refreshing the settings")
 		return
 	}
 
-	diskParams, err := NewDiskParams(a.settings, payloadBytes)
-	if err != nil {
-		err = bosherr.WrapError(err, "Parsing payload into disk params")
-		return
-	}
-
-	devicePath, err := diskParams.GetDevicePath()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting device path from params")
+	disksSettings := a.settings.GetDisks()
+	devicePath, found := disksSettings.Persistent[volumeId]
+	if !found {
+		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeId)
 		return
 	}
 

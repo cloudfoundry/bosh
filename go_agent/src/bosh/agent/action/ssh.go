@@ -4,8 +4,8 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	"encoding/json"
 	"errors"
+	"path/filepath"
 )
 
 type sshAction struct {
@@ -23,13 +23,14 @@ func (a sshAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a sshAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	cmd, params, err := extractCommand(payloadBytes)
-	if err != nil {
-		err = bosherr.WrapError(err, "Extracting ssh command")
-		return
-	}
+type sshParams struct {
+	UserRegex string `json:"user_regex"`
+	User      string
+	Password  string
+	PublicKey string `json:"public_key"`
+}
 
+func (a sshAction) Run(cmd string, params sshParams) (value interface{}, err error) {
 	switch cmd {
 	case "setup":
 		return a.setupSsh(params)
@@ -41,33 +42,51 @@ func (a sshAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	return
 }
 
-func extractCommand(payloadBytes []byte) (cmd string, params sshParams, err error) {
-	var payload struct {
-		Arguments []interface{}
-	}
-
-	err = json.Unmarshal(payloadBytes, &payload)
+func (a sshAction) setupSsh(params sshParams) (value interface{}, err error) {
+	boshSshPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh_ssh")
+	err = a.platform.CreateUser(params.User, params.Password, boshSshPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Parsing payload")
+		err = bosherr.WrapError(err, "Creating user")
 		return
 	}
 
-	cmd, ok := payload.Arguments[0].(string)
-	if !ok {
-		err = payloadErr("command")
+	err = a.platform.AddUserToGroups(params.User, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP})
+	if err != nil {
+		err = bosherr.WrapError(err, "Adding user to groups")
 		return
 	}
 
-	paramsMap, ok := payload.Arguments[1].(map[string]interface{})
-	params = sshParams(paramsMap)
-	if !ok {
-		err = payloadErr("params")
+	err = a.platform.SetupSsh(params.PublicKey, params.User)
+	if err != nil {
+		err = bosherr.WrapError(err, "Setting ssh public key")
 		return
 	}
 
+	defaultIp, found := a.settings.GetDefaultIp()
+
+	if !found {
+		err = errors.New("No default ip could be found")
+		return
+	}
+
+	value = map[string]string{
+		"command": "setup",
+		"status":  "success",
+		"ip":      defaultIp,
+	}
 	return
 }
 
-func payloadErr(attr string) error {
-	return bosherr.New("Parsing %s in payload", attr)
+func (a sshAction) cleanupSsh(params sshParams) (value interface{}, err error) {
+	err = a.platform.DeleteEphemeralUsersMatching(params.UserRegex)
+	if err != nil {
+		err = bosherr.WrapError(err, "Ssh Cleanup: Deleting Ephemeral Users")
+		return
+	}
+
+	value = map[string]string{
+		"command": "cleanup",
+		"status":  "success",
+	}
+	return
 }

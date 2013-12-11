@@ -12,7 +12,7 @@ func TestStopShouldBeAsynchronous(t *testing.T) {
 
 func TestStopRunReturnsStopped(t *testing.T) {
 	action := newStop()
-	stopped, err := action.Run([]byte{})
+	stopped, err := action.Run()
 	assert.NoError(t, err)
 	assert.Equal(t, "stopped", stopped)
 }

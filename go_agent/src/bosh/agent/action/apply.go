@@ -8,7 +8,6 @@ import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
-	"errors"
 	"path/filepath"
 )
 
@@ -29,33 +28,14 @@ func (a applyAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	var payload struct {
-		Arguments []interface{}
-	}
-	err = json.Unmarshal(payloadBytes, &payload)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload")
-		return
-	}
-
-	if len(payload.Arguments) == 0 {
-		err = errors.New("Not enough arguments, expected 1")
-		return
-	}
-
-	applySpec, err := boshas.NewV1ApplySpecFromData(payload.Arguments[0])
-	if err != nil {
-		return
-	}
-
+func (a applyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
 	err = a.applier.Apply(applySpec)
 	if err != nil {
 		err = bosherr.WrapError(err, "Applying")
 		return
 	}
 
-	spec, err := json.Marshal(payload.Arguments[0])
+	spec, err := json.Marshal(applySpec)
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling apply spec")
 		return

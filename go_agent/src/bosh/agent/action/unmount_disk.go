@@ -22,14 +22,11 @@ func (a unmountDiskAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a unmountDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	diskParams, err := NewDiskParams(a.settings, payloadBytes)
-	if err != nil {
-		return
-	}
-
-	devicePath, err := diskParams.GetDevicePath()
-	if err != nil {
+func (a unmountDiskAction) Run(volumeId string) (value interface{}, err error) {
+	disksSettings := a.settings.GetDisks()
+	devicePath, found := disksSettings.Persistent[volumeId]
+	if !found {
+		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeId)
 		return
 	}
 

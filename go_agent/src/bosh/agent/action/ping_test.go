@@ -12,7 +12,7 @@ func TestPingShouldBeSynchronous(t *testing.T) {
 
 func TestPingRunReturnsPong(t *testing.T) {
 	action := newPing()
-	pong, err := action.Run([]byte{})
+	pong, err := action.Run()
 	assert.NoError(t, err)
 	assert.Equal(t, "pong", pong)
 }

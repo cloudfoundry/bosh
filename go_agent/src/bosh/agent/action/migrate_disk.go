@@ -20,7 +20,7 @@ func (a migrateDiskAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a migrateDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
+func (a migrateDiskAction) Run() (value interface{}, err error) {
 	fromMountPoint := a.settings.GetStoreMountPoint()
 	toMountPoint := a.settings.GetStoreMigrationMountPoint()
 

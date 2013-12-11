@@ -31,11 +31,7 @@ func (a *actionWithGoodRunMethod) IsAsynchronous() bool {
 	return false
 }
 
-func (a *actionWithGoodRunMethod) Run(payloadBytes []byte) (value interface{}, err error) {
-	return
-}
-
-func (a *actionWithGoodRunMethod) RunWithoutPayload(subAction string, someId int, extraArgs argsType, sliceArgs []string) (value valueType, err error) {
+func (a *actionWithGoodRunMethod) Run(subAction string, someId int, extraArgs argsType, sliceArgs []string) (value valueType, err error) {
 	a.SubAction = subAction
 	a.SomeId = someId
 	a.ExtraArgs = extraArgs
@@ -107,10 +103,6 @@ func (a *actionWithoutRunMethod) IsAsynchronous() bool {
 	return false
 }
 
-func (a *actionWithoutRunMethod) Run(payloadBytes []byte) (value interface{}, err error) {
-	return
-}
-
 func TestRunnerRunErrsWhenActionDoesNotImplementRun(t *testing.T) {
 	runner := NewRunner()
 	_, err := runner.Run(&actionWithoutRunMethod{}, []byte(`{"arguments":[]}`))
@@ -124,11 +116,7 @@ func (a *actionWithOneRunReturnValue) IsAsynchronous() bool {
 	return false
 }
 
-func (a *actionWithOneRunReturnValue) Run(payloadBytes []byte) (value interface{}, err error) {
-	return
-}
-
-func (a *actionWithOneRunReturnValue) RunWithoutPayload() (err error) {
+func (a *actionWithOneRunReturnValue) Run() (err error) {
 	return
 }
 
@@ -145,11 +133,7 @@ func (a *actionWithSecondReturnValueNotError) IsAsynchronous() bool {
 	return false
 }
 
-func (a *actionWithSecondReturnValueNotError) Run(payloadBytes []byte) (value interface{}, err error) {
-	return
-}
-
-func (a *actionWithSecondReturnValueNotError) RunWithoutPayload() (value interface{}, otherValue string) {
+func (a *actionWithSecondReturnValueNotError) Run() (value interface{}, otherValue string) {
 	return
 }
 

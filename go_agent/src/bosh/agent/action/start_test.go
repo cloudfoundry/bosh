@@ -12,7 +12,7 @@ func TestStartShouldBeSynchronous(t *testing.T) {
 
 func TestStartRunReturnsStarted(t *testing.T) {
 	action := newStart()
-	started, err := action.Run([]byte{})
+	started, err := action.Run()
 	assert.NoError(t, err)
 	assert.Equal(t, "started", started)
 }

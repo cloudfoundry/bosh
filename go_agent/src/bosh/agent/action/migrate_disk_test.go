@@ -16,7 +16,7 @@ func TestMigrateDiskShouldBeAsynchronous(t *testing.T) {
 func TestMigrateDiskActionRun(t *testing.T) {
 	platform, action := buildMigrateDiskAction()
 
-	value, err := action.Run([]byte(""))
+	value, err := action.Run()
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, value, "{}")
 

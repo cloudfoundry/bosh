@@ -24,7 +24,7 @@ func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 		},
 	}
 
-	taskValue, err := action.Run([]byte(`{"arguments":["57"]}`))
+	taskValue, err := action.Run("57")
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, taskValue,
 		`{"agent_task_id":"found-57-id","state":"failed","exception":"Oops we failed..."}`)
@@ -41,7 +41,7 @@ func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {
 		},
 	}
 
-	taskValue, err := action.Run([]byte(`{"arguments":["57"]}`))
+	taskValue, err := action.Run("57")
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, taskValue,
 		`{"agent_task_id":"found-57-id","state":"done","value":"some-task-value"}`)
@@ -52,19 +52,9 @@ func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {
 
 	taskService.Tasks = map[string]boshtask.Task{}
 
-	_, err := action.Run([]byte(`{"arguments":["57"]}`))
+	_, err := action.Run("57")
 	assert.Error(t, err)
 	assert.Equal(t, "Task with id 57 could not be found", err.Error())
-}
-
-func TestGetTaskRunWhenPayloadDoesNotHaveTaskId(t *testing.T) {
-	taskService, action := buildGetTaskAction()
-
-	taskService.Tasks = map[string]boshtask.Task{}
-
-	_, err := action.Run([]byte(`{"arguments":[]}`))
-	assert.Error(t, err)
-	assert.Equal(t, "Error finding task: Not enough arguments", err.Error())
 }
 
 func buildGetTaskAction() (*faketask.FakeService, getTaskAction) {

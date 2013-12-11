@@ -22,7 +22,7 @@ func (a getStateAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a getStateAction) Run([]byte) (value interface{}, err error) {
+func (a getStateAction) Run() (value interface{}, err error) {
 	content, err := a.fs.ReadFile(boshsettings.VCAP_BASE_DIR + "/bosh/spec.json")
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading spec from disk")

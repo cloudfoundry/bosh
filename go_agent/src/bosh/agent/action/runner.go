@@ -30,7 +30,7 @@ func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface
 	}
 
 	actionValue := reflect.ValueOf(action)
-	runMethodValue := actionValue.MethodByName("RunWithoutPayload")
+	runMethodValue := actionValue.MethodByName("Run")
 
 	if runMethodValue.Kind() != reflect.Func {
 		err = bosherr.New("Run method not found")

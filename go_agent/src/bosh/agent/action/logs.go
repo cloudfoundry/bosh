@@ -5,8 +5,6 @@ import (
 	bosherr "bosh/errors"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
-	"encoding/json"
-	"errors"
 	"path/filepath"
 )
 
@@ -25,13 +23,7 @@ func (a logsAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a logsAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	filters, err := extractFilters(payloadBytes)
-	if err != nil {
-		err = bosherr.WrapError(err, "Extracting filters from payload")
-		return
-	}
-
+func (a logsAction) Run(_ string, filters []string) (value interface{}, err error) {
 	if len(filters) == 0 {
 		filters = []string{"**/*"}
 	}
@@ -50,42 +42,5 @@ func (a logsAction) Run(payloadBytes []byte) (value interface{}, err error) {
 	}
 
 	value = map[string]string{"blobstore_id": blobId}
-	return
-}
-
-func extractFilters(payloadBytes []byte) (filters []string, err error) {
-	type payloadType struct {
-		Arguments []interface{}
-	}
-	payload := payloadType{}
-	err = json.Unmarshal(payloadBytes, &payload)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload")
-		return
-	}
-
-	if len(payload.Arguments) < 2 {
-		err = errors.New("Not enough arguments in payload")
-		return
-	}
-
-	filterArgs, ok := payload.Arguments[1].([]interface{})
-	parseError := errors.New("Error parsing arguments when processing logs")
-
-	if !ok {
-		err = parseError
-		return
-	}
-
-	for _, filterArg := range filterArgs {
-		filter, ok := filterArg.(string)
-		if !ok {
-			err = parseError
-			return
-		}
-
-		filters = append(filters, filter)
-	}
-
 	return
 }

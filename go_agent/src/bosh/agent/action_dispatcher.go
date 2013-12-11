@@ -38,7 +38,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshmbus.Request) (resp 
 
 	case action.IsAsynchronous():
 		task := dispatcher.taskService.StartTask(func() (value interface{}, err error) {
-			value, err = action.Run(req.GetPayload())
+			value, err = dispatcher.actionRunner.Run(action, req.GetPayload())
 			return
 		})
 		resp = boshmbus.NewValueResponse(TaskValue{
@@ -47,7 +47,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshmbus.Request) (resp 
 		})
 
 	default:
-		value, err := action.Run(req.GetPayload())
+		value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
 
 		if err != nil {
 			err = bosherr.WrapError(err, "Action Failed %s", req.Method)

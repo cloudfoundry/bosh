@@ -34,25 +34,29 @@ func TestDispatchHandlesSynchronousAction(t *testing.T) {
 	// when action is successful
 	actionFactory.CreateAction = &fakeaction.TestAction{
 		Asynchronous: false,
-		RunValue:     "some value",
 	}
+	actionRunner.RunValue = "some value"
 
 	dispatcher := NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
 
 	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
 	resp := dispatcher.Dispatch(req)
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
-	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
+	assert.Equal(t, req.GetPayload(), actionRunner.RunPayload)
 	assert.Equal(t, boshmbus.NewValueResponse("some value"), resp)
+}
+
+func TestDispatchHandlesSynchronousActionWhenErr(t *testing.T) {
+	logger, taskService, actionFactory, actionRunner := getActionDispatcherDependencies()
 
 	// when action returns an error
-	actionFactory.CreateAction = &fakeaction.TestAction{
-		RunErr: errors.New("some error"),
-	}
+	actionFactory.CreateAction = &fakeaction.TestAction{}
+	actionRunner.RunErr = errors.New("some error")
 
-	dispatcher = NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
+	dispatcher := NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
 
-	resp = dispatcher.Dispatch(req)
+	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
+	resp := dispatcher.Dispatch(req)
 	expectedJson := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: some error\"}}", req.Method)
 	boshassert.MatchesJsonString(t, resp, expectedJson)
 	assert.Equal(t, actionFactory.CreateMethod, "some action")
@@ -64,8 +68,8 @@ func TestDispatchHandlesAsynchronousAction(t *testing.T) {
 	taskService.StartTaskStartedTask = boshtask.Task{Id: "found-57-id", State: boshtask.TaskStateDone}
 	actionFactory.CreateAction = &fakeaction.TestAction{
 		Asynchronous: true,
-		RunValue:     "some-task-result-value",
 	}
+	actionRunner.RunValue = "some-task-result-value"
 
 	dispatcher := NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
 	req := boshmbus.NewRequest("reply to me!", "some async action", []byte("some payload"))
@@ -80,7 +84,7 @@ func TestDispatchHandlesAsynchronousAction(t *testing.T) {
 	assert.Equal(t, "some-task-result-value", value)
 
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
-	assert.Equal(t, req.GetPayload(), actionFactory.CreateAction.RunPayload)
+	assert.Equal(t, req.GetPayload(), actionRunner.RunPayload)
 	assert.Equal(t, actionFactory.CreateMethod, "some async action")
 }
 

@@ -41,31 +41,7 @@ func (a compilePackageAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a compilePackageAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	var payload struct {
-		Arguments []interface{}
-	}
-	err = json.Unmarshal(payloadBytes, &payload)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload")
-		return
-	}
-
-	deps, err := getPackageDependencies(payload.Arguments[4])
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshaling dependencies")
-		return
-	}
-
-	blobstoreId := payload.Arguments[0].(string)
-	sha1 := payload.Arguments[1].(string)
-	pkgName := payload.Arguments[2].(string)
-	pkgVersion := payload.Arguments[3].(string)
-
-	return a.run(blobstoreId, sha1, pkgName, pkgVersion, deps)
-}
-
-func (a compilePackageAction) run(bstoreId, sha1, pName, pVer string, deps Dependencies) (val interface{}, err error) {
+func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Dependencies) (val interface{}, err error) {
 	var depFile *os.File
 
 	for _, dep := range deps {
