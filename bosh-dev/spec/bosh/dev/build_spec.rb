@@ -229,18 +229,21 @@ module Bosh::Dev
 
         it 'publishes a light stemcell to S3 bucket' do
           key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
-          build.upload_stemcell(stemcell)
-          expect(bucket_files.map(&:key)).to include(key)
-          expect(bucket_files.get(key).body).to eq('this file is a light stemcell')
-        end
+          latest_key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-        it 'updates the latest light stemcell in the s3 bucket' do
-          key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
           logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
+
+          upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+                                                      key: key,
+                                                      body: anything,
+                                                      public: true)
+
+          upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+                                                      key: latest_key,
+                                                      body: anything,
+                                                      public: true)
+
           build.upload_stemcell(stemcell)
-          expect(bucket_files.map(&:key)).to include(key)
-          expect(bucket_files.get(key).body).to eq('this file is a light stemcell')
         end
       end
     end
