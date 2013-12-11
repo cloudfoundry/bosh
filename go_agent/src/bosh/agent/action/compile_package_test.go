@@ -1,6 +1,7 @@
 package action
 
 import (
+	boshassert "bosh/assert"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	fakeplatform "bosh/platform/fakes"
@@ -13,6 +14,22 @@ import (
 func TestCompilePackageShouldBeAsynchronous(t *testing.T) {
 	_, _, action, _, _ := buildCompilePackageAction()
 	assert.True(t, action.IsAsynchronous())
+}
+
+func TestCompilePackageRunReturnsBlobId(t *testing.T) {
+	_, blobstore, action, _, _ := buildCompilePackageAction()
+
+	blobstore.CreateBlobId = "my-blob-id"
+	blobId, sha1, name, version, deps := getTestArguments()
+
+	expectedJson := map[string]interface{}{
+		"result": map[string]string{"blobstore_id": "my-blob-id"},
+	}
+
+	val, err := action.Run(blobId, sha1, name, version, deps)
+	assert.NoError(t, err)
+
+	boshassert.MatchesJsonMap(t, val, expectedJson)
 }
 
 func TestCompilePackageFetchesSourcePackageFromBlobstore(t *testing.T) {

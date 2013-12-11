@@ -111,12 +111,19 @@ func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Depen
 		return
 	}
 
-	_, err = a.blobstore.Create(tmpPackageTar)
+	uploadedBlobId, err := a.blobstore.Create(tmpPackageTar)
 	if err != nil {
 		bosherr.WrapError(err, "Uploading compiled package")
 		return
 	}
 
+	v := make(map[string]interface{})
+	result := make(map[string]string)
+
+	result["blobstore_id"] = uploadedBlobId
+	v["result"] = result
+
+	val = v
 	return
 }
 
