@@ -67,6 +67,89 @@ func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
 	assert.Equal(t, compressor.DecompressFileToDirTarballs[2], file)
 }
 
+func TestCompilePackageCreatesInstallDir(t *testing.T) {
+	_, _, action, fs := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
+}
+
+func TestCompilePackageRecreatesInstallDir(t *testing.T) {
+	_, _, action, fs := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	err := fs.MkdirAll("/var/vcap/data/packages/pkg_name/pkg_version", os.FileMode(0700))
+	assert.NoError(t, err)
+
+	_, err = fs.WriteToFile("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted", "test")
+	assert.NoError(t, err)
+
+	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
+
+	_, err = action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
+}
+
+func TestCompilePackageSymlinksInstallDir(t *testing.T) {
+	_, _, action, fs := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	fileStats := fs.GetFileTestStat("/var/vcap/packages/pkg_name")
+	assert.NotNil(t, fileStats)
+	assert.Equal(t, fakesys.FakeFileTypeSymlink, fileStats.FileType)
+	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", fileStats.SymlinkTarget)
+}
+
+// disk free check?
+
+// set up env
+func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
+	_, _, action, _ := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	clearEnvVariables()
+
+	assert.Empty(t, os.Getenv("BOSH_COMPILE_TARGET"))
+	assert.Empty(t, os.Getenv("BOSH_INSTALL_TARGET"))
+	assert.Empty(t, os.Getenv("BOSH_PACKAGE_NAME"))
+	assert.Empty(t, os.Getenv("BOSH_PACKAGE_VERSION"))
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.Equal(t, "/var/vcap/data/compile/pkg_name", os.Getenv("BOSH_COMPILE_TARGET"))
+	assert.Equal(t, "/var/vcap/packages/pkg_name", os.Getenv("BOSH_INSTALL_TARGET"))
+	assert.Equal(t, "pkg_name", os.Getenv("BOSH_PACKAGE_NAME"))
+	assert.Equal(t, "pkg_version", os.Getenv("BOSH_PACKAGE_VERSION"))
+
+	assert.Empty(t, os.Getenv("GEM_HOME"))
+	assert.Empty(t, os.Getenv("BUNDLE_GEMFILE"))
+	assert.Empty(t, os.Getenv("RUBYOPT"))
+}
+
+// runs packaging script
+
+func clearEnvVariables() {
+	os.Setenv("BOSH_COMPILE_TARGET", "")
+	os.Setenv("BOSH_INSTALL_TARGET", "")
+	os.Setenv("BOSH_PACKAGE_NAME", "")
+	os.Setenv("BOSH_PACKAGE_VERSION", "")
+}
+
 func getTestPayload() (payload string) {
 	payload = `
 		{
