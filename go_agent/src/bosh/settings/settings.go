@@ -1,14 +1,16 @@
 package settings
 
 const (
-	ROOT_USERNAME         = "root"
-	VCAP_USERNAME         = "vcap"
-	VCAP_BASE_DIR         = "/var/vcap"
-	VCAP_ETC_DIR          = VCAP_BASE_DIR + "/bosh/etc"
-	VCAP_PKG_DIR          = VCAP_BASE_DIR + "/data/packages"
-	VCAP_COMPILE_DIR      = VCAP_BASE_DIR + "/data/compile"
-	ADMIN_GROUP           = "admin"
-	EPHEMERAL_USER_PREFIX = "bosh_"
+	ROOT_USERNAME            = "root"
+	VCAP_USERNAME            = "vcap"
+	VCAP_BASE_DIR            = "/var/vcap"
+	VCAP_ETC_DIR             = VCAP_BASE_DIR + "/bosh/etc"
+	VCAP_STORE_DIR           = VCAP_BASE_DIR + "/store"
+	VCAP_STORE_MIGRATION_DIR = VCAP_BASE_DIR + "/store_migration_target"
+	VCAP_PKG_DIR             = VCAP_BASE_DIR + "/data/packages"
+	VCAP_COMPILE_DIR         = VCAP_BASE_DIR + "/data/compile"
+	ADMIN_GROUP              = "admin"
+	EPHEMERAL_USER_PREFIX    = "bosh_"
 )
 
 type Settings struct {

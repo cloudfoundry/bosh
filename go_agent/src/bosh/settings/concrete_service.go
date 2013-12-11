@@ -2,7 +2,6 @@ package settings
 
 import (
 	bosherr "bosh/errors"
-	"path/filepath"
 )
 
 type SettingsFetcher func() (settings Settings, err error)
@@ -48,14 +47,6 @@ func (service *concreteService) GetMbusUrl() string {
 
 func (service *concreteService) GetDisks() Disks {
 	return service.settings.Disks
-}
-
-func (service *concreteService) GetStoreMountPoint() string {
-	return filepath.Join(VCAP_BASE_DIR, "store")
-}
-
-func (service *concreteService) GetStoreMigrationMountPoint() string {
-	return filepath.Join(VCAP_BASE_DIR, "store_migration_target")
 }
 
 func (service *concreteService) GetDefaultIp() (ip string, found bool) {

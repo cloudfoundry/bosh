@@ -35,7 +35,7 @@ func (a mountDiskAction) Run(volumeId string) (value interface{}, err error) {
 		return
 	}
 
-	mountPoint := a.settings.GetStoreMountPoint()
+	mountPoint := boshsettings.VCAP_STORE_DIR
 
 	isMountPoint, err := a.platform.IsMountPoint(mountPoint)
 	if err != nil {
@@ -43,7 +43,7 @@ func (a mountDiskAction) Run(volumeId string) (value interface{}, err error) {
 		return
 	}
 	if isMountPoint {
-		mountPoint = a.settings.GetStoreMigrationMountPoint()
+		mountPoint = boshsettings.VCAP_STORE_MIGRATION_DIR
 	}
 
 	err = a.platform.MountPersistentDisk(devicePath, mountPoint)

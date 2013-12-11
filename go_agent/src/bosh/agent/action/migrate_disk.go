@@ -21,8 +21,8 @@ func (a migrateDiskAction) IsAsynchronous() bool {
 }
 
 func (a migrateDiskAction) Run() (value interface{}, err error) {
-	fromMountPoint := a.settings.GetStoreMountPoint()
-	toMountPoint := a.settings.GetStoreMigrationMountPoint()
+	fromMountPoint := boshsettings.VCAP_STORE_DIR
+	toMountPoint := boshsettings.VCAP_STORE_MIGRATION_DIR
 
 	err = a.platform.MigratePersistentDisk(fromMountPoint, toMountPoint)
 	if err != nil {
