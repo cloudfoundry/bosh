@@ -105,9 +105,15 @@ func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Depen
 		}
 	}
 
-	_, err = a.compressor.CompressFilesInDir(installPath, []string{"**/*"})
+	tmpPackageTar, err := a.compressor.CompressFilesInDir(installPath, []string{"**/*"})
 	if err != nil {
 		bosherr.WrapError(err, "Compressing compiled package")
+		return
+	}
+
+	_, err = a.blobstore.Create(tmpPackageTar)
+	if err != nil {
+		bosherr.WrapError(err, "Uploading compiled package")
 		return
 	}
 

@@ -213,6 +213,19 @@ func TestCompilePackageScriptExists(t *testing.T) {
 		[][]string{{"cd", "/var/vcap/data/compile/pkg_name", "&&", "bash", "-x", "packaging", "2>&1"}})
 }
 
+func TestCompilePackageUploadsCompressedPackage(t *testing.T) {
+	compressor, blobstore, action, _, _ := buildCompilePackageAction()
+
+	blobId, sha1, name, version, deps := getTestArguments()
+
+	compressor.CompressFilesInDirTarballPath = "/tmp/foo"
+
+	_, err := action.Run(blobId, sha1, name, version, deps)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "/tmp/foo", blobstore.CreateFileName)
+}
+
 func clearEnvVariables() {
 	os.Setenv("BOSH_COMPILE_TARGET", "")
 	os.Setenv("BOSH_INSTALL_TARGET", "")
