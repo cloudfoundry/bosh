@@ -2,7 +2,7 @@ package action
 
 import (
 	fakeblobstore "bosh/blobstore/fakes"
-	fakedisk "bosh/platform/disk/fakes"
+	fakecmd "bosh/platform/commands/fakes"
 	fakeplatform "bosh/platform/fakes"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
@@ -250,8 +250,8 @@ func getTestArguments() (blobId, sha1, name, version string, deps Dependencies) 
 	return
 }
 
-func buildCompilePackageAction() (*fakedisk.FakeCompressor, *fakeblobstore.FakeBlobstore, compilePackageAction, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform) {
-	compressor := fakedisk.NewFakeCompressor()
+func buildCompilePackageAction() (*fakecmd.FakeCompressor, *fakeblobstore.FakeBlobstore, compilePackageAction, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform) {
+	compressor := fakecmd.NewFakeCompressor()
 	blobstore := &fakeblobstore.FakeBlobstore{}
 	platform := fakeplatform.NewFakePlatform()
 	action := newCompilePackage(compressor, blobstore, platform)

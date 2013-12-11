@@ -4,7 +4,7 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
-	fakedisk "bosh/platform/disk/fakes"
+	fakecmd "bosh/platform/commands/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -102,12 +102,12 @@ func TestApplyErrsWhenPackageDecompressErrs(t *testing.T) {
 func buildPackageApplier() (
 	*fakebc.FakeBundleCollection,
 	*fakeblob.FakeBlobstore,
-	*fakedisk.FakeCompressor,
+	*fakecmd.FakeCompressor,
 	PackageApplier,
 ) {
 	packagesBc := fakebc.NewFakeBundleCollection()
 	blobstore := fakeblob.NewFakeBlobstore()
-	compressor := fakedisk.NewFakeCompressor()
+	compressor := fakecmd.NewFakeCompressor()
 	applier := NewConcretePackageApplier(packagesBc, blobstore, compressor)
 	return packagesBc, blobstore, compressor, applier
 }

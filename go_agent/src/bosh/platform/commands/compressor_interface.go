@@ -1,4 +1,4 @@
-package disk
+package commands
 
 import "os"
 

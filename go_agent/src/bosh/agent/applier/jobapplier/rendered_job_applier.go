@@ -5,7 +5,7 @@ import (
 	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
-	boshdisk "bosh/platform/disk"
+	boshcmd "bosh/platform/commands"
 	"os"
 	"path/filepath"
 )
@@ -13,13 +13,13 @@ import (
 type renderedJobApplier struct {
 	jobsBc     bc.BundleCollection
 	blobstore  boshblob.Blobstore
-	compressor boshdisk.Compressor
+	compressor boshcmd.Compressor
 }
 
 func NewRenderedJobApplier(
 	jobsBc bc.BundleCollection,
 	blobstore boshblob.Blobstore,
-	compressor boshdisk.Compressor,
+	compressor boshcmd.Compressor,
 ) *renderedJobApplier {
 	return &renderedJobApplier{
 		jobsBc:     jobsBc,

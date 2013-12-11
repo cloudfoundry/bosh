@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	boshdisk "bosh/platform/disk"
-	fakedisk "bosh/platform/disk/fakes"
+	boshcmd "bosh/platform/commands"
+	fakecmd "bosh/platform/commands/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
@@ -14,7 +14,7 @@ type FakePlatform struct {
 	Fs                 *fakesys.FakeFileSystem
 	Runner             *fakesys.FakeCmdRunner
 	FakeStatsCollector *fakestats.FakeStatsCollector
-	FakeCompressor     *fakedisk.FakeCompressor
+	FakeCompressor     *fakecmd.FakeCompressor
 
 	SetupRuntimeConfigurationWasInvoked bool
 
@@ -65,7 +65,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.Fs = &fakesys.FakeFileSystem{}
 	platform.Runner = &fakesys.FakeCmdRunner{}
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
-	platform.FakeCompressor = &fakedisk.FakeCompressor{}
+	platform.FakeCompressor = &fakecmd.FakeCompressor{}
 
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
@@ -85,7 +85,7 @@ func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) 
 	return p.FakeStatsCollector
 }
 
-func (p *FakePlatform) GetCompressor() (compressor boshdisk.Compressor) {
+func (p *FakePlatform) GetCompressor() (compressor boshcmd.Compressor) {
 	return p.FakeCompressor
 }
 

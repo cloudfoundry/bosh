@@ -1,8 +1,7 @@
 package platform
 
 import (
-	boshdisk "bosh/platform/disk"
-	fakedisk "bosh/platform/disk/fakes"
+	boshcmd "bosh/platform/commands"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -27,8 +26,8 @@ func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) 
 	return boshstats.NewDummyStatsCollector()
 }
 
-func (p dummyPlatform) GetCompressor() (compressor boshdisk.Compressor) {
-	return &fakedisk.FakeCompressor{}
+func (p dummyPlatform) GetCompressor() (compressor boshcmd.Compressor) {
+	return boshcmd.DummyCompressor{}
 }
 
 func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {

@@ -1,7 +1,7 @@
 package platform
 
 import (
-	boshdisk "bosh/platform/disk"
+	boshcmd "bosh/platform/commands"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -11,7 +11,7 @@ type Platform interface {
 	GetFs() (fs boshsys.FileSystem)
 	GetRunner() (runner boshsys.CmdRunner)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
-	GetCompressor() (compressor boshdisk.Compressor)
+	GetCompressor() (compressor boshcmd.Compressor)
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)
 	AddUserToGroups(username string, groups []string) (err error)

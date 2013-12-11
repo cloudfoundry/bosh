@@ -3,6 +3,7 @@ package platform
 import (
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
+	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshsys "bosh/system"
@@ -19,7 +20,7 @@ func NewProvider(logger boshlog.Logger) (p provider) {
 	fs := boshsys.NewOsFileSystem(logger, runner)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
 	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(logger, runner, fs)
-	compressor := boshdisk.NewTarballCompressor(runner, fs)
+	compressor := boshcmd.NewTarballCompressor(runner, fs)
 
 	p.platforms = map[string]Platform{
 		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, compressor),

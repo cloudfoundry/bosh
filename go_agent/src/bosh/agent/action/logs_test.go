@@ -3,7 +3,7 @@ package action
 import (
 	boshassert "bosh/assert"
 	fakeblobstore "bosh/blobstore/fakes"
-	fakedisk "bosh/platform/disk/fakes"
+	fakecmd "bosh/platform/commands/fakes"
 	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -49,8 +49,8 @@ func testLogs(t *testing.T, filters []string, expectedFilters []string) {
 	boshassert.MatchesJsonString(t, logs, `{"blobstore_id":"my-blob-id"}`)
 }
 
-func buildLogsAction() (*fakedisk.FakeCompressor, *fakeblobstore.FakeBlobstore, logsAction) {
-	compressor := fakedisk.NewFakeCompressor()
+func buildLogsAction() (*fakecmd.FakeCompressor, *fakeblobstore.FakeBlobstore, logsAction) {
+	compressor := fakecmd.NewFakeCompressor()
 	blobstore := &fakeblobstore.FakeBlobstore{}
 	action := newLogs(compressor, blobstore)
 	return compressor, blobstore, action

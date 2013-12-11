@@ -1,6 +1,7 @@
 package platform
 
 import (
+	fakecmd "bosh/platform/commands/fakes"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
@@ -187,7 +188,7 @@ func testUbuntuSetupDhcp(
 	fakeFs *fakesys.FakeFileSystem,
 	fakeCmdRunner *fakesys.FakeCmdRunner,
 	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor *fakedisk.FakeCompressor,
+	fakeCompressor *fakecmd.FakeCompressor,
 ) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
@@ -502,12 +503,12 @@ func getUbuntuDependencies() (
 	fs *fakesys.FakeFileSystem,
 	cmdRunner *fakesys.FakeCmdRunner,
 	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor *fakedisk.FakeCompressor,
+	fakeCompressor *fakecmd.FakeCompressor,
 ) {
 	collector = &fakestats.FakeStatsCollector{}
 	fs = &fakesys.FakeFileSystem{}
 	cmdRunner = &fakesys.FakeCmdRunner{}
 	fakeDiskManager = fakedisk.NewFakeDiskManager(cmdRunner)
-	fakeCompressor = fakedisk.NewFakeCompressor()
+	fakeCompressor = fakecmd.NewFakeCompressor()
 	return
 }

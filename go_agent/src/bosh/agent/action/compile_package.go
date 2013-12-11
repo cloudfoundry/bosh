@@ -4,7 +4,7 @@ import (
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
-	boshdisk "bosh/platform/disk"
+	boshcmd "bosh/platform/commands"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 )
 
 type compilePackageAction struct {
-	compressor boshdisk.Compressor
+	compressor boshcmd.Compressor
 	blobstore  boshblob.Blobstore
 	fs         boshsys.FileSystem
 	platform   boshplatform.Platform
@@ -28,11 +28,11 @@ type Dependency struct {
 	Version     string
 }
 
-func newCompilePackage(c boshdisk.Compressor, b boshblob.Blobstore, p boshplatform.Platform) (cPkg compilePackageAction) {
-	cPkg.compressor = c
-	cPkg.blobstore = b
-	cPkg.fs = p.GetFs()
-	cPkg.platform = p
+func newCompilePackage(compressor boshcmd.Compressor, blobstore boshblob.Blobstore, p boshplatform.Platform) (compilePackage compilePackageAction) {
+	compilePackage.compressor = compressor
+	compilePackage.blobstore = blobstore
+	compilePackage.fs = p.GetFs()
+	compilePackage.platform = p
 
 	return
 }

@@ -3,17 +3,17 @@ package action
 import (
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
-	boshdisk "bosh/platform/disk"
+	boshcmd "bosh/platform/commands"
 	boshsettings "bosh/settings"
 	"path/filepath"
 )
 
 type logsAction struct {
-	compressor boshdisk.Compressor
+	compressor boshcmd.Compressor
 	blobstore  boshblob.Blobstore
 }
 
-func newLogs(compressor boshdisk.Compressor, blobstore boshblob.Blobstore) (action logsAction) {
+func newLogs(compressor boshcmd.Compressor, blobstore boshblob.Blobstore) (action logsAction) {
 	action.compressor = compressor
 	action.blobstore = blobstore
 	return

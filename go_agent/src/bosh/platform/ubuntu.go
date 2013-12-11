@@ -2,6 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
+	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
@@ -23,7 +24,7 @@ type ubuntu struct {
 	partitioner     boshdisk.Partitioner
 	formatter       boshdisk.Formatter
 	mounter         boshdisk.Mounter
-	compressor      boshdisk.Compressor
+	compressor      boshcmd.Compressor
 	diskWaitTimeout time.Duration
 }
 
@@ -32,7 +33,7 @@ func newUbuntuPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	diskManager boshdisk.Manager,
-	compressor boshdisk.Compressor,
+	compressor boshcmd.Compressor,
 ) (platform ubuntu) {
 	platform.collector = collector
 	platform.fs = fs
@@ -57,7 +58,7 @@ func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }
 
-func (p ubuntu) GetCompressor() (runner boshdisk.Compressor) {
+func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
 }
 
