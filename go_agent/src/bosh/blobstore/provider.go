@@ -5,6 +5,7 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshuuid "bosh/uuid"
+	"path/filepath"
 )
 
 type provider struct {
@@ -15,11 +16,12 @@ func NewProvider(platform boshplatform.Platform) (p provider) {
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
 	uuidGen := boshuuid.NewGenerator()
+	s3cliConfigPath := filepath.Join(boshsettings.VCAP_ETC_DIR, "s3cli")
 
 	p.blobstores = map[boshsettings.BlobstoreType]Blobstore{
 		boshsettings.BlobstoreTypeDav:   newDummyBlobstore(),
 		boshsettings.BlobstoreTypeDummy: newDummyBlobstore(),
-		boshsettings.BlobstoreTypeS3:    newS3Blobstore(fs, runner, uuidGen),
+		boshsettings.BlobstoreTypeS3:    newS3Blobstore(fs, runner, uuidGen, s3cliConfigPath),
 	}
 	return
 }

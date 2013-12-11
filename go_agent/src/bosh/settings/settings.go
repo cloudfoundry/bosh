@@ -4,6 +4,7 @@ const (
 	ROOT_USERNAME         = "root"
 	VCAP_USERNAME         = "vcap"
 	VCAP_BASE_DIR         = "/var/vcap"
+	VCAP_ETC_DIR          = VCAP_BASE_DIR + "/bosh/etc"
 	VCAP_PKG_DIR          = VCAP_BASE_DIR + "/data/packages"
 	VCAP_COMPILE_DIR      = VCAP_BASE_DIR + "/data/compile"
 	ADMIN_GROUP           = "admin"

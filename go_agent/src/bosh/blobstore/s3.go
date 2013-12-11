@@ -2,7 +2,6 @@ package blobstore
 
 import (
 	bosherr "bosh/errors"
-	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	boshuuid "bosh/uuid"
 	"encoding/json"
@@ -18,12 +17,12 @@ type s3 struct {
 	configFilePath string
 }
 
-func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator) (blobstore Blobstore) {
+func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
 	return s3{
 		fs:             fs,
 		runner:         runner,
 		uuidGen:        uuidGen,
-		configFilePath: filepath.Join(boshsettings.VCAP_BASE_DIR, "etc", "s3cli"),
+		configFilePath: configFilePath,
 	}
 }
 
