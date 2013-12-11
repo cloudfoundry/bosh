@@ -136,6 +136,26 @@ func TestFileExists(t *testing.T) {
 	assert.True(t, osFs.FileExists(testPath))
 }
 
+func TestRename(t *testing.T) {
+	osFs, _ := createOsFs()
+	tempDir := os.TempDir()
+	oldPath := filepath.Join(tempDir, "old")
+	oldFilePath := filepath.Join(oldPath, "test.txt")
+	newPath := filepath.Join(tempDir, "new")
+
+	os.Mkdir(oldPath, os.ModePerm)
+	_, err := os.Create(oldFilePath)
+	assert.NoError(t, err)
+
+	err = osFs.Rename(oldPath, newPath)
+	assert.NoError(t, err)
+
+	assert.True(t, osFs.FileExists(newPath))
+
+	newFilePath := filepath.Join(newPath, "test.txt")
+	assert.True(t, osFs.FileExists(newFilePath))
+}
+
 func TestSymlink(t *testing.T) {
 	osFs, _ := createOsFs()
 	filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")

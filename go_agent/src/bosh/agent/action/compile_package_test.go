@@ -3,6 +3,7 @@ package action
 import (
 	fakeblobstore "bosh/blobstore/fakes"
 	fakedisk "bosh/platform/disk/fakes"
+	fakeplatform "bosh/platform/fakes"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -10,12 +11,12 @@ import (
 )
 
 func TestCompilePackageShouldBeAsynchronous(t *testing.T) {
-	_, _, action, _ := buildCompilePackageAction()
+	_, _, action, _, _ := buildCompilePackageAction()
 	assert.True(t, action.IsAsynchronous())
 }
 
 func TestCompilePackageFetchesSourcePackageFromBlobstore(t *testing.T) {
-	_, blobstore, action, _ := buildCompilePackageAction()
+	_, blobstore, action, _, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -28,7 +29,7 @@ func TestCompilePackageFetchesSourcePackageFromBlobstore(t *testing.T) {
 }
 
 func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
-	compressor, blobstore, action, _ := buildCompilePackageAction()
+	compressor, blobstore, action, fs, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -41,15 +42,61 @@ func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
 	_, err = action.Run([]byte(payload))
 	assert.NoError(t, err)
 
-	assert.Equal(t, compressor.DecompressFileToDirDirs[0], "/var/vcap/data/packages/first_dep/first_dep_version")
-	assert.Equal(t, compressor.DecompressFileToDirDirs[1], "/var/vcap/data/packages/sec_dep/sec_dep_version")
+	assert.Equal(t, compressor.DecompressFileToDirDirs[0],
+		"/var/vcap/data/packages/first_dep/first_dep_version-bosh-agent-unpack")
+	assert.Equal(t, compressor.DecompressFileToDirDirs[1],
+		"/var/vcap/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack")
 
 	assert.Equal(t, compressor.DecompressFileToDirTarballs[0], file)
 	assert.Equal(t, compressor.DecompressFileToDirTarballs[1], file)
+
+	assert.Equal(t, "/var/vcap/data/packages/first_dep/first_dep_version-bosh-agent-unpack", fs.RenameOldPaths[0])
+	assert.Equal(t, "/var/vcap/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack", fs.RenameOldPaths[1])
+
+	assert.Equal(t, "/var/vcap/data/packages/first_dep/first_dep_version", fs.RenameNewPaths[0])
+	assert.Equal(t, "/var/vcap/data/packages/sec_dep/sec_dep_version", fs.RenameNewPaths[1])
+}
+
+func TestCompilePackageCreatesDependencyInstallDir(t *testing.T) {
+	_, _, action, fs, _ := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
+	assert.False(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
+	assert.True(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
+}
+
+func TestFoo(t *testing.T) {
+	os.Rename("/tmp/dir1", "/tmp/dir2")
+}
+
+func TestCompilePackageRecreatesDependencyInstallDir(t *testing.T) {
+	_, _, action, fs, _ := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	err := fs.MkdirAll("/var/vcap/data/packages/first_dep/first_dep_version", os.FileMode(0700))
+	assert.NoError(t, err)
+
+	_, err = fs.WriteToFile("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted", "test")
+	assert.NoError(t, err)
+
+	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
+
+	_, err = action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
 }
 
 func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
-	compressor, blobstore, action, fs := buildCompilePackageAction()
+	compressor, blobstore, action, fs, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -63,12 +110,15 @@ func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/compile/pkg_name"))
-	assert.Equal(t, compressor.DecompressFileToDirDirs[2], "/var/vcap/data/compile/pkg_name")
+	assert.Equal(t, compressor.DecompressFileToDirDirs[2], "/var/vcap/data/compile/pkg_name-bosh-agent-unpack")
 	assert.Equal(t, compressor.DecompressFileToDirTarballs[2], file)
+
+	assert.Equal(t, fs.RenameOldPaths[2], "/var/vcap/data/compile/pkg_name-bosh-agent-unpack")
+	assert.Equal(t, fs.RenameNewPaths[2], "/var/vcap/data/compile/pkg_name")
 }
 
 func TestCompilePackageCreatesInstallDir(t *testing.T) {
-	_, _, action, fs := buildCompilePackageAction()
+	_, _, action, fs, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -81,7 +131,7 @@ func TestCompilePackageCreatesInstallDir(t *testing.T) {
 }
 
 func TestCompilePackageRecreatesInstallDir(t *testing.T) {
-	_, _, action, fs := buildCompilePackageAction()
+	_, _, action, fs, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -100,7 +150,7 @@ func TestCompilePackageRecreatesInstallDir(t *testing.T) {
 }
 
 func TestCompilePackageSymlinksInstallDir(t *testing.T) {
-	_, _, action, fs := buildCompilePackageAction()
+	_, _, action, fs, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -113,11 +163,8 @@ func TestCompilePackageSymlinksInstallDir(t *testing.T) {
 	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", fileStats.SymlinkTarget)
 }
 
-// disk free check?
-
-// set up env
 func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
-	_, _, action, _ := buildCompilePackageAction()
+	_, _, action, _, _ := buildCompilePackageAction()
 
 	payload := getTestPayload()
 
@@ -141,7 +188,30 @@ func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
 	assert.Empty(t, os.Getenv("RUBYOPT"))
 }
 
-// runs packaging script
+func TestCompilePackageScriptDoesNotExist(t *testing.T) {
+	_, _, action, _, platform := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.Empty(t, platform.Runner.RunCommands)
+}
+
+func TestCompilePackageScriptExists(t *testing.T) {
+	_, _, action, fs, platform := buildCompilePackageAction()
+
+	payload := getTestPayload()
+
+	fs.WriteToFile("/var/vcap/data/compile/pkg_name/packaging", "hi")
+
+	_, err := action.Run([]byte(payload))
+	assert.NoError(t, err)
+
+	assert.Equal(t, platform.Runner.RunCommands,
+		[][]string{{"cd", "/var/vcap/data/compile/pkg_name", "&&", "bash", "-x", "packaging", "2>&1"}})
+}
 
 func clearEnvVariables() {
 	os.Setenv("BOSH_COMPILE_TARGET", "")
@@ -178,10 +248,10 @@ func getTestPayload() (payload string) {
 	return
 }
 
-func buildCompilePackageAction() (*fakedisk.FakeCompressor, *fakeblobstore.FakeBlobstore, compilePackageAction, *fakesys.FakeFileSystem) {
+func buildCompilePackageAction() (*fakedisk.FakeCompressor, *fakeblobstore.FakeBlobstore, compilePackageAction, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform) {
 	compressor := fakedisk.NewFakeCompressor()
 	blobstore := &fakeblobstore.FakeBlobstore{}
-	fakeFs := fakesys.NewFakeFileSystem()
-	action := newCompilePackage(compressor, blobstore, fakeFs)
-	return compressor, blobstore, action, fakeFs
+	platform := fakeplatform.NewFakePlatform()
+	action := newCompilePackage(compressor, blobstore, platform)
+	return compressor, blobstore, action, platform.Fs, platform
 }

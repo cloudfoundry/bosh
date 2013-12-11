@@ -15,6 +15,7 @@ type FileSystem interface {
 	WriteToFile(path, content string) (written bool, err error)
 	ReadFile(path string) (content string, err error)
 	FileExists(path string) bool
+	Rename(oldPath, newPath string) (err error)
 
 	// After Symlink file at newPath will be pointing to file at oldPath.
 	// Symlink call will remove file at newPath if one exists

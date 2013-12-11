@@ -30,6 +30,10 @@ type FakeFileSystem struct {
 	CopyDirEntriesSrcPath string
 	CopyDirEntriesDstPath string
 
+	RenameError    error
+	RenameOldPaths []string
+	RenameNewPaths []string
+
 	TempFileError  error
 	ReturnTempFile *os.File
 
@@ -109,6 +113,31 @@ func (fs *FakeFileSystem) ReadFile(path string) (content string, err error) {
 
 func (fs *FakeFileSystem) FileExists(path string) bool {
 	return fs.GetFileTestStat(path) != nil
+}
+
+func (fs *FakeFileSystem) Rename(oldPath, newPath string) (err error) {
+	if fs.RenameError != nil {
+		err = fs.RenameError
+		return
+	}
+
+	stats := fs.GetFileTestStat(oldPath)
+	if stats == nil {
+		err = errors.New("Old path did not exist")
+		return
+	}
+
+	fs.RenameOldPaths = append(fs.RenameOldPaths, oldPath)
+	fs.RenameNewPaths = append(fs.RenameNewPaths, newPath)
+
+	newStats := fs.getOrCreateFile(newPath)
+	newStats.Content = stats.Content
+	newStats.FileMode = stats.FileMode
+	newStats.FileType = stats.FileType
+
+	fs.RemoveAll(oldPath)
+
+	return
 }
 
 func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {

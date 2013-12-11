@@ -3,6 +3,7 @@ package action
 import (
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
+	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -15,6 +16,7 @@ type compilePackageAction struct {
 	compressor boshdisk.Compressor
 	blobstore  boshblob.Blobstore
 	fs         boshsys.FileSystem
+	platform   boshplatform.Platform
 }
 
 type Dependencies map[string]Dependency
@@ -26,10 +28,11 @@ type Dependency struct {
 	Version     string
 }
 
-func newCompilePackage(c boshdisk.Compressor, b boshblob.Blobstore, fs boshsys.FileSystem) (cPkg compilePackageAction) {
+func newCompilePackage(c boshdisk.Compressor, b boshblob.Blobstore, p boshplatform.Platform) (cPkg compilePackageAction) {
 	cPkg.compressor = c
 	cPkg.blobstore = b
-	cPkg.fs = fs
+	cPkg.fs = p.GetFs()
+	cPkg.platform = p
 
 	return
 }
@@ -73,7 +76,12 @@ func (a compilePackageAction) run(bstoreId, sha1, pName, pVer string, deps Depen
 		}
 
 		depFilePath := packageInstallPath(dep.Name, dep.Version)
-		err = a.compressor.DecompressFileToDir(depFile, depFilePath)
+		err = cleanPackageInstallPath(depFilePath, a.fs)
+		if err != nil {
+			err = bosherr.WrapError(err, "Clean package install path %s", depFilePath)
+			return
+		}
+		err = a.atomicDecompress(depFile, depFilePath)
 		if err != nil {
 			err = bosherr.WrapError(err, "Uncompressing dependent package %", dep.Name)
 			return
@@ -89,7 +97,7 @@ func (a compilePackageAction) run(bstoreId, sha1, pName, pVer string, deps Depen
 	compilePath := filepath.Join(boshsettings.VCAP_COMPILE_DIR, pName)
 	a.fs.MkdirAll(compilePath, os.ModePerm)
 
-	err = a.compressor.DecompressFileToDir(srcPkgFile, compilePath)
+	err = a.atomicDecompress(srcPkgFile, compilePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Uncompressing source package %s", pName)
 	}
@@ -108,6 +116,33 @@ func (a compilePackageAction) run(bstoreId, sha1, pName, pVer string, deps Depen
 	}
 
 	manageEnvironmentVariables(compilePath, packageLinkPath, pName, pVer)
+
+	scriptPath := filepath.Join(compilePath, "packaging")
+
+	if a.fs.FileExists(scriptPath) {
+		_, _, err = a.platform.GetRunner().RunCommand(
+			"cd", compilePath, "&&",
+			"bash", "-x", "packaging", "2>&1")
+		if err != nil {
+			err = bosherr.WrapError(err, "Running packaging script")
+			return
+		}
+	}
+
+	return
+}
+
+func (a compilePackageAction) atomicDecompress(archive *os.File, finalDir string) (err error) {
+	tmpInstallPath := finalDir + "-bosh-agent-unpack"
+	a.fs.RemoveAll(tmpInstallPath)
+	a.fs.MkdirAll(tmpInstallPath, os.ModePerm)
+
+	err = a.compressor.DecompressFileToDir(archive, tmpInstallPath)
+	if err != nil {
+		return
+	}
+
+	err = a.fs.Rename(tmpInstallPath, finalDir)
 
 	return
 }

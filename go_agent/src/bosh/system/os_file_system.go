@@ -139,6 +139,13 @@ func (fs osFileSystem) FileExists(path string) bool {
 	return true
 }
 
+func (fs osFileSystem) Rename(oldPath, newPath string) (err error) {
+	fs.logger.Debug(fs.logTag, "Renaming %s to %s", oldPath, newPath)
+
+	fs.RemoveAll(newPath)
+	return os.Rename(oldPath, newPath)
+}
+
 func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 	fs.logger.Debug(fs.logTag, "Symlinking oldPath %s with newPath %s", oldPath, newPath)
 

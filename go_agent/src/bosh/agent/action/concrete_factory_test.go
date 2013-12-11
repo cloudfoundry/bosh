@@ -118,7 +118,8 @@ func TestNewFactoryCompilePackage(t *testing.T) {
 	action, err := factory.Create("compile_package")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newCompilePackage(platform.GetCompressor(), blobstore, platform.GetFs()), action)
+	assert.Equal(t, newCompilePackage(platform.GetCompressor(), blobstore, platform),
+		action)
 }
 
 func buildFactory() (

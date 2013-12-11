@@ -39,7 +39,7 @@ func NewFactory(
 			"start":           newStart(),
 			"stop":            newStop(),
 			"unmount_disk":    newUnmountDisk(settings, platform),
-			"compile_package": newCompilePackage(compressor, blobstore, fs),
+			"compile_package": newCompilePackage(compressor, blobstore, platform),
 		},
 	}
 	return
