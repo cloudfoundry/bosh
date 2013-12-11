@@ -15,15 +15,15 @@ func TestCompressFilesInDir(t *testing.T) {
 	dc := NewTarballCompressor(cmdRunner, fs)
 
 	srcDir := fixtureSrcDir(t)
-	tgz, err := dc.CompressFilesInDir(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
+	tgzName, err := dc.CompressFilesInDir(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
 	assert.NoError(t, err)
 
-	defer os.Remove(tgz.Name())
+	defer os.Remove(tgzName)
 
 	dstDir := createdTmpDir(t, fs)
 	defer os.RemoveAll(dstDir)
 
-	_, _, err = cmdRunner.RunCommand("tar", "xzf", tgz.Name(), "-C", dstDir)
+	_, _, err = cmdRunner.RunCommand("tar", "xzf", tgzName, "-C", dstDir)
 	assert.NoError(t, err)
 
 	// regular files
@@ -104,14 +104,14 @@ func TestDecompressFileToDirUsesNoSameOwnerOption(t *testing.T) {
 	dstDir := createdTmpDir(t, fs)
 	defer os.RemoveAll(dstDir)
 
-	tarball := fixtureSrcTgz(t)
-	err := dc.DecompressFileToDir(tarball, dstDir)
+	tarballPath := fixtureSrcTgz(t)
+	err := dc.DecompressFileToDir(tarballPath, dstDir)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(cmdRunner.RunCommands))
 	assert.Equal(t, []string{
 		"tar", "--no-same-owner",
-		"-xzvf", tarball.Name(),
+		"-xzvf", tarballPath,
 		"-C", dstDir,
 	}, cmdRunner.RunCommands[0])
 }
@@ -129,13 +129,10 @@ func fixtureSrcDir(t *testing.T) string {
 	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
 }
 
-func fixtureSrcTgz(t *testing.T) *os.File {
+func fixtureSrcTgz(t *testing.T) string {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
-
-	srcTgz, err := os.Open(filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz"))
-	assert.NoError(t, err)
-	return srcTgz
+	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz")
 }
 
 func getCompressorDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {

@@ -7,7 +7,6 @@ import (
 	fakecmd "bosh/platform/commands/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
@@ -48,16 +47,12 @@ func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
 	pkg := buildPackage()
 	pkg.Source.BlobstoreId = "fake-blobstore-id"
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
+	blobstore.GetFileName = "/dev/null"
 
-	blobstore.GetFile = file
-
-	err = applier.Apply(pkg)
+	err := applier.Apply(pkg)
 	assert.NoError(t, err)
 	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
-	assert.Equal(t, file, blobstore.CleanUpFile)
+	assert.Equal(t, blobstore.GetFileName, blobstore.CleanUpFileName)
 }
 
 func TestApplyErrsWhenPackageDownloadErrs(t *testing.T) {
@@ -75,16 +70,12 @@ func TestApplyDecompressesPackageToInstallPath(t *testing.T) {
 	packagesBc, blobstore, compressor, applier := buildPackageApplier()
 	pkg := buildPackage()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	packagesBc.InstallPath = "fake-install-path"
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
-	err = applier.Apply(pkg)
+	err := applier.Apply(pkg)
 	assert.NoError(t, err)
-	assert.Equal(t, file, compressor.DecompressFileToDirTarballs[0])
+	assert.Equal(t, blobstore.GetFileName, compressor.DecompressFileToDirTarballPaths[0])
 	assert.Equal(t, "fake-install-path", compressor.DecompressFileToDirDirs[0])
 }
 

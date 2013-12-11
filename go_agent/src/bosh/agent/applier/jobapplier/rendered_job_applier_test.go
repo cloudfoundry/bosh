@@ -59,21 +59,17 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 	job := buildJob()
 	job.Source.BlobstoreId = "fake-blobstore-id"
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	fs := fakesys.NewFakeFileSystem()
 	jobsBc.InstallFs = fs
 	jobsBc.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
-	err = applier.Apply(job)
+	err := applier.Apply(job)
 	assert.NoError(t, err)
 	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
-	assert.Equal(t, file, blobstore.CleanUpFile)
+	assert.Equal(t, blobstore.GetFileName, blobstore.CleanUpFileName)
 }
 
 func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
@@ -91,10 +87,6 @@ func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 	jobsBc, blobstore, compressor, applier := buildJobApplier()
 	job := buildJob()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 	fs.MkdirAll("fake-tmp-dir", os.FileMode(0))
@@ -103,11 +95,11 @@ func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 	jobsBc.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
-	err = applier.Apply(job)
+	err := applier.Apply(job)
 	assert.NoError(t, err)
-	assert.Equal(t, file, compressor.DecompressFileToDirTarballs[0])
+	assert.Equal(t, blobstore.GetFileName, compressor.DecompressFileToDirTarballPaths[0])
 	assert.Equal(t, "fake-tmp-dir", compressor.DecompressFileToDirDirs[0])
 	assert.Nil(t, fs.GetFileTestStat(fs.TempDirDir))
 }
@@ -116,17 +108,13 @@ func TestApplyErrsWhenTempDirErrs(t *testing.T) {
 	jobsBc, blobstore, _, applier := buildJobApplier()
 	job := buildJob()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
 	jobsBc.InstallFs = fs
 
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
-	err = applier.Apply(job)
+	err := applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-filesystem-tempdir-error")
 }
@@ -150,10 +138,6 @@ func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 	job := buildJob()
 	job.Source.PathInArchive = "fake-path-in-archive"
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 	fs.MkdirAll("fake-tmp-dir", os.FileMode(0))
@@ -162,14 +146,14 @@ func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 	jobsBc.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
 	compressor.DecompressFileToDirCallBack = func() {
 		fs.MkdirAll("fake-tmp-dir/fake-path-in-archive", os.FileMode(0))
 		fs.WriteToFile("fake-tmp-dir/fake-path-in-archive/file", "file-contents")
 	}
 
-	err = applier.Apply(job)
+	err := applier.Apply(job)
 	assert.NoError(t, err)
 	fileInArchiveStat := fs.GetFileTestStat("fake-install-dir/file")
 	assert.NotNil(t, fileInArchiveStat)
@@ -181,9 +165,7 @@ func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
 	job := buildJob()
 	job.Source.PathInArchive = "fake-path-in-archive"
 
-	file, _ := os.Open("/dev/null")
-	defer file.Close()
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
@@ -221,19 +203,15 @@ func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 	jobsBc, blobstore, _, applier := buildJobApplier()
 	job := buildJob()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 	fs.CopyDirEntriesError = errors.New("fake-copy-dir-entries-error")
 
 	jobsBc.InstallFs = fs
 
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
-	err = applier.Apply(job)
+	err := applier.Apply(job)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-copy-dir-entries-error")
 }

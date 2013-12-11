@@ -18,7 +18,7 @@ func NewTarballCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c
 	return
 }
 
-func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tarballPath string, err error) {
 	tgzDir, err := c.fs.TempDir("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		return
@@ -52,12 +52,14 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 		}
 	}
 
-	tarball, err = c.fs.TempFile("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
+	tarball, err := c.fs.TempFile("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		return
 	}
 
-	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarball.Name(), "-C", tgzDir, ".")
+	tarballPath = tarball.Name()
+
+	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", tgzDir, ".")
 	if err != nil {
 		return
 	}
@@ -65,8 +67,8 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 	return
 }
 
-func (c tarballCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
-	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarball.Name(), "-C", dir)
+func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string) (err error) {
+	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarballPath, "-C", dir)
 	if err != nil {
 		return
 	}

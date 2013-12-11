@@ -2,20 +2,19 @@ package fakes
 
 import (
 	boshblob "bosh/blobstore"
-	"os"
 )
 
 type FakeBlobstore struct {
 	Options map[string]string
 
-	GetBlobIds []string
-	GetFile    *os.File
-	GetError   error
+	GetBlobIds  []string
+	GetFileName string
+	GetError    error
 
-	CleanUpFile *os.File
+	CleanUpFileName string
 
-	CreateFile   *os.File
-	CreateBlobId string
+	CreateFileName string
+	CreateBlobId   string
 }
 
 func NewFakeBlobstore() *FakeBlobstore {
@@ -28,20 +27,20 @@ func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblob.
 	return
 }
 
-func (bs *FakeBlobstore) Get(blobId string) (file *os.File, err error) {
+func (bs *FakeBlobstore) Get(blobId string) (fileName string, err error) {
 	bs.GetBlobIds = append(bs.GetBlobIds, blobId)
-	file = bs.GetFile
+	fileName = bs.GetFileName
 	err = bs.GetError
 	return
 }
 
-func (bs *FakeBlobstore) CleanUp(file *os.File) (err error) {
-	bs.CleanUpFile = file
+func (bs *FakeBlobstore) CleanUp(fileName string) (err error) {
+	bs.CleanUpFileName = fileName
 	return
 }
 
-func (bs *FakeBlobstore) Create(file *os.File) (blobId string, err error) {
-	bs.CreateFile = file
+func (bs *FakeBlobstore) Create(fileName string) (blobId string, err error) {
+	bs.CreateFileName = fileName
 
 	blobId = bs.CreateBlobId
 	return

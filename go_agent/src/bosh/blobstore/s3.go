@@ -5,7 +5,6 @@ import (
 	boshsys "bosh/system"
 	boshuuid "bosh/uuid"
 	"encoding/json"
-	"os"
 	"path/filepath"
 )
 
@@ -66,28 +65,30 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 	return
 }
 
-func (blobstore s3) Get(blobId string) (file *os.File, err error) {
-	file, err = blobstore.fs.TempFile("bosh-blobstore-s3-Get")
+func (blobstore s3) Get(blobId string) (fileName string, err error) {
+	file, err := blobstore.fs.TempFile("bosh-blobstore-s3-Get")
 	if err != nil {
 		return
 	}
 
-	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, file.Name())
+	fileName = file.Name()
+
+	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, fileName)
 	if err != nil {
-		blobstore.fs.RemoveAll(file.Name())
-		file = nil
+		blobstore.fs.RemoveAll(fileName)
+		fileName = ""
 	}
 
 	return
 }
 
-func (blobstore s3) CleanUp(file *os.File) (err error) {
-	blobstore.fs.RemoveAll(file.Name())
+func (blobstore s3) CleanUp(fileName string) (err error) {
+	blobstore.fs.RemoveAll(fileName)
 	return
 }
 
-func (blobstore s3) Create(file *os.File) (blobId string, err error) {
-	filePath, err := filepath.Abs(file.Name())
+func (blobstore s3) Create(fileName string) (blobId string, err error) {
+	filePath, err := filepath.Abs(fileName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting absolute file path")
 		return

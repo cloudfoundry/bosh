@@ -1,7 +1,5 @@
 package blobstore
 
-import "os"
-
 type Blobstore interface {
 	ApplyOptions(opts map[string]string) (updated Blobstore, err error)
 
@@ -9,9 +7,9 @@ type Blobstore interface {
 	// file handle is returned to downloaded blob.
 	// Caller must not assume anything about layout of such scratch space.
 	// Cleanup call is needed to properly cleanup downloaded blob.
-	Get(blobId string) (file *os.File, err error)
+	Get(blobId string) (fileName string, err error)
 
-	CleanUp(file *os.File) (err error)
+	CleanUp(fileName string) (err error)
 
-	Create(file *os.File) (blobId string, err error)
+	Create(fileName string) (blobId string, err error)
 }

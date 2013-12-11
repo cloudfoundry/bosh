@@ -42,22 +42,22 @@ func (a compilePackageAction) IsAsynchronous() bool {
 }
 
 func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Dependencies) (val interface{}, err error) {
-	var depFile *os.File
+	var depFilePath string
 
 	for _, dep := range deps {
-		depFile, err = a.blobstore.Get(dep.BlobstoreId)
+		depFilePath, err = a.blobstore.Get(dep.BlobstoreId)
 		if err != nil {
 			err = bosherr.WrapError(err, "Fetching dependent package blob %s", bstoreId)
 			return
 		}
 
-		depFilePath := packageInstallPath(dep.Name, dep.Version)
-		err = cleanPackageInstallPath(depFilePath, a.fs)
+		targetDir := packageInstallPath(dep.Name, dep.Version)
+		err = cleanPackageInstallPath(targetDir, a.fs)
 		if err != nil {
-			err = bosherr.WrapError(err, "Clean package install path %s", depFilePath)
+			err = bosherr.WrapError(err, "Clean package install path %s", targetDir)
 			return
 		}
-		err = a.atomicDecompress(depFile, depFilePath)
+		err = a.atomicDecompress(depFilePath, targetDir)
 		if err != nil {
 			err = bosherr.WrapError(err, "Uncompressing dependent package %", dep.Name)
 			return
@@ -114,12 +114,12 @@ func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Depen
 	return
 }
 
-func (a compilePackageAction) atomicDecompress(archive *os.File, finalDir string) (err error) {
+func (a compilePackageAction) atomicDecompress(archivePath string, finalDir string) (err error) {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
 	a.fs.RemoveAll(tmpInstallPath)
 	a.fs.MkdirAll(tmpInstallPath, os.ModePerm)
 
-	err = a.compressor.DecompressFileToDir(archive, tmpInstallPath)
+	err = a.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
 	if err != nil {
 		return
 	}

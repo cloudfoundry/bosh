@@ -6,7 +6,6 @@ import (
 	fakecmd "bosh/platform/commands/fakes"
 	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -32,8 +31,7 @@ func TestLogsWithoutFilters(t *testing.T) {
 func testLogs(t *testing.T, filters []string, expectedFilters []string) {
 	compressor, blobstore, action := buildLogsAction()
 
-	var err error
-	compressor.CompressFilesInDirTarball, err = os.Open("logs_test.go")
+	compressor.CompressFilesInDirTarballPath = "logs_test.go"
 	blobstore.CreateBlobId = "my-blob-id"
 
 	logs, err := action.Run("agent", filters)
@@ -44,7 +42,7 @@ func testLogs(t *testing.T, filters []string, expectedFilters []string) {
 	assert.Equal(t, expectedFilters, compressor.CompressFilesInDirFilters)
 
 	// The log file is used when calling blobstore.Create
-	assert.Equal(t, compressor.CompressFilesInDirTarball, blobstore.CreateFile)
+	assert.Equal(t, compressor.CompressFilesInDirTarballPath, blobstore.CreateFileName)
 
 	boshassert.MatchesJsonString(t, logs, `{"blobstore_id":"my-blob-id"}`)
 }

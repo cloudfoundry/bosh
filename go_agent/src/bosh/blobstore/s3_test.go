@@ -7,7 +7,6 @@ import (
 	fakeuuid "bosh/uuid/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -44,7 +43,7 @@ func TestGet(t *testing.T) {
 	fs.ReturnTempFile = tempFile
 	defer fs.RemoveAll(tempFile.Name())
 
-	file, err := blobstore.Get("fake-blob-id")
+	fileName, err := blobstore.Get("fake-blob-id")
 	assert.NoError(t, err)
 
 	// downloads correct blob
@@ -56,7 +55,7 @@ func TestGet(t *testing.T) {
 	}, runner.RunCommands[0])
 
 	// keeps the file
-	assert.Equal(t, file, tempFile)
+	assert.Equal(t, fileName, tempFile.Name())
 	assert.True(t, fs.FileExists(tempFile.Name()))
 }
 
@@ -66,11 +65,11 @@ func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
 
 	fs.TempFileError = errors.New("fake-error")
 
-	file, err := blobstore.Get("fake-blob-id")
+	fileName, err := blobstore.Get("fake-blob-id")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-error")
 
-	assert.Nil(t, file)
+	assert.Empty(t, fileName)
 }
 
 func TestGetErrsWhenS3CliErrs(t *testing.T) {
@@ -90,12 +89,12 @@ func TestGetErrsWhenS3CliErrs(t *testing.T) {
 	}
 	runner.AddCmdResult(strings.Join(expectedCmd, " "), []string{"", "fake-error"})
 
-	file, err := blobstore.Get("fake-blob-id")
+	fileName, err := blobstore.Get("fake-blob-id")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-error")
 
 	// cleans up temporary file
-	assert.Nil(t, file)
+	assert.Empty(t, fileName)
 	assert.False(t, fs.FileExists(tempFile.Name()))
 }
 
@@ -105,24 +104,25 @@ func TestCleanUp(t *testing.T) {
 
 	file, err := fs.TempFile("bosh-blobstore-s3-TestCleanUp")
 	assert.NoError(t, err)
+	fileName := file.Name()
 
-	defer fs.RemoveAll(file.Name())
+	defer fs.RemoveAll(fileName)
 
-	err = blobstore.CleanUp(file)
+	err = blobstore.CleanUp(fileName)
 	assert.NoError(t, err)
-	assert.False(t, fs.FileExists(file.Name()))
+	assert.False(t, fs.FileExists(fileName))
 }
 
 func TestCreate(t *testing.T) {
-	file, _ := os.Open("../../../fixtures/some.config")
-	expectedPath, _ := filepath.Abs(file.Name())
+	fileName := "../../../fixtures/some.config"
+	expectedPath, _ := filepath.Abs(fileName)
 
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
 	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
 
 	uuidGen.GeneratedUuid = "some-uuid"
 
-	blobId, err := blobstore.Create(file)
+	blobId, err := blobstore.Create(fileName)
 	assert.NoError(t, err)
 	assert.Equal(t, blobId, "some-uuid")
 

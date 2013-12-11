@@ -1,33 +1,31 @@
 package fakes
 
-import "os"
-
 type DecompressFileToDirCallBackFunc func()
 
 type FakeCompressor struct {
-	CompressFilesInDirTarball   *os.File
-	CompressFilesInDirDir       string
-	CompressFilesInDirFilters   []string
-	DecompressFileToDirTarballs []*os.File
-	DecompressFileToDirDirs     []string
-	DecompressFileToDirError    error
-	DecompressFileToDirCallBack DecompressFileToDirCallBackFunc
+	CompressFilesInDirTarballPath   string
+	CompressFilesInDirDir           string
+	CompressFilesInDirFilters       []string
+	DecompressFileToDirTarballPaths []string
+	DecompressFileToDirDirs         []string
+	DecompressFileToDirError        error
+	DecompressFileToDirCallBack     DecompressFileToDirCallBackFunc
 }
 
 func NewFakeCompressor() *FakeCompressor {
 	return &FakeCompressor{}
 }
 
-func (fc *FakeCompressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+func (fc *FakeCompressor) CompressFilesInDir(dir string, filters []string) (tarballPath string, err error) {
 	fc.CompressFilesInDirDir = dir
 	fc.CompressFilesInDirFilters = filters
 
-	tarball = fc.CompressFilesInDirTarball
+	tarballPath = fc.CompressFilesInDirTarballPath
 	return
 }
 
-func (fc *FakeCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
-	fc.DecompressFileToDirTarballs = append(fc.DecompressFileToDirTarballs, tarball)
+func (fc *FakeCompressor) DecompressFileToDir(tarballPath string, dir string) (err error) {
+	fc.DecompressFileToDirTarballPaths = append(fc.DecompressFileToDirTarballPaths, tarballPath)
 	fc.DecompressFileToDirDirs = append(fc.DecompressFileToDirDirs, dir)
 
 	if fc.DecompressFileToDirCallBack != nil {

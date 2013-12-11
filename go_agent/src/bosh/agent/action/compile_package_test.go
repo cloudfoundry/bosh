@@ -33,13 +33,9 @@ func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
 
 	blobId, sha1, name, version, deps := getTestArguments()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
+	blobstore.GetFileName = "/dev/null"
 
-	blobstore.GetFile = file
-
-	_, err = action.Run(blobId, sha1, name, version, deps)
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, compressor.DecompressFileToDirDirs[0],
@@ -47,8 +43,8 @@ func TestCompilePackageExtractsDependenciesToPackagesDir(t *testing.T) {
 	assert.Equal(t, compressor.DecompressFileToDirDirs[1],
 		"/var/vcap/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack")
 
-	assert.Equal(t, compressor.DecompressFileToDirTarballs[0], file)
-	assert.Equal(t, compressor.DecompressFileToDirTarballs[1], file)
+	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[0], blobstore.GetFileName)
+	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[1], blobstore.GetFileName)
 
 	assert.Equal(t, "/var/vcap/data/packages/first_dep/first_dep_version-bosh-agent-unpack", fs.RenameOldPaths[0])
 	assert.Equal(t, "/var/vcap/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack", fs.RenameOldPaths[1])
@@ -96,18 +92,14 @@ func TestCompilePackageExtractsSourcePkgToCompileDir(t *testing.T) {
 
 	blobId, sha1, name, version, deps := getTestArguments()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
+	blobstore.GetFileName = "/dev/null"
 
-	blobstore.GetFile = file
-
-	_, err = action.Run(blobId, sha1, name, version, deps)
+	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/compile/pkg_name"))
 	assert.Equal(t, compressor.DecompressFileToDirDirs[2], "/var/vcap/data/compile/pkg_name-bosh-agent-unpack")
-	assert.Equal(t, compressor.DecompressFileToDirTarballs[2], file)
+	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[2], blobstore.GetFileName)
 
 	assert.Equal(t, fs.RenameOldPaths[2], "/var/vcap/data/compile/pkg_name-bosh-agent-unpack")
 	assert.Equal(t, fs.RenameNewPaths[2], "/var/vcap/data/compile/pkg_name")
