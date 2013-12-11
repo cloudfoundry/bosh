@@ -18,20 +18,14 @@ type concreteRunner struct {
 }
 
 func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface{}, err error) {
-	type payloadType struct {
-		Arguments []interface{} `json:"arguments"`
-	}
-	payload := payloadType{}
-
-	err = json.Unmarshal(payloadBytes, &payload)
+	payloadArgs, err := r.extractJsonArguments(payloadBytes)
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload arguments to interface{} types")
+		err = bosherr.WrapError(err, "Extracting json arguments")
 		return
 	}
 
 	actionValue := reflect.ValueOf(action)
 	runMethodValue := actionValue.MethodByName("Run")
-
 	if runMethodValue.Kind() != reflect.Func {
 		err = bosherr.New("Run method not found")
 		return
@@ -43,7 +37,7 @@ func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface
 		return
 	}
 
-	methodArgs, err := r.extractMethodArgs(runMethodType, payload.Arguments)
+	methodArgs, err := r.extractMethodArgs(runMethodType, payloadArgs)
 	if err != nil {
 		err = bosherr.WrapError(err, "Extracting method arguments from payload")
 		return
@@ -51,6 +45,20 @@ func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface
 
 	values := runMethodValue.Call(methodArgs)
 	return r.extractReturns(values)
+}
+
+func (r concreteRunner) extractJsonArguments(payloadBytes []byte) (args []interface{}, err error) {
+	type payloadType struct {
+		Arguments []interface{} `json:"arguments"`
+	}
+	payload := payloadType{}
+
+	err = json.Unmarshal(payloadBytes, &payload)
+	if err != nil {
+		err = bosherr.WrapError(err, "Unmarshalling payload arguments to interface{} types")
+	}
+	args = payload.Arguments
+	return
 }
 
 func (r concreteRunner) invalidReturnTypes(methodType reflect.Type) (valid bool) {
