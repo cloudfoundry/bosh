@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	bosherr "bosh/errors"
 	"errors"
 	gouuid "github.com/nu7hatch/gouuid"
 	"os"
@@ -182,6 +183,7 @@ func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	} else {
 		file, err = os.Open("/dev/null")
 		if err != nil {
+			err = bosherr.WrapError(err, "Opening /dev/null")
 			return
 		}
 

@@ -1,6 +1,7 @@
 package action
 
 import (
+	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -26,6 +27,7 @@ func (a migrateDiskAction) Run() (value interface{}, err error) {
 
 	err = a.platform.MigratePersistentDisk(fromMountPoint, toMountPoint)
 	if err != nil {
+		err = bosherr.WrapError(err, "Migrating persistent disk")
 		return
 	}
 

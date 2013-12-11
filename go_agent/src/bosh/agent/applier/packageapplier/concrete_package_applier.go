@@ -4,6 +4,7 @@ import (
 	bc "bosh/agent/applier/bundlecollection"
 	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
+	bosherr "bosh/errors"
 	boshcmd "bosh/platform/commands"
 )
 
@@ -25,23 +26,31 @@ func NewConcretePackageApplier(
 	}
 }
 
-func (s *concretePackageApplier) Apply(pkg models.Package) error {
+func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 	_, packageDir, err := s.packagesBc.Install(pkg)
 	if err != nil {
-		return err
+		err = bosherr.WrapError(err, "Installling package directory")
+		return
 	}
 
 	file, err := s.blobstore.Get(pkg.Source.BlobstoreId)
 	if err != nil {
-		return err
+		err = bosherr.WrapError(err, "Fetching package blob")
+		return
 	}
 
 	defer s.blobstore.CleanUp(file)
 
 	err = s.compressor.DecompressFileToDir(file, packageDir)
 	if err != nil {
-		return err
+		err = bosherr.WrapError(err, "Decompressing package files")
+		return
 	}
 
-	return s.packagesBc.Enable(pkg)
+	err = s.packagesBc.Enable(pkg)
+	if err != nil {
+		err = bosherr.WrapError(err, "Enabling package")
+	}
+
+	return
 }

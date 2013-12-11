@@ -68,6 +68,7 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 func (blobstore s3) Get(blobId string) (fileName string, err error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-s3-Get")
 	if err != nil {
+		err = bosherr.WrapError(err, "Creating temporary file")
 		return
 	}
 
@@ -75,6 +76,7 @@ func (blobstore s3) Get(blobId string) (fileName string, err error) {
 
 	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, fileName)
 	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to s3 cli")
 		blobstore.fs.RemoveAll(fileName)
 		fileName = ""
 	}

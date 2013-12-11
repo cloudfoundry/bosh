@@ -33,6 +33,7 @@ func New(logger boshlog.Logger) (app app) {
 func (app app) Run(args []string) (err error) {
 	opts, err := parseOptions(args)
 	if err != nil {
+		err = bosherr.WrapError(err, "Parsing options")
 		return
 	}
 

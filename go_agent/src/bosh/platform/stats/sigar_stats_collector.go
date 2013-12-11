@@ -16,6 +16,7 @@ func (s sigarStatsCollector) GetCpuLoad() (load CpuLoad, err error) {
 	l := sigar.LoadAverage{}
 	err = l.Get()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting Sigar Load Average")
 		return
 	}
 

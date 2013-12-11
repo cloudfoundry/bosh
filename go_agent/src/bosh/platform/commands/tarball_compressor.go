@@ -1,6 +1,7 @@
 package commands
 
 import (
+	bosherr "bosh/errors"
 	boshsys "bosh/system"
 	"os"
 	"path/filepath"
@@ -21,6 +22,7 @@ func NewTarballCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c
 func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tarballPath string, err error) {
 	tgzDir, err := c.fs.TempDir("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
+		err = bosherr.WrapError(err, "Creating temporary directory")
 		return
 	}
 
@@ -28,6 +30,7 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 
 	filesToCopy, err := c.findFilesMatchingFilters(dir, filters)
 	if err != nil {
+		err = bosherr.WrapError(err, "Finding files matching filters")
 		return
 	}
 
@@ -42,18 +45,21 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 
 		err = c.fs.MkdirAll(filepath.Dir(dst), os.ModePerm)
 		if err != nil {
+			err = bosherr.WrapError(err, "Making destination directory for %s", file)
 			return
 		}
 
 		// Golang does not have a way of copying files and preserving file info...
 		_, _, err = c.cmdRunner.RunCommand("cp", "-p", file, dst)
 		if err != nil {
+			err = bosherr.WrapError(err, "Shelling out to cp")
 			return
 		}
 	}
 
 	tarball, err := c.fs.TempFile("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
+		err = bosherr.WrapError(err, "Creating temporary file for tarball")
 		return
 	}
 
@@ -61,6 +67,7 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 
 	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", tgzDir, ".")
 	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to tar")
 		return
 	}
 
@@ -70,6 +77,7 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string) (err error) {
 	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarballPath, "-C", dir)
 	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to tar")
 		return
 	}
 
@@ -82,6 +90,7 @@ func (c tarballCompressor) findFilesMatchingFilters(dir string, filters []string
 
 		newFiles, err = c.findFilesMatchingFilter(filepath.Join(dir, filter))
 		if err != nil {
+			err = bosherr.WrapError(err, "Finding files matching filter %s", filter)
 			return
 		}
 
@@ -94,6 +103,7 @@ func (c tarballCompressor) findFilesMatchingFilters(dir string, filters []string
 func (c tarballCompressor) findFilesMatchingFilter(filter string) (files []string, err error) {
 	files, err = filepath.Glob(filter)
 	if err != nil {
+		err = bosherr.WrapError(err, "Doing glob with filter")
 		return
 	}
 
@@ -105,6 +115,7 @@ func (c tarballCompressor) findFilesMatchingFilter(filter string) (files []strin
 		updatedFilter := strings.Replace(filter, "**/*", "*", 1)
 		extraFiles, err = c.findFilesMatchingFilter(updatedFilter)
 		if err != nil {
+			err = bosherr.WrapError(err, "Recursing into filter %s", updatedFilter)
 			return
 		}
 
