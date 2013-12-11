@@ -2,9 +2,68 @@ package applyspec
 
 import (
 	models "bosh/agent/applier/models"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestV1ApplySpecJsonConversion(t *testing.T) {
+	specJson := `{
+		"properties": {
+			"logging": {"max_log_file_size": "10M"}
+		},
+		"job": {
+			"name": "router",
+			"template": "router template",
+			"version": "1.0",
+			"sha1": "router sha1",
+			"blobstore_id": "router-blob-id-1",
+			"templates": [
+				{"name": "template 1", "version": "0.1", "sha1": "template 1 sha1", "blobstore_id": "template-blob-id-1"},
+				{"name": "template 2", "version": "0.2", "sha1": "template 2 sha1", "blobstore_id": "template-blob-id-2"}
+			]
+		},
+		"packages": {
+			"package 1": {"name": "package 1", "version": "0.1", "sha1": "package 1 sha1", "blobstore_id": "package-blob-id-1"},
+			"package 2": {"name": "package 2", "version": "0.2", "sha1": "package 2 sha1", "blobstore_id": "package-blob-id-2"}
+		},
+		"rendered_templates_archive": {
+			"sha1": "archive sha 1",
+			"blobstore_id": "archive-blob-id-1"
+		}
+	}`
+
+	expectedSpec := V1ApplySpec{
+		PropertiesSpec: PropertiesSpec{
+			LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
+		},
+		JobSpec: JobSpec{
+			Name:        "router",
+			Template:    "router template",
+			Version:     "1.0",
+			Sha1:        "router sha1",
+			BlobstoreId: "router-blob-id-1",
+			JobTemplateSpecs: []JobTemplateSpec{
+				{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreId: "template-blob-id-1"},
+				{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreId: "template-blob-id-2"},
+			},
+		},
+		PackageSpecs: map[string]PackageSpec{
+			"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "package 1 sha1", BlobstoreId: "package-blob-id-1"},
+			"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "package 2 sha1", BlobstoreId: "package-blob-id-2"},
+		},
+		RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
+			Sha1:        "archive sha 1",
+			BlobstoreId: "archive-blob-id-1",
+		},
+	}
+
+	spec := V1ApplySpec{}
+	err := json.Unmarshal([]byte(specJson), &spec)
+
+	assert.NoError(t, err)
+	assert.Equal(t, spec, expectedSpec)
+}
 
 func TestJobsWithSpecifiedJobTemplates(t *testing.T) {
 	spec := V1ApplySpec{
