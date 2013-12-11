@@ -173,11 +173,13 @@ module Bosh::Dev
     describe '#upload_stemcell' do
       let(:logger) { instance_double('Logger').as_null_object }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
+      let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
 
       before do
         FileUtils.mkdir('/tmp')
         File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
         Logger.stub(new: logger)
+        Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter)
       end
 
       describe 'when publishing a full stemcell' do
@@ -192,20 +194,23 @@ module Bosh::Dev
         end
         let(:stemcell_contents) { 'contents of the stemcells' }
 
-        it 'publishes a stemcell to an S3 bucket' do
+        it 'uses the upload adapter to upload the numbered and latest stemcell to s3' do
           key = '123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
-          build.upload_stemcell(stemcell)
-          expect(bucket_files.map(&:key)).to include(key)
-          expect(bucket_files.get(key).body).to eq('contents of the stemcells')
-        end
+          latest_key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-        it 'updates the latest stemcell in the S3 bucket' do
-          key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
           logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
+
+          upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+                                                      key: key,
+                                                      body: anything,
+                                                      public: true)
+
+          upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+                                                      key: latest_key,
+                                                      body: anything,
+                                                      public: true)
+
           build.upload_stemcell(stemcell)
-          expect(bucket_files.map(&:key)).to include(key)
-          expect(bucket_files.get(key).body).to eq('contents of the stemcells')
         end
       end
 
