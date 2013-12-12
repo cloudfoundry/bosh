@@ -35,6 +35,14 @@ func (a applyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err e
 		return
 	}
 
+	err = a.persistApplySpec(applySpec)
+	if err != nil {
+		err = bosherr.WrapError(err, "Persisting apply spec")
+	}
+	return
+}
+
+func (a applyAction) persistApplySpec(applySpec boshas.V1ApplySpec) (err error) {
 	spec, err := json.Marshal(applySpec)
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling apply spec")
