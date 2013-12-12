@@ -39,6 +39,22 @@ func (s *FileBundleCollection) Install(bundle Bundle) (fs boshsys.FileSystem, pa
 	return
 }
 
+func (s *FileBundleCollection) GetDir(bundle Bundle) (fs boshsys.FileSystem, path string, err error) {
+	err = s.checkBundle(bundle)
+	if err != nil {
+		return
+	}
+
+	path = s.buildInstallPath(bundle)
+	if !s.fs.FileExists(path) {
+		err = bosherr.New("install dir does not exist")
+		return
+	}
+
+	fs = s.fs
+	return
+}
+
 // Symlinked from {{ path }}/{{ name }}/{{ bundle.BundleName }} to installed path
 func (s *FileBundleCollection) Enable(bundle Bundle) (err error) {
 	err = s.checkBundle(bundle)

@@ -18,5 +18,7 @@ type BundleCollection interface {
 	// some location (s3 bucket, fs, etc.)
 	Install(bundle Bundle) (boshsys.FileSystem, string, error)
 
+	GetDir(bundle Bundle) (fs boshsys.FileSystem, path string, err error)
+
 	Enable(bundle Bundle) error
 }
