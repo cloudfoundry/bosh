@@ -5,6 +5,7 @@ import (
 	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	fakeblob "bosh/blobstore/fakes"
+	fakemon "bosh/monitor/fakes"
 	fakeplatform "bosh/platform/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -13,6 +14,7 @@ import (
 func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 	platform := fakeplatform.NewFakePlatform()
 	blobstore := fakeblob.NewFakeBlobstore()
+	monitor := fakemon.NewFakeMonitor()
 
 	expectedPackageApplier := pa.NewConcretePackageApplier(
 		bc.NewFileBundleCollection("packages", "/var/vcap", platform.GetFs()),
@@ -24,6 +26,7 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 		bc.NewFileBundleCollection("jobs", "/var/vcap", platform.GetFs()),
 		blobstore,
 		platform.GetCompressor(),
+		monitor,
 	)
 
 	expectedApplier := NewConcreteApplier(
@@ -32,7 +35,7 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 		platform,
 	)
 
-	provider := NewApplierProvider(platform, blobstore)
+	provider := NewApplierProvider(platform, blobstore, monitor)
 	applier := provider.Get()
 	assert.Equal(t, expectedApplier, applier)
 }

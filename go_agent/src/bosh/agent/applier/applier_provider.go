@@ -5,6 +5,7 @@ import (
 	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	boshblob "bosh/blobstore"
+	boshmon "bosh/monitor"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -12,11 +13,13 @@ import (
 type ApplierProvider struct {
 	platform  boshplatform.Platform
 	blobstore boshblob.Blobstore
+	monitor   boshmon.Monitor
 }
 
-func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore) (p ApplierProvider) {
+func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore, monitor boshmon.Monitor) (p ApplierProvider) {
 	p.platform = platform
 	p.blobstore = blobstore
+	p.monitor = monitor
 	return
 }
 
@@ -28,6 +31,7 @@ func (p ApplierProvider) Get() (applier Applier) {
 		jobsBc,
 		p.blobstore,
 		p.platform.GetCompressor(),
+		p.monitor,
 	)
 
 	packagesBc := bc.NewFileBundleCollection(

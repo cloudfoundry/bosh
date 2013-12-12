@@ -4,6 +4,7 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
+	fakemon "bosh/monitor/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	fakesys "bosh/system/fakes"
 	"errors"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestApplyInstallsAndEnablesJob(t *testing.T) {
-	jobsBc, _, _, applier := buildJobApplier()
+	jobsBc, _, _, _, applier := buildJobApplier()
 	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
@@ -28,7 +29,7 @@ func TestApplyInstallsAndEnablesJob(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobInstallFails(t *testing.T) {
-	jobsBc, _, _, applier := buildJobApplier()
+	jobsBc, _, _, _, applier := buildJobApplier()
 	job := buildJob()
 
 	jobsBc.InstallError = errors.New("fake-install-error")
@@ -39,7 +40,7 @@ func TestApplyErrsWhenJobInstallFails(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobEnableFails(t *testing.T) {
-	jobsBc, _, _, applier := buildJobApplier()
+	jobsBc, _, _, _, applier := buildJobApplier()
 	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
@@ -55,7 +56,7 @@ func TestApplyErrsWhenJobEnableFails(t *testing.T) {
 }
 
 func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
-	jobsBc, blobstore, _, applier := buildJobApplier()
+	jobsBc, blobstore, _, _, applier := buildJobApplier()
 	job := buildJob()
 	job.Source.BlobstoreId = "fake-blobstore-id"
 
@@ -73,7 +74,7 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
-	_, blobstore, _, applier := buildJobApplier()
+	_, blobstore, _, _, applier := buildJobApplier()
 	job := buildJob()
 
 	blobstore.GetError = errors.New("fake-get-error")
@@ -84,7 +85,7 @@ func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
 }
 
 func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
-	jobsBc, blobstore, compressor, applier := buildJobApplier()
+	jobsBc, blobstore, compressor, _, applier := buildJobApplier()
 	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
@@ -105,7 +106,7 @@ func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 }
 
 func TestApplyErrsWhenTempDirErrs(t *testing.T) {
-	jobsBc, blobstore, _, applier := buildJobApplier()
+	jobsBc, blobstore, _, _, applier := buildJobApplier()
 	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
@@ -120,7 +121,7 @@ func TestApplyErrsWhenTempDirErrs(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobDecompressErrs(t *testing.T) {
-	jobsBc, _, compressor, applier := buildJobApplier()
+	jobsBc, _, compressor, _, applier := buildJobApplier()
 	job := buildJob()
 
 	compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
@@ -134,7 +135,7 @@ func TestApplyErrsWhenJobDecompressErrs(t *testing.T) {
 }
 
 func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
-	jobsBc, blobstore, compressor, applier := buildJobApplier()
+	jobsBc, blobstore, compressor, _, applier := buildJobApplier()
 	job := buildJob()
 	job.Source.PathInArchive = "fake-path-in-archive"
 
@@ -161,7 +162,7 @@ func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 }
 
 func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
-	jobsBc, blobstore, compressor, applier := buildJobApplier()
+	jobsBc, blobstore, compressor, _, applier := buildJobApplier()
 	job := buildJob()
 	job.Source.PathInArchive = "fake-path-in-archive"
 
@@ -200,7 +201,7 @@ func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
 }
 
 func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
-	jobsBc, blobstore, _, applier := buildJobApplier()
+	jobsBc, blobstore, _, _, applier := buildJobApplier()
 	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
@@ -216,17 +217,52 @@ func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-copy-dir-entries-error")
 }
 
+func TestConfigure(t *testing.T) {
+	jobsBc, _, _, monitor, applier := buildJobApplier()
+	job := buildJob()
+
+	fs := fakesys.NewFakeFileSystem()
+	fs.WriteToFile("/path/to/job/monit", "some conf")
+	fs.GlobPaths = []string{"/path/to/job/subjob.monit"}
+
+	jobsBc.GetDirPath = "/path/to/job"
+	jobsBc.GetDirFs = fs
+
+	err := applier.Configure(job, 0)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "/path/to/job/*.monit", fs.GlobPattern)
+	assert.Equal(t, 2, len(monitor.AddJobArgs))
+
+	firstArgs := fakemon.AddJobArgs{
+		Name:       job.Name,
+		Index:      0,
+		ConfigPath: "/path/to/job/monit",
+	}
+
+	secondArgs := fakemon.AddJobArgs{
+		Name:       job.Name + "_subjob",
+		Index:      0,
+		ConfigPath: "/path/to/job/subjob.monit",
+	}
+	assert.Equal(t, firstArgs, monitor.AddJobArgs[0])
+	assert.Equal(t, secondArgs, monitor.AddJobArgs[1])
+}
+
 func buildJobApplier() (
-	*fakebc.FakeBundleCollection,
-	*fakeblob.FakeBlobstore,
-	*fakecmd.FakeCompressor,
-	JobApplier,
+	jobsBc *fakebc.FakeBundleCollection,
+	blobstore *fakeblob.FakeBlobstore,
+	compressor *fakecmd.FakeCompressor,
+	monitor *fakemon.FakeMonitor,
+	applier JobApplier,
 ) {
-	jobsBc := fakebc.NewFakeBundleCollection()
-	blobstore := fakeblob.NewFakeBlobstore()
-	compressor := fakecmd.NewFakeCompressor()
-	applier := NewRenderedJobApplier(jobsBc, blobstore, compressor)
-	return jobsBc, blobstore, compressor, applier
+	jobsBc = fakebc.NewFakeBundleCollection()
+	blobstore = fakeblob.NewFakeBlobstore()
+	compressor = fakecmd.NewFakeCompressor()
+	monitor = fakemon.NewFakeMonitor()
+
+	applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, monitor)
+	return
 }
 
 func buildJob() models.Job {

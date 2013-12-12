@@ -11,6 +11,7 @@ import (
 	boshinf "bosh/infrastructure"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
+	boshmon "bosh/monitor"
 	boshplatform "bosh/platform"
 	"flag"
 	"io/ioutil"
@@ -72,7 +73,8 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	applier := boshas.NewApplierProvider(platform, blobstore).Get()
+	monitor := boshmon.NewMonit()
+	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier)
