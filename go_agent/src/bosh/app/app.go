@@ -4,6 +4,7 @@ import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
 	boshas "bosh/agent/applier"
+	boshcomp "bosh/agent/compiler"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"
@@ -75,9 +76,10 @@ func (app app) Run(args []string) (err error) {
 
 	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner())
 	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
+	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
-	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier)
+	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier, compiler)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 

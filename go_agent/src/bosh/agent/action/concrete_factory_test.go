@@ -2,6 +2,7 @@ package action
 
 import (
 	fakeappl "bosh/agent/applier/fakes"
+	fakecomp "bosh/agent/compiler/fakes"
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakeplatform "bosh/platform/fakes"
@@ -28,7 +29,7 @@ func TestNewFactory(t *testing.T) {
 		"compile_package",
 	}
 
-	_, _, _, _, _, factory := buildFactory()
+	_, _, _, _, _, _, factory := buildFactory()
 
 	for _, actionName := range actions {
 		action, err := factory.Create(actionName)
@@ -42,7 +43,7 @@ func TestNewFactory(t *testing.T) {
 }
 
 func TestNewFactoryApply(t *testing.T) {
-	_, platform, _, _, applier, factory := buildFactory()
+	_, platform, _, _, applier, _, factory := buildFactory()
 	action, err := factory.Create("apply")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -50,7 +51,7 @@ func TestNewFactoryApply(t *testing.T) {
 }
 
 func TestNewFactoryFetchLogs(t *testing.T) {
-	_, platform, blobstore, _, _, factory := buildFactory()
+	_, platform, blobstore, _, _, _, factory := buildFactory()
 	action, err := factory.Create("fetch_logs")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -58,7 +59,7 @@ func TestNewFactoryFetchLogs(t *testing.T) {
 }
 
 func TestNewFactoryGetTask(t *testing.T) {
-	_, _, _, taskService, _, factory := buildFactory()
+	_, _, _, taskService, _, _, factory := buildFactory()
 	action, err := factory.Create("get_task")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -66,7 +67,7 @@ func TestNewFactoryGetTask(t *testing.T) {
 }
 
 func TestNewFactoryGetState(t *testing.T) {
-	settings, platform, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, factory := buildFactory()
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -74,7 +75,7 @@ func TestNewFactoryGetState(t *testing.T) {
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
-	settings, platform, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, factory := buildFactory()
 	action, err := factory.Create("list_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -82,7 +83,7 @@ func TestNewFactoryListDisk(t *testing.T) {
 }
 
 func TestNewFactoryMigrateDisk(t *testing.T) {
-	settings, platform, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, factory := buildFactory()
 	action, err := factory.Create("migrate_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -90,7 +91,7 @@ func TestNewFactoryMigrateDisk(t *testing.T) {
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
-	settings, platform, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, factory := buildFactory()
 	action, err := factory.Create("mount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -98,7 +99,7 @@ func TestNewFactoryMountDisk(t *testing.T) {
 }
 
 func TestNewFactorySsh(t *testing.T) {
-	settings, platform, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, factory := buildFactory()
 	action, err := factory.Create("ssh")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -106,7 +107,7 @@ func TestNewFactorySsh(t *testing.T) {
 }
 
 func TestNewFactoryUnmountDisk(t *testing.T) {
-	settings, platform, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, factory := buildFactory()
 	action, err := factory.Create("unmount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
@@ -114,11 +115,11 @@ func TestNewFactoryUnmountDisk(t *testing.T) {
 }
 
 func TestNewFactoryCompilePackage(t *testing.T) {
-	_, platform, blobstore, _, _, factory := buildFactory()
+	_, _, _, _, _, compiler, factory := buildFactory()
 	action, err := factory.Create("compile_package")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newCompilePackage(platform.GetCompressor(), blobstore, platform),
+	assert.Equal(t, newCompilePackage(compiler),
 		action)
 }
 
@@ -128,6 +129,7 @@ func buildFactory() (
 	blobstore *fakeblobstore.FakeBlobstore,
 	taskService *faketask.FakeService,
 	applier *fakeappl.FakeApplier,
+	compiler *fakecomp.FakeCompiler,
 	factory Factory) {
 
 	settings = &fakesettings.FakeSettingsService{}
@@ -135,7 +137,8 @@ func buildFactory() (
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	taskService = &faketask.FakeService{}
 	applier = fakeappl.NewFakeApplier()
+	compiler = fakecomp.NewFakeCompiler()
 
-	factory = NewFactory(settings, platform, blobstore, taskService, applier)
+	factory = NewFactory(settings, platform, blobstore, taskService, applier, compiler)
 	return
 }

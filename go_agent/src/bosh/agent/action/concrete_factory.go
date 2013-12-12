@@ -2,6 +2,7 @@ package action
 
 import (
 	boshappl "bosh/agent/applier"
+	boshcomp "bosh/agent/compiler"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
@@ -19,6 +20,7 @@ func NewFactory(
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
 	applier boshappl.Applier,
+	compiler boshcomp.Compiler,
 ) (factory Factory) {
 
 	fs := platform.GetFs()
@@ -39,7 +41,7 @@ func NewFactory(
 			"start":           newStart(),
 			"stop":            newStop(),
 			"unmount_disk":    newUnmountDisk(settings, platform),
-			"compile_package": newCompilePackage(compressor, blobstore, platform),
+			"compile_package": newCompilePackage(compiler),
 		},
 	}
 	return
