@@ -33,6 +33,7 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 		expectedJobApplier,
 		expectedPackageApplier,
 		platform,
+		monitor,
 	)
 
 	provider := NewApplierProvider(platform, blobstore, monitor)

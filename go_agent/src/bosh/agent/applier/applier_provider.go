@@ -43,5 +43,5 @@ func (p ApplierProvider) Get() (applier Applier) {
 		p.platform.GetCompressor(),
 	)
 
-	return NewConcreteApplier(jobApplier, packageApplier, p.platform)
+	return NewConcreteApplier(jobApplier, packageApplier, p.platform, p.monitor)
 }

@@ -73,7 +73,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	monitor := boshmon.NewMonit()
+	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner())
 	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)

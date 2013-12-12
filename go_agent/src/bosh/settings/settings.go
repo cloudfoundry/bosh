@@ -9,6 +9,7 @@ const (
 	VCAP_STORE_MIGRATION_DIR = VCAP_BASE_DIR + "/store_migration_target"
 	VCAP_PKG_DIR             = VCAP_BASE_DIR + "/data/packages"
 	VCAP_COMPILE_DIR         = VCAP_BASE_DIR + "/data/compile"
+	VCAP_MONIT_JOBS_DIR      = VCAP_BASE_DIR + "/monit/job"
 	ADMIN_GROUP              = "admin"
 	EPHEMERAL_USER_PREFIX    = "bosh_"
 )

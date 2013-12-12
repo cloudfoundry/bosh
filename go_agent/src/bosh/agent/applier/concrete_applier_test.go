@@ -5,6 +5,7 @@ import (
 	fakeja "bosh/agent/applier/jobapplier/fakes"
 	models "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
+	fakemon "bosh/monitor/fakes"
 	boshsettings "bosh/settings"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func (d *FakeLogRotateDelegate) SetupLogrotate(groupName, basePath, size string)
 }
 
 func TestApplyAppliesJobs(t *testing.T) {
-	jobApplier, _, _, applier := buildApplier()
+	jobApplier, _, _, _, applier := buildApplier()
 	job := buildJob()
 
 	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
@@ -42,7 +43,7 @@ func TestApplyAppliesJobs(t *testing.T) {
 }
 
 func TestApplyErrsWhenApplyingJobsErrs(t *testing.T) {
-	jobApplier, _, _, applier := buildApplier()
+	jobApplier, _, _, _, applier := buildApplier()
 	job := buildJob()
 
 	jobApplier.ApplyError = errors.New("fake-apply-job-error")
@@ -53,7 +54,7 @@ func TestApplyErrsWhenApplyingJobsErrs(t *testing.T) {
 }
 
 func TestApplyAppliesPackages(t *testing.T) {
-	_, packageApplier, _, applier := buildApplier()
+	_, packageApplier, _, _, applier := buildApplier()
 
 	pkg1 := buildPackage()
 	pkg2 := buildPackage()
@@ -64,7 +65,7 @@ func TestApplyAppliesPackages(t *testing.T) {
 }
 
 func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
-	_, packageApplier, _, applier := buildApplier()
+	_, packageApplier, _, _, applier := buildApplier()
 	pkg := buildPackage()
 
 	packageApplier.ApplyError = errors.New("fake-apply-package-error")
@@ -74,8 +75,44 @@ func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-apply-package-error")
 }
 
+func TestApplyConfiguresJobs(t *testing.T) {
+	jobApplier, _, _, monitor, applier := buildApplier()
+
+	job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
+	job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
+	jobs := []models.Job{job1, job2}
+
+	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
+	assert.NoError(t, err)
+	assert.Equal(t, jobApplier.ConfiguredJobs, []models.Job{job2, job1})
+	assert.Equal(t, jobApplier.ConfiguredJobIndices, []int{0, 1})
+
+	assert.True(t, monitor.Reloaded)
+}
+
+func TestApplyErrsIfMonitorFailsReload(t *testing.T) {
+	_, _, _, monitor, applier := buildApplier()
+	jobs := []models.Job{}
+	monitor.ReloadErr = errors.New("error reloading monit")
+
+	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error reloading monit")
+}
+
+func TestApplyErrsIfAJobFailsConfiguring(t *testing.T) {
+	jobApplier, _, _, _, applier := buildApplier()
+	jobApplier.ConfigureError = errors.New("error configuring job")
+
+	job := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
+
+	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error configuring job")
+}
+
 func TestApplySetsUpLogrotation(t *testing.T) {
-	_, _, platform, applier := buildApplier()
+	_, _, platform, _, applier := buildApplier()
 
 	err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
 	assert.NoError(t, err)
@@ -87,7 +124,7 @@ func TestApplySetsUpLogrotation(t *testing.T) {
 }
 
 func TestApplyErrsIfSetupLogrotateFails(t *testing.T) {
-	_, _, platform, applier := buildApplier()
+	_, _, platform, _, applier := buildApplier()
 
 	platform.SetupLogrotateErr = errors.New("fake-msg")
 
@@ -100,13 +137,15 @@ func buildApplier() (
 	*fakeja.FakeJobApplier,
 	*fakepa.FakePackageApplier,
 	*FakeLogRotateDelegate,
+	*fakemon.FakeMonitor,
 	Applier,
 ) {
 	jobApplier := fakeja.NewFakeJobApplier()
 	packageApplier := fakepa.NewFakePackageApplier()
 	platform := &FakeLogRotateDelegate{}
-	applier := NewConcreteApplier(jobApplier, packageApplier, platform)
-	return jobApplier, packageApplier, platform, applier
+	monitor := fakemon.NewFakeMonitor()
+	applier := NewConcreteApplier(jobApplier, packageApplier, platform, monitor)
+	return jobApplier, packageApplier, platform, monitor, applier
 }
 
 func buildJob() models.Job {

@@ -5,6 +5,7 @@ import (
 	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	bosherr "bosh/errors"
+	boshmon "bosh/monitor"
 	boshsettings "bosh/settings"
 )
 
@@ -12,23 +13,27 @@ type concreteApplier struct {
 	jobApplier        ja.JobApplier
 	packageApplier    pa.PackageApplier
 	logrotateDelegate LogrotateDelegate
+	monitor           boshmon.Monitor
 }
 
 func NewConcreteApplier(
 	jobApplier ja.JobApplier,
 	packageApplier pa.PackageApplier,
 	logrotateDelegate LogrotateDelegate,
+	monitor boshmon.Monitor,
 ) *concreteApplier {
 	return &concreteApplier{
 		jobApplier:        jobApplier,
 		packageApplier:    packageApplier,
 		logrotateDelegate: logrotateDelegate,
+		monitor:           monitor,
 	}
 }
 
-func (s *concreteApplier) Apply(applySpec as.ApplySpec) (err error) {
-	for _, job := range applySpec.Jobs() {
-		err = s.jobApplier.Apply(job)
+func (a *concreteApplier) Apply(applySpec as.ApplySpec) (err error) {
+	jobs := applySpec.Jobs()
+	for _, job := range jobs {
+		err = a.jobApplier.Apply(job)
 		if err != nil {
 			err = bosherr.WrapError(err, "Applying job %s", job.Name)
 			return
@@ -36,19 +41,35 @@ func (s *concreteApplier) Apply(applySpec as.ApplySpec) (err error) {
 	}
 
 	for _, pkg := range applySpec.Packages() {
-		err = s.packageApplier.Apply(pkg)
+		err = a.packageApplier.Apply(pkg)
 		if err != nil {
 			err = bosherr.WrapError(err, "Applying package %s", pkg.Name)
 			return
 		}
 	}
 
-	err = s.setUpLogrotate(applySpec)
+	for i := 0; i < len(jobs); i++ {
+		job := jobs[len(jobs)-1-i]
+
+		err = a.jobApplier.Configure(job, i)
+		if err != nil {
+			err = bosherr.WrapError(err, "Configuring job %s", job.Name)
+			return
+		}
+	}
+
+	err = a.monitor.Reload()
+	if err != nil {
+		err = bosherr.WrapError(err, "Reloading monitor")
+		return
+	}
+
+	err = a.setUpLogrotate(applySpec)
 	return
 }
 
-func (s *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) (err error) {
-	err = s.logrotateDelegate.SetupLogrotate(
+func (a *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) (err error) {
+	err = a.logrotateDelegate.SetupLogrotate(
 		boshsettings.VCAP_USERNAME,
 		boshsettings.VCAP_BASE_DIR,
 		applySpec.MaxLogFileSize(),
