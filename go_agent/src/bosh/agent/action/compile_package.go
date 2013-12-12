@@ -7,7 +7,6 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
-	"encoding/json"
 	"os"
 	"path/filepath"
 )
@@ -19,9 +18,9 @@ type compilePackageAction struct {
 	platform   boshplatform.Platform
 }
 
-type Dependencies map[string]Dependency
+type Dependencies map[string]Package
 
-type Dependency struct {
+type Package struct {
 	BlobstoreId string `json:"blobstore_id"`
 	Name        string
 	Sha1        string
@@ -41,64 +40,60 @@ func (a compilePackageAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Dependencies) (val interface{}, err error) {
-	var depFilePath string
+func (a compilePackageAction) Run(blobId, sha1, name, version string, deps Dependencies) (val map[string]interface{}, err error) {
+	pkg := Package{
+		BlobstoreId: blobId,
+		Name:        name,
+		Sha1:        sha1,
+		Version:     version,
+	}
 
 	for _, dep := range deps {
-		depFilePath, err = a.blobstore.Get(dep.BlobstoreId)
-		if err != nil {
-			err = bosherr.WrapError(err, "Fetching dependent package blob %s", bstoreId)
-			return
-		}
+		targetDir := packageInstallPath(dep)
 
-		targetDir := packageInstallPath(dep.Name, dep.Version)
-		err = cleanPackageInstallPath(targetDir, a.fs)
+		err = a.fetchAndUncompress(dep, targetDir)
 		if err != nil {
-			err = bosherr.WrapError(err, "Clean package install path %s", targetDir)
-			return
-		}
-		err = a.atomicDecompress(depFilePath, targetDir)
-		if err != nil {
-			err = bosherr.WrapError(err, "Uncompressing dependent package %", dep.Name)
+			err = bosherr.WrapError(err, "Fetching dependency %s", dep.Name)
 			return
 		}
 	}
 
-	srcPkgFile, err := a.blobstore.Get(bstoreId)
+	compilePath := filepath.Join(boshsettings.VCAP_COMPILE_DIR, pkg.Name)
+	err = a.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Fetching source package blob %s", bstoreId)
+		err = bosherr.WrapError(err, "Fetching package %s", pkg.Name)
 		return
 	}
 
-	compilePath := filepath.Join(boshsettings.VCAP_COMPILE_DIR, pName)
-	a.fs.MkdirAll(compilePath, os.ModePerm)
-
-	err = a.atomicDecompress(srcPkgFile, compilePath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Uncompressing source package %s", pName)
-	}
-
-	installPath := packageInstallPath(pName, pVer)
+	installPath := packageInstallPath(pkg)
 	err = cleanPackageInstallPath(installPath, a.fs)
 	if err != nil {
 		err = bosherr.WrapError(err, "Clean package install path %s", installPath)
 		return
 	}
 
-	packageLinkPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "packages", pName)
+	packageLinkPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "packages", pkg.Name)
 	err = a.fs.Symlink(installPath, packageLinkPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Symlinking %s to %s", installPath, packageLinkPath)
+		return
 	}
-
-	manageEnvironmentVariables(compilePath, packageLinkPath, pName, pVer)
 
 	scriptPath := filepath.Join(compilePath, "packaging")
 
 	if a.fs.FileExists(scriptPath) {
-		_, _, err = a.platform.GetRunner().RunCommand(
-			"cd", compilePath, "&&",
-			"bash", "-x", "packaging", "2>&1")
+		command := boshsys.Command{
+			Name: "bash",
+			Args: []string{"-x", "packaging"},
+			Env: map[string]string{
+				"BOSH_COMPILE_TARGET":  compilePath,
+				"BOSH_INSTALL_TARGET":  installPath,
+				"BOSH_PACKAGE_NAME":    name,
+				"BOSH_PACKAGE_VERSION": version,
+			},
+			WorkingDir: compilePath,
+		}
+		_, _, err = a.platform.GetRunner().RunComplexCommand(command)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running packaging script")
 			return
@@ -107,73 +102,62 @@ func (a compilePackageAction) Run(bstoreId, sha1, pName, pVer string, deps Depen
 
 	tmpPackageTar, err := a.compressor.CompressFilesInDir(installPath, []string{"**/*"})
 	if err != nil {
-		bosherr.WrapError(err, "Compressing compiled package")
+		err = bosherr.WrapError(err, "Compressing compiled package")
 		return
 	}
 
 	uploadedBlobId, err := a.blobstore.Create(tmpPackageTar)
 	if err != nil {
-		bosherr.WrapError(err, "Uploading compiled package")
+		err = bosherr.WrapError(err, "Uploading compiled package")
 		return
 	}
 
-	v := make(map[string]interface{})
-	result := make(map[string]string)
+	result := map[string]string{
+		"blobstore_id": uploadedBlobId,
+	}
 
-	result["blobstore_id"] = uploadedBlobId
-	v["result"] = result
+	val = map[string]interface{}{
+		"result": result,
+	}
+	return
+}
 
-	val = v
+func (a compilePackageAction) fetchAndUncompress(pkg Package, targetDir string) (err error) {
+	depFilePath, err := a.blobstore.Get(pkg.BlobstoreId)
+	if err != nil {
+		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreId)
+		return
+	}
+
+	err = cleanPackageInstallPath(targetDir, a.fs)
+	if err != nil {
+		err = bosherr.WrapError(err, "Cleaning package install path %s", targetDir)
+		return
+	}
+
+	err = a.atomicDecompress(depFilePath, targetDir)
+	if err != nil {
+		err = bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
+	}
+
 	return
 }
 
 func (a compilePackageAction) atomicDecompress(archivePath string, finalDir string) (err error) {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
 	a.fs.RemoveAll(tmpInstallPath)
-	a.fs.MkdirAll(tmpInstallPath, os.ModePerm)
+	a.fs.MkdirAll(tmpInstallPath, os.FileMode(0700))
 
 	err = a.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
 	if err != nil {
+		err = bosherr.WrapError(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
 		return
 	}
 
 	err = a.fs.Rename(tmpInstallPath, finalDir)
-
-	return
-}
-
-func getPackageDependencies(dependencies interface{}) (deps Dependencies, err error) {
-	depsJson, err := json.Marshal(dependencies)
-
 	if err != nil {
-		err = bosherr.WrapError(err, "Interpret compile package dependencies")
-		return
+		err = bosherr.WrapError(err, "Moving temporary directory %s to final destination %s", tmpInstallPath, finalDir)
 	}
-
-	err = json.Unmarshal(depsJson, &deps)
-
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshal compile package dependencies")
-		return
-	}
-
-	return
-}
-
-func getDependency(dependency interface{}) (dep Dependency, err error) {
-	depJson, err := json.Marshal(dependency)
-
-	if err != nil {
-		err = bosherr.WrapError(err, "Interpret compile package dependencies")
-		return
-	}
-
-	err = json.Unmarshal(depJson, &dep)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshal compile package dependencies")
-		return
-	}
-
 	return
 }
 
@@ -184,17 +168,6 @@ func cleanPackageInstallPath(installPath string, fs boshsys.FileSystem) (err err
 	return
 }
 
-func packageInstallPath(packageName string, packageVersion string) string {
-	return filepath.Join(boshsettings.VCAP_PKG_DIR, packageName, packageVersion)
-}
-
-func manageEnvironmentVariables(compileTarget, installTarget, pkgName, pkgVersion string) {
-	os.Setenv("BOSH_COMPILE_TARGET", compileTarget)
-	os.Setenv("BOSH_INSTALL_TARGET", installTarget)
-	os.Setenv("BOSH_PACKAGE_NAME", pkgName)
-	os.Setenv("BOSH_PACKAGE_VERSION", pkgVersion)
-
-	os.Setenv("GEM_HOME", "")
-	os.Setenv("BUNDLE_GEMFILE", "")
-	os.Setenv("RUBYOPT", "")
+func packageInstallPath(dep Package) string {
+	return filepath.Join(boshsettings.VCAP_PKG_DIR, dep.Name, dep.Version)
 }

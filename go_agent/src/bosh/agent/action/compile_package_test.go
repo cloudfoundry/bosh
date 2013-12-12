@@ -5,6 +5,7 @@ import (
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	fakeplatform "bosh/platform/fakes"
+	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -168,31 +169,6 @@ func TestCompilePackageSymlinksInstallDir(t *testing.T) {
 	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", fileStats.SymlinkTarget)
 }
 
-func TestCompilePackageSetsUpEnvironmentVariables(t *testing.T) {
-	_, _, action, _, _ := buildCompilePackageAction()
-
-	blobId, sha1, name, version, deps := getTestArguments()
-
-	clearEnvVariables()
-
-	assert.Empty(t, os.Getenv("BOSH_COMPILE_TARGET"))
-	assert.Empty(t, os.Getenv("BOSH_INSTALL_TARGET"))
-	assert.Empty(t, os.Getenv("BOSH_PACKAGE_NAME"))
-	assert.Empty(t, os.Getenv("BOSH_PACKAGE_VERSION"))
-
-	_, err := action.Run(blobId, sha1, name, version, deps)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "/var/vcap/data/compile/pkg_name", os.Getenv("BOSH_COMPILE_TARGET"))
-	assert.Equal(t, "/var/vcap/packages/pkg_name", os.Getenv("BOSH_INSTALL_TARGET"))
-	assert.Equal(t, "pkg_name", os.Getenv("BOSH_PACKAGE_NAME"))
-	assert.Equal(t, "pkg_version", os.Getenv("BOSH_PACKAGE_VERSION"))
-
-	assert.Empty(t, os.Getenv("GEM_HOME"))
-	assert.Empty(t, os.Getenv("BUNDLE_GEMFILE"))
-	assert.Empty(t, os.Getenv("RUBYOPT"))
-}
-
 func TestCompilePackageCompressesCompiledPackage(t *testing.T) {
 	compressor, _, action, _, _ := buildCompilePackageAction()
 
@@ -216,18 +192,34 @@ func TestCompilePackageScriptDoesNotExist(t *testing.T) {
 	assert.Empty(t, platform.Runner.RunCommands)
 }
 
-func TestCompilePackageScriptExists(t *testing.T) {
-	_, _, action, fs, platform := buildCompilePackageAction()
+func TestCompilePackageScriptIsRunWhenItExists(t *testing.T) {
+	compressor, _, action, fs, platform := buildCompilePackageAction()
 
 	blobId, sha1, name, version, deps := getTestArguments()
 
-	fs.WriteToFile("/var/vcap/data/compile/pkg_name/packaging", "hi")
+	compressor.DecompressFileToDirCallBack = func() {
+		fs.WriteToFile("/var/vcap/data/compile/pkg_name/packaging", "hi")
+	}
 
 	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
 
-	assert.Equal(t, platform.Runner.RunCommands,
-		[][]string{{"cd", "/var/vcap/data/compile/pkg_name", "&&", "bash", "-x", "packaging", "2>&1"}})
+	expectedCmd := boshsys.Command{
+		Name: "bash",
+		Args: []string{"-x", "packaging"},
+		Env: map[string]string{
+			"BOSH_COMPILE_TARGET":  "/var/vcap/data/compile/pkg_name",
+			"BOSH_INSTALL_TARGET":  "/var/vcap/data/packages/pkg_name/pkg_version",
+			"BOSH_PACKAGE_NAME":    "pkg_name",
+			"BOSH_PACKAGE_VERSION": "pkg_version",
+		},
+		WorkingDir: "/var/vcap/data/compile/pkg_name",
+	}
+
+	runner := platform.Runner
+
+	assert.Equal(t, 1, len(runner.RunComplexCommands))
+	assert.Equal(t, expectedCmd, runner.RunComplexCommands[0])
 }
 
 func TestCompilePackageUploadsCompressedPackage(t *testing.T) {
@@ -239,15 +231,7 @@ func TestCompilePackageUploadsCompressedPackage(t *testing.T) {
 
 	_, err := action.Run(blobId, sha1, name, version, deps)
 	assert.NoError(t, err)
-
 	assert.Equal(t, "/tmp/foo", blobstore.CreateFileName)
-}
-
-func clearEnvVariables() {
-	os.Setenv("BOSH_COMPILE_TARGET", "")
-	os.Setenv("BOSH_INSTALL_TARGET", "")
-	os.Setenv("BOSH_PACKAGE_NAME", "")
-	os.Setenv("BOSH_PACKAGE_VERSION", "")
 }
 
 func getTestArguments() (blobId, sha1, name, version string, deps Dependencies) {
@@ -256,13 +240,13 @@ func getTestArguments() (blobId, sha1, name, version string, deps Dependencies) 
 	name = "pkg_name"
 	version = "pkg_version"
 	deps = Dependencies{
-		"first_dep": Dependency{
+		"first_dep": Package{
 			BlobstoreId: "first_dep_blobstore_id",
 			Name:        "first_dep",
 			Sha1:        "first_dep_sha1",
 			Version:     "first_dep_version",
 		},
-		"sec_dep": Dependency{
+		"sec_dep": Package{
 			BlobstoreId: "sec_dep_blobstore_id",
 			Name:        "sec_dep",
 			Sha1:        "sec_dep_sha1",
