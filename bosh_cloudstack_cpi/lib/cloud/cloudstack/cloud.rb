@@ -288,6 +288,9 @@ module Bosh::CloudStackCloud
           # Delete ephemeral volume
           if volume
             @logger.info("Deleting ephemeral volume `#{volume.id}'...")
+            unless volume.server_id.nil?
+              volume.detach
+            end
             wait_resource(volume, :"", :server_id)
             delete_disk(volume.id)
           end
