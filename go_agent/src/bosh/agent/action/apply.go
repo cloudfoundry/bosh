@@ -29,10 +29,12 @@ func (a applyAction) IsAsynchronous() bool {
 }
 
 func (a applyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
-	err = a.applier.Apply(applySpec)
-	if err != nil {
-		err = bosherr.WrapError(err, "Applying")
-		return
+	if applySpec.ConfigurationHash != "" {
+		err = a.applier.Apply(applySpec)
+		if err != nil {
+			err = bosherr.WrapError(err, "Applying")
+			return
+		}
 	}
 
 	err = a.persistApplySpec(applySpec)

@@ -34,17 +34,33 @@ func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 	boshassert.MatchesJsonString(t, applySpec, stats.Content)
 }
 
-func TestApplyRunRunsApplierWithApplySpec(t *testing.T) {
+func TestApplyRunSkipsApplierWhenApplySpecDoesNotHaveConfigurationHash(t *testing.T) {
+	applier, _, _, action := buildApplyAction()
+
+	applySpec := boshas.V1ApplySpec{
+		JobSpec: boshas.JobSpec{
+			Template: "fake-job-template",
+		},
+	}
+
+	_, err := action.Run(applySpec)
+	assert.NoError(t, err)
+	assert.False(t, applier.Applied)
+}
+
+func TestApplyRunRunsApplierWithApplySpecWhenApplySpecHasConfigurationHash(t *testing.T) {
 	applier, _, _, action := buildApplyAction()
 
 	expectedApplySpec := boshas.V1ApplySpec{
 		JobSpec: boshas.JobSpec{
 			Template: "fake-job-template",
 		},
+		ConfigurationHash: "fake-config-hash",
 	}
 
 	_, err := action.Run(expectedApplySpec)
 	assert.NoError(t, err)
+	assert.True(t, applier.Applied)
 	assert.Equal(t, expectedApplySpec, applier.ApplyApplySpec)
 }
 
@@ -53,7 +69,7 @@ func TestApplyRunErrsWhenApplierFails(t *testing.T) {
 
 	applier.ApplyError = errors.New("fake-apply-error")
 
-	_, err := action.Run(boshas.V1ApplySpec{})
+	_, err := action.Run(boshas.V1ApplySpec{ConfigurationHash: "fake-config-hash"})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-apply-error")
 }

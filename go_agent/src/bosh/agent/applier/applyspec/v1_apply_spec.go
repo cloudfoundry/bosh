@@ -5,9 +5,10 @@ import (
 )
 
 type V1ApplySpec struct {
-	PropertiesSpec PropertiesSpec         `json:"properties"`
-	JobSpec        JobSpec                `json:"job"`
-	PackageSpecs   map[string]PackageSpec `json:"packages"`
+	PropertiesSpec    PropertiesSpec         `json:"properties"`
+	JobSpec           JobSpec                `json:"job"`
+	PackageSpecs      map[string]PackageSpec `json:"packages"`
+	ConfigurationHash string                 `json:"configuration_hash"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }

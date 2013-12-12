@@ -3,6 +3,7 @@ package fakes
 import as "bosh/agent/applier/applyspec"
 
 type FakeApplier struct {
+	Applied        bool
 	ApplyApplySpec as.ApplySpec
 	ApplyError     error
 }
@@ -17,5 +18,6 @@ func (s *FakeApplier) Apply(applySpec as.ApplySpec) error {
 	}
 
 	s.ApplyApplySpec = applySpec
+	s.Applied = true
 	return nil
 }
