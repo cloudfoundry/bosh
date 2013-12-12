@@ -2,7 +2,6 @@ package system
 
 import (
 	boshlog "bosh/logger"
-	fakesys "bosh/system/fakes"
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -291,20 +290,28 @@ func TestTempDir(t *testing.T) {
 }
 
 func TestCopyDirEntries(t *testing.T) {
-	osFs, runner := createOsFs()
-	testPath := filepath.Join(os.TempDir(), "CopyDirEntriesTestDir")
+	osFs, _ := createOsFs()
+	srcPath := "../../../fixtures/test_copy_dir_entries"
+	destPath, _ := osFs.TempDir("CopyDirEntriesTestDir")
+	defer os.RemoveAll(destPath)
 
-	srcPath := filepath.Join(testPath, "src")
-	dstPath := filepath.Join(testPath, "dst")
-
-	err := osFs.CopyDirEntries(srcPath, dstPath)
+	err := osFs.CopyDirEntries(srcPath, destPath)
 	assert.NoError(t, err)
-	assert.Equal(t, runner.RunCommands, [][]string{{"cp", "-r", srcPath + "/", dstPath}})
+
+	fooContent, err := osFs.ReadFile(destPath + "/foo.txt")
+	assert.NoError(t, err)
+	assert.Equal(t, "foo\n", fooContent)
+
+	barContent, err := osFs.ReadFile(destPath + "/bar/bar.txt")
+	assert.NoError(t, err)
+	assert.Equal(t, "bar\n", barContent)
+
+	assert.True(t, osFs.FileExists(destPath+"/bar/baz"))
 }
 
-func createOsFs() (fs FileSystem, runner *fakesys.FakeCmdRunner) {
-	runner = fakesys.NewFakeCmdRunner()
+func createOsFs() (fs FileSystem, runner CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	runner = NewExecCmdRunner(logger)
 	fs = NewOsFileSystem(logger, runner)
 	return
 }
