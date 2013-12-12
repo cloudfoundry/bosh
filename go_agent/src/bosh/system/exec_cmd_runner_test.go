@@ -6,6 +6,35 @@ import (
 	"testing"
 )
 
+func TestRunComplexCommandWithWorkingDirectory(t *testing.T) {
+	cmd := Command{
+		Name:       "ls",
+		Args:       []string{"-l"},
+		WorkingDir: "../../..",
+	}
+	runner := createRunner()
+	stdout, stderr, err := runner.RunComplexCommand(cmd)
+	assert.NoError(t, err)
+	assert.Empty(t, stderr)
+	assert.Contains(t, stdout, "README.md")
+	assert.Contains(t, stdout, "total")
+}
+
+func TestRunComplexCommandWithEnv(t *testing.T) {
+	cmd := Command{
+		Name: "env",
+		Env: map[string]string{
+			"FOO": "BAR",
+		},
+	}
+	runner := createRunner()
+	stdout, stderr, err := runner.RunComplexCommand(cmd)
+	assert.NoError(t, err)
+	assert.Empty(t, stderr)
+	assert.Contains(t, stdout, "FOO=BAR")
+	assert.Contains(t, stdout, "PATH=")
+}
+
 func TestRunCommand(t *testing.T) {
 	runner := createRunner()
 
