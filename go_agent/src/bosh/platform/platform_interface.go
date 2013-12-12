@@ -12,6 +12,7 @@ type Platform interface {
 	GetRunner() (runner boshsys.CmdRunner)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	GetCompressor() (compressor boshcmd.Compressor)
+
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)
 	AddUserToGroups(username string, groups []string) (err error)

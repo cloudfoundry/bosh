@@ -28,9 +28,6 @@ type FakePlatform struct {
 	UserPasswords                     map[string]string
 	SetupHostnameHostname             string
 
-	SetupLogrotateErr  error
-	SetupLogrotateArgs SetupLogrotateArgs
-
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
 
@@ -52,12 +49,6 @@ type FakePlatform struct {
 	MountedDevicePaths []string
 
 	StartMonitStarted bool
-}
-
-type SetupLogrotateArgs struct {
-	GroupName string
-	BasePath  string
-	Size      string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -131,13 +122,6 @@ func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 }
 
 func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
-	p.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
-
-	if p.SetupLogrotateErr != nil {
-		err = p.SetupLogrotateErr
-		return
-	}
-
 	return
 }
 

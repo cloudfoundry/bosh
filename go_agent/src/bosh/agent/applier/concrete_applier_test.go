@@ -5,12 +5,32 @@ import (
 	fakeja "bosh/agent/applier/jobapplier/fakes"
 	models "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
-	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+type FakeLogRotateDelegate struct {
+	SetupLogrotateErr  error
+	SetupLogrotateArgs SetupLogrotateArgs
+}
+
+type SetupLogrotateArgs struct {
+	GroupName string
+	BasePath  string
+	Size      string
+}
+
+func (d *FakeLogRotateDelegate) SetupLogrotate(groupName, basePath, size string) (err error) {
+	d.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
+
+	if d.SetupLogrotateErr != nil {
+		err = d.SetupLogrotateErr
+	}
+
+	return
+}
 
 func TestApplyAppliesJobs(t *testing.T) {
 	jobApplier, _, _, applier := buildApplier()
@@ -59,7 +79,7 @@ func TestApplySetsUpLogrotation(t *testing.T) {
 
 	err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
 	assert.NoError(t, err)
-	assert.Equal(t, platform.SetupLogrotateArgs, fakeplatform.SetupLogrotateArgs{
+	assert.Equal(t, platform.SetupLogrotateArgs, SetupLogrotateArgs{
 		GroupName: boshsettings.VCAP_USERNAME,
 		BasePath:  boshsettings.VCAP_BASE_DIR,
 		Size:      "fake-size",
@@ -79,12 +99,12 @@ func TestApplyErrsIfSetupLogrotateFails(t *testing.T) {
 func buildApplier() (
 	*fakeja.FakeJobApplier,
 	*fakepa.FakePackageApplier,
-	*fakeplatform.FakePlatform,
+	*FakeLogRotateDelegate,
 	Applier,
 ) {
 	jobApplier := fakeja.NewFakeJobApplier()
 	packageApplier := fakepa.NewFakePackageApplier()
-	platform := fakeplatform.NewFakePlatform()
+	platform := &FakeLogRotateDelegate{}
 	applier := NewConcreteApplier(jobApplier, packageApplier, platform)
 	return jobApplier, packageApplier, platform, applier
 }
