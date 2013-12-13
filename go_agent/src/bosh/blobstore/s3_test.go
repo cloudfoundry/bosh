@@ -43,7 +43,7 @@ func TestGet(t *testing.T) {
 	fs.ReturnTempFile = tempFile
 	defer fs.RemoveAll(tempFile.Name())
 
-	fileName, err := blobstore.Get("fake-blob-id")
+	fileName, err := blobstore.Get("fake-blob-id", "")
 	assert.NoError(t, err)
 
 	// downloads correct blob
@@ -65,7 +65,7 @@ func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
 
 	fs.TempFileError = errors.New("fake-error")
 
-	fileName, err := blobstore.Get("fake-blob-id")
+	fileName, err := blobstore.Get("fake-blob-id", "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-error")
 
@@ -89,7 +89,7 @@ func TestGetErrsWhenS3CliErrs(t *testing.T) {
 	}
 	runner.AddCmdResult(strings.Join(expectedCmd, " "), []string{"", "fake-error"})
 
-	fileName, err := blobstore.Get("fake-blob-id")
+	fileName, err := blobstore.Get("fake-blob-id", "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-error")
 
@@ -122,9 +122,10 @@ func TestCreate(t *testing.T) {
 
 	uuidGen.GeneratedUuid = "some-uuid"
 
-	blobId, err := blobstore.Create(fileName)
+	blobId, fingerprint, err := blobstore.Create(fileName)
 	assert.NoError(t, err)
 	assert.Equal(t, blobId, "some-uuid")
+	assert.Empty(t, fingerprint)
 
 	assert.Equal(t, 1, len(runner.RunCommands))
 	assert.Equal(t, []string{

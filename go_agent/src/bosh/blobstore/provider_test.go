@@ -43,6 +43,7 @@ func TestGetS3(t *testing.T) {
 
 	expectedS3ConfigPath := filepath.Join(boshsettings.VCAP_ETC_DIR, "s3cli")
 	expectedBlobstore := newS3Blobstore(platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedS3ConfigPath)
+	expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
 	expectedBlobstore, err = expectedBlobstore.ApplyOptions(options)
 
 	assert.NoError(t, err)

@@ -11,7 +11,7 @@ func (blobstore dummy) ApplyOptions(opts map[string]string) (updated Blobstore, 
 	return
 }
 
-func (blobstore dummy) Get(blobId string) (fileName string, err error) {
+func (blobstore dummy) Get(blobId, fingerprint string) (fileName string, err error) {
 	return
 }
 
@@ -19,6 +19,6 @@ func (blobstore dummy) CleanUp(fileName string) (err error) {
 	return
 }
 
-func (blobstore dummy) Create(fileName string) (blobId string, err error) {
+func (blobstore dummy) Create(fileName string) (blobId string, fingerprint string, err error) {
 	return
 }

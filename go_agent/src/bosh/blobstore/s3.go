@@ -65,7 +65,7 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 	return
 }
 
-func (blobstore s3) Get(blobId string) (fileName string, err error) {
+func (blobstore s3) Get(blobId, _ string) (fileName string, err error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-s3-Get")
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating temporary file")
@@ -89,7 +89,7 @@ func (blobstore s3) CleanUp(fileName string) (err error) {
 	return
 }
 
-func (blobstore s3) Create(fileName string) (blobId string, err error) {
+func (blobstore s3) Create(fileName string) (blobId string, fingerprint string, err error) {
 	filePath, err := filepath.Abs(fileName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting absolute file path")

@@ -33,7 +33,8 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 		return
 	}
 
-	file, err := s.blobstore.Get(pkg.Source.BlobstoreId)
+	sha1 := ""
+	file, err := s.blobstore.Get(pkg.Source.BlobstoreId, sha1)
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching package blob")
 		return

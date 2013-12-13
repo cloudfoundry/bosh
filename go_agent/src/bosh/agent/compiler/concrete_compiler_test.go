@@ -10,16 +10,18 @@ import (
 	"testing"
 )
 
-func TestCompileReturnsBlobId(t *testing.T) {
+func TestCompileReturnsBlobIdAndSha1(t *testing.T) {
 	_, blobstore, _, _, compiler := buildCompiler()
 
 	blobstore.CreateBlobId = "my-blob-id"
+	blobstore.CreateFingerprint = "blob-sha1"
 	pkg, deps := getCompileArgs()
 
-	blobId, err := compiler.Compile(pkg, deps)
+	blobId, sha1, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "my-blob-id", blobId)
+	assert.Equal(t, "blob-sha1", sha1)
 }
 
 func TestCompileFetchesSourcePackageFromBlobstore(t *testing.T) {
@@ -27,7 +29,7 @@ func TestCompileFetchesSourcePackageFromBlobstore(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "first_dep_blobstore_id", blobstore.GetBlobIds[0])
@@ -42,7 +44,7 @@ func TestCompileExtractsDependenciesToPackagesDir(t *testing.T) {
 
 	blobstore.GetFileName = "/dev/null"
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, compressor.DecompressFileToDirDirs[0],
@@ -68,7 +70,7 @@ func TestCompileCreatesDependencyInstallDir(t *testing.T) {
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
@@ -88,7 +90,7 @@ func TestCompileRecreatesDependencyInstallDir(t *testing.T) {
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
 
-	_, err = compiler.Compile(pkg, deps)
+	_, _, err = compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
@@ -101,7 +103,7 @@ func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
 
 	blobstore.GetFileName = "/dev/null"
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/compile/pkg_name"))
@@ -119,7 +121,7 @@ func TestCompileCreatesInstallDir(t *testing.T) {
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
@@ -138,7 +140,7 @@ func TestCompileRecreatesInstallDir(t *testing.T) {
 
 	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
 
-	_, err = compiler.Compile(pkg, deps)
+	_, _, err = compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
@@ -149,7 +151,7 @@ func TestCompileSymlinksInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	fileStats := fs.GetFileTestStat("/var/vcap/packages/pkg_name")
@@ -163,7 +165,7 @@ func TestCompileCompressesCompiledPackage(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", compressor.CompressFilesInDirDir)
@@ -175,7 +177,7 @@ func TestCompileWhenScriptDoesNotExist(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	assert.Empty(t, runner.RunCommands)
@@ -190,7 +192,7 @@ func TestCompileWhenScriptExists(t *testing.T) {
 		fs.WriteToFile("/var/vcap/data/compile/pkg_name/packaging", "hi")
 	}
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
 	expectedCmd := boshsys.Command{
@@ -216,7 +218,7 @@ func TestCompileUploadsCompressedPackage(t *testing.T) {
 
 	compressor.CompressFilesInDirTarballPath = "/tmp/foo"
 
-	_, err := compiler.Compile(pkg, deps)
+	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 	assert.Equal(t, "/tmp/foo", blobstore.CreateFileName)
 }

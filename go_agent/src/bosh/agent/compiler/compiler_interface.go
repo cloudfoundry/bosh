@@ -1,7 +1,7 @@
 package compiler
 
 type Compiler interface {
-	Compile(pkg Package, deps Dependencies) (blobId string, err error)
+	Compile(pkg Package, deps Dependencies) (blobId, sha1 string, err error)
 }
 
 type Package struct {

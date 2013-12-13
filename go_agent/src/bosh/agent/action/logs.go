@@ -35,7 +35,7 @@ func (a logsAction) Run(_ string, filters []string) (value interface{}, err erro
 		return
 	}
 
-	blobId, err := a.blobstore.Create(tarball)
+	blobId, _, err := a.blobstore.Create(tarball)
 	if err != nil {
 		err = bosherr.WrapError(err, "Create file on blobstore")
 		return

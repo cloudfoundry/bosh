@@ -17,6 +17,7 @@ func TestCompilePackageShouldBeAsynchronous(t *testing.T) {
 func TestCompilePackageCompilesThePackageAbdReturnsBlobId(t *testing.T) {
 	compiler, action := buildCompilePackageAction()
 	compiler.CompileBlobId = "my-blob-id"
+	compiler.CompileSha1 = "some sha1"
 
 	blobId, sha1, name, version, deps := getCompileActionArguments()
 
@@ -27,7 +28,10 @@ func TestCompilePackageCompilesThePackageAbdReturnsBlobId(t *testing.T) {
 		Version:     version,
 	}
 	expectedJson := map[string]interface{}{
-		"result": map[string]string{"blobstore_id": "my-blob-id"},
+		"result": map[string]string{
+			"blobstore_id": "my-blob-id",
+			"sha1":         "some sha1",
+		},
 	}
 
 	val, err := action.Run(blobId, sha1, name, version, deps)

@@ -34,6 +34,8 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 		return
 	}
 
+	blobstore = NewSha1Verifiable(blobstore)
+
 	blobstore, err = blobstore.ApplyOptions(settings.Options)
 	if err != nil {
 		err = bosherr.WrapError(err, "Applying Options")

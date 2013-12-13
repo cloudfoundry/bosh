@@ -26,7 +26,7 @@ func (a compilePackageAction) Run(blobId, sha1, name, version string, deps boshc
 		Version:     version,
 	}
 
-	uploadedBlobId, err := a.compiler.Compile(pkg, deps)
+	uploadedBlobId, uploadedSha1, err := a.compiler.Compile(pkg, deps)
 	if err != nil {
 		err = bosherr.WrapError(err, "Compiling package %s", pkg.Name)
 		return
@@ -34,6 +34,7 @@ func (a compilePackageAction) Run(blobId, sha1, name, version string, deps boshc
 
 	result := map[string]string{
 		"blobstore_id": uploadedBlobId,
+		"sha1":         uploadedSha1,
 	}
 
 	val = map[string]interface{}{

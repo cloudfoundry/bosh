@@ -31,7 +31,7 @@ func newConcreteCompiler(
 	return
 }
 
-func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobId string, err error) {
+func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobId, sha1 string, err error) {
 	for _, dep := range deps {
 		targetDir := packageInstallPath(dep)
 
@@ -90,7 +90,7 @@ func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobI
 		return
 	}
 
-	uploadedBlobId, err = c.blobstore.Create(tmpPackageTar)
+	uploadedBlobId, sha1, err = c.blobstore.Create(tmpPackageTar)
 	if err != nil {
 		err = bosherr.WrapError(err, "Uploading compiled package")
 	}
@@ -98,7 +98,8 @@ func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobI
 }
 
 func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err error) {
-	depFilePath, err := c.blobstore.Get(pkg.BlobstoreId)
+	sha1 := ""
+	depFilePath, err := c.blobstore.Get(pkg.BlobstoreId, sha1)
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreId)
 		return
