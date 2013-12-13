@@ -35,6 +35,10 @@ func TestCompileFetchesSourcePackageFromBlobstore(t *testing.T) {
 	assert.Equal(t, "first_dep_blobstore_id", blobstore.GetBlobIds[0])
 	assert.Equal(t, "sec_dep_blobstore_id", blobstore.GetBlobIds[1])
 	assert.Equal(t, "blobstore_id", blobstore.GetBlobIds[2])
+
+	assert.Equal(t, "first_dep_sha1", blobstore.GetFingerprints[0])
+	assert.Equal(t, "sec_dep_sha1", blobstore.GetFingerprints[1])
+	assert.Equal(t, "sha1", blobstore.GetFingerprints[2])
 }
 
 func TestCompileExtractsDependenciesToPackagesDir(t *testing.T) {

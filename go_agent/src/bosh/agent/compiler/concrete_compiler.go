@@ -98,8 +98,7 @@ func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobI
 }
 
 func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err error) {
-	sha1 := ""
-	depFilePath, err := c.blobstore.Get(pkg.BlobstoreId, sha1)
+	depFilePath, err := c.blobstore.Get(pkg.BlobstoreId, pkg.Sha1)
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreId)
 		return
