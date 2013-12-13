@@ -10,6 +10,9 @@ type V1ApplySpec struct {
 	PackageSpecs      map[string]PackageSpec `json:"packages"`
 	ConfigurationHash string                 `json:"configuration_hash"`
 	NetworkSpecs      map[string]interface{} `json:"networks"`
+	ResourcePoolSpecs map[string]interface{} `json:"resource_pool"`
+	Deployment        string                 `json:"deployment"`
+	Index             int                    `json:"index"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }
