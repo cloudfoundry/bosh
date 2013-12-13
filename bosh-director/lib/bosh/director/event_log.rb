@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   class EventLog
-
     # Event log conventions:
     # All event log entries having same "stage" logically belong to the same
     # event group. "tags" is an array of strings that supposed to act as hint
