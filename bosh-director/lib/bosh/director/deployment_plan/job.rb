@@ -290,8 +290,7 @@ module Bosh::Director
       end
 
       def parse_resource_pool
-        resource_pool_name = safe_property(@job_spec, "resource_pool",
-                                           :class => String)
+        resource_pool_name = safe_property(@job_spec, "resource_pool", class: String)
         @resource_pool = deployment.resource_pool(resource_pool_name)
         if @resource_pool.nil?
           raise JobUnknownResourcePool,
@@ -300,8 +299,7 @@ module Bosh::Director
       end
 
       def parse_update_config
-        update_spec = safe_property(@job_spec, "update",
-                                    :class => Hash, :optional => true)
+        update_spec = safe_property(@job_spec, "update", class: Hash, optional: true)
         @update = UpdateConfig.new(update_spec, @deployment.update)
       end
 
@@ -309,35 +307,34 @@ module Bosh::Director
         @instances = []
         @instance_states = {}
 
-        @state = safe_property(@job_spec, "state",
-                               :class => String, :optional => true)
-
-        job_size = safe_property(@job_spec, "instances", :class => Integer)
-
-        instance_states = safe_property(@job_spec, "instance_states",
-                                        :class => Hash, :default => {})
+        @state = safe_property(@job_spec, "state", class: String, optional: true)
+        job_size = safe_property(@job_spec, "instances", class: Integer)
+        instance_states = safe_property(@job_spec, "instance_states", class: Hash, default: {})
 
         instance_states.each_pair do |index, state|
           begin
             index = Integer(index)
           rescue ArgumentError
             raise JobInvalidInstanceIndex,
-                  "Invalid job index `#{index}', integer expected"
+              "Invalid job index `#{index}', integer expected"
           end
+
           unless (0...job_size).include?(index)
             raise JobInvalidInstanceIndex,
-                  "`#{@name}/#{index}' is outside of (0..#{job_size-1}) range"
+              "`#{@name}/#{index}' is outside of (0..#{job_size-1}) range"
           end
+
           unless VALID_JOB_STATES.include?(state)
             raise JobInvalidInstanceState,
-                  "Invalid state `#{state}' for `#{@name}/#{index}', valid states are: #{VALID_JOB_STATES.join(", ")}"
+              "Invalid state `#{state}' for `#{@name}/#{index}', valid states are: #{VALID_JOB_STATES.join(", ")}"
           end
+
           @instance_states[index] = state
         end
 
         if @state && !VALID_JOB_STATES.include?(@state)
           raise JobInvalidJobState,
-                "Invalid state `#{@state}' for `#{@name}', valid states are: #{VALID_JOB_STATES.join(", ")}"
+            "Invalid state `#{@state}' for `#{@name}', valid states are: #{VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times do |index|
