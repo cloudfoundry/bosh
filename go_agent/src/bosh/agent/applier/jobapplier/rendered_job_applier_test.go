@@ -59,6 +59,7 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 	jobsBc, blobstore, _, _, applier := buildJobApplier()
 	job := buildJob()
 	job.Source.BlobstoreId = "fake-blobstore-id"
+	job.Source.Sha1 = "blob-sha1"
 
 	fs := fakesys.NewFakeFileSystem()
 	jobsBc.InstallFs = fs
@@ -70,6 +71,7 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 	err := applier.Apply(job)
 	assert.NoError(t, err)
 	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
+	assert.Equal(t, "blob-sha1", blobstore.GetFingerprints[0])
 	assert.Equal(t, blobstore.GetFileName, blobstore.CleanUpFileName)
 }
 

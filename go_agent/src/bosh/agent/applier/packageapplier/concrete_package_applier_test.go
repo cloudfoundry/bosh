@@ -46,12 +46,14 @@ func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
 	_, blobstore, _, applier := buildPackageApplier()
 	pkg := buildPackage()
 	pkg.Source.BlobstoreId = "fake-blobstore-id"
+	pkg.Source.Sha1 = "blob-sha1"
 
 	blobstore.GetFileName = "/dev/null"
 
 	err := applier.Apply(pkg)
 	assert.NoError(t, err)
 	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
+	assert.Equal(t, "blob-sha1", blobstore.GetFingerprints[0])
 	assert.Equal(t, blobstore.GetFileName, blobstore.CleanUpFileName)
 }
 
