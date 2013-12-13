@@ -9,6 +9,7 @@ type V1ApplySpec struct {
 	JobSpec           JobSpec                `json:"job"`
 	PackageSpecs      map[string]PackageSpec `json:"packages"`
 	ConfigurationHash string                 `json:"configuration_hash"`
+	NetworkSpecs      map[string]interface{} `json:"networks"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }

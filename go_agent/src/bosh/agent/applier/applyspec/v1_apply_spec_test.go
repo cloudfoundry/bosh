@@ -27,11 +27,57 @@ func TestV1ApplySpecJsonConversion(t *testing.T) {
 			"package 1": {"name": "package 1", "version": "0.1", "sha1": "package 1 sha1", "blobstore_id": "package-blob-id-1"},
 			"package 2": {"name": "package 2", "version": "0.2", "sha1": "package 2 sha1", "blobstore_id": "package-blob-id-2"}
 		},
+		"networks": {
+			"manual-net": {
+				"cloud_properties": {
+					"subnet": "subnet-xxxxxx"
+				},
+				"default": [
+					"dns",
+					"gateway"
+				],
+				"dns": [
+					"xx.xx.xx.xx"
+				],
+				"dns_record_name": "job-index.job-name.manual-net.deployment-name.bosh",
+				"gateway": "xx.xx.xx.xx",
+				"ip": "xx.xx.xx.xx",
+				"netmask": "xx.xx.xx.xx"
+			},
+			"vip-net": {
+				"cloud_properties": {
+					"security_groups": [
+						"bosh"
+					]
+				},
+				"dns_record_name": "job-index.job-name.vip-net.deployment-name.bosh",
+				"ip": "xx.xx.xx.xx",
+				"type": "vip"
+			}
+		},
 		"rendered_templates_archive": {
 			"sha1": "archive sha 1",
 			"blobstore_id": "archive-blob-id-1"
 		}
 	}`
+
+	expectedNetworks := map[string]interface{}{
+		"manual-net": map[string]interface{}{
+			"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
+			"default":          []interface{}{"dns", "gateway"},
+			"dns":              []interface{}{"xx.xx.xx.xx"},
+			"dns_record_name":  "job-index.job-name.manual-net.deployment-name.bosh",
+			"gateway":          "xx.xx.xx.xx",
+			"ip":               "xx.xx.xx.xx",
+			"netmask":          "xx.xx.xx.xx",
+		},
+		"vip-net": map[string]interface{}{
+			"cloud_properties": map[string]interface{}{"security_groups": []interface{}{"bosh"}},
+			"dns_record_name":  "job-index.job-name.vip-net.deployment-name.bosh",
+			"ip":               "xx.xx.xx.xx",
+			"type":             "vip",
+		},
+	}
 
 	expectedSpec := V1ApplySpec{
 		PropertiesSpec: PropertiesSpec{
@@ -56,12 +102,14 @@ func TestV1ApplySpecJsonConversion(t *testing.T) {
 			Sha1:        "archive sha 1",
 			BlobstoreId: "archive-blob-id-1",
 		},
+		NetworkSpecs: expectedNetworks,
 	}
 
 	spec := V1ApplySpec{}
 	err := json.Unmarshal([]byte(specJson), &spec)
 
 	assert.NoError(t, err)
+	assert.Equal(t, spec.NetworkSpecs, expectedNetworks)
 	assert.Equal(t, spec, expectedSpec)
 }
 
