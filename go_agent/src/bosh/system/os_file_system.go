@@ -172,6 +172,7 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 }
 
 func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
+	fs.RemoveAll(dstPath)
 	_, _, err = fs.runner.RunCommand("cp", "-r", srcPath+"/", dstPath)
 	return
 }
