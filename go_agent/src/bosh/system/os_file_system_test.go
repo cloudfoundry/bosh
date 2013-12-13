@@ -158,13 +158,15 @@ func TestRename(t *testing.T) {
 func TestSymlink(t *testing.T) {
 	osFs, _ := createOsFs()
 	filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
-	symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestSymlink")
+	containingDir := filepath.Join(os.TempDir(), "SubDir")
+	os.Remove(containingDir)
+	symlinkPath := filepath.Join(containingDir, "SymlinkTestSymlink")
 
 	osFs.WriteToFile(filePath, "some content")
 	defer os.Remove(filePath)
 
 	osFs.Symlink(filePath, symlinkPath)
-	defer os.Remove(symlinkPath)
+	defer os.Remove(containingDir)
 
 	symlinkStats, err := os.Lstat(symlinkPath)
 	assert.NoError(t, err)

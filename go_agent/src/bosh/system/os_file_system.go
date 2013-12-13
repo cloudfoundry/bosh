@@ -168,6 +168,11 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 		}
 	}
 
+	containingDir := filepath.Dir(newPath)
+	if !fs.FileExists(containingDir) {
+		fs.MkdirAll(containingDir, os.FileMode(0700))
+	}
+
 	return os.Symlink(oldPath, newPath)
 }
 
