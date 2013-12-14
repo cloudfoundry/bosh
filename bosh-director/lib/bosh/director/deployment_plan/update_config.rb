@@ -43,6 +43,12 @@ module Bosh::Director
             parse_watch_times(update_watch_times)
         end
 
+        @serial = safe_property(update_config, "serial", {
+          class: :boolean,
+          optional: true,
+          default: default_update_config && default_update_config.serial?,
+        })
+
         if optional
           @canaries ||= default_update_config.canaries
 
@@ -74,6 +80,10 @@ module Bosh::Director
         end
 
         result
+      end
+
+      def serial?
+        !!@serial
       end
     end
   end

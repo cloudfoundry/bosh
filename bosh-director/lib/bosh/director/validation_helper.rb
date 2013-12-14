@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module ValidationHelper
-
     def safe_property(hash, property, options = {})
       result = nil
 
@@ -48,8 +45,7 @@ module Bosh::Director
 
     def invalid_type(property, klass, value)
       raise ValidationInvalidType,
-            "Property `#{property}' (value #{value.inspect}) did not match the required type `#{klass}'"
+        "Property `#{property}' (value #{value.inspect}) did not match the required type `#{klass}'"
     end
-
   end
 end
