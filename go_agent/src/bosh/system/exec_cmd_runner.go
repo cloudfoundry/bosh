@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -43,8 +42,7 @@ func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...stri
 }
 
 func (run execCmdRunner) runCmd(cmd *exec.Cmd) (stdout, stderr string, err error) {
-	cmdName := filepath.Base(cmd.Path)
-	cmdString := strings.Join(append([]string{cmdName}, cmd.Args...), " ")
+	cmdString := strings.Join(cmd.Args, " ")
 
 	run.logger.Debug("Cmd Runner", "Running command: %s", cmdString)
 

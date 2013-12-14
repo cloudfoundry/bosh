@@ -58,7 +58,17 @@ func TestRunCommandWithError(t *testing.T) {
 
 	stdout, stderr, err := runner.RunCommand("false")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "status 1")
+	assert.Equal(t, err.Error(), "Running command: 'false', stdout: '', stderr: '': exit status 1")
+	assert.Empty(t, stderr)
+	assert.Empty(t, stdout)
+}
+
+func TestRunCommandWithErrorWithArgs(t *testing.T) {
+	runner := createRunner()
+
+	stdout, stderr, err := runner.RunCommand("false", "second arg")
+	assert.Error(t, err)
+	assert.Equal(t, err.Error(), "Running command: 'false second arg', stdout: '', stderr: '': exit status 1")
 	assert.Empty(t, stderr)
 	assert.Empty(t, stdout)
 }
