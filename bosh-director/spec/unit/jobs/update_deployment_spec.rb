@@ -87,7 +87,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         resource_pool_updater.stub(:missing_vm_count).and_return(5)
 
         Bosh::Director::ResourcePoolUpdater.stub(:new).with(resource_pool).and_return(resource_pool_updater)
-        Bosh::Director::DeploymentPlan::SerialMultiJobUpdater.stub(:new).with(no_args).and_return(multi_job_updater)
+        Bosh::Director::DeploymentPlan::BatchMultiJobUpdater.stub(:new).with(no_args).and_return(multi_job_updater)
 
         resource_pool.stub(:name).and_return('resource_pool_name')
 

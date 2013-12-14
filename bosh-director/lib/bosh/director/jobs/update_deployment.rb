@@ -50,7 +50,7 @@ module Bosh::Director
 
       def update
         resource_pools = DeploymentPlan::ResourcePools.new(event_log, @resource_pool_updaters)
-        multi_job_updater = DeploymentPlan::SerialMultiJobUpdater.new
+        multi_job_updater = DeploymentPlan::BatchMultiJobUpdater.new
         updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @assembler, @deployment_plan, multi_job_updater)
         updater.update
       end
