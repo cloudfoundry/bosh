@@ -10,6 +10,7 @@ const (
 	VCAP_PKG_DIR             = VCAP_BASE_DIR + "/data/packages"
 	VCAP_COMPILE_DIR         = VCAP_BASE_DIR + "/data/compile"
 	VCAP_MONIT_JOBS_DIR      = VCAP_BASE_DIR + "/monit/job"
+	VCAP_JOBS_DIR            = VCAP_BASE_DIR + "/jobs"
 	ADMIN_GROUP              = "admin"
 	EPHEMERAL_USER_PREFIX    = "bosh_"
 )

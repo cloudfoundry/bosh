@@ -80,17 +80,20 @@ func (r concreteRunner) invalidReturnTypes(methodType reflect.Type) (valid bool)
 	return
 }
 
-func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, arguments []interface{}) (methodArgs []reflect.Value, err error) {
+func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, args []interface{}) (methodArgs []reflect.Value, err error) {
 	numberOfArgs := runMethodType.NumIn()
+	numberOfReqArgs := numberOfArgs
 
-	if len(arguments) < numberOfArgs {
-		err = bosherr.New("Not enough arguments, expected %d, got %d", numberOfArgs, len(arguments))
+	if runMethodType.IsVariadic() {
+		numberOfReqArgs--
+	}
+
+	if len(args) < numberOfReqArgs {
+		err = bosherr.New("Not enough arguments, expected %d, got %d", numberOfReqArgs, len(args))
 		return
 	}
 
-	methodArgs = make([]reflect.Value, numberOfArgs)
-
-	for i, argFromPayload := range arguments[:numberOfArgs] {
+	for i, argFromPayload := range args {
 		var rawArgBytes []byte
 		rawArgBytes, err = json.Marshal(argFromPayload)
 		if err != nil {
@@ -98,17 +101,39 @@ func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, arguments 
 			return
 		}
 
-		argValuePtr := reflect.New(runMethodType.In(i))
+		argType, typeFound := r.getMethodArgType(runMethodType, i)
+		if !typeFound {
+			continue
+		}
+
+		argValuePtr := reflect.New(argType)
+
 		err = json.Unmarshal(rawArgBytes, argValuePtr.Interface())
 		if err != nil {
 			err = bosherr.WrapError(err, "Unmarshalling action argument")
 			return
 		}
 
-		methodArgs[i] = reflect.Indirect(argValuePtr)
+		methodArgs = append(methodArgs, reflect.Indirect(argValuePtr))
 	}
 
 	return
+}
+
+func (r concreteRunner) getMethodArgType(methodType reflect.Type, index int) (argType reflect.Type, found bool) {
+	numberOfArgs := methodType.NumIn()
+
+	switch {
+	case !methodType.IsVariadic() && index >= numberOfArgs:
+		return nil, false
+
+	case methodType.IsVariadic() && index >= numberOfArgs-1:
+		sliceType := methodType.In(numberOfArgs - 1)
+		return sliceType.Elem(), true
+
+	default:
+		return methodType.In(index), true
+	}
 }
 
 func (r concreteRunner) extractReturns(values []reflect.Value) (value interface{}, err error) {

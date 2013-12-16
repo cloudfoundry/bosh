@@ -14,6 +14,7 @@ import (
 	boshmbus "bosh/mbus"
 	boshmon "bosh/monitor"
 	boshmonit "bosh/monitor/monit"
+	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	"flag"
 	"github.com/cloudfoundry/yagnats"
@@ -85,11 +86,12 @@ func (app app) Run(args []string) (err error) {
 	}
 
 	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient)
+	notifier := boshnotif.NewNotifier(mbusHandler)
 	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
-	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier, compiler)
+	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, notifier, applier, compiler)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 

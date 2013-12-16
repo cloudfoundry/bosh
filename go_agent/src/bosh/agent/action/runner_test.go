@@ -96,6 +96,59 @@ func TestRunnerRunErrsWhenActionArgumentsTypesDoNotMatch(t *testing.T) {
 	assert.Error(t, err)
 }
 
+type actionWithOptionalRunArgument struct {
+	SubAction    string
+	OptionalArgs []argsType
+
+	Value valueType
+	Err   error
+}
+
+func (a *actionWithOptionalRunArgument) IsAsynchronous() bool {
+	return false
+}
+
+func (a *actionWithOptionalRunArgument) Run(subAction string, optionalArgs ...argsType) (value valueType, err error) {
+	a.SubAction = subAction
+	a.OptionalArgs = optionalArgs
+
+	value = a.Value
+	err = a.Err
+	return
+}
+
+func TestRunnerHandlesOptionalArgumentsBeingPassedIn(t *testing.T) {
+	runner := NewRunner()
+
+	expectedValue := valueType{Id: 13, Success: true}
+	expectedErr := errors.New("Oops")
+
+	action := &actionWithOptionalRunArgument{Value: expectedValue, Err: expectedErr}
+	payload := `{"arguments":["setup", {"user":"rob","pwd":"rob123","id":12}, {"user":"bob","pwd":"bob123","id":13}]}`
+
+	value, err := runner.Run(action, []byte(payload))
+
+	assert.Equal(t, value, expectedValue)
+	assert.Equal(t, err, expectedErr)
+
+	assert.Equal(t, action.SubAction, "setup")
+	assert.Equal(t, action.OptionalArgs, []argsType{
+		{User: "rob", Password: "rob123", Id: 12},
+		{User: "bob", Password: "bob123", Id: 13},
+	})
+}
+
+func TestRunnerHandlesOptionalArgumentsWhenNotPassedIn(t *testing.T) {
+	runner := NewRunner()
+	action := &actionWithOptionalRunArgument{}
+	payload := `{"arguments":["setup"]}`
+
+	runner.Run(action, []byte(payload))
+
+	assert.Equal(t, action.SubAction, "setup")
+	assert.Equal(t, action.OptionalArgs, []argsType{})
+}
+
 type actionWithoutRunMethod struct {
 }
 

@@ -6,6 +6,7 @@ import (
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
+	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -19,17 +20,19 @@ func NewFactory(
 	platform boshplatform.Platform,
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
+	notifier boshnotif.Notifier,
 	applier boshappl.Applier,
 	compiler boshcomp.Compiler,
 ) (factory Factory) {
 
 	fs := platform.GetFs()
+	runner := platform.GetRunner()
 	compressor := platform.GetCompressor()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
 			"apply":           newApply(applier, fs, platform),
-			"drain":           newDrain(),
+			"drain":           newDrain(runner, fs, notifier),
 			"fetch_logs":      newLogs(compressor, blobstore),
 			"get_task":        newGetTask(taskService),
 			"get_state":       newGetState(settings, fs),
