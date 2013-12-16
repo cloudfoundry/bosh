@@ -77,6 +77,7 @@ describe 'with release and stemcell and two deployments' do
     it 'should deploy using a static network', ssh: true do
       pending "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
       pending "doesn't work on OpenStack as the VIP IP isn't visible to the VM" if openstack?
+      pending "doesn't work on CloudStack as the VIP IP isn't visible to the VM" if cloudstack?
       ssh(static_ip, 'vcap', '/sbin/ifconfig eth0', @our_ssh_options).should match /#{static_ip}/
     end
 
@@ -91,7 +92,10 @@ describe 'with release and stemcell and two deployments' do
       end
 
       it 'should migrate disk contents', ssh: true do
-        persistent_disk(static_ip).should_not eq(@size)
+        unless cloudstack?
+          # doesn't work on CloudStack as the same Disk Offering could be choosed for different disk size requests
+          persistent_disk(static_ip).should_not eq(@size)
+        end
         ssh(static_ip, 'vcap', "cat #{SAVE_FILE}", @our_ssh_options).should match /foobar/
       end
 

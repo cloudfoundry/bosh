@@ -79,6 +79,11 @@ module Bat
       info['cpi'] == 'openstack'
     end
 
+    def cloudstack?
+      info['cpi'] == 'cloudstack'
+    end
+
+
     def compiled_package_cache?
       info['features'] && info['features']['compiled_package_cache']
     end

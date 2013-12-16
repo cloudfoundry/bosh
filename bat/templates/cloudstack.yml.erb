@@ -1,0 +1,91 @@
+---
+name: <%= properties.name || "bat" %>
+director_uuid: <%= properties.uuid %>
+
+release:
+  name: bat
+  version: <%= properties.release || "latest" %>
+
+compilation:
+  workers: 2
+  network: default
+  reuse_compilation_vms: true
+  cloud_properties:
+    instance_type: m1.small
+    <% if properties.key_name %>
+    key_name: <%= properties.key_name %>
+    <% end %>
+
+update:
+  canaries: <%= properties.canaries || 1 %>
+  canary_watch_time: 3000-90000
+  update_watch_time: 3000-90000
+  max_in_flight: <%= properties.max_in_flight || 1 %>
+  max_errors: 1
+
+networks:
+
+- name: static
+  type: vip
+  cloud_properties: {}
+
+- name: default
+  type: <%= p('network.type') %>
+  dns:
+    <% if_p('dns_nameserver') do |dns_nameserver| %>
+    - <%= dns_nameserver %>
+    <% end %>
+    <% if_p('network.dns') do |dns| %>
+    - <%= dns %>
+    <% end %>
+  cloud_properties:
+    network_name: <%= p('network.cloud_properties.network_name') %>
+
+
+resource_pools:
+  - name: common
+    network: default
+    size: <%= properties.pool_size %>
+    stemcell:
+      name: <%= properties.stemcell.name %>
+      version: <%= properties.stemcell.version %>
+    cloud_properties:
+      instance_type: m1.small
+      <% if properties.key_name %>
+      key_name: <%= properties.key_name %>
+      <% end %>
+    <% if properties.password %>
+    env:
+      bosh:
+        password: <%= properties.password %>
+    <% end %>
+
+jobs:
+  - name: <%= properties.job || "batlight" %>
+    template: <%= properties.template || properties.job || "batlight" %>
+    instances: <%= properties.instances %>
+    resource_pool: common
+    <% if properties.persistent_disk %>
+    persistent_disk: <%= properties.persistent_disk %>
+    <% end %>
+    networks:
+      - name: default
+        default: [dns, gateway]
+      <% if properties.use_static_ip %>
+      - name: static
+        static_ips:
+          - <%= properties.static_ip %>
+      <% end %>
+
+properties:
+  mbus: <%= properties.mbus %>
+  batlight:
+    <% if properties.batlight.fail %>
+    fail: <%= properties.batlight.fail %>
+    <% end %>
+    <% if properties.batlight.missing %>
+    missing: <%= properties.batlight.missing %>
+    <% end %>
+    <% if properties.batlight.drain_type %>
+    drain_type: <%= properties.batlight.drain_type %>
+    <% end %>
