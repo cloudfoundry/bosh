@@ -43,7 +43,7 @@ func (a agent) Run() (err error) {
 	errChan := make(chan error, 1)
 	heartbeatChan := make(chan boshmbus.Heartbeat, 1)
 
-	go a.runMbusHandler(errChan)
+	go a.subscribeActionDispatcher(errChan)
 	go a.generateHeartbeats(heartbeatChan)
 	go a.sendHeartbeats(heartbeatChan, errChan)
 
@@ -58,10 +58,10 @@ type TaskValue struct {
 	State       string `json:"state"`
 }
 
-func (a agent) runMbusHandler(errChan chan error) {
+func (a agent) subscribeActionDispatcher(errChan chan error) {
 	defer a.logger.HandlePanic("Agent Message Bus Handler")
 
-	err := a.mbusHandler.Run(a.actionDispatcher.Dispatch)
+	err := a.mbusHandler.AgentSubscribe(a.actionDispatcher.Dispatch)
 	if err != nil {
 		err = bosherr.WrapError(err, "Message Bus Handler")
 	}

@@ -3,30 +3,30 @@ package fakes
 import boshmbus "bosh/mbus"
 
 type FakeHandler struct {
-	ReceivedRun   bool
-	ReceivedStart bool
-	ReceivedStop  bool
-	Func          boshmbus.HandlerFunc
-	HeartbeatChan chan boshmbus.Heartbeat
+	AgentSubscribed bool
+	Func            boshmbus.HandlerFunc
+	HeartbeatChan   chan boshmbus.Heartbeat
+
+	NotifiedShutdown  bool
+	NotifyShutdownErr error
 }
 
-func (h *FakeHandler) Run(handlerFunc boshmbus.HandlerFunc) (err error) {
-	h.ReceivedRun = true
+func NewFakeHandler() *FakeHandler {
+	return &FakeHandler{}
+}
+
+func (h *FakeHandler) AgentSubscribe(handlerFunc boshmbus.HandlerFunc) (err error) {
+	h.AgentSubscribed = true
 	h.Func = handlerFunc
 	return
-}
-
-func (h *FakeHandler) Start(handlerFunc boshmbus.HandlerFunc) (err error) {
-	h.ReceivedStart = true
-	h.Func = handlerFunc
-	return
-}
-
-func (h *FakeHandler) Stop() {
-	h.ReceivedStop = true
 }
 
 func (h *FakeHandler) SendPeriodicHeartbeat(heartbeatChan chan boshmbus.Heartbeat) (err error) {
 	h.HeartbeatChan = heartbeatChan
 	return
+}
+
+func (h *FakeHandler) NotifyShutdown() (err error) {
+	h.NotifiedShutdown = true
+	return h.NotifyShutdownErr
 }

@@ -20,38 +20,15 @@ type natsHandler struct {
 	client   yagnats.NATSClient
 }
 
-func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
+func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler *natsHandler) {
+	handler = new(natsHandler)
 	handler.settings = settings
 	handler.logger = logger
 	handler.client = client
 	return
 }
 
-func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
-	err = h.Start(handlerFunc)
-	if err != nil {
-		err = bosherr.WrapError(err, "Starting nats handler")
-		return
-	}
-	defer h.Stop()
-
-	h.runUntilInterrupted()
-	return
-}
-
-func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
-	connProvider, err := h.getConnectionInfo()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting connection info")
-		return
-	}
-
-	err = h.client.Connect(connProvider)
-	if err != nil {
-		err = bosherr.WrapError(err, "Connecting")
-		return
-	}
-
+func (h *natsHandler) AgentSubscribe(handlerFunc HandlerFunc) (err error) {
 	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
@@ -82,26 +59,9 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	return
 }
 
-func (h natsHandler) Stop() {
-	h.client.Disconnect()
-}
-
-func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error) {
-	connProvider, err := h.getConnectionInfo()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting connection info")
-		return
-	}
-
-	err = h.client.Connect(connProvider)
-	if err != nil {
-		err = bosherr.WrapError(err, "Connecting")
-		return
-	}
-
-	heartbeatSubject := fmt.Sprintf("hm.agent.heartbeat.%s", h.settings.GetAgentId())
-
+func (h *natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error) {
 	var heartbeatBytes []byte
+
 	for heartbeat := range heartbeatChan {
 		heartbeatBytes, err = json.Marshal(heartbeat)
 		if err != nil {
@@ -112,13 +72,39 @@ func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err er
 		h.logger.Info("NATS Handler", "Sending heartbeat")
 		h.logger.DebugWithDetails("NATS Handler", "Payload", heartbeatBytes)
 
-		h.client.Publish(heartbeatSubject, heartbeatBytes)
+		h.sendMsgToHealthManager("heartbeat", heartbeatBytes)
 	}
-
 	return
 }
 
-func (h natsHandler) runUntilInterrupted() {
+func (h *natsHandler) NotifyShutdown() (err error) {
+	return h.sendMsgToHealthManager("shutdown", []byte(""))
+}
+
+func (h *natsHandler) sendMsgToHealthManager(topic string, msgBytes []byte) (err error) {
+	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentId())
+	return h.client.Publish(subject, msgBytes)
+}
+
+func (h *natsHandler) run() (err error) {
+	connProvider, err := h.getConnectionInfo()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting connection info")
+		return
+	}
+
+	err = h.client.Connect(connProvider)
+	if err != nil {
+		err = bosherr.WrapError(err, "Connecting")
+	}
+
+	go h.runUntilInterrupted()
+	return
+}
+
+func (h *natsHandler) runUntilInterrupted() {
+	defer h.client.Disconnect()
+
 	keepRunning := true
 
 	c := make(chan os.Signal, 1)
@@ -132,7 +118,7 @@ func (h natsHandler) runUntilInterrupted() {
 	}
 }
 
-func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
+func (h *natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
 	natsUrl, err := url.Parse(h.settings.GetMbusUrl())
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing Nats URL")

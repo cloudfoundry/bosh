@@ -10,20 +10,22 @@ import (
 	"testing"
 )
 
-func TestNatsHandlerStart(t *testing.T) {
+func TestNatsHandlerAgentSubscribe(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{
 		AgentId: "my-agent-id",
 		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
 	}
+
 	client, handler := buildNatsClientAndHandler(settings)
+	err := handler.run()
+	assert.NoError(t, err)
 
 	var receivedRequest Request
 
-	handler.Start(func(req Request) (resp Response) {
+	handler.AgentSubscribe(func(req Request) (resp Response) {
 		receivedRequest = req
 		return NewValueResponse("expected value")
 	})
-	defer handler.Stop()
 
 	// check connection
 	assert.NotNil(t, client.ConnectedConnectionProvider)
@@ -64,7 +66,10 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 		AgentId: "my-agent-id",
 		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
 	}
+
 	client, handler := buildNatsClientAndHandler(settings)
+	err := handler.run()
+	assert.NoError(t, err)
 
 	errChan := make(chan error, 1)
 
@@ -76,7 +81,6 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 
 	close(heartbeatChan)
 
-	var err error
 	select {
 	case err = <-errChan:
 	}
@@ -90,6 +94,28 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 
 	expectedJson := `{"job":"foo","index":0,"job_state":"","vitals":{"cpu":{},"mem":{},"swap":{},"disk":{"system":{},"ephemeral":{},"persistent":{}}}}`
 	assert.Equal(t, []byte(expectedJson), message.Payload)
+}
+
+func TestNotifyShutdown(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{
+		AgentId: "my-agent-id",
+		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+	}
+
+	client, handler := buildNatsClientAndHandler(settings)
+	err := handler.run()
+	assert.NoError(t, err)
+
+	err = handler.NotifyShutdown()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(client.PublishedMessages))
+	messages := client.PublishedMessages["hm.agent.shutdown.my-agent-id"]
+
+	assert.Equal(t, 1, len(messages))
+
+	expectedMsgJson := ``
+	assert.Equal(t, []byte(expectedMsgJson), messages[0].Payload)
 }
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {
@@ -120,7 +146,7 @@ func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler natsHandler) {
+func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler *natsHandler) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	client = fakeyagnats.New()
 	handler = newNatsHandler(settings, logger, client)
