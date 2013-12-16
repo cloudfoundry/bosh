@@ -5,9 +5,11 @@ import (
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 	fakeuuid "bosh/uuid/fakes"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -21,7 +23,7 @@ func TestSettingTheOptions(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	s3CliConfig, err := fs.ReadFile("/var/vcap/etc/s3cli")
+	s3CliConfig, err := fs.ReadFile(expectedConfigPath())
 	assert.NoError(t, err)
 
 	expectedJson := map[string]string{
@@ -30,6 +32,85 @@ func TestSettingTheOptions(t *testing.T) {
 		"Bucket":    "some-bucket",
 	}
 	boshassert.MatchesJsonString(t, expectedJson, s3CliConfig)
+}
+
+func TestGet(t *testing.T) {
+	fs, runner, uuidGen := getS3BlobstoreDependencies()
+	blobstore := newS3Blobstore(fs, runner, uuidGen)
+
+	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGet")
+	assert.NoError(t, err)
+
+	fs.ReturnTempFile = tempFile
+	defer fs.RemoveAll(tempFile.Name())
+
+	file, err := blobstore.Get("fake-blob-id")
+	assert.NoError(t, err)
+
+	// downloads correct blob
+	assert.Equal(t, 1, len(runner.RunCommands))
+	assert.Equal(t, []string{
+		"s3", "-c", expectedConfigPath(), "get",
+		"fake-blob-id",
+		tempFile.Name(),
+	}, runner.RunCommands[0])
+
+	// keeps the file
+	assert.Equal(t, file, tempFile)
+	assert.True(t, fs.FileExists(tempFile.Name()))
+}
+
+func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
+	fs, runner, uuidGen := getS3BlobstoreDependencies()
+	blobstore := newS3Blobstore(fs, runner, uuidGen)
+
+	fs.TempFileError = errors.New("fake-error")
+
+	file, err := blobstore.Get("fake-blob-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fake-error")
+
+	assert.Nil(t, file)
+}
+
+func TestGetErrsWhenS3CliErrs(t *testing.T) {
+	fs, runner, uuidGen := getS3BlobstoreDependencies()
+	blobstore := newS3Blobstore(fs, runner, uuidGen)
+
+	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGetErrsWhenS3CliErrs")
+	assert.NoError(t, err)
+
+	fs.ReturnTempFile = tempFile
+	defer fs.RemoveAll(tempFile.Name())
+
+	expectedCmd := []string{
+		"s3", "-c", expectedConfigPath(), "get",
+		"fake-blob-id",
+		tempFile.Name(),
+	}
+	runner.AddCmdResult(strings.Join(expectedCmd, " "), []string{"", "fake-error"})
+
+	file, err := blobstore.Get("fake-blob-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fake-error")
+
+	// cleans up temporary file
+	assert.Nil(t, file)
+	assert.False(t, fs.FileExists(tempFile.Name()))
+}
+
+func TestCleanUp(t *testing.T) {
+	fs, runner, uuidGen := getS3BlobstoreDependencies()
+	blobstore := newS3Blobstore(fs, runner, uuidGen)
+
+	file, err := fs.TempFile("bosh-blobstore-s3-TestCleanUp")
+	assert.NoError(t, err)
+
+	defer fs.RemoveAll(file.Name())
+
+	err = blobstore.CleanUp(file)
+	assert.NoError(t, err)
+	assert.False(t, fs.FileExists(file.Name()))
 }
 
 func TestCreate(t *testing.T) {
@@ -45,10 +126,11 @@ func TestCreate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, blobId, "some-uuid")
 
-	configPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "etc", "s3cli")
-
 	assert.Equal(t, 1, len(runner.RunCommands))
-	assert.Equal(t, []string{"s3", "-c", configPath, "put", expectedPath, "some-uuid"}, runner.RunCommands[0])
+	assert.Equal(t, []string{
+		"s3", "-c", expectedConfigPath(), "put",
+		expectedPath, "some-uuid",
+	}, runner.RunCommands[0])
 }
 
 func getS3BlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator) {
@@ -56,4 +138,8 @@ func getS3BlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.F
 	runner = &fakesys.FakeCmdRunner{}
 	uuidGen = &fakeuuid.FakeGenerator{}
 	return
+}
+
+func expectedConfigPath() string {
+	return filepath.Join(boshsettings.VCAP_BASE_DIR, "etc", "s3cli")
 }

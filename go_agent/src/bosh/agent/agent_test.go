@@ -12,6 +12,7 @@ import (
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -56,6 +57,11 @@ func TestRunHandlesGetStateMessage(t *testing.T) {
 
 func TestRunHandlesSshMessage(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me!", "ssh", []byte(`{"arguments":["setup",{"user":"foo","password":"bar"}]}`))
+	assertRequestIsProcessedSynchronously(t, req)
+}
+
+func TestRunHandlesListDiskMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "list_disk", []byte("some payload"))
 	assertRequestIsProcessedSynchronously(t, req)
 }
 
@@ -113,6 +119,16 @@ func TestRunHandlesDrainMessage(t *testing.T) {
 
 func TestRunHandlesMountDiskMessage(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me!", "mount_disk", []byte("some payload"))
+	assertRequestIsProcessedAsynchronously(t, req)
+}
+
+func TestRunHandlesUnmountDiskMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "unmount_disk", []byte("some payload"))
+	assertRequestIsProcessedAsynchronously(t, req)
+}
+
+func TestRunHandlesMigrateDiskMessage(t *testing.T) {
+	req := boshmbus.NewRequest("reply to me!", "migrate_disk", []byte("some payload"))
 	assertRequestIsProcessedAsynchronously(t, req)
 }
 
@@ -234,14 +250,14 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 }
 
 func getAgentDependencies() (
-	settings boshsettings.Settings,
+	settings *fakesettings.FakeSettingsService,
 	logger boshlog.Logger,
 	handler *fakembus.FakeHandler,
 	platform *fakeplatform.FakePlatform,
 	taskService *faketask.FakeService,
 	actionFactory *fakeaction.FakeFactory) {
 
-	settings = boshsettings.Settings{}
+	settings = &fakesettings.FakeSettingsService{}
 	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 	handler = &fakembus.FakeHandler{}
 	platform = &fakeplatform.FakePlatform{

@@ -4,13 +4,14 @@ import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	boshsys "bosh/system"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestGetStateRun(t *testing.T) {
-	settings := boshsettings.Settings{}
+	settings := &fakesettings.FakeSettingsService{}
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
@@ -31,7 +32,7 @@ func TestGetStateRun(t *testing.T) {
 	boshassert.MatchesJsonMap(t, state, expectedJson)
 }
 
-func buildGetStateAction(settings boshsettings.Settings) (boshsys.FileSystem, getStateAction) {
+func buildGetStateAction(settings boshsettings.Service) (boshsys.FileSystem, getStateAction) {
 	platform := fakeplatform.NewFakePlatform()
 	return platform.Fs, newGetState(settings, platform.Fs)
 }

@@ -11,32 +11,47 @@ import (
 )
 
 type FakePlatform struct {
-	FakeStatsCollector *fakestats.FakeStatsCollector
 	Fs                 *fakesys.FakeFileSystem
 	Runner             *fakesys.FakeCmdRunner
+	FakeStatsCollector *fakestats.FakeStatsCollector
 	FakeCompressor     *fakedisk.FakeCompressor
 
 	SetupRuntimeConfigurationWasInvoked bool
-	CreateUserUsername                  string
-	CreateUserPassword                  string
-	CreateUserBasePath                  string
-	AddUserToGroupsGroups               map[string][]string
-	DeleteEphemeralUsersMatchingRegex   string
-	SetupSshPublicKeys                  map[string]string
-	SetupHostnameHostname               string
+
+	CreateUserUsername string
+	CreateUserPassword string
+	CreateUserBasePath string
+
+	AddUserToGroupsGroups             map[string][]string
+	DeleteEphemeralUsersMatchingRegex string
+	SetupSshPublicKeys                map[string]string
+	UserPasswords                     map[string]string
+	SetupHostnameHostname             string
 
 	SetupLogrotateErr  error
 	SetupLogrotateArgs SetupLogrotateArgs
 
-	SetupEphemeralDiskWithPathDevicePath string
-	SetupEphemeralDiskWithPathMountPoint string
-	StartMonitStarted                    bool
-	UserPasswords                        map[string]string
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
 
+	SetupEphemeralDiskWithPathDevicePath string
+	SetupEphemeralDiskWithPathMountPoint string
+
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
+
+	UnmountPersistentDiskDidUnmount bool
+	UnmountPersistentDiskDevicePath string
+
+	MigratePersistentDiskFromMountPoint string
+	MigratePersistentDiskToMountPoint   string
+
+	IsMountPointResult bool
+	IsMountPointPath   string
+
+	MountedDevicePaths []string
+
+	StartMonitStarted bool
 }
 
 type SetupLogrotateArgs struct {
@@ -47,13 +62,14 @@ type SetupLogrotateArgs struct {
 
 func NewFakePlatform() (platform *FakePlatform) {
 	platform = new(FakePlatform)
+	platform.Fs = &fakesys.FakeFileSystem{}
+	platform.Runner = &fakesys.FakeCmdRunner{}
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
+	platform.FakeCompressor = &fakedisk.FakeCompressor{}
+
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
-	platform.Fs = &fakesys.FakeFileSystem{}
-	platform.Runner = &fakesys.FakeCmdRunner{}
-	platform.FakeCompressor = &fakedisk.FakeCompressor{}
 	return
 }
 
@@ -100,6 +116,11 @@ func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
+func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
+	p.UserPasswords[user] = encryptedPwd
+	return
+}
+
 func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 	p.SetupHostnameHostname = hostname
 	return
@@ -120,6 +141,12 @@ func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err err
 	return
 }
 
+func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
+	p.SetTimeWithNtpServersServers = servers
+	p.SetTimeWithNtpServersServersFilePath = serversFilePath
+	return
+}
+
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
 	p.SetupEphemeralDiskWithPathMountPoint = mountPoint
@@ -132,18 +159,34 @@ func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err e
 	return
 }
 
+func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+	p.UnmountPersistentDiskDevicePath = devicePath
+	didUnmount = p.UnmountPersistentDiskDidUnmount
+	return
+}
+
+func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
+	p.MigratePersistentDiskFromMountPoint = fromMountPoint
+	p.MigratePersistentDiskToMountPoint = toMountPoint
+	return
+}
+
+func (p *FakePlatform) IsMountPoint(path string) (result bool, err error) {
+	p.IsMountPointPath = path
+	result = p.IsMountPointResult
+	return
+}
+
+func (p *FakePlatform) IsDevicePathMounted(path string) (result bool, err error) {
+	for _, mountedPath := range p.MountedDevicePaths {
+		if mountedPath == path {
+			return true, nil
+		}
+	}
+	return
+}
+
 func (p *FakePlatform) StartMonit() (err error) {
 	p.StartMonitStarted = true
-	return
-}
-
-func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
-	p.UserPasswords[user] = encryptedPwd
-	return
-}
-
-func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
-	p.SetTimeWithNtpServersServers = servers
-	p.SetTimeWithNtpServersServersFilePath = serversFilePath
 	return
 }

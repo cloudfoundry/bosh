@@ -89,12 +89,14 @@ module Bosh::Cli
       stemcells_table = table do |t|
         t.headings = 'Name', 'Version', 'CID'
         stemcells.each do |sc|
-          t << [sc['name'], sc['version'], sc['cid']]
+          t << get_stemcell_table_record(sc)
         end
       end
 
       nl
       say(stemcells_table)
+      nl
+      say('(*) Currently in-use')
       nl
       say('Stemcells total: %d' % stemcells.size)
     end
@@ -150,6 +152,12 @@ module Bosh::Cli
       end
 
       !existing.empty?
+    end
+
+    def get_stemcell_table_record(sc)
+      deployments = sc.fetch('deployments', [])
+
+      [sc['name'], "#{sc['version']}#{deployments.empty? ? '' : '*'}", sc['cid']]
     end
   end
 end

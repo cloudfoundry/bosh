@@ -68,6 +68,8 @@ properties:
   openstack.endpoint_type:
     description: OpenStack endpoint type (optional, by default publicURL)
     default: publicURL
+  openstack.connection_options:
+    description: Hash containing optional connection parameters to the OpenStack API
 
   # For CloudStack
   cloudstack.endpoint:

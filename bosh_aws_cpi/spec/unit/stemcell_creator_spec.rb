@@ -46,8 +46,8 @@ describe Bosh::AwsCloud::StemcellCreator do
     it "should create a fake stemcell" do
       creator = described_class.new(region, stemcell_properties)
 
-      Bosh::AwsCloud::Stemcell.should_receive(:find).with(region, "ami-xxxxxxxx")
-      stemcell = creator.fake
+      Bosh::AwsCloud::StemcellFinder.should_receive(:find_by_region_and_id).with(region, "ami-xxxxxxxx light")
+      creator.fake
     end
 
     it "should raise an error if there is no ami for the current region" do

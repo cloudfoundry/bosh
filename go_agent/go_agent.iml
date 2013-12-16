@@ -6,7 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/pkg" />
     </content>
-    <orderEntry type="jdk" jdkName="Go sdk go1.1.2 darwin/amd64" jdkType="Google Go SDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

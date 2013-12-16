@@ -7,6 +7,7 @@ import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -391,7 +392,7 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err e
 }
 
 func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
-	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
 
 	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
@@ -422,6 +423,59 @@ func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 		return
 	}
 	return
+}
+
+func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+	realPath, err := p.getRealDevicePath(devicePath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	return p.mounter.Unmount(realPath + "1")
+}
+
+func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
+	return p.mounter.IsMountPoint(path)
+}
+
+func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
+	err = p.mounter.RemountAsReadonly(fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Remounting persistent disk as readonly")
+		return
+	}
+
+	// Golang does not implement a file copy that would allow us to preserve dates...
+	// So we have to shell out to tar to perform the copy instead of delegating to the FileSystem
+	tarCopy := fmt.Sprintf("(tar -C %s -cf - .) | (tar -C %s -xpf -)", fromMountPoint, toMountPoint)
+	_, _, err = p.cmdRunner.RunCommand("sh", "-c", tarCopy)
+	if err != nil {
+		err = bosherr.WrapError(err, "Copying files from old disk to new disk")
+		return
+	}
+
+	_, err = p.mounter.Unmount(fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Unmounting old persistent disk")
+		return
+	}
+
+	err = p.mounter.Remount(toMountPoint, fromMountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Remounting new disk on original mountpoint")
+	}
+	return
+}
+
+func (p ubuntu) IsDevicePathMounted(path string) (result bool, err error) {
+	realPath, err := p.getRealDevicePath(path)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	return p.mounter.IsMounted(realPath + "1")
 }
 
 func (p ubuntu) StartMonit() (err error) {

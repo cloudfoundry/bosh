@@ -1,16 +1,19 @@
 package action
 
 import (
+	boshas "bosh/agent/applier/applyspec"
+	fakeappl "bosh/agent/applier/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
-	fs, _, action := buildApplyAction()
+	_, fs, _, action := buildApplyAction()
 
 	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{"deployment":"dummy-damien"}]}`)
 	_, err := action.Run(payload)
@@ -21,44 +24,40 @@ func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 	assert.Equal(t, `{"deployment":"dummy-damien"}`, stats.Content)
 }
 
-func TestApplyRunSetsUpLogrotation(t *testing.T) {
-	_, platform, action := buildApplyAction()
+func TestApplyRunRunsApplierWithApplySpec(t *testing.T) {
+	applier, _, _, action := buildApplyAction()
 
-	payload := []byte(`{
-		"method":"apply",
-		"reply_to":"foo",
-		"arguments":[{
-			"properties":{
-				"logging":{
-					"max_log_file_size":"fake-size"
-				}
-			}
-		}]
-	}`)
-	_, err := action.Run(payload)
+	applySpecPayload := []byte(`{"job": {"template": "fake-job-template"}}`)
+
+	expectedApplySpec, err := boshas.NewV1ApplySpecFromJson(applySpecPayload)
 	assert.NoError(t, err)
 
-	assert.Equal(t, platform.SetupLogrotateArgs, fakeplatform.SetupLogrotateArgs{
-		GroupName: boshsettings.VCAP_USERNAME,
-		BasePath:  boshsettings.VCAP_BASE_DIR,
-		Size:      "fake-size",
-	})
+	payload := []byte(
+		fmt.Sprintf(`{
+			"method":    "apply",
+			"reply_to":  "foo",
+			"arguments": [%s]
+		}`, applySpecPayload),
+	)
+
+	_, err = action.Run(payload)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedApplySpec, applier.ApplyApplySpec)
 }
 
-func TestApplyRunErrsIfSetupLogrotateFails(t *testing.T) {
-	_, platform, action := buildApplyAction()
+func TestApplyRunErrsWhenApplierFails(t *testing.T) {
+	applier, _, _, action := buildApplyAction()
 
-	platform.SetupLogrotateErr = errors.New("fake-msg")
+	applier.ApplyError = errors.New("fake-apply-error")
 
 	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{}]}`)
 	_, err := action.Run(payload)
-
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Logrotate setup failed: fake-msg")
+	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
 func TestApplyRunErrsWithZeroArguments(t *testing.T) {
-	_, _, action := buildApplyAction()
+	_, _, _, action := buildApplyAction()
 
 	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[]}`)
 	_, err := action.Run(payload)
@@ -67,9 +66,10 @@ func TestApplyRunErrsWithZeroArguments(t *testing.T) {
 	assert.Contains(t, err.Error(), "Not enough arguments")
 }
 
-func buildApplyAction() (*fakesys.FakeFileSystem, *fakeplatform.FakePlatform, applyAction) {
+func buildApplyAction() (*fakeappl.FakeApplier, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform, applyAction) {
+	applier := fakeappl.NewFakeApplier()
 	platform := fakeplatform.NewFakePlatform()
 	fs := platform.Fs
-	action := newApply(fs, platform)
-	return fs, platform, action
+	action := newApply(applier, fs, platform)
+	return applier, fs, platform, action
 }

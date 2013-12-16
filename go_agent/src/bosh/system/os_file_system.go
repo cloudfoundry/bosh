@@ -151,17 +151,29 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 		if existingTargetedPath == actualOldPath {
 			return
 		} else {
-			return bosherr.New("Error creating symlink %s to %s, it already links to %s",
-				newPath, oldPath, existingTargetedPath)
+			err = os.Remove(newPath)
+			if err != nil {
+				err = bosherr.WrapError(err, "Failed to delete symlimk at %s", newPath)
+				return
+			}
 		}
 	}
 
 	return os.Symlink(oldPath, newPath)
 }
 
-func (fs osFileSystem) TempDir() (tmpDir string) {
-	fs.logger.Debug(fs.logTag, "Getting temp dir")
-	return os.TempDir()
+func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) error {
+	panic("not implemented")
+}
+
+func (fs osFileSystem) TempFile(prefix string) (file *os.File, err error) {
+	fs.logger.Debug(fs.logTag, "Creating temp file with prefix %s", prefix)
+	return ioutil.TempFile("", prefix)
+}
+
+func (fs osFileSystem) TempDir(prefix string) (path string, err error) {
+	fs.logger.Debug(fs.logTag, "Creating temp dir with prefix %s", prefix)
+	return ioutil.TempDir("", prefix)
 }
 
 func (fs osFileSystem) RemoveAll(fileOrDir string) {

@@ -1,7 +1,8 @@
 package action
 
 import (
-	boshspec "bosh/agent/applyspec"
+	boshappl "bosh/agent/applier"
+	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -12,11 +13,13 @@ import (
 )
 
 type applyAction struct {
+	applier  boshappl.Applier
 	fs       boshsys.FileSystem
 	platform boshplatform.Platform
 }
 
-func newApply(fs boshsys.FileSystem, platform boshplatform.Platform) (action applyAction) {
+func newApply(applier boshappl.Applier, fs boshsys.FileSystem, platform boshplatform.Platform) (action applyAction) {
+	action.applier = applier
 	action.fs = fs
 	action.platform = platform
 	return
@@ -37,18 +40,14 @@ func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
 		return
 	}
 
-	applySpec, err := boshspec.NewApplySpecFromData(payload.Arguments[0])
+	applySpec, err := boshas.NewV1ApplySpecFromData(payload.Arguments[0])
 	if err != nil {
 		return
 	}
 
-	err = a.platform.SetupLogrotate(
-		boshsettings.VCAP_USERNAME,
-		boshsettings.VCAP_BASE_DIR,
-		applySpec.MaxLogFileSize(),
-	)
+	err = a.applier.Apply(applySpec)
 	if err != nil {
-		err = bosherr.WrapError(err, "Logrotate setup failed")
+		err = bosherr.WrapError(err, "Applying")
 		return
 	}
 

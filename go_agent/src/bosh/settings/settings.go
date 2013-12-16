@@ -22,8 +22,9 @@ type Settings struct {
 type BlobstoreType string
 
 const (
-	BlobstoreTypeS3    BlobstoreType = "s3"
+	BlobstoreTypeDav   BlobstoreType = "dav"
 	BlobstoreTypeDummy               = "dummy"
+	BlobstoreTypeS3                  = "s3"
 )
 
 type Blobstore struct {
@@ -60,15 +61,15 @@ type BoshEnv struct {
 	Password string
 }
 
-type Networks map[string]NetworkSettings
+type Networks map[string]Network
 
-type NetworkSettings struct {
+type Network struct {
 	Default []string
 	Dns     []string
 	Ip      string
 }
 
-func (n Networks) DefaultNetworkFor(category string) (settings NetworkSettings, found bool) {
+func (n Networks) DefaultNetworkFor(category string) (network Network, found bool) {
 	if len(n) == 0 {
 		return
 	}
@@ -77,14 +78,14 @@ func (n Networks) DefaultNetworkFor(category string) (settings NetworkSettings, 
 		found = true
 	}
 
-	for _, networkSettings := range n {
-		for _, def := range networkSettings.Default {
+	for _, net := range n {
+		for _, def := range net.Default {
 			if def == category {
 				found = true
 			}
 		}
 		if found {
-			settings = networkSettings
+			network = net
 			return
 		}
 	}

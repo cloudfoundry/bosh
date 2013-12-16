@@ -24,5 +24,9 @@ type Platform interface {
 	SetTimeWithNtpServers(servers []string, serversFilePath string) (err error)
 	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
 	MountPersistentDisk(devicePath, mountPoint string) (err error)
+	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
+	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
+	IsMountPoint(path string) (result bool, err error)
+	IsDevicePathMounted(path string) (result bool, err error)
 	StartMonit() (err error)
 }

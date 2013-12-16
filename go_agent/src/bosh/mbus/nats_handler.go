@@ -15,12 +15,12 @@ import (
 )
 
 type natsHandler struct {
-	settings boshsettings.Settings
+	settings boshsettings.Service
 	logger   boshlog.Logger
 	client   yagnats.NATSClient
 }
 
-func newNatsHandler(settings boshsettings.Settings, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
+func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
 	handler.settings = settings
 	handler.logger = logger
 	handler.client = client
@@ -52,7 +52,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 		return
 	}
 
-	subject := fmt.Sprintf("agent.%s", h.settings.AgentId)
+	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
 		req := Request{}
@@ -99,7 +99,7 @@ func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err er
 		return
 	}
 
-	heartbeatSubject := fmt.Sprintf("hm.agent.heartbeat.%s", h.settings.AgentId)
+	heartbeatSubject := fmt.Sprintf("hm.agent.heartbeat.%s", h.settings.GetAgentId())
 
 	var heartbeatBytes []byte
 	for heartbeat := range heartbeatChan {
@@ -133,7 +133,7 @@ func (h natsHandler) runUntilInterrupted() {
 }
 
 func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
-	natsUrl, err := url.Parse(h.settings.Mbus)
+	natsUrl, err := url.Parse(h.settings.GetMbusUrl())
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing Nats URL")
 		return

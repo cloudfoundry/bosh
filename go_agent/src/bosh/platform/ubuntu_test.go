@@ -103,7 +103,7 @@ foobar:...
 
 func TestUbuntuSetupSsh(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeFs.HomeDirHomeDir = "/some/home/dir"
+	fakeFs.HomeDirHomePath = "/some/home/dir"
 
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 	ubuntu.SetupSsh("some public key", "vcap")
@@ -190,11 +190,11 @@ func testUbuntuSetupDhcp(
 	fakeCompressor *fakedisk.FakeCompressor,
 ) {
 	networks := boshsettings.Networks{
-		"bosh": boshsettings.NetworkSettings{
+		"bosh": boshsettings.Network{
 			Default: []string{"dns"},
 			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 		},
-		"vip": boshsettings.NetworkSettings{
+		"vip": boshsettings.Network{
 			Default: []string{},
 			Dns:     []string{"aa.aa.aa.aa"},
 		},
@@ -340,7 +340,7 @@ func TestUbuntuMountPersistentDisk(t *testing.T) {
 
 	mountPoint := fakeFs.GetFileTestStat("/mnt/point")
 	assert.Equal(t, fakesys.FakeFileTypeDir, mountPoint.FileType)
-	assert.Equal(t, os.FileMode(0750), mountPoint.FileMode)
+	assert.Equal(t, os.FileMode(0700), mountPoint.FileMode)
 
 	partition := fakePartitioner.PartitionPartitions[0]
 	assert.Equal(t, "/dev/vdf", fakePartitioner.PartitionDevicePath)
@@ -357,6 +357,29 @@ func TestUbuntuMountPersistentDisk(t *testing.T) {
 	assert.Equal(t, "/mnt/point", fakeMounter.MountMountPoints[0])
 	assert.Equal(t, 1, len(fakeMounter.MountPartitionPaths))
 	assert.Equal(t, "/dev/vdf1", fakeMounter.MountPartitionPaths[0])
+}
+
+func TestUbuntuUnmountPersistentDiskWhenNotMounted(t *testing.T) {
+	testUbuntuUnmountPersistentDisk(t, false)
+}
+
+func TestUbuntuUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
+	testUbuntuUnmountPersistentDisk(t, true)
+}
+
+func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	fakeMounter := fakeDiskManager.FakeMounter
+	fakeMounter.UnmountDidUnmount = !isMounted
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/dev/vdx", "")
+
+	didUnmount, err := ubuntu.UnmountPersistentDisk("/dev/sdx")
+	assert.NoError(t, err)
+	assert.Equal(t, didUnmount, !isMounted)
+	assert.Equal(t, "/dev/vdx1", fakeMounter.UnmountPartitionPath)
 }
 
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
@@ -429,6 +452,39 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSwap, swapSize)
 	assert.Equal(t, diskSizeInMb-expectedSwap, linuxSize)
+}
+
+func TestUbuntuMigratePersistentDisk(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	fakeMounter := fakeDiskManager.FakeMounter
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	ubuntu.MigratePersistentDisk("/from/path", "/to/path")
+
+	assert.Equal(t, fakeMounter.RemountAsReadonlyPath, "/from/path")
+
+	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, []string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}, fakeCmdRunner.RunCommands[0])
+
+	assert.Equal(t, fakeMounter.UnmountPartitionPath, "/from/path")
+	assert.Equal(t, fakeMounter.RemountFromMountPoint, "/to/path")
+	assert.Equal(t, fakeMounter.RemountToMountPoint, "/from/path")
+}
+
+func TestIsDevicePathMounted(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+
+	fakeFs.WriteToFile("/dev/xvda", "")
+	fakeMounter := fakeDiskManager.FakeMounter
+	fakeMounter.IsMountedResult = true
+
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	result, err := ubuntu.IsDevicePathMounted("/dev/sda")
+	assert.NoError(t, err)
+	assert.True(t, result)
+	assert.Equal(t, fakeMounter.IsMountedDevicePathOrMountPoint, "/dev/xvda1")
 }
 
 func TestStartMonit(t *testing.T) {

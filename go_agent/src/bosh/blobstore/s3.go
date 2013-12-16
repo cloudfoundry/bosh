@@ -18,12 +18,13 @@ type s3 struct {
 	configFilePath string
 }
 
-func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator) (blobstore s3) {
-	blobstore.fs = fs
-	blobstore.runner = runner
-	blobstore.uuidGen = uuidGen
-	blobstore.configFilePath = filepath.Join(boshsettings.VCAP_BASE_DIR, "etc", "s3cli")
-	return
+func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator) (blobstore Blobstore) {
+	return s3{
+		fs:             fs,
+		runner:         runner,
+		uuidGen:        uuidGen,
+		configFilePath: filepath.Join(boshsettings.VCAP_BASE_DIR, "etc", "s3cli"),
+	}
 }
 
 type s3CliConfig struct {
@@ -63,6 +64,26 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 	}
 
 	updated = blobstore
+	return
+}
+
+func (blobstore s3) Get(blobId string) (file *os.File, err error) {
+	file, err = blobstore.fs.TempFile("bosh-blobstore-s3-Get")
+	if err != nil {
+		return
+	}
+
+	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, file.Name())
+	if err != nil {
+		blobstore.fs.RemoveAll(file.Name())
+		file = nil
+	}
+
+	return
+}
+
+func (blobstore s3) CleanUp(file *os.File) (err error) {
+	blobstore.fs.RemoveAll(file.Name())
 	return
 }
 

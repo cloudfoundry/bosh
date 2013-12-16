@@ -4,8 +4,9 @@ require 'bosh/dev/git_tagger'
 
 module Bosh::Dev
   describe GitTagger do
+    subject(:git_tagger) { described_class.new(Logger.new(nil)) }
+
     describe '#tag_and_push' do
-      subject(:git_tagger) { described_class.new(Logger.new(nil)) }
       let(:sha)            { 'fake-sha' }
       let(:build_number)   { 'fake-build-id' }
 
@@ -79,6 +80,26 @@ module Bosh::Dev
             expect { git_tagger.tag_and_push(sha, build_number) }.to raise_error
           end
         end
+      end
+    end
+
+    describe '#stable_tag_for?' do
+      let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
+      let(:subject_sha) { 'some-subjected-sha' }
+      before do
+        Bosh::Core::Shell.stub(:new).and_return(shell)
+      end
+
+      it 'returns true when there is a stable tag for the given sha' do
+        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha}").and_return('stable-123')
+
+        expect(git_tagger.stable_tag_for?(subject_sha)).to eq(true)
+      end
+
+      it 'returns false when there is not a stable tag for the given sha' do
+        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha}").and_return('')
+
+        expect(git_tagger.stable_tag_for?(subject_sha)).to eq(false)
       end
     end
   end

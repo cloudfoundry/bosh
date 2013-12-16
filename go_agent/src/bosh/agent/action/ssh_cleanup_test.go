@@ -3,14 +3,13 @@ package action
 import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
-	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
-	settings := boshsettings.Settings{}
-	platform, action := buildSshActionCleanup(settings)
+	platform, action := buildSshActionCleanup()
 
 	payload := `{"arguments":["cleanup",{"user_regex":"^foobar.*"}]}`
 	response, err := action.Run([]byte(payload))
@@ -23,8 +22,9 @@ func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
 	})
 }
 
-func buildSshActionCleanup(settings boshsettings.Settings) (*fakeplatform.FakePlatform, sshAction) {
+func buildSshActionCleanup() (*fakeplatform.FakePlatform, sshAction) {
 	platform := fakeplatform.NewFakePlatform()
+	settings := &fakesettings.FakeSettingsService{}
 	action := newSsh(settings, platform)
 	return platform, action
 }

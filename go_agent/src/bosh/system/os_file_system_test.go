@@ -37,6 +37,10 @@ func TestMkdirAll(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, stat.IsDir())
 	assert.Equal(t, stat.Mode().Perm(), fileMode)
+
+	// check idempotency
+	err = osFs.MkdirAll(testPath, fileMode)
+	assert.NoError(t, err)
 }
 
 func TestChown(t *testing.T) {
@@ -185,11 +189,22 @@ func TestSymlinkWhenLinkAlreadyExistsAndDoesNotLinkToTheIntendedPath(t *testing.
 	osFs.WriteToFile(otherFilePath, "other content")
 	defer os.Remove(otherFilePath)
 
-	osFs.Symlink(otherFilePath, symlinkPath)
+	err := osFs.Symlink(otherFilePath, symlinkPath)
+	assert.NoError(t, err)
+
+	// Repoints symlink to new destination
+	err = osFs.Symlink(filePath, symlinkPath)
+	assert.NoError(t, err)
+
 	defer os.Remove(symlinkPath)
 
-	err := osFs.Symlink(filePath, symlinkPath)
-	assert.Error(t, err)
+	symlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, os.ModeSymlink, os.ModeSymlink&symlinkStats.Mode())
+
+	symlinkFile, err := os.Open(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
 func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
@@ -203,8 +218,55 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 	osFs.WriteToFile(symlinkPath, "some other content")
 	defer os.Remove(symlinkPath)
 
+	// Repoints symlink to new destination
 	err := osFs.Symlink(filePath, symlinkPath)
-	assert.Error(t, err)
+	assert.NoError(t, err)
+
+	defer os.Remove(symlinkPath)
+
+	symlinkStats, err := os.Lstat(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, os.ModeSymlink, os.ModeSymlink&symlinkStats.Mode())
+
+	symlinkFile, err := os.Open(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "some content", readFile(symlinkFile))
+}
+
+func TestTempFile(t *testing.T) {
+	osFs := createOsFs()
+
+	file1, err := osFs.TempFile("fake-prefix")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, file1)
+
+	defer os.Remove(file1.Name())
+
+	file2, err := osFs.TempFile("fake-prefix")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, file2)
+
+	defer os.Remove(file2.Name())
+
+	assert.NotEqual(t, file1.Name(), file2.Name())
+}
+
+func TestTempDir(t *testing.T) {
+	osFs := createOsFs()
+
+	path1, err := osFs.TempDir("fake-prefix")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, path1)
+
+	defer os.Remove(path1)
+
+	path2, err := osFs.TempDir("fake-prefix")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, path2)
+
+	defer os.Remove(path2)
+
+	assert.NotEqual(t, path1, path2)
 }
 
 func createOsFs() (fs FileSystem) {

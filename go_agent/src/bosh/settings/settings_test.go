@@ -14,7 +14,7 @@ func TestDefaultNetworkForWhenNetworksIsEmpty(t *testing.T) {
 
 func TestDefaultNetworkForWithSingleNetwork(t *testing.T) {
 	networks := Networks{
-		"bosh": NetworkSettings{
+		"bosh": Network{
 			Dns: []string{"xx.xx.xx.xx"},
 		},
 	}
@@ -26,11 +26,11 @@ func TestDefaultNetworkForWithSingleNetwork(t *testing.T) {
 
 func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsFoundForDns(t *testing.T) {
 	networks := Networks{
-		"bosh": NetworkSettings{
+		"bosh": Network{
 			Default: []string{"dns"},
 			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 		},
-		"vip": NetworkSettings{
+		"vip": Network{
 			Default: []string{},
 			Dns:     []string{"aa.aa.aa.aa"},
 		},
@@ -43,11 +43,11 @@ func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsFoundForDns(t *testing
 
 func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsNotFound(t *testing.T) {
 	networks := Networks{
-		"bosh": NetworkSettings{
+		"bosh": Network{
 			Default: []string{"foo"},
 			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 		},
-		"vip": NetworkSettings{
+		"vip": Network{
 			Default: []string{},
 			Dns:     []string{"aa.aa.aa.aa"},
 		},
@@ -59,10 +59,10 @@ func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsNotFound(t *testing.T)
 
 func TestDefaultIpWithTwoNetworks(t *testing.T) {
 	networks := Networks{
-		"bosh": NetworkSettings{
+		"bosh": Network{
 			Ip: "xx.xx.xx.xx",
 		},
-		"vip": NetworkSettings{
+		"vip": Network{
 			Ip: "aa.aa.aa.aa",
 		},
 	}
@@ -74,10 +74,10 @@ func TestDefaultIpWithTwoNetworks(t *testing.T) {
 
 func TestDefaultIpWithTwoNetworksOnlyWithDefaults(t *testing.T) {
 	networks := Networks{
-		"bosh": NetworkSettings{
+		"bosh": Network{
 			Ip: "xx.xx.xx.xx",
 		},
-		"vip": NetworkSettings{
+		"vip": Network{
 			Ip:      "aa.aa.aa.aa",
 			Default: []string{"dns"},
 		},
@@ -90,8 +90,8 @@ func TestDefaultIpWithTwoNetworksOnlyWithDefaults(t *testing.T) {
 
 func TestDefaultIpWhenNoneSpecified(t *testing.T) {
 	networks := Networks{
-		"bosh": NetworkSettings{},
-		"vip": NetworkSettings{
+		"bosh": Network{},
+		"vip": Network{
 			Default: []string{"dns"},
 		},
 	}

@@ -6,7 +6,7 @@ module Bosh::Dev
 
     def create
       Dir.chdir('release') do
-        @cli_session.run_bosh('create release --force --with-tarball')
+        @cli_session.run_bosh('create release --force')
         output = @cli_session.run_bosh('create release --force --final --with-tarball')
         output.scan(/Release tarball\s+\(.+\):\s+(.+)$/).first.first
       end

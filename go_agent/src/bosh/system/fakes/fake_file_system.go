@@ -2,6 +2,7 @@ package fakes
 
 import (
 	"errors"
+	gouuid "github.com/nu7hatch/gouuid"
 	"os"
 	"strings"
 )
@@ -18,9 +19,22 @@ type FakeFileSystem struct {
 	Files map[string]*FakeFileStats
 
 	HomeDirUsername string
-	HomeDirHomeDir  string
+	HomeDirHomePath string
 
 	FilesToOpen map[string]*os.File
+
+	MkdirAllError error
+	SymlinkError  error
+
+	CopyDirEntriesError   error
+	CopyDirEntriesSrcPath string
+	CopyDirEntriesDstPath string
+
+	TempFileError  error
+	ReturnTempFile *os.File
+
+	TempDirDir   string
+	TempDirError error
 }
 
 type FakeFileStats struct {
@@ -31,21 +45,29 @@ type FakeFileStats struct {
 	FileType      FakeFileType
 }
 
+func NewFakeFileSystem() *FakeFileSystem {
+	return &FakeFileSystem{}
+}
+
 func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {
 	stats = fs.Files[path]
 	return
 }
 
-func (fs *FakeFileSystem) HomeDir(username string) (homeDir string, err error) {
+func (fs *FakeFileSystem) HomeDir(username string) (path string, err error) {
 	fs.HomeDirUsername = username
-	homeDir = fs.HomeDirHomeDir
+	path = fs.HomeDirHomePath
 	return
 }
 
 func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
-	stats := fs.getOrCreateFile(path)
-	stats.FileMode = perm
-	stats.FileType = FakeFileTypeDir
+	if fs.MkdirAllError == nil {
+		stats := fs.getOrCreateFile(path)
+		stats.FileMode = perm
+		stats.FileType = FakeFileTypeDir
+	}
+
+	err = fs.MkdirAllError
 	return
 }
 
@@ -87,21 +109,87 @@ func (fs *FakeFileSystem) FileExists(path string) bool {
 }
 
 func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
-	stats := fs.getOrCreateFile(newPath)
-	stats.FileType = FakeFileTypeSymlink
-	stats.SymlinkTarget = oldPath
+	if fs.SymlinkError == nil {
+		stats := fs.getOrCreateFile(newPath)
+		stats.FileType = FakeFileTypeSymlink
+		stats.SymlinkTarget = oldPath
+		return
+	}
+
+	err = fs.SymlinkError
 	return
 }
 
-func (fs *FakeFileSystem) TempDir() (tmpDir string) {
-	return os.TempDir()
+func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
+	if fs.CopyDirEntriesError != nil {
+		return fs.CopyDirEntriesError
+	}
+
+	srcStat := fs.GetFileTestStat(srcPath)
+	if srcStat == nil {
+		return errors.New("srcPath does not exist")
+	}
+
+	dstStat := fs.GetFileTestStat(dstPath)
+	if dstStat == nil {
+		return errors.New("dstPath does not exist")
+	}
+
+	fs.CopyDirEntriesSrcPath = srcPath
+	fs.CopyDirEntriesDstPath = dstPath
+
+	return
 }
 
-func (fs *FakeFileSystem) RemoveAll(fileOrDir string) {
+func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
+	if fs.TempFileError != nil {
+		return nil, fs.TempFileError
+	}
+	if fs.ReturnTempFile != nil {
+		return fs.ReturnTempFile, nil
+	} else {
+		file, err = os.Open("/dev/null")
+		if err != nil {
+			return
+		}
+
+		// Make sure to record a reference for FileExist, etc. to work
+		stats := fs.getOrCreateFile(file.Name())
+		stats.FileType = FakeFileTypeFile
+
+		return
+	}
+}
+
+func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
+	if fs.TempDirError != nil {
+		return "", fs.TempDirError
+	}
+
+	var path string
+	if len(fs.TempDirDir) > 0 {
+		path = fs.TempDirDir
+	} else {
+		uuid, err := gouuid.NewV4()
+		if err != nil {
+			return "", err
+		}
+
+		path = uuid.String()
+	}
+
+	// Make sure to record a reference for FileExist, etc. to work
+	stats := fs.getOrCreateFile(path)
+	stats.FileType = FakeFileTypeDir
+
+	return path, nil
+}
+
+func (fs *FakeFileSystem) RemoveAll(path string) {
 	filesToRemove := []string{}
 
 	for name, _ := range fs.Files {
-		if strings.HasPrefix(name, fileOrDir) {
+		if strings.HasPrefix(name, path) {
 			filesToRemove = append(filesToRemove, name)
 		}
 	}

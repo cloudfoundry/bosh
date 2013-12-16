@@ -1,13 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::AwsCloud::ResourceWait do
+  before { Kernel.stub(:sleep) }
+  before { described_class.stub(:task_checkpoint) }
 
-  before do
-    Kernel.stub(:sleep)
-    described_class.stub(:task_checkpoint)
-  end
-
-  describe '#for_instance' do
+  describe '.for_instance' do
     let(:instance) { double(AWS::EC2::Instance, id: 'i-1234') }
 
     context 'deletion' do
@@ -21,7 +18,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
 
     context 'creation' do
-      context "when EC2 fails to find an instance" do
+      context 'when EC2 fails to find an instance' do
         it 'should wait until the state is running' do
           instance.should_receive(:status).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
           instance.should_receive(:status).and_return(:pending)
@@ -31,7 +28,7 @@ describe Bosh::AwsCloud::ResourceWait do
         end
       end
 
-      context "when resource is not found" do
+      context 'when resource is not found' do
         it 'should wait until the state is running' do
           instance.should_receive(:status).and_raise(AWS::Core::Resource::NotFound)
           instance.should_receive(:status).and_return(:pending)
@@ -53,7 +50,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_attachment' do
+  describe '.for_attachment' do
     let(:volume) { double(AWS::EC2::Volume, id: 'vol-1234') }
     let(:instance) { double(AWS::EC2::Instance, id: 'i-5678') }
     let(:attachment) { double(AWS::EC2::Attachment, volume: volume, instance: instance, device: '/dev/sda1') }
@@ -91,7 +88,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_volume' do
+  describe '.for_volume' do
     let(:volume) { double(AWS::EC2::Volume, id: 'v-123') }
 
     context 'creation' do
@@ -101,7 +98,6 @@ describe Bosh::AwsCloud::ResourceWait do
 
         described_class.for_volume(volume: volume, state: :available)
       end
-      #:error
 
       it 'should raise an error on error state' do
         volume.should_receive(:status).and_return(:creating)
@@ -130,8 +126,9 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_snapshot' do
+  describe '.for_snapshot' do
     let(:snapshot) { double(AWS::EC2::Snapshot, id: 'snap-123') }
+
     context 'creation' do
       it 'should wait until the state is completed' do
         snapshot.should_receive(:status).and_return(:pending)
@@ -151,7 +148,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_image' do
+  describe '.for_image' do
     let(:image) { double(AWS::EC2::Image, id: 'ami-123') }
 
     context 'creation' do
@@ -191,7 +188,7 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_subnet' do
+  describe '.for_subnet' do
     let(:subnet) { double(AWS::EC2::Subnet, id: 'subnet-123') }
 
     context 'creation' do
@@ -204,19 +201,73 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe "catching errors" do
-    it "should raise an error if the retry count is exceeded" do
-      resource = double("resource", status: :bar)
+  describe 'catching errors' do
+    it 'raises an error if the retry count is exceeded' do
+      resource = double('resource', status: :bar)
       resource_arguments = {
-          resource: resource,
-          tries: 1,
-          description: "description",
-          target_state: :foo
+        resource: resource,
+        tries: 1,
+        description: 'description',
+        target_state: :foo
       }
 
       expect {
         subject.for_resource(resource_arguments) { |_| false }
       }.to raise_error(Bosh::Clouds::CloudError, /Timed out waiting/)
+    end
+  end
+
+  describe '.sleep_callback' do
+    it 'returns seconds to sleep interval capped at 32 seconds' do
+      scb = described_class.sleep_callback('fake-time-test', 10)
+      expected_times = [1, 2, 4, 8, 16, 32, 32, 32, 32, 32, 32]
+      returned_times = (0..10).map { |try_number| scb.call(try_number, nil) }
+      expect(returned_times).to eq(expected_times)
+    end
+  end
+
+  describe '#for_resource' do
+    let(:args) do
+      {
+        resource: double('fake-resource', status: nil),
+        description: 'description',
+        target_state: 'fake-target-state',
+      }
+    end
+
+    it 'uses Bosh::Retryable with sleep_callback sleep setting' do
+      sleep_cb = double('fake-sleep-callback')
+      described_class.stub(:sleep_callback).and_return(sleep_cb)
+
+      retryable = double('Bosh::Retryable', retryer: nil)
+      Bosh::Retryable
+        .should_receive(:new)
+        .with(hash_including(sleep: sleep_cb))
+        .and_return(retryable)
+
+      subject.for_resource(args)
+    end
+
+    context 'when tries option is passed' do
+      before { args[:tries] = 5 }
+
+      it 'attempts passed number of times' do
+        actual_attempts = 0
+        expect {
+          subject.for_resource(args) { actual_attempts += 1; false }
+        }.to raise_error
+        expect(actual_attempts).to eq(5)
+      end
+    end
+
+    context 'when tries option is not passed' do
+      it 'attempts DEFAULT_TRIES times to wait for ~25 minutes' do
+        actual_attempts = 0
+        expect {
+          subject.for_resource(args) { actual_attempts += 1; false }
+        }.to raise_error
+        expect(actual_attempts).to eq(54)
+      end
     end
   end
 end

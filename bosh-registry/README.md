@@ -77,6 +77,8 @@ These are the credentials to connect to OpenStack services:
   OpenStack region
 * `endpoint_type` (optional)
   OpenStack endpoint type (publicURL (default), adminURL, internalURL)
+* `connection_options` (optional)
+  Hash containing optional connection parameters to the OpenStack API (`ssl_verify_peer`, `omit_default_port`, ...)
 
 ## Example
 

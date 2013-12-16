@@ -7,21 +7,19 @@ import (
 	"strings"
 )
 
-type compressor struct {
+type tarballCompressor struct {
 	cmdRunner boshsys.CmdRunner
 	fs        boshsys.FileSystem
 }
 
-func NewCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c compressor) {
+func NewTarballCompressor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c tarballCompressor) {
 	c.cmdRunner = cmdRunner
 	c.fs = fs
 	return
 }
 
-func (c compressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
-	tmpDir := c.fs.TempDir()
-	tgzDir := filepath.Join(tmpDir, "BoshAgentTarball")
-	err = c.fs.MkdirAll(tgzDir, os.ModePerm)
+func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tarball *os.File, err error) {
+	tgzDir, err := c.fs.TempDir("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		return
 	}
@@ -54,18 +52,12 @@ func (c compressor) CompressFilesInDir(dir string, filters []string) (tarball *o
 		}
 	}
 
-	tarballPath := filepath.Join(tmpDir, "files.tgz")
-	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", tgzDir, ".")
+	tarball, err = c.fs.TempFile("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		return
 	}
 
-	tarball, err = c.fs.Open(tarballPath)
-	return
-}
-
-func (c compressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
-	_, _, err = c.cmdRunner.RunCommand("tar", "xzf", tarball.Name(), "-C", dir)
+	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarball.Name(), "-C", tgzDir, ".")
 	if err != nil {
 		return
 	}
@@ -73,7 +65,16 @@ func (c compressor) DecompressFileToDir(tarball *os.File, dir string) (err error
 	return
 }
 
-func (c compressor) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
+func (c tarballCompressor) DecompressFileToDir(tarball *os.File, dir string) (err error) {
+	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarball.Name(), "-C", dir)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (c tarballCompressor) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
 	for _, filter := range filters {
 		var newFiles []string
 
@@ -88,7 +89,7 @@ func (c compressor) findFilesMatchingFilters(dir string, filters []string) (file
 	return
 }
 
-func (c compressor) findFilesMatchingFilter(filter string) (files []string, err error) {
+func (c tarballCompressor) findFilesMatchingFilter(filter string) (files []string, err error) {
 	files, err = filepath.Glob(filter)
 	if err != nil {
 		return

@@ -276,6 +276,8 @@ properties:
   openstack.stemcell_public_visibility:
     description: Set public visibility for stemcells (optional, false by default)
     default: false
+  openstack.connection_options:
+    description: Hash containing optional connection parameters to the OpenStack API
   openstack.default_key_name:
     description: Default OpenStack keypair to use when spinning up new vms
   cloudstack.endpoint:

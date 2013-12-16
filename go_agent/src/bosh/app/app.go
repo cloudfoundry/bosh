@@ -3,8 +3,9 @@ package app
 import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
+	boshas "bosh/agent/applier"
 	boshtask "bosh/agent/task"
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
@@ -50,30 +51,33 @@ func (app app) Run(args []string) (err error) {
 	}
 
 	boot := boshboot.New(infrastructure, platform)
-	settings, err := boot.Run()
+	settingsService, err := boot.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running bootstrap")
 		return
 	}
 
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settings, app.logger)
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger)
 	mbusHandler, err := mbusHandlerProvider.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mbus handler")
 		return
 	}
 
-	blobstoreProvider := boshblobstore.NewProvider(platform)
-	blobstore, err := blobstoreProvider.Get(settings.Blobstore)
+	blobstoreProvider := boshblob.NewProvider(platform)
+	blobstore, err := blobstoreProvider.Get(settingsService.GetBlobstore())
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blobstore")
 		return
 	}
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
-	actionFactory := boshaction.NewFactory(settings, platform, blobstore, taskService)
 
-	agent := boshagent.New(settings, app.logger, mbusHandler, platform, taskService, actionFactory)
+	applier := boshas.NewApplierProvider(platform, blobstore).Get()
+
+	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier)
+
+	agent := boshagent.New(settingsService, app.logger, mbusHandler, platform, taskService, actionFactory)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")

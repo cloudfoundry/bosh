@@ -7,6 +7,7 @@ import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
+	"errors"
 	"path/filepath"
 )
 
@@ -23,7 +24,7 @@ func New(inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstra
 	return
 }
 
-func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
+func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 	err = boot.platform.SetupRuntimeConfiguration()
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up runtime configuration")
@@ -36,11 +37,12 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
-	settings, err = boot.fetchSettings()
+	settings, err := boot.fetchInitialSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings")
 		return
 	}
+	settingsService = boshsettings.NewService(settings, boot.infrastructure.GetSettings)
 
 	err = boot.setUserPasswords(settings)
 	if err != nil {
@@ -72,6 +74,19 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 		return
 	}
 
+	if len(settings.Disks.Persistent) > 1 {
+		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
+		return
+	}
+
+	for _, devicePath := range settings.Disks.Persistent {
+		err = boot.platform.MountPersistentDisk(devicePath, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+		if err != nil {
+			err = bosherr.WrapError(err, "Mounting persistent disk")
+			return
+		}
+	}
+
 	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")
 	if !boot.fs.FileExists(monitUserFilePath) {
 		_, err = boot.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
@@ -89,7 +104,15 @@ func (boot bootstrap) Run() (settings boshsettings.Settings, err error) {
 	return
 }
 
-func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error) {
+func (boot bootstrap) fetchInitialSettings() (settings boshsettings.Settings, err error) {
+	settingsPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json")
+
+	existingSettingsJson, readError := boot.platform.GetFs().ReadFile(settingsPath)
+	if readError == nil {
+		err = json.Unmarshal([]byte(existingSettingsJson), &settings)
+		return
+	}
+
 	settings, err = boot.infrastructure.GetSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings from infrastructure")
@@ -102,7 +125,7 @@ func (boot bootstrap) fetchSettings() (settings boshsettings.Settings, err error
 		return
 	}
 
-	boot.fs.WriteToFile(filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json"), string(settingsJson))
+	boot.fs.WriteToFile(settingsPath, string(settingsJson))
 	return
 }
 

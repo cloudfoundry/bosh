@@ -40,6 +40,9 @@ cloud:
     <% if_p('openstack.endpoint_type') do |endpoint_type| %>
     endpoint_type: <%= endpoint_type %>
     <% end %>
+    <% if_p('openstack.connection_options') do |connection_options| %>
+    connection_options: <%= JSON.generate(connection_options) %>
+    <% end %>
 <% end %>
 <% if_p('cloudstack.endpoint', 'cloudstack.api_key', 'cloudstack.secret_access_key') do |endpoint, api_key, secret_access_key| %>
   plugin: cloudstack <% plugin = 'cloudstack' %>

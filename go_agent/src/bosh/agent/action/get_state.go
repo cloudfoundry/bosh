@@ -8,11 +8,11 @@ import (
 )
 
 type getStateAction struct {
-	settings boshsettings.Settings
+	settings boshsettings.Service
 	fs       boshsys.FileSystem
 }
 
-func newGetState(settings boshsettings.Settings, fs boshsys.FileSystem) (action getStateAction) {
+func newGetState(settings boshsettings.Service, fs boshsys.FileSystem) (action getStateAction) {
 	action.settings = settings
 	action.fs = fs
 	return
@@ -32,8 +32,8 @@ func (a getStateAction) Run([]byte) (value interface{}, err error) {
 		return
 	}
 
-	v["agent_id"] = a.settings.AgentId
-	v["vm"] = a.settings.Vm
+	v["agent_id"] = a.settings.GetAgentId()
+	v["vm"] = a.settings.GetVm()
 	v["job_state"] = "unknown"
 	v["bosh_protocol"] = "1"
 	value = v

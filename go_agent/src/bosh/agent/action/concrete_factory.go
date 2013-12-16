@@ -1,8 +1,9 @@
 package action
 
 import (
+	boshappl "bosh/agent/applier"
 	boshtask "bosh/agent/task"
-	boshblobstore "bosh/blobstore"
+	boshblob "bosh/blobstore"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -12,10 +13,11 @@ type concreteFactory struct {
 }
 
 func NewFactory(
-	settings boshsettings.Settings,
+	settings boshsettings.Service,
 	platform boshplatform.Platform,
-	blobstore boshblobstore.Blobstore,
+	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
+	applier boshappl.Applier,
 ) (factory Factory) {
 
 	fs := platform.GetFs()
@@ -23,16 +25,19 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"apply":      newApply(fs, platform),
-			"ping":       newPing(),
-			"get_task":   newGetTask(taskService),
-			"get_state":  newGetState(settings, fs),
-			"ssh":        newSsh(settings, platform),
-			"fetch_logs": newLogs(compressor, blobstore),
-			"start":      newStart(),
-			"stop":       newStop(),
-			"drain":      newDrain(),
-			"mount_disk": newMountDisk(settings, platform),
+			"apply":        newApply(applier, fs, platform),
+			"drain":        newDrain(),
+			"fetch_logs":   newLogs(compressor, blobstore),
+			"get_task":     newGetTask(taskService),
+			"get_state":    newGetState(settings, fs),
+			"list_disk":    newListDisk(settings, platform),
+			"migrate_disk": newMigrateDisk(settings, platform),
+			"mount_disk":   newMountDisk(settings, platform),
+			"ping":         newPing(),
+			"ssh":          newSsh(settings, platform),
+			"start":        newStart(),
+			"stop":         newStop(),
+			"unmount_disk": newUnmountDisk(settings, platform),
 		},
 	}
 	return

@@ -123,5 +123,68 @@ module Bosh::Cli
         expect(PublicStemcellPresenter).to have_received(:new).with(command, public_stemcells)
       end
     end
+
+    describe 'list' do
+      let(:stemcell1) { { 'name' => 'fake stemcell 1', 'version' => '123', 'cid' => '123456', 'deployments' => [] } }
+      let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012', 'deployments' => [] } }
+      let(:stemcells) { [stemcell1, stemcell2] }
+      let(:buffer) { StringIO.new }
+
+      before do
+        command.stub(:logged_in? => true)
+        command.options[:target] = 'http://bosh-target.example.com'
+
+        director.stub(:list_stemcells).and_return(stemcells)
+        Bosh::Cli::Config.output = buffer
+      end
+
+      it_behaves_like 'a command which requires user is logged in', ->(command) { command.list }
+
+      context 'when no stemcells are in use' do
+        it 'does not add a star to any stemcell listed' do
+          command.list
+
+          buffer.rewind
+          output = buffer.read
+
+          expect(output).to include('| fake stemcell 1 | 123     | 123456 |')
+          expect(output).to include('| fake stemcell 2 | 456     | 789012 |')
+          expect(output).to include('(*) Currently in-use')
+        end
+      end
+
+      context 'when there are stemcells in use' do
+        let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456',
+                            'cid' => '789012', 'deployments' => ['fake deployment'] } }
+
+        it 'adds a star for stemcells that are in use' do
+          command.list
+
+          buffer.rewind
+          output = buffer.read
+
+          expect(output).to include('| fake stemcell 1 | 123     | 123456 |')
+          expect(output).to include('| fake stemcell 2 | 456*    | 789012 |')
+          expect(output).to include('(*) Currently in-use')
+        end
+      end
+
+      context 'when there are no stemcells' do
+        let(:stemcells) { [] }
+
+        it 'errors' do
+          expect { command.list }.to raise_error(Bosh::Cli::CliError, 'No stemcells')
+        end
+      end
+
+      context 'when director does not return deployments for stemcells' do
+        let(:stemcell1) { { 'name' => 'fake stemcell 1', 'version' => '123', 'cid' => '123456' } }
+        let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012' } }
+
+        it 'does not raise' do
+          expect { command.list }.to_not raise_error
+        end
+      end
+    end
   end
 end

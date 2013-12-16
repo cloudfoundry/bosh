@@ -12,7 +12,7 @@ import (
 )
 
 type agent struct {
-	settings          boshsettings.Settings
+	settings          boshsettings.Service
 	logger            boshlog.Logger
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
@@ -21,12 +21,14 @@ type agent struct {
 	heartbeatInterval time.Duration
 }
 
-func New(settings boshsettings.Settings,
+func New(
+	settings boshsettings.Service,
 	logger boshlog.Logger,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,
 	taskService boshtask.Service,
-	actionFactory boshaction.Factory) (a agent) {
+	actionFactory boshaction.Factory,
+) (a agent) {
 
 	a.settings = settings
 	a.logger = logger
@@ -68,7 +70,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 
 	handlerFunc := func(req boshmbus.Request) (resp boshmbus.Response) {
 		switch req.Method {
-		case "get_task", "ping", "get_state", "ssh", "start":
+		case "get_task", "ping", "get_state", "ssh", "start", "list_disk":
 			action := a.actionFactory.Create(req.Method)
 			value, err := action.Run(req.GetPayload())
 
@@ -79,7 +81,7 @@ func (a agent) runMbusHandler(errChan chan error) {
 				return
 			}
 			resp = boshmbus.NewValueResponse(value)
-		case "apply", "fetch_logs", "stop", "drain", "mount_disk":
+		case "apply", "fetch_logs", "stop", "drain", "mount_disk", "unmount_disk", "migrate_disk":
 			task := a.taskService.StartTask(func() (value interface{}, err error) {
 				action := a.actionFactory.Create(req.Method)
 				value, err = action.Run(req.GetPayload())

@@ -9,11 +9,11 @@ import (
 )
 
 type mbusHandlerProvider struct {
-	settings boshsettings.Settings
+	settings boshsettings.Service
 	handlers map[string]Handler
 }
 
-func NewHandlerProvider(settings boshsettings.Settings, logger boshlog.Logger) (p mbusHandlerProvider) {
+func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger) (p mbusHandlerProvider) {
 	p.settings = settings
 	p.handlers = map[string]Handler{
 		"nats": newNatsHandler(settings, logger, yagnats.NewClient()),
@@ -22,7 +22,7 @@ func NewHandlerProvider(settings boshsettings.Settings, logger boshlog.Logger) (
 }
 
 func (p mbusHandlerProvider) Get() (handler Handler, err error) {
-	mbusUrl, err := url.Parse(p.settings.Mbus)
+	mbusUrl, err := url.Parse(p.settings.GetMbusUrl())
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing handler URL")
 		return

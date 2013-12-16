@@ -85,7 +85,7 @@ func TestAwsSetupNetworking(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
 	aws := newAwsInfrastructure("", fakeDnsResolver)
 	fakeDelegate := &FakeNetworkingDelegate{}
-	networks := boshsettings.Networks{"bosh": boshsettings.NetworkSettings{}}
+	networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
 	aws.SetupNetworking(fakeDelegate, networks)
 
@@ -209,12 +209,12 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 			},
 		},
 		Networks: boshsettings.Networks{
-			"netA": boshsettings.NetworkSettings{
+			"netA": boshsettings.Network{
 				Default: []string{"dns", "gateway"},
 				Ip:      "ww.ww.ww.ww",
 				Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy"},
 			},
-			"netB": boshsettings.NetworkSettings{
+			"netB": boshsettings.Network{
 				Dns: []string{"zz.zz.zz.zz"},
 			},
 		},

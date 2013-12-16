@@ -4,13 +4,14 @@ import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestSshSetupWithInvalidPayload(t *testing.T) {
-	settings := boshsettings.Settings{}
+	settings := &fakesettings.FakeSettingsService{}
 	_, action := buildSshActionSetup(settings)
 
 	// set user, pwd, public_key with invalid values
@@ -21,7 +22,7 @@ func TestSshSetupWithInvalidPayload(t *testing.T) {
 }
 
 func TestSshSetupWithoutDefaultIp(t *testing.T) {
-	settings := boshsettings.Settings{}
+	settings := &fakesettings.FakeSettingsService{}
 	_, action := buildSshActionSetup(settings)
 
 	payload := `{"arguments":["setup",{"user":"some-user","password":"some-pwd","public_key":"some-key"}]}`
@@ -39,10 +40,8 @@ func TestSshSetupWithoutPassword(t *testing.T) {
 }
 
 func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
-	settings := boshsettings.Settings{}
-	settings.Networks = map[string]boshsettings.NetworkSettings{
-		"default": {Ip: "ww.xx.yy.zz"},
-	}
+	settings := &fakesettings.FakeSettingsService{}
+	settings.DefaultIp = "ww.xx.yy.zz"
 
 	platform, action := buildSshActionSetup(settings)
 
@@ -82,7 +81,7 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	boshassert.MatchesJsonMap(t, response, expectedJson)
 }
 
-func buildSshActionSetup(settings boshsettings.Settings) (*fakeplatform.FakePlatform, sshAction) {
+func buildSshActionSetup(settings boshsettings.Service) (*fakeplatform.FakePlatform, sshAction) {
 	platform := fakeplatform.NewFakePlatform()
 	action := newSsh(settings, platform)
 	return platform, action
