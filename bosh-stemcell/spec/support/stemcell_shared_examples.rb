@@ -37,7 +37,7 @@ shared_examples_for 'a stemcell' do
     end
 
     describe command('rsyslogd -v') do
-      it { should return_stdout /7\.4\.6/ }
+      it { should return_stdout /7\.4\.7/ }
     end
   end
 end
