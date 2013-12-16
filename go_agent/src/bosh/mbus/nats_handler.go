@@ -28,7 +28,7 @@ func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client
 	return
 }
 
-func (h *natsHandler) AgentSubscribe(handlerFunc HandlerFunc) (err error) {
+func (h *natsHandler) SubscribeToDirector(handlerFunc HandlerFunc) (err error) {
 	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {

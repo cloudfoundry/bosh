@@ -22,7 +22,7 @@ func TestNatsHandlerAgentSubscribe(t *testing.T) {
 
 	var receivedRequest Request
 
-	handler.AgentSubscribe(func(req Request) (resp Response) {
+	handler.SubscribeToDirector(func(req Request) (resp Response) {
 		receivedRequest = req
 		return NewValueResponse("expected value")
 	})

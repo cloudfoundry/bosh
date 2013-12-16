@@ -3,9 +3,9 @@ package fakes
 import boshmbus "bosh/mbus"
 
 type FakeHandler struct {
-	AgentSubscribed bool
-	Func            boshmbus.HandlerFunc
-	HeartbeatChan   chan boshmbus.Heartbeat
+	SubscribedToDirector bool
+	Func                 boshmbus.HandlerFunc
+	HeartbeatChan        chan boshmbus.Heartbeat
 
 	NotifiedShutdown  bool
 	NotifyShutdownErr error
@@ -15,8 +15,8 @@ func NewFakeHandler() *FakeHandler {
 	return &FakeHandler{}
 }
 
-func (h *FakeHandler) AgentSubscribe(handlerFunc boshmbus.HandlerFunc) (err error) {
-	h.AgentSubscribed = true
+func (h *FakeHandler) SubscribeToDirector(handlerFunc boshmbus.HandlerFunc) (err error) {
+	h.SubscribedToDirector = true
 	h.Func = handlerFunc
 	return
 }
