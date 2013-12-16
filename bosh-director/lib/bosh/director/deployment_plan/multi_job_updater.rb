@@ -2,6 +2,8 @@ module Bosh::Director
   module DeploymentPlan
     class SerialMultiJobUpdater
       def run(base_job, deployment_plan, jobs)
+        base_job.logger.info("Updating jobs serially: #{jobs.map(&:name).join(', ')}")
+
         jobs.each do |j|
           base_job.task_checkpoint
           base_job.logger.info("Updating job: #{j.name}")
@@ -13,7 +15,9 @@ module Bosh::Director
 
     class ParallelMultiJobUpdater
       def run(base_job, deployment_plan, jobs)
+        base_job.logger.info("Updating jobs in parallel: #{jobs.map(&:name).join(', ')}")
         base_job.task_checkpoint
+
         ThreadPool.new(max_threads: jobs.size).wrap do |pool|
           jobs.each do |j|
             pool.process do
