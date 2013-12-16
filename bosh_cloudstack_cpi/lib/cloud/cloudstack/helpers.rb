@@ -122,6 +122,10 @@ module Bosh::CloudStackCloud
       job.job_result
     end
 
+    def wait_job_volume(job)
+      wait_resource(job, :"1", :job_status, false, @state_timeout_volume)
+      job.job_result
+    end
 
     def task_checkpoint
       Bosh::Clouds::Config.task_checkpoint

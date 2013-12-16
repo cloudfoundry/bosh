@@ -17,6 +17,7 @@ module Bosh::CloudStackCloud
     attr_accessor :logger
     attr_reader :metadata_server
     attr_reader :state_timeout
+    attr_reader :state_timeout_volume
 
     ##
     # Creates a new BOSH CloudStack CPI
@@ -39,6 +40,7 @@ module Bosh::CloudStackCloud
       @default_key_name = @fog_properties["default_key_name"]
       @default_security_groups = @fog_properties["default_security_groups"] || []
       @state_timeout = @fog_properties["state_timeout"]
+      @state_timeout_volume = @fog_properties["state_timeout_volume"] || @fog_properties["state_timeout"]
       @stemcell_public_visibility = @fog_properties["stemcell_public_visibility"]
 
       endpoint_uri = URI.parse(@fog_properties["endpoint"])
@@ -106,7 +108,7 @@ module Bosh::CloudStackCloud
           @compute.zones.reject { |zone| zone.id == @default_zone.id }.each do |zone|
             @logger.debug("Copying Stemcell `#{image.id}' from zone `#{image.zone_name}' (#{image.zone_id}) to zone `#{zone.name}' (#{zone.id})")
             copy_job = image.copy(zone)
-            wait_job(copy_job)
+            wait_job_volume(copy_job)
           end
 
           image.id

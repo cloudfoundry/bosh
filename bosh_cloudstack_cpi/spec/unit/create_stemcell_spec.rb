@@ -40,7 +40,7 @@ describe Bosh::CloudStackCloud::Cloud do
 
         creator.should_receive(:create).with(volume, "/dev/vdh", "/tmp/foo").and_return(stemcell)
         stemcell.should_receive(:copy)
-        cloud.stub(:wait_job)
+        cloud.stub(:wait_job_volume)
 
         cloud.should_receive(:detach_volume).with(server, volume)
         cloud.should_receive(:delete_disk).with("vol-xxxxxxxx")

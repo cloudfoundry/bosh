@@ -33,6 +33,7 @@ describe Bosh::CloudStackCloud::StemcellCreator do
     it "should create a real stemcell" do
       SecureRandom.stub(:hex).and_return("random")
       image.stub(:id).and_return("i-xxxxx")
+      cloud.stub(:state_timeout_volume).and_return(100)
 
       image_params = {
           :displaytext => "stemcell-name 0.7.0",
@@ -49,12 +50,12 @@ describe Bosh::CloudStackCloud::StemcellCreator do
       cloud.should_receive(:detach_volume).with(server, volume)
 
       cloud.compute.snapshots.should_receive(:create).with({:volume_id => "v-xxxxxxxx"}).and_return(snapshot)
-      creator.should_receive(:wait_resource).with(snapshot, :backedup)
+      creator.should_receive(:wait_resource).with(snapshot, :backedup, :state, false, 100)
 
       job = generate_job
       cloud.compute.should_receive(:create_template).with(image_params).and_return({"createtemplateresponse" => {"jobid" => "j-xxxxxx"}})
       cloud.compute.jobs.should_receive(:get).with("j-xxxxxx").and_return(job)
-      creator.should_receive(:wait_job).with(job)
+      creator.should_receive(:wait_job_volume).with(job)
 
       cloud.compute.images.should_receive(:get).with("j-xxxxxx").and_return(image)
       job.should_receive(:job_result).and_return({"template" => {"id" => "j-xxxxxx"}})

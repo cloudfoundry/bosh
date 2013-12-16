@@ -11,6 +11,7 @@ module Bosh::CloudStackCloud
       @stemcell_properties = stemcell_properties
       @cloud = cloud
       @state_timeout = cloud.state_timeout
+      @state_timeout_volume = cloud.state_timeout_volume
     end
 
     def create(volume, device, image_path)
@@ -25,13 +26,13 @@ module Bosh::CloudStackCloud
       cloud.detach_volume(volume.server, volume)
 
       snapshot = volume.service.snapshots.create({:volume_id => volume.id})
-      wait_resource(snapshot, :backedup)
+      wait_resource(snapshot, :backedup, :state, false, @state_timeout_volume)
 
       # TODO create fog model
       params = image_params(snapshot.id, volume.service)
       template_response = volume.service.create_template(params)
       template_job = volume.service.jobs.get(template_response["createtemplateresponse"]["jobid"])
-      wait_job(template_job)
+      wait_job_volume(template_job)
 
       image = volume.service.images.get(template_job.job_result["template"]["id"])
       TagManager.tag(

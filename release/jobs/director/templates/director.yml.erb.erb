@@ -219,6 +219,9 @@ cloud:
       <% if_p("cloudstack.state_timeout") do |state_timeout| %>
       state_timeout: <%= state_timeout %>
       <% end %>
+      <% if_p("cloudstack.state_timeout_volume") do |state_timeout_volume| %>
+      state_timeout_volume: <%= state_timeout_volume %>
+      <% end %>
       <% if_p("cloudstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
       stemcell_public_visibility: <%= stemcell_public_visibility %>
       <% end %>
