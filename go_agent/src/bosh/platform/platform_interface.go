@@ -31,4 +31,5 @@ type Platform interface {
 	IsDevicePathMounted(path string) (result bool, err error)
 	StartMonit() (err error)
 	SetupMonitUser() (err error)
+	GetMonitCredentials() (username, password string, err error)
 }

@@ -524,6 +524,42 @@ func TestSetupMonitUserIfFileDoesExist(t *testing.T) {
 	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
 }
 
+func TestGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake-random-password")
+
+	username, password, err := ubuntu.GetMonitCredentials()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "fake-user", username)
+	assert.Equal(t, "fake-random-password", password)
+}
+
+func TestGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user")
+
+	_, _, err := ubuntu.GetMonitCredentials()
+	assert.Error(t, err)
+}
+
+func TestGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake:random:password")
+
+	username, password, err := ubuntu.GetMonitCredentials()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "fake-user", username)
+	assert.Equal(t, "fake:random:password", password)
+}
+
 func getUbuntuDependencies() (
 	collector *fakestats.FakeStatsCollector,
 	fs *fakesys.FakeFileSystem,

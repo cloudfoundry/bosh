@@ -498,6 +498,25 @@ func (p ubuntu) SetupMonitUser() (err error) {
 	return
 }
 
+func (p ubuntu) GetMonitCredentials() (username, password string, err error) {
+	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")
+	credContent, err := p.fs.ReadFile(monitUserFilePath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Reading monit user file")
+		return
+	}
+
+	credParts := strings.SplitN(credContent, ":", 2)
+	if len(credParts) != 2 {
+		err = bosherr.New("Malformated monit user file, expecting username and password separated by ':'")
+		return
+	}
+
+	username = credParts[0]
+	password = credParts[1]
+	return
+}
+
 func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 

@@ -48,8 +48,10 @@ type FakePlatform struct {
 
 	MountedDevicePaths []string
 
-	StartMonitStarted   bool
-	SetupMonitUserSetup bool
+	StartMonitStarted           bool
+	SetupMonitUserSetup         bool
+	GetMonitCredentialsUsername string
+	GetMonitCredentialsPassword string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -178,5 +180,11 @@ func (p *FakePlatform) StartMonit() (err error) {
 
 func (p *FakePlatform) SetupMonitUser() (err error) {
 	p.SetupMonitUserSetup = true
+	return
+}
+
+func (p *FakePlatform) GetMonitCredentials() (username, password string, err error) {
+	username = p.GetMonitCredentialsUsername
+	password = p.GetMonitCredentialsPassword
 	return
 }

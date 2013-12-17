@@ -101,3 +101,7 @@ func (p dummyPlatform) StartMonit() (err error) {
 func (p dummyPlatform) SetupMonitUser() (err error) {
 	return
 }
+
+func (p dummyPlatform) GetMonitCredentials() (username, password string, err error) {
+	return
+}
