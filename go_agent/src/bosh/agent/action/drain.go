@@ -67,6 +67,8 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 			return
 		}
 		command.Args = []string{"job_shutdown", "hash_unchanged"}
+	case drainTypeStatus:
+		command.Args = []string{"job_check_status", "hash_unchanged"}
 	}
 
 	a.cmdRunner.RunComplexCommand(command)

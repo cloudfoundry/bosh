@@ -103,6 +103,29 @@ func TestRunWithShutdown(t *testing.T) {
 	assert.True(t, notifier.NotifiedShutdown)
 }
 
+func TestRunWithStatus(t *testing.T) {
+	cmdRunner, fs, _, action := buildDrain()
+
+	currentSpec := boshas.V1ApplySpec{}
+	currentSpec.JobSpec.Template = "foo"
+	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+
+	drainStatus, err := action.Run(drainTypeStatus)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, drainStatus)
+
+	expectedCmd := boshsys.Command{
+		Name: "/var/vcap/jobs/foo/bin/drain",
+		Args: []string{"job_check_status", "hash_unchanged"},
+		Env: map[string]string{
+			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+		},
+	}
+
+	assert.Equal(t, 1, len(cmdRunner.RunComplexCommands))
+	assert.Equal(t, expectedCmd, cmdRunner.RunComplexCommands[0])
+}
+
 func buildDrain() (
 	cmdRunner *fakesys.FakeCmdRunner,
 	fs *fakesys.FakeFileSystem,
