@@ -2,6 +2,7 @@ package monitor
 
 import (
 	bosherr "bosh/errors"
+	boshmonit "bosh/monitor/monit"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"fmt"
@@ -11,14 +12,33 @@ import (
 type monit struct {
 	fs     boshsys.FileSystem
 	runner boshsys.CmdRunner
+	client boshmonit.MonitClient
 }
 
-func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner) (m Monitor) {
-	return monit{fs: fs, runner: runner}
+func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner, client boshmonit.MonitClient) (m Monitor) {
+	return monit{fs: fs, runner: runner, client: client}
 }
 
 func (m monit) Reload() (err error) {
 	m.runner.RunCommand("monit", "reload")
+	return
+}
+
+func (m monit) Start() (err error) {
+	services, err := m.client.ServicesInGroup("vcap")
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting vcap services")
+		return
+	}
+
+	for _, service := range services {
+		err = m.client.StartService(service)
+		if err != nil {
+			err = bosherr.WrapError(err, "Starting service %s", service)
+			return
+		}
+	}
+
 	return
 }
 

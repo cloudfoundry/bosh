@@ -18,13 +18,11 @@ type agent struct {
 	heartbeatInterval time.Duration
 }
 
-func New(
-	settings boshsettings.Service,
+func New(settings boshsettings.Service,
 	logger boshlog.Logger,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,
-	actionDispatcher ActionDispatcher,
-) (a agent) {
+	actionDispatcher ActionDispatcher) (a agent) {
 
 	a.settings = settings
 	a.logger = logger

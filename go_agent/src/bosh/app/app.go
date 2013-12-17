@@ -13,6 +13,7 @@ import (
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshmon "bosh/monitor"
+	boshmonit "bosh/monitor/monit"
 	boshplatform "bosh/platform"
 	"flag"
 	"io/ioutil"
@@ -74,7 +75,14 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner())
+	monitClientProvider := boshmonit.NewProvider(platform)
+	monitClient, err := monitClientProvider.Get()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting monit client")
+		return
+	}
+
+	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient)
 	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
 

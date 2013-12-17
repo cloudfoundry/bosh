@@ -5,6 +5,9 @@ type FakeMonitor struct {
 	ReloadErr error
 
 	AddJobArgs []AddJobArgs
+
+	Started  bool
+	StartErr error
 }
 
 type AddJobArgs struct {
@@ -31,5 +34,11 @@ func (m *FakeMonitor) AddJob(jobName string, jobIndex int, configPath string) (e
 		ConfigPath: configPath,
 	}
 	m.AddJobArgs = append(m.AddJobArgs, args)
+	return
+}
+
+func (m *FakeMonitor) Start() (err error) {
+	m.Started = true
+	err = m.StartErr
 	return
 }
