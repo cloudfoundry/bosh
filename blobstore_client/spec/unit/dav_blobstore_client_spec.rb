@@ -8,8 +8,8 @@ module Bosh::Blobstore
 
     before { 
       HTTPClient.stub(new: httpclient)
-      HTTPClient.stub(:send_timeout)
-      HTTPClient.stub(:receive_timeout)
+      HTTPClient.stub(:send_timeout=)
+      HTTPClient.stub(:receive_timeout=)
       }
 
     it_implements_base_client_interface
