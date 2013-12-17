@@ -98,7 +98,7 @@ make && make install
 "
 
 # Rsyslog
-rsyslog_basename=rsyslog-7.4.7
+rsyslog_basename=rsyslog-7.4.6
 rsyslog_archive=$rsyslog_basename.tar.gz
 
 mkdir -p $chroot/$bosh_dir/src
