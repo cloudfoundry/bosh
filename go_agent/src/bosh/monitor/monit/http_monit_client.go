@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -63,7 +64,7 @@ func (client httpMonitClient) StartService(name string) (err error) {
 }
 
 func (client httpMonitClient) getStatus() (status MonitStatus, err error) {
-	endpoint := client.monitUrl("_status2")
+	endpoint := client.monitUrl("/_status2")
 	endpoint.RawQuery = "format=xml"
 	request, err := http.NewRequest("GET", endpoint.String(), nil)
 	request.SetBasicAuth(client.username, client.password)
@@ -92,11 +93,11 @@ func (client httpMonitClient) getStatus() (status MonitStatus, err error) {
 	return
 }
 
-func (client httpMonitClient) monitUrl(path string) (endpoint url.URL) {
+func (client httpMonitClient) monitUrl(thing string) (endpoint url.URL) {
 	endpoint = url.URL{
 		Scheme: "http",
 		Host:   client.host,
-		Path:   path,
+		Path:   path.Join("/", thing),
 	}
 	return
 }
