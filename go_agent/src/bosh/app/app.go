@@ -85,7 +85,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient)
+	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger)
 	notifier := boshnotif.NewNotifier(mbusHandler)
 	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()

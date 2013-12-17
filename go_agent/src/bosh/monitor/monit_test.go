@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	boshlog "bosh/logger"
 	fakemonit "bosh/monitor/monit/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
@@ -44,6 +45,7 @@ func buildMonit() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, cl
 	fs = &fakesys.FakeFileSystem{}
 	runner = &fakesys.FakeCmdRunner{}
 	client = fakemonit.NewFakeMonitClient()
-	monit = NewMonit(fs, runner, client)
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	monit = NewMonit(fs, runner, client, logger)
 	return
 }

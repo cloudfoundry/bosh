@@ -2,6 +2,7 @@ package monitor
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshmonit "bosh/monitor/monit"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -13,10 +14,13 @@ type monit struct {
 	fs     boshsys.FileSystem
 	runner boshsys.CmdRunner
 	client boshmonit.MonitClient
+	logger boshlog.Logger
 }
 
-func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner, client boshmonit.MonitClient) (m Monitor) {
-	return monit{fs: fs, runner: runner, client: client}
+const MonitTag = "Monit Monitor"
+
+func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner, client boshmonit.MonitClient, logger boshlog.Logger) (m Monitor) {
+	return monit{fs: fs, runner: runner, client: client, logger: logger}
 }
 
 func (m monit) Reload() (err error) {
@@ -37,6 +41,7 @@ func (m monit) Start() (err error) {
 			err = bosherr.WrapError(err, "Starting service %s", service)
 			return
 		}
+		m.logger.Debug(MonitTag, "Starting service %s", service)
 	}
 
 	return
