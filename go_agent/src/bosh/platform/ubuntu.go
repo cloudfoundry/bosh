@@ -487,6 +487,17 @@ func (p ubuntu) StartMonit() (err error) {
 	return
 }
 
+func (p ubuntu) SetupMonitUser() (err error) {
+	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")
+	if !p.fs.FileExists(monitUserFilePath) {
+		_, err = p.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
+		if err != nil {
+			err = bosherr.WrapError(err, "Writing monit user file")
+		}
+	}
+	return
+}
+
 func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 

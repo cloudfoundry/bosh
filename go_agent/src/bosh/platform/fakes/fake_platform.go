@@ -48,7 +48,8 @@ type FakePlatform struct {
 
 	MountedDevicePaths []string
 
-	StartMonitStarted bool
+	StartMonitStarted   bool
+	SetupMonitUserSetup bool
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -172,5 +173,10 @@ func (p *FakePlatform) IsDevicePathMounted(path string) (result bool, err error)
 
 func (p *FakePlatform) StartMonit() (err error) {
 	p.StartMonitStarted = true
+	return
+}
+
+func (p *FakePlatform) SetupMonitUser() (err error) {
+	p.SetupMonitUserSetup = true
 	return
 }

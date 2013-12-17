@@ -97,3 +97,7 @@ func (p dummyPlatform) IsDevicePathMounted(path string) (result bool, err error)
 func (p dummyPlatform) StartMonit() (err error) {
 	return
 }
+
+func (p dummyPlatform) SetupMonitUser() (err error) {
+	return
+}

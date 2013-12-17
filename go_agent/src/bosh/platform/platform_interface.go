@@ -30,4 +30,5 @@ type Platform interface {
 	IsMountPoint(path string) (result bool, err error)
 	IsDevicePathMounted(path string) (result bool, err error)
 	StartMonit() (err error)
+	SetupMonitUser() (err error)
 }

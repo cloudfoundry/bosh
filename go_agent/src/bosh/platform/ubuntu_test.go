@@ -498,6 +498,32 @@ func TestStartMonit(t *testing.T) {
 	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
 }
 
+func TestSetupMonitUserIfFileDoesNotExist(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	err := ubuntu.SetupMonitUser()
+	assert.NoError(t, err)
+
+	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	assert.NotNil(t, monitUserFileStats)
+	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
+}
+
+func TestSetupMonitUserIfFileDoesExist(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
+
+	err := ubuntu.SetupMonitUser()
+	assert.NoError(t, err)
+
+	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	assert.NotNil(t, monitUserFileStats)
+	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
+}
+
 func getUbuntuDependencies() (
 	collector *fakestats.FakeStatsCollector,
 	fs *fakesys.FakeFileSystem,
