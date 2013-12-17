@@ -41,11 +41,9 @@ func (a agent) Run() (err error) {
 	}
 
 	errChan := make(chan error, 1)
-	heartbeatChan := make(chan boshmbus.Heartbeat, 1)
 
 	go a.subscribeActionDispatcher(errChan)
-	go a.generateHeartbeats(heartbeatChan)
-	go a.sendHeartbeats(heartbeatChan, errChan)
+	go a.generateHeartbeats(errChan)
 
 	select {
 	case err = <-errChan:
@@ -69,25 +67,27 @@ func (a agent) subscribeActionDispatcher(errChan chan error) {
 	errChan <- err
 }
 
-func (a agent) generateHeartbeats(heartbeatChan chan boshmbus.Heartbeat) {
+func (a agent) generateHeartbeats(errChan chan error) {
 	defer a.logger.HandlePanic("Agent Generate Heartbeats")
 
 	tickChan := time.Tick(a.heartbeatInterval)
-	heartbeatChan <- getHeartbeat(a.settings, a.platform.GetStatsCollector())
+
+	heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector())
+	a.sendHeartbeat(heartbeat, errChan)
+
 	for {
 		select {
 		case <-tickChan:
-			heartbeatChan <- getHeartbeat(a.settings, a.platform.GetStatsCollector())
+			heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector())
+			a.sendHeartbeat(heartbeat, errChan)
 		}
 	}
 }
 
-func (a agent) sendHeartbeats(heartbeatChan chan boshmbus.Heartbeat, errChan chan error) {
-	defer a.logger.HandlePanic("Agent Send Heartbeats")
-
-	err := a.mbusHandler.SendPeriodicHeartbeat(heartbeatChan)
+func (a agent) sendHeartbeat(heartbeat interface{}, errChan chan error) {
+	err := a.mbusHandler.SendToHealthManager("heartbeat", heartbeat)
 	if err != nil {
-		err = bosherr.WrapError(err, "Sending Heartbeats")
+		err = bosherr.WrapError(err, "Sending Heartbeat")
 	}
 
 	errChan <- err

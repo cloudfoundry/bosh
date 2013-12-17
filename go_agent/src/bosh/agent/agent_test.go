@@ -66,23 +66,15 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
+	assert.False(t, handler.TickHeartbeatsSent)
 
-	var hb boshmbus.Heartbeat
+	assert.True(t, handler.InitialHeartbeatSent)
+	assert.Equal(t, "heartbeat", handler.SendToHealthManagerTopic)
+	time.Sleep(5 * time.Millisecond)
+	assert.True(t, handler.TickHeartbeatsSent)
 
-	select {
-	case hb = <-handler.HeartbeatChan:
-	case <-time.After(time.Millisecond):
-		t.Errorf("Did not receive an initial heartbeat in time")
-	}
-
-	select {
-	case hb = <-handler.HeartbeatChan:
-	case <-time.After(100 * time.Millisecond):
-		t.Errorf("Did not receive a second heartbeat in time")
-	}
-
+	hb := handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
 	assert.Equal(t, []string{"1.00", "5.00", "15.00"}, hb.Vitals.CpuLoad)
-
 	assert.Equal(t, boshmbus.CpuStats{
 		User: "5.5",
 		Sys:  "4.4",
@@ -125,7 +117,8 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 	err := agent.Run()
 	assert.NoError(t, err)
 
-	hb := <-handler.HeartbeatChan
+	assert.Equal(t, "heartbeat", handler.SendToHealthManagerTopic)
+	hb := handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
 
 	assert.Equal(t, boshmbus.Disks{
 		System:     boshmbus.DiskStats{Percent: "25", InodePercent: "30"},

@@ -13,5 +13,5 @@ func NewNotifier(handler boshmbus.Handler) (notifier Notifier) {
 }
 
 func (n concreteNotifier) NotifyShutdown() (err error) {
-	return n.handler.NotifyShutdown()
+	return n.handler.SendToHealthManager("shutdown", nil)
 }

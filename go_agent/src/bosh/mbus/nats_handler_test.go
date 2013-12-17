@@ -61,7 +61,6 @@ func TestNatsHandlerAgentSubscribe(t *testing.T) {
 }
 
 func TestNatsSendPeriodicHeartbeat(t *testing.T) {
-	heartbeatChan := make(chan Heartbeat, 1)
 	settings := &fakesettings.FakeSettingsService{
 		AgentId: "my-agent-id",
 		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
@@ -74,12 +73,8 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	errChan := make(chan error, 1)
 
 	go func() {
-		errChan <- handler.SendPeriodicHeartbeat(heartbeatChan)
+		errChan <- handler.SendToHealthManager("heartbeat", Heartbeat{Job: "foo", Index: 0})
 	}()
-
-	heartbeatChan <- Heartbeat{Job: "foo", Index: 0}
-
-	close(heartbeatChan)
 
 	select {
 	case err = <-errChan:
@@ -106,7 +101,7 @@ func TestNotifyShutdown(t *testing.T) {
 	err := handler.run()
 	assert.NoError(t, err)
 
-	err = handler.NotifyShutdown()
+	err = handler.SendToHealthManager("shutdown", nil)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(client.PublishedMessages))
@@ -114,8 +109,7 @@ func TestNotifyShutdown(t *testing.T) {
 
 	assert.Equal(t, 1, len(messages))
 
-	expectedMsgJson := ``
-	assert.Equal(t, []byte(expectedMsgJson), messages[0].Payload)
+	assert.Equal(t, []byte(""), messages[0].Payload)
 }
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {

@@ -5,10 +5,13 @@ import boshmbus "bosh/mbus"
 type FakeHandler struct {
 	SubscribedToDirector bool
 	Func                 boshmbus.HandlerFunc
-	HeartbeatChan        chan boshmbus.Heartbeat
 
-	NotifiedShutdown  bool
-	NotifyShutdownErr error
+	SendToHealthManagerErr     error
+	SendToHealthManagerTopic   string
+	SendToHealthManagerPayload interface{}
+
+	InitialHeartbeatSent bool
+	TickHeartbeatsSent   bool
 }
 
 func NewFakeHandler() *FakeHandler {
@@ -21,12 +24,13 @@ func (h *FakeHandler) SubscribeToDirector(handlerFunc boshmbus.HandlerFunc) (err
 	return
 }
 
-func (h *FakeHandler) SendPeriodicHeartbeat(heartbeatChan chan boshmbus.Heartbeat) (err error) {
-	h.HeartbeatChan = heartbeatChan
+func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
+	if h.InitialHeartbeatSent {
+		h.TickHeartbeatsSent = true
+	}
+	h.InitialHeartbeatSent = true
+	h.SendToHealthManagerTopic = topic
+	h.SendToHealthManagerPayload = payload
+	err = h.SendToHealthManagerErr
 	return
-}
-
-func (h *FakeHandler) NotifyShutdown() (err error) {
-	h.NotifiedShutdown = true
-	return h.NotifyShutdownErr
 }

@@ -59,29 +59,20 @@ func (h *natsHandler) SubscribeToDirector(handlerFunc HandlerFunc) (err error) {
 	return
 }
 
-func (h *natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error) {
-	var heartbeatBytes []byte
+func (h *natsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
+	msgBytes := []byte("")
 
-	for heartbeat := range heartbeatChan {
-		heartbeatBytes, err = json.Marshal(heartbeat)
+	if payload != nil {
+		msgBytes, err = json.Marshal(payload)
 		if err != nil {
-			err = bosherr.WrapError(err, "Marshalling heartbeat")
+			err = bosherr.WrapError(err, "Marshalling HM message payload")
 			return
 		}
-
-		h.logger.Info("NATS Handler", "Sending heartbeat")
-		h.logger.DebugWithDetails("NATS Handler", "Payload", heartbeatBytes)
-
-		h.sendMsgToHealthManager("heartbeat", heartbeatBytes)
 	}
-	return
-}
 
-func (h *natsHandler) NotifyShutdown() (err error) {
-	return h.sendMsgToHealthManager("shutdown", []byte(""))
-}
+	h.logger.Info("NATS Handler", "Sending HM message '%s'", topic)
+	h.logger.DebugWithDetails("NATS Handler", "Payload", msgBytes)
 
-func (h *natsHandler) sendMsgToHealthManager(topic string, msgBytes []byte) (err error) {
 	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentId())
 	return h.client.Publish(subject, msgBytes)
 }

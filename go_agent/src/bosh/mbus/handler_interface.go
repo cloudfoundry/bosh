@@ -4,6 +4,5 @@ type HandlerFunc func(req Request) (resp Response)
 
 type Handler interface {
 	SubscribeToDirector(handlerFunc HandlerFunc) (err error)
-	SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error)
-	NotifyShutdown() (err error)
+	SendToHealthManager(topic string, payload interface{}) (err error)
 }
