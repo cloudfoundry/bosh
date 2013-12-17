@@ -4,6 +4,7 @@ import (
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"
 	boshassert "bosh/assert"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -20,14 +21,15 @@ func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 		"57": boshtask.Task{
 			Id:    "found-57-id",
 			State: boshtask.TaskStateFailed,
-			Error: "Oops we failed...",
+			Error: errors.New("Oops we failed..."),
 		},
 	}
 
 	taskValue, err := action.Run("57")
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Equal(t, "Oops we failed...", err.Error())
 	boshassert.MatchesJsonString(t, taskValue,
-		`{"agent_task_id":"found-57-id","state":"failed","exception":"Oops we failed..."}`)
+		`{"agent_task_id":"found-57-id","state":"failed"}`)
 }
 
 func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {

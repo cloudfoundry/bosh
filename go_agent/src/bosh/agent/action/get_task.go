@@ -31,15 +31,15 @@ func (a getTaskAction) Run(taskId string) (value interface{}, err error) {
 		AgentTaskId string      `json:"agent_task_id"`
 		State       string      `json:"state"`
 		Value       interface{} `json:"value,omitempty"`
-		Error       string      `json:"exception,omitempty"`
 	}
 
 	value = valueType{
 		AgentTaskId: task.Id,
 		State:       string(task.State),
 		Value:       task.Value,
-		Error:       task.Error,
 	}
+
+	err = task.Error
 	return
 }
 
