@@ -6,6 +6,7 @@ import (
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
+	boshmon "bosh/monitor"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -23,6 +24,7 @@ func NewFactory(
 	notifier boshnotif.Notifier,
 	applier boshappl.Applier,
 	compiler boshcomp.Compiler,
+	monitor boshmon.Monitor,
 ) (factory Factory) {
 
 	fs := platform.GetFs()
@@ -41,7 +43,7 @@ func NewFactory(
 			"mount_disk":      newMountDisk(settings, platform),
 			"ping":            newPing(),
 			"ssh":             newSsh(settings, platform),
-			"start":           newStart(),
+			"start":           newStart(monitor),
 			"stop":            newStop(),
 			"unmount_disk":    newUnmountDisk(settings, platform),
 			"compile_package": newCompilePackage(compiler),

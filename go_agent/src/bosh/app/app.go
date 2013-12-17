@@ -91,7 +91,16 @@ func (app app) Run(args []string) (err error) {
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
-	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, notifier, applier, compiler)
+	actionFactory := boshaction.NewFactory(
+		settingsService,
+		platform,
+		blobstore,
+		taskService,
+		notifier,
+		applier,
+		compiler,
+		monitor,
+	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 
