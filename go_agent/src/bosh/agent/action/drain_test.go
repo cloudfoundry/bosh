@@ -7,12 +7,28 @@ import (
 	fakesys "bosh/system/fakes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 	"testing"
 )
 
 func TestDrainShouldBeAsynchronous(t *testing.T) {
 	_, _, _, action := buildDrain()
 	assert.True(t, action.IsAsynchronous())
+}
+
+func TestDrainRunsOnlyWithValidDrainScript(t *testing.T) {
+	currentSpec := boshas.V1ApplySpec{}
+	currentSpec.JobSpec.Template = "foo"
+
+	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
+
+	_, fs, _, action := buildDrain()
+
+	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	fs.RemoveAll(scriptPath)
+
+	_, err := action.Run(drainTypeStatus)
+	assert.Error(t, err)
 }
 
 func TestRunWithUpdateErrsIfNotGivenNewSpec(t *testing.T) {
@@ -36,6 +52,9 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 	}
 
 	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	fs.WriteToFile(drainScriptPath, "")
+
 	_, err := action.Run(drainTypeUpdate, newSpec)
 	assert.NoError(t, err)
 
@@ -86,6 +105,9 @@ func TestRunWithShutdown(t *testing.T) {
 	currentSpec.JobSpec.Template = "foo"
 	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
 
+	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	fs.WriteToFile(drainScriptPath, "")
+
 	drainStatus, err := action.Run(drainTypeShutdown)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, drainStatus)
@@ -109,6 +131,9 @@ func TestRunWithStatus(t *testing.T) {
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
 	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+
+	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	fs.WriteToFile(drainScriptPath, "")
 
 	drainStatus, err := action.Run(drainTypeStatus)
 	assert.NoError(t, err)

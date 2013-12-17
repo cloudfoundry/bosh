@@ -43,8 +43,14 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 		return
 	}
 
+	drainScriptPath := filepath.Join(boshsettings.VCAP_JOBS_DIR, currentSpec.JobSpec.Template, "bin", "drain")
+	if !a.fs.FileExists(drainScriptPath) {
+		err = bosherr.New("Drain action requires a valid drain script")
+		return
+	}
+
 	command := boshsys.Command{
-		Name: filepath.Join(boshsettings.VCAP_JOBS_DIR, currentSpec.JobSpec.Template, "bin", "drain"),
+		Name: drainScriptPath,
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},
