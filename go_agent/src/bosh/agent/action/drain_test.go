@@ -15,11 +15,68 @@ func TestDrainShouldBeAsynchronous(t *testing.T) {
 	assert.True(t, action.IsAsynchronous())
 }
 
-func TestRunWithUpdateReturns0(t *testing.T) {
+func TestRunWithUpdateErrsIfNotGivenNewSpec(t *testing.T) {
 	_, _, _, action := buildDrain()
-	val, err := action.Run(drainTypeUpdate)
+	_, err := action.Run(drainTypeUpdate)
+	assert.Error(t, err)
+}
+
+func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
+	cmdRunner, fs, _, action := buildDrain()
+	currentSpec := boshas.V1ApplySpec{}
+	currentSpec.JobSpec.Template = "foo"
+
+	newSpec := boshas.V1ApplySpec{
+		PackageSpecs: map[string]boshas.PackageSpec{
+			"foo": boshas.PackageSpec{
+				Name: "foo",
+				Sha1: "foo-sha1-new",
+			},
+		},
+	}
+
+	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	_, err := action.Run(drainTypeUpdate, newSpec)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, val)
+
+	expectedCmd := boshsys.Command{
+		Name: "/var/vcap/jobs/foo/bin/drain",
+		Args: []string{"job_new", "hash_new", "foo"},
+		Env: map[string]string{
+			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+		},
+	}
+
+	assert.Equal(t, []boshsys.Command{expectedCmd}, cmdRunner.RunComplexCommands)
+}
+
+func TestUpdatePackages(t *testing.T) {
+	oldPkgs := map[string]boshas.PackageSpec{
+		"foo": boshas.PackageSpec{
+			Name: "foo",
+			Sha1: "foo-sha1-old",
+		},
+		"bar": boshas.PackageSpec{
+			Name: "bar",
+			Sha1: "bar-sha1",
+		},
+	}
+	newPkgs := map[string]boshas.PackageSpec{
+		"foo": boshas.PackageSpec{
+			Name: "foo",
+			Sha1: "foo-sha1-new",
+		},
+		"bar": boshas.PackageSpec{
+			Name: "bar",
+			Sha1: "bar-sha1",
+		},
+		"baz": boshas.PackageSpec{
+			Name: "baz",
+			Sha1: "baz-sha1",
+		},
+	}
+	updatedPkgs := updatedPackages(oldPkgs, newPkgs)
+	assert.Equal(t, []string{"foo", "baz"}, updatedPkgs)
 }
 
 func TestRunWithShutdown(t *testing.T) {
