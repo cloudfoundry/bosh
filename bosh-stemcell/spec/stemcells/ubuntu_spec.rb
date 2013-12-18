@@ -23,7 +23,7 @@ describe 'Ubuntu Stemcell' do
       'debconf' => '1.5.28ubuntu4',
       'dhcp3-client' => '3.1.3-2ubuntu3.5',
       'eject' => '2.1.5+deb1+cvs20081104-7',
-      'gnupg' => '1.4.10-2ubuntu1.4',
+      'gnupg' => '1.4.10-2ubuntu1.5',
       'ifupdown' => '0.6.8ubuntu29.2',
       'initramfs-tools' => '0.92bubuntu78',
       'iproute' => '20091226-1',
