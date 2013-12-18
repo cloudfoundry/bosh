@@ -13,6 +13,7 @@ module Bosh::Cli
 
     # @param [Array] args
     def self.run(args)
+      Bosh::Cli::EnvironmentHelper.tmp_dir
       new(args).run
     end
 
