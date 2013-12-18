@@ -1,5 +1,5 @@
 module Bosh::Spec
-  module CommandHelper
+  module AwsBootstrapCommandHelper
     def run(cmd)
       output = ''
       IO.popen(cmd).each do |line|

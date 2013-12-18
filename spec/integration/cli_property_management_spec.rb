@@ -4,7 +4,6 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage property management' do
   include IntegrationExampleGroup
 
   describe 'property management' do
-
     it 'can get/set/unset deployment properties' do
       release_filename = spec_asset('valid_release.tgz')
       deployment_manifest = yaml_file(
@@ -30,6 +29,5 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage property management' do
       expect(props).to match /nats.user\tadmin/
       expect(props).to match /nats.password\tpass/
     end
-
   end
 end

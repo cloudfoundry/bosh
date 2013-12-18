@@ -3,7 +3,7 @@ require "cli"
 require "bosh_cli_plugin_aws"
 
 describe 'bosh_cli_plugin_aws_external' do
-  include Bosh::Spec::CommandHelper
+  include Bosh::Spec::AwsBootstrapCommandHelper
 
   def ec2
     @ec2 ||= AWS::EC2.new
