@@ -9,7 +9,6 @@ require "redis"
 require "restclient"
 require "bosh/director"
 
-
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 
 ASSETS_DIR = File.join(SPEC_ROOT, "assets")
@@ -61,12 +60,6 @@ def yaml_file(name, object)
   f
 end
 
-def director_version
-  version = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000)`
-  "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
-end
-
-
 def setup_bosh_work_dir
   FileUtils.cp_r(BOSH_WORK_TEMPLATE, BOSH_WORK_DIR, :preserve => true)
 end
@@ -102,10 +95,3 @@ def cleanup_bosh
   FileUtils.rm_rf(SANDBOX_DIR)
   FileUtils.mkdir_p(SANDBOX_DIR)
 end
-
-def get_task_id(output, state = 'done')
-  match = output.match(/Task (\d+) #{state}/)
-  match.should_not be_nil
-  match[1]
-end
-

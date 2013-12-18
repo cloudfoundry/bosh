@@ -84,7 +84,7 @@ module IntegrationExampleGroup
   end
 
   def self.included(base)
-    base.before(:each) do |example|
+    base.before do |example|
       unless $sandbox_started
         puts 'Starting sandboxed environment for BOSH tests...'
         current_sandbox.start
@@ -112,7 +112,7 @@ module IntegrationExampleGroup
       end
     end
 
-    base.after(:each) do |example|
+    base.after do |example|
       desc = example ? example.example.metadata[:description] : ""
       current_sandbox.save_task_logs(desc)
       FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
