@@ -105,4 +105,28 @@ describe 'deployment integrations' do
       expect(error_event['message']).to eq("Task #{task_id} cancelled")
     end
   end
+
+  def start_and_finish_times_for_job_updates(task_id)
+    jobs = {}
+    events(task_id).select do |e|
+      e['stage'] == 'Updating job' && %w(started finished).include?(e['state'])
+    end.each do |e|
+      jobs[e['task']] ||= {}
+      jobs[e['task']][e['state']] = e['time']
+    end
+    jobs
+  end
+
+  def events(task_id)
+    result = run_bosh("task #{task_id} --raw")
+    event_list = []
+    result.each_line do |line|
+      begin
+        event = Yajl::Parser.new.parse(line)
+        event_list << event if event
+      rescue Yajl::ParseError
+      end
+    end
+    event_list
+  end
 end
