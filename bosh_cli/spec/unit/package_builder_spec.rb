@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::PackageBuilder, "dev build" do
@@ -523,20 +521,48 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     s2.should == s1
   end
 
-  it "supports alternative src directory" do
-    add_file("src", "README.txt", "README contents")
-    add_file("src", "lib/1.rb", "puts 'Hello world'")
-    add_file("src", "lib/2.rb", "puts 'Goodbye world'")
+  describe "src_alt" do
+    it "includes top-level files from src_alt instead of src" do
+      add_file("src", "file1", "original")
 
-    builder = make_builder("A", %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
+      builder = make_builder("A", %w(file*))
+      s1 = builder.fingerprint
 
-    add_file("src_alt", "README.txt", "README contents")
-    add_file("src_alt", "lib/1.rb", "puts 'Hello world'")
-    add_file("src_alt", "lib/2.rb", "puts 'Goodbye world'")
+      add_file("src", "file1", "altered")
+      add_file("src_alt", "file1", "original")
+      builder.reload.fingerprint.should == s1
+    end
 
-    remove_files("src", %w(lib/1.rb))
-    builder.reload.fingerprint.should == s1
+    it "includes top-level files from src if not present in src_alt" do
+      add_file("src", "file1", "original1")
+      add_file("src", "file2", "original2")
+      builder = make_builder("A", %w(file*))
+      s1 = builder.fingerprint
+
+      add_file("src", "file1", "altered1")
+      add_file("src_alt", "file1", "original1")
+      builder.reload.fingerprint.should == s1
+    end
+
+    it "includes top-level-dir files from src_alt instead of src" do
+      add_file("src", "dir1/file1", "original1")
+      builder = make_builder("A", %w(dir1/*))
+      s1 = builder.fingerprint
+
+      add_file("src", "dir1/file1", "altered1")
+      add_file("src_alt", "dir1/file1", "original1")
+      builder.reload.fingerprint.should == s1
+    end
+
+    it "does not include top-level-dir files from src if not present in src_alt" do
+      add_file("src", "dir1/file1", "original1")
+      builder = make_builder("A", %w(dir1/*))
+      s1 = builder.fingerprint
+
+      add_file("src", "dir1/file2", "new2")
+      add_file("src_alt", "dir1/file1", "original1")
+      builder.reload.fingerprint.should == s1
+    end
   end
 
   it "checks if glob top level dir is present in src_alt but doesn't match" do

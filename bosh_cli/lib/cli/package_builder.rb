@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class PackageBuilder
     include PackagingHelper
@@ -250,30 +248,30 @@ module Bosh::Cli
         # when `src_alt/core' exists. That's error prone, so we don't lookup
         # in `src' if `src_alt' contains any part of the glob hierarchy.
         top_dir = glob.split(File::SEPARATOR)[0]
-        alt_only = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
+        src_alt_exists = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
 
         matches = Set.new
         # Alternative source dir completely shadows the source dir, there can be
         # no partial match of a particular glob in both.
         if File.directory?(@alt_sources_dir)
-          alt_matches = Dir.chdir(@alt_sources_dir) do
+          src_alt_matches = Dir.chdir(@alt_sources_dir) do
             resolve_glob_in_cwd(glob)
           end
         else
-          alt_matches = []
+          src_alt_matches = []
         end
 
-        if alt_matches.size > 0
-          matches += alt_matches.map do |path|
+        if src_alt_matches.size > 0
+          matches += src_alt_matches.map do |path|
             GlobMatch.new(@alt_sources_dir, path)
           end
         end
 
-        normal_matches = Dir.chdir(@sources_dir) do
+        src_matches = Dir.chdir(@sources_dir) do
           resolve_glob_in_cwd(glob)
         end
 
-        if alt_only && alt_matches.empty? && !normal_matches.empty?
+        if src_alt_exists && src_alt_matches.empty? && !src_matches.empty?
           raise InvalidPackage, "Package `#{name}' has a glob that " +
             "doesn't match in `#{File.basename(@alt_sources_dir)}' " +
             "but matches in `#{File.basename(@sources_dir)}'. " +
@@ -281,8 +279,10 @@ module Bosh::Cli
             "exists, so this might be an error."
         end
 
-        matches += normal_matches.map do |path|
-          GlobMatch.new(@sources_dir, path)
+        if !src_alt_exists
+          matches += src_matches.map do |path|
+            GlobMatch.new(@sources_dir, path)
+          end
         end
 
         # Blobs directory is a little bit different: whatever matches a blob
