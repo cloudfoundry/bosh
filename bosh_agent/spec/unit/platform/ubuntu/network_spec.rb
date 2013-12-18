@@ -83,4 +83,29 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
       network_wrapper.setup_networking
     end
   end
+
+  context "CloudStack" do
+    let(:partial_settings) do
+      json = %q[{"networks":{"default":{"dns":["1.2.3.4"],"default":["gateway","dns"]}}]
+      Yajl::Parser.new.parse(json)
+    end
+
+    before do
+      Bosh::Agent::Config.infrastructure_name = "cloudstack"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
+      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
+      Bosh::Agent::Config.settings = partial_settings
+    end
+
+    it "should configure dhcp with dns server prepended" do
+      Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
+        contents.should match /^prepend domain-name-servers 1\.2\.3\.4;$/
+        file.should == "/etc/dhcp3/dhclient.conf"
+        true # fake a change
+      end
+      network_wrapper.should_receive(:restart_dhclient)
+
+      network_wrapper.setup_networking
+    end
+  end
 end
