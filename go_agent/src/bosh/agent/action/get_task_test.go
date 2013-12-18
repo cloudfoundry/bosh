@@ -28,8 +28,7 @@ func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 	taskValue, err := action.Run("57")
 	assert.Error(t, err)
 	assert.Equal(t, "Oops we failed...", err.Error())
-	boshassert.MatchesJsonString(t, taskValue,
-		`{"agent_task_id":"found-57-id","state":"failed"}`)
+	boshassert.MatchesJsonString(t, taskValue, `null`)
 }
 
 func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {
@@ -45,8 +44,7 @@ func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {
 
 	taskValue, err := action.Run("57")
 	assert.NoError(t, err)
-	boshassert.MatchesJsonString(t, taskValue,
-		`{"agent_task_id":"found-57-id","state":"done","value":"some-task-value"}`)
+	boshassert.MatchesJsonString(t, taskValue, `"some-task-value"`)
 }
 
 func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {

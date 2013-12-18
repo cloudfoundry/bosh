@@ -27,18 +27,15 @@ func (a getTaskAction) Run(taskId string) (value interface{}, err error) {
 		return
 	}
 
-	type valueType struct {
-		AgentTaskId string      `json:"agent_task_id"`
-		State       string      `json:"state"`
-		Value       interface{} `json:"value,omitempty"`
+	if task.State == boshtask.TaskStateRunning {
+		value = map[string]string{
+			"agent_task_id": task.Id,
+			"state":         "running",
+		}
+		return
 	}
 
-	value = valueType{
-		AgentTaskId: task.Id,
-		State:       string(task.State),
-		Value:       task.Value,
-	}
-
+	value = task.Value
 	err = task.Error
 	return
 }
