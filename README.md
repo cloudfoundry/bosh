@@ -1,5 +1,7 @@
 # BOSH CloudStack CPI
 
+[![Build Status](https://travis-ci.org/cloudfoundry-community/bosh-cloudstack-cpi.png?branch=master)](https://travis-ci.org/cloudfoundry-community/bosh-cloudstack-cpi)
+
 A CPI for CloudStack from NTT & ZJU-SEL
 
 
