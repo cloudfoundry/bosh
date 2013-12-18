@@ -81,10 +81,6 @@ require 'cli/command_handler'
 require 'cli/runner'
 require 'cli/base_command'
 
-tmpdir = Dir.mktmpdir
-at_exit { FileUtils.rm_rf(tmpdir) }
-ENV['TMPDIR'] = tmpdir
-
 Dir[File.dirname(__FILE__) + '/cli/commands/*.rb'].each do |file|
   require file
 end
