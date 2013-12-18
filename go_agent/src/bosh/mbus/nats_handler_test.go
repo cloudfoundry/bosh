@@ -99,15 +99,15 @@ func TestNatsHandlerConnectionInfo(t *testing.T) {
 	assert.Equal(t, connInfo.Password, "bar")
 }
 
-func TestNatsHandlerConnectionInfoWithoutUsernameOrPassword(t *testing.T) {
+func TestNatsHandlerConnectionInfoDoesNotErrWhenNoUsernameAndPassword(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
 	_, err := handler.getConnectionInfo()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }
 
-func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
+func TestNatsHandlerConnectionInfoErrsWhenHasUsernameWithoutPassword(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 

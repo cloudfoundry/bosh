@@ -14,6 +14,6 @@ func TestGetSettings(t *testing.T) {
 	assert.Equal(t, settings, boshsettings.Settings{
 		AgentId:   "123-456-789",
 		Blobstore: boshsettings.Blobstore{Type: boshsettings.BlobstoreTypeDummy},
-		Mbus:      "nats://foo:bar@127.0.0.1:4222",
+		Mbus:      "nats://127.0.0.1:4222",
 	})
 }

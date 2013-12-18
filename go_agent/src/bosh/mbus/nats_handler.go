@@ -127,22 +127,19 @@ func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err 
 		return
 	}
 
-	user := natsUrl.User
-	if user == nil {
-		err = errors.New("No username or password set for connection")
-		return
-	}
-
-	password, passwordIsSet := user.Password()
-	if !passwordIsSet {
-		err = errors.New("No password set for connection")
-		return
-	}
-
 	connInfo = new(yagnats.ConnectionInfo)
-	connInfo.Password = password
-	connInfo.Username = user.Username()
 	connInfo.Addr = natsUrl.Host
+
+	user := natsUrl.User
+	if user != nil {
+		password, passwordIsSet := user.Password()
+		if !passwordIsSet {
+			err = errors.New("No password set for connection")
+			return
+		}
+		connInfo.Password = password
+		connInfo.Username = user.Username()
+	}
 
 	return
 }
