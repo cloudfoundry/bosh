@@ -24,6 +24,7 @@ func TestNewFactory(t *testing.T) {
 		"migrate_disk",
 		"mount_disk",
 		"ping",
+		"prepare_network_change",
 		"ssh",
 		"start",
 		"stop",
