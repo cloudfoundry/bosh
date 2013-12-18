@@ -1,8 +1,18 @@
 package action
 
-type stopAction struct{}
+import (
+	bosherr "bosh/errors"
+	boshmon "bosh/monitor"
+)
 
-func newStop() (stop stopAction) {
+type stopAction struct {
+	monitor boshmon.Monitor
+}
+
+func newStop(monitor boshmon.Monitor) (stop stopAction) {
+	stop = stopAction{
+		monitor: monitor,
+	}
 	return
 }
 
@@ -11,6 +21,12 @@ func (a stopAction) IsAsynchronous() bool {
 }
 
 func (s stopAction) Run() (value interface{}, err error) {
+	err = s.monitor.Stop()
+	if err != nil {
+		err = bosherr.WrapError(err, "Stopping Monitored Services")
+		return
+	}
+
 	value = "stopped"
 	return
 }

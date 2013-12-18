@@ -31,6 +31,19 @@ func TestStartStartsEachMonitServiceInGroupVcap(t *testing.T) {
 	assert.Equal(t, "fake-service", client.StartServiceNames[0])
 }
 
+func TestStopStopsEachMonitServiceInGroupVcap(t *testing.T) {
+	_, _, client, monit := buildMonit()
+
+	client.ServicesInGroupServices = []string{"fake-service"}
+
+	err := monit.Stop()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "vcap", client.ServicesInGroupName)
+	assert.Equal(t, 1, len(client.StopServiceNames))
+	assert.Equal(t, "fake-service", client.StopServiceNames[0])
+}
+
 func TestAddJob(t *testing.T) {
 	fs, _, _, monit := buildMonit()
 	fs.WriteToFile("/some/config/path", "some config content")

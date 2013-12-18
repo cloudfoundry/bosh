@@ -47,6 +47,25 @@ func (m monit) Start() (err error) {
 	return
 }
 
+func (m monit) Stop() (err error) {
+	services, err := m.client.ServicesInGroup("vcap")
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting vcap services")
+		return
+	}
+
+	for _, service := range services {
+		err = m.client.StopService(service)
+		if err != nil {
+			err = bosherr.WrapError(err, "Stopping service %s", service)
+			return
+		}
+		m.logger.Debug(MonitTag, "Stopping service %s", service)
+	}
+
+	return
+}
+
 func (m monit) AddJob(jobName string, jobIndex int, configPath string) (err error) {
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
 	targetConfigPath := filepath.Join(boshsettings.VCAP_MONIT_JOBS_DIR, targetFilename)

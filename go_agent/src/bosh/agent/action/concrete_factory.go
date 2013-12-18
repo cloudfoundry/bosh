@@ -44,7 +44,7 @@ func NewFactory(
 			"ping":            newPing(),
 			"ssh":             newSsh(settings, platform),
 			"start":           newStart(monitor),
-			"stop":            newStop(),
+			"stop":            newStop(monitor),
 			"unmount_disk":    newUnmountDisk(settings, platform),
 			"compile_package": newCompilePackage(compiler),
 		},
