@@ -72,23 +72,21 @@ func (a agent) generateHeartbeats(errChan chan error) {
 
 	tickChan := time.Tick(a.heartbeatInterval)
 
-	heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector())
-	a.sendHeartbeat(heartbeat, errChan)
-
+	a.sendHeartbeat(errChan)
 	for {
 		select {
 		case <-tickChan:
-			heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector())
-			a.sendHeartbeat(heartbeat, errChan)
+			a.sendHeartbeat(errChan)
 		}
 	}
 }
 
-func (a agent) sendHeartbeat(heartbeat interface{}, errChan chan error) {
+func (a agent) sendHeartbeat(errChan chan error) {
+	heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector())
 	err := a.mbusHandler.SendToHealthManager("heartbeat", heartbeat)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending Heartbeat")
+		errChan <- err
 	}
 
-	errChan <- err
 }
