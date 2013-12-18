@@ -51,11 +51,6 @@ func (a agent) Run() (err error) {
 	return
 }
 
-type TaskValue struct {
-	AgentTaskId string `json:"agent_task_id"`
-	State       string `json:"state"`
-}
-
 func (a agent) subscribeActionDispatcher(errChan chan error) {
 	defer a.logger.HandlePanic("Agent Message Bus Handler")
 

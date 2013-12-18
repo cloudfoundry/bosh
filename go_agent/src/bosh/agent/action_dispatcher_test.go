@@ -75,8 +75,6 @@ func TestDispatchHandlesAsynchronousAction(t *testing.T) {
 	req := boshmbus.NewRequest("reply to me!", "some async action", []byte("some payload"))
 	resp := dispatcher.Dispatch(req)
 
-	assert.Equal(t, boshmbus.NewValueResponse(TaskValue{AgentTaskId: "found-57-id", State: boshtask.TaskStateDone}), resp)
-
 	boshassert.MatchesJsonString(t, resp, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`)
 
 	value, err := taskService.StartTaskFunc()

@@ -41,7 +41,12 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshmbus.Request) (resp 
 			value, err = dispatcher.actionRunner.Run(action, req.GetPayload())
 			return
 		})
-		resp = boshmbus.NewValueResponse(TaskValue{
+
+		type taskValue struct {
+			AgentTaskId string `json:"agent_task_id"`
+			State       string `json:"state"`
+		}
+		resp = boshmbus.NewValueResponse(taskValue{
 			AgentTaskId: task.Id,
 			State:       string(task.State),
 		})
