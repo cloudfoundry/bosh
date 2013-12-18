@@ -20,14 +20,18 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
      'but ignores events from non-current stages' do
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 9))
     renderer.current_stage.should == 'Preparing'
+
     renderer.add_event(make_event('Preparing', 'Binding existing deployment', 2, 9))
     renderer.current_stage.should == 'Preparing'
+
     renderer.add_event(make_event('Updating resource pool', 'Deleting outdated VM', 1, 5))
     renderer.current_stage.should == 'Updating resource pool'
     renderer.events_count.should == 3
+
     renderer.add_event(make_event('Preparing', 'Some additional stuff', 3, 9))
     renderer.current_stage.should == 'Updating resource pool'
     renderer.events_count.should == 3
+
     renderer.add_event(make_event('Updating job router', 'Canary update', 1, 1))
     renderer.current_stage.should == 'Updating job router'
     renderer.events_count.should == 4

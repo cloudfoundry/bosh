@@ -4,8 +4,6 @@ module Bosh::Cli::TaskTracking
       if log_type == "event"
         EventLogRenderer.new
       elsif log_type == "result" || log_type == "none"
-        # Null renderer doesn't output anything to screen, so it fits well
-        # in case we need to fetch task result log only, without rendering it
         NullTaskLogRenderer.new
       else
         TaskLogRenderer.new
