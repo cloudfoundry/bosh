@@ -1,8 +1,7 @@
 require "spec_helper"
 
 describe Bosh::Cli::PackageBuilder, "dev build" do
-
-  before(:each) do
+  before do
     @release_dir = Dir.mktmpdir
     FileUtils.mkdir(File.join(@release_dir, "src"))
     FileUtils.mkdir(File.join(@release_dir, "blobs"))
