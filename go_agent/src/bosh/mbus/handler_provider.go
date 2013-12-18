@@ -10,18 +10,13 @@ import (
 
 type mbusHandlerProvider struct {
 	settings boshsettings.Service
-	handlers map[string]handlerRunner
+	handlers map[string]Handler
 }
 
-type handlerRunner interface {
-	Handler
-	run() (err error)
-}
-
-func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger, natsClient yagnats.NATSClient) (p mbusHandlerProvider) {
+func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger) (p mbusHandlerProvider) {
 	p.settings = settings
-	p.handlers = map[string]handlerRunner{
-		"nats": newNatsHandler(settings, logger, natsClient),
+	p.handlers = map[string]Handler{
+		"nats": newNatsHandler(settings, logger, yagnats.NewClient()),
 	}
 	return
 }
@@ -33,18 +28,10 @@ func (p mbusHandlerProvider) Get() (handler Handler, err error) {
 		return
 	}
 
-	handlerRunner, found := p.handlers[mbusUrl.Scheme]
-	handler = handlerRunner
+	handler, found := p.handlers[mbusUrl.Scheme]
 
 	if !found {
 		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusUrl.Scheme)
-		return
-	}
-
-	err = handlerRunner.run()
-	if err != nil {
-		err = bosherr.WrapError(err, "Running handler")
-		return
 	}
 	return
 }

@@ -59,7 +59,7 @@ type TaskValue struct {
 func (a agent) subscribeActionDispatcher(errChan chan error) {
 	defer a.logger.HandlePanic("Agent Message Bus Handler")
 
-	err := a.mbusHandler.SubscribeToDirector(a.actionDispatcher.Dispatch)
+	err := a.mbusHandler.Run(a.actionDispatcher.Dispatch)
 	if err != nil {
 		err = bosherr.WrapError(err, "Message Bus Handler")
 	}

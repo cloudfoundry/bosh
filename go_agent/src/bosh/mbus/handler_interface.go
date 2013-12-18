@@ -3,6 +3,8 @@ package mbus
 type HandlerFunc func(req Request) (resp Response)
 
 type Handler interface {
-	SubscribeToDirector(handlerFunc HandlerFunc) (err error)
+	Run(handlerFunc HandlerFunc) (err error)
+	Start(handlerFunc HandlerFunc) (err error)
+	Stop()
 	SendToHealthManager(topic string, payload interface{}) (err error)
 }

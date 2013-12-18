@@ -33,7 +33,7 @@ func TestRunSetsTheDispatcherAsMessageHandler(t *testing.T) {
 	err := agent.Run()
 
 	assert.NoError(t, err)
-	assert.True(t, handler.SubscribedToDirector)
+	assert.True(t, handler.ReceivedRun)
 
 	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
 	resp := handler.Func(req)

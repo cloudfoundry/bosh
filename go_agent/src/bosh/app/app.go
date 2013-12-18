@@ -17,7 +17,6 @@ import (
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	"flag"
-	"github.com/cloudfoundry/yagnats"
 	"io/ioutil"
 )
 
@@ -63,8 +62,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	natsClient := yagnats.NewClient()
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, natsClient)
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger)
 	mbusHandler, err := mbusHandlerProvider.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mbus handler")

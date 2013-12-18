@@ -20,15 +20,38 @@ type natsHandler struct {
 	client   yagnats.NATSClient
 }
 
-func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler *natsHandler) {
-	handler = new(natsHandler)
+func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
 	handler.settings = settings
 	handler.logger = logger
 	handler.client = client
 	return
 }
 
-func (h *natsHandler) SubscribeToDirector(handlerFunc HandlerFunc) (err error) {
+func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
+	err = h.Start(handlerFunc)
+	if err != nil {
+		err = bosherr.WrapError(err, "Starting nats handler")
+		return
+	}
+	defer h.Stop()
+
+	h.runUntilInterrupted()
+	return
+}
+
+func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
+	connProvider, err := h.getConnectionInfo()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting connection info")
+		return
+	}
+
+	err = h.client.Connect(connProvider)
+	if err != nil {
+		err = bosherr.WrapError(err, "Connecting")
+		return
+	}
+
 	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
@@ -59,7 +82,7 @@ func (h *natsHandler) SubscribeToDirector(handlerFunc HandlerFunc) (err error) {
 	return
 }
 
-func (h *natsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
+func (h natsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
 	msgBytes := []byte("")
 
 	if payload != nil {
@@ -77,23 +100,11 @@ func (h *natsHandler) SendToHealthManager(topic string, payload interface{}) (er
 	return h.client.Publish(subject, msgBytes)
 }
 
-func (h *natsHandler) run() (err error) {
-	connProvider, err := h.getConnectionInfo()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting connection info")
-		return
-	}
-
-	err = h.client.Connect(connProvider)
-	if err != nil {
-		err = bosherr.WrapError(err, "Connecting")
-	}
-
-	go h.runUntilInterrupted()
-	return
+func (h natsHandler) Stop() {
+	h.client.Disconnect()
 }
 
-func (h *natsHandler) runUntilInterrupted() {
+func (h natsHandler) runUntilInterrupted() {
 	defer h.client.Disconnect()
 
 	keepRunning := true
@@ -109,7 +120,7 @@ func (h *natsHandler) runUntilInterrupted() {
 	}
 }
 
-func (h *natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
+func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
 	natsUrl, err := url.Parse(h.settings.GetMbusUrl())
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing Nats URL")

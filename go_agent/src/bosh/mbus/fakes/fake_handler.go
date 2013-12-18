@@ -3,8 +3,11 @@ package fakes
 import boshmbus "bosh/mbus"
 
 type FakeHandler struct {
-	SubscribedToDirector bool
-	Func                 boshmbus.HandlerFunc
+	ReceivedRun     bool
+	ReceivedStart   bool
+	ReceivedStop    bool
+	AgentSubscribed bool
+	Func            boshmbus.HandlerFunc
 
 	SendToHealthManagerErr     error
 	SendToHealthManagerTopic   string
@@ -18,10 +21,20 @@ func NewFakeHandler() *FakeHandler {
 	return &FakeHandler{}
 }
 
-func (h *FakeHandler) SubscribeToDirector(handlerFunc boshmbus.HandlerFunc) (err error) {
-	h.SubscribedToDirector = true
+func (h *FakeHandler) Run(handlerFunc boshmbus.HandlerFunc) (err error) {
+	h.ReceivedRun = true
 	h.Func = handlerFunc
 	return
+}
+
+func (h *FakeHandler) Start(handlerFunc boshmbus.HandlerFunc) (err error) {
+	h.ReceivedStart = true
+	h.Func = handlerFunc
+	return
+}
+
+func (h *FakeHandler) Stop() {
+	h.ReceivedStop = true
 }
 
 func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
