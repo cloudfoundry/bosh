@@ -123,12 +123,16 @@ func TestCompileCreatesInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
+	installDir := "/var/vcap/data/packages/pkg_name/pkg_version"
+
+	assert.False(t, fs.FileExists(installDir))
 
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version"))
+	assert.True(t, fs.FileExists(installDir))
+	installDirStats := fs.GetFileTestStat(installDir)
+	assert.Equal(t, os.FileMode(0755), installDirStats.FileMode.Perm())
 }
 
 func TestCompileRecreatesInstallDir(t *testing.T) {

@@ -121,7 +121,7 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err
 func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) (err error) {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
 	c.fs.RemoveAll(tmpInstallPath)
-	c.fs.MkdirAll(tmpInstallPath, os.FileMode(0700))
+	c.fs.MkdirAll(tmpInstallPath, os.FileMode(0755))
 
 	err = c.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
 	if err != nil {
@@ -138,7 +138,7 @@ func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) 
 
 func (c concreteCompiler) cleanPackageInstallPath(installPath string) (err error) {
 	c.fs.RemoveAll(installPath)
-	err = c.fs.MkdirAll(installPath, os.FileMode(0700))
+	err = c.fs.MkdirAll(installPath, os.FileMode(0755))
 
 	return
 }
