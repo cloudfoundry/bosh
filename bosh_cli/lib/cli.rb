@@ -62,7 +62,7 @@ require 'cli/changeset_helper'
 require 'cli/task_tracker'
 require 'cli/task_log_renderer'
 require 'cli/event_log_renderer'
-require 'cli/null_renderer'
+require 'cli/null_task_log_renderer'
 require 'cli/deployment_manifest_compiler'
 
 require 'cli/release'

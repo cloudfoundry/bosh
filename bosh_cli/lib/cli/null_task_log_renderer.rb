@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
-  class NullRenderer < TaskLogRenderer
-
+  class NullTaskLogRenderer < TaskLogRenderer
     def initialize
     end
 
@@ -14,6 +11,5 @@ module Bosh::Cli
 
     def finish(state)
     end
-
   end
 end
