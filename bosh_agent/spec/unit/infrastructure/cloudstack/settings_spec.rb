@@ -50,12 +50,6 @@ describe Bosh::Agent::Infrastructure::Cloudstack::Settings do
       }.to raise_error Bosh::Agent::StateError, /Unsupported network type/
     end
 
-    it "should get nothing for manual networks" do
-      network_properties = {}
-      network_settings = cloudstack_settings.get_network_settings("test", network_properties)
-      network_settings.should be_nil
-    end
-
     it "should get nothing for vip networks" do
       network_properties = { "type" => "vip" }
       network_settings = cloudstack_settings.get_network_settings("test", network_properties)
