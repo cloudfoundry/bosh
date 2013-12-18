@@ -1,9 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-module Bosh
-  module Cli
-    class DirectorTask
-
+module Bosh::Cli
+  class DirectorTask
       attr_accessor :offset
 
       def initialize(director, task_id, log_type = nil)
@@ -23,8 +19,7 @@ module Bosh
       end
 
       def output
-        body, new_offset = @director.get_task_output(@task_id, @offset,
-                                                     @log_type)
+        body, new_offset = @director.get_task_output(@task_id, @offset, @log_type)
 
         @buf << body if body
 
@@ -58,7 +53,5 @@ module Bosh
       def cancel
         @director.cancel_task(@task_id)
       end
-    end
   end
 end
-
