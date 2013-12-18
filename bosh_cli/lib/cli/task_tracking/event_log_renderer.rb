@@ -1,4 +1,4 @@
-module Bosh::Cli
+module Bosh::Cli::TaskTracking
   class EventLogRenderer < TaskLogRenderer
     class InvalidEvent < StandardError; end
 

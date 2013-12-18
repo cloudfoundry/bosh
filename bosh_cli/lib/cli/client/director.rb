@@ -570,7 +570,7 @@ module Bosh
             if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
               task_id = $1
               if @track_tasks
-                tracker = Bosh::Cli::TaskTracker.new(self, task_id, track_opts)
+                tracker = Bosh::Cli::TaskTracking::TaskTracker.new(self, task_id, track_opts)
                 status  = tracker.track
               else
                 status = :running

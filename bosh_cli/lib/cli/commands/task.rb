@@ -57,7 +57,7 @@ module Bosh::Cli::Command
         err("Task id must be a positive integer")
       end
 
-      tracker = Bosh::Cli::TaskTracker.new(director, task_id, track_options)
+      tracker = Bosh::Cli::TaskTracking::TaskTracker.new(director, task_id, track_options)
       tracker.track
     end
 

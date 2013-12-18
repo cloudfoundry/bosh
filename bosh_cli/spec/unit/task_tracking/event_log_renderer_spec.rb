@@ -1,33 +1,15 @@
 require 'spec_helper'
 
-describe Bosh::Cli::EventLogRenderer do
-  def make_event(stage, task, index, total, state = 'started', tags = [], progress = 0)
-    event = {
-      'time'  => Time.now.to_i,
-      'stage' => stage,
-      'task'  => task,
-      'index' => index,
-      'total' => total,
-      'state' => state,
-      'tags'  => tags,
-      'progress' => progress
-    }
-    JSON.generate(event)
-  end
-
-  def make_renderer(*args)
-    Bosh::Cli::EventLogRenderer.new(*args)
-  end
+describe Bosh::Cli::TaskTracking::EventLogRenderer do
+  subject(:renderer) { described_class.new }
 
   it 'allows adding events' do
-    renderer = make_renderer
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 9, 'started'))
     renderer.add_event(make_event('Preparing', 'Binding existing deployment', 2, 9, 'started'))
     renderer.events_count.should == 2
   end
 
   it 'silently ignores malformed events' do
-    renderer = make_renderer
     renderer.add_event(make_event(nil, 'Binding release', 1, 9, nil, []))
     renderer.add_event(make_event('Preparing', 'Binding existing deployment', 2, nil, nil))
     renderer.add_event(JSON.generate('a' => 'b'))
@@ -36,7 +18,6 @@ describe Bosh::Cli::EventLogRenderer do
 
   it 'sets current stage based on the most recent event ' +
      'but ignores events from non-current stages' do
-    renderer = make_renderer
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 9))
     renderer.current_stage.should == 'Preparing'
     renderer.add_event(make_event('Preparing', 'Binding existing deployment', 2, 9))
@@ -56,7 +37,6 @@ describe Bosh::Cli::EventLogRenderer do
     buf = StringIO.new
     Bosh::Cli::Config.output = buf
 
-    renderer = make_renderer
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 9))
 
     lines = renderer.render.split("\n")
@@ -113,7 +93,6 @@ describe Bosh::Cli::EventLogRenderer do
     buf = StringIO.new
     Bosh::Cli::Config.output = buf
 
-    renderer = make_renderer
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 9))
     renderer.add_event(make_event('Preparing', 'Moving stuff', 2, 9))
     renderer.add_event(make_event('Preparing', 'Moving stuff', 2, 9, 'finished'))
@@ -125,7 +104,6 @@ describe Bosh::Cli::EventLogRenderer do
   end
 
   it 'supports tracking individual tasks progress' do
-    renderer = make_renderer
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 2, 'started', [], 0))
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 2, 'in_progress', [], 25))
 
@@ -145,5 +123,18 @@ describe Bosh::Cli::EventLogRenderer do
     lines = renderer.render.split("\n")
     lines[1].should_not =~ /Binding release/
     lines[1].should =~ /\|o+\s+\| 1\/2/
+  end
+
+  def make_event(stage, task, index, total, state = 'started', tags = [], progress = 0)
+    JSON.generate(
+      'time'  => Time.now.to_i,
+      'stage' => stage,
+      'task'  => task,
+      'index' => index,
+      'total' => total,
+      'state' => state,
+      'tags'  => tags,
+      'progress' => progress,
+    )
   end
 end

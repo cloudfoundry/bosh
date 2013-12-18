@@ -1,5 +1,4 @@
-module Bosh
-  module Cli
+module Bosh::Cli::TaskTracking
     # This class is responsible for tracking director tasks
     class TaskTracker
       MAX_POLLS = nil # not limited
@@ -27,12 +26,12 @@ module Bosh
         if options[:renderer]
           @renderer = options[:renderer]
         elsif options[:raw_output]
-          @renderer = Bosh::Cli::TaskLogRenderer.new
+          @renderer = TaskLogRenderer.new
         else
-          @renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(@log_type)
+          @renderer = TaskLogRenderer.create_for_log_type(@log_type)
         end
 
-        @poll_interval = Config.poll_interval || DEFAULT_POLL_INTERVAL
+        @poll_interval = Bosh::Cli::Config.poll_interval || DEFAULT_POLL_INTERVAL
       end
 
       # Tracks director task. Blocks until task is in one of the 'finished'
@@ -146,5 +145,4 @@ module Bosh
         Bosh::Cli::Config.interactive
       end
     end
-  end
 end

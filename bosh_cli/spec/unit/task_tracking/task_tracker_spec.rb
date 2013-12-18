@@ -1,14 +1,12 @@
 require "spec_helper"
 
-describe Bosh::Cli::TaskTracker do
-  before do
-    @director = double("director", :uuid => "deadbeef", :get_time_difference => 0.5)
-  end
+describe Bosh::Cli::TaskTracking::TaskTracker do
+  before { @director = double("director", :uuid => "deadbeef", :get_time_difference => 0.5) }
 
   def make_tracker(task_id, options)
-    tracker = Bosh::Cli::TaskTracker.new(@director, task_id, options)
-    tracker.stub(:sleep)
-    tracker
+    described_class.new(@director, task_id, options).tap do |t|
+      t.stub(:sleep)
+    end
   end
 
   it "tracks director task event log" do
@@ -34,7 +32,7 @@ describe Bosh::Cli::TaskTracker do
 
   it "uses appropriate renderer" do
     renderer = double("renderer", :duration_known? => false)
-    Bosh::Cli::TaskLogRenderer.should_receive(:create_for_log_type).
+    Bosh::Cli::TaskTracking::TaskLogRenderer.should_receive(:create_for_log_type).
       with("foobar").and_return(renderer)
 
     tracker = make_tracker("42", { :log_type => "foobar" })

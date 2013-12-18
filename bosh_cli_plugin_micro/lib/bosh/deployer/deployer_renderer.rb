@@ -1,5 +1,5 @@
 module Bosh::Deployer
-  class DeployerRenderer < Bosh::Cli::EventLogRenderer
+  class DeployerRenderer < Bosh::Cli::TaskTracking::EventLogRenderer
     attr_accessor :stage, :total, :index
 
     DEFAULT_POLL_INTERVAL = 1

@@ -1,4 +1,4 @@
-module Bosh::Cli
+module Bosh::Cli::TaskTracking
   class TaskLogRenderer
     def self.create_for_log_type(log_type)
       if log_type == "event"
