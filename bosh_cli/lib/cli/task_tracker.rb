@@ -1,15 +1,11 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh
   module Cli
     # This class is responsible for tracking director tasks
     class TaskTracker
-
       MAX_POLLS = nil # not limited
       DEFAULT_POLL_INTERVAL = 1 # second
 
       attr_reader :output
-
       attr_reader :renderer
 
       # @param [Bosh::Cli::Client::Director] director

@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class TaskLogRenderer
-
     def self.create_for_log_type(log_type)
       if log_type == "event"
         EventLogRenderer.new
@@ -44,6 +41,5 @@ module Bosh::Cli
       refresh
       @done = true
     end
-
   end
 end

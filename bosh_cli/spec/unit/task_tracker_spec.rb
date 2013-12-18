@@ -1,10 +1,8 @@
 require "spec_helper"
 
 describe Bosh::Cli::TaskTracker do
-
-  before(:each) do
-    @director = double("director", :uuid => "deadbeef",
-                     :get_time_difference => 0.5)
+  before do
+    @director = double("director", :uuid => "deadbeef", :get_time_difference => 0.5)
   end
 
   def make_tracker(task_id, options)

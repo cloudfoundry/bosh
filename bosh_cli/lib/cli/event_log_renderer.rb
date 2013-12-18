@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class EventLogRenderer < TaskLogRenderer
-
     class InvalidEvent < StandardError; end
 
     class Task
@@ -36,9 +33,7 @@ module Bosh::Cli
     end
 
     def add_output(output)
-      output.to_s.split("\n").each do |line|
-        add_event(line)
-      end
+      output.to_s.split("\n").each { |line| add_event(line) }
     end
 
     def add_event(event_line)
@@ -240,9 +235,9 @@ module Bosh::Cli
           # to only have canaries.
           @tasks_batch_size = @tasks.size
           @non_canary_event_start_time = task.start_time
-          @batches_count = ((total - @done_tasks.size) /
-              @tasks_batch_size.to_f).ceil
+          @batches_count = ((total - @done_tasks.size) / @tasks_batch_size.to_f).ceil
         end
+
       when "finished", "failed"
         @tasks.delete(event["index"])
         @done_tasks << task
@@ -256,13 +251,11 @@ module Bosh::Cli
         task_time = task.finish_time - task.start_time
 
         n_done_tasks = @done_tasks.size.to_f
-        @running_avg = @running_avg * (n_done_tasks - 1) / n_done_tasks +
-            task_time.to_f / n_done_tasks
+        @running_avg = @running_avg * (n_done_tasks - 1) / n_done_tasks + task_time.to_f / n_done_tasks
 
         progress = 1
         progress_bar.finished_steps += 1
         progress_bar.label = time_with_eta(task_time, @eta)
-
         progress_bar.clear_line
 
         task_name = task.name.to_s
@@ -277,13 +270,13 @@ module Bosh::Cli
           status = task_name.make_yellow
         end
         @buffer.puts("  #{status} (#{format_time(task_time)})")
+
       when "in_progress"
         progress = [event["progress"].to_f / 100, 1].min
       end
 
       if @batches_count > 0 && @non_canary_event_start_time
-        @eta = adjusted_time(@non_canary_event_start_time +
-                                 @running_avg * @batches_count)
+        @eta = adjusted_time(@non_canary_event_start_time + @running_avg * @batches_count)
       end
 
       progress_bar_gain = progress - task.progress
@@ -316,11 +309,9 @@ module Bosh::Cli
       end
     end
 
-    # Expects time and eta to be adjusted
     def time_with_eta(time, eta)
       time_fmt = format_time(time)
       eta_fmt = eta && eta > Time.now ? format_time(eta - Time.now) : "--:--:--"
-
       "#{time_fmt}  ETA: #{eta_fmt}"
     end
 
@@ -385,7 +376,5 @@ module Bosh::Cli
     rescue
       80
     end
-
   end
-
 end
