@@ -8,6 +8,8 @@ import (
 	boshsys "bosh/system"
 	"encoding/json"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 type drainAction struct {
@@ -44,10 +46,7 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 	}
 
 	drainScriptPath := filepath.Join(boshsettings.VCAP_JOBS_DIR, currentSpec.JobSpec.Template, "bin", "drain")
-	if !a.fs.FileExists(drainScriptPath) {
-		err = bosherr.New("Drain action requires a valid drain script")
-		return
-	}
+	missingDrainScript := !a.fs.FileExists(drainScriptPath)
 
 	command := boshsys.Command{
 		Name: drainScriptPath,
@@ -74,10 +73,26 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 		}
 		command.Args = []string{"job_shutdown", "hash_unchanged"}
 	case drainTypeStatus:
+		if missingDrainScript {
+			err = bosherr.New("Check Status on Drain action requires a valid drain script")
+			return
+		}
 		command.Args = []string{"job_check_status", "hash_unchanged"}
 	}
 
-	a.cmdRunner.RunComplexCommand(command)
+	if missingDrainScript {
+		return
+	}
+
+	stdout, _, err := a.cmdRunner.RunComplexCommand(command)
+	if err != nil {
+		err = bosherr.WrapError(err, "Running Drain script")
+		return
+	}
+	value, err = strconv.Atoi(strings.TrimSpace(stdout))
+	if err != nil {
+		err = bosherr.WrapError(err, "Drain script did not return a signed integer")
+	}
 	return
 }
 
