@@ -23,12 +23,25 @@ func (a logsAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a logsAction) Run(_ string, filters []string) (value interface{}, err error) {
-	if len(filters) == 0 {
-		filters = []string{"**/*"}
+func (a logsAction) Run(logType string, filters []string) (value interface{}, err error) {
+	var logsDir string
+
+	switch logType {
+	case "job":
+		if len(filters) == 0 {
+			filters = []string{"**/*.log"}
+		}
+		logsDir = filepath.Join(boshsettings.VCAP_BASE_DIR, "sys", "log")
+	case "agent":
+		if len(filters) == 0 {
+			filters = []string{"**/*"}
+		}
+		logsDir = filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
+	default:
+		err = bosherr.New("Invalid log type")
+		return
 	}
 
-	logsDir := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
 	tarball, err := a.compressor.CompressFilesInDir(logsDir, filters)
 	if err != nil {
 		err = bosherr.WrapError(err, "Making logs tarball")

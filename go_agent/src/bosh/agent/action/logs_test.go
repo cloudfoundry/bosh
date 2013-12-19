@@ -15,29 +15,54 @@ func TestLogsShouldBeAsynchronous(t *testing.T) {
 	assert.True(t, action.IsAsynchronous())
 }
 
-func TestLogsWithFilters(t *testing.T) {
+func TestLogsErrsIfGivenInvalidLogType(t *testing.T) {
+	_, _, action := buildLogsAction()
+	_, err := action.Run("other-logs", []string{})
+	assert.Error(t, err)
+}
+
+func TestAgentLogsWithFilters(t *testing.T) {
 	filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
 
 	expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-	testLogs(t, filters, expectedFilters)
+	testLogs(t, "agent", filters, expectedFilters)
 }
 
-func TestLogsWithoutFilters(t *testing.T) {
+func TestAgentLogsWithoutFilters(t *testing.T) {
 	filters := []string{}
 	expectedFilters := []string{"**/*"}
-	testLogs(t, filters, expectedFilters)
+	testLogs(t, "agent", filters, expectedFilters)
 }
 
-func testLogs(t *testing.T, filters []string, expectedFilters []string) {
+func TestJobLogsWithoutFilters(t *testing.T) {
+	filters := []string{}
+	expectedFilters := []string{"**/*.log"}
+	testLogs(t, "job", filters, expectedFilters)
+}
+
+func TestJobLogsWithFilters(t *testing.T) {
+	filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
+
+	expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
+	testLogs(t, "job", filters, expectedFilters)
+}
+
+func testLogs(t *testing.T, logType string, filters []string, expectedFilters []string) {
 	compressor, blobstore, action := buildLogsAction()
 
 	compressor.CompressFilesInDirTarballPath = "logs_test.go"
 	blobstore.CreateBlobId = "my-blob-id"
 
-	logs, err := action.Run("agent", filters)
+	logs, err := action.Run(logType, filters)
 	assert.NoError(t, err)
 
-	expectedPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
+	var expectedPath string
+	switch logType {
+	case "job":
+		expectedPath = filepath.Join(boshsettings.VCAP_BASE_DIR, "sys", "log")
+	case "agent":
+		expectedPath = filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
+	}
 	assert.Equal(t, expectedPath, compressor.CompressFilesInDirDir)
 	assert.Equal(t, expectedFilters, compressor.CompressFilesInDirFilters)
 
