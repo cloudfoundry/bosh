@@ -26,6 +26,7 @@ module Bosh::Dev::Openstack
           'BOSH_OPENSTACK_TENANT' => 'tenant',
           'BOSH_OPENSTACK_REGION' => 'region',
           'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
+          'BOSH_OPENSTACK_STATE_TIMEOUT' => 'state_timeout'
         )
       end
 
@@ -60,6 +61,7 @@ cloud:
       default_security_groups:
       - default
       private_key: private_key_path
+      state_timeout: state_timeout
 apply_spec:
   agent:
     blobstore:
@@ -104,6 +106,7 @@ cloud:
       default_security_groups:
       - default
       private_key: private_key_path
+      state_timeout: state_timeout
 apply_spec:
   agent:
     blobstore:
