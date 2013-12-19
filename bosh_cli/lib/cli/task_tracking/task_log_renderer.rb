@@ -1,8 +1,14 @@
 module Bosh::Cli::TaskTracking
   class TaskLogRenderer
+    EVENT_LOG_STAGES_WITHOUT_PROGRESS_BAR = [
+      'Updating job',
+      'Deleting unneeded instances',
+    ]
+
     def self.create_for_log_type(log_type)
       if log_type == "event"
-        EventLogRenderer.new
+        EventLogRenderer.new(stages_without_progress_bar:
+          EVENT_LOG_STAGES_WITHOUT_PROGRESS_BAR)
       elsif log_type == "result" || log_type == "none"
         NullTaskLogRenderer.new
       else

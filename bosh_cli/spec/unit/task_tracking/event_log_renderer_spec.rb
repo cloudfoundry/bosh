@@ -129,8 +129,76 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
     lines[1].should =~ /\|o+\s+\| 1\/2/
   end
 
-  def make_event(stage, task, index, total, state = 'started', tags = [], progress = 0)
-    JSON.generate(
+  describe 'tracking stages without progress bar' do
+    subject(:renderer) { described_class.new(stages_without_progress_bar: %w(fake-e1-stage fake-e2-stage fake-e3-stage)) }
+
+    def self.it_prints_marker_for_state(event_state, ui_label)
+      it "prints #{event_state} marker with stage name + tags and task name" do
+        renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, event_state, []))
+        renderer.render.should match /^\s+#{ui_label} fake-e1-stage: fake-e1-task$/
+
+        renderer.add_event(make_event('fake-e2-stage', 'fake-e2-task', 0, 0, event_state, ['fake-e2-tag1']))
+        renderer.render.should match /^\s+#{ui_label} fake-e2-stage fake-e2-tag1: fake-e2-task$/
+
+        renderer.add_event(make_event('fake-e3-stage', 'fake-e3-task', 0, 0, event_state, ['fake-e3-tag1', 'fake-e3-tag2']))
+        renderer.render.should match /^\s+#{ui_label} fake-e3-stage fake-e3-tag1, fake-e3-tag2: fake-e3-task$/
+      end
+    end
+
+    it_prints_marker_for_state 'started',  'Started'
+    it_prints_marker_for_state 'finished', 'Done'
+    it_prints_marker_for_state 'failed',   'Failed'
+
+    it 'does not print any information about progress' do
+      renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, 'in_progress', []))
+      renderer.render.should == ''
+    end
+
+    context 'when event is in the failed state' do
+      [nil, {}].each do |incomplete_data|
+        it "prints failed marker even when no event data is not available (#{incomplete_data.inspect})" do
+          renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, 'failed', [], 0, incomplete_data))
+          renderer.render.should match /^\s+Failed fake-e1-stage: fake-e1-task$/
+        end
+      end
+
+      it 'prints failed information with included error description' do
+        renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, 'failed', [], 0, {'error' => 'fake-error-description'}))
+        renderer.render.should match /^\s+Failed fake-e1-stage: fake-e1-task: fake-error-description$/
+      end
+    end
+
+    it 'ends previous stage (that was rendered with a progress bar) once new stage is started' do
+      renderer.add_event(make_event('Preparing', 'Binding release', 1, 2))
+      renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, 'started', []))
+
+      # Add 2nd event to make sure that there is not spaces between start events
+      renderer.add_event(make_event('fake-e2-stage', 'fake-e2-task', 0, 0, 'started', []))
+
+      final_console_output(renderer.render).should == <<-OUTPUT
+
+Preparing
+Done                          2/2 00:00:00
+
+  Started fake-e1-stage: fake-e1-task
+  Started fake-e2-stage: fake-e2-task
+      OUTPUT
+    end
+
+    it 'prints events right on the next line as they come in from the director' do
+      renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, 'started', []))
+      renderer.add_event(make_event('fake-e2-stage', 'fake-e2-task', 0, 0, 'started', []))
+      renderer.add_event(make_event('fake-e1-stage', 'fake-e1-task', 0, 0, 'finished', []))
+      renderer.render.should == <<-OUTPUT
+  Started fake-e1-stage: fake-e1-task
+  Started fake-e2-stage: fake-e2-task
+     Done fake-e1-stage: fake-e1-task
+      OUTPUT
+    end
+  end
+
+  def make_event(stage, task, index, total, state = 'started', tags = [], progress = 0, data = nil)
+    event = {
       'time'  => Time.now.to_i,
       'stage' => stage,
       'task'  => task,
@@ -139,6 +207,15 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       'state' => state,
       'tags'  => tags,
       'progress' => progress,
-    )
+    }
+
+    event.merge!('data' => data) if data
+
+    JSON.generate(event)
+  end
+
+  # Removes contents between \r to remove progress bars
+  def final_console_output(str)
+    str.gsub(/\r[^\n]+\r/, '')
   end
 end

@@ -20,7 +20,7 @@ module Bosh::Cli::TaskTracking
     attr_reader :events_count
     attr_reader :started_at, :finished_at
 
-    def initialize
+    def initialize(options={})
       @lock = Monitor.new
       @events_count = 0
       @seen_stages = Set.new
@@ -30,6 +30,7 @@ module Bosh::Cli::TaskTracking
       @progress_bars = {}
       @pos = 0
       @time_adjustment = 0
+      @stages_without_progress_bar = options[:stages_without_progress_bar] || []
     end
 
     def add_output(output)
@@ -44,6 +45,16 @@ module Bosh::Cli::TaskTracking
         if event["error"]
           done_with_stage if @current_stage
           add_error(event)
+          return
+        end
+
+        if can_handle_event_without_progress_bar?(event)
+          if @current_stage
+            done_with_stage
+            @current_stage = nil
+            @buffer.print "\n"
+          end
+          handle_event_without_progress_bar(event)
           return
         end
 
@@ -317,6 +328,31 @@ module Bosh::Cli::TaskTracking
 
     def adjusted_time(time)
       time + @time_adjustment.to_f
+    end
+
+    def can_handle_event_without_progress_bar?(event)
+      @stages_without_progress_bar.include?(event["stage"])
+    end
+
+    def handle_event_without_progress_bar(event)
+      event_header = "#{event["stage"].downcase}#{header_for_tags(event["tags"])}: #{event["task"]}"
+
+      case event["state"]
+        when "started"
+          @buffer.print("  Started #{event_header}\n")
+        when "finished"
+          @buffer.print("     Done #{event_header}\n")
+        when "failed"
+          event_data = event["data"] || {}
+          data_error = event_data["error"]
+          error_msg = data_error ? ": #{data_error.make_red}" : ""
+          @buffer.print("   Failed #{event_header}#{error_msg}\n")
+      end
+    end
+
+    def header_for_tags(tags)
+      tags = Array(tags)
+      tags.size > 0 ? " " + tags.sort.join(", ").make_green : ""
     end
   end
 end
