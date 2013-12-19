@@ -2,16 +2,21 @@ package fakes
 
 import (
 	boshsys "bosh/system"
-	"errors"
 	"strings"
 )
 
 type FakeCmdRunner struct {
-	CommandResults map[string][][]string
+	CommandResults map[string][]FakeCmdResult
 
 	RunComplexCommands   []boshsys.Command
 	RunCommands          [][]string
 	RunCommandsWithInput [][]string
+}
+
+type FakeCmdResult struct {
+	Stdout string
+	Stderr string
+	Error  error
 }
 
 func NewFakeCmdRunner() *FakeCmdRunner {
@@ -42,32 +47,29 @@ func (runner *FakeCmdRunner) RunCommandWithInput(input, cmdName string, args ...
 	return
 }
 
-func (runner *FakeCmdRunner) AddCmdResult(fullCmd string, result []string) {
+func (runner *FakeCmdRunner) AddCmdResult(fullCmd string, result FakeCmdResult) {
 	if runner.CommandResults == nil {
-		runner.CommandResults = make(map[string][][]string)
+		runner.CommandResults = make(map[string][]FakeCmdResult)
 	}
-
 	results := runner.CommandResults[fullCmd]
 	runner.CommandResults[fullCmd] = append(results, result)
 }
 
 func (runner *FakeCmdRunner) getOutputsForCmd(runCmd []string) (stdout, stderr string, err error) {
 	fullCmd := strings.Join(runCmd, " ")
-	results, found := runner.CommandResults[fullCmd]
 
+	results, found := runner.CommandResults[fullCmd]
 	if found {
 		result := results[0]
-		newResults := [][]string{}
+		newResults := []FakeCmdResult{}
 		if len(results) > 1 {
 			newResults = results[1:]
 		}
 		runner.CommandResults[fullCmd] = newResults
 
-		stdout = result[0]
-		stderr = result[1]
-		if stderr != "" {
-			err = errors.New(stderr)
-		}
+		stdout = result.Stdout
+		stderr = result.Stderr
+		err = result.Error
 	}
 	return
 }

@@ -2,6 +2,7 @@ package disk
 
 import (
 	fakesys "bosh/system/fakes"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -100,7 +101,7 @@ func TestRemount(t *testing.T) {
 
 func TestLinuxSwapOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
-	runner.AddCmdResult("swapon -s", []string{"Filename				Type		Size	Used	Priority\n", ""})
+	runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: "Filename				Type		Size	Used	Priority\n"})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
@@ -111,7 +112,7 @@ func TestLinuxSwapOn(t *testing.T) {
 
 func TestLinuxSwapOnWhenAlreadyOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
-	runner.AddCmdResult("swapon -s", []string{SWAPON_USAGE_OUTPUT, ""})
+	runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: SWAPON_USAGE_OUTPUT})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
@@ -125,7 +126,7 @@ const SWAPON_USAGE_OUTPUT = `Filename				Type		Size	Used	Priority
 
 func TestLinuxSwapOnWhenAlreadyOnOtherDevice(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
-	runner.AddCmdResult("swapon -s", []string{SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE, ""})
+	runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.SwapOn("/dev/swap")
@@ -180,9 +181,9 @@ func TestLinuxUnmountWhenItFailsSeveralTimes(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
-	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
-	runner.AddCmdResult("umount /dev/xvdb2", []string{"", ""})
+	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
+	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
+	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.unmountRetrySleep = 1 * time.Millisecond
@@ -201,8 +202,8 @@ func TestLinuxUnmountWhenItFailsTooManyTimes(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
-	runner.AddCmdResult("umount /dev/xvdb2", []string{"", "error"})
+	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
+	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 
 	mounter := newLinuxMounter(runner, fs)
 	mounter.maxUnmountRetries = 2

@@ -87,7 +87,7 @@ func TestGetErrsWhenS3CliErrs(t *testing.T) {
 		"fake-blob-id",
 		tempFile.Name(),
 	}
-	runner.AddCmdResult(strings.Join(expectedCmd, " "), []string{"", "fake-error"})
+	runner.AddCmdResult(strings.Join(expectedCmd, " "), fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 
 	fileName, err := blobstore.Get("fake-blob-id", "")
 	assert.Error(t, err)
