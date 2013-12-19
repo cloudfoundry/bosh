@@ -36,3 +36,8 @@ pkg_mgr install libyaml
 pkg_mgr install libyaml-devel
 
 touch ${chroot}/etc/sysconfig/network # must be present for network to be configured
+
+# readahead-collector was pegging CPU on startup
+
+echo 'READAHEAD_COLLECT="no"' >> ${chroot}/etc/sysconfig/readahead
+echo 'READAHEAD_COLLECT_ON_RPM="no"' >> ${chroot}/etc/sysconfig/readahead

@@ -162,6 +162,14 @@ describe 'CentOs Stemcell' do
     end
   end
 
+  context 'readahead-collector should be disabled' do
+    describe file('/etc/sysconfig/readahead') do
+      it { should be_file }
+      it { should contain 'READAHEAD_COLLECT="no"' }
+      it { should contain 'READAHEAD_COLLECT_ON_RPM="no"' }
+    end
+  end
+
   context 'rsyslog repo' do
     describe file('/etc/yum.repos.d/rsyslog.repo') do
       it { should contain('rsyslog_v7') }
