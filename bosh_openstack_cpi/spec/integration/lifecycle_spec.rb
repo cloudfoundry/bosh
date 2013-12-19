@@ -36,56 +36,67 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   before do
-    delegate = double("delegate", task_checkpoint: nil, logger: Logger.new(STDOUT))
+    delegate = double("delegate", task_checkpoint: nil, logger: logger)
     Bosh::Clouds::Config.configure(delegate)
   end
 
+  let(:logger) { Logger.new(STDOUT) }
+
   before { Bosh::Registry::Client.stub(:new).and_return(double("registry").as_null_object) }
-
-  before { @server_id = nil }
-
-  after do
-    if @server_id
-      cpi.delete_vm(@server_id)
-      cpi.has_vm?(@server_id).should be(false)
-    end
-  end
 
   before { @volume_id = nil }
   after { cpi.delete_disk(@volume_id) if @volume_id }
 
   def vm_lifecycle(stemcell_id, network_spec, disk_locality)
-    @server_id = cpi.create_vm(
+    logger.info("Creating VM with stemcell_id=#{stemcell_id}")
+    vm_id = cpi.create_vm(
       "agent-007",
       stemcell_id,
-      { "instance_type" => "m1.small"} ,
+      { "instance_type" => "m1.small" },
       network_spec,
       disk_locality,
       { "key" => "value" }
     )
+    vm_id.should_not be_nil
 
-    @server_id.should_not be_nil
+    logger.info("Checking VM existence vm_id=#{vm_id}")
+    cpi.has_vm?(vm_id).should be(true)
 
-    cpi.has_vm?(@server_id).should be(true)
+    logger.info("Setting VM metadata vm_id=#{vm_id}")
+    metadata = {:deployment => 'deployment', :job => 'openstack_cpi_spec', :index => '0'}
+    cpi.set_vm_metadata(vm_id, metadata)
 
-    metadata = {:deployment => 'deployment', :job => "openstack_cpi_spec", :index => "0"}
-    cpi.set_vm_metadata(@server_id, metadata)
-
-    @volume_id = cpi.create_disk(2048, @server_id)
+    logger.info("Creating disk for VM vm_id=#{vm_id}")
+    @volume_id = cpi.create_disk(2048, vm_id)
     @volume_id.should_not be_nil
 
-    cpi.attach_disk(@server_id, @volume_id)
+    logger.info("Attaching disk vm_id=#{vm_id} disk_id=#{@volume_id}")
+    cpi.attach_disk(vm_id, @volume_id)
 
-    cpi.detach_disk(@server_id, @volume_id)
+    logger.info("Detaching disk vm_id=#{vm_id} disk_id=#{@volume_id}")
+    cpi.detach_disk(vm_id, @volume_id)
 
     metadata[:instance_id] = 'instance'
     metadata[:agent_id] = 'agent'
     metadata[:director_name] = 'Director'
     metadata[:director_uuid] = '6d06b0cc-2c08-43c5-95be-f1b2dd247e18'
+
+    logger.info("Creating disk snapshot disk_id=#{@volume_id}")
     snapshot_id = cpi.snapshot_disk(@volume_id, metadata)
     snapshot_id.should_not be_nil
 
+    logger.info("Deleting disk snapshot disk_id=#{@volume_id} snapshot_id=#{snapshot_id}")
     cpi.delete_snapshot(snapshot_id)
+  ensure
+    if vm_id
+      logger.info("Deleting VM vm_id=#{vm_id}")
+      cpi.delete_vm(vm_id)
+
+      logger.info("Checking VM existence vm_id=#{vm_id}")
+      cpi.has_vm?(vm_id).should be(false)
+    else
+      logger.info("No VM to delete")
+    end
   end
 
   describe "dynamic network" do
