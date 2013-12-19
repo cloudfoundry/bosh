@@ -45,7 +45,7 @@ module Bosh::Dev::Openstack
               'default_key_name' => 'jenkins',
               'default_security_groups' => ['default'],
               'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
-              'state_timeout' => env['BOSH_OPENSTACK_STATE_TIMEOUT'] || 300
+              'state_timeout' => state_timeout,
             }
           }
         },
@@ -70,5 +70,10 @@ module Bosh::Dev::Openstack
     private
 
     attr_reader :env, :net_type
+
+    def state_timeout
+      timeout = env['BOSH_OPENSTACK_STATE_TIMEOUT']
+      timeout.to_s.empty? ? 300.0 : timeout.to_f
+    end
   end
 end
