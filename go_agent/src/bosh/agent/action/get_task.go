@@ -28,9 +28,9 @@ func (a getTaskAction) Run(taskId string) (value interface{}, err error) {
 	}
 
 	if task.State == boshtask.TaskStateRunning {
-		value = map[string]string{
-			"agent_task_id": task.Id,
-			"state":         "running",
+		value = boshtask.TaskStateValue{
+			AgentTaskId: task.Id,
+			State:       task.State,
 		}
 		return
 	}

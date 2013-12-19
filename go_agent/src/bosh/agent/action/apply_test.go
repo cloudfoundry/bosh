@@ -17,6 +17,21 @@ func TestApplyShouldBeAsynchronous(t *testing.T) {
 	assert.True(t, action.IsAsynchronous())
 }
 
+func TestApplyReturnsApplied(t *testing.T) {
+	_, _, _, action := buildApplyAction()
+
+	applySpec := boshas.V1ApplySpec{
+		JobSpec: boshas.JobSpec{
+			Name: "router",
+		},
+	}
+
+	value, err := action.Run(applySpec)
+	assert.NoError(t, err)
+
+	boshassert.MatchesJsonString(t, value, `"applied"`)
+}
+
 func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 	_, fs, _, action := buildApplyAction()
 

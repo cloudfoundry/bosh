@@ -40,7 +40,9 @@ func (a applyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err e
 	err = a.persistApplySpec(applySpec)
 	if err != nil {
 		err = bosherr.WrapError(err, "Persisting apply spec")
+		return
 	}
+	value = "applied"
 	return
 }
 

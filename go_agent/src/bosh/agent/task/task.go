@@ -17,3 +17,8 @@ type Task struct {
 	Value    interface{}
 	Error    error
 }
+
+type TaskStateValue struct {
+	AgentTaskId string    `json:"agent_task_id"`
+	State       TaskState `json:"state"`
+}

@@ -14,6 +14,21 @@ func TestGetTaskShouldBeSynchronous(t *testing.T) {
 	assert.False(t, action.IsAsynchronous())
 }
 
+func TestGetTaskRunReturnsARunningTask(t *testing.T) {
+	taskService, action := buildGetTaskAction()
+
+	taskService.Tasks = map[string]boshtask.Task{
+		"57": boshtask.Task{
+			Id:    "found-57-id",
+			State: boshtask.TaskStateRunning,
+		},
+	}
+
+	taskValue, err := action.Run("57")
+	assert.NoError(t, err)
+	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"running"}`)
+}
+
 func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 	taskService, action := buildGetTaskAction()
 
