@@ -9,6 +9,7 @@ module Bosh::Dev
         %w(vsphere   ubuntu),
         %w(vsphere   centos),
         %w(aws       ubuntu),
+        %w(aws       centos),
         %w(openstack ubuntu),
       ]
 
