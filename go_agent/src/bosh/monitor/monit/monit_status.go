@@ -91,8 +91,3 @@ func (status monitStatus) ServicesInGroup(name string) (services []Service) {
 
 	return
 }
-
-type Service struct {
-	Monitored bool
-	Status    string
-}

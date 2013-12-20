@@ -2,9 +2,11 @@ package monitor
 
 import (
 	boshlog "bosh/logger"
+	boshmonit "bosh/monitor/monit"
 	fakemonit "bosh/monitor/monit/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -52,6 +54,72 @@ func TestAddJob(t *testing.T) {
 	writtenConfig, err := fs.ReadFile(boshsettings.VCAP_MONIT_JOBS_DIR + "/0000_router.monitrc")
 	assert.NoError(t, err)
 	assert.Equal(t, writtenConfig, "some config content")
+}
+
+func TestStatusReturnsRunningWhenAllServicesAreMonitoredAndRunning(t *testing.T) {
+	_, _, client, monit := buildMonit()
+
+	client.StatusStatus = &fakemonit.FakeMonitStatus{
+		Services: []boshmonit.Service{
+			boshmonit.Service{Monitored: true, Status: "running"},
+			boshmonit.Service{Monitored: true, Status: "running"},
+		},
+	}
+
+	status := monit.Status()
+	assert.Equal(t, "running", status)
+}
+
+func TestStatusReturnsFailingWhenAllServicesAreMonitoredAndAtLeastOneServiceIsFailing(t *testing.T) {
+	_, _, client, monit := buildMonit()
+
+	client.StatusStatus = &fakemonit.FakeMonitStatus{
+		Services: []boshmonit.Service{
+			boshmonit.Service{Monitored: true, Status: "failing"},
+			boshmonit.Service{Monitored: true, Status: "running"},
+		},
+	}
+
+	status := monit.Status()
+	assert.Equal(t, "failing", status)
+}
+
+func TestStatusReturnsFailingWhenAtLeastOneServiceIsNotMonitored(t *testing.T) {
+	_, _, client, monit := buildMonit()
+
+	client.StatusStatus = &fakemonit.FakeMonitStatus{
+		Services: []boshmonit.Service{
+			boshmonit.Service{Monitored: false, Status: "running"},
+			boshmonit.Service{Monitored: true, Status: "running"},
+		},
+	}
+
+	status := monit.Status()
+	assert.Equal(t, "failing", status)
+}
+
+func TestStatusReturnsStartWhenAtLeastOneServiceIsStarting(t *testing.T) {
+	_, _, client, monit := buildMonit()
+
+	client.StatusStatus = &fakemonit.FakeMonitStatus{
+		Services: []boshmonit.Service{
+			boshmonit.Service{Monitored: true, Status: "failing"},
+			boshmonit.Service{Monitored: true, Status: "starting"},
+			boshmonit.Service{Monitored: true, Status: "running"},
+		},
+	}
+
+	status := monit.Status()
+	assert.Equal(t, "starting", status)
+}
+
+func TestStatusReturnsUnknownWhenError(t *testing.T) {
+	_, _, client, monit := buildMonit()
+
+	client.StatusErr = errors.New("fake-monit-client-error")
+
+	status := monit.Status()
+	assert.Equal(t, "unknown", status)
 }
 
 func buildMonit() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit monit) {

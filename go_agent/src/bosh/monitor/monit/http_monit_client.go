@@ -84,6 +84,10 @@ func (client httpMonitClient) StopService(name string) (err error) {
 	return
 }
 
+func (client httpMonitClient) Status() (status MonitStatus, err error) {
+	return client.status()
+}
+
 func (client httpMonitClient) status() (status monitStatus, err error) {
 	endpoint := client.monitUrl("/_status2")
 	endpoint.RawQuery = "format=xml"

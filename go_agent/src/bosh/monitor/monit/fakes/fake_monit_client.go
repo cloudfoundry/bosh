@@ -1,5 +1,9 @@
 package fakes
 
+import (
+	boshmonit "bosh/monitor/monit"
+)
+
 type FakeMonitClient struct {
 	ServicesInGroupName     string
 	ServicesInGroupServices []string
@@ -10,6 +14,9 @@ type FakeMonitClient struct {
 
 	StopServiceNames []string
 	StopServiceErr   error
+
+	StatusStatus boshmonit.MonitStatus
+	StatusErr    error
 }
 
 func NewFakeMonitClient() (client *FakeMonitClient) {
@@ -33,5 +40,11 @@ func (c *FakeMonitClient) StartService(name string) (err error) {
 func (c *FakeMonitClient) StopService(name string) (err error) {
 	c.StopServiceNames = append(c.StopServiceNames, name)
 	err = c.StopServiceErr
+	return
+}
+
+func (c *FakeMonitClient) Status() (status boshmonit.MonitStatus, err error) {
+	status = c.StatusStatus
+	err = c.StatusErr
 	return
 }

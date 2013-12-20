@@ -66,6 +66,25 @@ func (m monit) Stop() (err error) {
 	return
 }
 
+func (m monit) Status() (status string) {
+	status = "running"
+	monitStatus, err := m.client.Status()
+	if err != nil {
+		status = "unknown"
+		return
+	}
+
+	for _, service := range monitStatus.ServicesInGroup("vcap") {
+		if service.Status == "starting" {
+			return "starting"
+		}
+		if !service.Monitored || service.Status != "running" {
+			status = "failing"
+		}
+	}
+	return
+}
+
 func (m monit) AddJob(jobName string, jobIndex int, configPath string) (err error) {
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
 	targetConfigPath := filepath.Join(boshsettings.VCAP_MONIT_JOBS_DIR, targetFilename)
