@@ -1,16 +1,10 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require "spec_helper"
 
-require File.expand_path("../../spec_helper", __FILE__)
-
-describe Bosh::Director::EventLog do
-
-  def make_event_log(io)
-    Bosh::Director::EventLog.new(io)
-  end
+describe Bosh::Director::EventLog::Log do
+  subject(:event_log) { described_class.new(buf) }
+  let(:buf) { StringIO.new }
 
   it "tracks stages and tasks, persists them using JSON" do
-    buf = StringIO.new
-    event_log = make_event_log(buf)
     event_log.total.should be_nil
     event_log.stage.should be_nil
     event_log.counter.should == 0
@@ -43,9 +37,6 @@ describe Bosh::Director::EventLog do
   end
 
   it "supports tracking parallel events" do
-    buf = StringIO.new
-    event_log = make_event_log(buf)
-
     event_log.begin_stage(:prepare, 5)
 
     threads = []
@@ -74,9 +65,6 @@ describe Bosh::Director::EventLog do
   end
 
   it "doesn't enforce the proper event ordering or any other kind of consistency" do
-    buf = StringIO.new
-    event_log = make_event_log(buf)
-
     event_log.begin_stage(:prepare, 5)
 
     event_log.start_task(:foo, 1)
@@ -97,5 +85,4 @@ describe Bosh::Director::EventLog do
     events.map { |e| e["index"] }.should == [1,1,14,-500]
     events.map { |e| e["stage"] }.should == ["prepare", "prepare", "run", "run"]
   end
-
 end

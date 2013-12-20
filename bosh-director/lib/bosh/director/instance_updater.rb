@@ -12,10 +12,10 @@ module Bosh::Director
     attr_reader :current_state
 
     # @params [DeploymentPlan::Instance] instance
-    def initialize(instance, event_ticker)
+    def initialize(instance, event_log_task)
       @cloud = Config.cloud
       @logger = Config.logger
-      @ticker = event_ticker
+      @event_log_task = event_log_task
       @blobstore = App.instance.blobstores.blobstore
 
       @instance = instance
@@ -42,7 +42,7 @@ module Bosh::Director
     end
 
     def report_progress
-      @ticker.advance(100.0 / update_steps())
+      @event_log_task.advance(100.0 / update_steps())
     end
 
     def update_steps

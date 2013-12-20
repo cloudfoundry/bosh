@@ -55,8 +55,10 @@ module Bosh::Director
       debug_log = Logger.new(StringIO.new)
       result_file = double('result file')
 
-      EventLog.stub(:new).with(File.join(@task_dir, 'event')).
-        and_return(event_log)
+      EventLog::Log
+        .stub(:new)
+        .with(File.join(@task_dir, 'event'))
+        .and_return(event_log)
 
       Logger.stub(:new).with(File.join(@task_dir, 'debug')).and_return(debug_log)
 

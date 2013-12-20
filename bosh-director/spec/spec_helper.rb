@@ -185,7 +185,7 @@ RSpec.configure do |rspec|
 
     SpecHelper.reset
     @event_buffer = StringIO.new
-    @event_log = Bosh::Director::EventLog.new(@event_buffer)
+    @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
   end
 end

@@ -80,7 +80,7 @@ module Bosh::Director
 
         # Event logger supposed to be overridden per task,
         # the default one does nothing
-        @event_log = EventLog.new
+        @event_log = EventLog::Log.new
 
         # by default keep only last 500 tasks in disk
         @max_tasks = config.fetch("max_tasks", 500).to_i

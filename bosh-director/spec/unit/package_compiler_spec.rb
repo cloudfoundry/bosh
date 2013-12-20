@@ -247,7 +247,7 @@ module Bosh::Director
 
       it 'cancels the compilation' do
         director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
-        event_log = instance_double('Bosh::Director::EventLog', begin_stage: nil)
+        event_log = instance_double('Bosh::Director::EventLog::Log', begin_stage: nil)
         event_log.stub(:track).with(anything).and_yield
 
         config = class_double('Bosh::Director::Config').as_stubbed_const

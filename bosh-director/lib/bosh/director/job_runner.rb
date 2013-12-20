@@ -58,7 +58,7 @@ module Bosh::Director
       @debug_logger.level = Config.logger.level
       @debug_logger.formatter = ThreadFormatter.new
 
-      Config.event_log = EventLog.new(event_log)
+      Config.event_log = EventLog::Log.new(event_log)
       Config.result = TaskResultFile.new(result_log)
       Config.logger = @debug_logger
 

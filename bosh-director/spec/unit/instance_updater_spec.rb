@@ -86,13 +86,12 @@ module Bosh::Director
     end
 
     describe '#report_progress' do
-      let(:event_ticker) { instance_double('Bosh::Director::EventTicker') }
-
-      subject { described_class.new(instance, event_ticker) }
+      subject { described_class.new(instance, event_log_task) }
+      let(:event_log_task) { instance_double('Bosh::Director::EventLog::Task') }
 
       it 'advances the ticker' do
         subject.stub(update_steps: 200)
-        event_ticker.should_receive(:advance).with(0.5)
+        event_log_task.should_receive(:advance).with(0.5)
         subject.report_progress
       end
     end

@@ -5,7 +5,7 @@ require 'bosh/director/job_updater'
 describe Bosh::Director::DeploymentPlan::Updater do
   subject { described_class.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
   let(:base_job)        { instance_double('Bosh::Director::Jobs::BaseJob') }
-  let(:event_log)       { instance_double('Bosh::Director::EventLog', begin_stage: nil) }
+  let(:event_log)       { instance_double('Bosh::Director::EventLog::Log', begin_stage: nil) }
   let(:resource_pools)  { instance_double('Bosh::Director::DeploymentPlan::ResourcePools') }
   let(:assembler)       { instance_double('Bosh::Director::DeploymentPlan::Assembler') }
   let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', jobs: jobs) }
