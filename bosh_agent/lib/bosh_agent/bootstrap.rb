@@ -217,13 +217,17 @@ module Bosh::Agent
     end
 
     def setup_data_sys
+      data_sys_dir = File.join(base_dir, 'data', 'sys')
+      sys_dir = File.join(base_dir, 'sys')
+
       %w{log run}.each do |dir|
-        path = "#{base_dir}/data/sys/#{dir}"
-        %x[mkdir -p #{path}]
-        %x[chown root:vcap #{path}]
-        %x[chmod 0750 #{path}]
+        path = File.join(data_sys_dir, dir)
+        FileUtils.mkdir_p(path)
+        FileUtils.chown('root', 'vcap', path)
+        FileUtils.chmod(0750, path)
       end
-      %x[ln -nsf #{base_dir}/data/sys #{base_dir}/sys]
+
+      Bosh::Agent::Util.create_symlink(data_sys_dir, sys_dir)
     end
 
     def setup_tmp

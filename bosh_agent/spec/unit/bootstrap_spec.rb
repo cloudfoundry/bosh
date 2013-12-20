@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/../spec_helper'
+require 'fakefs/spec_helpers'
 
 describe Bosh::Agent::Bootstrap do
   let(:dummy_platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter') }
@@ -253,6 +254,49 @@ describe Bosh::Agent::Bootstrap do
         FileUtils.stub(:mkdir_p)
         @processor.should_not_receive(:sh)
         @processor.setup_data_disk
+      end
+    end
+  end
+
+  describe '#setup_data_sys' do
+    include FakeFS::SpecHelpers
+
+    before do
+      Bosh::Agent::Config.setup(
+        'logging' => { 'file' => StringIO.new },
+        'base_dir' => base_dir,
+      )
+    end
+
+    before { Etc.stub(:getgrnam).with('vcap').and_return(double(gid: 42)) }
+
+    before { Bosh::Agent::Util.stub(:create_symlink) }
+
+    let(:base_dir) { '/tmp/somedir' }
+    let(:dummy_dir_path) { '/tmp/canary_dir' }
+    let(:canary_dir_mode) do
+      dir = Dir.mktmpdir('dummy_dir')
+      FileUtils.chmod(0750, dir)
+      File.stat(dir).mode
+    end
+
+    it 'symlinks sys to data/sys' do
+      # Ruby's ln_sf is broken see .create_symlink for details
+      Bosh::Agent::Util
+        .should_receive(:create_symlink)
+        .with('/tmp/somedir/data/sys', '/tmp/somedir/sys')
+      @processor.setup_data_sys
+    end
+
+    %w(log run).each do |dir|
+      describe "#{dir} dir" do
+        it "creates a data/sys/#{dir} directory" do
+          path = "/tmp/somedir/data/sys/#{dir}"
+          @processor.setup_data_sys
+          expect(File.directory?(path)).to be_true
+          expect(File.stat(path).gid).to eq(42)
+          expect(File.stat(path).mode).to eq(canary_dir_mode)
+        end
       end
     end
   end
