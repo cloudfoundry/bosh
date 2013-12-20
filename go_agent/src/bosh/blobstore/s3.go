@@ -2,11 +2,9 @@ package blobstore
 
 import (
 	bosherr "bosh/errors"
-	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	boshuuid "bosh/uuid"
 	"encoding/json"
-	"os"
 	"path/filepath"
 )
 
@@ -18,12 +16,12 @@ type s3 struct {
 	configFilePath string
 }
 
-func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator) (blobstore Blobstore) {
+func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
 	return s3{
 		fs:             fs,
 		runner:         runner,
 		uuidGen:        uuidGen,
-		configFilePath: filepath.Join(boshsettings.VCAP_BASE_DIR, "etc", "s3cli"),
+		configFilePath: configFilePath,
 	}
 }
 
@@ -67,28 +65,32 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 	return
 }
 
-func (blobstore s3) Get(blobId string) (file *os.File, err error) {
-	file, err = blobstore.fs.TempFile("bosh-blobstore-s3-Get")
+func (blobstore s3) Get(blobId, _ string) (fileName string, err error) {
+	file, err := blobstore.fs.TempFile("bosh-blobstore-s3-Get")
 	if err != nil {
+		err = bosherr.WrapError(err, "Creating temporary file")
 		return
 	}
 
-	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, file.Name())
+	fileName = file.Name()
+
+	_, _, err = blobstore.runner.RunCommand("s3", "-c", blobstore.configFilePath, "get", blobId, fileName)
 	if err != nil {
-		blobstore.fs.RemoveAll(file.Name())
-		file = nil
+		err = bosherr.WrapError(err, "Shelling out to s3 cli")
+		blobstore.fs.RemoveAll(fileName)
+		fileName = ""
 	}
 
 	return
 }
 
-func (blobstore s3) CleanUp(file *os.File) (err error) {
-	blobstore.fs.RemoveAll(file.Name())
+func (blobstore s3) CleanUp(fileName string) (err error) {
+	blobstore.fs.RemoveAll(fileName)
 	return
 }
 
-func (blobstore s3) Create(file *os.File) (blobId string, err error) {
-	filePath, err := filepath.Abs(file.Name())
+func (blobstore s3) Create(fileName string) (blobId string, fingerprint string, err error) {
+	filePath, err := filepath.Abs(fileName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting absolute file path")
 		return

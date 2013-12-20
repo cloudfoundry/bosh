@@ -16,6 +16,7 @@ AllCops:
    - bosh-director/**
    - bosh-monitor/**
    - bosh-release/**
+   - bosh-stemcell/spec/stemcells/centos_spec.rb
    - release/**
    - simple_blobstore_server/**
    - spec/**

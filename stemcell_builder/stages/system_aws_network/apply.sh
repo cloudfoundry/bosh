@@ -20,12 +20,16 @@ then
 
 cat >> $chroot/etc/sysconfig/network <<EOS
 NETWORKING=yes
+NETWORKING_IPV6=no
+HOSTNAME=localhost.localdomain
+NOZEROCONF=yes
 EOS
 
 cat >> $chroot/etc/sysconfig/network-scripts/ifcfg-eth0 <<EOS
 DEVICE=eth0
 BOOTPROTO=dhcp
-ONBOOT=yes
+ONBOOT=on
+TYPE="Ethernet"
 EOS
 
 fi

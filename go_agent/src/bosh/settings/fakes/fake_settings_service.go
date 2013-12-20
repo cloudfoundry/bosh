@@ -2,7 +2,6 @@ package fakes
 
 import (
 	boshsettings "bosh/settings"
-	"path/filepath"
 )
 
 type FakeSettingsService struct {
@@ -40,14 +39,6 @@ func (service *FakeSettingsService) GetMbusUrl() string {
 
 func (service *FakeSettingsService) GetDisks() boshsettings.Disks {
 	return service.Disks
-}
-
-func (service *FakeSettingsService) GetStoreMountPoint() string {
-	return filepath.Join(boshsettings.VCAP_BASE_DIR, "store")
-}
-
-func (service *FakeSettingsService) GetStoreMigrationMountPoint() string {
-	return filepath.Join(boshsettings.VCAP_BASE_DIR, "store_migration_target")
 }
 
 func (service *FakeSettingsService) GetDefaultIp() (ip string, found bool) {

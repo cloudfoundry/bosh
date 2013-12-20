@@ -35,6 +35,5 @@ module VSphereCloud
         @lease.complete
       end
     end
-
   end
 end

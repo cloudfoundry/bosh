@@ -22,55 +22,78 @@ func NewFileBundleCollection(name, path string, fs boshsys.FileSystem) *FileBund
 }
 
 // Installed into {{ path }}/data/{{ name }}/{{ bundle.BundleName }}/{{ bundle.BundleVersion }}
-func (s *FileBundleCollection) Install(bundle Bundle) (boshsys.FileSystem, string, error) {
-	err := s.checkBundle(bundle)
+func (s *FileBundleCollection) Install(bundle Bundle) (fs boshsys.FileSystem, path string, err error) {
+	err = s.checkBundle(bundle)
 	if err != nil {
-		return nil, "", err
+		return
 	}
 
-	path := s.buildInstallPath(bundle)
+	path = s.buildInstallPath(bundle)
 	err = s.fs.MkdirAll(path, os.FileMode(0755))
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "failed to create install dir")
+		err = bosherr.WrapError(err, "failed to create install dir")
+		return
 	}
 
-	return s.fs, path, nil
+	fs = s.fs
+	return
+}
+
+func (s *FileBundleCollection) GetDir(bundle Bundle) (fs boshsys.FileSystem, path string, err error) {
+	err = s.checkBundle(bundle)
+	if err != nil {
+		return
+	}
+
+	path = s.buildInstallPath(bundle)
+	if !s.fs.FileExists(path) {
+		err = bosherr.New("install dir does not exist")
+		return
+	}
+
+	fs = s.fs
+	return
 }
 
 // Symlinked from {{ path }}/{{ name }}/{{ bundle.BundleName }} to installed path
-func (s *FileBundleCollection) Enable(bundle Bundle) error {
-	err := s.checkBundle(bundle)
+func (s *FileBundleCollection) Enable(bundle Bundle) (err error) {
+	err = s.checkBundle(bundle)
 	if err != nil {
-		return err
+		return
 	}
 
 	installPath := s.buildInstallPath(bundle)
 	if !s.fs.FileExists(installPath) {
-		return bosherr.New("bundle must be installed")
+		err = bosherr.New("bundle must be installed")
+		return
 	}
 
 	enablePath := s.buildEnablePath(bundle)
 	err = s.fs.MkdirAll(filepath.Dir(enablePath), os.FileMode(0755))
 	if err != nil {
-		return bosherr.WrapError(err, "failed to create enable dir")
+		err = bosherr.WrapError(err, "failed to create enable dir")
+		return
 	}
 
 	err = s.fs.Symlink(installPath, enablePath)
 	if err != nil {
-		return bosherr.WrapError(err, "failed to enable")
+		err = bosherr.WrapError(err, "failed to enable")
+		return
 	}
 
-	return nil
+	return
 }
 
-func (s *FileBundleCollection) checkBundle(bundle Bundle) error {
+func (s *FileBundleCollection) checkBundle(bundle Bundle) (err error) {
 	if len(bundle.BundleName()) == 0 {
-		return bosherr.New("missing bundle name")
+		err = bosherr.New("missing bundle name")
+		return
 	}
 	if len(bundle.BundleVersion()) == 0 {
-		return bosherr.New("missing bundle version")
+		err = bosherr.New("missing bundle version")
+		return
 	}
-	return nil
+	return
 }
 
 func (s *FileBundleCollection) buildInstallPath(bundle Bundle) string {

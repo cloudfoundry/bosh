@@ -6,6 +6,7 @@ import (
 	boshsettings "bosh/settings"
 	boshuuid "bosh/uuid"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 	"testing"
 )
 
@@ -40,7 +41,9 @@ func TestGetS3(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	expectedBlobstore := newS3Blobstore(platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator())
+	expectedS3ConfigPath := filepath.Join(boshsettings.VCAP_ETC_DIR, "s3cli")
+	expectedBlobstore := newS3Blobstore(platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedS3ConfigPath)
+	expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
 	expectedBlobstore, err = expectedBlobstore.ApplyOptions(options)
 
 	assert.NoError(t, err)

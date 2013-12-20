@@ -15,5 +15,5 @@ type Task struct {
 	Id       string
 	State    TaskState
 	Value    interface{}
-	Error    string
+	Error    error
 }

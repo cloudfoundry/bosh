@@ -8,7 +8,6 @@ import (
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
-	"errors"
 	"path/filepath"
 )
 
@@ -25,33 +24,28 @@ func newApply(applier boshappl.Applier, fs boshsys.FileSystem, platform boshplat
 	return
 }
 
-func (a applyAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	var payload struct {
-		Arguments []interface{}
+func (a applyAction) IsAsynchronous() bool {
+	return true
+}
+
+func (a applyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
+	if applySpec.ConfigurationHash != "" {
+		err = a.applier.Apply(applySpec)
+		if err != nil {
+			err = bosherr.WrapError(err, "Applying")
+			return
+		}
 	}
-	err = json.Unmarshal(payloadBytes, &payload)
+
+	err = a.persistApplySpec(applySpec)
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload")
-		return
+		err = bosherr.WrapError(err, "Persisting apply spec")
 	}
+	return
+}
 
-	if len(payload.Arguments) == 0 {
-		err = errors.New("Not enough arguments, expected 1")
-		return
-	}
-
-	applySpec, err := boshas.NewV1ApplySpecFromData(payload.Arguments[0])
-	if err != nil {
-		return
-	}
-
-	err = a.applier.Apply(applySpec)
-	if err != nil {
-		err = bosherr.WrapError(err, "Applying")
-		return
-	}
-
-	spec, err := json.Marshal(payload.Arguments[0])
+func (a applyAction) persistApplySpec(applySpec boshas.V1ApplySpec) (err error) {
+	spec, err := json.Marshal(applySpec)
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling apply spec")
 		return

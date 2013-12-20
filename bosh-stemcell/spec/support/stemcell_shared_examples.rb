@@ -6,7 +6,7 @@ shared_examples_for 'a stemcell' do
     end
   end
 
-  # currently `should cotain` on a file does not properly escape $PATH
+  # currently `should contain` on a file does not properly escape $PATH
   context 'installed by bosh_users' do
     describe command("grep -q 'export PATH=/var/vcap/bosh/bin:\\$PATH\n' /root/.bashrc") do
       it { should return_exit_status(0) }
@@ -18,15 +18,12 @@ shared_examples_for 'a stemcell' do
   end
 
   context 'installed by base_<os>' do
-
-    # required by go_agent
-    describe command('dig -v') do
+    describe command('dig -v') do # required by go_agent
       it { should return_exit_status(0) }
     end
   end
 
   context 'installed by rsyslog' do
-
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
     end
@@ -37,7 +34,7 @@ shared_examples_for 'a stemcell' do
     end
 
     describe command('rsyslogd -v') do
-      it { should return_stdout /7\.4\.6/ }
+      it { should return_stdout /7\.4\.\d+/ }
     end
   end
 end

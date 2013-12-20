@@ -10,6 +10,12 @@ import (
 	"testing"
 )
 
+func TestGetStateShouldBeSynchronous(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	_, action := buildGetStateAction(settings)
+	assert.False(t, action.IsAsynchronous())
+}
+
 func TestGetStateRun(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	settings.AgentId = "my-agent-id"
@@ -27,7 +33,7 @@ func TestGetStateRun(t *testing.T) {
 		"vm":            map[string]string{"name": "vm-abc-def"},
 	}
 
-	state, err := action.Run([]byte(`{"arguments":[]}`))
+	state, err := action.Run()
 	assert.NoError(t, err)
 	boshassert.MatchesJsonMap(t, state, expectedJson)
 }

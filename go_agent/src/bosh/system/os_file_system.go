@@ -13,12 +13,14 @@ import (
 type osFileSystem struct {
 	logger boshlog.Logger
 	logTag string
+	runner CmdRunner
 }
 
-func NewOsFileSystem(logger boshlog.Logger) (fs FileSystem) {
+func NewOsFileSystem(logger boshlog.Logger, runner CmdRunner) (fs FileSystem) {
 	return osFileSystem{
 		logger: logger,
 		logTag: "File System",
+		runner: runner,
 	}
 }
 
@@ -137,6 +139,13 @@ func (fs osFileSystem) FileExists(path string) bool {
 	return true
 }
 
+func (fs osFileSystem) Rename(oldPath, newPath string) (err error) {
+	fs.logger.Debug(fs.logTag, "Renaming %s to %s", oldPath, newPath)
+
+	fs.RemoveAll(newPath)
+	return os.Rename(oldPath, newPath)
+}
+
 func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 	fs.logger.Debug(fs.logTag, "Symlinking oldPath %s with newPath %s", oldPath, newPath)
 
@@ -159,11 +168,17 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 		}
 	}
 
+	containingDir := filepath.Dir(newPath)
+	if !fs.FileExists(containingDir) {
+		fs.MkdirAll(containingDir, os.FileMode(0700))
+	}
+
 	return os.Symlink(oldPath, newPath)
 }
 
-func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) error {
-	panic("not implemented")
+func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
+	_, _, err = fs.runner.RunCommand("cp", "-r", srcPath+"/.", dstPath)
+	return
 }
 
 func (fs osFileSystem) TempFile(prefix string) (file *os.File, err error) {
@@ -184,6 +199,11 @@ func (fs osFileSystem) RemoveAll(fileOrDir string) {
 func (fs osFileSystem) Open(path string) (file *os.File, err error) {
 	fs.logger.Debug(fs.logTag, "Open %s", path)
 	return os.Open(path)
+}
+
+func (fs osFileSystem) Glob(pattern string) (matches []string, err error) {
+	fs.logger.Debug(fs.logTag, "Glob '%s'", pattern)
+	return filepath.Glob(pattern)
 }
 
 func (fs osFileSystem) filesAreIdentical(newContent, filePath string) bool {

@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	bosherr "bosh/errors"
 	"errors"
 	gouuid "github.com/nu7hatch/gouuid"
 	"os"
@@ -30,11 +31,18 @@ type FakeFileSystem struct {
 	CopyDirEntriesSrcPath string
 	CopyDirEntriesDstPath string
 
+	RenameError    error
+	RenameOldPaths []string
+	RenameNewPaths []string
+
 	TempFileError  error
 	ReturnTempFile *os.File
 
 	TempDirDir   string
 	TempDirError error
+
+	GlobPattern string
+	GlobPaths   []string
 }
 
 type FakeFileStats struct {
@@ -108,6 +116,31 @@ func (fs *FakeFileSystem) FileExists(path string) bool {
 	return fs.GetFileTestStat(path) != nil
 }
 
+func (fs *FakeFileSystem) Rename(oldPath, newPath string) (err error) {
+	if fs.RenameError != nil {
+		err = fs.RenameError
+		return
+	}
+
+	stats := fs.GetFileTestStat(oldPath)
+	if stats == nil {
+		err = errors.New("Old path did not exist")
+		return
+	}
+
+	fs.RenameOldPaths = append(fs.RenameOldPaths, oldPath)
+	fs.RenameNewPaths = append(fs.RenameNewPaths, newPath)
+
+	newStats := fs.getOrCreateFile(newPath)
+	newStats.Content = stats.Content
+	newStats.FileMode = stats.FileMode
+	newStats.FileType = stats.FileType
+
+	fs.RemoveAll(oldPath)
+
+	return
+}
+
 func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	if fs.SymlinkError == nil {
 		stats := fs.getOrCreateFile(newPath)
@@ -125,18 +158,18 @@ func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 		return fs.CopyDirEntriesError
 	}
 
-	srcStat := fs.GetFileTestStat(srcPath)
-	if srcStat == nil {
-		return errors.New("srcPath does not exist")
+	filesToCopy := []string{}
+
+	for filePath, _ := range fs.Files {
+		if strings.HasPrefix(filePath, srcPath) {
+			filesToCopy = append(filesToCopy, filePath)
+		}
 	}
 
-	dstStat := fs.GetFileTestStat(dstPath)
-	if dstStat == nil {
-		return errors.New("dstPath does not exist")
+	for _, filePath := range filesToCopy {
+		newPath := strings.Replace(filePath, srcPath, dstPath, 1)
+		fs.Files[newPath] = fs.Files[filePath]
 	}
-
-	fs.CopyDirEntriesSrcPath = srcPath
-	fs.CopyDirEntriesDstPath = dstPath
 
 	return
 }
@@ -150,6 +183,7 @@ func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	} else {
 		file, err = os.Open("/dev/null")
 		if err != nil {
+			err = bosherr.WrapError(err, "Opening /dev/null")
 			return
 		}
 
@@ -201,6 +235,16 @@ func (fs *FakeFileSystem) RemoveAll(path string) {
 
 func (fs *FakeFileSystem) Open(path string) (file *os.File, err error) {
 	file = fs.FilesToOpen[path]
+	return
+}
+
+func (fs *FakeFileSystem) Glob(pattern string) (matches []string, err error) {
+	fs.GlobPattern = pattern
+	if fs.GlobPaths == nil {
+		matches = []string{}
+	} else {
+		matches = fs.GlobPaths
+	}
 	return
 }
 

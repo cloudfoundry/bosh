@@ -14,14 +14,15 @@ type FakeBundleCollection struct {
 	InstallPath  string
 	InstallError error
 
+	GetDirPath  string
+	GetDirFs    boshsys.FileSystem
+	GetDirError error
+
 	EnableError error
 }
 
 func NewFakeBundleCollection() *FakeBundleCollection {
-	return &FakeBundleCollection{
-		installedBundles: make([]bc.Bundle, 0),
-		enabledBundles:   make([]bc.Bundle, 0),
-	}
+	return &FakeBundleCollection{}
 }
 
 func (s *FakeBundleCollection) Install(bundle bc.Bundle) (boshsys.FileSystem, string, error) {
@@ -39,6 +40,13 @@ func (s *FakeBundleCollection) Install(bundle bc.Bundle) (boshsys.FileSystem, st
 
 func (s *FakeBundleCollection) IsInstalled(bundle bc.Bundle) bool {
 	return s.checkExists(s.installedBundles, bundle)
+}
+
+func (s *FakeBundleCollection) GetDir(bundle bc.Bundle) (fs boshsys.FileSystem, path string, err error) {
+	fs = s.GetDirFs
+	path = s.GetDirPath
+	err = s.GetDirError
+	return
 }
 
 func (s *FakeBundleCollection) Enable(bundle bc.Bundle) error {

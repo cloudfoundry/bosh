@@ -64,8 +64,8 @@ describe 'CentOs Stemcell' do
       'glibc-static'   => '2.12-1.107.el6_4.5.x86_64',
       'runit'          => '2.1.1-6.el6.x86_64',
       'sudo'           => '1.8.6p3-7.el6.x86_64',
-      'rsyslog'        => '7.4.6-1.el6.x86_64',
-      'rsyslog-relp'   => '7.4.6-1.el6.x86_64',
+      'rsyslog'        => '7.4.7-1.el6.x86_64',
+      'rsyslog-relp'   => '7.4.7-1.el6.x86_64',
       'nc'             => '1.84-22.el6.x86_64',
     }.each do |pkg, version|
       describe package(pkg) do
@@ -114,7 +114,7 @@ describe 'CentOs Stemcell' do
       it { should contain 'timeout=1' }
       it { should contain 'title CentOS release 6.4 (Final) (2.6.32-358.23.2.el6.x86_64)' }
       it { should contain '  root (hd0,0)' }
-      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.23.2.el6.x86_64 ro root=UUID=' }
+      it { should contain '  kernel /boot/vmlinuz-2.6.32-358.23.2.el6.x86_64 xen_blkfront.sda_is_xvda=1 ro root=UUID=' }
       it { should contain ' selinux=0' }
       it { should contain '  initrd /boot/initramfs-2.6.32-358.23.2.el6.x86_64.img' }
     end
@@ -148,13 +148,17 @@ describe 'CentOs Stemcell' do
     describe file('/etc/sysconfig/network') do
       it { should be_file }
       it { should contain 'NETWORKING=yes' }
+      it { should contain 'NETWORKING_IPV6=no' }
+      it { should contain 'HOSTNAME=localhost.localdomain' }
+      it { should contain 'NOZEROCONF=yes' }
     end
 
     describe file('/etc/sysconfig/network-scripts/ifcfg-eth0') do
       it { should be_file }
       it { should contain 'DEVICE=eth0' }
       it { should contain 'BOOTPROTO=dhcp' }
-      it { should contain 'ONBOOT=yes' }
+      it { should contain 'ONBOOT=on' }
+      it { should contain 'TYPE="Ethernet"' }
     end
   end
 

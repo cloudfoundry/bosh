@@ -76,6 +76,21 @@ module Bosh::Stemcell
       ]
     }
 
+    let(:openstack_centos_infrastructure_stages) {
+      [
+        :system_openstack_network_centos,
+        :system_parameters,
+        :bosh_clean,
+        :bosh_harden,
+        :bosh_harden_ssh,
+        :image_create,
+        :image_install_grub,
+        :image_openstack_qcow2,
+        :image_openstack_prepare_stemcell,
+        :stemcell_openstack
+      ]
+    }
+
     let(:vsphere_infrastructure_stages) {
       [
         :system_open_vm_tools,
@@ -160,7 +175,7 @@ module Bosh::Stemcell
             it 'has the correct stages' do
               expect(stage_collection.all_stages).to eq(centos_stages +
                                                           agent_stages +
-                                                          openstack_infrastructure_stages)
+                                                          openstack_centos_infrastructure_stages)
             end
           end
         end
@@ -243,7 +258,7 @@ module Bosh::Stemcell
             it 'has the correct stages' do
               expect(stage_collection.all_stages).to eq(centos_stages +
                                                           agent_stages +
-                                                          openstack_infrastructure_stages)
+                                                          openstack_centos_infrastructure_stages)
             end
           end
         end

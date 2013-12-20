@@ -2,20 +2,24 @@ package fakes
 
 import (
 	boshblob "bosh/blobstore"
-	"os"
 )
 
 type FakeBlobstore struct {
-	Options map[string]string
+	Options                      map[string]string
+	ApplyOptionsUpdatedBlobstore boshblob.Blobstore
 
-	GetBlobId string
-	GetFile   *os.File
-	GetError  error
+	GetBlobIds      []string
+	GetFingerprints []string
+	GetFileName     string
+	GetError        error
 
-	CleanUpFile *os.File
+	CleanUpFileName string
+	CleanUpErr      error
 
-	CreateFile   *os.File
-	CreateBlobId string
+	CreateFileName    string
+	CreateBlobId      string
+	CreateFingerprint string
+	CreateErr         error
 }
 
 func NewFakeBlobstore() *FakeBlobstore {
@@ -25,24 +29,32 @@ func NewFakeBlobstore() *FakeBlobstore {
 func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblob.Blobstore, err error) {
 	bs.Options = opts
 	updated = bs
+
+	if bs.ApplyOptionsUpdatedBlobstore != nil {
+		updated = bs.ApplyOptionsUpdatedBlobstore
+	}
 	return
 }
 
-func (bs *FakeBlobstore) Get(blobId string) (file *os.File, err error) {
-	bs.GetBlobId = blobId
-	file = bs.GetFile
+func (bs *FakeBlobstore) Get(blobId, fingerprint string) (fileName string, err error) {
+	bs.GetBlobIds = append(bs.GetBlobIds, blobId)
+	bs.GetFingerprints = append(bs.GetFingerprints, fingerprint)
+	fileName = bs.GetFileName
 	err = bs.GetError
 	return
 }
 
-func (bs *FakeBlobstore) CleanUp(file *os.File) (err error) {
-	bs.CleanUpFile = file
+func (bs *FakeBlobstore) CleanUp(fileName string) (err error) {
+	bs.CleanUpFileName = fileName
+	err = bs.CleanUpErr
 	return
 }
 
-func (bs *FakeBlobstore) Create(file *os.File) (blobId string, err error) {
-	bs.CreateFile = file
+func (bs *FakeBlobstore) Create(fileName string) (blobId string, fingerprint string, err error) {
+	bs.CreateFileName = fileName
 
 	blobId = bs.CreateBlobId
+	fingerprint = bs.CreateFingerprint
+	err = bs.CreateErr
 	return
 }

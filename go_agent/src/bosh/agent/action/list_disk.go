@@ -17,7 +17,11 @@ func newListDisk(settings boshsettings.Service, platform boshplatform.Platform) 
 	return
 }
 
-func (a listDiskAction) Run([]byte) (value interface{}, err error) {
+func (a listDiskAction) IsAsynchronous() bool {
+	return false
+}
+
+func (a listDiskAction) Run() (value interface{}, err error) {
 	disks := a.settings.GetDisks()
 	volumeIds := []string{}
 

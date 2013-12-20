@@ -81,7 +81,7 @@ func (service asyncTaskService) processTasks() {
 		value, err := task.taskFunc()
 
 		if err != nil {
-			task.Error = err.Error()
+			task.Error = err
 			task.State = TaskStateFailed
 
 			service.logger.Error("Task Service", "Failed processing task #%s got: %s", task.Id, err.Error())

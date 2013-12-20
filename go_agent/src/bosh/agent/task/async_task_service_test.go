@@ -45,9 +45,9 @@ func testRunningTask(t *testing.T, expectedState TaskState, withValue interface{
 	assert.Equal(t, withValue, updatedTask.Value)
 
 	if withErr != nil {
-		assert.Equal(t, withErr.Error(), updatedTask.Error)
+		assert.Equal(t, withErr, updatedTask.Error)
 	} else {
-		assert.Equal(t, "", updatedTask.Error)
+		assert.NoError(t, updatedTask.Error)
 	}
 }
 

@@ -1,18 +1,29 @@
 package fakes
 
 import (
+	boshsys "bosh/system"
 	"errors"
 	"strings"
 )
 
 type FakeCmdRunner struct {
-	CommandResults       map[string][][]string
+	CommandResults map[string][][]string
+
+	RunComplexCommands   []boshsys.Command
 	RunCommands          [][]string
 	RunCommandsWithInput [][]string
 }
 
 func NewFakeCmdRunner() *FakeCmdRunner {
 	return &FakeCmdRunner{}
+}
+
+func (runner *FakeCmdRunner) RunComplexCommand(cmd boshsys.Command) (stdout, stderr string, err error) {
+	runner.RunComplexCommands = append(runner.RunComplexCommands, cmd)
+	runCmd := append([]string{cmd.Name}, cmd.Args...)
+
+	stdout, stderr, err = runner.getOutputsForCmd(runCmd)
+	return
 }
 
 func (runner *FakeCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
