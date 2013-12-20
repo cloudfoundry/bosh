@@ -21,6 +21,29 @@ describe Bosh::Agent::Bootstrap do
     @processor.stub(:mem_total).and_return(3951616)
   end
 
+  it 'run configuration steps in a specific order' do
+    @processor.should_receive(:update_iptables).ordered
+    @processor.should_receive(:update_passwords).ordered
+    @processor.should_receive(:update_agent_id).ordered
+    @processor.should_receive(:update_credentials).ordered
+    @processor.should_receive(:update_hostname).ordered
+    @processor.should_receive(:update_mbus).ordered
+    @processor.should_receive(:update_blobstore).ordered
+    @processor.should_receive(:setup_networking).ordered
+    @processor.should_receive(:update_time).ordered
+    @processor.should_receive(:setup_data_disk).ordered
+    @processor.should_receive(:setup_data_sys).ordered
+    @processor.should_receive(:setup_tmp).ordered
+
+    Bosh::Agent::Monit.should_receive(:setup_monit_user).ordered
+    Bosh::Agent::Monit.should_receive(:setup_alerts).ordered
+
+    @processor.should_receive(:mount_persistent_disk).ordered
+    @processor.should_receive(:harden_permissions).ordered
+
+    @processor.configure
+  end
+
   it "should update credentials" do
     @processor.load_settings
     @processor.update_credentials
@@ -229,7 +252,6 @@ describe Bosh::Agent::Bootstrap do
       it 'should setup data sys' do
         FileUtils.stub(:mkdir_p)
         @processor.should_not_receive(:sh)
-        @processor.should_receive(:setup_data_sys)
         @processor.setup_data_disk
       end
     end

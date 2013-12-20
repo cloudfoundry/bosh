@@ -46,6 +46,7 @@ module Bosh::Agent
         setup_networking
         update_time
         setup_data_disk
+        setup_data_sys
         setup_tmp
 
         Bosh::Agent::Monit.setup_monit_user
@@ -194,8 +195,6 @@ module Bosh::Agent
           end
         end
       end
-
-      setup_data_sys
     end
 
     def data_sfdisk_input
