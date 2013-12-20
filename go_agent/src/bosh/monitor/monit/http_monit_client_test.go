@@ -117,3 +117,28 @@ func TestServicesInGroup(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"dummy"}, services)
 }
+
+func TestDecodeStatus(t *testing.T) {
+	monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status.xml")
+	assert.NotNil(t, monitStatusFilePath)
+
+	file, err := os.Open(monitStatusFilePath)
+	assert.NoError(t, err)
+	defer file.Close()
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.Copy(w, file)
+		assert.Equal(t, r.Method, "GET")
+		assert.Equal(t, r.URL.Path, "/_status2")
+		assert.Equal(t, r.URL.Query().Get("format"), "xml")
+	})
+	ts := httptest.NewServer(handler)
+	defer ts.Close()
+
+	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+
+	status, err := client.status()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(status.Services.Services))
+	assert.Equal(t, 1, status.Services.Services[0].Monitor)
+}

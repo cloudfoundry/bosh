@@ -8,23 +8,34 @@ type monitStatus struct {
 	Incarnation string   `xml:"incarnation,attr"`
 	Version     string   `xml:"version,attr"`
 
-	Services      []interface{} `xml:"services"`
-	ServiceGroups serviceGroups
+	Services      servicesTag
+	ServiceGroups serviceGroupsTag
 }
 
-type serviceGroups struct {
-	XMLName       xml.Name       `xml:"servicegroups"`
-	ServiceGroups []serviceGroup `xml:"servicegroup"`
+type servicesTag struct {
+	XMLName  xml.Name     `xml:"services"`
+	Services []serviceTag `xml:"service"`
 }
 
-type serviceGroup struct {
+type serviceTag struct {
+	XMLName xml.Name `xml:"service"`
+	Status  int      `xml:"status"`
+	Monitor int      `xml:"monitor"`
+}
+
+type serviceGroupsTag struct {
+	XMLName       xml.Name          `xml:"servicegroups"`
+	ServiceGroups []serviceGroupTag `xml:"servicegroup"`
+}
+
+type serviceGroupTag struct {
 	XMLName xml.Name `xml:"servicegroup"`
 	Name    string   `xml:"name,attr"`
 
 	Services []string `xml:"service"`
 }
 
-func (s serviceGroups) Get(name string) (group serviceGroup, found bool) {
+func (s serviceGroupsTag) Get(name string) (group serviceGroupTag, found bool) {
 	for _, g := range s.ServiceGroups {
 		if g.Name == name {
 			group = g
