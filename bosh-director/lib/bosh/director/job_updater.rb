@@ -37,68 +37,27 @@ module Bosh::Director
       end
 
       @logger.info("Found #{instances.size} instances to update")
-
       @event_log.begin_stage("Updating job", instances.size, [ @job.name ])
 
       ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
         num_canaries = [ @job.update.canaries, instances.size ].min
+        @logger.info("Starting canary update num_canaries=#{num_canaries}")
+        update_canaries(pool, instances, num_canaries)
 
-        @logger.info("Starting canary update")
-        # Canaries first
-        num_canaries.times do
-          instance = instances.shift
-
-          pool.process do
-            desc = "#{@job.name}/#{instance.index}"
-            @event_log.track("#{desc} (canary)") do |ticker|
-              with_thread_name("canary_update(#{desc})") do
-                unless @job.should_halt?
-                  begin
-                    InstanceUpdater.new(instance, ticker).
-                      update(:canary => true)
-                  rescue Exception => e
-                    @logger.error("Error updating canary instance: #{e}\n" +
-                                  "#{e.backtrace.join("\n")}")
-                    @job.record_update_error(e, :canary => true)
-                  end
-                end
-              end
-            end
-          end
-        end
-
+        @logger.info("Waiting for canaries to update")
         pool.wait
-        @logger.info("Finished canary update")
 
+        @logger.info("Finished canary update")
         if @job.should_halt?
           @logger.warn("Halting deployment due to a canary failure")
           halt
         end
 
-        # Continue with the rest of the updates
         @logger.info("Continuing the rest of the update")
-        instances.each do |instance|
-          pool.process do
-            desc = "#{@job.name}/#{instance.index}"
-            @event_log.track(desc) do |ticker|
-              with_thread_name("instance_update(#{desc})") do
-                unless @job.should_halt?
-                  begin
-                    InstanceUpdater.new(instance, ticker).update
-                  rescue Exception => e
-                    @logger.error("Error updating instance: #{e}\n" +
-                                  "#{e.backtrace.join("\n")}")
-                    @job.record_update_error(e)
-                  end
-                end
-              end
-            end
-          end
-        end
+        update_instances(pool, instances)
       end
 
       @logger.info("Finished the rest of the update")
-
       if @job.should_halt?
         @logger.warn("Halting deployment due to an update failure")
         halt
@@ -111,5 +70,51 @@ module Bosh::Director
       raise error
     end
 
+    private
+
+    def update_canaries(pool, instances, num_canaries)
+      num_canaries.times do
+        instance = instances.shift
+        pool.process { update_canary_instance(instance) }
+      end
+    end
+
+    def update_canary_instance(instance)
+      desc = "#{@job.name}/#{instance.index}"
+      @event_log.track("#{desc} (canary)") do |ticker|
+        next if @job.should_halt?
+
+        with_thread_name("canary_update(#{desc})") do
+          begin
+            InstanceUpdater.new(instance, ticker).update(:canary => true)
+          rescue Exception => e
+            @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
+            @job.record_update_error(e, :canary => true)
+          end
+        end
+      end
+    end
+
+    def update_instances(pool, instances)
+      instances.each do |instance|
+        pool.process { update_instance(instance) }
+      end
+    end
+
+    def update_instance(instance)
+      desc = "#{@job.name}/#{instance.index}"
+      @event_log.track(desc) do |ticker|
+        next if @job.should_halt?
+
+        with_thread_name("instance_update(#{desc})") do
+          begin
+            InstanceUpdater.new(instance, ticker).update
+          rescue Exception => e
+            @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
+            @job.record_update_error(e)
+          end
+        end
+      end
+    end
   end
 end

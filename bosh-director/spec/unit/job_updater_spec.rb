@@ -1,10 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
-
-  before(:each) do
+  before do
     @deployment_plan = double("deployment_plan")
     @job_spec = double("job_spec")
     @update_spec = double("update_spec")
@@ -163,5 +160,4 @@ describe Bosh::Director::JobUpdater do
     job_updater = Bosh::Director::JobUpdater.new(@deployment_plan, @job_spec)
     job_updater.update
   end
-
 end
