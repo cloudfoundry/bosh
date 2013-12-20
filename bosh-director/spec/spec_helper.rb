@@ -165,7 +165,7 @@ RSpec.configure do |rspec|
     unless $redis_63790_started
       redis_config = Tempfile.new('redis_config')
       File.write(redis_config.path, 'port 63790')
-      redis_pid = Process.spawn('redis-server', redis_config.path)
+      redis_pid = Process.spawn('redis-server', redis_config.path, out: '/dev/null')
       $redis_63790_started = true
 
       at_exit do
