@@ -19,7 +19,7 @@ type monit struct {
 
 const MonitTag = "Monit Monitor"
 
-func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner, client boshmonit.MonitClient, logger boshlog.Logger) (m Monitor) {
+func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner, client boshmonit.MonitClient, logger boshlog.Logger) (m monit) {
 	return monit{fs: fs, runner: runner, client: client, logger: logger}
 }
 

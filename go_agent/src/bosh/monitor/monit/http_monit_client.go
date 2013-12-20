@@ -27,7 +27,7 @@ func NewHttpMonitClient(host, username, password string) (client httpMonitClient
 }
 
 func (client httpMonitClient) ServicesInGroup(name string) (services []string, err error) {
-	status, err := client.getStatus()
+	status, err := client.status()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting status from Monit")
 		return
@@ -84,7 +84,7 @@ func (client httpMonitClient) StopService(name string) (err error) {
 	return
 }
 
-func (client httpMonitClient) getStatus() (status MonitStatus, err error) {
+func (client httpMonitClient) status() (status monitStatus, err error) {
 	endpoint := client.monitUrl("/_status2")
 	endpoint.RawQuery = "format=xml"
 	request, err := http.NewRequest("GET", endpoint.String(), nil)

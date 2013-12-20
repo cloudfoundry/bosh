@@ -54,7 +54,7 @@ func TestAddJob(t *testing.T) {
 	assert.Equal(t, writtenConfig, "some config content")
 }
 
-func buildMonit() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit Monitor) {
+func buildMonit() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit monit) {
 	fs = &fakesys.FakeFileSystem{}
 	runner = &fakesys.FakeCmdRunner{}
 	client = fakemonit.NewFakeMonitClient()

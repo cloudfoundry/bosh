@@ -2,7 +2,7 @@ package monit
 
 import "encoding/xml"
 
-type MonitStatus struct {
+type monitStatus struct {
 	XMLName     xml.Name `xml:"monit"`
 	Id          string   `xml:"id,attr"`
 	Incarnation string   `xml:"incarnation,attr"`
