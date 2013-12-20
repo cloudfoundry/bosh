@@ -109,10 +109,10 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
           expect(config).to_not be_serial
         end
 
-        it 'is not serial (parallel) if serial option is not set' do
+        it 'is serial (not parallel) if serial option is not set' do
           other_opts.delete('serial')
           config = BD::DeploymentPlan::UpdateConfig.new(other_opts, default_config)
-          expect(config).to_not be_serial
+          expect(config).to be_serial
         end
       end
 

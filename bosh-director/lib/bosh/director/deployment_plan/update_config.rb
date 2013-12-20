@@ -46,7 +46,7 @@ module Bosh::Director
         @serial = safe_property(update_config, "serial", {
           class: :boolean,
           optional: true,
-          default: default_update_config && default_update_config.serial?,
+          default: default_update_config ? default_update_config.serial? : true,
         })
 
         if optional
