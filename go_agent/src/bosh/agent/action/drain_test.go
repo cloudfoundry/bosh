@@ -166,35 +166,6 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 	assert.Equal(t, []boshsys.Command{expectedCmd}, cmdRunner.RunComplexCommands)
 }
 
-func TestUpdatePackages(t *testing.T) {
-	oldPkgs := map[string]boshas.PackageSpec{
-		"foo": boshas.PackageSpec{
-			Name: "foo",
-			Sha1: "foo-sha1-old",
-		},
-		"bar": boshas.PackageSpec{
-			Name: "bar",
-			Sha1: "bar-sha1",
-		},
-	}
-	newPkgs := map[string]boshas.PackageSpec{
-		"foo": boshas.PackageSpec{
-			Name: "foo",
-			Sha1: "foo-sha1-new",
-		},
-		"bar": boshas.PackageSpec{
-			Name: "bar",
-			Sha1: "bar-sha1",
-		},
-		"baz": boshas.PackageSpec{
-			Name: "baz",
-			Sha1: "baz-sha1",
-		},
-	}
-	updatedPkgs := updatedPackages(oldPkgs, newPkgs)
-	assert.Equal(t, []string{"foo", "baz"}, updatedPkgs)
-}
-
 func TestRunWithShutdown(t *testing.T) {
 	cmdRunner, fs, notifier, action := buildDrain()
 

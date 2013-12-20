@@ -2,14 +2,13 @@ package action
 
 import (
 	boshas "bosh/agent/applier/applyspec"
+	boshdrain "bosh/agent/drain"
 	bosherr "bosh/errors"
 	boshnotif "bosh/notification"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
 	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 type drainAction struct {
@@ -42,18 +41,12 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 
 	currentSpec, err := a.getCurrentSpec()
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting current spec")
 		return
 	}
 
-	drainScriptPath := filepath.Join(boshsettings.VCAP_JOBS_DIR, currentSpec.JobSpec.Template, "bin", "drain")
-	missingDrainScript := !a.fs.FileExists(drainScriptPath)
-
-	command := boshsys.Command{
-		Name: drainScriptPath,
-		Env: map[string]string{
-			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
-		},
-	}
+	drainScript := boshdrain.NewConcreteDrainScript(a.fs, a.cmdRunner, currentSpec.JobSpec.Template)
+	var params boshdrain.DrainScriptParams
 
 	switch drainType {
 	case drainTypeUpdate:
@@ -62,36 +55,31 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 			return
 		}
 		newSpec := newSpecs[0]
-		updatedPkgs := updatedPackages(currentSpec.PackageSpecs, newSpec.PackageSpecs)
-		command.Args = append(command.Args, jobChange(currentSpec, newSpec), hashChanged(currentSpec, newSpec))
-		command.Args = append(command.Args, updatedPkgs...)
+
+		params = boshdrain.NewUpdateDrainParams(currentSpec, newSpec)
 	case drainTypeShutdown:
 		err = a.notifier.NotifyShutdown()
 		if err != nil {
 			err = bosherr.WrapError(err, "Notifying shutdown")
 			return
 		}
-		command.Args = []string{"job_shutdown", "hash_unchanged"}
+		params = boshdrain.NewShutdownDrainParams()
 	case drainTypeStatus:
-		if missingDrainScript {
+		if !drainScript.Exists() {
 			err = bosherr.New("Check Status on Drain action requires a valid drain script")
 			return
 		}
-		command.Args = []string{"job_check_status", "hash_unchanged"}
+		params = boshdrain.NewStatusDrainParams()
 	}
 
-	if missingDrainScript {
+	if !drainScript.Exists() {
 		return
 	}
 
-	stdout, _, err := a.cmdRunner.RunComplexCommand(command)
+	value, err = drainScript.Run(params)
 	if err != nil {
-		err = bosherr.WrapError(err, "Running Drain script")
+		err = bosherr.WrapError(err, "Running Drain Script")
 		return
-	}
-	value, err = strconv.Atoi(strings.TrimSpace(stdout))
-	if err != nil {
-		err = bosherr.WrapError(err, "Drain script did not return a signed integer")
 	}
 	return
 }
@@ -109,49 +97,5 @@ func (a drainAction) getCurrentSpec() (currentSpec boshas.V1ApplySpec, err error
 		return
 	}
 
-	return
-}
-
-func marshalSpec(spec boshas.V1ApplySpec) (contents string, err error) {
-	bytes, err := json.Marshal(spec)
-	if err != nil {
-		return
-	}
-	contents = string(bytes)
-	return
-}
-
-func jobChange(currentSpec, newSpec boshas.V1ApplySpec) string {
-	switch {
-	case len(currentSpec.Jobs()) == 0:
-		return "job_new"
-	case currentSpec.JobSpec.Sha1 == newSpec.JobSpec.Sha1:
-		return "job_unchanged"
-	default:
-		return "job_changed"
-	}
-}
-
-func hashChanged(currentSpec, newSpec boshas.V1ApplySpec) string {
-	switch {
-	case currentSpec.ConfigurationHash == "":
-		return "hash_new"
-	case currentSpec.ConfigurationHash == newSpec.ConfigurationHash:
-		return "hash_unchanged"
-	default:
-		return "hash_changed"
-	}
-}
-
-func updatedPackages(currentPkgs, newPkgs map[string]boshas.PackageSpec) (pkgs []string) {
-	for _, pkg := range newPkgs {
-		currentPkg, found := currentPkgs[pkg.Name]
-		switch {
-		case !found:
-			pkgs = append(pkgs, pkg.Name)
-		case currentPkg.Sha1 != pkg.Sha1:
-			pkgs = append(pkgs, pkg.Name)
-		}
-	}
 	return
 }
