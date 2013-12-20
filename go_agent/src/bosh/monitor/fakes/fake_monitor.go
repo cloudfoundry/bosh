@@ -11,6 +11,8 @@ type FakeMonitor struct {
 
 	Stopped bool
 	StopErr error
+
+	StatusStatus string
 }
 
 type AddJobArgs struct {
@@ -49,5 +51,10 @@ func (m *FakeMonitor) Start() (err error) {
 func (m *FakeMonitor) Stop() (err error) {
 	m.Stopped = true
 	err = m.StopErr
+	return
+}
+
+func (m *FakeMonitor) Status() (status string) {
+	status = m.StatusStatus
 	return
 }

@@ -78,11 +78,11 @@ func TestNewFactoryGetTask(t *testing.T) {
 }
 
 func TestNewFactoryGetState(t *testing.T) {
-	settings, platform, _, _, _, _, _, _, factory := buildFactory()
+	settings, platform, _, _, _, _, _, monitor, factory := buildFactory()
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(settings, platform.GetFs()), action)
+	assert.Equal(t, newGetState(settings, platform.GetFs(), monitor), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {

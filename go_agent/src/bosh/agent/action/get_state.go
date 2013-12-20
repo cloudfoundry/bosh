@@ -2,6 +2,7 @@ package action
 
 import (
 	bosherr "bosh/errors"
+	boshmon "bosh/monitor"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 	"encoding/json"
@@ -10,11 +11,13 @@ import (
 type getStateAction struct {
 	settings boshsettings.Service
 	fs       boshsys.FileSystem
+	monitor  boshmon.Monitor
 }
 
-func newGetState(settings boshsettings.Service, fs boshsys.FileSystem) (action getStateAction) {
+func newGetState(settings boshsettings.Service, fs boshsys.FileSystem, monitor boshmon.Monitor) (action getStateAction) {
 	action.settings = settings
 	action.fs = fs
+	action.monitor = monitor
 	return
 }
 
@@ -38,7 +41,7 @@ func (a getStateAction) Run() (value interface{}, err error) {
 
 	v["agent_id"] = a.settings.GetAgentId()
 	v["vm"] = a.settings.GetVm()
-	v["job_state"] = "unknown"
+	v["job_state"] = a.monitor.Status()
 	v["bosh_protocol"] = "1"
 	value = v
 	return
