@@ -5,14 +5,11 @@ describe Bosh::Director::JobUpdater do
 
   before do
     @deployment_plan = double("deployment_plan")
-    @job_spec = double("job_spec")
-    @update_spec = double("update_spec")
-    @job_spec.stub(:update).and_return(@update_spec)
-    @job_spec.stub(:name).and_return("job_name")
-    @update_spec.stub(:max_in_flight).and_return(5)
-    @update_spec.stub(:canaries).and_return(1)
-    Bosh::Director::Config.stub(:cloud).and_return(nil)
+    @update_spec = double("update_spec", max_in_flight: 5, canaries: 1)
+    @job_spec = double("job_spec", update: @update_spec, name: 'job_name')
   end
+
+  before { Bosh::Director::Config.stub(:cloud).and_return(nil) }
 
   it "should do nothing when the job is up to date" do
     instance_1 = double("instance-1")
@@ -170,14 +167,23 @@ describe Bosh::Director::JobUpdater do
     lambda { job_updater.update }.should raise_exception(RuntimeError, "zb")
   end
 
-  it "should delete the unneeded instances" do
+  it "deletes unneeded instances" do
     instance = double("instance")
     @job_spec.stub(:instances).and_return([])
     @job_spec.stub(:unneeded_instances).and_return([instance])
 
-    instance_deleter = double("instance_deleter")
-    instance_deleter.should_receive(:delete_instances).with([instance], {:max_threads => 5})
-    Bosh::Director::InstanceDeleter.stub(:new).and_return(instance_deleter)
+    instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
+    Bosh::Director::InstanceDeleter.stub(:new).with(@deployment_plan).and_return(instance_deleter)
+
+    event_log = instance_double('Bosh::Director::EventLog::Log')
+    Bosh::Director::Config.stub(:event_log).and_return(event_log)
+
+    event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
+    event_log.stub(:begin_stage).with('Deleting unneeded instances', 1, ['job_name']).and_return(event_log_stage)
+
+    instance_deleter
+      .should_receive(:delete_instances)
+      .with([instance], event_log_stage, max_threads: 5)
 
     job_updater.update
   end

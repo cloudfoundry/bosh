@@ -10,20 +10,8 @@ module Bosh::Director
       @event_log = Config.event_log
     end
 
-    def delete_unneeded_instances
-      @logger.info("Deleting no longer needed instances")
-      unneeded_instances = @job.unneeded_instances
-
-      return if unneeded_instances.empty?
-
-      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
-      deleter = InstanceDeleter.new(@deployment_plan)
-      deleter.delete_instances(unneeded_instances, max_threads: @job.update.max_in_flight)
-
-      @logger.info("Deleted no longer needed instances")
-    end
-
     def update
+      @logger.info("Deleting no longer needed instances")
       delete_unneeded_instances
 
       instances = []
@@ -69,6 +57,17 @@ module Bosh::Director
     end
 
     private
+
+    def delete_unneeded_instances
+      unneeded_instances = @job.unneeded_instances
+      return if unneeded_instances.empty?
+
+      event_log_stage = @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
+      deleter = InstanceDeleter.new(@deployment_plan)
+      deleter.delete_instances(unneeded_instances, event_log_stage, max_threads: @job.update.max_in_flight)
+
+      @logger.info("Deleted no longer needed instances")
+    end
 
     def update_canaries(pool, instances, num_canaries, event_log_stage)
       num_canaries.times do

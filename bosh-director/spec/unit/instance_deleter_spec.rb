@@ -12,7 +12,9 @@ module Bosh::Director
       @deleter = InstanceDeleter.new(@deployment_plan)
     end
 
-    describe :delete_instances do
+    describe '#delete_instances' do
+      let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+
       it 'should delete the instances with the config max threads option' do
         instances = []
         5.times { instances << double('instance') }
@@ -23,8 +25,8 @@ module Bosh::Director
         pool.stub(:wrap).and_yield(pool)
         pool.stub(:process).and_yield
 
-        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index]) }
-        @deleter.delete_instances(instances)
+        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index], event_log_stage) }
+        @deleter.delete_instances(instances, event_log_stage)
       end
 
       it 'should delete the instances with the respected max threads option' do
@@ -36,17 +38,21 @@ module Bosh::Director
         pool.stub(:wrap).and_yield(pool)
         pool.stub(:process).and_yield
 
-        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index]) }
-        @deleter.delete_instances(instances, max_threads: 2)
+        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index], event_log_stage) }
+        @deleter.delete_instances(instances, event_log_stage, max_threads: 2)
       end
     end
 
     describe '#delete_instance' do
+      let(:instance) { Models::Instance.make(vm: vm, job: 'test', index: 5) }
+      let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+      let(:vm) { Models::Vm.make }
+
       it 'deletes a single instance' do
-        vm = Models::Vm.make
-        instance = Models::Instance.make(vm: vm, job: 'test', index: 5)
+        allow(event_log_stage).to receive(:advance_and_track).and_yield
+
         disk = Models::PersistentDisk.make
-        snapshot = Models::Snapshot.make(persistent_disk: disk)
+        Models::Snapshot.make(persistent_disk: disk)
         persistent_disks = [Models::PersistentDisk.make, disk]
         persistent_disks.each { |disk| instance.persistent_disks << disk }
 
@@ -64,10 +70,15 @@ module Bosh::Director
         allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner)
         expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-        @deleter.delete_instance(instance)
+        @deleter.delete_instance(instance, event_log_stage)
 
         Models::Vm[vm.id].should == nil
         Models::Instance[instance.id].should == nil
+      end
+
+      it 'advances event log stage to track deletion of given instance' do
+        event_log_stage.should_receive(:advance_and_track).with(vm.cid)
+        @deleter.delete_instance(instance, event_log_stage)
       end
     end
 

@@ -7,7 +7,6 @@ module Bosh::Director
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
       @logger = Config.logger
-      @event_log = Config.event_log
       @blobstore = App.instance.blobstores.blobstore
     end
 
@@ -15,11 +14,11 @@ module Bosh::Director
     # @param [Array<Models::Instance>] instances list of instances to delete
     # @param [Hash] options optional list of options controlling concurrency
     # @return [void]
-    def delete_instances(instances, options = {})
+    def delete_instances(instances, event_log_stage, options = {})
       max_threads = options[:max_threads] || Config.max_threads
       ThreadPool.new(:max_threads => max_threads).wrap do |pool|
         instances.each do |instance|
-          pool.process { delete_instance(instance) }
+          pool.process { delete_instance(instance, event_log_stage) }
         end
       end
     end
@@ -27,11 +26,11 @@ module Bosh::Director
     # Deletes a single instance and attached persistent disks
     # @param [Models::Instance] instance instance to delete
     # @return [void]
-    def delete_instance(instance)
+    def delete_instance(instance, event_log_stage)
       vm = instance.vm
-      @event_log.track(vm.cid) do
-        @logger.info("Delete unneeded instance: #{vm.cid}")
+      @logger.info("Delete unneeded instance: #{vm.cid}")
 
+      event_log_stage.advance_and_track(vm.cid) do
         drain(vm.agent_id)
         @cloud.delete_vm(vm.cid)
         delete_snapshots(instance)
@@ -105,6 +104,5 @@ module Bosh::Director
         delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
       end
     end
-
   end
 end
