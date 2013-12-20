@@ -23,106 +23,123 @@ module Bosh::Director
     # update |--------        | (2/4) 50%
 
     class Log
-      attr_reader :stage
-      attr_reader :total
-      attr_reader :counter
-
       def initialize(io = nil)
         @logger = CustomLogger.new(io || StringIO.new)
-        @lock = Mutex.new
-        @counter = 0
+        @last_stage = Stage.new(self, 'unknown', [], 0)
+        @last_stage_lock = Mutex.new
       end
 
-      def begin_stage(stage, total = nil, tags = [])
-        @lock.synchronize do
-          @stage = stage
-          @tags = tags
-          @counter = 0
-          @total = total
-        end
+      def begin_stage(stage_name, total = nil, tags = [])
+        stage = Stage.new(self, stage_name, tags, total)
+        @last_stage_lock.synchronize { @last_stage = stage }
       end
 
       def track(task_name = nil, &blk)
-        index = nil
-        @lock.synchronize do
-          @counter += 1
-          index = @counter
-        end
-
-        task = Task.new(self, task_name, index)
-
-        start_task(task_name, index)
+        task = @last_stage_lock.synchronize { @last_stage.advance(task_name) }
+        task.start
         begin
           blk.call(task) if blk
         rescue => e
-          task_failed(task_name, index, 100, e.to_s)
+          task.failed(e.to_s)
           raise
         end
-        finish_task(task_name, index)
+        task.finish
       end
 
       # Adds an error entry to the event log.
       # @param [DirectorError] error Director error
       # @return [void]
       def log_error(error)
-        entry = {
+        @logger.info(Yajl::Encoder.encode(
           :time => Time.now.to_i,
           :error => {
             :code => error.error_code,
-            :message => error.message
-          }
-        }
+            :message => error.message,
+          },
+        ))
+      end
 
+      def log_entry(entry)
         @logger.info(Yajl::Encoder.encode(entry))
       end
+    end
 
-      def start_task(task_name, index, progress = 0)
-        log_task(task_name, "started", index, progress)
+    class Stage
+      def initialize(event_log, name, tags, total)
+        @event_log = event_log
+        @name = name
+        @tags = tags
+        @index = 0
+        @total = total
+        @index_lock = Mutex.new
       end
 
-      def finish_task(task_name, index, progress = 100)
-        log_task(task_name, "finished", index, progress)
+      def advance(task_name)
+        @index_lock.synchronize do
+          @index += 1
+          Task.new(self, task_name, @index)
+        end
       end
 
-      def task_failed(task_name, index, progress = 100, error = nil)
-        log_task(task_name, "failed", index, progress, {"error" => error})
-      end
-
-      def log_task(task_name, state, index, progress = 0, data = {})
-        entry = {
+      def log_entry(entry)
+        @event_log.log_entry({
           :time => Time.now.to_i,
-          :stage => @stage,
-          :task => task_name,
+          :stage => @name,
           :tags => @tags,
-          :index => index,
           :total => @total,
-          :state => state,
-          :progress => progress,
+        }.merge(entry))
+      end
+    end
+
+    class Task
+      def initialize(stage, name, index)
+        @stage = stage
+        @name = name
+        @index = index
+        @state = 'in_progress'
+        @progress = 0
+      end
+
+      def advance(delta, data = {})
+        @state = 'in_progress'
+        @progress = [@progress + delta, 100].min
+        log_entry(data)
+      end
+
+      def start
+        @state = 'started'
+        log_entry
+      end
+
+      def finish
+        @state = 'finished'
+        @progress = 100
+        log_entry
+      end
+
+      def failed(error_msg = nil)
+        @state = 'failed'
+        @progress = 100
+        log_entry("error" => error_msg)
+      end
+
+      private
+
+      def log_entry(data = {})
+        task_entry = {
+          :task => @name,
+          :index => @index,
+          :state => @state,
+          :progress => @progress.to_i,
         }
-
-        entry[:data] = data if data.size > 0
-
-        @logger.info(Yajl::Encoder.encode(entry))
+        task_entry[:data] = data if data.size > 0
+        @stage.log_entry(task_entry)
       end
     end
 
     class CustomLogger < ::Logger
       def format_message(level, time, progname, msg)
         msg + "\n"
-      end
-    end
-
-    class Task
-      def initialize(event_log, name, index)
-        @event_log = event_log
-        @name = name
-        @index = index
-        @progress = 0
-      end
-
-      def advance(delta, data = {})
-        @progress = [@progress + delta, 100].min
-        @event_log.log_task(@name, "in_progress", @index, @progress.to_i, data)
       end
     end
   end
