@@ -20,8 +20,17 @@ module Bosh::Director
         logger.info("Enqueuing task: #{task.id}")
 
         # remove old tasks
-        min_task_id = task.id - Config.max_tasks
-        task_files = Dir.glob(File.join(Config.base_dir, "tasks/*"))
+        remove_old_tasks(logger, task, Config.max_tasks, Config.base_dir)
+
+        task.output = log_dir
+        task.save
+        task
+      end
+
+      private
+      def remove_old_tasks(logger, task, max_tasks, base_dir)
+        min_task_id = task.id - max_tasks
+        task_files = Dir.glob(File.join(base_dir, "tasks/*"))
         task_files.each do |file_path|
           begin
             task_file = File.basename(file_path)
@@ -36,10 +45,6 @@ module Bosh::Director
             # skip over invalid task files
           end
         end
-
-        task.output = log_dir
-        task.save
-        task
       end
     end
   end
