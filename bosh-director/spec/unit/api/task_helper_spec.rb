@@ -4,6 +4,8 @@ module Bosh::Director
   describe Api::TaskHelper do
     describe '#create_task' do
       let(:tmpdir) { Dir.mktmpdir }
+      after { FileUtils.rm_rf tmpdir }
+
       let(:user) { Models::User.make }
       let(:type) { 'type' }
       let(:description) { 'description' }
@@ -15,9 +17,6 @@ module Bosh::Director
         Config.max_tasks = 2
       end
 
-      after do
-        FileUtils.rm_rf tmpdir
-      end
 
       it 'should create the task output file' do
         task = described_class.new.create_task(user.username, type, description)
@@ -25,8 +24,11 @@ module Bosh::Director
       end
 
       it 'should create a new task model' do
-        described_class.new.create_task(user.username, type, description)
-        Models::Task.count.should == 1
+        expect {
+          described_class.new.create_task(user.username, type, description)
+        }.to change {
+          Models::Task.count
+        }.from(0).to(1)
       end
 
       it 'should clean up old tasks' do
