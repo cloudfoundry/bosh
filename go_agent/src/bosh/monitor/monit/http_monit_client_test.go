@@ -141,4 +141,5 @@ func TestDecodeStatus(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(status.Services.Services))
 	assert.Equal(t, 1, status.Services.Services[0].Monitor)
+	assert.Equal(t, "dummy", status.Services.Services[0].Name)
 }
