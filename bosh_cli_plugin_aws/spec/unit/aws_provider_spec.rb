@@ -13,6 +13,12 @@ module Bosh::Aws
 
     describe '#ec2' do
       let(:ec2) { instance_double('AWS::EC2') }
+      let(:credentials) do
+        {
+          'region' => 'FAKE_AWS_REGION',
+          'ec2_endpoint' => 'ec2.FAKE_AWS_REGION.amazonaws.com'
+        }
+      end
 
       it 'returns a correctly configured AWS::EC2 object' do
         AWS::EC2.should_receive(:new).with(credentials).and_return(ec2)
