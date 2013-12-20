@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   class ResourcePoolUpdater
-
     def initialize(resource_pool)
       @resource_pool = resource_pool
       @cloud = Config.cloud

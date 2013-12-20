@@ -35,15 +35,8 @@ module Bosh::Director
       end
 
       def track(task_name = nil, &blk)
-        task = @last_stage_lock.synchronize { @last_stage.advance(task_name) }
-        task.start
-        begin
-          blk.call(task) if blk
-        rescue => e
-          task.failed(e.to_s)
-          raise
-        end
-        task.finish
+        last_stage = @last_stage_lock.synchronize { @last_stage }
+        last_stage.advance_and_track(task_name, &blk)
       end
 
       # Adds an error entry to the event log.
@@ -74,11 +67,20 @@ module Bosh::Director
         @index_lock = Mutex.new
       end
 
-      def advance(task_name)
-        @index_lock.synchronize do
+      def advance_and_track(task_name, &blk)
+        task = @index_lock.synchronize do
           @index += 1
           Task.new(self, task_name, @index)
         end
+
+        task.start
+        begin
+          blk.call(task) if blk
+        rescue => e
+          task.failed(e.to_s)
+          raise
+        end
+        task.finish
       end
 
       def log_entry(entry)
