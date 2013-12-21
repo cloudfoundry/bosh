@@ -23,8 +23,12 @@ func TestCompressFilesInDir(t *testing.T) {
 	dstDir := createdTmpDir(t, fs)
 	defer os.RemoveAll(dstDir)
 
-	_, _, err = cmdRunner.RunCommand("tar", "xzf", tgzName, "-C", dstDir)
+	_, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
 	assert.NoError(t, err)
+
+	tarDirStat, err := os.Stat(dstDir)
+	assert.NoError(t, err)
+	assert.Equal(t, os.FileMode(0755), tarDirStat.Mode().Perm())
 
 	// regular files
 	content, err := fs.ReadFile(dstDir + "/app.stdout.log")

@@ -86,7 +86,7 @@ func TestCompileRecreatesDependencyInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	err := fs.MkdirAll("/var/vcap/data/packages/first_dep/first_dep_version", os.FileMode(0700))
+	err := fs.MkdirAll("/var/vcap/data/packages/first_dep/first_dep_version", os.FileMode(0755))
 	assert.NoError(t, err)
 
 	_, err = fs.WriteToFile("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted", "test")
@@ -140,7 +140,7 @@ func TestCompileRecreatesInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	err := fs.MkdirAll("/var/vcap/data/packages/pkg_name/pkg_version", os.FileMode(0700))
+	err := fs.MkdirAll("/var/vcap/data/packages/pkg_name/pkg_version", os.FileMode(0755))
 	assert.NoError(t, err)
 
 	_, err = fs.WriteToFile("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted", "test")

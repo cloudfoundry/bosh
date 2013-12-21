@@ -63,6 +63,12 @@ func (c tarballCompressor) CompressFilesInDir(dir string, filters []string) (tar
 		return
 	}
 
+	err = c.fs.Chmod(tgzDir, os.FileMode(0755))
+	if err != nil {
+		err = bosherr.WrapError(err, "Fixing permissions on tarball base dir")
+		return
+	}
+
 	tarballPath = tarball.Name()
 
 	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", tgzDir, ".")
