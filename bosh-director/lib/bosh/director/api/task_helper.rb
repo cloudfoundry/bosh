@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh/director/api/task_remover'
 
 module Bosh::Director
   module Api
@@ -20,31 +21,11 @@ module Bosh::Director
         logger.info("Enqueuing task: #{task.id}")
 
         # remove old tasks
-        remove_old_tasks(logger, task, Config.max_tasks, Config.base_dir)
+        TaskRemover.new(Config.max_tasks, logger).remove
 
         task.output = log_dir
         task.save
         task
-      end
-
-      private
-      def remove_old_tasks(logger, task, max_tasks, base_dir)
-        min_task_id = task.id - max_tasks
-        task_files = Dir.glob(File.join(base_dir, "tasks/*"))
-        task_files.each do |file_path|
-          begin
-            task_file = File.basename(file_path)
-            task_id = Integer(task_file)
-
-            if task_id <= min_task_id && task_id >= 0
-              logger.info("Delete #{task_file}")
-              FileUtils.rm_rf file_path
-              Models::Task[task_id].destroy
-            end
-          rescue
-            # skip over invalid task files
-          end
-        end
       end
     end
   end
