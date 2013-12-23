@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Api
     class InstanceManager
@@ -44,7 +42,7 @@ module Bosh::Director
       def fetch_logs(user, deployment_name, job, index, options = {})
         if deployment_name.nil? || job.nil? || index.nil?
           raise DirectorError,
-                "deployment, job and index parameters are required"
+                'deployment, job and index parameters are required'
         end
 
         instance = find_by_name(deployment_name, job, index)
