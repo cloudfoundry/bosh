@@ -61,6 +61,11 @@ group :development, :test do
   gem 'simplecov-rcov'
   gem 'vcr'
 
+  # Explicitly do not require serverspec dependency
+  # so that it could be monkey patched in a deterministic way
+  # in `bosh-stemcell/spec/support/serverspec.rb`
+  gem 'specinfra', require: nil
+
   # for director
   gem 'machinist', '~>1.0'
 

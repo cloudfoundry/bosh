@@ -468,6 +468,7 @@ DEPENDENCIES
   simple_blobstore_server!
   simplecov
   simplecov-rcov
+  specinfra
   sqlite3
   timecop
   vcr

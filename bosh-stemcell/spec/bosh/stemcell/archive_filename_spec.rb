@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
 require 'bosh/stemcell/operating_system'

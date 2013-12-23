@@ -1,10 +1,14 @@
 # rubocop:disable all
 # => disabling rubocop to preserve original style
 require 'serverspec'
+require 'serverspec/helper/backend'
 require 'pathname'
 
-raise "Unexpected Serverspec version #{Serverspec::VERSION}" unless Serverspec::VERSION == '0.7.10'
-module Serverspec::Backend
+unless Serverspec::VERSION == '0.13.7'
+  raise "Unexpected Serverspec version #{Serverspec::VERSION}"
+end
+
+module SpecInfra::Backend
   class Exec
     # ORIGINAL
     #def run_command(cmd, opts={})

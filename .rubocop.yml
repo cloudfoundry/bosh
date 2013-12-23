@@ -58,3 +58,5 @@ AvoidPerlisms:
 AlignParameters:
   Enabled: false
 
+IfUnlessModifier:
+  Enabled: false # It's nice to be able to use an if on its line
