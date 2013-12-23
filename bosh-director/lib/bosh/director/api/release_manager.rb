@@ -1,11 +1,9 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Api
     class ReleaseManager
       include ApiHelper
 
-      RELEASE_TGZ = "release.tgz"
+      RELEASE_TGZ = 'release.tgz'
 
       # Finds release by name
       # @param [String] name Release name
@@ -35,16 +33,16 @@ module Bosh::Director
       end
 
       def create_release(user, release_bundle, options = {})
-        release_dir = Dir.mktmpdir("release")
+        release_dir = Dir.mktmpdir('release')
 
         if options['remote']
           options['location'] = release_bundle
         else
           unless check_available_disk_space(release_dir, release_bundle.size)
-            raise NotEnoughDiskSpace, "Uploading release archive failed. " +
+            raise NotEnoughDiskSpace, 'Uploading release archive failed. ' +
               "Insufficient space on BOSH director in #{release_dir}"
           end
-  
+
           write_file(File.join(release_dir, RELEASE_TGZ), release_bundle)
         end
 

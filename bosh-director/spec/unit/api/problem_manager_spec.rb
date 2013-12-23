@@ -1,77 +1,65 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
-describe Bosh::Director::Api::ProblemManager do
-  let(:task) { double('Task', id: 42) }
-  let(:deployment) { double('Deployment', name: 'mycloud') }
-  let(:deployment_manager) { double('Deployment subject', find_by_name: deployment) }
-  subject { described_class.new(deployment_manager) }
+module Bosh::Director
+  describe Api::ProblemManager do
+    let(:task) { double('Task') }
+    let(:deployment) { double('Deployment', name: 'mycloud') }
+    let(:deployment_manager) { double('Deployment subject', find_by_name: deployment) }
+    let(:username) { 'username-1' }
+    let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
-  before do
-    BD::JobQueue.any_instance.stub(create_task: task)
-  end
+    subject { described_class.new(deployment_manager) }
 
-  describe '#perform_scan' do
-    it 'returns a task' do
-      Resque.stub(:enqueue)
-
-      expect(subject.perform_scan('admin', deployment.name)).to eq(task)
+    before do
+      JobQueue.stub(:new).and_return(job_queue)
     end
 
-    it 'enqueues a task' do
-      Resque.should_receive(:enqueue).with(BD::Jobs::CloudCheck::Scan, task.id, deployment.name)
-
-      subject.perform_scan('admin', deployment.name)
-    end
-  end
-
-  describe '#apply_resolutions' do
-    it 'returns a task' do
-      Resque.stub(:enqueue)
-
-      expect(subject.apply_resolutions('admin', deployment.name, 'FAKE RESOLUTIONS')).to eq(task)
-    end
-
-    it 'enqueues a task' do
-      Resque.should_receive(:enqueue).with(BD::Jobs::CloudCheck::ApplyResolutions, task.id, deployment.name, 'FAKE RESOLUTIONS')
-
-      subject.apply_resolutions('admin', deployment.name, 'FAKE RESOLUTIONS')
-    end
-  end
-
-  describe '#scan_and_fix' do
-    context 'when fixing stateful nodes' do
-      before :each do
-        Bosh::Director::Config.fix_stateful_nodes = true
+    describe '#perform_scan' do
+      it 'enqueues a task' do
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name]).and_return(task)
+        expect(subject.perform_scan(username, deployment.name)).to eq(task)
       end
+    end
 
-      it 'returns a task' do
-        Resque.stub(:enqueue)
-
-        expect(subject.scan_and_fix('admin', deployment.name, [])).to eq task
-      end
+    describe '#apply_resolutions' do
+      let(:resolutions) { double('Resolutions') }
 
       it 'enqueues a task' do
-        Resque.should_receive(:enqueue).with(BD::Jobs::CloudCheck::ScanAndFix, task.id, deployment.name, [], true)
-        subject.scan_and_fix('admin', deployment.name, [])
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions',
+          [deployment.name, resolutions]).and_return(task)
+        expect(subject.apply_resolutions(username, deployment.name, resolutions)).to eq(task)
       end
     end
 
-    context 'when not fixing stateful nodes' do
-      before :each do
-        Bosh::Director::Config.fix_stateful_nodes = false
+    describe '#scan_and_fix' do
+      let(:jobs) { double('Jobs') }
+
+      context 'when fixing stateful nodes' do
+        before do
+          Bosh::Director::Config.fix_stateful_nodes = true
+        end
+
+        it 'enqueues a task' do
+          job_queue.should_receive(:enqueue).with(
+            username, Jobs::CloudCheck::ScanAndFix, 'scan and fix',
+            [deployment.name, jobs, true]).and_return(task)
+          expect(subject.scan_and_fix(username, deployment.name, jobs)).to eq(task)
+        end
       end
 
-      it 'returns a task' do
-        Resque.stub(:enqueue)
+      context 'when not fixing stateful nodes' do
+        before do
+          Bosh::Director::Config.fix_stateful_nodes = false
+        end
 
-        expect(subject.scan_and_fix('admin', deployment.name, [])).to eq task
-      end
-
-      it 'enqueues a task' do
-        Resque.should_receive(:enqueue).with(BD::Jobs::CloudCheck::ScanAndFix, task.id, deployment.name, [], false)
-        subject.scan_and_fix('admin', deployment.name, [])
+        it 'enqueues a task' do
+          job_queue.should_receive(:enqueue).with(
+            username, Jobs::CloudCheck::ScanAndFix, 'scan and fix',
+            [deployment.name, jobs, false]).and_return(task)
+          expect(subject.scan_and_fix(username, deployment.name, jobs)).to eq(task)
+        end
       end
     end
   end
