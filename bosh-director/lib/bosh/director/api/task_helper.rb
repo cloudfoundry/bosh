@@ -4,8 +4,8 @@ require 'bosh/director/api/task_remover'
 module Bosh::Director
   module Api
     class TaskHelper
-      def create_task(user, type, description)
-        user = Models::User[:username => user]
+      def create_task(username, type, description)
+        user = Models::User[:username => username]
         task = Models::Task.create(:user => user,
                                    :type => type,
                                    :description => description,
