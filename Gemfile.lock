@@ -276,7 +276,7 @@ GEM
       multi_json (~> 1.3)
     gibberish (1.2.2)
     git-duet (0.1.3)
-    highline (1.6.19)
+    highline (1.6.20)
     httpclient (2.2.4)
     jenkins_api_client (0.12.1)
       json
@@ -304,7 +304,7 @@ GEM
       thin (>= 1.4.1)
     net-scp (1.1.2)
       net-ssh (>= 2.6.5)
-    net-ssh (2.6.8)
+    net-ssh (2.7.0)
     net-ssh-gateway (1.1.2)
       net-ssh (>= 2.6.5)
     netaddr (1.5.0)
@@ -342,6 +342,7 @@ GEM
       rspec-expectations (= 3.0.0.beta1)
       rspec-mocks (= 3.0.0.beta1)
     rspec-core (3.0.0.beta1)
+      rspec-support (= 3.0.0.beta1)
     rspec-expectations (3.0.0.beta1)
       diff-lcs (>= 1.1.3, < 2.0)
       rspec-support (= 3.0.0.beta1)
@@ -350,6 +351,7 @@ GEM
     rspec-instafail (0.2.4)
     rspec-its (1.0.0.pre)
     rspec-mocks (3.0.0.beta1)
+      rspec-support (= 3.0.0.beta1)
     rspec-support (3.0.0.beta1)
     rubocop (0.10.0)
       backports (~> 3.3.3)
@@ -370,10 +372,11 @@ GEM
       tzinfo (>= 0.3.23)
     rugged (0.16.0)
     sequel (3.43.0)
-    serverspec (0.7.10)
+    serverspec (0.13.7)
       highline
       net-ssh
       rspec (>= 2.13.0)
+      specinfra (>= 0.0.14)
     sigar (0.7.2)
     simplecov (0.7.1)
       multi_json (~> 1.0)
@@ -386,6 +389,7 @@ GEM
       rack-protection (~> 1.4)
       tilt (~> 1.3, >= 1.3.4)
     slop (3.4.5)
+    specinfra (0.0.17)
     sqlite3 (1.3.7)
     sys-filesystem (1.1.0)
       ffi
@@ -453,7 +457,7 @@ DEPENDENCIES
   rake (~> 10.0)
   redis
   rest-client
-  rspec
+  rspec (= 3.0.0.beta1)
   rspec-fire
   rspec-instafail
   rspec-its
