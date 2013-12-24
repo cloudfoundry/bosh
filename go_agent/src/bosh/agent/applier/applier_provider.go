@@ -7,25 +7,28 @@ import (
 	boshblob "bosh/blobstore"
 	boshmon "bosh/monitor"
 	boshplatform "bosh/platform"
-	boshsettings "bosh/settings"
+	"path/filepath"
 )
 
 type ApplierProvider struct {
 	platform  boshplatform.Platform
 	blobstore boshblob.Blobstore
 	monitor   boshmon.Monitor
+	baseDir   string
 }
 
-func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore, monitor boshmon.Monitor) (p ApplierProvider) {
+func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore, monitor boshmon.Monitor, baseDir string) (p ApplierProvider) {
 	p.platform = platform
 	p.blobstore = blobstore
 	p.monitor = monitor
+	p.baseDir = baseDir
 	return
 }
 
 func (p ApplierProvider) Get() (applier Applier) {
-	jobsBc := bc.NewFileBundleCollection(
-		"jobs", boshsettings.VCAP_BASE_DIR, p.platform.GetFs())
+	installPath := filepath.Join(p.baseDir, "data")
+
+	jobsBc := bc.NewFileBundleCollection(installPath, p.baseDir, "jobs", p.platform.GetFs())
 
 	jobApplier := ja.NewRenderedJobApplier(
 		jobsBc,
@@ -34,8 +37,7 @@ func (p ApplierProvider) Get() (applier Applier) {
 		p.monitor,
 	)
 
-	packagesBc := bc.NewFileBundleCollection(
-		"packages", boshsettings.VCAP_BASE_DIR, p.platform.GetFs())
+	packagesBc := bc.NewFileBundleCollection(installPath, p.baseDir, "packages", p.platform.GetFs())
 
 	packageApplier := pa.NewConcretePackageApplier(
 		packagesBc,

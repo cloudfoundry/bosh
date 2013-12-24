@@ -17,13 +17,13 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 	monitor := fakemon.NewFakeMonitor()
 
 	expectedPackageApplier := pa.NewConcretePackageApplier(
-		bc.NewFileBundleCollection("packages", "/var/vcap", platform.GetFs()),
+		bc.NewFileBundleCollection("/var/vcap/data", "/var/vcap", "packages", platform.GetFs()),
 		blobstore,
 		platform.GetCompressor(),
 	)
 
 	expectedJobApplier := ja.NewRenderedJobApplier(
-		bc.NewFileBundleCollection("jobs", "/var/vcap", platform.GetFs()),
+		bc.NewFileBundleCollection("/var/vcap/data", "/var/vcap", "jobs", platform.GetFs()),
 		blobstore,
 		platform.GetCompressor(),
 		monitor,
@@ -36,7 +36,7 @@ func TestHandlerProviderGetReturnsConcreteProvider(t *testing.T) {
 		monitor,
 	)
 
-	provider := NewApplierProvider(platform, blobstore, monitor)
+	provider := NewApplierProvider(platform, blobstore, monitor, "/var/vcap")
 	applier := provider.Get()
 	assert.Equal(t, expectedApplier, applier)
 }
