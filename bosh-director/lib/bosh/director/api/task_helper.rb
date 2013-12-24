@@ -16,7 +16,7 @@ module Bosh::Director
         task_status_file = File.join(log_dir, "debug")
         FileUtils.mkdir_p(log_dir)
         logger = Logger.new(task_status_file)
-        logger.level= Config.logger.level
+        logger.level = Config.logger.level
         logger.info("Director Version : #{Bosh::Director::VERSION}")
         logger.info("Enqueuing task: #{task.id}")
 
