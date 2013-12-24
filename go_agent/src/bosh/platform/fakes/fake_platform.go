@@ -28,8 +28,7 @@ type FakePlatform struct {
 	UserPasswords                     map[string]string
 	SetupHostnameHostname             string
 
-	SetTimeWithNtpServersServers         []string
-	SetTimeWithNtpServersServersFilePath string
+	SetTimeWithNtpServersServers []string
 
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathMountPoint string
@@ -128,9 +127,8 @@ func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err err
 	return
 }
 
-func (p *FakePlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
+func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	p.SetTimeWithNtpServersServers = servers
-	p.SetTimeWithNtpServersServersFilePath = serversFilePath
 	return
 }
 

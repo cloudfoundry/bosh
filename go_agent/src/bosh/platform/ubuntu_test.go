@@ -252,7 +252,7 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 
-	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, "/var/vcap/bosh/etc/ntpserver")
+	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
 	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
 	assert.Equal(t, []string{"ntpdate", "0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, fakeCmdRunner.RunCommands[0])
 
@@ -265,10 +265,10 @@ func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) 
 	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
 	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 
-	ubuntu.SetTimeWithNtpServers([]string{}, "/foo/bar")
+	ubuntu.SetTimeWithNtpServers([]string{})
 	assert.Equal(t, 0, len(fakeCmdRunner.RunCommands))
 
-	ntpConfig := fakeFs.GetFileTestStat("/foo/bar")
+	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
 	assert.Nil(t, ntpConfig)
 }
 

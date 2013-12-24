@@ -207,7 +207,6 @@ func TestRunSetsTime(t *testing.T) {
 	assert.Equal(t, 2, len(fakePlatform.SetTimeWithNtpServersServers))
 	assert.Equal(t, "0.north-america.pool.ntp.org", fakePlatform.SetTimeWithNtpServersServers[0])
 	assert.Equal(t, "1.north-america.pool.ntp.org", fakePlatform.SetTimeWithNtpServersServers[1])
-	assert.Equal(t, boshsettings.VCAP_BASE_DIR+"/bosh/etc/ntpserver", fakePlatform.SetTimeWithNtpServersServersFilePath)
 }
 
 func TestRunSetupsUpMonitUser(t *testing.T) {

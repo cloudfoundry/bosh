@@ -62,7 +62,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.platform.SetTimeWithNtpServers(settings.Ntp, filepath.Join(boshsettings.VCAP_BASE_DIR, "/bosh/etc/ntpserver"))
+	err = boot.platform.SetTimeWithNtpServers(settings.Ntp)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up NTP servers")
 		return
