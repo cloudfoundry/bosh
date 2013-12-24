@@ -13,6 +13,7 @@ type V1ApplySpec struct {
 	ResourcePoolSpecs interface{}            `json:"resource_pool"`
 	Deployment        string                 `json:"deployment"`
 	Index             int                    `json:"index"`
+	PersistentDisk    int                    `json:"persistent_disk"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }
