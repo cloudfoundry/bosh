@@ -3,3 +3,7 @@
 
 require 'rspec'
 require 'agent_client'
+
+RSpec.configure do |c|
+  c.raise_errors_for_deprecations!
+end
