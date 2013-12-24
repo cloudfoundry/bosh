@@ -3,8 +3,6 @@ package action
 import (
 	boshtask "bosh/agent/task"
 	bosherr "bosh/errors"
-	"encoding/json"
-	"errors"
 )
 
 type getTaskAction struct {
@@ -37,24 +35,5 @@ func (a getTaskAction) Run(taskId string) (value interface{}, err error) {
 
 	value = task.Value
 	err = task.Error
-	return
-}
-
-func parseTaskId(payloadBytes []byte) (taskId string, err error) {
-	var payload struct {
-		Arguments []string
-	}
-	err = json.Unmarshal(payloadBytes, &payload)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling payload")
-		return
-	}
-
-	if len(payload.Arguments) == 0 {
-		err = errors.New("Not enough arguments")
-		return
-	}
-
-	taskId = payload.Arguments[0]
 	return
 }
