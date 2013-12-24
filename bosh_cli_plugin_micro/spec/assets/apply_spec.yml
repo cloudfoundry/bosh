@@ -39,6 +39,8 @@ properties:
     address: 127.0.0.1
     name: micro
     port: 25555
+  dns:
+    address: 127.0.0.1
   hm:
     http:
       port: 25923

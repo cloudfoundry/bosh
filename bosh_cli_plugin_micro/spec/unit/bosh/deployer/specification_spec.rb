@@ -24,6 +24,11 @@ describe Bosh::Deployer::Specification do
     expect(spec.properties['agent']['blobstore']['address']).to eq '1.1.1.1'
   end
 
+  it 'should update dns address' do
+    spec.update('1.1.1.1', '2.2.2.2')
+    expect(spec.properties['dns']['address']).to eq '1.1.1.1'
+  end
+
   describe 'agent override' do
     let(:agent_properties) { { 'blobstore' => { 'address' => '3.3.3.3' } } }
     let(:spec_properties) { { 'ntp' => %w[1.2.3.4] } }
