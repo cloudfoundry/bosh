@@ -106,14 +106,14 @@ module IntegrationExampleGroup
         end
       end
 
-      unless example.example.metadata[:no_reset]
-        desc = example ? example.example.metadata[:description] : ''
+      unless example.metadata[:no_reset]
+        desc = example ? example.metadata[:description] : ''
         current_sandbox.reset(desc)
       end
     end
 
     base.after do |example|
-      desc = example ? example.example.metadata[:description] : ""
+      desc = example ? example.metadata[:description] : ""
       current_sandbox.save_task_logs(desc)
       FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
     end
