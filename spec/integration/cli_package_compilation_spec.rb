@@ -27,9 +27,10 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
       run_bosh("upload release #{release_filename}")
       run_bosh('deploy')
       dir_glob = Dir.glob(File.join(simple_blob_store_path, '**/*'))
-      dir_glob.detect do |cache_item|
+      cached_items = dir_glob.detect do |cache_item|
         cache_item =~ /foo-/
-      end.should_not be_nil
+      end
+      expect(cached_items).to_not be(nil)
 
       # delete release so that the compiled packages are removed from the local blobstore
       run_bosh('delete deployment simple')
@@ -40,8 +41,8 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
       run_bosh('deploy')
 
       event_log = run_bosh('task last --event --raw')
-      event_log.should match /Downloading '.+' from global cache/
-      event_log.should_not match /Compiling packages/
+      expect(event_log).to match(/Downloading '.+' from global cache/)
+      expect(event_log).to_not match(/Compiling packages/)
     end
 
     it 'compiles explicit requirements and dependencies recursively, but only applies explicit requirements to jobs' do
@@ -67,37 +68,37 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
       goo_package_compile_regex = %r{compile_package.goo/0.1-dev.*(..method...compile_package.*)$}
       goo_package_compile_json = goo_package_compile_regex.match(deploy_results)[1]
       goo_package_compile = JSON.parse(goo_package_compile_json)
-      goo_package_compile['arguments'][2..3].should == ['goo', '0.1-dev.1']
-      goo_package_compile['arguments'][4].should have_key('boo')
+      expect(goo_package_compile['arguments'][2..3]).to eq(['goo', '0.1-dev.1'])
+      expect(goo_package_compile['arguments'][4]).to have_key('boo')
 
       baz_package_compile_regex = %r{compile_package.baz/0.1-dev.*(..method...compile_package.*)$}
       baz_package_compile_json = baz_package_compile_regex.match(deploy_results)[1]
       baz_package_compile = JSON.parse(baz_package_compile_json)
-      baz_package_compile['arguments'][2..3].should == ['baz', '0.1-dev.1']
-      baz_package_compile['arguments'][4].should have_key('goo')
-      baz_package_compile['arguments'][4].should have_key('boo')
+      expect(baz_package_compile['arguments'][2..3]).to eq(['baz', '0.1-dev.1'])
+      expect(baz_package_compile['arguments'][4]).to have_key('goo')
+      expect(baz_package_compile['arguments'][4]).to have_key('boo')
 
       foo_package_compile_regex = %r{compile_package.foo/0.1-dev.*(..method...compile_package.*)$}
       foo_package_compile_json = foo_package_compile_regex.match(deploy_results)[1]
       foo_package_compile = JSON.parse(foo_package_compile_json)
-      foo_package_compile['arguments'][2..4].should == ['foo', '0.1-dev.1', {}]
+      expect(foo_package_compile['arguments'][2..4]).to eq(['foo', '0.1-dev.1', {}])
 
       bar_package_compile_regex = %r{compile_package.bar/0.1-dev.*(..method...compile_package.*)$}
       bar_package_compile_json = bar_package_compile_regex.match(deploy_results)[1]
       bar_package_compile = JSON.parse(bar_package_compile_json)
-      bar_package_compile['arguments'][2..3].should == ['bar', '0.1-dev.1']
-      bar_package_compile['arguments'][4].should have_key('foo')
+      expect(bar_package_compile['arguments'][2..3]).to eq(['bar', '0.1-dev.1'])
+      expect(bar_package_compile['arguments'][4]).to have_key('foo')
 
       apply_spec_regex = %r{canary_update.foobar/0.*apply_spec_json.{5}(.+).{2}WHERE}
       apply_spec_json = apply_spec_regex.match(deploy_results)[1]
       apply_spec = JSON.parse(apply_spec_json)
       packages = apply_spec['packages']
       packages.each do |key, value|
-        value['name'].should == key
-        value['version'].should == '0.1-dev.1'
-        value.keys.should =~ ['name', 'version', 'sha1', 'blobstore_id']
+        expect(value['name']).to eq(key)
+        expect(value['version']).to eq('0.1-dev.1')
+        expect(value.keys).to match_array(%w(name version sha1 blobstore_id))
       end
-      packages.keys.should =~ ['foo', 'bar', 'baz']
+      expect(packages.keys).to match_array(%w(foo bar baz))
     end
   end
 end

@@ -63,9 +63,9 @@ describe 'deployment integrations' do
 
       drain_output = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"].detect {|f| File.basename(f) == 'drain-test.log' }
       drain_times = File.read(drain_output).split.map { |time| time.to_i }
-      drain_times.size.should == 3
-      (drain_times[1] - drain_times[0]).should be >= 3
-      (drain_times[2] - drain_times[1]).should be >= 2
+      expect(drain_times.size).to eq(3)
+      expect(drain_times[1] - drain_times[0]).to be >= 3
+      expect(drain_times[2] - drain_times[1]).to be >= 2
     end
   end
 
@@ -132,7 +132,7 @@ describe 'deployment integrations' do
 
   def get_task_id(output, state = 'done')
     match = output.match(/Task (\d+) #{state}/)
-    match.should_not be_nil
+    expect(match).to_not be(nil)
     match[1]
   end
 end
