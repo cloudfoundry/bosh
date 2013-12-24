@@ -6,13 +6,12 @@ shared_examples_for 'a stemcell' do
     end
   end
 
-  # currently `should contain` on a file does not properly escape $PATH
   context 'installed by bosh_users' do
-    describe command("grep -q 'export PATH=/var/vcap/bosh/bin:\\$PATH\n' /root/.bashrc") do
+    describe command("grep -q 'export PATH=/var/vcap/bosh/bin:$PATH\n' /root/.bashrc") do
       it { should return_exit_status(0) }
     end
 
-    describe command("grep -q 'export PATH=/var/vcap/bosh/bin:\\$PATH\n' /home/vcap/.bashrc") do
+    describe command("grep -q 'export PATH=/var/vcap/bosh/bin:$PATH\n' /home/vcap/.bashrc") do
       it { should return_exit_status(0) }
     end
   end

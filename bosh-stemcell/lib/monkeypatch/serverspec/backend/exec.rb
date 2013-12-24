@@ -80,9 +80,11 @@ module SpecInfra::Backend
     end
 
     def chroot_cmd(cmd)
+      #quoting command so $ will not be interpreted by shell
+      quoted_cmd = cmd.gsub('$', '\$')
       %Q{
 sudo chroot #{chroot_dir} /bin/bash <<CHROOT_CMD
-  #{cmd} 2>&1; echo #{exit_code_token}\\$?
+  #{quoted_cmd} 2>&1; echo #{exit_code_token}\\$?
 CHROOT_CMD
 }
     end
