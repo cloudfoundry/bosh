@@ -7,28 +7,29 @@ import (
 	boshblob "bosh/blobstore"
 	boshmon "bosh/monitor"
 	boshplatform "bosh/platform"
+	boshdirs "bosh/settings/directories"
 	"path/filepath"
 )
 
 type ApplierProvider struct {
-	platform  boshplatform.Platform
-	blobstore boshblob.Blobstore
-	monitor   boshmon.Monitor
-	baseDir   string
+	platform    boshplatform.Platform
+	blobstore   boshblob.Blobstore
+	monitor     boshmon.Monitor
+	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore, monitor boshmon.Monitor, baseDir string) (p ApplierProvider) {
+func NewApplierProvider(platform boshplatform.Platform, blobstore boshblob.Blobstore, monitor boshmon.Monitor, dirProvider boshdirs.DirectoriesProvider) (p ApplierProvider) {
 	p.platform = platform
 	p.blobstore = blobstore
 	p.monitor = monitor
-	p.baseDir = baseDir
+	p.dirProvider = dirProvider
 	return
 }
 
 func (p ApplierProvider) Get() (applier Applier) {
-	installPath := filepath.Join(p.baseDir, "data")
+	installPath := filepath.Join(p.dirProvider.BaseDir(), "data")
 
-	jobsBc := bc.NewFileBundleCollection(installPath, p.baseDir, "jobs", p.platform.GetFs())
+	jobsBc := bc.NewFileBundleCollection(installPath, p.dirProvider.BaseDir(), "jobs", p.platform.GetFs())
 
 	jobApplier := ja.NewRenderedJobApplier(
 		jobsBc,
@@ -37,7 +38,7 @@ func (p ApplierProvider) Get() (applier Applier) {
 		p.monitor,
 	)
 
-	packagesBc := bc.NewFileBundleCollection(installPath, p.baseDir, "packages", p.platform.GetFs())
+	packagesBc := bc.NewFileBundleCollection(installPath, p.dirProvider.BaseDir(), "packages", p.platform.GetFs())
 
 	packageApplier := pa.NewConcretePackageApplier(
 		packagesBc,
@@ -45,5 +46,5 @@ func (p ApplierProvider) Get() (applier Applier) {
 		p.platform.GetCompressor(),
 	)
 
-	return NewConcreteApplier(jobApplier, packageApplier, p.platform, p.monitor)
+	return NewConcreteApplier(jobApplier, packageApplier, p.platform, p.monitor, p.dirProvider)
 }

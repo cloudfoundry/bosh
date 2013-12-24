@@ -17,7 +17,7 @@ import (
 	boshmonit "bosh/monitor/monit"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
-	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	"flag"
 	"io/ioutil"
 	"path/filepath"
@@ -86,14 +86,16 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
+	dirProvider := boshdirs.NewDirectoriesProvider("/var/vcap")
+
 	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger)
 	notifier := boshnotif.NewNotifier(mbusHandler)
-	applier := boshappl.NewApplierProvider(platform, blobstore, monitor, boshsettings.VCAP_BASE_DIR).Get()
-	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
+	applier := boshappl.NewApplierProvider(platform, blobstore, monitor, dirProvider).Get()
+	compiler := boshcomp.NewCompilerProvider(platform, blobstore, dirProvider).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
-	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "spec.json")
+	specFilePath := filepath.Join(dirProvider.BaseDir(), "bosh", "spec.json")
 	specService := boshas.NewConcreteV1Service(platform.GetFs(), specFilePath)
 	actionFactory := boshaction.NewFactory(
 		settingsService,
@@ -105,6 +107,7 @@ func (app app) Run(args []string) (err error) {
 		compiler,
 		monitor,
 		specService,
+		dirProvider,
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)

@@ -4,6 +4,7 @@ import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -58,7 +59,7 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	// assert on user and ssh setup
 	assert.Equal(t, expectedUser, platform.CreateUserUsername)
 	assert.Equal(t, expectedPwd, platform.CreateUserPassword)
-	assert.Equal(t, "/var/vcap/bosh_ssh", platform.CreateUserBasePath)
+	assert.Equal(t, "/foo/bosh_ssh", platform.CreateUserBasePath)
 	assert.Equal(t, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP}, platform.AddUserToGroupsGroups[expectedUser])
 	assert.Equal(t, expectedKey, platform.SetupSshPublicKeys[expectedUser])
 
@@ -88,6 +89,6 @@ func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
 
 func buildSshAction(settings boshsettings.Service) (*fakeplatform.FakePlatform, sshAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := newSsh(settings, platform)
+	action := newSsh(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
 	return platform, action
 }

@@ -4,18 +4,20 @@ import (
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshcmd "bosh/platform/commands"
-	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	"path/filepath"
 )
 
 type logsAction struct {
-	compressor boshcmd.Compressor
-	blobstore  boshblob.Blobstore
+	compressor  boshcmd.Compressor
+	blobstore   boshblob.Blobstore
+	settingsDir boshdirs.DirectoriesProvider
 }
 
-func newLogs(compressor boshcmd.Compressor, blobstore boshblob.Blobstore) (action logsAction) {
+func newLogs(compressor boshcmd.Compressor, blobstore boshblob.Blobstore, settingsDir boshdirs.DirectoriesProvider) (action logsAction) {
 	action.compressor = compressor
 	action.blobstore = blobstore
+	action.settingsDir = settingsDir
 	return
 }
 
@@ -31,12 +33,12 @@ func (a logsAction) Run(logType string, filters []string) (value interface{}, er
 		if len(filters) == 0 {
 			filters = []string{"**/*.log"}
 		}
-		logsDir = filepath.Join(boshsettings.VCAP_BASE_DIR, "sys", "log")
+		logsDir = filepath.Join(a.settingsDir.BaseDir(), "sys", "log")
 	case "agent":
 		if len(filters) == 0 {
 			filters = []string{"**/*"}
 		}
-		logsDir = filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
+		logsDir = filepath.Join(a.settingsDir.BaseDir(), "bosh", "log")
 	default:
 		err = bosherr.New("Invalid log type")
 		return

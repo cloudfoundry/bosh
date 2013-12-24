@@ -3,16 +3,23 @@ package compiler
 import (
 	boshblobstore "bosh/blobstore"
 	boshplatform "bosh/platform"
+	boshdirs "bosh/settings/directories"
 )
 
 type Provider struct {
-	platform  boshplatform.Platform
-	blobstore boshblobstore.Blobstore
+	platform    boshplatform.Platform
+	blobstore   boshblobstore.Blobstore
+	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewCompilerProvider(platform boshplatform.Platform, blobstore boshblobstore.Blobstore) (p Provider) {
+func NewCompilerProvider(
+	platform boshplatform.Platform,
+	blobstore boshblobstore.Blobstore,
+	dirProvider boshdirs.DirectoriesProvider,
+) (p Provider) {
 	p.platform = platform
 	p.blobstore = blobstore
+	p.dirProvider = dirProvider
 	return
 }
 
@@ -22,5 +29,5 @@ func (p Provider) Get() (c Compiler) {
 	fs := p.platform.GetFs()
 	runner := p.platform.GetRunner()
 
-	return newConcreteCompiler(compressor, blobstore, fs, runner)
+	return newConcreteCompiler(compressor, blobstore, fs, runner, p.dirProvider)
 }

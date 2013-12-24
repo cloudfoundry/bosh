@@ -4,7 +4,7 @@ import (
 	boshassert "bosh/assert"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
-	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
 	"testing"
@@ -59,9 +59,9 @@ func testLogs(t *testing.T, logType string, filters []string, expectedFilters []
 	var expectedPath string
 	switch logType {
 	case "job":
-		expectedPath = filepath.Join(boshsettings.VCAP_BASE_DIR, "sys", "log")
+		expectedPath = filepath.Join("/fake", "dir", "sys", "log")
 	case "agent":
-		expectedPath = filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "log")
+		expectedPath = filepath.Join("/fake", "dir", "bosh", "log")
 	}
 	assert.Equal(t, expectedPath, compressor.CompressFilesInDirDir)
 	assert.Equal(t, expectedFilters, compressor.CompressFilesInDirFilters)
@@ -75,6 +75,7 @@ func testLogs(t *testing.T, logType string, filters []string, expectedFilters []
 func buildLogsAction() (*fakecmd.FakeCompressor, *fakeblobstore.FakeBlobstore, logsAction) {
 	compressor := fakecmd.NewFakeCompressor()
 	blobstore := &fakeblobstore.FakeBlobstore{}
-	action := newLogs(compressor, blobstore)
+	dirProvider := boshdirs.NewDirectoriesProvider("/fake/dir")
+	action := newLogs(compressor, blobstore, dirProvider)
 	return compressor, blobstore, action
 }

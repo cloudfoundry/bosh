@@ -4,17 +4,18 @@ import (
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshcmd "bosh/platform/commands"
-	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	"os"
 	"path/filepath"
 )
 
 type concreteCompiler struct {
-	compressor boshcmd.Compressor
-	blobstore  boshblob.Blobstore
-	fs         boshsys.FileSystem
-	runner     boshsys.CmdRunner
+	compressor  boshcmd.Compressor
+	blobstore   boshblob.Blobstore
+	fs          boshsys.FileSystem
+	runner      boshsys.CmdRunner
+	dirProvider boshdirs.DirectoriesProvider
 }
 
 func newConcreteCompiler(
@@ -22,18 +23,20 @@ func newConcreteCompiler(
 	blobstore boshblob.Blobstore,
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
+	dirProvider boshdirs.DirectoriesProvider,
 ) (c concreteCompiler) {
 
 	c.compressor = compressor
 	c.blobstore = blobstore
 	c.fs = fs
 	c.runner = runner
+	c.dirProvider = dirProvider
 	return
 }
 
 func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobId, sha1 string, err error) {
 	for _, dep := range deps {
-		targetDir := packageInstallPath(dep)
+		targetDir := c.packageInstallPath(dep)
 
 		err = c.fetchAndUncompress(dep, targetDir)
 		if err != nil {
@@ -42,21 +45,21 @@ func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobI
 		}
 	}
 
-	compilePath := filepath.Join(boshsettings.VCAP_COMPILE_DIR, pkg.Name)
+	compilePath := filepath.Join(c.dirProvider.CompileDir(), pkg.Name)
 	err = c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching package %s", pkg.Name)
 		return
 	}
 
-	installPath := packageInstallPath(pkg)
+	installPath := c.packageInstallPath(pkg)
 	err = c.cleanPackageInstallPath(installPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Clean package install path %s", installPath)
 		return
 	}
 
-	packageLinkPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "packages", pkg.Name)
+	packageLinkPath := filepath.Join(c.dirProvider.BaseDir(), "packages", pkg.Name)
 	err = c.fs.Symlink(installPath, packageLinkPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Symlinking %s to %s", installPath, packageLinkPath)
@@ -143,6 +146,6 @@ func (c concreteCompiler) cleanPackageInstallPath(installPath string) (err error
 	return
 }
 
-func packageInstallPath(dep Package) string {
-	return filepath.Join(boshsettings.VCAP_PKG_DIR, dep.Name, dep.Version)
+func (c concreteCompiler) packageInstallPath(dep Package) string {
+	return filepath.Join(c.dirProvider.PkgDir(), dep.Name, dep.Version)
 }

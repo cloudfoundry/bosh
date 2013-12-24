@@ -4,18 +4,21 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	"errors"
 	"path/filepath"
 )
 
 type sshAction struct {
-	settings boshsettings.Service
-	platform boshplatform.Platform
+	settings    boshsettings.Service
+	platform    boshplatform.Platform
+	dirProvider boshdirs.DirectoriesProvider
 }
 
-func newSsh(settings boshsettings.Service, platform boshplatform.Platform) (action sshAction) {
+func newSsh(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action sshAction) {
 	action.settings = settings
 	action.platform = platform
+	action.dirProvider = dirProvider
 	return
 }
 
@@ -43,7 +46,7 @@ func (a sshAction) Run(cmd string, params sshParams) (value interface{}, err err
 }
 
 func (a sshAction) setupSsh(params sshParams) (value interface{}, err error) {
-	boshSshPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh_ssh")
+	boshSshPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 	err = a.platform.CreateUser(params.User, params.Password, boshSshPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating user")
