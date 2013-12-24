@@ -49,8 +49,12 @@ module Bosh::Dev
     end
 
     def upload_release(release)
-      key = File.join(number.to_s, release_path)
-      upload_adapter.upload(bucket_name: bucket, key: key, body: File.open(release.tarball_path), public: true)
+      upload_adapter.upload(
+        bucket_name: bucket,
+        key: File.join(number.to_s, release_path),
+        body: File.open(release.final_tarball_path),
+        public: true,
+      )
     end
 
     def upload_stemcell(stemcell)
@@ -112,7 +116,7 @@ module Bosh::Dev
     class Local < self
       def release_tarball_path
         release = BoshRelease.build
-        release.tarball_path
+        release.dev_tarball_path
       end
 
       def download_stemcell(name, infrastructure, operating_system, light, output_directory)

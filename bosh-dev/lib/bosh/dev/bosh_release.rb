@@ -13,8 +13,12 @@ module Bosh::Dev
       @release_creator = release_creator
     end
 
-    def tarball_path
-      @release_creator.create
+    def final_tarball_path
+      @release_creator.create_final
+    end
+
+    def dev_tarball_path
+      @release_creator.create_dev
     end
   end
 end

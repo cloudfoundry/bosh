@@ -20,15 +20,15 @@ module Bosh::Dev
         it 'uses DownloadAdapater as download adapter' do
           download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
           Bosh::Dev::DownloadAdapter
-          .should_receive(:new)
-          .with(logger)
-          .and_return(download_adapter)
+            .should_receive(:new)
+            .with(logger)
+            .and_return(download_adapter)
 
           build = instance_double('Bosh::Dev::Build::Local')
           Bosh::Dev::Build::Candidate
-          .should_receive(:new)
-          .with('candidate', download_adapter)
-          .and_return(build)
+            .should_receive(:new)
+            .with('candidate', download_adapter)
+            .and_return(build)
 
           subject.should == build
         end
@@ -41,15 +41,15 @@ module Bosh::Dev
         it 'uses LocalDownloadAdapater as download adapter' do
           download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
           Bosh::Dev::LocalDownloadAdapter
-          .should_receive(:new)
-          .with(logger)
-          .and_return(download_adapter)
+            .should_receive(:new)
+            .with(logger)
+            .and_return(download_adapter)
 
           build = instance_double('Bosh::Dev::Build::Local')
           Bosh::Dev::Build::Local
-          .should_receive(:new)
-          .with('local', download_adapter)
-          .and_return(build)
+            .should_receive(:new)
+            .with('local', download_adapter)
+            .and_return(build)
 
           subject.should == build
         end
@@ -82,16 +82,26 @@ module Bosh::Dev
       })
     end
 
-    describe '#upload' do
-      let(:release) { double(tarball_path: 'release-tarball.tgz') }
-      let(:io) { double }
+    describe '#upload_release' do
+      let(:release) do
+        instance_double(
+          'Bosh::Dev::BoshRelease',
+          final_tarball_path: 'fake-release-tarball-path',
+        )
+      end
 
       before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
       let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
 
       it 'uploads the release with its build number' do
-        File.stub(:open).with(release.tarball_path) { io }
-        upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline', key: '123/release/bosh-123.tgz', body: io, public: true)
+        io = double('io')
+        File.stub(:open).with('fake-release-tarball-path') { io }
+        upload_adapter.should_receive(:upload).with(
+          bucket_name: 'bosh-ci-pipeline',
+          key: '123/release/bosh-123.tgz',
+          body: io,
+          public: true,
+        )
         subject.upload_release(release)
       end
 
@@ -311,7 +321,7 @@ module Bosh::Dev
 
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
-        it 'raises' do
+        it 'raises an exception' do
           error = Exception.new('error-message')
           download_adapter.stub(:download).and_raise(error)
           expect { build.release_tarball_path }.to raise_error(error)
@@ -319,15 +329,15 @@ module Bosh::Dev
       end
 
       it 'downloads the specified release from the pipeline bucket' do
-        download_adapter.should_receive(:download).with(
-          URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'tmp/bosh-123.tgz')
+        uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz')
+        download_adapter.should_receive(:download).with(uri, 'tmp/bosh-123.tgz')
         build.release_tarball_path
       end
 
       it 'returns the relative path of the downloaded release' do
-        download_adapter.should_receive(:download).with(
-          URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz'), 'tmp/bosh-123.tgz')
-        expect(build.release_tarball_path).to eq 'tmp/bosh-123.tgz'
+        uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/123/release/bosh-123.tgz')
+        download_adapter.should_receive(:download).with(uri, 'tmp/bosh-123.tgz')
+        expect(build.release_tarball_path).to eq('tmp/bosh-123.tgz')
       end
     end
   end
@@ -340,10 +350,13 @@ module Bosh::Dev
     after(:all) { Fog.unmock! }
 
     describe '#release_tarball_path' do
-      it 'returns the path to new microbosh release' do
-        micro_bosh_release = instance_double('Bosh::Dev::BoshRelease', tarball_path: 'tarball-path')
-        Bosh::Dev::BoshRelease.stub(new: micro_bosh_release)
-        expect(subject.release_tarball_path).to eq('tarball-path')
+      it 'returns the path to new dev bosh release' do
+        dev_bosh_release = instance_double(
+          'Bosh::Dev::BoshRelease',
+          dev_tarball_path: 'fake-dev-tarball-path',
+        )
+        Bosh::Dev::BoshRelease.stub(build: dev_bosh_release)
+        expect(subject.release_tarball_path).to eq('fake-dev-tarball-path')
       end
     end
 
