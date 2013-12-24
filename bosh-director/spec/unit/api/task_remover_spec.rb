@@ -7,15 +7,17 @@ module Bosh::Director::Api
     describe '#remove' do
       include FakeFS::SpecHelpers
 
+      def make_n_tasks(num_tasks)
+        num_tasks.times do |i|
+          task = Bosh::Director::Models::Task.make(state: 'done', output: "/director/tasks/#{i}")
+          FileUtils.mkpath(task.output)
+        end
+      end
+
       subject(:remover) { described_class.new(3, double('logger')) }
 
       context 'when there are fewer than max_tasks in the database' do
-        before do
-          2.times do |i|
-            task = Bosh::Director::Models::Task.make(output: "/director/tasks/#{i}")
-            FileUtils.mkpath(task.output)
-          end
-        end
+        before { make_n_tasks(2) }
 
         it 'keeps all tasks files' do
           expect {
@@ -35,12 +37,7 @@ module Bosh::Director::Api
       end
 
       context 'when there are exactly max_tasks in the database' do
-        before do
-          3.times do |i|
-            task = Bosh::Director::Models::Task.make(output: "/director/tasks/#{i}")
-            FileUtils.mkpath(task.output)
-          end
-        end
+        before { make_n_tasks(3) }
 
         it 'keeps all tasks files' do
           expect {
@@ -60,12 +57,7 @@ module Bosh::Director::Api
       end
 
       context 'when there is one more than max_tasks in the database' do
-        before do
-          4.times do |i|
-            task = Bosh::Director::Models::Task.make(output: "/director/tasks/#{i}")
-            FileUtils.mkpath(task.output)
-          end
-        end
+        before { make_n_tasks(4) }
 
         it 'keeps the latest `max_tasks` tasks files' do
           expect {
@@ -89,12 +81,7 @@ module Bosh::Director::Api
       end
 
       context 'when there are 2 more than max_tasks in the database' do
-        before do
-          5.times do |i|
-            task = Bosh::Director::Models::Task.make(output: "/director/tasks/#{i}")
-            FileUtils.mkpath(task.output)
-          end
-        end
+        before { make_n_tasks(5) }
 
         it 'removes the oldest 2 tasks files because it eventually converges to `max_tasks`' do
           expect {
@@ -118,12 +105,7 @@ module Bosh::Director::Api
       end
 
       context 'when there are 10 more than max_tasks in the database' do
-        before do
-          13.times do |i|
-            task = Bosh::Director::Models::Task.make(output: "/director/tasks/#{i}")
-            FileUtils.mkpath(task.output)
-          end
-        end
+        before { make_n_tasks(13) }
 
         it 'removes 2 files older than the latest `max_tasks` because it eventually converges to `max_tasks`' do
           expect {
@@ -143,6 +125,64 @@ module Bosh::Director::Api
           }.to change {
             Bosh::Director::Models::Task.map(:id)
           }.from((1..13).to_a).to((1..13).to_a - [9,10])
+        end
+      end
+
+      context 'when a processing task is too old' do
+        before do
+          make_n_tasks(5)
+
+          running_task = Bosh::Director::Models::Task[1]
+          running_task.update({:state => :processing})
+        end
+
+        it 'removes file older than the latest `max_tasks` that do not correspond to a task that is in a `processing` state' do
+          expect {
+            remover.remove
+          }.to change {
+            Dir['/director/tasks/*'].sort
+          }.from(
+            (0...5).map { |i| "/director/tasks/#{i}" }.sort
+          ).to(
+            ([0] + (2...5).to_a).map { |i| "/director/tasks/#{i}" }.sort
+          )
+        end
+
+        it 'removes the database entry older than the latest `max_tasks` that is not in a `processing` state' do
+          expect {
+            remover.remove
+          }.to change {
+            Bosh::Director::Models::Task.map(:id)
+          }.from((1..5).to_a).to((1..5).to_a - [2])
+        end
+      end
+
+      context 'when a queued task is too old' do
+        before do
+          make_n_tasks(5)
+
+          running_task = Bosh::Director::Models::Task[1]
+          running_task.update({:state => :queued})
+        end
+
+        it 'removes file older than the latest `max_tasks` that do not correspond to a task that is in a `queued` state' do
+          expect {
+            remover.remove
+          }.to change {
+            Dir['/director/tasks/*'].sort
+          }.from(
+                 (0...5).map { |i| "/director/tasks/#{i}" }.sort
+               ).to(
+                 ([0] + (2...5).to_a).map { |i| "/director/tasks/#{i}" }.sort
+               )
+        end
+
+        it 'removes the database entry older than the latest `max_tasks` that is not in a `queued` state' do
+          expect {
+            remover.remove
+          }.to change {
+            Bosh::Director::Models::Task.map(:id)
+          }.from((1..5).to_a).to((1..5).to_a - [2])
         end
       end
     end
