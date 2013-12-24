@@ -2,23 +2,21 @@ package action
 
 import (
 	boshas "bosh/agent/applier/applyspec"
+	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
 	boshassert "bosh/assert"
-	fakeplatform "bosh/platform/fakes"
-	boshsettings "bosh/settings"
-	fakesys "bosh/system/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestApplyShouldBeAsynchronous(t *testing.T) {
-	_, _, _, action := buildApplyAction()
+	_, _, action := buildApplyAction()
 	assert.True(t, action.IsAsynchronous())
 }
 
 func TestApplyReturnsApplied(t *testing.T) {
-	_, _, _, action := buildApplyAction()
+	_, _, action := buildApplyAction()
 
 	applySpec := boshas.V1ApplySpec{
 		JobSpec: boshas.JobSpec{
@@ -33,7 +31,7 @@ func TestApplyReturnsApplied(t *testing.T) {
 }
 
 func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
-	_, fs, _, action := buildApplyAction()
+	_, specService, action := buildApplyAction()
 
 	applySpec := boshas.V1ApplySpec{
 		JobSpec: boshas.JobSpec{
@@ -43,14 +41,11 @@ func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
 
 	_, err := action.Run(applySpec)
 	assert.NoError(t, err)
-
-	stats := fs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/spec.json")
-	assert.Equal(t, stats.FileType, fakesys.FakeFileTypeFile)
-	boshassert.MatchesJsonString(t, applySpec, stats.Content)
+	assert.Equal(t, applySpec, specService.Spec)
 }
 
 func TestApplyRunSkipsApplierWhenApplySpecDoesNotHaveConfigurationHash(t *testing.T) {
-	applier, _, _, action := buildApplyAction()
+	applier, _, action := buildApplyAction()
 
 	applySpec := boshas.V1ApplySpec{
 		JobSpec: boshas.JobSpec{
@@ -64,7 +59,7 @@ func TestApplyRunSkipsApplierWhenApplySpecDoesNotHaveConfigurationHash(t *testin
 }
 
 func TestApplyRunRunsApplierWithApplySpecWhenApplySpecHasConfigurationHash(t *testing.T) {
-	applier, _, _, action := buildApplyAction()
+	applier, _, action := buildApplyAction()
 
 	expectedApplySpec := boshas.V1ApplySpec{
 		JobSpec: boshas.JobSpec{
@@ -80,7 +75,7 @@ func TestApplyRunRunsApplierWithApplySpecWhenApplySpecHasConfigurationHash(t *te
 }
 
 func TestApplyRunErrsWhenApplierFails(t *testing.T) {
-	applier, _, _, action := buildApplyAction()
+	applier, _, action := buildApplyAction()
 
 	applier.ApplyError = errors.New("fake-apply-error")
 
@@ -89,10 +84,9 @@ func TestApplyRunErrsWhenApplierFails(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
-func buildApplyAction() (*fakeappl.FakeApplier, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform, applyAction) {
+func buildApplyAction() (*fakeappl.FakeApplier, *fakeas.FakeV1Service, applyAction) {
 	applier := fakeappl.NewFakeApplier()
-	platform := fakeplatform.NewFakePlatform()
-	fs := platform.Fs
-	action := newApply(applier, fs, platform)
-	return applier, fs, platform, action
+	specService := fakeas.NewFakeV1Service()
+	action := newApply(applier, specService)
+	return applier, specService, action
 }

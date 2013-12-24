@@ -1,22 +1,21 @@
 package action
 
 import (
+	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
 	boshmon "bosh/monitor"
 	boshsettings "bosh/settings"
-	boshsys "bosh/system"
-	"encoding/json"
 )
 
 type getStateAction struct {
-	settings boshsettings.Service
-	fs       boshsys.FileSystem
-	monitor  boshmon.Monitor
+	settings    boshsettings.Service
+	specService boshas.V1Service
+	monitor     boshmon.Monitor
 }
 
-func newGetState(settings boshsettings.Service, fs boshsys.FileSystem, monitor boshmon.Monitor) (action getStateAction) {
+func newGetState(settings boshsettings.Service, specService boshas.V1Service, monitor boshmon.Monitor) (action getStateAction) {
 	action.settings = settings
-	action.fs = fs
+	action.specService = specService
 	action.monitor = monitor
 	return
 }
@@ -25,24 +24,29 @@ func (a getStateAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a getStateAction) Run() (value interface{}, err error) {
-	content, err := a.fs.ReadFile(boshsettings.VCAP_BASE_DIR + "/bosh/spec.json")
+type getStateV1ApplySpec struct {
+	boshas.V1ApplySpec
+
+	AgentId      string          `json:"agent_id"`
+	Vm           boshsettings.Vm `json:"vm"`
+	JobState     string          `json:"job_state"`
+	BoshProtocol string          `json:"bosh_protocol"`
+}
+
+func (a getStateAction) Run() (value getStateV1ApplySpec, err error) {
+	spec, err := a.specService.Get()
 	if err != nil {
-		err = bosherr.WrapError(err, "Reading spec from disk")
+		err = bosherr.WrapError(err, "Getting current spec")
 		return
 	}
 
-	v := make(map[string]interface{})
-	err = json.Unmarshal([]byte(content), &v)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling spec")
-		return
+	value = getStateV1ApplySpec{
+		spec,
+		a.settings.GetAgentId(),
+		a.settings.GetVm(),
+		a.monitor.Status(),
+		"1",
 	}
 
-	v["agent_id"] = a.settings.GetAgentId()
-	v["vm"] = a.settings.GetVm()
-	v["job_state"] = a.monitor.Status()
-	v["bosh_protocol"] = "1"
-	value = v
 	return
 }

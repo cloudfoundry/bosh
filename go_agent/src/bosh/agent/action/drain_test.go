@@ -2,11 +2,11 @@ package action
 
 import (
 	boshas "bosh/agent/applier/applyspec"
+	fakeas "bosh/agent/applier/applyspec/fakes"
 	boshassert "bosh/assert"
 	fakenotif "bosh/notification/fakes"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"encoding/json"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestDrainShouldBeAsynchronous(t *testing.T) {
-	_, _, _, action := buildDrain()
+	_, _, _, _, action := buildDrain()
 	assert.True(t, action.IsAsynchronous())
 }
 
@@ -24,9 +24,9 @@ func TestDrainRunUpdateSkipsDrainScriptWhenWithoutDrainScript(t *testing.T) {
 
 	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
 
-	runner, fs, _, action := buildDrain()
+	runner, fs, _, specService, action := buildDrain()
 
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 	fs.RemoveAll(scriptPath)
 
 	newSpec := boshas.V1ApplySpec{
@@ -48,9 +48,9 @@ func TestDrainRunShutdownSkipsDrainScriptWhenWithoutDrainScript(t *testing.T) {
 
 	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
 
-	runner, fs, _, action := buildDrain()
+	runner, fs, _, specService, action := buildDrain()
 
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 	fs.RemoveAll(scriptPath)
 
 	newSpec := boshas.V1ApplySpec{
@@ -72,9 +72,9 @@ func TestDrainRunStatusErrsWhenWithoutDrainScript(t *testing.T) {
 
 	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
 
-	_, fs, _, action := buildDrain()
+	_, fs, _, specService, action := buildDrain()
 
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 	fs.RemoveAll(scriptPath)
 
 	_, err := action.Run(drainTypeStatus)
@@ -82,11 +82,11 @@ func TestDrainRunStatusErrsWhenWithoutDrainScript(t *testing.T) {
 }
 
 func TestDrainReturnsIntegerValueOfDrainscriptStdoutAfterTrimmingWhitespace(t *testing.T) {
-	cmdRunner, fs, _, action := buildDrain()
+	cmdRunner, fs, _, specService, action := buildDrain()
 
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 
 	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
@@ -98,11 +98,11 @@ func TestDrainReturnsIntegerValueOfDrainscriptStdoutAfterTrimmingWhitespace(t *t
 }
 
 func TestDrainErrsWhenDrainscriptStdoutIsNotSignedInteger(t *testing.T) {
-	cmdRunner, fs, _, action := buildDrain()
+	cmdRunner, fs, _, specService, action := buildDrain()
 
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 
 	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
@@ -113,11 +113,11 @@ func TestDrainErrsWhenDrainscriptStdoutIsNotSignedInteger(t *testing.T) {
 }
 
 func TestDrainErrsWhenDrainscriptExitsNonZero(t *testing.T) {
-	cmdRunner, fs, _, action := buildDrain()
+	cmdRunner, fs, _, specService, action := buildDrain()
 
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 
 	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
@@ -128,13 +128,13 @@ func TestDrainErrsWhenDrainscriptExitsNonZero(t *testing.T) {
 }
 
 func TestRunWithUpdateErrsIfNotGivenNewSpec(t *testing.T) {
-	_, _, _, action := buildDrain()
+	_, _, _, _, action := buildDrain()
 	_, err := action.Run(drainTypeUpdate)
 	assert.Error(t, err)
 }
 
 func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
-	cmdRunner, fs, _, action := buildDrain()
+	cmdRunner, fs, _, specService, action := buildDrain()
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
 
@@ -147,7 +147,7 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 		},
 	}
 
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_new hash_new foo", fakesys.FakeCmdResult{Stdout: "1"})
@@ -167,11 +167,11 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 }
 
 func TestRunWithShutdown(t *testing.T) {
-	cmdRunner, fs, notifier, action := buildDrain()
+	cmdRunner, fs, notifier, specService, action := buildDrain()
 
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 
 	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
@@ -195,11 +195,11 @@ func TestRunWithShutdown(t *testing.T) {
 }
 
 func TestRunWithStatus(t *testing.T) {
-	cmdRunner, fs, _, action := buildDrain()
+	cmdRunner, fs, _, specService, action := buildDrain()
 
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
-	fs.WriteToFile("/var/vcap/bosh/spec.json", marshalSpecForTests(currentSpec))
+	specService.Spec = currentSpec
 
 	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
@@ -225,17 +225,13 @@ func buildDrain() (
 	cmdRunner *fakesys.FakeCmdRunner,
 	fs *fakesys.FakeFileSystem,
 	notifier *fakenotif.FakeNotifier,
+	specService *fakeas.FakeV1Service,
 	action drainAction,
 ) {
 	cmdRunner = fakesys.NewFakeCmdRunner()
 	fs = fakesys.NewFakeFileSystem()
 	notifier = fakenotif.NewFakeNotifier()
-	action = newDrain(cmdRunner, fs, notifier)
-	return
-}
-
-func marshalSpecForTests(spec boshas.V1ApplySpec) (contents string) {
-	bytes, _ := json.Marshal(spec)
-	contents = string(bytes)
+	specService = fakeas.NewFakeV1Service()
+	action = newDrain(cmdRunner, fs, notifier, specService)
 	return
 }

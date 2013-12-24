@@ -5,22 +5,21 @@ import (
 	boshdrain "bosh/agent/drain"
 	bosherr "bosh/errors"
 	boshnotif "bosh/notification"
-	boshsettings "bosh/settings"
 	boshsys "bosh/system"
-	"encoding/json"
-	"path/filepath"
 )
 
 type drainAction struct {
-	cmdRunner boshsys.CmdRunner
-	fs        boshsys.FileSystem
-	notifier  boshnotif.Notifier
+	cmdRunner   boshsys.CmdRunner
+	fs          boshsys.FileSystem
+	notifier    boshnotif.Notifier
+	specService boshas.V1Service
 }
 
-func newDrain(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem, notifier boshnotif.Notifier) (drain drainAction) {
+func newDrain(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem, notifier boshnotif.Notifier, specService boshas.V1Service) (drain drainAction) {
 	drain.cmdRunner = cmdRunner
 	drain.fs = fs
 	drain.notifier = notifier
+	drain.specService = specService
 	return
 }
 
@@ -39,7 +38,7 @@ const (
 func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (value interface{}, err error) {
 	value = 0
 
-	currentSpec, err := a.getCurrentSpec()
+	currentSpec, err := a.specService.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting current spec")
 		return
@@ -81,21 +80,5 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 		err = bosherr.WrapError(err, "Running Drain Script")
 		return
 	}
-	return
-}
-
-func (a drainAction) getCurrentSpec() (currentSpec boshas.V1ApplySpec, err error) {
-	contents, err := a.fs.ReadFile(filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "spec.json"))
-	if err != nil {
-		err = bosherr.WrapError(err, "Reading json spec file")
-		return
-	}
-
-	err = json.Unmarshal([]byte(contents), &currentSpec)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling json spec file")
-		return
-	}
-
 	return
 }

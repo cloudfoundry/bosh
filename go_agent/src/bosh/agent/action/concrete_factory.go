@@ -2,6 +2,7 @@ package action
 
 import (
 	boshappl "bosh/agent/applier"
+	boshas "bosh/agent/applier/applyspec"
 	boshcomp "bosh/agent/compiler"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
@@ -25,6 +26,7 @@ func NewFactory(
 	applier boshappl.Applier,
 	compiler boshcomp.Compiler,
 	monitor boshmon.Monitor,
+	specService boshas.V1Service,
 ) (factory Factory) {
 
 	fs := platform.GetFs()
@@ -33,11 +35,11 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"apply":        newApply(applier, fs, platform),
-			"drain":        newDrain(runner, fs, notifier),
+			"apply":        newApply(applier, specService),
+			"drain":        newDrain(runner, fs, notifier, specService),
 			"fetch_logs":   newLogs(compressor, blobstore),
 			"get_task":     newGetTask(taskService),
-			"get_state":    newGetState(settings, fs, monitor),
+			"get_state":    newGetState(settings, specService, monitor),
 			"list_disk":    newListDisk(settings, platform),
 			"migrate_disk": newMigrateDisk(settings, platform),
 			"mount_disk":   newMountDisk(settings, platform),

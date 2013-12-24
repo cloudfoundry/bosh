@@ -3,7 +3,8 @@ package app
 import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
-	boshas "bosh/agent/applier"
+	boshappl "bosh/agent/applier"
+	boshas "bosh/agent/applier/applyspec"
 	boshcomp "bosh/agent/compiler"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
@@ -16,8 +17,10 @@ import (
 	boshmonit "bosh/monitor/monit"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 	"flag"
 	"io/ioutil"
+	"path/filepath"
 )
 
 type app struct {
@@ -85,10 +88,13 @@ func (app app) Run(args []string) (err error) {
 
 	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger)
 	notifier := boshnotif.NewNotifier(mbusHandler)
-	applier := boshas.NewApplierProvider(platform, blobstore, monitor).Get()
+	applier := boshappl.NewApplierProvider(platform, blobstore, monitor).Get()
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
+
+	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "spec.json")
+	specService := boshas.NewConcreteV1Service(platform.GetFs(), specFilePath)
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		platform,
@@ -98,6 +104,7 @@ func (app app) Run(args []string) (err error) {
 		applier,
 		compiler,
 		monitor,
+		specService,
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
