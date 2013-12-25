@@ -16,14 +16,13 @@ import (
 )
 
 func TestSetupRuntimeConfiguration(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	err := ubuntu.SetupRuntimeConfiguration()
 	assert.NoError(t, err)
 
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"bosh-agent-rc"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"bosh-agent-rc"}, deps.cmdRunner.RunCommands[0])
 }
 
 func TestUbuntuCreateUser(t *testing.T) {
@@ -52,35 +51,33 @@ func TestUbuntuCreateUserWithAnEmptyPassword(t *testing.T) {
 }
 
 func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	err := ubuntu.CreateUser("foo-user", password, "/some/path/to/home")
 	assert.NoError(t, err)
 
-	basePathStat := fakeFs.GetFileTestStat("/some/path/to/home")
+	basePathStat := deps.fs.GetFileTestStat("/some/path/to/home")
 	assert.Equal(t, fakesys.FakeFileTypeDir, basePathStat.FileType)
 	assert.Equal(t, os.FileMode(0755), basePathStat.FileMode)
 
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, expectedUseradd, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, expectedUseradd, deps.cmdRunner.RunCommands[0])
 }
 
 func TestAddUserToGroups(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	err := ubuntu.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
 
 	usermod := []string{"usermod", "-G", "group1,group2,group3", "foo-user"}
-	assert.Equal(t, usermod, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, usermod, deps.cmdRunner.RunCommands[0])
 }
 
 func TestDeleteUsersWithPrefixAndRegex(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	deps, ubuntu := buildUbuntu()
 
 	passwdFile := fmt.Sprintf(`%sfoo:...
 %sbar:...
@@ -91,35 +88,32 @@ foobar:...
 		boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX,
 	)
 
-	fakeFs.WriteToFile("/etc/passwd", passwdFile)
-
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps.fs.WriteToFile("/etc/passwd", passwdFile)
 
 	err := ubuntu.DeleteEphemeralUsersMatching("bar$")
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"userdel", "-r", "bosh_bar"}, fakeCmdRunner.RunCommands[0])
-	assert.Equal(t, []string{"userdel", "-r", "bosh_foobar"}, fakeCmdRunner.RunCommands[1])
+	assert.Equal(t, 2, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"userdel", "-r", "bosh_bar"}, deps.cmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"userdel", "-r", "bosh_foobar"}, deps.cmdRunner.RunCommands[1])
 }
 
 func TestUbuntuSetupSsh(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeFs.HomeDirHomePath = "/some/home/dir"
+	deps, ubuntu := buildUbuntu()
+	deps.fs.HomeDirHomePath = "/some/home/dir"
 
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 	ubuntu.SetupSsh("some public key", "vcap")
 
 	sshDirPath := "/some/home/dir/.ssh"
-	sshDirStat := fakeFs.GetFileTestStat(sshDirPath)
+	sshDirStat := deps.fs.GetFileTestStat(sshDirPath)
 
-	assert.Equal(t, fakeFs.HomeDirUsername, "vcap")
+	assert.Equal(t, deps.fs.HomeDirUsername, "vcap")
 
 	assert.NotNil(t, sshDirStat)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sshDirStat.FileType)
 	assert.Equal(t, sshDirStat.FileMode, os.FileMode(0700))
 	assert.Equal(t, sshDirStat.Username, "vcap")
 
-	authKeysStat := fakeFs.GetFileTestStat(filepath.Join(sshDirPath, "authorized_keys"))
+	authKeysStat := deps.fs.GetFileTestStat(filepath.Join(sshDirPath, "authorized_keys"))
 
 	assert.NotNil(t, authKeysStat)
 	assert.Equal(t, authKeysStat.FileType, fakesys.FakeFileTypeFile)
@@ -129,27 +123,25 @@ func TestUbuntuSetupSsh(t *testing.T) {
 }
 
 func TestUbuntuSetUserPassword(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	ubuntu.SetUserPassword("my-user", "my-encrypted-password")
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"usermod", "-p", "my-encrypted-password", "my-user"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"usermod", "-p", "my-encrypted-password", "my-user"}, deps.cmdRunner.RunCommands[0])
 }
 
 func TestUbuntuSetupHostname(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	ubuntu.SetupHostname("foobar.local")
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"hostname", "foobar.local"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"hostname", "foobar.local"}, deps.cmdRunner.RunCommands[0])
 
-	hostnameFileContent, err := fakeFs.ReadFile("/etc/hostname")
+	hostnameFileContent, err := deps.fs.ReadFile("/etc/hostname")
 	assert.NoError(t, err)
 	assert.Equal(t, "foobar.local", hostnameFileContent)
 
-	hostsFileContent, err := fakeFs.ReadFile("/etc/hosts")
+	hostsFileContent, err := deps.fs.ReadFile("/etc/hosts")
 	assert.NoError(t, err)
 	assert.Equal(t, EXPECTED_ETC_HOSTS, hostsFileContent)
 }
@@ -166,29 +158,26 @@ ff02::3 ip6-allhosts
 `
 
 func TestUbuntuSetupDhcp(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	testUbuntuSetupDhcp(t, fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
+	testUbuntuSetupDhcp(t, deps, ubuntu)
 
-	assert.Equal(t, len(fakeCmdRunner.RunCommands), 2)
-	assert.Equal(t, fakeCmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
-	assert.Equal(t, fakeCmdRunner.RunCommands[1], []string{"/etc/init.d/networking", "restart"})
+	assert.Equal(t, len(deps.cmdRunner.RunCommands), 2)
+	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[1], []string{"/etc/init.d/networking", "restart"})
 }
 
 func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeFs.WriteToFile("/etc/dhcp3/dhclient.conf", EXPECTED_DHCP_CONFIG)
-	testUbuntuSetupDhcp(t, fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
+	deps.fs.WriteToFile("/etc/dhcp3/dhclient.conf", EXPECTED_DHCP_CONFIG)
+	testUbuntuSetupDhcp(t, deps, ubuntu)
 
-	assert.Equal(t, len(fakeCmdRunner.RunCommands), 0)
+	assert.Equal(t, len(deps.cmdRunner.RunCommands), 0)
 }
 
 func testUbuntuSetupDhcp(
 	t *testing.T,
-	fakeStats *fakestats.FakeStatsCollector,
-	fakeFs *fakesys.FakeFileSystem,
-	fakeCmdRunner *fakesys.FakeCmdRunner,
-	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor *fakecmd.FakeCompressor,
+	deps ubuntuDependencies,
+	platform ubuntu,
 ) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
@@ -201,10 +190,9 @@ func testUbuntuSetupDhcp(
 		},
 	}
 
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
-	ubuntu.SetupDhcp(networks)
+	platform.SetupDhcp(networks)
 
-	dhcpConfig := fakeFs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+	dhcpConfig := deps.fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 	assert.NotNil(t, dhcpConfig)
 	assert.Equal(t, dhcpConfig.Content, EXPECTED_DHCP_CONFIG)
 }
@@ -226,12 +214,11 @@ prepend domain-name-servers xx.xx.xx.xx;
 `
 
 func TestUbuntuSetupLogrotate(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	ubuntu.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
 
-	logrotateFileContent, err := fakeFs.ReadFile("/etc/logrotate.d/fake-group-name")
+	logrotateFileContent, err := deps.fs.ReadFile("/etc/logrotate.d/fake-group-name")
 	assert.NoError(t, err)
 	assert.Equal(t, EXPECTED_ETC_LOGROTATE, logrotateFileContent)
 }
@@ -249,44 +236,41 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 `
 
 func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"ntpdate", "0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"ntpdate", "0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, deps.cmdRunner.RunCommands[0])
 
-	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	ntpConfig := deps.fs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
 	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
 	assert.Equal(t, fakesys.FakeFileTypeFile, ntpConfig.FileType)
 }
 
 func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	ubuntu.SetTimeWithNtpServers([]string{})
-	assert.Equal(t, 0, len(fakeCmdRunner.RunCommands))
+	assert.Equal(t, 0, len(deps.cmdRunner.RunCommands))
 
-	ntpConfig := fakeFs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	ntpConfig := deps.fs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
 	assert.Nil(t, ntpConfig)
 }
 
 func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeFormatter := fakeDiskManager.FakeFormatter
-	fakePartitioner := fakeDiskManager.FakePartitioner
-	fakeMounter := fakeDiskManager.FakeMounter
+	deps, ubuntu := buildUbuntu()
+	fakeFormatter := deps.diskManager.FakeFormatter
+	fakePartitioner := deps.diskManager.FakePartitioner
+	fakeMounter := deps.diskManager.FakeMounter
 
 	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 
-	fakeFs.WriteToFile("/dev/xvda", "")
+	deps.fs.WriteToFile("/dev/xvda", "")
 
 	err := ubuntu.SetupEphemeralDiskWithPath("/dev/sda", "/data-dir")
 	assert.NoError(t, err)
 
-	dataDir := fakeFs.GetFileTestStat("/data-dir")
+	dataDir := deps.fs.GetFileTestStat("/data-dir")
 	assert.Equal(t, fakesys.FakeFileTypeDir, dataDir.FileType)
 	assert.Equal(t, os.FileMode(0750), dataDir.FileMode)
 
@@ -315,31 +299,29 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, 1, len(fakeMounter.SwapOnPartitionPaths))
 	assert.Equal(t, "/dev/xvda1", fakeMounter.SwapOnPartitionPaths[0])
 
-	sysLogStats := fakeFs.GetFileTestStat("/data-dir/sys/log")
+	sysLogStats := deps.fs.GetFileTestStat("/data-dir/sys/log")
 	assert.NotNil(t, sysLogStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysLogStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysLogStats.FileMode)
 
-	sysRunStats := fakeFs.GetFileTestStat("/data-dir/sys/run")
+	sysRunStats := deps.fs.GetFileTestStat("/data-dir/sys/run")
 	assert.NotNil(t, sysRunStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysRunStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 
 func TestUbuntuMountPersistentDisk(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeFormatter := fakeDiskManager.FakeFormatter
-	fakePartitioner := fakeDiskManager.FakePartitioner
-	fakeMounter := fakeDiskManager.FakeMounter
+	deps, ubuntu := buildUbuntu()
+	fakeFormatter := deps.diskManager.FakeFormatter
+	fakePartitioner := deps.diskManager.FakePartitioner
+	fakeMounter := deps.diskManager.FakeMounter
 
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
-
-	fakeFs.WriteToFile("/dev/vdf", "")
+	deps.fs.WriteToFile("/dev/vdf", "")
 
 	err := ubuntu.MountPersistentDisk("/dev/sdf", "/mnt/point")
 	assert.NoError(t, err)
 
-	mountPoint := fakeFs.GetFileTestStat("/mnt/point")
+	mountPoint := deps.fs.GetFileTestStat("/mnt/point")
 	assert.Equal(t, fakesys.FakeFileTypeDir, mountPoint.FileType)
 	assert.Equal(t, os.FileMode(0700), mountPoint.FileMode)
 
@@ -369,13 +351,11 @@ func TestUbuntuUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
 }
 
 func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeMounter := fakeDiskManager.FakeMounter
+	deps, ubuntu := buildUbuntu()
+	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.UnmountDidUnmount = !isMounted
 
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
-
-	fakeFs.WriteToFile("/dev/vdx", "")
+	deps.fs.WriteToFile("/dev/vdx", "")
 
 	didUnmount, err := ubuntu.UnmountPersistentDisk("/dev/sdx")
 	assert.NoError(t, err)
@@ -384,11 +364,10 @@ func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
 }
 
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
-	fakeFs.WriteToFile("/dev/xvda", "")
-	fakeFs.WriteToFile("/dev/vda", "")
+	deps.fs.WriteToFile("/dev/xvda", "")
+	deps.fs.WriteToFile("/dev/vda", "")
 
 	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
 	assert.NoError(t, err)
@@ -396,11 +375,10 @@ func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 }
 
 func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	time.AfterFunc(time.Second, func() {
-		fakeFs.WriteToFile("/dev/xvda", "")
+		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
 	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
@@ -409,12 +387,12 @@ func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
 }
 
 func TestUbuntuGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
+
 	ubuntu.diskWaitTimeout = time.Second
 
 	time.AfterFunc(2*time.Second, func() {
-		fakeFs.WriteToFile("/dev/xvda", "")
+		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
 	_, err := ubuntu.getRealDevicePath("/dev/sda")
@@ -438,15 +416,13 @@ func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmall
 }
 
 func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeStats.MemStats.Total = totalMemInMb * uint64(1024*1024)
+	deps, ubuntu := buildUbuntu()
+	deps.collector.MemStats.Total = totalMemInMb * uint64(1024*1024)
 
-	fakePartitioner := fakeDiskManager.FakePartitioner
+	fakePartitioner := deps.diskManager.FakePartitioner
 	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
 		"/dev/hda": diskSizeInMb,
 	}
-
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 
 	swapSize, linuxSize, err := ubuntu.calculateEphemeralDiskPartitionSizes("/dev/hda")
 
@@ -456,17 +432,15 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, 
 }
 
 func TestUbuntuMigratePersistentDisk(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	fakeMounter := fakeDiskManager.FakeMounter
-
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
+	fakeMounter := deps.diskManager.FakeMounter
 
 	ubuntu.MigratePersistentDisk("/from/path", "/to/path")
 
 	assert.Equal(t, fakeMounter.RemountAsReadonlyPath, "/from/path")
 
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}, deps.cmdRunner.RunCommands[0])
 
 	assert.Equal(t, fakeMounter.UnmountPartitionPath, "/from/path")
 	assert.Equal(t, fakeMounter.RemountFromMountPoint, "/to/path")
@@ -474,13 +448,11 @@ func TestUbuntuMigratePersistentDisk(t *testing.T) {
 }
 
 func TestIsDevicePathMounted(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	deps, ubuntu := buildUbuntu()
 
-	fakeFs.WriteToFile("/dev/xvda", "")
-	fakeMounter := fakeDiskManager.FakeMounter
+	deps.fs.WriteToFile("/dev/xvda", "")
+	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.IsMountedResult = true
-
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
 
 	result, err := ubuntu.IsDevicePathMounted("/dev/sda")
 	assert.NoError(t, err)
@@ -489,46 +461,42 @@ func TestIsDevicePathMounted(t *testing.T) {
 }
 
 func TestStartMonit(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	err := ubuntu.StartMonit()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(fakeCmdRunner.RunCommands))
-	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"sv", "up", "monit"}, deps.cmdRunner.RunCommands[0])
 }
 
 func TestSetupMonitUserIfFileDoesNotExist(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
 	err := ubuntu.SetupMonitUser()
 	assert.NoError(t, err)
 
-	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	monitUserFileStats := deps.fs.GetFileTestStat("/var/vcap/monit/monit.user")
 	assert.NotNil(t, monitUserFileStats)
 	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
 }
 
 func TestSetupMonitUserIfFileDoesExist(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
-	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
+	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
 
 	err := ubuntu.SetupMonitUser()
 	assert.NoError(t, err)
 
-	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	monitUserFileStats := deps.fs.GetFileTestStat("/var/vcap/monit/monit.user")
 	assert.NotNil(t, monitUserFileStats)
 	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
 }
 
 func TestGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
-	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake-random-password")
+	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake-random-password")
 
 	username, password, err := ubuntu.GetMonitCredentials()
 	assert.NoError(t, err)
@@ -538,20 +506,17 @@ func TestGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
 }
 
 func TestGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+	deps, ubuntu := buildUbuntu()
 
-	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user")
+	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "fake-user")
 
 	_, _, err := ubuntu.GetMonitCredentials()
 	assert.Error(t, err)
 }
 
 func TestGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
-	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
-	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
-
-	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake:random:password")
+	deps, ubuntu := buildUbuntu()
+	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake:random:password")
 
 	username, password, err := ubuntu.GetMonitCredentials()
 	assert.NoError(t, err)
@@ -560,17 +525,30 @@ func TestGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
 	assert.Equal(t, "fake:random:password", password)
 }
 
-func getUbuntuDependencies() (
-	collector *fakestats.FakeStatsCollector,
-	fs *fakesys.FakeFileSystem,
-	cmdRunner *fakesys.FakeCmdRunner,
-	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor *fakecmd.FakeCompressor,
+type ubuntuDependencies struct {
+	collector   *fakestats.FakeStatsCollector
+	fs          *fakesys.FakeFileSystem
+	cmdRunner   *fakesys.FakeCmdRunner
+	diskManager fakedisk.FakeDiskManager
+	compressor  *fakecmd.FakeCompressor
+}
+
+func buildUbuntu() (
+	deps ubuntuDependencies,
+	platform ubuntu,
 ) {
-	collector = &fakestats.FakeStatsCollector{}
-	fs = &fakesys.FakeFileSystem{}
-	cmdRunner = &fakesys.FakeCmdRunner{}
-	fakeDiskManager = fakedisk.NewFakeDiskManager(cmdRunner)
-	fakeCompressor = fakecmd.NewFakeCompressor()
+	deps.collector = &fakestats.FakeStatsCollector{}
+	deps.fs = &fakesys.FakeFileSystem{}
+	deps.cmdRunner = &fakesys.FakeCmdRunner{}
+	deps.diskManager = fakedisk.NewFakeDiskManager(deps.cmdRunner)
+	deps.compressor = fakecmd.NewFakeCompressor()
+
+	platform = newUbuntuPlatform(
+		deps.collector,
+		deps.fs,
+		deps.cmdRunner,
+		deps.diskManager,
+		deps.compressor,
+	)
 	return
 }
