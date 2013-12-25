@@ -4,6 +4,7 @@ import (
 	boshappl "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
 	boshcomp "bosh/agent/compiler"
+	boshdrain "bosh/agent/drain"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
@@ -29,16 +30,14 @@ func NewFactory(
 	monitor boshmon.Monitor,
 	specService boshas.V1Service,
 	dirProvider boshdirs.DirectoriesProvider,
+	drainScriptProvider boshdrain.DrainScriptProvider,
 ) (factory Factory) {
-
-	fs := platform.GetFs()
-	runner := platform.GetRunner()
 	compressor := platform.GetCompressor()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
 			"apply":        newApply(applier, specService),
-			"drain":        newDrain(runner, fs, notifier, specService),
+			"drain":        newDrain(notifier, specService, drainScriptProvider),
 			"fetch_logs":   newLogs(compressor, blobstore, dirProvider),
 			"get_task":     newGetTask(taskService),
 			"get_state":    newGetState(settings, specService, monitor),

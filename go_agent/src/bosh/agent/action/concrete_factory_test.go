@@ -4,6 +4,7 @@ import (
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
 	fakecomp "bosh/agent/compiler/fakes"
+	boshdrain "bosh/agent/drain"
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakemon "bosh/monitor/fakes"
@@ -16,16 +17,17 @@ import (
 )
 
 type concreteFactoryDependencies struct {
-	settings    *fakesettings.FakeSettingsService
-	platform    *fakeplatform.FakePlatform
-	blobstore   *fakeblobstore.FakeBlobstore
-	taskService *faketask.FakeService
-	notifier    *fakenotif.FakeNotifier
-	applier     *fakeappl.FakeApplier
-	compiler    *fakecomp.FakeCompiler
-	monitor     *fakemon.FakeMonitor
-	specService *fakeas.FakeV1Service
-	dirProvider boshdirs.DirectoriesProvider
+	settings            *fakesettings.FakeSettingsService
+	platform            *fakeplatform.FakePlatform
+	blobstore           *fakeblobstore.FakeBlobstore
+	taskService         *faketask.FakeService
+	notifier            *fakenotif.FakeNotifier
+	applier             *fakeappl.FakeApplier
+	compiler            *fakecomp.FakeCompiler
+	monitor             *fakemon.FakeMonitor
+	specService         *fakeas.FakeV1Service
+	dirProvider         boshdirs.DirectoriesProvider
+	drainScriptProvider boshdrain.DrainScriptProvider
 }
 
 func TestNewFactory(t *testing.T) {
@@ -73,7 +75,7 @@ func TestNewFactoryDrain(t *testing.T) {
 	action, err := factory.Create("drain")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newDrain(deps.platform.Runner, deps.platform.Fs, deps.notifier, deps.specService), action)
+	assert.Equal(t, newDrain(deps.notifier, deps.specService, deps.drainScriptProvider), action)
 }
 
 func TestNewFactoryFetchLogs(t *testing.T) {
@@ -170,6 +172,7 @@ func buildFactory() (
 	deps.monitor = fakemon.NewFakeMonitor()
 	deps.specService = fakeas.NewFakeV1Service()
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/foo")
+	deps.drainScriptProvider = boshdrain.NewDrainScriptProvider(nil, nil)
 
 	factory = NewFactory(
 		deps.settings,
@@ -182,6 +185,7 @@ func buildFactory() (
 		deps.monitor,
 		deps.specService,
 		deps.dirProvider,
+		deps.drainScriptProvider,
 	)
 	return
 }

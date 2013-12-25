@@ -5,21 +5,18 @@ import (
 	boshdrain "bosh/agent/drain"
 	bosherr "bosh/errors"
 	boshnotif "bosh/notification"
-	boshsys "bosh/system"
 )
 
 type drainAction struct {
-	cmdRunner   boshsys.CmdRunner
-	fs          boshsys.FileSystem
-	notifier    boshnotif.Notifier
-	specService boshas.V1Service
+	drainScriptProvider boshdrain.DrainScriptProvider
+	notifier            boshnotif.Notifier
+	specService         boshas.V1Service
 }
 
-func newDrain(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem, notifier boshnotif.Notifier, specService boshas.V1Service) (drain drainAction) {
-	drain.cmdRunner = cmdRunner
-	drain.fs = fs
+func newDrain(notifier boshnotif.Notifier, specService boshas.V1Service, drainScriptProvider boshdrain.DrainScriptProvider) (drain drainAction) {
 	drain.notifier = notifier
 	drain.specService = specService
+	drain.drainScriptProvider = drainScriptProvider
 	return
 }
 
@@ -44,7 +41,7 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 		return
 	}
 
-	drainScript := boshdrain.NewConcreteDrainScript(a.fs, a.cmdRunner, currentSpec.JobSpec.Template)
+	drainScript := a.drainScriptProvider.NewDrainScript(currentSpec.JobSpec.Template)
 	var params boshdrain.DrainScriptParams
 
 	switch drainType {

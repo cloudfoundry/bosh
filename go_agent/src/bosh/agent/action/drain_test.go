@@ -3,6 +3,7 @@ package action
 import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
+	boshdrain "bosh/agent/drain"
 	boshassert "bosh/assert"
 	fakenotif "bosh/notification/fakes"
 	boshsys "bosh/system"
@@ -232,6 +233,7 @@ func buildDrain() (
 	fs = fakesys.NewFakeFileSystem()
 	notifier = fakenotif.NewFakeNotifier()
 	specService = fakeas.NewFakeV1Service()
-	action = newDrain(cmdRunner, fs, notifier, specService)
+	drainScriptProvider := boshdrain.NewDrainScriptProvider(cmdRunner, fs)
+	action = newDrain(notifier, specService, drainScriptProvider)
 	return
 }

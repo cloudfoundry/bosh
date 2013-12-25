@@ -6,6 +6,7 @@ import (
 	boshappl "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
 	boshcomp "bosh/agent/compiler"
+	boshdrain "bosh/agent/drain"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"
@@ -97,6 +98,8 @@ func (app app) Run(args []string) (err error) {
 
 	specFilePath := filepath.Join(dirProvider.BaseDir(), "bosh", "spec.json")
 	specService := boshas.NewConcreteV1Service(platform.GetFs(), specFilePath)
+	drainScriptProvider := boshdrain.NewDrainScriptProvider(platform.GetRunner(), platform.GetFs())
+
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		platform,
@@ -108,6 +111,7 @@ func (app app) Run(args []string) (err error) {
 		monitor,
 		specService,
 		dirProvider,
+		drainScriptProvider,
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
