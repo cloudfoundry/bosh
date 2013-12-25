@@ -60,6 +60,24 @@ func TestInstallErrsWhenBundleCannotBeInstalled(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-mkdirall-error")
 }
 
+func TestGetDir(t *testing.T) {
+	fs, fileCollection, bundle := buildFileBundleCollection()
+
+	fs.MkdirAll(expectedInstallPath, os.FileMode(0))
+
+	actualFs, path, err := fileCollection.GetDir(bundle)
+	assert.NoError(t, err)
+	assert.Equal(t, fs, actualFs)
+	assert.Equal(t, expectedInstallPath, path)
+}
+
+func TestGetDirErrsWhenDirDoesNotExist(t *testing.T) {
+	_, fileCollection, bundle := buildFileBundleCollection()
+
+	_, _, err := fileCollection.GetDir(bundle)
+	assert.Error(t, err)
+}
+
 func TestEnableSucceedsWhenBundleIsInstalled(t *testing.T) {
 	fs, fileCollection, bundle := buildFileBundleCollection()
 

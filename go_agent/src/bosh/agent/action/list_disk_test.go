@@ -9,6 +9,13 @@ import (
 	"testing"
 )
 
+func TestListDiskShouldBeSynchronous(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	platform := fakeplatform.NewFakePlatform()
+	action := newListDisk(settings, platform)
+	assert.False(t, action.IsAsynchronous())
+}
+
 func TestListDiskRun(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{
 		Disks: boshsettings.Disks{
@@ -23,7 +30,7 @@ func TestListDiskRun(t *testing.T) {
 	platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
 
 	action := newListDisk(settings, platform)
-	value, err := action.Run([]byte(""))
+	value, err := action.Run()
 	assert.NoError(t, err)
 	boshassert.MatchesJsonString(t, value, `["volume-2","volume-3"]`)
 }

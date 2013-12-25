@@ -1,10 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::PackageBuilder, "dev build" do
-
-  before(:each) do
+  before do
     @release_dir = Dir.mktmpdir
     FileUtils.mkdir(File.join(@release_dir, "src"))
     FileUtils.mkdir(File.join(@release_dir, "blobs"))
@@ -325,18 +322,6 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
                          "`bar' pre-packaging failed")
   end
 
-  it "prevents building final version with src alt" do
-    spec = {
-      "name" => "bar",
-      "files" => "foo/**/*"
-    }
-
-    lambda {
-      Bosh::Cli::PackageBuilder.new(spec, @release_dir,
-                                    true, double("blobstore"))
-    }.should raise_error(/Please remove `src_alt' first/)
-  end
-
   it "bumps major dev version in sync with final version" do
     FileUtils.rm_rf(File.join(@release_dir, "src_alt"))
 
@@ -523,71 +508,93 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     s2.should == s1
   end
 
-  it "supports alternative src directory" do
-    add_file("src", "README.txt", "README contents")
-    add_file("src", "lib/1.rb", "puts 'Hello world'")
-    add_file("src", "lib/2.rb", "puts 'Goodbye world'")
-
-    builder = make_builder("A", %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
-
-    add_file("src_alt", "README.txt", "README contents")
-    add_file("src_alt", "lib/1.rb", "puts 'Hello world'")
-    add_file("src_alt", "lib/2.rb", "puts 'Goodbye world'")
-
-    remove_files("src", %w(lib/1.rb))
-    builder.reload.fingerprint.should == s1
-  end
-
-  it "checks if glob top level dir is present in src_alt but doesn't match" do
-    add_file("src", "README.txt", "README contents")
-    add_file("src", "lib/1.rb", "puts 'Hello world'")
-    add_file("src", "lib/2.rb", "puts 'Goodbye world'")
-
-    builder = make_builder("A", %w(lib/*.rb README.*))
-
-    FileUtils.mkdir(File.join(@release_dir, "src_alt", "lib"))
-
-    lambda {
-      builder.fingerprint
-    }.should raise_error("Package `A' has a glob that doesn't match " +
-                         "in `src_alt' but matches in `src'. However " +
-                         "`src_alt/lib' exists, so this might be an error.")
-  end
-
-  it "doesn't allow glob to match files under more than one source directory" do
-    add_file("src", "README.txt", "README contents")
-    add_file("src", "lib/1.rb", "puts 'Hello world'")
-
-    builder = make_builder("A", %w(lib/*.rb README.*))
-    lambda {
-      builder.fingerprint
-    }.should_not raise_error
-
-    add_file("src_alt", "README.txt", "README contents")
-    remove_files("src", %w(README.txt lib/1.rb))
-
-    lambda {
-      builder.reload.fingerprint
-    }.should raise_error("Package `A' has a glob that resolves to " +
-                         "an empty file list: lib/*.rb")
-  end
-
   it "doesn't include the same path twice" do
     add_file("src", "test/foo/README.txt", "README contents")
     add_file("src", "test/foo/NOTICE.txt", "NOTICE contents")
-
     fp1 = make_builder("A", %w(test/**/*)).fingerprint
 
-    remove_file("src", "test/foo/NOTICE.txt")
-    add_file("blobs", "test/foo/NOTICE.txt", "NOTICE contents")
+    remove_file("src", "test/foo/NOTICE.txt")                   # src has test/foo
+    add_file("blobs", "test/foo/NOTICE.txt", "NOTICE contents") # blobs has test/foo
 
-    File.directory?(File.join(@release_dir, "src", "test", "foo")).
-      should be(true)
+    File.directory?(File.join(@release_dir, "src", "test", "foo")).should be(true)
 
     fp2 = make_builder("A", %w(test/**/*)).fingerprint
-
     fp1.should == fp2
   end
 
+  describe "file overriding via src_alt" do
+    it "includes top-level files from src_alt instead of src" do
+      add_file("src", "file1", "original")
+
+      builder = make_builder("A", %w(file*))
+      s1 = builder.fingerprint
+
+      add_file("src", "file1", "altered")
+      add_file("src_alt", "file1", "original")
+      builder.reload.fingerprint.should == s1
+    end
+
+    it "includes top-level files from src if not present in src_alt" do
+      add_file("src", "file1", "original1")
+      add_file("src", "file2", "original2")
+      builder = make_builder("A", %w(file*))
+      s1 = builder.fingerprint
+
+      add_file("src", "file1", "altered1")
+      add_file("src_alt", "file1", "original1")
+      builder.reload.fingerprint.should == s1
+    end
+
+    it "includes top-level-dir files from src_alt instead of src" do
+      add_file("src", "dir1/file1", "original1")
+      builder = make_builder("A", %w(dir1/*))
+      s1 = builder.fingerprint
+
+      add_file("src", "dir1/file1", "altered1")
+      add_file("src_alt", "dir1/file1", "original1")
+      builder.reload.fingerprint.should == s1
+    end
+
+    it "does not include top-level-dir files from src if not present in src_alt" do
+      add_file("src", "dir1/file1", "original1")
+      builder = make_builder("A", %w(dir1/*))
+      s1 = builder.fingerprint
+
+      add_file("src", "dir1/file2", "new2")
+      add_file("src_alt", "dir1/file1", "original1")
+      builder.reload.fingerprint.should == s1
+    end
+
+    it "checks if glob top-level-dir is present in src_alt but doesn't match" do
+      add_file("src", "dir1/file1", "original1")
+      FileUtils.mkdir(File.join(@release_dir, "src_alt", "dir1"))
+
+      builder = make_builder("A", %w(dir1/*))
+
+      lambda {
+        builder.fingerprint
+      }.should raise_error(
+        "Package `A' has a glob that doesn't match " +
+        "in `src_alt' but matches in `src'. However " +
+        "`src_alt/dir1' exists, so this might be an error."
+       )
+    end
+
+    it "raises an error if glob does not match any files in src or src_alt" do
+      builder = make_builder("A", %w(dir1/*))
+
+      lambda {
+        builder.reload.fingerprint
+      }.should raise_error("Package `A' has a glob that resolves to an empty file list: dir1/*")
+    end
+
+    it "prevents building final version with src_alt" do
+      lambda {
+        Bosh::Cli::PackageBuilder.new({
+          "name" => "bar",
+          "files" => "foo/**/*"
+        }, @release_dir, true, double("blobstore"))
+      }.should raise_error(/Please remove `src_alt' first/)
+    end
+  end
 end

@@ -60,6 +60,7 @@ cloud:
       default_security_groups:
       - default
       private_key: private_key_path
+      state_timeout: 300
 apply_spec:
   agent:
     blobstore:
@@ -104,6 +105,7 @@ cloud:
       default_security_groups:
       - default
       private_key: private_key_path
+      state_timeout: 300
 apply_spec:
   agent:
     blobstore:
@@ -115,6 +117,28 @@ YAML
 
         it 'generates the correct YAML' do
           expect(subject.to_h).to eq(Psych.load(expected_yml))
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_STATE_TIMEOUT is specified' do
+        it 'uses given env variable value (converted to a float) as a state_timeout' do
+          value = double('state_timeout', to_f: 'state_timeout_as_float')
+          env.merge!('BOSH_OPENSTACK_STATE_TIMEOUT' => value)
+          expect(subject.to_h['cloud']['properties']['openstack']['state_timeout']).to eq('state_timeout_as_float')
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_STATE_TIMEOUT is an empty string' do
+        it 'uses 300 (number) as a state_timeout' do
+          env.merge!('BOSH_OPENSTACK_STATE_TIMEOUT' => '')
+          expect(subject.to_h['cloud']['properties']['openstack']['state_timeout']).to eq(300)
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_STATE_TIMEOUT is not specified' do
+        it 'uses 300 (number) as a state_timeout' do
+          env.merge!('BOSH_OPENSTACK_STATE_TIMEOUT' => nil)
+          expect(subject.to_h['cloud']['properties']['openstack']['state_timeout']).to eq(300)
         end
       end
     end

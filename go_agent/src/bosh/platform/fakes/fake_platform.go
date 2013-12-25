@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	boshdisk "bosh/platform/disk"
-	fakedisk "bosh/platform/disk/fakes"
+	boshcmd "bosh/platform/commands"
+	fakecmd "bosh/platform/commands/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
@@ -14,7 +14,7 @@ type FakePlatform struct {
 	Fs                 *fakesys.FakeFileSystem
 	Runner             *fakesys.FakeCmdRunner
 	FakeStatsCollector *fakestats.FakeStatsCollector
-	FakeCompressor     *fakedisk.FakeCompressor
+	FakeCompressor     *fakecmd.FakeCompressor
 
 	SetupRuntimeConfigurationWasInvoked bool
 
@@ -27,9 +27,6 @@ type FakePlatform struct {
 	SetupSshPublicKeys                map[string]string
 	UserPasswords                     map[string]string
 	SetupHostnameHostname             string
-
-	SetupLogrotateErr  error
-	SetupLogrotateArgs SetupLogrotateArgs
 
 	SetTimeWithNtpServersServers         []string
 	SetTimeWithNtpServersServersFilePath string
@@ -51,13 +48,10 @@ type FakePlatform struct {
 
 	MountedDevicePaths []string
 
-	StartMonitStarted bool
-}
-
-type SetupLogrotateArgs struct {
-	GroupName string
-	BasePath  string
-	Size      string
+	StartMonitStarted           bool
+	SetupMonitUserSetup         bool
+	GetMonitCredentialsUsername string
+	GetMonitCredentialsPassword string
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -65,7 +59,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.Fs = &fakesys.FakeFileSystem{}
 	platform.Runner = &fakesys.FakeCmdRunner{}
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
-	platform.FakeCompressor = &fakedisk.FakeCompressor{}
+	platform.FakeCompressor = &fakecmd.FakeCompressor{}
 
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
@@ -85,7 +79,7 @@ func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) 
 	return p.FakeStatsCollector
 }
 
-func (p *FakePlatform) GetCompressor() (compressor boshdisk.Compressor) {
+func (p *FakePlatform) GetCompressor() (compressor boshcmd.Compressor) {
 	return p.FakeCompressor
 }
 
@@ -131,13 +125,6 @@ func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 }
 
 func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
-	p.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
-
-	if p.SetupLogrotateErr != nil {
-		err = p.SetupLogrotateErr
-		return
-	}
-
 	return
 }
 
@@ -188,5 +175,16 @@ func (p *FakePlatform) IsDevicePathMounted(path string) (result bool, err error)
 
 func (p *FakePlatform) StartMonit() (err error) {
 	p.StartMonitStarted = true
+	return
+}
+
+func (p *FakePlatform) SetupMonitUser() (err error) {
+	p.SetupMonitUserSetup = true
+	return
+}
+
+func (p *FakePlatform) GetMonitCredentials() (username, password string, err error) {
+	username = p.GetMonitCredentialsUsername
+	password = p.GetMonitCredentialsPassword
 	return
 }

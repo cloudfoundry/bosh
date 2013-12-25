@@ -1,8 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
-  class EventLog
-
+  module EventLog
     # Event log conventions:
     # All event log entries having same "stage" logically belong to the same
     # event group. "tags" is an array of strings that supposed to act as hint
@@ -25,112 +22,127 @@ module Bosh::Director
     # Job update (mysql_node):
     # update |--------        | (2/4) 50%
 
-    attr_reader :stage
-    attr_reader :total
-    attr_reader :counter
+    class Log
+      def initialize(io = nil)
+        @logger = CustomLogger.new(io || StringIO.new)
+        @last_stage = Stage.new(self, 'unknown', [], 0)
+        @last_stage_lock = Mutex.new
+      end
 
-    def initialize(io = nil)
-      @logger = EventLogger.new(io || StringIO.new)
-      @lock = Mutex.new
-      @counter = 0
+      def begin_stage(stage_name, total = nil, tags = [])
+        stage = Stage.new(self, stage_name, tags, total)
+        @last_stage_lock.synchronize { @last_stage = stage }
+      end
+
+      def track(task_name = nil, &blk)
+        last_stage = @last_stage_lock.synchronize { @last_stage }
+        last_stage.advance_and_track(task_name, &blk)
+      end
+
+      # Adds an error entry to the event log.
+      # @param [DirectorError] error Director error
+      # @return [void]
+      def log_error(error)
+        @logger.info(Yajl::Encoder.encode(
+          :time => Time.now.to_i,
+          :error => {
+            :code => error.error_code,
+            :message => error.message,
+          },
+        ))
+      end
+
+      def log_entry(entry)
+        @logger.info(Yajl::Encoder.encode(entry))
+      end
     end
 
-    def begin_stage(stage, total = nil, tags = [])
-      @lock.synchronize do
-        @stage = stage
+    class Stage
+      def initialize(event_log, name, tags, total)
+        @event_log = event_log
+        @name = name
         @tags = tags
-        @counter = 0
+        @index = 0
         @total = total
+        @index_lock = Mutex.new
+      end
+
+      def advance_and_track(task_name, &blk)
+        task = @index_lock.synchronize do
+          @index += 1
+          Task.new(self, task_name, @index)
+        end
+
+        task.start
+        begin
+          blk.call(task) if blk
+        rescue => e
+          task.failed(e.to_s)
+          raise
+        end
+        task.finish
+      end
+
+      def log_entry(entry)
+        @event_log.log_entry({
+          :time => Time.now.to_i,
+          :stage => @name,
+          :tags => @tags,
+          :total => @total,
+        }.merge(entry))
       end
     end
 
-    def track(task = nil)
-      index = nil
-      @lock.synchronize do
-        @counter += 1
-        index = @counter
+    class Task
+      def initialize(stage, name, index)
+        @stage = stage
+        @name = name
+        @index = index
+        @state = 'in_progress'
+        @progress = 0
       end
 
-      ticker = EventTicker.new(self, task, index)
-
-      start_task(task, index)
-      begin
-        yield ticker if block_given?
-      rescue => e
-        task_failed(task, index, 100, e.to_s)
-        raise
+      def advance(delta, data = {})
+        @state = 'in_progress'
+        @progress = [@progress + delta, 100].min
+        log_entry(data)
       end
-      finish_task(task, index)
-    end
 
-    # Adds an error entry to the event log.
-    # @param [DirectorError] error Director error
-    # @return [void]
-    def log_error(error)
-      entry = {
-        :time => Time.now.to_i,
-        :error => {
-          :code => error.error_code,
-          :message => error.message
+      def start
+        @state = 'started'
+        log_entry
+      end
+
+      def finish
+        @state = 'finished'
+        @progress = 100
+        log_entry
+      end
+
+      def failed(error_msg = nil)
+        @state = 'failed'
+        @progress = 100
+        log_entry("error" => error_msg)
+      end
+
+      private
+
+      def log_entry(data = {})
+        task_entry = {
+          :task => @name,
+          :index => @index,
+          :state => @state,
+          :progress => @progress.to_i,
         }
-      }
-
-      @logger.info(Yajl::Encoder.encode(entry))
-    end
-
-    def start_task(task, index, progress = 0)
-      log_task(task, "started", index, progress)
-    end
-
-    def finish_task(task, index, progress = 100)
-      log_task(task, "finished", index, progress)
-    end
-
-    def task_failed(task, index, progress = 100, error = nil)
-      log_task(task, "failed", index, progress, {"error" => error})
-    end
-
-    def log_task(task, state, index, progress = 0, data = {})
-      entry = {
-        :time => Time.now.to_i,
-        :stage => @stage,
-        :task => task,
-        :tags => @tags,
-        :index => index,
-        :total => @total,
-        :state => state,
-        :progress => progress,
-      }
-
-      if data.size > 0
-        entry[:data] = data
+        task_entry[:data] = data if data.size > 0
+        @stage.log_entry(task_entry)
       end
-
-      @logger.info(Yajl::Encoder.encode(entry))
     end
 
-  end
-
-  class EventLogger < Logger
-    def format_message(level, time, progname, msg)
-      msg + "\n"
-    end
-  end
-
-  # Sometimes task needs to be split into subtasks so we can track its progress
-  # with more granularity. In that case we can use EventTicker helper class
-  # to advance progress between N and N+1 by small increments.
-  class EventTicker
-    def initialize(event_log, task, index)
-      @event_log = event_log
-      @task = task
-      @index = index
-      @progress = 0
-    end
-
-    def advance(delta, data = {})
-      @progress = [@progress + delta, 100].min
-      @event_log.log_task(@task, "in_progress", @index, @progress.to_i, data)
+    class CustomLogger < ::Logger
+      def format_message(level, time, progname, msg)
+        msg + "\n"
+      end
     end
   end
 end

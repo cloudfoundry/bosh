@@ -63,5 +63,14 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage cloudcheck' do
   2. Recreate VM using last known apply spec
   3. Delete VM reference (DANGEROUS!)')
     end
+
+    def run_bosh_cck_ignore_errors(num_errors)
+      resolution_selections = "1\n"*num_errors + "yes"
+      output = `echo "#{resolution_selections}" | bosh -c #{BOSH_CONFIG} cloudcheck`
+      if $?.exitstatus != 0
+        puts output
+      end
+      output
+    end
   end
 end

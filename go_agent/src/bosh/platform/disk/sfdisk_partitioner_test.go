@@ -10,7 +10,7 @@ import (
 
 func TestSfdiskPartition(t *testing.T) {
 	runner := &fakesys.FakeCmdRunner{}
-	runner.AddCmdResult("sfdisk -d /dev/sda", []string{DEVSDA_SFDISK_EMPTY_DUMP, ""})
+	runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_EMPTY_DUMP})
 	partitioner := createSfdiskPartitionerForTests(runner)
 
 	partitions := []Partition{
@@ -36,7 +36,7 @@ unit: sectors
 
 func TestSfdiskPartitionWithNoPartitionTable(t *testing.T) {
 	runner := &fakesys.FakeCmdRunner{}
-	runner.AddCmdResult("sfdisk -d /dev/sda", []string{"", DEVSDA_SFDISK_NOTABLE_DUMP_STDERR})
+	runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stderr: DEVSDA_SFDISK_NOTABLE_DUMP_STDERR})
 	partitioner := createSfdiskPartitionerForTests(runner)
 
 	partitions := []Partition{
@@ -58,7 +58,7 @@ No partitions found`
 
 func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 	runner := &fakesys.FakeCmdRunner{}
-	runner.AddCmdResult("sfdisk -s /dev/sda", []string{fmt.Sprintf("%d\n", 40000*1024), ""})
+	runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 40000*1024)})
 	partitioner := createSfdiskPartitionerForTests(runner)
 
 	size, err := partitioner.GetDeviceSizeInMb("/dev/sda")
@@ -69,11 +69,11 @@ func TestSfdiskGetDeviceSizeInMb(t *testing.T) {
 
 func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 	runner := &fakesys.FakeCmdRunner{}
-	runner.AddCmdResult("sfdisk -d /dev/sda", []string{DEVSDA_SFDISK_DUMP, ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda", []string{fmt.Sprintf("%d\n", 2048*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda1", []string{fmt.Sprintf("%d\n", 525*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda2", []string{fmt.Sprintf("%d\n", 1020*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda3", []string{fmt.Sprintf("%d\n", 500*1024), ""})
+	runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_DUMP})
+	runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 525*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda2", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1020*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda3", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 500*1024)})
 	partitioner := createSfdiskPartitionerForTests(runner)
 
 	partitions := []Partition{
@@ -89,10 +89,10 @@ func TestSfdiskPartitionWhenPartitionsAlreadyMatch(t *testing.T) {
 
 func TestSfdiskPartitionWithLastPartitionNotMatchingSize(t *testing.T) {
 	runner := &fakesys.FakeCmdRunner{}
-	runner.AddCmdResult("sfdisk -d /dev/sda", []string{DEVSDA_SFDISK_DUMP_ONE_PARTITION, ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda", []string{fmt.Sprintf("%d\n", 2048*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda1", []string{fmt.Sprintf("%d\n", 1024*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda2", []string{fmt.Sprintf("%d\n", 512*1024), ""})
+	runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_DUMP_ONE_PARTITION})
+	runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda2", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 512*1024)})
 	partitioner := createSfdiskPartitionerForTests(runner)
 
 	partitions := []Partition{
@@ -108,10 +108,10 @@ func TestSfdiskPartitionWithLastPartitionNotMatchingSize(t *testing.T) {
 
 func TestSfdiskPartitionWithLastPartitionFillingDisk(t *testing.T) {
 	runner := &fakesys.FakeCmdRunner{}
-	runner.AddCmdResult("sfdisk -d /dev/sda", []string{DEVSDA_SFDISK_DUMP_ONE_PARTITION, ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda", []string{fmt.Sprintf("%d\n", 2048*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda1", []string{fmt.Sprintf("%d\n", 1024*1024), ""})
-	runner.AddCmdResult("sfdisk -s /dev/sda2", []string{fmt.Sprintf("%d\n", 1024*1024), ""})
+	runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_DUMP_ONE_PARTITION})
+	runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})
+	runner.AddCmdResult("sfdisk -s /dev/sda2", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})
 
 	partitioner := createSfdiskPartitionerForTests(runner)
 

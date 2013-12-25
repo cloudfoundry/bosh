@@ -23,7 +23,7 @@ module Bosh::Agent
     def write_dhcp_conf
       template = ERB.new(load_erb("dhclient_conf.erb"), 0, '%<>-')
       result = template.result(binding)
-      updated = Bosh::Agent::Util::update_file(result, '/etc/dhclient.conf')
+      updated = Bosh::Agent::Util::update_file(result, '/etc/dhcp/dhclient.conf')
       if updated
         @logger.info("Updated dhclient.conf")
         restart_dhclient

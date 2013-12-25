@@ -1,28 +1,24 @@
 require 'spec_helper'
 
-describe Bosh::Director::Api::BackupManager do
-  let(:user) { Bosh::Director::Models::User.make }
-  let(:command_runner) { double('command_runner') }
-  let(:backup_manager) { described_class.new }
+module Bosh::Director
+  describe Api::BackupManager do
+    let(:username) { 'username-1' }
+    let(:backup_manager) { described_class.new }
 
-  describe '#create_bosh_backup' do
-    let(:task_id) { 42 }
-    let(:task) { double('Task', id: task_id) }
-    let(:user) { double('User') }
+    describe '#create_bosh_backup' do
+      let(:task) { double('fake task') }
+      let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
-    before do
-      Resque.stub(:enqueue)
-      BD::JobQueue.any_instance.stub(:create_task => task)
-    end
+      before do
+        JobQueue.stub(:new).and_return(job_queue)
+      end
 
-    it 'enqueues a task to create a backup of BOSH' do
-      Resque.should_receive(:enqueue).with(BD::Jobs::Backup, task_id, '/var/vcap/store/director/backup.tgz')
+      it 'enqueues a task to create a backup of BOSH' do
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::Backup, 'bosh backup', ['/var/vcap/store/director/backup.tgz']).and_return(task)
 
-      backup_manager.create_backup(user)
-    end
-
-    it 'returns the task so it can be tracked' do
-      backup_manager.create_backup(user).should == task
+        expect(backup_manager.create_backup(username)).to eq(task)
+      end
     end
   end
 end

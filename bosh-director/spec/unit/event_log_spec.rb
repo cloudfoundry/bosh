@@ -1,101 +1,87 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'spec_helper'
 
-require File.expand_path("../../spec_helper", __FILE__)
+describe Bosh::Director::EventLog::Log do
+  subject(:event_log) { described_class.new(buf) }
+  let(:buf) { StringIO.new }
 
-describe Bosh::Director::EventLog do
+  it 'tracks stages and tasks, persists them using JSON' do
+    stage1 = event_log.begin_stage(:stage1, 2)
+    stage1.advance_and_track(:foo) do
+      stage1.advance_and_track(:bar)
+    end
 
-  def make_event_log(io)
-    Bosh::Director::EventLog.new(io)
+    events = sent_events
+    events.size.should == 4
+    events.map { |e| e['total'] }.uniq.should == [2]
+    events.map { |e| e['index'] }.should == [1,2,2,1]
+    events.map { |e| e['stage'] }.uniq.should == ['stage1']
+    events.map { |e| e['state'] }.should == ['started', 'started', 'finished', 'finished']
   end
 
-  it "tracks stages and tasks, persists them using JSON" do
-    buf = StringIO.new
-    event_log = make_event_log(buf)
-    event_log.total.should be_nil
-    event_log.stage.should be_nil
-    event_log.counter.should == 0
-
+  it 'supports tracking parallel events without being thread safe' +
+     '(since stages can start in the middle of other stages)' do
     event_log.begin_stage(:prepare, 5)
-    event_log.stage.should == :prepare
-
-    event_log.start_task(:foo, 1)
-    event_log.start_task(:bar, 2)
-    event_log.start_task(:baz, 3)
-
-    event_log.finish_task(:bar, 2)
-    event_log.finish_task(:baz, 3)
-    event_log.finish_task(:foo, 1)
-
-    event_log.begin_stage(:post_prepare, 256)
-    event_log.stage.should == :post_prepare
-    event_log.total.should == 256
-
-    buf.rewind
-    lines = buf.read.split("\n")
-    events = lines.map { |line| JSON.parse(line) }
-
-    events.size.should == 6
-
-    events.map { |e| e["total"] }.uniq.should == [5]
-    events.map { |e| e["index"] }.should == [1,2,3,2,3,1]
-    events.map { |e| e["stage"] }.uniq.should == ["prepare"]
-    events.map { |e| e["state"] }.should == [["started"]*3, ["finished"]*3].flatten
-  end
-
-  it "supports tracking parallel events" do
-    buf = StringIO.new
-    event_log = make_event_log(buf)
-
-    event_log.begin_stage(:prepare, 5)
-
     threads = []
 
     5.times do |i|
       threads << Thread.new do
         sleep(rand()/5)
-        event_log.track(i) do
-          sleep(rand()/5)
-        end
+        event_log.track(i) { sleep(rand()/5) }
       end
     end
 
-    threads.each { |thread| thread.join }
+    threads.each(&:join)
 
-    buf.rewind
-    lines = buf.read.split("\n")
-    events = lines.map { |line| JSON.parse(line) }
-
+    events = sent_events
     events.size.should == 10
-
-    events.map { |e| e["total"] }.uniq.should == [5]
-    events.map { |e| e["index"] }.sort.should == [1,1,2,2,3,3,4,4,5,5]
-    events.map { |e| e["stage"] }.uniq.should == ["prepare"]
-    events.map { |e| e["state"] }.sort.should == [["finished"]*5, ["started"]*5].flatten
+    events.map { |e| e['total'] }.uniq.should == [5]
+    events.map { |e| e['index'] }.sort.should == [1,1,2,2,3,3,4,4,5,5]
+    events.map { |e| e['stage'] }.uniq.should == ['prepare']
+    events.map { |e| e['state'] }.sort.should == [['finished']*5, ['started']*5].flatten
   end
 
-  it "doesn't enforce the proper event ordering or any other kind of consistency" do
-    buf = StringIO.new
-    event_log = make_event_log(buf)
+  it 'supports tracking parallel events while being thread safe' +
+     '(since stages can start in the middle of other stages)' do
+    stage1 = event_log.begin_stage(:stage1, 2)
+    stage2 = event_log.begin_stage(:stage2, 2)
 
-    event_log.begin_stage(:prepare, 5)
+    # stages are started and completed out of order
+    stage1.advance_and_track(:stage1_task1)
+    stage2.advance_and_track(:stage2_task1)
+    stage1.advance_and_track(:stage1_task2)
+    stage2.advance_and_track(:stage2_task2)
 
-    event_log.start_task(:foo, 1)
-    event_log.start_task(:bar, 1)
+    events = sent_events
+    events.size.should == 8
+    events.map { |e| e['total'] }.uniq.should == [2]
+    events.map { |e| e['index'] }.should == [1,1,1,1,2,2,2,2]
+    events.map { |e| e['stage'] }.should == ['stage1', 'stage1', 'stage2', 'stage2', 'stage1', 'stage1', 'stage2', 'stage2']
+    events.map { |e| e['state'] }.should == ['started', 'finished', 'started', 'finished', 'started', 'finished', 'started', 'finished']
+  end
 
-    event_log.begin_stage(:run, 200)
+  it 'does not enforce current task index consistency for a stage' do
+    stage1 = event_log.begin_stage(:stage1, 2)
+    stage1.advance_and_track(:stage1_task1)
+    stage1.advance_and_track(:stage1_task2)
+    stage1.advance_and_track(:stage1_task3) # over the total # of stages
 
-    event_log.finish_task(:foo, 14)
-    event_log.finish_task(:zbb, -500)
+    events = sent_events
+    events.size.should == 6
+  end
 
+  it 'has a default stage of unknown' do
+    event_log.track(:task1)
+
+    events = sent_events
+    expect(events.size).to eq(2)
+    expect(events.map { |e| e['total'] }).to eq([0,0])
+    expect(events.map { |e| e['index'] }).to eq([1,1])
+    expect(events.map { |e| e['stage'] }).to eq(['unknown', 'unknown'])
+    expect(events.map { |e| e['state'] }).to eq(['started', 'finished'])
+  end
+
+  def sent_events
     buf.rewind
-    lines = buf.read.split("\n")
-    events = lines.map { |line| JSON.parse(line) }
-
-    events.size.should == 4
-
-    events.map { |e| e["total"] }.should == [5,5,200,200]
-    events.map { |e| e["index"] }.should == [1,1,14,-500]
-    events.map { |e| e["stage"] }.should == ["prepare", "prepare", "run", "run"]
+    buf.read.split("\n").map { |line| JSON.parse(line) }
   end
-
 end

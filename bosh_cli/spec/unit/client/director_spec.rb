@@ -450,7 +450,7 @@ describe Bosh::Cli::Client::Director do
 
       tracker = double('tracker', :track => 'polling result', :output => 'foo')
 
-      Bosh::Cli::TaskTracker.should_receive(:new).
+      Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
         with(@director, '502', options).
         and_return(tracker)
 
@@ -471,7 +471,7 @@ describe Bosh::Cli::Client::Director do
 
       tracker = double('tracker', :track => 'polling result', :output => 'foo')
 
-      Bosh::Cli::TaskTracker.should_receive(:new).
+      Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
         with(@director, '502', options).
         and_return(tracker)
 
@@ -497,7 +497,7 @@ describe Bosh::Cli::Client::Director do
 
         tracker = double('tracker', :track => 'polling result', :output => 'foo')
 
-        Bosh::Cli::TaskTracker.should_receive(:new).
+        Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
           with(@director, '502', options).
           never
 

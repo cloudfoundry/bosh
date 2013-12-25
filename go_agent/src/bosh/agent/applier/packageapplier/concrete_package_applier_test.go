@@ -4,10 +4,9 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
-	fakedisk "bosh/platform/disk/fakes"
+	fakecmd "bosh/platform/commands/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
@@ -47,17 +46,15 @@ func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
 	_, blobstore, _, applier := buildPackageApplier()
 	pkg := buildPackage()
 	pkg.Source.BlobstoreId = "fake-blobstore-id"
+	pkg.Source.Sha1 = "blob-sha1"
 
-	file, err := os.Open("/dev/null")
+	blobstore.GetFileName = "/dev/null"
+
+	err := applier.Apply(pkg)
 	assert.NoError(t, err)
-	defer file.Close()
-
-	blobstore.GetFile = file
-
-	err = applier.Apply(pkg)
-	assert.NoError(t, err)
-	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobId)
-	assert.Equal(t, file, blobstore.CleanUpFile)
+	assert.Equal(t, "fake-blobstore-id", blobstore.GetBlobIds[0])
+	assert.Equal(t, "blob-sha1", blobstore.GetFingerprints[0])
+	assert.Equal(t, blobstore.GetFileName, blobstore.CleanUpFileName)
 }
 
 func TestApplyErrsWhenPackageDownloadErrs(t *testing.T) {
@@ -75,17 +72,13 @@ func TestApplyDecompressesPackageToInstallPath(t *testing.T) {
 	packagesBc, blobstore, compressor, applier := buildPackageApplier()
 	pkg := buildPackage()
 
-	file, err := os.Open("/dev/null")
-	assert.NoError(t, err)
-	defer file.Close()
-
 	packagesBc.InstallPath = "fake-install-path"
-	blobstore.GetFile = file
+	blobstore.GetFileName = "/dev/null"
 
-	err = applier.Apply(pkg)
+	err := applier.Apply(pkg)
 	assert.NoError(t, err)
-	assert.Equal(t, file, compressor.DecompressFileToDirTarball)
-	assert.Equal(t, "fake-install-path", compressor.DecompressFileToDirDir)
+	assert.Equal(t, blobstore.GetFileName, compressor.DecompressFileToDirTarballPaths[0])
+	assert.Equal(t, "fake-install-path", compressor.DecompressFileToDirDirs[0])
 }
 
 func TestApplyErrsWhenPackageDecompressErrs(t *testing.T) {
@@ -102,12 +95,12 @@ func TestApplyErrsWhenPackageDecompressErrs(t *testing.T) {
 func buildPackageApplier() (
 	*fakebc.FakeBundleCollection,
 	*fakeblob.FakeBlobstore,
-	*fakedisk.FakeCompressor,
+	*fakecmd.FakeCompressor,
 	PackageApplier,
 ) {
 	packagesBc := fakebc.NewFakeBundleCollection()
 	blobstore := fakeblob.NewFakeBlobstore()
-	compressor := fakedisk.NewFakeCompressor()
+	compressor := fakecmd.NewFakeCompressor()
 	applier := NewConcretePackageApplier(packagesBc, blobstore, compressor)
 	return packagesBc, blobstore, compressor, applier
 }

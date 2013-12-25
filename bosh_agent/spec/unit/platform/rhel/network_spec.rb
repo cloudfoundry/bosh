@@ -48,7 +48,7 @@ describe Bosh::Agent::Platform::Centos::Network do
     it 'should configure dhcp with dns server prepended' do
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 5\.6\.7\.8;\nprepend domain-name-servers 1\.2\.3\.4;$/
-        file.should == '/etc/dhclient.conf'
+        file.should == '/etc/dhcp/dhclient.conf'
         true # fake a change
       end
       network_wrapper.should_receive(:restart_dhclient)
@@ -71,7 +71,7 @@ describe Bosh::Agent::Platform::Centos::Network do
 
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 1\.2\.3\.4;$/
-        file.should == '/etc/dhclient.conf'
+        file.should == '/etc/dhcp/dhclient.conf'
         true # fake a change
       end
       network_wrapper.should_receive(:restart_dhclient)

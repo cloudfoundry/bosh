@@ -63,9 +63,9 @@ module Bosh::Dev
       bucket = 'bosh-ci-pipeline'
       upload_adapter = Bosh::Dev::UploadAdapter.new
 
-      upload_adapter.upload(bucket_name: bucket, key: s3_latest_path, body: File.open(stemcell.path), public: false)
+      upload_adapter.upload(bucket_name: bucket, key: s3_latest_path, body: File.open(stemcell.path), public: true)
       logger.info("uploaded to s3://#{bucket}/#{s3_latest_path}")
-      upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(stemcell.path), public: false)
+      upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(stemcell.path), public: true)
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 

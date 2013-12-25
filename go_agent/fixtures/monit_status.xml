@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<monit id="31624af2d6e660abea718e9ca6a77bf4" incarnation="1386971748" version="5.6">
+    <server>
+        <uptime>62</uptime>
+        <poll>10</poll>
+        <startdelay>0</startdelay>
+        <localhostname>system</localhostname>
+        <controlfile>/etc/monitrc</controlfile>
+        <httpd>
+            <address>127.0.0.1</address>
+            <port>2822</port>
+            <ssl>0</ssl>
+        </httpd>
+    </server>
+    <platform>
+        <name>Darwin</name>
+        <release>12.5.0</release>
+        <version>Darwin Kernel Version 12.5.0: Sun Sep 29 13:33:47 PDT 2013; root:xnu-2050.48.12~1/RELEASE_X86_64</version>
+        <machine>x86_64</machine>
+        <cpu>8</cpu>
+        <memory>33554432</memory>
+        <swap>65536</swap>
+    </platform>
+    <services>
+        <service name="dummy">
+            <type>3</type>
+            <collected_sec>1386971809</collected_sec>
+            <collected_usec>735466</collected_usec>
+            <status>0</status>
+            <status_hint>0</status_hint>
+            <monitor>1</monitor>
+            <monitormode>0</monitormode>
+            <pendingaction>0</pendingaction>
+            <pid>1</pid>
+            <ppid>0</ppid>
+            <uptime>880183</uptime>
+            <children>163</children>
+            <memory>
+                <percent>0.0</percent>
+                <percenttotal>0.0</percenttotal>
+                <kilobyte>0</kilobyte>
+                <kilobytetotal>4004</kilobytetotal>
+            </memory>
+            <cpu>
+                <percent>0.0</percent>
+                <percenttotal>0.0</percenttotal>
+            </cpu>
+        </service>
+        <service name="system">
+            <type>5</type>
+            <collected_sec>1386971809</collected_sec>
+            <collected_usec>735467</collected_usec>
+            <status>0</status>
+            <status_hint>0</status_hint>
+            <monitor>1</monitor>
+            <monitormode>0</monitormode>
+            <pendingaction>0</pendingaction>
+            <system>
+                <load>
+                    <avg01>6.93</avg01>
+                    <avg05>6.72</avg05>
+                    <avg15>6.62</avg15>
+                </load>
+                <cpu>
+                    <user>14.1</user>
+                    <system>5.8</system>
+                </cpu>
+                <memory>
+                    <percent>32.6</percent>
+                    <kilobyte>10945144</kilobyte>
+                </memory>
+                <swap>
+                    <percent>0.0</percent>
+                    <kilobyte>0</kilobyte>
+                </swap>
+            </system>
+        </service>
+    </services>
+    <servicegroups>
+        <servicegroup name="vcap">
+            <service>dummy</service>
+        </servicegroup>
+    </servicegroups>
+</monit>

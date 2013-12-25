@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class PackageBuilder
     include PackagingHelper
@@ -246,34 +244,21 @@ module Bosh::Cli
       all_matches = Set.new
 
       @globs.each do |glob|
+        matches = Set.new
+
+        src_matches = Dir.chdir(@sources_dir) { resolve_glob_in_cwd(glob) }
+        src_alt_matches = []
+        if File.directory?(@alt_sources_dir)
+          src_alt_matches = Dir.chdir(@alt_sources_dir) { resolve_glob_in_cwd(glob) }
+        end
+
         # Glob like core/dea/**/* might not yield anything in alt source even
         # when `src_alt/core' exists. That's error prone, so we don't lookup
         # in `src' if `src_alt' contains any part of the glob hierarchy.
         top_dir = glob.split(File::SEPARATOR)[0]
-        alt_only = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
+        top_dir_in_src_alt_exists = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
 
-        matches = Set.new
-        # Alternative source dir completely shadows the source dir, there can be
-        # no partial match of a particular glob in both.
-        if File.directory?(@alt_sources_dir)
-          alt_matches = Dir.chdir(@alt_sources_dir) do
-            resolve_glob_in_cwd(glob)
-          end
-        else
-          alt_matches = []
-        end
-
-        if alt_matches.size > 0
-          matches += alt_matches.map do |path|
-            GlobMatch.new(@alt_sources_dir, path)
-          end
-        end
-
-        normal_matches = Dir.chdir(@sources_dir) do
-          resolve_glob_in_cwd(glob)
-        end
-
-        if alt_only && alt_matches.empty? && !normal_matches.empty?
+        if top_dir_in_src_alt_exists && src_alt_matches.empty? && !src_matches.empty?
           raise InvalidPackage, "Package `#{name}' has a glob that " +
             "doesn't match in `#{File.basename(@alt_sources_dir)}' " +
             "but matches in `#{File.basename(@sources_dir)}'. " +
@@ -281,8 +266,12 @@ module Bosh::Cli
             "exists, so this might be an error."
         end
 
-        matches += normal_matches.map do |path|
-          GlobMatch.new(@sources_dir, path)
+        # First add src_alt matches since src_alt takes priority over src matches
+        matches += src_alt_matches.map { |path| GlobMatch.new(@alt_sources_dir, path) }
+
+        # Only add if top-level-dir does not exist in src_alt. No partial matches.
+        if !top_dir_in_src_alt_exists
+          matches += src_matches.map { |path| GlobMatch.new(@sources_dir, path) }
         end
 
         # Blobs directory is a little bit different: whatever matches a blob
@@ -291,18 +280,12 @@ module Bosh::Cli
         if File.directory?(File.join(@blobs_dir))
           Dir.chdir(@blobs_dir) do
             blob_matches = resolve_glob_in_cwd(glob)
-
-            unless blob_matches.empty?
-              blob_matches.each do |path|
-                matches << GlobMatch.new(@blobs_dir, path)
-              end
-            end
+            blob_matches.each { |path| matches << GlobMatch.new(@blobs_dir, path) }
           end
         end
 
         if matches.empty?
-          raise InvalidPackage, "Package `#{name}' has a glob that " +
-            "resolves to an empty file list: #{glob}"
+          raise InvalidPackage, "Package `#{name}' has a glob that resolves to an empty file list: #{glob}"
         end
 
         all_matches += matches

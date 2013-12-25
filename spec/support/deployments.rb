@@ -1,6 +1,5 @@
 module Bosh::Spec
   class Deployments
-
     def self.minimal_manifest
       # This is a minimal manifest I was actually being able to deploy with. It doesn't even have any jobs,
       # so it's not very realistic though
@@ -11,7 +10,7 @@ module Bosh::Spec
           "version" => "0.1" # It's our dummy valid release from spec/assets/valid_release.tgz
         },
 
-        "director_uuid" => "deadbeef",
+        "director_uuid"  => "deadbeef",
         "networks"       => [ { "name" => "a", "subnets" => [  ] }, ],
         "compilation"    => { "workers" => 1, "network" => "a", "cloud_properties" => { } },
         "resource_pools" => [ ],
@@ -33,36 +32,39 @@ module Bosh::Spec
           "version" => "0.1-dev"
         },
 
-        "networks" => [{ "name" => "a",
-                         "subnets" => [{ "range"    => "192.168.1.0/24",
-                                         "gateway"  => "192.168.1.1",
-                                         "dns"      => [ "192.168.1.1", "192.168.1.2" ],
-                                         "static"   => [ "192.168.1.10" ],
-                                         "reserved" => [ ],
-                                         "cloud_properties" => { }
-                                       }]
-                       }],
+        "networks" => [{
+          "name"    => "a",
+          "subnets" => [{
+            "range"    => "192.168.1.0/24",
+            "gateway"  => "192.168.1.1",
+            "dns"      => [ "192.168.1.1", "192.168.1.2" ],
+            "static"   => [ "192.168.1.10" ],
+            "reserved" => [ ],
+            "cloud_properties" => { },
+          }]
+        }],
 
-        "resource_pools" => [{ "name" => "a",
-                               "size" => 3,
-                               "cloud_properties" => { },
-                               "network" => "a",
-                               "stemcell" => {
-                                 "name"    => "ubuntu-stemcell",
-                                 "version" => "1"
-                               }
-                             }],
+        "resource_pools" => [{
+          "name" => "a",
+          "size" => 3,
+          "cloud_properties" => { },
+          "network"   => "a",
+          "stemcell"  => {
+            "name"    => "ubuntu-stemcell",
+            "version" => "1"
+          }
+        }],
 
-        "jobs" => [{ "name"          => "foobar",
-                     "template"      => "foobar",
-                     "resource_pool" => "a",
-                     "instances"     => 3,
-                     "networks"      => [ { "name" => "a" } ]
-                   }]
+        "jobs" => [{
+          "name"          => "foobar",
+          "template"      => "foobar",
+          "resource_pool" => "a",
+          "instances"     => 3,
+          "networks"      => [{ "name" => "a" } ]
+        }]
       }
 
       minimal_manifest.merge(extras)
     end
-
   end
 end

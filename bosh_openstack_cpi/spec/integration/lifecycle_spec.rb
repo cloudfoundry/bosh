@@ -36,57 +36,13 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   before do
-    delegate = double("delegate", task_checkpoint: nil, logger: Logger.new(STDOUT))
+    delegate = double("delegate", task_checkpoint: nil, logger: logger)
     Bosh::Clouds::Config.configure(delegate)
   end
 
+  let(:logger) { Logger.new(STDERR) }
+
   before { Bosh::Registry::Client.stub(:new).and_return(double("registry").as_null_object) }
-
-  before { @server_id = nil }
-
-  after do
-    if @server_id
-      cpi.delete_vm(@server_id)
-      cpi.has_vm?(@server_id).should be(false)
-    end
-  end
-
-  before { @volume_id = nil }
-  after { cpi.delete_disk(@volume_id) if @volume_id }
-
-  def vm_lifecycle(stemcell_id, network_spec, disk_locality)
-    @server_id = cpi.create_vm(
-      "agent-007",
-      stemcell_id,
-      { "instance_type" => "m1.small"} ,
-      network_spec,
-      disk_locality,
-      { "key" => "value" }
-    )
-
-    @server_id.should_not be_nil
-
-    cpi.has_vm?(@server_id).should be(true)
-
-    metadata = {:deployment => 'deployment', :job => "openstack_cpi_spec", :index => "0"}
-    cpi.set_vm_metadata(@server_id, metadata)
-
-    @volume_id = cpi.create_disk(2048, @server_id)
-    @volume_id.should_not be_nil
-
-    cpi.attach_disk(@server_id, @volume_id)
-
-    cpi.detach_disk(@server_id, @volume_id)
-
-    metadata[:instance_id] = 'instance'
-    metadata[:agent_id] = 'agent'
-    metadata[:director_name] = 'Director'
-    metadata[:director_uuid] = '6d06b0cc-2c08-43c5-95be-f1b2dd247e18'
-    snapshot_id = cpi.snapshot_disk(@volume_id, metadata)
-    snapshot_id.should_not be_nil
-
-    cpi.delete_snapshot(snapshot_id)
-  end
 
   describe "dynamic network" do
     let(:network_spec) do
@@ -146,5 +102,119 @@ describe Bosh::OpenStackCloud::Cloud do
         vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
       end
     end
+  end
+
+  def vm_lifecycle(stemcell_id, network_spec, disk_locality)
+    vm_id = create_vm(stemcell_id, network_spec, disk_locality)
+    disk_id = create_disk(vm_id)
+    disk_snapshot_id = create_disk_snapshot(disk_id)
+  rescue Exception => create_error
+  ensure
+    # create_error is in scope and possibly populated!
+    run_all_and_raise_any_errors(create_error, [
+      lambda { clean_up_disk_snapshot(disk_snapshot_id) },
+      lambda { clean_up_disk(disk_id) },
+      lambda { clean_up_vm(vm_id) },
+    ])
+  end
+
+  def create_vm(stemcell_id, network_spec, disk_locality)
+    logger.info("Creating VM with stemcell_id=#{stemcell_id}")
+    vm_id = cpi.create_vm(
+      "agent-007",
+      stemcell_id,
+      { "instance_type" => "m1.small" },
+      network_spec,
+      disk_locality,
+      { "key" => "value" }
+    )
+    vm_id.should_not be_nil
+
+    logger.info("Checking VM existence vm_id=#{vm_id}")
+    cpi.has_vm?(vm_id).should be(true)
+
+    logger.info("Setting VM metadata vm_id=#{vm_id}")
+    cpi.set_vm_metadata(vm_id, {
+      :deployment => 'deployment',
+      :job => 'openstack_cpi_spec',
+      :index => '0',
+    })
+
+    vm_id
+  end
+
+  def clean_up_vm(vm_id)
+    if vm_id
+      logger.info("Deleting VM vm_id=#{vm_id}")
+      cpi.delete_vm(vm_id)
+
+      logger.info("Checking VM existence vm_id=#{vm_id}")
+      cpi.has_vm?(vm_id).should be(false)
+    else
+      logger.info("No VM to delete")
+    end
+  end
+
+  def create_disk(vm_id)
+    logger.info("Creating disk for VM vm_id=#{vm_id}")
+    disk_id = cpi.create_disk(2048, vm_id)
+    disk_id.should_not be_nil
+
+    logger.info("Attaching disk vm_id=#{vm_id} disk_id=#{disk_id}")
+    cpi.attach_disk(vm_id, disk_id)
+
+    logger.info("Detaching disk vm_id=#{vm_id} disk_id=#{disk_id}")
+    cpi.detach_disk(vm_id, disk_id)
+
+    disk_id
+  end
+
+  def clean_up_disk(disk_id)
+    if disk_id
+      logger.info("Deleting disk disk_id=#{disk_id}")
+      cpi.delete_disk(disk_id)
+    else
+      logger.info("No disk to delete")
+    end
+  end
+
+  def create_disk_snapshot(disk_id)
+    logger.info("Creating disk snapshot disk_id=#{disk_id}")
+    disk_snapshot_id = cpi.snapshot_disk(disk_id, {
+      :deployment => 'deployment',
+      :job => 'openstack_cpi_spec',
+      :index => '0',
+      :instance_id => 'instance',
+      :agent_id => 'agent',
+      :director_name => 'Director',
+      :director_uuid => '6d06b0cc-2c08-43c5-95be-f1b2dd247e18',
+    })
+    disk_snapshot_id.should_not be_nil
+
+    logger.info("Created disk snapshot disk_snapshot_id=#{disk_snapshot_id}")
+    disk_snapshot_id
+  end
+
+  def clean_up_disk_snapshot(disk_snapshot_id)
+    if disk_snapshot_id
+      logger.info("Deleting disk snapshot disk_snapshot_id=#{disk_snapshot_id}")
+      cpi.delete_snapshot(disk_snapshot_id)
+    else
+      logger.info("No disk snapshot to delete")
+    end
+  end
+
+  def run_all_and_raise_any_errors(existing_errors, funcs)
+    exceptions = Array(existing_errors)
+    funcs.each do |f|
+      begin
+        f.call
+      rescue Exception => e
+        exceptions << e
+      end
+    end
+    # Prints all exceptions but raises original exception
+    exceptions.each { |e| logger.info("Failed with: #{e.inspect}\n#{e.backtrace.join("\n")}\n") }
+    raise exceptions.first if exceptions.any?
   end
 end

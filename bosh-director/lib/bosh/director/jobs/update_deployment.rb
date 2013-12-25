@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
@@ -52,8 +50,8 @@ module Bosh::Director
 
       def update
         resource_pools = DeploymentPlan::ResourcePools.new(event_log, @resource_pool_updaters)
-
-        updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @assembler, @deployment_plan)
+        multi_job_updater = DeploymentPlan::BatchMultiJobUpdater.new
+        updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @assembler, @deployment_plan, multi_job_updater)
         updater.update
       end
 

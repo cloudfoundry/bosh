@@ -3,7 +3,9 @@ package app
 import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
-	boshas "bosh/agent/applier"
+	boshappl "bosh/agent/applier"
+	boshas "bosh/agent/applier/applyspec"
+	boshcomp "bosh/agent/compiler"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"
@@ -11,9 +13,14 @@ import (
 	boshinf "bosh/infrastructure"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
+	boshmon "bosh/monitor"
+	boshmonit "bosh/monitor/monit"
+	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 	"flag"
 	"io/ioutil"
+	"path/filepath"
 )
 
 type app struct {
@@ -33,6 +40,7 @@ func New(logger boshlog.Logger) (app app) {
 func (app app) Run(args []string) (err error) {
 	opts, err := parseOptions(args)
 	if err != nil {
+		err = bosherr.WrapError(err, "Parsing options")
 		return
 	}
 
@@ -71,13 +79,37 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
+	monitClientProvider := boshmonit.NewProvider(platform)
+	monitClient, err := monitClientProvider.Get()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting monit client")
+		return
+	}
+
+	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger)
+	notifier := boshnotif.NewNotifier(mbusHandler)
+	applier := boshappl.NewApplierProvider(platform, blobstore, monitor).Get()
+	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
+
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
-	applier := boshas.NewApplierProvider(platform, blobstore).Get()
+	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "spec.json")
+	specService := boshas.NewConcreteV1Service(platform.GetFs(), specFilePath)
+	actionFactory := boshaction.NewFactory(
+		settingsService,
+		platform,
+		blobstore,
+		taskService,
+		notifier,
+		applier,
+		compiler,
+		monitor,
+		specService,
+	)
+	actionRunner := boshaction.NewRunner()
+	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 
-	actionFactory := boshaction.NewFactory(settingsService, platform, blobstore, taskService, applier)
-
-	agent := boshagent.New(settingsService, app.logger, mbusHandler, platform, taskService, actionFactory)
+	agent := boshagent.New(settingsService, app.logger, mbusHandler, platform, actionDispatcher)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")

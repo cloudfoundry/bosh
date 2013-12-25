@@ -1,11 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "logger"
 
 module Bosh
-
   class ThreadPool
-
     def initialize(options = {})
       @actions = []
       @lock = Mutex.new

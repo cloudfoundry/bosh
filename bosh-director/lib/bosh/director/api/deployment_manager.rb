@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Api
     class DeploymentManager
@@ -18,7 +16,7 @@ module Bosh::Director
         deployment_manifest_dir = Dir::tmpdir
         deployment_manifest_file = File.join(deployment_manifest_dir, random_name)
         unless check_available_disk_space(deployment_manifest_dir, deployment_manifest.size)
-          raise NotEnoughDiskSpace, "Uploading deployment manifest failed. " +
+          raise NotEnoughDiskSpace, 'Uploading deployment manifest failed. ' +
             "Insufficient space on BOSH director in #{deployment_manifest_dir}"
         end
 
@@ -33,7 +31,7 @@ module Bosh::Director
 
       def deployment_to_json(deployment)
         result = {
-          "manifest" => deployment.manifest,
+          'manifest' => deployment.manifest,
         }
 
         Yajl::Encoder.encode(result)
@@ -46,10 +44,10 @@ module Bosh::Director
           instance = vm.instance
 
           vms << {
-            "agent_id" => vm.agent_id,
-            "cid" => vm.cid,
-            "job" => instance ? instance.job : nil,
-            "index" => instance ? instance.index : nil
+            'agent_id' => vm.agent_id,
+            'cid' => vm.cid,
+            'job' => instance ? instance.job : nil,
+            'index' => instance ? instance.index : nil
           }
         end
 

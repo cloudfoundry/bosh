@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/../spec_helper'
+require 'fakefs/spec_helpers'
 
 describe Bosh::Agent::Bootstrap do
   let(:dummy_platform) { instance_double('Bosh::Agent::Platform::Linux::Adapter') }
@@ -19,6 +20,29 @@ describe Bosh::Agent::Bootstrap do
     Bosh::Agent::Util.stub(:update_file)
     @processor.stub(:partition_disk)
     @processor.stub(:mem_total).and_return(3951616)
+  end
+
+  it 'run configuration steps in a specific order' do
+    @processor.should_receive(:update_iptables).ordered
+    @processor.should_receive(:update_passwords).ordered
+    @processor.should_receive(:update_agent_id).ordered
+    @processor.should_receive(:update_credentials).ordered
+    @processor.should_receive(:update_hostname).ordered
+    @processor.should_receive(:update_mbus).ordered
+    @processor.should_receive(:update_blobstore).ordered
+    @processor.should_receive(:setup_networking).ordered
+    @processor.should_receive(:update_time).ordered
+    @processor.should_receive(:setup_data_disk).ordered
+    @processor.should_receive(:setup_data_sys).ordered
+    @processor.should_receive(:setup_tmp).ordered
+
+    Bosh::Agent::Monit.should_receive(:setup_monit_user).ordered
+    Bosh::Agent::Monit.should_receive(:setup_alerts).ordered
+
+    @processor.should_receive(:mount_persistent_disk).ordered
+    @processor.should_receive(:harden_permissions).ordered
+
+    @processor.configure
   end
 
   it "should update credentials" do
@@ -229,8 +253,50 @@ describe Bosh::Agent::Bootstrap do
       it 'should setup data sys' do
         FileUtils.stub(:mkdir_p)
         @processor.should_not_receive(:sh)
-        @processor.should_receive(:setup_data_sys)
         @processor.setup_data_disk
+      end
+    end
+  end
+
+  describe '#setup_data_sys' do
+    include FakeFS::SpecHelpers
+
+    before do
+      Bosh::Agent::Config.setup(
+        'logging' => { 'file' => StringIO.new },
+        'base_dir' => base_dir,
+      )
+    end
+
+    before { Etc.stub(:getgrnam).with('vcap').and_return(double(gid: 42)) }
+
+    before { Bosh::Agent::Util.stub(:create_symlink) }
+
+    let(:base_dir) { '/tmp/somedir' }
+    let(:dummy_dir_path) { '/tmp/canary_dir' }
+    let(:canary_dir_mode) do
+      dir = Dir.mktmpdir('dummy_dir')
+      FileUtils.chmod(0750, dir)
+      File.stat(dir).mode
+    end
+
+    it 'symlinks sys to data/sys' do
+      # Ruby's ln_sf is broken see .create_symlink for details
+      Bosh::Agent::Util
+        .should_receive(:create_symlink)
+        .with('/tmp/somedir/data/sys', '/tmp/somedir/sys')
+      @processor.setup_data_sys
+    end
+
+    %w(log run).each do |dir|
+      describe "#{dir} dir" do
+        it "creates a data/sys/#{dir} directory" do
+          path = "/tmp/somedir/data/sys/#{dir}"
+          @processor.setup_data_sys
+          expect(File.directory?(path)).to be_true
+          expect(File.stat(path).gid).to eq(42)
+          expect(File.stat(path).mode).to eq(canary_dir_mode)
+        end
       end
     end
   end

@@ -156,6 +156,7 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (shouldMount
 		return
 	})
 	if err != nil {
+		err = bosherr.WrapError(err, "Searching mounts")
 		return
 	}
 

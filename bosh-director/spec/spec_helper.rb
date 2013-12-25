@@ -165,7 +165,7 @@ RSpec.configure do |rspec|
     unless $redis_63790_started
       redis_config = Tempfile.new('redis_config')
       File.write(redis_config.path, 'port 63790')
-      redis_pid = Process.spawn('redis-server', redis_config.path)
+      redis_pid = Process.spawn('redis-server', redis_config.path, out: '/dev/null')
       $redis_63790_started = true
 
       at_exit do
@@ -185,7 +185,7 @@ RSpec.configure do |rspec|
 
     SpecHelper.reset
     @event_buffer = StringIO.new
-    @event_log = Bosh::Director::EventLog.new(@event_buffer)
+    @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
   end
 end

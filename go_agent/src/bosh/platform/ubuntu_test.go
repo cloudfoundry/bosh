@@ -1,6 +1,7 @@
 package platform
 
 import (
+	fakecmd "bosh/platform/commands/fakes"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
@@ -187,7 +188,7 @@ func testUbuntuSetupDhcp(
 	fakeFs *fakesys.FakeFileSystem,
 	fakeCmdRunner *fakesys.FakeCmdRunner,
 	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor *fakedisk.FakeCompressor,
+	fakeCompressor *fakecmd.FakeCompressor,
 ) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
@@ -497,17 +498,79 @@ func TestStartMonit(t *testing.T) {
 	assert.Equal(t, []string{"sv", "up", "monit"}, fakeCmdRunner.RunCommands[0])
 }
 
+func TestSetupMonitUserIfFileDoesNotExist(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	err := ubuntu.SetupMonitUser()
+	assert.NoError(t, err)
+
+	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	assert.NotNil(t, monitUserFileStats)
+	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
+}
+
+func TestSetupMonitUserIfFileDoesExist(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
+
+	err := ubuntu.SetupMonitUser()
+	assert.NoError(t, err)
+
+	monitUserFileStats := fakeFs.GetFileTestStat("/var/vcap/monit/monit.user")
+	assert.NotNil(t, monitUserFileStats)
+	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
+}
+
+func TestGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake-random-password")
+
+	username, password, err := ubuntu.GetMonitCredentials()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "fake-user", username)
+	assert.Equal(t, "fake-random-password", password)
+}
+
+func TestGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user")
+
+	_, _, err := ubuntu.GetMonitCredentials()
+	assert.Error(t, err)
+}
+
+func TestGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
+	fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor := getUbuntuDependencies()
+	ubuntu := newUbuntuPlatform(fakeStats, fakeFs, fakeCmdRunner, fakeDiskManager, fakeCompressor)
+
+	fakeFs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake:random:password")
+
+	username, password, err := ubuntu.GetMonitCredentials()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "fake-user", username)
+	assert.Equal(t, "fake:random:password", password)
+}
+
 func getUbuntuDependencies() (
 	collector *fakestats.FakeStatsCollector,
 	fs *fakesys.FakeFileSystem,
 	cmdRunner *fakesys.FakeCmdRunner,
 	fakeDiskManager fakedisk.FakeDiskManager,
-	fakeCompressor *fakedisk.FakeCompressor,
+	fakeCompressor *fakecmd.FakeCompressor,
 ) {
 	collector = &fakestats.FakeStatsCollector{}
 	fs = &fakesys.FakeFileSystem{}
 	cmdRunner = &fakesys.FakeCmdRunner{}
 	fakeDiskManager = fakedisk.NewFakeDiskManager(cmdRunner)
-	fakeCompressor = fakedisk.NewFakeCompressor()
+	fakeCompressor = fakecmd.NewFakeCompressor()
 	return
 }

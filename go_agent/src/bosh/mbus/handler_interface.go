@@ -6,5 +6,5 @@ type Handler interface {
 	Run(handlerFunc HandlerFunc) (err error)
 	Start(handlerFunc HandlerFunc) (err error)
 	Stop()
-	SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error)
+	SendToHealthManager(topic string, payload interface{}) (err error)
 }

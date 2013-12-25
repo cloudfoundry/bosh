@@ -82,43 +82,31 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	return
 }
 
+func (h natsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
+	msgBytes := []byte("")
+
+	if payload != nil {
+		msgBytes, err = json.Marshal(payload)
+		if err != nil {
+			err = bosherr.WrapError(err, "Marshalling HM message payload")
+			return
+		}
+	}
+
+	h.logger.Info("NATS Handler", "Sending HM message '%s'", topic)
+	h.logger.DebugWithDetails("NATS Handler", "Payload", msgBytes)
+
+	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentId())
+	return h.client.Publish(subject, msgBytes)
+}
+
 func (h natsHandler) Stop() {
 	h.client.Disconnect()
 }
 
-func (h natsHandler) SendPeriodicHeartbeat(heartbeatChan chan Heartbeat) (err error) {
-	connProvider, err := h.getConnectionInfo()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting connection info")
-		return
-	}
-
-	err = h.client.Connect(connProvider)
-	if err != nil {
-		err = bosherr.WrapError(err, "Connecting")
-		return
-	}
-
-	heartbeatSubject := fmt.Sprintf("hm.agent.heartbeat.%s", h.settings.GetAgentId())
-
-	var heartbeatBytes []byte
-	for heartbeat := range heartbeatChan {
-		heartbeatBytes, err = json.Marshal(heartbeat)
-		if err != nil {
-			err = bosherr.WrapError(err, "Marshalling heartbeat")
-			return
-		}
-
-		h.logger.Info("NATS Handler", "Sending heartbeat")
-		h.logger.DebugWithDetails("NATS Handler", "Payload", heartbeatBytes)
-
-		h.client.Publish(heartbeatSubject, heartbeatBytes)
-	}
-
-	return
-}
-
 func (h natsHandler) runUntilInterrupted() {
+	defer h.client.Disconnect()
+
 	keepRunning := true
 
 	c := make(chan os.Signal, 1)
@@ -139,22 +127,19 @@ func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err 
 		return
 	}
 
-	user := natsUrl.User
-	if user == nil {
-		err = errors.New("No username or password set for connection")
-		return
-	}
-
-	password, passwordIsSet := user.Password()
-	if !passwordIsSet {
-		err = errors.New("No password set for connection")
-		return
-	}
-
 	connInfo = new(yagnats.ConnectionInfo)
-	connInfo.Password = password
-	connInfo.Username = user.Username()
 	connInfo.Addr = natsUrl.Host
+
+	user := natsUrl.User
+	if user != nil {
+		password, passwordIsSet := user.Password()
+		if !passwordIsSet {
+			err = errors.New("No password set for connection")
+			return
+		}
+		connInfo.Password = password
+		connInfo.Username = user.Username()
+	}
 
 	return
 }

@@ -4,6 +4,8 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	"bytes"
+	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -16,30 +18,38 @@ func NewExecCmdRunner(logger boshlog.Logger) (cmRunner CmdRunner) {
 	return execCmdRunner{logger}
 }
 
+func (run execCmdRunner) RunComplexCommand(cmd Command) (stdout, stderr string, err error) {
+	execCmd := exec.Command(cmd.Name, cmd.Args...)
+	execCmd.Dir = cmd.WorkingDir
+	env := os.Environ()
+	for name, value := range cmd.Env {
+		env = append(env, fmt.Sprintf("%s=%s", name, value))
+	}
+	execCmd.Env = env
+
+	return run.runCmd(execCmd)
+}
+
 func (run execCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
-	return run.runCmd(cmdName, args, nil)
+	cmd := exec.Command(cmdName, args...)
+	return run.runCmd(cmd)
 }
 
 func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (stdout, stderr string, err error) {
-	return run.runCmd(cmdName, args, func(cmd *exec.Cmd) {
-		cmd.Stdin = strings.NewReader(input)
-	})
+	cmd := exec.Command(cmdName, args...)
+	cmd.Stdin = strings.NewReader(input)
+	return run.runCmd(cmd)
 }
 
-func (run execCmdRunner) runCmd(cmdName string, args []string, cmdHook func(*exec.Cmd)) (stdout, stderr string, err error) {
-	run.logger.Debug("Cmd Runner", "Running command: %s %s", cmdName, strings.Join(args, " "))
+func (run execCmdRunner) runCmd(cmd *exec.Cmd) (stdout, stderr string, err error) {
+	cmdString := strings.Join(cmd.Args, " ")
 
-	cmd := exec.Command(cmdName, args...)
-	cmdString := strings.Join(append([]string{cmdName}, args...), " ")
+	run.logger.Debug("Cmd Runner", "Running command: %s", cmdString)
 
 	stdoutWriter := bytes.NewBufferString("")
 	stderrWriter := bytes.NewBufferString("")
 	cmd.Stdout = stdoutWriter
 	cmd.Stderr = stderrWriter
-
-	if cmdHook != nil {
-		cmdHook(cmd)
-	}
 
 	err = cmd.Start()
 	if err != nil {

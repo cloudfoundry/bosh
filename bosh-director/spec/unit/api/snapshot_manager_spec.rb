@@ -3,10 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   describe Api::SnapshotManager do
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:user) { Models::User.make }
+    let(:username) { 'username-1' }
     let(:time) { Time.now.to_s }
 
     let(:deployment) { Models::Deployment.make(name: 'deployment') }
+    let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
+    let(:options) { { foo: 'bar' } }
 
     before do
       Config.stub(cloud: cloud)
@@ -33,46 +35,51 @@ module Bosh::Director
       # snapshot from another deployment
       Models::Snapshot.make
 
-      Resque.stub(:enqueue)
-      JobQueue.any_instance.stub(create_task: task)
+      JobQueue.stub(:new).and_return(job_queue)
     end
 
     let(:task) { instance_double('Bosh::Director::Models::Task', id: 'task_id') }
 
-    describe 'create_deployment_snapshot_task' do
-      it 'should take snapshots of all instances with persistent disks' do
-        Resque.should_receive(:enqueue).with(Jobs::SnapshotDeployment, task.id, deployment.name, {})
+    describe '#create_deployment_snapshot_task' do
+      it 'enqueues a SnapshotDeployment job' do
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options]
+        ).and_return(task)
 
-        expect(subject.create_deployment_snapshot_task(user.username, deployment)).to eq task
+        expect(subject.create_deployment_snapshot_task(username, deployment, options)).to eq(task)
       end
     end
 
-    describe 'create_snapshot_task' do
+    describe '#create_snapshot_task' do
       let(:instance) { instance_double('Bosh::Director::Models::Instance', id: 0) }
-      let(:options) { {} }
 
       it 'should enqueue a CreateSnapshot job' do
-        Resque.should_receive(:enqueue).with(Jobs::CreateSnapshot, task.id, instance.id, options)
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::CreateSnapshot, 'create snapshot', [instance.id, options]
+        ).and_return(task)
 
-        expect(subject.create_snapshot_task(user.username, instance, options)).to eq task
+        expect(subject.create_snapshot_task(username, instance, options)).to eq(task)
       end
     end
 
-    describe 'delete_deployment_snapshots' do
-      it 'should enqueue a DeleteDeploymentSnapshots job' do
-        Resque.should_receive(:enqueue).with(Jobs::DeleteDeploymentSnapshots, task.id, deployment.name)
+    describe '#delete_deployment_snapshots_task' do
+      it 'enqueues a DeleteDeploymentSnapshots job' do
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name]
+        ).and_return(task)
 
-        expect(subject.delete_deployment_snapshots_task(user.username, deployment)).to eq task
+        expect(subject.delete_deployment_snapshots_task(username, deployment)).to eq(task)
       end
     end
 
-    describe 'delete_snapshots_task' do
+    describe '#delete_snapshots_task' do
       let(:snapshot_cids) { %w[snap0 snap1] }
 
-      it 'should enqueue a DeleteSnapshot job' do
-        Resque.should_receive(:enqueue).with(Jobs::DeleteSnapshots, task.id, snapshot_cids)
+      it 'enqueues a DeleteSnapshots job' do
+        job_queue.should_receive(:enqueue).with(
+          username, Jobs::DeleteSnapshots, 'delete snapshot', [snapshot_cids]).and_return(task)
 
-        expect(subject.delete_snapshots_task(user.username, snapshot_cids)).to eq task
+        expect(subject.delete_snapshots_task(username, snapshot_cids)).to eq(task)
       end
     end
 
@@ -85,17 +92,17 @@ module Bosh::Director
     describe '#snapshots' do
       it 'should list all snapshots for a given deployment' do
         response = [
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true},
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false},
-            {'job' => 'job', 'index' => 1, 'snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false},
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
+          { 'job' => 'job', 'index' => 1, 'snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
         ]
         expect(subject.snapshots(deployment)).to eq response
       end
 
       it 'should list all snapshots for a given instance' do
         response = [
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true},
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false},
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
+          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
         ]
         expect(subject.snapshots(deployment, 'job', 0)).to eq response
       end
@@ -123,13 +130,13 @@ module Bosh::Director
       describe '#take_snapshot' do
         let(:metadata) {
           {
-              agent_id: 'agent0',
-              instance_id: 1,
-              director_name: 'Test Director',
-              director_uuid: Config.uuid,
-              deployment: 'deployment',
-              job: 'job',
-              index: 0
+            agent_id: 'agent0',
+            instance_id: 1,
+            director_name: 'Test Director',
+            director_uuid: Config.uuid,
+            deployment: 'deployment',
+            job: 'job',
+            index: 0
           }
         }
 
@@ -154,7 +161,7 @@ module Bosh::Director
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
             Config.cloud.should_receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-            expect(described_class.take_snapshot(@instance, {:clean => true})).to eq %w[snap0c]
+            expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
             expect(snapshot.clean).to be(true)

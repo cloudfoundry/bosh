@@ -4,6 +4,7 @@ require 'ruby_vim_sdk'
 require 'cloud'
 require 'cloud/vsphere/client'
 require 'cloud/vsphere/config'
+require 'cloud/vsphere/lease_obtainer'
 require 'cloud/vsphere/lease_updater'
 require 'cloud/vsphere/resources'
 require 'cloud/vsphere/resources/cluster'
@@ -84,16 +85,16 @@ module VSphereCloud
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool.mob, datastore.mob)
-          lease = obtain_nfc_lease(cluster.resource_pool.mob, import_spec_result.import_spec,
-                                   cluster.datacenter.template_folder.mob)
-          @logger.info('Waiting for NFC lease')
-          state = wait_for_nfc_lease(lease)
 
-          raise_nfc_lease_error(lease) if state == Vim::HttpNfcLease::State::ERROR
-          raise "Could not acquire HTTP NFC lease (state is: #{state})" unless state == Vim::HttpNfcLease::State::READY
+          lease_obtainer = LeaseObtainer.new(@client, @logger)
+          nfc_lease = lease_obtainer.obtain(
+            cluster.resource_pool,
+            import_spec_result.import_spec,
+            cluster.datacenter.template_folder,
+          )
 
           @logger.info('Uploading')
-          vm = upload_ovf(ovf_file, lease, import_spec_result.file_item)
+          vm = upload_ovf(ovf_file, nfc_lease, import_spec_result.file_item)
           result = name
 
           @logger.info('Removing NICs')
@@ -1146,8 +1147,12 @@ module VSphereCloud
     private
 
     def raise_nfc_lease_error(lease)
-      error_message = client.get_property(lease, Vim::HttpNfcLease, 'error').msg
-      raise "Could not acquire HTTP NFC lease, message is:  #{error_message}"
+      error = client.get_property(lease, Vim::HttpNfcLease, 'error')
+      raise "Could not acquire HTTP NFC lease, message is: '#{error.msg}' " +
+        "fault cause is: '#{error.fault_cause}', " +
+        "fault message is: #{error.fault_message}, " +
+        "dynamic type is '#{error.dynamic_type}', " +
+        "dynamic property is #{error.dynamic_property}"
     end
   end
 end

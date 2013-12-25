@@ -16,32 +16,27 @@ func newGetTask(taskService boshtask.Service) (getTask getTaskAction) {
 	return
 }
 
-func (a getTaskAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	taskId, err := parseTaskId(payloadBytes)
-	if err != nil {
-		err = bosherr.WrapError(err, "Error finding task")
-		return
-	}
+func (a getTaskAction) IsAsynchronous() bool {
+	return false
+}
 
+func (a getTaskAction) Run(taskId string) (value interface{}, err error) {
 	task, found := a.taskService.FindTask(taskId)
 	if !found {
 		err = bosherr.New("Task with id %s could not be found", taskId)
 		return
 	}
 
-	type valueType struct {
-		AgentTaskId string      `json:"agent_task_id"`
-		State       string      `json:"state"`
-		Value       interface{} `json:"value,omitempty"`
-		Error       string      `json:"exception,omitempty"`
+	if task.State == boshtask.TaskStateRunning {
+		value = boshtask.TaskStateValue{
+			AgentTaskId: task.Id,
+			State:       task.State,
+		}
+		return
 	}
 
-	value = valueType{
-		AgentTaskId: task.Id,
-		State:       string(task.State),
-		Value:       task.Value,
-		Error:       task.Error,
-	}
+	value = task.Value
+	err = task.Error
 	return
 }
 

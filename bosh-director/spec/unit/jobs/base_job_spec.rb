@@ -7,11 +7,11 @@ module Bosh::Director
     before do
       Config.stub(:cloud_options).and_return({})
       @task_dir = Dir.mktmpdir
-      @event_log = EventLog.new(StringIO.new)
+      @event_log = EventLog::Log.new(StringIO.new)
       @logger = Logger.new(StringIO.new)
 
       Logger.stub(:new).with("#{@task_dir}/debug").and_return(@logger)
-      EventLog.stub(:new).with("#{@task_dir}/event").
+      EventLog::Log.stub(:new).with("#{@task_dir}/event").
         and_return(@event_log)
       @result_file = double('result-file')
       TaskResultFile.stub(:new).with("#{@task_dir}/result").

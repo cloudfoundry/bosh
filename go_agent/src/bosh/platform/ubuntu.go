@@ -2,6 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
+	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
@@ -23,7 +24,7 @@ type ubuntu struct {
 	partitioner     boshdisk.Partitioner
 	formatter       boshdisk.Formatter
 	mounter         boshdisk.Mounter
-	compressor      boshdisk.Compressor
+	compressor      boshcmd.Compressor
 	diskWaitTimeout time.Duration
 }
 
@@ -32,7 +33,7 @@ func newUbuntuPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	diskManager boshdisk.Manager,
-	compressor boshdisk.Compressor,
+	compressor boshcmd.Compressor,
 ) (platform ubuntu) {
 	platform.collector = collector
 	platform.fs = fs
@@ -57,7 +58,7 @@ func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }
 
-func (p ubuntu) GetCompressor() (runner boshdisk.Compressor) {
+func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
 }
 
@@ -483,6 +484,36 @@ func (p ubuntu) StartMonit() (err error) {
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sv")
 	}
+	return
+}
+
+func (p ubuntu) SetupMonitUser() (err error) {
+	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")
+	if !p.fs.FileExists(monitUserFilePath) {
+		_, err = p.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
+		if err != nil {
+			err = bosherr.WrapError(err, "Writing monit user file")
+		}
+	}
+	return
+}
+
+func (p ubuntu) GetMonitCredentials() (username, password string, err error) {
+	monitUserFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "monit", "monit.user")
+	credContent, err := p.fs.ReadFile(monitUserFilePath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Reading monit user file")
+		return
+	}
+
+	credParts := strings.SplitN(credContent, ":", 2)
+	if len(credParts) != 2 {
+		err = bosherr.New("Malformated monit user file, expecting username and password separated by ':'")
+		return
+	}
+
+	username = credParts[0]
+	password = credParts[1]
 	return
 }
 

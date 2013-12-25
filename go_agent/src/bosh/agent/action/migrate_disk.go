@@ -1,6 +1,7 @@
 package action
 
 import (
+	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -16,12 +17,17 @@ func newMigrateDisk(settings boshsettings.Service, platform boshplatform.Platfor
 	return
 }
 
-func (a migrateDiskAction) Run(payloadBytes []byte) (value interface{}, err error) {
-	fromMountPoint := a.settings.GetStoreMountPoint()
-	toMountPoint := a.settings.GetStoreMigrationMountPoint()
+func (a migrateDiskAction) IsAsynchronous() bool {
+	return true
+}
+
+func (a migrateDiskAction) Run() (value interface{}, err error) {
+	fromMountPoint := boshsettings.VCAP_STORE_DIR
+	toMountPoint := boshsettings.VCAP_STORE_MIGRATION_DIR
 
 	err = a.platform.MigratePersistentDisk(fromMountPoint, toMountPoint)
 	if err != nil {
+		err = bosherr.WrapError(err, "Migrating persistent disk")
 		return
 	}
 

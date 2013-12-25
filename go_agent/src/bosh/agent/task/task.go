@@ -15,5 +15,10 @@ type Task struct {
 	Id       string
 	State    TaskState
 	Value    interface{}
-	Error    string
+	Error    error
+}
+
+type TaskStateValue struct {
+	AgentTaskId string    `json:"agent_task_id"`
+	State       TaskState `json:"state"`
 }

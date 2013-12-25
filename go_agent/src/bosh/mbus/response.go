@@ -7,7 +7,7 @@ type Response interface {
 }
 
 type valueResponse struct {
-	Value interface{} `json:"value,omitempty"`
+	Value interface{} `json:"value"`
 }
 
 func NewValueResponse(value interface{}) (resp Response) {

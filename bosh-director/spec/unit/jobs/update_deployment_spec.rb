@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 describe Bosh::Director::Jobs::UpdateDeployment do
@@ -74,13 +72,14 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       end
     end
 
-    describe 'update' do
+    describe '#update' do
+      let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
+
       it 'should update the deployment' do
         assembler = double('assembler')
         resource_pool = double('resource_pool')
         resource_pool_updater = double('resource_pool_updater')
         job = double('job')
-        job_updater = double('job_updater')
 
         resource_pool_updater.stub(:extra_vm_count).and_return(2)
         resource_pool_updater.stub(:outdated_idle_vm_count).and_return(3)
@@ -88,7 +87,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         resource_pool_updater.stub(:missing_vm_count).and_return(5)
 
         Bosh::Director::ResourcePoolUpdater.stub(:new).with(resource_pool).and_return(resource_pool_updater)
-        Bosh::Director::JobUpdater.stub(:new).with(@deployment_plan, job).and_return(job_updater)
+        Bosh::Director::DeploymentPlan::BatchMultiJobUpdater.stub(:new).with(no_args).and_return(multi_job_updater)
 
         resource_pool.stub(:name).and_return('resource_pool_name')
 
@@ -108,17 +107,13 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         assembler.should_receive(:delete_unneeded_vms).ordered
         assembler.should_receive(:delete_unneeded_instances).ordered
 
-        job_updater.should_receive(:update)
+        multi_job_updater.should_receive(:run).ordered
 
         resource_pool_updater.should_receive(:reserve_networks).ordered
         resource_pool_updater.should_receive(:create_missing_vms).ordered
 
-        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
-
-        update_deployment_job.instance_eval do
-          @assembler = assembler
-        end
-
+        update_deployment_job = described_class.new(@manifest_file.path)
+        update_deployment_job.instance_eval { @assembler = assembler }
         update_deployment_job.update
 
         check_event_log do |events|

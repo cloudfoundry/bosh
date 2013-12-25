@@ -25,7 +25,6 @@ module Bosh::Director
     # @return [String] A unique checksum based on the dependencies in this task
     attr_reader :cache_key
 
-
     def initialize(package, stemcell, initial_job, dependency_key, cache_key)
       @package = package
       @stemcell = stemcell

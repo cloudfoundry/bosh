@@ -49,7 +49,7 @@ module Bosh::Stemcell
         when Infrastructure::Aws then
           aws_stages
         when Infrastructure::OpenStack then
-          openstack_stages
+          operating_system.instance_of?(OperatingSystem::Centos) ? hacked_centos_openstack : openstack_stages
         when Infrastructure::Vsphere then
           operating_system.instance_of?(OperatingSystem::Centos) ? hacked_centos_vsphere : vsphere_stages
         when Infrastructure::CloudStack then
@@ -84,6 +84,24 @@ module Bosh::Stemcell
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
         :stemcell
+      ]
+    end
+
+    def hacked_centos_openstack
+      [
+        # Misc
+        :system_openstack_network_centos,
+        :system_parameters,
+        # Finalisation,
+        :bosh_clean,
+        :bosh_harden,
+        :bosh_harden_ssh,
+        :image_create,
+        :image_install_grub,
+        :image_openstack_qcow2,
+        :image_openstack_prepare_stemcell,
+        # Final stemcell
+        :stemcell_openstack
       ]
     end
 

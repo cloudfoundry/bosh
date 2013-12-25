@@ -2,74 +2,91 @@ package action
 
 import (
 	boshas "bosh/agent/applier/applyspec"
+	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
-	fakeplatform "bosh/platform/fakes"
-	boshsettings "bosh/settings"
-	fakesys "bosh/system/fakes"
+	boshassert "bosh/assert"
 	"errors"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
-	_, fs, _, action := buildApplyAction()
-
-	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{"deployment":"dummy-damien"}]}`)
-	_, err := action.Run(payload)
-	assert.NoError(t, err)
-
-	stats := fs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/spec.json")
-	assert.Equal(t, stats.FileType, fakesys.FakeFileTypeFile)
-	assert.Equal(t, `{"deployment":"dummy-damien"}`, stats.Content)
+func TestApplyShouldBeAsynchronous(t *testing.T) {
+	_, _, action := buildApplyAction()
+	assert.True(t, action.IsAsynchronous())
 }
 
-func TestApplyRunRunsApplierWithApplySpec(t *testing.T) {
-	applier, _, _, action := buildApplyAction()
+func TestApplyReturnsApplied(t *testing.T) {
+	_, _, action := buildApplyAction()
 
-	applySpecPayload := []byte(`{"job": {"template": "fake-job-template"}}`)
+	applySpec := boshas.V1ApplySpec{
+		JobSpec: boshas.JobSpec{
+			Name: "router",
+		},
+	}
 
-	expectedApplySpec, err := boshas.NewV1ApplySpecFromJson(applySpecPayload)
+	value, err := action.Run(applySpec)
 	assert.NoError(t, err)
 
-	payload := []byte(
-		fmt.Sprintf(`{
-			"method":    "apply",
-			"reply_to":  "foo",
-			"arguments": [%s]
-		}`, applySpecPayload),
-	)
+	boshassert.MatchesJsonString(t, value, `"applied"`)
+}
 
-	_, err = action.Run(payload)
+func TestApplyRunSavesTheFirstArgumentToSpecJson(t *testing.T) {
+	_, specService, action := buildApplyAction()
+
+	applySpec := boshas.V1ApplySpec{
+		JobSpec: boshas.JobSpec{
+			Name: "router",
+		},
+	}
+
+	_, err := action.Run(applySpec)
 	assert.NoError(t, err)
+	assert.Equal(t, applySpec, specService.Spec)
+}
+
+func TestApplyRunSkipsApplierWhenApplySpecDoesNotHaveConfigurationHash(t *testing.T) {
+	applier, _, action := buildApplyAction()
+
+	applySpec := boshas.V1ApplySpec{
+		JobSpec: boshas.JobSpec{
+			Template: "fake-job-template",
+		},
+	}
+
+	_, err := action.Run(applySpec)
+	assert.NoError(t, err)
+	assert.False(t, applier.Applied)
+}
+
+func TestApplyRunRunsApplierWithApplySpecWhenApplySpecHasConfigurationHash(t *testing.T) {
+	applier, _, action := buildApplyAction()
+
+	expectedApplySpec := boshas.V1ApplySpec{
+		JobSpec: boshas.JobSpec{
+			Template: "fake-job-template",
+		},
+		ConfigurationHash: "fake-config-hash",
+	}
+
+	_, err := action.Run(expectedApplySpec)
+	assert.NoError(t, err)
+	assert.True(t, applier.Applied)
 	assert.Equal(t, expectedApplySpec, applier.ApplyApplySpec)
 }
 
 func TestApplyRunErrsWhenApplierFails(t *testing.T) {
-	applier, _, _, action := buildApplyAction()
+	applier, _, action := buildApplyAction()
 
 	applier.ApplyError = errors.New("fake-apply-error")
 
-	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[{}]}`)
-	_, err := action.Run(payload)
+	_, err := action.Run(boshas.V1ApplySpec{ConfigurationHash: "fake-config-hash"})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
-func TestApplyRunErrsWithZeroArguments(t *testing.T) {
-	_, _, _, action := buildApplyAction()
-
-	payload := []byte(`{"method":"apply","reply_to":"foo","arguments":[]}`)
-	_, err := action.Run(payload)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Not enough arguments")
-}
-
-func buildApplyAction() (*fakeappl.FakeApplier, *fakesys.FakeFileSystem, *fakeplatform.FakePlatform, applyAction) {
+func buildApplyAction() (*fakeappl.FakeApplier, *fakeas.FakeV1Service, applyAction) {
 	applier := fakeappl.NewFakeApplier()
-	platform := fakeplatform.NewFakePlatform()
-	fs := platform.Fs
-	action := newApply(applier, fs, platform)
-	return applier, fs, platform, action
+	specService := fakeas.NewFakeV1Service()
+	action := newApply(applier, specService)
+	return applier, specService, action
 }

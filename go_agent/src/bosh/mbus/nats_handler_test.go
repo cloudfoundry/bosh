@@ -59,7 +59,6 @@ func TestNatsHandlerStart(t *testing.T) {
 }
 
 func TestNatsSendPeriodicHeartbeat(t *testing.T) {
-	heartbeatChan := make(chan Heartbeat, 1)
 	settings := &fakesettings.FakeSettingsService{
 		AgentId: "my-agent-id",
 		MbusUrl: "nats://foo:bar@127.0.0.1:1234",
@@ -69,12 +68,8 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	errChan := make(chan error, 1)
 
 	go func() {
-		errChan <- handler.SendPeriodicHeartbeat(heartbeatChan)
+		errChan <- handler.SendToHealthManager("heartbeat", Heartbeat{Job: "foo", Index: 0})
 	}()
-
-	heartbeatChan <- Heartbeat{Job: "foo", Index: 0}
-
-	close(heartbeatChan)
 
 	var err error
 	select {
@@ -104,15 +99,15 @@ func TestNatsHandlerConnectionInfo(t *testing.T) {
 	assert.Equal(t, connInfo.Password, "bar")
 }
 
-func TestNatsHandlerConnectionInfoWithoutUsernameOrPassword(t *testing.T) {
+func TestNatsHandlerConnectionInfoDoesNotErrWhenNoUsernameAndPassword(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
 	_, err := handler.getConnectionInfo()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }
 
-func TestNatsHandlerConnectionInfoWithoutPassword(t *testing.T) {
+func TestNatsHandlerConnectionInfoErrsWhenHasUsernameWithoutPassword(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 

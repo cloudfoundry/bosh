@@ -1,10 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::DirectorTask do
-
-  before :each do
+  before do
     URI.should_receive(:parse).with("http://target.example.com").and_call_original
     Resolv.should_receive(:getaddresses).with("target.example.com").and_return(["127.0.0.1"])
     @director = Bosh::Cli::Client::Director.new("http://target.example.com", "user", "pass")

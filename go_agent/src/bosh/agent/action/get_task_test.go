@@ -4,9 +4,30 @@ import (
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"
 	boshassert "bosh/assert"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestGetTaskShouldBeSynchronous(t *testing.T) {
+	_, action := buildGetTaskAction()
+	assert.False(t, action.IsAsynchronous())
+}
+
+func TestGetTaskRunReturnsARunningTask(t *testing.T) {
+	taskService, action := buildGetTaskAction()
+
+	taskService.Tasks = map[string]boshtask.Task{
+		"57": boshtask.Task{
+			Id:    "found-57-id",
+			State: boshtask.TaskStateRunning,
+		},
+	}
+
+	taskValue, err := action.Run("57")
+	assert.NoError(t, err)
+	boshassert.MatchesJsonString(t, taskValue, `{"agent_task_id":"found-57-id","state":"running"}`)
+}
 
 func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 	taskService, action := buildGetTaskAction()
@@ -15,14 +36,14 @@ func TestGetTaskRunReturnsAFailedTask(t *testing.T) {
 		"57": boshtask.Task{
 			Id:    "found-57-id",
 			State: boshtask.TaskStateFailed,
-			Error: "Oops we failed...",
+			Error: errors.New("Oops we failed..."),
 		},
 	}
 
-	taskValue, err := action.Run([]byte(`{"arguments":["57"]}`))
-	assert.NoError(t, err)
-	boshassert.MatchesJsonString(t, taskValue,
-		`{"agent_task_id":"found-57-id","state":"failed","exception":"Oops we failed..."}`)
+	taskValue, err := action.Run("57")
+	assert.Error(t, err)
+	assert.Equal(t, "Oops we failed...", err.Error())
+	boshassert.MatchesJsonString(t, taskValue, `null`)
 }
 
 func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {
@@ -36,10 +57,9 @@ func TestGetTaskRunReturnsASuccessfulTask(t *testing.T) {
 		},
 	}
 
-	taskValue, err := action.Run([]byte(`{"arguments":["57"]}`))
+	taskValue, err := action.Run("57")
 	assert.NoError(t, err)
-	boshassert.MatchesJsonString(t, taskValue,
-		`{"agent_task_id":"found-57-id","state":"done","value":"some-task-value"}`)
+	boshassert.MatchesJsonString(t, taskValue, `"some-task-value"`)
 }
 
 func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {
@@ -47,19 +67,9 @@ func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {
 
 	taskService.Tasks = map[string]boshtask.Task{}
 
-	_, err := action.Run([]byte(`{"arguments":["57"]}`))
+	_, err := action.Run("57")
 	assert.Error(t, err)
 	assert.Equal(t, "Task with id 57 could not be found", err.Error())
-}
-
-func TestGetTaskRunWhenPayloadDoesNotHaveTaskId(t *testing.T) {
-	taskService, action := buildGetTaskAction()
-
-	taskService.Tasks = map[string]boshtask.Task{}
-
-	_, err := action.Run([]byte(`{"arguments":[]}`))
-	assert.Error(t, err)
-	assert.Equal(t, "Error finding task: Not enough arguments", err.Error())
 }
 
 func buildGetTaskAction() (*faketask.FakeService, getTaskAction) {
