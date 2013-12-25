@@ -6,6 +6,7 @@ import (
 	boshdrain "bosh/agent/drain"
 	boshassert "bosh/assert"
 	fakenotif "bosh/notification/fakes"
+	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"errors"
@@ -23,7 +24,7 @@ func TestDrainRunUpdateSkipsDrainScriptWhenWithoutDrainScript(t *testing.T) {
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
 
-	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
+	scriptPath := filepath.Join("/fake-dir", currentSpec.JobSpec.Template, "bin", "drain")
 
 	runner, fs, _, specService, action := buildDrain()
 
@@ -47,7 +48,7 @@ func TestDrainRunShutdownSkipsDrainScriptWhenWithoutDrainScript(t *testing.T) {
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
 
-	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
+	scriptPath := filepath.Join("/fake-dir", currentSpec.JobSpec.Template, "bin", "drain")
 
 	runner, fs, _, specService, action := buildDrain()
 
@@ -71,7 +72,7 @@ func TestDrainRunStatusErrsWhenWithoutDrainScript(t *testing.T) {
 	currentSpec := boshas.V1ApplySpec{}
 	currentSpec.JobSpec.Template = "foo"
 
-	scriptPath := filepath.Join("/var/vcap", currentSpec.JobSpec.Template, "bin", "drain")
+	scriptPath := filepath.Join("/fake-dir", currentSpec.JobSpec.Template, "bin", "drain")
 
 	_, fs, _, specService, action := buildDrain()
 
@@ -89,7 +90,7 @@ func TestDrainReturnsIntegerValueOfDrainscriptStdoutAfterTrimmingWhitespace(t *t
 	currentSpec.JobSpec.Template = "foo"
 	specService.Spec = currentSpec
 
-	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	drainScriptPath := filepath.Join("/fake-dir/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "-56\n"})
 
@@ -105,7 +106,7 @@ func TestDrainErrsWhenDrainscriptStdoutIsNotSignedInteger(t *testing.T) {
 	currentSpec.JobSpec.Template = "foo"
 	specService.Spec = currentSpec
 
-	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	drainScriptPath := filepath.Join("/fake-dir/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "not a number"})
 
@@ -120,7 +121,7 @@ func TestDrainErrsWhenDrainscriptExitsNonZero(t *testing.T) {
 	currentSpec.JobSpec.Template = "foo"
 	specService.Spec = currentSpec
 
-	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	drainScriptPath := filepath.Join("/fake-dir/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "0", Error: errors.New("errors")})
 
@@ -149,7 +150,7 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 	}
 
 	specService.Spec = currentSpec
-	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	drainScriptPath := filepath.Join("/fake-dir/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_new hash_new foo", fakesys.FakeCmdResult{Stdout: "1"})
 
@@ -157,7 +158,7 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedCmd := boshsys.Command{
-		Name: "/var/vcap/jobs/foo/bin/drain",
+		Name: "/fake-dir/jobs/foo/bin/drain",
 		Args: []string{"job_new", "hash_new", "foo"},
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
@@ -174,7 +175,7 @@ func TestRunWithShutdown(t *testing.T) {
 	currentSpec.JobSpec.Template = "foo"
 	specService.Spec = currentSpec
 
-	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	drainScriptPath := filepath.Join("/fake-dir/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_shutdown hash_unchanged", fakesys.FakeCmdResult{Stdout: "1"})
 
@@ -183,7 +184,7 @@ func TestRunWithShutdown(t *testing.T) {
 	assert.Equal(t, 1, drainStatus)
 
 	expectedCmd := boshsys.Command{
-		Name: "/var/vcap/jobs/foo/bin/drain",
+		Name: "/fake-dir/jobs/foo/bin/drain",
 		Args: []string{"job_shutdown", "hash_unchanged"},
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
@@ -202,7 +203,7 @@ func TestRunWithStatus(t *testing.T) {
 	currentSpec.JobSpec.Template = "foo"
 	specService.Spec = currentSpec
 
-	drainScriptPath := filepath.Join("/var/vcap/jobs", currentSpec.JobSpec.Template, "bin", "drain")
+	drainScriptPath := filepath.Join("/fake-dir/jobs", currentSpec.JobSpec.Template, "bin", "drain")
 	fs.WriteToFile(drainScriptPath, "")
 	cmdRunner.AddCmdResult(drainScriptPath+" job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "1"})
 
@@ -211,7 +212,7 @@ func TestRunWithStatus(t *testing.T) {
 	assert.Equal(t, 1, drainStatus)
 
 	expectedCmd := boshsys.Command{
-		Name: "/var/vcap/jobs/foo/bin/drain",
+		Name: "/fake-dir/jobs/foo/bin/drain",
 		Args: []string{"job_check_status", "hash_unchanged"},
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
@@ -233,7 +234,8 @@ func buildDrain() (
 	fs = fakesys.NewFakeFileSystem()
 	notifier = fakenotif.NewFakeNotifier()
 	specService = fakeas.NewFakeV1Service()
-	drainScriptProvider := boshdrain.NewDrainScriptProvider(cmdRunner, fs)
+	dirProvider := boshdirs.NewDirectoriesProvider("/fake-dir")
+	drainScriptProvider := boshdrain.NewDrainScriptProvider(cmdRunner, fs, dirProvider)
 	action = newDrain(notifier, specService, drainScriptProvider)
 	return
 }

@@ -45,6 +45,8 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
+	dirProvider := boshdirs.NewDirectoriesProvider("/var/vcap")
+
 	infProvider := boshinf.NewProvider(app.logger)
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
@@ -52,7 +54,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	platformProvider := boshplatform.NewProvider(app.logger)
+	platformProvider := boshplatform.NewProvider(app.logger, dirProvider)
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting platform")
@@ -87,8 +89,6 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	dirProvider := boshdirs.NewDirectoriesProvider("/var/vcap")
-
 	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger)
 	notifier := boshnotif.NewNotifier(mbusHandler)
 	applier := boshappl.NewApplierProvider(platform, blobstore, monitor, dirProvider).Get()
@@ -98,7 +98,7 @@ func (app app) Run(args []string) (err error) {
 
 	specFilePath := filepath.Join(dirProvider.BaseDir(), "bosh", "spec.json")
 	specService := boshas.NewConcreteV1Service(platform.GetFs(), specFilePath)
-	drainScriptProvider := boshdrain.NewDrainScriptProvider(platform.GetRunner(), platform.GetFs())
+	drainScriptProvider := boshdrain.NewDrainScriptProvider(platform.GetRunner(), platform.GetFs(), dirProvider)
 
 	actionFactory := boshaction.NewFactory(
 		settingsService,

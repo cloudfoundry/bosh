@@ -31,7 +31,6 @@ type FakePlatform struct {
 	SetTimeWithNtpServersServers []string
 
 	SetupEphemeralDiskWithPathDevicePath string
-	SetupEphemeralDiskWithPathMountPoint string
 
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
@@ -132,9 +131,8 @@ func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
+func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
-	p.SetupEphemeralDiskWithPathMountPoint = mountPoint
 	return
 }
 

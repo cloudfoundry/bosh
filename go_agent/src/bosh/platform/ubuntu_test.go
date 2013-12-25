@@ -6,6 +6,7 @@ import (
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -242,7 +243,7 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
 	assert.Equal(t, []string{"ntpdate", "0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, deps.cmdRunner.RunCommands[0])
 
-	ntpConfig := deps.fs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	ntpConfig := deps.fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
 	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
 	assert.Equal(t, fakesys.FakeFileTypeFile, ntpConfig.FileType)
 }
@@ -253,7 +254,7 @@ func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) 
 	ubuntu.SetTimeWithNtpServers([]string{})
 	assert.Equal(t, 0, len(deps.cmdRunner.RunCommands))
 
-	ntpConfig := deps.fs.GetFileTestStat("/var/vcap/bosh/etc/ntpserver")
+	ntpConfig := deps.fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
 	assert.Nil(t, ntpConfig)
 }
 
@@ -267,10 +268,10 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 
-	err := ubuntu.SetupEphemeralDiskWithPath("/dev/sda", "/data-dir")
+	err := ubuntu.SetupEphemeralDiskWithPath("/dev/sda")
 	assert.NoError(t, err)
 
-	dataDir := deps.fs.GetFileTestStat("/data-dir")
+	dataDir := deps.fs.GetFileTestStat("/fake-dir/data")
 	assert.Equal(t, fakesys.FakeFileTypeDir, dataDir.FileType)
 	assert.Equal(t, os.FileMode(0750), dataDir.FileMode)
 
@@ -292,19 +293,19 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, boshdisk.FileSystemExt4, fakeFormatter.FormatFsTypes[1])
 
 	assert.Equal(t, 1, len(fakeMounter.MountMountPoints))
-	assert.Equal(t, "/data-dir", fakeMounter.MountMountPoints[0])
+	assert.Equal(t, "/fake-dir/data", fakeMounter.MountMountPoints[0])
 	assert.Equal(t, 1, len(fakeMounter.MountPartitionPaths))
 	assert.Equal(t, "/dev/xvda2", fakeMounter.MountPartitionPaths[0])
 
 	assert.Equal(t, 1, len(fakeMounter.SwapOnPartitionPaths))
 	assert.Equal(t, "/dev/xvda1", fakeMounter.SwapOnPartitionPaths[0])
 
-	sysLogStats := deps.fs.GetFileTestStat("/data-dir/sys/log")
+	sysLogStats := deps.fs.GetFileTestStat("/fake-dir/data/sys/log")
 	assert.NotNil(t, sysLogStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysLogStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysLogStats.FileMode)
 
-	sysRunStats := deps.fs.GetFileTestStat("/data-dir/sys/run")
+	sysRunStats := deps.fs.GetFileTestStat("/fake-dir/data/sys/run")
 	assert.NotNil(t, sysRunStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysRunStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
@@ -475,7 +476,7 @@ func TestSetupMonitUserIfFileDoesNotExist(t *testing.T) {
 	err := ubuntu.SetupMonitUser()
 	assert.NoError(t, err)
 
-	monitUserFileStats := deps.fs.GetFileTestStat("/var/vcap/monit/monit.user")
+	monitUserFileStats := deps.fs.GetFileTestStat("/fake-dir/monit/monit.user")
 	assert.NotNil(t, monitUserFileStats)
 	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
 }
@@ -483,12 +484,12 @@ func TestSetupMonitUserIfFileDoesNotExist(t *testing.T) {
 func TestSetupMonitUserIfFileDoesExist(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
 
-	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "vcap:other-random-password")
+	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "vcap:other-random-password")
 
 	err := ubuntu.SetupMonitUser()
 	assert.NoError(t, err)
 
-	monitUserFileStats := deps.fs.GetFileTestStat("/var/vcap/monit/monit.user")
+	monitUserFileStats := deps.fs.GetFileTestStat("/fake-dir/monit/monit.user")
 	assert.NotNil(t, monitUserFileStats)
 	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
 }
@@ -496,7 +497,7 @@ func TestSetupMonitUserIfFileDoesExist(t *testing.T) {
 func TestGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
 
-	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake-random-password")
+	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
 
 	username, password, err := ubuntu.GetMonitCredentials()
 	assert.NoError(t, err)
@@ -508,7 +509,7 @@ func TestGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
 func TestGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
 
-	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "fake-user")
+	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user")
 
 	_, _, err := ubuntu.GetMonitCredentials()
 	assert.Error(t, err)
@@ -516,7 +517,7 @@ func TestGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
 
 func TestGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
-	deps.fs.WriteToFile("/var/vcap/monit/monit.user", "fake-user:fake:random:password")
+	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
 
 	username, password, err := ubuntu.GetMonitCredentials()
 	assert.NoError(t, err)
@@ -531,6 +532,7 @@ type ubuntuDependencies struct {
 	cmdRunner   *fakesys.FakeCmdRunner
 	diskManager fakedisk.FakeDiskManager
 	compressor  *fakecmd.FakeCompressor
+	dirProvider boshdirs.DirectoriesProvider
 }
 
 func buildUbuntu() (
@@ -542,6 +544,7 @@ func buildUbuntu() (
 	deps.cmdRunner = &fakesys.FakeCmdRunner{}
 	deps.diskManager = fakedisk.NewFakeDiskManager(deps.cmdRunner)
 	deps.compressor = fakecmd.NewFakeCompressor()
+	deps.dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 
 	platform = newUbuntuPlatform(
 		deps.collector,
@@ -549,6 +552,7 @@ func buildUbuntu() (
 		deps.cmdRunner,
 		deps.diskManager,
 		deps.compressor,
+		deps.dirProvider,
 	)
 	return
 }

@@ -70,7 +70,7 @@ func (p dummyPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
+func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	return
 }
 

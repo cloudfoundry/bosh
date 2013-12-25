@@ -68,7 +68,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral, filepath.Join(boshsettings.VCAP_BASE_DIR, "data"))
+	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ephemeral disk")
 		return

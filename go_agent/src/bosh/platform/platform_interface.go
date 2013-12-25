@@ -23,7 +23,7 @@ type Platform interface {
 	SetupDhcp(networks boshsettings.Networks) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)
-	SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error)
+	SetupEphemeralDiskWithPath(devicePath string) (err error)
 	MountPersistentDisk(devicePath, mountPoint string) (err error)
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
