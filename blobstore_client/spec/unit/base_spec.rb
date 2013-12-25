@@ -12,7 +12,7 @@ describe Bosh::Blobstore::BaseClient do
     end
 
     it 'should raise BlobstoreError exceptions' do
-      subject.should_receive(:create_file).and_raise(
+      expect(subject).to receive(:create_file).and_raise(
         Bosh::Blobstore::BlobstoreError, 'Could not create object')
 
       expect { subject.create('contents') }.to raise_error(
@@ -20,7 +20,7 @@ describe Bosh::Blobstore::BaseClient do
     end
 
     it 'should trap generic exceptions and raise a BlobstoreError exception' do
-      subject.should_receive(:create_file).and_raise(
+      expect(subject).to receive(:create_file).and_raise(
         Errno::ECONNRESET, 'Could not create object')
 
       expect { subject.create('contents') }.to raise_error(
@@ -42,7 +42,7 @@ describe Bosh::Blobstore::BaseClient do
     end
 
     it 'should raise BlobstoreError exceptions' do
-      subject.should_receive(:get_file).and_raise(
+      expect(subject).to receive(:get_file).and_raise(
         Bosh::Blobstore::BlobstoreError, 'Could not fetch object')
 
       expect { subject.get('id', 'file') }.to raise_error(
@@ -50,7 +50,7 @@ describe Bosh::Blobstore::BaseClient do
     end
 
     it 'should trap generic exceptions and raise a BlobstoreError exception' do
-      subject.should_receive(:get_file).and_raise(
+      expect(subject).to receive(:get_file).and_raise(
         Errno::ECONNRESET, 'Could not fetch object')
 
       expect { subject.get('id', 'file') }.to raise_error(

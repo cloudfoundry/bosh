@@ -27,7 +27,7 @@ module BaseSharedExamples
     describe '#create' do
       it "calls wrapped_client's create" do
         contents, id, result = 'fake-contents', 'fake-id', 'fake-result'
-        wrapped_client.should_receive(:create).with(contents, id).and_return(result)
+        expect(wrapped_client).to receive(:create).with(contents, id).and_return(result)
         expect(subject.create(contents, id)).to eq(result)
       end
     end
@@ -36,7 +36,7 @@ module BaseSharedExamples
       describe '#get' do
         it "calls wrapped_client's get" do
           id, file, options, result = 'fake-id', 'fake-file', 'fake-options', 'fake-result'
-          wrapped_client.should_receive(:get).with(id, file, options).and_return(result)
+          expect(wrapped_client).to receive(:get).with(id, file, options).and_return(result)
           expect(subject.get(id, file, options)).to eq(result)
         end
       end
@@ -45,7 +45,7 @@ module BaseSharedExamples
     describe '#delete' do
       it "calls wrapped_client's delete" do
         oid, result = 'fake-oid', 'fake-result'
-        wrapped_client.should_receive(:delete).with(oid).and_return(result)
+        expect(wrapped_client).to receive(:delete).with(oid).and_return(result)
         expect(subject.delete(oid)).to eq(result)
       end
     end
@@ -53,7 +53,7 @@ module BaseSharedExamples
     describe '#exists?' do
       it "calls wrapped_client's exists" do
         oid, result = 'fake-oid', 'fake-result'
-        wrapped_client.should_receive(:exists?).with(oid).and_return(result)
+        expect(wrapped_client).to receive(:exists?).with(oid).and_return(result)
         expect(subject.exists?(oid)).to eq(result)
       end
     end

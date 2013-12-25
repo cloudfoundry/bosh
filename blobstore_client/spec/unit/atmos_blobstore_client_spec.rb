@@ -9,10 +9,10 @@ module Bosh::Blobstore
         secret: 'secret' }
     end
 
-    before { Atmos::Store.stub(new: atmos) }
+    before { allow(Atmos::Store).to receive(:new).and_return(atmos) }
     let(:atmos) { double('atmos') }
 
-    before { HTTPClient.stub(new: http_client) }
+    before { allow(HTTPClient).to receive(:new).and_return(http_client) }
     let(:http_client) { double('http-client', ssl_config: http_client_ssl_opt) }
     let(:http_client_ssl_opt) { double('http-client-ssl-opts', :verify_mode= => nil) }
 
@@ -23,7 +23,7 @@ module Bosh::Blobstore
         ENV['HTTPS_PROXY'] = ENV['https_proxy'] = 'https://proxy.example.com:8080'
         ENV['HTTP_PROXY']  = ENV['http_proxy']  = 'http://proxy.example.com:8080'
         options[:url] = 'http://localhost'
-        HTTPClient.should_receive(:new).with(proxy: 'http://proxy.example.com:8080')
+        expect(HTTPClient).to receive(:new).with(proxy: 'http://proxy.example.com:8080')
         client
       end
 
@@ -31,7 +31,7 @@ module Bosh::Blobstore
         ENV['HTTPS_PROXY'] = ENV['https_proxy'] = 'https://proxy.example.com:8080'
         ENV['HTTP_PROXY']  = ENV['http_proxy']  = 'http://proxy.example.com:8080'
         options[:url] = 'https://localhost'
-        HTTPClient.should_receive(:new).with(proxy: 'https://proxy.example.com:8080')
+        expect(HTTPClient).to receive(:new).with(proxy: 'https://proxy.example.com:8080')
         client
       end
 
@@ -39,7 +39,7 @@ module Bosh::Blobstore
         ENV['HTTPS_PROXY'] = ENV['https_proxy'] = nil
         ENV['HTTP_PROXY']  = ENV['http_proxy']  = nil
         options[:url] = 'https://localhost'
-        HTTPClient.should_receive(:new)
+        expect(HTTPClient).to receive(:new)
         client
       end
     end
@@ -47,20 +47,20 @@ module Bosh::Blobstore
     describe '#exists?' do
       it 'should return true if the object already exists' do
         object = double(Atmos::Object)
-        atmos.stub(:get).with(id: 'id').and_return(object)
+        allow(atmos).to receive(:get).with(id: 'id').and_return(object)
 
-        object.should_receive(:exists?).and_return(true)
+        expect(object).to receive(:exists?).and_return(true)
 
-        client.exists?('id').should be(true)
+        expect(client.exists?('id')).to be(true)
       end
 
       it 'should return false if the object does not exist' do
         object = double(Atmos::Object)
-        atmos.stub(:get).with(id: 'id').and_return(object)
+        allow(atmos).to receive(:get).with(id: 'id').and_return(object)
 
-        object.should_receive(:exists?).and_return(false)
+        expect(object).to receive(:exists?).and_return(false)
 
-        client.exists?('id').should be(false)
+        expect(client.exists?('id')).to be(false)
       end
     end
 
@@ -68,17 +68,17 @@ module Bosh::Blobstore
       data = 'some content'
       object = double('object')
 
-      atmos.should_receive(:create) do |opt|
-        opt[:data].read.should eql data
-        opt[:length].should eql data.length
+      expect(atmos).to receive(:create) do |opt|
+        expect(opt[:data].read).to eq(data)
+        expect(opt[:length]).to eq(data.length)
       end.and_return(object)
 
-      object.should_receive(:aoid).and_return('test-key')
+      expect(object).to receive(:aoid).and_return('test-key')
 
       object_id = client.create(data)
       object_info = MultiJson.decode(Base64.decode64(URI.unescape(object_id)))
-      object_info['oid'].should eql('test-key')
-      object_info['sig'].should_not be_nil
+      expect(object_info['oid']).to eq('test-key')
+      expect(object_info['sig']).to_not be(nil)
     end
 
     it 'should raise an error if a object id is suggested' do
@@ -87,8 +87,8 @@ module Bosh::Blobstore
 
     it 'should delete an object' do
       object = double('object')
-      atmos.should_receive(:get).with(id: 'test-key').and_return(object)
-      object.should_receive(:delete)
+      expect(atmos).to receive(:get).with(id: 'test-key').and_return(object)
+      expect(object).to receive(:delete)
 
       id = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'test-key', sig: 'sig' })))
       client.delete(id)
@@ -97,10 +97,10 @@ module Bosh::Blobstore
     it 'should fetch an object' do
       url = 'http://localhost/rest/objects/test-key?uid=uid&expires=1893484800&signature=sig'
       response = double('response')
-      response.stub(:status).and_return(200)
-      http_client.should_receive(:get).with(url).and_yield('some-content').and_return(response)
+      allow(response).to receive(:status).and_return(200)
+      expect(http_client).to receive(:get).with(url).and_yield('some-content').and_return(response)
       id = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'test-key', sig: 'sig' })))
-      client.get(id).should eql('some-content')
+      expect(client.get(id)).to eq('some-content')
     end
 
     it 'should refuse to create object without the password' do
@@ -112,11 +112,11 @@ module Bosh::Blobstore
 
       url = 'http://localhost/rest/objects/test-key?uid=uid&expires=1893484800&signature=sig'
       response = double('response')
-      response.stub(:status).and_return(200)
-      http_client.should_receive(:get).with(url).and_yield('some-content').and_return(response)
+      allow(response).to receive(:status).and_return(200)
+      expect(http_client).to receive(:get).with(url).and_yield('some-content').and_return(response)
       id = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'test-key', sig: 'sig' })))
 
-      no_pass_client.get(id).should eql('some-content')
+      expect(no_pass_client.get(id)).to eq('some-content')
     end
   end
 end

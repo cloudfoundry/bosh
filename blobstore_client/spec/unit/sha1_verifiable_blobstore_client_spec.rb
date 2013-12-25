@@ -13,13 +13,13 @@ module Bosh::Blobstore
 
       it 'calls wrapped client with all given arguments' do
         options = { 'sha1' => 'fake-sha1', 'fake-key' => 'fake-value' }
-        wrapped_client.should_receive(:get).with('fake-id', file, options)
+        expect(wrapped_client).to receive(:get).with('fake-id', file, options)
         subject.get('fake-id', file, options)
       end
 
       it 'returns downloaded file if no file is given' do
-        wrapped_client
-          .should_receive(:get)
+        expect(wrapped_client)
+          .to receive(:get)
           .with('fake-id', nil, {})
           .and_return(file)
         expect(subject.get('fake-id', nil, {})).to eq(file)
@@ -27,17 +27,17 @@ module Bosh::Blobstore
 
       it 'propagates errors raised by wrapped client' do
         error = Exception.new('fake-wrapped-client-error')
-        wrapped_client.should_receive(:get).and_raise(error)
+        expect(wrapped_client).to receive(:get).and_raise(error)
         expect {
           subject.get('fake-id', file)
         }.to raise_error(error)
       end
 
       context 'when file download is finished' do
-        before { wrapped_client.stub(:get) }
+        before { allow(wrapped_client).to receive(:get) }
 
         context 'when sha1 of downloaded file matches expected sha1' do
-          before { Digest::SHA1.stub(:file).with('fake-file-path').and_return(sha1_digest) }
+          before { allow(Digest::SHA1).to receive(:file).with('fake-file-path').and_return(sha1_digest) }
           let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'expected-sha1') }
 
           context 'when expected sha1 is given in the options' do
@@ -58,7 +58,7 @@ module Bosh::Blobstore
         end
 
         context 'when sha1 of downloaded file does not match expected sha1' do
-          before { Digest::SHA1.stub(:file).with('fake-file-path').and_return(sha1_digest) }
+          before { allow(Digest::SHA1).to receive(:file).with('fake-file-path').and_return(sha1_digest) }
           let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'actual-sha1') }
 
           context 'when expected sha1 is given in the options' do

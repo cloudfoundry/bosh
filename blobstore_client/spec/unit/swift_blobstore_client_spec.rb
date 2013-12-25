@@ -39,9 +39,9 @@ module Bosh::Blobstore
 
     before(:each) do
       @swift = double('swift')
-      Fog::Storage.stub(:new).and_return(@swift)
+      allow(Fog::Storage).to receive(:new).and_return(@swift)
       @http_client = double('http-client')
-      HTTPClient.stub(:new).and_return(@http_client)
+      allow(HTTPClient).to receive(:new).and_return(@http_client)
     end
 
     describe 'interface' do
@@ -64,52 +64,52 @@ module Bosh::Blobstore
 
         describe '#create_file' do
           it 'should create an object' do
-            @client.should_receive(:generate_object_id).and_return('object_id')
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:create) do |opt|
-              opt[:key].should eql 'object_id'
+            expect(@client).to receive(:generate_object_id).and_return('object_id')
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:create) do |opt|
+              expect(opt[:key]).to eq 'object_id'
               object
             end
-            object.should_receive(:public_url).and_return('public-url')
+            expect(object).to receive(:public_url).and_return('public-url')
 
             object_id = @client.create(data)
             object_info = MultiJson.decode(Base64.decode64(URI.unescape(object_id)))
-            object_info['oid'].should eql('object_id')
-            object_info['purl'].should eql('public-url')
+            expect(object_info['oid']).to eq('object_id')
+            expect(object_info['purl']).to eq('public-url')
           end
         end
 
         describe '#get_file' do
           it 'should fetch an object without a public url' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:get).with('object_id').and_yield(data).and_return(object)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_yield(data).and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
 
           it 'should fetch an object with a public url' do
             response = double('response')
 
-            @http_client.should_receive(:get).with('public-url').and_yield(data).and_return(response)
-            response.stub(:status).and_return(200)
+            expect(@http_client).to receive(:get).with('public-url').and_yield(data).and_return(response)
+            allow(response).to receive(:status).and_return(200)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id', purl: 'public-url' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
         end
 
         describe '#delete_object' do
           it 'should delete an object' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:get).with('object_id').and_return(object)
-            object.should_receive(:destroy)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(object)
+            expect(object).to receive(:destroy)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             @client.delete(oid)
@@ -118,23 +118,23 @@ module Bosh::Blobstore
 
         describe '#object_exists?' do
           it 'should return true if object exists' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:head).with('object_id').and_return(object)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:head).with('object_id').and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be(true)
+            expect(@client.exists?(oid)).to be(true)
           end
 
           it "should return false if object doesn't exists" do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:head).with('object_id').and_return(nil)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be(false)
+            expect(@client.exists?(oid)).to be(false)
           end
         end
       end
@@ -160,11 +160,11 @@ module Bosh::Blobstore
           it 'should fetch an object with a public url' do
             response = double('response')
 
-            @http_client.should_receive(:get).with('public-url').and_yield(data).and_return(response)
-            response.stub(:status).and_return(200)
+            expect(@http_client).to receive(:get).with('public-url').and_yield(data).and_return(response)
+            allow(response).to receive(:status).and_return(200)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id', purl: 'public-url' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
         end
 
@@ -200,52 +200,52 @@ module Bosh::Blobstore
 
         describe '#create_file' do
           it 'should create an object' do
-            @client.should_receive(:generate_object_id).and_return('object_id')
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:create) do |opt|
-              opt[:key].should eql 'object_id'
+            expect(@client).to receive(:generate_object_id).and_return('object_id')
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:create) do |opt|
+              expect(opt[:key]).to eq('object_id')
               object
             end
-            object.should_receive(:public_url).and_raise(NotImplementedError)
+            expect(object).to receive(:public_url).and_raise(NotImplementedError)
 
             object_id = @client.create(data)
             object_info = MultiJson.decode(Base64.decode64(URI.unescape(object_id)))
-            object_info['oid'].should eql('object_id')
-            object_info['purl'].should be_nil
+            expect(object_info['oid']).to eq('object_id')
+            expect(object_info['purl']).to be(nil)
           end
         end
 
         describe '#get_file' do
           it 'should fetch an object without a public url' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:get).with('object_id').and_yield(data).and_return(object)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_yield(data).and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eql(data)
           end
 
           it 'should fetch an object with a public url' do
             response = double('response')
 
-            @http_client.should_receive(:get).with('public-url').and_yield(data).and_return(response)
-            response.stub(:status).and_return(200)
+            expect(@http_client).to receive(:get).with('public-url').and_yield(data).and_return(response)
+            allow(response).to receive(:status).and_return(200)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id', purl: 'public-url' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eql(data)
           end
         end
 
         describe '#delete_object' do
           it 'should delete an object' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:get).with('object_id').and_return(object)
-            object.should_receive(:destroy)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(object)
+            expect(object).to receive(:destroy)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             @client.delete(oid)
@@ -254,23 +254,23 @@ module Bosh::Blobstore
 
         describe '#object_exists?' do
           it 'should return true if object exists' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:head).with('object_id').and_return(object)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:head).with('object_id').and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be(true)
+            expect(@client.exists?(oid)).to be(true)
           end
 
           it "should return false if object doesn't exists" do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:head).with('object_id').and_return(nil)
+            allow(@swift).to receive(:directories).and_return(directories)
+           expect(directories).to receive(:get).with('test-container').and_return(container)
+           expect(container).to receive(:files).and_return(files)
+           expect(files).to receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be(false)
+            expect(@client.exists?(oid)).to be(false)
           end
         end
       end
@@ -296,11 +296,11 @@ module Bosh::Blobstore
           it 'should fetch an object with a public url' do
             response = double('response')
 
-            @http_client.should_receive(:get).with('public-url').and_yield(data).and_return(response)
-            response.stub(:status).and_return(200)
+            expect(@http_client).to receive(:get).with('public-url').and_yield(data).and_return(response)
+            allow(response).to receive(:status).and_return(200)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id', purl: 'public-url' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
         end
 
@@ -336,52 +336,52 @@ module Bosh::Blobstore
 
         describe '#create_file' do
           it 'should create an object' do
-            @client.should_receive(:generate_object_id).and_return('object_id')
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:create) do |opt|
-              opt[:key].should eql 'object_id'
+            expect(@client).to receive(:generate_object_id).and_return('object_id')
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:create) do |opt|
+              expect(opt[:key]).to eq 'object_id'
               object
             end
-            object.should_receive(:public_url).and_return('public-url')
+            expect(object).to receive(:public_url).and_return('public-url')
 
             object_id = @client.create(data)
             object_info = MultiJson.decode(Base64.decode64(URI.unescape(object_id)))
-            object_info['oid'].should eql('object_id')
-            object_info['purl'].should eql('public-url')
+            expect(object_info['oid']).to eq('object_id')
+            expect(object_info['purl']).to eq('public-url')
           end
         end
 
         describe '#get_file' do
           it 'should fetch an object without a public url' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:get).with('object_id').and_yield(data).and_return(object)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_yield(data).and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
 
           it 'should fetch an object with a public url' do
             response = double('response')
 
-            @http_client.should_receive(:get).with('public-url').and_yield(data).and_return(response)
-            response.stub(:status).and_return(200)
+            expect(@http_client).to receive(:get).with('public-url').and_yield(data).and_return(response)
+            allow(response).to receive(:status).and_return(200)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id', purl: 'public-url' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
         end
 
         describe '#delete_object' do
           it 'should delete an object' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:get).with('object_id').and_return(object)
-            object.should_receive(:destroy)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(object)
+            expect(object).to receive(:destroy)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             @client.delete(oid)
@@ -390,23 +390,23 @@ module Bosh::Blobstore
 
         describe '#object_exists?' do
           it 'should return true if object exists' do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:head).with('object_id').and_return(object)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:head).with('object_id').and_return(object)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be(true)
+            expect(@client.exists?(oid)).to be(true)
           end
 
           it "should return false if object doesn't exists" do
-            @swift.stub(:directories).and_return(directories)
-            directories.should_receive(:get).with('test-container').and_return(container)
-            container.should_receive(:files).and_return(files)
-            files.should_receive(:head).with('object_id').and_return(nil)
+            allow(@swift).to receive(:directories).and_return(directories)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
-            @client.exists?(oid).should be(false)
+            expect(@client.exists?(oid)).to be(false)
           end
         end
       end
@@ -432,11 +432,11 @@ module Bosh::Blobstore
           it 'should fetch an object with a public url' do
             response = double('response')
 
-            @http_client.should_receive(:get).with('public-url').and_yield(data).and_return(response)
-            response.stub(:status).and_return(200)
+            expect(@http_client).to receive(:get).with('public-url').and_yield(data).and_return(response)
+            allow(response).to receive(:status).and_return(200)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id', purl: 'public-url' })))
-            @client.get(oid).should eql(data)
+            expect(@client.get(oid)).to eq(data)
           end
         end
 

@@ -20,6 +20,7 @@ end
 
 RSpec.configure do |config|
   config.include(RSpec::Fire)
+  config.raise_errors_for_deprecations!
 end
 
 RSpec::Fire.configure do |config|

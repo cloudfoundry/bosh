@@ -14,14 +14,14 @@ module Bosh::Blobstore
 
       it 'calls wrapped client with all given arguments' do
         options = double('fake-options')
-        wrapped_client.should_receive(:get).with('fake-id', file, options)
+        expect(wrapped_client).to receive(:get).with('fake-id', file, options)
         subject.get('fake-id', file, options)
       end
 
       it 'returns downloaded file if no file is given' do
         returned_file = double('fake-file')
-        wrapped_client
-          .should_receive(:get)
+        expect(wrapped_client)
+          .to receive(:get)
           .with('fake-id', nil, {})
           .and_return(returned_file)
         expect(subject.get('fake-id', nil)).to eq(returned_file)
@@ -29,7 +29,7 @@ module Bosh::Blobstore
 
       it 'propagates errors raised by wrapped client' do
         error = Exception.new('fake-wrapped-client-error')
-        wrapped_client.should_receive(:get).and_raise(error)
+        expect(wrapped_client).to receive(:get).and_raise(error)
         expect {
           subject.get('fake-id', file)
         }.to raise_error(error)
@@ -40,16 +40,16 @@ module Bosh::Blobstore
 
         context 'when file is given explicitly' do
           it 'calls wrapped client multiple times and returns successfully' do
-            wrapped_client.should_receive(:get).ordered.and_raise(error)
-            wrapped_client.should_receive(:get).ordered.with('fake-id', file, {})
+            expect(wrapped_client).to receive(:get).ordered.and_raise(error)
+            expect(wrapped_client).to receive(:get).ordered.with('fake-id', file, {})
             expect { subject.get('fake-id', file) }.to_not raise_error
           end
         end
 
         context 'when file is not given explicitly' do
           it 'calls wrapped client multiple times and returns successfully' do
-            wrapped_client.should_receive(:get).ordered.and_raise(error)
-            wrapped_client.should_receive(:get).ordered.with('fake-id', nil, {})
+            expect(wrapped_client).to receive(:get).ordered.and_raise(error)
+            expect(wrapped_client).to receive(:get).ordered.with('fake-id', nil, {})
             expect { subject.get('fake-id', nil) }.to_not raise_error
           end
         end
@@ -61,8 +61,8 @@ module Bosh::Blobstore
 
         context 'when file is given explicitly' do
           it 'raises last BlobstoreError' do
-            wrapped_client.should_receive(:get).ordered.and_raise(error1)
-            wrapped_client.should_receive(:get).ordered.and_raise(error2)
+            expect(wrapped_client).to receive(:get).ordered.and_raise(error1)
+            expect(wrapped_client).to receive(:get).ordered.and_raise(error2)
             expect {
               subject.get('fake-id', file)
             }.to raise_error(/fake-wrapped-client-error2/)
@@ -71,8 +71,8 @@ module Bosh::Blobstore
 
         context 'when file is not given explicitly' do
           it 'raises last BlobstoreError ' do
-            wrapped_client.should_receive(:get).ordered.and_raise(error1)
-            wrapped_client.should_receive(:get).ordered.and_raise(error2)
+            expect(wrapped_client).to receive(:get).ordered.and_raise(error1)
+            expect(wrapped_client).to receive(:get).ordered.and_raise(error2)
             expect {
               subject.get('fake-id', nil)
             }.to raise_error(/fake-wrapped-client-error2/)

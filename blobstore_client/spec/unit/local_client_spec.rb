@@ -22,7 +22,7 @@ module Bosh::Blobstore
 
       LocalClient.new('blobstore_path' => dir)
 
-      File.directory?(dir).should be(true)
+      expect(File.directory?(dir)).to be(true)
     end
 
     describe 'operations' do
@@ -34,12 +34,12 @@ module Bosh::Blobstore
           end
 
           client = LocalClient.new(@options)
-          client.exists?('foo').should be(true)
+          expect(client.exists?('foo')).to be(true)
         end
 
         it "should return false if the object doesn't exists" do
           client = LocalClient.new(@options)
-          client.exists?('foo').should be(false)
+          expect(client.exists?('foo')).to be(false)
         end
       end
 
@@ -50,7 +50,7 @@ module Bosh::Blobstore
           end
 
           client = LocalClient.new(@options)
-          client.get('foo').should eq("bar\n")
+          expect(client.get('foo')).to eq("bar\n")
         end
       end
 
@@ -64,7 +64,7 @@ module Bosh::Blobstore
           original = File.new(test_file).readlines
 
           stored = File.new(File.join(@tmp, id)).readlines
-          stored.should eq(original)
+          expect(stored).to eq(original)
         end
 
         it 'should store a string' do
@@ -73,7 +73,7 @@ module Bosh::Blobstore
           id = client.create(string)
 
           stored = File.new(File.join(@tmp, id)).readlines
-          stored.should eq([string])
+          expect(stored).to eq([string])
         end
 
         it 'should accept object id suggestion' do
@@ -81,16 +81,16 @@ module Bosh::Blobstore
           string = 'foobar'
 
           id = client.create(string, 'foobar')
-          id.should eq('foobar')
+          expect(id).to eq('foobar')
 
           stored = File.new(File.join(@tmp, id)).readlines
-          stored.should eq([string])
+          expect(stored).to eq([string])
         end
 
         it 'should raise an error' do
           client = LocalClient.new(@options)
           string = 'foobar'
-          client.create(string, 'foobar').should eq('foobar')
+          expect(client.create(string, 'foobar')).to eq('foobar')
 
           expect { client.create(string, 'foobar') }.to raise_error BlobstoreError
         end
@@ -102,7 +102,7 @@ module Bosh::Blobstore
           string = 'foobar'
           id = client.create(string)
           client.delete(id)
-          File.exist?(File.join(@tmp, id)).should be(false)
+          expect(File.exist?(File.join(@tmp, id))).to be(false)
         end
 
         it 'should raise NotFound error when trying to delete a missing id' do
