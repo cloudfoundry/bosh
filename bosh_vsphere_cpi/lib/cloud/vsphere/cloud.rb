@@ -1143,16 +1143,5 @@ module VSphereCloud
 
       vms
     end
-
-    private
-
-    def raise_nfc_lease_error(lease)
-      error = client.get_property(lease, Vim::HttpNfcLease, 'error')
-      raise "Could not acquire HTTP NFC lease, message is: '#{error.msg}' " +
-        "fault cause is: '#{error.fault_cause}', " +
-        "fault message is: #{error.fault_message}, " +
-        "dynamic type is '#{error.dynamic_type}', " +
-        "dynamic property is #{error.dynamic_property}"
-    end
   end
 end
