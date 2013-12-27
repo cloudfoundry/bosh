@@ -204,20 +204,17 @@ describe VSphereCloud::Cloud do
     end
 
     context 'when stemcell resides on the given datastore' do
-
       it 'returns the found replica' do
         client.stub(:find_by_inventory_path).with(any_args).and_return(stemcell_vm)
         client.stub(:get_property).with(any_args).and_return(datastore)
         datastore.stub(:mob).and_return(datastore)
-
         vsphere_cloud.replicate_stemcell(cluster, datastore, stemcell_id).should eq(stemcell_vm)
-
       end
     end
   end
 
   describe '#generate_network_env' do
-    let(:device) { instance_double('Vim::Vm::Device::VirtualEthernetCard', backing: backing, mac_address: '00:00:00:00:00:00') }
+    let(:device) { instance_double('VimSdk::Vim::Vm::Device::VirtualEthernetCard', backing: backing, mac_address: '00:00:00:00:00:00') }
     let(:devices) { [device] }
     let(:network1) {
       {
@@ -245,7 +242,7 @@ describe VSphereCloud::Cloud do
     end
 
     context 'using a distributed switch' do
-      let(:backing) { instance_double('Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo') }
+      let(:backing) { instance_double('VimSdk::Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo') }
       let(:dvs_index) { { 'fake_pgkey1' => 'fake_network1' } }
 
       it 'generates the network env' do
@@ -319,7 +316,7 @@ describe VSphereCloud::Cloud do
 
     context 'using a distributed switch' do
       let(:v_network_name) { 'fake_network1' }
-      let(:network) { instance_double('Vim::Dvs::DistributedVirtualPortgroup', class: VimSdk::Vim::Dvs::DistributedVirtualPortgroup) }
+      let(:network) { instance_double('VimSdk::Vim::Dvs::DistributedVirtualPortgroup', class: VimSdk::Vim::Dvs::DistributedVirtualPortgroup) }
       let(:dvs_index) { {} }
       let(:switch) { double() }
       let(:portgroup_properties) { { 'config.distributedVirtualSwitch' => switch, 'config.key' => 'fake_portgroup_key' } }

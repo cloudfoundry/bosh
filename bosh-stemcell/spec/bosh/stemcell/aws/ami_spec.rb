@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/stemcell/archive'
 require 'bosh/stemcell/aws/ami'
 
 module Bosh::Stemcell::Aws
@@ -6,7 +7,7 @@ module Bosh::Stemcell::Aws
     subject(:ami) { Ami.new(stemcell, region) }
 
     let(:stemcell) do
-      instance_double('Bosh::Dev::Stemcell').tap do |s|
+      instance_double('Bosh::Stemcell::Archive').tap do |s|
         s.stub(:extract).and_yield('/foo/bar', {
           'cloud_properties' => { 'ami' => '' }
         })

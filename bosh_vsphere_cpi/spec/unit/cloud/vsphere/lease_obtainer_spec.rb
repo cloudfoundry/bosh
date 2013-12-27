@@ -11,7 +11,7 @@ module VSphereCloud
       let(:resource_pool) { instance_double('VSphereCloud::Resources::ResourcePool', mob: resource_pool_mob) }
       let(:resource_pool_mob) { instance_double('VimSdk::Vim::ResourcePool') }
 
-      let(:import_spec) { instance_double('VimSdk::Vim::OvfCreateImportSpec') }
+      let(:import_spec) { instance_double('VimSdk::Vim::ImportSpec') }
 
       let(:template_folder) { instance_double('VSphereCloud::Resources::Folder', mob: template_folder_mob) }
       let(:template_folder_mob) { instance_double('VimSdk::Vim::Folder') }
