@@ -6,6 +6,7 @@ import (
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	"bytes"
@@ -64,6 +65,10 @@ func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 
 func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
+}
+
+func (p ubuntu) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
+	return p.dirProvider
 }
 
 func (p ubuntu) SetupRuntimeConfiguration() (err error) {

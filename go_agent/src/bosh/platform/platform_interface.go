@@ -4,6 +4,7 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 )
 
@@ -12,6 +13,7 @@ type Platform interface {
 	GetRunner() (runner boshsys.CmdRunner)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	GetCompressor() (compressor boshcmd.Compressor)
+	GetDirProvider() (dirProvider boshdir.DirectoriesProvider)
 
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)

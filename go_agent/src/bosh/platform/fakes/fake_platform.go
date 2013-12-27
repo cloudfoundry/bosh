@@ -6,6 +6,7 @@ import (
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 )
@@ -79,6 +80,10 @@ func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) 
 
 func (p *FakePlatform) GetCompressor() (compressor boshcmd.Compressor) {
 	return p.FakeCompressor
+}
+
+func (p *FakePlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
+	return boshdir.NewDirectoriesProvider("/var/vcap")
 }
 
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
