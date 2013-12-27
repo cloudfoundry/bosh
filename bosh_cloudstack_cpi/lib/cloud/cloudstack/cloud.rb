@@ -574,7 +574,7 @@ module Bosh::CloudStackCloud
       if volumes && !volumes.empty?
         disks = volumes.map { |vid| with_compute { @compute.volumes.get(vid) } }
         ensure_same_availability_zone(disks, resource_pool_az)
-        disks.first.availability_zone
+        disks.first.zone_name
       else
         resource_pool_az
       end
@@ -589,7 +589,7 @@ module Bosh::CloudStackCloud
     # @return [String] availability zone to use or nil
     # @note this is a private method that is public to make it easier to test
     def ensure_same_availability_zone(disks, default)
-      zones = disks.map { |disk| disk.availability_zone }
+      zones = disks.map { |disk| disk.zone_name }
       zones << default if default
       zones.uniq!
       cloud_error "can't use multiple availability zones: %s" %

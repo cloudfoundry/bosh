@@ -338,7 +338,7 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
 
   def volume(zone)
     vol = double("volume")
-    vol.stub(:availability_zone).and_return(zone)
+    vol.stub(:zone_name).and_return(zone)
     vol
   end
 
@@ -355,14 +355,14 @@ describe Bosh::CloudStackCloud::Cloud, "create_vm" do
 
     it "should select the zone from a list of disks" do
       cloud = mock_cloud do |compute|
-        compute.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
+        compute.volumes.stub(:get).and_return(volume("foo"))
       end
       cloud.select_availability_zone(%w[cid1 cid2], nil).should == "foo"
     end
 
     it "should select the zone from a list of disks and a default" do
       cloud = mock_cloud do |compute|
-        compute.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
+        compute.volumes.stub(:get).and_return(volume("foo"))
       end
       cloud.select_availability_zone(%w[cid1 cid2], "foo").should == "foo"
     end
