@@ -4,6 +4,7 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshuuid "bosh/uuid"
 	"path/filepath"
 )
@@ -12,11 +13,11 @@ type provider struct {
 	blobstores map[boshsettings.BlobstoreType]Blobstore
 }
 
-func NewProvider(platform boshplatform.Platform) (p provider) {
+func NewProvider(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (p provider) {
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
 	uuidGen := boshuuid.NewGenerator()
-	s3cliConfigPath := filepath.Join(boshsettings.VCAP_ETC_DIR, "s3cli")
+	s3cliConfigPath := filepath.Join(dirProvider.EtcDir(), "s3cli")
 
 	p.blobstores = map[boshsettings.BlobstoreType]Blobstore{
 		boshsettings.BlobstoreTypeDav:   newDummyBlobstore(),

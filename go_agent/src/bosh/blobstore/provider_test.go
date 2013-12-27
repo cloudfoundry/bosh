@@ -4,6 +4,7 @@ import (
 	boshplatform "bosh/platform"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshuuid "bosh/uuid"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestGetDav(t *testing.T) {
-	_, provider := buildProvider()
+	_, _, provider := buildProvider()
 	blobstore, err := provider.Get(boshsettings.Blobstore{
 		Type: boshsettings.BlobstoreTypeDav,
 	})
@@ -20,7 +21,7 @@ func TestGetDav(t *testing.T) {
 }
 
 func TestGetDummy(t *testing.T) {
-	_, provider := buildProvider()
+	_, _, provider := buildProvider()
 	blobstore, err := provider.Get(boshsettings.Blobstore{
 		Type: boshsettings.BlobstoreTypeDummy,
 	})
@@ -29,7 +30,7 @@ func TestGetDummy(t *testing.T) {
 }
 
 func TestGetS3(t *testing.T) {
-	platform, provider := buildProvider()
+	platform, dirProvider, provider := buildProvider()
 	options := map[string]string{
 		"access_key_id":     "some-access-key",
 		"secret_access_key": "some-secret-key",
@@ -41,7 +42,7 @@ func TestGetS3(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	expectedS3ConfigPath := filepath.Join(boshsettings.VCAP_ETC_DIR, "s3cli")
+	expectedS3ConfigPath := filepath.Join(dirProvider.EtcDir(), "s3cli")
 	expectedBlobstore := newS3Blobstore(platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedS3ConfigPath)
 	expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
 	expectedBlobstore, err = expectedBlobstore.ApplyOptions(options)
@@ -50,8 +51,9 @@ func TestGetS3(t *testing.T) {
 	assert.Equal(t, blobstore, expectedBlobstore)
 }
 
-func buildProvider() (platform boshplatform.Platform, provider provider) {
+func buildProvider() (platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider, provider provider) {
 	platform = fakeplatform.NewFakePlatform()
-	provider = NewProvider(platform)
+	dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+	provider = NewProvider(platform, dirProvider)
 	return
 }

@@ -76,7 +76,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	blobstoreProvider := boshblob.NewProvider(platform)
+	blobstoreProvider := boshblob.NewProvider(platform, dirProvider)
 	blobstore, err := blobstoreProvider.Get(settingsService.GetBlobstore())
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blobstore")

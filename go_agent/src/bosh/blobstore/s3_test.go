@@ -2,7 +2,7 @@ package blobstore
 
 import (
 	boshassert "bosh/assert"
-	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	fakeuuid "bosh/uuid/fakes"
 	"errors"
@@ -138,6 +138,7 @@ func getS3BlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.F
 	fs = &fakesys.FakeFileSystem{}
 	runner = &fakesys.FakeCmdRunner{}
 	uuidGen = &fakeuuid.FakeGenerator{}
-	configPath = filepath.Join(boshsettings.VCAP_ETC_DIR, "s3cli")
+	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+	configPath = filepath.Join(dirProvider.EtcDir(), "s3cli")
 	return
 }
