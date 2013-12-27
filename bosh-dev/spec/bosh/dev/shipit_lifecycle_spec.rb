@@ -13,8 +13,7 @@ module Bosh::Dev
       Rugged::Repository.stub(:new).with(repo_path).and_return(repository)
     end
 
-    # rspec-fire is not happy with Repository#new method defined by c ext in Rugged
-    let(:repository)     { double('Rugged::Repository', head: head_reference) }
+    let(:repository)     { instance_double('Rugged::Repository', head: head_reference) }
     let(:head_reference) { instance_double('Rugged::Reference', name: 'refs/heads/this-branch') }
 
     describe '#pull' do

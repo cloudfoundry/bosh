@@ -1,5 +1,4 @@
 require 'rspec'
-require 'rspec/fire'
 require 'sequel'
 require 'sequel/adapters/sqlite'
 
@@ -23,7 +22,3 @@ config.uuid = '123'
 
 Bosh::Clouds::Config.configure(config)
 VSphereCloud::Config.logger = config.logger
-
-RSpec.configure do |config|
-  config.include(RSpec::Fire)
-end

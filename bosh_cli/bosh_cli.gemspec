@@ -31,9 +31,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'netaddr', '~>1.5.0'
   s.add_dependency 'minitar', '~>0.5.4'
 
-  s.add_development_dependency 'fakefs'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rspec-its'
-  s.add_development_dependency 'rspec-fire'
+  s.add_development_dependency 'fakefs'
   s.add_development_dependency 'webmock'
 end

@@ -16,27 +16,27 @@ Gem::Specification.new do |s|
   s.required_ruby_version   = Gem::Requirement.new('>= 1.9.3')
 
   # Third party dependencies
-  s.add_dependency          'netaddr',          '~>1.5.0'
-  s.add_dependency          'thin',             '~>1.5.0'
-  s.add_dependency          'yajl-ruby',        '~>1.1.0'
-  s.add_dependency          'sinatra',          '~>1.4.2'
-  s.add_dependency          'nats',             '~>0.4.28'
-  s.add_dependency          'sigar',            '~>0.7.2'
-  s.add_dependency          'httpclient',       '=2.2.4'
-  s.add_dependency          'syslog_protocol',  '~>0.9.2'
-  s.add_dependency          'crack',            '~>0.3.2'
+  s.add_dependency 'netaddr',          '~>1.5.0'
+  s.add_dependency 'thin',             '~>1.5.0'
+  s.add_dependency 'yajl-ruby',        '~>1.1.0'
+  s.add_dependency 'sinatra',          '~>1.4.2'
+  s.add_dependency 'nats',             '~>0.4.28'
+  s.add_dependency 'sigar',            '~>0.7.2'
+  s.add_dependency 'httpclient',       '=2.2.4'
+  s.add_dependency 'syslog_protocol',  '~>0.9.2'
+  s.add_dependency 'crack',            '~>0.3.2'
 
   # Bosh Dependencies
-  s.add_dependency          'bosh-core', "~>#{version}"
-  s.add_dependency          'bosh_common',      "~>#{version}"
-  s.add_dependency          'blobstore_client', "~>#{version}"
+  s.add_dependency 'bosh-core', "~>#{version}"
+  s.add_dependency 'bosh_common',      "~>#{version}"
+  s.add_dependency 'blobstore_client', "~>#{version}"
 
+  s.add_development_dependency 'rspec'
   s.add_development_dependency 'fakefs'
-  s.add_development_dependency 'rspec-fire'
 
-  s.files                   = `git ls-files -- lib/*`.split("\n") + %w(CHANGELOG)
-  s.require_paths           = %w(lib)
-  s.test_files              = s.files.grep(%r{^(test|spec|features)/})
-  s.bindir                  = 'bin'
-  s.executables             << 'bosh_agent'
+  s.files         = `git ls-files -- lib/*`.split("\n") + %w(CHANGELOG)
+  s.require_paths = %w(lib)
+  s.test_files    = s.files.grep(%r{^(test|spec|features)/})
+  s.bindir        = 'bin'
+  s.executables   << 'bosh_agent'
 end
