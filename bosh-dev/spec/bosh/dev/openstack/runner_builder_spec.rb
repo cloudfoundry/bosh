@@ -20,6 +20,7 @@ module Bosh::Dev::Openstack
         bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
         class_double('Bosh::Dev::BoshCliSession').as_stubbed_const
           .should_receive(:new)
+          .with(no_args)
           .and_return(bosh_cli_session)
 
         stemcell_archive = instance_double(
@@ -40,6 +41,7 @@ module Bosh::Dev::Openstack
         microbosh_deployment_cleaner = instance_double('Bosh::Dev::Openstack::MicroBoshDeploymentCleaner')
         class_double('Bosh::Dev::Openstack::MicroBoshDeploymentCleaner').as_stubbed_const
           .should_receive(:new)
+          .with(microbosh_deployment_manifest)
           .and_return(microbosh_deployment_cleaner)
 
         director_uuid = instance_double('Bosh::Dev::Bat::DirectorUuid')

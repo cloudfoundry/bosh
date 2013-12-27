@@ -19,10 +19,12 @@ module Bosh::Dev::Openstack
 
       microbosh_deployment_manifest =
         MicroBoshDeploymentManifest.new(env, net_type)
+
       bat_deployment_manifest =
         BatDeploymentManifest.new(env, net_type, director_uuid, stemcell_archive)
 
-      microbosh_deployment_cleaner = MicroBoshDeploymentCleaner.new
+      microbosh_deployment_cleaner =
+        MicroBoshDeploymentCleaner.new(microbosh_deployment_manifest)
 
       # rubocop:disable ParameterLists
       Bosh::Dev::Bat::Runner.new(
