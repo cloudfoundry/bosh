@@ -30,8 +30,12 @@ module Bosh::Dev::Bat
       microbosh_deployment_cleaner.clean
       deploy_microbosh
       run_bats
-    ensure
-      teardown_micro
+
+      # We are not deleting micro here because
+      # bats environment (vms) is cleaned before each run
+      # by the micro_bosh_deployment_cleaner.
+      # It's useful to keep around micro if tests
+      # failed so we can debug problem(s).
     end
 
     def run_bats
@@ -82,14 +86,6 @@ module Bosh::Dev::Bat
       env['BAT_VCAP_PRIVATE_KEY'] = env['BOSH_OPENSTACK_PRIVATE_KEY'] || env['BOSH_KEY_PATH']
       env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
       env['BAT_INFRASTRUCTURE']   = stemcell_archive.infrastructure
-    end
-
-    def teardown_micro
-      Dir.chdir(bat_helper.artifacts_dir) do
-        bosh_cli_session.run_bosh 'delete deployment bat', ignore_failures: true
-        bosh_cli_session.run_bosh "delete stemcell #{stemcell_archive.name} #{stemcell_archive.version}", ignore_failures: true
-        bosh_cli_session.run_bosh 'micro delete', ignore_failures: true
-      end
     end
   end
 end

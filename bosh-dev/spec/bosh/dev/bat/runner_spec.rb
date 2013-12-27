@@ -95,49 +95,6 @@ module Bosh::Dev::Bat
         subject.should_receive(:run_bats)
         subject.deploy_microbosh_and_run_bats
       end
-
-      def self.it_cleans_up_after_rake_task(ignore_error = false)
-        it 'deletes the bat deployment, stemcell and then micro' do
-          bosh_cli_session
-            .should_receive(:run_bosh)
-            .with('delete deployment bat', ignore_failures: true)
-            .ordered
-
-          bosh_cli_session.should_receive(:run_bosh)
-            .with('delete stemcell stemcell-name 6', ignore_failures: true)
-            .ordered
-
-          bosh_cli_session
-            .should_receive(:run_bosh)
-            .with('micro delete', ignore_failures: true)
-            .ordered
-
-          begin
-            subject.deploy_microbosh_and_run_bats
-          rescue
-            raise unless ignore_error
-          end
-        end
-      end
-
-      context 'when running bats does not raise an error' do
-        before { subject.stub(:run_bats) }
-        it_cleans_up_after_rake_task
-
-        it 'does not raise an error' do
-          expect { subject.deploy_microbosh_and_run_bats }.to_not raise_error
-        end
-      end
-
-      context 'when running bats raises an error' do
-        before { subject.stub(:run_bats).and_raise(error) }
-        let(:error) { RuntimeError.new('error') }
-        it_cleans_up_after_rake_task(true)
-
-        it 're-raises bats error' do
-          expect { subject.deploy_microbosh_and_run_bats }.to raise_error(error)
-        end
-      end
     end
 
     describe '#run_bats' do
