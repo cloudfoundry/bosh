@@ -5,6 +5,7 @@ import (
 	boshinf "bosh/infrastructure"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	"encoding/json"
 	"errors"
@@ -15,11 +16,13 @@ type bootstrap struct {
 	fs             boshsys.FileSystem
 	infrastructure boshinf.Infrastructure
 	platform       boshplatform.Platform
+	dirProvider    boshdir.DirectoriesProvider
 }
 
-func New(inf boshinf.Infrastructure, platform boshplatform.Platform) (b bootstrap) {
+func New(inf boshinf.Infrastructure, platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (b bootstrap) {
 	b.infrastructure = inf
 	b.platform = platform
+	b.dirProvider = dirProvider
 	b.fs = platform.GetFs()
 	return
 }
@@ -80,7 +83,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 	}
 
 	for _, devicePath := range settings.Disks.Persistent {
-		err = boot.platform.MountPersistentDisk(devicePath, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+		err = boot.platform.MountPersistentDisk(devicePath, boot.dirProvider.StoreDir())
 		if err != nil {
 			err = bosherr.WrapError(err, "Mounting persistent disk")
 			return
@@ -102,7 +105,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 }
 
 func (boot bootstrap) fetchInitialSettings() (settings boshsettings.Settings, err error) {
-	settingsPath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "settings.json")
+	settingsPath := filepath.Join(boot.dirProvider.BaseDir(), "bosh", "settings.json")
 
 	existingSettingsJson, readError := boot.platform.GetFs().ReadFile(settingsPath)
 	if readError == nil {

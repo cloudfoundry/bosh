@@ -4,24 +4,24 @@ import (
 	fakeinf "bosh/infrastructure/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
-	"path/filepath"
 	"testing"
 )
 
 func TestRunSetsUpRuntimeConfiguration(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.True(t, fakePlatform.SetupRuntimeConfigurationWasInvoked)
 }
 
 func TestRunSetsUpSsh(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, fakeInfrastructure.SetupSshDelegate, fakePlatform)
@@ -33,14 +33,14 @@ func TestRunGetsSettingsFromTheInfrastructure(t *testing.T) {
 		AgentId: "123-456-789",
 	}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = expectedSettings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	settingsService, err := boot.Run()
 	assert.NoError(t, err)
 
-	settingsFileStat := fakePlatform.Fs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/settings.json")
+	settingsFileStat := fakePlatform.Fs.GetFileTestStat(dirProvider.BaseDir() + "/bosh/settings.json")
 	settingsJson, err := json.Marshal(expectedSettings)
 	assert.NoError(t, err)
 
@@ -54,17 +54,17 @@ func TestRunDoesNotFetchSettingsIfTheyAreOnTheDisk(t *testing.T) {
 	infSettings := boshsettings.Settings{AgentId: "xxx-xxx-xxx"}
 	expectedSettings := boshsettings.Settings{AgentId: "123-456-789"}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = infSettings
 
 	existingSettingsBytes, _ := json.Marshal(expectedSettings)
 	fakePlatform.GetFs().WriteToFile("/var/vcap/bosh/settings.json", string(existingSettingsBytes))
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	settingsService, err := boot.Run()
 	assert.NoError(t, err)
 
-	settingsFileStat := fakePlatform.Fs.GetFileTestStat(boshsettings.VCAP_BASE_DIR + "/bosh/settings.json")
+	settingsFileStat := fakePlatform.Fs.GetFileTestStat(dirProvider.BaseDir() + "/bosh/settings.json")
 
 	assert.NotNil(t, settingsFileStat)
 	assert.Equal(t, settingsFileStat.FileType, fakesys.FakeFileTypeFile)
@@ -73,12 +73,12 @@ func TestRunDoesNotFetchSettingsIfTheyAreOnTheDisk(t *testing.T) {
 }
 
 func TestRunSetsUpHostname(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = boshsettings.Settings{
 		AgentId: "foo-bar-baz-123",
 	}
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, fakePlatform.SetupHostnameHostname, "foo-bar-baz-123")
@@ -91,10 +91,10 @@ func TestRunSetsUpNetworking(t *testing.T) {
 		},
 	}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, fakeInfrastructure.SetupNetworkingDelegate, fakePlatform)
@@ -108,10 +108,10 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 		},
 	}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
@@ -124,15 +124,15 @@ func TestRunMountsPersistentDisk(t *testing.T) {
 		},
 	}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	_, err := boot.Run()
 
 	assert.NoError(t, err)
 	assert.Equal(t, fakePlatform.MountPersistentDiskDevicePath, "/dev/sdb")
-	assert.Equal(t, fakePlatform.MountPersistentDiskMountPoint, filepath.Join(boshsettings.VCAP_BASE_DIR, "store"))
+	assert.Equal(t, fakePlatform.MountPersistentDiskMountPoint, dirProvider.StoreDir())
 }
 
 func TestRunErrorsIfThereIsMoreThanOnePersistentDisk(t *testing.T) {
@@ -145,10 +145,10 @@ func TestRunErrorsIfThereIsMoreThanOnePersistentDisk(t *testing.T) {
 		},
 	}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	_, err := boot.Run()
 
 	assert.Error(t, err)
@@ -161,10 +161,10 @@ func TestRunDoesNotTryToMountWhenNoPersistentDisk(t *testing.T) {
 		},
 	}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	_, err := boot.Run()
 
 	assert.NoError(t, err)
@@ -173,10 +173,10 @@ func TestRunDoesNotTryToMountWhenNoPersistentDisk(t *testing.T) {
 }
 
 func TestRunSetsRootAndVcapPasswords(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings.Env.Bosh.Password = "some-encrypted-password"
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, 2, len(fakePlatform.UserPasswords))
@@ -187,20 +187,20 @@ func TestRunSetsRootAndVcapPasswords(t *testing.T) {
 func TestRunDoesNotSetPasswordIfNotProvided(t *testing.T) {
 	settings := boshsettings.Settings{}
 
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, 0, len(fakePlatform.UserPasswords))
 }
 
 func TestRunSetsTime(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings.Ntp = []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
 
-	boot := New(fakeInfrastructure, fakePlatform)
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, 2, len(fakePlatform.SetTimeWithNtpServersServers))
@@ -209,8 +209,8 @@ func TestRunSetsTime(t *testing.T) {
 }
 
 func TestRunSetupsUpMonitUser(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 
 	boot.Run()
 
@@ -218,16 +218,17 @@ func TestRunSetupsUpMonitUser(t *testing.T) {
 }
 
 func TestRunStartsMonit(t *testing.T) {
-	fakeInfrastructure, fakePlatform := getBootstrapDependencies()
-	boot := New(fakeInfrastructure, fakePlatform)
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 
 	boot.Run()
 
 	assert.True(t, fakePlatform.StartMonitStarted)
 }
 
-func getBootstrapDependencies() (inf *fakeinf.FakeInfrastructure, platform *fakeplatform.FakePlatform) {
+func getBootstrapDependencies() (inf *fakeinf.FakeInfrastructure, platform *fakeplatform.FakePlatform, dirProvider boshdir.DirectoriesProvider) {
 	inf = &fakeinf.FakeInfrastructure{}
 	platform = fakeplatform.NewFakePlatform()
+	dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 	return
 }

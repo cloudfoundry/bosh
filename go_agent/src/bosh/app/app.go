@@ -62,7 +62,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	boot := boshboot.New(infrastructure, platform)
+	boot := boshboot.New(infrastructure, platform, dirProvider)
 	settingsService, err := boot.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running bootstrap")
