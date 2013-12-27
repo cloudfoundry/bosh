@@ -55,3 +55,8 @@ builds:
     version: 12
     sha1: !binary |-
       MWZiNzEyMWRhY2M5YWE2YzZiZWE0MTFmOGE4MGNiNzZmNjg0OWNhZQ==
+  !binary "NjNhYzQ5YzQyMDRjM2U5OTEyOTA3NjU5OTE2YWViODNlMDI5ZmI0Mg==":
+    blobstore_id: aab51b48-efd6-4368-af17-a5a7b91a7e23
+    version: 13
+    sha1: !binary |-
+      NGU0NDUxN2M3OTY4YzM5ZmYxOTNiZTczNTM3MjNhYzljOWRiYmYzYw==
