@@ -4,21 +4,21 @@ import (
 	boshmbus "bosh/mbus"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	"fmt"
+	"path/filepath"
 )
 
 const (
-	SYSTEM_DISK_PATH     = "/"
-	EPHEMERAL_DISK_PATH  = boshsettings.VCAP_BASE_DIR + "/data"
-	PERSISTENT_DISK_PATH = boshsettings.VCAP_BASE_DIR + "/store"
+	SYSTEM_DISK_PATH = "/"
 )
 
-func getHeartbeat(settings boshsettings.Service, collector boshstats.StatsCollector) (hb boshmbus.Heartbeat) {
+func getHeartbeat(settings boshsettings.Service, collector boshstats.StatsCollector, dirProvider boshdir.DirectoriesProvider) (hb boshmbus.Heartbeat) {
 	hb = updateWithCpuLoad(collector, hb)
 	hb = updateWithCpuStats(collector, hb)
 	hb = updateWithMemStats(collector, hb)
 	hb = updateWithSwapStats(collector, hb)
-	hb = updateWithDiskStats(settings, collector, hb)
+	hb = updateWithDiskStats(settings, collector, hb, dirProvider)
 	return
 }
 
@@ -92,17 +92,19 @@ func updateWithSwapStats(platform boshstats.StatsCollector, hb boshmbus.Heartbea
 	return
 }
 
-func updateWithDiskStats(settings boshsettings.Service, platform boshstats.StatsCollector, hb boshmbus.Heartbeat) (updatedHb boshmbus.Heartbeat) {
+func updateWithDiskStats(settings boshsettings.Service, platform boshstats.StatsCollector, hb boshmbus.Heartbeat, dirProvider boshdir.DirectoriesProvider) (updatedHb boshmbus.Heartbeat) {
 	updatedHb = hb
 
 	updatedHb.Vitals.Disks.System = getDiskStats(platform, SYSTEM_DISK_PATH)
 
 	if settings.GetDisks().Ephemeral != "" {
-		updatedHb.Vitals.Disks.Ephemeral = getDiskStats(platform, EPHEMERAL_DISK_PATH)
+		emphemeralDiskPath := filepath.Join(dirProvider.BaseDir(), "data")
+		updatedHb.Vitals.Disks.Ephemeral = getDiskStats(platform, emphemeralDiskPath)
 	}
 
 	if len(settings.GetDisks().Persistent) == 1 {
-		updatedHb.Vitals.Disks.Persistent = getDiskStats(platform, PERSISTENT_DISK_PATH)
+		persistentDiskPath := filepath.Join(dirProvider.BaseDir(), "store")
+		updatedHb.Vitals.Disks.Persistent = getDiskStats(platform, persistentDiskPath)
 	}
 
 	return

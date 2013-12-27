@@ -77,7 +77,7 @@ func (a agent) generateHeartbeats(errChan chan error) {
 }
 
 func (a agent) sendHeartbeat(errChan chan error) {
-	heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector())
+	heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector(), a.platform.GetDirProvider())
 	err := a.mbusHandler.SendToHealthManager("heartbeat", heartbeat)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending Heartbeat")
