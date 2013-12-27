@@ -142,5 +142,37 @@ YAML
         end
       end
     end
+
+    its(:director_name) { should match(/microbosh-openstack-/) }
+
+    describe '#cpi_options' do
+      before do
+        env.merge!(
+          'BOSH_OPENSTACK_AUTH_URL' => 'fake-auth-url',
+          'BOSH_OPENSTACK_USERNAME' => 'fake-username',
+          'BOSH_OPENSTACK_API_KEY' => 'fake-api-key',
+          'BOSH_OPENSTACK_TENANT' => 'fake-tenant',
+          'BOSH_OPENSTACK_REGION' => 'fake-region',
+          'BOSH_OPENSTACK_PRIVATE_KEY' => 'fake-private-key-path',
+        )
+      end
+
+      it 'returns cpi options' do
+        expect(subject.cpi_options).to eq(
+          'openstack' => {
+            'auth_url' => 'fake-auth-url',
+            'username' => 'fake-username',
+            'api_key' => 'fake-api-key',
+            'tenant' => 'fake-tenant',
+            'region' => 'fake-region',
+            'endpoint_type' => 'publicURL',
+            'default_key_name' => 'jenkins',
+            'default_security_groups' => ['default'],
+            'private_key' => 'fake-private-key-path',
+            'state_timeout' => 300,
+          }
+        )
+      end
+    end
   end
 end
