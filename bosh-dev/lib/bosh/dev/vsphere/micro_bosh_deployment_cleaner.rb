@@ -14,35 +14,36 @@ module Bosh::Dev::VSphere
     end
 
     def clean
-      config = OpenStruct.new(logger: @logger, uuid: nil, task_checkpoint: nil, db: Sequel.sqlite)
-      Bosh::Clouds::Config.configure(config)
+      configure_cpi
 
-      cloud = get_cloud(@manifest)
+      cloud = VSphereCloud::Cloud.new(@manifest.to_h['cloud']['properties'])
+
       old_vms = cloud.get_vms
-      unless old_vms.empty?
-        @logger.info('Terminating instances')
+      return if old_vms.empty?
 
-        old_vms.each do |vm|
-          begin
-            @logger.info("Powering off #{vm.name}")
-            cloud.client.power_off_vm(vm)
-            cloud.wait_until_off(vm, 15)
+      old_vms.each do |vm|
+        begin
+          @logger.info("Powering off #{vm.name}")
+          cloud.client.power_off_vm(vm)
+          cloud.wait_until_off(vm, 15)
 
-            @logger.info("#{vm.name} powered off, terminating")
-            vm.destroy
-          rescue
-            @logger.info("Destruction of #{vm.inspect} failed, continuing")
-          end
+          @logger.info("#{vm.name} powered off, terminating")
+          vm.destroy
+        rescue
+          @logger.info("Destruction of #{vm.inspect} failed, continuing")
         end
       end
     end
 
     private
 
-    def get_cloud(manifest)
-      vsphere_properties = manifest.to_h['cloud']['properties']
-
-      VSphereCloud::Cloud.new(vsphere_properties)
+    def configure_cpi
+      Bosh::Clouds::Config.configure(OpenStruct.new(
+        logger: @logger,
+        uuid: nil,
+        task_checkpoint: nil,
+        db: Sequel.sqlite,
+      ))
     end
   end
 end

@@ -49,9 +49,7 @@ module Bosh::Dev::Openstack
         }
       }
 
-      if net_type == 'manual'
-        result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP']
-      end
+      result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP'] if net_type == 'manual'
 
       result
     end

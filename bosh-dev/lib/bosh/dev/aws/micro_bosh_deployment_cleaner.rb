@@ -34,7 +34,10 @@ module Bosh::Dev::Aws
       # Assumption here is that when director deploys instances
       # it properly tags them with director's name.
       ec2.instances.select do |instance|
-        instance.tags.values_at('Name', 'director').include?(@manifest.director_name) && instance.status != :terminated
+        tags = instance.tags.values_at('Name', 'director')
+        director_related = tags.include?(@manifest.director_name)
+        not_terminated = instance.status != :terminated
+        director_related && not_terminated
       end
     end
   end
