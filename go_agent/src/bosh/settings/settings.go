@@ -4,7 +4,6 @@ const (
 	ROOT_USERNAME         = "root"
 	VCAP_USERNAME         = "vcap"
 	VCAP_BASE_DIR         = "/var/vcap"
-	VCAP_JOBS_DIR         = VCAP_BASE_DIR + "/jobs"
 	ADMIN_GROUP           = "admin"
 	EPHEMERAL_USER_PREFIX = "bosh_"
 )
