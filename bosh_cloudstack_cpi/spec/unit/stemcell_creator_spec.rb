@@ -57,6 +57,8 @@ describe Bosh::CloudStackCloud::StemcellCreator do
       cloud.compute.jobs.should_receive(:get).with("j-xxxxxx").and_return(job)
       creator.should_receive(:wait_job_volume).with(job)
 
+      snapshot.should_receive(:destroy)
+
       cloud.compute.images.should_receive(:get).with("j-xxxxxx").and_return(image)
       job.should_receive(:job_result).and_return({"template" => {"id" => "j-xxxxxx"}})
       Bosh::CloudStackCloud::TagManager.should_receive(:tag).with(image, "Name", "stemcell-name 0.7.0")

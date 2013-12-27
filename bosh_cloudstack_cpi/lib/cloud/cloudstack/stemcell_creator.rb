@@ -34,6 +34,8 @@ module Bosh::CloudStackCloud
       template_job = volume.service.jobs.get(template_response["createtemplateresponse"]["jobid"])
       wait_job_volume(template_job)
 
+      snapshot.destroy
+
       image = volume.service.images.get(template_job.job_result["template"]["id"])
       TagManager.tag(
         image,
