@@ -31,6 +31,7 @@ type app struct {
 type options struct {
 	InfrastructureName string
 	PlatformName       string
+	BaseDirectory      string
 }
 
 func New(logger boshlog.Logger) (app app) {
@@ -45,7 +46,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	dirProvider := boshdirs.NewDirectoriesProvider("/var/vcap")
+	dirProvider := boshdirs.NewDirectoriesProvider(opts.BaseDirectory)
 
 	infProvider := boshinf.NewProvider(app.logger)
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
@@ -129,6 +130,7 @@ func parseOptions(args []string) (opts options, err error) {
 	flagSet.SetOutput(ioutil.Discard)
 	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
 	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
+	flagSet.StringVar(&opts.BaseDirectory, "B", "/var/vcap", "Set Base Directory")
 
 	err = flagSet.Parse(args[1:])
 	return
