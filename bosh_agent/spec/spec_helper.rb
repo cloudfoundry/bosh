@@ -1,6 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require 'rspec'
+require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
 ENV['RACK_ENV'] = 'test'
 
@@ -8,9 +6,7 @@ require 'bosh_agent'
 require 'timecop'
 require 'fakefs/spec_helpers'
 
-Dir.glob(File.expand_path('support/**/*.rb', File.dirname(__FILE__))).each do |support|
-  require support
-end
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
 RSpec.configure do |config|
   config.include Bosh::Agent::Spec::Assets

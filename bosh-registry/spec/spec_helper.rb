@@ -1,10 +1,8 @@
-# Copyright (c) 2009-2013 VMware, Inc.
+require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
 require "fileutils"
 require "logger"
 require "tmpdir"
-
-require "rspec"
 require "rack/test"
 
 module SpecHelper

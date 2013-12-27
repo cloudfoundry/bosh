@@ -1,6 +1,6 @@
-require 'rspec/core'
-require 'tempfile'
+require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
+require 'tempfile'
 require 'bosh/monitor'
 
 def spec_asset(filename)

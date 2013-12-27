@@ -1,5 +1,7 @@
 $: << File.expand_path('..', __FILE__)
 
+require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
+
 require 'digest/sha1'
 require 'fileutils'
 require 'logger'
@@ -17,12 +19,6 @@ require 'support/job_example_group'
 require 'support/task_helpers'
 
 RSpec.configure do |config|
-  config.deprecation_stream = StringIO.new
-
-  config.mock_with :rspec do |mocks|
-    mocks.verify_doubled_constant_names = true
-  end
-
   config.include Bosh::Director::Test::TaskHelpers
 end
 

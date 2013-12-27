@@ -1,12 +1,11 @@
-require 'rspec'
+require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
+
 require 'rspec/its'
 require 'webmock'
 require 'timecop'
 require 'cli'
 
 Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
-
-require 'support/command_shared_examples'
 
 def spec_asset(dir_or_file_name)
   File.expand_path(File.join(File.dirname(__FILE__), 'assets', dir_or_file_name))

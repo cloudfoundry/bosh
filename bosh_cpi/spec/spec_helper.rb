@@ -1,6 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
-require "rspec"
 require "cloud"
 require "logger"
 
@@ -8,7 +7,6 @@ require "logger"
 $:.unshift(File.expand_path('../lib', __FILE__))
 
 class CloudSpecConfig
-
   attr_accessor :db, :uuid
 
   def logger
