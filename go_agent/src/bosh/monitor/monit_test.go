@@ -4,7 +4,7 @@ import (
 	boshlog "bosh/logger"
 	boshmonit "bosh/monitor/monit"
 	fakemonit "bosh/monitor/monit/fakes"
-	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +51,7 @@ func TestAddJob(t *testing.T) {
 	fs.WriteToFile("/some/config/path", "some config content")
 	monit.AddJob("router", 0, "/some/config/path")
 
-	writtenConfig, err := fs.ReadFile(boshsettings.VCAP_MONIT_JOBS_DIR + "/0000_router.monitrc")
+	writtenConfig, err := fs.ReadFile(monit.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
 	assert.NoError(t, err)
 	assert.Equal(t, writtenConfig, "some config content")
 }
@@ -127,6 +127,7 @@ func buildMonit() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, cl
 	runner = &fakesys.FakeCmdRunner{}
 	client = fakemonit.NewFakeMonitClient()
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	monit = NewMonit(fs, runner, client, logger)
+	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+	monit = NewMonit(fs, runner, client, logger, dirProvider)
 	return
 }

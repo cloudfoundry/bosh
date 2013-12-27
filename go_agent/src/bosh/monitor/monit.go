@@ -4,23 +4,29 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	boshmonit "bosh/monitor/monit"
-	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	"fmt"
 	"path/filepath"
 )
 
 type monit struct {
-	fs     boshsys.FileSystem
-	runner boshsys.CmdRunner
-	client boshmonit.MonitClient
-	logger boshlog.Logger
+	fs          boshsys.FileSystem
+	runner      boshsys.CmdRunner
+	client      boshmonit.MonitClient
+	logger      boshlog.Logger
+	dirProvider boshdir.DirectoriesProvider
 }
 
 const MonitTag = "Monit Monitor"
 
-func NewMonit(fs boshsys.FileSystem, runner boshsys.CmdRunner, client boshmonit.MonitClient, logger boshlog.Logger) (m monit) {
-	return monit{fs: fs, runner: runner, client: client, logger: logger}
+func NewMonit(
+	fs boshsys.FileSystem,
+	runner boshsys.CmdRunner,
+	client boshmonit.MonitClient,
+	logger boshlog.Logger,
+	dirProvider boshdir.DirectoriesProvider) (m monit) {
+	return monit{fs: fs, runner: runner, client: client, logger: logger, dirProvider: dirProvider}
 }
 
 func (m monit) Reload() (err error) {
@@ -87,7 +93,7 @@ func (m monit) Status() (status string) {
 
 func (m monit) AddJob(jobName string, jobIndex int, configPath string) (err error) {
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
-	targetConfigPath := filepath.Join(boshsettings.VCAP_MONIT_JOBS_DIR, targetFilename)
+	targetConfigPath := filepath.Join(m.dirProvider.MonitJobsDir(), targetFilename)
 
 	configContent, err := m.fs.ReadFile(configPath)
 	if err != nil {
