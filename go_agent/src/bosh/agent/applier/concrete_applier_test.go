@@ -7,6 +7,7 @@ import (
 	fakepa "bosh/agent/applier/packageapplier/fakes"
 	fakemon "bosh/monitor/fakes"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -118,7 +119,7 @@ func TestApplySetsUpLogrotation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, platform.SetupLogrotateArgs, SetupLogrotateArgs{
 		GroupName: boshsettings.VCAP_USERNAME,
-		BasePath:  boshsettings.VCAP_BASE_DIR,
+		BasePath:  "/fake-base-dir",
 		Size:      "fake-size",
 	})
 }
@@ -144,7 +145,7 @@ func buildApplier() (
 	packageApplier := fakepa.NewFakePackageApplier()
 	platform := &FakeLogRotateDelegate{}
 	monitor := fakemon.NewFakeMonitor()
-	applier := NewConcreteApplier(jobApplier, packageApplier, platform, monitor)
+	applier := NewConcreteApplier(jobApplier, packageApplier, platform, monitor, boshdirs.NewDirectoriesProvider("/fake-base-dir"))
 	return jobApplier, packageApplier, platform, monitor, applier
 }
 

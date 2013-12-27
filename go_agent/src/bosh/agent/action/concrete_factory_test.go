@@ -4,15 +4,31 @@ import (
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
 	fakecomp "bosh/agent/compiler/fakes"
+	boshdrain "bosh/agent/drain"
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakemon "bosh/monitor/fakes"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
+	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+type concreteFactoryDependencies struct {
+	settings            *fakesettings.FakeSettingsService
+	platform            *fakeplatform.FakePlatform
+	blobstore           *fakeblobstore.FakeBlobstore
+	taskService         *faketask.FakeService
+	notifier            *fakenotif.FakeNotifier
+	applier             *fakeappl.FakeApplier
+	compiler            *fakecomp.FakeCompiler
+	monitor             *fakemon.FakeMonitor
+	specService         *fakeas.FakeV1Service
+	dirProvider         boshdirs.DirectoriesProvider
+	drainScriptProvider boshdrain.DrainScriptProvider
+}
 
 func TestNewFactory(t *testing.T) {
 	actions := []string{
@@ -33,7 +49,7 @@ func TestNewFactory(t *testing.T) {
 		"compile_package",
 	}
 
-	_, _, _, _, _, _, _, _, _, factory := buildFactory()
+	_, factory := buildFactory()
 
 	for _, actionName := range actions {
 		action, err := factory.Create(actionName)
@@ -47,124 +63,129 @@ func TestNewFactory(t *testing.T) {
 }
 
 func TestNewFactoryApply(t *testing.T) {
-	_, _, _, _, _, applier, _, _, specService, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("apply")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newApply(applier, specService), action)
+	assert.Equal(t, newApply(deps.applier, deps.specService), action)
 }
 
 func TestNewFactoryDrain(t *testing.T) {
-	_, platform, _, _, notifier, _, _, _, specService, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("drain")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newDrain(platform.Runner, platform.Fs, notifier, specService), action)
+	assert.Equal(t, newDrain(deps.notifier, deps.specService, deps.drainScriptProvider), action)
 }
 
 func TestNewFactoryFetchLogs(t *testing.T) {
-	_, platform, blobstore, _, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("fetch_logs")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newLogs(platform.GetCompressor(), blobstore), action)
+	assert.Equal(t, newLogs(deps.platform.GetCompressor(), deps.blobstore, deps.dirProvider), action)
 }
 
 func TestNewFactoryGetTask(t *testing.T) {
-	_, _, _, taskService, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("get_task")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetTask(taskService), action)
+	assert.Equal(t, newGetTask(deps.taskService), action)
 }
 
 func TestNewFactoryGetState(t *testing.T) {
-	settings, _, _, _, _, _, _, monitor, specService, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(settings, specService, monitor), action)
+	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.monitor), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
-	settings, platform, _, _, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("list_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newListDisk(settings, platform), action)
+	assert.Equal(t, newListDisk(deps.settings, deps.platform), action)
 }
 
 func TestNewFactoryMigrateDisk(t *testing.T) {
-	settings, platform, _, _, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("migrate_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMigrateDisk(settings, platform), action)
+	assert.Equal(t, newMigrateDisk(deps.settings, deps.platform, deps.dirProvider), action)
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
-	settings, platform, _, _, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("mount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMountDisk(settings, platform), action)
+	assert.Equal(t, newMountDisk(deps.settings, deps.platform, deps.dirProvider), action)
 }
 
 func TestNewFactorySsh(t *testing.T) {
-	settings, platform, _, _, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("ssh")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newSsh(settings, platform), action)
+	assert.Equal(t, newSsh(deps.settings, deps.platform, deps.dirProvider), action)
 }
 
 func TestNewFactoryStart(t *testing.T) {
-	_, _, _, _, _, _, _, monitor, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("start")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newStart(monitor), action)
+	assert.Equal(t, newStart(deps.monitor), action)
 }
 
 func TestNewFactoryUnmountDisk(t *testing.T) {
-	settings, platform, _, _, _, _, _, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("unmount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newUnmountDisk(settings, platform), action)
+	assert.Equal(t, newUnmountDisk(deps.settings, deps.platform), action)
 }
 
 func TestNewFactoryCompilePackage(t *testing.T) {
-	_, _, _, _, _, _, compiler, _, _, factory := buildFactory()
+	deps, factory := buildFactory()
 	action, err := factory.Create("compile_package")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newCompilePackage(compiler),
-		action)
+	assert.Equal(t, newCompilePackage(deps.compiler), action)
 }
 
 func buildFactory() (
-	settings *fakesettings.FakeSettingsService,
-	platform *fakeplatform.FakePlatform,
-	blobstore *fakeblobstore.FakeBlobstore,
-	taskService *faketask.FakeService,
-	notifier *fakenotif.FakeNotifier,
-	applier *fakeappl.FakeApplier,
-	compiler *fakecomp.FakeCompiler,
-	monitor *fakemon.FakeMonitor,
-	specService *fakeas.FakeV1Service,
+	deps concreteFactoryDependencies,
 	factory Factory) {
 
-	settings = &fakesettings.FakeSettingsService{}
-	platform = fakeplatform.NewFakePlatform()
-	blobstore = &fakeblobstore.FakeBlobstore{}
-	taskService = &faketask.FakeService{}
-	notifier = fakenotif.NewFakeNotifier()
-	applier = fakeappl.NewFakeApplier()
-	compiler = fakecomp.NewFakeCompiler()
-	monitor = fakemon.NewFakeMonitor()
-	specService = fakeas.NewFakeV1Service()
+	deps.settings = &fakesettings.FakeSettingsService{}
+	deps.platform = fakeplatform.NewFakePlatform()
+	deps.blobstore = &fakeblobstore.FakeBlobstore{}
+	deps.taskService = &faketask.FakeService{}
+	deps.notifier = fakenotif.NewFakeNotifier()
+	deps.applier = fakeappl.NewFakeApplier()
+	deps.compiler = fakecomp.NewFakeCompiler()
+	deps.monitor = fakemon.NewFakeMonitor()
+	deps.specService = fakeas.NewFakeV1Service()
+	deps.dirProvider = boshdirs.NewDirectoriesProvider("/foo")
+	deps.drainScriptProvider = boshdrain.NewDrainScriptProvider(nil, nil, deps.dirProvider)
 
-	factory = NewFactory(settings, platform, blobstore, taskService, notifier, applier, compiler, monitor, specService)
+	factory = NewFactory(
+		deps.settings,
+		deps.platform,
+		deps.blobstore,
+		deps.taskService,
+		deps.notifier,
+		deps.applier,
+		deps.compiler,
+		deps.monitor,
+		deps.specService,
+		deps.dirProvider,
+		deps.drainScriptProvider,
+	)
 	return
 }

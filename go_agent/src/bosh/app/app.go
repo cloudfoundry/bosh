@@ -6,6 +6,7 @@ import (
 	boshappl "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
 	boshcomp "bosh/agent/compiler"
+	boshdrain "bosh/agent/drain"
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	boshboot "bosh/bootstrap"
@@ -17,7 +18,7 @@ import (
 	boshmonit "bosh/monitor/monit"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
-	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	"flag"
 	"io/ioutil"
 	"path/filepath"
@@ -44,6 +45,8 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
+	dirProvider := boshdirs.NewDirectoriesProvider("/var/vcap")
+
 	infProvider := boshinf.NewProvider(app.logger)
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
@@ -51,7 +54,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	platformProvider := boshplatform.NewProvider(app.logger)
+	platformProvider := boshplatform.NewProvider(app.logger, dirProvider)
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting platform")
@@ -88,13 +91,15 @@ func (app app) Run(args []string) (err error) {
 
 	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger)
 	notifier := boshnotif.NewNotifier(mbusHandler)
-	applier := boshappl.NewApplierProvider(platform, blobstore, monitor).Get()
-	compiler := boshcomp.NewCompilerProvider(platform, blobstore).Get()
+	applier := boshappl.NewApplierProvider(platform, blobstore, monitor, dirProvider).Get()
+	compiler := boshcomp.NewCompilerProvider(platform, blobstore, dirProvider).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
-	specFilePath := filepath.Join(boshsettings.VCAP_BASE_DIR, "bosh", "spec.json")
+	specFilePath := filepath.Join(dirProvider.BaseDir(), "bosh", "spec.json")
 	specService := boshas.NewConcreteV1Service(platform.GetFs(), specFilePath)
+	drainScriptProvider := boshdrain.NewDrainScriptProvider(platform.GetRunner(), platform.GetFs(), dirProvider)
+
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		platform,
@@ -105,6 +110,8 @@ func (app app) Run(args []string) (err error) {
 		compiler,
 		monitor,
 		specService,
+		dirProvider,
+		drainScriptProvider,
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)

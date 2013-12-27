@@ -7,6 +7,7 @@ import (
 	bosherr "bosh/errors"
 	boshmon "bosh/monitor"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 )
 
 type concreteApplier struct {
@@ -14,6 +15,7 @@ type concreteApplier struct {
 	packageApplier    pa.PackageApplier
 	logrotateDelegate LogrotateDelegate
 	monitor           boshmon.Monitor
+	dirProvider       boshdirs.DirectoriesProvider
 }
 
 func NewConcreteApplier(
@@ -21,12 +23,14 @@ func NewConcreteApplier(
 	packageApplier pa.PackageApplier,
 	logrotateDelegate LogrotateDelegate,
 	monitor boshmon.Monitor,
+	dirProvider boshdirs.DirectoriesProvider,
 ) *concreteApplier {
 	return &concreteApplier{
 		jobApplier:        jobApplier,
 		packageApplier:    packageApplier,
 		logrotateDelegate: logrotateDelegate,
 		monitor:           monitor,
+		dirProvider:       dirProvider,
 	}
 }
 
@@ -71,7 +75,7 @@ func (a *concreteApplier) Apply(applySpec as.ApplySpec) (err error) {
 func (a *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) (err error) {
 	err = a.logrotateDelegate.SetupLogrotate(
 		boshsettings.VCAP_USERNAME,
-		boshsettings.VCAP_BASE_DIR,
+		a.dirProvider.BaseDir(),
 		applySpec.MaxLogFileSize(),
 	)
 	if err != nil {

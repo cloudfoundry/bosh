@@ -4,16 +4,19 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 )
 
 type mountDiskAction struct {
-	settings boshsettings.Service
-	platform boshplatform.Platform
+	settings    boshsettings.Service
+	platform    boshplatform.Platform
+	dirProvider boshdirs.DirectoriesProvider
 }
 
-func newMountDisk(settings boshsettings.Service, platform boshplatform.Platform) (mountDisk mountDiskAction) {
+func newMountDisk(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (mountDisk mountDiskAction) {
 	mountDisk.settings = settings
 	mountDisk.platform = platform
+	mountDisk.dirProvider = dirProvider
 	return
 }
 
@@ -35,7 +38,7 @@ func (a mountDiskAction) Run(volumeId string) (value interface{}, err error) {
 		return
 	}
 
-	mountPoint := boshsettings.VCAP_STORE_DIR
+	mountPoint := a.dirProvider.StoreDir()
 
 	isMountPoint, err := a.platform.IsMountPoint(mountPoint)
 	if err != nil {
@@ -43,7 +46,7 @@ func (a mountDiskAction) Run(volumeId string) (value interface{}, err error) {
 		return
 	}
 	if isMountPoint {
-		mountPoint = boshsettings.VCAP_STORE_MIGRATION_DIR
+		mountPoint = a.dirProvider.StoreMigrationDir()
 	}
 
 	err = a.platform.MountPersistentDisk(devicePath, mountPoint)

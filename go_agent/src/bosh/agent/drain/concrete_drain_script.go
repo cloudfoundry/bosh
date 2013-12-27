@@ -2,30 +2,28 @@ package drain
 
 import (
 	bosherr "bosh/errors"
-	boshsettings "bosh/settings"
 	boshsys "bosh/system"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 type concreteDrainScript struct {
-	fs     boshsys.FileSystem
-	runner boshsys.CmdRunner
-	path   string
+	fs              boshsys.FileSystem
+	runner          boshsys.CmdRunner
+	drainScriptPath string
 }
 
-func NewConcreteDrainScript(fs boshsys.FileSystem, runner boshsys.CmdRunner, jobTemplateName string) (script concreteDrainScript) {
+func NewConcreteDrainScript(fs boshsys.FileSystem, runner boshsys.CmdRunner, drainScriptPath string) (script concreteDrainScript) {
 	script = concreteDrainScript{
-		fs:     fs,
-		runner: runner,
-		path:   filepath.Join(boshsettings.VCAP_JOBS_DIR, jobTemplateName, "bin", "drain"),
+		fs:              fs,
+		runner:          runner,
+		drainScriptPath: drainScriptPath,
 	}
 	return
 }
 
 func (script concreteDrainScript) Exists() bool {
-	return script.fs.FileExists(script.path)
+	return script.fs.FileExists(script.drainScriptPath)
 }
 
 func (script concreteDrainScript) Run(params DrainScriptParams) (value int, err error) {
@@ -34,7 +32,7 @@ func (script concreteDrainScript) Run(params DrainScriptParams) (value int, err 
 	updatedPkgs := params.UpdatedPackages()
 
 	command := boshsys.Command{
-		Name: script.path,
+		Name: script.drainScriptPath,
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},

@@ -163,8 +163,8 @@ func TestEnableErrsWhenBundleCannotBeEnabled(t *testing.T) {
 func buildFileBundleCollection() (*fakesys.FakeFileSystem, *FileBundleCollection, testBundle) {
 	fs := &fakesys.FakeFileSystem{}
 
-	fileCollection := NewFileBundleCollection(
-		"fake-collection-name", "/fake-collection-path", fs)
+	fileCollection := NewFileBundleCollection("/fake-collection-path/data", "/fake-collection-path",
+		"fake-collection-name", fs)
 
 	bundle := testBundle{
 		Name:    "fake-bundle-name",

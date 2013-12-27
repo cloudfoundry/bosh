@@ -66,11 +66,11 @@ func (p dummyPlatform) SetupLogrotate(groupName, basePath, size string) (err err
 	return
 }
 
-func (p dummyPlatform) SetTimeWithNtpServers(servers []string, serversFilePath string) (err error) {
+func (p dummyPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath, mountPoint string) (err error) {
+func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	return
 }
 

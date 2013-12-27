@@ -6,6 +6,7 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
+	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 )
 
@@ -15,7 +16,7 @@ type provider struct {
 
 // There is a reason the runner is not injected.
 // Other entities should not use a runner, they should go through the platform
-func NewProvider(logger boshlog.Logger) (p provider) {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger, runner)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
@@ -23,7 +24,7 @@ func NewProvider(logger boshlog.Logger) (p provider) {
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
 
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, compressor),
+		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, compressor, dirProvider),
 		"dummy":  newDummyPlatform(),
 	}
 	return

@@ -8,20 +8,22 @@ import (
 )
 
 type FileBundleCollection struct {
-	name string
-	path string
-	fs   boshsys.FileSystem
+	name        string
+	installPath string
+	enablePath  string
+	fs          boshsys.FileSystem
 }
 
-func NewFileBundleCollection(name, path string, fs boshsys.FileSystem) *FileBundleCollection {
+func NewFileBundleCollection(installPath, enablePath, name string, fs boshsys.FileSystem) *FileBundleCollection {
 	return &FileBundleCollection{
-		name: name,
-		path: path,
-		fs:   fs,
+		name:        name,
+		installPath: installPath,
+		enablePath:  enablePath,
+		fs:          fs,
 	}
 }
 
-// Installed into {{ path }}/data/{{ name }}/{{ bundle.BundleName }}/{{ bundle.BundleVersion }}
+// Installed into {{ installPath }}/{{ name }}/{{ bundle.BundleName }}/{{ bundle.BundleVersion }}
 func (s *FileBundleCollection) Install(bundle Bundle) (fs boshsys.FileSystem, path string, err error) {
 	err = s.checkBundle(bundle)
 	if err != nil {
@@ -55,7 +57,7 @@ func (s *FileBundleCollection) GetDir(bundle Bundle) (fs boshsys.FileSystem, pat
 	return
 }
 
-// Symlinked from {{ path }}/{{ name }}/{{ bundle.BundleName }} to installed path
+// Symlinked from {{ enablePath }}/{{ name }}/{{ bundle.BundleName }} to installed path
 func (s *FileBundleCollection) Enable(bundle Bundle) (err error) {
 	err = s.checkBundle(bundle)
 	if err != nil {
@@ -97,9 +99,9 @@ func (s *FileBundleCollection) checkBundle(bundle Bundle) (err error) {
 }
 
 func (s *FileBundleCollection) buildInstallPath(bundle Bundle) string {
-	return filepath.Join(s.path, "data", s.name, bundle.BundleName(), bundle.BundleVersion())
+	return filepath.Join(s.installPath, s.name, bundle.BundleName(), bundle.BundleVersion())
 }
 
 func (s *FileBundleCollection) buildEnablePath(bundle Bundle) string {
-	return filepath.Join(s.path, s.name, bundle.BundleName())
+	return filepath.Join(s.enablePath, s.name, bundle.BundleName())
 }

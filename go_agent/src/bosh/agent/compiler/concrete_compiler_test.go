@@ -3,6 +3,7 @@ package compiler
 import (
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
+	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
@@ -52,18 +53,18 @@ func TestCompileExtractsDependenciesToPackagesDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, compressor.DecompressFileToDirDirs[0],
-		"/var/vcap/data/packages/first_dep/first_dep_version-bosh-agent-unpack")
+		"/fake-dir/data/packages/first_dep/first_dep_version-bosh-agent-unpack")
 	assert.Equal(t, compressor.DecompressFileToDirDirs[1],
-		"/var/vcap/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack")
+		"/fake-dir/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack")
 
 	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[0], blobstore.GetFileName)
 	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[1], blobstore.GetFileName)
 
-	assert.Equal(t, "/var/vcap/data/packages/first_dep/first_dep_version-bosh-agent-unpack", fs.RenameOldPaths[0])
-	assert.Equal(t, "/var/vcap/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack", fs.RenameOldPaths[1])
+	assert.Equal(t, "/fake-dir/data/packages/first_dep/first_dep_version-bosh-agent-unpack", fs.RenameOldPaths[0])
+	assert.Equal(t, "/fake-dir/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack", fs.RenameOldPaths[1])
 
-	assert.Equal(t, "/var/vcap/data/packages/first_dep/first_dep_version", fs.RenameNewPaths[0])
-	assert.Equal(t, "/var/vcap/data/packages/sec_dep/sec_dep_version", fs.RenameNewPaths[1])
+	assert.Equal(t, "/fake-dir/data/packages/first_dep/first_dep_version", fs.RenameNewPaths[0])
+	assert.Equal(t, "/fake-dir/data/packages/sec_dep/sec_dep_version", fs.RenameNewPaths[1])
 }
 
 func TestCompileCreatesDependencyInstallDir(t *testing.T) {
@@ -71,14 +72,14 @@ func TestCompileCreatesDependencyInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
-	assert.False(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
+	assert.False(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version"))
+	assert.False(t, fs.FileExists("/fake-dir/data/packages/sec_dep/sec_dep_version"))
 
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version"))
-	assert.True(t, fs.FileExists("/var/vcap/data/packages/sec_dep/sec_dep_version"))
+	assert.True(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version"))
+	assert.True(t, fs.FileExists("/fake-dir/data/packages/sec_dep/sec_dep_version"))
 }
 
 func TestCompileRecreatesDependencyInstallDir(t *testing.T) {
@@ -86,18 +87,18 @@ func TestCompileRecreatesDependencyInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	err := fs.MkdirAll("/var/vcap/data/packages/first_dep/first_dep_version", os.FileMode(0755))
+	err := fs.MkdirAll("/fake-dir/data/packages/first_dep/first_dep_version", os.FileMode(0755))
 	assert.NoError(t, err)
 
-	_, err = fs.WriteToFile("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted", "test")
+	_, err = fs.WriteToFile("/fake-dir/data/packages/first_dep/first_dep_version/should_be_deleted", "test")
 	assert.NoError(t, err)
 
-	assert.True(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
+	assert.True(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version/should_be_deleted"))
 
 	_, _, err = compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.False(t, fs.FileExists("/var/vcap/data/packages/first_dep/first_dep_version/should_be_deleted"))
+	assert.False(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version/should_be_deleted"))
 }
 
 func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
@@ -110,12 +111,12 @@ func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.True(t, fs.FileExists("/var/vcap/data/compile/pkg_name"))
-	assert.Equal(t, compressor.DecompressFileToDirDirs[2], "/var/vcap/data/compile/pkg_name-bosh-agent-unpack")
+	assert.True(t, fs.FileExists("/fake-dir/data/compile/pkg_name"))
+	assert.Equal(t, compressor.DecompressFileToDirDirs[2], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
 	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[2], blobstore.GetFileName)
 
-	assert.Equal(t, fs.RenameOldPaths[2], "/var/vcap/data/compile/pkg_name-bosh-agent-unpack")
-	assert.Equal(t, fs.RenameNewPaths[2], "/var/vcap/data/compile/pkg_name")
+	assert.Equal(t, fs.RenameOldPaths[2], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
+	assert.Equal(t, fs.RenameNewPaths[2], "/fake-dir/data/compile/pkg_name")
 }
 
 func TestCompileCreatesInstallDir(t *testing.T) {
@@ -123,7 +124,7 @@ func TestCompileCreatesInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	installDir := "/var/vcap/data/packages/pkg_name/pkg_version"
+	installDir := "/fake-dir/data/packages/pkg_name/pkg_version"
 
 	assert.False(t, fs.FileExists(installDir))
 
@@ -140,18 +141,18 @@ func TestCompileRecreatesInstallDir(t *testing.T) {
 
 	pkg, deps := getCompileArgs()
 
-	err := fs.MkdirAll("/var/vcap/data/packages/pkg_name/pkg_version", os.FileMode(0755))
+	err := fs.MkdirAll("/fake-dir/data/packages/pkg_name/pkg_version", os.FileMode(0755))
 	assert.NoError(t, err)
 
-	_, err = fs.WriteToFile("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted", "test")
+	_, err = fs.WriteToFile("/fake-dir/data/packages/pkg_name/pkg_version/should_be_deleted", "test")
 	assert.NoError(t, err)
 
-	assert.True(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
+	assert.True(t, fs.FileExists("/fake-dir/data/packages/pkg_name/pkg_version/should_be_deleted"))
 
 	_, _, err = compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.False(t, fs.FileExists("/var/vcap/data/packages/pkg_name/pkg_version/should_be_deleted"))
+	assert.False(t, fs.FileExists("/fake-dir/data/packages/pkg_name/pkg_version/should_be_deleted"))
 }
 
 func TestCompileSymlinksInstallDir(t *testing.T) {
@@ -162,10 +163,10 @@ func TestCompileSymlinksInstallDir(t *testing.T) {
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	fileStats := fs.GetFileTestStat("/var/vcap/packages/pkg_name")
+	fileStats := fs.GetFileTestStat("/fake-dir/packages/pkg_name")
 	assert.NotNil(t, fileStats)
 	assert.Equal(t, fakesys.FakeFileTypeSymlink, fileStats.FileType)
-	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", fileStats.SymlinkTarget)
+	assert.Equal(t, "/fake-dir/data/packages/pkg_name/pkg_version", fileStats.SymlinkTarget)
 }
 
 func TestCompileCompressesCompiledPackage(t *testing.T) {
@@ -176,7 +177,7 @@ func TestCompileCompressesCompiledPackage(t *testing.T) {
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "/var/vcap/data/packages/pkg_name/pkg_version", compressor.CompressFilesInDirDir)
+	assert.Equal(t, "/fake-dir/data/packages/pkg_name/pkg_version", compressor.CompressFilesInDirDir)
 	assert.Equal(t, []string{"**/*"}, compressor.CompressFilesInDirFilters)
 }
 
@@ -197,7 +198,7 @@ func TestCompileWhenScriptExists(t *testing.T) {
 	pkg, deps := getCompileArgs()
 
 	compressor.DecompressFileToDirCallBack = func() {
-		fs.WriteToFile("/var/vcap/data/compile/pkg_name/packaging", "hi")
+		fs.WriteToFile("/fake-dir/data/compile/pkg_name/packaging", "hi")
 	}
 
 	_, _, err := compiler.Compile(pkg, deps)
@@ -207,12 +208,12 @@ func TestCompileWhenScriptExists(t *testing.T) {
 		Name: "bash",
 		Args: []string{"-x", "packaging"},
 		Env: map[string]string{
-			"BOSH_COMPILE_TARGET":  "/var/vcap/data/compile/pkg_name",
-			"BOSH_INSTALL_TARGET":  "/var/vcap/data/packages/pkg_name/pkg_version",
+			"BOSH_COMPILE_TARGET":  "/fake-dir/data/compile/pkg_name",
+			"BOSH_INSTALL_TARGET":  "/fake-dir/data/packages/pkg_name/pkg_version",
 			"BOSH_PACKAGE_NAME":    "pkg_name",
 			"BOSH_PACKAGE_VERSION": "pkg_version",
 		},
-		WorkingDir: "/var/vcap/data/compile/pkg_name",
+		WorkingDir: "/fake-dir/data/compile/pkg_name",
 	}
 
 	assert.Equal(t, 1, len(runner.RunComplexCommands))
@@ -266,6 +267,6 @@ func buildCompiler() (
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	fs = fakesys.NewFakeFileSystem()
 	runner = fakesys.NewFakeCmdRunner()
-	compiler = newConcreteCompiler(compressor, blobstore, fs, runner)
+	compiler = newConcreteCompiler(compressor, blobstore, fs, runner, boshdirs.NewDirectoriesProvider("/fake-dir"))
 	return
 }
