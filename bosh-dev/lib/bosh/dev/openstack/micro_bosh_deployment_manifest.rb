@@ -15,7 +15,7 @@ module Bosh::Dev::Openstack
 
     def to_h
       result = {
-        'name' => "microbosh-openstack-#{net_type}",
+        'name' => director_name,
         'logging' => {
           'level' => 'DEBUG'
         },
@@ -34,20 +34,7 @@ module Bosh::Dev::Openstack
         },
         'cloud' => {
           'plugin' => 'openstack',
-          'properties' => {
-            'openstack' => {
-              'auth_url' => env['BOSH_OPENSTACK_AUTH_URL'],
-              'username' => env['BOSH_OPENSTACK_USERNAME'],
-              'api_key' => env['BOSH_OPENSTACK_API_KEY'],
-              'tenant' => env['BOSH_OPENSTACK_TENANT'],
-              'region' => env['BOSH_OPENSTACK_REGION'],
-              'endpoint_type' => 'publicURL',
-              'default_key_name' => 'jenkins',
-              'default_security_groups' => ['default'],
-              'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
-              'state_timeout' => state_timeout,
-            }
-          }
+          'properties' => cpi_options,
         },
         'apply_spec' => {
           'agent' => {
@@ -65,6 +52,27 @@ module Bosh::Dev::Openstack
       result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP'] if net_type == 'manual'
 
       result
+    end
+
+    def director_name
+      "microbosh-openstack-#{net_type}"
+    end
+
+    def cpi_options
+      {
+        'openstack' => {
+          'auth_url' => env['BOSH_OPENSTACK_AUTH_URL'],
+          'username' => env['BOSH_OPENSTACK_USERNAME'],
+          'api_key' => env['BOSH_OPENSTACK_API_KEY'],
+          'tenant' => env['BOSH_OPENSTACK_TENANT'],
+          'region' => env['BOSH_OPENSTACK_REGION'],
+          'endpoint_type' => 'publicURL',
+          'default_key_name' => 'jenkins',
+          'default_security_groups' => ['default'],
+          'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
+          'state_timeout' => state_timeout,
+        }
+      }
     end
 
     private

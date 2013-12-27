@@ -52,14 +52,12 @@ module Bosh::Dev::Aws
             instance_double('AWS::EC2::Instance', tags: { 'director' => 'fake-director-name' }, status: :terminated)
           terminated_instance_with_matching.should_not_receive(:terminate)
 
-          ec2.stub(instances:
-            [
-              instance_with_non_matching,
-              instance_with_matching,
-              microbosh_instance,
-              terminated_instance_with_matching,
-            ]
-          )
+          ec2.stub(instances: [
+            instance_with_non_matching,
+            instance_with_matching,
+            microbosh_instance,
+            terminated_instance_with_matching,
+          ])
 
           micro_bosh_deployment_cleaner.clean
         end
