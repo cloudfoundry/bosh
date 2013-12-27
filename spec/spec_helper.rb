@@ -40,8 +40,7 @@ module Bosh
 end
 
 RSpec.configure do |c|
-  c.raise_errors_for_deprecations!
-  c.before(:each) do |example|
+  c.before do |example|
     cleanup_bosh
     setup_test_release_dir
     setup_bosh_work_dir
