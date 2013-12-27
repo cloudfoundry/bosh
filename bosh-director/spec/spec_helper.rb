@@ -18,6 +18,11 @@ require 'support/task_helpers'
 
 RSpec.configure do |config|
   config.deprecation_stream = StringIO.new
+
+  config.mock_with :rspec do |mocks|
+    mocks.verify_doubled_constant_names = true
+  end
+
   config.include Bosh::Director::Test::TaskHelpers
 end
 

@@ -7,6 +7,14 @@ end
 
 describe 'instance_double' do
   describe '#initialize' do
+    context 'when trying to initialize with non-existent class' do
+      it 'raises an error' do
+        expect {
+          instance_double('ClassToStubThatDoesNotExist')
+        }.to raise_error(/NamedObjectReference/m) # error in Rspec should be NameError
+      end
+    end
+
     context 'when trying to stub non-existent method' do
       it 'raises an error' do
         expect {
@@ -26,6 +34,18 @@ describe 'instance_double' do
             subject.stub(no_method: nil)
           }.to raise_error(/ClassToStub does not implement.*no_method/m)
         end
+      end
+    end
+  end
+end
+
+describe 'class_double' do
+  describe '#initialize' do
+    context 'when trying to initialize with non-existent class' do
+      it 'raises an error' do
+        expect {
+          class_double('ClassToStubThatDoesNotExist')
+        }.to raise_error(/NamedObjectReference/m) # error in Rspec should be NameError
       end
     end
   end
