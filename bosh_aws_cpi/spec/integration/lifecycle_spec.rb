@@ -71,7 +71,7 @@ describe Bosh::AwsCloud::Cloud do
             [],
             {}
           )
-          vm_metadata = { delete_me: 'please', example: example.full_description }
+          vm_metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
           cpi.set_vm_metadata(instance_id, vm_metadata)
           cpi.delete_vm(instance_id)
           cpi.delete_stemcell(stemcell_id)
