@@ -34,8 +34,10 @@ RSpec.configure do |config|
     $?.exitstatus.should == 0
   end
 
-  config.before(:each) do
-    requirement :no_tasks_processing unless example.metadata[:skip_task_check]
+  config.before do |example|
+    unless example.metadata[:skip_task_check]
+      requirement :no_tasks_processing
+    end
   end
 end
 
