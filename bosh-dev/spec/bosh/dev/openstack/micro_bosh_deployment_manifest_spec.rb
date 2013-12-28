@@ -34,18 +34,22 @@ module Bosh::Dev::Openstack
         let(:expected_yml) { <<YAML }
 ---
 name: microbosh-openstack-manual
+
 logging:
   level: DEBUG
+
 network:
   type: manual
   vip: vip
   ip: ip
   cloud_properties:
     net_id: net_id
+
 resources:
   persistent_disk: 4096
   cloud_properties:
     instance_type: m1.small
+
 cloud:
   plugin: openstack
   properties:
@@ -61,6 +65,13 @@ cloud:
       - default
       private_key: private_key_path
       state_timeout: 300
+
+    # Default registry configuration needed by CPI
+    registry:
+      endpoint: http://admin:admin@localhost:25889
+      user: admin
+      password: admin
+
 apply_spec:
   agent:
     blobstore:
@@ -106,6 +117,10 @@ cloud:
       - default
       private_key: private_key_path
       state_timeout: 300
+    registry:
+      endpoint: http://admin:admin@localhost:25889
+      user: admin
+      password: admin
 apply_spec:
   agent:
     blobstore:
@@ -170,7 +185,12 @@ YAML
             'default_security_groups' => ['default'],
             'private_key' => 'fake-private-key-path',
             'state_timeout' => 300,
-          }
+          },
+          'registry' => {
+            'endpoint' => 'http://admin:admin@localhost:25889',
+            'user' => 'admin',
+            'password' => 'admin',
+          },
         )
       end
     end

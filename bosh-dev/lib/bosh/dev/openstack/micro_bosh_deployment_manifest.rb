@@ -71,7 +71,12 @@ module Bosh::Dev::Openstack
           'default_security_groups' => ['default'],
           'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
           'state_timeout' => state_timeout,
-        }
+        },
+        'registry' => {
+          'endpoint' => 'http://admin:admin@localhost:25889',
+          'user' => 'admin',
+          'password' => 'admin',
+        },
       }
     end
 
