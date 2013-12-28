@@ -10,6 +10,8 @@ describe Bosh::AwsCloud::Cloud do
     @subnet_id         = ENV['BOSH_AWS_SUBNET_ID']         || raise("Missing BOSH_AWS_SUBNET_ID")
   end
 
+  before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
+
   # Use let-bang because AWS SDK needs to be reconfigured
   # with a current test's logger before new AWS::EC2 object is created.
   # Reconfiguration happens via `AWS.config`.
@@ -43,8 +45,6 @@ describe Bosh::AwsCloud::Cloud do
     Bosh::Clouds::Config.configure(
       double('delegate', task_checkpoint: nil, logger: Logger.new(STDOUT)))
   end
-
-  before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
 
   before { @instance_id = nil }
   after  { cpi.delete_vm(@instance_id) if @instance_id }
