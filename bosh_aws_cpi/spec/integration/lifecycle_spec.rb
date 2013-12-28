@@ -12,10 +12,10 @@ describe Bosh::AwsCloud::Cloud do
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
 
-  # Use let-bang because AWS SDK needs to be reconfigured
+  # Use subject-bang because AWS SDK needs to be reconfigured
   # with a current test's logger before new AWS::EC2 object is created.
   # Reconfiguration happens via `AWS.config`.
-  let!(:cpi) do
+  subject!(:cpi) do
     described_class.new(
       'aws' => {
         'region' => 'us-east-1',
@@ -45,6 +45,9 @@ describe Bosh::AwsCloud::Cloud do
     Bosh::Clouds::Config.configure(
       double('delegate', task_checkpoint: nil, logger: Logger.new(STDOUT)))
   end
+
+  before { Bosh::Clouds::Config.stub(logger: logger) }
+  let(:logger) { Logger.new(STDERR) }
 
   before { @instance_id = nil }
   after  { cpi.delete_vm(@instance_id) if @instance_id }

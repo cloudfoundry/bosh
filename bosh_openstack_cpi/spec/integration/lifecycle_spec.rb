@@ -40,9 +40,10 @@ describe Bosh::OpenStackCloud::Cloud do
     Bosh::Clouds::Config.configure(delegate)
   end
 
+  before { Bosh::Clouds::Config.stub(logger: logger) }
   let(:logger) { Logger.new(STDERR) }
 
-  before { Bosh::Registry::Client.stub(:new).and_return(double("registry").as_null_object) }
+  before { Bosh::Registry::Client.stub(new: double("registry").as_null_object) }
 
   describe "dynamic network" do
     let(:network_spec) do
