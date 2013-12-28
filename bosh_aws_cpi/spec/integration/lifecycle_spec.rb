@@ -10,7 +10,10 @@ describe Bosh::AwsCloud::Cloud do
     @subnet_id         = ENV['BOSH_AWS_SUBNET_ID']         || raise("Missing BOSH_AWS_SUBNET_ID")
   end
 
-  let(:cpi) do
+  # Use let-bang because AWS SDK needs to be reconfigured
+  # with a current test's logger before new AWS::EC2 object is created.
+  # Reconfiguration happens via `AWS.config`.
+  let!(:cpi) do
     described_class.new(
       'aws' => {
         'region' => 'us-east-1',
