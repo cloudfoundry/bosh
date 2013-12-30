@@ -1,10 +1,9 @@
-# -*- encoding: utf-8 -*-
-# Copyright (c) 2009-2012 VMware, Inc.
-version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
+# coding: utf-8
+require File.expand_path('../lib/agent_client/version', __FILE__)
 
 Gem::Specification.new do |s|
   s.name         = 'agent_client'
-  s.version      = version
+  s.version      = Bosh::Agent::Client::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH agent client'
   s.description  = "BOSH agent client\n#{`git rev-parse HEAD`[0, 6]}"
@@ -13,7 +12,6 @@ Gem::Specification.new do |s|
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
-
 
   s.files        = `git ls-files -- lib/*`.split("\n")
   s.require_path = 'lib'

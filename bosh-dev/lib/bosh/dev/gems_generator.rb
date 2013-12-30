@@ -1,5 +1,4 @@
 require 'bosh/dev'
-require 'bosh/dev/version_file'
 require 'bosh/dev/gem_components'
 
 module Bosh::Dev

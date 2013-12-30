@@ -8,7 +8,7 @@ module Bosh::Dev
     let(:component_version_file) { "#{root}/fake-component/lib/fake/component/version.rb" }
 
     subject(:gem_component) do
-      GemComponent.new('fake-component', '1.5.0.pre.1234')
+      GemComponent.new('fake-component', '1.1234.0')
     end
 
     before do
@@ -17,7 +17,7 @@ module Bosh::Dev
       Rake::FileUtilsExt.stub(:sh)
     end
 
-    its(:dot_gem) { should eq('fake-component-1.5.0.pre.1234.gem') }
+    its(:dot_gem) { should eq('fake-component-1.1234.0.gem') }
 
     describe '#build_release_gem' do
       include FakeFS::SpecHelpers
@@ -30,7 +30,7 @@ module Bosh::Dev
       it 'shells out to build the gem' do
         Rake::FileUtilsExt.should_receive(:sh).with('cd fake-component && ' +
                                                      'gem build fake-component.gemspec && ' +
-                                                     "mv fake-component-1.5.0.pre.1234.gem #{root}/pkg/gems/")
+                                                     "mv fake-component-1.1234.0.gem #{root}/pkg/gems/")
 
         gem_component.build_release_gem
       end
@@ -58,12 +58,12 @@ module Bosh::Dev
         FileUtils.rm_r(root)
       end
 
-      it "set the component's version to the global BOSH_VERSION" do
+      it 'set the components version to the given version' do
         expect {
           gem_component.update_version
         }.to change { File.read(component_version_file) }.to <<-RUBY.gsub /^\s+/, ''
               module Fake::Component
-                VERSION = '1.5.0.pre.1234'
+                VERSION = '1.1234.0'
               end
         RUBY
       end

@@ -1,6 +1,7 @@
-# -*- encoding: utf-8 -*-
-# Copyright (c) 2009-2012 VMware, Inc.
-version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
+# coding: utf-8
+require File.expand_path('../lib/blobstore_client/version', __FILE__)
+
+version = Bosh::Blobstore::Client::VERSION
 
 Gem::Specification.new do |s|
   s.name         = 'blobstore_client'
@@ -13,7 +14,6 @@ Gem::Specification.new do |s|
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
-
 
   s.files        = `git ls-files -- bin/* lib/* config/*`.split("\n") + %w(README.md)
   s.require_path = 'lib'

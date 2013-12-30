@@ -1,6 +1,7 @@
-# -*- encoding: utf-8 -*-
-# Copyright (c) 2009-2012 VMware, Inc.
-version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
+# coding: utf-8
+require File.expand_path('../lib/bosh/release/version', __FILE__)
+
+version = Bosh::Release::VERSION
 
 Gem::Specification.new do |s|
   s.name         = 'bosh-release'
@@ -19,9 +20,9 @@ Gem::Specification.new do |s|
   s.bindir       = 'bin'
   s.executables  = %w(bosh-release)
 
-  s.add_dependency 'agent_client', "~>#{version}"
+  s.add_dependency 'agent_client',     "~>#{version}"
   s.add_dependency 'blobstore_client', "~>#{version}"
-  s.add_dependency 'bosh_common', "~>#{version}"
+  s.add_dependency 'bosh_common',      "~>#{version}"
   s.add_dependency 'yajl-ruby', '~>1.1.0'
-  s.add_dependency 'trollop', '~>1.16'
+  s.add_dependency 'trollop',   '~>1.16'
 end

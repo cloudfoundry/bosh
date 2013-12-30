@@ -1,5 +1,7 @@
 # coding: utf-8
-version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
+require File.expand_path('../lib/bosh/stemcell/version', __FILE__)
+
+version = Bosh::Stemcell::VERSION
 
 Gem::Specification.new do |spec|
   spec.name          = 'bosh-stemcell'

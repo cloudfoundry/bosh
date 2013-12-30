@@ -20,7 +20,6 @@ module Bosh
       end
 
       def validate_requirements
-
         release_exist = director.list_releases.detect { |r| r['name'] == 'bosh' }
         first_stemcell = director.list_stemcells.first
 
@@ -151,7 +150,7 @@ This command should be used for bootstrapping bosh from scratch.
 
       def bosh_version
         ENV['BOSH_VERSION_OVERRIDE'] ||
-            Bosh::Aws::VERSION.split('.').last
+            Bosh::Aws::VERSION.split('.')[1]
       end
     end
   end

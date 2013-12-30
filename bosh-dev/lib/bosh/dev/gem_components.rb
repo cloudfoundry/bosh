@@ -1,13 +1,13 @@
 require 'rake'
 require 'bosh/dev/gem_component'
-require 'bosh/dev/version_file'
+require 'bosh/dev/gem_version'
 
 module Bosh::Dev
   class GemComponents
     include Enumerable
 
     def initialize(build_number)
-      @version_file = VersionFile.new(build_number)
+      @gem_version = GemVersion.new(build_number)
     end
 
     def build_release_gems
@@ -46,8 +46,7 @@ module Bosh::Dev
     def components
       return @components if @components
 
-      @version_file.write
-      @components = map { |component| GemComponent.new(component, @version_file.version) }
+      @components = map { |component| GemComponent.new(component, @gem_version.version) }
     end
 
     def has_db?(component)
