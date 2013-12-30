@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-type concreteDrainScript struct {
+type ConcreteDrainScript struct {
 	fs              boshsys.FileSystem
 	runner          boshsys.CmdRunner
 	drainScriptPath string
 }
 
-func NewConcreteDrainScript(fs boshsys.FileSystem, runner boshsys.CmdRunner, drainScriptPath string) (script concreteDrainScript) {
-	script = concreteDrainScript{
+func NewConcreteDrainScript(fs boshsys.FileSystem, runner boshsys.CmdRunner, drainScriptPath string) (script ConcreteDrainScript) {
+	script = ConcreteDrainScript{
 		fs:              fs,
 		runner:          runner,
 		drainScriptPath: drainScriptPath,
@@ -22,11 +22,15 @@ func NewConcreteDrainScript(fs boshsys.FileSystem, runner boshsys.CmdRunner, dra
 	return
 }
 
-func (script concreteDrainScript) Exists() bool {
+func (script ConcreteDrainScript) Exists() bool {
 	return script.fs.FileExists(script.drainScriptPath)
 }
 
-func (script concreteDrainScript) Run(params DrainScriptParams) (value int, err error) {
+func (script ConcreteDrainScript) Path() string {
+	return script.drainScriptPath
+}
+
+func (script ConcreteDrainScript) Run(params DrainScriptParams) (value int, err error) {
 	jobChange := params.JobChange()
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()

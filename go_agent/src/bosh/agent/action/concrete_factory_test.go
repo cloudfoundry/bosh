@@ -172,7 +172,7 @@ func buildFactory() (
 	deps.monitor = fakemon.NewFakeMonitor()
 	deps.specService = fakeas.NewFakeV1Service()
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/foo")
-	deps.drainScriptProvider = boshdrain.NewDrainScriptProvider(nil, nil, deps.dirProvider)
+	deps.drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, deps.dirProvider)
 
 	factory = NewFactory(
 		deps.settings,
