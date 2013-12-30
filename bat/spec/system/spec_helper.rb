@@ -42,7 +42,13 @@ RSpec.configure do |config|
 end
 
 RSpec::Matchers.define :succeed do |_|
-  match { |actual| actual.exit_status == 0 }
+  match do |actual|
+    # RSpec 3 appears to be greedily checking match against
+    # actual and expected values.
+    # Inspecting the actual value fixes this
+    actual.inspect
+    actual.exit_status == 0
+  end
 
   failure_message_for_should do |actual|
     'expected command to exit with 0 but was ' +
@@ -55,6 +61,10 @@ RSpec::Matchers.define :succeed_with do |expected|
   expect_regex  = expected.instance_of?(Regexp)
 
   match do |actual|
+    # RSpec 3 appears to be greedily checking match against
+    # actual and expected values.
+    # Inspecting the actual value fixes this
+    actual.inspect
     if actual.exit_status != 0
       false
     elsif expect_string
