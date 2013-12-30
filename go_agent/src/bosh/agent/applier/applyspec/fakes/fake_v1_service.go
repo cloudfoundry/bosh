@@ -17,7 +17,6 @@ func NewFakeV1Service() (service *FakeV1Service) {
 func (s *FakeV1Service) Get() (spec boshas.V1ApplySpec, err error) {
 	if s.GetErr != nil {
 		err = s.GetErr
-		return
 	}
 	spec = s.Spec
 	return

@@ -2,7 +2,6 @@ package action
 
 import (
 	boshas "bosh/agent/applier/applyspec"
-	bosherr "bosh/errors"
 	boshmon "bosh/monitor"
 	boshsettings "bosh/settings"
 )
@@ -33,11 +32,10 @@ type getStateV1ApplySpec struct {
 	BoshProtocol string          `json:"bosh_protocol"`
 }
 
-func (a getStateAction) Run() (value getStateV1ApplySpec, err error) {
+func (a getStateAction) Run() (value getStateV1ApplySpec, _ error) {
 	spec, err := a.specService.Get()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting current spec")
-		return
+		spec = boshas.V1ApplySpec{}
 	}
 
 	value = getStateV1ApplySpec{
