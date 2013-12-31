@@ -2,7 +2,7 @@ package monit
 
 import boshsysstat "bosh/jobsupervisor/system_status"
 
-type MonitStatus interface {
+type Status interface {
 	ServicesInGroup(name string) (services []Service)
 	SystemStatus() (systemStatus boshsysstat.SystemStatus)
 }

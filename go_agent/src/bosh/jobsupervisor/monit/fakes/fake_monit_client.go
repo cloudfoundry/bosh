@@ -15,7 +15,7 @@ type FakeMonitClient struct {
 	StopServiceNames []string
 	StopServiceErr   error
 
-	StatusStatus boshmonit.MonitStatus
+	StatusStatus boshmonit.Status
 	StatusErr    error
 }
 
@@ -43,7 +43,7 @@ func (c *FakeMonitClient) StopService(name string) (err error) {
 	return
 }
 
-func (c *FakeMonitClient) Status() (status boshmonit.MonitStatus, err error) {
+func (c *FakeMonitClient) Status() (status boshmonit.Status, err error) {
 	status = c.StatusStatus
 	err = c.StatusErr
 	return

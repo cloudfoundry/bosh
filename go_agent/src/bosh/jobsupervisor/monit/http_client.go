@@ -12,21 +12,21 @@ import (
 	"strings"
 )
 
-type httpMonitClient struct {
+type httpClient struct {
 	host     string
 	username string
 	password string
 }
 
-func NewHttpMonitClient(host, username, password string) (client httpMonitClient) {
-	return httpMonitClient{
+func NewHttpClient(host, username, password string) (client httpClient) {
+	return httpClient{
 		host:     host,
 		username: username,
 		password: password,
 	}
 }
 
-func (client httpMonitClient) ServicesInGroup(name string) (services []string, err error) {
+func (client httpClient) ServicesInGroup(name string) (services []string, err error) {
 	status, err := client.status()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting status from Monit")
@@ -42,7 +42,7 @@ func (client httpMonitClient) ServicesInGroup(name string) (services []string, e
 	return
 }
 
-func (client httpMonitClient) StartService(name string) (err error) {
+func (client httpClient) StartService(name string) (err error) {
 	endpoint := client.monitUrl(name)
 	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=start"))
 	request.SetBasicAuth(client.username, client.password)
@@ -63,7 +63,7 @@ func (client httpMonitClient) StartService(name string) (err error) {
 	return
 }
 
-func (client httpMonitClient) StopService(name string) (err error) {
+func (client httpClient) StopService(name string) (err error) {
 	endpoint := client.monitUrl(name)
 	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=stop"))
 	request.SetBasicAuth(client.username, client.password)
@@ -84,11 +84,11 @@ func (client httpMonitClient) StopService(name string) (err error) {
 	return
 }
 
-func (client httpMonitClient) Status() (status MonitStatus, err error) {
+func (client httpClient) Status() (status Status, err error) {
 	return client.status()
 }
 
-func (client httpMonitClient) status() (status monitStatus, err error) {
+func (client httpClient) status() (status status, err error) {
 	endpoint := client.monitUrl("/_status2")
 	endpoint.RawQuery = "format=xml"
 	request, err := http.NewRequest("GET", endpoint.String(), nil)
@@ -118,7 +118,7 @@ func (client httpMonitClient) status() (status monitStatus, err error) {
 	return
 }
 
-func (client httpMonitClient) monitUrl(thing string) (endpoint url.URL) {
+func (client httpClient) monitUrl(thing string) (endpoint url.URL) {
 	endpoint = url.URL{
 		Scheme: "http",
 		Host:   client.host,
@@ -127,7 +127,7 @@ func (client httpMonitClient) monitUrl(thing string) (endpoint url.URL) {
 	return
 }
 
-func (client httpMonitClient) validateResponse(response *http.Response) (err error) {
+func (client httpClient) validateResponse(response *http.Response) (err error) {
 	if response.StatusCode == http.StatusOK {
 		return
 	}

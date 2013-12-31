@@ -62,8 +62,8 @@ func TestSystemStatus(t *testing.T) {
 	assert.Equal(t, systemStatus, expectedStatus)
 }
 
-func buildMonitStatus() (status monitStatus) {
-	status = monitStatus{
+func buildMonitStatus() (stat status) {
+	stat = status{
 		Services: servicesTag{
 			Services: []serviceTag{
 				{

@@ -14,7 +14,7 @@ import (
 type monitJobSupervisor struct {
 	fs          boshsys.FileSystem
 	runner      boshsys.CmdRunner
-	client      boshmonit.MonitClient
+	client      boshmonit.Client
 	logger      boshlog.Logger
 	dirProvider boshdir.DirectoriesProvider
 }
@@ -24,7 +24,7 @@ const MonitTag = "Monit Job Supervisor"
 func NewMonitJobSupervisor(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
-	client boshmonit.MonitClient,
+	client boshmonit.Client,
 	logger boshlog.Logger,
 	dirProvider boshdir.DirectoriesProvider) (m monitJobSupervisor) {
 	return monitJobSupervisor{fs: fs, runner: runner, client: client, logger: logger, dirProvider: dirProvider}

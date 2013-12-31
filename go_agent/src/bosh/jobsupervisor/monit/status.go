@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 )
 
-type monitStatus struct {
+type status struct {
 	XMLName     xml.Name `xml:"monit"`
 	Id          string   `xml:"id,attr"`
 	Incarnation string   `xml:"incarnation,attr"`
@@ -109,7 +109,7 @@ func (t serviceGroupTag) Contains(name string) bool {
 	return false
 }
 
-func (status monitStatus) ServicesInGroup(name string) (services []Service) {
+func (status status) ServicesInGroup(name string) (services []Service) {
 	services = []Service{}
 
 	serviceGroupTag, found := status.ServiceGroups.Get(name)
@@ -131,7 +131,7 @@ func (status monitStatus) ServicesInGroup(name string) (services []Service) {
 	return
 }
 
-func (status monitStatus) SystemStatus() (systemStatus boshsysstat.SystemStatus) {
+func (status status) SystemStatus() (systemStatus boshsysstat.SystemStatus) {
 	for _, serviceTag := range status.Services.Services {
 		if serviceTag.Type == 5 {
 			systemStatus = boshsysstat.SystemStatus{

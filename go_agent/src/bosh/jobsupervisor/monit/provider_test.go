@@ -16,6 +16,6 @@ func TestGet(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	expectedClient := NewHttpMonitClient("127.0.0.1:2822", "fake-user", "fake-pass")
+	expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass")
 	assert.Equal(t, expectedClient, client)
 }

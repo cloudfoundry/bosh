@@ -34,7 +34,7 @@ func TestStartService(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
 
 	err := client.StartService("test-service")
 	assert.NoError(t, err)
@@ -49,7 +49,7 @@ func TestStartServiceErrsWhenNon200Response(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
 
 	err := client.StartService("test-service")
 	assert.Error(t, err)
@@ -72,7 +72,7 @@ func TestStopService(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
 
 	err := client.StopService("test-service")
 	assert.NoError(t, err)
@@ -87,7 +87,7 @@ func TestStopServiceErrsWhenNon200Response(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
 
 	err := client.StopService("test-service")
 	assert.Error(t, err)
@@ -111,7 +111,7 @@ func TestServicesInGroup(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
 
 	services, err := client.ServicesInGroup("vcap")
 	assert.NoError(t, err)
@@ -135,7 +135,7 @@ func TestDecodeStatus(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpMonitClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
 
 	status, err := client.status()
 	assert.NoError(t, err)
