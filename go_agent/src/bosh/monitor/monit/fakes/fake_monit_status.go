@@ -10,3 +10,7 @@ func (s *FakeMonitStatus) ServicesInGroup(name string) (services []boshmonit.Ser
 	services = s.Services
 	return
 }
+
+func (s *FakeMonitStatus) SystemStatus() (systemStatus boshmonit.SystemStatus) {
+	return
+}
