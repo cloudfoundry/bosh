@@ -1,6 +1,7 @@
 package monit
 
 import (
+	boshsysstat "bosh/monitor/system_status"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -38,21 +39,21 @@ func TestSystemStatus(t *testing.T) {
 
 	systemStatus := status.SystemStatus()
 
-	expectedStatus := SystemStatus{
-		Load: SystemStatusLoad{
+	expectedStatus := boshsysstat.SystemStatus{
+		Load: boshsysstat.SystemStatusLoad{
 			Avg01: 2.02,
 			Avg05: 5.6,
 			Avg15: 4.44,
 		},
-		CPU: SystemStatusCPU{
+		CPU: boshsysstat.SystemStatusCPU{
 			User:   40.90,
 			System: 80.70,
 		},
-		Memory: SystemStatusMemory{
+		Memory: boshsysstat.SystemStatusMemory{
 			Percent:  1.1,
 			Kilobyte: 8041492,
 		},
-		Swap: SystemStatusSwap{
+		Swap: boshsysstat.SystemStatusSwap{
 			Percent:  2.2,
 			Kilobyte: 684800,
 		},

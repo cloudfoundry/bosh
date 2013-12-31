@@ -1,5 +1,7 @@
 package stats
 
+import "math"
+
 type CpuLoad struct {
 	One     float64
 	Five    float64
@@ -23,6 +25,22 @@ type DiskStats struct {
 	Total      uint64
 	InodeUsed  uint64
 	InodeTotal uint64
+}
+
+func (stats DiskStats) Percent() (percent float64) {
+	percent = float64(stats.Used) / float64(stats.Total)
+	if math.IsNaN(percent) {
+		percent = 0.0
+	}
+	return
+}
+
+func (stats DiskStats) InodePercent() (percent float64) {
+	percent = float64(stats.InodeUsed) / float64(stats.InodeTotal)
+	if math.IsNaN(percent) {
+		percent = 0.0
+	}
+	return
 }
 
 type StatsCollector interface {

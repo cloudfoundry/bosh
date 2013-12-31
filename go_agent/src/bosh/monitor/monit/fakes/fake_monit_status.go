@@ -1,9 +1,13 @@
 package fakes
 
-import boshmonit "bosh/monitor/monit"
+import (
+	boshmonit "bosh/monitor/monit"
+	boshsysstat "bosh/monitor/system_status"
+)
 
 type FakeMonitStatus struct {
-	Services []boshmonit.Service
+	Services           []boshmonit.Service
+	SystemStatusStatus boshsysstat.SystemStatus
 }
 
 func (s *FakeMonitStatus) ServicesInGroup(name string) (services []boshmonit.Service) {
@@ -11,6 +15,7 @@ func (s *FakeMonitStatus) ServicesInGroup(name string) (services []boshmonit.Ser
 	return
 }
 
-func (s *FakeMonitStatus) SystemStatus() (systemStatus boshmonit.SystemStatus) {
+func (s *FakeMonitStatus) SystemStatus() (systemStatus boshsysstat.SystemStatus) {
+	systemStatus = s.SystemStatusStatus
 	return
 }

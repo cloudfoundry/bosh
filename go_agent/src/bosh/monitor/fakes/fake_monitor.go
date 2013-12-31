@@ -1,5 +1,7 @@
 package fakes
 
+import boshsysstat "bosh/monitor/system_status"
+
 type FakeMonitor struct {
 	Reloaded  bool
 	ReloadErr error
@@ -56,5 +58,9 @@ func (m *FakeMonitor) Stop() (err error) {
 
 func (m *FakeMonitor) Status() (status string) {
 	status = m.StatusStatus
+	return
+}
+
+func (m *FakeMonitor) SystemStatus() (status boshsysstat.SystemStatus, err error) {
 	return
 }

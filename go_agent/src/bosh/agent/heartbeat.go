@@ -116,8 +116,8 @@ func getDiskStats(platform boshstats.StatsCollector, devicePath string) (stats b
 		return
 	}
 
-	percent := float64(diskStats.Used) / float64(diskStats.Total) * 100
-	inodePercent := float64(diskStats.InodeUsed) / float64(diskStats.InodeTotal) * 100
+	percent := diskStats.Percent() * 100
+	inodePercent := diskStats.InodePercent() * 100
 
 	stats.Percent = fmt.Sprintf("%.0f", percent)
 	stats.InodePercent = fmt.Sprintf("%.0f", inodePercent)

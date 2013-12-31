@@ -4,6 +4,7 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	boshmonit "bosh/monitor/monit"
+	boshsysstat "bosh/monitor/system_status"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	"fmt"
@@ -88,6 +89,16 @@ func (m monit) Status() (status string) {
 			status = "failing"
 		}
 	}
+	return
+}
+
+func (m monit) SystemStatus() (systemStatus boshsysstat.SystemStatus, err error) {
+	status, err := m.client.Status()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting system status")
+		return
+	}
+	systemStatus = status.SystemStatus()
 	return
 }
 

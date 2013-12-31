@@ -1,6 +1,9 @@
 package monit
 
-import "encoding/xml"
+import (
+	boshsysstat "bosh/monitor/system_status"
+	"encoding/xml"
+)
 
 type monitStatus struct {
 	XMLName     xml.Name `xml:"monit"`
@@ -128,24 +131,24 @@ func (status monitStatus) ServicesInGroup(name string) (services []Service) {
 	return
 }
 
-func (status monitStatus) SystemStatus() (systemStatus SystemStatus) {
+func (status monitStatus) SystemStatus() (systemStatus boshsysstat.SystemStatus) {
 	for _, serviceTag := range status.Services.Services {
 		if serviceTag.Type == 5 {
-			systemStatus = SystemStatus{
-				Load: SystemStatusLoad{
+			systemStatus = boshsysstat.SystemStatus{
+				Load: boshsysstat.SystemStatusLoad{
 					Avg01: serviceTag.System.Load.Avg01,
 					Avg05: serviceTag.System.Load.Avg05,
 					Avg15: serviceTag.System.Load.Avg15,
 				},
-				CPU: SystemStatusCPU{
+				CPU: boshsysstat.SystemStatusCPU{
 					User:   serviceTag.System.CPU.User,
 					System: serviceTag.System.CPU.System,
 				},
-				Memory: SystemStatusMemory{
+				Memory: boshsysstat.SystemStatusMemory{
 					Percent:  serviceTag.System.Memory.Percent,
 					Kilobyte: serviceTag.System.Memory.Kilobyte,
 				},
-				Swap: SystemStatusSwap{
+				Swap: boshsysstat.SystemStatusSwap{
 					Percent:  serviceTag.System.Swap.Percent,
 					Kilobyte: serviceTag.System.Swap.Kilobyte,
 				},
