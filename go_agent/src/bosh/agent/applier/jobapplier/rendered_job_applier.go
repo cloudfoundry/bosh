@@ -5,7 +5,7 @@ import (
 	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
-	boshmon "bosh/monitor"
+	boshjobsuper "bosh/jobsupervisor"
 	boshcmd "bosh/platform/commands"
 	"fmt"
 	"os"
@@ -14,23 +14,23 @@ import (
 )
 
 type renderedJobApplier struct {
-	jobsBc     bc.BundleCollection
-	blobstore  boshblob.Blobstore
-	compressor boshcmd.Compressor
-	monitor    boshmon.Monitor
+	jobsBc        bc.BundleCollection
+	blobstore     boshblob.Blobstore
+	compressor    boshcmd.Compressor
+	jobSupervisor boshjobsuper.JobSupervisor
 }
 
 func NewRenderedJobApplier(
 	jobsBc bc.BundleCollection,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
-	monitor boshmon.Monitor,
+	jobSupervisor boshjobsuper.JobSupervisor,
 ) *renderedJobApplier {
 	return &renderedJobApplier{
-		jobsBc:     jobsBc,
-		blobstore:  blobstore,
-		compressor: compressor,
-		monitor:    monitor,
+		jobsBc:        jobsBc,
+		blobstore:     blobstore,
+		compressor:    compressor,
+		jobSupervisor: jobSupervisor,
 	}
 }
 
@@ -98,7 +98,7 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 
 	monitFilePath := filepath.Join(jobDir, "monit")
 	if fs.FileExists(monitFilePath) {
-		err = s.monitor.AddJob(job.Name, jobIndex, monitFilePath)
+		err = s.jobSupervisor.AddJob(job.Name, jobIndex, monitFilePath)
 		if err != nil {
 			err = bosherr.WrapError(err, "Adding monit configuration")
 			return
@@ -115,7 +115,7 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 		label := strings.Replace(filepath.Base(monitFilePath), ".monit", "", 1)
 		subJobName := fmt.Sprintf("%s_%s", job.Name, label)
 
-		err = s.monitor.AddJob(subJobName, jobIndex, monitFilePath)
+		err = s.jobSupervisor.AddJob(subJobName, jobIndex, monitFilePath)
 		if err != nil {
 			err = bosherr.WrapError(err, "Adding additional monit configuration %s", label)
 			return

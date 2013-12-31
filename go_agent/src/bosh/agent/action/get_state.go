@@ -2,20 +2,24 @@ package action
 
 import (
 	boshas "bosh/agent/applier/applyspec"
-	boshmon "bosh/monitor"
+	boshjobsuper "bosh/jobsupervisor"
 	boshsettings "bosh/settings"
 )
 
 type getStateAction struct {
-	settings    boshsettings.Service
-	specService boshas.V1Service
-	monitor     boshmon.Monitor
+	settings      boshsettings.Service
+	specService   boshas.V1Service
+	jobSupervisor boshjobsuper.JobSupervisor
 }
 
-func newGetState(settings boshsettings.Service, specService boshas.V1Service, monitor boshmon.Monitor) (action getStateAction) {
+func newGetState(
+	settings boshsettings.Service,
+	specService boshas.V1Service,
+	jobSupervisor boshjobsuper.JobSupervisor,
+) (action getStateAction) {
 	action.settings = settings
 	action.specService = specService
-	action.monitor = monitor
+	action.jobSupervisor = jobSupervisor
 	return
 }
 
@@ -42,7 +46,7 @@ func (a getStateAction) Run() (value getStateV1ApplySpec, _ error) {
 		spec,
 		a.settings.GetAgentId(),
 		a.settings.GetVm(),
-		a.monitor.Status(),
+		a.jobSupervisor.Status(),
 		"1",
 	}
 

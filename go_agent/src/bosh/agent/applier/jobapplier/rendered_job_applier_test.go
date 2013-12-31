@@ -4,7 +4,7 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
-	fakemon "bosh/monitor/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	fakesys "bosh/system/fakes"
 	"errors"
@@ -220,7 +220,7 @@ func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 }
 
 func TestConfigure(t *testing.T) {
-	jobsBc, _, _, monitor, applier := buildJobApplier()
+	jobsBc, _, _, jobSupervisor, applier := buildJobApplier()
 	job := buildJob()
 
 	fs := fakesys.NewFakeFileSystem()
@@ -234,36 +234,36 @@ func TestConfigure(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "/path/to/job/*.monit", fs.GlobPattern)
-	assert.Equal(t, 2, len(monitor.AddJobArgs))
+	assert.Equal(t, 2, len(jobSupervisor.AddJobArgs))
 
-	firstArgs := fakemon.AddJobArgs{
+	firstArgs := fakejobsuper.AddJobArgs{
 		Name:       job.Name,
 		Index:      0,
 		ConfigPath: "/path/to/job/monit",
 	}
 
-	secondArgs := fakemon.AddJobArgs{
+	secondArgs := fakejobsuper.AddJobArgs{
 		Name:       job.Name + "_subjob",
 		Index:      0,
 		ConfigPath: "/path/to/job/subjob.monit",
 	}
-	assert.Equal(t, firstArgs, monitor.AddJobArgs[0])
-	assert.Equal(t, secondArgs, monitor.AddJobArgs[1])
+	assert.Equal(t, firstArgs, jobSupervisor.AddJobArgs[0])
+	assert.Equal(t, secondArgs, jobSupervisor.AddJobArgs[1])
 }
 
 func buildJobApplier() (
 	jobsBc *fakebc.FakeBundleCollection,
 	blobstore *fakeblob.FakeBlobstore,
 	compressor *fakecmd.FakeCompressor,
-	monitor *fakemon.FakeMonitor,
+	jobSupervisor *fakejobsuper.FakeJobSupervisor,
 	applier JobApplier,
 ) {
 	jobsBc = fakebc.NewFakeBundleCollection()
 	blobstore = fakeblob.NewFakeBlobstore()
 	compressor = fakecmd.NewFakeCompressor()
-	monitor = fakemon.NewFakeMonitor()
+	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 
-	applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, monitor)
+	applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, jobSupervisor)
 	return
 }
 

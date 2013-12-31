@@ -2,16 +2,16 @@ package action
 
 import (
 	bosherr "bosh/errors"
-	boshmon "bosh/monitor"
+	boshjobsuper "bosh/jobsupervisor"
 )
 
 type startAction struct {
-	monitor boshmon.Monitor
+	jobSupervisor boshjobsuper.JobSupervisor
 }
 
-func newStart(monitor boshmon.Monitor) (start startAction) {
+func newStart(jobSupervisor boshjobsuper.JobSupervisor) (start startAction) {
 	start = startAction{
-		monitor: monitor,
+		jobSupervisor: jobSupervisor,
 	}
 	return
 }
@@ -21,7 +21,7 @@ func (a startAction) IsAsynchronous() bool {
 }
 
 func (s startAction) Run() (value interface{}, err error) {
-	err = s.monitor.Start()
+	err = s.jobSupervisor.Start()
 	if err != nil {
 		err = bosherr.WrapError(err, "Starting Monitored Services")
 		return

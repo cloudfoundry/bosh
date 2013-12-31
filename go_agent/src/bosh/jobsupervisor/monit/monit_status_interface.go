@@ -1,6 +1,6 @@
 package monit
 
-import boshsysstat "bosh/monitor/system_status"
+import boshsysstat "bosh/jobsupervisor/system_status"
 
 type MonitStatus interface {
 	ServicesInGroup(name string) (services []Service)

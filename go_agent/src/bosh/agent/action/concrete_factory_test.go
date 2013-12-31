@@ -7,7 +7,7 @@ import (
 	boshdrain "bosh/agent/drain"
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
-	fakemon "bosh/monitor/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshdirs "bosh/settings/directories"
@@ -24,7 +24,7 @@ type concreteFactoryDependencies struct {
 	notifier            *fakenotif.FakeNotifier
 	applier             *fakeappl.FakeApplier
 	compiler            *fakecomp.FakeCompiler
-	monitor             *fakemon.FakeMonitor
+	jobSupervisor       *fakejobsuper.FakeJobSupervisor
 	specService         *fakeas.FakeV1Service
 	dirProvider         boshdirs.DirectoriesProvider
 	drainScriptProvider boshdrain.DrainScriptProvider
@@ -99,7 +99,7 @@ func TestNewFactoryGetState(t *testing.T) {
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.monitor), action)
+	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
@@ -139,7 +139,7 @@ func TestNewFactoryStart(t *testing.T) {
 	action, err := factory.Create("start")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newStart(deps.monitor), action)
+	assert.Equal(t, newStart(deps.jobSupervisor), action)
 }
 
 func TestNewFactoryUnmountDisk(t *testing.T) {
@@ -169,7 +169,7 @@ func buildFactory() (
 	deps.notifier = fakenotif.NewFakeNotifier()
 	deps.applier = fakeappl.NewFakeApplier()
 	deps.compiler = fakecomp.NewFakeCompiler()
-	deps.monitor = fakemon.NewFakeMonitor()
+	deps.jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	deps.specService = fakeas.NewFakeV1Service()
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/foo")
 	deps.drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, deps.dirProvider)
@@ -182,7 +182,7 @@ func buildFactory() (
 		deps.notifier,
 		deps.applier,
 		deps.compiler,
-		deps.monitor,
+		deps.jobSupervisor,
 		deps.specService,
 		deps.dirProvider,
 		deps.drainScriptProvider,

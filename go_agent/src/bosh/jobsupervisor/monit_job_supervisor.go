@@ -1,17 +1,17 @@
-package monitor
+package jobsupervisor
 
 import (
 	bosherr "bosh/errors"
+	boshmonit "bosh/jobsupervisor/monit"
+	boshsysstat "bosh/jobsupervisor/system_status"
 	boshlog "bosh/logger"
-	boshmonit "bosh/monitor/monit"
-	boshsysstat "bosh/monitor/system_status"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	"fmt"
 	"path/filepath"
 )
 
-type monit struct {
+type monitJobSupervisor struct {
 	fs          boshsys.FileSystem
 	runner      boshsys.CmdRunner
 	client      boshmonit.MonitClient
@@ -19,23 +19,23 @@ type monit struct {
 	dirProvider boshdir.DirectoriesProvider
 }
 
-const MonitTag = "Monit Monitor"
+const MonitTag = "Monit Job Supervisor"
 
-func NewMonit(
+func NewMonitJobSupervisor(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	client boshmonit.MonitClient,
 	logger boshlog.Logger,
-	dirProvider boshdir.DirectoriesProvider) (m monit) {
-	return monit{fs: fs, runner: runner, client: client, logger: logger, dirProvider: dirProvider}
+	dirProvider boshdir.DirectoriesProvider) (m monitJobSupervisor) {
+	return monitJobSupervisor{fs: fs, runner: runner, client: client, logger: logger, dirProvider: dirProvider}
 }
 
-func (m monit) Reload() (err error) {
+func (m monitJobSupervisor) Reload() (err error) {
 	m.runner.RunCommand("monit", "reload")
 	return
 }
 
-func (m monit) Start() (err error) {
+func (m monitJobSupervisor) Start() (err error) {
 	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting vcap services")
@@ -54,7 +54,7 @@ func (m monit) Start() (err error) {
 	return
 }
 
-func (m monit) Stop() (err error) {
+func (m monitJobSupervisor) Stop() (err error) {
 	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting vcap services")
@@ -73,7 +73,7 @@ func (m monit) Stop() (err error) {
 	return
 }
 
-func (m monit) Status() (status string) {
+func (m monitJobSupervisor) Status() (status string) {
 	status = "running"
 	monitStatus, err := m.client.Status()
 	if err != nil {
@@ -92,7 +92,7 @@ func (m monit) Status() (status string) {
 	return
 }
 
-func (m monit) SystemStatus() (systemStatus boshsysstat.SystemStatus, err error) {
+func (m monitJobSupervisor) SystemStatus() (systemStatus boshsysstat.SystemStatus, err error) {
 	status, err := m.client.Status()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting system status")
@@ -102,7 +102,7 @@ func (m monit) SystemStatus() (systemStatus boshsysstat.SystemStatus, err error)
 	return
 }
 
-func (m monit) AddJob(jobName string, jobIndex int, configPath string) (err error) {
+func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) (err error) {
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
 	targetConfigPath := filepath.Join(m.dirProvider.MonitJobsDir(), targetFilename)
 

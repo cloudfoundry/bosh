@@ -1,7 +1,7 @@
 package monit
 
 import (
-	boshsysstat "bosh/monitor/system_status"
+	boshsysstat "bosh/jobsupervisor/system_status"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

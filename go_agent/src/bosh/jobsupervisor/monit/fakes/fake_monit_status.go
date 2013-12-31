@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	boshmonit "bosh/monitor/monit"
-	boshsysstat "bosh/monitor/system_status"
+	boshmonit "bosh/jobsupervisor/monit"
+	boshsysstat "bosh/jobsupervisor/system_status"
 )
 
 type FakeMonitStatus struct {

@@ -3,7 +3,7 @@ package action
 import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
-	fakemon "bosh/monitor/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
 	"errors"
@@ -22,8 +22,8 @@ func TestGetStateRun(t *testing.T) {
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	specService, monitor, action := buildGetStateAction(settings)
-	monitor.StatusStatus = "running"
+	specService, jobSupervisor, action := buildGetStateAction(settings)
+	jobSupervisor.StatusStatus = "running"
 
 	specService.Spec = boshas.V1ApplySpec{
 		Deployment: "fake-deployment",
@@ -52,8 +52,8 @@ func TestGetStateRunWithoutCurrentSpec(t *testing.T) {
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	specService, monitor, action := buildGetStateAction(settings)
-	monitor.StatusStatus = "running"
+	specService, jobSupervisor, action := buildGetStateAction(settings)
+	jobSupervisor.StatusStatus = "running"
 
 	specService.GetErr = errors.New("some error")
 	specService.Spec = boshas.V1ApplySpec{
@@ -74,11 +74,11 @@ func TestGetStateRunWithoutCurrentSpec(t *testing.T) {
 
 func buildGetStateAction(settings boshsettings.Service) (
 	specService *fakeas.FakeV1Service,
-	monitor *fakemon.FakeMonitor,
+	jobSupervisor *fakejobsuper.FakeJobSupervisor,
 	action getStateAction,
 ) {
-	monitor = fakemon.NewFakeMonitor()
+	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	specService = fakeas.NewFakeV1Service()
-	action = newGetState(settings, specService, monitor)
+	action = newGetState(settings, specService, jobSupervisor)
 	return
 }

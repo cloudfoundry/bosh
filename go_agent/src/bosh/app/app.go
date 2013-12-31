@@ -12,10 +12,10 @@ import (
 	boshboot "bosh/bootstrap"
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
+	boshjobsuper "bosh/jobsupervisor"
+	boshmonit "bosh/jobsupervisor/monit"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
-	boshmon "bosh/monitor"
-	boshmonit "bosh/monitor/monit"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshdirs "bosh/settings/directories"
@@ -90,9 +90,9 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	monitor := boshmon.NewMonit(platform.GetFs(), platform.GetRunner(), monitClient, app.logger, dirProvider)
+	jobSupervisor := boshjobsuper.NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), monitClient, app.logger, dirProvider)
 	notifier := boshnotif.NewNotifier(mbusHandler)
-	applier := boshappl.NewApplierProvider(platform, blobstore, monitor, dirProvider).Get()
+	applier := boshappl.NewApplierProvider(platform, blobstore, jobSupervisor, dirProvider).Get()
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore, dirProvider).Get()
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
@@ -109,7 +109,7 @@ func (app app) Run(args []string) (err error) {
 		notifier,
 		applier,
 		compiler,
-		monitor,
+		jobSupervisor,
 		specService,
 		dirProvider,
 		drainScriptProvider,

@@ -5,7 +5,7 @@ import (
 	fakeja "bosh/agent/applier/jobapplier/fakes"
 	models "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
-	fakemon "bosh/monitor/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	"errors"
@@ -77,7 +77,7 @@ func TestApplyErrsWhenApplyingPackagesErrs(t *testing.T) {
 }
 
 func TestApplyConfiguresJobs(t *testing.T) {
-	jobApplier, _, _, monitor, applier := buildApplier()
+	jobApplier, _, _, jobSupervisor, applier := buildApplier()
 
 	job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 	job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
@@ -88,13 +88,13 @@ func TestApplyConfiguresJobs(t *testing.T) {
 	assert.Equal(t, jobApplier.ConfiguredJobs, []models.Job{job2, job1})
 	assert.Equal(t, jobApplier.ConfiguredJobIndices, []int{0, 1})
 
-	assert.True(t, monitor.Reloaded)
+	assert.True(t, jobSupervisor.Reloaded)
 }
 
 func TestApplyErrsIfMonitorFailsReload(t *testing.T) {
-	_, _, _, monitor, applier := buildApplier()
+	_, _, _, jobSupervisor, applier := buildApplier()
 	jobs := []models.Job{}
-	monitor.ReloadErr = errors.New("error reloading monit")
+	jobSupervisor.ReloadErr = errors.New("error reloading monit")
 
 	err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
 	assert.Error(t, err)
@@ -138,15 +138,15 @@ func buildApplier() (
 	*fakeja.FakeJobApplier,
 	*fakepa.FakePackageApplier,
 	*FakeLogRotateDelegate,
-	*fakemon.FakeMonitor,
+	*fakejobsuper.FakeJobSupervisor,
 	Applier,
 ) {
 	jobApplier := fakeja.NewFakeJobApplier()
 	packageApplier := fakepa.NewFakePackageApplier()
 	platform := &FakeLogRotateDelegate{}
-	monitor := fakemon.NewFakeMonitor()
-	applier := NewConcreteApplier(jobApplier, packageApplier, platform, monitor, boshdirs.NewDirectoriesProvider("/fake-base-dir"))
-	return jobApplier, packageApplier, platform, monitor, applier
+	jobSupervisor := fakejobsuper.NewFakeJobSupervisor()
+	applier := NewConcreteApplier(jobApplier, packageApplier, platform, jobSupervisor, boshdirs.NewDirectoriesProvider("/fake-base-dir"))
+	return jobApplier, packageApplier, platform, jobSupervisor, applier
 }
 
 func buildJob() models.Job {

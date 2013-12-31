@@ -5,7 +5,7 @@ import (
 	ja "bosh/agent/applier/jobapplier"
 	pa "bosh/agent/applier/packageapplier"
 	bosherr "bosh/errors"
-	boshmon "bosh/monitor"
+	boshjobsuper "bosh/jobsupervisor"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 )
@@ -14,7 +14,7 @@ type concreteApplier struct {
 	jobApplier        ja.JobApplier
 	packageApplier    pa.PackageApplier
 	logrotateDelegate LogrotateDelegate
-	monitor           boshmon.Monitor
+	jobSupervisor     boshjobsuper.JobSupervisor
 	dirProvider       boshdirs.DirectoriesProvider
 }
 
@@ -22,14 +22,14 @@ func NewConcreteApplier(
 	jobApplier ja.JobApplier,
 	packageApplier pa.PackageApplier,
 	logrotateDelegate LogrotateDelegate,
-	monitor boshmon.Monitor,
+	jobSupervisor boshjobsuper.JobSupervisor,
 	dirProvider boshdirs.DirectoriesProvider,
 ) *concreteApplier {
 	return &concreteApplier{
 		jobApplier:        jobApplier,
 		packageApplier:    packageApplier,
 		logrotateDelegate: logrotateDelegate,
-		monitor:           monitor,
+		jobSupervisor:     jobSupervisor,
 		dirProvider:       dirProvider,
 	}
 }
@@ -62,9 +62,9 @@ func (a *concreteApplier) Apply(applySpec as.ApplySpec) (err error) {
 		}
 	}
 
-	err = a.monitor.Reload()
+	err = a.jobSupervisor.Reload()
 	if err != nil {
-		err = bosherr.WrapError(err, "Reloading monitor")
+		err = bosherr.WrapError(err, "Reloading jobSupervisor")
 		return
 	}
 

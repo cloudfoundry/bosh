@@ -1,7 +1,7 @@
 package action
 
 import (
-	fakemon "bosh/monitor/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -20,15 +20,15 @@ func TestStartRunReturnsStarted(t *testing.T) {
 }
 
 func TestStartRunStartsMonitorServices(t *testing.T) {
-	monitor, action := buildStartAction()
+	jobSupervisor, action := buildStartAction()
 
 	_, err := action.Run()
 	assert.NoError(t, err)
-	assert.True(t, monitor.Started)
+	assert.True(t, jobSupervisor.Started)
 }
 
-func buildStartAction() (monitor *fakemon.FakeMonitor, action startAction) {
-	monitor = fakemon.NewFakeMonitor()
-	action = newStart(monitor)
+func buildStartAction() (jobSupervisor *fakejobsuper.FakeJobSupervisor, action startAction) {
+	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+	action = newStart(jobSupervisor)
 	return
 }

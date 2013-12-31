@@ -1,8 +1,8 @@
 package fakes
 
-import boshsysstat "bosh/monitor/system_status"
+import boshsysstat "bosh/jobsupervisor/system_status"
 
-type FakeMonitor struct {
+type FakeJobSupervisor struct {
 	Reloaded  bool
 	ReloadErr error
 
@@ -23,18 +23,18 @@ type AddJobArgs struct {
 	ConfigPath string
 }
 
-func NewFakeMonitor() (monitor *FakeMonitor) {
-	monitor = &FakeMonitor{}
+func NewFakeJobSupervisor() (jobSupervisor *FakeJobSupervisor) {
+	jobSupervisor = &FakeJobSupervisor{}
 	return
 }
 
-func (m *FakeMonitor) Reload() (err error) {
+func (m *FakeJobSupervisor) Reload() (err error) {
 	m.Reloaded = true
 	err = m.ReloadErr
 	return
 }
 
-func (m *FakeMonitor) AddJob(jobName string, jobIndex int, configPath string) (err error) {
+func (m *FakeJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) (err error) {
 	args := AddJobArgs{
 		Name:       jobName,
 		Index:      jobIndex,
@@ -44,23 +44,23 @@ func (m *FakeMonitor) AddJob(jobName string, jobIndex int, configPath string) (e
 	return
 }
 
-func (m *FakeMonitor) Start() (err error) {
+func (m *FakeJobSupervisor) Start() (err error) {
 	m.Started = true
 	err = m.StartErr
 	return
 }
 
-func (m *FakeMonitor) Stop() (err error) {
+func (m *FakeJobSupervisor) Stop() (err error) {
 	m.Stopped = true
 	err = m.StopErr
 	return
 }
 
-func (m *FakeMonitor) Status() (status string) {
+func (m *FakeJobSupervisor) Status() (status string) {
 	status = m.StatusStatus
 	return
 }
 
-func (m *FakeMonitor) SystemStatus() (status boshsysstat.SystemStatus, err error) {
+func (m *FakeJobSupervisor) SystemStatus() (status boshsysstat.SystemStatus, err error) {
 	return
 }

@@ -2,16 +2,16 @@ package action
 
 import (
 	bosherr "bosh/errors"
-	boshmon "bosh/monitor"
+	boshjobsuper "bosh/jobsupervisor"
 )
 
 type stopAction struct {
-	monitor boshmon.Monitor
+	jobSupervisor boshjobsuper.JobSupervisor
 }
 
-func newStop(monitor boshmon.Monitor) (stop stopAction) {
+func newStop(jobSupervisor boshjobsuper.JobSupervisor) (stop stopAction) {
 	stop = stopAction{
-		monitor: monitor,
+		jobSupervisor: jobSupervisor,
 	}
 	return
 }
@@ -21,7 +21,7 @@ func (a stopAction) IsAsynchronous() bool {
 }
 
 func (s stopAction) Run() (value interface{}, err error) {
-	err = s.monitor.Stop()
+	err = s.jobSupervisor.Stop()
 	if err != nil {
 		err = bosherr.WrapError(err, "Stopping Monitored Services")
 		return

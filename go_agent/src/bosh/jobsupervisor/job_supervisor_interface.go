@@ -1,8 +1,8 @@
-package monitor
+package jobsupervisor
 
-import boshsysstat "bosh/monitor/system_status"
+import boshsysstat "bosh/jobsupervisor/system_status"
 
-type Monitor interface {
+type JobSupervisor interface {
 	Reload() (err error)
 	Start() (err error)
 	Stop() (err error)

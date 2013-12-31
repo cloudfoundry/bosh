@@ -1,10 +1,10 @@
-package monitor
+package jobsupervisor
 
 import (
+	boshmonit "bosh/jobsupervisor/monit"
+	fakemonit "bosh/jobsupervisor/monit/fakes"
+	boshsysstat "bosh/jobsupervisor/system_status"
 	boshlog "bosh/logger"
-	boshmonit "bosh/monitor/monit"
-	fakemonit "bosh/monitor/monit/fakes"
-	boshsysstat "bosh/monitor/system_status"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"errors"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestReload(t *testing.T) {
-	_, runner, _, monit := buildMonit()
+	_, runner, _, monit := buildMonitJobSupervisor()
 	err := monit.Reload()
 
 	assert.NoError(t, err)
@@ -22,7 +22,7 @@ func TestReload(t *testing.T) {
 }
 
 func TestStartStartsEachMonitServiceInGroupVcap(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.ServicesInGroupServices = []string{"fake-service"}
 
@@ -35,7 +35,7 @@ func TestStartStartsEachMonitServiceInGroupVcap(t *testing.T) {
 }
 
 func TestStopStopsEachMonitServiceInGroupVcap(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.ServicesInGroupServices = []string{"fake-service"}
 
@@ -48,7 +48,7 @@ func TestStopStopsEachMonitServiceInGroupVcap(t *testing.T) {
 }
 
 func TestAddJob(t *testing.T) {
-	fs, _, _, monit := buildMonit()
+	fs, _, _, monit := buildMonitJobSupervisor()
 	fs.WriteToFile("/some/config/path", "some config content")
 	monit.AddJob("router", 0, "/some/config/path")
 
@@ -58,7 +58,7 @@ func TestAddJob(t *testing.T) {
 }
 
 func TestStatusReturnsRunningWhenAllServicesAreMonitoredAndRunning(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
@@ -72,7 +72,7 @@ func TestStatusReturnsRunningWhenAllServicesAreMonitoredAndRunning(t *testing.T)
 }
 
 func TestStatusReturnsFailingWhenAllServicesAreMonitoredAndAtLeastOneServiceIsFailing(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
@@ -86,7 +86,7 @@ func TestStatusReturnsFailingWhenAllServicesAreMonitoredAndAtLeastOneServiceIsFa
 }
 
 func TestStatusReturnsFailingWhenAtLeastOneServiceIsNotMonitored(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
@@ -100,7 +100,7 @@ func TestStatusReturnsFailingWhenAtLeastOneServiceIsNotMonitored(t *testing.T) {
 }
 
 func TestStatusReturnsStartWhenAtLeastOneServiceIsStarting(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
@@ -115,7 +115,7 @@ func TestStatusReturnsStartWhenAtLeastOneServiceIsStarting(t *testing.T) {
 }
 
 func TestStatusReturnsUnknownWhenError(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.StatusErr = errors.New("fake-monit-client-error")
 
@@ -124,7 +124,7 @@ func TestStatusReturnsUnknownWhenError(t *testing.T) {
 }
 
 func TestSystemStatusReturnsSuccessfully(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	expectedSystemStatus := boshsysstat.SystemStatus{
 		Load: boshsysstat.SystemStatusLoad{
@@ -143,7 +143,7 @@ func TestSystemStatusReturnsSuccessfully(t *testing.T) {
 }
 
 func TestSystemStatusBubblesErrors(t *testing.T) {
-	_, _, client, monit := buildMonit()
+	_, _, client, monit := buildMonitJobSupervisor()
 
 	client.StatusErr = errors.New("something went wrong")
 
@@ -151,12 +151,12 @@ func TestSystemStatusBubblesErrors(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func buildMonit() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit monit) {
+func buildMonitJobSupervisor() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit monitJobSupervisor) {
 	fs = &fakesys.FakeFileSystem{}
 	runner = &fakesys.FakeCmdRunner{}
 	client = fakemonit.NewFakeMonitClient()
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-	monit = NewMonit(fs, runner, client, logger, dirProvider)
+	monit = NewMonitJobSupervisor(fs, runner, client, logger, dirProvider)
 	return
 }

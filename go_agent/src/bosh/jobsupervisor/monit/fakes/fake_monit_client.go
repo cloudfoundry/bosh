@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshmonit "bosh/monitor/monit"
+	boshmonit "bosh/jobsupervisor/monit"
 )
 
 type FakeMonitClient struct {

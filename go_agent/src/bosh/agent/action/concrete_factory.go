@@ -8,7 +8,7 @@ import (
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
-	boshmon "bosh/monitor"
+	boshjobsuper "bosh/jobsupervisor"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
@@ -27,7 +27,7 @@ func NewFactory(
 	notifier boshnotif.Notifier,
 	applier boshappl.Applier,
 	compiler boshcomp.Compiler,
-	monitor boshmon.Monitor,
+	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
 	dirProvider boshdirs.DirectoriesProvider,
 	drainScriptProvider boshdrain.DrainScriptProvider,
@@ -40,15 +40,15 @@ func NewFactory(
 			"drain":        newDrain(notifier, specService, drainScriptProvider),
 			"fetch_logs":   newLogs(compressor, blobstore, dirProvider),
 			"get_task":     newGetTask(taskService),
-			"get_state":    newGetState(settings, specService, monitor),
+			"get_state":    newGetState(settings, specService, jobSupervisor),
 			"list_disk":    newListDisk(settings, platform),
 			"migrate_disk": newMigrateDisk(settings, platform, dirProvider),
 			"mount_disk":   newMountDisk(settings, platform, dirProvider),
 			"ping":         newPing(),
 			"prepare_network_change": newPrepareNetworkChange(),
 			"ssh":             newSsh(settings, platform, dirProvider),
-			"start":           newStart(monitor),
-			"stop":            newStop(monitor),
+			"start":           newStart(jobSupervisor),
+			"stop":            newStop(jobSupervisor),
 			"unmount_disk":    newUnmountDisk(settings, platform),
 			"compile_package": newCompilePackage(compiler),
 		},
