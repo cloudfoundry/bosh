@@ -10,6 +10,7 @@ import (
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
+	fakestats "bosh/platform/stats/fakes"
 	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,7 @@ type concreteFactoryDependencies struct {
 	specService         *fakeas.FakeV1Service
 	dirProvider         boshdirs.DirectoriesProvider
 	drainScriptProvider boshdrain.DrainScriptProvider
+	statsCollector      *fakestats.FakeStatsCollector
 }
 
 func TestNewFactory(t *testing.T) {
@@ -99,7 +101,7 @@ func TestNewFactoryGetState(t *testing.T) {
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor), action)
+	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.statsCollector), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
@@ -173,6 +175,7 @@ func buildFactory() (
 	deps.specService = fakeas.NewFakeV1Service()
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/foo")
 	deps.drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, deps.dirProvider)
+	deps.statsCollector = &fakestats.FakeStatsCollector{}
 
 	factory = NewFactory(
 		deps.settings,
