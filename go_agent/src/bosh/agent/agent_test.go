@@ -5,10 +5,7 @@ import (
 	boshmbus "bosh/mbus"
 	fakembus "bosh/mbus/fakes"
 	fakeplatform "bosh/platform/fakes"
-	boshstats "bosh/platform/stats"
-	fakestats "bosh/platform/stats/fakes"
-	boshsettings "bosh/settings"
-	fakesettings "bosh/settings/fakes"
+	boshvitals "bosh/platform/vitals"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -26,138 +23,56 @@ func (dispatcher *FakeActionDispatcher) Dispatch(req boshmbus.Request) (resp bos
 }
 
 func TestRunSetsTheDispatcherAsMessageHandler(t *testing.T) {
-	settings, logger, handler, platform, actionDispatcher := getAgentDependencies()
-	actionDispatcher.DispatchResp = boshmbus.NewValueResponse("pong")
+	deps, agent := buildAgent()
+	deps.actionDispatcher.DispatchResp = boshmbus.NewValueResponse("pong")
 
-	agent := New(settings, logger, handler, platform, actionDispatcher)
 	err := agent.Run()
 
 	assert.NoError(t, err)
-	assert.True(t, handler.ReceivedRun)
+	assert.True(t, deps.handler.ReceivedRun)
 
 	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
-	resp := handler.Func(req)
+	resp := deps.handler.Func(req)
 
-	assert.Equal(t, actionDispatcher.DispatchReq, req)
-	assert.Equal(t, resp, actionDispatcher.DispatchResp)
+	assert.Equal(t, deps.actionDispatcher.DispatchReq, req)
+	assert.Equal(t, resp, deps.actionDispatcher.DispatchResp)
 }
 
 func TestRunSetsUpHeartbeats(t *testing.T) {
-	settings, logger, handler, platform, actionDispatcher := getAgentDependencies()
-	settings.Disks = boshsettings.Disks{
-		System:     "/dev/sda1",
-		Ephemeral:  "/dev/sdb",
-		Persistent: map[string]string{"vol-xxxx": "/dev/sdf"},
+	deps, agent := buildAgent()
+	deps.platform.FakeVitalsService.GetVitals = boshvitals.Vitals{
+		Load: []string{"a", "b", "c"},
 	}
 
-	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
-		CpuLoad:   boshstats.CpuLoad{One: 1.0, Five: 5.0, Fifteen: 15.0},
-		CpuStats:  boshstats.CpuStats{User: 55, Sys: 44, Wait: 11, Total: 1000},
-		MemStats:  boshstats.Usage{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
-		SwapStats: boshstats.Usage{Used: 10 * 1024 * 1024, Total: 100 * 1024 * 1024},
-		DiskStats: map[string]boshstats.DiskStats{
-			"/": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 25, Total: 100},
-				InodeUsage: boshstats.Usage{Used: 300, Total: 1000},
-			},
-			"/var/vcap/data": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 5, Total: 100},
-				InodeUsage: boshstats.Usage{Used: 150, Total: 1000},
-			},
-			"/var/vcap/store": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 0, Total: 100},
-				InodeUsage: boshstats.Usage{Used: 0, Total: 1000},
-			},
-		},
-	}
-
-	agent := New(settings, logger, handler, platform, actionDispatcher)
 	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
-	assert.False(t, handler.TickHeartbeatsSent)
+	assert.False(t, deps.handler.TickHeartbeatsSent)
 
-	assert.True(t, handler.InitialHeartbeatSent)
-	assert.Equal(t, "heartbeat", handler.SendToHealthManagerTopic)
+	assert.True(t, deps.handler.InitialHeartbeatSent)
+	assert.Equal(t, "heartbeat", deps.handler.SendToHealthManagerTopic)
 	time.Sleep(5 * time.Millisecond)
-	assert.True(t, handler.TickHeartbeatsSent)
+	assert.True(t, deps.handler.TickHeartbeatsSent)
 
-	hb := handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
-	assert.Equal(t, []string{"1.00", "5.00", "15.00"}, hb.Vitals.CpuLoad)
-	assert.Equal(t, boshmbus.CpuStats{
-		User: "5.5",
-		Sys:  "4.4",
-		Wait: "1.1",
-	}, hb.Vitals.Cpu)
-
-	assert.Equal(t, boshmbus.MemStats{
-		Percent: "40",
-		Kb:      "40960",
-	}, hb.Vitals.UsedMem)
-
-	assert.Equal(t, boshmbus.MemStats{
-		Percent: "10",
-		Kb:      "10240",
-	}, hb.Vitals.UsedSwap)
-
-	assert.Equal(t, boshmbus.Disks{
-		System:     boshmbus.DiskStats{Percent: "25", InodePercent: "30"},
-		Ephemeral:  boshmbus.DiskStats{Percent: "5", InodePercent: "15"},
-		Persistent: boshmbus.DiskStats{Percent: "0", InodePercent: "0"},
-	}, hb.Vitals.Disks)
+	hb := deps.handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
+	assert.Equal(t, deps.platform.FakeVitalsService.GetVitals, hb.Vitals)
 }
 
-func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
-	settings, logger, handler, platform, actionDispatcher := getAgentDependencies()
-	settings.Disks = boshsettings.Disks{
-		System: "/dev/sda1",
-	}
-
-	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
-		DiskStats: map[string]boshstats.DiskStats{
-			"/": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 25, Total: 100},
-				InodeUsage: boshstats.Usage{Used: 300, Total: 1000},
-			},
-			"/var/vcap/data": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 5, Total: 100},
-				InodeUsage: boshstats.Usage{Used: 150, Total: 1000},
-			},
-			"/var/vcap/store": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 0, Total: 100},
-				InodeUsage: boshstats.Usage{Used: 0, Total: 1000},
-			},
-		},
-	}
-
-	agent := New(settings, logger, handler, platform, actionDispatcher)
-	agent.heartbeatInterval = time.Millisecond
-	err := agent.Run()
-	assert.NoError(t, err)
-
-	assert.Equal(t, "heartbeat", handler.SendToHealthManagerTopic)
-	hb := handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
-
-	assert.Equal(t, boshmbus.Disks{
-		System:     boshmbus.DiskStats{Percent: "25", InodePercent: "30"},
-		Ephemeral:  boshmbus.DiskStats{},
-		Persistent: boshmbus.DiskStats{},
-	}, hb.Vitals.Disks)
+type agentDeps struct {
+	logger           boshlog.Logger
+	handler          *fakembus.FakeHandler
+	platform         *fakeplatform.FakePlatform
+	actionDispatcher *FakeActionDispatcher
 }
 
-func getAgentDependencies() (
-	settings *fakesettings.FakeSettingsService,
-	logger boshlog.Logger,
-	handler *fakembus.FakeHandler,
-	platform *fakeplatform.FakePlatform,
-	actionDispatcher *FakeActionDispatcher) {
-
-	settings = &fakesettings.FakeSettingsService{}
-	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
-	handler = &fakembus.FakeHandler{}
-	platform = &fakeplatform.FakePlatform{
-		FakeStatsCollector: &fakestats.FakeStatsCollector{},
+func buildAgent() (deps agentDeps, agent agent) {
+	deps = agentDeps{
+		logger:           boshlog.NewLogger(boshlog.LEVEL_NONE),
+		handler:          &fakembus.FakeHandler{},
+		platform:         fakeplatform.NewFakePlatform(),
+		actionDispatcher: &FakeActionDispatcher{},
 	}
-	actionDispatcher = &FakeActionDispatcher{}
+
+	agent = New(deps.logger, deps.handler, deps.platform, deps.actionDispatcher)
 	return
 }

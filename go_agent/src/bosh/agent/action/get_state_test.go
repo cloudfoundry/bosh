@@ -5,10 +5,9 @@ import (
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	boshassert "bosh/assert"
 	fakejobsuper "bosh/jobsupervisor/fakes"
-	boshstats "bosh/platform/stats"
-	fakestats "bosh/platform/stats/fakes"
+	boshvitals "bosh/platform/vitals"
+	fakevitals "bosh/platform/vitals/fakes"
 	boshsettings "bosh/settings"
-	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -82,43 +81,17 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	specService, jobSupervisor, _, action := buildGetStateAction(settings)
+	specService, jobSupervisor, fakeVitals, action := buildGetStateAction(settings)
 	jobSupervisor.StatusStatus = "running"
 
 	specService.Spec = boshas.V1ApplySpec{
 		Deployment: "fake-deployment",
 	}
 
-	expectedVitals := map[string]interface{}{
-		"cpu": map[string]int{
-			"sys":  10,
-			"user": 56,
-			"wait": 1,
-		},
-		"disk": map[string]interface{}{
-			"system": map[string]string{
-				"percent":       "50",
-				"inode_percent": "10",
-			},
-			"ephemeral": map[string]string{
-				"percent":       "75",
-				"inode_percent": "20",
-			},
-			"persistent": map[string]string{
-				"percent":       "100",
-				"inode_percent": "75",
-			},
-		},
-		"load": []float64{0.2, 4.55, 1.123},
-		"mem": map[string]interface{}{
-			"kb":      70,
-			"percent": 70.0,
-		},
-		"swap": map[string]interface{}{
-			"kb":      600,
-			"percent": 60.0,
-		},
+	expectedVitals := boshvitals.Vitals{
+		Load: []string{"foo", "bar", "baz"},
 	}
+	fakeVitals.GetVitals = expectedVitals
 	expectedVm := map[string]interface{}{"name": "vm-abc-def"}
 
 	state, err := action.Run("full")
@@ -127,37 +100,15 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 	boshassert.MatchesJsonString(t, state.AgentId, `"my-agent-id"`)
 	boshassert.MatchesJsonString(t, state.JobState, `"running"`)
 	boshassert.MatchesJsonString(t, state.Deployment, `"fake-deployment"`)
-	boshassert.MatchesJsonMap(t, state.Vitals, expectedVitals)
+	assert.Equal(t, *state.Vitals, expectedVitals)
 	boshassert.MatchesJsonMap(t, state.Vm, expectedVm)
 }
 
-func TestGetStateRunWithFullFormatOptionWhenMissingDisks(t *testing.T) {
+func TestGetStateRunOnVitalsError(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
-	settings.AgentId = "my-agent-id"
-	settings.Vm.Name = "vm-abc-def"
 
-	_, _, statsCollector, action := buildGetStateAction(settings)
-	statsCollector.DiskStats = map[string]boshstats.DiskStats{
-		"/": boshstats.DiskStats{
-			DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
-			InodeUsage: boshstats.Usage{Used: 50, Total: 500},
-		},
-	}
-
-	state, err := action.Run("full")
-	assert.NoError(t, err)
-
-	boshassert.LacksJsonKey(t, state.Vitals.Disk, "ephemeral")
-	boshassert.LacksJsonKey(t, state.Vitals.Disk, "persistent")
-}
-
-func TestGetStateRunWithFullFormatOptionOnSystemDiskError(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	settings.AgentId = "my-agent-id"
-	settings.Vm.Name = "vm-abc-def"
-
-	_, _, statsCollector, action := buildGetStateAction(settings)
-	statsCollector.DiskStats = map[string]boshstats.DiskStats{}
+	_, _, fakeVitals, action := buildGetStateAction(settings)
+	fakeVitals.GetErr = errors.New("Oops, could not get vitals")
 
 	_, err := action.Run("full")
 	assert.Error(t, err)
@@ -166,47 +117,12 @@ func TestGetStateRunWithFullFormatOptionOnSystemDiskError(t *testing.T) {
 func buildGetStateAction(settings boshsettings.Service) (
 	specService *fakeas.FakeV1Service,
 	jobSupervisor *fakejobsuper.FakeJobSupervisor,
-	statsCollector *fakestats.FakeStatsCollector,
+	vitalsService *fakevitals.FakeService,
 	action getStateAction,
 ) {
 	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	specService = fakeas.NewFakeV1Service()
-	dirProvider := boshdirs.NewDirectoriesProvider("/fake/base/dir")
-	statsCollector = &fakestats.FakeStatsCollector{
-		CpuLoad: boshstats.CpuLoad{
-			One:     0.2,
-			Five:    4.55,
-			Fifteen: 1.123,
-		},
-		CpuStats: boshstats.CpuStats{
-			User:  56,
-			Sys:   10,
-			Wait:  1,
-			Total: 67,
-		},
-		MemStats: boshstats.Usage{
-			Used:  70,
-			Total: 100,
-		},
-		SwapStats: boshstats.Usage{
-			Used:  600,
-			Total: 1000,
-		},
-		DiskStats: map[string]boshstats.DiskStats{
-			"/": boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
-				InodeUsage: boshstats.Usage{Used: 50, Total: 500},
-			},
-			dirProvider.DataDir(): boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 15, Total: 20},
-				InodeUsage: boshstats.Usage{Used: 10, Total: 50},
-			},
-			dirProvider.StoreDir(): boshstats.DiskStats{
-				DiskUsage:  boshstats.Usage{Used: 2, Total: 2},
-				InodeUsage: boshstats.Usage{Used: 3, Total: 4},
-			},
-		},
-	}
-	action = newGetState(settings, specService, jobSupervisor, statsCollector, dirProvider)
+	vitalsService = fakevitals.NewFakeService()
+	action = newGetState(settings, specService, jobSupervisor, vitalsService)
 	return
 }

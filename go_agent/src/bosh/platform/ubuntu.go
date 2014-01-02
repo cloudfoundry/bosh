@@ -5,6 +5,7 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
+	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
@@ -29,6 +30,7 @@ type ubuntu struct {
 	compressor      boshcmd.Compressor
 	diskWaitTimeout time.Duration
 	dirProvider     boshdirs.DirectoriesProvider
+	vitalsService   boshvitals.Service
 }
 
 func newUbuntuPlatform(
@@ -48,6 +50,7 @@ func newUbuntuPlatform(
 	platform.compressor = compressor
 	platform.diskWaitTimeout = 3 * time.Minute
 	platform.dirProvider = dirProvider
+	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	return
 }
 
@@ -69,6 +72,10 @@ func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
 
 func (p ubuntu) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
 	return p.dirProvider
+}
+
+func (p ubuntu) GetVitalsService() (service boshvitals.Service) {
+	return p.vitalsService
 }
 
 func (p ubuntu) SetupRuntimeConfiguration() (err error) {

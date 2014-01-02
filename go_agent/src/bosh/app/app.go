@@ -111,13 +111,12 @@ func (app app) Run(args []string) (err error) {
 		compiler,
 		jobSupervisor,
 		specService,
-		dirProvider,
 		drainScriptProvider,
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 
-	agent := boshagent.New(settingsService, app.logger, mbusHandler, platform, actionDispatcher)
+	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")

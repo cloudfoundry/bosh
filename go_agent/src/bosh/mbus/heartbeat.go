@@ -1,46 +1,18 @@
 package mbus
 
+import boshvitals "bosh/platform/vitals"
+
 type JobState string
 
 const (
 	JobStateRunning JobState = "running"
 )
 
-type MemStats struct {
-	Percent string `json:"percent,omitempty"`
-	Kb      string `json:"kb,omitempty"`
-}
-
-type DiskStats struct {
-	Percent      string `json:"percent,omitempty"`
-	InodePercent string `json:"inode_percent,omitempty"`
-}
-
-type CpuStats struct {
-	User string `json:"user,omitempty"`
-	Sys  string `json:"sys,omitempty"`
-	Wait string `json:"wait,omitempty"`
-}
-
-type Disks struct {
-	System     DiskStats `json:"system"`
-	Ephemeral  DiskStats `json:"ephemeral"`
-	Persistent DiskStats `json:"persistent"`
-}
-
-type Vitals struct {
-	CpuLoad  []string `json:"load,omitempty"`
-	Cpu      CpuStats `json:"cpu"`
-	UsedMem  MemStats `json:"mem"`
-	UsedSwap MemStats `json:"swap"`
-	Disks    Disks    `json:"disk"`
-}
-
 type Heartbeat struct {
-	Job      string   `json:"job"`
-	Index    int      `json:"index"`
-	JobState JobState `json:"job_state"`
-	Vitals   Vitals   `json:"vitals"`
+	Job      string            `json:"job"`
+	Index    int               `json:"index"`
+	JobState JobState          `json:"job_state"`
+	Vitals   boshvitals.Vitals `json:"vitals"`
 }
 
 //Heartbeat payload example:

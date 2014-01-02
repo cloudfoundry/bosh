@@ -10,8 +10,6 @@ import (
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
-	fakestats "bosh/platform/stats/fakes"
-	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -27,9 +25,7 @@ type concreteFactoryDependencies struct {
 	compiler            *fakecomp.FakeCompiler
 	jobSupervisor       *fakejobsuper.FakeJobSupervisor
 	specService         *fakeas.FakeV1Service
-	dirProvider         boshdirs.DirectoriesProvider
 	drainScriptProvider boshdrain.DrainScriptProvider
-	statsCollector      *fakestats.FakeStatsCollector
 }
 
 func TestNewFactory(t *testing.T) {
@@ -85,7 +81,7 @@ func TestNewFactoryFetchLogs(t *testing.T) {
 	action, err := factory.Create("fetch_logs")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newLogs(deps.platform.GetCompressor(), deps.blobstore, deps.dirProvider), action)
+	assert.Equal(t, newLogs(deps.platform.GetCompressor(), deps.blobstore, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryGetTask(t *testing.T) {
@@ -101,7 +97,7 @@ func TestNewFactoryGetState(t *testing.T) {
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.statsCollector, deps.dirProvider), action)
+	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.platform.GetVitalsService()), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
@@ -117,7 +113,7 @@ func TestNewFactoryMigrateDisk(t *testing.T) {
 	action, err := factory.Create("migrate_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMigrateDisk(deps.settings, deps.platform, deps.dirProvider), action)
+	assert.Equal(t, newMigrateDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
@@ -125,7 +121,7 @@ func TestNewFactoryMountDisk(t *testing.T) {
 	action, err := factory.Create("mount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMountDisk(deps.settings, deps.platform, deps.dirProvider), action)
+	assert.Equal(t, newMountDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactorySsh(t *testing.T) {
@@ -133,7 +129,7 @@ func TestNewFactorySsh(t *testing.T) {
 	action, err := factory.Create("ssh")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newSsh(deps.settings, deps.platform, deps.dirProvider), action)
+	assert.Equal(t, newSsh(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryStart(t *testing.T) {
@@ -173,9 +169,7 @@ func buildFactory() (
 	deps.compiler = fakecomp.NewFakeCompiler()
 	deps.jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	deps.specService = fakeas.NewFakeV1Service()
-	deps.dirProvider = boshdirs.NewDirectoriesProvider("/foo")
-	deps.drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, deps.dirProvider)
-	deps.statsCollector = &fakestats.FakeStatsCollector{}
+	deps.drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, deps.platform.GetDirProvider())
 
 	factory = NewFactory(
 		deps.settings,
@@ -187,7 +181,6 @@ func buildFactory() (
 		deps.compiler,
 		deps.jobSupervisor,
 		deps.specService,
-		deps.dirProvider,
 		deps.drainScriptProvider,
 	)
 	return

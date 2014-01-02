@@ -4,6 +4,7 @@ import (
 	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
+	"encoding/json"
 	"github.com/cloudfoundry/yagnats"
 	"github.com/cloudfoundry/yagnats/fakeyagnats"
 	"github.com/stretchr/testify/assert"
@@ -66,9 +67,10 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	client, handler := buildNatsClientAndHandler(settings)
 
 	errChan := make(chan error, 1)
+	expectedHeartbeat := Heartbeat{Job: "foo", Index: 0}
 
 	go func() {
-		errChan <- handler.SendToHealthManager("heartbeat", Heartbeat{Job: "foo", Index: 0})
+		errChan <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
 	}()
 
 	var err error
@@ -83,8 +85,8 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 	assert.Equal(t, len(messages), 1)
 	message := messages[0]
 
-	expectedJson := `{"job":"foo","index":0,"job_state":"","vitals":{"cpu":{},"mem":{},"swap":{},"disk":{"system":{},"ephemeral":{},"persistent":{}}}}`
-	assert.Equal(t, []byte(expectedJson), message.Payload)
+	expectedJson, _ := json.Marshal(expectedHeartbeat)
+	assert.Equal(t, string(expectedJson), string(message.Payload))
 }
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {

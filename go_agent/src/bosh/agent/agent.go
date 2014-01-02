@@ -5,12 +5,10 @@ import (
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
-	boshsettings "bosh/settings"
 	"time"
 )
 
 type agent struct {
-	settings          boshsettings.Service
 	logger            boshlog.Logger
 	mbusHandler       boshmbus.Handler
 	platform          boshplatform.Platform
@@ -18,13 +16,11 @@ type agent struct {
 	heartbeatInterval time.Duration
 }
 
-func New(settings boshsettings.Service,
-	logger boshlog.Logger,
+func New(logger boshlog.Logger,
 	mbusHandler boshmbus.Handler,
 	platform boshplatform.Platform,
 	actionDispatcher ActionDispatcher) (a agent) {
 
-	a.settings = settings
 	a.logger = logger
 	a.mbusHandler = mbusHandler
 	a.platform = platform
@@ -77,11 +73,23 @@ func (a agent) generateHeartbeats(errChan chan error) {
 }
 
 func (a agent) sendHeartbeat(errChan chan error) {
-	heartbeat := getHeartbeat(a.settings, a.platform.GetStatsCollector(), a.platform.GetDirProvider())
+	heartbeat := a.getHeartbeat()
 	err := a.mbusHandler.SendToHealthManager("heartbeat", heartbeat)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending Heartbeat")
 		errChan <- err
 	}
 
+}
+
+func (a agent) getHeartbeat() (hb boshmbus.Heartbeat) {
+	vitalsService := a.platform.GetVitalsService()
+
+	vitals, err := vitalsService.Get()
+	if err != nil {
+		return
+	}
+
+	hb.Vitals = vitals
+	return
 }

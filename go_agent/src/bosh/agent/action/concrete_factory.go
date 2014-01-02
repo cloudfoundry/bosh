@@ -12,7 +12,6 @@ import (
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	boshdirs "bosh/settings/directories"
 )
 
 type concreteFactory struct {
@@ -29,11 +28,11 @@ func NewFactory(
 	compiler boshcomp.Compiler,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
-	dirProvider boshdirs.DirectoriesProvider,
 	drainScriptProvider boshdrain.DrainScriptProvider,
 ) (factory Factory) {
 	compressor := platform.GetCompressor()
-	statsCollector := platform.GetStatsCollector()
+	dirProvider := platform.GetDirProvider()
+	vitalsService := platform.GetVitalsService()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -41,7 +40,7 @@ func NewFactory(
 			"drain":        newDrain(notifier, specService, drainScriptProvider),
 			"fetch_logs":   newLogs(compressor, blobstore, dirProvider),
 			"get_task":     newGetTask(taskService),
-			"get_state":    newGetState(settings, specService, jobSupervisor, statsCollector, dirProvider),
+			"get_state":    newGetState(settings, specService, jobSupervisor, vitalsService),
 			"list_disk":    newListDisk(settings, platform),
 			"migrate_disk": newMigrateDisk(settings, platform, dirProvider),
 			"mount_disk":   newMountDisk(settings, platform, dirProvider),
