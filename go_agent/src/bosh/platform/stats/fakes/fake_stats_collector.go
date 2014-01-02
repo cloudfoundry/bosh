@@ -1,6 +1,9 @@
 package fakes
 
-import boshstats "bosh/platform/stats"
+import (
+	boshstats "bosh/platform/stats"
+	"errors"
+)
 
 type FakeStatsCollector struct {
 	CpuLoad   boshstats.CpuLoad
@@ -31,6 +34,9 @@ func (c *FakeStatsCollector) GetSwapStats() (stats boshstats.MemStats, err error
 }
 
 func (c *FakeStatsCollector) GetDiskStats(devicePath string) (stats boshstats.DiskStats, err error) {
-	stats = c.DiskStats[devicePath]
+	stats, found := c.DiskStats[devicePath]
+	if !found {
+		err = errors.New("Disk not found")
+	}
 	return
 }

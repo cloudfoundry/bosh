@@ -17,7 +17,7 @@ import (
 
 func TestGetStateShouldBeSynchronous(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
-	_, _, action := buildGetStateAction(settings)
+	_, _, _, action := buildGetStateAction(settings)
 	assert.False(t, action.IsAsynchronous())
 }
 
@@ -26,7 +26,7 @@ func TestGetStateRun(t *testing.T) {
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	specService, jobSupervisor, action := buildGetStateAction(settings)
+	specService, jobSupervisor, _, action := buildGetStateAction(settings)
 	jobSupervisor.StatusStatus = "running"
 
 	specService.Spec = boshas.V1ApplySpec{
@@ -47,6 +47,7 @@ func TestGetStateRun(t *testing.T) {
 	assert.Equal(t, state.AgentId, expectedSpec.AgentId)
 	assert.Equal(t, state.JobState, expectedSpec.JobState)
 	assert.Equal(t, state.Deployment, expectedSpec.Deployment)
+	boshassert.LacksJsonKey(t, state, "vitals")
 
 	assert.Equal(t, state, expectedSpec)
 }
@@ -56,7 +57,7 @@ func TestGetStateRunWithoutCurrentSpec(t *testing.T) {
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	specService, jobSupervisor, action := buildGetStateAction(settings)
+	specService, jobSupervisor, _, action := buildGetStateAction(settings)
 	jobSupervisor.StatusStatus = "running"
 
 	specService.GetErr = errors.New("some error")
@@ -81,7 +82,7 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 	settings.AgentId = "my-agent-id"
 	settings.Vm.Name = "vm-abc-def"
 
-	specService, jobSupervisor, action := buildGetStateAction(settings)
+	specService, jobSupervisor, _, action := buildGetStateAction(settings)
 	jobSupervisor.StatusStatus = "running"
 
 	specService.Spec = boshas.V1ApplySpec{
@@ -130,15 +131,50 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 	boshassert.MatchesJsonMap(t, state.Vm, expectedVm)
 }
 
+func TestGetStateRunWithFullFormatOptionWhenMissingDisks(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	settings.AgentId = "my-agent-id"
+	settings.Vm.Name = "vm-abc-def"
+
+	_, _, statsCollector, action := buildGetStateAction(settings)
+	statsCollector.DiskStats = map[string]boshstats.DiskStats{
+		"/": boshstats.DiskStats{
+			Used:       100,
+			Total:      200,
+			InodeUsed:  50,
+			InodeTotal: 500,
+		},
+	}
+
+	state, err := action.Run("full")
+	assert.NoError(t, err)
+
+	boshassert.LacksJsonKey(t, state.Vitals.Disk, "ephemeral")
+	boshassert.LacksJsonKey(t, state.Vitals.Disk, "persistent")
+}
+
+func TestGetStateRunWithFullFormatOptionOnSystemDiskError(t *testing.T) {
+	settings := &fakesettings.FakeSettingsService{}
+	settings.AgentId = "my-agent-id"
+	settings.Vm.Name = "vm-abc-def"
+
+	_, _, statsCollector, action := buildGetStateAction(settings)
+	statsCollector.DiskStats = map[string]boshstats.DiskStats{}
+
+	_, err := action.Run("full")
+	assert.Error(t, err)
+}
+
 func buildGetStateAction(settings boshsettings.Service) (
 	specService *fakeas.FakeV1Service,
 	jobSupervisor *fakejobsuper.FakeJobSupervisor,
+	statsCollector *fakestats.FakeStatsCollector,
 	action getStateAction,
 ) {
 	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	specService = fakeas.NewFakeV1Service()
 	dirProvider := boshdirs.NewDirectoriesProvider("/fake/base/dir")
-	statsCollector := &fakestats.FakeStatsCollector{
+	statsCollector = &fakestats.FakeStatsCollector{
 		CpuLoad: boshstats.CpuLoad{
 			One:     0.2,
 			Five:    4.55,

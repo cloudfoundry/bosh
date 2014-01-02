@@ -39,11 +39,11 @@ func (a getStateAction) IsAsynchronous() bool {
 type getStateV1ApplySpec struct {
 	boshas.V1ApplySpec
 
-	AgentId      string           `json:"agent_id"`
-	BoshProtocol string           `json:"bosh_protocol"`
-	JobState     string           `json:"job_state"`
-	Vitals       getStateV1Vitals `json:"vitals"`
-	Vm           boshsettings.Vm  `json:"vm"`
+	AgentId      string            `json:"agent_id"`
+	BoshProtocol string            `json:"bosh_protocol"`
+	JobState     string            `json:"job_state"`
+	Vitals       *getStateV1Vitals `json:"vitals,omitempty"`
+	Vm           boshsettings.Vm   `json:"vm"`
 }
 
 type getStateV1Vitals struct {
@@ -65,11 +65,7 @@ type getStateV1VitalsMemory struct {
 	Percent float64 `json:"percent"`
 }
 
-type getStateV1VitalDisk struct {
-	Ephemeral  getStateV1VitalDiskStats `json:"ephemeral"`
-	Persistent getStateV1VitalDiskStats `json:"persistent"`
-	System     getStateV1VitalDiskStats `json:"system"`
-}
+type getStateV1VitalDisk map[string]getStateV1VitalDiskStats
 
 type getStateV1VitalDiskStats struct {
 	InodePercent string `json:"inode_percent"`
@@ -82,73 +78,13 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 		spec = boshas.V1ApplySpec{}
 	}
 
-	vitals := getStateV1Vitals{}
+	var vitals *getStateV1Vitals
+
 	if len(filters) > 0 && filters[0] == "full" {
-		var (
-			loadStats boshstats.CpuLoad
-			cpuStats  boshstats.CpuStats
-			memStats  boshstats.MemStats
-			swapStats boshstats.MemStats
-		)
-
-		loadStats, err = a.statsCollector.GetCpuLoad()
+		vitals, err = a.buildFullVitals()
 		if err != nil {
-			err = bosherr.WrapError(err, "Getting CPU Load")
+			err = bosherr.WrapError(err, "Building full vitals")
 			return
-		}
-
-		cpuStats, err = a.statsCollector.GetCpuStats()
-		if err != nil {
-			err = bosherr.WrapError(err, "Getting CPU Stats")
-			return
-		}
-
-		memStats, err = a.statsCollector.GetMemStats()
-		if err != nil {
-			err = bosherr.WrapError(err, "Getting Memory Stats")
-			return
-		}
-
-		swapStats, err = a.statsCollector.GetSwapStats()
-		if err != nil {
-			err = bosherr.WrapError(err, "Getting Swap Stats")
-			return
-		}
-
-		diskStats := getStateV1VitalDisk{}
-		diskStats.System, err = a.getDiskStats("/")
-		if err != nil {
-			return
-		}
-		diskStats.Ephemeral, err = a.getDiskStats(a.dirProvider.DataDir())
-		if err != nil {
-			return
-		}
-		diskStats.Persistent, err = a.getDiskStats(a.dirProvider.StoreDir())
-		if err != nil {
-			return
-		}
-
-		vitals = getStateV1Vitals{
-			Load: []float64{
-				loadStats.One,
-				loadStats.Five,
-				loadStats.Fifteen,
-			},
-			CPU: getStateV1VitalsCPU{
-				User: cpuStats.User,
-				Sys:  cpuStats.Sys,
-				Wait: cpuStats.Wait,
-			},
-			Mem: getStateV1VitalsMemory{
-				Percent: float64(memStats.Used) / float64(memStats.Total) * 100,
-				Kb:      memStats.Used,
-			},
-			Swap: getStateV1VitalsMemory{
-				Percent: float64(swapStats.Used) / float64(swapStats.Total) * 100,
-				Kb:      swapStats.Used,
-			},
-			Disk: diskStats,
 		}
 	}
 
@@ -164,13 +100,101 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 	return
 }
 
-func (a getStateAction) getDiskStats(mountedPath string) (diskStats getStateV1VitalDiskStats, err error) {
-	s, err := a.statsCollector.GetDiskStats(mountedPath)
+func (a getStateAction) buildFullVitals() (vitals *getStateV1Vitals, err error) {
+	var (
+		loadStats boshstats.CpuLoad
+		cpuStats  boshstats.CpuStats
+		memStats  boshstats.MemStats
+		swapStats boshstats.MemStats
+		diskStats getStateV1VitalDisk
+	)
+
+	loadStats, err = a.statsCollector.GetCpuLoad()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting Disk Stats for %s", mountedPath)
+		err = bosherr.WrapError(err, "Getting CPU Load")
+		return
 	}
 
-	diskStats.Percent = fmt.Sprintf("%.0f", s.Percent()*100)
-	diskStats.InodePercent = fmt.Sprintf("%.0f", s.InodePercent()*100)
+	cpuStats, err = a.statsCollector.GetCpuStats()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting CPU Stats")
+		return
+	}
+
+	memStats, err = a.statsCollector.GetMemStats()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting Memory Stats")
+		return
+	}
+
+	swapStats, err = a.statsCollector.GetSwapStats()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting Swap Stats")
+		return
+	}
+
+	diskStats, err = a.getDiskStats()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting Disk Stats")
+		return
+	}
+
+	vitals = &getStateV1Vitals{
+		Load: []float64{
+			loadStats.One,
+			loadStats.Five,
+			loadStats.Fifteen,
+		},
+		CPU: getStateV1VitalsCPU{
+			User: cpuStats.User,
+			Sys:  cpuStats.Sys,
+			Wait: cpuStats.Wait,
+		},
+		Mem: getStateV1VitalsMemory{
+			Percent: float64(memStats.Used) / float64(memStats.Total) * 100,
+			Kb:      memStats.Used,
+		},
+		Swap: getStateV1VitalsMemory{
+			Percent: float64(swapStats.Used) / float64(swapStats.Total) * 100,
+			Kb:      swapStats.Used,
+		},
+		Disk: diskStats,
+	}
+	return
+}
+
+func (a getStateAction) getDiskStats() (diskStats getStateV1VitalDisk, err error) {
+	disks := map[string]string{
+		"/": "system",
+		a.dirProvider.DataDir():  "ephemeral",
+		a.dirProvider.StoreDir(): "persistent",
+	}
+	diskStats = make(getStateV1VitalDisk, len(disks))
+
+	for path, name := range disks {
+		diskStats, err = a.addDiskStats(diskStats, path, name)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func (a getStateAction) addDiskStats(diskStats getStateV1VitalDisk, path, name string) (updated getStateV1VitalDisk, err error) {
+	updated = diskStats
+
+	s, diskErr := a.statsCollector.GetDiskStats(path)
+	if diskErr != nil {
+		if path == "/" {
+			err = bosherr.WrapError(diskErr, "Getting Disk Stats for /")
+		}
+		return
+	}
+
+	updated[name] = getStateV1VitalDiskStats{
+		Percent:      fmt.Sprintf("%.0f", s.Percent()*100),
+		InodePercent: fmt.Sprintf("%.0f", s.InodePercent()*100),
+	}
 	return
 }
