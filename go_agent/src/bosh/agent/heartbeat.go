@@ -6,7 +6,6 @@ import (
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	"fmt"
-	"path/filepath"
 )
 
 const (
@@ -46,14 +45,10 @@ func updateWithCpuStats(platform boshstats.StatsCollector, hb boshmbus.Heartbeat
 		return
 	}
 
-	user := float64(cpuStats.User) / float64(cpuStats.Total) * 100
-	sys := float64(cpuStats.Sys) / float64(cpuStats.Total) * 100
-	wait := float64(cpuStats.Wait) / float64(cpuStats.Total) * 100
-
 	updatedHb.Vitals.Cpu = boshmbus.CpuStats{
-		User: fmt.Sprintf("%.1f", user),
-		Sys:  fmt.Sprintf("%.1f", sys),
-		Wait: fmt.Sprintf("%.1f", wait),
+		User: cpuStats.UserPercent().FormatFractionOf100(1),
+		Sys:  cpuStats.SysPercent().FormatFractionOf100(1),
+		Wait: cpuStats.WaitPercent().FormatFractionOf100(1),
 	}
 	return
 }
@@ -65,12 +60,9 @@ func updateWithMemStats(platform boshstats.StatsCollector, hb boshmbus.Heartbeat
 		return
 	}
 
-	percent := float64(memStats.Used) / float64(memStats.Total) * 100
-	kb := memStats.Used / 1024
-
 	updatedHb.Vitals.UsedMem = boshmbus.MemStats{
-		Percent: fmt.Sprintf("%.0f", percent),
-		Kb:      fmt.Sprintf("%d", kb),
+		Percent: memStats.Percent().FormatFractionOf100(0),
+		Kb:      fmt.Sprintf("%d", memStats.Used/1024),
 	}
 	return
 }
@@ -82,12 +74,9 @@ func updateWithSwapStats(platform boshstats.StatsCollector, hb boshmbus.Heartbea
 		return
 	}
 
-	percent := float64(swapStats.Used) / float64(swapStats.Total) * 100
-	kb := swapStats.Used / 1024
-
 	updatedHb.Vitals.UsedSwap = boshmbus.MemStats{
-		Percent: fmt.Sprintf("%.0f", percent),
-		Kb:      fmt.Sprintf("%d", kb),
+		Percent: swapStats.Percent().FormatFractionOf100(0),
+		Kb:      fmt.Sprintf("%d", swapStats.Used/1024),
 	}
 	return
 }
@@ -98,13 +87,11 @@ func updateWithDiskStats(settings boshsettings.Service, platform boshstats.Stats
 	updatedHb.Vitals.Disks.System = getDiskStats(platform, SYSTEM_DISK_PATH)
 
 	if settings.GetDisks().Ephemeral != "" {
-		emphemeralDiskPath := filepath.Join(dirProvider.BaseDir(), "data")
-		updatedHb.Vitals.Disks.Ephemeral = getDiskStats(platform, emphemeralDiskPath)
+		updatedHb.Vitals.Disks.Ephemeral = getDiskStats(platform, dirProvider.DataDir())
 	}
 
 	if len(settings.GetDisks().Persistent) == 1 {
-		persistentDiskPath := filepath.Join(dirProvider.BaseDir(), "store")
-		updatedHb.Vitals.Disks.Persistent = getDiskStats(platform, persistentDiskPath)
+		updatedHb.Vitals.Disks.Persistent = getDiskStats(platform, dirProvider.StoreDir())
 	}
 
 	return
@@ -116,11 +103,7 @@ func getDiskStats(platform boshstats.StatsCollector, devicePath string) (stats b
 		return
 	}
 
-	percent := diskStats.Percent() * 100
-	inodePercent := diskStats.InodePercent() * 100
-
-	stats.Percent = fmt.Sprintf("%.0f", percent)
-	stats.InodePercent = fmt.Sprintf("%.0f", inodePercent)
-
+	stats.Percent = diskStats.DiskUsage.Percent().FormatFractionOf100(0)
+	stats.InodePercent = diskStats.InodeUsage.Percent().FormatFractionOf100(0)
 	return
 }

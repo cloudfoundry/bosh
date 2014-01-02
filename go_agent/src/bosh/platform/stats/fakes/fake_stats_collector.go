@@ -8,8 +8,8 @@ import (
 type FakeStatsCollector struct {
 	CpuLoad   boshstats.CpuLoad
 	CpuStats  boshstats.CpuStats
-	MemStats  boshstats.MemStats
-	SwapStats boshstats.MemStats
+	MemStats  boshstats.Usage
+	SwapStats boshstats.Usage
 	DiskStats map[string]boshstats.DiskStats
 }
 
@@ -23,13 +23,13 @@ func (c *FakeStatsCollector) GetCpuStats() (stats boshstats.CpuStats, err error)
 	return
 }
 
-func (c *FakeStatsCollector) GetMemStats() (stats boshstats.MemStats, err error) {
-	stats = c.MemStats
+func (c *FakeStatsCollector) GetMemStats() (usage boshstats.Usage, err error) {
+	usage = c.MemStats
 	return
 }
 
-func (c *FakeStatsCollector) GetSwapStats() (stats boshstats.MemStats, err error) {
-	stats = c.SwapStats
+func (c *FakeStatsCollector) GetSwapStats() (usage boshstats.Usage, err error) {
+	usage = c.SwapStats
 	return
 }
 

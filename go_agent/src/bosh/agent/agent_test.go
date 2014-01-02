@@ -53,12 +53,21 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
 		CpuLoad:   boshstats.CpuLoad{One: 1.0, Five: 5.0, Fifteen: 15.0},
 		CpuStats:  boshstats.CpuStats{User: 55, Sys: 44, Wait: 11, Total: 1000},
-		MemStats:  boshstats.MemStats{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
-		SwapStats: boshstats.MemStats{Used: 10 * 1024 * 1024, Total: 100 * 1024 * 1024},
+		MemStats:  boshstats.Usage{Used: 40 * 1024 * 1024, Total: 100 * 1024 * 1024},
+		SwapStats: boshstats.Usage{Used: 10 * 1024 * 1024, Total: 100 * 1024 * 1024},
 		DiskStats: map[string]boshstats.DiskStats{
-			"/":               boshstats.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
-			"/var/vcap/data":  boshstats.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
-			"/var/vcap/store": boshstats.DiskStats{Used: 0, Total: 100, InodeUsed: 0, InodeTotal: 1000},
+			"/": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 25, Total: 100},
+				InodeUsage: boshstats.Usage{Used: 300, Total: 1000},
+			},
+			"/var/vcap/data": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 5, Total: 100},
+				InodeUsage: boshstats.Usage{Used: 150, Total: 1000},
+			},
+			"/var/vcap/store": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 0, Total: 100},
+				InodeUsage: boshstats.Usage{Used: 0, Total: 1000},
+			},
 		},
 	}
 
@@ -106,9 +115,18 @@ func TestRunSetsUpHeartbeatsWithoutEphemeralOrPersistentDisk(t *testing.T) {
 
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{
 		DiskStats: map[string]boshstats.DiskStats{
-			"/":               boshstats.DiskStats{Used: 25, Total: 100, InodeUsed: 300, InodeTotal: 1000},
-			"/var/vcap/data":  boshstats.DiskStats{Used: 5, Total: 100, InodeUsed: 150, InodeTotal: 1000},
-			"/var/vcap/store": boshstats.DiskStats{Used: 0, Total: 100, InodeUsed: 0, InodeTotal: 1000},
+			"/": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 25, Total: 100},
+				InodeUsage: boshstats.Usage{Used: 300, Total: 1000},
+			},
+			"/var/vcap/data": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 5, Total: 100},
+				InodeUsage: boshstats.Usage{Used: 150, Total: 1000},
+			},
+			"/var/vcap/store": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 0, Total: 100},
+				InodeUsage: boshstats.Usage{Used: 0, Total: 1000},
+			},
 		},
 	}
 

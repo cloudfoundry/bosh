@@ -7,7 +7,6 @@ import (
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
-	"fmt"
 )
 
 type getStateAction struct {
@@ -104,8 +103,8 @@ func (a getStateAction) buildFullVitals() (vitals *getStateV1Vitals, err error) 
 	var (
 		loadStats boshstats.CpuLoad
 		cpuStats  boshstats.CpuStats
-		memStats  boshstats.MemStats
-		swapStats boshstats.MemStats
+		memStats  boshstats.Usage
+		swapStats boshstats.Usage
 		diskStats getStateV1VitalDisk
 	)
 
@@ -151,11 +150,11 @@ func (a getStateAction) buildFullVitals() (vitals *getStateV1Vitals, err error) 
 			Wait: cpuStats.Wait,
 		},
 		Mem: getStateV1VitalsMemory{
-			Percent: float64(memStats.Used) / float64(memStats.Total) * 100,
+			Percent: memStats.Percent().FractionOf100(),
 			Kb:      memStats.Used,
 		},
 		Swap: getStateV1VitalsMemory{
-			Percent: float64(swapStats.Used) / float64(swapStats.Total) * 100,
+			Percent: swapStats.Percent().FractionOf100(),
 			Kb:      swapStats.Used,
 		},
 		Disk: diskStats,
@@ -193,8 +192,8 @@ func (a getStateAction) addDiskStats(diskStats getStateV1VitalDisk, path, name s
 	}
 
 	updated[name] = getStateV1VitalDiskStats{
-		Percent:      fmt.Sprintf("%.0f", s.Percent()*100),
-		InodePercent: fmt.Sprintf("%.0f", s.InodePercent()*100),
+		Percent:      s.DiskUsage.Percent().FormatFractionOf100(0),
+		InodePercent: s.InodeUsage.Percent().FormatFractionOf100(0),
 	}
 	return
 }

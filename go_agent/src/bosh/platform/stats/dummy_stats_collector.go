@@ -16,18 +16,18 @@ func (p dummyStatsCollector) GetCpuStats() (stats CpuStats, err error) {
 	return
 }
 
-func (p dummyStatsCollector) GetMemStats() (stats MemStats, err error) {
-	stats.Total = 1
+func (p dummyStatsCollector) GetMemStats() (usage Usage, err error) {
+	usage.Total = 1
 	return
 }
 
-func (p dummyStatsCollector) GetSwapStats() (stats MemStats, err error) {
-	stats.Total = 1
+func (p dummyStatsCollector) GetSwapStats() (usage Usage, err error) {
+	usage.Total = 1
 	return
 }
 
 func (p dummyStatsCollector) GetDiskStats(devicePath string) (stats DiskStats, err error) {
-	stats.Total = 1
-	stats.InodeTotal = 1
+	stats.DiskUsage.Total = 1
+	stats.InodeUsage.Total = 1
 	return
 }

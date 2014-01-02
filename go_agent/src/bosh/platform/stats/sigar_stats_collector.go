@@ -43,7 +43,7 @@ func (s sigarStatsCollector) GetCpuStats() (stats CpuStats, err error) {
 	return
 }
 
-func (s sigarStatsCollector) GetMemStats() (stats MemStats, err error) {
+func (s sigarStatsCollector) GetMemStats() (usage Usage, err error) {
 	mem := sigar.Mem{}
 	err = mem.Get()
 	if err != nil {
@@ -51,13 +51,13 @@ func (s sigarStatsCollector) GetMemStats() (stats MemStats, err error) {
 		return
 	}
 
-	stats.Total = mem.Total
-	stats.Used = mem.Used
+	usage.Total = mem.Total
+	usage.Used = mem.Used
 
 	return
 }
 
-func (s sigarStatsCollector) GetSwapStats() (stats MemStats, err error) {
+func (s sigarStatsCollector) GetSwapStats() (usage Usage, err error) {
 	swap := sigar.Swap{}
 	err = swap.Get()
 	if err != nil {
@@ -65,8 +65,8 @@ func (s sigarStatsCollector) GetSwapStats() (stats MemStats, err error) {
 		return
 	}
 
-	stats.Total = swap.Total
-	stats.Used = swap.Used
+	usage.Total = swap.Total
+	usage.Used = swap.Used
 
 	return
 }
@@ -79,10 +79,10 @@ func (s sigarStatsCollector) GetDiskStats(mountedPath string) (stats DiskStats, 
 		return
 	}
 
-	stats.Total = fsUsage.Total
-	stats.Used = fsUsage.Used
-	stats.InodeTotal = fsUsage.Files
-	stats.InodeUsed = fsUsage.Files - fsUsage.FreeFiles
+	stats.DiskUsage.Total = fsUsage.Total
+	stats.DiskUsage.Used = fsUsage.Used
+	stats.InodeUsage.Total = fsUsage.Files
+	stats.InodeUsage.Used = fsUsage.Files - fsUsage.FreeFiles
 
 	return
 }

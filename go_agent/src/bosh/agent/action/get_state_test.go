@@ -139,10 +139,8 @@ func TestGetStateRunWithFullFormatOptionWhenMissingDisks(t *testing.T) {
 	_, _, statsCollector, action := buildGetStateAction(settings)
 	statsCollector.DiskStats = map[string]boshstats.DiskStats{
 		"/": boshstats.DiskStats{
-			Used:       100,
-			Total:      200,
-			InodeUsed:  50,
-			InodeTotal: 500,
+			DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
+			InodeUsage: boshstats.Usage{Used: 50, Total: 500},
 		},
 	}
 
@@ -186,32 +184,26 @@ func buildGetStateAction(settings boshsettings.Service) (
 			Wait:  1,
 			Total: 67,
 		},
-		MemStats: boshstats.MemStats{
+		MemStats: boshstats.Usage{
 			Used:  70,
 			Total: 100,
 		},
-		SwapStats: boshstats.MemStats{
+		SwapStats: boshstats.Usage{
 			Used:  600,
 			Total: 1000,
 		},
 		DiskStats: map[string]boshstats.DiskStats{
 			"/": boshstats.DiskStats{
-				Used:       100,
-				Total:      200,
-				InodeUsed:  50,
-				InodeTotal: 500,
+				DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
+				InodeUsage: boshstats.Usage{Used: 50, Total: 500},
 			},
 			dirProvider.DataDir(): boshstats.DiskStats{
-				Used:       15,
-				Total:      20,
-				InodeUsed:  10,
-				InodeTotal: 50,
+				DiskUsage:  boshstats.Usage{Used: 15, Total: 20},
+				InodeUsage: boshstats.Usage{Used: 10, Total: 50},
 			},
 			dirProvider.StoreDir(): boshstats.DiskStats{
-				Used:       2,
-				Total:      2,
-				InodeUsed:  3,
-				InodeTotal: 4,
+				DiskUsage:  boshstats.Usage{Used: 2, Total: 2},
+				InodeUsage: boshstats.Usage{Used: 3, Total: 4},
 			},
 		},
 	}
