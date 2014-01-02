@@ -350,12 +350,23 @@ module Bosh::Dev
     after(:all) { Fog.unmock! }
 
     describe '#release_tarball_path' do
+      let(:dev_bosh_release) { instance_double('Bosh::Dev::BoshRelease') }
+      before { Bosh::Dev::BoshRelease.stub(build: dev_bosh_release) }
+
+      let(:gem_components) { instance_double('Bosh::Dev::GemComponents') }
+      before { allow(GemComponents).to receive(:new).with('build-number').and_return(gem_components) }
+
+      it 'builds gems before creating release because the latter depends on the presence of release gems' do
+        expect(gem_components).to receive(:build_release_gems).ordered
+        expect(dev_bosh_release).to receive(:dev_tarball_path).ordered
+
+        subject.release_tarball_path
+      end
+
       it 'returns the path to new dev bosh release' do
-        dev_bosh_release = instance_double(
-          'Bosh::Dev::BoshRelease',
-          dev_tarball_path: 'fake-dev-tarball-path',
-        )
-        Bosh::Dev::BoshRelease.stub(build: dev_bosh_release)
+        allow(dev_bosh_release).to receive(:dev_tarball_path).and_return('fake-dev-tarball-path')
+        allow(gem_components).to receive(:build_release_gems)
+
         expect(subject.release_tarball_path).to eq('fake-dev-tarball-path')
       end
     end

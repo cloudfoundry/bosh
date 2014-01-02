@@ -7,6 +7,7 @@ require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
 require 'bosh/dev/bosh_release'
 require 'bosh/dev/uri_provider'
+require 'bosh/dev/gem_components'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/infrastructure'
@@ -116,6 +117,7 @@ module Bosh::Dev
     class Local < self
       def release_tarball_path
         release = BoshRelease.build
+        GemComponents.new(@number).build_release_gems
         release.dev_tarball_path
       end
 
