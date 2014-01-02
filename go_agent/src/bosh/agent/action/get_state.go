@@ -6,6 +6,8 @@ import (
 	boshjobsuper "bosh/jobsupervisor"
 	boshstats "bosh/platform/stats"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
+	"fmt"
 )
 
 type getStateAction struct {
@@ -13,16 +15,20 @@ type getStateAction struct {
 	specService    boshas.V1Service
 	jobSupervisor  boshjobsuper.JobSupervisor
 	statsCollector boshstats.StatsCollector
+	dirProvider    boshdirs.DirectoriesProvider
 }
 
 func newGetState(settings boshsettings.Service,
 	specService boshas.V1Service,
 	jobSupervisor boshjobsuper.JobSupervisor,
-	statsCollector boshstats.StatsCollector) (action getStateAction) {
+	statsCollector boshstats.StatsCollector,
+	dirProvider boshdirs.DirectoriesProvider,
+) (action getStateAction) {
 	action.settings = settings
 	action.specService = specService
 	action.jobSupervisor = jobSupervisor
 	action.statsCollector = statsCollector
+	action.dirProvider = dirProvider
 	return
 }
 
@@ -42,6 +48,7 @@ type getStateV1ApplySpec struct {
 
 type getStateV1Vitals struct {
 	CPU  getStateV1VitalsCPU    `json:"cpu"`
+	Disk getStateV1VitalDisk    `json:"disk"`
 	Load []float64              `json:"load"`
 	Mem  getStateV1VitalsMemory `json:"mem"`
 	Swap getStateV1VitalsMemory `json:"swap"`
@@ -56,6 +63,17 @@ type getStateV1VitalsCPU struct {
 type getStateV1VitalsMemory struct {
 	Kb      uint64  `json:"kb"`
 	Percent float64 `json:"percent"`
+}
+
+type getStateV1VitalDisk struct {
+	Ephemeral  getStateV1VitalDiskStats `json:"ephemeral"`
+	Persistent getStateV1VitalDiskStats `json:"persistent"`
+	System     getStateV1VitalDiskStats `json:"system"`
+}
+
+type getStateV1VitalDiskStats struct {
+	InodePercent string `json:"inode_percent"`
+	Percent      string `json:"percent"`
 }
 
 func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err error) {
@@ -97,6 +115,20 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 			return
 		}
 
+		diskStats := getStateV1VitalDisk{}
+		diskStats.System, err = a.getDiskStats("/")
+		if err != nil {
+			return
+		}
+		diskStats.Ephemeral, err = a.getDiskStats(a.dirProvider.DataDir())
+		if err != nil {
+			return
+		}
+		diskStats.Persistent, err = a.getDiskStats(a.dirProvider.StoreDir())
+		if err != nil {
+			return
+		}
+
 		vitals = getStateV1Vitals{
 			Load: []float64{
 				loadStats.One,
@@ -116,6 +148,7 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 				Percent: float64(swapStats.Used) / float64(swapStats.Total) * 100,
 				Kb:      swapStats.Used,
 			},
+			Disk: diskStats,
 		}
 	}
 
@@ -128,5 +161,16 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 		a.settings.GetVm(),
 	}
 
+	return
+}
+
+func (a getStateAction) getDiskStats(mountedPath string) (diskStats getStateV1VitalDiskStats, err error) {
+	s, err := a.statsCollector.GetDiskStats(mountedPath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting Disk Stats for %s", mountedPath)
+	}
+
+	diskStats.Percent = fmt.Sprintf("%.0f", s.Percent()*100)
+	diskStats.InodePercent = fmt.Sprintf("%.0f", s.InodePercent()*100)
 	return
 }

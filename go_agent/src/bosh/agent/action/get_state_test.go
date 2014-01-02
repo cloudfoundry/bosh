@@ -8,6 +8,7 @@ import (
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshsettings "bosh/settings"
+	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -93,6 +94,20 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 			"user": 56,
 			"wait": 1,
 		},
+		"disk": map[string]interface{}{
+			"system": map[string]string{
+				"percent":       "50",
+				"inode_percent": "10",
+			},
+			"ephemeral": map[string]string{
+				"percent":       "75",
+				"inode_percent": "20",
+			},
+			"persistent": map[string]string{
+				"percent":       "100",
+				"inode_percent": "75",
+			},
+		},
 		"load": []float64{0.2, 4.55, 1.123},
 		"mem": map[string]interface{}{
 			"kb":      70,
@@ -116,12 +131,13 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 }
 
 func buildGetStateAction(settings boshsettings.Service) (
-specService *fakeas.FakeV1Service,
+	specService *fakeas.FakeV1Service,
 	jobSupervisor *fakejobsuper.FakeJobSupervisor,
 	action getStateAction,
 ) {
 	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	specService = fakeas.NewFakeV1Service()
+	dirProvider := boshdirs.NewDirectoriesProvider("/fake/base/dir")
 	statsCollector := &fakestats.FakeStatsCollector{
 		CpuLoad: boshstats.CpuLoad{
 			One:     0.2,
@@ -142,7 +158,27 @@ specService *fakeas.FakeV1Service,
 			Used:  600,
 			Total: 1000,
 		},
+		DiskStats: map[string]boshstats.DiskStats{
+			"/": boshstats.DiskStats{
+				Used:       100,
+				Total:      200,
+				InodeUsed:  50,
+				InodeTotal: 500,
+			},
+			dirProvider.DataDir(): boshstats.DiskStats{
+				Used:       15,
+				Total:      20,
+				InodeUsed:  10,
+				InodeTotal: 50,
+			},
+			dirProvider.StoreDir(): boshstats.DiskStats{
+				Used:       2,
+				Total:      2,
+				InodeUsed:  3,
+				InodeTotal: 4,
+			},
+		},
 	}
-	action = newGetState(settings, specService, jobSupervisor, statsCollector)
+	action = newGetState(settings, specService, jobSupervisor, statsCollector, dirProvider)
 	return
 }

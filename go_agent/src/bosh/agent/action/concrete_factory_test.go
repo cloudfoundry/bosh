@@ -101,7 +101,7 @@ func TestNewFactoryGetState(t *testing.T) {
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.statsCollector), action)
+	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.statsCollector, deps.dirProvider), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {

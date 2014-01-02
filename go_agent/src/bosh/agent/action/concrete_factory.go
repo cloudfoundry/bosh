@@ -41,7 +41,7 @@ func NewFactory(
 			"drain":        newDrain(notifier, specService, drainScriptProvider),
 			"fetch_logs":   newLogs(compressor, blobstore, dirProvider),
 			"get_task":     newGetTask(taskService),
-			"get_state":    newGetState(settings, specService, jobSupervisor, statsCollector),
+			"get_state":    newGetState(settings, specService, jobSupervisor, statsCollector, dirProvider),
 			"list_disk":    newListDisk(settings, platform),
 			"migrate_disk": newMigrateDisk(settings, platform, dirProvider),
 			"mount_disk":   newMountDisk(settings, platform, dirProvider),

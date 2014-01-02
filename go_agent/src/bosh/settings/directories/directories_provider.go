@@ -23,6 +23,10 @@ func (p DirectoriesProvider) StoreDir() string {
 	return filepath.Join(p.BaseDir(), "store")
 }
 
+func (p DirectoriesProvider) DataDir() string {
+	return filepath.Join(p.BaseDir(), "data")
+}
+
 func (p DirectoriesProvider) StoreMigrationDir() string {
 	return filepath.Join(p.BaseDir(), "store_migration_target")
 }

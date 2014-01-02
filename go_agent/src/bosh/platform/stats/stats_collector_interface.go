@@ -48,5 +48,5 @@ type StatsCollector interface {
 	GetCpuStats() (stats CpuStats, err error)
 	GetMemStats() (stats MemStats, err error)
 	GetSwapStats() (stats MemStats, err error)
-	GetDiskStats(devicePath string) (stats DiskStats, err error)
+	GetDiskStats(mountedPath string) (stats DiskStats, err error)
 }
