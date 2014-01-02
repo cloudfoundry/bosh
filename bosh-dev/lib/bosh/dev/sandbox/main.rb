@@ -222,7 +222,10 @@ module Bosh::Dev::Sandbox
 
       @director_process.start
       @worker_process.start
-      @director_socket_connector.try_to_connect(50)
+
+      # CI does not have enough time to start bosh-director
+      # for some parallel tests; increasing to 40 secs (= 80 tries).
+      @director_socket_connector.try_to_connect(80)
     end
 
     def kill_agents
