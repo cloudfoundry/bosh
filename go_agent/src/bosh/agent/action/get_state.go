@@ -34,28 +34,28 @@ type getStateV1ApplySpec struct {
 	boshas.V1ApplySpec
 
 	AgentId      string           `json:"agent_id"`
-	Vm           boshsettings.Vm  `json:"vm"`
-	JobState     string           `json:"job_state"`
 	BoshProtocol string           `json:"bosh_protocol"`
+	JobState     string           `json:"job_state"`
 	Vitals       getStateV1Vitals `json:"vitals"`
+	Vm           boshsettings.Vm  `json:"vm"`
 }
 
 type getStateV1Vitals struct {
-	Load []float64              `json:"load"`
 	CPU  getStateV1VitalsCPU    `json:"cpu"`
+	Load []float64              `json:"load"`
 	Mem  getStateV1VitalsMemory `json:"mem"`
 	Swap getStateV1VitalsMemory `json:"swap"`
 }
 
 type getStateV1VitalsCPU struct {
-	User uint64 `json:"user"`
 	Sys  uint64 `json:"sys"`
+	User uint64 `json:"user"`
 	Wait uint64 `json:"wait"`
 }
 
 type getStateV1VitalsMemory struct {
-	Percent float64 `json:"percent"`
 	Kb      uint64  `json:"kb"`
+	Percent float64 `json:"percent"`
 }
 
 func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err error) {
@@ -122,10 +122,10 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 	value = getStateV1ApplySpec{
 		spec,
 		a.settings.GetAgentId(),
-		a.settings.GetVm(),
-		a.jobSupervisor.Status(),
 		"1",
+		a.jobSupervisor.Status(),
 		vitals,
+		a.settings.GetVm(),
 	}
 
 	return

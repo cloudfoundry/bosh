@@ -3,6 +3,7 @@ package action
 import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
+	boshassert "bosh/assert"
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
@@ -86,47 +87,36 @@ func TestGetStateRunWithFullFormatOption(t *testing.T) {
 		Deployment: "fake-deployment",
 	}
 
-	expectedSpec := getStateV1ApplySpec{
-		AgentId:      "my-agent-id",
-		JobState:     "running",
-		BoshProtocol: "1",
-		Vm:           boshsettings.Vm{Name: "vm-abc-def"},
-		Vitals: getStateV1Vitals{
-			Load: []float64{0.2, 4.55, 1.123},
-			CPU: getStateV1VitalsCPU{
-				User: 56,
-				Sys:  10,
-				Wait: 1,
-			},
-			Mem: getStateV1VitalsMemory{
-				Percent: 70.0,
-				Kb:      70,
-			},
-			Swap: getStateV1VitalsMemory{
-				Percent: 60.0,
-				Kb:      600,
-			},
+	expectedVitals := map[string]interface{}{
+		"cpu": map[string]int{
+			"sys":  10,
+			"user": 56,
+			"wait": 1,
+		},
+		"load": []float64{0.2, 4.55, 1.123},
+		"mem": map[string]interface{}{
+			"kb":      70,
+			"percent": 70.0,
+		},
+		"swap": map[string]interface{}{
+			"kb":      600,
+			"percent": 60.0,
 		},
 	}
-	expectedSpec.Deployment = "fake-deployment"
+	expectedVm := map[string]interface{}{"name": "vm-abc-def"}
 
 	state, err := action.Run("full")
 	assert.NoError(t, err)
 
-	assert.Equal(t, state.AgentId, expectedSpec.AgentId)
-	assert.Equal(t, state.JobState, expectedSpec.JobState)
-	assert.Equal(t, state.Deployment, expectedSpec.Deployment)
-
-	assert.Equal(t, state.Vitals.Load, expectedSpec.Vitals.Load)
-	assert.Equal(t, state.Vitals.CPU, expectedSpec.Vitals.CPU)
-	assert.Equal(t, state.Vitals.Mem, expectedSpec.Vitals.Mem)
-	assert.Equal(t, state.Vitals.Swap, expectedSpec.Vitals.Swap)
-
-	assert.Equal(t, state, expectedSpec)
+	boshassert.MatchesJsonString(t, state.AgentId, `"my-agent-id"`)
+	boshassert.MatchesJsonString(t, state.JobState, `"running"`)
+	boshassert.MatchesJsonString(t, state.Deployment, `"fake-deployment"`)
+	boshassert.MatchesJsonMap(t, state.Vitals, expectedVitals)
+	boshassert.MatchesJsonMap(t, state.Vm, expectedVm)
 }
 
 func buildGetStateAction(settings boshsettings.Service) (
-	specService *fakeas.FakeV1Service,
+specService *fakeas.FakeV1Service,
 	jobSupervisor *fakejobsuper.FakeJobSupervisor,
 	action getStateAction,
 ) {
