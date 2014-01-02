@@ -1,7 +1,5 @@
 package fakes
 
-import boshsysstat "bosh/jobsupervisor/system_status"
-
 type FakeJobSupervisor struct {
 	Reloaded  bool
 	ReloadErr error
@@ -58,9 +56,5 @@ func (m *FakeJobSupervisor) Stop() (err error) {
 
 func (m *FakeJobSupervisor) Status() (status string) {
 	status = m.StatusStatus
-	return
-}
-
-func (m *FakeJobSupervisor) SystemStatus() (status boshsysstat.SystemStatus, err error) {
 	return
 }

@@ -3,7 +3,6 @@ package jobsupervisor
 import (
 	boshmonit "bosh/jobsupervisor/monit"
 	fakemonit "bosh/jobsupervisor/monit/fakes"
-	boshsysstat "bosh/jobsupervisor/system_status"
 	boshlog "bosh/logger"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
@@ -121,34 +120,6 @@ func TestStatusReturnsUnknownWhenError(t *testing.T) {
 
 	status := monit.Status()
 	assert.Equal(t, "unknown", status)
-}
-
-func TestSystemStatusReturnsSuccessfully(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
-
-	expectedSystemStatus := boshsysstat.SystemStatus{
-		Load: boshsysstat.SystemStatusLoad{
-			Avg01: 0.1,
-			Avg05: 0.1,
-			Avg15: 0.1,
-		},
-	}
-	client.StatusStatus = &fakemonit.FakeMonitStatus{
-		SystemStatusStatus: expectedSystemStatus,
-	}
-
-	systemStatus, err := monit.SystemStatus()
-	assert.NoError(t, err)
-	assert.Equal(t, expectedSystemStatus, systemStatus)
-}
-
-func TestSystemStatusBubblesErrors(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
-
-	client.StatusErr = errors.New("something went wrong")
-
-	_, err := monit.SystemStatus()
-	assert.Error(t, err)
 }
 
 func buildMonitJobSupervisor() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit monitJobSupervisor) {

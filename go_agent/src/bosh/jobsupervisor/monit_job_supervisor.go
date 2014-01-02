@@ -3,7 +3,6 @@ package jobsupervisor
 import (
 	bosherr "bosh/errors"
 	boshmonit "bosh/jobsupervisor/monit"
-	boshsysstat "bosh/jobsupervisor/system_status"
 	boshlog "bosh/logger"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
@@ -89,16 +88,6 @@ func (m monitJobSupervisor) Status() (status string) {
 			status = "failing"
 		}
 	}
-	return
-}
-
-func (m monitJobSupervisor) SystemStatus() (systemStatus boshsysstat.SystemStatus, err error) {
-	status, err := m.client.Status()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting system status")
-		return
-	}
-	systemStatus = status.SystemStatus()
 	return
 }
 
