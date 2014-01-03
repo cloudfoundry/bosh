@@ -5,10 +5,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-#Add rsyslog rpm repo
-cp $assets_dir/rsyslog.repo $chroot//etc/yum.repos.d/
-pkg_mgr update
-
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
 pkg_mgr install upstart
 
@@ -23,7 +19,7 @@ zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb libcap2-bin libcap-devel bzip2-devel \
-libyaml-devel cmake sudo nc rsyslog-relp"
+libyaml-devel cmake sudo nc libuuid-devel"
 pkg_mgr install $packages
 
 # Lifted from bosh_debs
@@ -43,6 +39,3 @@ run_in_chroot $chroot "
   rpm -i /rpmbuild/RPMS/${runit_version}.rpm
 "
 #/runit
-
-# rsyslog config
-cp -f $assets_dir/rsyslog.conf $chroot/etc/rsyslog.conf

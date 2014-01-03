@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe 'Ubuntu Stemcell' do
-
   it_behaves_like 'a stemcell'
 
   describe package('apt') do
@@ -204,12 +203,6 @@ describe 'Ubuntu Stemcell' do
       it { should be_file }
       it { should contain 'auto eth0' }
       it { should contain 'iface eth0 inet dhcp' }
-    end
-  end
-
-  context 'installed by rsyslog' do
-    describe file('/etc/init/rsyslog.conf') do
-      it { should contain('/usr/local/sbin/rsyslogd') }
     end
   end
 end

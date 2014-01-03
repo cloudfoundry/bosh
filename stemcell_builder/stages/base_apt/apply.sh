@@ -56,8 +56,6 @@ libaio1 gdb tripwire libcap2-bin libcap2-dev libbz2-dev \
 libyaml-dev cmake uuid-dev libgcrypt-dev"
 pkg_mgr install $debs
 
-pkg_mgr remove rsyslog
-
 # Lifted from bosh_debs
 pkg_mgr install "scsitools mg htop module-assistant debhelper runit"
 #/Lifted from bosh_debs

@@ -38,7 +38,7 @@ module Bosh::Stemcell
     def operating_system_stages
       case operating_system
         when OperatingSystem::Centos then
-          [:base_centos, :base_yum] + hacked_centos_common
+          [:base_centos, :base_yum, :rsyslog] + hacked_centos_common
         when OperatingSystem::Ubuntu then
           [:base_debootstrap, :base_apt, :bosh_dpkg_list] + common_stages
       end
