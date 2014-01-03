@@ -30,15 +30,8 @@ module Bosh::Dev
       }[name]
     end
 
-    def initialize(
-      build_target,
-      micro_target,
-      bosh_target,
-      deployment_account,
-      artifacts_downloader
-    )
+    def initialize(build_target, bosh_target, deployment_account, artifacts_downloader)
       @build_target = build_target
-      @micro_target = micro_target
       @bosh_target = bosh_target
       @deployment_account = deployment_account
       @artifacts_downloader = artifacts_downloader
@@ -49,29 +42,18 @@ module Bosh::Dev
 
       stemcell_path = @artifacts_downloader.download_stemcell(@build_target, Dir.pwd)
       stemcell_archive = Bosh::Stemcell::Archive.new(stemcell_path)
-      micro_director_client.upload_stemcell(stemcell_archive)
+      director_client.upload_stemcell(stemcell_archive)
 
-      release_path = @artifacts_downloader.download_release(
-        @build_target.build_number, Dir.pwd)
-      micro_director_client.upload_release(release_path)
+      release_path = @artifacts_downloader.download_release(@build_target.build_number, Dir.pwd)
+      director_client.upload_release(release_path)
 
       manifest_path = @deployment_account.manifest_path
-      micro_director_client.deploy(manifest_path)
-
-      bosh_director_client.upload_stemcell(stemcell_archive)
+      director_client.deploy(manifest_path)
     end
 
     private
 
-    def micro_director_client
-      @micro_director_client ||= DirectorClient.new(
-        uri: @micro_target,
-        username: @deployment_account.bosh_user,
-        password: @deployment_account.bosh_password,
-      )
-    end
-
-    def bosh_director_client
+    def director_client
       @director_client ||= DirectorClient.new(
         uri: @bosh_target,
         username: @deployment_account.bosh_user,

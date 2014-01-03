@@ -32,7 +32,6 @@ module Bosh::Dev::VSphere
         Bosh::Dev::AutomatedDeploy.should_receive(:new).with(
           build_target,
           'fake-micro-target',
-          'fake-bosh-target',
           deployment_account,
           artifacts_downloader,
         ).and_return(automated_deploy)

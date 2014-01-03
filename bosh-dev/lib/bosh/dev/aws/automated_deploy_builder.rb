@@ -20,7 +20,6 @@ module Bosh::Dev::Aws
       Bosh::Dev::AutomatedDeploy.new(
         build_target,
         micro_target,
-        bosh_target,
         deployment_account,
         artifacts_downloader,
       )

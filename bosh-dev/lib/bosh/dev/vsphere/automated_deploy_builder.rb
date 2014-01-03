@@ -10,8 +10,7 @@ module Bosh::Dev::VSphere
       logger = Logger.new(STDERR)
 
       deployments_repository = Bosh::Dev::DeploymentsRepository.new(ENV, path_root: '/tmp')
-      deployment_account = DeploymentAccount.new(
-        environment_name, deployment_name, deployments_repository)
+      deployment_account = DeploymentAccount.new(environment_name, deployment_name, deployments_repository)
 
       download_adapter = Bosh::Dev::DownloadAdapter.new(logger)
       artifacts_downloader = Bosh::Dev::ArtifactsDownloader.new(download_adapter, logger)
@@ -19,7 +18,6 @@ module Bosh::Dev::VSphere
       Bosh::Dev::AutomatedDeploy.new(
         build_target,
         micro_target,
-        bosh_target,
         deployment_account,
         artifacts_downloader,
       )
