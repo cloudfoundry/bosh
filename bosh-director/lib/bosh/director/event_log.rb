@@ -26,17 +26,14 @@ module Bosh::Director
       def initialize(io = nil)
         @logger = CustomLogger.new(io || StringIO.new)
         @last_stage = Stage.new(self, 'unknown', [], 0)
-        @last_stage_lock = Mutex.new
       end
 
       def begin_stage(stage_name, total = nil, tags = [])
-        stage = Stage.new(self, stage_name, tags, total)
-        @last_stage_lock.synchronize { @last_stage = stage }
+        @last_stage = Stage.new(self, stage_name, tags, total)
       end
 
       def track(task_name = nil, &blk)
-        last_stage = @last_stage_lock.synchronize { @last_stage }
-        last_stage.advance_and_track(task_name, &blk)
+        @last_stage.advance_and_track(task_name, &blk)
       end
 
       # Adds an error entry to the event log.
