@@ -22,7 +22,6 @@ module Bosh::Dev
         deployer = instance_double('Bosh::Dev::AutomatedDeploy')
         builder.should_receive(:build).with(
           build_target,
-          'fake-micro-target',
           'fake-bosh-target',
           'fake-environment-name',
           'fake-deployment-name',

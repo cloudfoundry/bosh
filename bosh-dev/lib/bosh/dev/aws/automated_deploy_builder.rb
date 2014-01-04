@@ -8,7 +8,7 @@ require 'bosh/dev/aws/deployment_account'
 
 module Bosh::Dev::Aws
   class AutomatedDeployBuilder
-    def build(build_target, micro_target, bosh_target, environment_name, deployment_name)
+    def build(build_target, bosh_target, environment_name, _)
       logger = Logger.new(STDERR)
 
       deployments_repository = Bosh::Dev::DeploymentsRepository.new(ENV, path_root: '/tmp')
@@ -19,7 +19,7 @@ module Bosh::Dev::Aws
 
       Bosh::Dev::AutomatedDeploy.new(
         build_target,
-        micro_target,
+        bosh_target,
         deployment_account,
         artifacts_downloader,
       )

@@ -17,7 +17,6 @@ module Bosh::Dev
       builder = builder_for_infrastructure_name(args.infrastructure_name)
       builder.build(
         build_target,
-        args.micro_target,
         args.bosh_target,
         args.environment_name,
         args.deployment_name,
