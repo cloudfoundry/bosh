@@ -1,6 +1,8 @@
 require 'bosh/core/shell'
 
 module Bosh::Dev::VSphere
+  # Requires folder structure:
+  #   ...repo/<env-name>/<deployment-name>/manifest.yml
   class DeploymentAccount
     attr_reader :bosh_user, :bosh_password
 
@@ -8,6 +10,7 @@ module Bosh::Dev::VSphere
       @environment_name = environment_name
       @deployment_name = deployment_name
       @deployments_repository = deployments_repository
+
       @bosh_user = 'admin'
       @bosh_password = 'admin'
     end

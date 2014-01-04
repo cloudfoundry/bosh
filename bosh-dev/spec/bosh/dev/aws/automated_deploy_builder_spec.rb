@@ -17,6 +17,7 @@ module Bosh::Dev::Aws
         deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
         Bosh::Dev::Aws::DeploymentAccount.should_receive(:new).with(
           'fake-environment-name',
+          'fake-deployment-name',
           deployments_repository,
         ).and_return(deployment_account)
 
