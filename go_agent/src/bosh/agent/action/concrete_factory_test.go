@@ -10,6 +10,7 @@ import (
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
+	boshntp "bosh/platform/ntp"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -94,10 +95,11 @@ func TestNewFactoryGetTask(t *testing.T) {
 
 func TestNewFactoryGetState(t *testing.T) {
 	deps, factory := buildFactory()
+	ntpService := boshntp.NewConcreteService(deps.platform.GetFs(), deps.platform.GetDirProvider())
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.platform.GetVitalsService()), action)
+	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.platform.GetVitalsService(), ntpService), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {

@@ -11,6 +11,7 @@ import (
 	boshjobsuper "bosh/jobsupervisor"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
+	boshntp "bosh/platform/ntp"
 	boshsettings "bosh/settings"
 )
 
@@ -33,6 +34,7 @@ func NewFactory(
 	compressor := platform.GetCompressor()
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
+	ntpService := boshntp.NewConcreteService(platform.GetFs(), dirProvider)
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -40,7 +42,7 @@ func NewFactory(
 			"drain":        newDrain(notifier, specService, drainScriptProvider),
 			"fetch_logs":   newLogs(compressor, blobstore, dirProvider),
 			"get_task":     newGetTask(taskService),
-			"get_state":    newGetState(settings, specService, jobSupervisor, vitalsService),
+			"get_state":    newGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
 			"list_disk":    newListDisk(settings, platform),
 			"migrate_disk": newMigrateDisk(settings, platform, dirProvider),
 			"mount_disk":   newMountDisk(settings, platform, dirProvider),

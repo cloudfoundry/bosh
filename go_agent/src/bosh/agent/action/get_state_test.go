@@ -5,6 +5,8 @@ import (
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	boshassert "bosh/assert"
 	fakejobsuper "bosh/jobsupervisor/fakes"
+	boshntp "bosh/platform/ntp"
+	fakentp "bosh/platform/ntp/fakes"
 	boshvitals "bosh/platform/vitals"
 	fakevitals "bosh/platform/vitals/fakes"
 	boshsettings "bosh/settings"
@@ -37,6 +39,10 @@ func TestGetStateRun(t *testing.T) {
 		JobState:     "running",
 		BoshProtocol: "1",
 		Vm:           boshsettings.Vm{Name: "vm-abc-def"},
+		Ntp: boshntp.NTPInfo{
+			Offset:    "0.34958",
+			Timestamp: "12 Oct 17:37:58",
+		},
 	}
 	expectedSpec.Deployment = "fake-deployment"
 
@@ -69,10 +75,18 @@ func TestGetStateRunWithoutCurrentSpec(t *testing.T) {
 		JobState:     "running",
 		BoshProtocol: "1",
 		Vm:           boshsettings.Vm{Name: "vm-abc-def"},
+		Ntp: boshntp.NTPInfo{
+			Offset:    "0.34958",
+			Timestamp: "12 Oct 17:37:58",
+		},
 	}
 
 	state, err := action.Run()
 	assert.NoError(t, err)
+	boshassert.MatchesJsonMap(t, expectedSpec.Ntp, map[string]interface{}{
+		"offset":    "0.34958",
+		"timestamp": "12 Oct 17:37:58",
+	})
 	assert.Equal(t, state, expectedSpec)
 }
 
@@ -123,6 +137,12 @@ func buildGetStateAction(settings boshsettings.Service) (
 	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	specService = fakeas.NewFakeV1Service()
 	vitalsService = fakevitals.NewFakeService()
-	action = newGetState(settings, specService, jobSupervisor, vitalsService)
+	fakeNTPService := &fakentp.FakeService{
+		GetOffsetNTPOffset: boshntp.NTPInfo{
+			Offset:    "0.34958",
+			Timestamp: "12 Oct 17:37:58",
+		},
+	}
+	action = newGetState(settings, specService, jobSupervisor, vitalsService, fakeNTPService)
 	return
 }
