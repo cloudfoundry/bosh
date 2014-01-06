@@ -66,7 +66,7 @@ module Bosh::Stemcell
         :bosh_sudoers,
         # Install GRUB/kernel/etc
         :system_grub,
-      #:system_kernel,
+        #:system_kernel,
       ]
     end
 

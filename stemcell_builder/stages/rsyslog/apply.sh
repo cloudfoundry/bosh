@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 
 set -e
 
@@ -15,11 +14,11 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$gmp_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $gmp_archive
-cd $gmp_basename
-./configure
-make && make install
+  cd src
+  tar zxvf $gmp_archive
+  cd $gmp_basename
+  ./configure
+  make && make install
 "
 
 # nettle
@@ -30,11 +29,11 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$nettle_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $nettle_archive
-cd $nettle_basename
-./configure --disable-openssl
-make && make install
+  cd src
+  tar zxvf $nettle_archive
+  cd $nettle_basename
+  ./configure --disable-openssl
+  make && make install
 "
 
 # gnutls
@@ -45,11 +44,11 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$gnutls_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $gnutls_archive
-cd $gnutls_basename
-PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig ./configure --disable-doc
-make && make install
+  cd src
+  tar zxvf $gnutls_archive
+  cd $gnutls_basename
+  PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig ./configure --disable-doc
+  make && make install
 "
 
 # libestr
@@ -60,11 +59,11 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$libestr_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $libestr_archive
-cd $libestr_basename
-./configure
-make && make install
+  cd src
+  tar zxvf $libestr_archive
+  cd $libestr_basename
+  ./configure
+  make && make install
 "
 
 # json-c
@@ -75,11 +74,11 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$jsonc_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $jsonc_archive
-cd $jsonc_basename
-./configure
-make && make install
+  cd src
+  tar zxvf $jsonc_archive
+  cd $jsonc_basename
+  ./configure
+  make && make install
 "
 
 # librelp
@@ -90,11 +89,11 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$librelp_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $librelp_archive
-cd $librelp_basename
-PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig LD_RUN_PATH=/usr/local/lib ./configure
-make && make install
+  cd src
+  tar zxvf $librelp_archive
+  cd $librelp_basename
+  PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig LD_RUN_PATH=/usr/local/lib ./configure
+  make && make install
 "
 
 # Rsyslog
@@ -105,14 +104,14 @@ mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$rsyslog_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $rsyslog_archive
-cd $rsyslog_basename
-PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig LD_RUN_PATH=/usr/local/lib ./configure --enable-relp --enable-cached-man-pages
-make && make install
+  cd src
+  tar zxvf $rsyslog_archive
+  cd $rsyslog_basename
+  PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig LD_RUN_PATH=/usr/local/lib ./configure --enable-relp --enable-cached-man-pages
+  make && make install
 "
 
-# Configure Rsyslog
+# Add configuration files
 cp $assets_dir/rsyslog.conf $chroot/etc/rsyslog.conf
 cp $assets_dir/rsyslog_upstart.conf $chroot/etc/init/rsyslog.conf
 cp $assets_dir/rsyslog_logrotate.conf $chroot/etc/logrotate.d/rsyslog
@@ -131,10 +130,10 @@ filenames=( auth.log daemon.log debug kern.log lpr.log mail.err mail.info \
 
 for filename in ${filenames[@]}
 do
-    fullpath=/var/log/$filename
-    run_in_bosh_chroot $chroot "
+  fullpath=/var/log/$filename
+  run_in_bosh_chroot $chroot "
     touch ${fullpath} && chown syslog:adm ${fullpath} && chmod 640 ${fullpath}
-    "
+  "
 done
 
 # init.d configuration is different for each OS

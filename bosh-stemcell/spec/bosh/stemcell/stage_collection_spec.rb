@@ -40,7 +40,7 @@ module Bosh::Stemcell
         :bosh_ntpdate,
         :bosh_sudoers,
         :system_grub,
-      #:system_kernel,
+        #:system_kernel,
       ]
     }
 
@@ -140,9 +140,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('ubuntu') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(ubuntu_stages +
-                                                          agent_stages +
-                                                          aws_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + aws_infrastructure_stages)
             end
           end
 
@@ -150,9 +149,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('centos') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(centos_stages +
-                                                          agent_stages +
-                                                          aws_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + aws_infrastructure_stages)
             end
           end
         end
@@ -164,9 +162,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('ubuntu') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(ubuntu_stages +
-                                                          agent_stages +
-                                                          openstack_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + openstack_infrastructure_stages)
             end
           end
 
@@ -174,9 +171,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('centos') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(centos_stages +
-                                                          agent_stages +
-                                                          openstack_centos_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + openstack_centos_infrastructure_stages)
             end
           end
         end
@@ -188,9 +184,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('ubuntu') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(ubuntu_stages +
-                                                          agent_stages +
-                                                          vsphere_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + vsphere_infrastructure_stages)
             end
           end
 
@@ -198,9 +193,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('centos') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(centos_stages +
-                                                          agent_stages +
-                                                          vsphere_centos_infrastructure_stages)
+              expect(stage_collection.all_stages)
+              .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
             end
           end
         end
@@ -223,9 +217,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('ubuntu') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(ubuntu_stages +
-                                                          agent_stages +
-                                                          aws_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + aws_infrastructure_stages)
             end
           end
 
@@ -233,9 +226,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('centos') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(centos_stages +
-                                                          agent_stages +
-                                                          aws_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + aws_infrastructure_stages)
             end
           end
         end
@@ -247,9 +239,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('ubuntu') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(ubuntu_stages +
-                                                          agent_stages +
-                                                          openstack_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + openstack_infrastructure_stages)
             end
           end
 
@@ -257,9 +248,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('centos') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(centos_stages +
-                                                          agent_stages +
-                                                          openstack_centos_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + openstack_centos_infrastructure_stages)
             end
           end
         end
@@ -271,9 +261,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('ubuntu') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(ubuntu_stages +
-                                                          agent_stages +
-                                                          vsphere_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + vsphere_infrastructure_stages)
             end
           end
 
@@ -281,9 +270,8 @@ module Bosh::Stemcell
             let(:operating_system) { OperatingSystem.for('centos') }
 
             it 'has the correct stages' do
-              expect(stage_collection.all_stages).to eq(centos_stages +
-                                                          agent_stages +
-                                                          vsphere_centos_infrastructure_stages)
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
             end
           end
         end
