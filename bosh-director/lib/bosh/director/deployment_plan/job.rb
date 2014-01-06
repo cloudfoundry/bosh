@@ -218,8 +218,7 @@ module Bosh::Director
       end
 
       def parse_release
-        release_name = safe_property(@job_spec, "release", :class => String,
-                                     :optional => true)
+        release_name = safe_property(@job_spec, "release", :class => String, :optional => true)
 
         if release_name.nil?
           if @deployment.releases.size == 1
@@ -244,7 +243,6 @@ module Bosh::Director
         end
 
         template_names = safe_property(@job_spec, "template")
-
         if template_names.is_a?(String)
           template_names = Array(template_names)
         end
@@ -438,11 +436,18 @@ module Bosh::Director
           raise DirectorError, "Can't extract job properties before parsing job templates"
         end
 
-        return collection if @templates.none? { |template| template.properties }
-        return extract_template_properties(collection) if @templates.all? { |template| template.properties }
-        raise JobIncompatibleSpecs, "Job `#{name}' has specs with conflicting property definition styles between" +
-            " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
-            " `properties' and one which doesn't."
+        if @templates.none? { |template| template.properties }
+          return collection
+        end
+
+        if @templates.all? { |template| template.properties }
+          return extract_template_properties(collection)
+        end
+
+        raise JobIncompatibleSpecs,
+          "Job `#{name}' has specs with conflicting property definition styles between" +
+          " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
+          " `properties' and one which doesn't."
       end
 
       def extract_template_properties(collection)

@@ -7,7 +7,6 @@ module Bosh::Director
         result = hash[property]
 
         if options[:class]
-
           if options[:class] == :boolean
             unless result.kind_of?(TrueClass) || result.kind_of?(FalseClass)
               invalid_type(property, options[:class], result)
@@ -20,7 +19,6 @@ module Bosh::Director
               invalid_type(property, options[:class], result)
             end
           end
-
         end
 
         if options[:min] && result < options[:min]
