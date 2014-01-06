@@ -146,6 +146,47 @@ describe Bosh::Deployer::InstanceManager do
     load_deployment.should == @deployer.state.values
   end
 
+  it 'should update a Bosh instance with existing disk_cid where vm_cid missing' do
+    @deployer.stub(:service_ip).and_return('10.0.0.10')
+    spec = Psych.load_file(spec_asset('apply_spec_openstack.yml'))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+
+    disk_cid = '22'
+    @deployer.stub(:run_command)
+    @deployer.stub(:wait_until_agent_ready)
+    @deployer.stub(:wait_until_director_ready)
+    @deployer.stub(:load_apply_spec).and_return(spec)
+    @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
+    @deployer.stub(:persistent_disk_changed?).and_return(false)
+
+    @deployer.state.stemcell_cid = 'SC-CID-UPDATE'
+    @deployer.state.vm_cid = nil
+    @deployer.state.disk_cid = disk_cid
+
+    @agent.should_receive(:run_task).with(:stop)
+    @agent.should_not_receive(:run_task).with(:unmount_disk, disk_cid)
+    @cloud.should_not_receive(:detach_disk)
+    @cloud.should_not_receive(:delete_vm)
+    @cloud.should_receive(:delete_stemcell).with('SC-CID-UPDATE')
+    @cloud.should_receive(:create_stemcell).and_return('SC-CID')
+    @cloud.should_receive(:create_vm).and_return('NEW-VM-CID')
+    @cloud.should_receive(:attach_disk).with('NEW-VM-CID', disk_cid)
+    @agent.should_receive(:run_task).with(:mount_disk, disk_cid).and_return({})
+    @agent.should_receive(:list_disk).and_return([disk_cid])
+    @agent.should_not_receive(:run_task).with(:stop)
+    @agent.should_receive(:run_task).with(:apply, spec)
+    @agent.should_receive(:run_task).with(:start)
+
+    discover_bosh_ip('10.0.0.2', 'NEW-VM-CID')
+    @deployer.update(BOSH_STEMCELL_TGZ, nil)
+
+    @deployer.state.stemcell_cid.should == 'SC-CID'
+    @deployer.state.vm_cid.should_not be_nil
+    @deployer.state.disk_cid.should == disk_cid
+
+    load_deployment.should == @deployer.state.values
+  end
+
   it 'should fail to create a Bosh instance if stemcell CID exists' do
     @deployer.state.stemcell_cid = 'SC-CID'
 
