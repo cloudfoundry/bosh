@@ -40,6 +40,12 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 			p.uuidGen,
 			externalConfigFile,
 		)
+	case boshsettings.BlobstoreTypeLocal:
+		blobstore = newLocalBlobstore(
+			settings.Options,
+			p.platform.GetFs(),
+			p.uuidGen,
+		)
 	default:
 		blobstore = newExternalBlobstore(
 			settings.Type,

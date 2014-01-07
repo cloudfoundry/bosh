@@ -22,6 +22,7 @@ const (
 	BlobstoreTypeDav   = "dav"
 	BlobstoreTypeDummy = "dummy"
 	BlobstoreTypeS3    = "s3"
+	BlobstoreTypeLocal = "local"
 )
 
 type Blobstore struct {
