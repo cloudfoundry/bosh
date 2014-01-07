@@ -18,40 +18,44 @@ type provider struct {
 }
 
 func NewProvider(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (p provider) {
-	fs := platform.GetFs()
-	runner := platform.GetRunner()
 	p.uuidGen = boshuuid.NewGenerator()
-	s3cliConfigPath := filepath.Join(dirProvider.EtcDir(), "s3cli")
-
 	p.platform = platform
 	p.dirProvider = dirProvider
-	p.blobstores = map[string]Blobstore{
-		boshsettings.BlobstoreTypeDav:   newDummyBlobstore(),
-		boshsettings.BlobstoreTypeDummy: newDummyBlobstore(),
-		boshsettings.BlobstoreTypeS3:    newS3Blobstore(fs, runner, p.uuidGen, s3cliConfigPath),
-	}
 	return
 }
 
 func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err error) {
-	blobstore, found := p.blobstores[settings.Type]
+	externalConfigFile := filepath.Join(p.dirProvider.EtcDir(), fmt.Sprintf("blobstore-%s.json", settings.Type))
 
-	if !found {
-		config := filepath.Join(p.dirProvider.EtcDir(), fmt.Sprintf("blobstore-%s.json", settings.Type))
-		blobstore = newExternalBlobstore(settings.Type, p.platform.GetFs(), p.platform.GetRunner(), p.uuidGen, config)
-		err = blobstore.Validate()
-		if err != nil {
-		    err = bosherr.WrapError(err, "Validating blobstore")
-		    return
-		}
+	switch settings.Type {
+	case boshsettings.BlobstoreTypeDav:
+		blobstore = newDummyBlobstore()
+	case boshsettings.BlobstoreTypeDummy:
+		blobstore = newDummyBlobstore()
+	case boshsettings.BlobstoreTypeS3:
+		blobstore = newS3Blobstore(
+			settings.Options,
+			p.platform.GetFs(),
+			p.platform.GetRunner(),
+			p.uuidGen,
+			externalConfigFile,
+		)
+	default:
+		blobstore = newExternalBlobstore(
+			settings.Type,
+			settings.Options,
+			p.platform.GetFs(),
+			p.platform.GetRunner(),
+			p.uuidGen,
+			externalConfigFile,
+		)
 	}
 
 	blobstore = NewSha1Verifiable(blobstore)
 
-	blobstore, err = blobstore.ApplyOptions(settings.Options)
+	err = blobstore.Validate()
 	if err != nil {
-		err = bosherr.WrapError(err, "Applying Options")
-		return
+		err = bosherr.WrapError(err, "Validating blobstore")
 	}
 	return
 }

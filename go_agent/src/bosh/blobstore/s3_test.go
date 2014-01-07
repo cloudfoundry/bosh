@@ -12,15 +12,19 @@ import (
 	"testing"
 )
 
-func TestSettingTheOptions(t *testing.T) {
+func TestS3ValidateWritesConfigFile(t *testing.T) {
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
 
-	_, err := newS3Blobstore(fs, runner, uuidGen, configPath).ApplyOptions(map[string]string{
+	options := map[string]string{
 		"access_key_id":     "some-access-key",
 		"secret_access_key": "some-secret-key",
 		"bucket_name":       "some-bucket",
-	})
-	assert.NoError(t, err)
+	}
+
+	blobstore := newS3Blobstore(options, fs, runner, uuidGen, configPath)
+
+	runner.CommandExistsValue = true
+	assert.NoError(t, blobstore.Validate())
 
 	s3CliConfig, err := fs.ReadFile(configPath)
 	assert.NoError(t, err)
@@ -33,9 +37,19 @@ func TestSettingTheOptions(t *testing.T) {
 	boshassert.MatchesJsonString(t, expectedJson, s3CliConfig)
 }
 
+func TestS3ValidateErrorsWhenCommandNotInPath(t *testing.T) {
+	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
+
+	options := map[string]string{}
+
+	blobstore := newS3Blobstore(options, fs, runner, uuidGen, configPath)
+
+	assert.Error(t, blobstore.Validate())
+}
+
 func TestGet(t *testing.T) {
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+	blobstore := newS3Blobstore(map[string]string{}, fs, runner, uuidGen, configPath)
 
 	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGet")
 	assert.NoError(t, err)
@@ -61,7 +75,7 @@ func TestGet(t *testing.T) {
 
 func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+	blobstore := newS3Blobstore(map[string]string{}, fs, runner, uuidGen, configPath)
 
 	fs.TempFileError = errors.New("fake-error")
 
@@ -74,7 +88,7 @@ func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
 
 func TestGetErrsWhenS3CliErrs(t *testing.T) {
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+	blobstore := newS3Blobstore(map[string]string{}, fs, runner, uuidGen, configPath)
 
 	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGetErrsWhenS3CliErrs")
 	assert.NoError(t, err)
@@ -100,7 +114,7 @@ func TestGetErrsWhenS3CliErrs(t *testing.T) {
 
 func TestCleanUp(t *testing.T) {
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+	blobstore := newS3Blobstore(map[string]string{}, fs, runner, uuidGen, configPath)
 
 	file, err := fs.TempFile("bosh-blobstore-s3-TestCleanUp")
 	assert.NoError(t, err)
@@ -118,7 +132,7 @@ func TestCreate(t *testing.T) {
 	expectedPath, _ := filepath.Abs(fileName)
 
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+	blobstore := newS3Blobstore(map[string]string{}, fs, runner, uuidGen, configPath)
 
 	uuidGen.GeneratedUuid = "some-uuid"
 
@@ -132,15 +146,6 @@ func TestCreate(t *testing.T) {
 		"s3", "-c", configPath, "put",
 		expectedPath, "some-uuid",
 	}, runner.RunCommands[0])
-}
-
-func TestS3Valid(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
-
-	assert.Error(t, blobstore.Validate())
-	runner.CommandExistsValue = true
-	assert.NoError(t, blobstore.Validate())
 }
 
 func getS3BlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator, configPath string) {

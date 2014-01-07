@@ -15,20 +15,22 @@ type external struct {
 	uuidGen        boshuuid.Generator
 	configFilePath string
 	provider       string
+	options        map[string]string
 }
 
-func newExternalBlobstore(provider string, fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
+func newExternalBlobstore(provider string, options map[string]string, fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
 	return external{
 		provider:       provider,
 		fs:             fs,
 		runner:         runner,
 		uuidGen:        uuidGen,
 		configFilePath: configFilePath,
+		options:        options,
 	}
 }
 
-func (blobstore external) ApplyOptions(opts map[string]string) (updated Blobstore, err error) {
-	configJson, err := json.Marshal(opts)
+func (blobstore external) writeConfigFile() (err error) {
+	configJson, err := json.Marshal(blobstore.options)
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling JSON")
 		return
@@ -39,8 +41,6 @@ func (blobstore external) ApplyOptions(opts map[string]string) (updated Blobstor
 		err = bosherr.WrapError(err, "Writing config file")
 		return
 	}
-
-	updated = blobstore
 	return
 }
 
@@ -87,7 +87,9 @@ func (blobstore external) Create(fileName string) (blobId string, fingerprint st
 func (blobstore external) Validate() (err error) {
 	if !blobstore.runner.CommandExists(blobstore.executable()) {
 		err = bosherr.New("executable %s not found in PATH", blobstore.executable())
+		return
 	}
+	err = blobstore.writeConfigFile()
 	return
 }
 

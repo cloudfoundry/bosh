@@ -6,11 +6,6 @@ func newDummyBlobstore() (blobstore dummy) {
 	return
 }
 
-func (blobstore dummy) ApplyOptions(opts map[string]string) (updated Blobstore, err error) {
-	updated = blobstore
-	return
-}
-
 func (blobstore dummy) Get(blobId, fingerprint string) (fileName string, err error) {
 	return
 }

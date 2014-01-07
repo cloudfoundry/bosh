@@ -1,13 +1,6 @@
 package fakes
 
-import (
-	boshblob "bosh/blobstore"
-)
-
 type FakeBlobstore struct {
-	Options                      map[string]string
-	ApplyOptionsUpdatedBlobstore boshblob.Blobstore
-
 	GetBlobIds      []string
 	GetFingerprints []string
 	GetFileName     string
@@ -20,20 +13,12 @@ type FakeBlobstore struct {
 	CreateBlobId      string
 	CreateFingerprint string
 	CreateErr         error
+
+	ValidateError error
 }
 
 func NewFakeBlobstore() *FakeBlobstore {
 	return &FakeBlobstore{}
-}
-
-func (bs *FakeBlobstore) ApplyOptions(opts map[string]string) (updated boshblob.Blobstore, err error) {
-	bs.Options = opts
-	updated = bs
-
-	if bs.ApplyOptionsUpdatedBlobstore != nil {
-		updated = bs.ApplyOptionsUpdatedBlobstore
-	}
-	return
 }
 
 func (bs *FakeBlobstore) Get(blobId, fingerprint string) (fileName string, err error) {
@@ -60,5 +45,5 @@ func (bs *FakeBlobstore) Create(fileName string) (blobId string, fingerprint str
 }
 
 func (bs *FakeBlobstore) Validate() (err error) {
-	return
+	return bs.ValidateError
 }

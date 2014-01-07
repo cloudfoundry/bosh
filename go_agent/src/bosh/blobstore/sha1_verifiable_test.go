@@ -3,24 +3,22 @@ package blobstore_test
 import (
 	boshblob "bosh/blobstore"
 	fakeblob "bosh/blobstore/fakes"
+	bosherr "bosh/errors"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestSha1VerifiableApplyOptions(t *testing.T) {
+func TestSha1VerifiableValidate(t *testing.T) {
 	innerBlobstore, sha1Verifiable := buildSha1Verifiable()
 
-	updatedInnerBlobstore := &fakeblob.FakeBlobstore{}
-	innerBlobstore.ApplyOptionsUpdatedBlobstore = updatedInnerBlobstore
-
-	expectedOptions := map[string]string{"foo": "bar"}
-
-	updatedSha1Verifiable, err := sha1Verifiable.ApplyOptions(expectedOptions)
-
+	err := sha1Verifiable.Validate()
 	assert.NoError(t, err)
-	assert.Equal(t, innerBlobstore.Options, expectedOptions)
-	assert.Equal(t, updatedSha1Verifiable, boshblob.NewSha1Verifiable(updatedInnerBlobstore))
+
+	innerBlobstore.ValidateError = bosherr.New("fake-error")
+	err = sha1Verifiable.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fake-error")
 }
 
 func TestSha1VerifiableGetWhenSha1IsCorrect(t *testing.T) {

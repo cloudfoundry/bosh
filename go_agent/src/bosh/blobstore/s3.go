@@ -12,16 +12,17 @@ type s3 struct {
 	fs             boshsys.FileSystem
 	runner         boshsys.CmdRunner
 	uuidGen        boshuuid.Generator
-	bucketName     string
 	configFilePath string
+	options        map[string]string
 }
 
-func newS3Blobstore(fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
+func newS3Blobstore(options map[string]string, fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
 	return s3{
 		fs:             fs,
 		runner:         runner,
 		uuidGen:        uuidGen,
 		configFilePath: configFilePath,
+		options:        options,
 	}
 }
 
@@ -40,13 +41,11 @@ type s3CliConfig struct {
 //
 // If access_key_id and secret_access_key are not present, the blobstore client
 // operates in read only mode as a simple_blobstore_client
-func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err error) {
-	blobstore.bucketName = opts["bucket_name"]
-
+func (blobstore s3) writeConfigFile() (err error) {
 	config := s3CliConfig{
-		AccessKey: opts["access_key_id"],
-		Bucket:    opts["bucket_name"],
-		SecretKey: opts["secret_access_key"],
+		AccessKey: blobstore.options["access_key_id"],
+		Bucket:    blobstore.options["bucket_name"],
+		SecretKey: blobstore.options["secret_access_key"],
 	}
 
 	configJson, err := json.Marshal(config)
@@ -61,7 +60,6 @@ func (blobstore s3) ApplyOptions(opts map[string]string) (updated Blobstore, err
 		return
 	}
 
-	updated = blobstore
 	return
 }
 
@@ -113,6 +111,8 @@ func (blobstore s3) Create(fileName string) (blobId string, fingerprint string, 
 func (blobstore s3) Validate() (err error) {
 	if !blobstore.runner.CommandExists("s3") {
 		err = bosherr.New("executable s3 not found in PATH")
+		return
 	}
+	err = blobstore.writeConfigFile()
 	return
 }
