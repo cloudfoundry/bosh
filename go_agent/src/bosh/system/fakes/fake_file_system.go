@@ -31,6 +31,8 @@ type FakeFileSystem struct {
 	CopyDirEntriesSrcPath string
 	CopyDirEntriesDstPath string
 
+	CopyFileError error
+
 	RenameError    error
 	RenameOldPaths []string
 	RenameNewPaths []string
@@ -171,6 +173,16 @@ func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 		fs.Files[newPath] = fs.Files[filePath]
 	}
 
+	return
+}
+
+func (fs *FakeFileSystem) CopyFile(srcPath, dstPath string) (err error) {
+	if fs.CopyFileError != nil {
+		err = fs.CopyFileError
+		return
+	}
+
+	fs.Files[dstPath] = fs.Files[srcPath]
 	return
 }
 

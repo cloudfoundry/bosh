@@ -3,3 +3,4 @@
 set -e
 
 $(dirname $0)/go build -o out/bosh-agent bosh/main
+$(dirname $0)/go build -o out/dav-cli bosh/davcli/main

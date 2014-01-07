@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_3" assert-keyword="false" jdk-15="false" project-jdk-name="Go sdk go1.2 darwin/amd64" project-jdk-type="Google Go SDK">
+  <component name="IdProvider" IDEtalkID="612E25EC5CCB09DB7B36786454E88DB1" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_3" assert-keyword="false" jdk-15="false" project-jdk-name="Go SDK go1.2 darwin/amd64" project-jdk-type="Google Go SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>

@@ -246,6 +246,9 @@ module Bosh::OpenStackCloud
           wait_resource(server, :active, :state)
         rescue Bosh::Clouds::CloudError => e
           @logger.warn("Failed to create server: #{e.message}")
+
+          with_openstack { server.destroy }
+
           raise Bosh::Clouds::VMCreationFailed.new(true)
         end
 

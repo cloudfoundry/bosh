@@ -27,6 +27,7 @@ type FileSystem interface {
 	// Overwrites files in the dstPath but does not remove
 	// files from dstPath that are not found in srcPath (= adds/overwrites).
 	CopyDirEntries(srcPath, dstPath string) (err error)
+	CopyFile(srcPath, dstPath string) (err error)
 
 	// Returns *unique* temporary file/dir with a custom prefix
 	TempFile(prefix string) (file *os.File, err error)
