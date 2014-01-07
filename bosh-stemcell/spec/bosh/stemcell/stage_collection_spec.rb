@@ -16,15 +16,15 @@ module Bosh::Stemcell
         :base_debootstrap,
         :base_apt,
         :bosh_dpkg_list,
-        :bosh_users,
-        :bosh_monit,
         :bosh_sysstat,
         :bosh_sysctl,
+        :system_kernel,
+        :bosh_users,
+        :bosh_monit,
         :bosh_ntpdate,
         :bosh_sudoers,
         :rsyslog,
         :system_grub,
-        :system_kernel,
       ]
     }
 

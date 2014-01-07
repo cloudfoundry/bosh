@@ -38,9 +38,9 @@ module Bosh::Stemcell
     def operating_system_stages
       case operating_system
         when OperatingSystem::Centos then
-          [:base_centos, :base_yum] + hacked_centos_common
+          centos_os_stages + common_os_stages
         when OperatingSystem::Ubuntu then
-          [:base_debootstrap, :base_apt, :bosh_dpkg_list] + common_stages
+          ubuntu_os_stages + common_os_stages
       end
     end
 
@@ -49,29 +49,49 @@ module Bosh::Stemcell
         when Infrastructure::Aws then
           aws_stages
         when Infrastructure::OpenStack then
-          operating_system.instance_of?(OperatingSystem::Centos) ? hacked_centos_openstack : openstack_stages
+          if operating_system.instance_of?(OperatingSystem::Centos)
+            centos_openstack_stages
+          else
+            openstack_stages
+          end
         when Infrastructure::Vsphere then
-          operating_system.instance_of?(OperatingSystem::Centos) ? hacked_centos_vsphere : vsphere_stages
+          if operating_system.instance_of?(OperatingSystem::Centos)
+            centos_vsphere_stages
+          else
+            vsphere_stages
+          end
       end
     end
 
-    def hacked_centos_common
+    def centos_os_stages
+      [:base_centos, :base_yum]
+    end
+
+    def ubuntu_os_stages
+      [
+        :base_debootstrap,
+        :base_apt,
+        :bosh_dpkg_list,
+        :bosh_sysstat,
+        :bosh_sysctl,
+        :system_kernel,
+      ]
+    end
+
+    def common_os_stages
       [
         # Bosh steps
         :bosh_users,
         :bosh_monit,
-        #:bosh_sysstat,
-        #:bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
         :rsyslog,
         # Install GRUB/kernel/etc
         :system_grub,
-        #:system_kernel,
       ]
     end
 
-    def hacked_centos_vsphere
+    def centos_vsphere_stages
       [
         #:system_open_vm_tools,
         :system_parameters,
@@ -82,11 +102,11 @@ module Bosh::Stemcell
         :image_vsphere_vmx,
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
-        :stemcell
+        :stemcell,
       ]
     end
 
-    def hacked_centos_openstack
+    def centos_openstack_stages
       [
         # Misc
         :system_openstack_network_centos,
@@ -100,23 +120,7 @@ module Bosh::Stemcell
         :image_openstack_qcow2,
         :image_openstack_prepare_stemcell,
         # Final stemcell
-        :stemcell_openstack
-      ]
-    end
-
-    def common_stages
-      [
-        # Bosh steps
-        :bosh_users,
-        :bosh_monit,
-        :bosh_sysstat,
-        :bosh_sysctl,
-        :bosh_ntpdate,
-        :bosh_sudoers,
-        :rsyslog,
-        # Install GRUB/kernel/etc
-        :system_grub,
-        :system_kernel,
+        :stemcell_openstack,
       ]
     end
 
@@ -136,7 +140,7 @@ module Bosh::Stemcell
         :image_aws_update_grub,
         :image_aws_prepare_stemcell,
         # Final stemcell
-        :stemcell
+        :stemcell,
       ]
     end
 
@@ -157,7 +161,7 @@ module Bosh::Stemcell
         :image_openstack_qcow2,
         :image_openstack_prepare_stemcell,
         # Final stemcell
-        :stemcell_openstack
+        :stemcell_openstack,
       ]
     end
 
@@ -176,7 +180,7 @@ module Bosh::Stemcell
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
         # Final stemcell
-        :stemcell
+        :stemcell,
       ]
     end
   end
