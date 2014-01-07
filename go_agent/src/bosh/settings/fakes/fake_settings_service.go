@@ -13,6 +13,7 @@ type FakeSettingsService struct {
 	MbusUrl   string
 	Disks     boshsettings.Disks
 	DefaultIp string
+	Ips       []string
 }
 
 func (service *FakeSettingsService) Refresh() (err error) {
@@ -30,7 +31,6 @@ func (service *FakeSettingsService) GetAgentId() string {
 
 func (service *FakeSettingsService) GetVm() boshsettings.Vm {
 	return service.Vm
-
 }
 
 func (service *FakeSettingsService) GetMbusUrl() string {
@@ -43,4 +43,8 @@ func (service *FakeSettingsService) GetDisks() boshsettings.Disks {
 
 func (service *FakeSettingsService) GetDefaultIp() (ip string, found bool) {
 	return service.DefaultIp, service.DefaultIp != ""
+}
+
+func (service *FakeSettingsService) GetIps() []string {
+	return service.Ips
 }

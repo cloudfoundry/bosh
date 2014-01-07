@@ -107,6 +107,15 @@ func (n Networks) DefaultIp() (ip string, found bool) {
 	return
 }
 
+func (n Networks) Ips() (ips []string) {
+	for _, net := range n {
+		if net.Ip != "" {
+			ips = append(ips, net.Ip)
+		}
+	}
+	return
+}
+
 //{
 //	"agent_id": "bm-xxxxxxxx",
 //	"blobstore": {

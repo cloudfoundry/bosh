@@ -1,6 +1,9 @@
 package agent
 
 import (
+	boshalert "bosh/agent/alert"
+	fakealert "bosh/agent/alert/fakes"
+	fakejobsup "bosh/jobsupervisor/fakes"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	fakembus "bosh/mbus/fakes"
@@ -58,11 +61,31 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 	assert.Equal(t, deps.platform.FakeVitalsService.GetVitals, hb.Vitals)
 }
 
+func TestRunSetsTheCallbackForJobFailuresMonitoring(t *testing.T) {
+	deps, agent := buildAgent()
+
+	builtAlert := boshalert.Alert{Id: "some built alert id"}
+	deps.alertBuilder.BuildAlert = builtAlert
+
+	err := agent.Run()
+	assert.NoError(t, err)
+	assert.NotEqual(t, deps.handler.SendToHealthManagerTopic, "alert")
+
+	failureAlert := boshalert.MonitAlert{Id: "some random id"}
+	deps.jobSupervisor.OnJobFailure(failureAlert)
+
+	assert.Equal(t, deps.alertBuilder.BuildInput, failureAlert)
+	assert.Equal(t, deps.handler.SendToHealthManagerTopic, "alert")
+	assert.Equal(t, deps.handler.SendToHealthManagerPayload, builtAlert)
+}
+
 type agentDeps struct {
 	logger           boshlog.Logger
 	handler          *fakembus.FakeHandler
 	platform         *fakeplatform.FakePlatform
 	actionDispatcher *FakeActionDispatcher
+	alertBuilder     *fakealert.FakeAlertBuilder
+	jobSupervisor    *fakejobsup.FakeJobSupervisor
 }
 
 func buildAgent() (deps agentDeps, agent agent) {
@@ -71,8 +94,10 @@ func buildAgent() (deps agentDeps, agent agent) {
 		handler:          &fakembus.FakeHandler{},
 		platform:         fakeplatform.NewFakePlatform(),
 		actionDispatcher: &FakeActionDispatcher{},
+		alertBuilder:     fakealert.NewFakeAlertBuilder(),
+		jobSupervisor:    fakejobsup.NewFakeJobSupervisor(),
 	}
 
-	agent = New(deps.logger, deps.handler, deps.platform, deps.actionDispatcher)
+	agent = New(deps.logger, deps.handler, deps.platform, deps.actionDispatcher, deps.alertBuilder, deps.jobSupervisor)
 	return
 }

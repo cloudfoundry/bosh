@@ -52,3 +52,7 @@ func (service *concreteService) GetDisks() Disks {
 func (service *concreteService) GetDefaultIp() (ip string, found bool) {
 	return service.settings.Networks.DefaultIp()
 }
+
+func (service *concreteService) GetIps() (ips []string) {
+	return service.settings.Networks.Ips()
+}

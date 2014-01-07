@@ -67,3 +67,14 @@ func TestGetDefaultIp(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, ip, "xx.xx.xx.xx")
 }
+
+func TestGetIps(t *testing.T) {
+	networks := Networks{
+		"bosh":  Network{Ip: "xx.xx.xx.xx"},
+		"vip":   Network{Ip: "zz.zz.zz.zz"},
+		"other": Network{},
+	}
+	settings := Settings{Networks: networks}
+	ips := NewService(settings, nil).GetIps()
+	assert.Equal(t, ips, []string{"xx.xx.xx.xx", "zz.zz.zz.zz"})
+}

@@ -1,5 +1,7 @@
 package fakes
 
+import boshjobsup "bosh/jobsupervisor"
+
 type FakeJobSupervisor struct {
 	Reloaded  bool
 	ReloadErr error
@@ -13,6 +15,8 @@ type FakeJobSupervisor struct {
 	StopErr error
 
 	StatusStatus string
+
+	OnJobFailure boshjobsup.JobFailureHandler
 }
 
 type AddJobArgs struct {
@@ -56,5 +60,10 @@ func (m *FakeJobSupervisor) Stop() (err error) {
 
 func (m *FakeJobSupervisor) Status() (status string) {
 	status = m.StatusStatus
+	return
+}
+
+func (m *FakeJobSupervisor) MonitorJobFailures(handler boshjobsup.JobFailureHandler) (err error) {
+	m.OnJobFailure = handler
 	return
 }

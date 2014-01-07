@@ -1,21 +1,26 @@
 package jobsupervisor
 
 import (
+	boshalert "bosh/agent/alert"
 	bosherr "bosh/errors"
 	boshmonit "bosh/jobsupervisor/monit"
 	boshlog "bosh/logger"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"path/filepath"
 )
 
 type monitJobSupervisor struct {
-	fs          boshsys.FileSystem
-	runner      boshsys.CmdRunner
-	client      boshmonit.Client
-	logger      boshlog.Logger
-	dirProvider boshdir.DirectoriesProvider
+	fs                    boshsys.FileSystem
+	runner                boshsys.CmdRunner
+	client                boshmonit.Client
+	logger                boshlog.Logger
+	dirProvider           boshdir.DirectoriesProvider
+	jobFailuresServerPort int
 }
 
 const MonitTag = "Monit Job Supervisor"
@@ -25,8 +30,16 @@ func NewMonitJobSupervisor(
 	runner boshsys.CmdRunner,
 	client boshmonit.Client,
 	logger boshlog.Logger,
-	dirProvider boshdir.DirectoriesProvider) (m monitJobSupervisor) {
-	return monitJobSupervisor{fs: fs, runner: runner, client: client, logger: logger, dirProvider: dirProvider}
+	dirProvider boshdir.DirectoriesProvider,
+) (m monitJobSupervisor) {
+	return monitJobSupervisor{
+		fs:                    fs,
+		runner:                runner,
+		client:                client,
+		logger:                logger,
+		dirProvider:           dirProvider,
+		jobFailuresServerPort: 5678,
+	}
 }
 
 func (m monitJobSupervisor) Reload() (err error) {
@@ -105,5 +118,34 @@ func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath stri
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to job config file")
 	}
+	return
+}
+
+func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err error) {
+	alertHandler := func(w http.ResponseWriter, req *http.Request) {
+		bodyBytes, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+
+		monitAlert := boshalert.MonitAlert{}
+		err = json.Unmarshal(bodyBytes, &monitAlert)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+
+		err = handler(monitAlert)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+
+		w.WriteHeader(200)
+	}
+
+	serverAddr := fmt.Sprintf(":%d", m.jobFailuresServerPort)
+	err = http.ListenAndServe(serverAddr, http.HandlerFunc(alertHandler))
 	return
 }

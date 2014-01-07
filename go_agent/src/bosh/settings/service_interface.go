@@ -9,4 +9,5 @@ type Service interface {
 	GetMbusUrl() string
 	GetDisks() Disks
 	GetDefaultIp() (ip string, found bool)
+	GetIps() (ips []string)
 }

@@ -3,6 +3,7 @@ package app
 import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
+	boshalert "bosh/agent/alert"
 	boshappl "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
 	boshcomp "bosh/agent/compiler"
@@ -115,8 +116,9 @@ func (app app) Run(args []string) (err error) {
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
+	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
-	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher)
+	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher, alertBuilder, jobSupervisor)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")

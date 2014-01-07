@@ -1,65 +1,69 @@
 package jobsupervisor
 
 import (
+	boshalert "bosh/agent/alert"
 	boshmonit "bosh/jobsupervisor/monit"
 	fakemonit "bosh/jobsupervisor/monit/fakes"
 	boshlog "bosh/logger"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
+	"bytes"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
 
 func TestReload(t *testing.T) {
-	_, runner, _, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 	err := monit.Reload()
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(runner.RunCommands))
-	assert.Equal(t, []string{"monit", "reload"}, runner.RunCommands[0])
+	assert.Equal(t, 1, len(deps.runner.RunCommands))
+	assert.Equal(t, []string{"monit", "reload"}, deps.runner.RunCommands[0])
 }
 
 func TestStartStartsEachMonitServiceInGroupVcap(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.ServicesInGroupServices = []string{"fake-service"}
+	deps.client.ServicesInGroupServices = []string{"fake-service"}
 
 	err := monit.Start()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "vcap", client.ServicesInGroupName)
-	assert.Equal(t, 1, len(client.StartServiceNames))
-	assert.Equal(t, "fake-service", client.StartServiceNames[0])
+	assert.Equal(t, "vcap", deps.client.ServicesInGroupName)
+	assert.Equal(t, 1, len(deps.client.StartServiceNames))
+	assert.Equal(t, "fake-service", deps.client.StartServiceNames[0])
 }
 
 func TestStopStopsEachMonitServiceInGroupVcap(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.ServicesInGroupServices = []string{"fake-service"}
+	deps.client.ServicesInGroupServices = []string{"fake-service"}
 
 	err := monit.Stop()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "vcap", client.ServicesInGroupName)
-	assert.Equal(t, 1, len(client.StopServiceNames))
-	assert.Equal(t, "fake-service", client.StopServiceNames[0])
+	assert.Equal(t, "vcap", deps.client.ServicesInGroupName)
+	assert.Equal(t, 1, len(deps.client.StopServiceNames))
+	assert.Equal(t, "fake-service", deps.client.StopServiceNames[0])
 }
 
 func TestAddJob(t *testing.T) {
-	fs, _, _, monit := buildMonitJobSupervisor()
-	fs.WriteToFile("/some/config/path", "some config content")
+	deps, monit := buildMonitJobSupervisor()
+	deps.fs.WriteToFile("/some/config/path", "some config content")
 	monit.AddJob("router", 0, "/some/config/path")
 
-	writtenConfig, err := fs.ReadFile(monit.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
+	writtenConfig, err := deps.fs.ReadFile(monit.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
 	assert.NoError(t, err)
 	assert.Equal(t, writtenConfig, "some config content")
 }
 
 func TestStatusReturnsRunningWhenAllServicesAreMonitoredAndRunning(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.StatusStatus = &fakemonit.FakeMonitStatus{
+	deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
 			boshmonit.Service{Monitored: true, Status: "running"},
 			boshmonit.Service{Monitored: true, Status: "running"},
@@ -71,9 +75,9 @@ func TestStatusReturnsRunningWhenAllServicesAreMonitoredAndRunning(t *testing.T)
 }
 
 func TestStatusReturnsFailingWhenAllServicesAreMonitoredAndAtLeastOneServiceIsFailing(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.StatusStatus = &fakemonit.FakeMonitStatus{
+	deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
 			boshmonit.Service{Monitored: true, Status: "failing"},
 			boshmonit.Service{Monitored: true, Status: "running"},
@@ -85,9 +89,9 @@ func TestStatusReturnsFailingWhenAllServicesAreMonitoredAndAtLeastOneServiceIsFa
 }
 
 func TestStatusReturnsFailingWhenAtLeastOneServiceIsNotMonitored(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.StatusStatus = &fakemonit.FakeMonitStatus{
+	deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
 			boshmonit.Service{Monitored: false, Status: "running"},
 			boshmonit.Service{Monitored: true, Status: "running"},
@@ -99,9 +103,9 @@ func TestStatusReturnsFailingWhenAtLeastOneServiceIsNotMonitored(t *testing.T) {
 }
 
 func TestStatusReturnsStartWhenAtLeastOneServiceIsStarting(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.StatusStatus = &fakemonit.FakeMonitStatus{
+	deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
 		Services: []boshmonit.Service{
 			boshmonit.Service{Monitored: true, Status: "failing"},
 			boshmonit.Service{Monitored: true, Status: "starting"},
@@ -114,20 +118,109 @@ func TestStatusReturnsStartWhenAtLeastOneServiceIsStarting(t *testing.T) {
 }
 
 func TestStatusReturnsUnknownWhenError(t *testing.T) {
-	_, _, client, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	client.StatusErr = errors.New("fake-monit-client-error")
+	deps.client.StatusErr = errors.New("fake-monit-client-error")
 
 	status := monit.Status()
 	assert.Equal(t, "unknown", status)
 }
 
-func buildMonitJobSupervisor() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, client *fakemonit.FakeMonitClient, monit monitJobSupervisor) {
-	fs = &fakesys.FakeFileSystem{}
-	runner = &fakesys.FakeCmdRunner{}
-	client = fakemonit.NewFakeMonitClient()
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-	monit = NewMonitJobSupervisor(fs, runner, client, logger, dirProvider)
+func TestMonitorJobFailures(t *testing.T) {
+	var handledAlert boshalert.MonitAlert
+
+	failureHandler := func(alert boshalert.MonitAlert) (err error) {
+		handledAlert = alert
+		return
+	}
+
+	_, monit := buildMonitJobSupervisor()
+
+	monit.jobFailuresServerPort = getJobFailureServerPort()
+	go monit.MonitorJobFailures(failureHandler)
+
+	msg := `{
+		"id": "1304319946.0@localhost",
+		"service": "nats",
+		"event": "does not exist",
+		"action": "restart",
+		"date": "Sun, 22 May 2011 20:07:41 +0500",
+		"description": "process is not running"
+	}`
+
+	resp := doJobFailureReq(msg, monit.jobFailuresServerPort)
+
+	assert.Equal(t, resp.StatusCode, 200)
+	assert.Equal(t, handledAlert, boshalert.MonitAlert{
+		Id:          "1304319946.0@localhost",
+		Service:     "nats",
+		Event:       "does not exist",
+		Action:      "restart",
+		Date:        "Sun, 22 May 2011 20:07:41 +0500",
+		Description: "process is not running",
+	})
+}
+
+func TestMonitorJobFailuresHandlesInvalidJson(t *testing.T) {
+	failureHandler := func(alert boshalert.MonitAlert) (err error) {
+		return
+	}
+	_, monit := buildMonitJobSupervisor()
+
+	monit.jobFailuresServerPort = getJobFailureServerPort()
+	go monit.MonitorJobFailures(failureHandler)
+
+	resp := doJobFailureReq(`{ "id": "1304319946.0@localhost", `, monit.jobFailuresServerPort)
+
+	assert.Equal(t, resp.StatusCode, 500)
+}
+
+func TestMonitorJobFailuresHandlesHandlerError(t *testing.T) {
+	failureHandler := func(alert boshalert.MonitAlert) (err error) {
+		err = errors.New("Oops")
+		return
+	}
+	_, monit := buildMonitJobSupervisor()
+
+	monit.jobFailuresServerPort = getJobFailureServerPort()
+	go monit.MonitorJobFailures(failureHandler)
+
+	resp := doJobFailureReq(`{ "id": "1304319946.0@localhost" }`, monit.jobFailuresServerPort)
+
+	assert.Equal(t, resp.StatusCode, 500)
+}
+
+func doJobFailureReq(body string, port int) (resp *http.Response) {
+	msg := bytes.NewReader([]byte(body))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("http://0.0.0.0:%d/job-failure", port), msg)
+	resp, _ = http.DefaultClient.Do(req)
 	return
+}
+
+type monitJobSupDeps struct {
+	fs          *fakesys.FakeFileSystem
+	runner      *fakesys.FakeCmdRunner
+	client      *fakemonit.FakeMonitClient
+	logger      boshlog.Logger
+	dirProvider boshdir.DirectoriesProvider
+}
+
+func buildMonitJobSupervisor() (deps monitJobSupDeps, monit monitJobSupervisor) {
+	deps = monitJobSupDeps{
+		fs:          &fakesys.FakeFileSystem{},
+		runner:      &fakesys.FakeCmdRunner{},
+		client:      fakemonit.NewFakeMonitClient(),
+		logger:      boshlog.NewLogger(boshlog.LEVEL_NONE),
+		dirProvider: boshdir.NewDirectoriesProvider("/var/vcap"),
+	}
+
+	monit = NewMonitJobSupervisor(deps.fs, deps.runner, deps.client, deps.logger, deps.dirProvider)
+	return
+}
+
+var jobFailureServerPort int = 5000
+
+func getJobFailureServerPort() int {
+	jobFailureServerPort++
+	return jobFailureServerPort
 }

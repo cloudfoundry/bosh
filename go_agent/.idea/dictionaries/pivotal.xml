@@ -3,6 +3,7 @@
     <words>
       <w>async</w>
       <w>blobstore</w>
+      <w>boshalert</w>
       <w>boshassert</w>
       <w>boshblob</w>
       <w>boshdisk</w>
@@ -13,7 +14,9 @@
       <w>boshstats</w>
       <w>boshsys</w>
       <w>fakeaction</w>
+      <w>fakealert</w>
       <w>fakeblob</w>
+      <w>fakejobsup</w>
       <w>fakembus</w>
       <w>fakemon</w>
       <w>fakeplatform</w>
