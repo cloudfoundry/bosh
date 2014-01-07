@@ -32,13 +32,13 @@ module Bosh::Stemcell
       [
         :base_centos,
         :base_yum,
-        :rsyslog,
         :bosh_users,
         :bosh_monit,
         #:bosh_sysstat,
         #:bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
+        :rsyslog,
         :system_grub,
         #:system_kernel,
       ]
