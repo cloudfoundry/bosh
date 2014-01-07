@@ -96,7 +96,7 @@ func TestRunCommandWithInput(t *testing.T) {
 func TestCommandExists(t *testing.T) {
 	runner := createRunner()
 
-	assert.True(t, runner.CommandExists("cd"))
+	assert.True(t, runner.CommandExists("env"))
 	assert.False(t, runner.CommandExists("absolutely-does-not-exist-ever-please-unicorns"))
 }
 
