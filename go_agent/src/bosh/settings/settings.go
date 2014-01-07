@@ -18,16 +18,14 @@ type Settings struct {
 	Vm        Vm
 }
 
-type BlobstoreType string
-
 const (
-	BlobstoreTypeDav   BlobstoreType = "dav"
-	BlobstoreTypeDummy               = "dummy"
-	BlobstoreTypeS3                  = "s3"
+	BlobstoreTypeDav   = "dav"
+	BlobstoreTypeDummy = "dummy"
+	BlobstoreTypeS3    = "s3"
 )
 
 type Blobstore struct {
-	Type    BlobstoreType `json:"provider"`
+	Type    string `json:"provider"`
 	Options map[string]string
 }
 

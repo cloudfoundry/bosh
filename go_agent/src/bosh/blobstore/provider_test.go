@@ -1,7 +1,6 @@
 package blobstore
 
 import (
-	boshplatform "bosh/platform"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -51,7 +50,44 @@ func TestGetS3(t *testing.T) {
 	assert.Equal(t, blobstore, expectedBlobstore)
 }
 
-func buildProvider() (platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider, provider provider) {
+func TestGetExternalWhenExternalCommandInPath(t *testing.T) {
+	platform, dirProvider, provider := buildProvider()
+	options := map[string]string{
+		"key": "value",
+	}
+
+	platform.Runner.CommandExistsValue = true
+	blobstore, err := provider.Get(boshsettings.Blobstore{
+		Type:    "fake-external-type",
+		Options: options,
+	})
+	assert.NoError(t, err)
+
+	expectedExternalConfigPath := filepath.Join(dirProvider.EtcDir(), "blobstore-fake-external-type.json")
+	expectedBlobstore := newExternalBlobstore("fake-external-type", platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedExternalConfigPath)
+	expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
+	expectedBlobstore, err = expectedBlobstore.ApplyOptions(options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, blobstore, expectedBlobstore)
+
+}
+
+func TestGetExternalErrsWhenExternalCommandNotInPath(t *testing.T) {
+	platform, _, provider := buildProvider()
+	options := map[string]string{
+		"key": "value",
+	}
+
+	platform.Runner.CommandExistsValue = false
+	_, err := provider.Get(boshsettings.Blobstore{
+		Type:    "fake-external-type",
+		Options: options,
+	})
+	assert.Error(t, err)
+}
+
+func buildProvider() (platform *fakeplatform.FakePlatform, dirProvider boshdir.DirectoriesProvider, provider provider) {
 	platform = fakeplatform.NewFakePlatform()
 	dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 	provider = NewProvider(platform, dirProvider)
