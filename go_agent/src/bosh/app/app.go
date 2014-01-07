@@ -48,17 +48,17 @@ func (app app) Run(args []string) (err error) {
 
 	dirProvider := boshdirs.NewDirectoriesProvider(opts.BaseDirectory)
 
-	infProvider := boshinf.NewProvider(app.logger)
-	infrastructure, err := infProvider.Get(opts.InfrastructureName)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting infrastructure")
-		return
-	}
-
 	platformProvider := boshplatform.NewProvider(app.logger, dirProvider)
 	platform, err := platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting platform")
+		return
+	}
+
+	infProvider := boshinf.NewProvider(app.logger, platform.GetFs(), dirProvider)
+	infrastructure, err := infProvider.Get(opts.InfrastructureName)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting infrastructure")
 		return
 	}
 
