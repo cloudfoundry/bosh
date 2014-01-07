@@ -17,7 +17,7 @@ To publish:
 
     nats-pub agent.123-456-789 '{"method":"apply","arguments":[{"packages":[{"name":"package-name", "version":"package-version"}]}]}' -s nats://localhost:4222
 
-# Setting up a workstation for Go Agent development
+# Set up a workstation for development
 
 Note: This guide assumes a few things:
 
