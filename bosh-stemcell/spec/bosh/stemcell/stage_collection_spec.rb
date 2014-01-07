@@ -34,13 +34,10 @@ module Bosh::Stemcell
         :base_yum,
         :bosh_users,
         :bosh_monit,
-        #:bosh_sysstat,
-        #:bosh_sysctl,
         :bosh_ntpdate,
         :bosh_sudoers,
         :rsyslog,
         :system_grub,
-        #:system_kernel,
       ]
     }
 
@@ -60,7 +57,7 @@ module Bosh::Stemcell
       ]
     }
 
-    let(:openstack_infrastructure_stages) {
+    let(:openstack_ubuntu_infrastructure_stages) {
       [
         :system_openstack_network,
         :system_openstack_clock,
@@ -92,7 +89,7 @@ module Bosh::Stemcell
       ]
     }
 
-    let(:vsphere_infrastructure_stages) {
+    let(:vsphere_ubuntu_infrastructure_stages) {
       [
         :system_open_vm_tools,
         :system_parameters,
@@ -163,7 +160,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + agent_stages + openstack_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + openstack_ubuntu_infrastructure_stages)
             end
           end
 
@@ -185,7 +182,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + agent_stages + vsphere_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + vsphere_ubuntu_infrastructure_stages)
             end
           end
 
@@ -240,7 +237,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + agent_stages + openstack_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + openstack_ubuntu_infrastructure_stages)
             end
           end
 
@@ -262,7 +259,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + agent_stages + vsphere_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + vsphere_ubuntu_infrastructure_stages)
             end
           end
 
