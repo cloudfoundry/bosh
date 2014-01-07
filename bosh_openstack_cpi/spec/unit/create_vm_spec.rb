@@ -241,23 +241,39 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                             combined_network_spec)
   end
 
-  it "raises a Retryable Error when cannot create an OpenStack server" do
-    cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:create).and_return(server)
-      openstack.security_groups.should_receive(:collect).and_return(%w[default])
-      openstack.images.should_receive(:find).and_return(image)
-      openstack.flavors.should_receive(:find).and_return(flavor)
-      openstack.key_pairs.should_receive(:find).and_return(key_pair)
+  context "when cannot create an OpenStack server" do
+    let(:cloud) do
+      c = mock_cloud do |openstack|
+        openstack.servers.should_receive(:create).and_return(server)
+        openstack.security_groups.should_receive(:collect).and_return(%w[default])
+        openstack.images.should_receive(:find).and_return(image)
+        openstack.flavors.should_receive(:find).and_return(flavor)
+        openstack.key_pairs.should_receive(:find).and_return(key_pair)
+      end
+
+      allow(c).to receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
+      c
     end
 
-    cloud.should_receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
+    it "raises a Retryable Error" do
+      allow(server).to receive(:destroy)
 
-    expect {
-      vm_id = cloud.create_vm("agent-id", "sc-id",
-                              resource_pool_spec,
-                              { "network_a" => dynamic_network_spec },
-                              nil, { "test_env" => "value" })
-    }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      expect {
+        vm_id = cloud.create_vm("agent-id", "sc-id",
+                                resource_pool_spec,
+                                { "network_a" => dynamic_network_spec },
+                                nil, { "test_env" => "value" })
+      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+    end
+
+    it "destroys the server" do
+      expect(server).to receive(:destroy)
+
+      cloud.create_vm("agent-id", "sc-id",
+                      resource_pool_spec,
+                      {"network_a" => dynamic_network_spec},
+                      nil, {"test_env" => "value"}) rescue nil
+    end
   end
 
   it "raises an error when a security group doesn't exist" do
