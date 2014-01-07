@@ -22,3 +22,7 @@ func (blobstore dummy) CleanUp(fileName string) (err error) {
 func (blobstore dummy) Create(fileName string) (blobId string, fingerprint string, err error) {
 	return
 }
+
+func (blobstore dummy) Valid() bool {
+	return true
+}

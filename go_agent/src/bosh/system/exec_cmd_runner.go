@@ -41,6 +41,15 @@ func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...stri
 	return run.runCmd(cmd)
 }
 
+func (run execCmdRunner) CommandExists(cmdName string) (exists bool) {
+	_, err := exec.LookPath(cmdName)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (run execCmdRunner) runCmd(cmd *exec.Cmd) (stdout, stderr string, err error) {
 	cmdString := strings.Join(cmd.Args, " ")
 

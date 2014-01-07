@@ -12,4 +12,6 @@ type Blobstore interface {
 	CleanUp(fileName string) (err error)
 
 	Create(fileName string) (blobId string, fingerprint string, err error)
+
+	Valid() bool
 }

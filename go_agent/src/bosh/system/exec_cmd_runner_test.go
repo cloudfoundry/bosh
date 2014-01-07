@@ -93,6 +93,13 @@ func TestRunCommandWithInput(t *testing.T) {
 	assert.Empty(t, stderr)
 }
 
+func TestCommandExists(t *testing.T) {
+	runner := createRunner()
+
+	assert.True(t, runner.CommandExists("cd"))
+	assert.False(t, runner.CommandExists("absolutely-does-not-exist-ever-please-unicorns"))
+}
+
 func createRunner() (r CmdRunner) {
 	r = NewExecCmdRunner(boshlog.NewLogger(boshlog.LEVEL_NONE))
 	return

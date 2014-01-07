@@ -73,3 +73,7 @@ func calculateSha1(fileName string) (fingerprint string, err error) {
 	fingerprint = fmt.Sprintf("%x", h.Sum(nil))
 	return
 }
+
+func (b sha1Verifiable) Valid() bool {
+	return b.blobstore.Valid()
+}

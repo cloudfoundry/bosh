@@ -11,6 +11,8 @@ type FakeCmdRunner struct {
 	RunComplexCommands   []boshsys.Command
 	RunCommands          [][]string
 	RunCommandsWithInput [][]string
+
+	CommandExistsValue bool
 }
 
 type FakeCmdResult struct {
@@ -45,6 +47,10 @@ func (runner *FakeCmdRunner) RunCommandWithInput(input, cmdName string, args ...
 
 	stdout, stderr, err = runner.getOutputsForCmd(runCmd)
 	return
+}
+
+func (runner *FakeCmdRunner) CommandExists(cmdName string) (exists bool) {
+	return runner.CommandExistsValue
 }
 
 func (runner *FakeCmdRunner) AddCmdResult(fullCmd string, result FakeCmdResult) {

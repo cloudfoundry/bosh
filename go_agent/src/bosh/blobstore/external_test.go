@@ -12,32 +12,32 @@ import (
 	"testing"
 )
 
-func TestSettingTheOptions(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
+func TestExternalSettingTheOptions(t *testing.T) {
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
 
-	_, err := newS3Blobstore(fs, runner, uuidGen, configPath).ApplyOptions(map[string]string{
+	_, err := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath).ApplyOptions(map[string]string{
 		"access_key_id":     "some-access-key",
 		"secret_access_key": "some-secret-key",
 		"bucket_name":       "some-bucket",
 	})
 	assert.NoError(t, err)
 
-	s3CliConfig, err := fs.ReadFile(configPath)
+	externalCliConfig, err := fs.ReadFile(configPath)
 	assert.NoError(t, err)
 
 	expectedJson := map[string]string{
-		"AccessKey": "some-access-key",
-		"SecretKey": "some-secret-key",
-		"Bucket":    "some-bucket",
+		"access_key_id":     "some-access-key",
+		"secret_access_key": "some-secret-key",
+		"bucket_name":       "some-bucket",
 	}
-	boshassert.MatchesJsonString(t, expectedJson, s3CliConfig)
+	boshassert.MatchesJsonString(t, expectedJson, externalCliConfig)
 }
 
-func TestGet(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+func TestExternalGet(t *testing.T) {
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
+	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
-	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGet")
+	tempFile, err := fs.TempFile("bosh-blobstore-external-TestGet")
 	assert.NoError(t, err)
 
 	fs.ReturnTempFile = tempFile
@@ -49,7 +49,7 @@ func TestGet(t *testing.T) {
 	// downloads correct blob
 	assert.Equal(t, 1, len(runner.RunCommands))
 	assert.Equal(t, []string{
-		"s3", "-c", configPath, "get",
+		"bosh-blobstore-fake-provider", "-c", configPath, "get",
 		"fake-blob-id",
 		tempFile.Name(),
 	}, runner.RunCommands[0])
@@ -59,9 +59,9 @@ func TestGet(t *testing.T) {
 	assert.True(t, fs.FileExists(tempFile.Name()))
 }
 
-func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+func TestExternalGetErrsWhenTempFileCreateErrs(t *testing.T) {
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
+	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
 	fs.TempFileError = errors.New("fake-error")
 
@@ -72,18 +72,18 @@ func TestGetErrsWhenTempFileCreateErrs(t *testing.T) {
 	assert.Empty(t, fileName)
 }
 
-func TestGetErrsWhenS3CliErrs(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+func TestExternalGetErrsWhenExternalCliErrs(t *testing.T) {
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
+	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
-	tempFile, err := fs.TempFile("bosh-blobstore-s3-TestGetErrsWhenS3CliErrs")
+	tempFile, err := fs.TempFile("bosh-blobstore-external-TestGetErrsWhenExternalCliErrs")
 	assert.NoError(t, err)
 
 	fs.ReturnTempFile = tempFile
 	defer fs.RemoveAll(tempFile.Name())
 
 	expectedCmd := []string{
-		"s3", "-c", configPath, "get",
+		"bosh-blobstore-fake-provider", "-c", configPath, "get",
 		"fake-blob-id",
 		tempFile.Name(),
 	}
@@ -98,11 +98,11 @@ func TestGetErrsWhenS3CliErrs(t *testing.T) {
 	assert.False(t, fs.FileExists(tempFile.Name()))
 }
 
-func TestCleanUp(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+func TestExternalCleanUp(t *testing.T) {
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
+	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
-	file, err := fs.TempFile("bosh-blobstore-s3-TestCleanUp")
+	file, err := fs.TempFile("bosh-blobstore-external-TestCleanUp")
 	assert.NoError(t, err)
 	fileName := file.Name()
 
@@ -113,12 +113,12 @@ func TestCleanUp(t *testing.T) {
 	assert.False(t, fs.FileExists(fileName))
 }
 
-func TestCreate(t *testing.T) {
+func TestExternalCreate(t *testing.T) {
 	fileName := "../../../fixtures/some.config"
 	expectedPath, _ := filepath.Abs(fileName)
 
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
+	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
 	uuidGen.GeneratedUuid = "some-uuid"
 
@@ -129,25 +129,25 @@ func TestCreate(t *testing.T) {
 
 	assert.Equal(t, 1, len(runner.RunCommands))
 	assert.Equal(t, []string{
-		"s3", "-c", configPath, "put",
+		"bosh-blobstore-fake-provider", "-c", configPath, "put",
 		expectedPath, "some-uuid",
 	}, runner.RunCommands[0])
 }
 
-func TestS3Valid(t *testing.T) {
-	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
-	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
+func TestExternalValid(t *testing.T) {
+	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
+	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
 	assert.False(t, blobstore.Valid())
 	runner.CommandExistsValue = true
 	assert.True(t, blobstore.Valid())
 }
 
-func getS3BlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator, configPath string) {
+func getExternalBlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator, configPath string) {
 	fs = &fakesys.FakeFileSystem{}
 	runner = &fakesys.FakeCmdRunner{}
 	uuidGen = &fakeuuid.FakeGenerator{}
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-	configPath = filepath.Join(dirProvider.EtcDir(), "s3cli")
+	configPath = filepath.Join(dirProvider.EtcDir(), "blobstore-fake-provider.json")
 	return
 }
