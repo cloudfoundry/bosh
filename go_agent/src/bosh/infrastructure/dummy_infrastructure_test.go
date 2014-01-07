@@ -31,3 +31,14 @@ func TestGetSettings(t *testing.T) {
 		Mbus:      "nats://127.0.0.1:4222",
 	})
 }
+
+func TestGetSettingsErrsWhenSettingsFileDoesNotExist(t *testing.T) {
+	fs := fakefs.NewFakeFileSystem()
+	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+
+	dummy := newDummyInfrastructure(fs, dirProvider)
+
+	_, err := dummy.GetSettings()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Read settings file")
+}

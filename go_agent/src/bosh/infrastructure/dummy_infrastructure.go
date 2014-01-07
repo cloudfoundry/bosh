@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
@@ -26,9 +27,17 @@ func (inf dummyInfrastructure) SetupSsh(delegate SshSetupDelegate, username stri
 func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
 	settingsPath := filepath.Join(inf.dirProvider.BaseDir(), "bosh", "settings.json")
 	contents, err := inf.fs.ReadFile(settingsPath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Read settings file")
+		return
+	}
 
 	jsonSettings := boshsettings.Settings{}
 	err = json.Unmarshal([]byte(contents), &jsonSettings)
+	if err != nil {
+		err = bosherr.WrapError(err, "Unmarshal json settings")
+		return
+	}
 
 	settings.AgentId = jsonSettings.AgentId
 	settings.Blobstore = jsonSettings.Blobstore
