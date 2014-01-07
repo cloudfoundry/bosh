@@ -3,6 +3,7 @@ package system
 import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
+	"io"
 	"io/ioutil"
 	"os"
 	osuser "os/user"
@@ -178,6 +179,28 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 
 func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 	_, _, err = fs.runner.RunCommand("cp", "-r", srcPath+"/.", dstPath)
+	return
+}
+
+func (fs osFileSystem) CopyFile(srcPath, dstPath string) (err error) {
+	fs.logger.Debug(fs.logTag, "Copying %s to %s", srcPath, dstPath)
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Opening source path")
+		return
+	}
+
+	dstFile, err := os.Create(dstPath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Creating destination file")
+		return
+	}
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		err = bosherr.WrapError(err, "Copying file")
+		return
+	}
 	return
 }
 

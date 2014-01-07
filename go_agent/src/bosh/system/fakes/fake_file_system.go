@@ -174,6 +174,11 @@ func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 	return
 }
 
+func (fs *FakeFileSystem) CopyFile(srcPath, dstPath string) (err error) {
+	fs.Files[dstPath] = fs.Files[srcPath]
+	return
+}
+
 func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	if fs.TempFileError != nil {
 		return nil, fs.TempFileError

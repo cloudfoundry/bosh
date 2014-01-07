@@ -311,6 +311,20 @@ func TestCopyDirEntries(t *testing.T) {
 	assert.True(t, osFs.FileExists(destPath+"/bar/baz"))
 }
 
+func TestCopyFile(t *testing.T) {
+	osFs, _ := createOsFs()
+	srcPath := "../../../fixtures/test_copy_dir_entries/foo.txt"
+	dstFile, err := osFs.TempFile("CopyFileTestFile")
+	assert.NoError(t, err)
+	defer os.Remove(dstFile.Name())
+
+	err = osFs.CopyFile(srcPath, dstFile.Name())
+
+	fooContent, err := osFs.ReadFile(dstFile.Name())
+	assert.NoError(t, err)
+	assert.Equal(t, fooContent, "foo\n")
+}
+
 func createOsFs() (fs FileSystem, runner CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	runner = NewExecCmdRunner(logger)
