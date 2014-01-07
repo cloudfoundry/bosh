@@ -23,6 +23,6 @@ func (blobstore dummy) Create(fileName string) (blobId string, fingerprint strin
 	return
 }
 
-func (blobstore dummy) Valid() bool {
-	return true
+func (blobstore dummy) Validate() (err error) {
+	return
 }

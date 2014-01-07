@@ -138,9 +138,9 @@ func TestExternalValid(t *testing.T) {
 	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
 	blobstore := newExternalBlobstore("fake-provider", fs, runner, uuidGen, configPath)
 
-	assert.False(t, blobstore.Valid())
+	assert.Error(t, blobstore.Validate())
 	runner.CommandExistsValue = true
-	assert.True(t, blobstore.Valid())
+	assert.NoError(t, blobstore.Validate())
 }
 
 func getExternalBlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator, configPath string) {

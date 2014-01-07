@@ -84,8 +84,11 @@ func (blobstore external) Create(fileName string) (blobId string, fingerprint st
 	return
 }
 
-func (blobstore external) Valid() bool {
-	return blobstore.runner.CommandExists(blobstore.executable())
+func (blobstore external) Validate() (err error) {
+	if !blobstore.runner.CommandExists(blobstore.executable()) {
+		err = bosherr.New("executable %s not found in PATH", blobstore.executable())
+	}
+	return
 }
 
 func (blobstore external) run(method, src, dst string) (err error) {

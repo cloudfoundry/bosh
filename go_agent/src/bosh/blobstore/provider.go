@@ -39,9 +39,10 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 	if !found {
 		config := filepath.Join(p.dirProvider.EtcDir(), fmt.Sprintf("blobstore-%s.json", settings.Type))
 		blobstore = newExternalBlobstore(settings.Type, p.platform.GetFs(), p.platform.GetRunner(), p.uuidGen, config)
-		if !blobstore.Valid() {
-			err = bosherr.New("Blobstore %s could not be found", settings.Type)
-			return
+		err = blobstore.Validate()
+		if err != nil {
+		    err = bosherr.WrapError(err, "Validating blobstore")
+		    return
 		}
 	}
 

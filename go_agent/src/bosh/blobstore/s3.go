@@ -110,6 +110,9 @@ func (blobstore s3) Create(fileName string) (blobId string, fingerprint string, 
 	return
 }
 
-func (blobstore s3) Valid() bool {
-	return blobstore.runner.CommandExists("s3")
+func (blobstore s3) Validate() (err error) {
+	if !blobstore.runner.CommandExists("s3") {
+		err = bosherr.New("executable s3 not found in PATH")
+	}
+	return
 }

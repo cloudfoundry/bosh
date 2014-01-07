@@ -74,6 +74,6 @@ func calculateSha1(fileName string) (fingerprint string, err error) {
 	return
 }
 
-func (b sha1Verifiable) Valid() bool {
-	return b.blobstore.Valid()
+func (b sha1Verifiable) Validate() (err error) {
+	return b.blobstore.Validate()
 }

@@ -138,9 +138,9 @@ func TestS3Valid(t *testing.T) {
 	fs, runner, uuidGen, configPath := getS3BlobstoreDependencies()
 	blobstore := newS3Blobstore(fs, runner, uuidGen, configPath)
 
-	assert.False(t, blobstore.Valid())
+	assert.Error(t, blobstore.Validate())
 	runner.CommandExistsValue = true
-	assert.True(t, blobstore.Valid())
+	assert.NoError(t, blobstore.Validate())
 }
 
 func getS3BlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator, configPath string) {

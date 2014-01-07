@@ -59,6 +59,6 @@ func (bs *FakeBlobstore) Create(fileName string) (blobId string, fingerprint str
 	return
 }
 
-func (bs *FakeBlobstore) Valid() bool {
-	return true
+func (bs *FakeBlobstore) Validate() (err error) {
+	return
 }
