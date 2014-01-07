@@ -1,0 +1,5 @@
+{
+    "Username":"some user",
+    "Password":"some pwd",
+    "Endpoint":"http://example.com/some/endpoint"
+}
