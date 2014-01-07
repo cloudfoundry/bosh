@@ -84,11 +84,27 @@ module Bosh::Dev
     end
 
     describe '#deploy' do
-      it 'sets the deployment and then runs a deplpy using the cli' do
+      let(:manifest_path) { '/path/to/fake-manifest.yml' }
+      include FakeFS::SpecHelpers
+      before do
+        FileUtils.mkdir_p(File.dirname(manifest_path))
+        File.open(manifest_path, 'w') { |f| f.write "---\n{}" }
+        allow(director_handle).to receive('uuid')
+      end
+
+      it 'updates the uuid in the manifest to the one from the targetted director' do
+        allow(director_handle).to receive('uuid').and_return('uuid_value')
+
+        director_client.deploy(manifest_path)
+        manifest = YAML.load_file(manifest_path)
+        expect(manifest['director_uuid']).to eq('uuid_value')
+      end
+
+      it 'sets the deployment and then runs a deploy using the cli' do
         cli.should_receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
         cli.should_receive(:run_bosh).with('deploy', debug_on_fail: true).ordered
 
-        director_client.deploy('/path/to/fake-manifest.yml')
+        director_client.deploy(manifest_path)
       end
 
       it 'always re-targets and logs in first' do
@@ -100,7 +116,7 @@ module Bosh::Dev
         cli.should_receive(:run_bosh).with(/deployment/).ordered
         cli.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
 
-        director_client.deploy('/path/to/fake-manifest.yml')
+        director_client.deploy(manifest_path)
       end
     end
   end

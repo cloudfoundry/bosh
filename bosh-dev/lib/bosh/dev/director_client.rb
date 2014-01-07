@@ -1,5 +1,6 @@
-require 'cli'
 require 'bosh/dev/bosh_cli_session'
+require 'cli'
+require 'yaml'
 
 module Bosh::Dev
   class DirectorClient
@@ -26,6 +27,7 @@ module Bosh::Dev
 
     def deploy(manifest_path)
       target_and_login!
+      fix_uuid_in_manifest(manifest_path)
       cli.run_bosh("deployment #{manifest_path}")
       cli.run_bosh('deploy', debug_on_fail: true)
     end
@@ -33,6 +35,12 @@ module Bosh::Dev
     private
 
     attr_reader :uri, :username, :password, :cli, :director_handle
+
+    def fix_uuid_in_manifest(manifest_path)
+      manifest = YAML.load_file(manifest_path)
+      manifest['director_uuid'] = director_handle.uuid
+      File.open(manifest_path, 'w') { |f| f.write manifest.to_yaml }
+    end
 
     def target_and_login!
       cli.run_bosh("target #{uri}", retryable: Bosh::Retryable.new(tries: 3, on: [RuntimeError]))
