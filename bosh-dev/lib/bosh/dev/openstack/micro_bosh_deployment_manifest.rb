@@ -46,7 +46,8 @@ module Bosh::Dev::Openstack
             }
           },
           'properties' => {}
-        }
+        },
+        'max_vm_create_tries' => 15,
       }
 
       result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP'] if net_type == 'manual'
