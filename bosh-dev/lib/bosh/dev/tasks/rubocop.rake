@@ -1,5 +1,3 @@
-task rubocop: ['rubocop:all']
-
 require 'rubocop/rake_task'
 
 namespace :rubocop do
@@ -11,3 +9,5 @@ namespace :rubocop do
   desc 'Run RuboCop on all files'
   Rubocop::RakeTask.new(:all)
 end
+
+task rubocop: ['rubocop:all']
