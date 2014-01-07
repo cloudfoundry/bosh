@@ -5,6 +5,7 @@ describe Bosh::Director::VmCreator do
   before do
     @cloud = double('cloud')
     Bosh::Director::Config.stub(:cloud).and_return(@cloud)
+    Bosh::Director::Config.max_vm_create_tries = 2
 
     @deployment = Bosh::Director::Models::Deployment.make
 
@@ -106,8 +107,10 @@ describe Bosh::Director::VmCreator do
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
-  it 'should try exactly five times when it is a retryable error' do
-    @cloud.should_receive(:create_vm).exactly(5).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+  it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
+    Bosh::Director::Config.max_vm_create_tries = 3
+
+    @cloud.should_receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
     expect {
       vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
