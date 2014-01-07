@@ -34,8 +34,8 @@ module Bosh::Director
 
       if Config.encryption?
         credentials = generate_agent_credentials
-        env["bosh"] ||= {}
-        env["bosh"]["credentials"] = credentials
+        env['bosh'] ||= {}
+        env['bosh']['credentials'] = credentials
         options[:credentials] = credentials
       end
 
