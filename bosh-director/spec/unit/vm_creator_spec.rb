@@ -107,6 +107,15 @@ describe Bosh::Director::VmCreator do
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
+  it 'should try exactly five times when it is a retryable error' do
+    @cloud.should_receive(:create_vm).exactly(5).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+
+    expect {
+      vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                                                @network_settings, nil, @resource_pool_spec.env)
+    }.to raise_error(Bosh::Clouds::VMCreationFailed)
+  end
+
   it "should have deep copy of environment" do
     Bosh::Director::Config.encryption = true
     env_id = nil
