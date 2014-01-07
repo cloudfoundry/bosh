@@ -13,7 +13,7 @@ module Bosh
           guard_stdout, guard_stderr, guard_status = Open3.capture3('git', 'status')
           fail("Failure to obtain git repo status in #{dir}: stdout: '#{guard_stdout}', stderr: '#{guard_stderr}'") unless guard_status.success?
 
-          unless guard_stdout.include?('nothing to commit (working directory clean)')
+          unless guard_stdout.match(/^nothing to commit.*working directory clean.*$/)
             stdout, stderr, status = Open3.capture3('git', 'commit', '-a', '-m', 'Autodeployer receipt file update')
             fail("Failed to commit modified files in #{dir}: stdout: '#{stdout}', stderr: '#{stderr}'") unless status.success?
 
