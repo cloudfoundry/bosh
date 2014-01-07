@@ -20,4 +20,40 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#max_create_vm_retries' do
+    context 'when hash has value set' do
+      it 'returns the configuration value' do
+        test_config['max_vm_create_tries'] = 3
+
+        config = described_class.load_hash(test_config)
+        described_class.configure(config.hash)
+
+        expect(described_class.max_vm_create_tries).to eq(3)
+      end
+    end
+
+    context 'when hash does not have value set' do
+      it 'returns default value of five as per previous behavior' do
+        # our fixture does not have this set so this is a no-op
+        # i'm doing this because i want to be more explicit
+        test_config.delete('max_vm_create_tries')
+
+        config = described_class.load_hash(test_config)
+        described_class.configure(config.hash)
+
+        expect(described_class.max_vm_create_tries).to eq(5)
+      end
+    end
+
+    context 'when hash contains a non integral value' do
+      it 'raises an error' do
+        test_config['max_vm_create_tries'] = 'bad number'
+
+        config = described_class.load_hash(test_config)
+        expect{
+          described_class.configure(config.hash)
+        }.to raise_error(ArgumentError)
+      end
+    end
+  end
 end

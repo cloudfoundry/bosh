@@ -28,7 +28,6 @@ describe Bosh::Director::VmCreator do
     @network_settings = {'network_a' => {'ip' => '1.2.3.4'}}
   end
 
-
   it 'should create a vm' do
     @cloud.should_receive(:create_vm).with(kind_of(String), 'stemcell-id', {'ram' => '2gb'}, @network_settings, nil, {})
 

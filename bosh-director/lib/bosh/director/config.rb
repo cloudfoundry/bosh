@@ -33,7 +33,8 @@ module Bosh::Director
         :current_job,
         :encryption,
         :fix_stateful_nodes,
-        :enable_snapshots
+        :enable_snapshots,
+        :max_vm_create_tries,
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -59,6 +60,7 @@ module Bosh::Director
       end
 
       def configure(config)
+        @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
 
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
