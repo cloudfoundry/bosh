@@ -146,45 +146,36 @@ describe Bosh::Deployer::InstanceManager do
     load_deployment.should == @deployer.state.values
   end
 
-  it 'should update a Bosh instance with existing disk_cid where vm_cid missing' do
-    @deployer.stub(:service_ip).and_return('10.0.0.10')
-    spec = Psych.load_file(spec_asset('apply_spec_aws.yml'))
-    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+  context 'with vm_cid missing but disk_cid present' do
+    before do
+      @config['name'] = 'test-micro'
+      # fake out the nil vm_cid
+      File.write(File.join(@dir, 'bosh-deployments.yml'),
+                 YAML.dump(
+                   {
+                     'instances' => [
+                       {
+                         name: 'test-micro',
+                         uuid: 'bm-sdfaskd-asdfh',
+                         stemcell_cid: 'ami-5df5d934',
+                         stemcell_sha1: 'ami-5df5d934',
+                         stemcell_name: 'ami-5df5d934',
+                         config_sha1: 'ac4a8b34d2f9894a2aa7bd3e1bcd5803b99cf5ce',
+                         vm_cid: nil,
+                         disk_cid: 'vol-b84fd9f5',
+                       }
+                     ],
+                     'disks' => [],
+                   }
+                 )
+      )
+    end
 
-    disk_cid = '22'
-    @deployer.stub(:run_command)
-    @deployer.stub(:wait_until_agent_ready)
-    @deployer.stub(:wait_until_director_ready)
-    @deployer.stub(:load_apply_spec).and_return(spec)
-    @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
-    @deployer.stub(:persistent_disk_changed?).and_return(false)
-
-    @deployer.state.stemcell_cid = 'SC-CID-UPDATE'
-    @deployer.state.vm_cid = nil
-    @deployer.state.disk_cid = disk_cid
-
-    @agent.should_receive(:run_task).with(:stop)
-    @agent.should_not_receive(:run_task).with(:unmount_disk, disk_cid)
-    @cloud.should_not_receive(:detach_disk)
-    @cloud.should_not_receive(:delete_vm)
-    @cloud.should_receive(:delete_stemcell).with('SC-CID-UPDATE')
-    @cloud.should_receive(:create_stemcell).and_return('SC-CID')
-    @cloud.should_receive(:create_vm).and_return('NEW-VM-CID')
-    @cloud.should_receive(:attach_disk).with('NEW-VM-CID', disk_cid)
-    @agent.should_receive(:run_task).with(:mount_disk, disk_cid).and_return({})
-    @agent.should_receive(:list_disk).and_return([disk_cid])
-    @agent.should_not_receive(:run_task).with(:stop)
-    @agent.should_receive(:run_task).with(:apply, spec)
-    @agent.should_receive(:run_task).with(:start)
-
-    discover_bosh_ip('10.0.0.2', 'NEW-VM-CID')
-    @deployer.update(BOSH_STEMCELL_TGZ, nil)
-
-    @deployer.state.stemcell_cid.should == 'SC-CID'
-    @deployer.state.vm_cid.should_not be_nil
-    @deployer.state.disk_cid.should == disk_cid
-
-    load_deployment.should == @deployer.state.values
+    it 'should update a Bosh instance ' do
+      expect {
+        Bosh::Deployer::InstanceManager.create(@config)
+      }.not_to raise_error
+    end
   end
 
   it 'should fail to create a Bosh instance if stemcell CID exists' do
