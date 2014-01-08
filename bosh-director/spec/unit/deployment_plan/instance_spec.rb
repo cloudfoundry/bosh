@@ -195,7 +195,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'updating deployment' do
-      let(:job) { Job.new(plan, {}) }
+      let(:job) { Job.new(plan) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
       let(:template) { instance_double('Bosh::Director::DeploymentPlan::Template') }
 
@@ -233,7 +233,7 @@ module Bosh::Director::DeploymentPlan
                           spec: { 'foo' => 'bar' },
                           env: { 'key' => 'value' })
         }
-        let(:job) { Job.new(plan, {}) }
+        let(:job) { Job.new(plan) }
 
         before do
           job.stub(:instance_state).with(0).and_return('started')

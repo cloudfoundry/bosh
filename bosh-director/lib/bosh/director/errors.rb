@@ -134,6 +134,7 @@ module Bosh::Director
   JobInvalidInstanceState = err(140005)
   JobInvalidJobState = err(140006)
   JobMissingNetwork = err(140007)
+  JobInvalidTemplates = err(140008)
 
   JobUnknownNetwork = err(150001)
   JobNetworkInstanceIpMismatch = err(150002)

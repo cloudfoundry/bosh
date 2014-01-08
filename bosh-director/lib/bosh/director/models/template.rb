@@ -1,9 +1,13 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director::Models
   class Template < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :release
     many_to_many :release_versions
+
+    def validate
+      validates_presence [:release_id, :name, :version, :blobstore_id, :sha1]
+      validates_unique [:release_id, :name, :version]
+      validates_format VALID_ID, [:name, :version]
+    end
 
     def package_names
       result = self.package_names_json
@@ -33,12 +37,6 @@ module Bosh::Director::Models
     def properties
       result = self.properties_json
       result ? Yajl::Parser.parse(result) : nil
-    end
-
-    def validate
-      validates_presence [:release_id, :name, :version, :blobstore_id, :sha1]
-      validates_unique [:release_id, :name, :version]
-      validates_format VALID_ID, [:name, :version]
     end
   end
 end

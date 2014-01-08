@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Common
   module PropertyHelper
     # Copies property with a given name from src to dst.
