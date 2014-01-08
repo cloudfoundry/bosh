@@ -48,7 +48,7 @@ describe Bosh::Director::ValidationHelper do
           obj.safe_property(hash, 'test', options)
         }.should raise_error(
           Bosh::Director::ValidationMissingField,
-          "Required property `test' was not specified in Object",
+          "Required property `test' was not specified in object (#{hash.inspect})",
         )
       end
     end
