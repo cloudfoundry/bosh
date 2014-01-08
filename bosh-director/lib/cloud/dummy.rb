@@ -70,6 +70,9 @@ module Bosh
           disks: {
             persistent: {},
           },
+          vm: {
+            name: "vm-#{agent_id}"
+          },
           mbus: nats_uri,
         }
         File.write(File.join(agent_base_dir, 'bosh', 'settings.json'), JSON.generate(settings))
