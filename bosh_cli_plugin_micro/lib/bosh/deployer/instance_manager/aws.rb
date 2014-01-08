@@ -125,7 +125,7 @@ module Bosh::Deployer
       end
 
       def discover_bosh_ip
-        if exists?
+        if state.vm_cid
           # choose elastic IP over public, as any agent connecting to the
           # deployed micro bosh will be cut off from the public IP when
           # we re-deploy micro bosh

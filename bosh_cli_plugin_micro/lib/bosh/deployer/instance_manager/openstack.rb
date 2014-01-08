@@ -120,7 +120,7 @@ module Bosh::Deployer
       end
 
       def discover_bosh_ip
-        if exists?
+        if state.vm_cid
           floating_ip = cloud.openstack.servers.get(state.vm_cid).floating_ip_address
           ip = floating_ip || service_ip
 

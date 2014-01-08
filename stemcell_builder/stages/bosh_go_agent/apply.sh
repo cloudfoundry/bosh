@@ -23,6 +23,9 @@ chmod +x /etc/sv/monit/run /etc/sv/monit/log/run
 ln -s /etc/sv/monit /etc/service/monit
 "
 
+# alerts for monit config
+cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
+
 cd $assets_dir/go_agent
 
 bin/build

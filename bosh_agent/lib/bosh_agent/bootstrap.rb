@@ -36,24 +36,31 @@ module Bosh::Agent
       logger.info("Loaded settings: #{@settings.inspect}")
 
       if @settings
-        update_iptables
-        update_passwords
-        update_agent_id
-        update_credentials
-        update_hostname
-        update_mbus
-        update_blobstore
-        setup_networking
-        update_time
-        setup_data_disk
-        setup_data_sys
-        setup_tmp
+        if Config.configure
+          update_iptables
+          update_passwords
+          update_agent_id
+          update_credentials
+          update_hostname
+          update_mbus
+          update_blobstore
+          setup_networking
+          update_time
+          setup_data_disk
+          setup_data_sys
+          setup_tmp
 
-        Bosh::Agent::Monit.setup_monit_user
-        Bosh::Agent::Monit.setup_alerts
+          Bosh::Agent::Monit.setup_monit_user
+          Bosh::Agent::Monit.setup_alerts
 
-        mount_persistent_disk
-        harden_permissions
+          mount_persistent_disk
+          harden_permissions
+        else
+          update_agent_id
+          update_credentials
+          update_mbus
+          update_blobstore
+        end
       end
       { "settings" => @settings }
     end

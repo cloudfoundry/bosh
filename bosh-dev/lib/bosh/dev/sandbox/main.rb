@@ -17,9 +17,6 @@ module Bosh::Dev::Sandbox
     DIRECTOR_CONFIG = 'director_test.yml'
     DIRECTOR_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_test.yml.erb')
 
-    BLOBSTORE_CONFIG = 'blobstore_server.yml'
-    BLOBSTORE_CONF_TEMPLATE = File.join(ASSETS_DIR, 'blobstore_server.yml.erb')
-
     REDIS_CONFIG = 'redis_test.conf'
     REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
 
@@ -54,12 +51,6 @@ module Bosh::Dev::Sandbox
         %W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
 
       @redis_socket_connector = SocketConnector.new('localhost', redis_port, @logger)
-
-      @blobstore_process = Service.new(
-        %W[simple_blobstore_server -c #{sandbox_path(BLOBSTORE_CONFIG)}],
-        { output: "#{logs_path}/blobstore.out" },
-        @logger,
-      )
 
       @nats_process = Service.new(%W[nats-server -p #{nats_port}], {}, @logger)
 
@@ -113,7 +104,6 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(logs_path)
 
       @redis_process.start
-      @blobstore_process.start
       @nats_process.start
       @redis_socket_connector.try_to_connect
     end
@@ -145,7 +135,6 @@ module Bosh::Dev::Sandbox
       @scheduler_process.stop
       @worker_process.stop
       @director_process.stop
-      @blobstore_process.stop
       @redis_process.stop
       @nats_process.stop
       @health_monitor_process.stop
@@ -176,10 +165,6 @@ module Bosh::Dev::Sandbox
 
     def hm_port
       @hm_port ||= get_named_port(:hm)
-    end
-
-    def blobstore_port
-      @blobstore_port ||= get_named_port(:blobstore)
     end
 
     def director_port
@@ -242,7 +227,6 @@ module Bosh::Dev::Sandbox
     def setup_sandbox_root
       write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
-      write_in_sandbox(BLOBSTORE_CONFIG, load_config_template(BLOBSTORE_CONF_TEMPLATE))
       write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
       FileUtils.mkdir_p(sandbox_path('redis'))
       FileUtils.mkdir_p(blobstore_storage_dir)

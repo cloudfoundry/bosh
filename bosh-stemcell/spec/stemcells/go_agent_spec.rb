@@ -34,5 +34,9 @@ describe 'Stemcell with Go Agent' do
     describe file('/var/vcap/sys') do
       it { should be_linked_to('data/sys') }
     end
+
+    describe file('/var/vcap/monit/alerts.monitrc') do
+      it { should contain('set alert agent@local') }
+    end
   end
 end

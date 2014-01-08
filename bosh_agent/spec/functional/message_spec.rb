@@ -68,23 +68,15 @@ describe "messages" do
     command = "nats-server --port #{@port} --user #{@user} --pass #{@pass}"
     @nats_pid = Process.spawn(command)
 
-    agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
-    @basedir = File.expand_path("../../../tmp", __FILE__)
-    FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
-    command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1"
-    command += " -b #{@basedir} -l ERROR -t #{@smtp_port}"
-    @agent_pid = Process.spawn(command)
+    @agent_sandbox = Bosh::Agent::Spec::AgentSandbox.new(@agent_id, @nats_uri, @smtp_port, 'ERROR')
+    @agent_sandbox.run
     wait_for_nats
   end
 
-
-
   after(:all) do
-    Process.kill(:TERM, @agent_pid)
-    Process.waitpid(@agent_pid)
+    @agent_sandbox.stop
     Process.kill(:TERM, @nats_pid)
     Process.waitpid(@nats_pid)
-    FileUtils.rm_rf(@basedir)
   end
 
   it "should respond to state message" do

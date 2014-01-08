@@ -146,6 +146,38 @@ describe Bosh::Deployer::InstanceManager do
     load_deployment.should == @deployer.state.values
   end
 
+  context 'with vm_cid missing but disk_cid present' do
+    before do
+      @config['name'] = 'test-micro-openstack'
+      # fake out the nil vm_cid
+      File.write(File.join(@dir, 'bosh-deployments.yml'),
+                 YAML.dump(
+                   {
+                     'instances' => [
+                       {
+                         name: 'test-micro-openstack',
+                         uuid: 'bm-sdfaskd-asdfh',
+                         stemcell_cid: 'ami-5df5d934',
+                         stemcell_sha1: 'ami-5df5d934',
+                         stemcell_name: 'ami-5df5d934',
+                         config_sha1: 'ac4a8b34d2f9894a2aa7bd3e1bcd5803b99cf5ce',
+                         vm_cid: nil,
+                         disk_cid: 'vol-b84fd9f5',
+                       }
+                     ],
+                     'disks' => [],
+                   }
+                 )
+      )
+    end
+
+    it 'should update a Bosh instance ' do
+      expect {
+        Bosh::Deployer::InstanceManager.create(@config)
+      }.not_to raise_error
+    end
+  end
+
   it 'should fail to create a Bosh instance if stemcell CID exists' do
     @deployer.state.stemcell_cid = 'SC-CID'
 

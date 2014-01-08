@@ -38,11 +38,9 @@ dns:
       max_connections: 32
       pool_timeout: 10
 blobstore: &director_blobstore
-  provider: simple
+  provider: local
   options:
-    endpoint: http://127.0.0.1:<%= blobstore_port %>
-    user: bs_admin
-    password: bs_pass
+    blobstore_path: <%= blobstore_storage_dir %>
 backup_destination:
   provider: local
   options:
