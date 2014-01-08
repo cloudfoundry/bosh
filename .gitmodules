@@ -13,3 +13,6 @@
 [submodule "go_agent/src/github.com/nu7hatch/gouuid"]
 	path = go_agent/src/github.com/nu7hatch/gouuid
 	url = https://github.com/nu7hatch/gouuid.git
+[submodule "go_agent/src/github.com/pivotal/go-smtpd"]
+	path = go_agent/src/github.com/pivotal/go-smtpd
+	url = git@github.com:pivotal/go-smtpd.git
