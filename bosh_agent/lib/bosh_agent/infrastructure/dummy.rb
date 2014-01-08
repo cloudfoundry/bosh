@@ -4,17 +4,7 @@ module Bosh::Agent
   class Infrastructure::Dummy
 
     def load_settings
-      {
-        "blobstore" => {
-          "provider" => Bosh::Agent::Config.blobstore_provider,
-          "options" => Bosh::Agent::Config.blobstore_options,
-        },
-        "ntp" => [],
-        "disks" => {
-          "persistent" => {},
-        },
-        "mbus" => Bosh::Agent::Config.mbus,
-      }
+      JSON.parse(File.read(Config.settings_file))
     end
 
     def get_network_settings(network_name, properties)

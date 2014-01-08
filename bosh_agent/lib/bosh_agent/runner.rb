@@ -13,15 +13,13 @@ module Bosh::Agent
       $stdout.sync = true
       @logger.info("Starting agent #{VERSION}...")
 
-      if Config.configure
-        @logger.info('Configuring agent...')
-        Bootstrap.new.configure
+      @logger.info('Configuring agent...')
+      Bootstrap.new.configure
 
+      if Config.configure
         Monit.enable
         Monit.start
         Monit.start_services
-      else
-        @logger.info("Skipping configuration step (use '-c' argument to configure on start) ")
       end
 
       if Config.mbus.start_with?('https')

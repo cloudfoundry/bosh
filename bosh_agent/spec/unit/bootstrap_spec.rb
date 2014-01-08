@@ -23,6 +23,8 @@ describe Bosh::Agent::Bootstrap do
   end
 
   it 'run configuration steps in a specific order' do
+    Bosh::Agent::Config.stub(configure: true)
+
     @processor.should_receive(:update_iptables).ordered
     @processor.should_receive(:update_passwords).ordered
     @processor.should_receive(:update_agent_id).ordered
