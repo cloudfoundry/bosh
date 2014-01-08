@@ -803,6 +803,20 @@ module Bosh::Director
 
           subject.update_resource_pool(new_disk_cid)
         end
+
+        context 'when new vm creation fails' do
+          it 'does not try to delete the original vm multiple times' do
+            agent_client.stub(:get_state).and_return(instance_state)
+
+            cloud.stub(:delete_vm)
+
+            cloud.stub(:create_vm).and_raise('create vm failure')
+
+            expect {
+              subject.update_resource_pool(new_disk_cid)
+            }.to raise_error(/create vm failure/)
+          end
+        end
       end
 
     end

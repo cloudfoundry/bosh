@@ -207,7 +207,7 @@ module Bosh::Director
       @instance.model.db.transaction do
         @instance.model.vm = nil
         @instance.model.save
-        @vm.destroy
+        @vm.destroy if @vm.exists?
       end
     end
 
