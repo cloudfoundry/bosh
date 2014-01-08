@@ -54,16 +54,22 @@ describe "http messages" do
     @port = get_free_port
     smtp_port = get_free_port
     @http_uri = "https://#{@user}:#{@pass}@localhost:#{@port}/agent"
+    @agent_id = "rspec_agent"
+    agent_out = Tempfile.new('agent_out')
 
-    @agent_sandbox = Bosh::Agent::Spec::AgentSandbox.new('rspec_agent', @http_uri, smtp_port)
-    @agent_sandbox.run
+    puts "starting http agent"
+    agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
+    @basedir = File.expand_path("../../../tmp", __FILE__)
+    FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
+    command = "ruby #{agent} -n #{@http_uri} -t #{smtp_port} -a #{@agent_id} -h 1 -b #{@basedir}"
+    @agent_pid = Process.spawn(command, out: agent_out.path, err: agent_out.path)
 
     counter = 0
     while !http_up?
       counter += 1
       # wait max 10 seconds for the agent to start
       if counter > 100
-        puts File.read(@agent_sandbox.agent_logfile)
+        puts File.read(agent_out)
         raise "unable to connect to agent"
       end
       sleep 0.1
@@ -71,7 +77,14 @@ describe "http messages" do
   end
 
   after(:all) do
-    @agent_sandbox.stop
+    if @agent_pid
+      puts "stopping agent"
+      Process.kill(:TERM, @agent_pid)
+      Process.waitpid(@agent_pid)
+    else
+      raise "unable to stop agent, you need to clean up by hand"
+    end
+    FileUtils.rm_rf(@basedir)
   end
 
   it "should respond to state message" do

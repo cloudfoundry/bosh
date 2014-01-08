@@ -31,8 +31,12 @@ module Bosh
         FileUtils.rm(stemcell_file(stemcell_cid))
       end
 
-      def blobstore
-        @options['agent']['blobstore']
+      def blobstore_uri
+        properties = @options['agent']['blobstore']['options']
+        uri = URI(properties['endpoint'])
+        uri.user = properties['user']
+        uri.password = properties['password']
+        uri.to_s
       end
 
       def nats_uri
@@ -48,8 +52,7 @@ module Bosh
         # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
         # then port should be overriden for each agent, otherwise all but first won't start
         # (won't be able to bind to port)
-        write_agent_settings(agent_base_dir, agent_id, nats_uri)
-        agent_cmd = %W[bosh_agent -b #{agent_base_dir} -r #{root_dir} --no-alerts -I dummy]
+        agent_cmd = %W[bosh_agent -a #{agent_id} -s #{blobstore_uri} -p simple -b #{agent_base_dir} -n #{nats_uri} -r #{root_dir} --no-alerts]
         agent_log = "#{@options['dir']}/agent.#{agent_id}.log"
         agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir, out: agent_log, err: agent_log)
 
@@ -59,20 +62,6 @@ module Bosh
         FileUtils.touch(vm_file(agent_pid))
 
         agent_pid.to_s
-      end
-
-      def write_agent_settings(agent_base_dir, agent_id, nats_uri)
-        FileUtils.mkdir_p(File.join(agent_base_dir, 'bosh'))
-        settings = {
-          agent_id: agent_id,
-          blobstore: @options['agent']['blobstore'],
-          ntp: [],
-          disks: {
-            persistent: {},
-          },
-          mbus: nats_uri,
-        }
-        File.write(File.join(agent_base_dir, 'bosh', 'settings.json'), JSON.generate(settings))
       end
 
       def delete_vm(vm_name)
