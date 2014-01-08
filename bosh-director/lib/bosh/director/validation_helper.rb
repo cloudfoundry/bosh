@@ -3,7 +3,11 @@ module Bosh::Director
     def safe_property(hash, property, options = {})
       result = nil
 
-      if hash && hash.has_key?(property)
+      if hash && !hash.kind_of?(Hash)
+        raise Bosh::Director::ValidationInvalidType,
+              "Object (#{hash.inspect}) did not match the required type `Hash'"
+
+      elsif hash && hash.has_key?(property)
         result = hash[property]
 
         if options[:class]
@@ -38,12 +42,13 @@ module Bosh::Director
         raise ValidationMissingField,
               "Required property `#{property}' was not specified in #{self.class.name}"
       end
+
       result
     end
 
     def invalid_type(property, klass, value)
       raise ValidationInvalidType,
-        "Property `#{property}' (value #{value.inspect}) did not match the required type `#{klass}'"
+            "Property `#{property}' (value #{value.inspect}) did not match the required type `#{klass}'"
     end
   end
 end
