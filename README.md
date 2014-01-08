@@ -8,7 +8,8 @@ A CPI for CloudStack from NTT & ZJU-SEL
 ## Current Status
 
 * Working on merging source code from ZJU-SEL and NTT.
-* Testing implementation
+* Testing implementations both in basic zone and advanced zone.
+* Successfully deploy Cloudfoundry v2 and run simple ruby app with Ubuntu12.04 template.
 
 
 ## Known Limitations
@@ -34,16 +35,18 @@ See also [the issue page](https://github.com/cloudfoundry-community/bosh-cloudst
 You need a VM on the CloudStack domain where you install a BOSH instance using this CPI. This VM is so-called "inception" server. Install BOSH CLI and BOSH Deployer gems on the server and run all operations with them.
 
 
-#### Create Security Groups
+#### Create Security Groups or Firewall Rules
 
-The inception server must have a security group which opens the TCP port 25889, which is used by the temporary BOSH Registry launched by BOSH Deployer.
+The inception server must have a security group which opens the TCP port 25889, which is used by the temporary BOSH Registry launched by BOSH Deployer. In advanced zone, you need to configure the firewall rule of inception server which opens the TCP port 25889 for the same reason.
 
-You also need to create one or more security groups for VMs create by your BOSH instance. We recommend that you create a security group which opnens all the TCP and UDP ports for testing.
+You also need to create one or more security groups or firewall rules for VMs created by your BOSH instance. We recommend that you create a security group or firewall rule which opnens all the TCP and UDP ports for testing.
 
 
 #### Boot a Ubuntu server
 
-We recommend Ubuntu 12.04 64bit or later for your inception server. For those who use Ubuntu 12.10 or later we strongly recommand to select OS type with Ubuntu 10.04 or later, Please don't select other Linux distributions like Centos or Apple Mac OS. CentOS is not tested and it would be not compatible with this CPI. Don't forget adding the security group which opens the port 25889 to the VM.
+We recommend Ubuntu 12.04 64bit or later for your inception server. For those who use Ubuntu 12.10 or later we strongly recommand to select OS type with Ubuntu 10.04 or later while creating instance via ISO file or registering VM templates. Please don't select other Linux distributions like Centos or Apple Mac OS in case of some issues.(Issue #7)
+
+CentOS is not tested and it would be not compatible with this CPI. Don't forget adding the security group which opens the port 25889 to the VM.
 
 
 #### Install tools
@@ -78,7 +81,7 @@ To install BOSH gems and generate a stemcell with the CloudStack CPI, clone this
 ```
 git clone https://github.com/cloudfoundry-community/bosh-cloudstack-cpi.git ~/bosh
 cd ~/bosh
-git checkout ntt
+git checkout ubuntu1204
 ```
 
 
