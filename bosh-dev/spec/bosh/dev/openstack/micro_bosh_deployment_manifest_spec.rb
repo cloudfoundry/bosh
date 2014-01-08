@@ -78,8 +78,9 @@ apply_spec:
       address: vip
     nats:
       address: vip
-  properties: {}
-max_vm_create_tries: 15
+  properties:
+    director:
+      max_vm_create_tries: 15
 YAML
 
         it 'generates the correct YAML' do
@@ -128,8 +129,9 @@ apply_spec:
       address: vip
     nats:
       address: vip
-  properties: {}
-max_vm_create_tries: 15
+  properties:
+    director:
+      max_vm_create_tries: 15
 YAML
 
         it 'generates the correct YAML' do

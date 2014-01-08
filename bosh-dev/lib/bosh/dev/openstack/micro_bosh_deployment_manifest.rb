@@ -45,9 +45,12 @@ module Bosh::Dev::Openstack
               'address' => env['BOSH_OPENSTACK_VIP_DIRECTOR_IP']
             }
           },
-          'properties' => {}
+          'properties' => {
+            'director' => {
+              'max_vm_create_tries' => 15
+            },
+          },
         },
-        'max_vm_create_tries' => 15,
       }
 
       result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP'] if net_type == 'manual'
