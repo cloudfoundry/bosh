@@ -1,0 +1,4 @@
+set alert agent@local
+
+set mailserver localhost port 2825
+     with timeout 15 seconds
