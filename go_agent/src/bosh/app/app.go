@@ -131,7 +131,13 @@ func parseOptions(args []string) (opts options, err error) {
 	flagSet.SetOutput(ioutil.Discard)
 	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
 	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
-	flagSet.StringVar(&opts.BaseDirectory, "B", "/var/vcap", "Set Base Directory")
+	flagSet.StringVar(&opts.BaseDirectory, "b", "/var/vcap", "Set Base Directory")
+
+	// The following two options are accepted but ignored for compatibility with the old agent
+	var systemRoot string
+	flagSet.StringVar(&systemRoot, "r", "/", "system root (ignored by go agent)")
+	var noAlerts bool
+	flagSet.BoolVar(&noAlerts, "no-alerts", false, "don't process alerts (ignored by go agent)")
 
 	err = flagSet.Parse(args[1:])
 	return
