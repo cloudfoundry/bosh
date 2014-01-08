@@ -7,10 +7,8 @@ import (
 	boshlog "bosh/logger"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
+	"github.com/pivotal/go-smtpd/smtpd"
 	"path/filepath"
 )
 
@@ -38,7 +36,7 @@ func NewMonitJobSupervisor(
 		client:                client,
 		logger:                logger,
 		dirProvider:           dirProvider,
-		jobFailuresServerPort: 5678,
+		jobFailuresServerPort: 2825,
 	}
 }
 
@@ -122,30 +120,23 @@ func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath stri
 }
 
 func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err error) {
-	alertHandler := func(w http.ResponseWriter, req *http.Request) {
-		bodyBytes, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			w.WriteHeader(500)
-			return
+	alertHandler := func(smtpd.Connection, smtpd.MailAddress) (env smtpd.Envelope, err error) {
+		env = &alertEnvelope{
+			new(smtpd.BasicEnvelope),
+			handler,
+			new(boshalert.MonitAlert),
 		}
-
-		monitAlert := boshalert.MonitAlert{}
-		err = json.Unmarshal(bodyBytes, &monitAlert)
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		err = handler(monitAlert)
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		w.WriteHeader(200)
+		return
 	}
 
-	serverAddr := fmt.Sprintf(":%d", m.jobFailuresServerPort)
-	err = http.ListenAndServe(serverAddr, http.HandlerFunc(alertHandler))
+	serv := &smtpd.Server{
+		Addr:      fmt.Sprintf(":%d", m.jobFailuresServerPort),
+		OnNewMail: alertHandler,
+	}
+
+	err = serv.ListenAndServe()
+	if err != nil {
+		err = bosherr.WrapError(err, "Listen for SMTP")
+	}
 	return
 }

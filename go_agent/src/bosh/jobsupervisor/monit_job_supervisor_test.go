@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"net/http"
+	"net/smtp"
 	"testing"
 )
 
@@ -139,18 +139,16 @@ func TestMonitorJobFailures(t *testing.T) {
 	monit.jobFailuresServerPort = getJobFailureServerPort()
 	go monit.MonitorJobFailures(failureHandler)
 
-	msg := `{
-		"id": "1304319946.0@localhost",
-		"service": "nats",
-		"event": "does not exist",
-		"action": "restart",
-		"date": "Sun, 22 May 2011 20:07:41 +0500",
-		"description": "process is not running"
-	}`
+	msg := `Message-id: <1304319946.0@localhost>
+    Service: nats
+    Event: does not exist
+    Action: restart
+    Date: Sun, 22 May 2011 20:07:41 +0500
+    Description: process is not running`
 
-	resp := doJobFailureReq(msg, monit.jobFailuresServerPort)
+	err := doJobFailureEmail(msg, monit.jobFailuresServerPort)
+	assert.NoError(t, err)
 
-	assert.Equal(t, resp.StatusCode, 200)
 	assert.Equal(t, handledAlert, boshalert.MonitAlert{
 		Id:          "1304319946.0@localhost",
 		Service:     "nats",
@@ -161,39 +159,45 @@ func TestMonitorJobFailures(t *testing.T) {
 	})
 }
 
-func TestMonitorJobFailuresHandlesInvalidJson(t *testing.T) {
+func TestMonitorJobFailuresIgnoresOtherEmails(t *testing.T) {
+	var didHandleAlert bool
+
 	failureHandler := func(alert boshalert.MonitAlert) (err error) {
+		didHandleAlert = true
 		return
 	}
+
 	_, monit := buildMonitJobSupervisor()
 
 	monit.jobFailuresServerPort = getJobFailureServerPort()
 	go monit.MonitorJobFailures(failureHandler)
 
-	resp := doJobFailureReq(`{ "id": "1304319946.0@localhost", `, monit.jobFailuresServerPort)
+	msg := `Hi! How'sit goin`
 
-	assert.Equal(t, resp.StatusCode, 500)
+	err := doJobFailureEmail(msg, monit.jobFailuresServerPort)
+	assert.NoError(t, err)
+	assert.False(t, didHandleAlert)
 }
 
-func TestMonitorJobFailuresHandlesHandlerError(t *testing.T) {
-	failureHandler := func(alert boshalert.MonitAlert) (err error) {
-		err = errors.New("Oops")
+func doJobFailureEmail(email string, port int) (err error) {
+	email = fmt.Sprintf("%s\r\n", email)
+
+	conn, err := smtp.Dial(fmt.Sprintf("localhost:%d", port))
+	for err != nil {
+		conn, err = smtp.Dial(fmt.Sprintf("localhost:%d", port))
+	}
+
+	conn.Mail("sender@example.org")
+	conn.Rcpt("recipient@example.net")
+	writeCloser, err := conn.Data()
+	if err != nil {
 		return
 	}
-	_, monit := buildMonitJobSupervisor()
 
-	monit.jobFailuresServerPort = getJobFailureServerPort()
-	go monit.MonitorJobFailures(failureHandler)
+	defer writeCloser.Close()
 
-	resp := doJobFailureReq(`{ "id": "1304319946.0@localhost" }`, monit.jobFailuresServerPort)
-
-	assert.Equal(t, resp.StatusCode, 500)
-}
-
-func doJobFailureReq(body string, port int) (resp *http.Response) {
-	msg := bytes.NewReader([]byte(body))
-	req, _ := http.NewRequest("POST", fmt.Sprintf("http://0.0.0.0:%d/job-failure", port), msg)
-	resp, _ = http.DefaultClient.Do(req)
+	buf := bytes.NewBufferString(email)
+	buf.WriteTo(writeCloser)
 	return
 }
 
