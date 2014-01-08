@@ -207,7 +207,7 @@ module Bosh::Director
       @instance.model.db.transaction do
         @instance.model.vm = nil
         @instance.model.save
-        @vm.destroy if @vm.exists?
+        @vm.destroy
       end
     end
 
@@ -219,16 +219,19 @@ module Bosh::Director
                              @resource_pool_spec.cloud_properties,
                              @instance.network_settings, disks,
                              @resource_pool_spec.env)
-      @instance.model.vm = @vm
-      @instance.model.save
 
-      agent.wait_until_ready
-    rescue => e
-      if @vm
-        @logger.error("error during create_vm(), deleting vm #{@vm.cid}")
-        delete_vm
+      begin
+        @instance.model.vm = @vm
+        @instance.model.save
+
+        agent.wait_until_ready
+      rescue => e
+        if @vm
+          @logger.error("error during create_vm(), deleting vm #{@vm.cid}")
+          delete_vm
+        end
+        raise e
       end
-      raise e
     end
 
     def apply_state(state)
