@@ -47,7 +47,8 @@ describe 'director.yml.erb.erb' do
             'database' => 'bosh',
             'connection_options' => {},
           },
-          'auto_fix_stateful_nodes' => true
+          'auto_fix_stateful_nodes' => true,
+          'max_vm_create_tries' => 5,
         }
       }
     }

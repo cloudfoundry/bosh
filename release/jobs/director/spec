@@ -72,6 +72,9 @@ properties:
   director.auto_fix_stateful_nodes:
     description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
     default: true
+  director.max_vm_create_tries:
+    description: Max retries when creating VMs
+    default: 5
 
   redis.address:
     description: Address of the redis server

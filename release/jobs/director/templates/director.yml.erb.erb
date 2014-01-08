@@ -35,6 +35,7 @@ db:
   connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
 snapshots:
   enabled: <%= p('director.enable_snapshots') %>
+max_vm_create_tries: <%= p('director.max_vm_create_tries') %>
 
 scheduled_jobs:
   <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
