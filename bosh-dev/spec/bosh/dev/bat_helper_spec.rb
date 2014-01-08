@@ -5,7 +5,7 @@ module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(bat_runner_builder, infrastructure, operating_system, build, 'net-type') }
+    subject { described_class.new(bat_runner_builder, infrastructure, operating_system, build, networking_type) }
 
     let(:bat_runner_builder) { instance_double('Bosh::Dev::Aws::RunnerBuilder') }
 
@@ -24,6 +24,8 @@ module Bosh::Dev
       )
     end
 
+    let(:networking_type) { 'networking-type' }
+
     let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
 
     describe '.for_rake_args' do
@@ -32,7 +34,7 @@ module Bosh::Dev
           :infrastructure_name,
           :operating_system_name,
           :net_type,
-        ).new('infrastructure-name', 'operating-system-name', 'net-type')
+        ).new('infrastructure-name', 'operating-system-name', networking_type)
 
         described_class
           .should_receive(:runner_builder_for_infrastructure_name)
@@ -54,14 +56,14 @@ module Bosh::Dev
         bat_helper = instance_double('Bosh::Dev::BatHelper')
         described_class
           .should_receive(:new)
-          .with(bat_runner_builder, infrastructure, operating_system, build, 'net-type')
+          .with(bat_runner_builder, infrastructure, operating_system, build, networking_type)
           .and_return(bat_helper)
 
         described_class.for_rake_args(rake_args).should == bat_helper
       end
     end
 
-    expected_artifacts_dir = '/tmp/ci-artifacts/infrastructure-name/operating-system-name'
+    let(:expected_artifacts_dir) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name' }
 
     describe '#initialize' do
       its(:infrastructure)             { should == infrastructure }
@@ -69,6 +71,14 @@ module Bosh::Dev
       its(:micro_bosh_deployment_name) { should == 'microbosh' }
       its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
       its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }
+
+      context 'when there is no networking type defined' do
+        let(:networking_type) { nil }
+        let(:expected_artifacts_dir) { '/tmp/ci-artifacts/infrastructure-name/operating-system-name' }
+
+        its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
+        its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }
+      end
     end
 
     describe '#deploy_microbosh_and_run_bats' do
@@ -101,7 +111,7 @@ module Bosh::Dev
       it 'uses bats runner to deploy microbosh and run bats' do
         bat_runner_builder
           .should_receive(:build)
-          .with(subject, 'net-type')
+          .with(subject, networking_type)
           .and_return(bat_runner)
 
         bat_runner.should_receive(:deploy_microbosh_and_run_bats)
@@ -115,7 +125,7 @@ module Bosh::Dev
         bat_runner = instance_double('Bosh::Dev::Bat::Runner')
         bat_runner_builder
           .should_receive(:build)
-          .with(subject, 'net-type')
+          .with(subject, networking_type)
           .and_return(bat_runner)
 
         bat_runner.should_receive(:run_bats)

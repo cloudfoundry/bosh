@@ -42,6 +42,7 @@ module Bosh::Dev
         '/tmp',
         'ci-artifacts',
         infrastructure.name,
+        net_type ? net_type : '',
         operating_system.name,
         'deployments',
       )
