@@ -70,9 +70,7 @@ module Bosh
           context 'when bosh-deployment.yml vm_cid is nil' do
             before { deployer.state.vm_cid = nil }
 
-            it 'does not stop tasks via the agent, unmount the disk ' +
-                 'detach the disk, delete the vm' do
-              # agent.should_not_receive(:run_task).with(:stop)
+            it 'does not unmount the disk or detach the disk or delete the vm' do
               agent.should_not_receive(:run_task).with(:unmount_disk, anything)
               cloud.should_not_receive(:detach_disk)
               cloud.should_not_receive(:delete_vm)
@@ -224,8 +222,7 @@ module Bosh
           end
         end
 
-        context 'when stemcell archive is provided' +
-                '(stemcell archives include sha1 in the stemcell.MF)' do
+        context 'when stemcell archive is provided(it includes sha1 in the stemcell.MF)' do
           before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
           let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
 
@@ -283,8 +280,7 @@ module Bosh
           end
         end
 
-        context 'when stemcell archive is not provided ' +
-                '(e.g. only ami id is given instead of tgz file)' do
+        context 'when stemcell archive is not provided but only ami id is given' do
           let(:stemcell_archive) { nil }
           let(:stemcell_id) { 'fake-ami-id' }
 
