@@ -33,6 +33,7 @@ type options struct {
 	InfrastructureName string
 	PlatformName       string
 	BaseDirectory      string
+	JobSupervisor      string
 }
 
 func New(logger boshlog.Logger) (app app) {
@@ -91,7 +92,13 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	jobSupervisor := boshjobsuper.NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), monitClient, app.logger, dirProvider)
+	jobSupervisorProvider := boshjobsuper.NewProvider(platform, monitClient, app.logger, dirProvider)
+	jobSupervisor, err := jobSupervisorProvider.Get(opts.JobSupervisor)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting job supervisor")
+		return
+	}
+
 	notifier := boshnotif.NewNotifier(mbusHandler)
 	applier := boshappl.NewApplierProvider(platform, blobstore, jobSupervisor, dirProvider).Get()
 	compiler := boshcomp.NewCompilerProvider(platform, blobstore, dirProvider).Get()
@@ -131,6 +138,7 @@ func parseOptions(args []string) (opts options, err error) {
 	flagSet.SetOutput(ioutil.Discard)
 	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
 	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
+	flagSet.StringVar(&opts.JobSupervisor, "M", "monit", "Set jobsupervisor")
 	flagSet.StringVar(&opts.BaseDirectory, "b", "/var/vcap", "Set Base Directory")
 
 	// The following two options are accepted but ignored for compatibility with the old agent
