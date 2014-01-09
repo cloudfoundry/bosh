@@ -11,6 +11,7 @@ module Bosh::Dev
         %w(aws       ubuntu),
         %w(aws       centos),
         %w(openstack ubuntu),
+        %w(openstack centos),
       ]
 
       matrix = matrix_names.map do |(infrastructure_name, os_name)|

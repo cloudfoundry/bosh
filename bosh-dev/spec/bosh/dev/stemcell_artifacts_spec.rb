@@ -9,13 +9,14 @@ module Bosh::Dev
 
         described_class.should_receive(:new) do |version, matrix|
           expect(version).to eq('version')
-          expect(matrix.size).to eq(5)
+          expect(matrix.size).to eq(6)
 
           expect(matrix[0].map(&:name)).to eq(%w(vsphere   ubuntu))
           expect(matrix[1].map(&:name)).to eq(%w(vsphere   centos))
           expect(matrix[2].map(&:name)).to eq(%w(aws       ubuntu))
           expect(matrix[3].map(&:name)).to eq(%w(aws       centos))
           expect(matrix[4].map(&:name)).to eq(%w(openstack ubuntu))
+          expect(matrix[5].map(&:name)).to eq(%w(openstack centos))
 
           artifacts
         end
