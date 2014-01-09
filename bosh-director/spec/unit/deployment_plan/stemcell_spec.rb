@@ -9,11 +9,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   end
 
   def make_resource_pool(plan)
-    double(BD::DeploymentPlan::ResourcePool, :deployment_plan => plan)
+    instance_double('Bosh::Director::DeploymentPlan::ResourcePool', :deployment_plan => plan)
   end
 
   def make_plan(deployment = nil)
-    double(BD::DeploymentPlan, :model => deployment)
+    instance_double('Bosh::Director::DeploymentPlan::Planner', :model => deployment)
   end
 
   def make_deployment(name)

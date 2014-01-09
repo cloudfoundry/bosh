@@ -9,15 +9,15 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   describe 'instance methods' do
     before do
       @manifest = double('manifest')
-      @deployment_plan = double('deployment_plan')
+      @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
 
       @deployment_plan.stub(:name).and_return('test_deployment')
       @deployment_plan.should_receive(:parse).once
 
-      pool1 = double('resource_pool')
-      pool2 = double('resource_pool')
-      updater1 = double('resource_pool_updater')
-      updater2 = double('resource_pool_updater')
+      pool1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+      pool2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+      updater1 =  instance_double('Bosh::Director::ResourcePoolUpdater')
+      updater2 =  instance_double('Bosh::Director::ResourcePoolUpdater')
 
       Bosh::Director::ResourcePoolUpdater.stub(:new).with(pool1).and_return(updater1)
       Bosh::Director::ResourcePoolUpdater.stub(:new).with(pool2).and_return(updater2)
@@ -45,8 +45,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     describe 'prepare' do
       it 'should prepare the deployment plan' do
         Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-        assembler = double('assembler')
-        package_compiler = double('package_compiler')
+        assembler = instance_double('Bosh::Director::DeploymentPlan::Assembler')
+        package_compiler = instance_double('Bosh::Director::PackageCompiler')
 
         Bosh::Director::DeploymentPlan::Assembler.stub(:new).with(@deployment_plan).and_return(assembler)
         update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
@@ -76,10 +76,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
 
       it 'should update the deployment' do
-        assembler = double('assembler')
-        resource_pool = double('resource_pool')
-        resource_pool_updater = double('resource_pool_updater')
-        job = double('job')
+        assembler = instance_double('Bosh::Director::DeploymentPlan::Assembler')
+        resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+        resource_pool_updater =  instance_double('Bosh::Director::ResourcePoolUpdater')
+        job =  instance_double('Bosh::Director::DeploymentPlan::Job')
 
         resource_pool_updater.stub(:extra_vm_count).and_return(2)
         resource_pool_updater.stub(:outdated_idle_vm_count).and_return(3)
@@ -126,8 +126,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       it 'should delete references to no longer used stemcells' do
         deployment = Bosh::Director::Models::Deployment.make
 
-        resource_pool_spec = double('resource_pool_spec')
-        stemcell_spec = double('stemcell_spec')
+        resource_pool_spec = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+        stemcell_spec = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
 
         new_stemcell = Bosh::Director::Models::Stemcell.make
         old_stemcell = Bosh::Director::Models::Stemcell.make
@@ -162,11 +162,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         bar_release_version = Bosh::Director::Models::ReleaseVersion.
             make(release: bar_release, version: 42)
 
-        foo_release_spec = double('release_spec',
+        foo_release_spec = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
                                 name: 'foo',
                                 model: foo_release_version)
 
-        bar_release_spec = double('release_spec',
+        bar_release_spec = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
                                 name: 'bar',
                                 model: bar_release_version)
 

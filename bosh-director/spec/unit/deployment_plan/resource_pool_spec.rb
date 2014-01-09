@@ -24,9 +24,9 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
   describe "creating" do
     it "parses name, size, stemcell spec, cloud properties, env" do
-      network = double(BD::DeploymentPlan::Network)
+      network = instance_double('Bosh::Director::DeploymentPlan::Network')
 
-      plan = double(BD::DeploymentPlan)
+      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
       plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec)
@@ -44,7 +44,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       %w(name size cloud_properties).each do |key|
         spec = valid_spec.dup
         spec.delete(key)
-        plan = double(BD::DeploymentPlan)
+        plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
 
         expect {
           make(plan, spec)
@@ -54,7 +54,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
     it "requires referencing an existing network" do
       spec = valid_spec.merge("network" => "foobar")
-      plan = double(BD::DeploymentPlan)
+      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
       plan.stub(:network).with("foobar").and_return(nil)
 
       expect {
@@ -65,8 +65,8 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     it "has default env" do
       spec = valid_spec.dup
       spec.delete("env")
-      network = double(BD::DeploymentPlan::Network)
-      plan = double(BD::DeploymentPlan)
+      network = instance_double('Bosh::Director::DeploymentPlan::Network')
+      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
       plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, spec)
@@ -75,8 +75,8 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   it "returns resource pool spec as Hash" do
-    network = double(BD::DeploymentPlan::Network)
-    plan = double(BD::DeploymentPlan)
+    network = instance_double('Bosh::Director::DeploymentPlan::Network')
+    plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
     plan.stub(:network).with("test").and_return(network)
 
     rp = make(plan, valid_spec)
@@ -88,8 +88,8 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   it "reserves capacity up to size" do
-    network = double(BD::DeploymentPlan::Network)
-    plan = double(BD::DeploymentPlan)
+    network = instance_double('Bosh::Director::DeploymentPlan::Network')
+    plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
     plan.stub(:network).with("test").and_return(network)
 
     rp = make(plan, valid_spec)
@@ -103,10 +103,10 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
   describe "processing idle VMs" do
     it "creates idle vm objects for missing idle VMs" do
-      network = double(BD::DeploymentPlan::Network)
+      network = instance_double('Bosh::Director::DeploymentPlan::Network')
       network.stub(:reserve!)
 
-      plan = double(BD::DeploymentPlan)
+      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
       plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec)
@@ -120,8 +120,8 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     end
 
     it "reserves dynamic networks for idle VMs that don't have reservations" do
-      network = double(BD::DeploymentPlan::Network)
-      plan = double(BD::DeploymentPlan)
+      network = instance_double('Bosh::Director::DeploymentPlan::Network')
+      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
       plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec.merge("size" => 3))

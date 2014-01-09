@@ -3,7 +3,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   before(:each) do
-    @deployment_plan = double(:DeploymentPlan)
+    @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
   end
 
   describe :initialize do
@@ -26,8 +26,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should not allow overlapping subnets' do
-      subnet_a = double(BD::DeploymentPlan::NetworkSubnet)
-      subnet_b = double(BD::DeploymentPlan::NetworkSubnet)
+      subnet_a = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
+      subnet_b = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
       BD::DeploymentPlan::NetworkSubnet.stub(:new).
           and_return(subnet_a, subnet_b)
 
@@ -51,7 +51,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe :reserve do
     before(:each) do
-      @subnet = double(BD::DeploymentPlan::NetworkSubnet)
+      @subnet = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
       @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
       BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
@@ -125,7 +125,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe :release do
     before(:each) do
-      @subnet = double(BD::DeploymentPlan::NetworkSubnet)
+      @subnet = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
       @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
       BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
@@ -159,7 +159,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe :network_settings do
     before(:each) do
-      @subnet = double(BD::DeploymentPlan::NetworkSubnet)
+      @subnet = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
       @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
       @subnet.stub(:netmask).and_return('255.255.255.0')
       @subnet.stub(:cloud_properties).and_return({'VLAN' => 'a'})

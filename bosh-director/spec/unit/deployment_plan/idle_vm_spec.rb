@@ -4,12 +4,12 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan::IdleVm do
   before(:each) do
-    @reservation = double(:NetworkReservation)
-    @network = double(BD::DeploymentPlan::Network)
+    @reservation = instance_double('Bosh::Director::NetworkReservation')
+    @network = instance_double('Bosh::Director::DeploymentPlan::Network')
     @network.stub(:name).and_return("test_network")
     @network.stub(:network_settings).with(@reservation).and_return({"ip" => 1})
-    @deployment = double(:DeploymentPlan)
-    @resource_pool = double(:ResourcePool)
+    @deployment = instance_double('Bosh::Director::DeploymentPlan::Planner')
+    @resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
     @resource_pool.stub(:network).and_return(@network)
     @resource_pool.stub(:spec).and_return({"size" => "small"})
     @resource_pool.stub(:deployment_plan).and_return(@deployment)
@@ -29,7 +29,7 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
     end
 
     it "should delegate to the bound instance when present" do
-      bound_instance = double(BD::DeploymentPlan::Instance)
+      bound_instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
       bound_instance.stub(:network_settings).and_return({"dhcp" => "true"})
       @vm.bound_instance = bound_instance
       @vm.network_settings.should == {"dhcp" => "true"}

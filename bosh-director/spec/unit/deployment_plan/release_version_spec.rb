@@ -6,7 +6,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   end
 
   def make_plan(deployment)
-    double(BD::DeploymentPlan, :model => deployment)
+    instance_double('Bosh::Director::DeploymentPlan::Planner', :model => deployment)
   end
 
   def find_release(name)

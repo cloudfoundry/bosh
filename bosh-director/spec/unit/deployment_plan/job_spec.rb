@@ -4,7 +4,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   subject(:job) { described_class.new(plan, spec) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
-  let(:plan) { double(Bosh::Director::DeploymentPlan, model: deployment) }
+  let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment) }
   let(:spec) do
     {
       'name' => 'foobar',
@@ -40,8 +40,8 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     describe 'template key' do
       it 'parses a single template' do
-        release = instance_double(Bosh::Director::DeploymentPlan::ReleaseVersion)
-        template = instance_double(Bosh::Director::DeploymentPlan::Template)
+        release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+        template = instance_double('Bosh::Director::DeploymentPlan::Template')
 
         allow(plan).to receive(:release).with('appcloud').and_return(release)
         expect(release).to receive(:use_template_named).with('foo')

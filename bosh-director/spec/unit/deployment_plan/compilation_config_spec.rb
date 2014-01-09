@@ -5,8 +5,8 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::DeploymentPlan::CompilationConfig do
   describe :initialize do
     before(:each) do
-      @deployment = double(:DeploymentPlan)
-      @network = double(BD::DeploymentPlan::Network)
+      @deployment = instance_double('Bosh::Director::DeploymentPlan::Planner')
+      @network = instance_double('Bosh::Director::DeploymentPlan::Network')
       @deployment.stub(:network).with("foo").and_return(@network)
     end
 

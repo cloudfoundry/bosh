@@ -4,7 +4,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan::DynamicNetwork do
   before(:each) do
-    @deployment_plan = double(:DeploymentPlan)
+    @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
   end
 
   describe :initialize do
