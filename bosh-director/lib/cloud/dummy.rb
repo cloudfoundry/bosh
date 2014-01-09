@@ -30,38 +30,14 @@ module Bosh
         FileUtils.rm(stemcell_file(stemcell_cid))
       end
 
-      def blobstore
-        @options['agent']['blobstore']
-      end
-
-      def nats_uri
-        @options['nats']
-      end
-
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
-        agent_base_dir = "#{@options['dir']}/agent-base-dir-#{agent_id}"
-
-        root_dir = File.join(agent_base_dir, 'root_dir')
+        root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
         FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
 
         # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
         # then port should be overriden for each agent, otherwise all but first won't start
         # (won't be able to bind to port)
-        write_agent_settings(agent_base_dir, agent_id, nats_uri)
-        agent_cmd = %W[bosh_agent -b #{agent_base_dir} -r #{root_dir} --no-alerts -I dummy]
-        agent_log = "#{@options['dir']}/agent.#{agent_id}.log"
-        agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir, out: agent_log, err: agent_log)
 
-        Process.detach(agent_pid)
-
-        FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
-        FileUtils.touch(vm_file(agent_pid))
-
-        agent_pid.to_s
-      end
-
-      def write_agent_settings(agent_base_dir, agent_id, nats_uri)
-        FileUtils.mkdir_p(File.join(agent_base_dir, 'bosh'))
         settings = {
           agent_id: agent_id,
           blobstore: @options['agent']['blobstore'],
@@ -72,9 +48,25 @@ module Bosh
           vm: {
             name: "vm-#{agent_id}"
           },
-          mbus: nats_uri,
+          mbus: @options['nats'],
         }
-        File.write(File.join(agent_base_dir, 'bosh', 'settings.json'), JSON.generate(settings))
+        write_agent_settings(agent_id, settings)
+
+        agent_cmds = {
+          ruby: %W[bosh_agent -b #{agent_base_dir(agent_id)} -r #{root_dir} --no-alerts -I dummy],
+          go: %W[#{File.absolute_path('bosh/go_agent/out/bosh-agent')} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy],
+        }
+
+        agent_cmd = agent_cmds[:ruby]
+        agent_log = "#{@options['dir']}/agent.#{agent_id}.log"
+        agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir(agent_id), out: agent_log, err: agent_log)
+
+        Process.detach(agent_pid)
+
+        FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
+        File.write(vm_file(agent_pid), agent_id)
+
+        agent_pid.to_s
       end
 
       def delete_vm(vm_name)
@@ -102,10 +94,20 @@ module Bosh
         file = attachment_file(vm_id, disk_id)
         FileUtils.mkdir_p(File.dirname(file))
         FileUtils.touch(file)
+
+        agent_id = agent_id_for_vm_id(vm_id)
+        settings = read_agent_settings(agent_id)
+        settings['disks']['persistent'][disk_id] = 'attached'
+        write_agent_settings(agent_id, settings)
       end
 
       def detach_disk(vm_id, disk_id)
         FileUtils.rm(attachment_file(vm_id, disk_id))
+
+        agent_id = agent_id_for_vm_id(vm_id)
+        settings = read_agent_settings(agent_id)
+        settings['disks']['persistent'].delete(disk_id)
+        write_agent_settings(agent_id, settings)
       end
 
       def create_disk(size, vm_locality = nil)
@@ -137,6 +139,27 @@ module Bosh
       end
 
       private
+
+      def agent_id_for_vm_id(vm_id)
+        File.read(vm_file(vm_id))
+      end
+
+      def agent_settings_file(agent_id)
+        File.join(agent_base_dir(agent_id), 'bosh', 'settings.json')
+      end
+
+      def agent_base_dir(agent_id)
+        "#{@options['dir']}/agent-base-dir-#{agent_id}"
+      end
+
+      def write_agent_settings(agent_id, settings)
+        FileUtils.mkdir_p(File.dirname(agent_settings_file(agent_id)))
+        File.write(agent_settings_file(agent_id), JSON.generate(settings))
+      end
+
+      def read_agent_settings(agent_id)
+        JSON.parse(File.read(agent_settings_file(agent_id)))
+      end
 
       def stemcell_file(stemcell_id)
         File.join(@base_dir, "stemcell_#{stemcell_id}")
