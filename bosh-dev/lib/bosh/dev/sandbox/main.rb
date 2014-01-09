@@ -182,10 +182,10 @@ module Bosh::Dev::Sandbox
     private
 
     def do_reset(name)
+      kill_agents
       @worker_process.stop('QUIT')
       @director_process.stop
       @health_monitor_process.stop
-      kill_agents
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
@@ -214,10 +214,11 @@ module Bosh::Dev::Sandbox
     end
 
     def kill_agents
-      Dir[File.join(agent_tmp_path, 'running_vms', '*')].each do |vm|
+      vm_ids = Dir.glob(File.join(agent_tmp_path, 'running_vms', '*')).map { |vm| File.basename(vm).to_i }
+      puts "killing vms #{vm_ids}"
+      vm_ids.each do |agent_pid|
         begin
-          agent_pid = File.basename(vm).to_i
-          Process.kill('INT', -1 * agent_pid) # Kill the whole process group
+          Process.kill('INT', agent_pid)
         rescue Errno::ESRCH
           puts "Running VM found but no agent with #{agent_pid} is running"
         end
