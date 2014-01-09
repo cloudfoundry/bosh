@@ -14,7 +14,7 @@ func TestFilteredCopyToTemp(t *testing.T) {
 	dc := NewCpCopier(cmdRunner, fs)
 
 	srcDir := copierFixtureSrcDir(t)
-	dstDir, err := dc.FilteredCopyToTemp(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
+	dstDir, err := dc.FilteredCopyToTemp(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config", "some_directory/**/*"})
 	assert.NoError(t, err)
 	defer os.RemoveAll(dstDir)
 
@@ -35,6 +35,16 @@ func TestFilteredCopyToTemp(t *testing.T) {
 	content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stdout.log")
 	assert.NoError(t, err)
 	assert.Contains(t, content, "this is other app stdout")
+
+	// file in a sub directory
+	content, err = fs.ReadFile(dstDir + "/other_logs/more_logs/more.stdout.log")
+	assert.NoError(t, err)
+	assert.Contains(t, content, "this is more stdout")
+
+	// directories
+	assert.True(t, fs.FileExists(dstDir+"/some_directory"))
+	assert.True(t, fs.FileExists(dstDir+"/some_directory/sub_dir"))
+	assert.True(t, fs.FileExists(dstDir+"/some_directory/sub_dir/other_sub_dir"))
 
 	// file that is not matching filter
 	content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stderr.log")
@@ -59,7 +69,7 @@ func TestCleanUp(t *testing.T) {
 func copierFixtureSrcDir(t *testing.T) string {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
-	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
+	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_filtered_copy_to_temp")
 }
 
 func getCopierDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {

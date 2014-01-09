@@ -123,7 +123,7 @@ func createdTmpDir(t *testing.T, fs boshsys.FileSystem) string {
 func fixtureSrcDir(t *testing.T) string {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
-	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_get_files_in_dir")
+	return filepath.Join(pwd, "..", "..", "..", "..", "fixtures", "test_filtered_copy_to_temp")
 }
 
 func fixtureSrcTgz(t *testing.T) string {
