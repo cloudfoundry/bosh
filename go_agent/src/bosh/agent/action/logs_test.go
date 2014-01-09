@@ -11,12 +11,12 @@ import (
 )
 
 func TestLogsShouldBeAsynchronous(t *testing.T) {
-	_, _, action := buildLogsAction()
+	_, action := buildLogsAction()
 	assert.True(t, action.IsAsynchronous())
 }
 
 func TestLogsErrsIfGivenInvalidLogType(t *testing.T) {
-	_, _, action := buildLogsAction()
+	_, action := buildLogsAction()
 	_, err := action.Run("other-logs", []string{})
 	assert.Error(t, err)
 }
@@ -48,10 +48,11 @@ func TestJobLogsWithFilters(t *testing.T) {
 }
 
 func testLogs(t *testing.T, logType string, filters []string, expectedFilters []string) {
-	compressor, blobstore, action := buildLogsAction()
+	deps, action := buildLogsAction()
 
-	compressor.CompressFilesInDirTarballPath = "logs_test.go"
-	blobstore.CreateBlobId = "my-blob-id"
+	deps.copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
+	deps.compressor.CompressFilesInDirTarballPath = "logs_test.go"
+	deps.blobstore.CreateBlobId = "my-blob-id"
 
 	logs, err := action.Run(logType, filters)
 	assert.NoError(t, err)
@@ -63,19 +64,39 @@ func testLogs(t *testing.T, logType string, filters []string, expectedFilters []
 	case "agent":
 		expectedPath = filepath.Join("/fake", "dir", "bosh", "log")
 	}
-	assert.Equal(t, expectedPath, compressor.CompressFilesInDirDir)
-	assert.Equal(t, expectedFilters, compressor.CompressFilesInDirFilters)
+
+	assert.Equal(t, expectedPath, deps.copier.FilteredCopyToTempDir)
+	assert.Equal(t, expectedFilters, deps.copier.FilteredCopyToTempFilters)
+
+	assert.Equal(t, deps.copier.FilteredCopyToTempTempDir, deps.compressor.CompressFilesInDirDir)
+	assert.Equal(t, deps.copier.CleanUpTempDir, deps.compressor.CompressFilesInDirDir)
 
 	// The log file is used when calling blobstore.Create
-	assert.Equal(t, compressor.CompressFilesInDirTarballPath, blobstore.CreateFileName)
+	assert.Equal(t, deps.compressor.CompressFilesInDirTarballPath, deps.blobstore.CreateFileName)
 
 	boshassert.MatchesJsonString(t, logs, `{"blobstore_id":"my-blob-id"}`)
 }
 
-func buildLogsAction() (*fakecmd.FakeCompressor, *fakeblobstore.FakeBlobstore, logsAction) {
-	compressor := fakecmd.NewFakeCompressor()
-	blobstore := &fakeblobstore.FakeBlobstore{}
-	dirProvider := boshdirs.NewDirectoriesProvider("/fake/dir")
-	action := newLogs(compressor, blobstore, dirProvider)
-	return compressor, blobstore, action
+type logsDeps struct {
+	compressor  *fakecmd.FakeCompressor
+	copier      *fakecmd.FakeCopier
+	blobstore   *fakeblobstore.FakeBlobstore
+	dirProvider boshdirs.DirectoriesProvider
+}
+
+func buildLogsAction() (deps logsDeps, action logsAction) {
+	deps = logsDeps{
+		compressor:  fakecmd.NewFakeCompressor(),
+		blobstore:   &fakeblobstore.FakeBlobstore{},
+		dirProvider: boshdirs.NewDirectoriesProvider("/fake/dir"),
+		copier:      fakecmd.NewFakeCopier(),
+	}
+
+	action = newLogs(
+		deps.compressor,
+		deps.copier,
+		deps.blobstore,
+		deps.dirProvider,
+	)
+	return
 }

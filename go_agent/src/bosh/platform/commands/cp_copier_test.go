@@ -11,7 +11,7 @@ import (
 
 func TestFilteredCopyToTemp(t *testing.T) {
 	fs, cmdRunner := getCopierDependencies()
-	dc := NewCopier(cmdRunner, fs)
+	dc := NewCpCopier(cmdRunner, fs)
 
 	srcDir := copierFixtureSrcDir(t)
 	dstDir, err := dc.FilteredCopyToTemp(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
@@ -41,6 +41,18 @@ func TestFilteredCopyToTemp(t *testing.T) {
 	assert.Error(t, err)
 
 	content, err = fs.ReadFile(dstDir + "/../some.config")
+	assert.Error(t, err)
+}
+
+func TestCleanUp(t *testing.T) {
+	fs, cmdRunner := getCopierDependencies()
+	dc := NewCpCopier(cmdRunner, fs)
+
+	tempDir := filepath.Join(os.TempDir(), "test-copier-cleanup")
+	fs.MkdirAll(tempDir, os.ModePerm)
+	dc.CleanUp(tempDir)
+
+	_, err := os.Stat(tempDir)
 	assert.Error(t, err)
 }
 

@@ -178,7 +178,6 @@ func TestCompileCompressesCompiledPackage(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "/fake-dir/data/packages/pkg_name/pkg_version", compressor.CompressFilesInDirDir)
-	assert.Equal(t, []string{"**/*"}, compressor.CompressFilesInDirFilters)
 }
 
 func TestCompileWhenScriptDoesNotExist(t *testing.T) {

@@ -15,7 +15,7 @@ func TestCompressFilesInDir(t *testing.T) {
 	dc := NewTarballCompressor(cmdRunner, fs)
 
 	srcDir := fixtureSrcDir(t)
-	tgzName, err := dc.CompressFilesInDir(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config"})
+	tgzName, err := dc.CompressFilesInDir(srcDir)
 	assert.NoError(t, err)
 
 	defer os.Remove(tgzName)
@@ -43,13 +43,6 @@ func TestCompressFilesInDir(t *testing.T) {
 	content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stdout.log")
 	assert.NoError(t, err)
 	assert.Contains(t, content, "this is other app stdout")
-
-	// file that is not matching filter
-	content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stderr.log")
-	assert.Error(t, err)
-
-	content, err = fs.ReadFile(dstDir + "/../some.config")
-	assert.Error(t, err)
 }
 
 func TestDecompressFileToDir(t *testing.T) {

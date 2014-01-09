@@ -10,12 +10,14 @@ import (
 
 type logsAction struct {
 	compressor  boshcmd.Compressor
+	copier      boshcmd.Copier
 	blobstore   boshblob.Blobstore
 	settingsDir boshdirs.DirectoriesProvider
 }
 
-func newLogs(compressor boshcmd.Compressor, blobstore boshblob.Blobstore, settingsDir boshdirs.DirectoriesProvider) (action logsAction) {
+func newLogs(compressor boshcmd.Compressor, copier boshcmd.Copier, blobstore boshblob.Blobstore, settingsDir boshdirs.DirectoriesProvider) (action logsAction) {
 	action.compressor = compressor
+	action.copier = copier
 	action.blobstore = blobstore
 	action.settingsDir = settingsDir
 	return
@@ -44,7 +46,15 @@ func (a logsAction) Run(logType string, filters []string) (value interface{}, er
 		return
 	}
 
-	tarball, err := a.compressor.CompressFilesInDir(logsDir, filters)
+	tmpDir, err := a.copier.FilteredCopyToTemp(logsDir, filters)
+	if err != nil {
+		err = bosherr.WrapError(err, "Copying filtered files to temp directory")
+		return
+	}
+
+	defer a.copier.CleanUp(tmpDir)
+
+	tarball, err := a.compressor.CompressFilesInDir(tmpDir)
 	if err != nil {
 		err = bosherr.WrapError(err, "Making logs tarball")
 		return

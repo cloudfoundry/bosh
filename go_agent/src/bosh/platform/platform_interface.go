@@ -14,6 +14,7 @@ type Platform interface {
 	GetRunner() (runner boshsys.CmdRunner)
 	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	GetCompressor() (compressor boshcmd.Compressor)
+	GetCopier() (copier boshcmd.Copier)
 	GetDirProvider() (dirProvider boshdir.DirectoriesProvider)
 	GetVitalsService() (service boshvitals.Service)
 

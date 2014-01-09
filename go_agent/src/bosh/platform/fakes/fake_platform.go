@@ -18,6 +18,7 @@ type FakePlatform struct {
 	Runner             *fakesys.FakeCmdRunner
 	FakeStatsCollector *fakestats.FakeStatsCollector
 	FakeCompressor     *fakecmd.FakeCompressor
+	FakeCopier         *fakecmd.FakeCopier
 	FakeVitalsService  *fakevitals.FakeService
 
 	SetupRuntimeConfigurationWasInvoked bool
@@ -61,7 +62,8 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.Fs = &fakesys.FakeFileSystem{}
 	platform.Runner = &fakesys.FakeCmdRunner{}
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
-	platform.FakeCompressor = &fakecmd.FakeCompressor{}
+	platform.FakeCompressor = fakecmd.NewFakeCompressor()
+	platform.FakeCopier = fakecmd.NewFakeCopier()
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 
 	platform.AddUserToGroupsGroups = make(map[string][]string)
@@ -84,6 +86,10 @@ func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) 
 
 func (p *FakePlatform) GetCompressor() (compressor boshcmd.Compressor) {
 	return p.FakeCompressor
+}
+
+func (p *FakePlatform) GetCopier() (copier boshcmd.Copier) {
+	return p.FakeCopier
 }
 
 func (p *FakePlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {

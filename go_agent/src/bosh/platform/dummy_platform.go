@@ -15,6 +15,7 @@ type dummyPlatform struct {
 	fs            boshsys.FileSystem
 	cmdRunner     boshsys.CmdRunner
 	compressor    boshcmd.Compressor
+	copier        boshcmd.Copier
 	dirProvider   boshdirs.DirectoriesProvider
 	vitalsService boshvitals.Service
 }
@@ -30,6 +31,7 @@ func newDummyPlatform(
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
 	platform.compressor = compressor
+	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.dirProvider = dirProvider
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	return
@@ -49,6 +51,10 @@ func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) 
 
 func (p dummyPlatform) GetCompressor() (compressor boshcmd.Compressor) {
 	return p.compressor
+}
+
+func (p dummyPlatform) GetCopier() (copier boshcmd.Copier) {
+	return p.copier
 }
 
 func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {

@@ -87,7 +87,7 @@ func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobI
 		}
 	}
 
-	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath, []string{"**/*"})
+	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Compressing compiled package")
 		return

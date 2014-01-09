@@ -28,6 +28,7 @@ type ubuntu struct {
 	formatter       boshdisk.Formatter
 	mounter         boshdisk.Mounter
 	compressor      boshcmd.Compressor
+	copier          boshcmd.Copier
 	diskWaitTimeout time.Duration
 	dirProvider     boshdirs.DirectoriesProvider
 	vitalsService   boshvitals.Service
@@ -48,6 +49,7 @@ func newUbuntuPlatform(
 	platform.formatter = diskManager.GetFormatter()
 	platform.mounter = diskManager.GetMounter()
 	platform.compressor = compressor
+	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.diskWaitTimeout = 3 * time.Minute
 	platform.dirProvider = dirProvider
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
@@ -68,6 +70,10 @@ func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 
 func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
+}
+
+func (p ubuntu) GetCopier() (runner boshcmd.Copier) {
+	return p.copier
 }
 
 func (p ubuntu) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {

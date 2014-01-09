@@ -8,18 +8,18 @@ import (
 	"strings"
 )
 
-type copier struct {
+type cpCopier struct {
 	fs        boshsys.FileSystem
 	cmdRunner boshsys.CmdRunner
 }
 
-func NewCopier(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c copier) {
+func NewCpCopier(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) (c cpCopier) {
 	c.cmdRunner = cmdRunner
 	c.fs = fs
 	return
 }
 
-func (c copier) FilteredCopyToTemp(dir string, filters []string) (tempDir string, err error) {
+func (c cpCopier) FilteredCopyToTemp(dir string, filters []string) (tempDir string, err error) {
 	tempDir, err = c.fs.TempDir("bosh-platform-disk-TarballCompressor-CompressFilesInDir")
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating temporary directory")
@@ -70,7 +70,11 @@ func (c copier) FilteredCopyToTemp(dir string, filters []string) (tempDir string
 	return
 }
 
-func (c copier) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
+func (c cpCopier) CleanUp(tempDir string) {
+	c.fs.RemoveAll(tempDir)
+}
+
+func (c cpCopier) findFilesMatchingFilters(dir string, filters []string) (files []string, err error) {
 	for _, filter := range filters {
 		var newFiles []string
 
@@ -86,7 +90,7 @@ func (c copier) findFilesMatchingFilters(dir string, filters []string) (files []
 	return
 }
 
-func (c copier) findFilesMatchingFilter(filter string) (files []string, err error) {
+func (c cpCopier) findFilesMatchingFilter(filter string) (files []string, err error) {
 	files, err = filepath.Glob(filter)
 	if err != nil {
 		err = bosherr.WrapError(err, "Doing glob with filter")
