@@ -4,41 +4,59 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
-	fakevitals "bosh/platform/vitals/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
+	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	fakesys "bosh/system/fakes"
 )
 
-type dummyPlatform struct{}
+type dummyPlatform struct {
+	collector     boshstats.StatsCollector
+	fs            boshsys.FileSystem
+	cmdRunner     boshsys.CmdRunner
+	compressor    boshcmd.Compressor
+	dirProvider   boshdirs.DirectoriesProvider
+	vitalsService boshvitals.Service
+}
 
-func newDummyPlatform() (p dummyPlatform) {
+func newDummyPlatform(
+	collector boshstats.StatsCollector,
+	fs boshsys.FileSystem,
+	cmdRunner boshsys.CmdRunner,
+	compressor boshcmd.Compressor,
+	dirProvider boshdirs.DirectoriesProvider,
+) (platform dummyPlatform) {
+	platform.collector = collector
+	platform.fs = fs
+	platform.cmdRunner = cmdRunner
+	platform.compressor = compressor
+	platform.dirProvider = dirProvider
+	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	return
 }
 
 func (p dummyPlatform) GetFs() (fs boshsys.FileSystem) {
-	return &fakesys.FakeFileSystem{}
+	return p.fs
 }
 
 func (p dummyPlatform) GetRunner() (runner boshsys.CmdRunner) {
-	return &fakesys.FakeCmdRunner{}
+	return p.cmdRunner
 }
 
 func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
-	return boshstats.NewDummyStatsCollector()
+	return p.collector
 }
 
 func (p dummyPlatform) GetCompressor() (compressor boshcmd.Compressor) {
-	return boshcmd.DummyCompressor{}
+	return p.compressor
 }
 
 func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
-	return boshdir.NewDirectoriesProvider("/var/vcap")
+	return p.dirProvider
 }
 
 func (p dummyPlatform) GetVitalsService() (service boshvitals.Service) {
-	return fakevitals.NewFakeService()
+	return p.vitalsService
 }
 
 func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
