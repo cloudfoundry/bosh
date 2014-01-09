@@ -403,10 +403,12 @@ module Bosh::Director
 
     def delete_unneeded_vms
       unneeded_vms = @deployment_plan.unneeded_vms
-      return if unneeded_vms.empty?
+      if unneeded_vms.empty?
+        @logger.info("No unneeded vms to delete")
+        return
+      end
 
       @event_log.begin_stage("Deleting unneeded VMs", unneeded_vms.size)
-
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         unneeded_vms.each do |vm|
           pool.process do
@@ -422,7 +424,10 @@ module Bosh::Director
 
     def delete_unneeded_instances
       unneeded_instances = @deployment_plan.unneeded_instances
-      return if unneeded_instances.empty?
+      if unneeded_instances.empty?
+        @logger.info("No unneeded instances to delete")
+        return
+      end
 
       event_log_stage = @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size)
       instance_deleter = InstanceDeleter.new(@deployment_plan)
