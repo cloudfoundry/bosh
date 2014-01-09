@@ -32,16 +32,11 @@ func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, er
 		return
 	}
 
-	jsonSettings := boshsettings.Settings{}
-	err = json.Unmarshal([]byte(contents), &jsonSettings)
+	err = json.Unmarshal([]byte(contents), &settings)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshal json settings")
 		return
 	}
-
-	settings.AgentId = jsonSettings.AgentId
-	settings.Blobstore = jsonSettings.Blobstore
-	settings.Mbus = jsonSettings.Mbus
 
 	return
 }
