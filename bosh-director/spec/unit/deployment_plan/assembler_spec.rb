@@ -650,15 +650,30 @@ module Bosh::Director
         end
       end
 
-      describe :delete_unneeded_instances do
-        it 'should delete unneeded instances' do
-          instance = Models::Instance.make
-          @deployment_plan.stub(:unneeded_instances).and_return([instance])
-          instance_deleter = double('instance_deleter')
-          InstanceDeleter.stub(:new).and_return(instance_deleter)
+      describe '#delete_unneeded_instances' do
+        before { allow(Config).to receive(:event_log).and_return(event_log) }
+        let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
-          instance_deleter.should_receive(:delete_instances).with([instance])
-          @assembler.delete_unneeded_instances
+        subject(:assembler) { described_class.new(@deployment_plan) }
+
+        it 'deletes unneeded instances and records stage progress' do
+          instance = Models::Instance.make
+          allow(@deployment_plan).to receive(:unneeded_instances).and_return([instance])
+
+          instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
+          expect(InstanceDeleter).to receive(:new)
+            .with(@deployment_plan)
+            .and_return(instance_deleter)
+
+          event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
+          expect(event_log).to receive(:begin_stage)
+            .with('Deleting unneeded instances', 1)
+            .and_return(event_log_stage)
+
+          expect(instance_deleter).to receive(:delete_instances)
+            .with([instance], event_log_stage)
+
+          assembler.delete_unneeded_instances
         end
       end
     end
