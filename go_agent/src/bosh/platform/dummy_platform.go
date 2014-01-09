@@ -24,15 +24,15 @@ func newDummyPlatform(
 	collector boshstats.StatsCollector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
-	compressor boshcmd.Compressor,
 	dirProvider boshdirs.DirectoriesProvider,
 ) (platform dummyPlatform) {
 	platform.collector = collector
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
-	platform.compressor = compressor
-	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.dirProvider = dirProvider
+
+	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
+	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	return
 }

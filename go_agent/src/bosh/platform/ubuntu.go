@@ -39,19 +39,20 @@ func newUbuntuPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	diskManager boshdisk.Manager,
-	compressor boshcmd.Compressor,
 	dirProvider boshdirs.DirectoriesProvider,
 ) (platform ubuntu) {
 	platform.collector = collector
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
+	platform.dirProvider = dirProvider
+
 	platform.partitioner = diskManager.GetPartitioner()
 	platform.formatter = diskManager.GetFormatter()
 	platform.mounter = diskManager.GetMounter()
-	platform.compressor = compressor
-	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.diskWaitTimeout = 3 * time.Minute
-	platform.dirProvider = dirProvider
+
+	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
+	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	return
 }

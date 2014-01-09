@@ -1,7 +1,6 @@
 package platform
 
 import (
-	fakecmd "bosh/platform/commands/fakes"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
@@ -531,7 +530,6 @@ type ubuntuDependencies struct {
 	fs          *fakesys.FakeFileSystem
 	cmdRunner   *fakesys.FakeCmdRunner
 	diskManager fakedisk.FakeDiskManager
-	compressor  *fakecmd.FakeCompressor
 	dirProvider boshdirs.DirectoriesProvider
 }
 
@@ -543,7 +541,6 @@ func buildUbuntu() (
 	deps.fs = &fakesys.FakeFileSystem{}
 	deps.cmdRunner = &fakesys.FakeCmdRunner{}
 	deps.diskManager = fakedisk.NewFakeDiskManager(deps.cmdRunner)
-	deps.compressor = fakecmd.NewFakeCompressor()
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 
 	platform = newUbuntuPlatform(
@@ -551,7 +548,6 @@ func buildUbuntu() (
 		deps.fs,
 		deps.cmdRunner,
 		deps.diskManager,
-		deps.compressor,
 		deps.dirProvider,
 	)
 	return
