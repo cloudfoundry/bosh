@@ -16,3 +16,6 @@
 [submodule "go_agent/src/github.com/pivotal/go-smtpd"]
 	path = go_agent/src/github.com/pivotal/go-smtpd
 	url = https://github.com/pivotal/go-smtpd.git
+[submodule "go_agent/src/github.com/cloudfoundry/gofileutils"]
+	path = go_agent/src/github.com/cloudfoundry/gofileutils
+	url = https://github.com/cloudfoundry/gofileutils.git
