@@ -1,6 +1,8 @@
 #!/bin/bash 
 
 set -e
+BINDIR=$(dirname $0)
+BASEDIR=$(dirname $BINDIR)
 
-$(dirname $0)/go build -o out/bosh-agent bosh/main
-$(dirname $0)/go build -o out/dav-cli bosh/davcli/main
+$BINDIR/go build -o $BASEDIR/out/bosh-agent bosh/main
+$BINDIR/go build -o $BASEDIR/out/dav-cli bosh/davcli/main

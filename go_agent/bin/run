@@ -1,5 +1,7 @@
 #!/bin/bash
 
 set -e
+BINDIR=$(dirname $0)
+BASEDIR=$(dirname $BINDIR)
 
-$(dirname $0)/go run src/bosh/main/agent.go $*
+$BINDIR/go run $BASEDIR/src/bosh/main/agent.go $*
