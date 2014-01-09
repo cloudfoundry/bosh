@@ -7,13 +7,13 @@ module Bosh::Director
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
       before do
-        @cloud = double(:Cloud)
+        @cloud = instance_double('Bosh::Cloud')
         Config.stub(:cloud).and_return(@cloud)
-        @deployment_plan = double(:DeploymentPlan)
+        @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
         @assembler = Assembler.new(@deployment_plan)
       end
 
-      let(:plan) { double(DeploymentPlan) }
+      let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
       let(:compiler) { Assembler.new(plan) }
 
       it 'should bind deployment' do
@@ -22,8 +22,8 @@ module Bosh::Director
       end
 
       it 'should bind releases' do
-        r1 = double(ReleaseVersion)
-        r2 = double(ReleaseVersion)
+        r1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+        r2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
 
         plan.should_receive(:releases).and_return([r1, r2])
 
@@ -47,8 +47,8 @@ module Bosh::Director
       end
 
       it 'should bind resource pools' do
-        rp1 = double(ResourcePool)
-        rp2 = double(ResourcePool)
+        rp1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+        rp2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
 
         plan.should_receive(:resource_pools).and_return([rp1, rp2])
 
@@ -59,11 +59,11 @@ module Bosh::Director
       end
 
       it 'should bind stemcells' do
-        sc1 = double(Stemcell)
-        sc2 = double(Stemcell)
+        sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
+        sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
 
-        rp1 = double(ResourcePool, :stemcell => sc1)
-        rp2 = double(ResourcePool, :stemcell => sc2)
+        rp1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', :stemcell => sc1)
+        rp2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', :stemcell => sc2)
 
         plan.should_receive(:resource_pools).and_return([rp1, rp2])
 
@@ -74,8 +74,8 @@ module Bosh::Director
       end
 
       it 'should bind templates' do
-        r1 = double(ReleaseVersion)
-        r2 = double(ReleaseVersion)
+        r1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+        r2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
 
         plan.should_receive(:releases).and_return([r1, r2])
 
@@ -86,10 +86,10 @@ module Bosh::Director
       end
 
       it 'should bind unallocated VMs' do
-        instances = (1..4).map { |i| double(Instance) }
+        instances = (1..4).map { |i| instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-        j1 = double(Job, :instances => instances[0..1])
-        j2 = double(Job, :instances => instances[2..3])
+        j1 = instance_double('Bosh::Director::DeploymentPlan::Job', :instances => instances[0..1])
+        j2 = instance_double('Bosh::Director::DeploymentPlan::Job', :instances => instances[2..3])
 
         plan.should_receive(:jobs).and_return([j1, j2])
 
@@ -101,8 +101,8 @@ module Bosh::Director
         compiler.bind_unallocated_vms
       end
 
-      describe :bind_existing_vm do
-        before(:each) do
+      describe '#bind_existing_vm' do
+        before do
           @lock = Mutex.new
           @vm = Models::Vm.make(:agent_id => 'foo')
         end
@@ -124,7 +124,7 @@ module Bosh::Director
         it 'should bind an idle vm' do
           state = { 'resource_pool' => { 'name' => 'baz' } }
           reservations = { 'foo' => 'reservation' }
-          resource_pool = double(:ResourcePool)
+          resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
 
           @deployment_plan.stub(:resource_pool).with('baz').
             and_return(resource_pool)
@@ -154,15 +154,15 @@ module Bosh::Director
         end
       end
 
-      describe :bind_idle_vm do
-        before(:each) do
-          @network = double(Network)
+      describe '#bind_idle_vm' do
+        before do
+          @network = instance_double('Bosh::Director::DeploymentPlan::Network')
           @network.stub(:name).and_return('foo')
-          @reservation = double(:NetworkReservation)
-          @resource_pool = double(:ResourcePool)
+          @reservation = instance_double('Bosh::Director::NetworkReservation')
+          @resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
           @resource_pool.stub(:name).and_return('baz')
           @resource_pool.stub(:network).and_return(@network)
-          @idle_vm = double(:IdleVm)
+          @idle_vm = instance_double('Bosh::Director::DeploymentPlan::IdleVm')
           @vm = Models::Vm.make
         end
 
@@ -200,18 +200,16 @@ module Bosh::Director
         end
       end
 
-      describe :bind_instance do
-        before(:each) do
-          @model = Models::Instance.make(:job => 'foo', :index => 3)
-        end
+      describe '#bind_instance' do
+        before { @model = Models::Instance.make(:job => 'foo', :index => 3) }
 
         it 'should associate the instance to the instance spec' do
           state = { 'state' => 'baz' }
           reservations = { 'net' => 'reservation' }
 
-          instance = double(Instance)
-          resource_pool = double(:ResourcePool)
-          job = double(Job)
+          instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
+          resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+          job = instance_double('Bosh::Director::DeploymentPlan::Job')
           job.stub(:instance).with(3).and_return(instance)
           job.stub(:resource_pool).and_return(resource_pool)
           @deployment_plan.stub(:job).with('foo').and_return(job)
@@ -230,9 +228,9 @@ module Bosh::Director
           state = { 'state' => 'baz' }
           reservations = { 'net' => 'reservation' }
 
-          instance = double(Instance)
-          resource_pool = double(:ResourcePool)
-          job = double(Job)
+          instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
+          resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+          job = instance_double('Bosh::Director::DeploymentPlan::Job')
           job.stub(:instance).with(3).and_return(instance)
           job.stub(:resource_pool).and_return(resource_pool)
           @deployment_plan.stub(:job).with('bar').and_return(job)
@@ -260,10 +258,10 @@ module Bosh::Director
         end
       end
 
-      describe :get_network_reservations do
+      describe '#get_network_reservations' do
         it 'should reserve all of the networks listed in the state' do
-          foo_network = double(Network)
-          bar_network = double(Network)
+          foo_network = instance_double('Bosh::Director::DeploymentPlan::Network')
+          bar_network = instance_double('Bosh::Director::DeploymentPlan::Network')
 
           @deployment_plan.stub(:network).with('foo').and_return(foo_network)
           @deployment_plan.stub(:network).with('bar').and_return(bar_network)
@@ -282,20 +280,20 @@ module Bosh::Director
             false
           end
 
-          @assembler.get_network_reservations({
-                                                               'networks' => {
-                                                                 'foo' => {
-                                                                   'ip' => '1.2.3.4'
-                                                                 },
-                                                                 'bar' => {
-                                                                   'ip' => '10.20.30.40'
-                                                                 }
-                                                               }
-                                                             }).should == { 'foo' => foo_reservation }
+          @assembler.get_network_reservations(
+            'networks' => {
+              'foo' => {
+                'ip' => '1.2.3.4'
+              },
+              'bar' => {
+                'ip' => '10.20.30.40'
+              }
+            }
+          ).should == { 'foo' => foo_reservation }
         end
       end
 
-      describe :get_state do
+      describe '#get_state' do
         it 'should return the processed agent state' do
           state = { 'state' => 'baz' }
 
@@ -312,8 +310,8 @@ module Bosh::Director
         end
       end
 
-      describe :verify_state do
-        before(:each) do
+      describe '#verify_state' do
+        before do
           @deployment = Models::Deployment.make(:name => 'foo')
           @vm = Models::Vm.make(:deployment => @deployment, :cid => 'foo')
           @deployment_plan.stub(:name).and_return('foo')
@@ -396,14 +394,15 @@ module Bosh::Director
         end
       end
 
-      describe :migrate_legacy_state
-      describe :bind_resource_pools
+      describe '#migrate_legacy_state'
 
-      describe :bind_instance_networks do
-        before(:each) do
-          @job_spec = double(Job)
-          @instance_spec = double(Instance)
-          @network_spec = double(Network)
+      describe '#bind_resource_pools'
+
+      describe '#bind_instance_networks' do
+        before do
+          @job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
+          @instance_spec = instance_double('Bosh::Director::DeploymentPlan::Instance')
+          @network_spec = instance_double('Bosh::Director::DeploymentPlan::Network')
 
           @deployment_plan.stub(:jobs).and_return([@job_spec])
           @deployment_plan.stub(:network).with('network-a').
@@ -446,8 +445,8 @@ module Bosh::Director
         end
       end
 
-      describe :bind_dns do
-        before(:each) do
+      describe '#bind_dns' do
+        before do
           Config.stub(:dns).and_return({ 'address' => '1.2.3.4' })
           Config.stub(:dns_domain_name).and_return('bosh')
         end
@@ -505,7 +504,7 @@ module Bosh::Director
         end
       end
 
-      describe :bind_instance_vms
+      describe '#bind_instance_vms'
 
       describe '#bind_instance_vm' do
         let(:instance) do
@@ -632,7 +631,7 @@ module Bosh::Director
         end
       end
 
-      describe :delete_unneeded_vms do
+      describe '#delete_unneeded_vms' do
         it 'should delete unneeded VMs' do
           vm = Models::Vm.make(:cid => 'vm-cid')
           @deployment_plan.stub(:unneeded_vms).and_return([vm])
