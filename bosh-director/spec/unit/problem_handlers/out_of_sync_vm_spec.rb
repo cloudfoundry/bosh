@@ -12,7 +12,7 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
   end
 
   before(:each) do
-    @cloud = double("cloud")
+    @cloud = instance_double('Bosh::Cloud')
     @agent = double("agent")
 
     @deployment = Bosh::Director::Models::Deployment.make(:name => "mycloud")

@@ -9,7 +9,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   end
 
   before(:each) do
-    @cloud = double("cloud")
+    @cloud = instance_double('Bosh::Cloud')
     @agent = double("agent")
 
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")

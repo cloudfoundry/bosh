@@ -87,7 +87,7 @@ module Bosh::Director
       end
 
       let(:vm) do
-        cloud = double('cloud')
+        cloud = instance_double('Bosh::Cloud')
         Config.stub(:cloud).and_return(cloud)
         env = {}
         deployment = Models::Deployment.make

@@ -8,7 +8,7 @@ module Bosh::Director
       let(:blobstore) { double('Blobstore') }
 
       before do
-        @cloud = double('cloud')
+        @cloud = instance_double('Bosh::Cloud')
         Config.stub(:cloud).and_return(@cloud)
       end
 

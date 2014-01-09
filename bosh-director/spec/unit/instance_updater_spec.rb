@@ -76,7 +76,7 @@ module Bosh::Director
              network_settings: double('NetworkSettings'),
              disk_size: disk_size)
     end
-    let(:cloud) { double('cloud') }
+    let(:cloud) { instance_double('Bosh::Cloud') }
 
     let(:agent_client) { double('Bosh::Director::AgentClient') }
 

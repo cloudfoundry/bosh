@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::Director::VmCreator do
 
   before do
-    @cloud = double('cloud')
+    @cloud = instance_double('Bosh::Cloud')
     Bosh::Director::Config.stub(:cloud).and_return(@cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
 

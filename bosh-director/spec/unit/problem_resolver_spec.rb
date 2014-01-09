@@ -6,7 +6,7 @@ module Bosh::Director
       @deployment = Models::Deployment.make(name: 'mycloud')
       @other_deployment = Models::Deployment.make(name: 'othercloud')
 
-      @cloud = double('cloud')
+      @cloud = instance_double('Bosh::Cloud')
       Config.stub(:cloud).and_return(@cloud)
     end
 

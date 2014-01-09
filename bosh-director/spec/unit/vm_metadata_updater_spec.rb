@@ -4,7 +4,7 @@ require 'logger'
 describe Bosh::Director::VmMetadataUpdater do
   describe '.build' do
     it 'returns metadata updater' do
-      cloud = double('cloud')
+      cloud = instance_double('Bosh::Cloud')
       logger = double('logger')
       Bosh::Director::Config.stub(
         cloud: cloud, name: 'fake-director-name', logger: logger)

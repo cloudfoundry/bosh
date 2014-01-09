@@ -13,7 +13,7 @@ module Bosh::Director
     end
 
     before(:each) do
-      @cloud = double('cloud')
+      @cloud = instance_double('Bosh::Cloud')
       @agent = double('agent')
       Config.stub(:cloud).and_return(@cloud)
 

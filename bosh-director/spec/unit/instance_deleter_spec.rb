@@ -6,7 +6,7 @@ module Bosh::Director
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before do
-      @cloud = double('cloud')
+      @cloud = instance_double('Bosh::Cloud')
       Config.stub(:cloud).and_return(@cloud)
       @deployment_plan = double('deployment_plan')
       @deleter = InstanceDeleter.new(@deployment_plan)

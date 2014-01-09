@@ -6,7 +6,7 @@ require 'net/http'
 describe Bosh::Director::Jobs::UpdateStemcell do
 
   before(:each) do
-    @cloud = double("cloud")
+    @cloud = instance_double('Bosh::Cloud')
 
     @tmpdir = Dir.mktmpdir("base_dir")
 
