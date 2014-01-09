@@ -42,7 +42,7 @@ module Bosh::OpenStackCloud
                        "with floating IP `#{@ip}'")
           address.server = server
         else
-          cloud_error("Floating IP #{@ip} not allocated")
+          cloud_error("Floating IP #{@ip} not allocated as it's not found in IP pool")
         end
       end
     end
