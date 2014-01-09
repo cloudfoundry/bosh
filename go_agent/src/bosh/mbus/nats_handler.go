@@ -55,26 +55,11 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
-		req := Request{}
-		err := json.Unmarshal(natsMsg.Payload, &req)
+		respBytes, req, err := performHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
 		if err != nil {
-			err = bosherr.WrapError(err, "Unmarshalling JSON payload")
+			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
 			return
 		}
-		req.payload = natsMsg.Payload
-
-		h.logger.Info("NATS Handler", "Received request with action %s", req.Method)
-		h.logger.DebugWithDetails("NATS Handler", "Payload", req.payload)
-
-		resp := handlerFunc(req)
-		respBytes, err := json.Marshal(resp)
-		if err != nil {
-			err = bosherr.WrapError(err, "Marshalling JSON response")
-			return
-		}
-
-		h.logger.Info("NATS Handler", "Responding")
-		h.logger.DebugWithDetails("NATS Handler", "Payload", respBytes)
 
 		h.client.Publish(req.ReplyTo, respBytes)
 	})

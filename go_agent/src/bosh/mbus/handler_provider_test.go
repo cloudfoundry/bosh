@@ -8,21 +8,31 @@ import (
 )
 
 func TestHandlerProviderGetReturnsNatsHandler(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://0.0.0.0"}
-
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	provider := NewHandlerProvider(settings, logger)
+	provider := buildProvider("nats://0.0.0.0")
 	handler, err := provider.Get()
 
 	assert.NoError(t, err)
 	assert.IsType(t, natsHandler{}, handler)
 }
 
+func TestHandlerProviderGetReturnsHttpsHandler(t *testing.T) {
+	provider := buildProvider("https://0.0.0.0")
+	handler, err := provider.Get()
+
+	assert.NoError(t, err)
+	assert.IsType(t, httpsHandler{}, handler)
+}
+
 func TestHandlerProviderGetReturnsAnErrorIfNotSupported(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{MbusUrl: "foo://0.0.0.0"}
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	provider := NewHandlerProvider(settings, logger)
+	provider := buildProvider("foo://0.0.0.0")
 	_, err := provider.Get()
 
 	assert.Error(t, err)
+}
+
+func buildProvider(mbusUrl string) (provider mbusHandlerProvider) {
+	settings := &fakesettings.FakeSettingsService{MbusUrl: mbusUrl}
+	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	provider = NewHandlerProvider(settings, logger)
+	return
 }
