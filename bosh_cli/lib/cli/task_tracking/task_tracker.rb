@@ -113,6 +113,7 @@ module Bosh::Cli::TaskTracking
       say("Task #{@task_id} #{task_status.to_s.make_yellow}")
 
       if task_status == :done && @renderer.duration_known?
+        nl
         say("Started\t\t#{@renderer.started_at.utc.to_s}")
         say("Finished\t#{@renderer.finished_at.utc.to_s}")
         say("Duration\t#{format_time(@renderer.duration).make_yellow}")
