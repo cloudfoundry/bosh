@@ -462,7 +462,41 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
     describe 'update key'
     describe 'instances key'
-    describe 'networks key'
+
+    describe 'networks key' do
+      before { job_spec['networks'].first['static_ips'] = '10.0.0.2 - 10.0.0.4' } # 2,3,4
+
+      context 'when the number of static ips is less than number of instances' do
+        it 'raises an exception because if a job uses static ips all instances must have a static ip' do
+          job_spec['instances'] = 4
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+            Bosh::Director::JobNetworkInstanceIpMismatch,
+            "Job `fake-job-name' has 4 instances but was allocated 3 static IPs",
+          )
+        end
+      end
+
+      context 'when the number of static ips is greater the number of instances' do
+        it 'raises an exception because the extra ip is wasted' do
+          job_spec['instances'] = 2
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+            Bosh::Director::JobNetworkInstanceIpMismatch,
+            "Job `fake-job-name' has 2 instances but was allocated 3 static IPs",
+          )
+        end
+      end
+
+      context 'when number of static ips matches the number of instances' do
+        it 'does not raise an exception' do
+          job_spec['instances'] = 3
+          expect { parser.parse(job_spec) }.to_not raise_error
+        end
+      end
+    end
 
     def make_template(name, rel_ver)
       instance_double(
