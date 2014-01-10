@@ -215,12 +215,11 @@ module Bosh::Dev::Sandbox
 
     def kill_agents
       vm_ids = Dir.glob(File.join(agent_tmp_path, 'running_vms', '*')).map { |vm| File.basename(vm).to_i }
-      puts "killing vms #{vm_ids}"
       vm_ids.each do |agent_pid|
         begin
           Process.kill('INT', agent_pid)
         rescue Errno::ESRCH
-          puts "Running VM found but no agent with #{agent_pid} is running"
+          @logger.info("Running VM found but no agent with #{agent_pid} is running")
         end
       end
     end
