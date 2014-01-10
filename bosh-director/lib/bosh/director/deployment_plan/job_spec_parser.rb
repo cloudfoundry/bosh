@@ -6,6 +6,7 @@ module Bosh::Director
       include DnsHelper
       include ValidationHelper
       include Bosh::Common::PropertyHelper
+      include IpUtil
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
       def initialize(deployment)
