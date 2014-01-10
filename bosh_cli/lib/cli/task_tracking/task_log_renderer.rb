@@ -6,10 +6,10 @@ module Bosh::Cli::TaskTracking
     ]
 
     def self.create_for_log_type(log_type)
-      if log_type == "event"
+      if log_type == 'event'
         EventLogRenderer.new(stages_without_progress_bar:
           EVENT_LOG_STAGES_WITHOUT_PROGRESS_BAR)
-      elsif log_type == "result" || log_type == "none"
+      elsif log_type == 'result' || log_type == 'none'
         NullTaskLogRenderer.new
       else
         TaskLogRenderer.new
@@ -23,7 +23,7 @@ module Bosh::Cli::TaskTracking
       @out = Bosh::Cli::Config.output || $stdout
       @out.sync = true
       @lock = Mutex.new
-      @output = ""
+      @output = ''
       @time_adjustment = 0
       @duration = nil
     end
@@ -38,7 +38,7 @@ module Bosh::Cli::TaskTracking
 
     def refresh
       @out.print(@output)
-      @output = ""
+      @output = ''
     end
 
     def finish(state)

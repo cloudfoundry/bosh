@@ -31,7 +31,7 @@ module Bosh::Cli::TaskTracking
 
       @lock.synchronize do
         # Handling the special "error" event
-        if event["error"]
+        if event['error']
           done_with_stage if @current_stage
           add_error(event)
           return
@@ -55,11 +55,11 @@ module Bosh::Cli::TaskTracking
         # resuming the older stages rendering if we feel
         # that it's valuable.
 
-        tags = event["tags"].is_a?(Array) ? event["tags"] : []
-        stage_header = event["stage"]
+        tags = event['tags'].is_a?(Array) ? event['tags'] : []
+        stage_header = event['stage']
 
         if tags.size > 0
-          stage_header += " " + tags.sort.join(", ").make_green
+          stage_header += ' ' + tags.sort.join(', ').make_green
         end
 
         unless @seen_stages.include?(stage_header)
@@ -80,7 +80,7 @@ module Bosh::Cli::TaskTracking
       @current_stage = header
       @seen_stages << @current_stage
 
-      @stage_start_time = Time.at(event["time"]) rescue Time.now
+      @stage_start_time = Time.at(event['time']) rescue Time.now
       @local_start_time = adjusted_time(@stage_start_time)
 
       @tasks = {}
@@ -109,11 +109,11 @@ module Bosh::Cli::TaskTracking
     end
 
     def add_error(event)
-      error = event["error"] || {}
-      code = error["code"]
-      message = error["message"]
+      error = event['error'] || {}
+      code = error['code']
+      message = error['message']
 
-      error = "Error"
+      error = 'Error'
       error += " #{code}" if code
       error += ": #{message}" if message
 
@@ -152,23 +152,23 @@ module Bosh::Cli::TaskTracking
       return unless @in_progress
 
       if @last_event
-        completion_time = Time.at(@last_event["time"]) rescue Time.now
+        completion_time = Time.at(@last_event['time']) rescue Time.now
       else
         completion_time = Time.now
       end
 
       if state.nil?
-        state = @stage_has_error ? "error" : "done"
+        state = @stage_has_error ? 'error' : 'done'
       end
 
       case state.to_s
-      when "done"
-        progress_bar.title = "Done".make_green
+      when 'done'
+        progress_bar.title = 'Done'.make_green
         progress_bar.finished_steps = progress_bar.total
-      when "error"
-        progress_bar.title = "Error".make_red
+      when 'error'
+        progress_bar.title = 'Error'.make_red
       else
-        progress_bar.title = "Not done".make_yellow
+        progress_bar.title = 'Not done'.make_yellow
       end
 
       progress_bar.bar_visible = false
@@ -188,34 +188,34 @@ module Bosh::Cli::TaskTracking
       validate_event(event)
 
       progress = 0
-      total = event["total"].to_i
+      total = event['total'].to_i
 
-      if event["state"] == "started"
-        task = Task.new(event["task"])
+      if event['state'] == 'started'
+        task = Task.new(event['task'])
       else
-        task = @tasks[event["index"]]
+        task = @tasks[event['index']]
       end
 
-      event_data = event["data"] || {}
+      event_data = event['data'] || {}
       # Ignoring out-of-order events
       return if task.nil?
 
       @events_count += 1
       @last_event = event
 
-      case event["state"]
-      when "started"
+      case event['state']
+      when 'started'
         @total_duration.started_at = event['time']
 
         begin
-          task.start_time = Time.at(event["time"])
+          task.start_time = Time.at(event['time'])
         rescue
           task.start_time = Time.now
         end
 
         task.progress = 0
 
-        @tasks[event["index"]] = task
+        @tasks[event['index']] = task
 
         if @tasks.size > @tasks_batch_size
           # Heuristics here: we assume that local maximum of
@@ -229,14 +229,14 @@ module Bosh::Cli::TaskTracking
           @batches_count = ((total - @done_tasks.size) / @tasks_batch_size.to_f).ceil
         end
 
-      when "finished", "failed"
-        @tasks.delete(event["index"])
+      when 'finished', 'failed'
+        @tasks.delete(event['index'])
         @done_tasks << task
 
-        @total_duration.finished_at = event["time"]
+        @total_duration.finished_at = event['time']
 
         begin
-          task.finish_time = Time.at(event["time"])
+          task.finish_time = Time.at(event['time'])
         rescue
           task.finish_time = Time.now
         end
@@ -256,16 +256,16 @@ module Bosh::Cli::TaskTracking
           task_name = task_name[0..0].to_s.downcase + task_name[1..-1].to_s
         end
 
-        if event["state"] == "failed"
-          status = [task_name.make_red, event_data["error"]].compact.join(": ")
+        if event['state'] == 'failed'
+          status = [task_name.make_red, event_data['error']].compact.join(': ')
           @stage_has_error = true
         else
           status = task_name.make_yellow
         end
         @buffer.puts("  #{status} (#{format_time(task_time)})")
 
-      when "in_progress"
-        progress = [event["progress"].to_f / 100, 1].min
+      when 'in_progress'
+        progress = [event['progress'].to_f / 100, 1].min
       end
 
       if @batches_count > 0 && @non_canary_event_start_time
@@ -276,7 +276,7 @@ module Bosh::Cli::TaskTracking
       task.progress = progress
 
       progress_bar.total = total
-      progress_bar.title = @tasks.values.map { |t| t.name }.sort.join(", ")
+      progress_bar.title = @tasks.values.map { |t| t.name }.sort.join(', ')
 
       progress_bar.current += progress_bar_gain
       progress_bar.refresh
@@ -291,20 +291,20 @@ module Bosh::Cli::TaskTracking
       end
       event
     rescue JSON::JSONError
-      raise InvalidEvent, "Cannot parse event, invalid JSON"
+      raise InvalidEvent, 'Cannot parse event, invalid JSON'
     end
 
     def validate_event(event)
-      unless event["time"] && event["stage"] && event["task"] &&
-        event["index"] && event["total"] && event["state"]
-        raise InvalidEvent, "Invalid event structure: stage, time, task, " +
-                            "index, total, state are all required"
+      unless event['time'] && event['stage'] && event['task'] &&
+        event['index'] && event['total'] && event['state']
+        raise InvalidEvent, 'Invalid event structure: stage, time, task, ' +
+          'index, total, state are all required'
       end
     end
 
     def time_with_eta(time, eta)
       time_fmt = format_time(time)
-      eta_fmt = eta && eta > Time.now ? format_time(eta - Time.now) : "--:--:--"
+      eta_fmt = eta && eta > Time.now ? format_time(eta - Time.now) : '--:--:--'
       "#{time_fmt}  ETA: #{eta_fmt}"
     end
 
@@ -313,30 +313,30 @@ module Bosh::Cli::TaskTracking
     end
 
     def can_handle_event_without_progress_bar?(event)
-      @stages_without_progress_bar.include?(event["stage"])
+      @stages_without_progress_bar.include?(event['stage'])
     end
 
     def handle_event_without_progress_bar(event)
-      event_header = "#{event["stage"].downcase}#{header_for_tags(event["tags"])}: #{event["task"]}"
+      event_header = "#{event['stage'].downcase}#{header_for_tags(event['tags'])}: #{event['task']}"
 
-      case event["state"]
-        when "started"
-          @total_duration.started_at = event["time"]
+      case event['state']
+        when 'started'
+          @total_duration.started_at = event['time']
           @buffer.print("  Started #{event_header}\n")
-        when "finished"
-          @total_duration.finished_at = event["time"]
+        when 'finished'
+          @total_duration.finished_at = event['time']
           @buffer.print("     Done #{event_header}\n")
-        when "failed"
-          event_data = event["data"] || {}
-          data_error = event_data["error"]
-          error_msg = data_error ? ": #{data_error.make_red}" : ""
+        when 'failed'
+          event_data = event['data'] || {}
+          data_error = event_data['error']
+          error_msg = data_error ? ": #{data_error.make_red}" : ''
           @buffer.print("   Failed #{event_header}#{error_msg}\n")
       end
     end
 
     def header_for_tags(tags)
       tags = Array(tags)
-      tags.size > 0 ? " " + tags.sort.join(", ").make_green : ""
+      tags.size > 0 ? ' ' + tags.sort.join(', ').make_green : ''
     end
 
     class Task

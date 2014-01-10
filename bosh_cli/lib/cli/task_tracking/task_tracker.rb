@@ -16,7 +16,7 @@ module Bosh::Cli::TaskTracking
       @options = options
 
       @quiet = !!options[:quiet]
-      default_log_type = @quiet ? "none" : "event"
+      default_log_type = @quiet ? 'none' : 'event'
 
       @log_type = options[:log_type] || default_log_type
 
@@ -77,14 +77,14 @@ module Bosh::Cli::TaskTracking
     def prompt_for_debug_log
       return unless interactive?
       nl
-      confirm = ask("The task has returned an error status, " +
-                      "do you want to see debug log? [Yn]: ")
+      confirm = ask('The task has returned an error status, ' +
+        'do you want to see debug log? [Yn]: ')
       if confirm.empty? || confirm =~ /y(es)?/i
         self.class.new(@director, @task_id,
-                       @options.merge(:log_type => "debug")).track
+                       @options.merge(:log_type => 'debug')).track
       else
         say("Please use 'bosh task #{@task_id}' command ".make_red +
-              "to see the debug log".make_red)
+              'to see the debug log'.make_red)
       end
     end
 
@@ -92,7 +92,7 @@ module Bosh::Cli::TaskTracking
       return unless interactive?
       nl
       confirm = ask("Do you want to cancel task #{@task_id}? [yN] " +
-                      "(^C again to detach): ")
+        '(^C again to detach): ')
 
       if confirm =~ /y(es)?/i
         say("Cancelling task #{@task_id}...")
@@ -132,13 +132,13 @@ module Bosh::Cli::TaskTracking
     # @param [String] output Output received from director task
     def output_received(output)
       return if output.nil?
-      @output ||= ""
+      @output ||= ''
       @output << output
       @renderer.add_output(output)
     end
 
     def finished?(state)
-      %(done error cancelled).include?(state)
+      'done error cancelled'.include?(state)
     end
 
     def interactive?
