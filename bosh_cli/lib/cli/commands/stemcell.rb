@@ -28,6 +28,7 @@ module Bosh::Cli
 
     usage 'upload stemcell'
     desc 'Upload stemcell (stemcell_location can be a local file or a remote URI)'
+    option '--skip-if-exists', 'skips upload if stemcell already exists'
     def upload(stemcell_location)
       auth_required
 
@@ -49,8 +50,13 @@ module Bosh::Cli
         version = stemcell.manifest['version']
 
         if exists?(name, version)
+          if options[:skip_if_exists]
+            say("Stemcell `#{name}/#{version}' already exists. Skipping upload.")
+            return
+          else
           err("Stemcell `#{name}/#{version}' already exists, " +
                 'increment the version if it has changed')
+          end
         else
           say('No')
         end
