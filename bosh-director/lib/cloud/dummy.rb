@@ -3,10 +3,8 @@ require 'fileutils'
 require 'securerandom'
 
 module Bosh
-
   module Clouds
     class Dummy
-
       class NotImplemented < StandardError; end
 
       def initialize(options)
@@ -16,6 +14,7 @@ module Bosh
 
         @options = options
         @base_dir = options["dir"]
+
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
         raise ArgumentError, "cannot create dummy cloud base directory #{@base_dir}"
@@ -88,7 +87,7 @@ module Bosh
       end
 
       def reboot_vm(vm)
-        raise NotImplemented, "reboot_vm"
+        raise NotImplemented, "Dummy CPI does not implement reboot_vm"
       end
 
       def has_vm?(vm_id)
@@ -96,7 +95,7 @@ module Bosh
       end
 
       def configure_networks(vm, networks)
-        raise NotImplemented, "configure_networks"
+        raise NotImplemented, "Dummy CPI does not implement configure_networks"
       end
 
       def attach_disk(vm_id, disk_id)
@@ -134,7 +133,7 @@ module Bosh
       end
 
       def validate_deployment(old_manifest, new_manifest)
-        raise NotImplemented, "validate_deployment"
+        raise NotImplemented, "Dummy CPI does not implement validate_deployment"
       end
 
       private
