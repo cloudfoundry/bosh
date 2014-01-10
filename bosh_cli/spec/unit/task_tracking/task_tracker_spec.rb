@@ -1,7 +1,7 @@
 require "spec_helper"
 
 describe Bosh::Cli::TaskTracking::TaskTracker do
-  before { @director = double("director", :uuid => "deadbeef", :get_time_difference => 0.5) }
+  before { @director = instance_double('Bosh::Cli::Client::Director', :uuid => "deadbeef", :get_time_difference => 0.5) }
 
   def make_tracker(task_id, options)
     described_class.new(@director, task_id, options).tap do |t|

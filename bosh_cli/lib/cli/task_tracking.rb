@@ -3,6 +3,7 @@ module Bosh::Cli
 end
 
 require 'cli/task_tracking/task_tracker'
+require 'cli/task_tracking/total_duration'
 require 'cli/task_tracking/task_log_renderer'
 require 'cli/task_tracking/null_task_log_renderer'
 require 'cli/task_tracking/stage_progress_bar'

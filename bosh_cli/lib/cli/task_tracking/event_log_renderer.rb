@@ -2,25 +2,14 @@ module Bosh::Cli::TaskTracking
   class EventLogRenderer < TaskLogRenderer
     class InvalidEvent < StandardError; end
 
-    class Task
-      attr_accessor :name
-      attr_accessor :progress
-      attr_accessor :start_time
-      attr_accessor :finish_time
-
-      def initialize(name)
-        @name = name
-        @progress = 0
-        @start_time = nil
-        @finish_time = nil
-      end
-    end
+    extend Forwardable
+    def_delegators :@total_duration, :duration, :duration_known?, :started_at, :finished_at
 
     attr_reader :current_stage
     attr_reader :events_count
-    attr_reader :started_at, :finished_at
 
     def initialize(options={})
+      @total_duration = TotalDuration.new
       @lock = Monitor.new
       @events_count = 0
       @seen_stages = Set.new
@@ -153,15 +142,6 @@ module Bosh::Cli::TaskTracking
       end
     end
 
-    def duration_known?
-      @started_at && @finished_at
-    end
-
-    def duration
-      return unless duration_known?
-      @finished_at - @started_at
-    end
-
     private
 
     def append_stage_header
@@ -225,10 +205,10 @@ module Bosh::Cli::TaskTracking
 
       case event["state"]
       when "started"
+        @total_duration.started_at = event['time']
+
         begin
           task.start_time = Time.at(event["time"])
-          # Treat first "started" event as task start time
-          @started_at = task.start_time if @started_at.nil?
         rescue
           task.start_time = Time.now
         end
@@ -253,8 +233,10 @@ module Bosh::Cli::TaskTracking
         @tasks.delete(event["index"])
         @done_tasks << task
 
+        @total_duration.finished_at = event["time"]
+
         begin
-          task.finish_time = @finished_at = Time.at(event["time"])
+          task.finish_time = Time.at(event["time"])
         rescue
           task.finish_time = Time.now
         end
@@ -339,8 +321,10 @@ module Bosh::Cli::TaskTracking
 
       case event["state"]
         when "started"
+          @total_duration.started_at = event["time"]
           @buffer.print("  Started #{event_header}\n")
         when "finished"
+          @total_duration.finished_at = event["time"]
           @buffer.print("     Done #{event_header}\n")
         when "failed"
           event_data = event["data"] || {}
@@ -353,6 +337,20 @@ module Bosh::Cli::TaskTracking
     def header_for_tags(tags)
       tags = Array(tags)
       tags.size > 0 ? " " + tags.sort.join(", ").make_green : ""
+    end
+
+    class Task
+      attr_accessor :name
+      attr_accessor :progress
+      attr_accessor :start_time
+      attr_accessor :finish_time
+
+      def initialize(name)
+        @name = name
+        @progress = 0
+        @start_time = nil
+        @finish_time = nil
+      end
     end
   end
 end
