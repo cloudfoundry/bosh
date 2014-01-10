@@ -201,6 +201,22 @@ module Bosh::Director
         ])
       end
 
+      it 'allows to delete DNS domains in parallel threads' do
+        domain = Models::Dns::Domain.make
+        Models::Dns::Record.make(
+          domain: domain,
+          name: '0.job-a.network-a.dep.bosh',
+          content: '1.1.1.1',
+        )
+
+        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
+        Models::Dns::Record.make(domain: rdomain)
+        Models::Dns::Record.make(domain: rdomain)
+
+        expect_any_instance_of(Models::Dns::Domain).to receive(:require_modification=).with(false)
+        delete_dns_records('0.job-a.%.dep.bosh', domain.id)
+      end
+
       it 'deletes the reverse domain if it is empty' do
         domain = Models::Dns::Domain.make
         rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')

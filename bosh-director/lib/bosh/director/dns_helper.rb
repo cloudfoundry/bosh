@@ -174,12 +174,21 @@ module Bosh::Director
       end
     end
 
-    # if the count is 2, it means we only have the NS & SOA record
-    # and the domain is "empty" and can be deleted
     def delete_empty_domain(domain)
+      # If the count is 2, it means we only have the NS & SOA record
+      # and the domain is "empty" and can be deleted
       if domain.records.size == 2
         @logger.info("Deleting empty reverse domain #{domain.name}")
-        domain.destroy # cascaded - all records are removed
+
+        # Since DNS domain can be deleted by multiple threads
+        # it's possible for database to return 0 rows modified result.
+        # In this specific case that's a valid return value
+        # but Sequel usually considers that an error.
+        # ('Attempt to delete object did not result in a single row modification')
+        domain.require_modification = false
+
+        # Cascaded - all records are removed
+        domain.destroy
       end
     end
 
