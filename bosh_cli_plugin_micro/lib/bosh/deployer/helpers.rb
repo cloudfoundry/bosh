@@ -5,7 +5,7 @@ module Bosh::Deployer
     DEPLOYMENTS_FILE = 'bosh-deployments.yml'
 
     def is_tgz?(path)
-      File.extname(path) == '.tgz'
+      File.extname(path) == '.tgz' || path.end_with?('.tar.gz')
     end
 
     def cloud_plugin(config)
