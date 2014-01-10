@@ -101,6 +101,66 @@ module Bosh::Dev::Bat
       before { Rake::Task.stub(:[]).with('bat').and_return(bat_rake_task) }
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
 
+      describe 'targetting the micro' do
+        shared_examples_for 'a method that targets the micro correctly' do
+          it 'targets the micro with the correct username and password' do
+            expect(bosh_cli_session).to receive(:run_bosh).with(
+                                          "-u #{expected_username} -p #{expected_password} target director-hostname"
+                                        )
+
+            subject.run_bats
+          end
+        end
+
+        context 'when the environment does not specify a username or password' do
+          let(:expected_username) { 'admin' }
+          let(:expected_password) { 'admin' }
+
+          include_examples 'a method that targets the micro correctly'
+        end
+
+        context 'when the environment specifies a username' do
+          let(:expected_username) { 'username' }
+          let(:expected_password) { 'admin' }
+
+          before do
+            env['BOSH_USER'] = 'username'
+          end
+
+          include_examples 'a method that targets the micro correctly'
+        end
+
+        context 'when the environment specifies a password' do
+          let(:expected_username) { 'admin' }
+          let(:expected_password) { 'password' }
+
+          before do
+            env['BOSH_PASSWORD'] = 'password'
+          end
+
+          include_examples 'a method that targets the micro correctly'
+        end
+
+        context 'when the environment specifies both a password and password' do
+          let(:expected_username) { 'username' }
+          let(:expected_password) { 'password' }
+
+          before do
+            env['BOSH_USER'] = 'username'
+            env['BOSH_PASSWORD'] = 'password'
+          end
+
+          include_examples 'a method that targets the micro correctly'
+        end
+
+        it 'targets the director before writing the bosh manifest' do
+          expect(bosh_cli_session).to receive(:run_bosh).with(/target director-hostname/).ordered
+          expect(bat_deployment_manifest).to receive(:write).with(no_args).ordered
+
+          subject.run_bats
+        end
+      end
+
       it 'generates a bat manifest' do
         bat_deployment_manifest.should_receive(:write) do
           FileUtils.touch(File.join(Dir.pwd, 'FAKE_BAT_MANIFEST'))

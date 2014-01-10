@@ -42,6 +42,7 @@ module Bosh::Dev::Bat
     end
 
     def run_bats
+      @bosh_cli_session.run_bosh "-u #{@env['BOSH_USER'] || 'admin'} -p #{@env['BOSH_PASSWORD'] || 'admin'} target #{@director_address.hostname}"
       create_bat_manifest
       set_bat_env_variables
       Rake::Task['bat'].invoke
