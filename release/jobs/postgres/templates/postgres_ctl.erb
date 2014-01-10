@@ -22,10 +22,12 @@ case "$1" in
   start)
     mkdir -p $RUN_DIR
 
-    if [ ! -d $DATA_DIR -o ! -f $DATA_DIR/postgresql.conf ]; then
-      mkdir -p $DATA_DIR
-      chown vcap:vcap $DATA_DIR
+    mkdir -p $DATA_DIR
+    chown -R vcap:vcap $DATA_DIR
 
+    # We cannot kill the following conditional
+    # because initdb is very picky about looking at an empty dir
+    if [ ! -f $DATA_DIR/postgresql.conf ]; then
       su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
 
       if [ $? != 0 ]; then
@@ -36,8 +38,8 @@ case "$1" in
       echo "host all $USER 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
 
       mkdir -p $DATA_DIR/pg_log
-      chown vcap:vcap $DATA_DIR/pg_log
     fi
+    chown -R vcap:vcap $DATA_DIR/pg_log
 
     echo "Starting PostgreSQL 9.0: "
     su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl -o \"-h $HOST -p $PORT\" -w start -D $DATA_DIR -l \"$DATA_DIR/pg_log/startup.log\""
