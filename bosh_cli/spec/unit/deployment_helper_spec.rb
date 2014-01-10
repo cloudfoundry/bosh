@@ -13,7 +13,7 @@ describe Bosh::Cli::DeploymentHelper do
     end
   end
 
-  let(:fake_director) { double(Bosh::Cli::Client::Director) }
+  let(:fake_director) { instance_double('Bosh::Cli::Client::Director') }
   let(:tester) { DeploymentHelperTester.new(fake_director) }
   let(:release_list) do
     [
@@ -391,6 +391,32 @@ describe Bosh::Cli::DeploymentHelper do
 
     it 'returns array of ["job", index]' do
       tester.jobs_and_indexes.should == [['job1', 0], ['job2', 0], ['job2', 1]]
+    end
+  end
+
+  describe '#inspect_deployment_changes' do
+    context 'no changes with new manifest' do
+      it 'prints out "no changes" for all manifest sections' do
+        manifest = {'name' => 'fake-deployment-name'}
+        current_deployment = {'manifest' => 'name: fake-deployment-name'}
+
+        output = ""
+        allow(tester).to receive(:nl) { output += "\n" }
+        allow(tester).to receive(:say) { |line| output += "#{line}\n" }
+
+        allow(fake_director).to receive(:get_deployment)
+          .with('fake-deployment-name')
+          .and_return(current_deployment)
+
+        tester.inspect_deployment_changes(manifest)
+        expect(output).to include("Releases\nNo changes")
+        expect(output).to include("Compilation\nNo changes")
+        expect(output).to include("Update\nNo changes")
+        expect(output).to include("Resource pools\nNo changes")
+        expect(output).to include("Networks\nNo changes")
+        expect(output).to include("Jobs\nNo changes")
+        expect(output).to include("Properties\nNo changes")
+      end
     end
   end
 end

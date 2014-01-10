@@ -299,12 +299,14 @@ module Bosh::Cli
       title ||= key.to_s.gsub(/[-_]/, ' ').capitalize
 
       say(title.make_green)
-      summary = diff[key].summary
-      if summary.empty?
+
+      summary = diff[key] && diff[key].summary
+      if !summary || summary.empty?
         say('No changes')
       else
         say(summary.join("\n"))
       end
+
       @_diff_key_visited[key.to_s] = 1
     end
 
