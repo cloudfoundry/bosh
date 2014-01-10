@@ -32,6 +32,9 @@ module IntegrationExampleGroup
       command = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
       output = `#{command} 2>&1`
       if $?.exitstatus != 0 && !failure_expected
+        if output =~ /bosh (task \d+ --debug)/
+          puts run_bosh($1, options.merge(failure_expected: true)) rescue nil
+        end
         raise "ERROR: #{command} failed with #{output}"
       end
       output
