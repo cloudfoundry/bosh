@@ -6,11 +6,12 @@ module Bosh::Dev
     attr_reader :build_number, :infrastructure, :operating_system
 
     def self.from_names(build_number, infrastructure_name, operating_system_name)
+      infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
       new(
         build_number,
-        Bosh::Stemcell::Infrastructure.for(infrastructure_name),
+        infrastructure,
         Bosh::Stemcell::OperatingSystem.for(operating_system_name),
-        false,
+        infrastructure.light?,
       )
     end
 
