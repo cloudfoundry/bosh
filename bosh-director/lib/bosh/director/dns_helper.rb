@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DnsHelper
 
@@ -199,6 +197,5 @@ module Bosh::Director
       octets = ip.split(/\./)
       "#{octets[0..n].reverse.join(".")}.in-addr.arpa"
     end
-
   end
 end
