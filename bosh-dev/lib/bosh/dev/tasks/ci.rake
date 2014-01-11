@@ -8,12 +8,15 @@ namespace :ci do
 
     desc 'Task that installs a go binary locally and runs go agent tests'
     task :go_agent_tests do
-      mkdir = 'mkdir -p tmp'
-      curl = 'curl https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz > tmp/go.tgz'
-      untar = 'tar xzf tmp/go.tgz -C tmp'
-      go_tests = 'PATH=`pwd`/tmp/go/bin:$PATH go_agent/bin/test'
+      FileUtils.mkdir_p('tmp')
+      sh 'curl https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz > tmp/go.tgz'
+      sh 'tar xzf tmp/go.tgz -C tmp'
 
-      exec "#{mkdir} && #{curl} && #{untar} && #{go_tests}"
+      path = [File.absolute_path('tmp/go/bin'), ENV['PATH']].join(':')
+      env = { 'PATH' => path }
+      sh(env, 'which', 'go')
+      sh(env, 'go_agent/bin/go', 'version')
+      sh(env, 'go_agent/bin/test')
     end
   end
 
