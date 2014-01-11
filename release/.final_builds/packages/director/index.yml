@@ -99,3 +99,8 @@ builds:
     version: 22
     sha1: !binary |-
       ZjE2MTJlMzRkMGE1NTZjMTBiNTNiMzJlMmM4NWRkNTk1YjRhYjc5Nw==
+  !binary "Yjc1ZTI3YmU3NGUwYzRhZWJmMjQ3ODUwOGJjYTMzOTU5N2U2OTAxZQ==":
+    blobstore_id: b96b0710-7ebf-4a16-baad-bda36feb3817
+    version: 23
+    sha1: !binary |-
+      YWM0ZWRiZDU0NTBkYmEyZDVjODEzNTMzMTQwZDIwY2M3YTliMmFjOA==
