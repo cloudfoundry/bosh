@@ -33,6 +33,11 @@ module Bosh::CloudStackCloud
       # if it is associated to any server, so we can disassociate it
       # before associating it to the new server.
       address = cloudstack.ipaddresses.find { |a| a.ip_address == @ip }
+      
+      unless address
+        cloud_error("No IP `#{@ip}' found in vip network `#{@name}'")
+      end
+      
       if address.virtual_machine_id
         static_nat_params = {
           :ip_address_id => address.id,
