@@ -16,3 +16,4 @@ env:
 matrix:
   allow_failures:
     - rvm: ruby-2.0.0
+    - env: TASKS="ci:run:go_agent_tests"
