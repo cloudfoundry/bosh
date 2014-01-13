@@ -35,6 +35,8 @@ cp src/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent-rc
 
+cp src/bosh/mbus/agent.{cert,key} $chroot/var/vcap/bosh/
+
 # setup additional permissions
 
 run_in_chroot $chroot "

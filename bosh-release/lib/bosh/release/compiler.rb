@@ -175,20 +175,19 @@ module Bosh
 
         src = "#{dir}/packages/#{name}.tgz"
         version = package["version"]
-        dependencies = package["dependencies"]
 
         # push source package into blobstore
         file = File.new(src)
         id = @blobstore_client.create(file)
 
-        sha1 = "sha1"
+        sha1 = Digest::SHA1.file(src).hexdigest
         dependencies = {}
         package["dependencies"].each do |name|
           @logger.debug "dependency: #{name} = #{@spec["packages"][name]}"
           dependencies[name] = @spec["packages"][name]
         end
 
-        result = @agent.run_task(:compile_package, id, sha1, name, version, dependencies)
+        result = @agent.run_task(:compile_package, id, sha1, name, "#{version}", dependencies)
         @logger.info("result is #{result}")
 
         # remove source package from blobstore

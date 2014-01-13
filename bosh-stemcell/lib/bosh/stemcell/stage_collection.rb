@@ -22,8 +22,9 @@ module Bosh::Stemcell
       case agent_name
         when 'go'
           [
+            :bosh_ruby,
             :bosh_go_agent,
-            #:bosh_micro,
+            :bosh_micro_go,
             :aws_cli,
           ]
         else
