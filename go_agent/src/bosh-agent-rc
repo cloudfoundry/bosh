@@ -1,10 +1,18 @@
 #!/bin/sh
 
-chmod 0660 /dev/sr0
-chown root:root /dev/sr0
+set -e
 
-chmod 0660 /dev/log
-chown root:vcap /dev/log
+if [ -e /dev/sr0 ]; then
+  chmod 0660 /dev/sr0
+  chown root:root /dev/sr0
+fi
 
-chmod 0770 /dev/shm
-chown root:vcap /dev/shm
+if [ -e /dev/log ]; then
+  chmod 0660 /dev/log
+  chown root:vcap /dev/log
+fi
+
+if [ -e /dev/shm ]; then
+  chmod 0770 /dev/shm
+  chown root:vcap /dev/shm
+fi
