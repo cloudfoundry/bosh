@@ -81,11 +81,34 @@ describe Bosh::Cli::Runner do
 
     it 'writes error output to stderr' do
       runner.stub(:exit)
-      orig_stderr = $stderr
-      $stderr = StringIO.new
-      runner.run
-      expect($stderr.string).to include 'Unknown command: bad_argument'
-      $stderr = orig_stderr
+      stderr = capture_stderr { runner.run }
+      expect(stderr).to include 'Unknown command: bad_argument'
     end
+  end
+
+  describe 'invalid option return code' do
+    let(:runner) { described_class.new(['test', '--invalid-option']) }
+
+    class TestCommand < Bosh::Cli::Command::Base
+      usage 'test'
+      desc 'a test command'
+      def test; end
+    end
+
+    it 'returns exit code 1' do
+      expect(runner).to receive(:exit).with(1)
+      capture_stderr { runner.run }
+    end
+  end
+
+  def capture_stderr
+    orig_stderr = $stderr
+    new_stderr = StringIO.new
+
+    $stderr = new_stderr
+    yield
+    new_stderr.string
+  ensure
+    $stderr = orig_stderr
   end
 end

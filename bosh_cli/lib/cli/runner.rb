@@ -61,6 +61,7 @@ module Bosh::Cli
         if command.has_options?
           say(command.options_summary.indent(7))
         end
+        exit(1)
       end
 
     rescue OptionParser::ParseError => e
