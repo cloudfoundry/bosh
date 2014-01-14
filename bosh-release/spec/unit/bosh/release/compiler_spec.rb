@@ -95,8 +95,11 @@ describe Bosh::Release::Compiler do
     @compiler = Bosh::Release::Compiler.new(options)
     test_agent = double(:agent)
     test_agent.stub(:ping)
+    digester = double('Digest::SHA1')
+    digester.stub(hexdigest: 'fake-sha1')
+    Digest::SHA1.stub(:file).and_return(digester)
     result = {'result' => {'blobstore_id' => 'blah', 'sha1' => 'blah'}}
-    test_agent.stub(:run_task).with(:compile_package, kind_of(String), 'sha1',
+    test_agent.stub(:run_task).with(:compile_package, kind_of(String), 'fake-sha1',
                                     /(ruby|nats|redis|libpq|postgres|blobstore|nginx|director|health_monitor|aws_registry)/,
                                     kind_of(String), kind_of(Hash)).and_return(result)
     Bosh::Agent::Client.should_receive(:create).and_return(test_agent)
