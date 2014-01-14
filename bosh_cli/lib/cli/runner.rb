@@ -56,8 +56,10 @@ module Bosh::Cli
         exit_code = command.run(@args, @options)
         exit(exit_code)
       rescue OptionParser::ParseError => e
-        say_err e.message
-        say_err "Usage: bosh #{command.usage_with_params.columnize(60, 7)}"
+        say_err(e.message)
+        nl
+        say_err("Usage: bosh #{command.usage_with_params.columnize(60, 7)}")
+        nl
         if command.has_options?
           say(command.options_summary.indent(7))
         end
@@ -65,12 +67,13 @@ module Bosh::Cli
       end
 
     rescue OptionParser::ParseError => e
-      say_err e.message
-      say_err @option_parser.to_s
+      say_err(e.message)
+      say_err(@option_parser.to_s)
       exit(1)
+
     rescue Bosh::Cli::CliError => e
-      say_err e.message
-      puts ""
+      say_err(e.message)
+      nl
       exit(e.exit_code)
     end
 
