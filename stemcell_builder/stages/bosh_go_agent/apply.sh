@@ -32,8 +32,10 @@ bin/build
 
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
 cp src/bosh-agent-rc $chroot/var/vcap/bosh/bin/
+mv out/dav-cli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent-rc
+chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 
 cp src/bosh/mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 

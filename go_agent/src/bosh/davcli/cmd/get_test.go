@@ -14,7 +14,7 @@ import (
 )
 
 func TestGetRunWithValidArgs(t *testing.T) {
-	requestedBlob := "/path/to/cat.jpg"
+	requestedBlob := "0ca907f2-dde8-4413-a304-9076c9d0978b"
 	targetFilePath := filepath.Join(os.TempDir(), "testRunGetCommand.txt")
 	defer os.RemoveAll(targetFilePath)
 
@@ -24,7 +24,7 @@ func TestGetRunWithValidArgs(t *testing.T) {
 		username, password, err := req.ExtractBasicAuth()
 
 		assert.NoError(t, err)
-		assert.Equal(t, req.URL.Path, requestedBlob)
+		assert.Equal(t, req.URL.Path, "/0d/"+requestedBlob)
 		assert.Equal(t, req.Method, "GET")
 		assert.Equal(t, username, "some user")
 		assert.Equal(t, password, "some pwd")
@@ -36,7 +36,7 @@ func TestGetRunWithValidArgs(t *testing.T) {
 	defer ts.Close()
 
 	config := davconf.Config{
-		Username: "some user",
+		User:     "some user",
 		Password: "some pwd",
 		Endpoint: ts.URL,
 	}

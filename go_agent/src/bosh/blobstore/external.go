@@ -96,7 +96,7 @@ func (blobstore external) Validate() (err error) {
 func (blobstore external) run(method, src, dst string) (err error) {
 	_, _, err = blobstore.runner.RunCommand(blobstore.executable(), "-c", blobstore.configFilePath, method, src, dst)
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to %s cli")
+		err = bosherr.WrapError(err, "Shelling out to %s cli", blobstore.executable())
 		return
 	}
 	return

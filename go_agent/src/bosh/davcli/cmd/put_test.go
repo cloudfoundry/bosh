@@ -16,7 +16,7 @@ import (
 func TestPutRunWithValidArgs(t *testing.T) {
 	pwd, _ := os.Getwd()
 	sourceFilePath := filepath.Join(pwd, "../../../../fixtures/cat.jpg")
-	targetBlob := "/path/to/cat.jpg"
+	targetBlob := "some-other-awesome-guid"
 	serverWasHit := false
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +26,7 @@ func TestPutRunWithValidArgs(t *testing.T) {
 		username, password, err := req.ExtractBasicAuth()
 
 		assert.NoError(t, err)
-		assert.Equal(t, req.URL.Path, targetBlob)
+		assert.Equal(t, req.URL.Path, "/d1/"+targetBlob)
 		assert.Equal(t, req.Method, "PUT")
 		assert.Equal(t, username, "some user")
 		assert.Equal(t, password, "some pwd")
@@ -42,7 +42,7 @@ func TestPutRunWithValidArgs(t *testing.T) {
 	defer ts.Close()
 
 	config := davconf.Config{
-		Username: "some user",
+		User:     "some user",
 		Password: "some pwd",
 		Endpoint: ts.URL,
 	}

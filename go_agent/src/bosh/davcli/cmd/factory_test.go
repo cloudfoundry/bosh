@@ -31,7 +31,7 @@ func TestFactoryCreateWhenCmdIsUnknown(t *testing.T) {
 }
 
 func buildFactory() (client davclient.Client, factory Factory) {
-	config := davconf.Config{Username: "some user"}
+	config := davconf.Config{User: "some user"}
 	client = davclient.NewClient(config)
 
 	factory = NewFactory()

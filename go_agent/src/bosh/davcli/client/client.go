@@ -2,8 +2,13 @@ package client
 
 import (
 	davconf "bosh/davcli/config"
+	"crypto/sha1"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 )
 
 type Client interface {
@@ -49,14 +54,28 @@ func (c client) Put(path string, content io.ReadCloser) (err error) {
 	return
 }
 
-func (c client) createReq(method, path string, body io.Reader) (req *http.Request, err error) {
-	url := c.config.Endpoint + path
-
-	req, err = http.NewRequest(method, url, body)
+func (c client) createReq(method, blobId string, body io.Reader) (req *http.Request, err error) {
+	blobUrl, err := url.Parse(c.config.Endpoint)
 	if err != nil {
 		return
 	}
 
-	req.SetBasicAuth(c.config.Username, c.config.Password)
+	digester := sha1.New()
+	digester.Write([]byte(blobId))
+	blobPrefix := fmt.Sprintf("%02x", digester.Sum(nil)[0])
+
+	newPath := path.Join(blobUrl.Path, blobPrefix, blobId)
+	if !strings.HasPrefix(newPath, "/") {
+		newPath = "/" + newPath
+	}
+
+	blobUrl.Path = newPath
+
+	req, err = http.NewRequest(method, blobUrl.String(), body)
+	if err != nil {
+		return
+	}
+
+	req.SetBasicAuth(c.config.User, c.config.Password)
 	return
 }

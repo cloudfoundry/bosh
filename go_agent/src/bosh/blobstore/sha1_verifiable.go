@@ -35,7 +35,8 @@ func (b sha1Verifiable) Get(blobId, fingerprint string) (fileName string, err er
 	}
 
 	if actualSha1 != fingerprint {
-		err = bosherr.New("SHA1 mismatch. Expected %s, got %s", fingerprint, actualSha1)
+		err = bosherr.New("SHA1 mismatch. Expected %s, got %s for blob %s", fingerprint, actualSha1, fileName)
+
 	}
 	return
 }

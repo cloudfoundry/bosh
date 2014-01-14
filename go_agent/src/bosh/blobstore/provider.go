@@ -28,8 +28,6 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 	externalConfigFile := filepath.Join(p.dirProvider.EtcDir(), fmt.Sprintf("blobstore-%s.json", settings.Type))
 
 	switch settings.Type {
-	case boshsettings.BlobstoreTypeDav:
-		blobstore = newDummyBlobstore()
 	case boshsettings.BlobstoreTypeDummy:
 		blobstore = newDummyBlobstore()
 	case boshsettings.BlobstoreTypeS3:

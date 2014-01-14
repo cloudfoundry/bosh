@@ -20,6 +20,7 @@ func New(runner davcmd.Runner) (app App) {
 }
 
 func (app App) Run(args []string) (err error) {
+	args = args[1:]
 	var configFilePath string
 
 	flagSet := flag.NewFlagSet("davcli-args", flag.ContinueOnError)

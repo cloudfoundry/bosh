@@ -80,7 +80,7 @@ func TestAcceptsExactlyOneArgument(t *testing.T) {
 func TestSetConfig(t *testing.T) {
 	factory := &FakeFactory{}
 	cmdRunner := NewRunner(factory)
-	conf := davconf.Config{Username: "foo"}
+	conf := davconf.Config{User: "foo"}
 
 	cmdRunner.SetConfig(conf)
 

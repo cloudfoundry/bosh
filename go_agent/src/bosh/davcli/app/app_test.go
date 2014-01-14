@@ -29,11 +29,11 @@ func TestRunsThePutCommand(t *testing.T) {
 	runner := &FakeRunner{}
 
 	app := New(runner)
-	err := app.Run([]string{"-c", pathToFixture("dav-cli-config.json"), "put", "localFile", "remoteFile"})
+	err := app.Run([]string{"dav-cli", "-c", pathToFixture("dav-cli-config.json"), "put", "localFile", "remoteFile"})
 	assert.NoError(t, err)
 
 	expectedConfig := davconf.Config{
-		Username: "some user",
+		User:     "some user",
 		Password: "some pwd",
 		Endpoint: "http://example.com/some/endpoint",
 	}
@@ -58,7 +58,7 @@ func TestReturnsErrorFromTheCmdRunner(t *testing.T) {
 	}
 
 	app := New(runner)
-	err := app.Run([]string{"-c", pathToFixture("dav-cli-config.json"), "put", "localFile", "remoteFile"})
+	err := app.Run([]string{"dav-cli", "-c", pathToFixture("dav-cli-config.json"), "put", "localFile", "remoteFile"})
 
 	assert.Error(t, err)
 	assert.Equal(t, err, runner.RunErr)

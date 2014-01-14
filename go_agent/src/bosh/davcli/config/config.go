@@ -1,7 +1,7 @@
 package config
 
 type Config struct {
-	Username string
+	User     string
 	Password string
 	Endpoint string
 }

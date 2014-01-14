@@ -9,15 +9,6 @@ import (
 	"testing"
 )
 
-func TestGetDav(t *testing.T) {
-	_, provider := buildProvider()
-	blobstore, err := provider.Get(boshsettings.Blobstore{
-		Type: boshsettings.BlobstoreTypeDav,
-	})
-	assert.NoError(t, err)
-	assert.NotNil(t, blobstore)
-}
-
 func TestGetDummy(t *testing.T) {
 	_, provider := buildProvider()
 	blobstore, err := provider.Get(boshsettings.Blobstore{
