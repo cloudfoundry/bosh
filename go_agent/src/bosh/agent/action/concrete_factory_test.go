@@ -46,6 +46,7 @@ func TestNewFactory(t *testing.T) {
 		"stop",
 		"unmount_disk",
 		"compile_package",
+		"release_apply_spec",
 	}
 
 	_, factory := buildFactory()

@@ -49,11 +49,12 @@ func NewFactory(
 			"mount_disk":   newMountDisk(settings, platform, dirProvider),
 			"ping":         newPing(),
 			"prepare_network_change": newPrepareNetworkChange(),
-			"ssh":             newSsh(settings, platform, dirProvider),
-			"start":           newStart(jobSupervisor),
-			"stop":            newStop(jobSupervisor),
-			"unmount_disk":    newUnmountDisk(settings, platform),
-			"compile_package": newCompilePackage(compiler),
+			"ssh":                newSsh(settings, platform, dirProvider),
+			"start":              newStart(jobSupervisor),
+			"stop":               newStop(jobSupervisor),
+			"unmount_disk":       newUnmountDisk(settings, platform),
+			"compile_package":    newCompilePackage(compiler),
+			"release_apply_spec": newReleaseApplySpec(platform),
 		},
 	}
 	return
