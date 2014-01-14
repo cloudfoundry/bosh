@@ -8,12 +8,12 @@ module Bosh
       class NotImplemented < StandardError; end
 
       def initialize(options)
-        if options["dir"].nil?
-          raise ArgumentError, "please provide base directory for dummy cloud"
+        if options['dir'].nil?
+          raise ArgumentError, 'please provide base directory for dummy cloud'
         end
 
         @options = options
-        @base_dir = options["dir"]
+        @base_dir = options['dir']
 
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
@@ -30,40 +30,27 @@ module Bosh
         FileUtils.rm(stemcell_file(stemcell_cid))
       end
 
+      # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
+      # rubocop:enable ParameterLists
         root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
         FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
 
-        # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
-        # then port should be overriden for each agent, otherwise all but first won't start
-        # (won't be able to bind to port)
-
-        settings = {
+        write_agent_settings(agent_id, {
           agent_id: agent_id,
           blobstore: @options['agent']['blobstore'],
           ntp: [],
-          disks: {
-            persistent: {},
-          },
-          vm: {
-            name: "vm-#{agent_id}"
-          },
+          disks: { persistent: {} },
+          vm: { name: "vm-#{agent_id}" },
           mbus: @options['nats'],
-        }
-        write_agent_settings(agent_id, settings)
+        })
 
-        agent_cmds = {
-          ruby: %W[bosh_agent -b #{agent_base_dir(agent_id)} -r #{root_dir} --no-alerts -I dummy],
-          go: %W[#{File.absolute_path('bosh/go_agent/out/bosh-agent')} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy],
-        }
-
-        agent_cmd = agent_cmds[:ruby]
+        agent_cmd = agent_cmd(agent_id, root_dir, :ruby)
         agent_log = "#{@options['dir']}/agent.#{agent_id}.log"
         agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir(agent_id), out: agent_log, err: agent_log)
-
         Process.detach(agent_pid)
 
-        FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
+        FileUtils.mkdir_p(File.join(@base_dir, 'running_vms'))
         File.write(vm_file(agent_pid), agent_id)
 
         agent_pid.to_s
@@ -71,15 +58,16 @@ module Bosh
 
       def delete_vm(vm_name)
         agent_pid = vm_name.to_i
-        Process.kill("INT", agent_pid)
+        Process.kill('INT', agent_pid)
+      # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
-        # don't care :)
+      # rubocop:enable HandleExceptions
       ensure
-        FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_name))
+        FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_name))
       end
 
       def reboot_vm(vm)
-        raise NotImplemented, "Dummy CPI does not implement reboot_vm"
+        raise NotImplemented, 'Dummy CPI does not implement reboot_vm'
       end
 
       def has_vm?(vm_id)
@@ -87,7 +75,7 @@ module Bosh
       end
 
       def configure_networks(vm, networks)
-        raise NotImplemented, "Dummy CPI does not implement configure_networks"
+        raise NotImplemented, 'Dummy CPI does not implement configure_networks'
       end
 
       def attach_disk(vm_id, disk_id)
@@ -135,7 +123,7 @@ module Bosh
       end
 
       def validate_deployment(old_manifest, new_manifest)
-        raise NotImplemented, "Dummy CPI does not implement validate_deployment"
+        raise NotImplemented, 'Dummy CPI does not implement validate_deployment'
       end
 
       private
@@ -157,6 +145,14 @@ module Bosh
         File.write(agent_settings_file(agent_id), JSON.generate(settings))
       end
 
+      def agent_cmd(agent_id, root_dir, agent_type)
+        go_agent_exe = File.absolute_path('bosh/go_agent/out/bosh-agent')
+        {
+          ruby: %W[bosh_agent      -b #{agent_base_dir(agent_id)} -I dummy -r #{root_dir} --no-alerts],
+          go:   %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy],
+        }[agent_type]
+      end
+
       def read_agent_settings(agent_id)
         JSON.parse(File.read(agent_settings_file(agent_id)))
       end
@@ -166,19 +162,19 @@ module Bosh
       end
 
       def vm_file(vm_id)
-        File.join(@base_dir, "running_vms", vm_id.to_s)
+        File.join(@base_dir, 'running_vms', vm_id.to_s)
       end
 
       def disk_file(disk_id)
-        File.join(@base_dir, "disks", disk_id)
+        File.join(@base_dir, 'disks', disk_id)
       end
 
       def attachment_file(vm_id, disk_id)
-        File.join(@base_dir, "attachments", vm_id, disk_id)
+        File.join(@base_dir, 'attachments', vm_id, disk_id)
       end
 
       def snapshot_file(snapshot_id)
-        File.join(@base_dir, "snapshots", snapshot_id)
+        File.join(@base_dir, 'snapshots', snapshot_id)
       end
     end
   end

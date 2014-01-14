@@ -1,17 +1,27 @@
 #!/usr/bin/env ruby
 
-APP_DIR = File.expand_path(File.join("..", ".."), __FILE__)
+APP_DIR = File.expand_path(File.join('..', '..'), __FILE__)
 
-DEFAULT_DIRECTOR_CONFIG = File.join(APP_DIR, "config", "bosh-director.yml")
-
-require 'bosh/director'
 require 'irb'
 require 'irb/completion'
+require 'bosh/director'
 require 'rack/test'
+
+options = {}
+
+OptionParser.new do |opt|
+  opt.banner = 'Usage: director_console [options]'
+  opt.on('-c', '--config [ARG]', 'configuration file') { |v| options[:config] = v }
+  opt.parse!(ARGV)
+end
+
+config_file = File.join(APP_DIR, 'config', 'bosh-director.yml')
+if options[:config]
+  config_file = File.expand_path(options[:config])
+end
 
 module Bosh
   module Director
-
     class TestApplication
       include Rack::Test::Methods
 
@@ -21,45 +31,27 @@ module Bosh
     end
 
     class Console
-      def self.start(context)
-        new.start(context)
-      end
-
-      def start(context)
-        options = {}
-
-        OptionParser.new do |opt|
-          opt.banner = "Usage: director_console [options]"
-          opt.on('-c', '--config [ARG]', 'configuration file') { |v| options[:config] = v }
-          opt.parse!(ARGV)
-        end
-
-        if options[:config]
-          config_file = File.expand_path(options[:config])
-        else
-          config_file = DEFAULT_DIRECTOR_CONFIG
-        end
-
+      def start(context, config_file)
         puts "=> Loading #{config_file}"
-        Bosh::Director::App.new(Bosh::Director::Config.load_file(config_file))
+        config = Bosh::Director::Config.load_file(config_file)
+        Bosh::Director::App.new(config)
 
-        context.instance_eval do
-          include BD::Models
-        end
-
-        begin
-          require 'ruby-debug'
-          puts "=> Debugger enabled"
-        rescue LoadError
-          puts "=> ruby-debug not found, debugger disabled"
-        end
+        context.instance_eval { include BD::Models }
+        require_ruby_debug
 
         puts "=> Welcome to BOSH Director console\n=> You can use 'app' to access REST API"
         puts "=> You can also use 'cloud', 'blobstore', 'nats' helpers to query these services"
-
         IRB.start
       end
 
+      private
+
+      def require_ruby_debug
+        require 'ruby-debug'
+        puts '=> Debugger enabled'
+      rescue LoadError
+        puts '=> ruby-debug not found, debugger disabled'
+      end
     end
   end
 end
@@ -80,5 +72,4 @@ end
   end
 end
 
-BD::Console.start(self)
-
+BD::Console.new.start(self, config_file)

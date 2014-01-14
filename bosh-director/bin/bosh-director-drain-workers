@@ -1,23 +1,23 @@
 #!/usr/bin/env ruby
 
-require "bosh/director"
+require 'bosh/director'
 
 config_file = nil
 report = false
 active_worker = 1
 
-opts = OptionParser.new do |opts|
-  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+opts = OptionParser.new do |op|
+  op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
     config_file = opt
   end
-  opts.on("-r", "--report", "Report 1 if any active worker, 0 otherwise") do |opt|
+  op.on('-r', '--report', 'Report 1 if any active worker, 0 otherwise') do
     report = true
   end
 end
 
 opts.parse!(ARGV.dup)
 
-config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
+config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 config = Bosh::Director::Config.load_file(config_file)
 
 Bosh::Director::App.new(config)
@@ -25,16 +25,17 @@ Bosh::Director::App.new(config)
 logger = Bosh::Director::Config.logger
 
 loop do
-  logger.info("Checking for any workers that are still processing..")
-  worker = Resque::Worker.all.find { |worker| worker.working? }
+  logger.info('Checking for any workers that are still processing..')
+
+  worker = Resque::Worker.all.find(&:working?)
   if worker.nil?
     active_worker = 0
-    logger.info("All workers are idle")
+    logger.info('All workers are idle')
     break
   end
-  if report
-    break
-  end
+
+  break if report
+
   logger.info("Found worker: #{worker}, sleeping for 60 seconds.")
   sleep 60
 end

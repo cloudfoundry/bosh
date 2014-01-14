@@ -5,8 +5,8 @@ require 'thin'
 
 config_file = nil
 
-opts = OptionParser.new do |opts|
-  opts.on('-c', '--config [ARG]', 'Configuration File') do |opt|
+opts = OptionParser.new do |op|
+  op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
     config_file = opt
   end
 end
@@ -18,9 +18,9 @@ config = Bosh::Director::Config.load_file(config_file)
 
 Bosh::Director::App.new(config)
 
-thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], :signals => false) do
+thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], signals: false) do
   use Rack::CommonLogger
-  map "/" do
+  map '/' do
     run Bosh::Director::Api::Controller.new
   end
 end

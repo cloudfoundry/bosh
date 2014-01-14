@@ -1,29 +1,29 @@
 #!/usr/bin/env ruby
 
-require "erb"
-require "bosh/director"
+require 'erb'
+require 'bosh/director'
 
 config_file = nil
 index = nil
 erb = false
 
-opts = OptionParser.new do |opts|
-  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+opts = OptionParser.new do |op|
+  op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
     config_file = opt
   end
 
-  opts.on("-i", "--index [ARG]", Integer, "Worker Index") do |opt|
+  op.on('-i', '--index [ARG]', Integer, 'Worker Index') do |opt|
     index = opt
   end
 
-  opts.on("-e", "--[no-]erb", "Treat Configuration as ERB Template") do |opt|
+  op.on('-e', '--[no-]erb', 'Treat Configuration as ERB Template') do |opt|
     erb = opt
   end
 end
 
 opts.parse!(ARGV.dup)
 
-config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
+config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 config = nil
 
 # Is this code even used anymore?
@@ -40,7 +40,7 @@ if erb
     end
   end
 
-  template = ERB.new(File.read(config_file), 0, "%<>-")
+  template = ERB.new(File.read(config_file), 0, '%<>-')
   contents = template.result(ConfigBindingHelper.new(index).get_binding)
   config_hash = Psych.load(contents)
   config = Bosh::Director::Config.load_hash(config_hash)
@@ -63,11 +63,11 @@ begin
   worker = Resque::Worker.new(*queues)
   worker.term_child = true
 rescue Resque::NoQueueError
-  abort "set QUEUE env var, e.g. $ QUEUE=critical,high rake resque:work"
+  abort 'set QUEUE env var, e.g. $ QUEUE=critical,high rake resque:work'
 end
 
 Resque.after_fork do
-  EM.error_handler{ |e| puts "Error raised during event loop: #{e.message}" }
+  EM.error_handler { |e| puts "Error raised during event loop: #{e.message}" }
   Thread.new { EM.run }
 end
 

@@ -5,8 +5,8 @@ require 'bosh/director/scheduler'
 
 config_file = ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 
-opts = OptionParser.new do |opts|
-  opts.on('-c', '--config [ARG]', 'Configuration File') do |opt|
+opts = OptionParser.new do |op|
+  op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
     config_file = opt
   end
 end

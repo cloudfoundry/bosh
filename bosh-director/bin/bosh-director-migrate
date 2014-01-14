@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
-require "logger"
-require "sequel"
-require "bosh/director"
-require "optparse"
+require 'logger'
+require 'sequel'
+require 'bosh/director'
+require 'optparse'
 
 config_file = nil
 
-opts = OptionParser.new do |opts|
-  opts.on("-c", "--config FILE", "configuration file") do |opt|
+opts = OptionParser.new do |op|
+  op.on('-c', '--config FILE', 'configuration file') do |opt|
     config_file = opt
   end
 end
@@ -21,11 +21,11 @@ if config_file.nil?
 end
 
 config = Psych.load_file(config_file)
-unless config["db"] && config["db"]["database"]
-  abort ("Director database config missing from config file")
+unless config['db'] && config['db']['database']
+  abort ('Director database config missing from config file')
 end
 
-db = Bosh::Director::Config.configure_db(config["db"])
+db = Bosh::Director::Config.configure_db(config['db'])
 
 def migrate(database, schema_table, dir, target = nil)
   options = {}
@@ -36,21 +36,20 @@ def migrate(database, schema_table, dir, target = nil)
   Sequel::TimestampMigrator.new(database, dir, options).run
 end
 
-migrations_dir = File.expand_path("../../db/migrations/director", __FILE__)
+migrations_dir = File.expand_path('../../db/migrations/director', __FILE__)
 
 migrate(db, nil, migrations_dir)
 
-if config["dns"] && config["dns"]["db"]
-  dns_migrations_dir = File.expand_path("../../db/migrations/dns", __FILE__)
-  dns_db = Bosh::Director::Config.configure_db(config["dns"]["db"])
-  migrate(dns_db, "dns_schema",
-          dns_migrations_dir)
+if config['dns'] && config['dns']['db']
+  dns_migrations_dir = File.expand_path('../../db/migrations/dns', __FILE__)
+  dns_db = Bosh::Director::Config.configure_db(config['dns']['db'])
+  migrate(dns_db, 'dns_schema', dns_migrations_dir)
 end
 
-cpi = config["cloud"]["plugin"]
-require_path = File.join("cloud", cpi)
+cpi = config['cloud']['plugin']
+require_path = File.join('cloud', cpi)
 cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, require_path)) }
-migrations = File.expand_path("../db/migrations", cpi_path)
+migrations = File.expand_path('../db/migrations', cpi_path)
 
 if File.directory?(migrations)
   migrate(db, "#{cpi}_cpi_schema", migrations)
