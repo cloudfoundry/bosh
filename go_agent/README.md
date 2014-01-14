@@ -17,6 +17,26 @@ To publish:
 
     nats-pub agent.123-456-789 '{"method":"apply","arguments":[{"packages":[{"name":"package-name", "version":"package-version"}]}]}' -s nats://localhost:4222
 
+## Blobstores
+
+The Go Agent ships with 4 default blobstores:
+
+- Local filesystem
+- Dummy (for testing)
+- S3
+- DAV
+
+You can, however, use custom blobstores by implementing a simple interface. For example, if you want to use a blobstore named "custom" you need to create an executable named `bosh-blobstore-custom` somewhere in `PATH`. This executable must conform to the following command line interface:
+
+- `-c` flag that specifies a config file path (this will be passed to every call to the executable)
+- must parse the config file in JSON format
+- must respond to `get <blobID> <filename>` by placing the file identified by the blobID into the filename specified
+- must respond to `put <filename> <blobID>` by storing the file at filename into the blobstore at the specified blobID
+
+A full call might look like:
+
+    bosh-blobstore-custom -c /var/vcap/bosh/etc/blobstore-custom.json get 2340958ddfg /tmp/my-cool-file
+
 # Set up a workstation for development
 
 Note: This guide assumes a few things:

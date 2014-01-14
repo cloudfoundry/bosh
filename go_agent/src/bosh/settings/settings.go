@@ -20,7 +20,6 @@ type Settings struct {
 
 const (
 	BlobstoreTypeDummy = "dummy"
-	BlobstoreTypeS3    = "s3"
 	BlobstoreTypeLocal = "local"
 )
 

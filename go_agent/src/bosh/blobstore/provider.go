@@ -11,7 +11,6 @@ import (
 )
 
 type provider struct {
-	blobstores  map[string]Blobstore
 	platform    boshplatform.Platform
 	dirProvider boshdir.DirectoriesProvider
 	uuidGen     boshuuid.Generator
@@ -30,14 +29,6 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 	switch settings.Type {
 	case boshsettings.BlobstoreTypeDummy:
 		blobstore = newDummyBlobstore()
-	case boshsettings.BlobstoreTypeS3:
-		blobstore = newS3Blobstore(
-			settings.Options,
-			p.platform.GetFs(),
-			p.platform.GetRunner(),
-			p.uuidGen,
-			externalConfigFile,
-		)
 	case boshsettings.BlobstoreTypeLocal:
 		blobstore = newLocalBlobstore(
 			settings.Options,

@@ -196,7 +196,7 @@ func spinUpAwsRegistry(t *testing.T) (ts *httptest.Server, port string, expected
 				"access_key_id":     "optional access key id",
 				"secret_access_key": "optional secret access key",
 			},
-			Type: boshsettings.BlobstoreTypeS3,
+			Type: "s3",
 		},
 		Disks: boshsettings.Disks{
 			Ephemeral:  "/dev/sdb",
