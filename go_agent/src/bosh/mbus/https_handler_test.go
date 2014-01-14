@@ -73,6 +73,7 @@ func TestStartWithIncorrectUsernameAndPassword(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, httpResponse.StatusCode, 401)
+	assert.Equal(t, httpResponse.Header.Get("WWW-Authenticate"), `Basic realm=""`)
 }
 
 var httpsHandlerPort int = 6900

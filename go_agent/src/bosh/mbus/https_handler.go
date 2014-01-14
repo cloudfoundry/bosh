@@ -41,6 +41,7 @@ func (h httpsHandler) Start(handlerFunc HandlerFunc) (err error) {
 
 			if h.requestNotAuthorized(r) {
 				err = bosherr.WrapError(errors.New("Incorrect Basic Auth"), "Handle HTTP")
+				w.Header().Add("WWW-Authenticate", `Basic realm=""`)
 				w.WriteHeader(401)
 				return
 			}
