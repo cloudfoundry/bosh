@@ -38,7 +38,7 @@ func (oc concreteService) GetInfo() (ntpInfo NTPInfo) {
 		return
 	}
 
-	lines := strings.Split(content, "\n")
+	lines := strings.Split(strings.Trim(content, "\n"), "\n")
 	lastLine := lines[len(lines)-1]
 
 	regex, _ := regexp.Compile(`^(.+)\s+ntpdate.+offset\s+(-*\d+\.\d+)`)

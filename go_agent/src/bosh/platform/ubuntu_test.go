@@ -239,12 +239,13 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
 
 	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
-	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
-	assert.Equal(t, []string{"ntpdate", "0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}, deps.cmdRunner.RunCommands[0])
 
 	ntpConfig := deps.fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
 	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
 	assert.Equal(t, fakesys.FakeFileTypeFile, ntpConfig.FileType)
+
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"ntpdate"}, deps.cmdRunner.RunCommands[0])
 }
 
 func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {

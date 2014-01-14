@@ -334,17 +334,18 @@ func (p ubuntu) SetTimeWithNtpServers(servers []string) (err error) {
 		return
 	}
 
-	_, _, err = p.cmdRunner.RunCommand("ntpdate", servers...)
-	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to ntpdate")
-		return
-	}
-
 	_, err = p.fs.WriteToFile(serversFilePath, strings.Join(servers, " "))
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to %s", serversFilePath)
 		return
 	}
+
+	_, _, err = p.cmdRunner.RunCommand("ntpdate")
+	if err != nil {
+		err = bosherr.WrapError(err, "Shelling out to ntpdate")
+		return
+	}
+
 	return
 }
 

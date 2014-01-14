@@ -8,8 +8,9 @@ import (
 )
 
 func TestGetOffsetReturnsValidOffset(t *testing.T) {
-	NTPData := "server 10.16.45.209, stratum 2, offset -0.081236, delay 0.04291\n" +
-		"12 Oct 17:37:58 ntpdate[42757]: adjust time server 10.16.45.209 offset -0.081236 sec"
+	NTPData := `server 10.16.45.209, stratum 2, offset -0.081236, delay 0.04291
+12 Oct 17:37:58 ntpdate[42757]: adjust time server 10.16.45.209 offset -0.081236 sec
+`
 	service := buildService(NTPData)
 
 	expectedNTPOffset := NTPInfo{
@@ -22,7 +23,7 @@ func TestGetOffsetReturnsValidOffset(t *testing.T) {
 func TestGetOffsetReturnsBadFileMessageWhenFileIsBad(t *testing.T) {
 	NTPData := "sdfhjsdfjghsdf\n" +
 		"dsfjhsdfhjsdfhjg\n" +
-		"dsjkfsdfkjhsdfhjk"
+		"dsjkfsdfkjhsdfhjk\n"
 	service := buildService(NTPData)
 
 	expectedNTPOffset := NTPInfo{
@@ -32,7 +33,7 @@ func TestGetOffsetReturnsBadFileMessageWhenFileIsBad(t *testing.T) {
 }
 
 func TestGetOffsetReturnsBadNTPServerMessageWhenFileHasBadServer(t *testing.T) {
-	NTPData := "13 Oct 18:00:05 ntpdate[1754]: no server suitable for synchronization found"
+	NTPData := "13 Oct 18:00:05 ntpdate[1754]: no server suitable for synchronization found\n"
 	service := buildService(NTPData)
 
 	expectedNTPOffset := NTPInfo{
