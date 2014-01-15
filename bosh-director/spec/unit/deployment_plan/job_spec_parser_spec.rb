@@ -59,7 +59,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
 
       it 'complains about unknown release' do
-        pending 'refactor to delay assertions to allow for template level release definition'
         job_spec['release'] = 'unknown-release-name'
         expect(deployment_plan).to receive(:release)
           .with('unknown-release-name')
@@ -71,6 +70,33 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           Bosh::Director::JobUnknownRelease,
           "Job `fake-job-name' references an unknown release `unknown-release-name'",
         )
+      end
+
+      context 'when there is no job-level release defined' do
+        before { job_spec.delete('release') }
+
+        context 'when the deployment has zero releases'
+
+        context 'when the deployment has exactly one release' do
+          it "picks the deployment's release" do
+            deployment_release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            allow(deployment_plan).to receive(:releases).and_return([deployment_release])
+
+            job = parser.parse(job_spec)
+            expect(job.release).to eq(deployment_release)
+          end
+        end
+
+        context 'when the deployment has more than one release' do
+          it "does not pick a release" do
+            job_spec.delete('release')
+
+            allow(deployment_plan).to receive(:releases).and_return([instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion'), instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')])
+
+            job = parser.parse(job_spec)
+            expect(job.release).to be_nil
+          end
+        end
       end
     end
 
@@ -198,13 +224,11 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               before { allow(deployment_plan).to receive(:releases).and_return([double, double]) }
 
               it 'raises an error because there is not default release specified' do
-                pending 'refactor to delay assertions to allow for template level release definition'
-
                 expect {
                   parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
-                  "Cannot tell what release job `fake-job-name' supposed to use, please reference an existing release",
+                  "Cannot tell what release template `fake-template-name' is supposed to use, please reference an existing release",
                 )
               end
             end
@@ -228,13 +252,11 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               before { allow(deployment_plan).to receive(:releases).and_return([]) }
 
               it 'raises an error because there is not default release specified' do
-                pending 'refactor to delay assertions to allow for template level release definition'
-
                 expect {
                   parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
-                  "Cannot tell what release job `fake-job-name' supposed to use, please reference an existing release",
+                  "Cannot tell what release template `fake-template-name' is supposed to use, please reference an existing release",
                 )
               end
             end
@@ -299,46 +321,36 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         context 'when multiple hashes reference different releases' do
-          before do
+          it 'uses the correct release for each template' do
             job_spec['templates'] = [
               {'name' => 'fake-template-name1', 'release' => 'fake-template-release1'},
               {'name' => 'fake-template-name2', 'release' => 'fake-template-release2'},
             ]
-          end
 
-          before do # resolve first release and template obj
+            # resolve first release and template obj
             rel_ver1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
             allow(deployment_plan).to receive(:release)
-              .with('fake-template-release1')
-              .and_return(rel_ver1)
+                                      .with('fake-template-release1')
+                                      .and_return(rel_ver1)
 
             template1 = make_template('fake-template-name1', rel_ver1)
-            allow(rel_ver1).to receive(:use_template_named)
-              .with('fake-template-name1')
-              .and_return(template1)
-          end
+            expect(rel_ver1).to receive(:use_template_named)
+                               .with('fake-template-name1')
+                               .and_return(template1)
 
-          before do # resolve second release and template obj
+            # resolve second release and template obj
             rel_ver2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
             allow(deployment_plan).to receive(:release)
-              .with('fake-template-release2')
-              .and_return(rel_ver2)
+                                      .with('fake-template-release2')
+                                      .and_return(rel_ver2)
 
             template2 = make_template('fake-template-name2', rel_ver2)
-            allow(rel_ver2).to receive(:use_template_named)
-              .with('fake-template-name2')
-              .and_return(template2)
-          end
+            expect(rel_ver2).to receive(:use_template_named)
+                               .with('fake-template-name2')
+                               .and_return(template2)
 
-          it 'raises an error because currently multi-release collocation is not supported' do
-            pending('To allow for acceptance of #60722772')
             job_spec['name'] = 'fake-job-name'
-            expect {
-              parser.parse(job_spec)
-            }.to raise_error(
-              Bosh::Director::JobInvalidTemplates,
-              "Job `fake-job-name' templates must come from the same release."
-            )
+            parser.parse(job_spec)
           end
         end
 

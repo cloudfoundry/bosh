@@ -50,25 +50,18 @@ module Bosh::Director
         if release_name.nil?
           if @deployment.releases.size == 1
             @job.release = @deployment.releases.first
-          #else
-          #  raise JobMissingRelease,
-          #        "Cannot tell what release job `#{@job.name}' supposed to use, please reference an existing release"
           end
         else
           @job.release = @deployment.release(release_name)
-        end
 
-        #if @job.release.nil?
-        #  raise JobUnknownRelease,
-        #        "Job `#{@job.name}' references an unknown release `#{release_name}'"
-        #end
+          if @job.release.nil?
+            raise JobUnknownRelease,
+                  "Job `#{@job.name}' references an unknown release `#{release_name}'"
+          end
+        end
       end
 
       def parse_template
-        #if @job.release.nil?
-        #  raise DirectorError, "Cannot parse template before parsing release"
-        #end
-
         template_names = safe_property(@job_spec, "template", optional: true)
         if template_names
           if template_names.is_a?(String)
@@ -93,13 +86,20 @@ module Bosh::Director
             template_name = safe_property(template, 'name', class: String)
             release_name = safe_property(template, 'release', class: String, optional: true)
 
-            release = release_name ? @deployment.release(release_name) : @job.release
-            if release
-              @job.templates << release.use_template_named(template_name)
+            release = nil
+            if release_name
+              release = @deployment.release(release_name)
+              unless release
+                raise JobUnknownRelease,
+                      "Template `#{template_name}' (job `#{@job.name}') references an unknown release `#{release_name}'"
+              end
             else
-              raise JobUnknownRelease,
-                    "Template `#{template_name}' (job `#{@job.name}') references an unknown release `#{release_name}'"
+              release = @job.release
+              unless release
+                raise JobMissingRelease, "Cannot tell what release template `#{template_name}' is supposed to use, please reference an existing release"
+              end
             end
+            @job.templates << release.use_template_named(template_name)
           end
         end
       end
