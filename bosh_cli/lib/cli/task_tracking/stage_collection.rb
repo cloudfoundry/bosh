@@ -48,13 +48,22 @@ module Bosh::Cli::TaskTracking
       @name = name
       @progress = progress
       @callbacks = callbacks
+      @total_duration = TotalDuration.new
     end
 
     def update_with_event(event)
-      @state = event['state']
+      @state    = event['state']
       @progress = event['progress']
-      @error = (event['data'] || {})['error']
+      @error    = (event['data'] || {})['error']
+
+      @total_duration.started_at  = event['time'] if @state == 'started'
+      @total_duration.finished_at = event['time'] if @state == 'finished'
+
       call_state_callback
+    end
+
+    def duration
+      @total_duration.duration
     end
 
     private

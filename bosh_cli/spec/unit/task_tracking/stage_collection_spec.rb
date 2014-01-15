@@ -135,6 +135,40 @@ module Bosh::Cli::TaskTracking
         }.to change { task.progress }.from(0).to('fake-new-progress')
       end
 
+      it 'updates duration when finish before starting' do
+        task.update_with_event('state' => 'finished', 'time' => 500)
+        expect(task.duration).to be(nil)
+
+        task.update_with_event('state' => 'started', 'time' => 100)
+        expect(task.duration).to eq(400)
+      end
+
+      it 'updates duration with start before finish' do
+        task.update_with_event('state' => 'started', 'time' => 200)
+        task.update_with_event('state' => 'finished', 'time' => 500)
+        expect(task.duration).to eq(300)
+      end
+
+      it 'only uses the first start time when multiple starts are passed' do
+        task.update_with_event('state' => 'started', 'time' => 100)
+        task.update_with_event('state' => 'started', 'time' => 200)
+        task.update_with_event('state' => 'started', 'time' => 300)
+        task.update_with_event('state' => 'finished', 'time' => 600)
+
+        expect(task.duration).to eq(500)
+      end
+
+      it 'gets duration of nil when job does not finish' do
+        task.update_with_event('state' => 'started', 'time' => 100)
+        expect(task.duration).to be(nil)
+      end
+
+      it 'gets duration of nil when job finishes but was never started' do
+        task.update_with_event('state' => 'finished', 'time' => 100)
+        expect(task.duration).to be(nil)
+      end
+
+
       context 'when the task is started' do
         it 'calls task_start callback' do
           callbacks[:task_started] = ->{}
