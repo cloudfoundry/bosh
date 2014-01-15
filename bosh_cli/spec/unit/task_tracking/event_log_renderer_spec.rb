@@ -3,10 +3,6 @@ require 'spec_helper'
 describe Bosh::Cli::TaskTracking::EventLogRenderer do
   subject(:renderer) { described_class.new }
 
-  # consider injecting total duration into renderers?
-  let!(:total_duration) { Bosh::Cli::TaskTracking::TotalDuration.new }
-  before { allow(Bosh::Cli::TaskTracking::TotalDuration).to receive(:new).with(no_args).and_return(total_duration) }
-
   it 'allows adding events' do
     renderer.add_event(make_event('Preparing', 'Binding release', 1, 9, 'started'))
     renderer.add_event(make_event('Preparing', 'Binding existing deployment', 2, 9, 'started'))
@@ -138,7 +134,7 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       it 'updates total duration started at time' do
         expect {
           renderer.add_event(make_event('with-progress', 'task1', 0, 0, 'started', [], 0, nil, 101))
-        }.to change { total_duration.started_at }.to(Time.at(101))
+        }.to change { renderer.started_at }.to(Time.at(101))
       end
     end
 
@@ -148,7 +144,7 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       it 'updates total duration finished at time' do
         expect {
           renderer.add_event(make_event('with-progress', 'task1', 0, 0, 'finished', [], 0, nil, 101))
-        }.to change { total_duration.finished_at }.to(Time.at(101))
+        }.to change { renderer.finished_at }.to(Time.at(101))
       end
     end
   end
@@ -182,7 +178,7 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       it 'updates total duration started at time' do
         expect {
           renderer.add_event(make_event('fake-e1-stage', 'task1', 0, 0, 'started', [], 0, nil, 101))
-        }.to change { total_duration.started_at }.to(Time.at(101))
+        }.to change { renderer.started_at }.to(Time.at(101))
       end
     end
 
@@ -190,7 +186,7 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       it 'updates total duration finished at time' do
         expect {
           renderer.add_event(make_event('fake-e1-stage', 'task1', 0, 0, 'finished', [], 0, nil, 101))
-        }.to change { total_duration.finished_at }.to(Time.at(101))
+        }.to change { renderer.finished_at }.to(Time.at(101))
       end
     end
 
@@ -234,15 +230,6 @@ Done                          2/2 00:00:00
   Started fake-e2-stage: fake-e2-task
      Done fake-e1-stage: fake-e1-task
       OUTPUT
-    end
-  end
-
-  %w(duration duration_known? started_at finished_at).each do |duration_method|
-    describe "##{duration_method}" do
-      it 'delegates to TotalDuration' do
-        expect(total_duration).to receive(duration_method).with(no_args).and_return('result')
-        expect(subject.send(duration_method)).to eq('result')
-      end
     end
   end
 
