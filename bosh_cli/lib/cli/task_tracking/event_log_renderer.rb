@@ -328,12 +328,14 @@ module Bosh::Cli::TaskTracking
           @buffer.print("  Started #{header_for_task(task)}\n")
         },
         task_finished: ->(task){
-          @buffer.print("     Done #{header_for_task(task)}\n")
+          duration = task.duration ? " (#{format_time(task.duration)})" : ''
+          @buffer.print("     Done #{header_for_task(task)}#{duration}\n")
         },
         task_failed: ->(task){
           error_msg = task.error
           error_msg = ": #{error_msg.make_red}" if error_msg
-          @buffer.print("   Failed #{header_for_task(task)}#{error_msg}\n")
+          duration = task.duration ? " (#{format_time(task.duration)})" : ''
+          @buffer.print("   Failed #{header_for_task(task)}#{duration}#{error_msg}\n")
         },
       )
     end

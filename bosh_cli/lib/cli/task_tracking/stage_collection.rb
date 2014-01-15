@@ -57,7 +57,7 @@ module Bosh::Cli::TaskTracking
       @error    = (event['data'] || {})['error']
 
       @total_duration.started_at  = event['time'] if @state == 'started'
-      @total_duration.finished_at = event['time'] if @state == 'finished'
+      @total_duration.finished_at = event['time'] if @state == 'finished' || @state == 'failed'
 
       call_state_callback
     end
