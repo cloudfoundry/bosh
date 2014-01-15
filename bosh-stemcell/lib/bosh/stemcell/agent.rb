@@ -13,9 +13,15 @@ module Bosh::Stemcell
     end
 
     class Go
+      def name
+        'go'
+      end
     end
 
     class Ruby
+      def name
+        'ruby'
+      end
     end
   end
 end
