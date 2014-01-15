@@ -65,6 +65,7 @@ function wait_agent {
 wait_agent ${agent_host} ${agent_port}
 
 bosh-release \
+  --json \
   --cpi ${infrastructure} \
   compile \
     ${bosh_src_dir}/release.yml \

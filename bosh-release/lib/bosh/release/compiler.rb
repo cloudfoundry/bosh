@@ -29,6 +29,10 @@ module Bosh
         send(@options["command"].to_sym)
       end
 
+      def apply_spec_json
+        File.join(@options["base_dir"], "micro/apply_spec.json")
+      end
+
       def apply_spec
         File.join(@options["base_dir"], "micro/apply_spec.yml")
       end
@@ -90,7 +94,13 @@ module Bosh
 
         # save apply spec
         FileUtils.mkdir_p(File.dirname(apply_spec))
-        File.open(apply_spec, 'w') { |f| f.write(Psych.dump(@spec)) }
+        if @options[:json]
+          File.open(apply_spec_json, 'w') { |f| f.write(@spec.to_json) }
+        else
+          File.open(apply_spec, 'w') { |f| f.write(Psych.dump(@spec)) }
+        end
+
+
 
         @spec["packages"]
       rescue => e

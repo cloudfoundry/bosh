@@ -12,6 +12,7 @@ def usage(msg=nil)
   $stderr.puts "  options:"
   $stderr.puts "    --cpi <cloud provider interface> (#{CPIS.join(', ')})"
   $stderr.puts "    --job <job to compile> (defaults to 'micro_<cpi>')"
+  $stderr.puts "    --json (write apply spec file as JSON instead of YAML)"
   $stderr.puts "  commands:"
   $stderr.puts "    apply <apply_spec> <mbus_uri>"
   $stderr.puts "    compile <manifest> <release_tgz> <blobstore_path> <mbus_uri>"
@@ -21,6 +22,7 @@ end
 options = Trollop::options do
   opt :cpi, "Cloud Provider Interface", :type => String, :required => true
   opt :job, "Job to compile", :type => String
+  opt :json, "Write apply spec as JSON"
   stop_on COMMANDS
 end
 

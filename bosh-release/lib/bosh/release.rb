@@ -2,6 +2,7 @@ module Bosh; module Release; end; end
 
 require 'logger'
 require 'yaml'
+require 'json'
 require 'blobstore_client'
 require 'common/common'
 require 'common/properties'

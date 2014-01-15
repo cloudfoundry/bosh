@@ -52,6 +52,18 @@ describe Bosh::Release::Compiler do
       compiler.compile.should include('director')
     end
 
+    it 'writes the apply spec as json if the json option is set' do
+      compiler = Bosh::Release::Compiler.new(options.merge({json: true}))
+      compiler.compile
+
+      file = File.open(compiler.apply_spec_json)
+      contents = file.read
+
+      apply_spec_hash = JSON.parse(contents)
+      apply_spec_hash["deployment"].should eq("micro")
+      compiler.apply_spec_json.should match(/json\z/)
+    end
+
     context 'when job uses job collocation' do
       let(:manifest) { 'micro_bosh_collo/micro_bosh_collo.yml' }
       let(:release_tar) { 'micro_bosh_collo/micro_bosh_collo.tgz' }

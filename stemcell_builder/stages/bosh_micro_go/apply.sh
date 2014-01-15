@@ -3,6 +3,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
+set -x
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
@@ -21,4 +22,4 @@ run_in_bosh_chroot $chroot "$bosh_dir/src/micro_bosh/configure_micro_bosh.sh ${s
 
 # Copy the generated apply spec to stemcell directory
 mkdir -p $work/stemcell
-cp $chroot/$bosh_app_dir/micro/apply_spec.yml $work/stemcell
+cp $chroot/$bosh_app_dir/micro/apply_spec.json $work/stemcell
