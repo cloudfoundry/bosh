@@ -64,6 +64,7 @@ namespace :ci do
     build.promote_artifacts
   end
 
+  desc 'Promote candidate sha to stable branch outside of the promote_artifacts task'
   task :promote, [:candidate_build_number, :candidate_sha, :stable_branch] do |_, args|
     require 'logger'
     require 'bosh/dev/promoter'
