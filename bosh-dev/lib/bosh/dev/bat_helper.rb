@@ -1,18 +1,20 @@
 require 'bosh/dev/build'
-require 'bosh/stemcell/infrastructure'
+require 'bosh/stemcell/definition'
 require 'bosh/dev/aws/runner_builder'
 require 'bosh/dev/openstack/runner_builder'
 require 'bosh/dev/vsphere/runner_builder'
 
+require 'forwardable'
+
 module Bosh::Dev
   class BatHelper
-    attr_reader :infrastructure, :operating_system
+    extend Forwardable
+    def_delegators :@stemcell_definition, :infrastructure, :operating_system, :agent
 
     def self.for_rake_args(args)
       new(
         runner_builder_for_infrastructure_name(args.infrastructure_name),
-        Bosh::Stemcell::Infrastructure.for(args.infrastructure_name),
-        Bosh::Stemcell::OperatingSystem.for(args.operating_system_name),
+        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.agent_name),
         Build.candidate,
         args.net_type,
       )
@@ -25,10 +27,9 @@ module Bosh::Dev
       }[name]
     end
 
-    def initialize(runner_builder, infrastructure, operating_system, build, net_type)
+    def initialize(runner_builder, stemcell_definition, build, net_type)
       @runner_builder   = runner_builder
-      @infrastructure   = infrastructure
-      @operating_system = operating_system
+      @stemcell_definition = stemcell_definition
       @build    = build
       @net_type = net_type
     end
@@ -68,7 +69,7 @@ module Bosh::Dev
 
     private
 
-    attr_reader :build, :net_type
+    attr_reader :build, :net_type, :stemcell_definition
 
     def prepare_directories
       FileUtils.rm_rf(artifacts_dir)

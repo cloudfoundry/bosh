@@ -5,7 +5,7 @@ module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(bat_runner_builder, infrastructure, operating_system, build, networking_type) }
+    subject { described_class.new(bat_runner_builder, definition, build, networking_type) }
 
     let(:bat_runner_builder) { instance_double('Bosh::Dev::Aws::RunnerBuilder') }
 
@@ -24,6 +24,21 @@ module Bosh::Dev
       )
     end
 
+    let(:agent) do
+      instance_double(
+        'Bosh::Stemcell::Agent::Go'
+      )
+    end
+
+    let(:definition) do
+      instance_double(
+        'Bosh::Stemcell::Definition',
+        infrastructure: infrastructure,
+        operating_system: operating_system,
+        agent: agent,
+      )
+    end
+
     let(:networking_type) { 'networking-type' }
 
     let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
@@ -34,32 +49,28 @@ module Bosh::Dev
           :infrastructure_name,
           :operating_system_name,
           :net_type,
-        ).new('infrastructure-name', 'operating-system-name', networking_type)
+          :agent_name
+        ).new('infrastructure-name', 'operating-system-name', networking_type, 'agent-name')
 
         described_class
           .should_receive(:runner_builder_for_infrastructure_name)
           .with('infrastructure-name')
           .and_return(bat_runner_builder)
 
-        Bosh::Stemcell::Infrastructure
-          .should_receive(:for)
-          .with('infrastructure-name')
-          .and_return(infrastructure)
-
-        Bosh::Stemcell::OperatingSystem
-          .should_receive(:for)
-          .with('operating-system-name')
-          .and_return(operating_system)
-
         Build.should_receive(:candidate).and_return(build)
+
+        allow(Bosh::Stemcell::Definition).to receive(:for).and_return(definition)
 
         bat_helper = instance_double('Bosh::Dev::BatHelper')
         described_class
           .should_receive(:new)
-          .with(bat_runner_builder, infrastructure, operating_system, build, networking_type)
+          .with(bat_runner_builder, definition, build, networking_type)
           .and_return(bat_helper)
 
-        described_class.for_rake_args(rake_args).should == bat_helper
+        expect(described_class.for_rake_args(rake_args)).to eq bat_helper
+
+        expect(Bosh::Stemcell::Definition).to have_received(:for)
+                                           .with('infrastructure-name', 'operating-system-name', 'agent-name')
       end
     end
 
@@ -68,6 +79,7 @@ module Bosh::Dev
     describe '#initialize' do
       its(:infrastructure)             { should == infrastructure }
       its(:operating_system)           { should == operating_system }
+      its(:agent)                      { should == agent }
       its(:micro_bosh_deployment_name) { should == 'microbosh' }
       its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
       its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }

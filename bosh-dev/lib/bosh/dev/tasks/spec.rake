@@ -77,7 +77,7 @@ namespace :spec do
 
   namespace :system do
     desc 'Run system (BATs) tests (deploys microbosh)'
-    task :micro, [:infrastructure_name, :operating_system_name, :net_type] do |_, args|
+    task :micro, [:infrastructure_name, :operating_system_name, :net_type, :agent_name] do |_, args|
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
