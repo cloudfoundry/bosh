@@ -69,17 +69,49 @@ module Bosh::Director
         assembler.bind_stemcells
       end
 
-      it 'should bind templates' do
-        r1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
-        r2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+      describe '#bind_templates' do
+        it 'should bind templates' do
+          r1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+          r2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
 
-        deployment_plan.should_receive(:releases).and_return([r1, r2])
+          deployment_plan.should_receive(:releases).and_return([r1, r2])
+          allow(deployment_plan).to receive(:jobs).and_return([])
 
-        r1.should_receive(:bind_templates)
-        r2.should_receive(:bind_templates)
+          r1.should_receive(:bind_templates)
+          r2.should_receive(:bind_templates)
 
-        assembler.bind_templates
+          assembler.bind_templates
+        end
+
+        it 'validates the jobs' do
+          j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
+
+          expect(deployment_plan).to receive(:jobs).and_return([j1, j2])
+          allow(deployment_plan).to receive(:releases).and_return([])
+
+          expect(j1).to receive(:validate_package_names_do_not_collide!).once
+          expect(j2).to receive(:validate_package_names_do_not_collide!).once
+
+          assembler.bind_templates
+        end
+
+        context 'when the job validation fails' do
+          it "bubbles up the exception" do
+            j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
+            j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
+
+            allow(deployment_plan).to receive(:jobs).and_return([j1, j2])
+            allow(deployment_plan).to receive(:releases).and_return([])
+
+            expect(j1).to receive(:validate_package_names_do_not_collide!).once
+            expect(j2).to receive(:validate_package_names_do_not_collide!).once.and_raise('Unable to deploy manifest')
+
+            expect { assembler.bind_templates }.to raise_error('Unable to deploy manifest')
+          end
+        end
       end
+
 
       it 'should bind unallocated VMs' do
         instances = (1..4).map { |i| instance_double('Bosh::Director::DeploymentPlan::Instance') }

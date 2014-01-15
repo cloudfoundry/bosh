@@ -32,8 +32,19 @@ describe Bosh::Director::DeploymentPlan::Job do
     {'dea_max_memory' => {'default' => 2048}}
   end
 
-  let(:foo_template) { make_template('foo', release, foo_properties) }
-  let(:bar_template) { make_template('bar', release, bar_properties) }
+  let(:foo_template) { instance_double(
+    'Bosh::Director::DeploymentPlan::Template',
+    name: 'foo',
+    release: release,
+    properties: foo_properties,
+  ) }
+
+  let(:bar_template) { instance_double(
+    'Bosh::Director::DeploymentPlan::Template',
+    name: 'bar',
+    release: release,
+    properties: bar_properties,
+  ) }
 
   before do
     allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
@@ -146,22 +157,101 @@ describe Bosh::Director::DeploymentPlan::Job do
       job.bind_properties
 
       expect(job.properties).to eq(
-        'db' => {
-          'user' => 'admin',
-          'password' => '12321',
-          'host' => 'localhost'
-        },
-        'mem' => 2048,
-      )
+                                  'db' => {
+                                    'user' => 'admin',
+                                    'password' => '12321',
+                                    'host' => 'localhost'
+                                  },
+                                  'mem' => 2048,
+                                )
     end
   end
 
-  def make_template(name, rel_ver, properties)
-    instance_double(
-      'Bosh::Director::DeploymentPlan::Template',
-      name: name,
-      release: rel_ver,
-      properties: properties,
-    )
+  describe '#validate_package_names_do_not_collide!' do
+    let(:foo_template_package_name) { 'one_name' }
+    let(:bar_template_package_name) { 'another_name' }
+
+    before do
+      allow(plan).to receive(:release).with('release1').and_return(release)
+
+      allow(plan).to receive(:properties).and_return({})
+
+      foo_template_model = instance_double('Bosh::Director::Models::Template')
+      bar_template_model = instance_double('Bosh::Director::Models::Template')
+
+      allow(foo_template_model).to receive(:package_names).and_return([foo_template_package_name])
+      allow(bar_template_model).to receive(:package_names).and_return([bar_template_package_name])
+
+      allow(foo_template).to receive(:model).and_return(foo_template_model)
+      allow(bar_template).to receive(:model).and_return(bar_template_model)
+    end
+
+    context 'when the templates are from the same release' do
+      let(:spec) do
+        {
+          'name' => 'foobar',
+          'templates' => [
+            {'name' => 'foo', 'release' => 'release1'},
+            {'name' => 'bar', 'release' => 'release1'},
+          ],
+          'resource_pool' => 'dea',
+          'instances' => 1,
+          'networks' => [{'name' => 'fake-network-name'}],
+        }
+      end
+
+      let(:foo_template_package_name) { 'same_name' }
+      let(:bar_template_package_name) { 'same_name' }
+
+      before do
+        allow(plan).to receive(:releases).with(no_args).and_return([release])
+      end
+
+      it 'does not raise an error when they have the same packages' do
+        expect { job.validate_package_names_do_not_collide! }.to_not raise_error
+      end
+    end
+
+    context 'when the templates are from different releases' do
+      let(:spec) do
+        {
+          'name' => 'foobar',
+          'templates' => [
+            {'name' => 'foo', 'release' => 'release1'},
+            {'name' => 'bar', 'release' => 'release2'},
+          ],
+          'resource_pool' => 'dea',
+          'instances' => 1,
+          'networks' => [{'name' => 'fake-network-name'}],
+        }
+      end
+
+      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+      let(:bar_template) { instance_double(
+        'Bosh::Director::DeploymentPlan::Template',
+        name: 'bar',
+        release: bar_release,
+        properties: bar_properties,
+      ) }
+
+      before do
+        allow(plan).to receive(:releases).with(no_args).and_return([release, bar_release])
+
+        allow(plan).to receive(:release).with('release2').and_return(bar_release)
+        allow(bar_release).to receive(:use_template_named).with('bar').and_return(bar_template)
+      end
+
+      it 'does not raise an exception when the templates do not share the same packages' do
+        expect { job.validate_package_names_do_not_collide! }.to_not raise_error
+      end
+
+      context 'when the templates share the same packages' do
+        let(:foo_template_package_name) { 'same_name' }
+        let(:bar_template_package_name) { 'same_name' }
+        it 'raises an exception' do
+          expect { job.validate_package_names_do_not_collide! }.to raise_error(Bosh::Director::JobPackageCollision, "Unable to deploy: package name collision in job definitions.")
+        end
+      end
+    end
   end
 end

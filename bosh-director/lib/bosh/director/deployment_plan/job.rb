@@ -203,6 +203,22 @@ module Bosh::Director
         @properties = filter_properties(@all_properties)
       end
 
+      def validate_package_names_do_not_collide!
+        releases_by_package_names = templates.reduce([]) { |memo, t|
+          memo + t.model.package_names.product([t.release])
+        }.reduce({}) { |memo, package_name_and_release_version|
+          package_name = package_name_and_release_version.first
+          release_version = package_name_and_release_version.last
+          memo[package_name] ||= Set.new
+          memo[package_name] << release_version
+          memo
+        }
+
+        if releases_by_package_names.values.detect { |x| x.size > 1 }
+          raise JobPackageCollision, 'Unable to deploy: package name collision in job definitions.'
+        end
+      end
+
       private
 
       # @param [Hash] collection All properties collection

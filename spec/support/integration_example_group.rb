@@ -13,14 +13,30 @@ module IntegrationExampleGroup
     deploy_simple_manifest(options)
   end
 
+  def deploy_simple_with_collocation(options={})
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+    run_bosh('login admin admin')
+
+    run_bosh('upload release /Users/pivotal/workspace/dummy-boshrelease2/dev_releases/dummy2-0.2-dev.tgz')
+    run_bosh('upload release /Users/pivotal/workspace/dummy-boshrelease/dev_releases/dummy-0.2-dev.tgz')
+
+    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    deploy_simple_manifest(options)
+  end
+
   def deploy_simple_manifest(options={})
     manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
     deployment_manifest = yaml_file('simple', manifest_hash)
     run_bosh("deployment #{deployment_manifest.path}")
 
     no_track = options.fetch(:no_track, false)
-    deploy_result = run_bosh("#{no_track ? '--no-track ' : ''}deploy")
-    expect($?).to be_success
+    deploy_result = run_bosh("#{no_track ? '--no-track ' : ''}deploy", failure_expected: true)
+
+    if options[:expect_failure]
+      expect($?).not_to be_success
+    else
+      expect($?).to be_success
+    end
 
     deploy_result
   end

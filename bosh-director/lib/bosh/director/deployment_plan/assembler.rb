@@ -291,6 +291,10 @@ module Bosh::Director
       @deployment_plan.releases.each do |release|
         release.bind_templates
       end
+
+      @deployment_plan.jobs.each do |job|
+        job.validate_package_names_do_not_collide!
+      end
     end
 
     # Binds properties for all templates in the deployment

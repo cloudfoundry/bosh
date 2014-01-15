@@ -50,24 +50,24 @@ module Bosh::Director
         if release_name.nil?
           if @deployment.releases.size == 1
             @job.release = @deployment.releases.first
-          else
-            raise JobMissingRelease,
-                  "Cannot tell what release job `#{@job.name}' supposed to use, please reference an existing release"
+          #else
+          #  raise JobMissingRelease,
+          #        "Cannot tell what release job `#{@job.name}' supposed to use, please reference an existing release"
           end
         else
           @job.release = @deployment.release(release_name)
         end
 
-        if @job.release.nil?
-          raise JobUnknownRelease,
-                "Job `#{@job.name}' references an unknown release `#{release_name}'"
-        end
+        #if @job.release.nil?
+        #  raise JobUnknownRelease,
+        #        "Job `#{@job.name}' references an unknown release `#{release_name}'"
+        #end
       end
 
       def parse_template
-        if @job.release.nil?
-          raise DirectorError, "Cannot parse template before parsing release"
-        end
+        #if @job.release.nil?
+        #  raise DirectorError, "Cannot parse template before parsing release"
+        #end
 
         template_names = safe_property(@job_spec, "template", optional: true)
         if template_names
@@ -108,11 +108,6 @@ module Bosh::Director
         if @job.templates.uniq(&:name).size != @job.templates.size
           raise JobInvalidTemplates,
                 "Job `#{@job.name}' templates must not have repeating names."
-        end
-
-        if @job.templates.uniq(&:release).size > 1
-          raise JobInvalidTemplates,
-                "Job `#{@job.name}' templates must come from the same release."
         end
       end
 
