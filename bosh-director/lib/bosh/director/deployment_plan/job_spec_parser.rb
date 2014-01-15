@@ -96,7 +96,7 @@ module Bosh::Director
             else
               release = @job.release
               unless release
-                raise JobMissingRelease, "Cannot tell what release template `#{template_name}' is supposed to use, please reference an existing release"
+                raise JobMissingRelease, "Cannot tell what release template `#{template_name}' (job `#{@job.name}') is supposed to use, please explicitly specify one"
               end
             end
             @job.templates << release.use_template_named(template_name)

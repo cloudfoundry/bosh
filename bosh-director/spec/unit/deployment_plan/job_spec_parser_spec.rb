@@ -228,7 +228,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                   parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
-                  "Cannot tell what release template `fake-template-name' is supposed to use, please reference an existing release",
+                  "Cannot tell what release template `fake-template-name' (job `fake-job-name') is supposed to use, please explicitly specify one",
                 )
               end
             end
@@ -256,7 +256,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                   parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
-                  "Cannot tell what release template `fake-template-name' is supposed to use, please reference an existing release",
+                  "Cannot tell what release template `fake-template-name' (job `fake-job-name') is supposed to use, please explicitly specify one",
                 )
               end
             end
