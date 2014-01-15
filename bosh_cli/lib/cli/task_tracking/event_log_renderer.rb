@@ -317,26 +317,31 @@ module Bosh::Cli::TaskTracking
     end
 
     def handle_event_without_progress_bar(event)
-      event_header = "#{event['stage'].downcase}#{header_for_tags(event['tags'])}: #{event['task']}"
-
-      case event['state']
-        when 'started'
-          @total_duration.started_at = event['time']
-          @buffer.print("  Started #{event_header}\n")
-        when 'finished'
-          @total_duration.finished_at = event['time']
-          @buffer.print("     Done #{event_header}\n")
-        when 'failed'
-          event_data = event['data'] || {}
-          data_error = event_data['error']
-          error_msg = data_error ? ": #{data_error.make_red}" : ''
-          @buffer.print("   Failed #{event_header}#{error_msg}\n")
-      end
+      @total_duration.started_at = event['time']
+      @total_duration.finished_at = event['time']
+      stage_collection.update_with_event(event)
     end
 
-    def header_for_tags(tags)
-      tags = Array(tags)
-      tags.size > 0 ? ' ' + tags.sort.join(', ').make_green : ''
+    def stage_collection
+      @stage_collection ||= StageCollection.new(
+        task_started: ->(task){
+          @buffer.print("  Started #{header_for_task(task)}\n")
+        },
+        task_finished: ->(task){
+          @buffer.print("     Done #{header_for_task(task)}\n")
+        },
+        task_failed: ->(task){
+          error_msg = task.error
+          error_msg = ": #{error_msg.make_red}" if error_msg
+          @buffer.print("   Failed #{header_for_task(task)}#{error_msg}\n")
+        },
+      )
+    end
+
+    def header_for_task(task)
+      tags = task.stage.tags
+      tags_str = tags.size > 0 ? ' ' + tags.sort.join(', ').make_green : ''
+      "#{task.stage.name.downcase}#{tags_str}: #{task.name}"
     end
 
     class Task
