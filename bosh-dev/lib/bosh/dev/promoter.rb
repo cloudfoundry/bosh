@@ -32,9 +32,6 @@ module Bosh::Dev
       if tagger.stable_tag_for?(@candidate_sha)
         @logger.info('Skipping promotion since an existing stable tag was found')
       else
-        build = Build.candidate
-        build.promote_artifacts
-
         release_promoter = ReleaseChangePromoter.new(@candidate_build_number, @candidate_sha, DownloadAdapter.new(@logger))
         final_release_sha = release_promoter.promote
 
@@ -45,6 +42,9 @@ module Bosh::Dev
 
         git_branch_merger = GitBranchMerger.new
         git_branch_merger.merge('develop', "Merge final release for build #{@candidate_build_number} to develop")
+
+        build = Build.candidate
+        build.promote_artifacts
       end
     end
   end

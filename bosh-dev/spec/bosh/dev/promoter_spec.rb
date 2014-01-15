@@ -67,12 +67,6 @@ module Bosh::Dev
           git_tagger.stub(:stable_tag_for?).with(candidate_sha).and_return(false)
         end
 
-        it 'promotes artifacts' do
-          build.should_receive(:promote_artifacts)
-
-          promoter.promote
-        end
-
         it 'promotes the candidate sha to the nominated stable branch (master by default)' do
           release_change_promoter.stub(:promote).and_return(final_release_sha)
           git_promoter.should_receive(:promote).with(final_release_sha, stable_branch)
@@ -91,6 +85,12 @@ module Bosh::Dev
         it 'commits a record of the final release to the git repo' do
           expect(release_change_promoter).to receive(:promote).ordered
           expect(git_branch_merger).to receive(:merge).with('develop', "Merge final release for build #{candidate_build_number} to develop").ordered
+
+          promoter.promote
+        end
+
+        it 'promotes artifacts' do
+          build.should_receive(:promote_artifacts)
 
           promoter.promote
         end
