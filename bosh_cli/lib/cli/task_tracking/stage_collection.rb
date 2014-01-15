@@ -35,8 +35,35 @@ module Bosh::Cli::TaskTracking
         found_task = new_task
         @tasks << new_task
       end
+      fire_started_callback(event)
       found_task.update_with_event(event)
+      fire_finished_callback(event)
+      fire_failed_callback(event)
       found_task
+    end
+
+    private
+
+    def fire_started_callback(event)
+      if event['state'] == 'started' && event['index'] == 1
+        callback = @callbacks[:stage_started]
+        callback.call(self) if callback
+      end
+    end
+
+    def fire_finished_callback(event)
+      if event['state'] == 'finished' && ((event['index'] == event['total']) || event['total'].nil?)
+        callback = @callbacks[:stage_finished]
+        callback.call(self) if callback
+      end
+    end
+
+    def fire_failed_callback(event)
+      if event['state'] == 'failed'
+        # If there are multiple failures do we need to only fire on the first one?
+        callback = @callbacks[:stage_failed]
+        callback.call(self) if callback
+      end
     end
   end
 

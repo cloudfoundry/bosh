@@ -114,6 +114,43 @@ module Bosh::Cli::TaskTracking
           stage.update_with_event(event)
         end
       end
+
+      context 'when the started event for the first task is received' do
+        it 'calls stage_started callbacks' do
+          callbacks[:stage_started] = -> {}
+          expect(callbacks[:stage_started]).to receive(:call).with(stage)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task', 'index' => 1, 'state' => 'started')
+        end
+      end
+
+      context 'when the finished event for the last task is received' do
+        before { callbacks[:stage_finished] = -> {} }
+
+        context 'when total is not null' do
+          it 'calls stage_finished callbacks' do
+            expect(callbacks[:stage_finished]).to receive(:call).with(stage)
+            stage.update_with_event(
+              'stage' => 'fake-stage', 'index' => 1, 'total' => 1, 'state' => 'finished')
+          end
+        end
+
+        context 'when total is null' do
+          it 'calls stage_finished callbacks' do
+            expect(callbacks[:stage_finished]).to receive(:call).with(stage)
+            stage.update_with_event(
+              'stage' => 'fake-stage', 'index' => 1, 'total' => nil, 'state' => 'finished')
+          end
+        end
+      end
+
+      context 'when a failed event is received' do
+        it 'calls stage_failed callbacks' do
+          callbacks[:stage_failed] = -> {}
+          expect(callbacks[:stage_failed]).to receive(:call).with(stage)
+          stage.update_with_event(
+            'stage' => 'fake-stage', 'task' => 'fake-task', 'state' => 'failed')
+        end
+      end
     end
   end
 
