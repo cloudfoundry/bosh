@@ -340,6 +340,36 @@ module Bosh::Dev
         expect(build.release_tarball_path).to eq('tmp/bosh-123.tgz')
       end
     end
+
+    describe '#light_stemcell' do
+      let(:archive_filename) {
+        instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename')
+      }
+
+      let(:archive) {
+        instance_double('Bosh::Stemcell::Archive')
+      }
+
+      before do
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
+        allow(UriProvider).to receive(:pipeline_uri).and_return('fake-url')
+        allow(Dir).to receive(:pwd).and_return('current-dir')
+        allow(download_adapter).to receive(:download)
+        allow(Bosh::Stemcell::Archive).to receive(:new).and_return(archive)
+      end
+
+      it 'fetches the light stemcell for aws + ubuntu + ruby agent' do
+        subject.light_stemcell
+
+        expect(UriProvider).to have_received(:pipeline_uri).with('123/bosh-stemcell/aws', 'fake-filename')
+        expect(download_adapter).to have_received(:download).with('fake-url', 'current-dir/fake-filename')
+      end
+
+      it 'returns the path to a light stemcell' do
+        actual_archive = subject.light_stemcell
+        expect(actual_archive).to eq archive
+      end
+    end
   end
 
   describe Build::Local do
