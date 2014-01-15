@@ -10,8 +10,7 @@ require 'bosh/dev/uri_provider'
 require 'bosh/dev/gem_components'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
+require 'bosh/stemcell/definition'
 
 module Bosh::Dev
   class Build
@@ -100,9 +99,8 @@ module Bosh::Dev
 
     def light_stemcell
       name = 'bosh-stemcell'
-      infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
-      operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-      filename = download_stemcell(name, infrastructure, operating_system, true, Dir.pwd)
+      definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'ruby')
+      filename = download_stemcell(name, definition.infrastructure, definition.operating_system, true, Dir.pwd)
       Bosh::Stemcell::Archive.new(filename)
     end
 
