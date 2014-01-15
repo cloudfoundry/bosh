@@ -65,6 +65,8 @@ cloud:
       - default
       private_key: private_key_path
       state_timeout: 300
+      connection_options:
+        connect_timeout: 60
 
     # Default registry configuration needed by CPI
     registry:
@@ -119,6 +121,8 @@ cloud:
       - default
       private_key: private_key_path
       state_timeout: 300
+      connection_options:
+        connect_timeout: 60
     registry:
       endpoint: http://admin:admin@localhost:25889
       user: admin
@@ -160,6 +164,29 @@ YAML
           expect(subject.to_h['cloud']['properties']['openstack']['state_timeout']).to eq(300)
         end
       end
+
+      context 'when BOSH_OPENSTACK_CONNECTION_TIMEOUT is specified' do
+        it 'uses given env variable value (converted to a float) as a connect_timeout' do
+          value = double('connection_timeout', to_f: 'connection_timeout_as_float')
+          env.merge!('BOSH_OPENSTACK_CONNECTION_TIMEOUT' => value)
+          expect(subject.to_h['cloud']['properties']['openstack']['connection_options']['connect_timeout']).to eq('connection_timeout_as_float')
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_CONNECTION_TIMEOUT is an empty string' do
+        it 'uses 60 (number) as a connect_timeout' do
+          env.merge!('BOSH_OPENSTACK_CONNECTION_TIMEOUT' => '')
+          expect(subject.to_h['cloud']['properties']['openstack']['connection_options']['connect_timeout']).to eq(60)
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_CONNECTION_TIMEOUT is not specified' do
+        it 'uses 60 (number) as a connect_timeout' do
+
+          env.merge!('BOSH_OPENSTACK_CONNECTION_TIMEOUT' => nil)
+          expect(subject.to_h['cloud']['properties']['openstack']['connection_options']['connect_timeout']).to eq(60)
+        end
+      end
     end
 
     its(:director_name) { should match(/microbosh-openstack-/) }
@@ -189,6 +216,9 @@ YAML
             'default_security_groups' => ['default'],
             'private_key' => 'fake-private-key-path',
             'state_timeout' => 300,
+            'connection_options' => {
+              'connect_timeout' => 60,
+            }
           },
           'registry' => {
             'endpoint' => 'http://admin:admin@localhost:25889',

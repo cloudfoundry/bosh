@@ -75,6 +75,9 @@ module Bosh::Dev::Openstack
           'default_security_groups' => ['default'],
           'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
           'state_timeout' => state_timeout,
+          'connection_options' => {
+            'connect_timeout' => connection_timeout,
+          }
         },
         'registry' => {
           'endpoint' => 'http://admin:admin@localhost:25889',
@@ -91,6 +94,11 @@ module Bosh::Dev::Openstack
     def state_timeout
       timeout = env['BOSH_OPENSTACK_STATE_TIMEOUT']
       timeout.to_s.empty? ? 300.0 : timeout.to_f
+    end
+
+    def connection_timeout
+      timeout = env['BOSH_OPENSTACK_CONNECTION_TIMEOUT']
+      timeout.to_s.empty? ? 60.0 : timeout.to_f
     end
   end
 end
