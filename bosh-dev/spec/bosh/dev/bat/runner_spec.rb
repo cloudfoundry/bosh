@@ -102,61 +102,40 @@ module Bosh::Dev::Bat
       let(:bat_rake_task) { double("Rake::Task['bat']", invoke: nil) }
 
       describe 'targetting the micro' do
-        shared_examples_for 'a method that targets the micro correctly' do
+        def self.it_targets_micro(username, password)
           it 'targets the micro with the correct username and password' do
             expect(bosh_cli_session).to receive(:run_bosh).with(
-                                          "-u #{expected_username} -p #{expected_password} target director-hostname"
-                                        )
-
+              "-u #{username} -p #{password} target director-hostname"
+            )
             subject.run_bats
           end
         end
 
         context 'when the environment does not specify a username or password' do
-          let(:expected_username) { 'admin' }
-          let(:expected_password) { 'admin' }
-
-          include_examples 'a method that targets the micro correctly'
+          it_targets_micro 'admin', 'admin'
         end
 
         context 'when the environment specifies a username' do
-          let(:expected_username) { 'username' }
-          let(:expected_password) { 'admin' }
-
-          before do
-            env['BOSH_USER'] = 'username'
-          end
-
-          include_examples 'a method that targets the micro correctly'
+          before { env['BOSH_USER'] = 'username' }
+          it_targets_micro 'username', 'admin'
         end
 
         context 'when the environment specifies a password' do
-          let(:expected_username) { 'admin' }
-          let(:expected_password) { 'password' }
-
-          before do
-            env['BOSH_PASSWORD'] = 'password'
-          end
-
-          include_examples 'a method that targets the micro correctly'
+          before { env['BOSH_PASSWORD'] = 'password' }
+          it_targets_micro 'admin', 'password'
         end
 
         context 'when the environment specifies both a password and password' do
-          let(:expected_username) { 'username' }
-          let(:expected_password) { 'password' }
-
           before do
             env['BOSH_USER'] = 'username'
             env['BOSH_PASSWORD'] = 'password'
           end
-
-          include_examples 'a method that targets the micro correctly'
+          it_targets_micro 'username', 'password'
         end
 
         it 'targets the director before writing the bosh manifest' do
           expect(bosh_cli_session).to receive(:run_bosh).with(/target director-hostname/).ordered
           expect(bat_deployment_manifest).to receive(:write).with(no_args).ordered
-
           subject.run_bats
         end
       end

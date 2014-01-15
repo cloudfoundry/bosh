@@ -42,13 +42,19 @@ module Bosh::Dev::Bat
     end
 
     def run_bats
-      @bosh_cli_session.run_bosh "-u #{@env['BOSH_USER'] || 'admin'} -p #{@env['BOSH_PASSWORD'] || 'admin'} target #{@director_address.hostname}"
+      target_micro
       create_bat_manifest
       set_bat_env_variables
       Rake::Task['bat'].invoke
     end
 
     private
+
+    def target_micro
+      username = @env['BOSH_USER'] || 'admin'
+      password = @env['BOSH_PASSWORD'] || 'admin'
+      @bosh_cli_session.run_bosh("-u #{username} -p #{password} target #{@director_address.hostname}")
+    end
 
     def create_microbosh_manifest
       Dir.chdir(@bat_helper.micro_bosh_deployment_dir) do
@@ -58,10 +64,10 @@ module Bosh::Dev::Bat
 
     def deploy_microbosh
       Dir.chdir(@bat_helper.artifacts_dir) do
-        @bosh_cli_session.run_bosh "micro deployment #{@bat_helper.micro_bosh_deployment_name}"
-        @bosh_cli_session.run_bosh "micro deploy #{@bat_helper.bosh_stemcell_path}"
-        @bosh_cli_session.run_bosh 'login admin admin'
-        @bosh_cli_session.run_bosh "upload stemcell #{@bat_helper.bosh_stemcell_path}", debug_on_fail: true
+        @bosh_cli_session.run_bosh("micro deployment #{@bat_helper.micro_bosh_deployment_name}")
+        @bosh_cli_session.run_bosh("micro deploy #{@bat_helper.bosh_stemcell_path}")
+        @bosh_cli_session.run_bosh('login admin admin')
+        @bosh_cli_session.run_bosh("upload stemcell #{@bat_helper.bosh_stemcell_path}", debug_on_fail: true)
       end
     end
 
