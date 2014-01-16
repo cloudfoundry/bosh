@@ -61,6 +61,8 @@ describe Bosh::Cli::Client::Director do
   end
 
   describe 'API calls' do
+    let(:task_number) { 232 }
+
     describe '#list_vms' do
       let(:http_client) { double('HTTPClient').as_null_object }
       let(:response) { double('Response', body: response_body, code: 200, headers: {}) }
@@ -317,42 +319,42 @@ describe Bosh::Cli::Client::Director do
 
     it 'gets task state' do
       @director.should_receive(:get).
-        with('/tasks/232').
+        with("/tasks/#{task_number}").
         and_return([200, JSON.generate({ 'state' => 'done' })])
-      @director.get_task_state(232).should == 'done'
+      @director.get_task_state(task_number).should == 'done'
     end
 
     it 'whines on missing task' do
       @director.should_receive(:get).
-        with('/tasks/232').
+        with("/tasks/#{task_number}").
         and_return([404, 'Not Found'])
       lambda {
-        @director.get_task_state(232).should
+        @director.get_task_state(task_number).should
       }.should raise_error(Bosh::Cli::MissingTask)
     end
 
     it 'gets task output' do
       @director.should_receive(:get).
-        with('/tasks/232/output', nil,
+        with("/tasks/#{task_number}/output", nil,
              nil, { 'Range' => 'bytes=42-' }).
         and_return([206, 'test', { :content_range => 'bytes 42-56/100' }])
-      @director.get_task_output(232, 42).should == ['test', 57]
+      @director.get_task_output(task_number, 42).should == ['test', 57]
     end
 
     it "doesn't set task output body and new offset if there's a byte range unsatisfiable response" do
       @director.should_receive(:get).
-        with('/tasks/232/output', nil,
+        with("/tasks/#{task_number}/output", nil,
              nil, { 'Range' => 'bytes=42-' }).
         and_return([416, 'Byte range unsatisfiable', { :content_range => 'bytes */100' }])
-      @director.get_task_output(232, 42).should == [nil, nil]
+      @director.get_task_output(task_number, 42).should == [nil, nil]
     end
 
     it "doesn't set task output new offset if it wasn't a partial response" do
       @director.should_receive(:get).
-        with('/tasks/232/output', nil, nil,
+        with("/tasks/#{task_number}/output", nil, nil,
              { 'Range' => 'bytes=42-' }).
         and_return([200, 'test'])
-      @director.get_task_output(232, 42).should == ['test', nil]
+      @director.get_task_output(task_number, 42).should == ['test', nil]
     end
 
     it 'know how to find time difference with director' do
