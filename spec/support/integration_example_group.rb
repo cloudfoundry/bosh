@@ -17,8 +17,9 @@ module IntegrationExampleGroup
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')
 
-    run_bosh('upload release /Users/pivotal/workspace/dummy-boshrelease2/dev_releases/dummy2-0.2-dev.tgz')
-    run_bosh('upload release /Users/pivotal/workspace/dummy-boshrelease/dev_releases/dummy-0.2-dev.tgz')
+
+    run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
+    run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")
 
     run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
     deploy_simple_manifest(options)
