@@ -21,67 +21,69 @@ describe Bosh::Agent::Platform::Linux::Disk do
   before { stub_const('Bosh::Agent::Platform::Linux::Disk::DISK_RETRY_MAX_DEFAULT', 2) }
   before { Bosh::Agent::Mounter.stub(:new).and_return(mounter) }
 
-  context 'vSphere' do
-    let(:settings) { { 'disks' => { 'persistent' => { 2 => '333' } } } }
-    let(:infrastructure_name) { 'vsphere' }
+  ['vsphere', 'vcloud'].each do |infra|
+    context 'vSphere' do
+      let(:settings) { { 'disks' => { 'persistent' => { 2 => '333' } } } }
+      let(:infrastructure_name) { infra }
 
-    before { disk_manager.stub(:sh).with('rescan-scsi-bus.sh') }
+      before { disk_manager.stub(:sh).with('rescan-scsi-bus.sh') }
 
-    it 'looks up disk by cid' do
-      Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
-      disk_manager.lookup_disk_by_cid(2).should eq '/dev/sdy'
-    end
+      it 'looks up disk by cid' do
+        Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
+        disk_manager.lookup_disk_by_cid(2).should eq '/dev/sdy'
+      end
 
-    it 'retries disk lookup by cid' do
-      Dir.should_receive(:glob).with(dev_path, 0).exactly(2).and_return([])
-      expect {
-        disk_manager.lookup_disk_by_cid(2)
-      }.to raise_error(Bosh::Agent::DiskNotFoundError)
-    end
-
-    it 'gets data disk device name' do
-      disk_manager.get_data_disk_device_name.should eq '/dev/sdb'
-    end
-
-    context 'if persistent disk cid is unknown' do
-      let(:settings) { { 'disks' => { 'persistent' => { 199 => 2 } } } }
-
-      it 'raises an exception' do
+      it 'retries disk lookup by cid' do
+        Dir.should_receive(:glob).with(dev_path, 0).exactly(2).and_return([])
         expect {
-          disk_manager.lookup_disk_by_cid(200)
-        }.to raise_error(Bosh::Agent::FatalError, /Unknown persistent disk/)
-      end
-    end
-
-    context 'when disk is a block device' do
-      before do
-        Dir.stub(:glob).with(dev_path, 0).and_return(%w(/dev/sdy))
-        File.stub(:blockdev?).with('/dev/sdy1').and_return(true)
-        File.stub(:read).with('/proc/mounts').and_return('', '/dev/sdy1')
+          disk_manager.lookup_disk_by_cid(2)
+        }.to raise_error(Bosh::Agent::DiskNotFoundError)
       end
 
-      it 'mounts persistent disk to store_dir if not already mounted' do
-        mounter.should_receive(:mount).with('/dev/sdy1', store_path, {})
-
-        disk_manager.mount_persistent_disk(2)
+      it 'gets data disk device name' do
+        disk_manager.get_data_disk_device_name.should eq '/dev/sdb'
       end
 
-      it 'mounts persistent disk only once' do
-        mounter.should_receive(:mount).with('/dev/sdy1', store_path, {}).once
+      context 'if persistent disk cid is unknown' do
+        let(:settings) { { 'disks' => { 'persistent' => { 199 => 2 } } } }
 
-        disk_manager.mount_persistent_disk(2)
-        disk_manager.mount_persistent_disk(2)
+        it 'raises an exception' do
+          expect {
+            disk_manager.lookup_disk_by_cid(200)
+          }.to raise_error(Bosh::Agent::FatalError, /Unknown persistent disk/)
+        end
       end
-    end
 
-    context 'when disk is not a block device' do
-      it 'does not mount' do
-        Dir.stub(:glob).with(dev_path, 0).and_return(%w(/dev/sdy))
-        File.stub(:blockdev?).with('/dev/sdy1').and_return(false)
+      context 'when disk is a block device' do
+        before do
+          Dir.stub(:glob).with(dev_path, 0).and_return(%w(/dev/sdy))
+          File.stub(:blockdev?).with('/dev/sdy1').and_return(true)
+          File.stub(:read).with('/proc/mounts').and_return('', '/dev/sdy1')
+        end
 
-        mounter.should_not_receive(:mount)
+        it 'mounts persistent disk to store_dir if not already mounted' do
+          mounter.should_receive(:mount).with('/dev/sdy1', store_path, {})
 
-        disk_manager.mount_persistent_disk(2)
+          disk_manager.mount_persistent_disk(2)
+        end
+
+        it 'mounts persistent disk only once' do
+          mounter.should_receive(:mount).with('/dev/sdy1', store_path, {}).once
+
+          disk_manager.mount_persistent_disk(2)
+          disk_manager.mount_persistent_disk(2)
+        end
+      end
+
+      context 'when disk is not a block device' do
+        it 'does not mount' do
+          Dir.stub(:glob).with(dev_path, 0).and_return(%w(/dev/sdy))
+          File.stub(:blockdev?).with('/dev/sdy1').and_return(false)
+
+          mounter.should_not_receive(:mount)
+
+          disk_manager.mount_persistent_disk(2)
+        end
       end
     end
   end
