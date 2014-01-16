@@ -77,9 +77,6 @@ module Bosh::Dev
     let(:expected_artifacts_dir) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name' }
 
     describe '#initialize' do
-      its(:infrastructure)             { should == infrastructure }
-      its(:operating_system)           { should == operating_system }
-      its(:agent)                      { should == agent }
       its(:micro_bosh_deployment_name) { should == 'microbosh' }
       its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
       its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }

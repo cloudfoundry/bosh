@@ -9,7 +9,6 @@ require 'forwardable'
 module Bosh::Dev
   class BatHelper
     extend Forwardable
-    def_delegators :@stemcell_definition, :infrastructure, :operating_system, :agent
 
     def self.for_rake_args(args)
       new(
@@ -75,6 +74,7 @@ module Bosh::Dev
     private
 
     attr_reader :build, :net_type, :stemcell_definition
+    def_delegators :@stemcell_definition, :infrastructure, :operating_system
 
     def prepare_directories
       FileUtils.rm_rf(artifacts_dir)
