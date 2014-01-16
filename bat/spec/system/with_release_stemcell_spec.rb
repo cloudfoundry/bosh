@@ -4,16 +4,17 @@ describe 'with release and stemcell and two deployments' do
   let(:deployed_regexp) { /Deployed \`.*' to \`.*'/ }
 
   before(:all) do
-    requirement previous_release
-    requirement release
-    requirement stemcell
+    @requirements.requirement(@requirements.release)
+    @requirements.requirement(@requirements.stemcell)
+  end
+
+  before(:all) do
+    @requirements.requirement(@requirements.previous_release)
     load_deployment_spec
   end
 
   after(:all) do
-    cleanup release
-    cleanup previous_release
-    cleanup stemcell
+    @requirements.cleanup(@requirements.previous_release)
   end
 
   context 'first deployment' do
@@ -32,11 +33,11 @@ describe 'with release and stemcell and two deployments' do
 
       use_persistent_disk(2048)
 
-      @first_deployment_result = requirement deployment
+      @first_deployment_result = @requirements.requirement(deployment, @spec)
     end
 
     after(:all) do
-      cleanup deployment
+      @requirements.cleanup(deployment)
     end
 
     it 'should set vcap password', ssh: true do
@@ -58,7 +59,7 @@ describe 'with release and stemcell and two deployments' do
       no_static_ip
       use_deployment_name('bat2')
       with_deployment do
-        deployments.should include('bat2')
+        @bosh_api.deployments.should include('bat2')
       end
       # Not sure why these are necessary since the before(:all) should call them
       # before setting up future deployments. But without these, the state leaks
@@ -87,7 +88,7 @@ describe 'with release and stemcell and two deployments' do
         ssh(static_ip, 'vcap', "echo 'foobar' > #{SAVE_FILE}", @our_ssh_options)
         @size = persistent_disk(static_ip)
         use_persistent_disk(4096)
-        @second_deployment_result = requirement deployment
+        @second_deployment_result = @requirements.requirement(deployment, @spec, force: true)
       end
 
       it 'should migrate disk contents', ssh: true do

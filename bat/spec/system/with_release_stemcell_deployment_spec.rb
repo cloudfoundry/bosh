@@ -2,24 +2,24 @@ require 'system/spec_helper'
 
 describe 'with release, stemcell and deployment' do
   before(:all) do
-    requirement stemcell
-    requirement release
+    @requirements.requirement(@requirements.stemcell)
+    @requirements.requirement(@requirements.release)
+  end
 
+  before(:all) do
     load_deployment_spec
     use_static_ip
-    requirement deployment
+    @requirements.requirement(deployment, @spec) # 2.5 min on local vsphere
   end
 
   after(:all) do
-    cleanup deployment
-    cleanup release
-    cleanup stemcell
+    @requirements.cleanup(deployment)
   end
 
   describe 'agent' do
     it 'should survive agent dying', ssh: true do
       Dir.mktmpdir do |tmpdir|
-        ssh(static_ip, 'vcap', "echo #{password} | sudo -S pkill -9 agent", ssh_options)
+        ssh(static_ip, 'vcap', "echo #{@env.vcap_password} | sudo -S pkill -9 agent", ssh_options)
         wait_for_vm('batlight/0')
         bosh_safe("logs batlight 0 --agent --dir #{tmpdir}").should succeed
       end
@@ -32,20 +32,20 @@ describe 'with release, stemcell and deployment' do
 
       # Try our best to clean out old host fingerprints for director and vms
       if File.exist?(File.expand_path('~/.ssh/known_hosts'))
-        Bosh::Exec.sh("ssh-keygen -R '#{bosh_director}'")
+        Bosh::Exec.sh("ssh-keygen -R '#{@env.director}'")
         Bosh::Exec.sh("ssh-keygen -R '#{static_ip}'")
       end
 
       if private_key
         bosh_ssh_options = {
-          gateway_host: bosh_director,
+          gateway_host: @env.director,
           gateway_user: 'vcap',
           gateway_identity_file: private_key,
         }.map { |k, v| "--#{k} '#{v}'" }.join(' ')
 
         # Note gateway_host + ip: ...fingerprint does not match for "micro.ci2.cf-app.com,54.208.15.101" (Net::SSH::HostKeyMismatch)
         if File.exist?(File.expand_path('~/.ssh/known_hosts'))
-          Bosh::Exec.sh("ssh-keygen -R '#{bosh_director},#{static_ip}'")
+          Bosh::Exec.sh("ssh-keygen -R '#{@env.director},#{static_ip}'")
         end
       end
 
@@ -54,7 +54,7 @@ describe 'with release, stemcell and deployment' do
   end
 
   describe 'dns' do
-    before(:all) { @dns = Resolv::DNS.new(nameserver: bosh_director) }
+    before(:all) { @dns = Resolv::DNS.new(nameserver: @env.director) }
     before { pending 'director not configured with dns' unless dns? }
 
     context 'external' do
@@ -157,14 +157,15 @@ describe 'with release, stemcell and deployment' do
 
   describe 'release' do
     describe 'upload' do
-      after { bosh("delete release #{previous_release.name} #{previous_release.version}", on_error: :return) }
+      after { bosh("delete release #{prev_rel.name} #{prev_rel.version}", on_error: :return) }
+      let(:prev_rel) { @requirements.previous_release }
 
       it 'should succeed when the release is valid' do
-        bosh_safe("upload release #{previous_release.to_path}").should succeed_with /Release uploaded/
+        bosh_safe("upload release #{prev_rel.to_path}").should succeed_with /Release uploaded/
       end
 
       it 'should fail when the release already is uploaded' do
-        result = bosh_safe("upload release #{release.to_path}")
+        result = bosh_safe("upload release #{@requirements.release.to_path}")
         result.should_not succeed
         result.output.should match /This release version has already been uploaded/
       end
@@ -173,25 +174,25 @@ describe 'with release, stemcell and deployment' do
     describe 'delete' do
       context 'in use' do
         it 'should not be possible to delete a release that is in use' do
-          result = bosh_safe("delete release #{release.name}")
+          result = bosh_safe("delete release #{@requirements.release.name}")
           result.should_not succeed
           result.output.should match /Error 30007/
         end
 
         it 'should not be possible to delete the version that is in use' do
-          result = bosh_safe("delete release #{release.name} #{release.version}")
+          result = bosh_safe("delete release #{@requirements.release.name} #{@requirements.release.version}")
           result.should_not succeed
           result.output.should match /Error 30008/
         end
       end
 
       context 'not in use' do
-        before { bosh("upload release #{previous_release.to_path}") }
+        before { bosh("upload release #{@requirements.previous_release.to_path}") }
 
         it 'should be possible to delete a single release' do
-          result = bosh_safe("delete release #{previous_release.name} #{previous_release.version}")
-          result.should succeed_with(/Deleted `#{previous_release.name}/)
-          releases.should_not include(previous_release)
+          result = bosh_safe("delete release #{@requirements.previous_release.name} #{@requirements.previous_release.version}")
+          result.should succeed_with(/Deleted `#{@requirements.previous_release.name}/)
+          @bosh_api.releases.should_not include(@requirements.previous_release)
         end
       end
     end

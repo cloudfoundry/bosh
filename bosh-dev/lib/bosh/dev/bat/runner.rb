@@ -28,16 +28,16 @@ module Bosh::Dev::Bat
     end
 
     def deploy_microbosh_and_run_bats
-      @logger.info("Creating microbosh manifest")
+      @logger.info('Creating microbosh manifest')
       create_microbosh_manifest
 
-      @logger.info("Cleaning microbosh deployment")
+      @logger.info('Cleaning microbosh deployment')
       @microbosh_deployment_cleaner.clean
 
-      @logger.info("Deploying microbosh")
+      @logger.info('Deploying microbosh')
       deploy_microbosh
 
-      @logger.info("Running bats")
+      @logger.info('Running bats')
       run_bats
 
       # We are not deleting micro here because
@@ -48,16 +48,16 @@ module Bosh::Dev::Bat
     end
 
     def run_bats
-      @logger.info("Targetting microbosh")
+      @logger.info('Targetting microbosh')
       target_micro
 
-      @logger.info("Creating bat manifest")
+      @logger.info('Creating bat manifest')
       create_bat_manifest
 
-      @logger.info("Setting ENV variables")
+      @logger.info('Setting ENV variables')
       set_bat_env_variables
 
-      @logger.info("Running bat rake task")
+      @logger.info('Running bat rake task')
       Rake::Task['bat'].invoke
     end
 
@@ -79,7 +79,7 @@ module Bosh::Dev::Bat
       Dir.chdir(@bat_helper.artifacts_dir) do
         @bosh_cli_session.run_bosh("micro deployment #{@bat_helper.micro_bosh_deployment_name}")
 
-        @logger.info("Running micro deploy")
+        @logger.info('Running micro deploy')
         @bosh_cli_session.run_bosh("micro deploy #{@bat_helper.bosh_stemcell_path}")
         @bosh_cli_session.run_bosh('login admin admin')
       end

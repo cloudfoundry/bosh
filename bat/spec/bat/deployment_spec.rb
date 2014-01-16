@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bat/deployment'
 require 'fileutils'
 
