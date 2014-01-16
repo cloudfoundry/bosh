@@ -74,8 +74,7 @@ module Bosh::Dev
     end
 
     def download_stemcell(name, definition, light, output_directory)
-      filename   = Bosh::Stemcell::ArchiveFilename.new(
-        number.to_s, definition.infrastructure, definition.operating_system, name, light).to_s
+      filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, definition, name, light).to_s
       remote_dir = File.join(number.to_s, name, definition.infrastructure.name)
       download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), File.join(output_directory, filename))
       filename
@@ -90,8 +89,7 @@ module Bosh::Dev
     def bosh_stemcell_path(definition, download_dir)
       File.join(download_dir, Bosh::Stemcell::ArchiveFilename.new(
         number.to_s,
-        definition.infrastructure,
-        definition.operating_system,
+        definition,
         'bosh-stemcell',
         definition.infrastructure.light?,
       ).to_s)
@@ -121,7 +119,7 @@ module Bosh::Dev
 
       def download_stemcell(name, definition, light, output_directory)
         filename = Bosh::Stemcell::ArchiveFilename.new(
-          number.to_s, definition.infrastructure, definition.operating_system, name, light).to_s
+          number.to_s, definition, name, light).to_s
         download_adapter.download("tmp/#{filename}", File.join(output_directory, filename))
         filename
       end

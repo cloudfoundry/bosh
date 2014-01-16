@@ -26,11 +26,11 @@ module Bosh::Dev
 
       matrix.each do |definition|
         versions.each do |version|
-          filename = Bosh::Stemcell::ArchiveFilename.new(version, definition.infrastructure, definition.operating_system, 'bosh-stemcell', false)
+          filename = Bosh::Stemcell::ArchiveFilename.new(version, definition, 'bosh-stemcell', false)
           artifact_names << archive_path(filename.to_s, definition.infrastructure)
 
           if definition.infrastructure.light?
-            light_filename = Bosh::Stemcell::ArchiveFilename.new(version, definition.infrastructure, definition.operating_system, 'bosh-stemcell', true)
+            light_filename = Bosh::Stemcell::ArchiveFilename.new(version, definition, 'bosh-stemcell', true)
             artifact_names << archive_path(light_filename.to_s, definition.infrastructure)
           end
         end

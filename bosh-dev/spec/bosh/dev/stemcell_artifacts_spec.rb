@@ -39,20 +39,20 @@ module Bosh::Dev
 
       it 'returns a complete list of stemcell build artifact names' do
         Bosh::Stemcell::ArchiveFilename.stub(:new)
-        .with('latest', definitions[0].infrastructure, definitions[0].operating_system, 'bosh-stemcell', false)
-        .and_return('fake-latest-archive-filename1')
+          .with('latest', definitions[0], 'bosh-stemcell', false)
+          .and_return('fake-latest-archive-filename1')
 
         Bosh::Stemcell::ArchiveFilename.stub(:new)
-        .with(version, definitions[0].infrastructure, definitions[0].operating_system, 'bosh-stemcell', false)
-        .and_return('fake-version-archive-filename1')
+          .with(version, definitions[0], 'bosh-stemcell', false)
+          .and_return('fake-version-archive-filename1')
 
         Bosh::Stemcell::ArchiveFilename.stub(:new)
-        .with('latest', definitions[1].infrastructure, definitions[1].operating_system, 'bosh-stemcell', false)
-        .and_return('fake-latest-archive-filename2')
+          .with('latest', definitions[1], 'bosh-stemcell', false)
+          .and_return('fake-latest-archive-filename2')
 
         Bosh::Stemcell::ArchiveFilename.stub(:new)
-        .with(version, definitions[1].infrastructure, definitions[1].operating_system, 'bosh-stemcell', false)
-        .and_return('fake-version-archive-filename2')
+          .with(version, definitions[1], 'bosh-stemcell', false)
+          .and_return('fake-version-archive-filename2')
 
         expect(artifacts.list.sort).to eq(%w[
           bosh-stemcell/vsphere/fake-version-archive-filename1
@@ -73,18 +73,18 @@ module Bosh::Dev
           Bosh::Stemcell::ArchiveFilename.stub(:new).and_return('unrelated')
 
           Bosh::Stemcell::ArchiveFilename.stub(:new)
-          .with(version, definitions[0].infrastructure, definitions[0].operating_system, 'bosh-stemcell', false)
-          .and_return('fake-version-archive-filename')
+            .with(version, definitions[0], 'bosh-stemcell', false)
+            .and_return('fake-version-archive-filename')
           Bosh::Stemcell::ArchiveFilename.stub(:new)
-          .with(version, definitions[0].infrastructure, definitions[0].operating_system, 'bosh-stemcell', true)
-          .and_return('fake-light-version-archive-filename')
+            .with(version, definitions[0], 'bosh-stemcell', true)
+            .and_return('fake-light-version-archive-filename')
 
           Bosh::Stemcell::ArchiveFilename.stub(:new)
-          .with('latest', definitions[0].infrastructure, definitions[0].operating_system, 'bosh-stemcell', false)
-          .and_return('fake-latest-archive-filename')
+            .with('latest', definitions[0], 'bosh-stemcell', false)
+            .and_return('fake-latest-archive-filename')
           Bosh::Stemcell::ArchiveFilename.stub(:new)
-          .with('latest', definitions[0].infrastructure, definitions[0].operating_system, 'bosh-stemcell', true)
-          .and_return('fake-light-latest-archive-filename')
+            .with('latest', definitions[0], 'bosh-stemcell', true)
+            .and_return('fake-light-latest-archive-filename')
 
           expect(artifacts.list.length).to eq 4
           expect(artifacts.list).to include('bosh-stemcell/aws/fake-version-archive-filename')

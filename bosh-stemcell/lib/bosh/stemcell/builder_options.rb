@@ -50,6 +50,7 @@ module Bosh::Stemcell
     attr_reader(
       :environment,
       :stemcell_version,
+      :definition,
       :image_create_disk_size,
       :bosh_micro_release_tgz_path
     )
@@ -79,7 +80,7 @@ module Bosh::Stemcell
     end
 
     def archive_filename
-      ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false, agent.name)
+      ArchiveFilename.new(stemcell_version, definition, 'bosh-stemcell', false)
     end
 
     def stemcell_image_name

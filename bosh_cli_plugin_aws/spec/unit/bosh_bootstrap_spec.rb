@@ -57,15 +57,7 @@ module Bosh::Aws
           allow(Bosh::Stemcell::Definition).to receive(:for).and_return(definition)
         end
 
-        let(:definition) {
-          instance_double(
-            'Bosh::Stemcell::Definition',
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-          )
-        }
-        let(:infrastructure) { double('infrastructure') }
-        let(:operating_system) { double('operating_system') }
+        let(:definition) { instance_double('Bosh::Stemcell::Definition') }
         let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-stemcell-archive-filename') }
         let(:archive) { instance_double('Bosh::Stemcell::Archive', name: 'fake-archive-name') }
         let(:stemcell_command) { instance_double('Bosh::Cli::Command::Stemcell') }
@@ -83,7 +75,7 @@ module Bosh::Aws
 
             expect(s3).to have_received(:copy_remote_file).with('bosh-jenkins-artifacts', 'bosh-stemcell/aws/fake-stemcell-archive-filename', 'bosh_stemcell.tgz')
 
-            expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('latest', infrastructure, operating_system, 'bosh-stemcell', true)
+            expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('latest', definition, 'bosh-stemcell', true)
             expect(Bosh::Stemcell::Definition).to have_received(:for).with('aws', 'ubuntu', 'ruby')
             expect(stemcell_command).to have_received(:upload).with(stemcell_path)
             expect(Bosh::Stemcell::Archive).to have_received(:new).with(stemcell_path)

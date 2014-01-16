@@ -22,8 +22,7 @@ module Bosh::Dev
 
       file_name = Bosh::Stemcell::ArchiveFilename.new(
         build_target.build_number.to_s,
-        build_target.infrastructure,
-        build_target.operating_system,
+        build_target.definition,
         stemcell_name,
         build_target.infrastructure_light?,
       ).to_s

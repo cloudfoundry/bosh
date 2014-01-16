@@ -263,72 +263,67 @@ module Bosh::Dev
         build.download_stemcell('stemcell-name', definition, light, Dir.pwd)
       end
 
-      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name', hypervisor: 'infrastructure-hypervisor') }
-      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
-      let(:agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
-      let(:definition) {
-        instance_double(
-          'Bosh::Stemcell::Definition',
-          infrastructure: infrastructure,
-          operating_system: operating_system,
-          agent: agent,
-        )
-      }
+      let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename') }
 
-      expected_s3_bucket = 'http://bosh-ci-pipeline.s3.amazonaws.com'
-      expected_s3_folder = '/123/stemcell-name/infrastructure-name'
-      expected_stemcell_name = 'stemcell-name-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
+      before do
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
+      end
+
+      let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name') }
+      let(:definition) { instance_double('Bosh::Stemcell::Definition', infrastructure: infrastructure) }
+
+      let(:expected_s3_bucket) { 'http://bosh-ci-pipeline.s3.amazonaws.com' }
+      let(:expected_s3_folder) { '/123/stemcell-name/infrastructure-name' }
 
       it 'downloads the specified non-light stemcell version from the pipeline bucket' do
-        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{expected_stemcell_name}")
-        download_adapter.should_receive(:download).with(expected_uri, "/#{expected_stemcell_name}")
+        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{archive_filename}")
+        download_adapter.should_receive(:download).with(expected_uri, "/#{archive_filename}")
         perform
+
+        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'stemcell-name', false)
       end
 
       it 'downloads the specified light stemcell version from the pipeline bucket' do
-        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/light-#{expected_stemcell_name}")
-        download_adapter.should_receive(:download).with(expected_uri, "/light-#{expected_stemcell_name}")
+        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{archive_filename}")
+        download_adapter.should_receive(:download).with(expected_uri, "/#{archive_filename}")
         perform(true)
+
+        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'stemcell-name', true)
       end
 
       it 'returns the name of the downloaded file' do
         download_adapter.should_receive(:download)
-        perform.should eq(expected_stemcell_name)
-      end
-
-      it 'propagates downloading error when remote file does not exist' do
-        error = RuntimeError.new('error-message')
-        download_adapter.stub(:download).and_raise(error)
-        expect { perform }.to raise_error(error)
+        perform.should eq(archive_filename.to_s)
       end
     end
 
     describe '#bosh_stemcell_path' do
+
+      let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename') }
+
+      before do
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
+      end
+
       let(:infrastructure) do
         instance_double(
           'Bosh::Stemcell::Infrastructure::Base',
-          name: 'infrastructure-name',
-          hypervisor: 'infrastructure-hypervisor',
           light?: true,
         )
       end
 
-      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
-      let(:agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
       let(:definition) {
         instance_double(
           'Bosh::Stemcell::Definition',
           infrastructure: infrastructure,
-          operating_system: operating_system,
-          agent: agent,
         )
       }
 
-      it 'works' do
+      it 'returns the bosh stemcell path for given definition' do
         download_directory = '/FAKE/CUSTOM/WORK/DIRECTORY'
         bosh_stemcell_path = subject.bosh_stemcell_path(definition, download_directory)
-        expected_stemcell_name = 'light-bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
-        expect(bosh_stemcell_path).to eq(File.join(download_directory, expected_stemcell_name))
+        expect(bosh_stemcell_path).to eq(File.join(download_directory, archive_filename.to_s))
+        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'bosh-stemcell', true)
       end
     end
   end
@@ -424,33 +419,29 @@ module Bosh::Dev
         subject.download_stemcell('stemcell-name', definition, false, '/output-directory')
       end
 
-      let(:infrastructure) do
-        instance_double(
-          'Bosh::Stemcell::Infrastructure::Base',
-          name: 'infrastructure-name',
-          hypervisor: 'infrastructure-hypervisor',
-          light?: true,
-        )
-      end
+      let(:archive_filename) {
+        instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename')
+      }
 
-      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
-      let(:agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
       let(:definition) {
         instance_double(
           'Bosh::Stemcell::Definition',
-          infrastructure: infrastructure,
-          operating_system: operating_system,
-          agent: agent,
         )
       }
 
+      before do
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
+      end
+
       context 'when downloading does not result in an error' do
         it 'uses download adapter to move stemcell to given location' do
-          expected_stemcell_name = 'stemcell-name-build-number-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
           download_adapter
-          .should_receive(:download)
-          .with("tmp/#{expected_stemcell_name}", "/output-directory/#{expected_stemcell_name}")
-          perform
+            .should_receive(:download)
+            .with("tmp/#{archive_filename}", "/output-directory/#{archive_filename}")
+          filename = perform
+
+          expect(filename).to eq(archive_filename.to_s)
+          expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('build-number', definition, 'stemcell-name', false)
         end
       end
 

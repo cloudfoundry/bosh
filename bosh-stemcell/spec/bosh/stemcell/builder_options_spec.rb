@@ -26,8 +26,7 @@ module Bosh::Stemcell
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
     before do
-      ArchiveFilename.stub(:new).
-        with('007', infrastructure, operating_system, 'bosh-stemcell', false, agent.name).and_return(archive_filename)
+      allow(ArchiveFilename).to receive(:new).and_return(archive_filename)
     end
 
     describe '#default' do
@@ -37,6 +36,8 @@ module Bosh::Stemcell
       it 'sets stemcell_tgz' do
         result = stemcell_builder_options.default
         expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
+        expect(ArchiveFilename).to have_received(:new)
+          .with('007', definition, 'bosh-stemcell', false)
       end
 
       it 'sets stemcell_image_name' do
