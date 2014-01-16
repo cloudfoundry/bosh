@@ -38,11 +38,7 @@ module Bosh::Stemcell
 
     before do
       Definition.stub(:for).with(infrastructure.name, operating_system.name, agent.name).and_return(definition)
-      StageCollection.stub(:new).with(
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: agent.name,
-      ).and_return(stage_collection)
+      StageCollection.stub(:new).with(definition).and_return(stage_collection)
 
       StageRunner.stub(:new).with(
         build_path: File.join(root_dir, 'build', 'build'),

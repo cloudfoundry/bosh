@@ -45,11 +45,7 @@ module Bosh::Stemcell
 
       persist_settings_for_bash
 
-      stage_collection = StageCollection.new(
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: agent.name,
-      )
+      stage_collection = StageCollection.new(definition)
       stage_runner = StageRunner.new(
         build_path: build_path,
         command_env: command_env,
@@ -78,6 +74,7 @@ module Bosh::Stemcell
     attr_reader(
       :shell,
       :environment,
+      :definition,
       :stemcell_builder_options
     )
 
