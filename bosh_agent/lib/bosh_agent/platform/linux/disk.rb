@@ -29,7 +29,7 @@ module Bosh::Agent
 
     def get_data_disk_device_name
       case @config.infrastructure_name
-        when "vsphere"
+        when "vsphere", "vcloud"
           VSPHERE_DATA_DISK
         when "aws", "openstack"
           settings = @config.settings
@@ -53,7 +53,7 @@ module Bosh::Agent
       end
 
       case @config.infrastructure_name
-        when "vsphere"
+        when "vsphere", "vcloud"
           # VSphere passes in scsi disk id
           get_available_scsi_path(disk_id)
         when "aws", "openstack"
