@@ -6,11 +6,9 @@ module Bosh::Stemcell
     subject(:stemcell_builder_command) do
       described_class.new(
         env,
-        infrastructure_name: infrastructure.name,
-        operating_system_name: operating_system.name,
-        agent_name: agent.name,
-        release_tarball_path: release_tarball_path,
-        version: version
+        definition,
+        version,
+        release_tarball_path,
       )
     end
 
@@ -37,7 +35,6 @@ module Bosh::Stemcell
     end
 
     before do
-      Definition.stub(:for).with(infrastructure.name, operating_system.name, agent.name).and_return(definition)
       StageCollection.stub(:new).with(definition).and_return(stage_collection)
 
       StageRunner.stub(:new).with(

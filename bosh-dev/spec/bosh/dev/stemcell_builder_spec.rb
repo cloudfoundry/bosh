@@ -9,22 +9,26 @@ module Bosh::Dev
     describe '.for_candidate_build' do
       before { Build.stub(candidate: build) }
       let(:build) { instance_double('Bosh::Dev::Build::Candidate') }
+      let(:definition) { instance_double('Bosh::Stemcell::Definition') }
 
       it 'returns an instance of stemcell builder' do
         builder = instance_double('Bosh::Dev::StemcellBuilder')
         described_class.should_receive(:new).with(
           ENV,
           build,
-          'infrastructure-name',
-          'operating-system-name',
-          'ruby-agent',
+          definition
         ).and_return(builder)
 
-        described_class.for_candidate_build(
+        allow(Bosh::Stemcell::Definition).to receive(:for).and_return(definition)
+
+        expect(described_class.for_candidate_build(
           'infrastructure-name',
           'operating-system-name',
           'ruby-agent',
-        ).should == builder
+        )).to eq builder
+
+        expect(Bosh::Stemcell::Definition).to have_received(:for)
+                                              .with('infrastructure-name', 'operating-system-name', 'ruby-agent')
       end
     end
 
@@ -33,9 +37,7 @@ module Bosh::Dev
         StemcellBuilder.new(
           env,
           build,
-          infrastructure_name,
-          operating_system_name,
-          agent_name,
+          definition,
         )
       end
 
@@ -50,6 +52,7 @@ module Bosh::Dev
       let(:infrastructure_name) { 'vsphere' }
       let(:operating_system_name) { 'ubuntu' }
       let(:agent_name) { 'ruby' }
+      let(:definition) { instance_double('Bosh::Stemcell::Definition') }
 
       let(:build_number) { '869' }
 
@@ -66,11 +69,9 @@ module Bosh::Dev
       before do
         Bosh::Stemcell::BuilderCommand.stub(:new).with(
           env,
-          infrastructure_name: infrastructure_name,
-          operating_system_name: operating_system_name,
-          agent_name: agent_name,
-          release_tarball_path: build.release_tarball_path,
-          version: build_number,
+          definition,
+          build_number,
+          build.release_tarball_path
         ).and_return(stemcell_builder_command)
       end
 

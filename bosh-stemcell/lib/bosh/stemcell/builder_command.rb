@@ -13,19 +13,14 @@ module Bosh::Stemcell
   class BuilderCommand
     extend Forwardable
 
-    def initialize(env, options)
+    def initialize(env, definition, version, release_tarball_path)
       @environment = env
-      @definition = Definition.for(
-        options.fetch(:infrastructure_name),
-        options.fetch(:operating_system_name),
-        options.fetch(:agent_name),
-      )
-
+      @definition = definition
       @stemcell_builder_options = BuilderOptions.new(
         env,
         definition,
-        options.fetch(:version),
-        options.fetch(:release_tarball_path),
+        version,
+        release_tarball_path,
       )
       @shell = Bosh::Core::Shell.new
     end
