@@ -9,6 +9,7 @@ module Bosh::Dev
           vm_name: 'remote',
           infrastructure_name: 'fake-infrastructure_name',
           operating_system_name: 'fake-operating_system_name',
+          agent_name: 'fake-agent_name',
         }
       end
 
@@ -68,34 +69,15 @@ module Bosh::Dev
           BASH
         end
 
-        context 'with the ruby agent' do
-          it 'publishes a stemcell inside the VM' do
-            Rake::FileUtilsExt.should_receive(:sh) do |cmd|
-              actual = strip_heredoc(cmd)
-              expected = expected_cmd('fake-infrastructure_name,fake-operating_system_name')
+        it 'publishes a stemcell inside the VM' do
+          Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+            actual = strip_heredoc(cmd)
+            expected = expected_cmd('fake-infrastructure_name,fake-operating_system_name,fake-agent_name')
 
-              expect(actual).to include(expected)
-            end
-
-            vm.publish
-          end
-        end
-
-        context 'with the go agent' do
-          before do
-            options.merge!(agent_name: 'go')
+            expect(actual).to include(expected)
           end
 
-          it 'publishes a stemcell inside the VM' do
-            Rake::FileUtilsExt.should_receive(:sh) do |cmd|
-              actual = strip_heredoc(cmd)
-              expected = expected_cmd('fake-infrastructure_name,fake-operating_system_name,go')
-
-              expect(actual).to include(expected)
-            end
-
-            vm.publish
-          end
+          vm.publish
         end
       end
 
