@@ -14,7 +14,7 @@ module Bosh::Agent
 
     def setup_networking
       case @config.infrastructure_name
-        when "vsphere"
+        when "vsphere", "vcloud"
           setup_networking_from_settings
         when "aws"
           setup_dhcp_from_settings

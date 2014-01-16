@@ -55,14 +55,6 @@ properties:
       agent_timeout: 180
       rogue_agent_alert: 180
   dns:
-    user: powerdns
-    password: powerdns
     address: 127.0.0.1
     domain_name: microbosh
-    replication:
-      basic_auth: rick:QRoqsenPsNGX6
-      user: rick
-      password: deckard
-    database:
-      name: powerdns
-      port: 5445      
+    db: *bosh_db
