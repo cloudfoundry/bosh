@@ -144,8 +144,6 @@ properties:
     name: bosh
     address: 0.director.default.bosh-openstack.microbosh
     db: *bosh_db
-    snapshot_schedule: false
-    self_snapshot_schedule: false
 
   registry:
     address: 0.registry.default.bosh-openstack.microbosh
