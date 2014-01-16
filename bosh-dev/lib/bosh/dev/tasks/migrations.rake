@@ -1,22 +1,22 @@
-namespace 'migrations' do
-  namespace 'bosh-director' do
-    desc 'Generate new migration'
-    task 'new', :name, :type do |_, args|
+namespace :migrations do
+  namespace :bosh_director do
+    desc 'Generate new migration with NAME (there are two namespaces: dns, director)'
+    task :new, :name, :namespace do |_, args|
       args = args.to_hash
       name = args.fetch(:name)
-      type = args.fetch(:type)
+      namespace = args.fetch(:namespace)
 
       timestamp = Time.new.getutc.strftime('%Y%m%d%H%M%S')
-      new_migration_path = "bosh-director/db/migrations/#{type}/#{timestamp}_#{name}.rb"
+      new_migration_path = "bosh-director/db/migrations/#{namespace}/#{timestamp}_#{name}.rb"
 
       puts "Creating #{new_migration_path}"
       FileUtils.touch(new_migration_path)
     end
   end
 
-  namespace 'bosh-registry' do
-    desc 'Generate new migration'
-    task 'new', :name do |_, args|
+  namespace :bosh_registry do
+    desc 'Generate new migration with NAME'
+    task :new, :name do |_, args|
       args = args.to_hash
       name = args.fetch(:name)
 
@@ -28,9 +28,9 @@ namespace 'migrations' do
     end
   end
 
-  namespace 'bosh_vsphere_cpi' do
-    desc 'Generate new migration'
-    task 'new', :name do |_, args|
+  namespace :bosh_vsphere_cpi do
+    desc 'Generate new migration with NAME'
+    task :new, :name do |_, args|
       args = args.to_hash
       name = args.fetch(:name)
 
@@ -42,9 +42,9 @@ namespace 'migrations' do
     end
   end
 
-  namespace 'bosh_cli_plugin_aws' do
-    desc 'Generate a new AWS migration'
-    task 'new', :name do |_, args|
+  namespace :bosh_cli_plugin_aws do
+    desc 'Generate a new AWS migration with NAME'
+    task :new, :name do |_, args|
       args = args.to_hash
       name = args.fetch(:name)
 
