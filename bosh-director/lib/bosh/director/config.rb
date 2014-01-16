@@ -118,7 +118,7 @@ module Bosh::Director
           @dns_domain_name = canonical(@dns["domain_name"]) if @dns["domain_name"]
         end
 
-        @uuid = override_uuid || retrieve_uuid
+        @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
         @encryption = config["encryption"]
@@ -292,46 +292,27 @@ module Bosh::Director
         end
       end
 
-      def retrieve_uuid
-        directors = Bosh::Director::Models::DirectorAttribute.all
-        director = directors.first
-
-        if directors.size > 1
-          @logger.warn("More than one UUID stored in director table, using #{director.uuid}")
-        end
-
-        unless director
-          director = Bosh::Director::Models::DirectorAttribute.new
-          director.uuid = gen_uuid
-          director.save
-          @logger.info("Generated director UUID #{director.uuid}")
-        end
-
-        director.uuid
-      end
-
       def override_uuid
         new_uuid = nil
+        state_file = File.join(base_dir, 'state.json')
 
         if File.exists?(state_file)
           open(state_file, 'r+') do |file|
 
-            # lock before read to avoid director/worker race condition
+            # Lock before read to avoid director/worker race condition
             file.flock(File::LOCK_EX)
             state = Yajl::Parser.parse(file) || {}
-            # empty state file to prevent blocked processes from attempting to set UUID
+
+            # Empty state file to prevent blocked processes from attempting to set UUID
             file.truncate(0)
 
-            if state["uuid"]
-              Bosh::Director::Models::DirectorAttribute.delete
-              director = Bosh::Director::Models::DirectorAttribute.new
-              director.uuid = state["uuid"]
-              director.save
-              @logger.info("Using director UUID #{state["uuid"]} from #{state_file}")
-              new_uuid = state["uuid"]
+            if state['uuid']
+              Bosh::Director::Models::DirectorAttribute.update_or_create_uuid(state['uuid'], @logger)
+              @logger.info("Using director UUID #{state['uuid']} from #{state_file}")
+              new_uuid = state['uuid']
             end
 
-            # unlock after storing UUID
+            # Unlock after storing UUID
             file.flock(File::LOCK_UN)
           end
 
@@ -340,21 +321,13 @@ module Bosh::Director
 
         new_uuid
       end
-
-      def state_file
-        File.join(base_dir, "state.json")
-      end
-
-      def gen_uuid
-        SecureRandom.uuid
-      end
-
     end
 
     class << self
       def load_file(path)
         Config.new(Psych.load_file(path))
       end
+
       def load_hash(hash)
         Config.new(hash)
       end

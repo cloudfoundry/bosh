@@ -172,67 +172,29 @@ describe Bosh::Director::Config do
       end
     end
 
-    context 'retrieve_uuid' do
-
-      context 'when the uuid is not stored' do
-
-        it 'creates and stores a new uuid' do
-          expect { described_class.configure(test_config) }.to change {
-            Bosh::Director::Models::DirectorAttribute.all.size }.from(0).to(1)
-        end
-      end
-
-      context 'when the uuid is already stored' do
-        let(:uuid) { 'testuuid' }
-
-        before(:each) do
-          Bosh::Director::Models::DirectorAttribute.create(uuid: uuid)
-        end
-
-        it 'retrieves the existing uuid' do
-          expect { described_class.configure(test_config) }.to_not change { Bosh::Director::Models::DirectorAttribute.all.size }
-
-          expect(described_class.uuid).to eq uuid
-        end
-
-      end
-
-    end
-
-    context 'override_uuid' do
-      let(:uuid) { 'testuuid' }
-      let(:state_json) { File.join(test_config['dir'], 'state.json') }
-
+    describe '.override_uuid' do
       context 'when the state.json file exists' do
-
-        before(:each) do
-          open(state_json, 'w') do |f|
-            f.write("{\"uuid\":\"#{uuid}\"}")
-          end
-
-          described_class.configure(test_config)
-        end
+        before { open(state_json, 'w') { |f| f.write("{\"uuid\":\"testuuid\"}") } }
+        let(:state_json) { File.join(test_config['dir'], 'state.json') }
 
         it 'inserts the uuid from state.json into the database' do
-          attrs = Bosh::Director::Models::DirectorAttribute.all
-          expect(attrs.size).to eq 1
-          expect(attrs.first.uuid).to eq uuid
+          described_class.configure(test_config)
+          uuid = Bosh::Director::Models::DirectorAttribute.first(name: 'uuid')
+          expect(uuid.value).to eq('testuuid')
         end
 
         it 'deletes state.json' do
+          described_class.configure(test_config)
           expect(File.exist?(state_json)).to be(false)
         end
       end
 
       context 'when the state.json file does not exist' do
-
         it 'returns nil' do
           described_class.configure(test_config)
           expect(described_class.override_uuid).to be_nil
         end
-
       end
-
     end
 
     context 'database backup' do
@@ -241,6 +203,5 @@ describe Bosh::Director::Config do
         expect(described_class.configure_db(database_options)).to eq database_connection
       end
     end
-
   end
 end
