@@ -73,10 +73,10 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
-    def download_stemcell(name, infrastructure, operating_system, light, output_directory)
+    def download_stemcell(name, definition, light, output_directory)
       filename   = Bosh::Stemcell::ArchiveFilename.new(
-        number.to_s, infrastructure, operating_system, name, light).to_s
-      remote_dir = File.join(number.to_s, name, infrastructure.name)
+        number.to_s, definition.infrastructure, definition.operating_system, name, light).to_s
+      remote_dir = File.join(number.to_s, name, definition.infrastructure.name)
       download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), File.join(output_directory, filename))
       filename
     end
@@ -87,20 +87,20 @@ module Bosh::Dev
       end
     end
 
-    def bosh_stemcell_path(infrastructure, operating_system, download_dir)
+    def bosh_stemcell_path(definition, download_dir)
       File.join(download_dir, Bosh::Stemcell::ArchiveFilename.new(
         number.to_s,
-        infrastructure,
-        operating_system,
+        definition.infrastructure,
+        definition.operating_system,
         'bosh-stemcell',
-        infrastructure.light?,
+        definition.infrastructure.light?,
       ).to_s)
     end
 
     def light_stemcell
       name = 'bosh-stemcell'
       definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'ruby')
-      filename = download_stemcell(name, definition.infrastructure, definition.operating_system, true, Dir.pwd)
+      filename = download_stemcell(name, definition, true, Dir.pwd)
       Bosh::Stemcell::Archive.new(filename)
     end
 
@@ -119,9 +119,9 @@ module Bosh::Dev
         release.dev_tarball_path
       end
 
-      def download_stemcell(name, infrastructure, operating_system, light, output_directory)
+      def download_stemcell(name, definition, light, output_directory)
         filename = Bosh::Stemcell::ArchiveFilename.new(
-          number.to_s, infrastructure, operating_system, name, light).to_s
+          number.to_s, definition.infrastructure, definition.operating_system, name, light).to_s
         download_adapter.download("tmp/#{filename}", File.join(output_directory, filename))
         filename
       end

@@ -112,8 +112,7 @@ module Bosh::Dev
       it 'downloads stemcells for the specified infrastructure' do
         build.should_receive(:download_stemcell).with(
           'bosh-stemcell',
-          infrastructure,
-          operating_system,
+          definition,
           false,
           "#{expected_artifacts_dir}/deployments",
         )
@@ -149,7 +148,7 @@ module Bosh::Dev
       it 'delegates to the build' do
         build
           .should_receive(:bosh_stemcell_path)
-          .with(infrastructure, operating_system, "#{expected_artifacts_dir}/deployments")
+          .with(definition, "#{expected_artifacts_dir}/deployments")
           .and_return('bosh-stemcell-path')
         expect(subject.bosh_stemcell_path).to eq('bosh-stemcell-path')
       end

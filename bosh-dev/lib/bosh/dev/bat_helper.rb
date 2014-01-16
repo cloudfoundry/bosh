@@ -35,7 +35,7 @@ module Bosh::Dev
     end
 
     def bosh_stemcell_path
-      build.bosh_stemcell_path(infrastructure, operating_system, artifacts_dir)
+      build.bosh_stemcell_path(stemcell_definition, artifacts_dir)
     end
 
     def artifacts_dir
@@ -59,7 +59,12 @@ module Bosh::Dev
 
     def deploy_microbosh_and_run_bats
       prepare_directories
-      fetch_stemcells
+      build.download_stemcell(
+        'bosh-stemcell',
+        stemcell_definition,
+        infrastructure.light?,
+        artifacts_dir,
+      )
       bats_runner.deploy_microbosh_and_run_bats
     end
 
@@ -74,16 +79,6 @@ module Bosh::Dev
     def prepare_directories
       FileUtils.rm_rf(artifacts_dir)
       FileUtils.mkdir_p(micro_bosh_deployment_dir)
-    end
-
-    def fetch_stemcells
-      build.download_stemcell(
-        'bosh-stemcell',
-        infrastructure,
-        operating_system,
-        infrastructure.light?,
-        artifacts_dir,
-      )
     end
 
     def bats_runner

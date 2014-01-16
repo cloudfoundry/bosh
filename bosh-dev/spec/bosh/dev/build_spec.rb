@@ -260,11 +260,20 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       def perform(light = false)
-        build.download_stemcell('stemcell-name', infrastructure, operating_system, light, Dir.pwd)
+        build.download_stemcell('stemcell-name', definition, light, Dir.pwd)
       end
 
       let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name', hypervisor: 'infrastructure-hypervisor') }
       let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
+      let(:agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
+      let(:definition) {
+        instance_double(
+          'Bosh::Stemcell::Definition',
+          infrastructure: infrastructure,
+          operating_system: operating_system,
+          agent: agent,
+        )
+      }
 
       expected_s3_bucket = 'http://bosh-ci-pipeline.s3.amazonaws.com'
       expected_s3_folder = '/123/stemcell-name/infrastructure-name'
@@ -305,10 +314,19 @@ module Bosh::Dev
       end
 
       let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
+      let(:agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
+      let(:definition) {
+        instance_double(
+          'Bosh::Stemcell::Definition',
+          infrastructure: infrastructure,
+          operating_system: operating_system,
+          agent: agent,
+        )
+      }
 
       it 'works' do
         download_directory = '/FAKE/CUSTOM/WORK/DIRECTORY'
-        bosh_stemcell_path = subject.bosh_stemcell_path(infrastructure, operating_system, download_directory)
+        bosh_stemcell_path = subject.bosh_stemcell_path(definition, download_directory)
         expected_stemcell_name = 'light-bosh-stemcell-123-infrastructure-name-infrastructure-hypervisor-operating-system-name.tgz'
         expect(bosh_stemcell_path).to eq(File.join(download_directory, expected_stemcell_name))
       end
@@ -403,7 +421,7 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       def perform
-        subject.download_stemcell('stemcell-name', infrastructure, operating_system, false, '/output-directory')
+        subject.download_stemcell('stemcell-name', definition, false, '/output-directory')
       end
 
       let(:infrastructure) do
@@ -416,6 +434,15 @@ module Bosh::Dev
       end
 
       let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base', name: 'operating-system-name') }
+      let(:agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
+      let(:definition) {
+        instance_double(
+          'Bosh::Stemcell::Definition',
+          infrastructure: infrastructure,
+          operating_system: operating_system,
+          agent: agent,
+        )
+      }
 
       context 'when downloading does not result in an error' do
         it 'uses download adapter to move stemcell to given location' do
