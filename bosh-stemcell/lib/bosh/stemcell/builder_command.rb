@@ -23,11 +23,9 @@ module Bosh::Stemcell
 
       @stemcell_builder_options = BuilderOptions.new(
         env,
-        tarball: options.fetch(:release_tarball_path),
-        stemcell_version: options.fetch(:version),
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: agent.name,
+        definition,
+        options.fetch(:version),
+        options.fetch(:release_tarball_path),
       )
       @shell = Bosh::Core::Shell.new
     end

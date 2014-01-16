@@ -49,11 +49,9 @@ module Bosh::Stemcell
 
       BuilderOptions.stub(:new).with(
         env,
-        tarball: release_tarball_path,
-        stemcell_version: version,
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: expected_agent_name,
+        definition,
+        version,
+        release_tarball_path,
       ).and_return(stemcell_builder_options)
     end
 
