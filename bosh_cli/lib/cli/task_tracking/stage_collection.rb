@@ -42,6 +42,19 @@ module Bosh::Cli::TaskTracking
       found_task
     end
 
+    def duration
+      total_duration = TotalDuration.new
+
+      task_start_times = @tasks.map(&:started_at)
+      task_end_times = @tasks.map(&:finished_at)
+
+      # If any task start time is nil, the start time for the entire stage is unknown.
+      total_duration.started_at = task_start_times.min unless task_start_times.include?(nil)
+      total_duration.finished_at = task_end_times.max unless task_end_times.include?(nil)
+
+      total_duration.duration
+    end
+
     private
 
     def fire_started_callback(event)
@@ -70,6 +83,9 @@ module Bosh::Cli::TaskTracking
   class Task
     attr_reader :stage, :name, :state, :progress, :error
 
+    extend Forwardable
+    def_delegators :@total_duration, :duration, :started_at, :finished_at
+
     def initialize(stage, name, progress, callbacks)
       @stage = stage
       @name = name
@@ -87,10 +103,6 @@ module Bosh::Cli::TaskTracking
       @total_duration.finished_at = event['time'] if @state == 'finished' || @state == 'failed'
 
       call_state_callback
-    end
-
-    def duration
-      @total_duration.duration
     end
 
     private

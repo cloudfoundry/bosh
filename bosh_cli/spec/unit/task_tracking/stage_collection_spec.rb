@@ -152,6 +152,39 @@ module Bosh::Cli::TaskTracking
         end
       end
     end
+
+    describe '#duration' do
+      context 'when all tasks is not finished' do
+
+        it 'sums the durations of all tasks' do
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'started', 'time' => 100)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'finished', 'time' => 39560)
+
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'started', 'time' => 200)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'finished', 'time' => 39660)
+
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'started', 'time' => 300)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'finished', 'time' => 39760)
+
+          expect(stage.duration).to eq(39660)
+        end
+      end
+
+      context 'when one of the tasks is not finished' do
+        it 'returns nil' do
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'started', 'time' => 100)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'finished', 'time' => 39560)
+
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'started', 'time' => 200)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'finished', 'time' => 39660)
+
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'started', 'time' => 300)
+
+          expect(stage.duration).to be(nil)
+        end
+      end
+
+    end
   end
 
   describe Task do
