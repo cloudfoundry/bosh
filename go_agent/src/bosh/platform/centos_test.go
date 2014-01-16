@@ -15,17 +15,17 @@ import (
 	"time"
 )
 
-func TestUbuntuSetupRuntimeConfiguration(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupRuntimeConfiguration(t *testing.T) {
+	deps, centos := buildCentos()
 
-	err := ubuntu.SetupRuntimeConfiguration()
+	err := centos.SetupRuntimeConfiguration()
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
 	assert.Equal(t, []string{"bosh-agent-rc"}, deps.cmdRunner.RunCommands[0])
 }
 
-func TestUbuntuCreateUser(t *testing.T) {
+func TestCentosCreateUser(t *testing.T) {
 	expectedUseradd := []string{
 		"useradd",
 		"-m",
@@ -35,10 +35,10 @@ func TestUbuntuCreateUser(t *testing.T) {
 		"foo-user",
 	}
 
-	testUbuntuCreateUserWithPassword(t, "bar-pwd", expectedUseradd)
+	testCentosCreateUserWithPassword(t, "bar-pwd", expectedUseradd)
 }
 
-func TestUbuntuCreateUserWithAnEmptyPassword(t *testing.T) {
+func TestCentosCreateUserWithAnEmptyPassword(t *testing.T) {
 	expectedUseradd := []string{
 		"useradd",
 		"-m",
@@ -47,13 +47,13 @@ func TestUbuntuCreateUserWithAnEmptyPassword(t *testing.T) {
 		"foo-user",
 	}
 
-	testUbuntuCreateUserWithPassword(t, "", expectedUseradd)
+	testCentosCreateUserWithPassword(t, "", expectedUseradd)
 }
 
-func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
-	deps, ubuntu := buildUbuntu()
+func testCentosCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
+	deps, centos := buildCentos()
 
-	err := ubuntu.CreateUser("foo-user", password, "/some/path/to/home")
+	err := centos.CreateUser("foo-user", password, "/some/path/to/home")
 	assert.NoError(t, err)
 
 	basePathStat := deps.fs.GetFileTestStat("/some/path/to/home")
@@ -64,10 +64,10 @@ func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUse
 	assert.Equal(t, expectedUseradd, deps.cmdRunner.RunCommands[0])
 }
 
-func TestUbuntuAddUserToGroups(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosAddUserToGroups(t *testing.T) {
+	deps, centos := buildCentos()
 
-	err := ubuntu.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
+	err := centos.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
@@ -76,8 +76,8 @@ func TestUbuntuAddUserToGroups(t *testing.T) {
 	assert.Equal(t, usermod, deps.cmdRunner.RunCommands[0])
 }
 
-func TestUbuntuDeleteUsersWithPrefixAndRegex(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosDeleteUsersWithPrefixAndRegex(t *testing.T) {
+	deps, centos := buildCentos()
 
 	passwdFile := fmt.Sprintf(`%sfoo:...
 %sbar:...
@@ -90,18 +90,18 @@ foobar:...
 
 	deps.fs.WriteToFile("/etc/passwd", passwdFile)
 
-	err := ubuntu.DeleteEphemeralUsersMatching("bar$")
+	err := centos.DeleteEphemeralUsersMatching("bar$")
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(deps.cmdRunner.RunCommands))
 	assert.Equal(t, []string{"userdel", "-r", "bosh_bar"}, deps.cmdRunner.RunCommands[0])
 	assert.Equal(t, []string{"userdel", "-r", "bosh_foobar"}, deps.cmdRunner.RunCommands[1])
 }
 
-func TestUbuntuSetupSsh(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupSsh(t *testing.T) {
+	deps, centos := buildCentos()
 	deps.fs.HomeDirHomePath = "/some/home/dir"
 
-	ubuntu.SetupSsh("some public key", "vcap")
+	centos.SetupSsh("some public key", "vcap")
 
 	sshDirPath := "/some/home/dir/.ssh"
 	sshDirStat := deps.fs.GetFileTestStat(sshDirPath)
@@ -122,18 +122,18 @@ func TestUbuntuSetupSsh(t *testing.T) {
 	assert.Equal(t, authKeysStat.Content, "some public key")
 }
 
-func TestUbuntuSetUserPassword(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetUserPassword(t *testing.T) {
+	deps, centos := buildCentos()
 
-	ubuntu.SetUserPassword("my-user", "my-encrypted-password")
+	centos.SetUserPassword("my-user", "my-encrypted-password")
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
 	assert.Equal(t, []string{"usermod", "-p", "my-encrypted-password", "my-user"}, deps.cmdRunner.RunCommands[0])
 }
 
-func TestUbuntuSetupHostname(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupHostname(t *testing.T) {
+	deps, centos := buildCentos()
 
-	ubuntu.SetupHostname("foobar.local")
+	centos.SetupHostname("foobar.local")
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
 	assert.Equal(t, []string{"hostname", "foobar.local"}, deps.cmdRunner.RunCommands[0])
 
@@ -143,10 +143,10 @@ func TestUbuntuSetupHostname(t *testing.T) {
 
 	hostsFileContent, err := deps.fs.ReadFile("/etc/hosts")
 	assert.NoError(t, err)
-	assert.Equal(t, UBUNTU_EXPECTED_ETC_HOSTS, hostsFileContent)
+	assert.Equal(t, CENTOS_EXPECTED_ETC_HOSTS, hostsFileContent)
 }
 
-const UBUNTU_EXPECTED_ETC_HOSTS = `127.0.0.1 localhost foobar.local
+const CENTOS_EXPECTED_ETC_HOSTS = `127.0.0.1 localhost foobar.local
 
 # The following lines are desirable for IPv6 capable hosts
 ::1 localhost ip6-localhost ip6-loopback foobar.local
@@ -157,27 +157,27 @@ ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 `
 
-func TestUbuntuSetupDhcp(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
-	testUbuntuSetupDhcp(t, deps, ubuntu)
+func TestCentosSetupDhcp(t *testing.T) {
+	deps, centos := buildCentos()
+	testCentosSetupDhcp(t, deps, centos)
 
 	assert.Equal(t, len(deps.cmdRunner.RunCommands), 2)
 	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
 	assert.Equal(t, deps.cmdRunner.RunCommands[1], []string{"/etc/init.d/networking", "restart"})
 }
 
-func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
-	deps.fs.WriteToFile("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
-	testUbuntuSetupDhcp(t, deps, ubuntu)
+func TestCentosSetupDhcpWithPreExistingConfiguration(t *testing.T) {
+	deps, centos := buildCentos()
+	deps.fs.WriteToFile("/etc/dhcp3/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
+	testCentosSetupDhcp(t, deps, centos)
 
 	assert.Equal(t, len(deps.cmdRunner.RunCommands), 0)
 }
 
-func testUbuntuSetupDhcp(
+func testCentosSetupDhcp(
 	t *testing.T,
-	deps ubuntuDependencies,
-	platform ubuntu,
+	deps centosDependencies,
+	platform centos,
 ) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
@@ -194,10 +194,10 @@ func testUbuntuSetupDhcp(
 
 	dhcpConfig := deps.fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 	assert.NotNil(t, dhcpConfig)
-	assert.Equal(t, dhcpConfig.Content, UBUNTU_EXPECTED_DHCP_CONFIG)
+	assert.Equal(t, dhcpConfig.Content, CENTOS_EXPECTED_DHCP_CONFIG)
 }
 
-const UBUNTU_EXPECTED_DHCP_CONFIG = `# Generated by bosh-agent
+const CENTOS_EXPECTED_DHCP_CONFIG = `# Generated by bosh-agent
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
 
@@ -213,17 +213,17 @@ prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
 
-func TestUbuntuSetupLogrotate(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupLogrotate(t *testing.T) {
+	deps, centos := buildCentos()
 
-	ubuntu.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
+	centos.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
 
 	logrotateFileContent, err := deps.fs.ReadFile("/etc/logrotate.d/fake-group-name")
 	assert.NoError(t, err)
-	assert.Equal(t, UBUNTU_EXPECTED_ETC_LOGROTATE, logrotateFileContent)
+	assert.Equal(t, CENTOS_EXPECTED_ETC_LOGROTATE, logrotateFileContent)
 }
 
-const UBUNTU_EXPECTED_ETC_LOGROTATE = `# Generated by bosh-agent
+const CENTOS_EXPECTED_ETC_LOGROTATE = `# Generated by bosh-agent
 
 fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-path/data/sys/log/*/*/*.log {
   missingok
@@ -235,10 +235,10 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 }
 `
 
-func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetTimeWithNtpServers(t *testing.T) {
+	deps, centos := buildCentos()
 
-	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
+	centos.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
 
 	ntpConfig := deps.fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
 	assert.Equal(t, "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
@@ -248,18 +248,18 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 	assert.Equal(t, []string{"ntpdate"}, deps.cmdRunner.RunCommands[0])
 }
 
-func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
+	deps, centos := buildCentos()
 
-	ubuntu.SetTimeWithNtpServers([]string{})
+	centos.SetTimeWithNtpServers([]string{})
 	assert.Equal(t, 0, len(deps.cmdRunner.RunCommands))
 
 	ntpConfig := deps.fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
 	assert.Nil(t, ntpConfig)
 }
 
-func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
+	deps, centos := buildCentos()
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
@@ -268,7 +268,7 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 
-	err := ubuntu.SetupEphemeralDiskWithPath("/dev/sda")
+	err := centos.SetupEphemeralDiskWithPath("/dev/sda")
 	assert.NoError(t, err)
 
 	dataDir := deps.fs.GetFileTestStat("/fake-dir/data")
@@ -311,15 +311,15 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 
-func TestUbuntuMountPersistentDisk(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosMountPersistentDisk(t *testing.T) {
+	deps, centos := buildCentos()
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
 
 	deps.fs.WriteToFile("/dev/vdf", "")
 
-	err := ubuntu.MountPersistentDisk("/dev/sdf", "/mnt/point")
+	err := centos.MountPersistentDisk("/dev/sdf", "/mnt/point")
 	assert.NoError(t, err)
 
 	mountPoint := deps.fs.GetFileTestStat("/mnt/point")
@@ -343,81 +343,81 @@ func TestUbuntuMountPersistentDisk(t *testing.T) {
 	assert.Equal(t, "/dev/vdf1", fakeMounter.MountPartitionPaths[0])
 }
 
-func TestUbuntuUnmountPersistentDiskWhenNotMounted(t *testing.T) {
-	testUbuntuUnmountPersistentDisk(t, false)
+func TestCentosUnmountPersistentDiskWhenNotMounted(t *testing.T) {
+	testCentosUnmountPersistentDisk(t, false)
 }
 
-func TestUbuntuUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
-	testUbuntuUnmountPersistentDisk(t, true)
+func TestCentosUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
+	testCentosUnmountPersistentDisk(t, true)
 }
 
-func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
-	deps, ubuntu := buildUbuntu()
+func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
+	deps, centos := buildCentos()
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.UnmountDidUnmount = !isMounted
 
 	deps.fs.WriteToFile("/dev/vdx", "")
 
-	didUnmount, err := ubuntu.UnmountPersistentDisk("/dev/sdx")
+	didUnmount, err := centos.UnmountPersistentDisk("/dev/sdx")
 	assert.NoError(t, err)
 	assert.Equal(t, didUnmount, !isMounted)
 	assert.Equal(t, "/dev/vdx1", fakeMounter.UnmountPartitionPath)
 }
 
-func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
+	deps, centos := buildCentos()
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	deps.fs.WriteToFile("/dev/vda", "")
 
-	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
+	realPath, err := centos.getRealDevicePath("/dev/sda")
 	assert.NoError(t, err)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
-func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
+	deps, centos := buildCentos()
 
 	time.AfterFunc(time.Second, func() {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
+	realPath, err := centos.getRealDevicePath("/dev/sda")
 	assert.NoError(t, err)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
-func TestUbuntuGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
+	deps, centos := buildCentos()
 
-	ubuntu.diskWaitTimeout = time.Second
+	centos.diskWaitTimeout = time.Second
 
 	time.AfterFunc(2*time.Second, func() {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	_, err := ubuntu.getRealDevicePath("/dev/sda")
+	_, err := centos.getRealDevicePath("/dev/sda")
 	assert.Error(t, err)
 }
 
-func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskIsBiggerThanTwiceTheMemory(t *testing.T) {
+func TestCentosCalculateEphemeralDiskPartitionSizesWhenDiskIsBiggerThanTwiceTheMemory(t *testing.T) {
 	totalMemInMb := uint64(1024)
 
 	diskSizeInMb := totalMemInMb*2 + 64
 	expectedSwap := totalMemInMb
-	testUbuntuCalculateEphemeralDiskPartitionSizes(t, totalMemInMb, diskSizeInMb, expectedSwap)
+	testCentosCalculateEphemeralDiskPartitionSizes(t, totalMemInMb, diskSizeInMb, expectedSwap)
 }
 
-func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmaller(t *testing.T) {
+func TestCentosCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmaller(t *testing.T) {
 	totalMemInMb := uint64(1024)
 
 	diskSizeInMb := totalMemInMb*2 - 64
 	expectedSwap := diskSizeInMb / 2
-	testUbuntuCalculateEphemeralDiskPartitionSizes(t, totalMemInMb, diskSizeInMb, expectedSwap)
+	testCentosCalculateEphemeralDiskPartitionSizes(t, totalMemInMb, diskSizeInMb, expectedSwap)
 }
 
-func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
-	deps, ubuntu := buildUbuntu()
+func testCentosCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
+	deps, centos := buildCentos()
 	deps.collector.MemStats.Total = totalMemInMb * uint64(1024*1024)
 
 	fakePartitioner := deps.diskManager.FakePartitioner
@@ -425,18 +425,18 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, 
 		"/dev/hda": diskSizeInMb,
 	}
 
-	swapSize, linuxSize, err := ubuntu.calculateEphemeralDiskPartitionSizes("/dev/hda")
+	swapSize, linuxSize, err := centos.calculateEphemeralDiskPartitionSizes("/dev/hda")
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSwap, swapSize)
 	assert.Equal(t, diskSizeInMb-expectedSwap, linuxSize)
 }
 
-func TestUbuntuMigratePersistentDisk(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosMigratePersistentDisk(t *testing.T) {
+	deps, centos := buildCentos()
 	fakeMounter := deps.diskManager.FakeMounter
 
-	ubuntu.MigratePersistentDisk("/from/path", "/to/path")
+	centos.MigratePersistentDisk("/from/path", "/to/path")
 
 	assert.Equal(t, fakeMounter.RemountAsReadonlyPath, "/from/path")
 
@@ -448,32 +448,32 @@ func TestUbuntuMigratePersistentDisk(t *testing.T) {
 	assert.Equal(t, fakeMounter.RemountToMountPoint, "/from/path")
 }
 
-func TestUbuntuIsDevicePathMounted(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosIsDevicePathMounted(t *testing.T) {
+	deps, centos := buildCentos()
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.IsMountedResult = true
 
-	result, err := ubuntu.IsDevicePathMounted("/dev/sda")
+	result, err := centos.IsDevicePathMounted("/dev/sda")
 	assert.NoError(t, err)
 	assert.True(t, result)
 	assert.Equal(t, fakeMounter.IsMountedDevicePathOrMountPoint, "/dev/xvda1")
 }
 
-func TestUbuntuStartMonit(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosStartMonit(t *testing.T) {
+	deps, centos := buildCentos()
 
-	err := ubuntu.StartMonit()
+	err := centos.StartMonit()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
 	assert.Equal(t, []string{"sv", "up", "monit"}, deps.cmdRunner.RunCommands[0])
 }
 
-func TestUbuntuSetupMonitUserIfFileDoesNotExist(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupMonitUserIfFileDoesNotExist(t *testing.T) {
+	deps, centos := buildCentos()
 
-	err := ubuntu.SetupMonitUser()
+	err := centos.SetupMonitUser()
 	assert.NoError(t, err)
 
 	monitUserFileStats := deps.fs.GetFileTestStat("/fake-dir/monit/monit.user")
@@ -481,12 +481,12 @@ func TestUbuntuSetupMonitUserIfFileDoesNotExist(t *testing.T) {
 	assert.Equal(t, "vcap:random-password", monitUserFileStats.Content)
 }
 
-func TestUbuntuSetupMonitUserIfFileDoesExist(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosSetupMonitUserIfFileDoesExist(t *testing.T) {
+	deps, centos := buildCentos()
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "vcap:other-random-password")
 
-	err := ubuntu.SetupMonitUser()
+	err := centos.SetupMonitUser()
 	assert.NoError(t, err)
 
 	monitUserFileStats := deps.fs.GetFileTestStat("/fake-dir/monit/monit.user")
@@ -494,39 +494,39 @@ func TestUbuntuSetupMonitUserIfFileDoesExist(t *testing.T) {
 	assert.Equal(t, "vcap:other-random-password", monitUserFileStats.Content)
 }
 
-func TestUbuntuGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
+	deps, centos := buildCentos()
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
 
-	username, password, err := ubuntu.GetMonitCredentials()
+	username, password, err := centos.GetMonitCredentials()
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fake-user", username)
 	assert.Equal(t, "fake-random-password", password)
 }
 
-func TestUbuntuGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
+	deps, centos := buildCentos()
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user")
 
-	_, _, err := ubuntu.GetMonitCredentials()
+	_, _, err := centos.GetMonitCredentials()
 	assert.Error(t, err)
 }
 
-func TestUbuntuGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+func TestCentosGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
+	deps, centos := buildCentos()
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
 
-	username, password, err := ubuntu.GetMonitCredentials()
+	username, password, err := centos.GetMonitCredentials()
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fake-user", username)
 	assert.Equal(t, "fake:random:password", password)
 }
 
-type ubuntuDependencies struct {
+type centosDependencies struct {
 	collector   *fakestats.FakeStatsCollector
 	fs          *fakesys.FakeFileSystem
 	cmdRunner   *fakesys.FakeCmdRunner
@@ -534,9 +534,9 @@ type ubuntuDependencies struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func buildUbuntu() (
-	deps ubuntuDependencies,
-	platform ubuntu,
+func buildCentos() (
+	deps centosDependencies,
+	platform centos,
 ) {
 	deps.collector = &fakestats.FakeStatsCollector{}
 	deps.fs = &fakesys.FakeFileSystem{}
@@ -544,7 +544,7 @@ func buildUbuntu() (
 	deps.diskManager = fakedisk.NewFakeDiskManager(deps.cmdRunner)
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 
-	platform = newUbuntuPlatform(
+	platform = newCentosPlatform(
 		deps.collector,
 		deps.fs,
 		deps.cmdRunner,

@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-type ubuntu struct {
+type centos struct {
 	collector       boshstats.StatsCollector
 	fs              boshsys.FileSystem
 	cmdRunner       boshsys.CmdRunner
@@ -34,13 +34,13 @@ type ubuntu struct {
 	vitalsService   boshvitals.Service
 }
 
-func newUbuntuPlatform(
+func newCentosPlatform(
 	collector boshstats.StatsCollector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	diskManager boshdisk.Manager,
 	dirProvider boshdirs.DirectoriesProvider,
-) (platform ubuntu) {
+) (platform centos) {
 	platform.collector = collector
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
@@ -57,35 +57,35 @@ func newUbuntuPlatform(
 	return
 }
 
-func (p ubuntu) GetFs() (fs boshsys.FileSystem) {
+func (p centos) GetFs() (fs boshsys.FileSystem) {
 	return p.fs
 }
 
-func (p ubuntu) GetRunner() (runner boshsys.CmdRunner) {
+func (p centos) GetRunner() (runner boshsys.CmdRunner) {
 	return p.cmdRunner
 }
 
-func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
+func (p centos) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
 	return p.collector
 }
 
-func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
+func (p centos) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
 }
 
-func (p ubuntu) GetCopier() (runner boshcmd.Copier) {
+func (p centos) GetCopier() (runner boshcmd.Copier) {
 	return p.copier
 }
 
-func (p ubuntu) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
+func (p centos) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
 	return p.dirProvider
 }
 
-func (p ubuntu) GetVitalsService() (service boshvitals.Service) {
+func (p centos) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
 }
 
-func (p ubuntu) SetupRuntimeConfiguration() (err error) {
+func (p centos) SetupRuntimeConfiguration() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to bosh-agent-rc")
@@ -93,7 +93,7 @@ func (p ubuntu) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
+func (p centos) CreateUser(username, password, basePath string) (err error) {
 	p.fs.MkdirAll(basePath, os.FileMode(0755))
 	if err != nil {
 		err = bosherr.WrapError(err, "Making user base path")
@@ -116,7 +116,7 @@ func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
 	return
 }
 
-func (p ubuntu) AddUserToGroups(username string, groups []string) (err error) {
+func (p centos) AddUserToGroups(username string, groups []string) (err error) {
 	_, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
@@ -124,7 +124,7 @@ func (p ubuntu) AddUserToGroups(username string, groups []string) (err error) {
 	return
 }
 
-func (p ubuntu) DeleteEphemeralUsersMatching(reg string) (err error) {
+func (p centos) DeleteEphemeralUsersMatching(reg string) (err error) {
 	compiledReg, err := regexp.Compile(reg)
 	if err != nil {
 		err = bosherr.WrapError(err, "Compiling regexp")
@@ -143,12 +143,12 @@ func (p ubuntu) DeleteEphemeralUsersMatching(reg string) (err error) {
 	return
 }
 
-func (p ubuntu) deleteUser(user string) (err error) {
+func (p centos) deleteUser(user string) (err error) {
 	_, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
 	return
 }
 
-func (p ubuntu) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []string, err error) {
+func (p centos) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []string, err error) {
 	passwd, err := p.fs.ReadFile("/etc/passwd")
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading /etc/passwd")
@@ -167,7 +167,7 @@ func (p ubuntu) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []
 	return
 }
 
-func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
+func (p centos) SetupSsh(publicKey, username string) (err error) {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Finding home dir for user")
@@ -191,7 +191,7 @@ func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
 	return
 }
 
-func (p ubuntu) SetUserPassword(user, encryptedPwd string) (err error) {
+func (p centos) SetUserPassword(user, encryptedPwd string) (err error) {
 	_, _, err = p.cmdRunner.RunCommand("usermod", "-p", encryptedPwd, user)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
@@ -199,7 +199,7 @@ func (p ubuntu) SetUserPassword(user, encryptedPwd string) (err error) {
 	return
 }
 
-func (p ubuntu) SetupHostname(hostname string) (err error) {
+func (p centos) SetupHostname(hostname string) (err error) {
 	_, _, err = p.cmdRunner.RunCommand("hostname", hostname)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to hostname")
@@ -213,7 +213,7 @@ func (p ubuntu) SetupHostname(hostname string) (err error) {
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
-	t := template.Must(template.New("etc-hosts").Parse(UBUNTU_ETC_HOSTS_TEMPLATE))
+	t := template.Must(template.New("etc-hosts").Parse(CENTOS_ETC_HOSTS_TEMPLATE))
 
 	err = t.Execute(buffer, hostname)
 	if err != nil {
@@ -228,7 +228,7 @@ func (p ubuntu) SetupHostname(hostname string) (err error) {
 	return
 }
 
-const UBUNTU_ETC_HOSTS_TEMPLATE = `127.0.0.1 localhost {{ . }}
+const CENTOS_ETC_HOSTS_TEMPLATE = `127.0.0.1 localhost {{ . }}
 
 # The following lines are desirable for IPv6 capable hosts
 ::1 localhost ip6-localhost ip6-loopback {{ . }}
@@ -239,7 +239,7 @@ ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 `
 
-func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
+func (p centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
@@ -253,7 +253,7 @@ func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
-	t := template.Must(template.New("dhcp-config").Parse(UBUNTU_DHCP_CONFIG_TEMPLATE))
+	t := template.Must(template.New("dhcp-config").Parse(CENTOS_DHCP_CONFIG_TEMPLATE))
 
 	err = t.Execute(buffer, dhcpConfigArg{dnsServers})
 	if err != nil {
@@ -277,7 +277,7 @@ func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 }
 
 // DHCP Config file - /etc/dhcp3/dhclient.conf
-const UBUNTU_DHCP_CONFIG_TEMPLATE = `# Generated by bosh-agent
+const CENTOS_DHCP_CONFIG_TEMPLATE = `# Generated by bosh-agent
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
 
@@ -291,9 +291,9 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
-func (p ubuntu) SetupLogrotate(groupName, basePath, size string) (err error) {
+func (p centos) SetupLogrotate(groupName, basePath, size string) (err error) {
 	buffer := bytes.NewBuffer([]byte{})
-	t := template.Must(template.New("logrotate-d-config").Parse(UBUNTU_ETC_LOGROTATE_D_TEMPLATE))
+	t := template.Must(template.New("logrotate-d-config").Parse(CENTOS_ETC_LOGROTATE_D_TEMPLATE))
 
 	type logrotateArgs struct {
 		BasePath string
@@ -316,7 +316,7 @@ func (p ubuntu) SetupLogrotate(groupName, basePath, size string) (err error) {
 }
 
 // Logrotate config file - /etc/logrotate.d/<group-name>
-const UBUNTU_ETC_LOGROTATE_D_TEMPLATE = `# Generated by bosh-agent
+const CENTOS_ETC_LOGROTATE_D_TEMPLATE = `# Generated by bosh-agent
 
 {{ .BasePath }}/data/sys/log/*.log {{ .BasePath }}/data/sys/log/*/*.log {{ .BasePath }}/data/sys/log/*/*/*.log {
   missingok
@@ -328,7 +328,7 @@ const UBUNTU_ETC_LOGROTATE_D_TEMPLATE = `# Generated by bosh-agent
 }
 `
 
-func (p ubuntu) SetTimeWithNtpServers(servers []string) (err error) {
+func (p centos) SetTimeWithNtpServers(servers []string) (err error) {
 	serversFilePath := filepath.Join(p.dirProvider.BaseDir(), "/bosh/etc/ntpserver")
 	if len(servers) == 0 {
 		return
@@ -349,7 +349,7 @@ func (p ubuntu) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p ubuntu) SetupEphemeralDiskWithPath(devicePath string) (err error) {
+func (p centos) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
@@ -418,7 +418,7 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	return
 }
 
-func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+func (p centos) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
 
 	realPath, err := p.getRealDevicePath(devicePath)
@@ -452,7 +452,7 @@ func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	return
 }
 
-func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+func (p centos) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
 	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
@@ -462,11 +462,11 @@ func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	return p.mounter.Unmount(realPath + "1")
 }
 
-func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
+func (p centos) IsMountPoint(path string) (result bool, err error) {
 	return p.mounter.IsMountPoint(path)
 }
 
-func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
+func (p centos) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
 	err = p.mounter.RemountAsReadonly(fromMountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Remounting persistent disk as readonly")
@@ -495,7 +495,7 @@ func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err 
 	return
 }
 
-func (p ubuntu) IsDevicePathMounted(path string) (result bool, err error) {
+func (p centos) IsDevicePathMounted(path string) (result bool, err error) {
 	realPath, err := p.getRealDevicePath(path)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
@@ -505,7 +505,7 @@ func (p ubuntu) IsDevicePathMounted(path string) (result bool, err error) {
 	return p.mounter.IsMounted(realPath + "1")
 }
 
-func (p ubuntu) StartMonit() (err error) {
+func (p centos) StartMonit() (err error) {
 	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sv")
@@ -513,7 +513,7 @@ func (p ubuntu) StartMonit() (err error) {
 	return
 }
 
-func (p ubuntu) SetupMonitUser() (err error) {
+func (p centos) SetupMonitUser() (err error) {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
 	if !p.fs.FileExists(monitUserFilePath) {
 		_, err = p.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
@@ -524,7 +524,7 @@ func (p ubuntu) SetupMonitUser() (err error) {
 	return
 }
 
-func (p ubuntu) GetMonitCredentials() (username, password string, err error) {
+func (p centos) GetMonitCredentials() (username, password string, err error) {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
 	credContent, err := p.fs.ReadFile(monitUserFilePath)
 	if err != nil {
@@ -543,7 +543,7 @@ func (p ubuntu) GetMonitCredentials() (username, password string, err error) {
 	return
 }
 
-func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
+func (p centos) getRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 
 	realPath, found := p.findPossibleDevice(devicePath)
@@ -559,7 +559,7 @@ func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error
 	return
 }
 
-func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bool) {
+func (p centos) findPossibleDevice(devicePath string) (realPath string, found bool) {
 	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
 	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
@@ -574,7 +574,7 @@ func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bo
 	return
 }
 
-func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
+func (p centos) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
 	memStats, err := p.collector.GetMemStats()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mem stats")
