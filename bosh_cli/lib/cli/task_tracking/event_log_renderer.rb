@@ -324,6 +324,18 @@ module Bosh::Cli::TaskTracking
 
     def stage_collection
       @stage_collection ||= StageCollection.new(
+        stage_started: ->(stage){
+          @buffer.print("  Started #{header_for_stage(stage)}\n")
+        },
+        stage_finished: ->(stage){
+          duration = stage.duration ? " (#{format_time(stage.duration)})" : ''
+          @buffer.print("     Done #{header_for_stage(stage)}#{duration}\n")
+        },
+        stage_failed: ->(stage){
+          duration = stage.duration ? " (#{format_time(stage.duration)})" : ''
+          @buffer.print("   Failed #{header_for_stage(stage)}#{duration}\n")
+        },
+
         task_started: ->(task){
           @buffer.print("  Started #{header_for_task(task)}\n")
         },
@@ -338,6 +350,12 @@ module Bosh::Cli::TaskTracking
           @buffer.print("   Failed #{header_for_task(task)}#{duration}#{error_msg}\n")
         },
       )
+    end
+
+    def header_for_stage(stage)
+      tags = stage.tags
+      tags_str = tags.size > 0 ? ' ' + tags.sort.join(', ').make_green : ''
+      "#{stage.name.downcase}#{tags_str}"
     end
 
     def header_for_task(task)
