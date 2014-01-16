@@ -88,12 +88,6 @@ module Bosh::Dev::Bat
         subject.deploy_microbosh_and_run_bats
       end
 
-      it 'uploads the bosh stemcell to the micro' do
-        bosh_cli_session.should_receive(:run_bosh).with(
-          'upload stemcell fake_bosh_stemcell_path', debug_on_fail: true)
-        subject.deploy_microbosh_and_run_bats
-      end
-
       it 'runs bats' do
         subject.should_receive(:run_bats)
         subject.deploy_microbosh_and_run_bats

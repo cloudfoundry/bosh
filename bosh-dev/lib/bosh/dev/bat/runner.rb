@@ -82,9 +82,6 @@ module Bosh::Dev::Bat
         @logger.info("Running micro deploy")
         @bosh_cli_session.run_bosh("micro deploy #{@bat_helper.bosh_stemcell_path}")
         @bosh_cli_session.run_bosh('login admin admin')
-
-        @logger.info("Uploading stemcell to microbosh")
-        @bosh_cli_session.run_bosh("upload stemcell #{@bat_helper.bosh_stemcell_path}", debug_on_fail: true)
       end
     end
 
