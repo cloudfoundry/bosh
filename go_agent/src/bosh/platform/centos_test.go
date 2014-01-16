@@ -161,14 +161,13 @@ func TestCentosSetupDhcp(t *testing.T) {
 	deps, centos := buildCentos()
 	testCentosSetupDhcp(t, deps, centos)
 
-	assert.Equal(t, len(deps.cmdRunner.RunCommands), 2)
-	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
-	assert.Equal(t, deps.cmdRunner.RunCommands[1], []string{"/etc/init.d/networking", "restart"})
+	assert.Equal(t, len(deps.cmdRunner.RunCommands), 1)
+	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"service", "network", "restart"})
 }
 
 func TestCentosSetupDhcpWithPreExistingConfiguration(t *testing.T) {
 	deps, centos := buildCentos()
-	deps.fs.WriteToFile("/etc/dhcp3/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
+	deps.fs.WriteToFile("/etc/dhcp/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
 	testCentosSetupDhcp(t, deps, centos)
 
 	assert.Equal(t, len(deps.cmdRunner.RunCommands), 0)
@@ -192,7 +191,7 @@ func testCentosSetupDhcp(
 
 	platform.SetupDhcp(networks)
 
-	dhcpConfig := deps.fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+	dhcpConfig := deps.fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
 	assert.NotNil(t, dhcpConfig)
 	assert.Equal(t, dhcpConfig.Content, CENTOS_EXPECTED_DHCP_CONFIG)
 }

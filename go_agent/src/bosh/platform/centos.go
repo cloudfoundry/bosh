@@ -261,16 +261,15 @@ func (p centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 		return
 	}
 
-	written, err := p.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
+	written, err := p.fs.WriteToFile("/etc/dhcp/dhclient.conf", buffer.String())
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/dhcp3/dhclient.conf")
+		err = bosherr.WrapError(err, "Writing to /etc/dhcp/dhclient.conf")
 		return
 	}
 
 	if written {
 		// Ignore errors here, just run the commands
-		p.cmdRunner.RunCommand("pkill", "dhclient3")
-		p.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+		p.cmdRunner.RunCommand("service", "network", "restart")
 	}
 
 	return
