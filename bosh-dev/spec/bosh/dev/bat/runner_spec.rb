@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'logger'
 require 'bosh/dev/bat/runner'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/bat/director_address'
@@ -20,10 +21,12 @@ module Bosh::Dev::Bat
         microbosh_deployment_manifest,
         bat_deployment_manifest,
         microbosh_deployment_cleaner,
+        logger,
       )
     end
 
     let(:env) { {} }
+    let(:logger) { Logger.new('/dev/null') }
 
     before { FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir) }
     let(:bat_helper) do
