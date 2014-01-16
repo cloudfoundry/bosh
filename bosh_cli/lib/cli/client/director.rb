@@ -594,6 +594,10 @@ module Bosh
 
         private
 
+        def director_name
+          @director_name ||= get_status['name']
+        end
+
         def request(method, uri, content_type = nil, payload = nil,
           headers = {}, options = {})
           headers  = headers.dup
@@ -620,7 +624,7 @@ module Bosh
 
           if DIRECTOR_HTTP_ERROR_CODES.include?(response.code)
             if response.code == 404
-              raise ResourceNotFound, parse_error_message(response.code, body)
+              raise ResourceNotFound, unknown_call_message(uri)
             else
               raise DirectorError, parse_error_message(response.code, body)
             end
@@ -650,6 +654,11 @@ module Bosh
           else
             'HTTP %s: %s' % [status, body]
           end
+        end
+
+        def unknown_call_message(uri)
+          "The #{director_name} bosh director doesn't understand the following API call: #{uri}." +
+            " The bosh deployment may need to be upgraded."
         end
 
         def perform_http_request(method, uri, payload = nil, headers = {}, &block)

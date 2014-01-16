@@ -324,15 +324,6 @@ describe Bosh::Cli::Client::Director do
       @director.get_task_state(task_number).should == 'done'
     end
 
-    it 'whines on missing task' do
-      @director.should_receive(:get).
-        with("/tasks/#{task_number}").
-        and_return([404, 'Not Found'])
-      lambda {
-        @director.get_task_state(task_number).should
-      }.should raise_error(Bosh::Cli::MissingTask)
-    end
-
     it 'gets task output' do
       @director.should_receive(:get).
         with("/tasks/#{task_number}/output", nil,
@@ -404,6 +395,43 @@ describe Bosh::Cli::Client::Director do
       @director.should_receive(:request_and_track).
         with(:delete, '/deployments/foo/snapshots/snap0a', {}).and_return(true)
       @director.delete_snapshot('foo', 'snap0a')
+    end
+
+    context 'when director returns 404' do
+      let(:http_client) { double('HTTPClient').as_null_object }
+      let(:response) { double('Response', body: 'Not Found', code: 404, headers: {}) }
+      let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
+      let(:endpoint) { '/bad_endpoint' }
+
+      let(:target_name) { 'FAKE-DIRECTOR' }
+      let(:info_response) { double('Response', body: 'info response body', code: 200, headers: {}) }
+
+      before do
+        HTTPClient.stub(new: http_client)
+        JSON.stub(:parse).with('info response body').and_return({'name' => target_name})
+        http_client.stub(:request).with(:get, "https://127.0.0.1:8080#{endpoint}", body: anything, header: request_headers).and_return(response)
+        http_client.stub(:request).with(:get, "https://127.0.0.1:8080/info", body: anything, header: anything).and_return(info_response)
+      end
+
+      context 'when requesting tasks' do
+        it 'raises error' do
+          @director.should_receive(:get).
+            with("/tasks/#{task_number}").
+            and_return([404, 'Not Found'])
+          lambda {
+            @director.get_task_state(task_number).should
+          }.should raise_error(Bosh::Cli::MissingTask)
+        end
+      end
+
+      context 'when requesting anything else' do
+        it 'should raise error suggesting director upgrade' do
+          lambda {
+            @director.get(endpoint)
+          }.should raise_error(Bosh::Cli::ResourceNotFound, "The #{target_name} bosh director doesn't understand the following " +
+            "API call: #{endpoint}. The bosh deployment may need to be upgraded.")
+        end
+      end
     end
   end
 
