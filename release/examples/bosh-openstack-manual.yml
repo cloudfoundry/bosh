@@ -167,8 +167,6 @@ properties:
     name: bosh
     address: <ip_address_for_director> # CHANGE
     db: *bosh_db
-    snapshot_schedule: false
-    self_snapshot_schedule: false
 
   registry:
     address: <ip_address_for_registry> # CHANGE
