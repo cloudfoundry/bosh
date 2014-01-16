@@ -8,6 +8,7 @@ module Bosh::Stemcell
         expect(Infrastructure.for('openstack')).to be_an(Infrastructure::OpenStack)
         expect(Infrastructure.for('aws')).to be_an(Infrastructure::Aws)
         expect(Infrastructure.for('vsphere')).to be_a(Infrastructure::Vsphere)
+        expect(Infrastructure.for('vcloud')).to be_a(Infrastructure::Vcloud)
       end
 
       it 'raises for unknown instructures' do
@@ -59,6 +60,13 @@ module Bosh::Stemcell
 
   describe Infrastructure::Vsphere do
     its(:name)              { should eq('vsphere') }
+    its(:hypervisor)        { should eq('esxi') }
+    its(:default_disk_size) { should eq(3072) }
+    it { should_not be_light }
+  end
+
+  describe Infrastructure::Vcloud do
+    its(:name)              { should eq('vcloud') }
     its(:hypervisor)        { should eq('esxi') }
     its(:default_disk_size) { should eq(3072) }
     it { should_not be_light }

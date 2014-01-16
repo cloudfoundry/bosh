@@ -200,6 +200,29 @@ module Bosh::Stemcell
           end
         end
 
+        context 'when infrastruture is vcloud' do
+          let(:infrastructure) { Infrastructure.for('vcloud') }
+          let(:default_disk_size) { 3072 }
+
+          it_sets_correct_environment_variables
+
+          it 'has an "image_vcloud_ovf_ovftool_path" key' do
+            result = stemcell_builder_options.default
+
+            expect(result['image_vcloud_ovf_ovftool_path']).to be_nil
+          end
+
+          context 'if you have OVFTOOL set in the environment' do
+            let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
+
+            it 'sets image_vcloud_ovf_ovftool_path' do
+              result = stemcell_builder_options.default
+
+              expect(result['image_vcloud_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
+            end
+          end
+        end
+
         context 'when infrastructure is openstack' do
           let(:infrastructure) { Infrastructure.for('openstack') }
           let(:default_disk_size) { 10240 }

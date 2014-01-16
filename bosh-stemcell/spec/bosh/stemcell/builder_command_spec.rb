@@ -250,6 +250,19 @@ module Bosh::Stemcell
             it_behaves_like 'a builder that calls #configure_and_apply correctly'
           end
 
+          context 'on vCloud' do
+            let(:infrastructure) do
+              instance_double(
+                  'Bosh::Stemcell::Infrastructure::Vcloud',
+                  name: 'vcloud',
+                  hypervisor: 'esxi'
+              )
+            end
+            let(:additional_rspec_options) { ' --tag ~exclude_on_vcloud' }
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+
           context 'on OpenStack' do
             let(:infrastructure) do
               instance_double(
@@ -287,6 +300,19 @@ module Bosh::Stemcell
               )
             end
             let(:additional_rspec_options) { ' --tag ~exclude_on_vsphere' }
+
+            it_behaves_like 'a builder that calls #configure_and_apply correctly'
+          end
+
+          context 'on vCloud' do
+            let(:infrastructure) do
+              instance_double(
+                  'Bosh::Stemcell::Infrastructure::Vcloud',
+                  name: 'vcloud',
+                  hypervisor: 'esxi'
+              )
+            end
+            let(:additional_rspec_options) { ' --tag ~exclude_on_vcloud' }
 
             it_behaves_like 'a builder that calls #configure_and_apply correctly'
           end
