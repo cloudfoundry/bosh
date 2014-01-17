@@ -1,19 +1,29 @@
 module Bosh::Spec
   class Deployments
+    # This is a minimal manifest that deploys successfully.
+    # It doesn't have any jobs, so it's not very realistic though
     def self.minimal_manifest
-      # This is a minimal manifest I was actually being able to deploy with. It doesn't even have any jobs,
-      # so it's not very realistic though
       {
         "name" => "minimal",
-        "release" => {
+        "director_uuid"  => "deadbeef",
+
+        "releases" => [{
           "name"    => "appcloud",
           "version" => "0.1" # It's our dummy valid release from spec/assets/valid_release.tgz
+        }],
+
+        "networks" => [{
+          "name" => "a",
+          "subnets" => [],
+        }],
+
+        "compilation" => {
+          "workers" => 1,
+          "network" => "a",
+          "cloud_properties" => {},
         },
 
-        "director_uuid"  => "deadbeef",
-        "networks"       => [ { "name" => "a", "subnets" => [  ] }, ],
-        "compilation"    => { "workers" => 1, "network" => "a", "cloud_properties" => { } },
-        "resource_pools" => [ ],
+        "resource_pools" => [],
 
         "update" => {
           "canaries"          => 2,
@@ -25,29 +35,30 @@ module Bosh::Spec
     end
 
     def self.simple_manifest
-      extras = {
+      minimal_manifest.merge(
         "name" => "simple",
-        "release" => {
+
+        "releases" => [{
           "name"    => "bosh-release",
           "version" => "0.1-dev"
-        },
+        }],
 
         "networks" => [{
           "name"    => "a",
           "subnets" => [{
             "range"    => "192.168.1.0/24",
             "gateway"  => "192.168.1.1",
-            "dns"      => [ "192.168.1.1", "192.168.1.2" ],
-            "static"   => [ "192.168.1.10" ],
-            "reserved" => [ ],
-            "cloud_properties" => { },
+            "dns"      => ["192.168.1.1", "192.168.1.2"],
+            "static"   => ["192.168.1.10"],
+            "reserved" => [],
+            "cloud_properties" => {},
           }]
         }],
 
         "resource_pools" => [{
           "name" => "a",
           "size" => 3,
-          "cloud_properties" => { },
+          "cloud_properties" => {},
           "network"   => "a",
           "stemcell"  => {
             "name"    => "ubuntu-stemcell",
@@ -60,11 +71,9 @@ module Bosh::Spec
           "template"      => "foobar",
           "resource_pool" => "a",
           "instances"     => 3,
-          "networks"      => [{ "name" => "a" } ]
+          "networks"      => [{ "name" => "a" }]
         }]
-      }
-
-      minimal_manifest.merge(extras)
+      )
     end
   end
 end

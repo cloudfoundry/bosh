@@ -14,7 +14,7 @@ describe 'deployment integrations' do
       run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      manifest_hash['release']['version'] = 'latest'
+      manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
 
@@ -45,7 +45,7 @@ describe 'deployment integrations' do
       run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      manifest_hash['release']['version'] = 'latest'
+      manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
       manifest_hash['properties'] ||= {}
@@ -72,7 +72,7 @@ describe 'deployment integrations' do
   context 'updating jobs in parallel' do
     it 'should update a job with multiple instances in parallel and obey max_in_flight' do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      manifest_hash['release']['version'] = 'latest'
+      manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['update']['canaries'] = 0
       manifest_hash['properties'] = { 'test_property' => 2 }
       manifest_hash['update']['max_in_flight'] = 2

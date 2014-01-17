@@ -51,7 +51,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
       deployment_manifest_hash['jobs'][0]['instances'] = 1
       deployment_manifest_hash['resource_pools'][0]['size'] = 1
 
-      deployment_manifest_hash['release']['name'] = 'compilation-test'
+      deployment_manifest_hash['releases'].first['name'] = 'compilation-test'
 
       deployment_manifest = yaml_file('whatevs_manifest', deployment_manifest_hash)
 

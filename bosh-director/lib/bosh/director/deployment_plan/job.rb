@@ -204,18 +204,22 @@ module Bosh::Director
       end
 
       def validate_package_names_do_not_collide!
-        releases_by_package_names = templates.reduce([]) { |memo, t|
-          memo + t.model.package_names.product([t.release])
-        }.reduce({}) { |memo, package_name_and_release_version|
-          package_name = package_name_and_release_version.first
-          release_version = package_name_and_release_version.last
-          memo[package_name] ||= Set.new
-          memo[package_name] << release_version
-          memo
-        }
+        releases_by_package_names = templates
+          .reduce([]) { |memo, t| memo + t.model.package_names.product([t.release]) }
+          .reduce({}) { |memo, package_name_and_release_version|
+            package_name = package_name_and_release_version.first
+            release_version = package_name_and_release_version.last
+            memo[package_name] ||= Set.new
+            memo[package_name] << release_version
+            memo
+          }
 
-        if releases_by_package_names.values.detect { |x| x.size > 1 }
-          raise JobPackageCollision, "Cannot tell which release to use for job `#{@name}'. Please reference an existing release."
+        releases_by_package_names.each do |package_name, releases|
+          if releases.size > 1
+            raise JobPackageCollision,
+                  "Colocated package `#{package_name}' has the same name in multiple releases. " +
+                  'BOSH cannot currently colocate two packages with identical names from separate releases.'
+          end
         end
       end
 

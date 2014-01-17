@@ -1,78 +1,77 @@
 require 'spec_helper'
 
-describe 'collocating templates from 2 releases' do
+describe 'collocating templates from multiple releases' do
   include IntegrationExampleGroup
 
-  it 'refuses to deploy when 2 templates depend on packages with the same name' do
+  #context 'successfully collocating templates from different releases' do
+  #  let(:manifest) do
+  #    {
+  #      'releases' => [
+  #        { 'name' => 'dummy', 'version' => 'latest' },
+  #        { 'name' => 'dummy2', 'version' => 'latest' },
+  #      ],
+  #      'jobs' => [{
+  #        'name' => 'foobar',
+  #        'templates' => [
+  #          { 'name' => 'dummy_with_package', 'release' => 'dummy' },
+  #          { 'name' => 'dummy',              'release' => 'dummy2' },
+  #        ],
+  #        'resource_pool' => 'a',
+  #        'instances' => 1,
+  #        'networks' => [{ 'name' => 'a' }]
+  #      }]
+  #    }
+  #  end
+  #
+  #  it 'successfully deploys' do
+  #    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+  #    run_bosh('login admin admin')
+  #
+  #    run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
+  #    run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")
+  #    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+  #
+  #    manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
+  #    deployment_manifest = yaml_file('simple', manifest_hash)
+  #    run_bosh("deployment #{deployment_manifest.path}")
+  #    run_bosh("deploy")
+  #  end
+  #end
 
-    extras = {
-      'name' => 'simple',
-      'releases' => [
-        {
-          'name' => 'dummy',
-          'version' => 'latest',
-        },
-        {
-          'name' => 'dummy2',
-          'version' => 'latest',
-        },
-      ],
-
-      'networks' => [
-        {
-          'name' => 'a',
-          'subnets' => [
-            {
-              'range' => '192.168.1.0/24',
-              'gateway' => '192.168.1.1',
-              'dns' => ['192.168.1.1', '192.168.1.2'],
-              'static' => ['192.168.1.10'],
-              'reserved' => [],
-              'cloud_properties' => {},
-            }
-          ]
-        }
-      ],
-
-      'resource_pools' => [
-        {
-          'name' => 'a',
-          'size' => 3,
-          'cloud_properties' => {},
-          'network' => 'a',
-          'stemcell' => {
-            'name' => 'ubuntu-stemcell',
-            'version' => '1'
-          }
-        }
-      ],
-
-      'jobs' => [
-        {
+  context 'when 2 templates depend on packages with the same name from different releases' do
+    let(:manifest) do
+      {
+        'releases' => [
+          { 'name' => 'dummy', 'version' => 'latest' },
+          { 'name' => 'dummy2', 'version' => 'latest' },
+        ],
+        'jobs' => [{
           'name' => 'foobar',
           'templates' => [
-            {
-              'name' => 'dummy_with_package',
-              'release' => 'dummy',
-            },
-            {
-              'name' => 'template2',
-              'release' => 'dummy2',
-            },
+            { 'name' => 'dummy_with_package', 'release' => 'dummy' },
+            { 'name' => 'template2',          'release' => 'dummy2' },
           ],
-
           'resource_pool' => 'a',
           'instances' => 1,
-          'networks' => [{'name' => 'a'}]
-        }
-      ]
-    }
+          'networks' => [{ 'name' => 'a' }]
+        }]
+      }
+    end
 
-    minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
-    minimal_manifest.delete('release')
-    manifest_hash = minimal_manifest.merge(extras)
+    it 'refuses to deploy' do
+      run_bosh("target http://localhost:#{current_sandbox.director_port}")
+      run_bosh('login admin admin')
 
-    output = deploy_simple_with_collocation(manifest_hash: manifest_hash, expect_failure: true)
-    output.should =~ /Cannot tell which release to use for job `foobar'. Please reference an existing release./
+      run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
+      run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")
+      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
+      deployment_manifest = yaml_file('simple', manifest_hash)
+      run_bosh("deployment #{deployment_manifest.path}")
+
+      output = run_bosh("deploy", failure_expected: true)
+      expect(output).to match(/Colocated package `dummy_package' has the same name in multiple releases/)
+    end
   end
 end
