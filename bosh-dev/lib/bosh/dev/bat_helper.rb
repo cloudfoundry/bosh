@@ -39,7 +39,7 @@ module Bosh::Dev
         bat_definition.agent.name,
         'deployments'
       )
-      @artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, bat_definition)
+      @artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, microbosh_definition, bat_definition)
     end
 
     def deploy_microbosh_and_run_bats

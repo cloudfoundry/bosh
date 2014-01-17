@@ -58,7 +58,7 @@ module Bosh::Dev
         subject
 
         expect(Bosh::Dev::Bat::Artifacts).to have_received(:new)
-                                             .with(artifacts_path, build, bat_definition)
+                                             .with(artifacts_path, build, microbosh_definition, bat_definition)
       end
     end
 

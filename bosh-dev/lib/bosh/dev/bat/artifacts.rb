@@ -6,10 +6,11 @@ module Bosh::Dev::Bat
   class Artifacts
     attr_reader :path
 
-    def initialize(path, build, stemcell_definition)
+    def initialize(path, build, microbosh_definition, bat_definition)
       @path = path
       @build = build
-      @stemcell_definition = stemcell_definition
+      @microbosh_definition = microbosh_definition
+      @bat_definition = bat_definition
     end
 
     def micro_bosh_deployment_name
@@ -21,7 +22,11 @@ module Bosh::Dev::Bat
     end
 
     def bosh_stemcell_path
-      build.bosh_stemcell_path(stemcell_definition, path)
+      build.bosh_stemcell_path(microbosh_definition, path)
+    end
+
+    def bat_stemcell_path
+      build.bosh_stemcell_path(bat_definition, path)
     end
 
     def prepare_directories
@@ -31,6 +36,6 @@ module Bosh::Dev::Bat
 
     private
 
-    attr_reader :build, :stemcell_definition
+    attr_reader :build, :microbosh_definition, :bat_definition
   end
 end
