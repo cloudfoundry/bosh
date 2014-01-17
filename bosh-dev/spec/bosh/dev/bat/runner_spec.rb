@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/bat/runner'
 require 'bosh/dev/bat/artifacts'
 require 'bosh/dev/bat/director_address'
@@ -36,6 +35,7 @@ module Bosh::Dev::Bat
         micro_bosh_deployment_dir:  '/AwsRunner_fake_artifacts_path/fake_micro_bosh_deployment_dir',
         micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
         bosh_stemcell_path:         'fake_bosh_stemcell_path',
+        bat_stemcell_path:          'fake_bat_stemcell_path',
       )
     end
 
@@ -150,7 +150,7 @@ module Bosh::Dev::Bat
         expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(artifacts.path, 'bat.yml'))
         expect(env['BAT_DIRECTOR']).to eq('director-hostname')
         expect(env['BAT_DNS_HOST']).to eq('director-ip')
-        expect(env['BAT_STEMCELL']).to eq(artifacts.bosh_stemcell_path)
+        expect(env['BAT_STEMCELL']).to eq(artifacts.bat_stemcell_path)
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
         expect(env['BAT_INFRASTRUCTURE']).to eq('infrastructure')
       end

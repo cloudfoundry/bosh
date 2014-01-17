@@ -8,7 +8,7 @@ module Bosh::Dev::Aws
       it 'builds runner' do
         artifacts = instance_double(
           'Bosh::Dev::Bat::Artifacts',
-          bosh_stemcell_path: 'bosh-stemcell-path',
+          bat_stemcell_path: 'bat-stemcell-path',
         )
 
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
@@ -28,7 +28,7 @@ module Bosh::Dev::Aws
         )
         Bosh::Stemcell::Archive
           .should_receive(:new)
-          .with('bosh-stemcell-path')
+          .with('bat-stemcell-path')
           .and_return(stemcell_archive)
 
         microbosh_deployment_manifest = instance_double('Bosh::Dev::Aws::MicroBoshDeploymentManifest')

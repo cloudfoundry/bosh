@@ -17,7 +17,7 @@ module Bosh::Dev::VSphere
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_VSPHERE_MICROBOSH_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.new
       director_uuid    = Bosh::Dev::Bat::DirectorUuid.new(bosh_cli_session)
-      stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.bosh_stemcell_path)
+      stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.bat_stemcell_path)
 
       microbosh_deployment_manifest =
         MicroBoshDeploymentManifest.new(env)
