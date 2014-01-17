@@ -5,15 +5,12 @@ require 'bosh/dev/openstack/runner_builder'
 require 'bosh/dev/vsphere/runner_builder'
 require 'bosh/dev/bat/artifacts'
 
-require 'forwardable'
-
 module Bosh::Dev
   class BatHelper
-    extend Forwardable
-
     def self.for_rake_args(args)
       new(
         runner_builder_for_infrastructure_name(args.infrastructure_name),
+        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, 'ruby'),
         Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.agent_name),
         Build.candidate,
         args.net_type,
@@ -27,28 +24,30 @@ module Bosh::Dev
       }[name]
     end
 
-    def initialize(runner_builder, stemcell_definition, build, net_type)
+    def initialize(runner_builder, microbosh_definition, bat_definition, build, net_type)
       @runner_builder   = runner_builder
-      @stemcell_definition = stemcell_definition
+      @microbosh_definition = microbosh_definition
+      @bat_definition = bat_definition
       @build    = build
       @net_type = net_type
 
       artifacts_path = File.join(
         '/tmp/ci-artifacts',
-        infrastructure.name,
+        bat_definition.infrastructure.name,
         net_type,
-        operating_system.name,
+        bat_definition.operating_system.name,
+        bat_definition.agent.name,
         'deployments'
       )
-      @artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, stemcell_definition)
+      @artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, bat_definition)
     end
 
     def deploy_microbosh_and_run_bats
       artifacts.prepare_directories
       build.download_stemcell(
         'bosh-stemcell',
-        stemcell_definition,
-        infrastructure.light?,
+        bat_definition,
+        bat_definition.infrastructure.light?,
         artifacts.path,
       )
       bats_runner.deploy_microbosh_and_run_bats
@@ -59,8 +58,7 @@ module Bosh::Dev
     end
 
     private
-    attr_reader :build, :net_type, :stemcell_definition, :artifacts
-    def_delegators :@stemcell_definition, :infrastructure, :operating_system
+    attr_reader :build, :net_type, :microbosh_definition, :bat_definition, :artifacts
 
     def bats_runner
       @runner_builder.build(artifacts, net_type)

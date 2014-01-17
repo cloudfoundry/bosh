@@ -5,7 +5,7 @@ module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(bat_runner_builder, definition, build, networking_type) }
+    subject { described_class.new(bat_runner_builder, microbosh_definition, bat_definition, build, networking_type) }
 
     let(:bat_runner_builder) { instance_double('Bosh::Dev::Aws::RunnerBuilder') }
 
@@ -24,8 +24,19 @@ module Bosh::Dev
       )
     end
 
-    let(:agent) { instance_double('Bosh::Stemcell::Agent::Go') }
-    let(:definition) do
+    let(:agent) { instance_double('Bosh::Stemcell::Agent::Go', name: 'agent-name') }
+    let(:ruby_agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
+
+    let(:microbosh_definition) do
+      instance_double(
+        'Bosh::Stemcell::Definition',
+        infrastructure: infrastructure,
+        operating_system: operating_system,
+        agent: ruby_agent,
+      )
+    end
+
+    let(:bat_definition) do
       instance_double(
         'Bosh::Stemcell::Definition',
         infrastructure: infrastructure,
@@ -40,13 +51,14 @@ module Bosh::Dev
     let(:artifacts) { instance_double('Bosh::Dev::Bat::Artifacts', prepare_directories: nil, path: artifacts_path) }
     before { allow(Bosh::Dev::Bat::Artifacts).to receive(:new).and_return(artifacts) }
 
-    let(:artifacts_path) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name/deployments' }
+    let(:artifacts_path) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name/agent-name/deployments' }
 
     describe '#initialize' do
       it 'builds an artifacts object' do
         subject
 
-        expect(Bosh::Dev::Bat::Artifacts).to have_received(:new).with(artifacts_path, build, definition)
+        expect(Bosh::Dev::Bat::Artifacts).to have_received(:new)
+                                             .with(artifacts_path, build, bat_definition)
       end
     end
 
@@ -66,18 +78,20 @@ module Bosh::Dev
 
         Build.should_receive(:candidate).and_return(build)
 
-        allow(Bosh::Stemcell::Definition).to receive(:for).and_return(definition)
+        expect(Bosh::Stemcell::Definition).to receive(:for)
+                                              .with('infrastructure-name', 'operating-system-name', 'ruby')
+                                              .and_return(microbosh_definition)
+        expect(Bosh::Stemcell::Definition).to receive(:for)
+                                              .with('infrastructure-name', 'operating-system-name', 'agent-name')
+                                              .and_return(bat_definition)
 
         bat_helper = instance_double('Bosh::Dev::BatHelper')
         described_class
           .should_receive(:new)
-          .with(bat_runner_builder, definition, build, networking_type)
+          .with(bat_runner_builder, microbosh_definition, bat_definition, build, networking_type)
           .and_return(bat_helper)
 
         expect(described_class.for_rake_args(rake_args)).to eq bat_helper
-
-        expect(Bosh::Stemcell::Definition).to have_received(:for)
-                                           .with('infrastructure-name', 'operating-system-name', 'agent-name')
       end
     end
 
@@ -95,7 +109,7 @@ module Bosh::Dev
       it 'downloads stemcells for the specified infrastructure' do
         build.should_receive(:download_stemcell).with(
           'bosh-stemcell',
-          definition,
+          bat_definition,
           false,
           artifacts_path,
         )
