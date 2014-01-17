@@ -25,7 +25,7 @@ module Bosh::Dev
     end
 
     let(:agent) { instance_double('Bosh::Stemcell::Agent::Go', name: 'agent-name') }
-    let(:ruby_agent) { instance_double('Bosh::Stemcell::Agent::Ruby') }
+    let(:ruby_agent) { instance_double('Bosh::Stemcell::Agent::Ruby', name: 'agent-name') }
 
     let(:microbosh_definition) do
       instance_double(
@@ -106,14 +106,37 @@ module Bosh::Dev
         expect(artifacts).to have_received(:prepare_directories)
       end
 
-      it 'downloads stemcells for the specified infrastructure' do
-        build.should_receive(:download_stemcell).with(
-          'bosh-stemcell',
-          bat_definition,
-          false,
-          artifacts_path,
-        )
-        subject.deploy_microbosh_and_run_bats
+      context 'microbosh and bat stemcell definitions are the same' do
+        let(:bat_definition) { microbosh_definition }
+
+        it 'downloads stemcells for the specified infrastructure' do
+          build.should_receive(:download_stemcell).with(
+            'bosh-stemcell',
+            bat_definition,
+            false,
+            artifacts_path,
+          )
+          subject.deploy_microbosh_and_run_bats
+        end
+      end
+
+      context 'microbosh and bat stemcell definitions are different' do
+        it 'downloads stemcells for the specified infrastructure' do
+          build.should_receive(:download_stemcell).with(
+            'bosh-stemcell',
+            bat_definition,
+            false,
+            artifacts_path,
+          )
+
+          build.should_receive(:download_stemcell).with(
+            'bosh-stemcell',
+            microbosh_definition,
+            false,
+            artifacts_path,
+          )
+          subject.deploy_microbosh_and_run_bats
+        end
       end
 
       it 'uses bats runner to deploy microbosh and run bats' do

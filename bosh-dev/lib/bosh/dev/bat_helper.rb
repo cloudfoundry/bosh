@@ -50,6 +50,16 @@ module Bosh::Dev
         bat_definition.infrastructure.light?,
         artifacts.path,
       )
+
+      unless bat_definition == microbosh_definition
+        build.download_stemcell(
+          'bosh-stemcell',
+          microbosh_definition,
+          microbosh_definition.infrastructure.light?,
+          artifacts.path,
+        )
+      end
+
       bats_runner.deploy_microbosh_and_run_bats
     end
 
