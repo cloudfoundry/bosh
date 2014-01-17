@@ -73,6 +73,6 @@ describe 'collocating templates from 2 releases' do
     manifest_hash = minimal_manifest.merge(extras)
 
     output = deploy_simple_with_collocation(manifest_hash: manifest_hash, expect_failure: true)
-    output.should =~ /Unable to deploy: package name collision in job definitions/
+    output.should =~ /Cannot tell which release to use for job `foobar'. Please reference an existing release./
   end
 end

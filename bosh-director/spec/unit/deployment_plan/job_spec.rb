@@ -249,7 +249,8 @@ describe Bosh::Director::DeploymentPlan::Job do
         let(:foo_template_package_name) { 'same_name' }
         let(:bar_template_package_name) { 'same_name' }
         it 'raises an exception' do
-          expect { job.validate_package_names_do_not_collide! }.to raise_error(Bosh::Director::JobPackageCollision, "Unable to deploy: package name collision in job definitions.")
+          expect { job.validate_package_names_do_not_collide! }.to raise_error(Bosh::Director::JobPackageCollision,
+                        "Cannot tell which release to use for job `foobar'. Please reference an existing release.")
         end
       end
     end

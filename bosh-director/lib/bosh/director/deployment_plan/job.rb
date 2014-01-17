@@ -215,7 +215,7 @@ module Bosh::Director
         }
 
         if releases_by_package_names.values.detect { |x| x.size > 1 }
-          raise JobPackageCollision, 'Unable to deploy: package name collision in job definitions.'
+          raise JobPackageCollision, "Cannot tell which release to use for job `#{@name}'. Please reference an existing release."
         end
       end
 
