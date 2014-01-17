@@ -339,12 +339,8 @@ func (p centos) SetTimeWithNtpServers(servers []string) (err error) {
 		return
 	}
 
-	_, _, err = p.cmdRunner.RunCommand("ntpdate")
-	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to ntpdate")
-		return
-	}
-
+	// Make a best effort to sync time now but don't error
+	_, _, _ = p.cmdRunner.RunCommand("ntpdate")
 	return
 }
 
