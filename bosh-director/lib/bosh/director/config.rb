@@ -53,7 +53,11 @@ module Bosh::Director
         end
 
         @blobstore = nil
+
         @compiled_package_cache = nil
+        @compiled_package_blobstore = nil
+        @compiled_package_cache_options = nil
+
         @nats = nil
         @nats_rpc = nil
         @cloud = nil
