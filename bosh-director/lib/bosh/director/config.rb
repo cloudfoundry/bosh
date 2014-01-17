@@ -66,7 +66,7 @@ module Bosh::Director
       def configure(config)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
 
-        @base_dir = config["dir"]
+        @base_dir = config['dir']
         FileUtils.mkdir_p(@base_dir)
 
         # checkpoint task progress every 30 secs
@@ -89,14 +89,14 @@ module Bosh::Director
         @event_log = EventLog::Log.new
 
         # by default keep only last 500 tasks in disk
-        @max_tasks = config.fetch("max_tasks", 500).to_i
+        @max_tasks = config.fetch('max_tasks', 500).to_i
 
-        @max_threads = config.fetch("max_threads", 32).to_i
+        @max_threads = config.fetch('max_threads', 32).to_i
 
         self.redis_options= {
-          :host     => config["redis"]["host"],
-          :port     => config["redis"]["port"],
-          :password => config["redis"]["password"],
+          :host     => config['redis']['host'],
+          :port     => config['redis']['port'],
+          :password => config['redis']['password'],
           :logger   => redis_logger
         }
 
@@ -105,29 +105,29 @@ module Bosh::Director
         @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
 
         @process_uuid = SecureRandom.uuid
-        @nats_uri = config["mbus"]
+        @nats_uri = config['mbus']
 
-        @cloud_options = config["cloud"]
-        @compiled_package_cache_options = config["compiled_package_cache"]
-        @name = config["name"] || ""
+        @cloud_options = config['cloud']
+        @compiled_package_cache_options = config['compiled_package_cache']
+        @name = config['name'] || ''
 
         @compiled_package_cache = nil
 
         @db_config = config['db']
-        @db = configure_db(config["db"])
-        @dns = config["dns"]
-        @dns_domain_name = "bosh"
+        @db = configure_db(config['db'])
+        @dns = config['dns']
+        @dns_domain_name = 'bosh'
         if @dns
-          @dns_db = configure_db(@dns["db"]) if @dns["db"]
-          @dns_domain_name = canonical(@dns["domain_name"]) if @dns["domain_name"]
+          @dns_db = configure_db(@dns['db']) if @dns['db']
+          @dns_domain_name = canonical(@dns['domain_name']) if @dns['domain_name']
         end
 
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
-        @encryption = config["encryption"]
-        @fix_stateful_nodes = config.fetch("scan_and_fix", {})
-          .fetch("auto_fix_stateful_nodes", false)
+        @encryption = config['encryption']
+        @fix_stateful_nodes = config.fetch('scan_and_fix', {})
+          .fetch('auto_fix_stateful_nodes', false)
         @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
 
         Bosh::Clouds::Config.configure(self)
@@ -144,15 +144,15 @@ module Bosh::Director
       end
 
       def get_revision
-        Dir.chdir(File.expand_path("../../../../../..", __FILE__))
-        revision_command = "(cat REVISION 2> /dev/null || " +
-            "git show-ref --head --hash=8 2> /dev/null || " +
-            "echo 00000000) | head -n1"
+        Dir.chdir(File.expand_path('../../../../../..', __FILE__))
+        revision_command = '(cat REVISION 2> /dev/null || ' +
+            'git show-ref --head --hash=8 2> /dev/null || ' +
+            'echo 00000000) | head -n1'
         `#{revision_command}`.strip
       end
 
       def configure_db(db_config)
-        patch_sqlite if db_config["adapter"] == "sqlite"
+        patch_sqlite if db_config['adapter'] == 'sqlite'
 
         connection_options = db_config.delete('connection_options') {{}}
         db_config.delete_if { |_, v| v.to_s.empty? }
@@ -170,8 +170,8 @@ module Bosh::Director
       def compiled_package_cache_blobstore
         @lock.synchronize do
           if @compiled_package_cache_blobstore.nil? && use_compiled_package_cache?
-            provider = @compiled_package_cache_options["provider"]
-            options = @compiled_package_cache_options["options"]
+            provider = @compiled_package_cache_options['provider']
+            options = @compiled_package_cache_options['options']
             @compiled_package_cache_blobstore = Bosh::Blobstore::Client.safe_create(provider, options)
           end
         end
@@ -179,20 +179,20 @@ module Bosh::Director
       end
 
       def compiled_package_cache_provider
-        use_compiled_package_cache? ? @compiled_package_cache_options["provider"] : nil
+        use_compiled_package_cache? ? @compiled_package_cache_options['provider'] : nil
       end
 
       def cloud_type
         if @cloud_options
-          @cloud_options["plugin"]
+          @cloud_options['plugin']
         end
       end
 
       def cloud
         @lock.synchronize do
           if @cloud.nil?
-            plugin = @cloud_options["plugin"]
-            properties = @cloud_options["properties"]
+            plugin = @cloud_options['plugin']
+            properties = @cloud_options['properties']
             @cloud = Bosh::Clouds::Provider.create(plugin, properties)
           end
         end
@@ -270,8 +270,8 @@ module Bosh::Director
         return if @patched_sqlite
         @patched_sqlite = true
 
-        require "sequel"
-        require "sequel/adapters/sqlite"
+        require 'sequel'
+        require 'sequel/adapters/sqlite'
 
         Sequel::SQLite::Database.class_eval do
           def connect(server)
