@@ -17,9 +17,8 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
       run_bosh("create release --with-tarball", work_dir: Dir.pwd)
     end
 
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+    target_and_login
     run_bosh("deployment #{deployment_manifest.path}")
-    run_bosh("login admin admin")
     run_bosh("upload stemcell #{stemcell_filename}")
     run_bosh("upload release #{release_filename}")
 

@@ -2,6 +2,11 @@ require 'yajl'
 require 'bosh/dev/sandbox/main'
 
 module IntegrationExampleGroup
+  def target_and_login
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+    run_bosh('login admin admin')
+  end
+
   def deploy_simple(options={})
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')

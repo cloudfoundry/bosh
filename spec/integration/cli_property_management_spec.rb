@@ -9,9 +9,8 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage property management' do
       deployment_manifest = yaml_file(
         'minimal', Bosh::Spec::Deployments.minimal_manifest)
 
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
+      target_and_login
       run_bosh("deployment #{deployment_manifest.path}")
-      run_bosh('login admin admin')
       run_bosh("upload release #{release_filename}")
 
       run_bosh('deploy')

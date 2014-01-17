@@ -19,9 +19,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
       deployment_manifest = yaml_file(
           'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
 
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
-
+      target_and_login
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("upload stemcell #{stemcell_filename}")
       run_bosh("upload release #{release_filename}")
@@ -55,9 +53,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
 
       deployment_manifest = yaml_file('whatevs_manifest', deployment_manifest_hash)
 
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
-
+      target_and_login
       run_bosh("upload release #{spec_asset('release_compilation_test.tgz')}")
 
       run_bosh("deployment #{deployment_manifest.path}")

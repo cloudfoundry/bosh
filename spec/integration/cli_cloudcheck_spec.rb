@@ -10,8 +10,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage cloudcheck' do
     end
 
     before do
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
+      target_and_login
 
       run_bosh('reset release', work_dir: TEST_RELEASE_DIR)
       run_bosh('create release --force', work_dir: TEST_RELEASE_DIR)

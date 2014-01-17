@@ -24,8 +24,7 @@ describe 'collocating templates from multiple releases' do
   #  end
   #
   #  it 'successfully deploys' do
-  #    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-  #    run_bosh('login admin admin')
+  #    target_and_login
   #
   #    run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
   #    run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")
@@ -59,8 +58,7 @@ describe 'collocating templates from multiple releases' do
     end
 
     it 'refuses to deploy' do
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
+      target_and_login
 
       run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
       run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")

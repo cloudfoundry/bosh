@@ -5,12 +5,9 @@ describe 'deployment integrations' do
 
   describe 'static drain' do
     it 'runs the drain script on a job if drain script is present' do
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
-
+      target_and_login
       run_bosh('create release', work_dir: TEST_RELEASE_DIR)
       run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
-
       run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
@@ -36,12 +33,9 @@ describe 'deployment integrations' do
 
   describe 'dynamic drain' do
     it 'retries after the appropriate amount of time' do
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
-
+      target_and_login
       run_bosh('create release', work_dir: TEST_RELEASE_DIR)
       run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
-
       run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
@@ -89,7 +83,6 @@ describe 'deployment integrations' do
   context 'canceling a deploy job' do
     it 'should spawn a job and then successfully cancel it' do
       deploy_result = deploy_simple(no_track: true)
-
       task_id = get_task_id(deploy_result, 'running')
 
       # If you don't have this sleep, events() will hang

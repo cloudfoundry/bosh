@@ -11,8 +11,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage deployment prerequisites' do
     end
 
     it 'requires deployment to be chosen' do
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
+      target_and_login
       expect(run_bosh('deploy', :failure_expected => true)).to match(/Please choose deployment first/)
     end
   end

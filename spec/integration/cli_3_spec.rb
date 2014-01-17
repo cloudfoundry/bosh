@@ -8,8 +8,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       FileUtils.rm_rf('dev_releases')
 
       run_bosh('create release', work_dir: Dir.pwd)
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
+      target_and_login
       run_bosh('upload release', work_dir: Dir.pwd)
     end
 
@@ -29,8 +28,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       expect(File.exists?(release_1)).to be(true)
     end
 
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
     run_bosh("upload release #{release_1}")
 
     Dir.chdir(TEST_RELEASE_DIR) do
@@ -72,8 +70,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
       run_bosh('create release', work_dir: Dir.pwd)
       expect(File.exists?(release_1)).to be(true)
 
-      run_bosh("target http://localhost:#{current_sandbox.director_port}")
-      run_bosh('login admin admin')
+      target_and_login
       run_bosh("upload release #{release_1}", work_dir: Dir.pwd)
 
       new_file = File.join('src', 'bar', 'bla')
@@ -120,8 +117,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
   it 'cannot upload malformed release', no_reset: true do
     release_filename = spec_asset('release_invalid_checksum.tgz')
 
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
     out = run_bosh("upload release #{release_filename}", failure_expected: true)
 
     expect(out).to match /Release is invalid, please fix, verify and upload again/
@@ -131,8 +127,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
   it 'allows deleting a whole release' do
     release_filename = spec_asset('valid_release.tgz')
 
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
     run_bosh("upload release #{release_filename}")
 
     out = run_bosh('delete release appcloud')
@@ -147,8 +142,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
   it 'allows deleting a particular release version' do
     release_filename = spec_asset('valid_release.tgz')
 
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
     run_bosh("upload release #{release_filename}")
 
     out = run_bosh('delete release appcloud 0.1')

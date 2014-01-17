@@ -4,8 +4,7 @@ describe 'compiled_packages' do
   include IntegrationExampleGroup
 
   it 'allows user to export compiled packages after a deploy' do
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
 
     deployment_manifest = yaml_file(
       'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
@@ -34,8 +33,7 @@ describe 'compiled_packages' do
   end
 
   it 'allows the user to import compiled packages' do
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
 
     deployment_manifest = yaml_file(
       'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
@@ -55,8 +53,7 @@ describe 'compiled_packages' do
   end
 
   it 'allows the user to import compiled packages after a previously successful import' do
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    target_and_login
 
     deployment_manifest = yaml_file(
         'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
