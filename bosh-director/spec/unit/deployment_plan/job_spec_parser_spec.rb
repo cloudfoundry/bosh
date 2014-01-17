@@ -315,7 +315,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobInvalidTemplates,
-              "Job `fake-job-name' templates must not have repeating names."
+              "Colocated job template `fake-template-name1' has the same name in multiple releases. " +
+              "BOSH cannot currently colocate two job templates with identical names from separate releases.",
             )
           end
         end
@@ -361,7 +362,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::ValidationMissingField,
-              %{Required property `name' was not specified in object ({})},
+              "Required property `name' was not specified in object ({})",
             )
           end
         end

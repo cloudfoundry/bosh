@@ -87,6 +87,7 @@ module Bosh::Director
             release_name = safe_property(template, 'release', class: String, optional: true)
 
             release = nil
+
             if release_name
               release = @deployment.release(release_name)
               unless release
@@ -99,15 +100,20 @@ module Bosh::Director
                 raise JobMissingRelease, "Cannot tell what release template `#{template_name}' (job `#{@job.name}') is supposed to use, please explicitly specify one"
               end
             end
+
             @job.templates << release.use_template_named(template_name)
           end
         end
       end
 
       def check_template_uniqueness
-        if @job.templates.uniq(&:name).size != @job.templates.size
-          raise JobInvalidTemplates,
-                "Job `#{@job.name}' templates must not have repeating names."
+        all_names = @job.templates.map(&:name)
+        @job.templates.each do |template|
+          if all_names.count(template.name) > 1
+            raise JobInvalidTemplates,
+                  "Colocated job template `#{template.name}' has the same name in multiple releases. " +
+                  "BOSH cannot currently colocate two job templates with identical names from separate releases."
+          end
         end
       end
 
