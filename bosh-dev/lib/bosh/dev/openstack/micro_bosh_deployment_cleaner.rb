@@ -27,10 +27,27 @@ module Bosh::Dev::Openstack
         @logger.info("Destroying servers #{matching_server_names}")
 
         # calling destroy on a server multiple times is ok
-        servers.each(&:destroy)
+        servers.each { |s| clean_server(s) }
 
         servers.empty?
       end
+    end
+
+    def clean_server(server)
+      server.volumes.each do |volume|
+        volume.attachments.each do |atth|
+          volume.detach(atth['serverId'], atth['id'])
+        end
+
+        # OpenStack does not allow to delete a volume
+        # until its status becomes 'available'.
+        # Status turns from 'in-use' to 'available'
+        # some time after deleting all attachments.
+        options = { tries: 10, sleep: 5, on: [Excon::Errors::BadRequest] }
+        Bosh::Retryable.new(options).retryer { volume.destroy }
+      end
+
+      server.destroy
     end
 
     private
