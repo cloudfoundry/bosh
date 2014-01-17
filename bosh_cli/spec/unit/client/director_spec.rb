@@ -413,6 +413,8 @@ describe Bosh::Cli::Client::Director do
       let(:info_response) { double('Response', body: 'info response body', code: 200, headers: {}) }
       before do
         JSON.stub(:parse).with('info response body').and_return({'name' => target_name})
+        JSON.stub(:parse).with('Not Found').and_return({'name' => target_name})
+
         allow(http_client).to receive(:request).
           with(:get, "https://127.0.0.1:8080/info", body: anything, header: anything).
           and_return(info_response)
