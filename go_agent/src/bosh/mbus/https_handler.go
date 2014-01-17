@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"crypto/tls"
+	"net"
 )
 
 type httpsHandler struct {
@@ -60,11 +62,38 @@ func (h httpsHandler) Start(handlerFunc HandlerFunc) (err error) {
 			w.Write(respBytes)
 		},
 	}
-	err = http.ListenAndServeTLS(h.parsedURL.Host, "agent.cert", "agent.key", handler)
+
+	listener, err := net.Listen("tcp", h.parsedURL.Host)
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting HTTP server")
 		return
 	}
+
+	httpServer := &http.Server{}
+	mux := http.NewServeMux()
+	httpServer.Handler = mux
+
+	mux.HandleFunc("/agent", handler.Callback)
+
+	mux.HandleFunc("/bar", func(writer http.ResponseWriter, request *http.Request) {
+			defer request.Body.Close()
+			writer.WriteHeader(201)
+		})
+
+
+	config := &tls.Config{}
+
+	config.NextProtos = []string{"http/1.1"}
+
+	config.Certificates = make([]tls.Certificate, 1)
+	config.Certificates[0], err = tls.LoadX509KeyPair("agent.cert", "agent.key")
+	if err != nil {
+	err = bosherr.WrapError(err, "creating cert")
+	return
+	}
+
+	tlsListener := tls.NewListener(listener, config)
+	httpServer.Serve(tlsListener)
+
 	return
 }
 
