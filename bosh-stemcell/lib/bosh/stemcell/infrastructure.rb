@@ -26,6 +26,13 @@ module Bosh::Stemcell
       def light?
         @supports_light_stemcell
       end
+
+      def ==(other)
+        name == other.name &&
+          hypervisor == other.hypervisor &&
+          default_disk_size == other.default_disk_size &&
+          light? == other.light?
+      end
     end
 
     class OpenStack < Base

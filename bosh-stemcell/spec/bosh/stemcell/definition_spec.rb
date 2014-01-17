@@ -58,5 +58,26 @@ module Bosh::Stemcell
       its(:operating_system)           { should == operating_system }
       its(:agent)                      { should == agent }
     end
+
+    describe '#==' do
+      it 'compares by value instead of reference' do
+        expect_eq = [
+          %w(aws centos ruby),
+          %w(vsphere ubuntu go),
+        ]
+
+        expect_eq.each do |tuple|
+          expect(Definition.for(*tuple)).to eq(Definition.for(*tuple))
+        end
+
+        expect_not_equal = [
+          [%w(aws ubuntu ruby), %w(aws centos ruby)],
+          [%w(vsphere ubuntu go), %w(vsphere ubuntu ruby)],
+        ]
+        expect_not_equal.each do |left, right|
+          expect(Definition.for(*left)).to_not eq(Definition.for(*right))
+        end
+      end
+    end
   end
 end

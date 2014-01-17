@@ -16,11 +16,19 @@ module Bosh::Stemcell
       def name
         'go'
       end
+
+      def ==(other)
+        name == other.name
+      end
     end
 
     class Ruby
       def name
         'ruby'
+      end
+
+      def ==(other)
+        name == other.name
       end
     end
   end
