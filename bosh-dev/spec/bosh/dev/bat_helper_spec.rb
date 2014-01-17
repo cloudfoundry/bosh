@@ -24,12 +24,7 @@ module Bosh::Dev
       )
     end
 
-    let(:agent) do
-      instance_double(
-        'Bosh::Stemcell::Agent::Go'
-      )
-    end
-
+    let(:agent) { instance_double('Bosh::Stemcell::Agent::Go') }
     let(:definition) do
       instance_double(
         'Bosh::Stemcell::Definition',
@@ -40,8 +35,20 @@ module Bosh::Dev
     end
 
     let(:networking_type) { 'networking-type' }
-
     let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
+
+    let(:artifacts) { instance_double('Bosh::Dev::Bat::Artifacts', prepare_directories: nil, path: artifacts_path) }
+    before { allow(Bosh::Dev::Bat::Artifacts).to receive(:new).and_return(artifacts) }
+
+    let(:artifacts_path) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name/deployments' }
+
+    describe '#initialize' do
+      it 'builds an artifacts object' do
+        subject
+
+        expect(Bosh::Dev::Bat::Artifacts).to have_received(:new).with(artifacts_path, build, definition)
+      end
+    end
 
     describe '.for_rake_args' do
       it 'returns bat helper configured with rake arguments' do
@@ -74,36 +81,15 @@ module Bosh::Dev
       end
     end
 
-    let(:expected_artifacts_dir) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name' }
-
-    describe '#initialize' do
-      its(:micro_bosh_deployment_name) { should == 'microbosh' }
-      its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
-      its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }
-
-      context 'when there is no networking type defined' do
-        let(:networking_type) { nil }
-        let(:expected_artifacts_dir) { '/tmp/ci-artifacts/infrastructure-name/operating-system-name' }
-
-        its(:artifacts_dir)              { should eq("#{expected_artifacts_dir}/deployments") }
-        its(:micro_bosh_deployment_dir)  { should eq("#{expected_artifacts_dir}/deployments/microbosh") }
-      end
-    end
-
     describe '#deploy_microbosh_and_run_bats' do
       before { bat_runner_builder.stub(build: bat_runner) }
       let(:bat_runner) { instance_double('Bosh::Dev::Bat::Runner', deploy_microbosh_and_run_bats: nil) }
 
-      before { FileUtils.stub(rm_rf: nil, mkdir_p: nil) }
+      before { allow(artifacts).to receive(:prepare_directories) }
 
       it 'removes the artifacts dir' do
-        FileUtils.should_receive(:rm_rf).with(subject.artifacts_dir)
         subject.deploy_microbosh_and_run_bats
-      end
-
-      it 'creates the microbosh depolyments dir (which is contained within artifacts dir)' do
-        FileUtils.should_receive(:mkdir_p).with(subject.micro_bosh_deployment_dir)
-        subject.deploy_microbosh_and_run_bats
+        expect(artifacts).to have_received(:prepare_directories)
       end
 
       it 'downloads stemcells for the specified infrastructure' do
@@ -111,7 +97,7 @@ module Bosh::Dev
           'bosh-stemcell',
           definition,
           false,
-          "#{expected_artifacts_dir}/deployments",
+          artifacts_path,
         )
         subject.deploy_microbosh_and_run_bats
       end
@@ -119,7 +105,7 @@ module Bosh::Dev
       it 'uses bats runner to deploy microbosh and run bats' do
         bat_runner_builder
           .should_receive(:build)
-          .with(subject, networking_type)
+          .with(artifacts, networking_type)
           .and_return(bat_runner)
 
         bat_runner.should_receive(:deploy_microbosh_and_run_bats)
@@ -133,21 +119,11 @@ module Bosh::Dev
         bat_runner = instance_double('Bosh::Dev::Bat::Runner')
         bat_runner_builder
           .should_receive(:build)
-          .with(subject, networking_type)
+          .with(artifacts, networking_type)
           .and_return(bat_runner)
 
         bat_runner.should_receive(:run_bats)
         subject.run_bats
-      end
-    end
-
-    describe '#bosh_stemcell_path' do
-      it 'delegates to the build' do
-        build
-          .should_receive(:bosh_stemcell_path)
-          .with(definition, "#{expected_artifacts_dir}/deployments")
-          .and_return('bosh-stemcell-path')
-        expect(subject.bosh_stemcell_path).to eq('bosh-stemcell-path')
       end
     end
   end

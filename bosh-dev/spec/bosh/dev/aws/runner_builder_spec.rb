@@ -1,13 +1,13 @@
 require 'spec_helper'
-require 'bosh/dev/bat_helper'
+require 'bosh/dev/bat/artifacts'
 require 'bosh/dev/aws/runner_builder'
 
 module Bosh::Dev::Aws
   describe RunnerBuilder do
     describe '#build' do
       it 'builds runner' do
-        bat_helper = instance_double(
-          'Bosh::Dev::BatHelper',
+        artifacts = instance_double(
+          'Bosh::Dev::Bat::Artifacts',
           bosh_stemcell_path: 'bosh-stemcell-path',
         )
 
@@ -52,7 +52,7 @@ module Bosh::Dev::Aws
         runner = instance_double('Bosh::Dev::Bat::Runner')
         Bosh::Dev::Bat::Runner.should_receive(:new).with(
           ENV,
-          bat_helper,
+          artifacts,
           director_address,
           bosh_cli_session,
           stemcell_archive,
@@ -62,7 +62,7 @@ module Bosh::Dev::Aws
           be_an_instance_of(Logger),
         ).and_return(runner)
 
-        expect(subject.build(bat_helper, 'net-type')).to eq(runner)
+        expect(subject.build(artifacts, 'net-type')).to eq(runner)
       end
     end
   end
