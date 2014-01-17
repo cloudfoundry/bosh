@@ -3,6 +3,7 @@ package action
 import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
+	"encoding/json"
 )
 
 type releaseApplySpecAction struct {
@@ -20,9 +21,15 @@ func (a releaseApplySpecAction) IsAsynchronous() bool {
 
 func (a releaseApplySpecAction) Run() (value interface{}, err error) {
 	fs := a.platform.GetFs()
-	value, err = fs.ReadFile("/var/vcap/micro/apply_spec.json")
+	specBytes, err := fs.ReadFile("/var/vcap/micro/apply_spec.json")
 	if err != nil {
 		err = bosherr.WrapError(err, "Opening micro apply spec file")
+		return
+	}
+
+	err = json.Unmarshal([]byte(specBytes), &value)
+	if err != nil {
+		err = bosherr.WrapError(err, "Unmarshalling release apply spec")
 		return
 	}
 
