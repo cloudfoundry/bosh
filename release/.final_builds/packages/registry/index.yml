@@ -70,3 +70,8 @@ builds:
     version: 14
     sha1: !binary |-
       MzU2YWUyMmE1N2NiYjdlZDE2NzcyYmE0ZTVkZDQyMDBkZTk0MzUxMQ==
+  !binary "NTI5NDliZjgyNmI0M2RmYjg4ZWQyYzUyODNhNWQ4ZmQxZDIyNWRjMA==":
+    blobstore_id: 6c82712e-8ad2-4b92-9e23-9200af9f3a80
+    version: 15
+    sha1: !binary |-
+      NDkxNGZlNmZiOTc5OGY3ZWUyZTJlMjA3YTAxNWJkNDA3NTliNDM5OA==
