@@ -12,6 +12,9 @@ if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
 fi
 
-bundle install --local --path tmp/
+# Reuse gems directory so that same job does not have to
+# spend so much redownloading and reinstalling same gems.
+# (Destination directory is created by bundler)
+bundle install --local --path /tmp/$JOB_NAME/
 
 bundle exec rake --trace ci:setup:rspec "$@"
