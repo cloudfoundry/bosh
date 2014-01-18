@@ -6,40 +6,29 @@ describe 'Bosh::Spec::IntegrationTest::HealthMonitor 2' do
   before { current_sandbox.health_monitor_process.start }
   after { current_sandbox.health_monitor_process.stop }
 
-  before do
-    release_filename    = File.join(TEST_RELEASE_DIR, "dev_releases", "bosh-release-0.1-dev.tgz")
-    stemcell_filename   = spec_asset("valid_stemcell.tgz")
+  it 'does not resurrect stateful nodes by default' do
     deployment_hash = Bosh::Spec::Deployments.simple_manifest
-    deployment_hash['jobs'][0]['name'] = "foobar_ng"
+    deployment_hash['jobs'][0]['name'] = 'foobar_ng'
     deployment_hash['jobs'][0]['instances'] = 1
-    deployment_hash['jobs'][0]['persistent_disk'] = 20480
-    deployment_manifest = yaml_file('simple', deployment_hash)
+    deployment_hash['jobs'][0]['persistent_disk'] = 20_480
+    deploy_simple(manifest_hash: deployment_hash)
 
-    Dir.chdir(TEST_RELEASE_DIR) do
-      run_bosh("create release --with-tarball", work_dir: Dir.pwd)
-    end
-
-    target_and_login
-    run_bosh("deployment #{deployment_manifest.path}")
-    run_bosh("upload stemcell #{stemcell_filename}")
-    run_bosh("upload release #{release_filename}")
-
-    run_bosh("deploy")
+    kill_job_agent('foobar_ng/0')
+    expect(wait_for_vm('foobar_ng/0')).to be_nil
   end
 
-  describe "resurrector" do
-    it "does not resurrect stateful nodes by default" do
-      original_cid = kill_job_agent('foobar_ng/0')
-      foobar_ng_vm = wait_for_vm('foobar_ng/0')
-      expect(foobar_ng_vm).to be_nil
-    end
+  it 'resurrects stateful nodes if fix_stateful_nodes director option is set' do
+    current_sandbox.director_fix_stateful_nodes = true
+    current_sandbox.reconfigure_director
 
-    it "resurrects stateful nodes when configured to" do
-      current_sandbox.director_fix_stateful_nodes = true
-      current_sandbox.reconfigure_director
-      original_cid = kill_job_agent('foobar_ng/0')
-      foobar_ng_vm = wait_for_vm('foobar_ng/0')
-      expect(foobar_ng_vm[:cid]).to_not eq original_cid
-    end
+    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash['jobs'][0]['name'] = 'foobar_ng'
+    deployment_hash['jobs'][0]['instances'] = 1
+    deployment_hash['jobs'][0]['persistent_disk'] = 20_480
+    deploy_simple(manifest_hash: deployment_hash)
+
+    original_cid = kill_job_agent('foobar_ng/0')
+    foobar_ng_vm = wait_for_vm('foobar_ng/0')
+    expect(foobar_ng_vm[:cid]).to_not eq(original_cid)
   end
 end

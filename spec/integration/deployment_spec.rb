@@ -5,57 +5,37 @@ describe 'deployment integrations' do
 
   describe 'static drain' do
     it 'runs the drain script on a job if drain script is present' do
-      target_and_login
-      run_bosh('create release', work_dir: TEST_RELEASE_DIR)
-      run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
-      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
-
-      deployment_manifest = yaml_file('simple', manifest_hash)
-      run_bosh("deployment #{deployment_manifest.path}")
-      run_bosh('deploy')
-      deployment_manifest.delete
+      deploy_simple(manifest_hash: manifest_hash)
 
       manifest_hash['properties'] ||= {}
       manifest_hash['properties']['test_property'] = 0
-      deployment_manifest = yaml_file('simple', manifest_hash)
-      run_bosh("deployment #{deployment_manifest.path}")
-      run_bosh('deploy')
+      deploy_simple_manifest(manifest_hash: manifest_hash)
 
-      drain_output = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"].detect {|f| File.basename(f) == 'drain-test.log' }
-      expect(File.read(drain_output)).to eq "job_unchanged hash_changed\n1\n"
+      agent_files = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"]
+      drain_output = agent_files.detect { |f| File.basename(f) == 'drain-test.log' }
+      expect(File.read(drain_output)).to eq("job_unchanged hash_changed\n1\n")
     end
   end
 
   describe 'dynamic drain' do
     it 'retries after the appropriate amount of time' do
-      target_and_login
-      run_bosh('create release', work_dir: TEST_RELEASE_DIR)
-      run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
-      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
       manifest_hash['properties'] ||= {}
       manifest_hash['properties']['drain_type'] = 'dynamic'
-
-      deployment_manifest = yaml_file('simple', manifest_hash)
-      run_bosh("deployment #{deployment_manifest.path}")
-      run_bosh('deploy')
-      deployment_manifest.delete
+      deploy_simple(manifest_hash: manifest_hash)
 
       manifest_hash['properties']['test_property'] = 0
-      deployment_manifest = yaml_file('simple', manifest_hash)
-      run_bosh("deployment #{deployment_manifest.path}")
-      run_bosh('deploy')
+      deploy_simple_manifest(manifest_hash: manifest_hash)
 
-      drain_output = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"].detect {|f| File.basename(f) == 'drain-test.log' }
+      agent_files = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"]
+      drain_output = agent_files.detect { |f| File.basename(f) == 'drain-test.log' }
       drain_times = File.read(drain_output).split.map { |time| time.to_i }
       expect(drain_times.size).to eq(3)
       expect(drain_times[1] - drain_times[0]).to be >= 3
@@ -70,7 +50,6 @@ describe 'deployment integrations' do
       manifest_hash['update']['canaries'] = 0
       manifest_hash['properties'] = { 'test_property' => 2 }
       manifest_hash['update']['max_in_flight'] = 2
-
       deploy_simple(manifest_hash: manifest_hash)
 
       times = start_and_finish_times_for_job_updates('last')
@@ -87,11 +66,10 @@ describe 'deployment integrations' do
 
       # If you don't have this sleep, events() will hang
       # And, yes, you need it before "cancel task"
-      sleep 5 # Wait for deployment to start
-      cancel_result = run_bosh("cancel task #{task_id}")
-
+      sleep(5) # Wait for deployment to start
+      cancel_output = run_bosh("cancel task #{task_id}")
       expect($?).to be_success
-      expect(cancel_result).to match /Task #{task_id} is getting canceled/
+      expect(cancel_output).to match /Task #{task_id} is getting canceled/
 
       error_event = events(task_id).last['error']
       expect(error_event['code']).to eq(10001)

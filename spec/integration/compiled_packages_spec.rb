@@ -4,19 +4,7 @@ describe 'compiled_packages' do
   include IntegrationExampleGroup
 
   it 'allows user to export compiled packages after a deploy' do
-    target_and_login
-
-    deployment_manifest = yaml_file(
-      'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
-    run_bosh("deployment #{deployment_manifest.path}")
-
-    stemcell_path = spec_asset('valid_stemcell.tgz')
-    run_bosh("upload stemcell #{stemcell_path}")
-
-    release_path = create_release
-    run_bosh("upload release #{release_path}")
-
-    run_bosh('deploy')
+    deploy_simple
 
     Dir.mktmpdir do |download_dir|
       run_bosh("export compiled_packages bosh-release/0.1-dev ubuntu-stemcell/1 #{download_dir}")
@@ -35,51 +23,37 @@ describe 'compiled_packages' do
   it 'allows the user to import compiled packages' do
     target_and_login
 
-    deployment_manifest = yaml_file(
-      'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
+    deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.simple_manifest)
     run_bosh("deployment #{deployment_manifest.path}")
-
-    stemcell_path = spec_asset('valid_stemcell.tgz')
-    run_bosh("upload stemcell #{stemcell_path}")
-
-    release_path = create_release
-    run_bosh("upload release #{release_path}")
-
-    test_export = spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')
-    run_bosh("import compiled_packages #{test_export}")
+    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    run_bosh("upload release #{create_release}")
+    run_bosh("import compiled_packages #{spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')}")
 
     deploy_output = run_bosh('deploy')
-    expect(deploy_output).to_not include('Compiling packages')
+    expect(deploy_output).to_not match(/compiling packages/i)
   end
 
   it 'allows the user to import compiled packages after a previously successful import' do
     target_and_login
 
-    deployment_manifest = yaml_file(
-        'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
+    deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.simple_manifest)
     run_bosh("deployment #{deployment_manifest.path}")
-
-    stemcell_path = spec_asset('valid_stemcell.tgz')
-    run_bosh("upload stemcell #{stemcell_path}")
-
-    release_path = create_release
-    run_bosh("upload release #{release_path}")
+    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    run_bosh("upload release #{create_release}")
 
     test_export = spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')
     run_bosh("import compiled_packages #{test_export}")
-
     expect{ run_bosh("import compiled_packages #{test_export}") }.to_not raise_error
 
     deploy_output = run_bosh('deploy')
-    expect(deploy_output).to_not include('Compiling packages')
+    expect(deploy_output).to_not match(/compiling packages/i)
   end
 
   def create_release
-    release_file = 'dev_releases/bosh-release-0.1-dev.tgz'
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
       run_bosh('create release --with-tarball', work_dir: Dir.pwd)
     end
-    File.join(TEST_RELEASE_DIR, release_file)
+    File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.tgz')
   end
 end
