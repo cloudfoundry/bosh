@@ -1,26 +1,34 @@
 package micro
 
 import (
+	"bosh/blobstore"
 	bosherr "bosh/errors"
 	boshhandler "bosh/handler"
 	boshhttps "bosh/https_dispatcher"
 	boshlog "bosh/logger"
+	boshdir "bosh/settings/directories"
+	boshsys "bosh/system"
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 )
 
 type HttpsHandler struct {
-	parsedURL  *url.URL
-	logger     boshlog.Logger
-	dispatcher boshhttps.HttpsDispatcher
+	parsedURL   *url.URL
+	logger      boshlog.Logger
+	dispatcher  boshhttps.HttpsDispatcher
+	fs          boshsys.FileSystem
+	dirProvider boshdir.DirectoriesProvider
 }
 
-func NewHttpsHandler(parsedURL *url.URL, logger boshlog.Logger) (handler HttpsHandler) {
+func NewHttpsHandler(parsedURL *url.URL, logger boshlog.Logger, fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (handler HttpsHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
+	handler.fs = fs
+	handler.dirProvider = dirProvider
 	handler.dispatcher = boshhttps.NewHttpsDispatcher(parsedURL, logger)
 
 	return
@@ -37,6 +45,7 @@ func (h HttpsHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
 
 func (h HttpsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 	agentHandler := func(w http.ResponseWriter, r *http.Request) {
+		println("WRONNG")
 		if r.Method != "POST" {
 			err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
 			w.WriteHeader(404)
@@ -64,6 +73,28 @@ func (h HttpsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 	}
 
 	h.dispatcher.AddRoute("/agent", agentHandler)
+
+	blobsHandler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
+			w.WriteHeader(404)
+			return
+		}
+
+		_, blobId := path.Split(r.URL.Path)
+
+		blobFetcher := blobstore.NewBlobFetcher(h.fs, h.dirProvider)
+		blobBytes, err := blobFetcher.Fetch(blobId)
+		if err != nil {
+			w.WriteHeader(404)
+		} else {
+			w.Write(blobBytes)
+		}
+
+		return
+	}
+
+	h.dispatcher.AddRoute("/blobs/", blobsHandler)
 
 	h.dispatcher.Start()
 

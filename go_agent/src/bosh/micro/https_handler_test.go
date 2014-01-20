@@ -3,6 +3,8 @@ package micro
 import (
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
+	boshdir "bosh/settings/directories"
+	fakesys "bosh/system/fakes"
 	"crypto/tls"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -12,8 +14,8 @@ import (
 	"testing"
 )
 
-func TestStart(t *testing.T) {
-	serverURL, handler := startServer()
+func TestStartAgentEndpoint(t *testing.T) {
+	serverURL, handler, _ := startServer()
 	defer stopServer(handler)
 
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
@@ -34,14 +36,13 @@ func TestStart(t *testing.T) {
 	httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
 	assert.NoError(t, readErr)
 	assert.Equal(t, httpBody, []byte(`{"value":"expected value"}`))
-
 }
 
-func TestStartWithIncorrectHTTPMethod(t *testing.T) {
-	serverURL, handler := startServer()
+func TestStartAgentEndpointWithIncorrectHTTPMethod(t *testing.T) {
+	serverURL, handler, _ := startServer()
 	defer stopServer(handler)
 
-	waitForServerToStart(serverURL)
+	waitForServerToStart(serverURL, "agent")
 
 	client := getHTTPClient()
 	httpResponse, err := client.Get(serverURL + "/agent")
@@ -51,11 +52,62 @@ func TestStartWithIncorrectHTTPMethod(t *testing.T) {
 	assert.Equal(t, httpResponse.StatusCode, 404)
 }
 
-func TestStartWithIncorrectURIPath(t *testing.T) {
-	serverURL, handler := startServer()
+func TestStartBlobsEndpointWithIncorrectHTTPMethod(t *testing.T) {
+	serverURL, handler, _ := startServer()
 	defer stopServer(handler)
 
-	waitForServerToStart(serverURL)
+	waitForServerToStart(serverURL, "blobs")
+
+	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
+	postPayload := strings.NewReader(postBody)
+	client := getHTTPClient()
+
+	httpResponse, err := client.Post(serverURL+"/blobs/123", "application/json", postPayload)
+	defer httpResponse.Body.Close()
+
+	assert.NoError(t, err)
+	assert.Equal(t, httpResponse.StatusCode, 404)
+}
+
+func TestStartBlobsEndpoint(t *testing.T) {
+	serverURL, handler, fakeFs := startServer()
+	defer stopServer(handler)
+	fakeFs.WriteToFile("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+
+	client := getHTTPClient()
+
+	httpResponse, err := client.Get(serverURL + "/blobs/a5/123-456-789")
+	for err != nil {
+		httpResponse, err = client.Get(serverURL + "/blobs/a5/123-456-789")
+	}
+	defer httpResponse.Body.Close()
+
+	httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
+	assert.NoError(t, readErr)
+	assert.Equal(t, httpResponse.StatusCode, 200)
+	assert.Equal(t, httpBody, []byte("Some data"))
+}
+
+func TestStartBlobsEndpointWhenFileNotFound(t *testing.T) {
+	serverURL, handler, _ := startServer()
+	defer stopServer(handler)
+
+	waitForServerToStart(serverURL, "blobs")
+
+	client := getHTTPClient()
+
+	httpResponse, err := client.Get(serverURL + "/blobs/123")
+	defer httpResponse.Body.Close()
+
+	assert.NoError(t, err)
+	assert.Equal(t, httpResponse.StatusCode, 404)
+}
+
+func TestStartWithIncorrectURIPath(t *testing.T) {
+	serverURL, handler, _ := startServer()
+	defer stopServer(handler)
+
+	waitForServerToStart(serverURL, "agent")
 
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 	postPayload := strings.NewReader(postBody)
@@ -68,10 +120,10 @@ func TestStartWithIncorrectURIPath(t *testing.T) {
 }
 
 func TestStartWithIncorrectUsernameAndPassword(t *testing.T) {
-	serverURL, handler := startServer()
+	serverURL, handler, _ := startServer()
 	defer stopServer(handler)
 
-	waitForServerToStart(serverURL)
+	waitForServerToStart(serverURL, "agent")
 
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 	postPayload := strings.NewReader(postBody)
@@ -90,14 +142,14 @@ func getHTTPClient() (httpClient http.Client) {
 	return
 }
 
-func waitForServerToStart(serverURL string) (httpResponse *http.Response) {
+func waitForServerToStart(serverURL string, endpoint string) (httpResponse *http.Response) {
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 	postPayload := strings.NewReader(postBody)
 	client := getHTTPClient()
 
-	httpResponse, err := client.Post(serverURL+"/agent", "application/json", postPayload)
+	httpResponse, err := client.Post(serverURL+"/"+endpoint, "application/json", postPayload)
 	for err != nil {
-		httpResponse, err = client.Post(serverURL+"/agent", "application/json", postPayload)
+		httpResponse, err = client.Post(serverURL+"/"+endpoint, "application/json", postPayload)
 	}
 	defer httpResponse.Body.Close()
 	return
@@ -105,11 +157,13 @@ func waitForServerToStart(serverURL string) (httpResponse *http.Response) {
 
 var receivedRequest boshhandler.Request
 
-func startServer() (serverURL string, handler HttpsHandler) {
+func startServer() (serverURL string, handler HttpsHandler, fs *fakesys.FakeFileSystem) {
 	serverURL = "https://user:pass@127.0.0.1:6900"
 	mbusUrl, _ := url.Parse(serverURL)
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	handler = NewHttpsHandler(mbusUrl, logger)
+	fs = fakesys.NewFakeFileSystem()
+	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+	handler = NewHttpsHandler(mbusUrl, logger, fs, dirProvider)
 
 	go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 		receivedRequest = req

@@ -5,7 +5,9 @@ import (
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
 	"bosh/micro"
+	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
+	boshdir "bosh/settings/directories"
 	"github.com/cloudfoundry/yagnats"
 	"net/url"
 )
@@ -22,7 +24,7 @@ func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger) (p
 	return
 }
 
-func (p mbusHandlerProvider) Get() (handler boshhandler.Handler, err error) {
+func (p mbusHandlerProvider) Get(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (handler boshhandler.Handler, err error) {
 	if p.handler != nil {
 		handler = p.handler
 		return
@@ -38,7 +40,7 @@ func (p mbusHandlerProvider) Get() (handler boshhandler.Handler, err error) {
 	case "nats":
 		handler = newNatsHandler(p.settings, p.logger, yagnats.NewClient())
 	case "https":
-		handler = micro.NewHttpsHandler(mbusUrl, p.logger)
+		handler = micro.NewHttpsHandler(mbusUrl, p.logger, platform.GetFs(), dirProvider)
 	default:
 		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusUrl.Scheme)
 	}
