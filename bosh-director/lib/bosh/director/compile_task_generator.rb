@@ -2,8 +2,9 @@ require 'bosh/director'
 
 module Bosh::Director
   class CompileTaskGenerator
-    def initialize(logger)
+    def initialize(logger, event_log)
       @logger = logger
+      @event_log = event_log
     end
 
     # The compile_tasks hash passed in by the caller will be populated with CompileTasks objects

@@ -27,7 +27,7 @@ module Bosh::Director
 
       @vm_reuser = VmReuser.new
 
-      @compile_task_generator = CompileTaskGenerator.new(@logger)
+      @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
 
       @compile_tasks = {}
       @ready_tasks = []

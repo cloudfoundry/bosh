@@ -4,7 +4,7 @@ require 'bosh/director/compile_task_generator'
 module Bosh::Director
   describe CompileTaskGenerator do
     describe '#generate!' do
-      subject(:generator) { described_class.new(logger) }
+      subject(:generator) { described_class.new(logger, event_log) }
 
       let(:release_version_model) { instance_double('Bosh::Director::Models::ReleaseVersion', package_dependency_key: 'some-dependency-key', package_cache_key: 'some-package-cache-key') }
       let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model) }
@@ -17,6 +17,7 @@ module Bosh::Director
 
       let(:stemcell) { Bosh::Director::Models::Stemcell.make }
       let(:logger) { instance_double('Logger', info: nil) }
+      let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       let(:compile_tasks) { {} }
 
