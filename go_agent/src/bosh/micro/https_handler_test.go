@@ -1,6 +1,7 @@
-package mbus
+package micro
 
 import (
+	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
 	"crypto/tls"
 	"github.com/stretchr/testify/assert"
@@ -102,21 +103,21 @@ func waitForServerToStart(serverURL string) (httpResponse *http.Response) {
 	return
 }
 
-var receivedRequest Request
+var receivedRequest boshhandler.Request
 
-func startServer() (serverURL string, handler httpsHandler) {
+func startServer() (serverURL string, handler HttpsHandler) {
 	serverURL = "https://user:pass@127.0.0.1:6900"
 	mbusUrl, _ := url.Parse(serverURL)
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	handler = newHttpsHandler(mbusUrl, logger)
+	handler = NewHttpsHandler(mbusUrl, logger)
 
-	go handler.Start(func(req Request) (resp Response) {
+	go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 		receivedRequest = req
-		return NewValueResponse("expected value")
+		return boshhandler.NewValueResponse("expected value")
 	})
 	return
 }
 
-func stopServer(handler httpsHandler) {
+func stopServer(handler HttpsHandler) {
 	handler.Stop()
 }

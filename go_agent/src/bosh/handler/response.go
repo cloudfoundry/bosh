@@ -1,4 +1,4 @@
-package mbus
+package handler
 
 import "fmt"
 

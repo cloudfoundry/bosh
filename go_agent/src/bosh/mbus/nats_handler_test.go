@@ -1,6 +1,7 @@
 package mbus
 
 import (
+	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
@@ -18,11 +19,11 @@ func TestNatsHandlerStart(t *testing.T) {
 	}
 	client, handler := buildNatsClientAndHandler(settings)
 
-	var receivedRequest Request
+	var receivedRequest boshhandler.Request
 
-	handler.Start(func(req Request) (resp Response) {
+	handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 		receivedRequest = req
-		return NewValueResponse("expected value")
+		return boshhandler.NewValueResponse("expected value")
 	})
 	defer handler.Stop()
 
@@ -43,10 +44,10 @@ func TestNatsHandlerStart(t *testing.T) {
 	})
 
 	// request received
-	assert.Equal(t, receivedRequest, Request{
+	assert.Equal(t, receivedRequest, boshhandler.Request{
 		ReplyTo: "reply to me!",
 		Method:  "ping",
-		payload: expectedPayload,
+		Payload: expectedPayload,
 	})
 
 	// response sent

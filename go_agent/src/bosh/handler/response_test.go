@@ -1,4 +1,4 @@
-package mbus
+package handler
 
 import (
 	boshassert "bosh/assert"

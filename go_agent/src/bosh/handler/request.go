@@ -1,19 +1,19 @@
-package mbus
+package handler
 
 func NewRequest(replyTo, method string, payload []byte) Request {
 	return Request{
 		ReplyTo: replyTo,
 		Method:  method,
-		payload: payload,
+		Payload: payload,
 	}
 }
 
 type Request struct {
 	ReplyTo string `json:"reply_to"`
 	Method  string
-	payload []byte
+	Payload []byte
 }
 
 func (r Request) GetPayload() []byte {
-	return r.payload
+	return r.Payload
 }

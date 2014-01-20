@@ -2,6 +2,7 @@ package mbus
 
 import (
 	boshlog "bosh/logger"
+	"bosh/micro"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -20,7 +21,7 @@ func TestHandlerProviderGetReturnsHttpsHandler(t *testing.T) {
 	handler, err := provider.Get()
 
 	assert.NoError(t, err)
-	assert.IsType(t, httpsHandler{}, handler)
+	assert.IsType(t, micro.HttpsHandler{}, handler)
 }
 
 func TestHandlerProviderGetReturnsAnErrorIfNotSupported(t *testing.T) {

@@ -3,6 +3,7 @@ package agent
 import (
 	boshalert "bosh/agent/alert"
 	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
 	boshjobsup "bosh/jobsupervisor"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
@@ -12,7 +13,7 @@ import (
 
 type agent struct {
 	logger            boshlog.Logger
-	mbusHandler       boshmbus.Handler
+	mbusHandler       boshhandler.Handler
 	platform          boshplatform.Platform
 	actionDispatcher  ActionDispatcher
 	heartbeatInterval time.Duration
@@ -21,7 +22,7 @@ type agent struct {
 }
 
 func New(logger boshlog.Logger,
-	mbusHandler boshmbus.Handler,
+	mbusHandler boshhandler.Handler,
 	platform boshplatform.Platform,
 	actionDispatcher ActionDispatcher,
 	alertBuilder boshalert.Builder,

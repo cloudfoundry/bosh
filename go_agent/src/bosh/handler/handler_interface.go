@@ -1,4 +1,4 @@
-package mbus
+package handler
 
 type HandlerFunc func(req Request) (resp Response)
 

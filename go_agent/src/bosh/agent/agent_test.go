@@ -3,6 +3,7 @@ package agent
 import (
 	boshalert "bosh/agent/alert"
 	fakealert "bosh/agent/alert/fakes"
+	boshhandler "bosh/handler"
 	fakejobsup "bosh/jobsupervisor/fakes"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
@@ -15,11 +16,11 @@ import (
 )
 
 type FakeActionDispatcher struct {
-	DispatchReq  boshmbus.Request
-	DispatchResp boshmbus.Response
+	DispatchReq  boshhandler.Request
+	DispatchResp boshhandler.Response
 }
 
-func (dispatcher *FakeActionDispatcher) Dispatch(req boshmbus.Request) (resp boshmbus.Response) {
+func (dispatcher *FakeActionDispatcher) Dispatch(req boshhandler.Request) (resp boshhandler.Response) {
 	dispatcher.DispatchReq = req
 	resp = dispatcher.DispatchResp
 	return
@@ -27,14 +28,14 @@ func (dispatcher *FakeActionDispatcher) Dispatch(req boshmbus.Request) (resp bos
 
 func TestRunSetsTheDispatcherAsMessageHandler(t *testing.T) {
 	deps, agent := buildAgent()
-	deps.actionDispatcher.DispatchResp = boshmbus.NewValueResponse("pong")
+	deps.actionDispatcher.DispatchResp = boshhandler.NewValueResponse("pong")
 
 	err := agent.Run()
 
 	assert.NoError(t, err)
 	assert.True(t, deps.handler.ReceivedRun)
 
-	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
+	req := boshhandler.NewRequest("reply to me!", "some action", []byte("some payload"))
 	resp := deps.handler.Func(req)
 
 	assert.Equal(t, deps.actionDispatcher.DispatchReq, req)

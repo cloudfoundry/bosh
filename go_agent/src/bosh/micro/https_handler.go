@@ -1,7 +1,8 @@
-package mbus
+package micro
 
 import (
 	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
 	boshhttps "bosh/https_dispatcher"
 	boshlog "bosh/logger"
 	"encoding/base64"
@@ -11,13 +12,13 @@ import (
 	"net/url"
 )
 
-type httpsHandler struct {
+type HttpsHandler struct {
 	parsedURL  *url.URL
 	logger     boshlog.Logger
 	dispatcher boshhttps.HttpsDispatcher
 }
 
-func newHttpsHandler(parsedURL *url.URL, logger boshlog.Logger) (handler httpsHandler) {
+func NewHttpsHandler(parsedURL *url.URL, logger boshlog.Logger) (handler HttpsHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
 	handler.dispatcher = boshhttps.NewHttpsDispatcher(parsedURL, logger)
@@ -25,7 +26,7 @@ func newHttpsHandler(parsedURL *url.URL, logger boshlog.Logger) (handler httpsHa
 	return
 }
 
-func (h httpsHandler) Run(handlerFunc HandlerFunc) (err error) {
+func (h HttpsHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
 	err = h.Start(handlerFunc)
 	if err != nil {
 		err = bosherr.WrapError(err, "Starting https handler")
@@ -34,7 +35,7 @@ func (h httpsHandler) Run(handlerFunc HandlerFunc) (err error) {
 	return
 }
 
-func (h httpsHandler) Start(handlerFunc HandlerFunc) (err error) {
+func (h HttpsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 	agentHandler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
@@ -54,7 +55,7 @@ func (h httpsHandler) Start(handlerFunc HandlerFunc) (err error) {
 			err = bosherr.WrapError(err, "Reading http body")
 			return
 		}
-		respBytes, _, err := performHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
+		respBytes, _, err := boshhandler.PerformHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
 			return
@@ -63,21 +64,22 @@ func (h httpsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	}
 
 	h.dispatcher.AddRoute("/agent", agentHandler)
+
 	h.dispatcher.Start()
 
 	return
 }
 
-func (h httpsHandler) Stop() {
+func (h HttpsHandler) Stop() {
 	h.dispatcher.Stop()
 	return
 }
 
-func (h httpsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
+func (h HttpsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
 	return
 }
 
-func (h httpsHandler) requestNotAuthorized(request *http.Request) bool {
+func (h HttpsHandler) requestNotAuthorized(request *http.Request) bool {
 	username := h.parsedURL.User.Username()
 	password, _ := h.parsedURL.User.Password()
 	auth := username + ":" + password

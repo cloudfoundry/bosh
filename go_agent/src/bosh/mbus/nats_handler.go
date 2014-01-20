@@ -2,6 +2,7 @@ package mbus
 
 import (
 	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	"encoding/json"
@@ -27,7 +28,7 @@ func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client
 	return
 }
 
-func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
+func (h natsHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
 	err = h.Start(handlerFunc)
 	if err != nil {
 		err = bosherr.WrapError(err, "Starting nats handler")
@@ -39,7 +40,7 @@ func (h natsHandler) Run(handlerFunc HandlerFunc) (err error) {
 	return
 }
 
-func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
+func (h natsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting connection info")
@@ -55,7 +56,7 @@ func (h natsHandler) Start(handlerFunc HandlerFunc) (err error) {
 	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
-		respBytes, req, err := performHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
+		respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
 			return
