@@ -2,24 +2,26 @@ package mbus
 
 import (
 	bosherr "bosh/errors"
+	boshhttps "bosh/https_dispatcher"
 	boshlog "bosh/logger"
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"crypto/tls"
-	"net"
 )
 
 type httpsHandler struct {
-	parsedURL *url.URL
-	logger    boshlog.Logger
+	parsedURL  *url.URL
+	logger     boshlog.Logger
+	dispatcher boshhttps.HttpsDispatcher
 }
 
 func newHttpsHandler(parsedURL *url.URL, logger boshlog.Logger) (handler httpsHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
+	handler.dispatcher = boshhttps.NewHttpsDispatcher(parsedURL, logger)
+
 	return
 }
 
@@ -33,71 +35,41 @@ func (h httpsHandler) Run(handlerFunc HandlerFunc) (err error) {
 }
 
 func (h httpsHandler) Start(handlerFunc HandlerFunc) (err error) {
-	handler := concreteHTTPHandler{
-		Callback: func(w http.ResponseWriter, r *http.Request) {
-			if resourceNotFound(r) {
-				err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
-				w.WriteHeader(404)
-				return
-			}
+	agentHandler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
+			w.WriteHeader(404)
+			return
+		}
 
-			if h.requestNotAuthorized(r) {
-				err = bosherr.WrapError(errors.New("Incorrect Basic Auth"), "Handle HTTP")
-				w.Header().Add("WWW-Authenticate", `Basic realm=""`)
-				w.WriteHeader(401)
-				return
-			}
+		if h.requestNotAuthorized(r) {
+			err = bosherr.WrapError(errors.New("Incorrect Basic Auth"), "Handle HTTP")
+			w.Header().Add("WWW-Authenticate", `Basic realm=""`)
+			w.WriteHeader(401)
+			return
+		}
 
-			rawJSONPayload, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				err = bosherr.WrapError(err, "Reading http body")
-				return
-			}
-
-			respBytes, _, err := performHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
-			if err != nil {
-				err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
-				return
-			}
-			w.Write(respBytes)
-		},
+		rawJSONPayload, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			err = bosherr.WrapError(err, "Reading http body")
+			return
+		}
+		respBytes, _, err := performHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
+		if err != nil {
+			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
+			return
+		}
+		w.Write(respBytes)
 	}
 
-	listener, err := net.Listen("tcp", h.parsedURL.Host)
-	if err != nil {
-		return
-	}
-
-	httpServer := &http.Server{}
-	mux := http.NewServeMux()
-	httpServer.Handler = mux
-
-	mux.HandleFunc("/agent", handler.Callback)
-
-	mux.HandleFunc("/bar", func(writer http.ResponseWriter, request *http.Request) {
-			defer request.Body.Close()
-			writer.WriteHeader(201)
-		})
-
-
-	config := &tls.Config{}
-
-	config.NextProtos = []string{"http/1.1"}
-
-	config.Certificates = make([]tls.Certificate, 1)
-	config.Certificates[0], err = tls.LoadX509KeyPair("agent.cert", "agent.key")
-	if err != nil {
-	err = bosherr.WrapError(err, "creating cert")
-	return
-	}
-
-	tlsListener := tls.NewListener(listener, config)
-	httpServer.Serve(tlsListener)
+	h.dispatcher.AddRoute("/agent", agentHandler)
+	h.dispatcher.Start()
 
 	return
 }
 
 func (h httpsHandler) Stop() {
+	h.dispatcher.Stop()
 	return
 }
 
@@ -112,10 +84,6 @@ func (h httpsHandler) requestNotAuthorized(request *http.Request) bool {
 	expectedAuthorizationHeader := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 
 	return expectedAuthorizationHeader != request.Header.Get("Authorization")
-}
-
-func resourceNotFound(request *http.Request) bool {
-	return request.Method != "POST" || request.URL.Path != "/agent"
 }
 
 // Utils:

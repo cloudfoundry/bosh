@@ -1,14 +1,14 @@
 package https_dispatcher_test
 
 import (
-	boshlog "bosh/logger"
 	boshdispatcher "bosh/https_dispatcher"
-	"net/url"
+	boshlog "bosh/logger"
+	"crypto/tls"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 	"net/http"
-	"crypto/tls"
+	"net/url"
+	"time"
 )
 
 var _ = Describe("HttpsDispatcher", func() {
@@ -58,4 +58,3 @@ func getHTTPClient() (httpClient http.Client) {
 	httpClient = http.Client{Transport: httpTransport}
 	return
 }
-

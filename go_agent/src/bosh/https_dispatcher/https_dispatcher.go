@@ -1,19 +1,19 @@
 package https_dispatcher
 
 import (
-	"net/url"
-	boshlog "bosh/logger"
-	"net/http"
 	bosherr "bosh/errors"
-	"net"
+	boshlog "bosh/logger"
 	"crypto/tls"
+	"net"
+	"net/http"
+	"net/url"
 )
 
 type HttpsDispatcher struct {
-	logger    boshlog.Logger
+	logger     boshlog.Logger
 	httpServer *http.Server
-	mux *http.ServeMux
-	listener net.Listener
+	mux        *http.ServeMux
+	listener   net.Listener
 }
 
 type HttpHandlerFunc func(writer http.ResponseWriter, request *http.Request)
@@ -27,8 +27,8 @@ func NewHttpsDispatcher(baseURL *url.URL, logger boshlog.Logger) (dispatcher Htt
 
 	listener, err := net.Listen("tcp", baseURL.Host)
 	if err != nil {
-	    err = bosherr.WrapError(err, "Create HTTP listener")
-	    return
+		err = bosherr.WrapError(err, "Create HTTP listener")
+		return
 	}
 	dispatcher.listener = listener
 
@@ -46,7 +46,6 @@ func (h HttpsDispatcher) Start() (err error) {
 		err = bosherr.WrapError(err, "creating cert")
 		return
 	}
-
 	tlsListener := tls.NewListener(h.listener, config)
 	h.httpServer.Serve(tlsListener)
 

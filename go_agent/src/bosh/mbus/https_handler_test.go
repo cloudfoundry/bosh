@@ -3,7 +3,6 @@ package mbus
 import (
 	boshlog "bosh/logger"
 	"crypto/tls"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -13,7 +12,8 @@ import (
 )
 
 func TestStart(t *testing.T) {
-	serverURL := startServer()
+	serverURL, handler := startServer()
+	defer stopServer(handler)
 
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 	postPayload := strings.NewReader(postBody)
@@ -33,10 +33,13 @@ func TestStart(t *testing.T) {
 	httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
 	assert.NoError(t, readErr)
 	assert.Equal(t, httpBody, []byte(`{"value":"expected value"}`))
+
 }
 
 func TestStartWithIncorrectHTTPMethod(t *testing.T) {
-	serverURL := startServer()
+	serverURL, handler := startServer()
+	defer stopServer(handler)
+
 	waitForServerToStart(serverURL)
 
 	client := getHTTPClient()
@@ -48,7 +51,9 @@ func TestStartWithIncorrectHTTPMethod(t *testing.T) {
 }
 
 func TestStartWithIncorrectURIPath(t *testing.T) {
-	serverURL := startServer()
+	serverURL, handler := startServer()
+	defer stopServer(handler)
+
 	waitForServerToStart(serverURL)
 
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
@@ -62,7 +67,9 @@ func TestStartWithIncorrectURIPath(t *testing.T) {
 }
 
 func TestStartWithIncorrectUsernameAndPassword(t *testing.T) {
-	serverURL := startServer()
+	serverURL, handler := startServer()
+	defer stopServer(handler)
+
 	waitForServerToStart(serverURL)
 
 	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
@@ -74,13 +81,6 @@ func TestStartWithIncorrectUsernameAndPassword(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, httpResponse.StatusCode, 401)
 	assert.Equal(t, httpResponse.Header.Get("WWW-Authenticate"), `Basic realm=""`)
-}
-
-var httpsHandlerPort int = 6900
-
-func getHttpsHandlerPort() int {
-	httpsHandlerPort++
-	return httpsHandlerPort
 }
 
 func getHTTPClient() (httpClient http.Client) {
@@ -104,18 +104,19 @@ func waitForServerToStart(serverURL string) (httpResponse *http.Response) {
 
 var receivedRequest Request
 
-func startServer() (serverURL string) {
-	port := getHttpsHandlerPort()
-	serverURL = fmt.Sprintf("https://user:pass@127.0.0.1:%d", port)
-
+func startServer() (serverURL string, handler httpsHandler) {
+	serverURL = "https://user:pass@127.0.0.1:6900"
 	mbusUrl, _ := url.Parse(serverURL)
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	handler := newHttpsHandler(mbusUrl, logger)
+	handler = newHttpsHandler(mbusUrl, logger)
 
 	go handler.Start(func(req Request) (resp Response) {
 		receivedRequest = req
 		return NewValueResponse("expected value")
 	})
-	defer handler.Stop()
 	return
+}
+
+func stopServer(handler httpsHandler) {
+	handler.Stop()
 }
