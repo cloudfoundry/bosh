@@ -9,7 +9,8 @@ module Bosh::Director
       let(:release_version_model) { instance_double('Bosh::Director::Models::ReleaseVersion', package_dependency_key: 'some-dependency-key', package_cache_key: 'some-package-cache-key') }
       let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model) }
 
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, use_compiled_package: nil) }
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', use_compiled_package: nil) }
+      let(:template) { instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version) }
 
       let(:package_a) { Bosh::Director::Models::Package.make(name: 'package_a') }
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b') }
@@ -30,7 +31,7 @@ module Bosh::Director
           end
 
           it 'correctly adds dependencies' do
-            generator.generate!(compile_tasks, job, package_a, stemcell)
+            generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(3)
             compile_tasks.each_value do |task|
@@ -58,7 +59,7 @@ module Bosh::Director
           end
 
           it 'correctly adds dependencies' do
-            generator.generate!(compile_tasks, job, package_a, stemcell)
+            generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(4)
             compile_tasks.each_value do |task|
@@ -89,7 +90,7 @@ module Bosh::Director
           end
 
           it 'correctly adds dependencies' do
-            generator.generate!(compile_tasks, job, package_a, stemcell)
+            generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(3)
             compile_tasks.each_value do |task|
@@ -119,7 +120,7 @@ module Bosh::Director
           end
 
           it 'correctly adds dependencies' do
-            generator.generate!(compile_tasks, job, package_a, stemcell)
+            generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(4)
             compile_tasks.each_value do |task|
@@ -155,7 +156,7 @@ module Bosh::Director
           expect(logger).to receive(:info).with("Checking whether package `#{package_b.desc}' needs to be compiled for stemcell `#{stemcell.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package `#{package_b.desc}' dependencies").ordered
 
-          generator.generate!(compile_tasks, job, package_a, stemcell)
+          generator.generate!(compile_tasks, job, template, package_a, stemcell)
         end
       end
     end

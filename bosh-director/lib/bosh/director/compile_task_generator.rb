@@ -8,7 +8,7 @@ module Bosh::Director
     end
 
     # The compile_tasks hash passed in by the caller will be populated with CompileTasks objects
-    def generate!(compile_tasks, job, package, stemcell)
+    def generate!(compile_tasks, job, template, package, stemcell)
       # Our assumption here is that package dependency graph
       # has no cycles: this is being enforced on release upload.
       # Other than that it's a vanilla DFS.
@@ -22,7 +22,7 @@ module Bosh::Director
         return task
       end
 
-      release_version = job.release.model
+      release_version = template.release.model
 
       task = CompileTask.new(package,
                              stemcell,
@@ -39,7 +39,7 @@ module Bosh::Director
       dependencies = release_version.dependencies(package.name)
       dependencies.each do |dependency|
         @logger.info("Package `#{package.desc}' depends on package `#{dependency.desc}'")
-        dependency_task = generate!(compile_tasks, job, dependency, stemcell)
+        dependency_task = generate!(compile_tasks, job, template, dependency, stemcell)
         task.add_dependency(dependency_task)
       end
 

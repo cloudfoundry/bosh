@@ -192,7 +192,7 @@ module Bosh::Director
 
           job.templates.each do |template|
             template.package_models.each do |package|
-              @compile_task_generator.generate!(@compile_tasks, job, package, stemcell.model)
+              @compile_task_generator.generate!(@compile_tasks, job, template, package, stemcell.model)
             end
           end
         end
