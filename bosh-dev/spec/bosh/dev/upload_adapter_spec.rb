@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 require 'bosh/dev/upload_adapter'
 
 module Bosh::Dev
@@ -19,8 +18,8 @@ module Bosh::Dev
       Fog.mock!
       Fog::Mock.reset
       ENV.stub(to_hash: {
-        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => aws_access_key_id,
-        'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => aws_secret_access_key,
+        'BOSH_AWS_ACCESS_KEY_ID' => aws_access_key_id,
+        'BOSH_AWS_SECRET_ACCESS_KEY' => aws_secret_access_key,
       })
     end
 

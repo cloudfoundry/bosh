@@ -55,8 +55,6 @@ module Bosh::Dev
         CANDIDATE_BUILD_NUMBER
         BOSH_AWS_ACCESS_KEY_ID
         BOSH_AWS_SECRET_ACCESS_KEY
-        AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT
-        AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT
       ].map do |env_var|
         "export #{env_var}='#{env.fetch(env_var)}'"
       end

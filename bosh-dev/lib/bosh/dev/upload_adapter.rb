@@ -29,8 +29,8 @@ module Bosh::Dev
 
       fog_options = {
         provider: 'AWS',
-        aws_access_key_id: ENV.to_hash.fetch('AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'),
-        aws_secret_access_key: ENV.to_hash.fetch('AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT')
+        aws_access_key_id: ENV.to_hash.fetch('BOSH_AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key: ENV.to_hash.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
       }
 
       @cached_storage = Fog::Storage.new(fog_options)
