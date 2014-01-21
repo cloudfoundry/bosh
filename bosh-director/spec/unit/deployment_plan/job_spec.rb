@@ -9,17 +9,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
   let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
 
-  let(:spec) do
-    {
-      'name' => 'foobar',
-      'template' => 'foo',
-      'release' => 'appcloud',
-      'resource_pool' => 'dea',
-      'instances' => 1,
-      'networks'  => [{'name' => 'fake-network-name'}],
-    }
-  end
-
   let(:foo_properties) do
     {
       'dea_min_memory' => {'default' => 512},
@@ -58,6 +47,19 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_properties' do
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'template' => 'foo',
+        'release' => 'appcloud',
+        'resource_pool' => 'dea',
+        'instances' => 1,
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => props,
+        'template' => %w(foo bar),
+      }
+    end
+
     let(:props) do
       {
         'cc_url' => 'www.cc.com',
@@ -70,9 +72,6 @@ describe Bosh::Director::DeploymentPlan::Job do
     end
 
     before do
-      spec['properties'] = props
-      spec['template'] = %w(foo bar)
-
       allow(plan).to receive(:properties).and_return(props)
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
@@ -124,17 +123,17 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe 'property mappings' do
-    let(:foo_properties) {
+    let(:foo_properties) do
       {
-        'db.user' => { 'default' => 'root' },
+        'db.user' => {'default' => 'root'},
         'db.password' => {},
-        'db.host' => { 'default' => 'localhost' },
-        'mem' => { 'default' => 256 },
+        'db.host' => {'default' => 'localhost'},
+        'mem' => {'default' => 256},
       }
-    }
+    end
 
-    it 'supports property mappings' do
-      props = {
+    let(:props) do
+      {
         'ccdb' => {
           'user' => 'admin',
           'password' => '12321',
@@ -144,11 +143,23 @@ describe Bosh::Director::DeploymentPlan::Job do
           'max_memory' => 2048
         }
       }
+    end
 
-      spec['properties'] = props
-      spec['property_mappings'] = {'db' => 'ccdb', 'mem' => 'dea.max_memory'}
-      spec['template'] = 'foo'
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'template' => 'foo',
+        'release' => 'appcloud',
+        'resource_pool' => 'dea',
+        'instances' => 1,
+        'networks' => [{'name' => 'fake-network-name'}],
+        'properties' => props,
+        'property_mappings' => {'db' => 'ccdb', 'mem' => 'dea.max_memory'},
+        'template' => 'foo',
+      }
+    end
 
+    it 'supports property mappings' do
       allow(plan).to receive(:properties).and_return(props)
       expect(plan).to receive(:release).with('appcloud').and_return(release)
 
