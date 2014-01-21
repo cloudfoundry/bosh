@@ -20,7 +20,7 @@ module Bosh::Director
             'name' => stemcell.name,
             'version' => stemcell.version,
             'cid' => stemcell.cid,
-            'deployments' => stemcell.deployments
+            'deployments_count' => stemcell.deployments.size
           }
         end
         json_encode(stemcells)

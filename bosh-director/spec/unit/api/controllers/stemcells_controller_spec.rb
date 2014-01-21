@@ -98,11 +98,11 @@ module Bosh::Director
               body.size.should == 10
 
               response_collection = body.map do |e|
-                [e['name'], e['version'], e['cid'], e['deployments']]
+                [e['name'], e['version'], e['cid'], e['deployments_count']]
               end
 
               expected_collection = stemcells.sort_by { |e| e.name }.map do |e|
-                [e.name.to_s, e.version.to_s, e.cid.to_s, e.deployments]
+                [e.name.to_s, e.version.to_s, e.cid.to_s, e.deployments.size]
               end
 
               response_collection.should == expected_collection
