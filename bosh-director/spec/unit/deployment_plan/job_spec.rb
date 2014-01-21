@@ -305,7 +305,6 @@ describe Bosh::Director::DeploymentPlan::Job do
         expect(job.spec).to eq(
           {
             'name' => 'job1',
-            'release' => 'cf',
             'templates' => [
               {
                 'name' => 'foo',
@@ -338,7 +337,6 @@ describe Bosh::Director::DeploymentPlan::Job do
         expect(job.spec).to eq(
           {
             'name' => 'job1',
-            'release' => 'cf',
             'templates' =>[
               {
                 'name' => 'foo',
