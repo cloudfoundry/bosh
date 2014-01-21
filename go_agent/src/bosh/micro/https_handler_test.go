@@ -14,6 +14,8 @@ import (
 	"testing"
 )
 
+/********** POST /agent *************/
+
 func TestStartAgentEndpoint(t *testing.T) {
 	serverURL, handler, _ := startServer()
 	defer stopServer(handler)
@@ -52,24 +54,9 @@ func TestStartAgentEndpointWithIncorrectHTTPMethod(t *testing.T) {
 	assert.Equal(t, httpResponse.StatusCode, 404)
 }
 
-func TestStartBlobsEndpointWithIncorrectHTTPMethod(t *testing.T) {
-	serverURL, handler, _ := startServer()
-	defer stopServer(handler)
+/********** GET /blobs *************/
 
-	waitForServerToStart(serverURL, "blobs")
-
-	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
-	postPayload := strings.NewReader(postBody)
-	client := getHTTPClient()
-
-	httpResponse, err := client.Post(serverURL+"/blobs/123", "application/json", postPayload)
-	defer httpResponse.Body.Close()
-
-	assert.NoError(t, err)
-	assert.Equal(t, httpResponse.StatusCode, 404)
-}
-
-func TestStartBlobsEndpoint(t *testing.T) {
+func TestStartGETBlobsEndpoint(t *testing.T) {
 	serverURL, handler, fakeFs := startServer()
 	defer stopServer(handler)
 	fakeFs.WriteToFile("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
@@ -88,7 +75,24 @@ func TestStartBlobsEndpoint(t *testing.T) {
 	assert.Equal(t, httpBody, []byte("Some data"))
 }
 
-func TestStartBlobsEndpointWhenFileNotFound(t *testing.T) {
+func TestStartGETBlobsEndpointWithIncorrectHTTPMethod(t *testing.T) {
+	serverURL, handler, _ := startServer()
+	defer stopServer(handler)
+
+	waitForServerToStart(serverURL, "blobs")
+
+	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
+	postPayload := strings.NewReader(postBody)
+	client := getHTTPClient()
+
+	httpResponse, err := client.Post(serverURL+"/blobs/123", "application/json", postPayload)
+	defer httpResponse.Body.Close()
+
+	assert.NoError(t, err)
+	assert.Equal(t, httpResponse.StatusCode, 404)
+}
+
+func TestStartGETBlobsEndpointWhenFileNotFound(t *testing.T) {
 	serverURL, handler, _ := startServer()
 	defer stopServer(handler)
 
@@ -102,6 +106,52 @@ func TestStartBlobsEndpointWhenFileNotFound(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, httpResponse.StatusCode, 404)
 }
+
+/********** PUT /blobs *************/
+
+func TestStartPUTBlobsEndpoint(t *testing.T) {
+	serverURL, handler, fakeFs := startServer()
+	defer stopServer(handler)
+	fakeFs.WriteToFile("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+
+	putBody := `Updated data`
+	putPayload := strings.NewReader(putBody)
+	client := getHTTPClient()
+
+	waitForServerToStart(serverURL, "blobs")
+
+	request, err := http.NewRequest("PUT", serverURL+"/blobs/a5/123-456-789", putPayload)
+	assert.NoError(t, err)
+
+	httpResponse, err := client.Do(request)
+	defer httpResponse.Body.Close()
+
+	assert.NoError(t, err)
+	assert.Equal(t, httpResponse.StatusCode, 200)
+	contents, err := fakeFs.ReadFile("/var/vcap/micro_bosh/data/cache/123-456-789")
+	assert.NoError(t, err)
+	assert.Equal(t, contents, "Updated data")
+}
+
+func TestStartPUTBlobsEndpointForNonExistantFile(t *testing.T) {
+	serverURL, handler, _ := startServer()
+	defer stopServer(handler)
+
+	putBody := `Updated data`
+	putPayload := strings.NewReader(putBody)
+	client := getHTTPClient()
+
+	waitForServerToStart(serverURL, "blobs")
+
+	request, err := http.NewRequest("PUT", serverURL+"/blobs/a5/123-456-789", putPayload)
+	assert.NoError(t, err)
+
+	httpResponse, err := client.Do(request)
+	defer httpResponse.Body.Close()
+	assert.Equal(t, httpResponse.StatusCode, 404)
+}
+
+/********** defaults *************/
 
 func TestStartWithIncorrectURIPath(t *testing.T) {
 	serverURL, handler, _ := startServer()

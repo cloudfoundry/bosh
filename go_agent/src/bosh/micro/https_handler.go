@@ -9,7 +9,6 @@ import (
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	"encoding/base64"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -44,58 +43,8 @@ func (h HttpsHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
 }
 
 func (h HttpsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
-	agentHandler := func(w http.ResponseWriter, r *http.Request) {
-		println("WRONNG")
-		if r.Method != "POST" {
-			err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
-			w.WriteHeader(404)
-			return
-		}
-
-		if h.requestNotAuthorized(r) {
-			err = bosherr.WrapError(errors.New("Incorrect Basic Auth"), "Handle HTTP")
-			w.Header().Add("WWW-Authenticate", `Basic realm=""`)
-			w.WriteHeader(401)
-			return
-		}
-
-		rawJSONPayload, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			err = bosherr.WrapError(err, "Reading http body")
-			return
-		}
-		respBytes, _, err := boshhandler.PerformHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
-		if err != nil {
-			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
-			return
-		}
-		w.Write(respBytes)
-	}
-
-	h.dispatcher.AddRoute("/agent", agentHandler)
-
-	blobsHandler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			err = bosherr.WrapError(errors.New("URL or Method not found"), "Handle HTTP")
-			w.WriteHeader(404)
-			return
-		}
-
-		_, blobId := path.Split(r.URL.Path)
-
-		blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
-		blobBytes, err := blobManager.Fetch(blobId)
-		if err != nil {
-			w.WriteHeader(404)
-		} else {
-			w.Write(blobBytes)
-		}
-
-		return
-	}
-
-	h.dispatcher.AddRoute("/blobs/", blobsHandler)
-
+	h.dispatcher.AddRoute("/agent", h.agentHandler(handlerFunc))
+	h.dispatcher.AddRoute("/blobs/", h.blobsHandler())
 	h.dispatcher.Start()
 
 	return
@@ -117,6 +66,69 @@ func (h HttpsHandler) requestNotAuthorized(request *http.Request) bool {
 	expectedAuthorizationHeader := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 
 	return expectedAuthorizationHeader != request.Header.Get("Authorization")
+}
+
+func (h HttpsHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHandler func(http.ResponseWriter, *http.Request)) {
+	agentHandler = func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(404)
+			return
+		}
+
+		if h.requestNotAuthorized(r) {
+			w.Header().Add("WWW-Authenticate", `Basic realm=""`)
+			w.WriteHeader(401)
+			return
+		}
+
+		rawJSONPayload, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			err = bosherr.WrapError(err, "Reading http body")
+			return
+		}
+		respBytes, _, err := boshhandler.PerformHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
+		if err != nil {
+			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
+			return
+		}
+		w.Write(respBytes)
+	}
+	return
+}
+
+func (h HttpsHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *http.Request)) {
+	blobsHandler = func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			_, blobId := path.Split(r.URL.Path)
+			blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+
+			blobBytes, err := blobManager.Fetch(blobId)
+
+			if err != nil {
+				w.WriteHeader(404)
+			} else {
+				w.Write(blobBytes)
+			}
+		case "PUT":
+			_, blobId := path.Split(r.URL.Path)
+			blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+
+			payload, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				w.WriteHeader(500)
+			}
+
+			err = blobManager.Write(blobId, payload)
+			if err != nil {
+				w.WriteHeader(404)
+			}
+		default:
+			w.WriteHeader(404)
+		}
+		return
+	}
+	return
 }
 
 // Utils:
