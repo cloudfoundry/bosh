@@ -83,8 +83,8 @@ func (h HttpsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 
 		_, blobId := path.Split(r.URL.Path)
 
-		blobFetcher := blobstore.NewBlobFetcher(h.fs, h.dirProvider)
-		blobBytes, err := blobFetcher.Fetch(blobId)
+		blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+		blobBytes, err := blobManager.Fetch(blobId)
 		if err != nil {
 			w.WriteHeader(404)
 		} else {

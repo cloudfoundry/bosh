@@ -7,18 +7,18 @@ import (
 	"path/filepath"
 )
 
-type BlobFetcher struct {
+type BlobManager struct {
 	fs          boshsys.FileSystem
 	dirProvider boshdir.DirectoriesProvider
 }
 
-func NewBlobFetcher(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (fetcher BlobFetcher) {
+func NewBlobManager(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (fetcher BlobManager) {
 	fetcher.fs = fs
 	fetcher.dirProvider = dirProvider
 	return
 }
 
-func (fetcher BlobFetcher) Fetch(blobId string) (blobBytes []byte, err error) {
+func (fetcher BlobManager) Fetch(blobId string) (blobBytes []byte, err error) {
 	blobPath := filepath.Join(fetcher.dirProvider.MicroStore(), blobId)
 
 	blobString, err := fetcher.fs.ReadFile(blobPath)
