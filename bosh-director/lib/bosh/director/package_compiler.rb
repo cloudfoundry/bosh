@@ -185,10 +185,17 @@ module Bosh::Director
 
       @event_log.track('Finding packages to compile') do
         @deployment_plan.jobs.each do |job|
-          job_desc = "#{job.release.name}/#{job.name}"
           stemcell = job.resource_pool.stemcell
 
-          @logger.info("Job `#{job_desc}' needs to run on stemcell `#{stemcell.model.desc}'")
+          template_descs = job.templates.map do |t|
+            # we purposefully did NOT inline those because
+            # when instance_double blows up,
+            # it's obscure which double is at fault
+            release_name = t.release.name
+            template_name = t.name
+            "`#{release_name}/#{template_name}'"
+          end
+          @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.model.desc}'")
 
           job.templates.each do |template|
             template.package_models.each do |package|
