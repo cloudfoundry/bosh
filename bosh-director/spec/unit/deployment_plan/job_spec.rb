@@ -261,9 +261,98 @@ describe Bosh::Director::DeploymentPlan::Job do
           }.to raise_error(
             Bosh::Director::JobPackageCollision,
             "Colocated package `same-name' has the same name in multiple releases. " +
-            "BOSH cannot currently colocate two packages with identical names from separate releases.",
+              'BOSH cannot currently colocate two packages with identical names from separate releases.',
           )
         end
+      end
+    end
+  end
+
+  describe '#spec' do
+    let(:spec) do
+      {
+        'name' => 'job1',
+        'template' => 'foo',
+        'release' => 'release1',
+        'instances' => 1,
+        'resource_pool' => 'dea',
+        'networks'  => [{'name' => 'fake-network-name'}],
+      }
+    end
+
+    before do
+      allow(release).to receive(:name).and_return('cf')
+
+      allow(foo_template).to receive(:version).and_return('200')
+      allow(foo_template).to receive(:sha1).and_return('fake_sha1')
+      allow(foo_template).to receive(:blobstore_id).and_return('blobstore_id_for_foo_template')
+
+      allow(plan).to receive(:releases).with(no_args).and_return([release])
+      allow(plan).to receive(:release).with('release1').and_return(release)
+      allow(plan).to receive(:properties).with(no_args).and_return({})
+    end
+
+    context "when a template has 'logs'" do
+      before do
+        allow(foo_template).to receive(:logs).and_return(
+          {
+            'filter_name1' => 'foo/*',
+          }
+        )
+      end
+
+      it 'contains name, release for the job, and logs spec for each template' do
+        expect(job.spec).to eq(
+          {
+            'name' => 'job1',
+            'release' => 'cf',
+            'templates' => [
+              {
+                'name' => 'foo',
+                'version' => '200',
+                'sha1' => 'fake_sha1',
+                'blobstore_id' => 'blobstore_id_for_foo_template',
+                'logs' => {
+                  'filter_name1' => 'foo/*',
+                },
+              },
+            ],
+            'template' => 'foo',
+            'version' => '200',
+            'sha1' => 'fake_sha1',
+            'blobstore_id' => 'blobstore_id_for_foo_template',
+            'logs' => {
+              'filter_name1' => 'foo/*',
+            }
+          }
+        )
+      end
+    end
+
+    context "when a template does not have 'logs'" do
+      before do
+        allow(foo_template).to receive(:logs)
+      end
+
+      it 'contains name, release and information for each template' do
+        expect(job.spec).to eq(
+          {
+            'name' => 'job1',
+            'release' => 'cf',
+            'templates' =>[
+              {
+                'name' => 'foo',
+                'version' => '200',
+                'sha1' => 'fake_sha1',
+                'blobstore_id' => 'blobstore_id_for_foo_template',
+              },
+            ],
+            'template' => 'foo',
+            'version' => '200',
+            'sha1' => 'fake_sha1',
+            'blobstore_id' => 'blobstore_id_for_foo_template',
+          },
+        )
       end
     end
   end
