@@ -6,6 +6,7 @@ import (
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"crypto/tls"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -127,15 +128,17 @@ func TestStartPUTBlobsEndpoint(t *testing.T) {
 	defer httpResponse.Body.Close()
 
 	assert.NoError(t, err)
-	assert.Equal(t, httpResponse.StatusCode, 200)
+	assert.Equal(t, httpResponse.StatusCode, 201)
 	contents, err := fakeFs.ReadFile("/var/vcap/micro_bosh/data/cache/123-456-789")
 	assert.NoError(t, err)
 	assert.Equal(t, contents, "Updated data")
 }
 
-func TestStartPUTBlobsEndpointForNonExistantFile(t *testing.T) {
-	serverURL, handler, _ := startServer()
+func TestStartPUTBlobsEndpoint500WhenManagerErrs(t *testing.T) {
+	serverURL, handler, fs := startServer()
 	defer stopServer(handler)
+
+	fs.WriteToFileError = errors.New("oops")
 
 	putBody := `Updated data`
 	putPayload := strings.NewReader(putBody)
@@ -148,7 +151,11 @@ func TestStartPUTBlobsEndpointForNonExistantFile(t *testing.T) {
 
 	httpResponse, err := client.Do(request)
 	defer httpResponse.Body.Close()
-	assert.Equal(t, httpResponse.StatusCode, 404)
+	assert.Equal(t, httpResponse.StatusCode, 500)
+
+	responseBody, err := ioutil.ReadAll(httpResponse.Body)
+	assert.NoError(t, err)
+	assert.Contains(t, string(responseBody), "oops")
 }
 
 /********** defaults *************/

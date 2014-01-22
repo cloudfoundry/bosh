@@ -24,8 +24,9 @@ type FakeFileSystem struct {
 
 	FilesToOpen map[string]*os.File
 
-	MkdirAllError error
-	SymlinkError  error
+	WriteToFileError error
+	MkdirAllError    error
+	SymlinkError     error
 
 	CopyDirEntriesError   error
 	CopyDirEntriesSrcPath string
@@ -94,6 +95,11 @@ func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 }
 
 func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err error) {
+	if fs.WriteToFileError != nil {
+		err = fs.WriteToFileError
+		return
+	}
+
 	stats := fs.getOrCreateFile(path)
 	stats.FileType = FakeFileTypeFile
 

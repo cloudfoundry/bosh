@@ -100,35 +100,49 @@ func (h HttpsHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *ht
 	blobsHandler = func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			_, blobId := path.Split(r.URL.Path)
-			blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
-
-			blobBytes, err := blobManager.Fetch(blobId)
-
-			if err != nil {
-				w.WriteHeader(404)
-			} else {
-				w.Write(blobBytes)
-			}
+			h.getBlob(w, r)
 		case "PUT":
-			_, blobId := path.Split(r.URL.Path)
-			blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
-
-			payload, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				w.WriteHeader(500)
-			}
-
-			err = blobManager.Write(blobId, payload)
-			if err != nil {
-				w.WriteHeader(404)
-			}
+			h.putBlob(w, r)
 		default:
 			w.WriteHeader(404)
 		}
 		return
 	}
 	return
+}
+
+func (h HttpsHandler) putBlob(w http.ResponseWriter, r *http.Request) {
+	_, blobId := path.Split(r.URL.Path)
+	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+
+	payload, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	err = blobManager.Write(blobId, payload)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(201)
+}
+
+func (h HttpsHandler) getBlob(w http.ResponseWriter, r *http.Request) {
+	_, blobId := path.Split(r.URL.Path)
+	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+
+	blobBytes, err := blobManager.Fetch(blobId)
+
+	if err != nil {
+		w.WriteHeader(404)
+	} else {
+		w.Write(blobBytes)
+	}
 }
 
 // Utils:

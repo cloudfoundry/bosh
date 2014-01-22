@@ -34,11 +34,6 @@ func (manager BlobManager) Fetch(blobId string) (blobBytes []byte, err error) {
 func (manager BlobManager) Write(blobId string, blobBytes []byte) (err error) {
 	blobPath := filepath.Join(manager.dirProvider.MicroStore(), blobId)
 
-	if !manager.fs.FileExists(blobPath) {
-		err = bosherr.New("Blob does not exist")
-		return
-	}
-
 	_, err = manager.fs.WriteToFile(blobPath, string(blobBytes))
 	if err != nil {
 		err = bosherr.WrapError(err, "Updating blob")

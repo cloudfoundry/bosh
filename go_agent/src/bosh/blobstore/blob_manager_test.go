@@ -28,14 +28,6 @@ func TestWrite(t *testing.T) {
 	assert.Equal(t, contents, "new data")
 }
 
-func TestWriteFailsIfBlobDoesNotExist(t *testing.T) {
-	blobManager, fs := createBlobManager()
-
-	err := blobManager.Write("105d33ae-655c-493d-bf9f-1df5cf3ca847", []byte("new data"))
-	assert.Error(t, err)
-	assert.False(t, fs.FileExists("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847"))
-}
-
 func createBlobManager() (blobManager BlobManager, fs *fakesys.FakeFileSystem) {
 	fs = fakesys.NewFakeFileSystem()
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
