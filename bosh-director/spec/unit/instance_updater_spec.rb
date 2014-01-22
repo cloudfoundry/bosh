@@ -814,7 +814,6 @@ module Bosh::Director
             'deployment' => 'deployment',
             'networks' => instance.network_settings,
             'resource_pool' => 'resource_pool_spec',
-            'release' => 'release-spec',
             'index' => 0,
             'job' => 'job-spec',
           )
