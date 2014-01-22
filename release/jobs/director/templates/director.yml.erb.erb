@@ -78,6 +78,18 @@ blobstore:
     bucket_name: <%= p('blobstore.bucket_name') %>
     access_key_id: <%= p('blobstore.access_key_id') %>
     secret_access_key: <%= p('blobstore.secret_access_key') %>
+<% if_p('blobstore.use_ssl') do |use_ssl| %>
+    use_ssl: <%= use_ssl %>
+<% end %>
+ <% if_p('blobstore.port') do |port| %>
+    port: <%= p('blobstore.port') %>
+<% end %>
+<% if_p('blobstore.host') do |host| %>
+    endpoint: <%=
+        protocol = p('blobstore.use_ssl', nil) ? 'https' : 'http'
+        "#{protocol}://#{p('blobstore.host')}"
+    %>
+<% end %>
 <% else %>
     endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
     user: <%= p('blobstore.director.user') %>
@@ -270,6 +282,18 @@ cloud:
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
+      <% if_p('blobstore.use_ssl') do |use_ssl| %>
+          use_ssl: <%= use_ssl %>
+      <% end %>
+      <% if_p('blobstore.port') do |port| %>
+          port: <%= p('blobstore.port') %>
+      <% end %>
+      <% if_p('blobstore.host') do |port| %>
+          endpoint: <%=
+              protocol = p('blobstore.use_ssl', nil) ? 'https' : 'http'
+              "#{protocol}://#{p('blobstore.host')}"
+          %>
+      <% end %>
       <% else %>
           endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
           user: <%= p('blobstore.agent.user') %>
