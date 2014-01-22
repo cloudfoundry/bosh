@@ -29,7 +29,7 @@ class Batarang::NATS
   def on_connect(index)
     @state = :running
     @nats.subscribe("bat.#{index}") do |json|
-      handler(msg)
+      handler(json)
     end
   end
 
