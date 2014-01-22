@@ -50,7 +50,7 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 }
 
 func (c httpClient) StartService(serviceName string) (err error) {
-	response, err := c.makeRequest(serviceName, "POST")
+	response, err := c.makeRequest(serviceName, "POST", "action=start")
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending start request to monit")
@@ -65,14 +65,9 @@ func (c httpClient) StartService(serviceName string) (err error) {
 	return
 }
 
-func (c httpClient) StopService(name string) (err error) {
-	endpoint := c.monitUrl(name)
-	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=stop"))
-	request.SetBasicAuth(c.username, c.password)
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+func (c httpClient) StopService(serviceName string) (err error) {
+	response, err := c.makeRequest(serviceName, "POST", "action=stop")
 
-	httpClient := http.DefaultClient
-	response, err := httpClient.Do(request)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending stop request to monit")
 		return
@@ -81,7 +76,7 @@ func (c httpClient) StopService(name string) (err error) {
 
 	err = c.validateResponse(response)
 	if err != nil {
-		err = bosherr.WrapError(err, "Stopping Monit service %s", name)
+		err = bosherr.WrapError(err, "Stopping Monit service %s", serviceName)
 	}
 	return
 }
@@ -143,9 +138,9 @@ func (c httpClient) validateResponse(response *http.Response) (err error) {
 	return
 }
 
-func (c httpClient) makeRequest(serviceName, method string) (response *http.Response, err error) {
+func (c httpClient) makeRequest(serviceName, method, requestBody string) (response *http.Response, err error) {
 	endpoint := c.monitUrl(serviceName)
-	request, err := http.NewRequest(method, endpoint.String(), strings.NewReader("action=start"))
+	request, err := http.NewRequest(method, endpoint.String(), strings.NewReader(requestBody))
 	request.SetBasicAuth(c.username, c.password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	response, err = c.client.Do(request)
