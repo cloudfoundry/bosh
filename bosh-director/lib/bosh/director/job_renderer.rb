@@ -6,7 +6,7 @@ module Bosh::Director
     # @param [DeploymentPlan::Job]
     def initialize(job)
       @job = job
-      job_template_loader = JobTemplateLoader.new
+      job_template_loader = JobTemplateLoader.new(Config.logger)
       @instance_renderer = JobInstanceRenderer.new(@job, job_template_loader)
     end
 

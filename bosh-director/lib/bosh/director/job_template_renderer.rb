@@ -6,11 +6,11 @@ module Bosh::Director
 
     attr_reader :monit_template, :templates
 
-    def initialize(name, monit_template, templates)
+    def initialize(name, monit_template, templates, logger)
       @name = name
       @monit_template = monit_template
       @templates = templates
-      @logger = Config.logger
+      @logger = logger
     end
 
     def render(job_name, instance)
@@ -28,14 +28,12 @@ module Bosh::Director
 
     private
 
-    private
-
-    attr_reader :name
+    attr_reader :name, :logger
 
     def render_erb(job_name, template, template_context, index)
       template.result(template_context.get_binding)
     rescue Exception => e
-      @logger.debug(e.inspect)
+      logger.debug(e.inspect)
       job_desc = "#{job_name}/#{index}"
       line_index = e.backtrace.index { |l| l.include?(template.filename) }
       line = line_index ? e.backtrace[line_index] : '(unknown):(unknown)'
@@ -44,7 +42,7 @@ module Bosh::Director
       message = "Error filling in template `#{File.basename(template_name)}' " +
         "for `#{job_desc}' (line #{line}: #{e})"
 
-      @logger.debug("#{message}\n#{e.backtrace.join("\n")}")
+      logger.debug("#{message}\n#{e.backtrace.join("\n")}")
 
       raise JobTemplateBindingFailed, "#{message}"
     end

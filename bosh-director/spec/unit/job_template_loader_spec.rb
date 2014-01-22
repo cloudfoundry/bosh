@@ -5,7 +5,8 @@ require 'spec_helper'
 module Bosh::Director
   describe JobTemplateLoader do
     describe '#process' do
-      subject(:job_template_loader) { JobTemplateLoader.new }
+      subject(:job_template_loader) { JobTemplateLoader.new(logger) }
+      let(:logger) { double('Logger') }
 
       it 'returns the jobs template erb objects' do
         template_contents = create_job('foo', 'monit file',

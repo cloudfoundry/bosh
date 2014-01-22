@@ -4,6 +4,10 @@ module Bosh::Director
   SrcFileTemplate = Struct.new(:src_name, :dest_name, :erb_file)
 
   class JobTemplateLoader
+    def initialize(logger)
+      @logger = logger
+    end
+
     def process(job_template)
       template_dir = extract_template(job_template)
       manifest = Psych.load_file(File.join(template_dir, 'job.MF'))
@@ -19,12 +23,14 @@ module Bosh::Director
         templates << SrcFileTemplate.new(src_name, dest_name, erb_file)
       end
 
-      JobTemplateRenderer.new(job_template.name, monit_template, templates)
+      JobTemplateRenderer.new(job_template.name, monit_template, templates, logger)
     ensure
       FileUtils.rm_rf(template_dir) if template_dir
     end
 
     private
+
+    attr_reader :logger
 
     def extract_template(job_template)
       temp_path = job_template.download_blob
