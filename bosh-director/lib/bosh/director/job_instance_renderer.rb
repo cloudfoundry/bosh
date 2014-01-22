@@ -1,3 +1,5 @@
+require 'bosh/director/rendered_job_instance'
+
 module Bosh::Director
   class JobInstanceRenderer
     def initialize(job, job_template_loader)
@@ -6,10 +8,12 @@ module Bosh::Director
     end
 
     def render(instance)
-      job.templates.map do |template|
+      rendered_templates = job.templates.map do |template|
         job_template_renderer = job_template_renderers[template.name]
         job_template_renderer.render(job.name, instance)
       end
+
+      RenderedJobInstance.new(rendered_templates)
     end
 
     private

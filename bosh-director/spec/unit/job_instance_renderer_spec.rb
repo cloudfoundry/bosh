@@ -9,16 +9,17 @@ module Bosh::Director
       let(:job_template_renderer) { instance_double('Bosh::Director::JobTemplateRenderer') }
 
       let(:job) { double('job', templates: templates, name: 'foo') }
-
-
+      before { allow(RenderedJobInstance).to receive(:new).and_return(expected_rendered_job_instance) }
+      let(:expected_rendered_job_instance) { instance_double('Bosh::Director::RenderedJobInstance') }
 
       context 'when job has no templates' do
         let(:templates) { [] }
 
-        it 'returns emtpy array' do
+        it 'returns empty array' do
 
-          rendered_job_templates = job_instance_renderer.render(instance)
-          expect(rendered_job_templates).to eq ([])
+          rendered_instance = job_instance_renderer.render(instance)
+          expect(RenderedJobInstance).to have_received(:new).with([])
+          expect(rendered_instance).to eq(expected_rendered_job_instance)
         end
       end
 
@@ -33,8 +34,8 @@ module Bosh::Director
         it 'returns the rendered template for the given instance' do
           job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)
 
-          rendered_job_templates = job_instance_renderer.render(instance)
-          expect(rendered_job_templates).to eq (expected_rendered_templates)
+          job_instance_renderer.render(instance)
+          expect(RenderedJobInstance).to have_received(:new).with(expected_rendered_templates)
         end
 
         context 'when called for multiple instances' do
@@ -65,8 +66,8 @@ module Bosh::Director
         end
 
         it 'returns the rendered templates for an instance' do
-          rendered_job_templates = job_instance_renderer.render(instance)
-          expect(rendered_job_templates).to eq (expected_rendered_templates)
+          job_instance_renderer.render(instance)
+          expect(RenderedJobInstance).to have_received(:new).with(expected_rendered_templates)
         end
       end
     end

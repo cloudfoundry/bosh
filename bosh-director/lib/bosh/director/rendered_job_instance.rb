@@ -1,5 +1,10 @@
+require 'bosh/director/deployment_plan/rendered_templates_archive'
+require 'bosh/director/compressed_rendered_job_templates'
+require 'digest/sha1'
+require 'tempfile'
+
 module Bosh::Director
-  class RenderedJobInstanceHasher
+  class RenderedJobInstance
     def initialize(job_templates)
       @job_templates = job_templates
     end
@@ -23,6 +28,18 @@ module Bosh::Director
       job_templates.reduce({}) do |h, rendered_job_template|
         h.merge(rendered_job_template.name => rendered_job_template.template_hash)
       end
+    end
+
+    def persist(blobstore)
+      file = Tempfile.new('compressed-rendered-job-templates')
+
+      compressed_archive = CompressedRenderedJobTemplates.new(file.path)
+      compressed_archive.write(job_templates)
+
+      blobstore_id = blobstore.create(compressed_archive.contents)
+      DeploymentPlan::RenderedTemplatesArchive.new(blobstore_id, compressed_archive.sha1)
+    ensure
+      file.close!
     end
 
     private
