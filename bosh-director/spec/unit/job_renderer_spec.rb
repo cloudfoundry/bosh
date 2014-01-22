@@ -18,6 +18,8 @@ module Bosh::Director
           'Bosh::Director::DeploymentPlan::Instance',
           :configuration_hash= => nil,
           :template_hashes= => nil,
+          :rendered_templates_archive= => nil,
+          :model => double('InstanceModel'),
         )
       end
 
@@ -39,7 +41,8 @@ module Bosh::Director
 
       before { allow(RenderedJobTemplatesPersister).to receive(:new).with(blobstore).and_return(persister) }
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
-      let(:persister) { instance_double('Bosh::Director::RenderedJobTemplatesPersister', persist: true) }
+      let(:rendered_templates_archive) { instance_double('Bosh::Director::DeploymentPlan::RenderedTemplatesArchive') }
+      let(:persister) { instance_double('Bosh::Director::RenderedJobTemplatesPersister', persist: rendered_templates_archive) }
 
       def perform
         renderer.render_job_instances(blobstore)
@@ -58,9 +61,10 @@ module Bosh::Director
       end
 
       it 'uploads all the rendered templates for instance that has configuration_hash' do
-        expect(instance).to receive(:configuration_hash=).ordered.with('fake-config-hash')
-        expect(persister).to receive(:persist).ordered.with(instance, rendered_templates)
         perform
+
+        expect(instance).to have_received(:rendered_templates_archive=).with(rendered_templates_archive)
+        expect(persister).to have_received(:persist).with('fake-config-hash', instance.model, rendered_templates)
       end
     end
   end

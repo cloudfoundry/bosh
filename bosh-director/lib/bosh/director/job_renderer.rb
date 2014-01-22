@@ -17,11 +17,15 @@ module Bosh::Director
         rendered_templates = @instance_renderer.render(instance)
 
         hasher = RenderedJobInstanceHasher.new(rendered_templates)
-        instance.configuration_hash = hasher.configuration_hash
-        instance.template_hashes = hasher.template_hashes
+        configuration_hash = hasher.configuration_hash
+        template_hashes = hasher.template_hashes
 
         persister = RenderedJobTemplatesPersister.new(blobstore)
-        persister.persist(instance, rendered_templates)
+        rendered_templates_archive = persister.persist(configuration_hash, instance.model, rendered_templates)
+
+        instance.configuration_hash = configuration_hash
+        instance.template_hashes    = template_hashes
+        instance.rendered_templates_archive = rendered_templates_archive
       end
     end
   end
