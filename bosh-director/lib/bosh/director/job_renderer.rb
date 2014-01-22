@@ -21,7 +21,19 @@ module Bosh::Director
         template_hashes = hasher.template_hashes
 
         persister = RenderedJobTemplatesPersister.new(blobstore)
-        rendered_templates_archive = persister.persist(configuration_hash, instance.model, rendered_templates)
+        archive_model = instance.model.latest_rendered_templates_archive
+
+        if archive_model && archive_model.content_sha1 == configuration_hash
+          rendered_templates_archive = DeploymentPlan::RenderedTemplatesArchive.new(archive_model.blobstore_id, archive_model.sha1)
+        else
+          rendered_templates_archive = persister.persist(rendered_templates)
+          instance.model.add_rendered_templates_archive(
+            blobstore_id: rendered_templates_archive.blobstore_id,
+            sha1: rendered_templates_archive.sha1,
+            content_sha1: configuration_hash,
+            created_at: Time.now,
+          )
+        end
 
         instance.configuration_hash = configuration_hash
         instance.template_hashes    = template_hashes

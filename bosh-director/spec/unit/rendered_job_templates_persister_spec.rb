@@ -7,93 +7,10 @@ module Bosh::Director
 
     describe '#persist' do
       def perform
-        persister.persist(configuration_hash, instance_model, rendered_job_templates)
+        persister.persist(rendered_job_templates)
       end
 
-      let(:configuration_hash) { 'fake-content-sha1' }
-
-      let(:instance_model) { Models::Instance.make }
-
-      let(:rendered_job_templates) { [ instance_double('Bosh::Director::RenderedJobTemplate') ] }
-
-      before { allow(persister).to receive(:persist_without_checking).and_return(created_archive) }
-      let(:created_archive) do
-        Models::RenderedTemplatesArchive.make(
-          instance: instance_model,
-          blobstore_id: 'fake-new-blob-id',
-          sha1: 'fake-new-sha1',
-          content_sha1: 'fake-new-content-sha1',
-          created_at: Time.new(2013, 02, 01),
-        )
-      end
-
-      def self.it_persists_new_archive
-        it 'persists new archive' do
-          expect(persister).to receive(:persist_without_checking).with(configuration_hash, instance_model, rendered_job_templates)
-          perform
-        end
-      end
-
-      def self.it_does_not_persist_new_archive
-        it 'does not persist new archive' do
-          expect(persister).to_not receive(:persist_without_checking)
-          perform
-        end
-      end
-
-      def self.it_returns_rendered_templates_archive(blobstore_id, sha1)
-        it "sets rendered templates archive on the instance to archive with blobstore_id '#{blobstore_id}' and sha1 '#{sha1}'" do
-          rta = perform
-
-          expect(rta.blobstore_id).to eq(blobstore_id)
-          expect(rta.sha1).to eq(sha1)
-        end
-      end
-
-      context 'when instance does not have a latest archive' do
-        before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(nil) }
-        it_persists_new_archive
-        it_returns_rendered_templates_archive 'fake-new-blob-id', 'fake-new-sha1'
-      end
-
-      context 'when instance has rendered job templates archives' do
-        before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(latest_archive) }
-
-        let(:latest_archive) do
-          Models::RenderedTemplatesArchive.make(
-            instance: instance_model,
-            blobstore_id: 'fake-latest-blob-id',
-            sha1: 'fake-latest-sha1',
-            content_sha1: 'fake-latest-content-sha1',
-            created_at: Time.new(2013, 02, 01),
-          )
-        end
-
-        context 'when instance\'s latest archive has matching content_sha1' do
-          let(:configuration_hash) { 'fake-latest-content-sha1' }
-
-          it_does_not_persist_new_archive
-          it_returns_rendered_templates_archive 'fake-latest-blob-id', 'fake-latest-sha1'
-        end
-
-        context 'when instance\'s latest archive does have matching content_sha1' do
-          let(:configuration_hash) { 'fake-latest-non-matching-content-sha1' }
-          it_persists_new_archive
-          it_returns_rendered_templates_archive 'fake-new-blob-id', 'fake-new-sha1'
-        end
-      end
-    end
-
-    describe '#persist_without_checking' do
-      def perform
-        persister.persist_without_checking(configuration_hash, instance_model, rendered_job_templates)
-      end
-
-
-      let(:configuration_hash) { 'fake-content-sha1' }
-
-      let(:instance_model) { Models::Instance.make }
-      let(:rendered_job_templates) { [ instance_double('Bosh::Director::RenderedJobTemplate') ] }
+      let(:rendered_job_templates) { [instance_double('Bosh::Director::RenderedJobTemplate')] }
 
       before { allow(CompressedRenderedJobTemplates).to receive(:new).and_return(compressed_archive) }
       let(:compressed_archive) do
@@ -124,19 +41,10 @@ module Bosh::Director
         perform
       end
 
-      it 'persists blob record in the database and returns it' do
-        expect {
-          @created_archive = perform
-        }.to change {
-          instance_model.refresh.rendered_templates_archives.count
-        }.to(1)
-
-        @created_archive.refresh.tap do |rjt|
-          expect(rjt.blobstore_id).to eq('fake-blobstore-id')
-          expect(rjt.sha1).to eq('fake-blob-sha1')
-          expect(rjt.content_sha1).to eq('fake-content-sha1')
-          expect(rjt.created_at).to be <= Time.now
-        end
+      it 'returns a rendered template archive' do
+        rta = perform
+        expect(rta.blobstore_id).to eq('fake-blobstore-id')
+        expect(rta.sha1).to eq('fake-blob-sha1')
       end
 
       it 'closes temporary file after the upload' do
