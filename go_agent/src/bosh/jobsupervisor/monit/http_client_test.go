@@ -3,6 +3,7 @@ package monit
 import (
 	"bosh/jobsupervisor/monit/http_fakes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestServicesInGroupReturnsServicesWhenFound(t *testing.T) {
@@ -42,14 +44,30 @@ func TestStartService(t *testing.T) {
 	assert.True(t, calledMonit)
 }
 
-func TestStartServiceErrsWhenNon200Response(t *testing.T) {
-	fakeHttpClient := http_fakes.NewFakeHttpClient(500, "fake error message")
+func TestStartServiceRetriesWhenNon200Response(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.StatusCode = 500
+	fakeHttpClient.SetMessage("fake error message")
 
 	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
 
 	err := client.StartService("test-service")
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake error message")
+}
+
+func TestStartServiceRetriesWhenConnectionRefused(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.SetNilResponse()
+	fakeHttpClient.Error = errors.New("some error")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	err := client.StartService("test-service")
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
 }
 
 func TestStopService(t *testing.T) {

@@ -7,8 +7,11 @@ import (
 )
 
 type FakeHttpClient struct {
-	StatusCode int
-	response   http.Response
+	StatusCode        int
+	Response          http.Response
+	CallCount         int
+	Error             error
+	returnNilResponse bool
 }
 
 type nopCloser struct {
@@ -17,18 +20,25 @@ type nopCloser struct {
 
 func (nopCloser) Close() error { return nil }
 
-func NewFakeHttpClient(statusCode int, message string) (fakeHttpClient *FakeHttpClient) {
-	fakeHttpClient = &FakeHttpClient{
-		StatusCode: statusCode,
-		response: http.Response{
-			Body: nopCloser{bytes.NewBufferString(message)},
-		},
-	}
+func NewFakeHttpClient() (fakeHttpClient *FakeHttpClient) {
+	fakeHttpClient = &FakeHttpClient{}
 	return
 }
 
+func (c *FakeHttpClient) SetMessage(message string) {
+	c.Response = http.Response{Body: nopCloser{bytes.NewBufferString(message)}}
+}
+
+func (c *FakeHttpClient) SetNilResponse() {
+	c.returnNilResponse = true
+}
+
 func (c *FakeHttpClient) Do(req *http.Request) (resp *http.Response, err error) {
-	c.response.StatusCode = c.StatusCode
-	resp = &c.response
+	c.CallCount++
+	c.Response.StatusCode = c.StatusCode
+	if !c.returnNilResponse {
+		resp = &c.Response
+	}
+	err = c.Error
 	return
 }

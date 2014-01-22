@@ -10,21 +10,26 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 )
 
 type httpClient struct {
-	host     string
-	username string
-	password string
-	client   HttpClient
+	host                string
+	username            string
+	password            string
+	retryAttempts       int
+	delayBetweenRetries time.Duration
+	client              HttpClient
 }
 
 func NewHttpClient(host, username, password string, client HttpClient) httpClient {
 	return httpClient{
-		host:     host,
-		username: username,
-		password: password,
-		client:   client,
+		host:                host,
+		username:            username,
+		password:            password,
+		client:              client,
+		retryAttempts:       20,
+		delayBetweenRetries: 1 * time.Second,
 	}
 }
 
@@ -45,12 +50,18 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 }
 
 func (c httpClient) StartService(name string) (err error) {
-	endpoint := c.monitUrl(name)
-	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=start"))
-	request.SetBasicAuth(c.username, c.password)
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	response, err := c.makeRequest(name)
 
-	response, err := c.client.Do(request)
+	attempts := 1
+	for (err != nil || response.StatusCode != 200) && attempts < c.retryAttempts {
+		if response != nil {
+			response.Body.Close()
+		}
+		time.Sleep(c.delayBetweenRetries)
+		response, err = c.makeRequest(name)
+		attempts++
+	}
+
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending start request to monit")
 		return
@@ -139,5 +150,14 @@ func (c httpClient) validateResponse(response *http.Response) (err error) {
 		return
 	}
 	err = bosherr.New("Request failed with %s: %s", response.Status, string(body))
+	return
+}
+
+func (c httpClient) makeRequest(name string) (response *http.Response, err error) {
+	endpoint := c.monitUrl(name)
+	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=start"))
+	request.SetBasicAuth(c.username, c.password)
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	response, err = c.client.Do(request)
 	return
 }
