@@ -203,7 +203,6 @@ module Bosh::Director::DeploymentPlan
         job.release = release
         job.templates = [template]
         job.stub(name: 'dea')
-        job.release.should_receive(:name).twice.and_return('hbase-release')
 
         template.should_receive(:name).exactly(4).times.and_return('hbase_slave')
         template.should_receive(:version).exactly(4).times.and_return('2')
@@ -215,7 +214,6 @@ module Bosh::Director::DeploymentPlan
         instance.current_state = {
           'job' => {
             'name' => 'hbase_slave',
-            'release' => 'hbase-release',
             'template' => 'hbase_slave',
             'version' => '0.9-dev',
             'sha1' => 'a8ab636b7c340f98891178096a44c09487194f03',
@@ -297,7 +295,6 @@ module Bosh::Director::DeploymentPlan
 
           spec = instance.spec
           expect(spec['deployment']).to eq('mycloud')
-          expect(spec['release']).to eq(release_spec)
           expect(spec['job']).to eq(job_spec)
           expect(spec['index']).to eq(index)
           expect(spec['networks']).to include(network_name)
