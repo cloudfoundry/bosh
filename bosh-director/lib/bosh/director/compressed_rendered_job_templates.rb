@@ -1,5 +1,7 @@
 require 'tmpdir'
 require 'digest/sha1'
+require 'bosh/director/tar_gzipper'
+require 'bosh/director/rendered_templates_writer'
 
 module Bosh::Director
   class CompressedRenderedJobTemplates

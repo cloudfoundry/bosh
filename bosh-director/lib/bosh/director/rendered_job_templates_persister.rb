@@ -1,6 +1,6 @@
 require 'tempfile'
-require 'bosh/director/rendered_templates_writer'
 require 'bosh/director/compressed_rendered_job_templates'
+require 'bosh/director/deployment_plan/rendered_templates_archive'
 
 module Bosh::Director
   class RenderedJobTemplatesPersister
