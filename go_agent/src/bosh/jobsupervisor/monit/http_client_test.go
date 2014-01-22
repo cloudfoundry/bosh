@@ -170,3 +170,31 @@ func TestDecodeStatus(t *testing.T) {
 	assert.Equal(t, 1, status.Services.Services[0].Monitor)
 	assert.Equal(t, "dummy", status.Services.Services[0].Name)
 }
+
+func TestStatusRetriesWhenNon200Response(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.StatusCode = 500
+	fakeHttpClient.SetMessage("fake error message")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	_, err := client.Status()
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fake error message")
+}
+
+func TestStatusRetriesWhenConnectionRefused(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.SetNilResponse()
+	fakeHttpClient.Error = errors.New("some error")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	_, err := client.Status()
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+}

@@ -50,7 +50,7 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 }
 
 func (c httpClient) StartService(serviceName string) (err error) {
-	response, err := c.makeRequest(serviceName, "POST", "action=start")
+	response, err := c.makeRequest(c.monitUrl(serviceName), "POST", "action=start")
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending start request to monit")
@@ -66,7 +66,7 @@ func (c httpClient) StartService(serviceName string) (err error) {
 }
 
 func (c httpClient) StopService(serviceName string) (err error) {
-	response, err := c.makeRequest(serviceName, "POST", "action=stop")
+	response, err := c.makeRequest(c.monitUrl(serviceName), "POST", "action=stop")
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending stop request to monit")
@@ -86,13 +86,10 @@ func (c httpClient) Status() (status Status, err error) {
 }
 
 func (c httpClient) status() (status status, err error) {
-	endpoint := c.monitUrl("/_status2")
-	endpoint.RawQuery = "format=xml"
-	request, err := http.NewRequest("GET", endpoint.String(), nil)
-	request.SetBasicAuth(c.username, c.password)
+	url := c.monitUrl("/_status2")
+	url.RawQuery = "format=xml"
 
-	httpClient := http.DefaultClient
-	response, err := httpClient.Do(request)
+	response, err := c.makeRequest(url, "GET", "")
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending status request to monit")
 		return
@@ -138,9 +135,8 @@ func (c httpClient) validateResponse(response *http.Response) (err error) {
 	return
 }
 
-func (c httpClient) makeRequest(serviceName, method, requestBody string) (response *http.Response, err error) {
-	endpoint := c.monitUrl(serviceName)
-	request, err := http.NewRequest(method, endpoint.String(), strings.NewReader(requestBody))
+func (c httpClient) makeRequest(url url.URL, method, requestBody string) (response *http.Response, err error) {
+	request, err := http.NewRequest(method, url.String(), strings.NewReader(requestBody))
 	request.SetBasicAuth(c.username, c.password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	response, err = c.client.Do(request)
