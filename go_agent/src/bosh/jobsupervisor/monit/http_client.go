@@ -49,18 +49,8 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 	return
 }
 
-func (c httpClient) StartService(name string) (err error) {
-	response, err := c.makeRequest(name)
-
-	attempts := 1
-	for (err != nil || response.StatusCode != 200) && attempts < c.retryAttempts {
-		if response != nil {
-			response.Body.Close()
-		}
-		time.Sleep(c.delayBetweenRetries)
-		response, err = c.makeRequest(name)
-		attempts++
-	}
+func (c httpClient) StartService(serviceName string) (err error) {
+	response, err := c.makeRequest(serviceName, "POST")
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending start request to monit")
@@ -70,7 +60,7 @@ func (c httpClient) StartService(name string) (err error) {
 
 	err = c.validateResponse(response)
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting Monit service %s", name)
+		err = bosherr.WrapError(err, "Starting Monit service %s", serviceName)
 	}
 	return
 }
@@ -153,11 +143,22 @@ func (c httpClient) validateResponse(response *http.Response) (err error) {
 	return
 }
 
-func (c httpClient) makeRequest(name string) (response *http.Response, err error) {
-	endpoint := c.monitUrl(name)
-	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=start"))
+func (c httpClient) makeRequest(serviceName, method string) (response *http.Response, err error) {
+	endpoint := c.monitUrl(serviceName)
+	request, err := http.NewRequest(method, endpoint.String(), strings.NewReader("action=start"))
 	request.SetBasicAuth(c.username, c.password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	response, err = c.client.Do(request)
+
+	attempts := 1
+	for (err != nil || response.StatusCode != 200) && attempts < c.retryAttempts {
+		if response != nil {
+			response.Body.Close()
+		}
+		time.Sleep(c.delayBetweenRetries)
+		response, err = c.client.Do(request)
+		attempts++
+	}
+
 	return
 }
