@@ -3,6 +3,7 @@ package monit
 import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
+	"net/http"
 )
 
 type clientProvider struct {
@@ -23,6 +24,6 @@ func (p clientProvider) Get() (client Client, err error) {
 		return
 	}
 
-	client = NewHttpClient("127.0.0.1:2822", monitUser, monitPassword)
+	client = NewHttpClient("127.0.0.1:2822", monitUser, monitPassword, http.DefaultClient)
 	return
 }

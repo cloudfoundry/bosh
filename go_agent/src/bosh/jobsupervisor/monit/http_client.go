@@ -16,18 +16,20 @@ type httpClient struct {
 	host     string
 	username string
 	password string
+	client   HttpClient
 }
 
-func NewHttpClient(host, username, password string) (client httpClient) {
+func NewHttpClient(host, username, password string, client HttpClient) httpClient {
 	return httpClient{
 		host:     host,
 		username: username,
 		password: password,
+		client:   client,
 	}
 }
 
-func (client httpClient) ServicesInGroup(name string) (services []string, err error) {
-	status, err := client.status()
+func (c httpClient) ServicesInGroup(name string) (services []string, err error) {
+	status, err := c.status()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting status from Monit")
 		return
@@ -42,31 +44,30 @@ func (client httpClient) ServicesInGroup(name string) (services []string, err er
 	return
 }
 
-func (client httpClient) StartService(name string) (err error) {
-	endpoint := client.monitUrl(name)
+func (c httpClient) StartService(name string) (err error) {
+	endpoint := c.monitUrl(name)
 	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=start"))
-	request.SetBasicAuth(client.username, client.password)
+	request.SetBasicAuth(c.username, c.password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	httpClient := http.DefaultClient
-	response, err := httpClient.Do(request)
+	response, err := c.client.Do(request)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending start request to monit")
 		return
 	}
 	defer response.Body.Close()
 
-	err = client.validateResponse(response)
+	err = c.validateResponse(response)
 	if err != nil {
 		err = bosherr.WrapError(err, "Starting Monit service %s", name)
 	}
 	return
 }
 
-func (client httpClient) StopService(name string) (err error) {
-	endpoint := client.monitUrl(name)
+func (c httpClient) StopService(name string) (err error) {
+	endpoint := c.monitUrl(name)
 	request, err := http.NewRequest("POST", endpoint.String(), strings.NewReader("action=stop"))
-	request.SetBasicAuth(client.username, client.password)
+	request.SetBasicAuth(c.username, c.password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	httpClient := http.DefaultClient
@@ -77,22 +78,22 @@ func (client httpClient) StopService(name string) (err error) {
 	}
 	defer response.Body.Close()
 
-	err = client.validateResponse(response)
+	err = c.validateResponse(response)
 	if err != nil {
 		err = bosherr.WrapError(err, "Stopping Monit service %s", name)
 	}
 	return
 }
 
-func (client httpClient) Status() (status Status, err error) {
-	return client.status()
+func (c httpClient) Status() (status Status, err error) {
+	return c.status()
 }
 
-func (client httpClient) status() (status status, err error) {
-	endpoint := client.monitUrl("/_status2")
+func (c httpClient) status() (status status, err error) {
+	endpoint := c.monitUrl("/_status2")
 	endpoint.RawQuery = "format=xml"
 	request, err := http.NewRequest("GET", endpoint.String(), nil)
-	request.SetBasicAuth(client.username, client.password)
+	request.SetBasicAuth(c.username, c.password)
 
 	httpClient := http.DefaultClient
 	response, err := httpClient.Do(request)
@@ -102,7 +103,7 @@ func (client httpClient) status() (status status, err error) {
 	}
 	defer response.Body.Close()
 
-	err = client.validateResponse(response)
+	err = c.validateResponse(response)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting monit status")
 		return
@@ -118,16 +119,16 @@ func (client httpClient) status() (status status, err error) {
 	return
 }
 
-func (client httpClient) monitUrl(thing string) (endpoint url.URL) {
+func (c httpClient) monitUrl(thing string) (endpoint url.URL) {
 	endpoint = url.URL{
 		Scheme: "http",
-		Host:   client.host,
+		Host:   c.host,
 		Path:   path.Join("/", thing),
 	}
 	return
 }
 
-func (client httpClient) validateResponse(response *http.Response) (err error) {
+func (c httpClient) validateResponse(response *http.Response) (err error) {
 	if response.StatusCode == http.StatusOK {
 		return
 	}
