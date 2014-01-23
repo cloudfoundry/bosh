@@ -310,6 +310,18 @@ func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 
+func TestCentosSetupTmpDir(t *testing.T) {
+	deps, centos := buildCentos()
+
+	err := centos.SetupTmpDir()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, len(deps.cmdRunner.RunCommands))
+
+	assert.Equal(t, []string{"chown", "root:vcap", "/tmp"}, deps.cmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"chmod", "0770", "/tmp"}, deps.cmdRunner.RunCommands[1])
+}
+
 func TestCentosMountPersistentDisk(t *testing.T) {
 	deps, centos := buildCentos()
 	fakeFormatter := deps.diskManager.FakeFormatter
