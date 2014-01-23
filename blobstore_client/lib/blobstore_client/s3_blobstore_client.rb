@@ -34,9 +34,10 @@ module Bosh
         aws_options = {
           access_key_id: @options[:access_key_id],
           secret_access_key: @options[:secret_access_key],
-          use_ssl: true,
-          port: 443,
-          s3_endpoint: URI.parse(@options[:endpoint] || S3BlobstoreClient::ENDPOINT).host,
+          use_ssl: @options[:use_ssl].nil? ? true : @options[:use_ssl],
+          s3_port: @options[:port].nil? ? 443 : @options[:port],
+          s3_endpoint: @options[:host] || URI.parse(S3BlobstoreClient::ENDPOINT).host,
+          s3_force_path_style: true,
         }
 
         # using S3 without credentials is a special case:
