@@ -16,6 +16,14 @@ func TestGetReturnsAnAwsInfrastructure(t *testing.T) {
 	assert.IsType(t, awsInfrastructure{}, inf)
 }
 
+func TestGetReturnsVsphereInfrastructure(t *testing.T) {
+	provider := getNewProvider()
+	inf, err := provider.Get("vsphere")
+
+	assert.NoError(t, err)
+	assert.IsType(t, vsphereInfrastructure{}, inf)
+}
+
 func TestGetReturnsAnErrorOnUnknownInfrastructure(t *testing.T) {
 	provider := getNewProvider()
 	_, err := provider.Get("some unknown infrastructure name")

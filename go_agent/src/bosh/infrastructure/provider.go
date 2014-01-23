@@ -16,6 +16,7 @@ func NewProvider(logger boshlog.Logger, fs boshsys.FileSystem, dirProvider boshd
 
 	p.infrastructures = map[string]Infrastructure{
 		"aws":   newAwsInfrastructure("http://169.254.169.254", digDnsResolver),
+		"vsphere": newVsphereInfrastructure(),
 		"dummy": newDummyInfrastructure(fs, dirProvider),
 	}
 	return
