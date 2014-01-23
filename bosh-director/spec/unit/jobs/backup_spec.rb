@@ -14,7 +14,7 @@ module Bosh::Director
 
       let(:backup_file) { '/dest_dir/backup.tgz' }
       let(:tmp_output_dir) { File.join('/tmp/random') }
-      let(:tar_gzipper) { double('tar gzipper') }
+      let(:tar_gzipper) { instance_double('Bosh::Director::Core::TarGzipper') }
       let(:blobstore_client) { double(Bosh::Blobstore::Client) }
       let(:db_adapter) { double('db adapter') }
       let(:base_dir) { '/a/base/dir' }

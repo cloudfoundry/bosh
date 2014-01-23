@@ -19,7 +19,7 @@ module Bosh::Director
       # @return [Hash] A hash of template SHA1 hashes
       attr_accessor :template_hashes
 
-      # @return [DeploymentPlan::RenderedTemplatesArchive]
+      # @return [Bosh::Director::Core::Templates::RenderedTemplatesArchive]
       attr_accessor :rendered_templates_archive
 
       # @return [Hash<String, NetworkReservation>] network reservations

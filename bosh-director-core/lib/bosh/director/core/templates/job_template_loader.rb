@@ -1,8 +1,8 @@
-require 'bosh/director/job_template_renderer'
+require 'bosh/director/core/templates'
+require 'bosh/director/core/templates/job_template_renderer'
+require 'bosh/director/core/templates/src_file_template'
 
-module Bosh::Director
-  SrcFileTemplate = Struct.new(:src_name, :dest_name, :erb_file)
-
+module Bosh::Director::Core::Templates
   class JobTemplateLoader
     def initialize(logger)
       @logger = logger

@@ -1,4 +1,6 @@
-module Bosh::Director::DeploymentPlan
+require 'bosh/director/core/templates'
+
+module Bosh::Director::Core::Templates
   class RenderedTemplatesArchive
     attr_reader :blobstore_id, :sha1
 

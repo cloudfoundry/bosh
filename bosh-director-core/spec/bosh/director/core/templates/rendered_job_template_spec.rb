@@ -1,13 +1,21 @@
 require 'spec_helper'
-require 'bosh/director/rendered_job_template'
+require 'bosh/director/core/templates/rendered_job_template'
 
-module Bosh::Director
+module Bosh::Director::Core::Templates
   describe RenderedJobTemplate do
     describe '#template_hash' do
       let(:unordered_templates) do
         [
-          instance_double('Bosh::Director::RenderedFileTemplate', src_name: 'foo.erb', contents: 'rendered foo erb'),
-          instance_double('Bosh::Director::RenderedFileTemplate', src_name: 'bar.erb', contents: 'rendered bar erb'),
+          instance_double(
+            'Bosh::Director::Core::Templates::RenderedFileTemplate',
+            src_name: 'foo.erb',
+            contents: 'rendered foo erb',
+          ),
+          instance_double(
+            'Bosh::Director::Core::Templates::RenderedFileTemplate',
+            src_name: 'bar.erb',
+            contents: 'rendered bar erb',
+          ),
         ]
       end
       subject(:template) { described_class.new('template name', 'monit file', unordered_templates) }
