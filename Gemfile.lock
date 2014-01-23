@@ -68,8 +68,8 @@ PATH
 PATH
   remote: bosh-director-core
   specs:
-    bosh-director-core (1.1836.0)
-      bosh_common (~> 1.1836.0)
+    bosh-director-core (1.1840.0)
+      bosh_common (~> 1.1840.0)
 
 PATH
   remote: bosh-monitor
