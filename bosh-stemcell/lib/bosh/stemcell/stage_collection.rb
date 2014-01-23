@@ -60,6 +60,12 @@ module Bosh::Stemcell
           else
             vsphere_stages
           end
+        when Infrastructure::Vcloud then
+          if operating_system.instance_of?(OperatingSystem::Centos)
+            centos_vcloud_stages
+          else
+            vcloud_stages
+          end
       end
     end
 
@@ -103,6 +109,21 @@ module Bosh::Stemcell
         :image_vsphere_ovf,
         :image_vsphere_prepare_stemcell,
         :stemcell,
+      ]
+    end
+
+    def centos_vcloud_stages
+      [
+        #:system_open_vm_tools,
+        :system_parameters,
+        :bosh_clean,
+        :bosh_harden,
+        :image_create,
+        :image_install_grub,
+        :image_vcloud_vmx,
+        :image_vcloud_ovf,
+        :image_vcloud_prepare_stemcell,
+        :stemcell
       ]
     end
 
@@ -181,6 +202,25 @@ module Bosh::Stemcell
         :image_vsphere_prepare_stemcell,
         # Final stemcell
         :stemcell,
+      ]
+    end
+
+    def vcloud_stages
+      [
+        :system_open_vm_tools,
+        # Misc
+        :system_parameters,
+        # Finalisation
+        :bosh_clean,
+        :bosh_harden,
+        # Image/bootloader
+        :image_create,
+        :image_install_grub,
+        :image_vcloud_vmx,
+        :image_vcloud_ovf,
+        :image_vcloud_prepare_stemcell,
+        # Final stemcell
+        :stemcell
       ]
     end
   end

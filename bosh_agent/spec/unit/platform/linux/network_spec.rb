@@ -157,8 +157,10 @@ describe Bosh::Agent::Platform::Linux::Network do
     end
   end
 
-  context "vSphere" do
+  ["vsphere", "vcloud"].each do |infra|
+    context "vSphere" do
     before do
+      Bosh::Agent::Config.infrastructure_name = infra
       network_wrapper.stub(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
     end
 
@@ -188,6 +190,7 @@ describe Bosh::Agent::Platform::Linux::Network do
       end
       network_wrapper.setup_networking
     end
+  end
   end
 
   context "AWS" do
