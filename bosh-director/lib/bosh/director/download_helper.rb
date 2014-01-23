@@ -15,7 +15,25 @@ module Bosh::Director
     def download_remote_file(resource, remote_file, local_file)
       @logger.info("Downloading remote #{resource} from #{remote_file}") if @logger
       uri = URI.parse(remote_file)
-      Net::HTTP.start(uri.host, uri.port, 
+
+      proxy_uri = nil
+      if uri.scheme == 'https'
+        https_proxy = ENV['https_proxy']
+        proxy_uri = URI.parse(https_proxy) unless https_proxy.nil?
+      else
+        #Uri supports also upper case envs and other richer variations
+        proxy_uri = uri.find_proxy
+      end
+      if proxy_uri
+        proxy_address = proxy_uri.hostname
+        proxy_port = proxy_uri.port
+      else
+        proxy_address = nil
+        proxy_port = nil
+      end
+      @logger.info("Using proxy host=#{proxy_address} and port=#{proxy_port}") unless proxy_address.nil?
+
+      Net::HTTP.start(uri.host, uri.port, proxy_address, proxy_port, nil, nil,
                       :use_ssl => uri.scheme == 'https',
                       :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
         http.request_get(uri.request_uri) do |response|
