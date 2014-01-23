@@ -121,6 +121,10 @@ func (p dummyPlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool
 	return
 }
 
+func (p dummyPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+	return
+}
+
 func (p dummyPlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
 	return
 }

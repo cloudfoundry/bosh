@@ -31,10 +31,17 @@ func TestGetReturnsAnErrorOnUnknownInfrastructure(t *testing.T) {
 	assert.Error(t, err)
 }
 
+type cdromPlatform struct {
+}
+
+func (p cdromPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+	return
+}
+
 func getNewProvider() (provider provider) {
 	dirProvider := boshsys.NewDirectoriesProvider("/var/vcap")
 	fs := fakefs.NewFakeFileSystem()
 
-	provider = NewProvider(boshlog.NewLogger(boshlog.LEVEL_NONE), fs, dirProvider)
+	provider = NewProvider(boshlog.NewLogger(boshlog.LEVEL_NONE), fs, dirProvider, cdromPlatform{})
 	return
 }

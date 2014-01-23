@@ -57,7 +57,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	infProvider := boshinf.NewProvider(app.logger, platform.GetFs(), dirProvider)
+	infProvider := boshinf.NewProvider(app.logger, platform.GetFs(), dirProvider, platform)
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting infrastructure")

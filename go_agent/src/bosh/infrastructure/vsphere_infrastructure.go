@@ -5,9 +5,10 @@ import (
 )
 
 type vsphereInfrastructure struct {
+	cdromDelegate CDROMDelegate
 }
 
-func newVsphereInfrastructure() (infrastructure vsphereInfrastructure) {
+func newVsphereInfrastructure(delegate CDROMDelegate) (infrastructure vsphereInfrastructure) {
 	return
 }
 

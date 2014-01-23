@@ -168,6 +168,7 @@ module Bosh::Stemcell
     def vsphere_stages
       [
         :system_open_vm_tools,
+        :image_vsphere_cdrom,
         # Misc
         :system_parameters,
         # Finalisation

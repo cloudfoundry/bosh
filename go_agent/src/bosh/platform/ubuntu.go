@@ -473,6 +473,10 @@ func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	return p.mounter.Unmount(realPath + "1")
 }
 
+func (p ubuntu) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+	return
+}
+
 func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
 	return p.mounter.IsMountPoint(path)
 }

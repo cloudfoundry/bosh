@@ -6,4 +6,11 @@ describe 'vSphere Stemcell' do
       it { should contain('vsphere') }
     end
   end
+
+  context 'installed by image_vsphere_cdrom stage' do
+    describe file('/etc/udev/rules.d/95-bosh-cdrom.rules') do
+      it { should be_file }
+      it { should contain('KERNEL=="sr0", SYMLINK+="bosh-cdrom"') }
+    end
+  end
 end

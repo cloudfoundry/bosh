@@ -11,13 +11,13 @@ type provider struct {
 	infrastructures map[string]Infrastructure
 }
 
-func NewProvider(logger boshlog.Logger, fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (p provider) {
+func NewProvider(logger boshlog.Logger, fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider, cdromDelegate CDROMDelegate) (p provider) {
 	digDnsResolver := digDnsResolver{logger: logger}
 
 	p.infrastructures = map[string]Infrastructure{
-		"aws":   newAwsInfrastructure("http://169.254.169.254", digDnsResolver),
-		"vsphere": newVsphereInfrastructure(),
-		"dummy": newDummyInfrastructure(fs, dirProvider),
+		"aws":     newAwsInfrastructure("http://169.254.169.254", digDnsResolver),
+		"vsphere": newVsphereInfrastructure(cdromDelegate),
+		"dummy":   newDummyInfrastructure(fs, dirProvider),
 	}
 	return
 }

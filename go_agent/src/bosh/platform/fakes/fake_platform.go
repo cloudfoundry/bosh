@@ -174,6 +174,10 @@ func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool
 	return
 }
 
+func (p *FakePlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+	return
+}
+
 func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
 	p.MigratePersistentDiskFromMountPoint = fromMountPoint
 	p.MigratePersistentDiskToMountPoint = toMountPoint

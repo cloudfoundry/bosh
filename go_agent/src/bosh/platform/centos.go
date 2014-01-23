@@ -472,6 +472,10 @@ func (p centos) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	return p.mounter.Unmount(realPath + "1")
 }
 
+func (p centos) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+	return
+}
+
 func (p centos) IsMountPoint(path string) (result bool, err error) {
 	return p.mounter.IsMountPoint(path)
 }
