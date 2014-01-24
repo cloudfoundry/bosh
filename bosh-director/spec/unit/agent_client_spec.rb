@@ -141,10 +141,6 @@ module Bosh::Director
       @test_rpc_args = { arguments: test_args, method: :baz }
     end
 
-    def make(*args)
-      AgentClient.new(*args)
-    end
-
     it 'should send messages and return values' do
       response = { 'value' => 5 }
 
@@ -172,7 +168,7 @@ module Bosh::Director
       rm.should_receive(:delete_resource).with('deadbeef')
       Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
 
-      client = make('foo', 'bar')
+      client = AgentClient.new('foo', 'bar')
       expected_error_message = "test\na\nb\nc\nan exception"
 
       lambda {
@@ -186,7 +182,7 @@ module Bosh::Director
           with('foo.bar', test_rpc_args).and_return('req_id')
         @nats_rpc.should_receive(:cancel_request).with('req_id')
 
-        client = make('foo', 'bar', timeout: 0.1)
+        client = AgentClient.new('foo', 'bar', timeout: 0.1)
 
         lambda {
           client.baz(*test_args)
@@ -204,7 +200,7 @@ module Bosh::Director
         @nats_rpc.should_receive(:send_request).
           with('foo.bar', args).once.and_raise(Bosh::Director::RpcTimeout)
 
-        client = make('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', client_opts)
 
         lambda {
           client.baz
@@ -222,7 +218,7 @@ module Bosh::Director
           retry_methods: { baz: 1 }
         }
 
-        client = make('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', client_opts)
 
         lambda {
           client.baz
@@ -240,7 +236,7 @@ module Bosh::Director
           retry_methods: { retry_method: 10 }
         }
 
-        client = make('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', client_opts)
 
         lambda {
           client.baz
@@ -248,7 +244,7 @@ module Bosh::Director
       end
 
       describe :wait_until_ready do
-        let(:client) { make('foo', 'bar', timeout: 0.1) }
+        let(:client) { AgentClient.new('foo', 'bar', timeout: 0.1) }
 
         it 'should wait for the agent to be ready' do
           client.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
@@ -298,7 +294,7 @@ module Bosh::Director
           blk.call('encrypted_data' => handler.encrypt(response))
         }
 
-        client = make('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', client_opts)
         client.baz(1, 2, 3).should == 5
       end
     end
@@ -321,7 +317,7 @@ module Bosh::Director
         rm.should_receive(:delete_resource).with('cafe')
         Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
 
-        client = make('foo', 'bar')
+        client = AgentClient.new('foo', 'bar')
         value = client.baz(*test_args)
         value['result']['compile_log'].should == 'blob'
       end
@@ -329,7 +325,7 @@ module Bosh::Director
 
     describe 'formatting RPC remote exceptions' do
       it 'supports old style (String)' do
-        client = make('foo', 'bar')
+        client = AgentClient.new('foo', 'bar')
         client.format_exception('message string').should == 'message string'
       end
 
@@ -348,7 +344,7 @@ module Bosh::Director
 
         expected_error = "something happened\nin zbb.rb:35\nin zbb.rb:26\nFailed to compile: no such file 'zbb'"
 
-        client = make('foo', 'bar')
+        client = AgentClient.new('foo', 'bar')
         client.format_exception(exception).should == expected_error
       end
     end
