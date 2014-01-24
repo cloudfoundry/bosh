@@ -1,42 +1,41 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe VSphereCloud::Resources::ResourcePool do
-  before do
-    @client = double(:client)
-    VSphereCloud::Config.client = @client
-    VSphereCloud::Config.mem_overcommit = 1.0
+  subject { VSphereCloud::Resources::ResourcePool.new(cloud_config, cluster_config, root_resource_pool_mob) }
+  let(:cloud_config) { instance_double('VSphereCloud::Config', logger: fake_logger, client: fake_client) }
+  let(:fake_logger) { instance_double('Logger', debug: nil) }
+  let(:fake_client) { instance_double('VSphereCloud::Client') }
+  let(:cluster_config) do
+    instance_double('VSphereCloud::ClusterConfig', name: 'fake-cluster-name', resource_pool: cluster_resource_pool)
   end
+  let(:cluster_resource_pool) { nil }
+  let(:root_resource_pool_mob) { instance_double('VimSdk::Vim::ResourcePool') }
 
-  describe "#initialize" do
-    it "should create a resource pool" do
-      cluster = double(:cluster)
-      cluster_config = VSphereCloud::Config::ClusterConfig.new("foo")
-      cluster.stub(:config).and_return(cluster_config)
-      root_resource_pool_mob = double(:root_resource_pool)
+  describe '#initialize' do
 
-      resource_pool = VSphereCloud::Resources::ResourcePool.new(
-          cluster, root_resource_pool_mob)
-      resource_pool.mob.should == root_resource_pool_mob
+    context 'when the cluster config does not provide a resource pool' do
+      it 'uses the root resource pool' do
+        expect(subject.mob).to eq(root_resource_pool_mob)
+      end
     end
 
-    it "should create a resource pool with the specified name" do
-      cluster = double(:cluster)
-      cluster_config = VSphereCloud::Config::ClusterConfig.new(
-          {"foo" => {"resource_pool" => "bar"}})
-      cluster.stub(:config).and_return(cluster_config)
-      root_resource_pool_mob = double(:root_resource_pool)
+    context 'when the cluster config provides a resource pool' do
+      let(:cluster_resource_pool) { 'cluster-resource-pool' }
+      it 'uses the cluster config resource pool' do
+        resource_pool_mob = instance_double('VimSdk::Vim::ResourcePool')
 
-      child_resource_pool_mob = double(:child_resource_pool_mob)
-      @client.should_receive(:get_managed_object).
-          with(VimSdk::Vim::ResourcePool,
-               {:root=> root_resource_pool_mob, :name=>"bar"}).
-          and_return(child_resource_pool_mob)
+        allow(fake_client).to receive(:get_managed_object)
+                              .with(VimSdk::Vim::ResourcePool, root: root_resource_pool_mob, name: cluster_resource_pool)
+                              .and_return(resource_pool_mob)
 
-      resource_pool = VSphereCloud::Resources::ResourcePool.new(
-          cluster, root_resource_pool_mob)
-      resource_pool.mob.should == child_resource_pool_mob
+        expect(subject.mob).to eq(resource_pool_mob)
+      end
+    end
+  end
+
+  describe '#inspect' do
+    it 'returns the printable form' do
+      expect(subject.inspect).to eq("<Resource Pool: #{root_resource_pool_mob}>")
     end
   end
 end

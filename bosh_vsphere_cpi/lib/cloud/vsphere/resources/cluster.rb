@@ -1,51 +1,35 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module VSphereCloud
   class Resources
-
-    # Cluster resource.
     class Cluster
       include VimSdk
 
       PROPERTIES = %w(name datastore resourcePool host)
       HOST_PROPERTIES = %w(hardware.memorySize runtime.inMaintenanceMode)
-      HOST_COUNTERS = %w(cpu.usage.average mem.usage.average)
+      HOST_COUNTERS = %w(mem.usage.average)
 
       # @!attribute mob
       #   @return [Vim::ClusterComputeResource] cluster vSphere MOB.
-      attr_accessor :mob
-
-      # @!attribute config
-      #   @return [ClusterConfig] cluster config.
-      attr_accessor :config
+      attr_reader :mob
 
       # @!attribute datacenter
       #   @return [Datacenter] parent datacenter.
-      attr_accessor :datacenter
+      #attr_accessor :datacenter
 
       # @!attribute resource_pool
       #   @return [ResourcePool] resource pool.
-      attr_accessor :resource_pool
+      attr_reader :resource_pool
 
       # @!attribute ephemeral_datastores
       #   @return [Hash<String, Datastore>] ephemeral datastores.
-      attr_accessor :ephemeral_datastores
+      attr_reader :ephemeral_datastores
 
       # @!attribute persistent_datastores
       #   @return [Hash<String, Datastore>] persistent datastores.
-      attr_accessor :persistent_datastores
+      attr_reader :persistent_datastores
 
       # @!attribute shared_datastores
       #   @return [Hash<String, Datastore>] shared datastores.
-      attr_accessor :shared_datastores
-
-      # @!attribute idle_cpu
-      #   @return [Float] idle cpu ratio.
-      attr_accessor :idle_cpu
-
-      # @!attribute total_memory
-      #   @return [Integer] memory capacity in MB.
-      attr_accessor :total_memory
+      attr_reader :shared_datastores
 
       # @!attribute synced_free_memory
       #   @return [Integer] cached memory utilization in MB.
@@ -58,60 +42,33 @@ module VSphereCloud
       # Creates a new Cluster resource from the specified datacenter, cluster
       # configuration, and prefetched properties.
       #
-      # @param [Datacenter] datacenter parent datacenter.
+      # @param [CloudConfig] VSphereCloud::Config
       # @param [ClusterConfig] config cluster configuration as specified by the
       #   operator.
       # @param [Hash] properties prefetched vSphere properties for the cluster.
-      def initialize(datacenter, config, properties)
-        @logger = Config.logger
-        @client = Config.client
+      def initialize(cloud_config, cluster_config, properties)
+        @logger = cloud_config.logger
+        @client = cloud_config.client
+        @properties = properties
 
-        @datacenter = datacenter
-        @config = config
-        @mob = properties[:obj]
-        @resource_pool = ResourcePool.new(self, properties["resourcePool"])
+        @config = cluster_config
+        @cloud_config = cloud_config
+        @mob = properties['obj']
+        @resource_pool = ResourcePool.new(cloud_config, cluster_config, properties["resourcePool"])
 
         @allocated_after_sync = 0
         @ephemeral_datastores = {}
         @persistent_datastores = {}
         @shared_datastores = {}
 
-        datastores_properties = @client.get_properties(
-            properties["datastore"], Vim::Datastore, Datastore::PROPERTIES)
-        datastores_properties.each_value do |datastore_properties|
-          name = datastore_properties["name"]
-          datastore_config = datacenter.config.datastores
-          ephemeral = !!(name =~ datastore_config.ephemeral_pattern)
-          persistent = !!(name =~ datastore_config.persistent_pattern)
-
-          if ephemeral && persistent &&
-              !datastore_config.allow_mixed
-            raise "Datastore patterns are not mutually exclusive: #{name}"
-          end
-
-          if ephemeral || persistent
-            datastore = Datastore.new(datastore_properties)
-            if ephemeral && persistent
-              @shared_datastores[datastore.name] = datastore
-            elsif ephemeral
-              @ephemeral_datastores[datastore.name] = datastore
-            else
-              @persistent_datastores[datastore.name] = datastore
-            end
-          end
-        end
-
-        @logger.debug(
-            "Datastores - ephemeral: #{@ephemeral_datastores.keys.inspect}, " +
-                "persistent: #{@persistent_datastores.keys.inspect}, " +
-                "shared: #{@shared_datastores.keys.inspect}.")
+        setup_datastores
 
         # Have to use separate mechanisms for fetching utilization depending on
         # whether we're using resource pools or raw clusters.
         if @config.resource_pool.nil?
-          fetch_cluster_utilization(properties["host"])
+          fetch_cluster_utilization(properties['host'])
         else
-          fetch_res_pool_utilization
+          fetch_resource_pool_utilization
         end
       end
 
@@ -122,14 +79,23 @@ module VSphereCloud
       # @return [Datastore, nil] the requested persistent datastore.
       def persistent(datastore_name)
         @persistent_datastores[datastore_name] ||
-            @shared_datastores[datastore_name]
+          @shared_datastores[datastore_name]
       end
 
       # @return [Integer] amount of free memory in the cluster
       def free_memory
         @synced_free_memory -
-            (@allocated_after_sync * Config.mem_overcommit).to_i
+          (@allocated_after_sync * cloud_config.mem_overcommit).to_i
       end
+
+      # Marks the memory reservation against the cached utilization data.
+      #
+      # @param [Integer] memory size of memory reservation.
+      # @return [void]
+      def allocate(memory)
+        @allocated_after_sync += memory
+      end
+
 
       # Picks the best datastore for the specified persistent disk.
       #
@@ -149,25 +115,54 @@ module VSphereCloud
         pick_store(size, :ephemeral)
       end
 
-      # Marks the memory reservation against the cached utilization data.
-      #
-      # @param [Integer] memory size of memory reservation.
-      # @return [void]
-      def allocate(memory)
-        @allocated_after_sync += memory
-      end
-
       # @return [String] cluster name.
       def name
-        @config.name
+        config.name
       end
 
       # @return [String] debug cluster information.
       def inspect
-        "<Cluster: #@mob / #{@config.name}>"
+        "<Cluster: #{mob} / #{config.name}>"
       end
 
       private
+
+      attr_reader :cloud_config, :config, :client, :properties, :logger
+
+      def setup_datastores
+        datastores_properties = client.get_properties(properties['datastore'], Vim::Datastore, Datastore::PROPERTIES)
+
+        datastores_properties.each_value do |datastore_properties|
+          name = datastore_properties["name"]
+
+          ephemeral = !!(name =~ cloud_config.datacenter_datastore_pattern)
+          persistent = !!(name =~ cloud_config.datacenter_persistent_datastore_pattern)
+
+          if ephemeral && persistent && !cloud_config.datacenter_allow_mixed_datastores
+            raise "Datastore patterns are not mutually exclusive: #{name}"
+          end
+
+          if ephemeral || persistent
+            place_datastore(datastore_properties, ephemeral, persistent)
+          end
+        end
+
+        logger.debug(
+          "Datastores - ephemeral: #{@ephemeral_datastores.keys.inspect}, " +
+            "persistent: #{@persistent_datastores.keys.inspect}, " +
+            "shared: #{@shared_datastores.keys.inspect}.")
+      end
+
+      def place_datastore(datastore_properties, ephemeral, persistent)
+        datastore = Datastore.new(datastore_properties)
+        if ephemeral && persistent
+          @shared_datastores[datastore.name] = datastore
+        elsif ephemeral
+          @ephemeral_datastores[datastore.name] = datastore
+        else
+          @persistent_datastores[datastore.name] = datastore
+        end
+      end
 
       # Picks the best datastore for the specified disk size and type.
       #
@@ -181,7 +176,7 @@ module VSphereCloud
       def pick_store(size, type)
         weighted_datastores = []
         datastores =
-            type == :persistent ? @persistent_datastores : @ephemeral_datastores
+          type == :persistent ? @persistent_datastores : @ephemeral_datastores
         datastores.each_value do |datastore|
           if datastore.free_space - size >= DISK_THRESHOLD
             weighted_datastores << [datastore, datastore.free_space]
@@ -205,43 +200,40 @@ module VSphereCloud
       # individual host capacity and its utilization using the performance
       # manager.
       #
-      # @param [Array<Vim::HostSystem>] host_mobs cluster hosts.
+      # @param [Array<Vim::HostSystem>] cluster_host_systems cluster hosts.
       # @return [void]
-      def fetch_cluster_utilization(host_mobs)
+      def fetch_cluster_utilization(cluster_host_systems)
         hosts_properties = @client.get_properties(
-            host_mobs, Vim::HostSystem, HOST_PROPERTIES, :ensure_all => true)
-        host_mobs = filter_inactive_hosts(hosts_properties)
+          cluster_host_systems, Vim::HostSystem, HOST_PROPERTIES, ensure_all: true)
+        active_host_mobs = select_active_host_mobs(hosts_properties)
 
-        if host_mobs.empty?
-          @idle_cpu = 0
-          @total_memory = 0
-          @synced_free_memory = 0
-          return
-        end
+        @synced_free_memory = 0
+        return if active_host_mobs.empty?
 
-        samples = 0
-        cluster_total_memory = 0
         cluster_free_memory = 0
-        cluster_cpu_usage = 0
 
-        counters = @client.get_perf_counters(
-            host_mobs, HOST_COUNTERS, :max_sample => 5)
+        counters = @client.get_perf_counters(active_host_mobs, HOST_COUNTERS, max_sample: 5)
         counters.each do |host_mob, counter|
           host_properties = hosts_properties[host_mob]
           total_memory = host_properties["hardware.memorySize"].to_i
           percent_used = Util.average_csv(counter["mem.usage.average"]) / 10000
           free_memory = ((1.0 - percent_used) * total_memory).to_i
 
-          samples += 1
-          cluster_total_memory += total_memory
           cluster_free_memory += free_memory
-          cluster_cpu_usage +=
-              Util.average_csv(counter["cpu.usage.average"]) / 100
         end
 
-        @idle_cpu = (100 - cluster_cpu_usage / samples) / 100
-        @total_memory = cluster_total_memory / BYTES_IN_MB
         @synced_free_memory = cluster_free_memory / BYTES_IN_MB
+      end
+
+      # Filters out the hosts that are in maintenance mode.
+      #
+      # @param [Hash] host_properties host properties that already fetched
+      #   inMaintenanceMode from vSphere.
+      # @return [Array<Vim::HostSystem>] list of hosts that are active
+      def select_active_host_mobs(host_properties)
+        host_properties.values.
+          select { |p| p['runtime.inMaintenanceMode'] != 'true' }.
+          collect { |p| p['obj'] }
       end
 
       # Fetches the resource pool utilization from vSphere.
@@ -253,41 +245,21 @@ module VSphereCloud
       # so we can't use it for the raw clusters.
       #
       # @return [void]
-      def fetch_res_pool_utilization
-        properties = @client.get_properties(
-            @resource_pool.mob, Vim::ResourcePool, %w(summary))
-        if properties.nil?
-          raise "Failed to get utilization for resource pool #{resource_pool}"
-        end
+      def fetch_resource_pool_utilization
+        properties = @client.get_properties(resource_pool.mob, Vim::ResourcePool, 'summary')
+        raise "Failed to get utilization for resource pool #{resource_pool}" if properties.nil?
 
         runtime_info = properties["summary"].runtime
+
         if runtime_info.overall_status == "green"
-          cpu = runtime_info.cpu
-          @idle_cpu = 1 - (cpu.overall_usage.to_f / cpu.max_usage)
           memory = runtime_info.memory
-          @total_memory = memory.max_usage / BYTES_IN_MB
-          @synced_free_memory =
-              (memory.max_usage - memory.overall_usage) / BYTES_IN_MB
+          @synced_free_memory = (memory.max_usage - memory.overall_usage) / BYTES_IN_MB
         else
-          @logger.warn("Ignoring cluster: #{config.name} resource_pool: " +
-                           "#{@resource_pool.mob} as its state is " +
-                           "unreliable: #{runtime_info.overall_status}")
-          # resource pool is in an unreliable state
-          @idle_cpu = 0
-          @total_memory = 0
+          logger.warn("Ignoring cluster: #{config.name} resource_pool: " +
+                         "#{resource_pool.mob} as its state is " +
+                         "unreliable: #{runtime_info.overall_status}")
           @synced_free_memory = 0
         end
-      end
-
-      # Filters out the hosts that are in maintenance mode.
-      #
-      # @param [Hash] host_properties host properties that already fetched
-      #   inMaintenanceMode from vSphere.
-      # @return [Array<Vim::HostSystem>] list of hosts that are active
-      def filter_inactive_hosts(host_properties)
-        host_properties.values.
-            select { |p| p["runtime.inMaintenanceMode"] != "true" }.
-            collect { |p| p[:obj] }
       end
     end
   end

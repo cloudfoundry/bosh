@@ -28,12 +28,12 @@ module VSphereCloud
     attr_accessor :client
 
     def initialize(options)
-      Config.configure(options)
+      config = Config.build(options)
 
-      @logger = Config.logger
-      @client = Config.client
-      @rest_client = Config.rest_client
-      @resources = Resources.new
+      @logger = config.logger
+      @client = config.client
+      @rest_client = config.rest_client
+      @resources = Resources.new(config)
 
       # Global lock
       @lock = Mutex.new
@@ -163,11 +163,11 @@ module VSphereCloud
       client.find_by_inventory_path([dc.name, 'vm', dc.template_folder.name, name])
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil)
+    def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        memory = resource_pool['ram']
-        disk = resource_pool['disk']
-        cpu = resource_pool['cpu']
+        memory = cloud_properties['ram']
+        disk = cloud_properties['disk']
+        cpu = cloud_properties['cpu']
 
         # Make sure number of cores is a power of 2. kb.vmware.com/kb/2003484
         if cpu & cpu - 1 != 0
@@ -184,7 +184,7 @@ module VSphereCloud
         disks = disk_spec(disk_locality)
         # need to include swap and linked clone log
         ephemeral = disk + memory + stemcell_size
-        cluster, datastore = @resources.place(memory, ephemeral, disks)
+        cluster, datastore = @resources.place(cloud_properties, memory, ephemeral, disks)
 
         name = "vm-#{generate_unique_name}"
         @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")

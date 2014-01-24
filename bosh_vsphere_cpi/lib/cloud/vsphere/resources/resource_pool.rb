@@ -12,16 +12,16 @@ module VSphereCloud
       # @param [Cluster] cluster parent cluster.
       # @param [Vim::ResourcePool] root_resource_pool cluster's root resource
       #   pool.
-      def initialize(cluster, root_resource_pool)
-        if cluster.config.resource_pool.nil?
+      def initialize(cloud_config, cluster_config, root_resource_pool)
+        if cluster_config.resource_pool.nil?
           @mob = root_resource_pool
         else
-          client = Config.client
-          logger = Config.logger
+          client = cloud_config.client
+          logger = cloud_config.logger
           @mob = client.get_managed_object(
               Vim::ResourcePool,
               :root => root_resource_pool,
-              :name => cluster.config.resource_pool)
+              :name => cluster_config.resource_pool)
           logger.debug("Found requested resource pool: #@mob")
         end
       end

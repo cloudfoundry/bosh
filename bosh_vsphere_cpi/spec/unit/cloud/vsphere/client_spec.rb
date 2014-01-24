@@ -52,6 +52,12 @@ module VSphereCloud
           client.find_by_inventory_path(['foo', ['bar', 'baz/jaz']])
         end
       end
+
+      describe '#soap_stub' do
+        it 'returns the soap stub adapter' do
+          expect(client.soap_stub).to be_a(VimSdk::Soap::StubAdapter)
+        end
+      end
     end
   end
 end
