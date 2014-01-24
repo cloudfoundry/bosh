@@ -336,6 +336,130 @@ module Bosh::Director
 
           assembler.get_state(vm).should eq(state)
         end
+
+        context 'when the returned state contains top level "release" key' do
+          let(:agent_client) { double('AgentClient') }
+          let(:vm) { Models::Vm.make(:agent_id => 'agent-1') }
+          before do
+            allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent_client)
+          end
+
+          it 'prunes the legacy "release" data to avoid unnecessary update' do
+            legacy_state = { 'release' => 'cf', 'other' => 'data', 'job' => {} }
+            final_state = { 'other' => 'data', 'job' => {} }
+            agent_client.stub(:get_state).and_return(legacy_state)
+
+            assembler.stub(:verify_state).with(vm, legacy_state)
+            assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+
+            assembler.get_state(vm).should eq(final_state)
+          end
+
+          context 'and the returned state contains a job level release' do
+            it 'prunes the legacy "release" in job section so as to avoid unnecessary update' do
+              legacy_state = {
+                'release' => 'cf',
+                'other' => 'data',
+                'job' => {
+                  'release' => 'sql-release',
+                  'more' => 'data',
+                },
+              }
+              final_state = {
+                'other' => 'data',
+                'job' => {
+                  'more' => 'data',
+                },
+              }
+              agent_client.stub(:get_state).and_return(legacy_state)
+
+              assembler.stub(:verify_state).with(vm, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+
+              assembler.get_state(vm).should eq(final_state)
+            end
+          end
+
+          context 'and the returned state does not contain a job level release' do
+            it 'returns the job section as-is' do
+              legacy_state = {
+                'release' => 'cf',
+                'other' => 'data',
+                'job' => {
+                  'more' => 'data',
+                },
+              }
+              final_state = {
+                'other' => 'data',
+                'job' => {
+                  'more' => 'data',
+                },
+              }
+              agent_client.stub(:get_state).and_return(legacy_state)
+
+              assembler.stub(:verify_state).with(vm, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+
+              assembler.get_state(vm).should eq(final_state)
+            end
+          end
+        end
+
+        context 'when the returned state does not contain top level "release" key' do
+          let(:agent_client) { double('AgentClient') }
+          let(:vm) { Models::Vm.make(:agent_id => 'agent-1') }
+          before do
+            allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent_client)
+          end
+
+          context 'and the returned state contains a job level release' do
+            it 'prunes the legacy "release" in job section so as to avoid unnecessary update' do
+              legacy_state = {
+                'other' => 'data',
+                'job' => {
+                  'release' => 'sql-release',
+                  'more' => 'data',
+                },
+              }
+              final_state = {
+                'other' => 'data',
+                'job' => {
+                  'more' => 'data',
+                },
+              }
+              agent_client.stub(:get_state).and_return(legacy_state)
+
+              assembler.stub(:verify_state).with(vm, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+
+              assembler.get_state(vm).should eq(final_state)
+            end
+          end
+
+          context 'and the returned state does not contain a job level release' do
+            it 'returns the job section as-is' do
+              legacy_state = {
+                'release' => 'cf',
+                'other' => 'data',
+                'job' => {
+                  'more' => 'data',
+                },
+              }
+              final_state = {
+                'other' => 'data',
+                'job' => {
+                  'more' => 'data',
+                },
+              }
+              agent_client.stub(:get_state).and_return(legacy_state)
+
+              assembler.stub(:verify_state).with(vm, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+
+              assembler.get_state(vm).should eq(final_state)
+            end
+          end
+        end
       end
 
       describe '#verify_state' do

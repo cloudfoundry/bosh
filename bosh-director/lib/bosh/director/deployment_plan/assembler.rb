@@ -158,6 +158,10 @@ module Bosh::Director
       @logger.debug("Verified VM state")
 
       migrate_legacy_state(vm, state)
+      state.delete('release')
+      if state.include?('job')
+        state['job'].delete('release')
+      end
       state
     end
 
