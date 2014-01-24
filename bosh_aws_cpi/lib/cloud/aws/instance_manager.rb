@@ -1,4 +1,5 @@
 require "common/common"
+require "time"
 
 module Bosh::AwsCloud
   class InstanceManager
@@ -89,7 +90,7 @@ module Bosh::AwsCloud
     def create_spot_request_spec(instance_params, security_group_ids, spot_price) {
       spot_price: "#{spot_price}",
       instance_count: 1,
-      valid_until: "#{Time.now + 20*60}"
+      valid_until: "#{(Time.now + 20*60).utc.iso8601}",
       launch_specification: {
         image_id: instance_params[:image_id],
         key_name: instance_params[:key_name],
