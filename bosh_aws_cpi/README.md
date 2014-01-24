@@ -55,6 +55,8 @@ These options are specified under `cloud_options` in the `resource_pools` sectio
   the EC2 availability zone the VMs should be created in
 * `instance_type` (required)
   which [type of instance](http://aws.amazon.com/ec2/instance-types/) the VMs should belong to
+* `spot_bid_price` (optional)
+  the [AWS spot instance](http://aws.amazon.com/ec2/purchasing-options/spot-instances/) bid price to use.  When specified spot instances are started rather than on demand instances.  _NB: this will dramatically slow down resource pool creation._
 
 ### Network options
 
