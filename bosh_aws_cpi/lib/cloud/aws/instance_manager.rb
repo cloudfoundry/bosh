@@ -28,18 +28,44 @@ module Bosh::AwsCloud
           resource_pool["availability_zone"],
           (@instance_params[:subnet].availability_zone_name if @instance_params[:subnet])
       )
-
+      
       @logger.info("Creating new instance with: #{instance_params.inspect}")
-
-      # Retry the create instance operation a couple of times if we are told that the IP
-      # address is in use - it can happen when the director recreates a VM and AWS
-      # is too slow to update its state when we have released the IP address and want to
-      # realocate it again.
-      errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
-      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
-        @logger.warn("IP address was in use: #{error}") if tries > 0
-        @instance = @region.instances.create(instance_params)
-      end
+      
+      if resource_pool["spot_bid_price"]
+        @logger.info("Launching spot instance...")
+        security_group_ids = []
+        @region.security_groups.each do |group|
+           security_group_ids << group.security_group_id if @instance_params[:security_groups].include?(group.name)
+        end 
+        spot_request_spec = create_spot_request_spec(instance_params, security_group_ids, resource_pool["spot_bid_price"])
+        @logger.debug("Requesting spot instance with: #{spot_request_spec.inspect}")
+        spot_instance_requests = @region.client.request_spot_instances(spot_request_spec) 
+        @logger.debug("Got spot instance requests: #{spot_instance_requests.inspect}") 
+        
+        Bosh::Common.retryable(sleep: instance_create_wait_time*2, tries: 20) do |tries, error|
+            @logger.debug("Checking state of spot instance requests...")
+            spot_instance_request_ids = spot_instance_requests[:spot_instance_request_set].map { |r| r[:spot_instance_request_id] } 
+            response = @region.client.describe_spot_instance_requests(:spot_instance_request_ids => spot_instance_request_ids)
+            statuses = response[:spot_instance_request_set].map { |rr| rr[:state] }
+            @logger.debug("Spot instance request states: #{statuses.inspect}")
+            if statuses.all? { |s| s == 'active' }
+               @logger.info("Spot request instances fulfilled: #{response.inspect}")
+               instance_id = response[:spot_instance_request_set].map { |rr| rr[:instance_id] }[0]
+               @instance = @region.instances[instance_id]
+            end
+        end
+      else
+        # Retry the create instance operation a couple of times if we are told that the IP
+        # address is in use - it can happen when the director recreates a VM and AWS
+        # is too slow to update its state when we have released the IP address and want to
+        # realocate it again.
+        errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
+        Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
+          @logger.info("Launching on demand instance...") 
+          @logger.warn("IP address was in use: #{error}") if tries > 0
+          @instance = @region.instances.create(instance_params)
+        end
+      end 
 
       # We need to wait here for the instance to be running, as if we are going to
       # attach to a load balancer, the instance must be running.
@@ -47,6 +73,7 @@ module Bosh::AwsCloud
       # so we signal the director that it is ok to retry the operation. At the moment this
       # forever (until the operation is cancelled by the user).
       begin
+        @logger.info("Waiting for instance to be ready...") 
         ResourceWait.for_instance(instance: instance, state: :running)
       rescue Bosh::Common::RetryCountExceeded => e
         @logger.warn("timed out waiting for #{instance.id} to be running")
@@ -57,6 +84,30 @@ module Bosh::AwsCloud
       attach_to_load_balancers if elbs
 
       instance
+    end
+
+    def create_spot_request_spec(instance_params, security_group_ids, spot_price) {
+      spot_price: "#{spot_price}",
+      instance_count: 1,
+      valid_until: "#{Time.now + 20*60}"
+      launch_specification: {
+        image_id: instance_params[:image_id],
+        key_name: instance_params[:key_name],
+        instance_type: instance_params[:instance_type],
+        user_data: Base64.encode64(instance_params[:user_data]),
+        placement: {
+          availability_zone: instance_params[:availability_zone]
+        },
+        network_interfaces: [ 
+          { 
+            subnet_id: instance_params[:subnet].subnet_id,
+            groups: security_group_ids,
+            device_index: 0,
+            private_ip_address: instance_params[:private_ip_address]
+          } 
+        ]
+      }
+    }
     end
 
     def terminate(instance_id, fast=false)
