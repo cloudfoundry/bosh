@@ -326,15 +326,15 @@ module Bosh::Director
           state = { 'state' => 'baz' }
 
           vm = Models::Vm.make(:agent_id => 'agent-1')
-          client = double(:AgentClient)
-          AgentClient.stub(:with_defaults).with('agent-1').and_return(client)
+          client = double('AgentClient')
+          AgentClient.should_receive(:with_defaults).with('agent-1').and_return(client)
 
           client.should_receive(:get_state).and_return(state)
           assembler.should_receive(:verify_state).with(vm, state)
           assembler.should_receive(:migrate_legacy_state).
             with(vm, state)
 
-          assembler.get_state(vm)
+          assembler.get_state(vm).should eq(state)
         end
       end
 
