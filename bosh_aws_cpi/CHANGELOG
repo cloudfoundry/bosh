@@ -1,3 +1,7 @@
+=== 0.7.1 - 2014-01
+* Upgrade to aws-sdk 1.32.0
+* Add support for AWS spot instances
+
 === 0.7.0 - 2013-01-10
 * tag stemcells
 * pass dns server list as ec2 user data
