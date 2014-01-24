@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     ##
@@ -27,7 +25,7 @@ module Bosh::Director
 
       def current_state
         if @current_state
-          @current_state.delete("release")
+          @current_state.delete('release')
         end
         @current_state
       end
@@ -76,7 +74,7 @@ module Bosh::Director
         else
           unless @network_reservation
             raise NetworkReservationMissing,
-                  "Missing network reservation for resource pool VM"
+                  'Missing network reservation for resource pool VM'
           end
 
           network_settings = {}
@@ -91,14 +89,14 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected network configuration
       #   differs from the one provided by the VM
       def networks_changed?
-        network_settings != @current_state["networks"]
+        network_settings != @current_state['networks']
       end
 
       ##
       # @return [Boolean] returns true if the expected resource pool
       #   specification differs from the one provided by the VM
       def resource_pool_changed?
-        return true if resource_pool.spec != @current_state["resource_pool"]
+        return true if resource_pool.spec != @current_state['resource_pool']
         return true if resource_pool.deployment_plan.recreate
         return true if @vm && @vm.env != resource_pool.env
 
