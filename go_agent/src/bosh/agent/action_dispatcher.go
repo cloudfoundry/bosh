@@ -4,12 +4,12 @@ import (
 	boshaction "bosh/agent/action"
 	boshtask "bosh/agent/task"
 	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
-	boshmbus "bosh/mbus"
 )
 
 type ActionDispatcher interface {
-	Dispatch(req boshmbus.Request) (resp boshmbus.Response)
+	Dispatch(req boshhandler.Request) (resp boshhandler.Response)
 }
 
 type concreteActionDispatcher struct {
@@ -28,12 +28,12 @@ func NewActionDispatcher(logger boshlog.Logger, taskService boshtask.Service, ac
 	}
 }
 
-func (dispatcher concreteActionDispatcher) Dispatch(req boshmbus.Request) (resp boshmbus.Response) {
+func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) (resp boshhandler.Response) {
 	action, err := dispatcher.actionFactory.Create(req.Method)
 
 	switch {
 	case err != nil:
-		resp = boshmbus.NewExceptionResponse("unknown message %s", req.Method)
+		resp = boshhandler.NewExceptionResponse("unknown message %s", req.Method)
 		dispatcher.logger.Error("Action Dispatcher", "Unknown action %s", req.Method)
 
 	case action.IsAsynchronous():
@@ -42,7 +42,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshmbus.Request) (resp 
 			return
 		})
 
-		resp = boshmbus.NewValueResponse(boshtask.TaskStateValue{
+		resp = boshhandler.NewValueResponse(boshtask.TaskStateValue{
 			AgentTaskId: task.Id,
 			State:       task.State,
 		})
@@ -52,11 +52,11 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshmbus.Request) (resp 
 
 		if err != nil {
 			err = bosherr.WrapError(err, "Action Failed %s", req.Method)
-			resp = boshmbus.NewExceptionResponse(err.Error())
+			resp = boshhandler.NewExceptionResponse(err.Error())
 			dispatcher.logger.Error("Action Dispatcher", err.Error())
 			return
 		}
-		resp = boshmbus.NewValueResponse(value)
+		resp = boshhandler.NewValueResponse(value)
 	}
 	return
 }

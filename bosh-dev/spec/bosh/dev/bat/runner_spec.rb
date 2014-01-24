@@ -1,7 +1,6 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/bat/runner'
-require 'bosh/dev/bat_helper'
+require 'bosh/dev/bat/artifacts'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bat/director_uuid'
 require 'bosh/dev/bosh_cli_session'
@@ -14,7 +13,7 @@ module Bosh::Dev::Bat
     subject do
       described_class.new(
         env,
-        bat_helper,
+        artifacts,
         director_address,
         bosh_cli_session,
         stemcell_archive,
@@ -28,14 +27,15 @@ module Bosh::Dev::Bat
     let(:env) { {} }
     let(:logger) { Logger.new('/dev/null') }
 
-    before { FileUtils.mkdir_p(bat_helper.micro_bosh_deployment_dir) }
-    let(:bat_helper) do
+    before { FileUtils.mkdir_p(artifacts.micro_bosh_deployment_dir) }
+    let(:artifacts) do
       instance_double(
-        'Bosh::Dev::BatHelper',
-        artifacts_dir:              '/AwsRunner_fake_artifacts_dir',
-        micro_bosh_deployment_dir:  '/AwsRunner_fake_artifacts_dir/fake_micro_bosh_deployment_dir',
+        'Bosh::Dev::Bat::Artifacts',
+        path:                       '/AwsRunner_fake_artifacts_path',
+        micro_bosh_deployment_dir:  '/AwsRunner_fake_artifacts_path/fake_micro_bosh_deployment_dir',
         micro_bosh_deployment_name: 'fake_micro_bosh_deployment_name',
         bosh_stemcell_path:         'fake_bosh_stemcell_path',
+        bat_stemcell_path:          'fake_bat_stemcell_path',
       )
     end
 
@@ -63,7 +63,7 @@ module Bosh::Dev::Bat
           FileUtils.touch(File.join(Dir.pwd, 'FAKE_MICROBOSH_MANIFEST'))
         end
         subject.deploy_microbosh_and_run_bats
-        expect(Dir.entries(bat_helper.micro_bosh_deployment_dir)).to include('FAKE_MICROBOSH_MANIFEST')
+        expect(Dir.entries(artifacts.micro_bosh_deployment_dir)).to include('FAKE_MICROBOSH_MANIFEST')
       end
 
       it 'cleans any previous deployments out' do
@@ -142,15 +142,15 @@ module Bosh::Dev::Bat
           FileUtils.touch(File.join(Dir.pwd, 'FAKE_BAT_MANIFEST'))
         end
         subject.run_bats
-        expect(Dir.entries(bat_helper.artifacts_dir)).to include('FAKE_BAT_MANIFEST')
+        expect(Dir.entries(artifacts.path)).to include('FAKE_BAT_MANIFEST')
       end
 
       it 'sets the the required environment variables' do
         subject.run_bats
-        expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(bat_helper.artifacts_dir, 'bat.yml'))
+        expect(env['BAT_DEPLOYMENT_SPEC']).to eq(File.join(artifacts.path, 'bat.yml'))
         expect(env['BAT_DIRECTOR']).to eq('director-hostname')
         expect(env['BAT_DNS_HOST']).to eq('director-ip')
-        expect(env['BAT_STEMCELL']).to eq(bat_helper.bosh_stemcell_path)
+        expect(env['BAT_STEMCELL']).to eq(artifacts.bat_stemcell_path)
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
         expect(env['BAT_INFRASTRUCTURE']).to eq('infrastructure')
       end

@@ -6,39 +6,36 @@ module Bosh::Stemcell
     subject(:stemcell_builder_command) do
       described_class.new(
         env,
-        infrastructure_name: infrastructure.name,
-        operating_system_name: operating_system.name,
-        agent_name: agent_name,
-        release_tarball_path: release_tarball_path,
-        version: version
+        definition,
+        version,
+        release_tarball_path,
       )
     end
 
     let(:env) { {} }
 
-    let(:agent_name) { 'ruby' }
+    let(:agent) { Bosh::Stemcell::Agent.for('ruby') }
     let(:expected_agent_name) { 'ruby' }
 
     let(:infrastructure) do
-      instance_double(
-        'Bosh::Stemcell::Infrastructure::Vsphere',
-        name: 'vsphere',
-        hypervisor: 'esxi'
-      )
+      Bosh::Stemcell::Infrastructure.for('vsphere')
     end
 
-    let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Ubuntu', name: 'ubuntu') }
+    let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('ubuntu') }
     let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
     let(:version) { '007' }
 
-    before do
-      Infrastructure.stub(:for).with(infrastructure.name).and_return(infrastructure)
-      OperatingSystem.stub(:for).with(operating_system.name).and_return(operating_system)
-      StageCollection.stub(:new).with(
+    let(:definition) do
+      instance_double(
+        'Bosh::Stemcell::Definition',
         infrastructure: infrastructure,
         operating_system: operating_system,
-        agent_name: agent_name,
-      ).and_return(stage_collection)
+        agent: agent,
+      )
+    end
+
+    before do
+      StageCollection.stub(:new).with(definition).and_return(stage_collection)
 
       StageRunner.stub(:new).with(
         build_path: File.join(root_dir, 'build', 'build'),
@@ -49,11 +46,9 @@ module Bosh::Stemcell
 
       BuilderOptions.stub(:new).with(
         env,
-        tarball: release_tarball_path,
-        stemcell_version: version,
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: expected_agent_name,
+        definition,
+        version,
+        release_tarball_path,
       ).and_return(stemcell_builder_options)
     end
 
@@ -99,36 +94,6 @@ module Bosh::Stemcell
         FileUtils.stub(:cp_r).with([], File.join(root_dir, 'build', 'build'), preserve: true, verbose: true) do
           FileUtils.mkdir_p(etc_dir)
           FileUtils.touch(settings_file)
-        end
-      end
-
-      context 'when agent_name is nil' do
-        let(:agent_name) { nil }
-        let(:expected_agent_name) { 'ruby' }
-
-        it 'uses the correct agent name for the stage collection' do
-          StageCollection.should_receive(:new).with(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            agent_name: expected_agent_name,
-          ).and_return(stage_collection)
-
-          stemcell_builder_command.build
-        end
-      end
-
-      context 'when agent_name is foo' do
-        let(:agent_name) { 'foo' }
-        let(:expected_agent_name) { 'foo' }
-
-        it 'uses the correct agent name for the stage collection' do
-          StageCollection.should_receive(:new).with(
-            infrastructure: infrastructure,
-            operating_system: operating_system,
-            agent_name: expected_agent_name,
-          ).and_return(stage_collection)
-
-          stemcell_builder_command.build
         end
       end
 
@@ -205,7 +170,7 @@ module Bosh::Stemcell
             "STEMCELL_IMAGE=#{File.join(root_dir, 'work', 'work', 'fake-root-disk-image.raw')}",
             "bundle exec rspec -fd#{additional_rspec_options}",
             "spec/stemcells/#{operating_system.name}_spec.rb",
-            "spec/stemcells/#{agent_name}_agent_spec.rb",
+            "spec/stemcells/#{agent.name}_agent_spec.rb",
             "spec/stemcells/#{infrastructure.name}_spec.rb",
           ].join(' ')
         end

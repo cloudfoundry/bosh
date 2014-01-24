@@ -105,4 +105,39 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
       @vm.changed?.should == true
     end
   end
+
+  describe '#current_state' do
+    context 'when current state is not set' do
+      it 'should be nil' do
+        expect(@vm.current_state).to be_nil
+      end
+    end
+
+    context 'when current state is set' do
+      context 'but contains the legacy key "release"' do
+        it 'should return the current state sans the "release" key so that we transition away from per-job release' do
+          @vm.current_state = {
+            "networks" => {
+              "test_network" => {"ip" => 2}
+            },
+            "release" => {
+              "name" => "cf", "version" => "200",
+            }
+          }
+          expect(@vm.current_state).to eq({"networks" => {"test_network" => {"ip" => 2}}})
+        end
+      end
+
+      context 'and does not contain the legacy key "release"' do
+        it 'should return current state' do
+          @vm.current_state = {
+            "networks" => {
+              "test_network" => {"ip" => 2}
+            },
+          }
+          expect(@vm.current_state).to eq({"networks" => {"test_network" => {"ip" => 2}}})
+        end
+      end
+    end
+  end
 end

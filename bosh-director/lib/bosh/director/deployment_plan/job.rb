@@ -121,7 +121,6 @@ module Bosh::Director
         first_template = @templates[0]
         result = {
           "name" => @name,
-          "release" => @release.name,
           "templates" => [],
           # --- Legacy ---
           "template" => first_template.name,

@@ -14,30 +14,40 @@ module Bosh::Dev
     end
 
     describe '.from_names' do
+
       let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base') }
-      let(:operating_system) { instance_double('Bosh::Stemcell::OperatingSystem::Base') }
+      let(:definition) {
+        instance_double(
+          'Bosh::Stemcell::Definition',
+          infrastructure: infrastructure,
+        )
+      }
 
       before do
-        allow(Bosh::Stemcell::Infrastructure).to receive(:for).with('fake-infrastructure-name').and_return(infrastructure)
 
-        allow(Bosh::Stemcell::OperatingSystem).to receive(:for).with('fake-operating-system-name').and_return(operating_system)
+        allow(Bosh::Stemcell::Definition).to receive(:for).and_return(definition)
       end
 
       context 'when infrastructure is not light' do
         before { allow(infrastructure).to receive(:light?).and_return(false) }
 
         its(:build_number) { should eq('fake-build-number') }
+        its(:definition) { should eq(definition) }
         its(:infrastructure) { should eq(infrastructure) }
-        its(:operating_system) { should eq(operating_system) }
         its(:infrastructure_light?) { should be(false) }
+
+        it 'builds definition using infrastructure and operating system names and hardcoded ruby' do
+          subject.definition
+
+          expect(Bosh::Stemcell::Definition).to have_received(:for)
+            .with('fake-infrastructure-name', 'fake-operating-system-name', 'ruby')
+        end
       end
 
       context 'when infrastructure is light' do
         before { allow(infrastructure).to receive(:light?).and_return(true) }
 
         its(:build_number) { should eq('fake-build-number') }
-        its(:infrastructure) { should eq(infrastructure) }
-        its(:operating_system) { should eq(operating_system) }
         its(:infrastructure_light?) { should be(true) }
       end
     end

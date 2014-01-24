@@ -3,6 +3,7 @@ package monit
 import (
 	fakeplatform "bosh/platform/fakes"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
 
@@ -16,6 +17,6 @@ func TestGet(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass")
+	expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient)
 	assert.Equal(t, expectedClient, client)
 }

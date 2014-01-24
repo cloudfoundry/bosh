@@ -1,6 +1,7 @@
 require 'bosh/dev/build'
 require 'bosh/dev/gem_components'
 require 'bosh/stemcell/builder_command'
+require 'bosh/stemcell/definition'
 
 module Bosh::Dev
   class StemcellBuilder
@@ -8,21 +9,17 @@ module Bosh::Dev
       new(
         ENV.to_hash,
         Build.candidate,
-        infrastructure_name,
-        operating_system_name,
-        agent_name
+        Bosh::Stemcell::Definition.for(infrastructure_name, operating_system_name, agent_name)
       )
     end
 
-    def initialize(env, build, infrastructure_name, operating_system_name, agent_name)
+    def initialize(env, build, definition)
       @build_number = build.number
       @stemcell_builder_command = Bosh::Stemcell::BuilderCommand.new(
         env,
-        infrastructure_name: infrastructure_name,
-        operating_system_name: operating_system_name,
-        agent_name: agent_name,
-        version: build.number,
-        release_tarball_path: build.release_tarball_path,
+        definition,
+        build.number,
+        build.release_tarball_path,
       )
     end
 

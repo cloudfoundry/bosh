@@ -117,6 +117,15 @@ func TestRunSetsUpEphemeralDisk(t *testing.T) {
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
 }
 
+func TestRunSetsUpTmpDir(t *testing.T) {
+	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
+
+	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
+	boot.Run()
+
+	assert.True(t, fakePlatform.SetupTmpDirCalled)
+}
+
 func TestRunMountsPersistentDisk(t *testing.T) {
 	settings := boshsettings.Settings{
 		Disks: boshsettings.Disks{

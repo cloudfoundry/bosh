@@ -345,7 +345,6 @@ module Bosh::Director
       def spec
         spec = {
           'deployment' => @job.deployment.name,
-          'release' => job.release.spec,
           'job' => job.spec,
           'index' => index,
           'networks' => network_settings,

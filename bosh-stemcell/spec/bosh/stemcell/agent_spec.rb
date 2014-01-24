@@ -16,4 +16,16 @@ module Bosh::Stemcell
       end
     end
   end
+
+  describe Agent::Go do
+    its(:name) { should eq('go') }
+    it { should eq Agent::Go.new }
+    it { should_not eq Agent::Ruby.new }
+  end
+
+  describe Agent::Ruby do
+    its(:name) { should eq('ruby') }
+    it { should eq Agent::Ruby.new }
+    it { should_not eq Agent::Go.new }
+  end
 end

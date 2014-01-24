@@ -2,8 +2,7 @@ require_relative 'bootstrap'
 require 'net/https'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
+require 'bosh/stemcell/definition'
 
 module Bosh
   module Aws
@@ -17,6 +16,7 @@ module Bosh
         self.options[:non_interactive] = true
         self.director = director
         self.s3 = s3
+        @env = ENV.to_hash
       end
 
       def validate_requirements
@@ -52,6 +52,8 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       private
+
+      attr_reader :env
 
       def manifest
         unless @manifest
@@ -109,7 +111,7 @@ This command should be used for bootstrapping bosh from scratch.
 
       def fetch_and_upload_stemcell
         stemcell_command = Bosh::Cli::Command::Stemcell.new
-        stemcell_command.options = self.options
+        stemcell_command.options = options
         stemcell_path = bosh_stemcell
         stemcell_command.upload(stemcell_path)
         stemcell_path
@@ -127,9 +129,8 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def latest_aws_ubuntu_bosh_stemcell_filename
-        infrastructure = Bosh::Stemcell::Infrastructure.for('aws')
-        operating_system = Bosh::Stemcell::OperatingSystem.for('ubuntu')
-        Bosh::Stemcell::ArchiveFilename.new('latest', infrastructure, operating_system, 'bosh-stemcell', true)
+        definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'ruby')
+        Bosh::Stemcell::ArchiveFilename.new('latest', definition, 'bosh-stemcell', true)
       end
 
       def bosh_release
@@ -141,16 +142,15 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def bosh_stemcell_override
-        ENV['BOSH_OVERRIDE_LIGHT_STEMCELL_URL']
+        env['BOSH_OVERRIDE_LIGHT_STEMCELL_URL']
       end
 
       def bosh_release_override
-        ENV['BOSH_OVERRIDE_RELEASE_TGZ']
+        env['BOSH_OVERRIDE_RELEASE_TGZ']
       end
 
       def bosh_version
-        ENV['BOSH_VERSION_OVERRIDE'] ||
-            Bosh::Aws::VERSION.split('.')[1]
+        env['BOSH_VERSION_OVERRIDE'] || Bosh::Aws::VERSION.split('.')[1]
       end
     end
   end

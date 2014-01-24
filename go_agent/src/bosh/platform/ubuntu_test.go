@@ -311,6 +311,18 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
 }
 
+func TestSetupTmpDir(t *testing.T) {
+	deps, ubuntu := buildUbuntu()
+
+	err := ubuntu.SetupTmpDir()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, len(deps.cmdRunner.RunCommands))
+
+	assert.Equal(t, []string{"chown", "root:vcap", "/tmp"}, deps.cmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"chmod", "0770", "/tmp"}, deps.cmdRunner.RunCommands[1])
+}
+
 func TestUbuntuMountPersistentDisk(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
 	fakeFormatter := deps.diskManager.FakeFormatter

@@ -14,6 +14,10 @@ module Bosh::Stemcell
       def initialize(options = {})
         @name = options.fetch(:name)
       end
+
+      def ==(other)
+        name == other.name
+      end
     end
 
     class Centos < Base

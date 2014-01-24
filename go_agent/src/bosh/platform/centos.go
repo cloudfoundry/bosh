@@ -413,6 +413,21 @@ func (p centos) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	return
 }
 
+func (p centos) SetupTmpDir() (err error) {
+	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", "/tmp")
+	if err != nil {
+		err = bosherr.WrapError(err, "chown /tmp")
+		return
+	}
+	_, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
+	if err != nil {
+		err = bosherr.WrapError(err, "chmod /tmp")
+		return
+	}
+
+	return
+}
+
 func (p centos) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
 

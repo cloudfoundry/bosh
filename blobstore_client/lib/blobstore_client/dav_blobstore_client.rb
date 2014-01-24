@@ -11,8 +11,12 @@ module Bosh
       def initialize(options)
         super(options)
         @client = HTTPClient.new
+
+        if @options[:ssl_no_verify]
+          @client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+
         @endpoint = @options[:endpoint]
-        # @bucket = @options[:bucket] || "resources" # dav (or simple) doesn't support buckets
         @headers = {}
         user = @options[:user]
         password = @options[:password]

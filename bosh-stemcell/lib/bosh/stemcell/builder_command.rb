@@ -3,26 +3,24 @@ require 'fileutils'
 require 'bosh/core/shell'
 require 'bosh/stemcell/builder_options'
 require 'bosh/stemcell/disk_image'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
+require 'bosh/stemcell/definition'
 require 'bosh/stemcell/stage_collection'
 require 'bosh/stemcell/stage_runner'
 
+require 'forwardable'
+
 module Bosh::Stemcell
   class BuilderCommand
-    def initialize(env, options)
-      @environment = env
-      @infrastructure = Infrastructure.for(options.fetch(:infrastructure_name))
-      @operating_system = OperatingSystem.for(options.fetch(:operating_system_name))
-      @agent_name = options.fetch(:agent_name) || 'ruby'
+    extend Forwardable
 
+    def initialize(env, definition, version, release_tarball_path)
+      @environment = env
+      @definition = definition
       @stemcell_builder_options = BuilderOptions.new(
         env,
-        tarball: options.fetch(:release_tarball_path),
-        stemcell_version: options.fetch(:version),
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: agent_name,
+        definition,
+        version,
+        release_tarball_path,
       )
       @shell = Bosh::Core::Shell.new
     end
@@ -40,11 +38,7 @@ module Bosh::Stemcell
 
       persist_settings_for_bash
 
-      stage_collection = StageCollection.new(
-        infrastructure: infrastructure,
-        operating_system: operating_system,
-        agent_name: agent_name,
-      )
+      stage_collection = StageCollection.new(definition)
       stage_runner = StageRunner.new(
         build_path: build_path,
         command_env: command_env,
@@ -63,12 +57,17 @@ module Bosh::Stemcell
 
     private
 
+    def_delegators(
+      :@definition,
+      :infrastructure,
+      :operating_system,
+      :agent,
+    )
+
     attr_reader(
       :shell,
       :environment,
-      :infrastructure,
-      :operating_system,
-      :agent_name,
+      :definition,
       :stemcell_builder_options
     )
 
@@ -78,7 +77,7 @@ module Bosh::Stemcell
         "STEMCELL_IMAGE=#{image_file_path}",
         "bundle exec rspec -fd#{exclude_exclusions}",
         "spec/stemcells/#{operating_system.name}_spec.rb",
-        "spec/stemcells/#{agent_name}_agent_spec.rb",
+        "spec/stemcells/#{agent.name}_agent_spec.rb",
         "spec/stemcells/#{infrastructure.name}_spec.rb",
       ].join(' ')
     end

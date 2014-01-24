@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh/director/compile_task_generator'
 
 module Bosh::Director
   class PackageCompiler
@@ -26,6 +26,8 @@ module Bosh::Director
       @compilation_env = compilation_config.env
 
       @vm_reuser = VmReuser.new
+
+      @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
 
       @compile_tasks = {}
       @ready_tasks = []
@@ -183,57 +185,25 @@ module Bosh::Director
 
       @event_log.track('Finding packages to compile') do
         @deployment_plan.jobs.each do |job|
-          job_desc = "#{job.release.name}/#{job.name}"
           stemcell = job.resource_pool.stemcell
 
-          @logger.info("Job `#{job_desc}' needs to run on stemcell `#{stemcell.model.desc}'")
+          template_descs = job.templates.map do |t|
+            # we purposefully did NOT inline those because
+            # when instance_double blows up,
+            # it's obscure which double is at fault
+            release_name = t.release.name
+            template_name = t.name
+            "`#{release_name}/#{template_name}'"
+          end
+          @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.model.desc}'")
 
           job.templates.each do |template|
             template.package_models.each do |package|
-              generate_compile_task(job, package, stemcell.model)
+              @compile_task_generator.generate!(@compile_tasks, job, template, package, stemcell.model)
             end
           end
         end
       end
-    end
-
-    def generate_compile_task(job, package, stemcell)
-      # Our assumption here is that package dependency graph
-      # has no cycles: this is being enforced on release upload.
-      # Other than that it's a vanilla DFS.
-
-      @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.desc}'")
-      task_key = [package.id, stemcell.id]
-      task = @compile_tasks[task_key]
-
-      if task # We already visited this task and its dependencies
-        task.add_job(job) # But we still need to register this job with task
-        return task
-      end
-
-      release_version = job.release.model
-
-      task = CompileTask.new(package,
-                             stemcell,
-                             job,
-                             release_version.package_dependency_key(package.name),
-                             release_version.package_cache_key(package.name, stemcell))
-
-      compiled_package = task.find_compiled_package(@logger, @event_log)
-      if compiled_package
-        task.use_compiled_package(compiled_package)
-      end
-
-      @logger.info("Processing package `#{package.desc}' dependencies")
-      dependencies = release_version.dependencies(package.name)
-      dependencies.each do |dependency|
-        @logger.info("Package `#{package.desc}' depends on package `#{dependency.desc}'")
-        dependency_task = generate_compile_task(job, dependency, stemcell)
-        task.add_dependency(dependency_task)
-      end
-
-      @compile_tasks[task_key] = task
-      task
     end
 
     def tear_down_vm(vm_data)

@@ -1,65 +1,32 @@
 require 'spec_helper'
 require 'bosh/stemcell/builder_options'
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
+require 'bosh/stemcell/definition'
 
 module Bosh::Stemcell
   describe BuilderOptions do
-    subject(:stemcell_builder_options) { described_class.new(env, options) }
+    subject(:stemcell_builder_options) {
+      described_class.new(env, definition, '007', 'fake/release.tgz', disk_size)
+    }
     let(:env) { {} }
-    let(:options) do
-      {
-        tarball: 'fake/release.tgz',
-        stemcell_version: '007',
+    let(:disk_size) { nil }
+
+    let(:definition) {
+      instance_double(
+        'Bosh::Stemcell::Definition',
         infrastructure: infrastructure,
         operating_system: operating_system,
-        agent_name: agent_name,
-      }
-    end
+        agent: agent,
+      )
+    }
 
     let(:infrastructure) { Infrastructure.for('aws') }
     let(:operating_system) { OperatingSystem.for('ubuntu') }
-    let(:agent_name) { 'ruby' }
+    let(:agent) { Agent.for('ruby') }
     let(:expected_source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
     before do
-      ArchiveFilename.stub(:new).
-        with('007', infrastructure, operating_system, 'bosh-stemcell', false, agent_name).and_return(archive_filename)
-    end
-
-    describe '#initialize' do
-      context 'when :tarball is not set' do
-        before { options.delete(:tarball) }
-
-        it 'dies' do
-          expect { stemcell_builder_options }.to raise_error('key not found: :tarball')
-        end
-      end
-
-      context 'when :stemcell_version is not set' do
-        before { options.delete(:stemcell_version) }
-
-        it 'dies' do
-          expect { stemcell_builder_options }.to raise_error('key not found: :stemcell_version')
-        end
-      end
-
-      context 'when :infrastructure is not set' do
-        before { options.delete(:infrastructure) }
-
-        it 'dies' do
-          expect { stemcell_builder_options }.to raise_error('key not found: :infrastructure')
-        end
-      end
-
-      context 'when :operating_system is not set' do
-        before { options.delete(:operating_system) }
-
-        it 'dies' do
-          expect { stemcell_builder_options }.to raise_error('key not found: :operating_system')
-        end
-      end
+      allow(ArchiveFilename).to receive(:new).and_return(archive_filename)
     end
 
     describe '#default' do
@@ -69,6 +36,8 @@ module Bosh::Stemcell
       it 'sets stemcell_tgz' do
         result = stemcell_builder_options.default
         expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
+        expect(ArchiveFilename).to have_received(:new)
+          .with('007', definition, 'bosh-stemcell', false)
       end
 
       it 'sets stemcell_image_name' do
@@ -143,7 +112,7 @@ module Bosh::Stemcell
           end
 
           context 'when disk_size is passed' do
-            before { options.merge!(disk_size: 1234) }
+            let(:disk_size) { 1234 }
 
             it 'allows user to override default disk_size' do
               result = stemcell_builder_options.default
@@ -153,7 +122,7 @@ module Bosh::Stemcell
           end
 
           context 'when go agent is used' do
-            let(:agent_name) { 'go' }
+            let(:agent) { Agent.for('go') }
 
             it 'changes the stemcell_name' do
               result = stemcell_builder_options.default

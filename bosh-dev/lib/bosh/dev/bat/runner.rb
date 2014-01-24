@@ -6,7 +6,7 @@ module Bosh::Dev::Bat
     # rubocop:disable ParameterLists
     def initialize(
       env,
-      bat_helper,
+      artifacts,
       director_address,
       bosh_cli_session,
       stemcell_archive,
@@ -17,7 +17,7 @@ module Bosh::Dev::Bat
     )
     # rubocop:enable ParameterLists
       @env                           = env
-      @bat_helper                    = bat_helper
+      @artifacts                     = artifacts
       @director_address              = director_address
       @bosh_cli_session              = bosh_cli_session
       @stemcell_archive              = stemcell_archive
@@ -63,6 +63,8 @@ module Bosh::Dev::Bat
 
     private
 
+    attr_reader :artifacts
+
     def target_micro
       username = @env['BOSH_USER'] || 'admin'
       password = @env['BOSH_PASSWORD'] || 'admin'
@@ -70,32 +72,32 @@ module Bosh::Dev::Bat
     end
 
     def create_microbosh_manifest
-      Dir.chdir(@bat_helper.micro_bosh_deployment_dir) do
+      Dir.chdir(artifacts.micro_bosh_deployment_dir) do
         @microbosh_deployment_manifest.write
       end
     end
 
     def deploy_microbosh
-      Dir.chdir(@bat_helper.artifacts_dir) do
-        @bosh_cli_session.run_bosh("micro deployment #{@bat_helper.micro_bosh_deployment_name}")
+      Dir.chdir(artifacts.path) do
+        @bosh_cli_session.run_bosh("micro deployment #{artifacts.micro_bosh_deployment_name}")
 
         @logger.info('Running micro deploy')
-        @bosh_cli_session.run_bosh("micro deploy #{@bat_helper.bosh_stemcell_path}")
+        @bosh_cli_session.run_bosh("micro deploy #{artifacts.bosh_stemcell_path}")
         @bosh_cli_session.run_bosh('login admin admin')
       end
     end
 
     def create_bat_manifest
-      Dir.chdir(@bat_helper.artifacts_dir) do
+      Dir.chdir(artifacts.path) do
         @bat_deployment_manifest.write
       end
     end
 
     def set_bat_env_variables
-      @env['BAT_DEPLOYMENT_SPEC']  = File.join(@bat_helper.artifacts_dir, 'bat.yml')
+      @env['BAT_DEPLOYMENT_SPEC']  = File.join(artifacts.path, 'bat.yml')
       @env['BAT_DIRECTOR']         = @director_address.hostname
       @env['BAT_DNS_HOST']         = @director_address.ip
-      @env['BAT_STEMCELL']         = @bat_helper.bosh_stemcell_path
+      @env['BAT_STEMCELL']         = artifacts.bat_stemcell_path
       @env['BAT_VCAP_PRIVATE_KEY'] = @env['BOSH_OPENSTACK_PRIVATE_KEY'] || @env['BOSH_KEY_PATH']
       @env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
       @env['BAT_INFRASTRUCTURE']   = @stemcell_archive.infrastructure

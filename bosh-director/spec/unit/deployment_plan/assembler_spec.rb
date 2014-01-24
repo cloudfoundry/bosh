@@ -587,7 +587,6 @@ module Bosh::Director
           expect(agent).to receive(:apply).with(hash_including(
             'job' => 'fake-job-spec',
             'index' => 'fake-index',
-            'release' => 'fake-release-spec',
           ))
           assembler.bind_instance_vm(instance)
         end

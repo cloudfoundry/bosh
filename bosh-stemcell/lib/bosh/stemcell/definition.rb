@@ -19,5 +19,11 @@ module Bosh::Stemcell
       @operating_system = operating_system
       @agent = agent
     end
+
+    def ==(other)
+      infrastructure == other.infrastructure &&
+        operating_system == other.operating_system &&
+        agent == other.agent
+    end
   end
 end

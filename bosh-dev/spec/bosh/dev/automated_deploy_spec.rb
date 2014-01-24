@@ -79,23 +79,6 @@ module Bosh::Dev
         instance_double(
           'Bosh::Dev::BuildTarget',
           build_number: 'fake-build-number',
-          infrastructure: infrastructure,
-          operating_system: operating_system,
-        )
-      end
-
-      let(:infrastructure) do
-        instance_double(
-          'Bosh::Stemcell::Infrastructure::Base',
-          name: 'fake-infrastructure-name',
-          hypervisor: 'fake-infrastructure-hypervisor',
-        )
-      end
-
-      let(:operating_system) do
-        instance_double(
-          'Bosh::Stemcell::OperatingSystem::Base',
-          name: 'fake-os-name',
         )
       end
 

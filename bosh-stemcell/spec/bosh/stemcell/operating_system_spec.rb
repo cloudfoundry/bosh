@@ -37,11 +37,15 @@ module Bosh::Stemcell
     subject { OperatingSystem::Centos.new }
 
     its(:name) { should eq('centos') }
+    it { should eq OperatingSystem.for('centos') }
+    it { should_not eq OperatingSystem.for('ubuntu') }
   end
 
   describe OperatingSystem::Ubuntu do
     subject { OperatingSystem::Ubuntu.new }
 
     its(:name) { should eq('ubuntu') }
+    it { should eq OperatingSystem.for('ubuntu') }
+    it { should_not eq OperatingSystem.for('centos') }
   end
 end

@@ -37,6 +37,8 @@ type FakePlatform struct {
 
 	SetupEphemeralDiskWithPathDevicePath string
 
+	SetupTmpDirCalled bool
+
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
 
@@ -152,6 +154,11 @@ func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
+	return
+}
+
+func (p *FakePlatform) SetupTmpDir() (err error) {
+	p.SetupTmpDirCalled = true
 	return
 }
 

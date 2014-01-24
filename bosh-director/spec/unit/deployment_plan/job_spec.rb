@@ -9,17 +9,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
   let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
 
-  let(:spec) do
-    {
-      'name' => 'foobar',
-      'template' => 'foo',
-      'release' => 'appcloud',
-      'resource_pool' => 'dea',
-      'instances' => 1,
-      'networks'  => [{'name' => 'fake-network-name'}],
-    }
-  end
-
   let(:foo_properties) do
     {
       'dea_min_memory' => {'default' => 512},
@@ -58,6 +47,19 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_properties' do
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'template' => 'foo',
+        'release' => 'appcloud',
+        'resource_pool' => 'dea',
+        'instances' => 1,
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => props,
+        'template' => %w(foo bar),
+      }
+    end
+
     let(:props) do
       {
         'cc_url' => 'www.cc.com',
@@ -70,9 +72,6 @@ describe Bosh::Director::DeploymentPlan::Job do
     end
 
     before do
-      spec['properties'] = props
-      spec['template'] = %w(foo bar)
-
       allow(plan).to receive(:properties).and_return(props)
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
@@ -124,17 +123,17 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe 'property mappings' do
-    let(:foo_properties) {
+    let(:foo_properties) do
       {
-        'db.user' => { 'default' => 'root' },
+        'db.user' => {'default' => 'root'},
         'db.password' => {},
-        'db.host' => { 'default' => 'localhost' },
-        'mem' => { 'default' => 256 },
+        'db.host' => {'default' => 'localhost'},
+        'mem' => {'default' => 256},
       }
-    }
+    end
 
-    it 'supports property mappings' do
-      props = {
+    let(:props) do
+      {
         'ccdb' => {
           'user' => 'admin',
           'password' => '12321',
@@ -144,11 +143,23 @@ describe Bosh::Director::DeploymentPlan::Job do
           'max_memory' => 2048
         }
       }
+    end
 
-      spec['properties'] = props
-      spec['property_mappings'] = {'db' => 'ccdb', 'mem' => 'dea.max_memory'}
-      spec['template'] = 'foo'
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'template' => 'foo',
+        'release' => 'appcloud',
+        'resource_pool' => 'dea',
+        'instances' => 1,
+        'networks' => [{'name' => 'fake-network-name'}],
+        'properties' => props,
+        'property_mappings' => {'db' => 'ccdb', 'mem' => 'dea.max_memory'},
+        'template' => 'foo',
+      }
+    end
 
+    it 'supports property mappings' do
       allow(plan).to receive(:properties).and_return(props)
       expect(plan).to receive(:release).with('appcloud').and_return(release)
 
@@ -250,9 +261,96 @@ describe Bosh::Director::DeploymentPlan::Job do
           }.to raise_error(
             Bosh::Director::JobPackageCollision,
             "Colocated package `same-name' has the same name in multiple releases. " +
-            "BOSH cannot currently colocate two packages with identical names from separate releases.",
+              'BOSH cannot currently colocate two packages with identical names from separate releases.',
           )
         end
+      end
+    end
+  end
+
+  describe '#spec' do
+    let(:spec) do
+      {
+        'name' => 'job1',
+        'template' => 'foo',
+        'release' => 'release1',
+        'instances' => 1,
+        'resource_pool' => 'dea',
+        'networks'  => [{'name' => 'fake-network-name'}],
+      }
+    end
+
+    before do
+      allow(release).to receive(:name).and_return('cf')
+
+      allow(foo_template).to receive(:version).and_return('200')
+      allow(foo_template).to receive(:sha1).and_return('fake_sha1')
+      allow(foo_template).to receive(:blobstore_id).and_return('blobstore_id_for_foo_template')
+
+      allow(plan).to receive(:releases).with(no_args).and_return([release])
+      allow(plan).to receive(:release).with('release1').and_return(release)
+      allow(plan).to receive(:properties).with(no_args).and_return({})
+    end
+
+    context "when a template has 'logs'" do
+      before do
+        allow(foo_template).to receive(:logs).and_return(
+          {
+            'filter_name1' => 'foo/*',
+          }
+        )
+      end
+
+      it 'contains name, release for the job, and logs spec for each template' do
+        expect(job.spec).to eq(
+          {
+            'name' => 'job1',
+            'templates' => [
+              {
+                'name' => 'foo',
+                'version' => '200',
+                'sha1' => 'fake_sha1',
+                'blobstore_id' => 'blobstore_id_for_foo_template',
+                'logs' => {
+                  'filter_name1' => 'foo/*',
+                },
+              },
+            ],
+            'template' => 'foo',
+            'version' => '200',
+            'sha1' => 'fake_sha1',
+            'blobstore_id' => 'blobstore_id_for_foo_template',
+            'logs' => {
+              'filter_name1' => 'foo/*',
+            }
+          }
+        )
+      end
+    end
+
+    context "when a template does not have 'logs'" do
+      before do
+        allow(foo_template).to receive(:logs)
+      end
+
+      it 'contains name, release and information for each template' do
+        expect(job.spec).to eq(
+          {
+            'name' => 'job1',
+            'templates' =>[
+              {
+                'name' => 'foo',
+                'version' => '200',
+                'sha1' => 'fake_sha1',
+                'blobstore_id' => 'blobstore_id_for_foo_template',
+              },
+            ],
+            'template' => 'foo',
+            'version' => '200',
+            'sha1' => 'fake_sha1',
+            'blobstore_id' => 'blobstore_id_for_foo_template',
+          },
+        )
       end
     end
   end

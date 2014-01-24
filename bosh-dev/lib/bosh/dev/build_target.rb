@@ -1,29 +1,26 @@
-require 'bosh/stemcell/infrastructure'
-require 'bosh/stemcell/operating_system'
+require 'bosh/stemcell/definition'
 
 module Bosh::Dev
   class BuildTarget
-    attr_reader :build_number, :infrastructure, :operating_system
+    attr_reader :build_number, :definition
 
     def self.from_names(build_number, infrastructure_name, operating_system_name)
-      infrastructure = Bosh::Stemcell::Infrastructure.for(infrastructure_name)
-      new(
-        build_number,
-        infrastructure,
-        Bosh::Stemcell::OperatingSystem.for(operating_system_name),
-        infrastructure.light?,
-      )
+      definition = Bosh::Stemcell::Definition.for(infrastructure_name, operating_system_name, 'ruby')
+
+      new(build_number, definition)
     end
 
-    def initialize(build_number, infrastructure, operating_system, infrastructure_light)
+    def initialize(build_number, definition)
       @build_number = build_number
-      @infrastructure = infrastructure
-      @operating_system = operating_system
-      @infrastructure_light = infrastructure_light
+      @definition = definition
+    end
+
+    def infrastructure
+      definition.infrastructure
     end
 
     def infrastructure_light?
-      !!@infrastructure_light
+      !!definition.infrastructure.light?
     end
   end
 end

@@ -1,14 +1,14 @@
 require 'spec_helper'
-require 'bosh/dev/bat_helper'
+require 'bosh/dev/bat/artifacts'
 require 'bosh/dev/openstack/runner_builder'
 
 module Bosh::Dev::Openstack
   describe RunnerBuilder do
     describe '#build' do
       it 'returns openstack runner with injected env and proper director address' do
-        bat_helper = instance_double(
-          'Bosh::Dev::BatHelper',
-          bosh_stemcell_path: 'stemcell-path',
+        artifacts = instance_double(
+          'Bosh::Dev::Bat::Artifacts',
+          bat_stemcell_path: 'bat-stemcell-path',
         )
 
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
@@ -29,7 +29,7 @@ module Bosh::Dev::Openstack
         )
         class_double('Bosh::Stemcell::Archive').as_stubbed_const
           .should_receive(:new)
-          .with('stemcell-path')
+          .with('bat-stemcell-path')
           .and_return(stemcell_archive)
 
         microbosh_deployment_manifest = instance_double('Bosh::Dev::Openstack::MicroBoshDeploymentManifest')
@@ -60,7 +60,7 @@ module Bosh::Dev::Openstack
         class_double('Bosh::Dev::Bat::Runner').as_stubbed_const
           .should_receive(:new).with(
             ENV,
-            bat_helper,
+            artifacts,
             director_address,
             bosh_cli_session,
             stemcell_archive,
@@ -70,7 +70,7 @@ module Bosh::Dev::Openstack
             be_an_instance_of(Logger),
           ).and_return(runner)
 
-        expect(subject.build(bat_helper, 'net-type')).to eq(runner)
+        expect(subject.build(artifacts, 'net-type')).to eq(runner)
       end
     end
   end

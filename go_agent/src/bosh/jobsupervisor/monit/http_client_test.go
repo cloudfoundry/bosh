@@ -1,7 +1,9 @@
 package monit
 
 import (
+	"bosh/jobsupervisor/monit/http_fakes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestServicesInGroupReturnsServicesWhenFound(t *testing.T) {
@@ -34,26 +37,37 @@ func TestStartService(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
 
 	err := client.StartService("test-service")
 	assert.NoError(t, err)
 	assert.True(t, calledMonit)
 }
 
-func TestStartServiceErrsWhenNon200Response(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("fake error message"))
-	})
-	ts := httptest.NewServer(handler)
-	defer ts.Close()
+func TestStartServiceRetriesWhenNon200Response(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.StatusCode = 500
+	fakeHttpClient.SetMessage("fake error message")
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
 
 	err := client.StartService("test-service")
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "fake error message")
+}
+
+func TestStartServiceRetriesWhenConnectionRefused(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.SetNilResponse()
+	fakeHttpClient.Error = errors.New("some error")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	err := client.StartService("test-service")
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
 }
 
 func TestStopService(t *testing.T) {
@@ -72,26 +86,39 @@ func TestStopService(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
 
 	err := client.StopService("test-service")
 	assert.NoError(t, err)
 	assert.True(t, calledMonit)
 }
 
-func TestStopServiceErrsWhenNon200Response(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("fake error message"))
-	})
-	ts := httptest.NewServer(handler)
-	defer ts.Close()
+func TestStopServiceRetriesWhenNon200Response(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.StatusCode = 500
+	fakeHttpClient.SetMessage("fake error message")
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
 
 	err := client.StopService("test-service")
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fake error message")
+}
+
+func TestStopServiceRetriesWhenConnectionRefused(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.SetNilResponse()
+	fakeHttpClient.Error = errors.New("some error")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	err := client.StopService("test-service")
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
 }
 
 func TestServicesInGroup(t *testing.T) {
@@ -111,7 +138,7 @@ func TestServicesInGroup(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
 
 	services, err := client.ServicesInGroup("vcap")
 	assert.NoError(t, err)
@@ -135,11 +162,39 @@ func TestDecodeStatus(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass")
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
 
 	status, err := client.status()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(status.Services.Services))
 	assert.Equal(t, 1, status.Services.Services[0].Monitor)
 	assert.Equal(t, "dummy", status.Services.Services[0].Name)
+}
+
+func TestStatusRetriesWhenNon200Response(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.StatusCode = 500
+	fakeHttpClient.SetMessage("fake error message")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	_, err := client.Status()
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fake error message")
+}
+
+func TestStatusRetriesWhenConnectionRefused(t *testing.T) {
+	fakeHttpClient := http_fakes.NewFakeHttpClient()
+	fakeHttpClient.SetNilResponse()
+	fakeHttpClient.Error = errors.New("some error")
+
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
+	client.delayBetweenRetries = 1 * time.Millisecond
+
+	_, err := client.Status()
+	assert.Equal(t, fakeHttpClient.CallCount, 20)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
 }

@@ -26,7 +26,7 @@ module Bosh::Director
              stemcell: stemcell,
              cloud_properties: double('CloudProperties'),
              env: {},
-             spec: 'deployment-plan-spec',
+             spec: 'resource_pool_spec',
              release: release)
     end
 
@@ -810,7 +810,13 @@ module Bosh::Director
           subject.should_receive(:delete_vm)
           subject.should_receive(:create_vm).with(new_disk_cid)
           subject.should_receive(:attach_disk)
-          subject.should_receive(:apply_state)
+          subject.should_receive(:apply_state).with(
+            'deployment' => 'deployment',
+            'networks' => instance.network_settings,
+            'resource_pool' => 'resource_pool_spec',
+            'index' => 0,
+            'job' => 'job-spec',
+          )
           instance.should_receive(:current_state=).with(instance_state)
 
           subject.update_resource_pool(new_disk_cid)

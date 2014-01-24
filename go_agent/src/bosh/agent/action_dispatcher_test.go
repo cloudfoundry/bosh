@@ -5,8 +5,8 @@ import (
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"
 	boshassert "bosh/assert"
+	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
-	boshmbus "bosh/mbus"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ import (
 func TestDispatchRespondsWithExceptionWhenTheMethodIsUnknown(t *testing.T) {
 	logger, taskService, actionFactory, actionRunner := getActionDispatcherDependencies()
 
-	req := boshmbus.NewRequest("reply to me", "gibberish", []byte{})
+	req := boshhandler.NewRequest("reply to me", "gibberish", []byte{})
 
 	actionFactory.CreateErr = true
 
@@ -39,11 +39,11 @@ func TestDispatchHandlesSynchronousAction(t *testing.T) {
 
 	dispatcher := NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
 
-	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
+	req := boshhandler.NewRequest("reply to me!", "some action", []byte("some payload"))
 	resp := dispatcher.Dispatch(req)
 	assert.Equal(t, req.Method, actionFactory.CreateMethod)
 	assert.Equal(t, req.GetPayload(), actionRunner.RunPayload)
-	assert.Equal(t, boshmbus.NewValueResponse("some value"), resp)
+	assert.Equal(t, boshhandler.NewValueResponse("some value"), resp)
 }
 
 func TestDispatchHandlesSynchronousActionWhenErr(t *testing.T) {
@@ -55,7 +55,7 @@ func TestDispatchHandlesSynchronousActionWhenErr(t *testing.T) {
 
 	dispatcher := NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
 
-	req := boshmbus.NewRequest("reply to me!", "some action", []byte("some payload"))
+	req := boshhandler.NewRequest("reply to me!", "some action", []byte("some payload"))
 	resp := dispatcher.Dispatch(req)
 	expectedJson := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: some error\"}}", req.Method)
 	boshassert.MatchesJsonString(t, resp, expectedJson)
@@ -72,7 +72,7 @@ func TestDispatchHandlesAsynchronousAction(t *testing.T) {
 	actionRunner.RunValue = "some-task-result-value"
 
 	dispatcher := NewActionDispatcher(logger, taskService, actionFactory, actionRunner)
-	req := boshmbus.NewRequest("reply to me!", "some async action", []byte("some payload"))
+	req := boshhandler.NewRequest("reply to me!", "some async action", []byte("some payload"))
 	resp := dispatcher.Dispatch(req)
 
 	boshassert.MatchesJsonString(t, resp, `{"value":{"agent_task_id":"found-57-id","state":"done"}}`)

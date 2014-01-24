@@ -33,7 +33,7 @@ module Bosh::Director
 
       @deployment = Models::Deployment.make(name: 'mycloud')
       @config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
-      @plan = double('Bosh::Director::DeploymentPlan', compilation: @config, model: @deployment, name: 'mycloud')
+      @plan = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: @config, model: @deployment, name: 'mycloud')
       @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default')
 
       @n_workers = 3
@@ -89,13 +89,13 @@ module Bosh::Director
 
       rp_small = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'small', stemcell: @stemcell_b)
 
-      @t_dea = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [@p_dea, @p_nginx, @p_syslog])
+      @t_dea = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_dea, @p_nginx, @p_syslog], name: 'dea')
 
-      @t_warden = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [@p_warden])
+      @t_warden = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_warden], name: 'warden')
 
-      @t_nginx = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [@p_nginx])
+      @t_nginx = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_nginx], name: 'nginx')
 
-      @t_router = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [@p_router])
+      @t_router = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_router], name: 'router')
 
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
                                name: 'dea',
@@ -133,7 +133,14 @@ module Bosh::Director
           @j_router.should_receive(:use_compiled_package).with(cp2)
         end
 
+        logger = instance_double('Logger', info: nil, debug: nil)
+        Config.stub(logger: logger)
+
         compiler = PackageCompiler.new(@plan)
+
+        expect(logger).to receive(:info).with("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_a.model.desc}'")
+        expect(logger).to receive(:info).with("Job templates `cf-release/nginx', `cf-release/router', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+
         compiler.compile
         # For @stemcell_a we need to compile:
         # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
@@ -271,7 +278,7 @@ module Bosh::Director
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', resource_pool: resource_pool)
         package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
                                fingerprint: 'deadbeef')
-        template = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [ package_model ])
+        template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [ package_model ], name: 'fake_template')
         job.stub(templates: [template])
         planner = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, name: 'mycloud')
 
@@ -413,7 +420,7 @@ module Bosh::Director
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
         package  = make_package('common')
-        template = instance_double('Bosh::Director::DeploymentPlan::Template', package_models: [package])
+        template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release, package_models: [package], name: 'fake_template')
         job      = instance_double(
           'Bosh::Director::DeploymentPlan::Job',
           name: 'job-with-one-package',

@@ -20,10 +20,17 @@ module Bosh::Director
       attr_accessor :vm
 
       # @return [Hash] Current state as provided by the BOSH Agent
-      attr_accessor :current_state
+      attr_writer :current_state
 
       # @return [DeploymentPlan::Instance, nil] Instance that reserved this VM
       attr_accessor :bound_instance
+
+      def current_state
+        if @current_state
+          @current_state.delete("release")
+        end
+        @current_state
+      end
 
       ##
       # Creates a new idle VM reference for the specific resource pool

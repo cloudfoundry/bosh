@@ -109,6 +109,10 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error)
 	return
 }
 
+func (p dummyPlatform) SetupTmpDir() (err error) {
+	return
+}
+
 func (p dummyPlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	return
 }

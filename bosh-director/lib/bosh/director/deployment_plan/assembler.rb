@@ -389,7 +389,6 @@ module Bosh::Director
         state = idle_vm.current_state
         state['job'] = instance.job.spec
         state['index'] = instance.index
-        state['release'] = instance.job.release.spec
         agent.apply(state)
 
         # Our assumption here is that director database access

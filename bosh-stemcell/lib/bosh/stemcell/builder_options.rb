@@ -2,22 +2,24 @@ require 'rbconfig'
 require 'bosh_agent/version'
 require 'bosh/stemcell/archive_filename'
 
+require 'forwardable'
+
 module Bosh::Stemcell
   class BuilderOptions
-    def initialize(env, options)
-      @environment = env
-      @infrastructure = options.fetch(:infrastructure)
-      @operating_system = options.fetch(:operating_system)
-      @agent_name = options.fetch(:agent_name)
+    extend Forwardable
 
-      @stemcell_version = options.fetch(:stemcell_version)
-      @image_create_disk_size = options.fetch(:disk_size, infrastructure.default_disk_size)
-      @bosh_micro_release_tgz_path = options.fetch(:tarball)
+    def initialize(env, definition, version, tarball, disk_size = nil)
+      @environment = env
+      @definition = definition
+
+      @stemcell_version = version
+      @image_create_disk_size = disk_size || infrastructure.default_disk_size
+      @bosh_micro_release_tgz_path = tarball
     end
 
     def default
       stemcell_name = "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}"
-      stemcell_name += "-#{agent_name}_agent" unless agent_name == 'ruby'
+      stemcell_name += "-#{agent.name}_agent" unless agent.name == 'ruby'
 
       {
         'stemcell_name' => stemcell_name,
@@ -38,12 +40,17 @@ module Bosh::Stemcell
 
     private
 
-    attr_reader(
-      :environment,
+    def_delegators(
+      :@definition,
       :infrastructure,
       :operating_system,
-      :agent_name,
+      :agent,
+    )
+
+    attr_reader(
+      :environment,
       :stemcell_version,
+      :definition,
       :image_create_disk_size,
       :bosh_micro_release_tgz_path
     )
@@ -73,7 +80,7 @@ module Bosh::Stemcell
     end
 
     def archive_filename
-      ArchiveFilename.new(stemcell_version, infrastructure, operating_system, 'bosh-stemcell', false, agent_name)
+      ArchiveFilename.new(stemcell_version, definition, 'bosh-stemcell', false)
     end
 
     def stemcell_image_name

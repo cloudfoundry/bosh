@@ -19,3 +19,9 @@
 [submodule "go_agent/src/github.com/cloudfoundry/gofileutils"]
 	path = go_agent/src/github.com/cloudfoundry/gofileutils
 	url = https://github.com/cloudfoundry/gofileutils.git
+[submodule "go_agent/src/github.com/onsi/ginkgo"]
+	path = go_agent/src/github.com/onsi/ginkgo
+	url = https://github.com/onsi/ginkgo.git
+[submodule "go_agent/src/github.com/onsi/gomega"]
+	path = go_agent/src/github.com/onsi/gomega
+	url = https://github.com/onsi/gomega.git

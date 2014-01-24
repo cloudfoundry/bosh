@@ -1,12 +1,12 @@
 package notification
 
-import boshmbus "bosh/mbus"
+import boshhandler "bosh/handler"
 
 type concreteNotifier struct {
-	handler boshmbus.Handler
+	handler boshhandler.Handler
 }
 
-func NewNotifier(handler boshmbus.Handler) (notifier Notifier) {
+func NewNotifier(handler boshhandler.Handler) (notifier Notifier) {
 	return concreteNotifier{
 		handler: handler,
 	}
