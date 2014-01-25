@@ -228,7 +228,7 @@ GEM
   specs:
     addressable (2.3.4)
     ast (1.1.0)
-    aws-sdk (1.8.5)
+    aws-sdk (1.32.0)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
       uuidtools (~> 2.1)
