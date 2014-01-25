@@ -51,6 +51,7 @@ describe Bosh::AwsCloud::InstanceManager do
     end
     let(:aws_instances) { double(AWS::EC2::InstanceCollection) }
     let(:instance) { double(AWS::EC2::Instance, id: 'i-12345678') }
+    let(:aws_client) { double(AWS::EC2::Client) }
 
     it "should ask AWS to create an instance in the given region, with parameters built up from the given arguments" do
       region.stub(:instances).and_return(aws_instances)
@@ -80,6 +81,80 @@ describe Bosh::AwsCloud::InstanceManager do
       environment = nil
       options = {"aws" => {"region" => "us-east-1"}}
       instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
+    end
+
+    it "should ask AWS to create a SPOT instance in the given region, when resource_pool includes spot_bid_price" do
+      region.stub(:client).and_return(aws_client)
+      region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
+      region.stub(:instances).and_return( {'i-12345678' => instance } )
+
+      #need to translate security group names to security group ids
+      sg1 = double(AWS::EC2::SecurityGroup, security_group_id:"sg-baz-1234")
+      sg1.stub(:name).and_return("baz")
+      region.stub(:security_groups).and_return([sg1])
+
+      agent_id = "agent-id"
+      stemcell_id = "stemcell-id"
+      networks_spec = {
+          "default" => {
+              "type" => "dynamic",
+              "dns" => "foo",
+              "cloud_properties" => {"security_groups" => "baz"}
+          },
+          "other" => {
+              "type" => "manual",
+              "cloud_properties" => {"subnet" => "sub-123456"},
+              "ip" => "1.2.3.4"
+          }
+      }
+      disk_locality = nil
+      environment = nil
+      options = {"aws" => {"region" => "us-east-1"}}
+
+      #NB: The spot_bid_price param should trigger spot instance creation
+      resource_pool = {"spot_bid_price"=>0.15, "instance_type" => "m1.small", "key_name" => "bar"}
+
+      #Should not recieve an ondemand instance create call
+      aws_instances.should_not_receive(:create).with(aws_instance_params)
+
+      #Should rather recieve a spot instance request
+      aws_client.should_receive(:request_spot_instances) do |spot_request|
+        spot_request[:spot_price].should eq("0.15")
+        spot_request[:instance_count].should eq(1)
+        #spot_request[:valid_until].should  #TODO - not sure how to test this
+        spot_request[:launch_specification].should eq({ 
+          :image_id=>"stemcell-id", 
+          :key_name=>"bar", 
+          :instance_type=>"m1.small", 
+          :user_data=>Base64.encode64("{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}"),
+          :placement=> { :availability_zone=>"us-east-1a" }, 
+          :network_interfaces=>[ { 
+            :subnet_id=>fake_aws_subnet,
+            :groups=>["sg-baz-1234"], 
+            :device_index=>0, 
+            :private_ip_address=>"1.2.3.4"
+          }]
+        })
+        
+        # return 
+        {
+          :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }], 
+          :request_id => "request-id-12345"
+        }
+      end
+
+      # Should poll the spot instance request until state is active
+      aws_client.should_receive(:describe_spot_instance_requests) \
+        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
+        .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
+       
+      # Should then wait for instance to be running, just like in the case of on deman
+      Bosh::AwsCloud::ResourceWait.should_receive(:for_instance).with(instance: instance, state: :running)
+
+      # Trigger spot instance request
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
+
     end
 
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
