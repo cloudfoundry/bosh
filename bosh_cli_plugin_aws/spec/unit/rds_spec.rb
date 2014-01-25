@@ -5,7 +5,7 @@ describe Bosh::Aws::RDS do
   let(:db_instance_1) { instance_double('AWS::RDS::DBInstance', name: 'bosh_db', id: "db1") }
   let(:db_instance_2) { instance_double('AWS::RDS::DBInstance', name: 'cc_db', id: "db2") }
   let(:fake_aws_rds) { instance_double('AWS::RDS', db_instances: [db_instance_1, db_instance_2]) }
-  let(:fake_aws_rds_client) { instance_double('AWS::RDS::Client') }
+  let(:fake_aws_rds_client) { double('AWS::RDS::Client') }
 
   before(:each) do
     AWS::RDS.stub(new: fake_aws_rds)
