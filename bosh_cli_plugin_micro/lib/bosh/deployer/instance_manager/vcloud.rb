@@ -44,6 +44,14 @@ module Bosh::Deployer
 
       def stop
       end
+
+      def discover_bosh_ip
+        bosh_ip
+      end
+
+      def service_ip
+        bosh_ip
+      end
     end
   end
 end

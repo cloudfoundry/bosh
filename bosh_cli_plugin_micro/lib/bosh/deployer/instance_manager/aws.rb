@@ -73,7 +73,7 @@ module Bosh::Deployer
           end
         end
 
-        super
+        Config.bosh_ip
       end
 
       def service_ip
