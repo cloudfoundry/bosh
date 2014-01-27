@@ -7,7 +7,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment) }
   let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', reserve_capacity: nil) }
   let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
-  let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
 
   let(:foo_properties) do
     {
@@ -36,9 +35,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   ) }
 
   before do
-    allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-    allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
-
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
     allow(plan).to receive(:network).and_return(network)
@@ -47,6 +43,12 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_properties' do
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+    before do
+      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
+      allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
+    end
+
     let(:spec) do
       {
         'name' => 'foobar',
@@ -123,6 +125,11 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe 'property mappings' do
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+    before do
+      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
+    end
+
     let(:foo_properties) do
       {
         'db.user' => {'default' => 'root'},
@@ -179,6 +186,12 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#validate_package_names_do_not_collide!' do
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+    before do
+      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
+      allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
+    end
+
     before { allow(plan).to receive(:properties).and_return({}) }
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
@@ -269,6 +282,11 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#spec' do
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+    before do
+      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
+    end
+
     let(:spec) do
       {
         'name' => 'job1',
