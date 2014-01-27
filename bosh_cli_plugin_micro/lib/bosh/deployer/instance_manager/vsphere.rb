@@ -6,11 +6,6 @@ module Bosh::Deployer
       def remote_tunnel(port)
       end
 
-      FakeRegistry = Struct.new(:port)
-      def registry
-        @registry ||= FakeRegistry.new(nil)
-      end
-
       def disk_model
         if @disk_model.nil?
           require 'cloud/vsphere'
@@ -27,15 +22,6 @@ module Bosh::Deployer
           Config.cloud_options['properties']['vcenters'].first.dup
 
         properties['vcenter']['address'] ||= properties['vcenter']['host']
-      end
-
-      # @return [Integer] size in MiB
-      def disk_size(cid)
-        disk_model.first(uuid: cid).size
-      end
-
-      def persistent_disk_changed?
-        Config.resources['persistent_disk'] != disk_size(state.disk_cid)
       end
 
       def check_dependencies
@@ -56,6 +42,22 @@ module Bosh::Deployer
 
       def service_ip
         bosh_ip
+      end
+
+      # @return [Integer] size in MiB
+      def disk_size(cid)
+        disk_model.first(uuid: cid).size
+      end
+
+      def persistent_disk_changed?
+        Config.resources['persistent_disk'] != disk_size(state.disk_cid)
+      end
+
+      private
+
+      FakeRegistry = Struct.new(:port)
+      def registry
+        @registry ||= FakeRegistry.new(nil)
       end
     end
   end

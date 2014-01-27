@@ -379,10 +379,6 @@ module Bosh::Deployer
       agent_start
     end
 
-    def check_dependencies
-      # nothing to check, move on...
-    end
-
     private
 
     def bosh_ip

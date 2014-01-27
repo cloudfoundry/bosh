@@ -15,6 +15,10 @@ module Bosh::Deployer
         )
       end
 
+      def disk_model
+        nil
+      end
+
       def update_spec(spec)
         properties = spec.properties
 
@@ -28,18 +32,8 @@ module Bosh::Deployer
         spec.delete('networks')
       end
 
-      def configure
-        properties = Config.cloud_options['properties']
-        @ssh_user = properties['openstack']['ssh_user']
-        @ssh_port = properties['openstack']['ssh_port'] || 22
-        @ssh_wait = properties['openstack']['ssh_wait'] || 60
-
-        key = properties['openstack']['private_key']
-        err 'Missing properties.openstack.private_key' unless key
-        @ssh_key = File.expand_path(key)
-        unless File.exists?(@ssh_key)
-          err "properties.openstack.private_key '#{key}' does not exist"
-        end
+      def check_dependencies
+        # nothing to check, move on...
       end
 
       def start
@@ -88,6 +82,21 @@ module Bosh::Deployer
       private
 
       attr_reader :registry
+
+      def configure
+        properties = Config.cloud_options['properties']
+        @ssh_user = properties['openstack']['ssh_user']
+        @ssh_port = properties['openstack']['ssh_port'] || 22
+        @ssh_wait = properties['openstack']['ssh_wait'] || 60
+
+        key = properties['openstack']['private_key']
+        err 'Missing properties.openstack.private_key' unless key
+        @ssh_key = File.expand_path(key)
+        unless File.exists?(@ssh_key)
+          err "properties.openstack.private_key '#{key}' does not exist"
+        end
+      end
+
     end
   end
 end
