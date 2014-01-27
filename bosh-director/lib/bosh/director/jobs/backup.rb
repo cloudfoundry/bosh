@@ -1,5 +1,3 @@
-require 'bosh/director/core/tar_gzipper'
-
 module Bosh::Director
   module Jobs
     class Backup < BaseJob
@@ -13,7 +11,7 @@ module Bosh::Director
 
       def initialize(dest, options={})
         @backup_file = dest
-        @tar_gzipper = options.fetch(:tar_gzipper) { Core::TarGzipper.new }
+        @tar_gzipper = options.fetch(:tar_gzipper) { TarGzipper.new }
         @blobstore_client = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @db_adapter = options.fetch(:db_adapter) { Bosh::Director::DbBackup.create(Config.db_config) }
         @base_dir = options.fetch(:base_dir) { Config.base_dir }

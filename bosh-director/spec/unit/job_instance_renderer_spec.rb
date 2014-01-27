@@ -1,17 +1,16 @@
 require 'spec_helper'
-require 'bosh/director/core/templates/job_instance_renderer'
 
-module Bosh::Director::Core::Templates
+module Bosh::Director
   describe JobInstanceRenderer do
     describe '#render' do
       let(:instance) { double('instance') }
-      let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
+      let(:job_template_loader) { instance_double('Bosh::Director::JobTemplateLoader') }
       subject(:job_instance_renderer) { JobInstanceRenderer.new(job, job_template_loader) }
-      let(:job_template_renderer) { instance_double('Bosh::Director::Core::Templates::JobTemplateRenderer') }
+      let(:job_template_renderer) { instance_double('Bosh::Director::JobTemplateRenderer') }
 
       let(:job) { double('job', templates: templates, name: 'foo') }
       before { allow(RenderedJobInstance).to receive(:new).and_return(expected_rendered_job_instance) }
-      let(:expected_rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }
+      let(:expected_rendered_job_instance) { instance_double('Bosh::Director::RenderedJobInstance') }
 
       context 'when job has no templates' do
         let(:templates) { [] }
@@ -51,13 +50,12 @@ module Bosh::Director::Core::Templates
 
       context 'when job has multiple job_templates' do
         let(:templates) { [double('template1', name: 'b'), double('template2', name: 'a')] }
-        let(:expected_rendered_templates) do
-          [
-            double('rendered job template1'),
-            double('rendered job template2'),
-          ]
-        end
-        let(:job_template_renderer2) { instance_double('Bosh::Director::Core::Templates::JobTemplateRenderer') }
+        let(:expected_rendered_templates) { [
+          double('rendered job template1'),
+          double('rendered job template2'),
+        ] }
+        let(:job_template_renderer2) { instance_double('Bosh::Director::JobTemplateRenderer') }
+
 
         before do
           job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)

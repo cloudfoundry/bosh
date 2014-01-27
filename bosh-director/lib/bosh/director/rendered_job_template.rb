@@ -1,6 +1,4 @@
-require 'bosh/director/core/templates'
-
-module Bosh::Director::Core::Templates
+module Bosh::Director
   class RenderedJobTemplate
     attr_reader :name, :monit, :templates
 

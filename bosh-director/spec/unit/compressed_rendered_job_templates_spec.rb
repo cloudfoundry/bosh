@@ -1,16 +1,14 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
-require 'bosh/director/core/templates/compressed_rendered_job_templates'
-require 'bosh/director/core/templates/rendered_job_template'
 
-module Bosh::Director::Core::Templates
+module Bosh::Director
   describe CompressedRenderedJobTemplates do
     subject { described_class.new('/tmp/file-path') }
 
     describe '#write' do
       let(:rendered_job_template) do
         instance_double(
-          'Bosh::Director::Core::Templates::RenderedJobTemplate',
+          'Bosh::Director::RenderedJobTemplate',
           name: 'job-template-name',
           monit: 'monit file contents',
           templates: [],
@@ -20,10 +18,10 @@ module Bosh::Director::Core::Templates
       before { allow(Dir).to receive(:mktmpdir).and_yield('/tmp/path/for/non-compressed/templates') }
 
       before { RenderedTemplatesWriter.stub(new: writer) }
-      let(:writer) { instance_double('Bosh::Director::Core::Templates::RenderedTemplatesWriter') }
+      let(:writer) { instance_double('Bosh::Director::RenderedTemplatesWriter') }
 
-      before { Bosh::Director::Core::TarGzipper.stub(new: tar_gzipper) }
-      let(:tar_gzipper) { instance_double('Bosh::Director::Core::TarGzipper') }
+      before { TarGzipper.stub(new: tar_gzipper) }
+      let(:tar_gzipper) { instance_double('Bosh::Director::TarGzipper') }
 
       it 'writes rendered templates to disk and then compresses them' do
         expect(writer).to receive(:write).with(

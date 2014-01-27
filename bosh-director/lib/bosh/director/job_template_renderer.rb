@@ -1,9 +1,7 @@
-require 'bosh/director/core/templates'
-require 'bosh/director/core/templates/rendered_job_template'
-require 'bosh/director/core/templates/rendered_file_template'
-require 'common/properties'
+require 'bosh/director/rendered_job_template'
 
-module Bosh::Director::Core::Templates
+module Bosh::Director
+  RenderedFileTemplate = Struct.new(:src_name, :dest_name, :contents)
   class JobTemplateRenderer
 
     attr_reader :monit_template, :templates
@@ -34,7 +32,6 @@ module Bosh::Director::Core::Templates
 
     def render_erb(job_name, template, template_context, index)
       template.result(template_context.get_binding)
-    # rubocop:disable RescueException
     rescue Exception => e
       logger.debug(e.inspect)
       job_desc = "#{job_name}/#{index}"
@@ -46,8 +43,8 @@ module Bosh::Director::Core::Templates
         "for `#{job_desc}' (line #{line}: #{e})"
 
       logger.debug("#{message}\n#{e.backtrace.join("\n")}")
-      raise message
+
+      raise JobTemplateBindingFailed, "#{message}"
     end
-    # rubocop:enable RescueException
   end
 end

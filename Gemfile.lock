@@ -42,7 +42,6 @@ PATH
       bcrypt-ruby (~> 3.0.1)
       blobstore_client (~> 1.1840.0)
       bosh-core (~> 1.1840.0)
-      bosh-director-core (~> 1.1840.0)
       bosh_aws_cpi (~> 1.1840.0)
       bosh_common (~> 1.1840.0)
       bosh_cpi (~> 1.1840.0)
@@ -64,12 +63,6 @@ PATH
       sys-filesystem (~> 1.1.0)
       thin (~> 1.5.0)
       yajl-ruby (~> 1.1.0)
-
-PATH
-  remote: bosh-director-core
-  specs:
-    bosh-director-core (1.1840.0)
-      bosh_common (~> 1.1840.0)
 
 PATH
   remote: bosh-monitor
@@ -423,7 +416,6 @@ DEPENDENCIES
   bosh-core!
   bosh-dev!
   bosh-director!
-  bosh-director-core!
   bosh-monitor!
   bosh-registry!
   bosh-release!
