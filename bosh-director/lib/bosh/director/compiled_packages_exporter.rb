@@ -1,4 +1,4 @@
-require 'bosh/director/tar_gzipper'
+require 'bosh/director/core/tar_gzipper'
 require 'bosh/director/compiled_package_downloader'
 
 module Bosh::Director
@@ -15,7 +15,7 @@ module Bosh::Director
       manifest = CompiledPackageManifest.new(@compiled_package_group)
       manifest.write(File.join(download_dir, 'compiled_packages.MF'))
 
-      archiver = TarGzipper.new
+      archiver = Core::TarGzipper.new
       archiver.compress(download_dir, ['compiled_packages', 'compiled_packages.MF'], output_path)
     ensure
       downloader.cleanup

@@ -1,9 +1,10 @@
-require 'bosh/director/deployment_plan/rendered_templates_archive'
-require 'bosh/director/compressed_rendered_job_templates'
+require 'bosh/director/core/templates'
+require 'bosh/director/core/templates/rendered_templates_archive'
+require 'bosh/director/core/templates/compressed_rendered_job_templates'
 require 'digest/sha1'
 require 'tempfile'
 
-module Bosh::Director
+module Bosh::Director::Core::Templates
   class RenderedJobInstance
     def initialize(job_templates)
       @job_templates = job_templates
@@ -37,12 +38,13 @@ module Bosh::Director
       compressed_archive.write(job_templates)
 
       blobstore_id = blobstore.create(compressed_archive.contents)
-      DeploymentPlan::RenderedTemplatesArchive.new(blobstore_id, compressed_archive.sha1)
+      RenderedTemplatesArchive.new(blobstore_id, compressed_archive.sha1)
     ensure
       file.close!
     end
 
     private
+
     attr_reader :job_templates
   end
 end

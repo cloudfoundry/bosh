@@ -1,9 +1,10 @@
 require 'tmpdir'
 require 'digest/sha1'
-require 'bosh/director/tar_gzipper'
-require 'bosh/director/rendered_templates_writer'
+require 'bosh/director/core/templates'
+require 'bosh/director/core/tar_gzipper'
+require 'bosh/director/core/templates/rendered_templates_writer'
 
-module Bosh::Director
+module Bosh::Director::Core::Templates
   class CompressedRenderedJobTemplates
     def initialize(path)
       @path = path
@@ -14,7 +15,7 @@ module Bosh::Director
         writer = RenderedTemplatesWriter.new
         writer.write(rendered_templates, dir)
 
-        tar_gzipper = TarGzipper.new
+        tar_gzipper = Bosh::Director::Core::TarGzipper.new
         tar_gzipper.compress(dir, %w(.), @path)
       end
     end

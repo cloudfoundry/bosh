@@ -1,6 +1,9 @@
 require 'spec_helper'
+require 'bosh/director/core/templates/rendered_job_instance'
+require 'bosh/director/core/templates/rendered_job_template'
+require 'bosh/director/core/templates/rendered_file_template'
 
-module Bosh::Director
+module Bosh::Director::Core::Templates
   describe RenderedJobInstance do
     subject(:instance) { described_class.new(templates) }
 
@@ -11,7 +14,7 @@ module Bosh::Director
             'template-name1',
             'monit file contents 1',
             [
-              instance_double('Bosh::Director::RenderedFileTemplate',
+              instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
                               src_name: 'template-file1',
                               contents: 'template file contents 1')
             ]
@@ -20,10 +23,10 @@ module Bosh::Director
             'template-name2',
             'monit file contents 2',
             [
-              instance_double('Bosh::Director::RenderedFileTemplate',
+              instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
                               src_name: 'template-file3',
                               contents: 'template file contents 3'),
-              instance_double('Bosh::Director::RenderedFileTemplate',
+              instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
                               src_name: 'template-file2',
                               contents: 'template file contents 2'),
             ]
@@ -39,8 +42,16 @@ module Bosh::Director
     describe '#template_hashes' do
       let(:templates) {
         [
-          instance_double('Bosh::Director::RenderedJobTemplate', name: 'template-name1', template_hash: 'hash1'),
-          instance_double('Bosh::Director::RenderedJobTemplate', name: 'template-name2', template_hash: 'hash2'),
+          instance_double(
+            'Bosh::Director::Core::Templates::RenderedJobTemplate',
+            name: 'template-name1',
+            template_hash: 'hash1',
+          ),
+          instance_double(
+            'Bosh::Director::Core::Templates::RenderedJobTemplate',
+            name: 'template-name2',
+            template_hash: 'hash2',
+          ),
         ]
       }
 
@@ -52,8 +63,16 @@ module Bosh::Director
     describe '#persist' do
       let(:templates) {
         [
-          instance_double('Bosh::Director::RenderedJobTemplate', name: 'template-name1', template_hash: 'hash1'),
-          instance_double('Bosh::Director::RenderedJobTemplate', name: 'template-name2', template_hash: 'hash2'),
+          instance_double(
+            'Bosh::Director::Core::Templates::RenderedJobTemplate',
+            name: 'template-name1',
+            template_hash: 'hash1',
+          ),
+          instance_double(
+            'Bosh::Director::Core::Templates::RenderedJobTemplate',
+            name: 'template-name2',
+            template_hash: 'hash2',
+          ),
         ]
       }
 
@@ -61,14 +80,14 @@ module Bosh::Director
         instance.persist(blobstore)
       end
 
-      let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+      let(:blobstore) { double('Bosh::Blobstore::BaseClient') }
 
-      let(:templates) { [instance_double('Bosh::Director::RenderedJobTemplate')] }
+      let(:templates) { [instance_double('Bosh::Director::Core::Templates::RenderedJobTemplate')] }
 
       before { allow(CompressedRenderedJobTemplates).to receive(:new).and_return(compressed_archive) }
       let(:compressed_archive) do
         instance_double(
-          'Bosh::Director::CompressedRenderedJobTemplates',
+          'Bosh::Director::Core::Templates::CompressedRenderedJobTemplates',
           write: nil,
           contents: nil,
           sha1: 'fake-blob-sha1',

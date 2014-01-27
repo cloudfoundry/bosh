@@ -316,7 +316,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'includes rendered_templates_archive key after rendered templates were archived' do
           instance.rendered_templates_archive =
-            RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
+            Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
 
           expect(instance.spec['rendered_templates_archive']).to eq(
             'blobstore_id' => 'fake-blobstore-id',

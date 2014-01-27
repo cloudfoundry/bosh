@@ -1,6 +1,7 @@
-require 'bosh/director/rendered_job_instance'
+require 'bosh/director/core/templates'
+require 'bosh/director/core/templates/rendered_job_instance'
 
-module Bosh::Director
+module Bosh::Director::Core::Templates
   class JobInstanceRenderer
     def initialize(job, job_template_loader)
       @job = job

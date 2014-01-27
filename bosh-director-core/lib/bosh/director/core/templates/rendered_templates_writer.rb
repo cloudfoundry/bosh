@@ -1,6 +1,7 @@
+require 'bosh/director/core/templates'
 require 'fileutils'
 
-module Bosh::Director
+module Bosh::Director::Core::Templates
   class RenderedTemplatesWriter
     def write(rendered_templates, output_dir)
       rendered_templates.each do |job_template|

@@ -5,13 +5,13 @@ module Bosh::Director
     subject(:renderer) { JobRenderer.new(job) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
 
-    before { JobInstanceRenderer.stub(:new).with(job, job_template_loader).and_return(job_instance_renderer) }
+    before { allow(Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
     let(:job_instance_renderer) do
-      instance_double('Bosh::Director::JobInstanceRenderer', render: rendered_job_instance)
+      instance_double('Bosh::Director::Core::Templates::JobInstanceRenderer', render: rendered_job_instance)
     end
 
-    before { JobTemplateLoader.stub(new: job_template_loader) }
-    let(:job_template_loader) { instance_double('Bosh::Director::JobTemplateLoader') }
+    before { Core::Templates::JobTemplateLoader.stub(new: job_template_loader) }
+    let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
 
     describe '#render_job_instances' do
       before { job.stub(instances: [instance]) }
@@ -35,8 +35,8 @@ module Bosh::Director
       end
 
       let(:rendered_job_instance) do
-        double(
-          'RenderedJobInstance',
+        instance_double(
+          'Bosh::Director::Core::Templates::RenderedJobInstance',
           configuration_hash: configuration_hash,
           template_hashes: { 'job-template-name' => 'rendered-job-template-hash' },
           persist: rendered_templates_archive,
@@ -45,7 +45,7 @@ module Bosh::Director
 
       let(:rendered_templates_archive) do
         instance_double(
-          'Bosh::Director::DeploymentPlan::RenderedTemplatesArchive',
+          'Bosh::Director::Core::Templates::RenderedTemplatesArchive',
           blobstore_id: 'fake-new-blob-id',
           sha1: 'fake-new-sha1',
         )
@@ -57,6 +57,11 @@ module Bosh::Director
 
       def perform
         renderer.render_job_instances(blobstore)
+      end
+
+      it 'correctly initializes JobInstanceRenderer' do
+        perform
+        expect(Bosh::Director::Core::Templates::JobInstanceRenderer).to have_received(:new).with(job, job_template_loader)
       end
 
       context 'when instance does not have a latest archive' do
@@ -101,10 +106,10 @@ module Bosh::Director
           )
         end
 
-        before { allow(DeploymentPlan::RenderedTemplatesArchive).to receive(:new).and_return(latest_rendered_templates_archive) }
+        before { allow(Core::Templates::RenderedTemplatesArchive).to receive(:new).and_return(latest_rendered_templates_archive) }
         let(:latest_rendered_templates_archive) do
           instance_double(
-            'Bosh::Director::DeploymentPlan::RenderedTemplatesArchive',
+            'Bosh::Director::Core::Templates::RenderedTemplatesArchive',
             blobstore_id: 'fake-latest-blob-id',
             sha1: 'fake-latest-sha1',
           )
@@ -120,7 +125,7 @@ module Bosh::Director
 
           it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
             perform
-            expect(DeploymentPlan::RenderedTemplatesArchive).to have_received(:new).with('fake-latest-blob-id', 'fake-latest-sha1')
+            expect(Core::Templates::RenderedTemplatesArchive).to have_received(:new).with('fake-latest-blob-id', 'fake-latest-sha1')
             expect(instance).to have_received(:rendered_templates_archive=).with(latest_rendered_templates_archive)
           end
         end

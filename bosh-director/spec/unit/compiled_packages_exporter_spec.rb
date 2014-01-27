@@ -10,8 +10,8 @@ module Bosh::Director
     describe '#export' do
       let(:download_dir) { '/tmp/path/to/download_dir' }
 
-      before { TarGzipper.stub(new: archiver) }
-      let(:archiver) { instance_double('Bosh::Director::TarGzipper') }
+      before { Core::TarGzipper.stub(new: archiver) }
+      let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
 
       before { CompiledPackageDownloader.stub(:new).with(group, blobstore_client).and_return(downloader) }
       let(:downloader) { instance_double('Bosh::Director::CompiledPackageDownloader', cleanup: nil) }
