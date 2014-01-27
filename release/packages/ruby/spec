@@ -2,6 +2,5 @@
 name: ruby
 files:
 - ruby/ruby-1.9.3-p484.tar.gz
-- ruby/rubygems-1.8.24.tgz
-- ruby/rubygems-datefix.patch
-- ruby/bundler-1.2.3.gem
+- ruby/rubygems-2.1.11.tgz
+- ruby/bundler-1.5.2.gem

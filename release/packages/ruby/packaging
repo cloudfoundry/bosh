@@ -9,12 +9,11 @@ tar xzf ruby/ruby-1.9.3-p484.tar.gz
   make install
 )
 
-tar zxvf ruby/rubygems-1.8.24.tgz
+tar zxvf ruby/rubygems-2.1.11.tgz
 
 (
   set -e
-  cd rubygems-1.8.24
-  patch -p1 < ../ruby/rubygems-datefix.patch
+  cd rubygems-2.1.11
 
   ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb
 
@@ -24,4 +23,4 @@ tar zxvf ruby/rubygems-1.8.24.tgz
   fi
 )
 
-${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.2.3.gem --no-ri --no-rdoc
+${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.5.2.gem --no-ri --no-rdoc

@@ -119,3 +119,13 @@ ruby/ruby-1.9.3-p484.tar.gz:
   sha: !binary |-
     NmFlODBmNDI0OTY4YjVjZTY2MWVlOWIyYmVlMWMyMWFkYzllZTY3Yw==
   size: 12576996
+ruby/rubygems-2.1.11.tgz:
+  object_id: a949ba57-c5f8-43a1-a3e5-44faf1ab3b88
+  sha: !binary |-
+    Y2EzMDMzNDMyY2FlMjhkZWI3Y2VkNzljZGEyNzFjYjI5MmI3MGU1OQ==
+  size: 367166
+ruby/bundler-1.5.2.gem:
+  object_id: 7ab3bb7d-9ed5-4ff7-ae53-22ad6cac7342
+  sha: !binary |-
+    NzhhOWZlMTE2MTQwNzc3OGY0MzdmYWUzOWNiNWFjNTExMjdmNDYzNQ==
+  size: 286208
