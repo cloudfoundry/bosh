@@ -6,7 +6,6 @@ require 'bosh/deployer/ui_messager'
 
 module Bosh::Deployer
   class InstanceManager
-
     CONNECTION_EXCEPTIONS = [
       Bosh::Agent::Error,
       Errno::ECONNREFUSED,
@@ -79,12 +78,6 @@ module Bosh::Deployer
       result = yield
       renderer.update(:finished, task)
       result
-    end
-
-    def start
-    end
-
-    def stop
     end
 
     def with_lifecycle
@@ -438,7 +431,7 @@ module Bosh::Deployer
     end
 
     def wait_until_agent_ready
-      remote_tunnel(@registry_port)
+      remote_tunnel(registry.port)
       wait_until_ready('agent') { agent.ping }
     end
 

@@ -6,6 +6,11 @@ module Bosh::Deployer
       def remote_tunnel(port)
       end
 
+      FakeRegistry = Struct.new(:port)
+      def registry
+        @registry ||= FakeRegistry.new(nil)
+      end
+
       def disk_model
         if @disk_model.nil?
           require 'cloud/vsphere'
@@ -37,6 +42,12 @@ module Bosh::Deployer
         if Bosh::Common.which(%w[genisoimage mkisofs]).nil?
           err("either of 'genisoimage' or 'mkisofs' commands must be present")
         end
+      end
+
+      def start
+      end
+
+      def stop
       end
     end
   end

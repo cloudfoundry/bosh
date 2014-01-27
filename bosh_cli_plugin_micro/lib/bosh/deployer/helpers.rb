@@ -21,12 +21,6 @@ module Bosh::Deployer
       end
     end
 
-    def process_exists?(pid)
-      Process.kill(0, pid)
-    rescue Errno::ESRCH
-      false
-    end
-
     def socket_readable?(ip, port)
       socket = TCPSocket.new(ip, port)
       if IO.select([socket], nil, nil, 5)
