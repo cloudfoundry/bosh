@@ -3,11 +3,13 @@ set -e
 cd bosh/bosh-registry
 
 mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
-gem_cmd="/var/vcap/packages/ruby/bin/gem install --local --no-ri --no-rdoc -w -n ${BOSH_INSTALL_TARGET}/bin -i ${BOSH_INSTALL_TARGET}/gem_home"
+gem_cmd="/var/vcap/packages/ruby/bin/gem \
+    install --local --verbose --no-ri --no-rdoc -w \
+    -n ${BOSH_INSTALL_TARGET}/bin -i ${BOSH_INSTALL_TARGET}/gem_home"
 
 libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
 $gem_cmd pg -- --with-pg-lib=$libpq_dir/lib --with-pg-include=$libpq_dir/include
-$gem_cmd mysql -- --with-mysql-dir=$mysqlclient_dir --with-mysql-include=$mysqlclient_dir/include/mysql
+$gem_cmd mysql2 -- --with-mysql-dir=$mysqlclient_dir --with-mysql-include=$mysqlclient_dir/include/mysql
 
 $gem_cmd bosh-registry
