@@ -33,6 +33,7 @@ shared_examples_for 'a stemcell' do
 
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
+      it { should_not contain('$ModLoad imklog') }
     end
 
     describe user('syslog') do
