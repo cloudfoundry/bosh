@@ -17,7 +17,7 @@ module Bat
     def initialize(vars)
       VARS.keys.each do |name|
         val = vars[name]
-        raise ArgumentError, "Missing #{var}" unless val
+        raise ArgumentError, "Missing #{name}" unless val
         instance_variable_set("@#{name}", val)
       end
     end

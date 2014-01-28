@@ -16,6 +16,12 @@ describe 'initialization', :skip_task_check do
         File.exists?(deployment.to_path).should be(true)
       end
     end
+
+    it 'raises an argument error if one of the ENV vars are missing' do
+      expect {
+        Bat::Env.new({})
+      }.to raise_error(ArgumentError)
+    end
   end
 
   describe 'director' do
