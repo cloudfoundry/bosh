@@ -23,7 +23,7 @@ module Bosh::Dev
         Candidate.new(number, DownloadAdapter.new(logger))
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
-        Local.new('local', LocalDownloadAdapter.new(logger))
+        Local.new('0000', LocalDownloadAdapter.new(logger))
       end
     end
 

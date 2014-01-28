@@ -36,7 +36,7 @@ module Bosh::Dev
 
       context 'when CANDIDATE_BUILD_NUMBER is not set' do
         it { should be_a(Build::Local) }
-        its(:number) { should eq('local') }
+        its(:number) { should eq('0000') }
 
         it 'uses LocalDownloadAdapater as download adapter' do
           download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
@@ -48,7 +48,7 @@ module Bosh::Dev
           build = instance_double('Bosh::Dev::Build::Local')
           Bosh::Dev::Build::Local
             .should_receive(:new)
-            .with('local', download_adapter)
+            .with('0000', download_adapter)
             .and_return(build)
 
           subject.should == build
