@@ -186,7 +186,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#validate_package_names_do_not_collide!' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1') }
     before do
       allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
       allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
@@ -245,7 +245,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       before { allow(plan).to receive(:releases).with(no_args).and_return([release, bar_release]) }
 
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
-      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release') }
 
       before { allow(bar_release).to receive(:use_template_named).with('bar').and_return(bar_template) }
       let(:bar_template) do
@@ -273,8 +273,9 @@ describe Bosh::Director::DeploymentPlan::Job do
             job.validate_package_names_do_not_collide!
           }.to raise_error(
             Bosh::Director::JobPackageCollision,
-            "Colocated package `same-name' has the same name in multiple releases. " +
-              'BOSH cannot currently colocate two packages with identical names from separate releases.',
+            "Package name collision detected in job `foobar': template `release1/foo' depends on package `release1/same-name',"\
+            " template `bar_release/bar' depends on `bar_release/same-name'. " +
+              'BOSH cannot currently collocate two packages with identical names from separate releases.',
           )
         end
       end

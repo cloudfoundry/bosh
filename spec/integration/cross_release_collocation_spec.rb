@@ -69,7 +69,7 @@ describe 'collocating templates from multiple releases' do
       run_bosh("deployment #{deployment_manifest.path}")
 
       output = run_bosh("deploy", failure_expected: true)
-      expect(output).to match(/Colocated package `dummy_package' has the same name in multiple releases/)
+      expect(output).to match(%r[Package name collision detected in job `foobar': template `dummy/dummy_with_package' depends on package `dummy/dummy_package',])
     end
   end
 end
