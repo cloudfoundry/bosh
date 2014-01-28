@@ -14,14 +14,16 @@ module Bosh::Deployer
       HTTPClient::ConnectTimeoutError
     ]
 
-    extend Helpers
-    include Helpers
+    DEPLOYMENTS_FILE = 'bosh-deployments.yml'
 
     attr_reader :state
     attr_accessor :renderer
 
     def self.create(config)
-      plugin_name = cloud_plugin(config)
+      err 'No cloud properties defined' if config['cloud'].nil?
+      err 'No cloud plugin defined' if config['cloud']['plugin'].nil?
+
+      plugin_name = config['cloud']['plugin']
 
       begin
         require "bosh/deployer/instance_manager/#{plugin_name}"
@@ -197,7 +199,7 @@ module Bosh::Deployer
 
     # rubocop:disable MethodLength
     def create_stemcell(stemcell_tgz)
-      unless is_tgz?(stemcell_tgz)
+      unless File.extname(stemcell_tgz) == '.tgz'
         step 'Using existing stemcell' do
         end
 
@@ -225,7 +227,7 @@ module Bosh::Deployer
     rescue => e
       logger.err("create stemcell failed: #{e.message}:\n#{e.backtrace.join("\n")}")
       # make sure we clean up the stemcell if something goes wrong
-      delete_stemcell if is_tgz?(stemcell_tgz) && state.stemcell_cid
+      delete_stemcell if File.extname(stemcell_tgz) == '.tgz' && state.stemcell_cid
       raise e
     end
     # rubocop:enable MethodLength

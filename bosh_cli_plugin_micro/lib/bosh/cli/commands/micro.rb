@@ -6,8 +6,6 @@ require 'bosh/stemcell/archive'
 
 module Bosh::Cli::Command
   class Micro < Base
-    include Bosh::Deployer::Helpers
-
     MICRO_DIRECTOR_PORT = 25555
     DEFAULT_CONFIG_PATH = File.expand_path('~/.bosh_deployer_config')
     MICRO_BOSH_YAML = 'micro_bosh.yml'
@@ -159,7 +157,7 @@ module Bosh::Cli::Command
 
       confirm_deployment("#{confirmation} #{desc}")
 
-      if is_tgz?(stemcell)
+      if File.extname(stemcell) == '.tgz'
         stemcell_file = Bosh::Cli::Stemcell.new(stemcell)
 
         say("\nVerifying stemcell...")
@@ -228,7 +226,7 @@ module Bosh::Cli::Command
     usage 'micro deployments'
     desc 'Show the list of deployments'
     def list
-      file = File.join(work_dir, DEPLOYMENTS_FILE)
+      file = File.join(work_dir, Bosh::Deployer::InstanceManager::DEPLOYMENTS_FILE)
       if File.exists?(file)
         deployments = load_yaml_file(file)['instances']
       else
@@ -400,6 +398,16 @@ AGENT_HELP
         value.make_green
       else
         'n/a'.make_red
+      end
+    end
+
+    def strip_relative_path(path)
+      path[/#{Regexp.escape File.join(Dir.pwd, '')}(.*)/, 1] || path
+    end
+
+    def dig_hash(hash, *path)
+      path.inject(hash) do |location, key|
+        location.respond_to?(:keys) ? location[key] : nil
       end
     end
   end

@@ -1,13 +1,11 @@
 module Bosh::Deployer
   class Configuration
-    include Helpers
-
     attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
                   :spec_properties, :agent_properties, :bosh_ip, :env, :name, :net_conf
 
     # rubocop:disable MethodLength
     def configure(config)
-      plugin = cloud_plugin(config)
+      plugin = config['cloud']['plugin']
 
       config = deep_merge(load_defaults(plugin), config)
 

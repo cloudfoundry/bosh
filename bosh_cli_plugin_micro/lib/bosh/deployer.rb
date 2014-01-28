@@ -17,7 +17,6 @@ require 'common/common'
 require 'common/thread_formatter'
 
 require 'bosh/deployer/version'
-require 'bosh/deployer/helpers'
 require 'bosh/deployer/config'
 require 'bosh/deployer/specification'
 require 'bosh/deployer/instance_manager'
