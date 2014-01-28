@@ -7,4 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-echo 'KERNEL=="sr0", SYMLINK+="bosh-cdrom"' > $chroot/etc/udev/rules.d/95-bosh-cdrom.rules
+cp $assets_dir/95-bosh-cdrom.rules $chroot/etc/udev/rules.d/95-bosh-cdrom.rules
+
+cp $assets_dir/ready_cdrom.sh $chroot/etc/udev/rules.d/ready_cdrom.sh

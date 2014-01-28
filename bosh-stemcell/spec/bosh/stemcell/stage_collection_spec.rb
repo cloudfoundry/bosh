@@ -97,6 +97,7 @@ module Bosh::Stemcell
     let(:vsphere_ubuntu_infrastructure_stages) {
       [
         :system_open_vm_tools,
+        :system_vsphere_cdrom,
         :system_parameters,
         :bosh_clean,
         :bosh_harden,
@@ -112,6 +113,7 @@ module Bosh::Stemcell
     let(:vsphere_centos_infrastructure_stages) {
       [
         #:system_open_vm_tools,
+        :system_vsphere_cdrom,
         :system_parameters,
         :bosh_clean,
         :bosh_harden,

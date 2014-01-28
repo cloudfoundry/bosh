@@ -1,0 +1,1 @@
+KERNEL=="sr0", ACTION=="change", RUN+="/etc/udev/rules.d/ready_cdrom.sh"
