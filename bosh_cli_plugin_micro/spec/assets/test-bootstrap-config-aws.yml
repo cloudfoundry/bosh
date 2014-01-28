@@ -18,6 +18,7 @@ cloud:
       max_retries: 2
       default_key_name: foo-key
       default_security_groups: ["quick-start-1"]
+      ec2_private_key: spec/assets/fake-private.key
     registry:
       endpoint: http://admin:admin@10.176.194.184:25695
       user: admin

@@ -1,4 +1,6 @@
 require 'bosh/deployer/registry'
+require 'bosh/deployer/remote_tunnel'
+require 'bosh/deployer/ssh_server'
 
 module Bosh::Deployer
   class InstanceManager
@@ -6,13 +8,31 @@ module Bosh::Deployer
       def initialize(config, config_sha1, ui_messager)
         super
 
-        @registy = Registry.new(
+        @registry = Registry.new(
           Config.cloud_options['properties']['registry']['endpoint'],
           'openstack',
           Config.cloud_options['properties']['openstack'],
           @deployments,
           logger,
         )
+
+        properties = Config.cloud_options['properties']
+        ssh_user = properties['openstack']['ssh_user']
+        ssh_port = properties['openstack']['ssh_port'] || 22
+        ssh_wait = properties['openstack']['ssh_wait'] || 60
+
+        key = properties['openstack']['private_key']
+        err 'Missing properties.openstack.private_key' unless key
+        ssh_key = File.expand_path(key)
+        unless File.exists?(ssh_key)
+          err "properties.openstack.private_key '#{key}' does not exist"
+        end
+        ssh_server = SshServer.new(ssh_user, ssh_key, ssh_port, logger)
+        @remote_tunnel = RemoteTunnel.new(ssh_server, ssh_wait, logger)
+      end
+
+      def remote_tunnel(port)
+        remote_tunnel.create(Config.bosh_ip, port)
       end
 
       def disk_model
@@ -37,7 +57,6 @@ module Bosh::Deployer
       end
 
       def start
-        configure
         registry.start
       end
 
@@ -81,22 +100,7 @@ module Bosh::Deployer
 
       private
 
-      attr_reader :registry
-
-      def configure
-        properties = Config.cloud_options['properties']
-        @ssh_user = properties['openstack']['ssh_user']
-        @ssh_port = properties['openstack']['ssh_port'] || 22
-        @ssh_wait = properties['openstack']['ssh_wait'] || 60
-
-        key = properties['openstack']['private_key']
-        err 'Missing properties.openstack.private_key' unless key
-        @ssh_key = File.expand_path(key)
-        unless File.exists?(@ssh_key)
-          err "properties.openstack.private_key '#{key}' does not exist"
-        end
-      end
-
+      attr_reader :registry, :remote_tunnel
     end
   end
 end
