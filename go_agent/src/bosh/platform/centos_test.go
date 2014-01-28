@@ -459,6 +459,52 @@ func TestCentosMigratePersistentDisk(t *testing.T) {
 	assert.Equal(t, fakeMounter.RemountToMountPoint, "/from/path")
 }
 
+func TestCentosGetFileContentsFromCDROM(t *testing.T) {
+	deps, centos := buildCentos()
+
+	deps.fs.WriteToFile("/dev/bosh-cdrom", "")
+	settingsPath := filepath.Join(centos.dirProvider.SettingsDir(), "env")
+	deps.fs.WriteToFile(settingsPath, "some stuff")
+	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
+
+	contents, err := centos.GetFileContentsFromCDROM("env")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 3, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"mount", "/dev/sr0", "/fake-dir/bosh/settings"}, deps.cmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"umount", "/fake-dir/bosh/settings"}, deps.cmdRunner.RunCommands[1])
+	assert.Equal(t, []string{"eject", "/dev/sr0"}, deps.cmdRunner.RunCommands[2])
+
+	assert.Equal(t, contents, []byte("some stuff"))
+}
+
+func TestCentosGetFileContentsFromCDROMWhenCDROMFailedToLoad(t *testing.T) {
+	deps, centos := buildCentos()
+
+	deps.fs.WriteToFile("/dev/sr0/env", "some stuff")
+	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
+	centos.cdromWaitInterval = 1 * time.Millisecond
+
+	_, err := centos.GetFileContentsFromCDROM("env")
+	assert.Error(t, err)
+}
+
+func TestCentosGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
+	deps, centos := buildCentos()
+
+	settingsPath := filepath.Join(centos.dirProvider.SettingsDir(), "env")
+	deps.fs.WriteToFile(settingsPath, "some stuff")
+	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
+
+	go func() {
+		_, err := centos.GetFileContentsFromCDROM("env")
+		assert.NoError(t, err)
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+	deps.fs.WriteToFile("/dev/bosh-cdrom", "")
+}
+
 func TestCentosIsDevicePathMounted(t *testing.T) {
 	deps, centos := buildCentos()
 

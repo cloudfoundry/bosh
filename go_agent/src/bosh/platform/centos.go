@@ -11,6 +11,7 @@ import (
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,17 +22,18 @@ import (
 )
 
 type centos struct {
-	collector       boshstats.StatsCollector
-	fs              boshsys.FileSystem
-	cmdRunner       boshsys.CmdRunner
-	partitioner     boshdisk.Partitioner
-	formatter       boshdisk.Formatter
-	mounter         boshdisk.Mounter
-	compressor      boshcmd.Compressor
-	copier          boshcmd.Copier
-	diskWaitTimeout time.Duration
-	dirProvider     boshdirs.DirectoriesProvider
-	vitalsService   boshvitals.Service
+	collector         boshstats.StatsCollector
+	fs                boshsys.FileSystem
+	cmdRunner         boshsys.CmdRunner
+	partitioner       boshdisk.Partitioner
+	formatter         boshdisk.Formatter
+	mounter           boshdisk.Mounter
+	compressor        boshcmd.Compressor
+	copier            boshcmd.Copier
+	diskWaitTimeout   time.Duration
+	dirProvider       boshdirs.DirectoriesProvider
+	vitalsService     boshvitals.Service
+	cdromWaitInterval time.Duration
 }
 
 func newCentosPlatform(
@@ -54,6 +56,7 @@ func newCentosPlatform(
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
+	platform.cdromWaitInterval = 500 * time.Millisecond
 	return
 }
 
@@ -472,7 +475,84 @@ func (p centos) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	return p.mounter.Unmount(realPath + "1")
 }
 
-func (p centos) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+func (p centos) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
+	err = p.waitForCDROM()
+	if err != nil {
+		err = bosherr.WrapError(err, "Waiting for CDROM to be ready")
+		return
+	}
+	defer p.ejectCDROM(p.getCDROMPath())
+
+	err = p.createCDROMMountPoint()
+	if err != nil {
+		err = bosherr.WrapError(err, "Creating CDROM mount point")
+		return
+	}
+
+	err = p.mountCDROM(p.getCDROMPath(), p.dirProvider.SettingsDir())
+	if err != nil {
+		err = bosherr.WrapError(err, "Mounting CDROM")
+		return
+	}
+	defer p.umountCDROM(p.dirProvider.SettingsDir())
+
+	settingsPath := filepath.Join(p.dirProvider.SettingsDir(), fileName)
+
+	stringContents, err := p.fs.ReadFile(settingsPath)
+	if err != nil {
+		err = bosherr.WrapError(err, "Reading from CDROM")
+		return
+	}
+
+	contents = []byte(stringContents)
+
+	return
+}
+
+func (p centos) ejectCDROM(cdromPath string) {
+	_, _, _ = p.cmdRunner.RunCommand("eject", cdromPath)
+	return
+}
+
+func (p centos) umountCDROM(mountPath string) {
+	_, _, _ = p.cmdRunner.RunCommand("umount", mountPath)
+	return
+}
+
+func (p centos) mountCDROM(cdromPath, mountPath string) (err error) {
+	_, _, err = p.cmdRunner.RunCommand("mount", cdromPath, mountPath)
+	return
+}
+
+func (p centos) createCDROMMountPoint() (err error) {
+	var perms os.FileMode = 0700
+	err = p.fs.MkdirAll(p.dirProvider.SettingsDir(), perms)
+	return
+}
+
+func (p centos) waitForCDROM() (err error) {
+	for retryAttempts := 0; retryAttempts < 10; retryAttempts++ {
+		if p.fs.FileExists("/dev/bosh-cdrom") {
+			return
+		}
+		time.Sleep(p.cdromWaitInterval)
+	}
+
+	err = errors.New("/dev/bosh-cdrom syslink does not exist")
+	return
+}
+
+func (p centos) getCDROMPath() (path string) {
+	infoContents, err := p.fs.ReadFile("/proc/sys/dev/cdrom/info")
+	if err != nil {
+		err = bosherr.WrapError(err, "Reading cdrom info file")
+		return
+	}
+
+	rp := regexp.MustCompile(`drive name:\s*(\S+)\n`)
+	matches := rp.FindStringSubmatch(infoContents)
+	path = "/dev/" + matches[1]
+
 	return
 }
 
