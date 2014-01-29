@@ -32,7 +32,7 @@ module Bosh::Deployer
       end
 
       def remote_tunnel(port)
-        remote_tunnel.create(Config.bosh_ip, port)
+        @remote_tunnel.create(Config.bosh_ip, port)
       end
 
       def disk_model
@@ -100,7 +100,7 @@ module Bosh::Deployer
 
       private
 
-      attr_reader :registry, :remote_tunnel
+      attr_reader :registry
     end
   end
 end
