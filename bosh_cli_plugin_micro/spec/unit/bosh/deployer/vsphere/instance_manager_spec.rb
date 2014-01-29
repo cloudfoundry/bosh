@@ -5,7 +5,7 @@ require 'bosh/deployer/ui_messager'
 module Bosh
   module Deployer
     describe InstanceManager do
-      subject(:deployer) { InstanceManager::Vsphere.new(config, 'fake-config-sha1', ui_messager) }
+      subject(:deployer) { InstanceManager.new(config, 'fake-config-sha1', ui_messager, 'vsphere') }
       let(:ui_messager) { UiMessager.for_deployer }
       let(:config) do
         config = Psych.load_file(spec_asset('test-bootstrap-config.yml'))
@@ -48,8 +48,8 @@ module Bosh
         before do # attached disk
           deployer.state.disk_cid = 'fake-disk-cid'
           agent.stub(list_disk: ['fake-disk-cid'])
-          deployer.disk_model.delete
-          deployer.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
+          deployer.infrastructure.disk_model.delete
+          deployer.infrastructure.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
         end
 
         let(:apply_spec) { YAML.load_file(spec_asset('apply_spec.yml')) }

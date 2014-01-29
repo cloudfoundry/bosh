@@ -71,7 +71,7 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it 'should not populate disk model' do
-    disk_model = @deployer.disk_model
+    disk_model = @deployer.infrastructure.disk_model
     disk_model.should == nil
   end
 
@@ -139,7 +139,7 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it 'should update a Bosh instance' do
-    @deployer.stub(:service_ip).and_return('10.0.0.10')
+    @deployer.infrastructure.stub(:service_ip).and_return('10.0.0.10')
     spec = Psych.load_file(spec_asset('apply_spec_vcloud.yml'))
     disk_cid = '22'
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
@@ -150,7 +150,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub(:wait_until_director_ready)
     @deployer.stub(:load_apply_spec).and_return(spec)
     @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
-    @deployer.stub(:persistent_disk_changed?).and_return(false)
+    @deployer.infrastructure.stub(:persistent_disk_changed?).and_return(false)
 
     @deployer.state.stemcell_cid = 'SC-CID-UPDATE'
     @deployer.state.vm_cid = 'VM-CID-UPDATE'

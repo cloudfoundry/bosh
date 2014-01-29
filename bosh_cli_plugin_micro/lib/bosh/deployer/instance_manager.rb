@@ -18,6 +18,7 @@ module Bosh::Deployer
 
     attr_reader :state
     attr_accessor :renderer
+    attr_reader :infrastructure
     attr_reader :deployments
 
     def self.create(config)
@@ -35,12 +36,14 @@ module Bosh::Deployer
       config_sha1 = Bosh::Deployer::HashFingerprinter.new.sha1(config)
       ui_messager = Bosh::Deployer::UiMessager.for_deployer
 
-      plugin_class = InstanceManager.const_get(plugin_name.capitalize)
-      plugin_class.new(config, config_sha1, ui_messager)
+      new(config, config_sha1, ui_messager, plugin_name)
     end
 
-    def initialize(config, config_sha1, ui_messager)
+    def initialize(config, config_sha1, ui_messager, plugin_name)
       Config.configure(config)
+
+      plugin_class = InstanceManager.const_get(plugin_name.capitalize)
+      @infrastructure = plugin_class.new(self, logger)
 
       @state_yml = File.join(config['dir'], DEPLOYMENTS_FILE)
       load_state(config['name'])
@@ -64,16 +67,20 @@ module Bosh::Deployer
       Config.logger
     end
 
-    def disk_model
-      nil
-    end
-
     def instance_model
       Models::Instance
     end
 
     def exists?
       [state.vm_cid, state.stemcell_cid, state.disk_cid].any?
+    end
+
+    def check_dependencies
+      infrastructure.check_dependencies
+    end
+
+    def discover_bosh_ip
+      infrastructure.discover_bosh_ip
     end
 
     def step(task)
@@ -84,10 +91,10 @@ module Bosh::Deployer
     end
 
     def with_lifecycle
-      start
+      infrastructure.start
       yield
     ensure
-      stop
+      infrastructure.stop
     end
 
     def create_deployment(stemcell_tgz, stemcell_archive)
@@ -118,7 +125,7 @@ module Bosh::Deployer
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
         update_vm_metadata(state.vm_cid, { 'Name' => state.name })
-        discover_bosh_ip
+        infrastructure.discover_bosh_ip
       end
       save_state
 
@@ -344,7 +351,7 @@ module Bosh::Deployer
       if state.disk_cid.nil?
         create_disk
         attach_disk(state.disk_cid, true)
-      elsif persistent_disk_changed?
+      elsif infrastructure.persistent_disk_changed?
         size = Config.resources['persistent_disk']
 
         # save a reference to the old disk
@@ -374,19 +381,35 @@ module Bosh::Deployer
 
       step 'Applying micro BOSH spec' do
         # first update spec with infrastructure specific stuff
-        update_spec(spec)
+        infrastructure.update_spec(spec)
         # then update spec with generic changes
-        agent.run_task(:apply, spec.update(bosh_ip, service_ip))
+        agent.run_task(:apply, spec.update(bosh_ip, infrastructure.service_ip))
       end
 
       agent_start
     end
 
-    private
-
     def bosh_ip
       Config.bosh_ip
     end
+
+    def bosh_ip=(ip)
+      Config.bosh_ip = ip
+    end
+
+    def save_state
+      state.save
+      deployments['instances'] = instance_model.map { |instance| instance.values }
+      if infrastructure.disk_model
+        deployments['disks'] = infrastructure.disk_model.map { |disk| disk.values }
+      end
+
+      File.open(@state_yml, 'w') do |file|
+        file.write(Psych.dump(deployments))
+      end
+    end
+
+    private
 
     def agent_stop
       step 'Stopping agent services' do
@@ -422,7 +445,7 @@ module Bosh::Deployer
     end
 
     def wait_until_agent_ready
-      remote_tunnel(registry.port)
+      infrastructure.remote_tunnel
       wait_until_ready('agent') { agent.ping }
     end
 
@@ -503,8 +526,8 @@ module Bosh::Deployer
     def load_state(name)
       @deployments = load_deployments
 
-      disk_model.insert_multiple(@deployments['disks']) if disk_model
-      instance_model.insert_multiple(@deployments['instances'])
+      infrastructure.disk_model.insert_multiple(deployments['disks']) if infrastructure.disk_model
+      instance_model.insert_multiple(deployments['instances'])
 
       @state = instance_model.find(name: name)
       if @state.nil?
@@ -514,17 +537,7 @@ module Bosh::Deployer
         @state.stemcell_sha1 = nil
         @state.save
       else
-        discover_bosh_ip
-      end
-    end
-
-    def save_state
-      state.save
-      @deployments['instances'] = instance_model.map { |instance| instance.values }
-      @deployments['disks'] = disk_model.map { |disk| disk.values } if disk_model
-
-      File.open(@state_yml, 'w') do |file|
-        file.write(Psych.dump(@deployments))
+        infrastructure.discover_bosh_ip
       end
     end
 

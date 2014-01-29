@@ -1,6 +1,18 @@
 require 'spec_helper'
+require 'bosh/deployer/instance_manager/vsphere'
 
 describe Bosh::Deployer do
+  let(:infrastructure) do
+    double(
+      'Bosh::Deployer::InstanceManager::Vsphere',
+      disk_model: nil,
+      discover_bosh_ip: '127.127.0.1',
+    )
+  end
+  before do
+    Bosh::Deployer::InstanceManager.stub_chain(:const_get, :new).and_return(infrastructure)
+  end
+
   def setup(config_yml)
     @stemcell_tgz = ENV['BOSH_STEMCELL_TGZ']
     @dir = ENV['BOSH_DEPLOYER_DIR'] || Dir.mktmpdir('bd_spec')
@@ -10,12 +22,12 @@ describe Bosh::Deployer do
 
     messager = Bosh::Deployer::UiMessager.for_deployer
     @deployer = Bosh::Deployer::InstanceManager.new(
-      config, 'fake-config-sha1', messager)
+      config, 'fake-config-sha1', messager, 'fake-plugin')
   end
 
   describe 'vSphere' do
-    before(:all) { setup('test-bootstrap-config.yml') }
-    after(:all)  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
+    before { setup('test-bootstrap-config.yml') }
+    after  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
 
     it 'should create a Bosh VM' do
       pending 'stemcell tgz' unless @stemcell_tgz
@@ -35,8 +47,8 @@ describe Bosh::Deployer do
   end
 
   describe 'aws' do
-    before(:all) { setup('test-bootstrap-config-aws.yml') }
-    after(:all)  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
+    before { setup('test-bootstrap-config-aws.yml') }
+    after  { FileUtils.remove_entry_secure(@dir) unless ENV['BOSH_DEPLOYER_DIR'] }
 
     it 'should instantiate a deployer' do
       @deployer.cloud.should be_kind_of(Bosh::AwsCloud::Cloud)
