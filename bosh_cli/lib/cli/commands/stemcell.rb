@@ -155,9 +155,13 @@ module Bosh::Cli
     end
 
     def get_stemcell_table_record(sc)
-      deployments = sc.fetch('deployments', [])
+      any_deployments = deployments_count(sc) > 0
 
-      [sc['name'], "#{sc['version']}#{deployments.empty? ? '' : '*'}", sc['cid']]
+      [sc['name'], "#{sc['version']}#{any_deployments ? '*' : ''}", sc['cid']]
+    end
+
+    def deployments_count(sc)
+      sc.fetch('deployments_count', nil) || sc.fetch('deployments', []).size
     end
   end
 end

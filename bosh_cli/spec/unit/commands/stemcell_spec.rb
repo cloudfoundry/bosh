@@ -125,8 +125,10 @@ module Bosh::Cli
     end
 
     describe 'list' do
+      # stemcell1 uses director v1798 and earlier API format
       let(:stemcell1) { { 'name' => 'fake stemcell 1', 'version' => '123', 'cid' => '123456', 'deployments' => [] } }
-      let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012', 'deployments' => [] } }
+      # stemcell2 uses director v1798 and newer API format
+      let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012', 'deployments_count' => 0 } }
       let(:stemcells) { [stemcell1, stemcell2] }
       let(:buffer) { StringIO.new }
 
@@ -153,9 +155,25 @@ module Bosh::Cli
         end
       end
 
-      context 'when there are stemcells in use' do
+      context 'when there are stemcells in use (director v1798 and earlier)' do
         let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456',
                             'cid' => '789012', 'deployments' => ['fake deployment'] } }
+
+        it 'adds a star for stemcells that are in use' do
+          command.list
+
+          buffer.rewind
+          output = buffer.read
+
+          expect(output).to include('| fake stemcell 1 | 123     | 123456 |')
+          expect(output).to include('| fake stemcell 2 | 456*    | 789012 |')
+          expect(output).to include('(*) Currently in-use')
+        end
+      end
+
+      context 'when there are stemcells in use (director v1798 and newer)' do
+        let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456',
+                            'cid' => '789012', 'deployments_count' => 1 } }
 
         it 'adds a star for stemcells that are in use' do
           command.list
