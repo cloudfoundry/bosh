@@ -51,7 +51,7 @@ resource_pools:
     size: <%= properties.pool_size %>
     stemcell:
       name: <%= properties.stemcell.name %>
-      version: <%= properties.stemcell.version %>
+      version: '<%= properties.stemcell.version %>'
     cloud_properties:
       ram: 512
       disk: 2048
