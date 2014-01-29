@@ -6,6 +6,8 @@ require 'bosh/director/core/templates/job_instance_renderer'
 module Bosh::Director::Core::Templates
   describe JobInstanceRenderer do
     describe '#render' do
+      subject(:job_instance_renderer) { JobInstanceRenderer.new(templates, job_template_loader) }
+
       let(:spec) do
         {
           'job' => {
@@ -14,10 +16,8 @@ module Bosh::Director::Core::Templates
         }
       end
       let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
-      subject(:job_instance_renderer) { JobInstanceRenderer.new(job, job_template_loader) }
       let(:job_template_renderer) { instance_double('Bosh::Director::Core::Templates::JobTemplateRenderer') }
 
-      let(:job) { double('job', templates: templates) }
       before { allow(RenderedJobInstance).to receive(:new).and_return(expected_rendered_job_instance) }
       let(:expected_rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }
 

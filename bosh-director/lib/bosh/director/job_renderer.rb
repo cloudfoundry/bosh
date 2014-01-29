@@ -7,7 +7,7 @@ module Bosh::Director
     def initialize(job)
       @job = job
       job_template_loader = Core::Templates::JobTemplateLoader.new(Config.logger)
-      @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job, job_template_loader)
+      @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job.templates, job_template_loader)
     end
 
     def render_job_instances(blobstore)
