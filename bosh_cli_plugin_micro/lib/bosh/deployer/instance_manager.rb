@@ -18,6 +18,7 @@ module Bosh::Deployer
 
     attr_reader :state
     attr_accessor :renderer
+    attr_reader :deployments
 
     def self.create(config)
       err 'No cloud properties defined' if config['cloud'].nil?

@@ -12,7 +12,7 @@ module Bosh::Deployer
           Config.cloud_options['properties']['registry']['endpoint'],
           'aws',
           Config.cloud_options['properties']['aws'],
-          @deployments,
+          self,
           logger,
         )
 

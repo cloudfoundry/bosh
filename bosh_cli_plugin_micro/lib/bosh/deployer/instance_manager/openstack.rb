@@ -12,7 +12,7 @@ module Bosh::Deployer
           Config.cloud_options['properties']['registry']['endpoint'],
           'openstack',
           Config.cloud_options['properties']['openstack'],
-          @deployments,
+          self,
           logger,
         )
 

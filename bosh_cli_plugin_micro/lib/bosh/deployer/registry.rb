@@ -5,9 +5,9 @@ module Bosh::Deployer
   class Registry
     attr_reader :port
 
-    def initialize(endpoint, cloud_plugin, cloud_properties, deployments, logger)
+    def initialize(endpoint, cloud_plugin, cloud_properties, state, logger)
       @cloud_properties = cloud_properties
-      @deployments = deployments
+      @state = state
       @logger = logger
 
       uri = URI.parse(endpoint)
@@ -20,7 +20,7 @@ module Bosh::Deployer
       write_configure
       Sequel.connect(connection_settings) do |db|
         migrate(db)
-        instances = deployments['registry_instances']
+        instances = state.deployments['registry_instances']
         db[:registry_instances].insert_multiple(instances) if instances
       end
 
@@ -46,7 +46,7 @@ module Bosh::Deployer
       return unless db_file
 
       Sequel.connect(connection_settings) do |db|
-        deployments['registry_instances'] = db[:registry_instances].map { |row| row }
+        state.deployments['registry_instances'] = db[:registry_instances].map { |row| row }
       end
     ensure
       db_file.unlink if db_file
@@ -62,7 +62,7 @@ module Bosh::Deployer
     private
 
     attr_reader(
-      :deployments,
+      :state,
       :cloud_properties,
       :logger,
       :user,
