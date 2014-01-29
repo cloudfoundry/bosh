@@ -8,10 +8,10 @@ module Bosh::Director::Core::Templates
       @job_template_loader = job_template_loader
     end
 
-    def render(instance)
+    def render(spec)
       rendered_templates = job.templates.map do |template|
         job_template_renderer = job_template_renderers[template.name]
-        job_template_renderer.render(job.name, instance)
+        job_template_renderer.render(spec)
       end
 
       RenderedJobInstance.new(rendered_templates)

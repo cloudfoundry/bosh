@@ -12,7 +12,7 @@ module Bosh::Director
 
     def render_job_instances(blobstore)
       @job.instances.each do |instance|
-        rendered_job_instance = @instance_renderer.render(instance)
+        rendered_job_instance = @instance_renderer.render(instance.spec)
 
         configuration_hash = rendered_job_instance.configuration_hash
 

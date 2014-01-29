@@ -15,13 +15,15 @@ module Bosh::Director::Core::Templates
       @logger = logger
     end
 
-    def render(job_name, instance)
-      template_context = Bosh::Common::TemplateEvaluationContext.new(instance.spec)
+    def render(spec)
+      template_context = Bosh::Common::TemplateEvaluationContext.new(spec)
+      job_name = spec['job']['name']
+      index = spec['index']
 
-      monit = render_erb(job_name, monit_template, template_context, instance.index)
+      monit = render_erb(job_name, monit_template, template_context, index)
 
       rendered_templates = templates.map do |template_file|
-        file_contents = render_erb(job_name, template_file.erb_file, template_context, instance.index)
+        file_contents = render_erb(job_name, template_file.erb_file, template_context, index)
         RenderedFileTemplate.new(template_file.src_name, template_file.dest_name, file_contents)
       end
 

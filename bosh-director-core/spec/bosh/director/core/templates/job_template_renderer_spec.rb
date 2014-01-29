@@ -8,6 +8,7 @@ module Bosh::Director::Core::Templates
     describe '#render' do
       let(:monit_template) { ERB.new('monit file') }
       let(:fake_template) { ERB.new('test template') }
+
       let(:fake_templates) do
         [
           instance_double('Bosh::Director::Core::Templates::SrcFileTemplate',
@@ -16,7 +17,15 @@ module Bosh::Director::Core::Templates
                           erb_file: fake_template)
         ]
       end
-      let(:instance) { double('Bosh::Director::DeploymentPlan::Instance', spec: {}, index: 1) }
+
+      let(:spec) do
+        {
+          'index' => 1,
+          'job' => {
+            'name' => 'foo'
+          }
+        }
+      end
       let(:logger) { instance_double('Logger', debug: nil) }
 
       subject(:job_template_renderer) do
@@ -29,7 +38,7 @@ module Bosh::Director::Core::Templates
       end
 
       it 'returns a collection of rendered templates' do
-        rendered_templates = job_template_renderer.render('foo', instance)
+        rendered_templates = job_template_renderer.render(spec)
 
         expect(rendered_templates.monit).to eq('monit file')
         rendered_file_template = rendered_templates.templates.first
@@ -40,12 +49,15 @@ module Bosh::Director::Core::Templates
 
       context 'when there is an error during erb rendering' do
         let(:fake_template) { ERB.new('<% nil.no_method %>') }
+        before do
+          spec['job']['name'] = 'failing-job'
+        end
 
         it 'wraps the error and raises a new one' do
           expected_message = "Error filling in template `template-filename' for `failing-job/1' " +
                              "(line 1: undefined method `no_method' for nil:NilClass)"
           expect {
-            job_template_renderer.render('failing-job', instance)
+            job_template_renderer.render(spec)
           }.to raise_error(expected_message)
         end
       end
