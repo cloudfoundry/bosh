@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	boshsettings "bosh/settings"
+	fakefs "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -90,6 +91,41 @@ func TestAwsSetupNetworking(t *testing.T) {
 	aws.SetupNetworking(fakeDelegate, networks)
 
 	assert.Equal(t, fakeDelegate.SetupDhcpNetworks, networks)
+}
+
+func TestAwsFindPossibleDiskDevice(t *testing.T) {
+	fakeDnsResolver := &FakeDnsResolver{}
+	aws := newAwsInfrastructure("", fakeDnsResolver)
+	fs := fakefs.NewFakeFileSystem()
+
+	fs.WriteToFile("/dev/xvda", "")
+	path, found := aws.FindPossibleDiskDevice("/dev/sda", fs)
+
+	assert.Equal(t, path, "/dev/xvda")
+	assert.True(t, found)
+
+	fs.RemoveAll("/dev/xvda")
+	fs.WriteToFile("/dev/vda", "")
+	path, found = aws.FindPossibleDiskDevice("/dev/sda", fs)
+
+	assert.Equal(t, path, "/dev/vda")
+	assert.True(t, found)
+
+	fs.RemoveAll("/dev/vda")
+	fs.WriteToFile("/dev/sda", "")
+	path, found = aws.FindPossibleDiskDevice("/dev/sda", fs)
+
+	assert.Equal(t, path, "/dev/sda")
+	assert.True(t, found)
+}
+
+func TestAwsFindPossibleDiskDeviceReturnsFalseIfNotFound(t *testing.T) {
+	fakeDnsResolver := &FakeDnsResolver{}
+	aws := newAwsInfrastructure("", fakeDnsResolver)
+	fs := fakefs.NewFakeFileSystem()
+
+	_, found := aws.FindPossibleDiskDevice("/dev/sda", fs)
+	assert.False(t, found)
 }
 
 // Fake Ssh Setup Delegate

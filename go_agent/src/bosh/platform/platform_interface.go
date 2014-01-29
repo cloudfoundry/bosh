@@ -1,7 +1,9 @@
 package platform
 
 import (
+	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
+	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
@@ -39,4 +41,5 @@ type Platform interface {
 	StartMonit() (err error)
 	SetupMonitUser() (err error)
 	GetMonitCredentials() (username, password string, err error)
+	SetDiskManager(finder boshdisk.Finder, logger boshlog.Logger)
 }

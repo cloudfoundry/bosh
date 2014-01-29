@@ -1,9 +1,13 @@
 package infrastructure
 
-import boshsettings "bosh/settings"
+import (
+	boshsettings "bosh/settings"
+	boshsys "bosh/system"
+)
 
 type Infrastructure interface {
 	SetupSsh(delegate SshSetupDelegate, username string) (err error)
 	GetSettings() (settings boshsettings.Settings, err error)
 	SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error)
+	FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool)
 }

@@ -3,6 +3,7 @@ package infrastructure
 import (
 	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -197,6 +198,21 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling wrapped settings")
+	}
+	return
+}
+
+func (inf awsInfrastructure) FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
+
+	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
+	for _, prefix := range possiblePrefixes {
+		path := prefix + pathSuffix
+		if fs.FileExists(path) {
+			realPath = path
+			found = true
+			return
+		}
 	}
 	return
 }

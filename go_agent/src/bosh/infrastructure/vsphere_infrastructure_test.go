@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	fakefs "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,11 +15,27 @@ func (fakeCDROMDelegate FakeCDROMDelegate) GetFileContentsFromCDROM(_ string) (c
 }
 
 func TestVsphereGetSettings(t *testing.T) {
-	cdromDelegate := FakeCDROMDelegate{}
-	vsphere := newVsphereInfrastructure(cdromDelegate)
+	vsphere, _ := buildVsphere()
 
 	settings, err := vsphere.GetSettings()
 
 	assert.NoError(t, err)
 	assert.Equal(t, settings.AgentId, "123")
+}
+
+func TestVsphereFindPossibleDiskDevice(t *testing.T) {
+	vsphere, fs := buildVsphere()
+
+	fs.WriteToFile("/dev/sdb", "")
+
+	path, found := vsphere.FindPossibleDiskDevice("", fs)
+	assert.Equal(t, path, "/dev/sdb")
+	assert.True(t, found)
+}
+
+func buildVsphere() (vsphere vsphereInfrastructure, fs *fakefs.FakeFileSystem) {
+	cdromDelegate := FakeCDROMDelegate{}
+	vsphere = newVsphereInfrastructure(cdromDelegate)
+	fs = fakefs.NewFakeFileSystem()
+	return
 }

@@ -3,6 +3,7 @@ package fakes
 import (
 	boshinf "bosh/infrastructure"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 )
 
 type FakeInfrastructure struct {
@@ -27,5 +28,9 @@ func (i *FakeInfrastructure) GetSettings() (settings boshsettings.Settings, err 
 func (i *FakeInfrastructure) SetupNetworking(delegate boshinf.NetworkingDelegate, networks boshsettings.Networks) (err error) {
 	i.SetupNetworkingDelegate = delegate
 	i.SetupNetworkingNetworks = networks
+	return
+}
+
+func (inf *FakeInfrastructure) FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
 	return
 }

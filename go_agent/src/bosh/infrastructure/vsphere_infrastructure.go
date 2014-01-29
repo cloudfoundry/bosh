@@ -3,6 +3,7 @@ package infrastructure
 import (
 	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 	"encoding/json"
 )
 
@@ -35,5 +36,14 @@ func (inf vsphereInfrastructure) GetSettings() (settings boshsettings.Settings, 
 }
 
 func (inf vsphereInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
+	return
+}
+
+func (inf vsphereInfrastructure) FindPossibleDiskDevice(_ string, fs boshsys.FileSystem) (realPath string, found bool) {
+	path := "/dev/sdb"
+	if fs.FileExists(path) {
+		realPath = path
+		found = true
+	}
 	return
 }

@@ -44,3 +44,7 @@ func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, er
 func (inf dummyInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
 	return
 }
+
+func (inf dummyInfrastructure) FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+	return
+}

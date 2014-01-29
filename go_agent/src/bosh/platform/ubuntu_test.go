@@ -263,10 +263,12 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
+	fakeFinder := deps.diskManager.FakeFinder
 
 	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
 
-	deps.fs.WriteToFile("/dev/xvda", "")
+	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
+	fakeFinder.FindPossibleDiskDeviceFound = true
 
 	err := ubuntu.SetupEphemeralDiskWithPath("/dev/sda")
 	assert.NoError(t, err)
@@ -328,8 +330,10 @@ func TestUbuntuMountPersistentDisk(t *testing.T) {
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
+	fakeFinder := deps.diskManager.FakeFinder
 
-	deps.fs.WriteToFile("/dev/vdf", "")
+	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/vdf"
+	fakeFinder.FindPossibleDiskDeviceFound = true
 
 	err := ubuntu.MountPersistentDisk("/dev/sdf", "/mnt/point")
 	assert.NoError(t, err)
@@ -367,8 +371,10 @@ func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
 	deps, ubuntu := buildUbuntu()
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.UnmountDidUnmount = !isMounted
+	fakeFinder := deps.diskManager.FakeFinder
 
-	deps.fs.WriteToFile("/dev/vdx", "")
+	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/vdx"
+	fakeFinder.FindPossibleDiskDeviceFound = true
 
 	didUnmount, err := ubuntu.UnmountPersistentDisk("/dev/sdx")
 	assert.NoError(t, err)
@@ -424,9 +430,10 @@ func TestUbuntuGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
 
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
+	fakeFinder := deps.diskManager.FakeFinder
 
-	deps.fs.WriteToFile("/dev/xvda", "")
-	deps.fs.WriteToFile("/dev/vda", "")
+	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
+	fakeFinder.FindPossibleDiskDeviceFound = true
 
 	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
 	assert.NoError(t, err)
@@ -435,9 +442,11 @@ func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 
 func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
+	fakeFinder := deps.diskManager.FakeFinder
 
 	time.AfterFunc(time.Second, func() {
-		deps.fs.WriteToFile("/dev/xvda", "")
+		fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
+		fakeFinder.FindPossibleDiskDeviceFound = true
 	})
 
 	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
@@ -508,8 +517,10 @@ func TestUbuntuMigratePersistentDisk(t *testing.T) {
 
 func TestUbuntuIsDevicePathMounted(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
+	fakeFinder := deps.diskManager.FakeFinder
 
-	deps.fs.WriteToFile("/dev/xvda", "")
+	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
+	fakeFinder.FindPossibleDiskDeviceFound = true
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.IsMountedResult = true
 
@@ -606,8 +617,10 @@ func buildUbuntu() (
 		deps.collector,
 		deps.fs,
 		deps.cmdRunner,
-		deps.diskManager,
 		deps.dirProvider,
 	)
+
+	platform.diskManager = deps.diskManager
+
 	return
 }
