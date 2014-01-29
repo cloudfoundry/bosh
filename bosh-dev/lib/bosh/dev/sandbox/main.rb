@@ -119,6 +119,12 @@ module Bosh::Dev::Sandbox
       @director_process.start
     end
 
+    def reconfigure_health_monitor(erb_template)
+      @health_monitor_process.stop
+      write_in_sandbox(HM_CONFIG, load_config_template(File.join(ASSETS_DIR, erb_template)))
+      @health_monitor_process.start
+    end
+
     def cloud_storage_dir
       sandbox_path('bosh_cloud_test')
     end
