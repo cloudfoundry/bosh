@@ -36,7 +36,7 @@ func (inf vsphereInfrastructure) GetSettings() (settings boshsettings.Settings, 
 }
 
 func (inf vsphereInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
-	return
+	return delegate.SetupManualNetworking(networks)
 }
 
 func (inf vsphereInfrastructure) FindPossibleDiskDevice(_ string, fs boshsys.FileSystem) (realPath string, found bool) {

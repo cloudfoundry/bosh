@@ -144,11 +144,17 @@ func (d *FakeSshSetupDelegate) SetupSsh(publicKey, username string) (err error) 
 // Fake Networking Delegate
 
 type FakeNetworkingDelegate struct {
-	SetupDhcpNetworks boshsettings.Networks
+	SetupDhcpNetworks             boshsettings.Networks
+	SetupManualNetworkingNetworks boshsettings.Networks
 }
 
 func (d *FakeNetworkingDelegate) SetupDhcp(networks boshsettings.Networks) (err error) {
 	d.SetupDhcpNetworks = networks
+	return
+}
+
+func (d *FakeNetworkingDelegate) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	d.SetupManualNetworkingNetworks = networks
 	return
 }
 

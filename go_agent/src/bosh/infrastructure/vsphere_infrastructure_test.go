@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	boshsettings "bosh/settings"
 	fakefs "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -31,6 +32,16 @@ func TestVsphereFindPossibleDiskDevice(t *testing.T) {
 	path, found := vsphere.FindPossibleDiskDevice("", fs)
 	assert.Equal(t, path, "/dev/sdb")
 	assert.True(t, found)
+}
+
+func TestVsphereSetupNetworking(t *testing.T) {
+	vsphere, _ := buildVsphere()
+	fakeDelegate := &FakeNetworkingDelegate{}
+	networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
+
+	vsphere.SetupNetworking(fakeDelegate, networks)
+
+	assert.Equal(t, fakeDelegate.SetupManualNetworkingNetworks, networks)
 }
 
 func buildVsphere() (vsphere vsphereInfrastructure, fs *fakefs.FakeFileSystem) {
