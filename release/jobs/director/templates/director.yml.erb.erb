@@ -78,6 +78,41 @@ blobstore:
     bucket_name: <%= p('blobstore.bucket_name') %>
     access_key_id: <%= p('blobstore.access_key_id') %>
     secret_access_key: <%= p('blobstore.secret_access_key') %>
+<% elsif p('blobstore.provider') == 'swift' %>
+    swift_provider: <%= p('blobstore.options.swift_provider') %>
+    container_name: <%= p('blobstore.options.container_name') %>
+    <% if_p('blobstore.options.hp_access_key',
+            'blobstore.options.hp_secret_key',
+            'blobstore.options.hp_tenant_id',
+            'blobstore.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
+    hp:
+      hp_access_key: <%= hp_access_key %>
+      hp_secret_key: <%= hp_secret_key %>
+      hp_tenant_id: <%= hp_tenant_id %>
+      hp_avl_zone: <%= hp_avl_zone %>
+    <% end %>
+    <% if_p('blobstore.options.openstack_auth_url',
+            'blobstore.options.openstack_username',
+            'blobstore.options.openstack_api_key',
+            'blobstore.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
+    openstack:
+      openstack_auth_url: <%= openstack_auth_url %>
+      openstack_username: <%= openstack_username %>
+      openstack_api_key: <%= openstack_api_key %>
+      openstack_tenant: <%= openstack_tenant %>
+      <% if_p('blobstore.options.openstack_region') do |openstack_region| %>
+      openstack_region: <%= openstack_region %>
+      <% end %>
+    <% end %>
+    <% if_p('blobstore.options.rackspace_username',
+            'blobstore.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
+    rackspace:
+      rackspace_username: <%= rackspace_username %>
+      rackspace_api_key: <%= rackspace_api_key %>
+      <% if_p('blobstore.options.rackspace_region') do |rackspace_region| %>
+      rackspace_region: <%= rackspace_region %>
+      <% end %>
+    <% end %>
 <% else %>
     endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
     user: <%= p('blobstore.director.user') %>
@@ -270,9 +305,45 @@ cloud:
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
+      <% elsif p('blobstore.provider') == 'swift' %>
+          swift_provider: <%= p('blobstore.options.swift_provider') %>
+          container_name: <%= p('blobstore.options.container_name') %>
+          <% if_p('blobstore.options.hp_access_key',
+                  'blobstore.options.hp_secret_key',
+                  'blobstore.options.hp_tenant_id',
+                  'blobstore.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
+          hp:
+            hp_access_key: <%= hp_access_key %>
+            hp_secret_key: <%= hp_secret_key %>
+            hp_tenant_id: <%= hp_tenant_id %>
+            hp_avl_zone: <%= hp_avl_zone %>
+          <% end %>
+          <% if_p('blobstore.options.openstack_auth_url',
+                  'blobstore.options.openstack_username',
+                  'blobstore.options.openstack_api_key',
+                  'blobstore.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
+          openstack:
+            openstack_auth_url: <%= openstack_auth_url %>
+            openstack_username: <%= openstack_username %>
+            openstack_api_key: <%= openstack_api_key %>
+            openstack_tenant: <%= openstack_tenant %>
+            <% if_p('blobstore.options.openstack_region') do |openstack_region| %>
+            openstack_region: <%= openstack_region %>
+            <% end %>
+          <% end %>
+          <% if_p('blobstore.options.rackspace_username',
+                  'blobstore.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
+          rackspace:
+            rackspace_username: <%= rackspace_username %>
+            rackspace_api_key: <%= rackspace_api_key %>
+            <% if_p('blobstore.options.rackspace_region') do |rackspace_region| %>
+            rackspace_region: <%= rackspace_region %>
+            <% end %>
+          <% end %>
       <% else %>
           endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
           user: <%= p('blobstore.agent.user') %>
           password: <%= p('blobstore.agent.password') %>
       <% end %>
       mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p(['agent.nats.address', 'nats.address']) %>:<%= p('nats.port') %>
+
