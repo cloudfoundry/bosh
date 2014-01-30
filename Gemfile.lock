@@ -172,6 +172,8 @@ PATH
   specs:
     bosh_cli_plugin_micro (1.1868.0)
       agent_client (~> 1.1868.0)
+      blobstore_client (~> 1.1868.0)
+      bosh-director-core (~> 1.1868.0)
       bosh-registry (~> 1.1868.0)
       bosh-stemcell (~> 1.1868.0)
       bosh_aws_cpi (~> 1.1868.0)
