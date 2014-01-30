@@ -33,7 +33,7 @@ type Platform interface {
 	SetTimeWithNtpServers(servers []string) (err error)
 	SetupEphemeralDiskWithPath(devicePath string) (err error)
 	SetupTmpDir() (err error)
-	MountPersistentDisk(devicePath, mountPoint string) (err error)
+	MountPersistentDisk(devicePathOrCid, mountPoint string) (err error)
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)

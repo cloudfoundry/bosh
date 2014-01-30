@@ -39,7 +39,7 @@ func (inf vsphereInfrastructure) SetupNetworking(delegate NetworkingDelegate, ne
 	return delegate.SetupManualNetworking(networks)
 }
 
-func (inf vsphereInfrastructure) FindPossibleDiskDevice(_ string, fs boshsys.FileSystem) (realPath string, found bool) {
+func (inf vsphereInfrastructure) FindPossibleDiskDevice(cid string, fs boshsys.FileSystem) (realPath string, found bool) {
 	path := "/dev/sdb"
 	if fs.FileExists(path) {
 		realPath = path

@@ -5,5 +5,5 @@ import (
 )
 
 type Finder interface {
-	FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool)
+	FindPossibleDiskDevice(devicePathOrCid string, fs boshsys.FileSystem) (realPath string, found bool)
 }
