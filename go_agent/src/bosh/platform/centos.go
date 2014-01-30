@@ -33,6 +33,7 @@ type centos struct {
 	dirProvider       boshdirs.DirectoriesProvider
 	vitalsService     boshvitals.Service
 	cdromWaitInterval time.Duration
+	arpWaitInterval   time.Duration
 }
 
 func newCentosPlatform(
@@ -52,6 +53,7 @@ func newCentosPlatform(
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	platform.cdromWaitInterval = 500 * time.Millisecond
+	platform.arpWaitInterval = 10 * time.Second
 	return
 }
 
@@ -243,6 +245,17 @@ ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 `
 
+func (p centos) getDnsServers(networks boshsettings.Networks) (dnsServers []string) {
+	dnsNetwork, found := networks.DefaultNetworkFor("dns")
+	if found {
+		for i := len(dnsNetwork.Dns) - 1; i >= 0; i-- {
+			dnsServers = append(dnsServers, dnsNetwork.Dns[i])
+		}
+	}
+
+	return
+}
+
 func (p centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
@@ -295,6 +308,140 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ end }}`
 
 func (p centos) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	modifiedNetworks, err := p.writeIfcfgs(networks)
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing network interfaces")
+		return
+	}
+
+	p.restartNetwork()
+
+	err = p.writeResolvConf(networks)
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing resolv.conf")
+		return
+	}
+
+	go p.gratuitiousArp(modifiedNetworks)
+
+	return
+}
+
+func (p centos) gratuitiousArp(networks []customNetwork) {
+	for i := 0; i < 6; i++ {
+		for _, network := range networks {
+			for !p.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
+				time.Sleep(100 * time.Millisecond)
+			}
+
+			p.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.Ip)
+			time.Sleep(p.arpWaitInterval)
+		}
+	}
+	return
+}
+
+func (p centos) writeIfcfgs(networks boshsettings.Networks) (modifiedNetworks []customNetwork, err error) {
+	macAddresses, err := p.detectMacAddresses()
+	if err != nil {
+		err = bosherr.WrapError(err, "Detecting mac addresses")
+		return
+	}
+
+	for _, aNet := range networks {
+		var network, broadcast string
+		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.Ip, aNet.Netmask)
+		if err != nil {
+			err = bosherr.WrapError(err, "Calculating network and broadcast")
+			return
+		}
+
+		newNet := customNetwork{
+			aNet,
+			macAddresses[aNet.Mac],
+			network,
+			broadcast,
+			true,
+		}
+		modifiedNetworks = append(modifiedNetworks, newNet)
+
+		buffer := bytes.NewBuffer([]byte{})
+		t := template.Must(template.New("ifcfg").Parse(CENTOS_IFCFG_TEMPLATE))
+
+		err = t.Execute(buffer, newNet)
+		if err != nil {
+			err = bosherr.WrapError(err, "Generating config from template")
+			return
+		}
+
+		_, err = p.fs.WriteToFile(filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+newNet.Interface), buffer.String())
+		if err != nil {
+			err = bosherr.WrapError(err, "Writing to /etc/sysconfig/network-scripts")
+			return
+		}
+	}
+
+	return
+}
+
+const CENTOS_IFCFG_TEMPLATE = `DEVICE={{ .Interface }}
+BOOTPROTO=static
+IPADDR={{ .Ip }}
+NETMASK={{ .Netmask }}
+BROADCAST={{ .Broadcast }}
+{{ if .HasDefaultGateway }}GATEWAY={{ .Gateway }}{{ end }}
+ONBOOT=yes`
+
+func (p centos) writeResolvConf(networks boshsettings.Networks) (err error) {
+	buffer := bytes.NewBuffer([]byte{})
+	t := template.Must(template.New("resolv-conf").Parse(CENTOS_RESOLV_CONF_TEMPLATE))
+
+	dnsServers := p.getDnsServers(networks)
+	dnsServersArg := dnsConfigArg{dnsServers}
+	err = t.Execute(buffer, dnsServersArg)
+	if err != nil {
+		err = bosherr.WrapError(err, "Generating config from template")
+		return
+	}
+
+	_, err = p.fs.WriteToFile("/etc/resolv.conf", buffer.String())
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing to /etc/resolv.conf")
+		return
+	}
+
+	return
+}
+
+const CENTOS_RESOLV_CONF_TEMPLATE = `{{ range .DnsServers }}nameserver {{ . }}
+{{ end }}`
+
+func (p centos) detectMacAddresses() (addresses map[string]string, err error) {
+	addresses = map[string]string{}
+
+	filePaths, err := p.fs.Glob("/sys/class/net/*")
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting file list from /sys/class/net")
+		return
+	}
+
+	var macAddress string
+	for _, filePath := range filePaths {
+		macAddress, err = p.fs.ReadFile(filepath.Join(filePath, "address"))
+		if err != nil {
+			err = bosherr.WrapError(err, "Reading mac address from file")
+			return
+		}
+
+		interfaceName := filepath.Base(filePath)
+		addresses[macAddress] = interfaceName
+	}
+
+	return
+}
+
+func (p centos) restartNetwork() {
+	p.cmdRunner.RunCommand("service", "network", "restart")
 	return
 }
 

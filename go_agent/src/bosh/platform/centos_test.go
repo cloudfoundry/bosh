@@ -212,6 +212,60 @@ prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
 
+func TestCentosSetupManualNetworking(t *testing.T) {
+	deps, centos := buildCentos()
+	centos.arpWaitInterval = 1 * time.Millisecond
+
+	testCentosSetupManualNetworking(t, deps, centos)
+
+	time.Sleep(100 * time.Millisecond)
+
+	assert.Equal(t, len(deps.cmdRunner.RunCommands), 7)
+	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"service", "network", "restart"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[1], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[6], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+}
+
+func testCentosSetupManualNetworking(t *testing.T,
+	deps centosDependencies,
+	platform centos) {
+	networks := boshsettings.Networks{
+		"bosh": boshsettings.Network{
+			Default: []string{"dns", "gateway"},
+			Ip:      "192.168.195.6",
+			Netmask: "255.255.255.0",
+			Gateway: "192.168.195.1",
+			Mac:     "22:00:0a:1f:ac:2a",
+			Dns:     []string{"10.80.130.2", "10.80.130.1"},
+		},
+	}
+	deps.fs.WriteToFile("/sys/class/net/eth0", "")
+	deps.fs.WriteToFile("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a")
+	deps.fs.GlobPaths = []string{"/sys/class/net/eth0"}
+
+	platform.SetupManualNetworking(networks)
+
+	networkConfig := deps.fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+	assert.NotNil(t, networkConfig)
+	assert.Equal(t, networkConfig.Content, CENTOS_EXPECTED_IFCFG)
+
+	resolvConf := deps.fs.GetFileTestStat("/etc/resolv.conf")
+	assert.NotNil(t, resolvConf)
+	assert.Equal(t, resolvConf.Content, CENTOS_EXPECTED_RESOLV_CONF)
+}
+
+const CENTOS_EXPECTED_IFCFG = `DEVICE=eth0
+BOOTPROTO=static
+IPADDR=192.168.195.6
+NETMASK=255.255.255.0
+BROADCAST=192.168.195.255
+GATEWAY=192.168.195.1
+ONBOOT=yes`
+
+const CENTOS_EXPECTED_RESOLV_CONF = `nameserver 10.80.130.1
+nameserver 10.80.130.2
+`
+
 func TestCentosSetupLogrotate(t *testing.T) {
 	deps, centos := buildCentos()
 
