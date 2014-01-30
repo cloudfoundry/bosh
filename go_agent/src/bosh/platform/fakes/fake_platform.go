@@ -149,6 +149,10 @@ func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
+func (p *FakePlatform) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	return
+}
+
 func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
 	return
 }

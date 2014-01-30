@@ -28,6 +28,7 @@ type Platform interface {
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)
 	SetupDhcp(networks boshsettings.Networks) (err error)
+	SetupManualNetworking(networks boshsettings.Networks) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)
 	SetupEphemeralDiskWithPath(devicePath string) (err error)

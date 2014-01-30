@@ -103,6 +103,10 @@ func (p dummyPlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
 	return
 }

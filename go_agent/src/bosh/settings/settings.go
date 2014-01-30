@@ -63,6 +63,9 @@ type Network struct {
 	Default []string
 	Dns     []string
 	Ip      string
+	Netmask string
+	Gateway string
+	Mac     string
 }
 
 func (n Networks) DefaultNetworkFor(category string) (network Network, found bool) {

@@ -243,8 +243,7 @@ ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 `
 
-func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
-	dnsServers := []string{}
+func (p ubuntu) getDnsServers(networks boshsettings.Networks) (dnsServers []string) {
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
 		for i := len(dnsNetwork.Dns) - 1; i >= 0; i-- {
@@ -252,14 +251,20 @@ func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 		}
 	}
 
-	type dhcpConfigArg struct {
-		DnsServers []string
-	}
+	return
+}
+
+type dnsConfigArg struct {
+	DnsServers []string
+}
+
+func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
+	dnsServers := p.getDnsServers(networks)
 
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(UBUNTU_DHCP_CONFIG_TEMPLATE))
 
-	err = t.Execute(buffer, dhcpConfigArg{dnsServers})
+	err = t.Execute(buffer, dnsConfigArg{dnsServers})
 	if err != nil {
 		err = bosherr.WrapError(err, "Generating config from template")
 		return
@@ -294,6 +299,142 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
+
+type customNetwork struct {
+	boshsettings.Network
+	Interface         string
+	NetworkIp         string
+	Broadcast         string
+	HasDefaultGateway bool
+}
+
+func (p ubuntu) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	modifiedNetworks, err := p.writeNetworkInterfaces(networks)
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing network interfaces")
+		return
+	}
+
+	p.restartNetworkingInterfaces(modifiedNetworks)
+
+	err = p.writeResolvConf(networks)
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing resolv.conf")
+		return
+	}
+
+	return
+}
+
+func (p ubuntu) writeNetworkInterfaces(networks boshsettings.Networks) (modifiedNetworks []customNetwork, err error) {
+	macAddresses, err := p.detectMacAddresses()
+	if err != nil {
+		err = bosherr.WrapError(err, "Detecting mac addresses")
+		return
+	}
+
+	for _, aNet := range networks {
+		var network, broadcast string
+		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.Ip, aNet.Netmask)
+		if err != nil {
+			err = bosherr.WrapError(err, "Calculating network and broadcast")
+			return
+		}
+
+		newNet := customNetwork{
+			aNet,
+			macAddresses[aNet.Mac],
+			network,
+			broadcast,
+			true,
+		}
+		modifiedNetworks = append(modifiedNetworks, newNet)
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	t := template.Must(template.New("network-interfaces").Parse(UBUNTU_NETWORK_INTERFACES_TEMPLATE))
+
+	err = t.Execute(buffer, modifiedNetworks)
+	if err != nil {
+		err = bosherr.WrapError(err, "Generating config from template")
+		return
+	}
+
+	_, err = p.fs.WriteToFile("/etc/network/interfaces", buffer.String())
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing to /etc/network/interfaces")
+		return
+	}
+
+	return
+}
+
+const UBUNTU_NETWORK_INTERFACES_TEMPLATE = `auto lo
+iface lo inet loopback
+{{ range . }}
+auto {{ .Interface }}
+iface {{ .Interface }} inet static
+    address {{ .Ip }}
+    network {{ .NetworkIp }}
+    netmask {{ .Netmask }}
+    broadcast {{ .Broadcast }}
+{{ if .HasDefaultGateway }}    gateway {{ .Gateway }}{{ end }}{{ end }}`
+
+func (p ubuntu) writeResolvConf(networks boshsettings.Networks) (err error) {
+	buffer := bytes.NewBuffer([]byte{})
+	t := template.Must(template.New("resolv-conf").Parse(UBUNTU_RESOLV_CONF_TEMPLATE))
+
+	dnsServers := p.getDnsServers(networks)
+	dnsServersArg := dnsConfigArg{dnsServers}
+	err = t.Execute(buffer, dnsServersArg)
+	if err != nil {
+		err = bosherr.WrapError(err, "Generating config from template")
+		return
+	}
+
+	_, err = p.fs.WriteToFile("/etc/resolv.conf", buffer.String())
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing to /etc/resolv.conf")
+		return
+	}
+
+	return
+}
+
+const UBUNTU_RESOLV_CONF_TEMPLATE = `{{ range .DnsServers }}nameserver {{ . }}
+{{ end }}`
+
+func (p ubuntu) detectMacAddresses() (addresses map[string]string, err error) {
+	addresses = map[string]string{}
+
+	filePaths, err := p.fs.Glob("/sys/class/net/*")
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting file list from /sys/class/net")
+		return
+	}
+
+	var macAddress string
+	for _, filePath := range filePaths {
+		macAddress, err = p.fs.ReadFile(filepath.Join(filePath, "address"))
+		if err != nil {
+			err = bosherr.WrapError(err, "Reading mac address from file")
+			return
+		}
+
+		interfaceName := filepath.Base(filePath)
+		addresses[macAddress] = interfaceName
+	}
+
+	return
+}
+
+func (p ubuntu) restartNetworkingInterfaces(networks []customNetwork) {
+	for _, network := range networks {
+		p.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
+		p.cmdRunner.RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
+	}
+	return
+}
 
 func (p ubuntu) SetupLogrotate(groupName, basePath, size string) (err error) {
 	buffer := bytes.NewBuffer([]byte{})

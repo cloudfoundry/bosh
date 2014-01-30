@@ -294,6 +294,10 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
+func (p centos) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	return
+}
+
 func (p centos) SetupLogrotate(groupName, basePath, size string) (err error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("logrotate-d-config").Parse(CENTOS_ETC_LOGROTATE_D_TEMPLATE))
