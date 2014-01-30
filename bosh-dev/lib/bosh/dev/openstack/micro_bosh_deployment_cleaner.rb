@@ -36,7 +36,7 @@ module Bosh::Dev::Openstack
       cloud.openstack.images.all.each do |image|
         if image.name =~ /^BOSH/
           @logger.info("Destroying image #{image.name}")
-          image.destroy
+          # image.destroy
         else
           @logger.info("Ignoring image #{image.name}")
         end
@@ -46,7 +46,7 @@ module Bosh::Dev::Openstack
       cloud.openstack.volumes.all.each do |volume|
         if volume.attachments == [{}]
           @logger.info("Destroying volume #{volume.name}")
-          volume.destroy
+          # volume.destroy
         end
       end
     end
