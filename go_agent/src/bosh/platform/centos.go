@@ -503,7 +503,7 @@ func (p centos) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
-	realPath, err := p.getRealDevicePath(devicePath)
+	realPath, err := p.getEphemeralDiskPath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -586,7 +586,7 @@ func (p centos) SetupTmpDir() (err error) {
 func (p centos) MountPersistentDisk(devicePathOrCid, mountPoint string) (err error) {
 	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
 
-	realPath, err := p.getRealDevicePath(devicePathOrCid)
+	realPath, err := p.getPersistentDiskPath(devicePathOrCid)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -618,7 +618,7 @@ func (p centos) MountPersistentDisk(devicePathOrCid, mountPoint string) (err err
 }
 
 func (p centos) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
-	realPath, err := p.getRealDevicePath(devicePath)
+	realPath, err := p.getPersistentDiskPath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -742,7 +742,7 @@ func (p centos) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err 
 }
 
 func (p centos) IsDevicePathMounted(path string) (result bool, err error) {
-	realPath, err := p.getRealDevicePath(path)
+	realPath, err := p.getPersistentDiskPath(path)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -789,17 +789,33 @@ func (p centos) GetMonitCredentials() (username, password string, err error) {
 	return
 }
 
-func (p centos) getRealDevicePath(devicePathOrCid string) (realPath string, err error) {
+func (p centos) getPersistentDiskPath(devicePathOrCid string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 
-	realPath, found := p.diskManager.GetFinder().FindPossibleDiskDevice(devicePathOrCid, p.fs)
+	realPath, found := p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs)
 	for !found {
 		if time.Now().After(stopAfter) {
 			err = bosherr.New("Timed out getting real device path for %s", devicePathOrCid)
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
-		realPath, found = p.diskManager.GetFinder().FindPossibleDiskDevice(devicePathOrCid, p.fs)
+		realPath, found = p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs)
+	}
+
+	return
+}
+
+func (p centos) getEphemeralDiskPath(devicePathOrCid string) (realPath string, err error) {
+	stopAfter := time.Now().Add(p.diskWaitTimeout)
+
+	realPath, found := p.diskManager.GetFinder().GetEphemeralDiskPath(devicePathOrCid, p.fs)
+	for !found {
+		if time.Now().After(stopAfter) {
+			err = bosherr.New("Timed out getting real device path for %s", devicePathOrCid)
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+		realPath, found = p.diskManager.GetFinder().GetEphemeralDiskPath(devicePathOrCid, p.fs)
 	}
 
 	return

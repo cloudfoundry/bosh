@@ -24,12 +24,12 @@ func TestVsphereGetSettings(t *testing.T) {
 	assert.Equal(t, settings.AgentId, "123")
 }
 
-func TestVsphereFindPossibleDiskDevice(t *testing.T) {
+func TestVsphereGetEphemeralDiskPath(t *testing.T) {
 	vsphere, fs := buildVsphere()
 
 	fs.WriteToFile("/dev/sdb", "")
 
-	path, found := vsphere.FindPossibleDiskDevice("", fs)
+	path, found := vsphere.GetEphemeralDiskPath("", fs)
 	assert.Equal(t, path, "/dev/sdb")
 	assert.True(t, found)
 }

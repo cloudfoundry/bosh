@@ -320,8 +320,8 @@ func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
 
 	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
 
-	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
-	fakeFinder.FindPossibleDiskDeviceFound = true
+	fakeFinder.GetEphemeralDiskPathRealPath = "/dev/xvda"
+	fakeFinder.GetEphemeralDiskPathFound = true
 
 	err := centos.SetupEphemeralDiskWithPath("/dev/sda")
 	assert.NoError(t, err)
@@ -385,8 +385,8 @@ func TestCentosMountPersistentDisk(t *testing.T) {
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeFinder := deps.diskManager.FakeFinder
 
-	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/vdf"
-	fakeFinder.FindPossibleDiskDeviceFound = true
+	fakeFinder.GetPersistentDiskPathRealPath = "/dev/vdf"
+	fakeFinder.GetPersistentDiskPathFound = true
 
 	err := centos.MountPersistentDisk("/dev/sdf", "/mnt/point")
 	assert.NoError(t, err)
@@ -426,8 +426,8 @@ func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
 	fakeMounter.UnmountDidUnmount = !isMounted
 	fakeFinder := deps.diskManager.FakeFinder
 
-	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/vdx"
-	fakeFinder.FindPossibleDiskDeviceFound = true
+	fakeFinder.GetPersistentDiskPathRealPath = "/dev/vdx"
+	fakeFinder.GetPersistentDiskPathFound = true
 
 	didUnmount, err := centos.UnmountPersistentDisk("/dev/sdx")
 	assert.NoError(t, err)
@@ -435,33 +435,21 @@ func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
 	assert.Equal(t, "/dev/vdx1", fakeMounter.UnmountPartitionPath)
 }
 
-func TestCentosGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
-	deps, centos := buildCentos()
-	fakeFinder := deps.diskManager.FakeFinder
-
-	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
-	fakeFinder.FindPossibleDiskDeviceFound = true
-
-	realPath, err := centos.getRealDevicePath("/dev/sda")
-	assert.NoError(t, err)
-	assert.Equal(t, "/dev/xvda", realPath)
-}
-
-func TestCentosGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
+func TestCentosGetEphemeralDiskPathWithDelayWithinTimeout(t *testing.T) {
 	deps, centos := buildCentos()
 	fakeFinder := deps.diskManager.FakeFinder
 
 	time.AfterFunc(time.Second, func() {
-		fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
-		fakeFinder.FindPossibleDiskDeviceFound = true
+		fakeFinder.GetEphemeralDiskPathRealPath = "/dev/xvda"
+		fakeFinder.GetEphemeralDiskPathFound = true
 	})
 
-	realPath, err := centos.getRealDevicePath("/dev/sda")
+	realPath, err := centos.getEphemeralDiskPath("/dev/sda")
 	assert.NoError(t, err)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
-func TestCentosGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
+func TestCentosGetEphemeralDiskPathWithDelayBeyondTimeout(t *testing.T) {
 	deps, centos := buildCentos()
 
 	centos.diskWaitTimeout = time.Second
@@ -470,7 +458,34 @@ func TestCentosGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	_, err := centos.getRealDevicePath("/dev/sda")
+	_, err := centos.getEphemeralDiskPath("/dev/sda")
+	assert.Error(t, err)
+}
+
+func TestCentosGetPersistentDiskPathWithDelayWithinTimeout(t *testing.T) {
+	deps, centos := buildCentos()
+	fakeFinder := deps.diskManager.FakeFinder
+
+	time.AfterFunc(time.Second, func() {
+		fakeFinder.GetPersistentDiskPathRealPath = "/dev/xvda"
+		fakeFinder.GetPersistentDiskPathFound = true
+	})
+
+	realPath, err := centos.getPersistentDiskPath("/dev/sda")
+	assert.NoError(t, err)
+	assert.Equal(t, "/dev/xvda", realPath)
+}
+
+func TestCentosGetPersistentDiskPathWithDelayBeyondTimeout(t *testing.T) {
+	deps, centos := buildCentos()
+
+	centos.diskWaitTimeout = time.Second
+
+	time.AfterFunc(2*time.Second, func() {
+		deps.fs.WriteToFile("/dev/xvda", "")
+	})
+
+	_, err := centos.getPersistentDiskPath("/dev/sda")
 	assert.Error(t, err)
 }
 
@@ -572,8 +587,8 @@ func TestCentosIsDevicePathMounted(t *testing.T) {
 	deps, centos := buildCentos()
 	fakeFinder := deps.diskManager.FakeFinder
 
-	fakeFinder.FindPossibleDiskDeviceRealPath = "/dev/xvda"
-	fakeFinder.FindPossibleDiskDeviceFound = true
+	fakeFinder.GetPersistentDiskPathRealPath = "/dev/xvda"
+	fakeFinder.GetPersistentDiskPathFound = true
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.IsMountedResult = true
 

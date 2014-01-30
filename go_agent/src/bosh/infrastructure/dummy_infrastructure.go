@@ -45,6 +45,10 @@ func (inf dummyInfrastructure) SetupNetworking(delegate NetworkingDelegate, netw
 	return
 }
 
-func (inf dummyInfrastructure) FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+	return
+}
+
+func (inf dummyInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
 	return
 }

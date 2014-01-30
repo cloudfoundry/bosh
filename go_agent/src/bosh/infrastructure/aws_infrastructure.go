@@ -202,7 +202,15 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 	return
 }
 
-func (inf awsInfrastructure) FindPossibleDiskDevice(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+func (inf awsInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem) (string, bool) {
+	return inf.getDiskPath(devicePath, fs)
+}
+
+func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string, fs boshsys.FileSystem) (string, bool) {
+	return inf.getDiskPath(devicePath, fs)
+}
+
+func (inf awsInfrastructure) getDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
 	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
 	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}

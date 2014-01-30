@@ -93,38 +93,38 @@ func TestAwsSetupNetworking(t *testing.T) {
 	assert.Equal(t, fakeDelegate.SetupDhcpNetworks, networks)
 }
 
-func TestAwsFindPossibleDiskDevice(t *testing.T) {
+func TestAwsGetEphemeralDiskPath(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
 	aws := newAwsInfrastructure("", fakeDnsResolver)
 	fs := fakefs.NewFakeFileSystem()
 
 	fs.WriteToFile("/dev/xvda", "")
-	path, found := aws.FindPossibleDiskDevice("/dev/sda", fs)
+	path, found := aws.GetEphemeralDiskPath("/dev/sda", fs)
 
 	assert.Equal(t, path, "/dev/xvda")
 	assert.True(t, found)
 
 	fs.RemoveAll("/dev/xvda")
 	fs.WriteToFile("/dev/vda", "")
-	path, found = aws.FindPossibleDiskDevice("/dev/sda", fs)
+	path, found = aws.GetEphemeralDiskPath("/dev/sda", fs)
 
 	assert.Equal(t, path, "/dev/vda")
 	assert.True(t, found)
 
 	fs.RemoveAll("/dev/vda")
 	fs.WriteToFile("/dev/sda", "")
-	path, found = aws.FindPossibleDiskDevice("/dev/sda", fs)
+	path, found = aws.GetEphemeralDiskPath("/dev/sda", fs)
 
 	assert.Equal(t, path, "/dev/sda")
 	assert.True(t, found)
 }
 
-func TestAwsFindPossibleDiskDeviceReturnsFalseIfNotFound(t *testing.T) {
+func TestAwsGetEphemeralDiskPathReturnsFalseIfNotFound(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
 	aws := newAwsInfrastructure("", fakeDnsResolver)
 	fs := fakefs.NewFakeFileSystem()
 
-	_, found := aws.FindPossibleDiskDevice("/dev/sda", fs)
+	_, found := aws.GetEphemeralDiskPath("/dev/sda", fs)
 	assert.False(t, found)
 }
 

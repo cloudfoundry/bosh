@@ -5,5 +5,6 @@ import (
 )
 
 type Finder interface {
-	FindPossibleDiskDevice(devicePathOrCid string, fs boshsys.FileSystem) (realPath string, found bool)
+	GetEphemeralDiskPath(devicePathOrCid string, fs boshsys.FileSystem) (realPath string, found bool)
+	GetPersistentDiskPath(devicePathOrCid string, fs boshsys.FileSystem) (realPath string, found bool)
 }
