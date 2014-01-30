@@ -33,6 +33,7 @@ type ubuntu struct {
 	dirProvider       boshdirs.DirectoriesProvider
 	vitalsService     boshvitals.Service
 	cdromWaitInterval time.Duration
+	arpWaitInterval   time.Duration
 }
 
 func newUbuntuPlatform(
@@ -52,6 +53,7 @@ func newUbuntuPlatform(
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	platform.cdromWaitInterval = 500 * time.Millisecond
+	platform.arpWaitInterval = 10 * time.Second
 	return
 }
 
@@ -323,6 +325,22 @@ func (p ubuntu) SetupManualNetworking(networks boshsettings.Networks) (err error
 		return
 	}
 
+	go p.gratuitiousArp(modifiedNetworks)
+
+	return
+}
+
+func (p ubuntu) gratuitiousArp(networks []customNetwork) {
+	for i := 0; i < 6; i++ {
+		for _, network := range networks {
+			for !p.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
+				time.Sleep(100 * time.Millisecond)
+			}
+
+			p.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.Ip)
+			time.Sleep(p.arpWaitInterval)
+		}
+	}
 	return
 }
 

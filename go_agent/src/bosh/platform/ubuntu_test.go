@@ -213,11 +213,17 @@ prepend domain-name-servers xx.xx.xx.xx;
 
 func TestUbuntuSetupManualNetworking(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
+	ubuntu.arpWaitInterval = 1 * time.Millisecond
+
 	testUbuntuSetupManualNetworking(t, deps, ubuntu)
 
-	assert.Equal(t, len(deps.cmdRunner.RunCommands), 2)
+	time.Sleep(100 * time.Millisecond)
+
+	assert.Equal(t, len(deps.cmdRunner.RunCommands), 8)
 	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"service", "network-interface", "stop", "INTERFACE=eth0"})
 	assert.Equal(t, deps.cmdRunner.RunCommands[1], []string{"service", "network-interface", "start", "INTERFACE=eth0"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[2], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[7], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
 }
 
 func testUbuntuSetupManualNetworking(t *testing.T,
@@ -233,6 +239,7 @@ func testUbuntuSetupManualNetworking(t *testing.T,
 			Dns:     []string{"10.80.130.2", "10.80.130.1"},
 		},
 	}
+	deps.fs.WriteToFile("/sys/class/net/eth0", "")
 	deps.fs.WriteToFile("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a")
 	deps.fs.GlobPaths = []string{"/sys/class/net/eth0"}
 
