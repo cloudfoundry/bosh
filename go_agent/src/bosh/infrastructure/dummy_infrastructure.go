@@ -49,6 +49,6 @@ func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string, fs boshsy
 	return
 }
 
-func (inf dummyInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+func (inf dummyInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem, scsiDelegate ScsiDelegate) (realPath string, found bool) {
 	return
 }

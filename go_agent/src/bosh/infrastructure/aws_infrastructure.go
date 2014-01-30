@@ -202,7 +202,7 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 	return
 }
 
-func (inf awsInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem) (string, bool) {
+func (inf awsInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem, scsiDelegate ScsiDelegate) (string, bool) {
 	return inf.getDiskPath(devicePath, fs)
 }
 

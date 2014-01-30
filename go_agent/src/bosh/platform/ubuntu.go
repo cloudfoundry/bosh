@@ -817,14 +817,14 @@ func (p ubuntu) getEphemeralDiskPath(devicePathOrCid string) (realPath string, e
 func (p ubuntu) getPersistentDiskPath(devicePathOrCid string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 
-	realPath, found := p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs)
+	realPath, found := p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs, p)
 	for !found {
 		if time.Now().After(stopAfter) {
 			err = bosherr.New("Timed out getting real device path for %s", devicePathOrCid)
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
-		realPath, found = p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs)
+		realPath, found = p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs, p)
 	}
 
 	return
@@ -852,5 +852,10 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 	}
 
 	linuxSize = diskSizeInMb - swapSize
+	return
+}
+
+func (p ubuntu) RescanScsiBus() {
+	p.cmdRunner.RunCommand("rescan-scsi-bus.sh")
 	return
 }

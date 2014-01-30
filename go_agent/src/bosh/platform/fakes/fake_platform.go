@@ -224,3 +224,7 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	password = p.GetMonitCredentialsPassword
 	return
 }
+
+func (p *FakePlatform) RescanScsiBus() {
+	return
+}

@@ -158,3 +158,7 @@ func (p dummyPlatform) SetupMonitUser() (err error) {
 func (p dummyPlatform) GetMonitCredentials() (username, password string, err error) {
 	return
 }
+
+func (p dummyPlatform) RescanScsiBus() {
+	return
+}

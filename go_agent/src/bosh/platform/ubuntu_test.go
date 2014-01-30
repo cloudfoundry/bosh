@@ -666,6 +666,15 @@ func TestUbuntuGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
 	assert.Equal(t, "fake:random:password", password)
 }
 
+func TestUbuntuRescanScsiBus(t *testing.T) {
+	deps, ubuntu := buildUbuntu()
+
+	ubuntu.RescanScsiBus()
+
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"rescan-scsi-bus.sh"}, deps.cmdRunner.RunCommands[0])
+}
+
 type ubuntuDependencies struct {
 	collector   *fakestats.FakeStatsCollector
 	fs          *fakesys.FakeFileSystem

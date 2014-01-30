@@ -43,4 +43,5 @@ type Platform interface {
 	SetupMonitUser() (err error)
 	GetMonitCredentials() (username, password string, err error)
 	SetDiskManager(finder boshdisk.Finder, logger boshlog.Logger)
+	RescanScsiBus()
 }

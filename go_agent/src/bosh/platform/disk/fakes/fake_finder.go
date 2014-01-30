@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	"bosh/infrastructure"
 	boshsys "bosh/system"
 )
 
@@ -20,7 +21,7 @@ func (f *FakeFinder) GetEphemeralDiskPath(devicePath string, fs boshsys.FileSyst
 	return
 }
 
-func (f *FakeFinder) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+func (f *FakeFinder) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem, scsiDelegate infrastructure.ScsiDelegate) (realPath string, found bool) {
 	f.GetPersistentDiskPathDevicePath = devicePath
 	realPath = f.GetPersistentDiskPathRealPath
 	found = f.GetPersistentDiskPathFound

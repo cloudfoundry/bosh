@@ -5,6 +5,7 @@ import (
 	fakefs "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 type FakeCDROMDelegate struct {
@@ -42,6 +43,37 @@ func TestVsphereSetupNetworking(t *testing.T) {
 	vsphere.SetupNetworking(fakeDelegate, networks)
 
 	assert.Equal(t, fakeDelegate.SetupManualNetworkingNetworks, networks)
+}
+
+type FakeScsiDelegate struct {
+	RescanScsiBusCalled bool
+}
+
+func (f *FakeScsiDelegate) RescanScsiBus() {
+	f.RescanScsiBusCalled = true
+}
+
+func TestVsphereGetPersistentDiskPath(t *testing.T) {
+	vsphere, fs := buildVsphere()
+
+	fakeScsiDelegate := &FakeScsiDelegate{}
+	fs.GlobPaths = []string{"/sys/bus/scsi/devices/2:0:2:0/block/sdc"}
+
+	diskPath, found := vsphere.GetPersistentDiskPath("2", fs, fakeScsiDelegate)
+	assert.True(t, fakeScsiDelegate.RescanScsiBusCalled)
+	assert.Equal(t, fs.GlobPattern, "/sys/bus/scsi/devices/2:0:2:0/block/*")
+	assert.Equal(t, diskPath, "/dev/sdc")
+	assert.True(t, found)
+}
+
+func TestVsphereGetPersistentDiskPathWhenNeverFound(t *testing.T) {
+	vsphere, fs := buildVsphere()
+	vsphere.persistentDiskRetryInterval = 1 * time.Millisecond
+
+	fakeScsiDelegate := &FakeScsiDelegate{}
+
+	_, found := vsphere.GetPersistentDiskPath("2", fs, fakeScsiDelegate)
+	assert.False(t, found)
 }
 
 func buildVsphere() (vsphere vsphereInfrastructure, fs *fakefs.FakeFileSystem) {

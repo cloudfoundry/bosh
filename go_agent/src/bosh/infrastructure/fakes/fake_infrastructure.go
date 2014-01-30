@@ -35,6 +35,6 @@ func (inf *FakeInfrastructure) GetEphemeralDiskPath(devicePath string, fs boshsy
 	return
 }
 
-func (inf *FakeInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
+func (inf *FakeInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem, scsiDelegate boshinf.ScsiDelegate) (realPath string, found bool) {
 	return
 }

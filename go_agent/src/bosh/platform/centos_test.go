@@ -663,6 +663,15 @@ func TestCentosGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
 	assert.Equal(t, "fake:random:password", password)
 }
 
+func TestCentosRescanScsiBus(t *testing.T) {
+	deps, centos := buildCentos()
+
+	centos.RescanScsiBus()
+
+	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
+	assert.Equal(t, []string{"rescan-scsi-bus.sh"}, deps.cmdRunner.RunCommands[0])
+}
+
 type centosDependencies struct {
 	collector   *fakestats.FakeStatsCollector
 	fs          *fakesys.FakeFileSystem
