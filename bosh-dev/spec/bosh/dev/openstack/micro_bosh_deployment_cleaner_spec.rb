@@ -129,28 +129,34 @@ module Bosh::Dev::Openstack
       end
 
       context 'when images exist' do
-        let(:image1) do
-          instance_double('Fog::Compute::OpenStack::Image', name: 'fake-image-1', destroy: nil)
+        let(:image_to_be_deleted_1) do
+          instance_double('Fog::Compute::OpenStack::Image', name: 'BOSH-fake-image-1', destroy: nil)
         end
 
-        let(:image2) do
-          instance_double('Fog::Compute::OpenStack::Image', name: 'fake-image-2', destroy: nil)
+        let(:image_to_be_deleted_2) do
+          instance_double('Fog::Compute::OpenStack::Image', name: 'BOSH-fake-image-2', destroy: nil)
         end
 
-        before { image_collection.stub(all: [image1, image2]) }
+        let(:image_to_be_ignored) do
+          instance_double('Fog::Compute::OpenStack::Image', name: 'some-other-fake-image', destroy: nil)
+        end
+
+        before { image_collection.stub(all: [image_to_be_deleted_1, image_to_be_deleted_2, image_to_be_ignored]) }
 
         it 'deletes all images' do
-          expect(image1).to receive(:destroy)
-          expect(image2).to receive(:destroy)
-
           cleaner.clean
+
+          expect(image_to_be_deleted_1).to have_received(:destroy)
+          expect(image_to_be_deleted_2).to have_received(:destroy)
+          expect(image_to_be_ignored).to_not have_received(:destroy)
         end
 
         it 'logs message' do
-          expect(logger).to receive(:info).with('Destroying image fake-image-1')
-          expect(logger).to receive(:info).with('Destroying image fake-image-2')
-
           cleaner.clean
+
+          expect(logger).to have_received(:info).with('Destroying image BOSH-fake-image-1')
+          expect(logger).to have_received(:info).with('Destroying image BOSH-fake-image-2')
+          expect(logger).to have_received(:info).with('Ignoring image some-other-fake-image')
         end
 
       end

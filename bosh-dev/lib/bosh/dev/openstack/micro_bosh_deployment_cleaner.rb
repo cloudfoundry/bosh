@@ -34,8 +34,12 @@ module Bosh::Dev::Openstack
 
       # destroy all images
       cloud.openstack.images.all.each do |image|
-        @logger.info("Destroying image #{image.name}")
-        image.destroy
+        if image.name =~ /^BOSH/
+          @logger.info("Destroying image #{image.name}")
+          image.destroy
+        else
+          @logger.info("Ignoring image #{image.name}")
+        end
       end
 
       # destroy unattached volumes
