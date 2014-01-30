@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'logger'
 
 BOSH_STEMCELL_TGZ ||= 'bosh-instance-1.0.tgz'
 
@@ -23,8 +24,11 @@ describe Bosh::Deployer::InstanceManager do
     FileUtils.remove_entry_secure @dir
   end
 
+  let(:logger) { instance_double('Logger', debug: nil, info: nil) }
+
   def load_deployment
-    instances = @deployer.send(:load_deployments)['instances']
+    deployments = Bosh::Deployer::DeploymentsState.load_from_dir(@config['dir'], logger)
+    instances = deployments.deployments['instances']
     instances.detect { |d| d[:name] == @deployer.state.name }
   end
 

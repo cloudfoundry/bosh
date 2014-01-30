@@ -3,9 +3,14 @@ require 'bosh/deployer/logger_renderer'
 require 'bosh/deployer/hash_fingerprinter'
 require 'bosh/deployer/director_gateway_error'
 require 'bosh/deployer/ui_messager'
+require 'bosh/deployer/deployments_state'
+
+require 'forwardable'
 
 module Bosh::Deployer
   class InstanceManager
+    extend Forwardable
+
     CONNECTION_EXCEPTIONS = [
       Bosh::Agent::Error,
       Errno::ECONNREFUSED,
@@ -16,10 +21,8 @@ module Bosh::Deployer
 
     DEPLOYMENTS_FILE = 'bosh-deployments.yml'
 
-    attr_reader :state
     attr_accessor :renderer
-    attr_reader :infrastructure
-    attr_reader :deployments
+    attr_reader :infrastructure, :deployments_state
 
     def self.create(config)
       err 'No cloud properties defined' if config['cloud'].nil?
@@ -41,11 +44,12 @@ module Bosh::Deployer
 
     def initialize(config, config_sha1, ui_messager, plugin_name)
       Config.configure(config)
+      @config = Config
 
       plugin_class = InstanceManager.const_get(plugin_name.capitalize)
       @infrastructure = plugin_class.new(self, logger)
 
-      @state_yml = File.join(config['dir'], DEPLOYMENTS_FILE)
+      @deployments_state = DeploymentsState.load_from_dir(config['dir'], logger)
       load_state(config['name'])
 
       Config.uuid = state.uuid
@@ -55,25 +59,21 @@ module Bosh::Deployer
       @renderer = LoggerRenderer.new
     end
 
-    def cloud
-      Config.cloud
-    end
+    def_delegators(
+      :@deployments_state,
+      :deployments,
+      :state,
+      :exists?,
+    )
 
-    def agent
-      Config.agent
-    end
-
-    def logger
-      Config.logger
-    end
-
-    def instance_model
-      Models::Instance
-    end
-
-    def exists?
-      [state.vm_cid, state.stemcell_cid, state.disk_cid].any?
-    end
+    def_delegators(
+      :@config,
+      :cloud,
+      :agent,
+      :logger,
+      :bosh_ip,
+      :bosh_ip=,
+    )
 
     def check_dependencies
       infrastructure.check_dependencies
@@ -389,24 +389,8 @@ module Bosh::Deployer
       agent_start
     end
 
-    def bosh_ip
-      Config.bosh_ip
-    end
-
-    def bosh_ip=(ip)
-      Config.bosh_ip = ip
-    end
-
     def save_state
-      state.save
-      deployments['instances'] = instance_model.map { |instance| instance.values }
-      if infrastructure.disk_model
-        deployments['disks'] = infrastructure.disk_model.map { |disk| disk.values }
-      end
-
-      File.open(@state_yml, 'w') do |file|
-        file.write(Psych.dump(deployments))
-      end
+      deployments_state.save(infrastructure)
     end
 
     private
@@ -491,16 +475,6 @@ module Bosh::Deployer
       save_state
     end
 
-    def load_deployments
-      if File.exists?(@state_yml)
-        logger.info("Loading existing deployment data from: #{@state_yml}")
-        Psych.load_file(@state_yml)
-      else
-        logger.info("No existing deployments found (will save to #{@state_yml})")
-        { 'instances' => [], 'disks' => [] }
-      end
-    end
-
     def load_apply_spec(dir)
       load_spec("#{dir}/apply_spec.yml") do
         err "this isn't a micro bosh stemcell - apply_spec.yml missing"
@@ -519,26 +493,9 @@ module Bosh::Deployer
       Psych.load_file(file)
     end
 
-    def generate_unique_name
-      SecureRandom.uuid
-    end
-
     def load_state(name)
-      @deployments = load_deployments
-
-      infrastructure.disk_model.insert_multiple(deployments['disks']) if infrastructure.disk_model
-      instance_model.insert_multiple(deployments['instances'])
-
-      @state = instance_model.find(name: name)
-      if @state.nil?
-        @state = instance_model.new
-        @state.uuid = "bm-#{generate_unique_name}"
-        @state.name = name
-        @state.stemcell_sha1 = nil
-        @state.save
-      else
-        infrastructure.discover_bosh_ip
-      end
+      deployments_state.load_deployment(name, infrastructure)
+      infrastructure.discover_bosh_ip
     end
 
     def run_command(command)
@@ -585,4 +542,3 @@ module Bosh::Deployer
     end
   end
 end
-

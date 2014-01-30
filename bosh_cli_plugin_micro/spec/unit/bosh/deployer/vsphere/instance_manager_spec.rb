@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'bosh/deployer/instance_manager/vsphere'
 require 'bosh/deployer/ui_messager'
+require 'logger'
 
 module Bosh
   module Deployer
@@ -19,6 +20,7 @@ module Bosh
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:agent) { double('Bosh::Agent::HTTPClient') } # Uses method_missing :(
       let(:stemcell_tgz) { 'bosh-instance-1.0.tgz' }
+      let(:logger) { instance_double('Logger', debug: nil, info: nil) }
 
       before do
         Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
@@ -34,7 +36,8 @@ module Bosh
       end
 
       def load_deployment
-        instances = deployer.send(:load_deployments)['instances']
+        deployments = DeploymentsState.load_from_dir(config['dir'], logger)
+        instances = deployments.deployments['instances']
         instances.detect { |d| d[:name] == deployer.state.name }
       end
 
