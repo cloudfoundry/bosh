@@ -28,6 +28,14 @@ module Bosh
         Config.stub(agent: agent)
         Config.stub(agent_properties: {})
         SecureRandom.stub(uuid: 'deadbeef')
+
+        allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
+      end
+
+      class FakeMicroboshJobInstance
+        def render_templates(spec)
+          spec
+        end
       end
 
       after do

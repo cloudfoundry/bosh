@@ -17,6 +17,14 @@ module Bosh::Deployer
       Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
       @agent = double('agent')
       @deployer.stub(:agent).and_return(@agent)
+
+      allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
+    end
+
+    class FakeMicroboshJobInstance
+      def render_templates(spec)
+        spec
+      end
     end
 
     after do

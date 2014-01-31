@@ -4,6 +4,7 @@ require 'bosh/deployer/hash_fingerprinter'
 require 'bosh/deployer/director_gateway_error'
 require 'bosh/deployer/ui_messager'
 require 'bosh/deployer/deployments_state'
+require 'bosh/deployer/microbosh_job_instance'
 
 require 'forwardable'
 
@@ -383,7 +384,12 @@ module Bosh::Deployer
         # first update spec with infrastructure specific stuff
         infrastructure.update_spec(spec)
         # then update spec with generic changes
-        agent.run_task(:apply, spec.update(bosh_ip, infrastructure.service_ip))
+        spec = spec.update(bosh_ip, infrastructure.service_ip)
+
+        microbosh_job_instance = MicroboshJobInstance.new(bosh_ip, Config.agent_url, logger)
+        spec = microbosh_job_instance.render_templates(spec)
+
+        agent.run_task(:apply, spec)
       end
 
       agent_start
