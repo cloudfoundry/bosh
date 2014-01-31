@@ -2,8 +2,7 @@ package infrastructure
 
 import (
 	boshlog "bosh/logger"
-	boshsys "bosh/settings/directories"
-	fakefs "bosh/system/fakes"
+	fakeplatform "bosh/platform/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -31,17 +30,9 @@ func TestGetReturnsAnErrorOnUnknownInfrastructure(t *testing.T) {
 	assert.Error(t, err)
 }
 
-type cdromPlatform struct {
-}
-
-func (p cdromPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
-	return
-}
-
 func getNewProvider() (provider provider) {
-	dirProvider := boshsys.NewDirectoriesProvider("/var/vcap")
-	fs := fakefs.NewFakeFileSystem()
+	platform := fakeplatform.NewFakePlatform()
 
-	provider = NewProvider(boshlog.NewLogger(boshlog.LEVEL_NONE), fs, dirProvider, cdromPlatform{})
+	provider = NewProvider(boshlog.NewLogger(boshlog.LEVEL_NONE), platform)
 	return
 }
