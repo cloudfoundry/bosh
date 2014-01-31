@@ -498,15 +498,9 @@ func (p centos) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p centos) SetupEphemeralDiskWithPath(devicePath string) (err error) {
+func (p centos) SetupEphemeralDiskWithPath(realPath string) (err error) {
 	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
-
-	realPath, err := p.getRealDevicePath(devicePath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
-	}
 
 	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
 	if err != nil {

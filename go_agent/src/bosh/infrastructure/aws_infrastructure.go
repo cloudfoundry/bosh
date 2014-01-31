@@ -81,6 +81,10 @@ func (inf awsInfrastructure) SetupNetworking(networks boshsettings.Networks) (er
 	return inf.platform.SetupDhcp(networks)
 }
 
+func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+	return inf.platform.NormalizeDiskPath(devicePath)
+}
+
 func (inf awsInfrastructure) getInstanceId() (instanceId string, err error) {
 	instanceIdUrl := fmt.Sprintf("%s/latest/meta-data/instance-id", inf.metadataHost)
 	instanceIdResp, err := http.Get(instanceIdUrl)

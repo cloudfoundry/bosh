@@ -321,7 +321,7 @@ func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 
-	err := centos.SetupEphemeralDiskWithPath("/dev/sda")
+	err := centos.SetupEphemeralDiskWithPath("/dev/xvda")
 	assert.NoError(t, err)
 
 	dataDir := deps.fs.GetFileTestStat("/fake-dir/data")

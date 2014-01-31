@@ -102,17 +102,21 @@ func TestRunSetsUpNetworking(t *testing.T) {
 func TestRunSetsUpEphemeralDisk(t *testing.T) {
 	settings := boshsettings.Settings{
 		Disks: boshsettings.Disks{
-			Ephemeral: "/dev/sda",
+			Ephemeral: "fake-ephemeral-disk-setting",
 		},
 	}
 
 	fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
 	fakeInfrastructure.Settings = settings
 
+	fakeInfrastructure.GetEphemeralDiskPathRealPath = "/dev/sda"
+	fakeInfrastructure.GetEphemeralDiskPathFound = true
+
 	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
 	assert.Equal(t, fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
+	assert.Equal(t, fakeInfrastructure.GetEphemeralDiskPathDevicePath, "fake-ephemeral-disk-setting")
 }
 
 func TestRunSetsUpTmpDir(t *testing.T) {
@@ -235,6 +239,8 @@ func TestRunStartsMonit(t *testing.T) {
 
 func getBootstrapDependencies() (inf *fakeinf.FakeInfrastructure, platform *fakeplatform.FakePlatform, dirProvider boshdir.DirectoriesProvider) {
 	inf = &fakeinf.FakeInfrastructure{}
+	inf.GetEphemeralDiskPathFound = true
+	inf.GetEphemeralDiskPathRealPath = "/dev/sdz"
 	platform = fakeplatform.NewFakePlatform()
 	dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 	return

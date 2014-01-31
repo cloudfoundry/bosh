@@ -44,3 +44,7 @@ func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, er
 func (inf dummyInfrastructure) SetupNetworking(networks boshsettings.Networks) (err error) {
 	return
 }
+
+func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+	return
+}

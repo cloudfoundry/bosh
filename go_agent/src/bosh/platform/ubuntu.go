@@ -507,15 +507,9 @@ func (p ubuntu) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p ubuntu) SetupEphemeralDiskWithPath(devicePath string) (err error) {
+func (p ubuntu) SetupEphemeralDiskWithPath(realPath string) (err error) {
 	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
-
-	realPath, err := p.getRealDevicePath(devicePath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
-	}
 
 	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
 	if err != nil {

@@ -38,3 +38,7 @@ func (inf vsphereInfrastructure) GetSettings() (settings boshsettings.Settings, 
 func (inf vsphereInfrastructure) SetupNetworking(networks boshsettings.Networks) (err error) {
 	return inf.platform.SetupManualNetworking(networks)
 }
+
+func (inf vsphereInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+	return inf.platform.NormalizeDiskPath("/dev/sdb")
+}

@@ -97,6 +97,21 @@ func TestAwsSetupNetworking(t *testing.T) {
 	assert.Equal(t, platform.SetupDhcpNetworks, networks)
 }
 
+func TestAwsGetEphemeralDiskPath(t *testing.T) {
+	fakeDnsResolver := &FakeDnsResolver{}
+	platform := fakeplatform.NewFakePlatform()
+	aws := newAwsInfrastructure("", fakeDnsResolver, platform)
+
+	platform.NormalizeDiskPathRealPath = "/dev/xvdb"
+	platform.NormalizeDiskPathFound = true
+
+	realPath, found := aws.GetEphemeralDiskPath("/dev/sdb")
+
+	assert.True(t, found)
+	assert.Equal(t, realPath, "/dev/xvdb")
+	assert.Equal(t, platform.NormalizeDiskPathPath, "/dev/sdb")
+}
+
 // Fake Dns Resolver
 
 type FakeDnsResolver struct {

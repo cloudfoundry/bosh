@@ -71,7 +71,13 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.platform.SetupEphemeralDiskWithPath(settings.Disks.Ephemeral)
+	ephemeralDiskPath, found := boot.infrastructure.GetEphemeralDiskPath(settings.Disks.Ephemeral)
+	if !found {
+		err = bosherr.New("Could not find ephemeral disk '%s'", settings.Disks.Ephemeral)
+		return
+	}
+
+	err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ephemeral disk")
 		return

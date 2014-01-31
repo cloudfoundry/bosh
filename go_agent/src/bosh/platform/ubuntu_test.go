@@ -324,7 +324,7 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 
-	err := ubuntu.SetupEphemeralDiskWithPath("/dev/sda")
+	err := ubuntu.SetupEphemeralDiskWithPath("/dev/xvda")
 	assert.NoError(t, err)
 
 	dataDir := deps.fs.GetFileTestStat("/fake-dir/data")
