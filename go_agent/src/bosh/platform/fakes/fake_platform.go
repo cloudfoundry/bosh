@@ -190,6 +190,10 @@ func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool
 	return
 }
 
+func (p *FakePlatform) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
+	return
+}
+
 func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, err error) {
 	p.GetFileContentsFromCDROMPath = path
 	contents = p.GetFileContentsFromCDROMContents

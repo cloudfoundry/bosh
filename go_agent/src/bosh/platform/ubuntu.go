@@ -635,6 +635,14 @@ func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	return p.mounter.Unmount(realPath + "1")
 }
 
+func (p ubuntu) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
+	realPath, err := p.getRealDevicePath(devicePath)
+	if err == nil {
+		found = true
+	}
+	return
+}
+
 func (p ubuntu) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
 	err = p.waitForCDROM()
 	if err != nil {

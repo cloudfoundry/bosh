@@ -513,6 +513,30 @@ func TestCentosMigratePersistentDisk(t *testing.T) {
 	assert.Equal(t, fakeMounter.RemountToMountPoint, "/from/path")
 }
 
+func TestCentosNormalizeDiskPath(t *testing.T) {
+	deps, centos := buildCentos()
+
+	deps.fs.WriteToFile("/dev/xvda", "")
+	path, found := centos.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/xvda")
+	assert.True(t, found)
+
+	deps.fs.RemoveAll("/dev/xvda")
+	deps.fs.WriteToFile("/dev/vda", "")
+	path, found = centos.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/vda")
+	assert.True(t, found)
+
+	deps.fs.RemoveAll("/dev/vda")
+	deps.fs.WriteToFile("/dev/sda", "")
+	path, found = centos.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/sda")
+	assert.True(t, found)
+}
+
 func TestCentosGetFileContentsFromCDROM(t *testing.T) {
 	deps, centos := buildCentos()
 

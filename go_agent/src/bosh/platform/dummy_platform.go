@@ -125,6 +125,10 @@ func (p dummyPlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool
 	return
 }
 
+func (p dummyPlatform) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
+	return devicePath, true
+}
+
 func (p dummyPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
 	return
 }

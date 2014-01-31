@@ -626,6 +626,14 @@ func (p centos) UnmountPersistentDisk(devicePath string) (didUnmount bool, err e
 	return p.mounter.Unmount(realPath + "1")
 }
 
+func (p centos) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
+	realPath, err := p.getRealDevicePath(devicePath)
+	if err == nil {
+		found = true
+	}
+	return
+}
+
 func (p centos) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
 	err = p.waitForCDROM()
 	if err != nil {

@@ -432,6 +432,30 @@ func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
 	assert.Equal(t, "/dev/vdx1", fakeMounter.UnmountPartitionPath)
 }
 
+func TestUbuntuNormalizeDiskPath(t *testing.T) {
+	deps, ubuntu := buildUbuntu()
+
+	deps.fs.WriteToFile("/dev/xvda", "")
+	path, found := ubuntu.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/xvda")
+	assert.True(t, found)
+
+	deps.fs.RemoveAll("/dev/xvda")
+	deps.fs.WriteToFile("/dev/vda", "")
+	path, found = ubuntu.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/vda")
+	assert.True(t, found)
+
+	deps.fs.RemoveAll("/dev/vda")
+	deps.fs.WriteToFile("/dev/sda", "")
+	path, found = ubuntu.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/sda")
+	assert.True(t, found)
+}
+
 func TestUbuntuGetFileContentsFromCDROM(t *testing.T) {
 	deps, ubuntu := buildUbuntu()
 
