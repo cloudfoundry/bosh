@@ -12,6 +12,7 @@ module Bosh::Blobstore
       allow(HTTPClient).to receive_messages(new: httpclient)
       allow(httpclient).to receive_messages(ssl_config: ssl_config)
       allow(ssl_config).to receive(:verify_mode=)
+      allow(ssl_config).to receive(:verify_callback=)
     end
 
     it_implements_base_client_interface
@@ -35,6 +36,7 @@ module Bosh::Blobstore
           subject.get('foobar')
 
           expect(ssl_config).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
+          expect(ssl_config).to have_received(:verify_callback=)
         end
       end
 

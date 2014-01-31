@@ -14,6 +14,7 @@ module Bosh
 
         if @options[:ssl_no_verify]
           @client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          @client.ssl_config.verify_callback = proc {}
         end
 
         @endpoint = @options[:endpoint]
