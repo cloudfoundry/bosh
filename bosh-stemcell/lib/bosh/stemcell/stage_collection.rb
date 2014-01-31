@@ -128,6 +128,7 @@ module Bosh::Stemcell
     def centos_vcloud_stages
       [
         #:system_open_vm_tools,
+        :system_vsphere_cdrom,
         :system_parameters,
         :bosh_clean,
         :bosh_harden,
@@ -222,6 +223,7 @@ module Bosh::Stemcell
     def default_vcloud_stages
       [
         :system_open_vm_tools,
+        :system_vsphere_cdrom,
         # Misc
         :system_parameters,
         # Finalisation
