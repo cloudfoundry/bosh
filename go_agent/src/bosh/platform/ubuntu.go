@@ -554,10 +554,21 @@ func (p ubuntu) SetupEphemeralDiskWithPath(realPath string) (err error) {
 		return
 	}
 
+	sysdir := filepath.Join(mountPoint, "sys")
 	dir := filepath.Join(mountPoint, "sys", "log")
 	err = p.fs.MkdirAll(dir, os.FileMode(0750))
 	if err != nil {
 		err = bosherr.WrapError(err, "Making %s dir", dir)
+		return
+	}
+	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysdir)
+	if err != nil {
+		err = bosherr.WrapError(err, "chown %s", sysdir)
+		return
+	}
+	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	if err != nil {
+		err = bosherr.WrapError(err, "chown %s", dir)
 		return
 	}
 
@@ -565,6 +576,11 @@ func (p ubuntu) SetupEphemeralDiskWithPath(realPath string) (err error) {
 	err = p.fs.MkdirAll(dir, os.FileMode(0750))
 	if err != nil {
 		err = bosherr.WrapError(err, "Making %s dir", dir)
+		return
+	}
+	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	if err != nil {
+		err = bosherr.WrapError(err, "chown %s", dir)
 		return
 	}
 	return

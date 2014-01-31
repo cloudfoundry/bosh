@@ -360,11 +360,14 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.NotNil(t, sysLogStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysLogStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysLogStats.FileMode)
+	assert.Equal(t, []string{"chown", "root:vcap", "/fake-dir/data/sys"}, deps.cmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"chown", "root:vcap", "/fake-dir/data/sys/log"}, deps.cmdRunner.RunCommands[1])
 
 	sysRunStats := deps.fs.GetFileTestStat("/fake-dir/data/sys/run")
 	assert.NotNil(t, sysRunStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysRunStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
+	assert.Equal(t, []string{"chown", "root:vcap", "/fake-dir/data/sys/run"}, deps.cmdRunner.RunCommands[2])
 }
 
 func TestSetupTmpDir(t *testing.T) {
