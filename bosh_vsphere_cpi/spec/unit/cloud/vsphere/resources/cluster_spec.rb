@@ -2,9 +2,10 @@ require 'spec_helper'
 
 class VSphereCloud::Resources
   describe Cluster do
-    subject(:cluster) { described_class.new(cloud_config, cluster_config, properties) }
+    subject(:cluster) { described_class.new(datacenter, cloud_config, cluster_config, properties) }
 
-    let(:allow_mixed) { false }
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter') }
+
     let(:cloud_config) do
       instance_double(
         'VSphereCloud::Config',
@@ -18,6 +19,8 @@ class VSphereCloud::Resources
     end
     let(:logger) { instance_double('Logger', debug: nil, warn: nil) }
     let(:client) { instance_double('VSphereCloud::Client') }
+    let(:allow_mixed) { false }
+
 
     let(:cluster_config) do
       instance_double(
@@ -297,6 +300,12 @@ class VSphereCloud::Resources
             end
           end
         end
+      end
+    end
+
+    describe '#datacenter' do
+      it 'returns the injected datacenter' do
+        expect(subject.datacenter).to eq(datacenter)
       end
     end
 

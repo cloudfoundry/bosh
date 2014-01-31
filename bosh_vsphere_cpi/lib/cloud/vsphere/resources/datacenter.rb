@@ -66,7 +66,7 @@ module VSphereCloud
           cluster_properties = clusters_properties[cluster_mob]
           raise "Can't find properties for cluster: #{cluster_name}" if cluster_properties.nil?
 
-          cluster = Cluster.new(@config, cluster_config, cluster_properties)
+          cluster = Cluster.new(self, @config, cluster_config, cluster_properties)
           clusters[cluster.name] = cluster
         end
         clusters
