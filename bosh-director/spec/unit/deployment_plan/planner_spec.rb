@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      describe :initialize do
+      describe '#initialize' do
         it 'should parse the manifest' do
           plan = Planner.new(some: :manifest)
 
@@ -19,7 +19,7 @@ module Bosh::Director
           plan.parse
         end
 
-        describe :options do
+        describe 'options' do
           it 'should parse recreate' do
             plan = Planner.new({})
             plan.recreate.should == false
@@ -30,7 +30,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_name do
+      describe '#parse_name' do
         it 'should parse the raw and canonical names' do
           plan = Planner.new({ 'name' => 'Test Deployment' })
           plan.parse_name
@@ -39,7 +39,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_properties do
+      describe '#parse_properties' do
         it 'should parse basic properties' do
           plan = Planner.new({ 'properties' => { 'foo' => 'bar' } })
           plan.parse_properties
@@ -53,7 +53,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_releases do
+      describe '#parse_releases' do
         let(:release_spec) do
           {
             'name' => 'foo',
@@ -124,7 +124,7 @@ module Bosh::Director
 
       end
 
-      describe :parse_networks do
+      describe '#parse_networks' do
         it 'should create manual network by default' do
           network_spec = instance_double('Bosh::Director::DeploymentPlan::Network')
           network_spec.stub(:name).and_return('Bar')
@@ -175,7 +175,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_compilation do
+      describe '#parse_compilation' do
         it 'should delegate to CompilationConfig' do
           received_plan = nil
           CompilationConfig.
@@ -196,7 +196,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_update do
+      describe '#parse_update' do
         it 'should delegate to UpdateConfig' do
           UpdateConfig.should_receive(:new) do |spec|
             spec.should == { 'foo' => 'bar' }
@@ -214,7 +214,7 @@ module Bosh::Director
 
       end
 
-      describe :parse_resource_pools do
+      describe '#parse_resource_pools' do
         it 'should delegate to ResourcePool' do
           resource_pool_spec = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
           resource_pool_spec.stub(:name).and_return('foo')
