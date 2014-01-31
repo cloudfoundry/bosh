@@ -28,7 +28,7 @@ module VSphereCloud
     attr_accessor :client
 
     def initialize(options)
-      config = Config.build(options)
+      @config = Config.build(options)
 
       @logger = config.logger
       @client = config.client
@@ -184,7 +184,7 @@ module VSphereCloud
         disks = disk_spec(disk_locality)
         # need to include swap and linked clone log
         ephemeral = disk + memory + stemcell_size
-        cluster, datastore = @resources.place(cloud_properties, memory, ephemeral, disks)
+        cluster, datastore = @resources.place(memory, ephemeral, disks)
 
         name = "vm-#{generate_unique_name}"
         @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
@@ -541,7 +541,7 @@ module VSphereCloud
             destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.uuid}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
 
-            if Config.copy_disks
+            if config.copy_disks
               client.copy_disk(source_datacenter, source_path, datacenter, destination_path)
               @logger.info('Copied disk successfully')
             else
@@ -790,7 +790,7 @@ module VSphereCloud
       env['agent_id'] = agent_id
       env['networks'] = networking_env
       env['disks'] = disk_env
-      env.merge!(Config.agent)
+      env.merge!(config.agent)
       env
     end
 
@@ -906,7 +906,7 @@ module VSphereCloud
     def fetch_file(datacenter_name, datastore_name, path)
       retry_block do
         url =
-          "https://#{Config.vcenter.host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
+          "https://#{config.vcenter_host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
 
         response = @rest_client.get(url)
 
@@ -923,7 +923,7 @@ module VSphereCloud
     def upload_file(datacenter_name, datastore_name, path, contents)
       retry_block do
         url =
-          "https://#{Config.vcenter.host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
+          "https://#{config.vcenter_host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
         response = @rest_client.put(url,
                                     contents,
                                     { 'Content-Type' => 'application/octet-stream', 'Content-Length' => contents.length })
@@ -1143,5 +1143,9 @@ module VSphereCloud
 
       vms
     end
+
+    private
+
+    attr_reader :config
   end
 end
