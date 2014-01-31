@@ -251,52 +251,47 @@ module Bosh::Director
         end
       end
 
-      describe :parse_jobs do
+      describe '#parse_jobs' do
         it 'should delegate to Job' do
           job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
-          job_spec.stub(:name).and_return('Foo')
-          job_spec.stub(:canonical_name).and_return('foo')
-          job_spec
+          allow(job_spec).to receive(:name).and_return('Foo')
+          allow(job_spec).to receive(:canonical_name).and_return('foo')
 
-          received_plan = nil
-          Job.should_receive(:parse).
-            and_return do |deployment_plan, spec|
-            received_plan = deployment_plan
-            spec.should == { 'foo' => 'bar' }
-            job_spec
-          end
+          allow(Job).to receive(:parse).and_return(job_spec)
           plan = Planner.new({ 'jobs' => [{ 'foo' => 'bar' }] })
           plan.parse_jobs
-          received_plan.should == plan
+          expect(Job).to have_received(:parse).with(plan, { 'foo' => 'bar' })
         end
 
         it 'should enforce canonical name uniqueness' do
-          Job.stub(:parse).
-            and_return do |_, spec|
-            job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
-            job_spec.stub(:name).and_return(spec['name'])
-            job_spec.stub(:canonical_name).and_return(spec['cname'])
-            job_spec
-          end
-          lambda {
-            plan = Planner.new({ 'jobs' => [
-              { 'name' => 'Bar', 'cname' => 'bar' },
-              { 'name' => 'bar', 'cname' => 'bar' }
-            ] })
+          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'Bar')).and_return(
+            instance_double('Bosh::Director::DeploymentPlan::Job', name: 'Bar', canonical_name: 'bar'),
+          )
+          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'bar')).and_return(
+            instance_double('Bosh::Director::DeploymentPlan::Job', name: 'bar', canonical_name: 'bar'),
+          )
+
+          expect {
+            plan = Planner.new(
+              'jobs' => [
+                { 'name' => 'Bar' },
+                { 'name' => 'bar' }
+              ]
+            )
             plan.parse_jobs
-          }.should raise_error(DeploymentCanonicalJobNameTaken,
+          }.to raise_error(DeploymentCanonicalJobNameTaken,
                                "Invalid job name `bar', " +
                                  'canonical name already taken')
         end
 
         it 'should raise exception if renamed job is being referenced in deployment' do
-          lambda {
+          expect {
             plan = Planner.new(
               { 'jobs' => [{ 'name' => 'bar' }] },
               { 'job_rename' => { 'old_name' => 'bar', 'new_name' => 'foo' } }
             )
             plan.parse_jobs
-          }.should raise_error(DeploymentRenamedJobNameStillUsed,
+          }.to raise_error(DeploymentRenamedJobNameStillUsed,
                                "Renamed job `bar' is still referenced " +
                                  'in deployment manifest')
         end
