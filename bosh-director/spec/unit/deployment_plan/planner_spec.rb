@@ -3,6 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
+      let(:event_log) {instance_double('Bosh::Director::EventLog::Log')}
       describe '#initialize' do
         it 'should parse the manifest' do
           plan = Planner.new(some: :manifest)
@@ -14,9 +15,9 @@ module Bosh::Director
           plan.should_receive(:parse_compilation)
           plan.should_receive(:parse_update)
           plan.should_receive(:parse_resource_pools)
-          plan.should_receive(:parse_jobs)
+          plan.should_receive(:parse_jobs).with(event_log)
 
-          plan.parse
+          plan.parse(event_log)
         end
 
         describe 'options' do
@@ -253,21 +254,23 @@ module Bosh::Director
 
       describe '#parse_jobs' do
         it 'should delegate to Job' do
+          event_log = instance_double('Bosh::Director::EventLog::Log')
+
           job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
           allow(job_spec).to receive(:name).and_return('Foo')
           allow(job_spec).to receive(:canonical_name).and_return('foo')
 
           allow(Job).to receive(:parse).and_return(job_spec)
           plan = Planner.new({ 'jobs' => [{ 'foo' => 'bar' }] })
-          plan.parse_jobs
-          expect(Job).to have_received(:parse).with(plan, { 'foo' => 'bar' })
+          plan.parse_jobs(event_log)
+          expect(Job).to have_received(:parse).with(plan, { 'foo' => 'bar' }, event_log)
         end
 
         it 'should enforce canonical name uniqueness' do
-          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'Bar')).and_return(
+          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'Bar'), event_log).and_return(
             instance_double('Bosh::Director::DeploymentPlan::Job', name: 'Bar', canonical_name: 'bar'),
           )
-          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'bar')).and_return(
+          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'bar'), event_log).and_return(
             instance_double('Bosh::Director::DeploymentPlan::Job', name: 'bar', canonical_name: 'bar'),
           )
 
@@ -278,7 +281,7 @@ module Bosh::Director
                 { 'name' => 'bar' }
               ]
             )
-            plan.parse_jobs
+            plan.parse_jobs(event_log)
           }.to raise_error(DeploymentCanonicalJobNameTaken,
                                "Invalid job name `bar', " +
                                  'canonical name already taken')
@@ -290,7 +293,7 @@ module Bosh::Director
               { 'jobs' => [{ 'name' => 'bar' }] },
               { 'job_rename' => { 'old_name' => 'bar', 'new_name' => 'foo' } }
             )
-            plan.parse_jobs
+            plan.parse_jobs(event_log)
           }.to raise_error(DeploymentRenamedJobNameStillUsed,
                                "Renamed job `bar' is still referenced " +
                                  'in deployment manifest')
@@ -298,12 +301,12 @@ module Bosh::Director
 
         it 'should allow you to not have any jobs' do
           plan = Planner.new({ 'jobs' => [] })
-          plan.parse_jobs
+          plan.parse_jobs(event_log)
 
           plan.jobs.should be_empty
 
           plan = Planner.new({})
-          plan.parse_jobs
+          plan.parse_jobs(event_log)
           plan.jobs.should be_empty
         end
       end

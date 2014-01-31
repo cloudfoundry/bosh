@@ -129,6 +129,13 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
     lines[1].should =~ /\|o+\s+\| 1\/2/
   end
 
+  it 'recognizes deprecation warnings' do
+    Bosh::Cli::Config.colorize = true
+    allow(Bosh::Cli::Config.output).to receive(:tty? ).and_return(:true)
+    renderer.add_event('{"type": "deprecation", "time": 0, "message": "Warning message"}')
+    expect(renderer.render).to include('Deprecation: Warning message'.make_red)
+  end
+
   describe 'tracking stages with progress bar' do
     context 'when event state is started' do
       it 'updates total duration started at time' do

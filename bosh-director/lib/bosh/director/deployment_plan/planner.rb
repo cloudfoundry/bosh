@@ -41,7 +41,7 @@ module Bosh::Director
         @model = nil
       end
 
-      def parse
+      def parse(event_log)
         parse_name
         parse_properties
         parse_releases
@@ -49,7 +49,7 @@ module Bosh::Director
         parse_compilation
         parse_update
         parse_resource_pools
-        parse_jobs
+        parse_jobs(event_log)
       end
 
       # Looks up deployment model in DB or creates one if needed
@@ -208,7 +208,7 @@ module Bosh::Director
         # raise "No resource pools specified." if @resource_pools.empty?
       end
 
-      def parse_jobs
+      def parse_jobs(event_log)
         @jobs = []
         @jobs_name_index = {}
         @jobs_canonical_name_index = Set.new
@@ -228,7 +228,7 @@ module Bosh::Director
                     'deployment manifest'
           end
 
-          job = Job.parse(self, job)
+          job = Job.parse(self, job, event_log)
 
           if @jobs_canonical_name_index.include?(job.canonical_name)
             raise DeploymentCanonicalJobNameTaken,

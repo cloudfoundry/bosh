@@ -69,8 +69,8 @@ module Bosh::Director
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [Bosh::Director::DeploymentPlan::Job]
-      def self.parse(deployment, job_spec)
-        job_parser = JobSpecParser.new(deployment)
+      def self.parse(deployment, job_spec, event_log)
+        job_parser = JobSpecParser.new(deployment, event_log)
         job_parser.parse(job_spec)
       end
 

@@ -28,7 +28,7 @@ module Bosh::Director
 
         manifest_as_hash = Psych.load(@manifest)
         @deployment_plan = DeploymentPlan::Planner.new(manifest_as_hash, plan_options)
-        @deployment_plan.parse
+        @deployment_plan.parse(event_log)
         logger.info('Created deployment plan')
 
         resource_pools = @deployment_plan.resource_pools

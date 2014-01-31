@@ -2,7 +2,9 @@ require 'spec_helper'
 require 'bosh/director/deployment_plan/job_spec_parser'
 
 describe Bosh::Director::DeploymentPlan::JobSpecParser do
-  subject(:parser) { described_class.new(deployment_plan) }
+  subject(:parser) { described_class.new(deployment_plan, event_log) }
+  let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+
   let(:deployment_plan) do
     instance_double(
       'Bosh::Director::DeploymentPlan::Planner',
@@ -102,6 +104,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
     describe 'template key' do
       before { job_spec.delete('templates') }
+      before { allow(event_log).to receive(:warn_deprecated) }
 
       it 'parses a single template' do
         job_spec['template'] = 'fake-template-name'
@@ -117,6 +120,22 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         job = parser.parse(job_spec)
         expect(job.templates).to eq([template])
+      end
+
+      it "does not issue a deprecation warning when 'template' has a single value" do
+        job_spec['template'] = 'fake-template-name'
+
+        allow(deployment_plan).to receive(:release)
+                                  .with('fake-release-name')
+                                  .and_return(job_rel_ver)
+
+        template1 = make_template('fake-template-name', job_rel_ver)
+        allow(job_rel_ver).to receive(:use_template_named)
+                              .with('fake-template-name')
+                              .and_return(template1)
+
+        expect(event_log).not_to receive(:warn_deprecated)
+        parser.parse(job_spec)
       end
 
       it 'parses multiple templates' do
@@ -141,6 +160,33 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         job = parser.parse(job_spec)
         expect(job.templates).to eq([template1, template2])
+      end
+
+      it "issues a deprecation warning when 'template' has an array value" do
+        job_spec['template'] = %w(
+          fake-template1-name
+          fake-template2-name
+        )
+
+        allow(deployment_plan).to receive(:release)
+                                   .with('fake-release-name')
+                                   .and_return(job_rel_ver)
+
+        template1 = make_template('fake-template1-name', job_rel_ver)
+        allow(job_rel_ver).to receive(:use_template_named)
+                               .with('fake-template1-name')
+                               .and_return(template1)
+
+        template2 = make_template('fake-template2-name', job_rel_ver)
+        allow(job_rel_ver).to receive(:use_template_named)
+                               .with('fake-template2-name')
+                               .and_return(template2)
+
+        parser.parse(job_spec)
+        expect(event_log).to have_received(:warn_deprecated).with(
+          "Please use `templates' when specifying multiple templates for a job. "\
+          "`template' for multiple templates will soon be unsupported."
+        )
       end
     end
 
@@ -399,6 +445,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           job_spec['templates'] = []
           job_spec['template'] = []
         end
+        before { allow(event_log).to receive(:warn_deprecated) }
 
         it 'raises' do
           expect { parser.parse(job_spec) }.to raise_error(
