@@ -44,11 +44,3 @@ func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, er
 func (inf dummyInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
 	return
 }
-
-func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string, fs boshsys.FileSystem) (realPath string, found bool) {
-	return
-}
-
-func (inf dummyInfrastructure) GetPersistentDiskPath(devicePath string, fs boshsys.FileSystem, scsiDelegate ScsiDelegate) (realPath string, found bool) {
-	return
-}

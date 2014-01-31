@@ -3,6 +3,7 @@ package platform
 import (
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
+	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
@@ -18,10 +19,12 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger, runner)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
+	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(logger, runner, fs)
+	centosDiskManager := boshdisk.NewCentosDiskManager(logger, runner, fs)
 
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, dirProvider),
-		"centos": newCentosPlatform(sigarStatsCollector, fs, runner, dirProvider),
+		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, dirProvider),
+		"centos": newCentosPlatform(sigarStatsCollector, fs, runner, centosDiskManager, dirProvider),
 		"dummy":  newDummyPlatform(sigarStatsCollector, fs, runner, dirProvider),
 	}
 	return

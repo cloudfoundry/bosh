@@ -64,8 +64,6 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	platform.SetDiskManager(infrastructure, app.logger)
-
 	boot := boshboot.New(infrastructure, platform, dirProvider)
 	settingsService, err := boot.Run()
 	if err != nil {

@@ -1,9 +1,7 @@
 package platform
 
 import (
-	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
-	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
@@ -33,7 +31,7 @@ type Platform interface {
 	SetTimeWithNtpServers(servers []string) (err error)
 	SetupEphemeralDiskWithPath(devicePath string) (err error)
 	SetupTmpDir() (err error)
-	MountPersistentDisk(devicePathOrCid, mountPoint string) (err error)
+	MountPersistentDisk(devicePath, mountPoint string) (err error)
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
@@ -42,6 +40,4 @@ type Platform interface {
 	StartMonit() (err error)
 	SetupMonitUser() (err error)
 	GetMonitCredentials() (username, password string, err error)
-	SetDiskManager(finder boshdisk.Finder, logger boshlog.Logger)
-	RescanScsiBus()
 }

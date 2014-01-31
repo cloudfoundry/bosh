@@ -2,7 +2,6 @@ package platform
 
 import (
 	bosherr "bosh/errors"
-	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
@@ -26,7 +25,9 @@ type ubuntu struct {
 	collector         boshstats.StatsCollector
 	fs                boshsys.FileSystem
 	cmdRunner         boshsys.CmdRunner
-	diskManager       boshdisk.Manager
+	partitioner       boshdisk.Partitioner
+	formatter         boshdisk.Formatter
+	mounter           boshdisk.Mounter
 	compressor        boshcmd.Compressor
 	copier            boshcmd.Copier
 	diskWaitTimeout   time.Duration
@@ -40,6 +41,7 @@ func newUbuntuPlatform(
 	collector boshstats.StatsCollector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
+	diskManager boshdisk.Manager,
 	dirProvider boshdirs.DirectoriesProvider,
 ) (platform ubuntu) {
 	platform.collector = collector
@@ -47,6 +49,9 @@ func newUbuntuPlatform(
 	platform.cmdRunner = cmdRunner
 	platform.dirProvider = dirProvider
 
+	platform.partitioner = diskManager.GetPartitioner()
+	platform.formatter = diskManager.GetFormatter()
+	platform.mounter = diskManager.GetMounter()
 	platform.diskWaitTimeout = 3 * time.Minute
 
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
@@ -54,12 +59,6 @@ func newUbuntuPlatform(
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
 	platform.cdromWaitInterval = 500 * time.Millisecond
 	platform.arpWaitInterval = 10 * time.Second
-	return
-}
-
-func (p ubuntu) SetDiskManager(finder boshdisk.Finder, logger boshlog.Logger) {
-	diskManager := boshdisk.NewUbuntuDiskManager(logger, p.cmdRunner, p.fs, finder)
-	p.diskManager = diskManager
 	return
 }
 
@@ -512,7 +511,7 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
-	realPath, err := p.getEphemeralDiskPath(devicePath)
+	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -529,7 +528,7 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 		{SizeInMb: linuxSize, Type: boshdisk.PartitionTypeLinux},
 	}
 
-	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+	err = p.partitioner.Partition(realPath, partitions)
 	if err != nil {
 		err = bosherr.WrapError(err, "Partitioning disk")
 		return
@@ -537,25 +536,25 @@ func (p ubuntu) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 
 	swapPartitionPath := realPath + "1"
 	dataPartitionPath := realPath + "2"
-	err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
+	err = p.formatter.Format(swapPartitionPath, boshdisk.FileSystemSwap)
 	if err != nil {
 		err = bosherr.WrapError(err, "Formatting swap")
 		return
 	}
 
-	err = p.diskManager.GetFormatter().Format(dataPartitionPath, boshdisk.FileSystemExt4)
+	err = p.formatter.Format(dataPartitionPath, boshdisk.FileSystemExt4)
 	if err != nil {
 		err = bosherr.WrapError(err, "Formatting data partition with ext4")
 		return
 	}
 
-	err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
+	err = p.mounter.SwapOn(swapPartitionPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Mounting swap")
 		return
 	}
 
-	err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
+	err = p.mounter.Mount(dataPartitionPath, mountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Mounting data partition")
 		return
@@ -592,10 +591,10 @@ func (p ubuntu) SetupTmpDir() (err error) {
 	return
 }
 
-func (p ubuntu) MountPersistentDisk(devicePathOrCid, mountPoint string) (err error) {
+func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
 	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
 
-	realPath, err := p.getPersistentDiskPath(devicePathOrCid)
+	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -605,20 +604,20 @@ func (p ubuntu) MountPersistentDisk(devicePathOrCid, mountPoint string) (err err
 		{Type: boshdisk.PartitionTypeLinux},
 	}
 
-	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+	err = p.partitioner.Partition(realPath, partitions)
 	if err != nil {
 		err = bosherr.WrapError(err, "Partitioning disk")
 		return
 	}
 
 	partitionPath := realPath + "1"
-	err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
+	err = p.formatter.Format(partitionPath, boshdisk.FileSystemExt4)
 	if err != nil {
 		err = bosherr.WrapError(err, "Formatting partition with ext4")
 		return
 	}
 
-	err = p.diskManager.GetMounter().Mount(partitionPath, mountPoint)
+	err = p.mounter.Mount(partitionPath, mountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Mounting partition")
 		return
@@ -627,13 +626,13 @@ func (p ubuntu) MountPersistentDisk(devicePathOrCid, mountPoint string) (err err
 }
 
 func (p ubuntu) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
-	realPath, err := p.getPersistentDiskPath(devicePath)
+	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
 	}
 
-	return p.diskManager.GetMounter().Unmount(realPath + "1")
+	return p.mounter.Unmount(realPath + "1")
 }
 
 func (p ubuntu) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
@@ -718,11 +717,11 @@ func (p ubuntu) getCDROMPath() (path string) {
 }
 
 func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
-	return p.diskManager.GetMounter().IsMountPoint(path)
+	return p.mounter.IsMountPoint(path)
 }
 
 func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
-	err = p.diskManager.GetMounter().RemountAsReadonly(fromMountPoint)
+	err = p.mounter.RemountAsReadonly(fromMountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Remounting persistent disk as readonly")
 		return
@@ -737,13 +736,13 @@ func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err 
 		return
 	}
 
-	_, err = p.diskManager.GetMounter().Unmount(fromMountPoint)
+	_, err = p.mounter.Unmount(fromMountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmounting old persistent disk")
 		return
 	}
 
-	err = p.diskManager.GetMounter().Remount(toMountPoint, fromMountPoint)
+	err = p.mounter.Remount(toMountPoint, fromMountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Remounting new disk on original mountpoint")
 	}
@@ -751,13 +750,13 @@ func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err 
 }
 
 func (p ubuntu) IsDevicePathMounted(path string) (result bool, err error) {
-	realPath, err := p.getPersistentDiskPath(path)
+	realPath, err := p.getRealDevicePath(path)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
 	}
 
-	return p.diskManager.GetMounter().IsMounted(realPath + "1")
+	return p.mounter.IsMounted(realPath + "1")
 }
 
 func (p ubuntu) StartMonit() (err error) {
@@ -798,35 +797,34 @@ func (p ubuntu) GetMonitCredentials() (username, password string, err error) {
 	return
 }
 
-func (p ubuntu) getEphemeralDiskPath(devicePathOrCid string) (realPath string, err error) {
+func (p ubuntu) getRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 
-	realPath, found := p.diskManager.GetFinder().GetEphemeralDiskPath(devicePathOrCid, p.fs)
+	realPath, found := p.findPossibleDevice(devicePath)
 	for !found {
 		if time.Now().After(stopAfter) {
-			err = bosherr.New("Timed out getting real device path for %s", devicePathOrCid)
+			err = bosherr.New("Timed out getting real device path for %s", devicePath)
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
-		realPath, found = p.diskManager.GetFinder().GetEphemeralDiskPath(devicePathOrCid, p.fs)
+		realPath, found = p.findPossibleDevice(devicePath)
 	}
 
 	return
 }
 
-func (p ubuntu) getPersistentDiskPath(devicePathOrCid string) (realPath string, err error) {
-	stopAfter := time.Now().Add(p.diskWaitTimeout)
+func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bool) {
+	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
-	realPath, found := p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs, p)
-	for !found {
-		if time.Now().After(stopAfter) {
-			err = bosherr.New("Timed out getting real device path for %s", devicePathOrCid)
+	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
+	for _, prefix := range possiblePrefixes {
+		path := prefix + pathSuffix
+		if p.fs.FileExists(path) {
+			realPath = path
+			found = true
 			return
 		}
-		time.Sleep(100 * time.Millisecond)
-		realPath, found = p.diskManager.GetFinder().GetPersistentDiskPath(devicePathOrCid, p.fs, p)
 	}
-
 	return
 }
 
@@ -839,7 +837,7 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 
 	totalMemInMb := memStats.Total / uint64(1024*1024)
 
-	diskSizeInMb, err := p.diskManager.GetPartitioner().GetDeviceSizeInMb(devicePath)
+	diskSizeInMb, err := p.partitioner.GetDeviceSizeInMb(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting device size")
 		return
@@ -852,10 +850,5 @@ func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSiz
 	}
 
 	linuxSize = diskSizeInMb - swapSize
-	return
-}
-
-func (p ubuntu) RescanScsiBus() {
-	p.cmdRunner.RunCommand("rescan-scsi-bus.sh")
 	return
 }

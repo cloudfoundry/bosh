@@ -9,15 +9,13 @@ type ubuntuDiskManager struct {
 	partitioner Partitioner
 	formatter   Formatter
 	mounter     Mounter
-	finder      Finder
 }
 
-func NewUbuntuDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem, finder Finder) (manager Manager) {
+func NewUbuntuDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
 	return ubuntuDiskManager{
 		partitioner: newSfdiskPartitioner(logger, runner),
 		formatter:   newLinuxFormatter(runner, fs),
 		mounter:     newLinuxMounter(runner, fs),
-		finder:      finder,
 	}
 }
 
@@ -31,8 +29,4 @@ func (m ubuntuDiskManager) GetFormatter() Formatter {
 
 func (m ubuntuDiskManager) GetMounter() Mounter {
 	return m.mounter
-}
-
-func (m ubuntuDiskManager) GetFinder() Finder {
-	return m.finder
 }

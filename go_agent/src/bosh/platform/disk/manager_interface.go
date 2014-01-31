@@ -4,5 +4,4 @@ type Manager interface {
 	GetPartitioner() Partitioner
 	GetFormatter() Formatter
 	GetMounter() Mounter
-	GetFinder() Finder
 }

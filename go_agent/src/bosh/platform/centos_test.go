@@ -316,12 +316,10 @@ func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
-	fakeFinder := deps.diskManager.FakeFinder
 
 	fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
 
-	fakeFinder.GetEphemeralDiskPathRealPath = "/dev/xvda"
-	fakeFinder.GetEphemeralDiskPathFound = true
+	deps.fs.WriteToFile("/dev/xvda", "")
 
 	err := centos.SetupEphemeralDiskWithPath("/dev/sda")
 	assert.NoError(t, err)
@@ -383,10 +381,8 @@ func TestCentosMountPersistentDisk(t *testing.T) {
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
-	fakeFinder := deps.diskManager.FakeFinder
 
-	fakeFinder.GetPersistentDiskPathRealPath = "/dev/vdf"
-	fakeFinder.GetPersistentDiskPathFound = true
+	deps.fs.WriteToFile("/dev/vdf", "")
 
 	err := centos.MountPersistentDisk("/dev/sdf", "/mnt/point")
 	assert.NoError(t, err)
@@ -424,10 +420,8 @@ func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
 	deps, centos := buildCentos()
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.UnmountDidUnmount = !isMounted
-	fakeFinder := deps.diskManager.FakeFinder
 
-	fakeFinder.GetPersistentDiskPathRealPath = "/dev/vdx"
-	fakeFinder.GetPersistentDiskPathFound = true
+	deps.fs.WriteToFile("/dev/vdx", "")
 
 	didUnmount, err := centos.UnmountPersistentDisk("/dev/sdx")
 	assert.NoError(t, err)
@@ -435,21 +429,30 @@ func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
 	assert.Equal(t, "/dev/vdx1", fakeMounter.UnmountPartitionPath)
 }
 
-func TestCentosGetEphemeralDiskPathWithDelayWithinTimeout(t *testing.T) {
+func TestCentosGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
 	deps, centos := buildCentos()
-	fakeFinder := deps.diskManager.FakeFinder
 
-	time.AfterFunc(time.Second, func() {
-		fakeFinder.GetEphemeralDiskPathRealPath = "/dev/xvda"
-		fakeFinder.GetEphemeralDiskPathFound = true
-	})
+	deps.fs.WriteToFile("/dev/xvda", "")
+	deps.fs.WriteToFile("/dev/vda", "")
 
-	realPath, err := centos.getEphemeralDiskPath("/dev/sda")
+	realPath, err := centos.getRealDevicePath("/dev/sda")
 	assert.NoError(t, err)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
-func TestCentosGetEphemeralDiskPathWithDelayBeyondTimeout(t *testing.T) {
+func TestCentosGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
+	deps, centos := buildCentos()
+
+	time.AfterFunc(time.Second, func() {
+		deps.fs.WriteToFile("/dev/xvda", "")
+	})
+
+	realPath, err := centos.getRealDevicePath("/dev/sda")
+	assert.NoError(t, err)
+	assert.Equal(t, "/dev/xvda", realPath)
+}
+
+func TestCentosGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
 	deps, centos := buildCentos()
 
 	centos.diskWaitTimeout = time.Second
@@ -458,34 +461,7 @@ func TestCentosGetEphemeralDiskPathWithDelayBeyondTimeout(t *testing.T) {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	_, err := centos.getEphemeralDiskPath("/dev/sda")
-	assert.Error(t, err)
-}
-
-func TestCentosGetPersistentDiskPathWithDelayWithinTimeout(t *testing.T) {
-	deps, centos := buildCentos()
-	fakeFinder := deps.diskManager.FakeFinder
-
-	time.AfterFunc(time.Second, func() {
-		fakeFinder.GetPersistentDiskPathRealPath = "/dev/xvda"
-		fakeFinder.GetPersistentDiskPathFound = true
-	})
-
-	realPath, err := centos.getPersistentDiskPath("/dev/sda")
-	assert.NoError(t, err)
-	assert.Equal(t, "/dev/xvda", realPath)
-}
-
-func TestCentosGetPersistentDiskPathWithDelayBeyondTimeout(t *testing.T) {
-	deps, centos := buildCentos()
-
-	centos.diskWaitTimeout = time.Second
-
-	time.AfterFunc(2*time.Second, func() {
-		deps.fs.WriteToFile("/dev/xvda", "")
-	})
-
-	_, err := centos.getPersistentDiskPath("/dev/sda")
+	_, err := centos.getRealDevicePath("/dev/sda")
 	assert.Error(t, err)
 }
 
@@ -585,10 +561,8 @@ func TestCentosGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
 
 func TestCentosIsDevicePathMounted(t *testing.T) {
 	deps, centos := buildCentos()
-	fakeFinder := deps.diskManager.FakeFinder
 
-	fakeFinder.GetPersistentDiskPathRealPath = "/dev/xvda"
-	fakeFinder.GetPersistentDiskPathFound = true
+	deps.fs.WriteToFile("/dev/xvda", "")
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.IsMountedResult = true
 
@@ -663,15 +637,6 @@ func TestCentosGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
 	assert.Equal(t, "fake:random:password", password)
 }
 
-func TestCentosRescanScsiBus(t *testing.T) {
-	deps, centos := buildCentos()
-
-	centos.RescanScsiBus()
-
-	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
-	assert.Equal(t, []string{"rescan-scsi-bus.sh"}, deps.cmdRunner.RunCommands[0])
-}
-
 type centosDependencies struct {
 	collector   *fakestats.FakeStatsCollector
 	fs          *fakesys.FakeFileSystem
@@ -694,9 +659,8 @@ func buildCentos() (
 		deps.collector,
 		deps.fs,
 		deps.cmdRunner,
+		deps.diskManager,
 		deps.dirProvider,
 	)
-
-	platform.diskManager = deps.diskManager
 	return
 }

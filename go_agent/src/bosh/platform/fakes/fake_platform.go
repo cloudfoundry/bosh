@@ -1,10 +1,8 @@
 package fakes
 
 import (
-	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
-	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
@@ -73,10 +71,6 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
-	return
-}
-
-func (p *FakePlatform) SetDiskManager(_ boshdisk.Finder, _ boshlog.Logger) {
 	return
 }
 
@@ -222,9 +216,5 @@ func (p *FakePlatform) SetupMonitUser() (err error) {
 func (p *FakePlatform) GetMonitCredentials() (username, password string, err error) {
 	username = p.GetMonitCredentialsUsername
 	password = p.GetMonitCredentialsPassword
-	return
-}
-
-func (p *FakePlatform) RescanScsiBus() {
 	return
 }

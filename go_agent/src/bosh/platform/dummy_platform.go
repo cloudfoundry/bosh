@@ -1,9 +1,7 @@
 package platform
 
 import (
-	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
-	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
@@ -36,10 +34,6 @@ func newDummyPlatform(
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
-	return
-}
-
-func (p dummyPlatform) SetDiskManager(_ boshdisk.Finder, _ boshlog.Logger) {
 	return
 }
 
@@ -156,9 +150,5 @@ func (p dummyPlatform) SetupMonitUser() (err error) {
 }
 
 func (p dummyPlatform) GetMonitCredentials() (username, password string, err error) {
-	return
-}
-
-func (p dummyPlatform) RescanScsiBus() {
 	return
 }
