@@ -49,9 +49,9 @@ describe VSphereCloud::Resources::Datacenter do
                        ensure_all: true).and_return({ cluster_mob1 => {}, cluster_mob2 => {} })
 
     allow(VSphereCloud::Resources::Cluster).to receive(:new).with(
-                                                 config, cluster_config1, {}).and_return(resource_cluster1)
+                                                 anything, config, cluster_config1, {}).and_return(resource_cluster1)
     allow(VSphereCloud::Resources::Cluster).to receive(:new).with(
-                                                 config, cluster_config2, {}).and_return(resource_cluster2)
+                                                 anything, config, cluster_config2, {}).and_return(resource_cluster2)
   end
 
   describe '#mob' do
@@ -126,6 +126,11 @@ describe VSphereCloud::Resources::Datacenter do
 
   describe '#clusters' do
     it 'returns a hash mapping from cluster name to a configured cluster object' do
+      expect(VSphereCloud::Resources::Cluster).to receive(:new).with(
+                                                   subject, config, cluster_config1, {}).and_return(resource_cluster1)
+      expect(VSphereCloud::Resources::Cluster).to receive(:new).with(
+                                                   subject, config, cluster_config2, {}).and_return(resource_cluster2)
+
       clusters = datacenter.clusters
       expect(clusters.keys).to match_array(['cluster1', 'cluster2'])
       expect(clusters['cluster1']).to eq(resource_cluster1)
@@ -151,7 +156,6 @@ describe VSphereCloud::Resources::Datacenter do
 
         expect { datacenter.clusters }.to raise_error(/Can't find cluster: cluster1/)
       end
-
     end
 
     context 'when properties for a cluster cannot be found' do
@@ -164,7 +168,6 @@ describe VSphereCloud::Resources::Datacenter do
 
         expect { datacenter.clusters }.to raise_error(/Can't find properties for cluster: cluster1/)
       end
-
     end
   end
 

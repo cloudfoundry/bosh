@@ -13,7 +13,7 @@ module VSphereCloud
 
       # @!attribute datacenter
       #   @return [Datacenter] parent datacenter.
-      #attr_accessor :datacenter
+      attr_reader :datacenter
 
       # @!attribute resource_pool
       #   @return [ResourcePool] resource pool.
@@ -46,7 +46,8 @@ module VSphereCloud
       # @param [ClusterConfig] config cluster configuration as specified by the
       #   operator.
       # @param [Hash] properties prefetched vSphere properties for the cluster.
-      def initialize(cloud_config, cluster_config, properties)
+      def initialize(datacenter, cloud_config, cluster_config, properties)
+        @datacenter = datacenter
         @logger = cloud_config.logger
         @client = cloud_config.client
         @properties = properties
