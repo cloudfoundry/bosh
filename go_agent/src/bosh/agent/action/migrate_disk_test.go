@@ -4,7 +4,6 @@ import (
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshdirs "bosh/settings/directories"
-	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -27,8 +26,7 @@ func TestMigrateDiskActionRun(t *testing.T) {
 
 func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action migrateDiskAction) {
 	platform = fakeplatform.NewFakePlatform()
-	settings := &fakesettings.FakeSettingsService{}
 	dirProvider := boshdirs.NewDirectoriesProvider("/foo")
-	action = newMigrateDisk(settings, platform, dirProvider)
+	action = newMigrateDisk(platform, dirProvider)
 	return
 }

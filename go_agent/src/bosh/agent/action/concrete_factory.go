@@ -45,7 +45,7 @@ func NewFactory(
 			"get_task":     newGetTask(taskService),
 			"get_state":    newGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
 			"list_disk":    newListDisk(settings, platform),
-			"migrate_disk": newMigrateDisk(settings, platform, dirProvider),
+			"migrate_disk": newMigrateDisk(platform, dirProvider),
 			"mount_disk":   newMountDisk(settings, platform, dirProvider),
 			"ping":         newPing(),
 			"prepare_network_change": newPrepareNetworkChange(),

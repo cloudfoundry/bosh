@@ -3,18 +3,15 @@ package action
 import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
-	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 )
 
 type migrateDiskAction struct {
-	settings    boshsettings.Service
 	platform    boshplatform.Platform
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func newMigrateDisk(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action migrateDiskAction) {
-	action.settings = settings
+func newMigrateDisk(platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action migrateDiskAction) {
 	action.platform = platform
 	action.dirProvider = dirProvider
 	return

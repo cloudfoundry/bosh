@@ -116,7 +116,7 @@ func TestNewFactoryMigrateDisk(t *testing.T) {
 	action, err := factory.Create("migrate_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMigrateDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
+	assert.Equal(t, newMigrateDisk(deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
