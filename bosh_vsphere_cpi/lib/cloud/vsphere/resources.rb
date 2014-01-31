@@ -1,19 +1,13 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module VSphereCloud
-
-  # Resources model.
   class Resources
     MEMORY_THRESHOLD = 128
     DISK_THRESHOLD = 1024
     STALE_TIMEOUT = 60
     BYTES_IN_MB = 1024 * 1024
 
-    # Creates a new resources model.
     def initialize(config)
       @config = config
-      #@client = config.client
-      #@logger = config.logger
+      @logger = config.logger
       @last_update = 0
       @lock = Monitor.new
     end
@@ -97,60 +91,39 @@ module VSphereCloud
       locality = cluster_locality(persistent)
       locality.sort! { |a, b| b[1] <=> a[1] }
 
-      #blow up if datacenters.size > 1
-
-      datacenter = datacenters.first
-      datacenter_name = datacenter.fetch('name', nil)
-
-      if datacenter_name
-        cluster_hashes = datacenter.fetch('clusters', nil)
-      end
-
-      #blow up if preferred_clusters_hash > 1
-
-      cluster_hash = cluster_hashes.first
-      if cluster_hash
-        cluster_name = cluster_hash.fetch('name', nil)
-      end
-
-      #preferred_cluster = Config.clusters.fetch(cluster_name, nil)
-
       @lock.synchronize do
-        unless preferred_cluster
-          locality.each do |cluster, _|
-            persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
+        locality.each do |cluster, _|
+          persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
 
-            scorer = Scorer.new(cluster, memory, ephemeral, persistent_sizes)
-            if scorer.score > 0
-              datastore = cluster.pick_ephemeral(ephemeral)
-              if datastore
-                cluster.allocate(memory)
-                datastore.allocate(ephemeral)
-                return [cluster, datastore]
-              end
+          scorer = Scorer.new(@config, cluster, memory, ephemeral, persistent_sizes)
+          if scorer.score > 0
+            datastore = cluster.pick_ephemeral(ephemeral)
+            if datastore
+              cluster.allocate(memory)
+              datastore.allocate(ephemeral)
+              return [cluster, datastore]
             end
           end
-
-          unless locality.empty?
-            @logger.debug("Ignoring datastore locality as we could not find " +
-                            "any resources near disks: #{persistent.inspect}")
-          end
-
-          weighted_clusters = []
-          @config.datacenter_clusters.each_value do |cluster|
-            persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
-            scorer = Scorer.new(@config, cluster, memory, ephemeral, persistent_sizes)
-            score = scorer.score
-            @logger.debug("Score: #{cluster.name}: #{score}")
-            weighted_clusters << [cluster, score] if score > 0
-          end
-
-          raise "No available resources" if weighted_clusters.empty?
-
-          cluster = Util.weighted_random(weighted_clusters)
-        else
-          cluster = preferred_cluster
         end
+
+        unless locality.empty?
+          @logger.debug("Ignoring datastore locality as we could not find " +
+                          "any resources near disks: #{persistent.inspect}")
+        end
+
+        weighted_clusters = []
+        datacenter = datacenters.first.last
+        datacenter.clusters.each_value do |cluster|
+          persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
+          scorer = Scorer.new(@config, cluster, memory, ephemeral, persistent_sizes)
+          score = scorer.score
+          @logger.debug("Score: #{cluster.name}: #{score}")
+          weighted_clusters << [cluster, score] if score > 0
+        end
+
+        raise "No available resources" if weighted_clusters.empty?
+
+        cluster = Util.weighted_random(weighted_clusters)
 
         datastore = cluster.pick_ephemeral(ephemeral)
 
@@ -173,7 +146,7 @@ module VSphereCloud
     def update
       #datacenter_config = config.vcenter_datacenter
       datacenter = Datacenter.new(config)
-      @datacenters ={ datacenter.name => datacenter }
+      @datacenters = { datacenter.name => datacenter }
       @last_update = Time.now.to_i
     end
 
