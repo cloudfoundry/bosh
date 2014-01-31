@@ -24,7 +24,6 @@ func TestRunSetsUpSsh(t *testing.T) {
 	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
-	assert.Equal(t, fakeInfrastructure.SetupSshDelegate, fakePlatform)
 	assert.Equal(t, fakeInfrastructure.SetupSshUsername, "vcap")
 }
 
@@ -97,7 +96,6 @@ func TestRunSetsUpNetworking(t *testing.T) {
 	boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 	boot.Run()
 
-	assert.Equal(t, fakeInfrastructure.SetupNetworkingDelegate, fakePlatform)
 	assert.Equal(t, fakeInfrastructure.SetupNetworkingNetworks, settings.Networks)
 }
 

@@ -20,7 +20,7 @@ func newDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.Directori
 	return
 }
 
-func (inf dummyInfrastructure) SetupSsh(delegate SshSetupDelegate, username string) (err error) {
+func (inf dummyInfrastructure) SetupSsh(username string) (err error) {
 	return
 }
 
@@ -41,6 +41,6 @@ func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, er
 	return
 }
 
-func (inf dummyInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
+func (inf dummyInfrastructure) SetupNetworking(networks boshsettings.Networks) (err error) {
 	return
 }

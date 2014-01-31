@@ -30,6 +30,8 @@ type FakePlatform struct {
 	AddUserToGroupsGroups             map[string][]string
 	DeleteEphemeralUsersMatchingRegex string
 	SetupSshPublicKeys                map[string]string
+	SetupSshPublicKey                 string
+	SetupSshUsername                  string
 	UserPasswords                     map[string]string
 	SetupHostnameHostname             string
 
@@ -39,11 +41,17 @@ type FakePlatform struct {
 
 	SetupTmpDirCalled bool
 
+	SetupManualNetworkingNetworks boshsettings.Networks
+	SetupDhcpNetworks             boshsettings.Networks
+
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
 
 	UnmountPersistentDiskDidUnmount bool
 	UnmountPersistentDiskDevicePath string
+
+	GetFileContentsFromCDROMPath     string
+	GetFileContentsFromCDROMContents []byte
 
 	MigratePersistentDiskFromMountPoint string
 	MigratePersistentDiskToMountPoint   string
@@ -126,6 +134,8 @@ func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 
 func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
 	p.SetupSshPublicKeys[username] = publicKey
+	p.SetupSshPublicKey = publicKey
+	p.SetupSshUsername = username
 	return
 }
 
@@ -140,10 +150,12 @@ func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 }
 
 func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
+	p.SetupDhcpNetworks = networks
 	return
 }
 
 func (p *FakePlatform) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	p.SetupManualNetworkingNetworks = networks
 	return
 }
 
@@ -178,7 +190,9 @@ func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool
 	return
 }
 
-func (p *FakePlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
+func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, err error) {
+	p.GetFileContentsFromCDROMPath = path
+	contents = p.GetFileContentsFromCDROMContents
 	return
 }
 

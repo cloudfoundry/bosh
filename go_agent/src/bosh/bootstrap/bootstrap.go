@@ -34,7 +34,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.infrastructure.SetupSsh(boot.platform, boshsettings.VCAP_USERNAME)
+	err = boot.infrastructure.SetupSsh(boshsettings.VCAP_USERNAME)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ssh")
 		return
@@ -59,7 +59,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.infrastructure.SetupNetworking(boot.platform, settings.Networks)
+	err = boot.infrastructure.SetupNetworking(settings.Networks)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up networking")
 		return

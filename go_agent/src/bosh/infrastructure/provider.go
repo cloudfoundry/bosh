@@ -14,7 +14,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p provi
 	digDnsResolver := digDnsResolver{logger: logger}
 
 	p.infrastructures = map[string]Infrastructure{
-		"aws":     newAwsInfrastructure("http://169.254.169.254", digDnsResolver),
+		"aws":     newAwsInfrastructure("http://169.254.169.254", digDnsResolver, platform),
 		"vsphere": newVsphereInfrastructure(platform),
 		"dummy":   newDummyInfrastructure(platform.GetFs(), platform.GetDirProvider()),
 	}

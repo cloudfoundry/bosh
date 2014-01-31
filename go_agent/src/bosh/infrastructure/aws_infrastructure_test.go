@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -23,15 +24,15 @@ func TestAwsSetupSsh(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	aws := newAwsInfrastructure(ts.URL, &FakeDnsResolver{})
+	platform := fakeplatform.NewFakePlatform()
 
-	fakeSshSetupDelegate := &FakeSshSetupDelegate{}
+	aws := newAwsInfrastructure(ts.URL, &FakeDnsResolver{}, platform)
 
-	err := aws.SetupSsh(fakeSshSetupDelegate, "vcap")
+	err := aws.SetupSsh("vcap")
 	assert.NoError(t, err)
 
-	assert.Equal(t, fakeSshSetupDelegate.SetupSshPublicKey, expectedKey)
-	assert.Equal(t, fakeSshSetupDelegate.SetupSshUsername, "vcap")
+	assert.Equal(t, platform.SetupSshPublicKey, expectedKey)
+	assert.Equal(t, platform.SetupSshUsername, "vcap")
 }
 
 func TestAwsGetSettingsWhenADnsIsNotProvided(t *testing.T) {
@@ -43,7 +44,9 @@ func TestAwsGetSettingsWhenADnsIsNotProvided(t *testing.T) {
 	metadataTs := spinUpAwsMetadataServer(t, expectedUserData)
 	defer metadataTs.Close()
 
-	aws := newAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{})
+	platform := fakeplatform.NewFakePlatform()
+
+	aws := newAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{}, platform)
 
 	settings, err := aws.GetSettings()
 	assert.NoError(t, err)
@@ -72,7 +75,9 @@ func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 	metadataTs := spinUpAwsMetadataServer(t, expectedUserData)
 	defer metadataTs.Close()
 
-	aws := newAwsInfrastructure(metadataTs.URL, fakeDnsResolver)
+	platform := fakeplatform.NewFakePlatform()
+
+	aws := newAwsInfrastructure(metadataTs.URL, fakeDnsResolver, platform)
 
 	settings, err := aws.GetSettings()
 	assert.NoError(t, err)
@@ -83,43 +88,13 @@ func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 
 func TestAwsSetupNetworking(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
-	aws := newAwsInfrastructure("", fakeDnsResolver)
-	fakeDelegate := &FakeNetworkingDelegate{}
+	platform := fakeplatform.NewFakePlatform()
+	aws := newAwsInfrastructure("", fakeDnsResolver, platform)
 	networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
-	aws.SetupNetworking(fakeDelegate, networks)
+	aws.SetupNetworking(networks)
 
-	assert.Equal(t, fakeDelegate.SetupDhcpNetworks, networks)
-}
-
-// Fake Ssh Setup Delegate
-
-type FakeSshSetupDelegate struct {
-	SetupSshPublicKey string
-	SetupSshUsername  string
-}
-
-func (d *FakeSshSetupDelegate) SetupSsh(publicKey, username string) (err error) {
-	d.SetupSshPublicKey = publicKey
-	d.SetupSshUsername = username
-	return
-}
-
-// Fake Networking Delegate
-
-type FakeNetworkingDelegate struct {
-	SetupDhcpNetworks             boshsettings.Networks
-	SetupManualNetworkingNetworks boshsettings.Networks
-}
-
-func (d *FakeNetworkingDelegate) SetupDhcp(networks boshsettings.Networks) (err error) {
-	d.SetupDhcpNetworks = networks
-	return
-}
-
-func (d *FakeNetworkingDelegate) SetupManualNetworking(networks boshsettings.Networks) (err error) {
-	d.SetupManualNetworkingNetworks = networks
-	return
+	assert.Equal(t, platform.SetupDhcpNetworks, networks)
 }
 
 // Fake Dns Resolver

@@ -1,40 +1,35 @@
 package infrastructure
 
 import (
+	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-type FakeCDROMDelegate struct {
-}
-
-func (fakeCDROMDelegate FakeCDROMDelegate) GetFileContentsFromCDROM(_ string) (contents []byte, err error) {
-	contents = []byte(`{"agent_id": "123"}`)
-	return
-}
-
 func TestVsphereGetSettings(t *testing.T) {
-	vsphere := buildVsphere()
+	vsphere, platform := buildVsphere()
+
+	platform.GetFileContentsFromCDROMContents = []byte(`{"agent_id": "123"}`)
 
 	settings, err := vsphere.GetSettings()
 
 	assert.NoError(t, err)
+	assert.Equal(t, platform.GetFileContentsFromCDROMPath, "env")
 	assert.Equal(t, settings.AgentId, "123")
 }
 
 func TestVsphereSetupNetworking(t *testing.T) {
-	vsphere := buildVsphere()
-	fakeDelegate := &FakeNetworkingDelegate{}
+	vsphere, platform := buildVsphere()
 	networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
-	vsphere.SetupNetworking(fakeDelegate, networks)
+	vsphere.SetupNetworking(networks)
 
-	assert.Equal(t, fakeDelegate.SetupManualNetworkingNetworks, networks)
+	assert.Equal(t, platform.SetupManualNetworkingNetworks, networks)
 }
 
-func buildVsphere() (vsphere vsphereInfrastructure) {
-	cdromDelegate := FakeCDROMDelegate{}
-	vsphere = newVsphereInfrastructure(cdromDelegate)
+func buildVsphere() (vsphere vsphereInfrastructure, platform *fakeplatform.FakePlatform) {
+	platform = fakeplatform.NewFakePlatform()
+	vsphere = newVsphereInfrastructure(platform)
 	return
 }
