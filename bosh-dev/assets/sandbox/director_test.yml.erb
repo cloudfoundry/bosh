@@ -14,7 +14,7 @@ scheduled_jobs:
     schedule: '*/2 * * * * *'
   - command: ScheduledBackup
     schedule: '*/1 * * * * *'
-db:
+db: &bosh_db
   adapter: postgres
   database: <%= db_name %>
   # Settings are set to defaults since DbBackup
@@ -31,12 +31,7 @@ db:
     max_connections: 32
     pool_timeout: 10
 dns:
-  db:
-    adapter: postgres
-    database: <%= db_name %>
-    connection_options:
-      max_connections: 32
-      pool_timeout: 10
+  db: *bosh_db
 blobstore: &director_blobstore
   provider: local
   options:
