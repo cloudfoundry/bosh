@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	fakefs "bosh/system/fakes"
@@ -13,6 +14,7 @@ import (
 func TestGetSettings(t *testing.T) {
 	fs := fakefs.NewFakeFileSystem()
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+	platform := fakeplatform.NewFakePlatform()
 
 	settingsPath := filepath.Join(dirProvider.BaseDir(), "bosh", "settings.json")
 
@@ -20,7 +22,7 @@ func TestGetSettings(t *testing.T) {
 	existingSettingsBytes, _ := json.Marshal(expectedSettings)
 	fs.WriteToFile(settingsPath, string(existingSettingsBytes))
 
-	dummy := newDummyInfrastructure(fs, dirProvider)
+	dummy := newDummyInfrastructure(fs, dirProvider, platform)
 
 	settings, err := dummy.GetSettings()
 	assert.NoError(t, err)
@@ -35,8 +37,9 @@ func TestGetSettings(t *testing.T) {
 func TestGetSettingsErrsWhenSettingsFileDoesNotExist(t *testing.T) {
 	fs := fakefs.NewFakeFileSystem()
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+	platform := fakeplatform.NewFakePlatform()
 
-	dummy := newDummyInfrastructure(fs, dirProvider)
+	dummy := newDummyInfrastructure(fs, dirProvider, platform)
 
 	_, err := dummy.GetSettings()
 	assert.Error(t, err)
