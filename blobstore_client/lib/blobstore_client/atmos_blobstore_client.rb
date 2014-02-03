@@ -19,6 +19,10 @@ module Bosh
         }
         @tag = @options[:tag]
 
+        if @options[:unsupported]
+          @atmos_options[:unsupported] = @options[:unsupported]
+        end
+
         # Add proxy if ENV has the variable
         proxy = case URI.parse(@atmos_options[:url] || '').scheme
                   when 'https'
