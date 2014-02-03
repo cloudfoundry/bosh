@@ -87,7 +87,7 @@ describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
 
       apply_spec_regex = %r{canary_update.foobar/0.*apply_spec_json.{5}(.+).{2}WHERE}
       apply_spec_json = apply_spec_regex.match(deploy_results)[1]
-      apply_spec = JSON.parse(apply_spec_json)
+      apply_spec = JSON.parse(apply_spec_json.gsub('\"', '"'))
       packages = apply_spec['packages']
       packages.each do |key, value|
         expect(value['name']).to eq(key)

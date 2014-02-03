@@ -3,13 +3,17 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Sandbox
   class Postgresql
-    attr_reader :directory
+    attr_reader :db_name, :directory, :username, :password, :adapter, :port
 
     def initialize(directory, db_name, logger, runner = Bosh::Core::Shell.new)
       @directory = directory
       @db_name = db_name
       @logger = logger
       @runner = runner
+      @username = 'postgres'
+      @password = ''
+      @adapter = 'postgres'
+      @port = 5432
     end
 
     # Assumption is that user running tests can
@@ -26,6 +30,6 @@ module Bosh::Dev::Sandbox
 
     private
 
-    attr_reader :db_name, :runner
+    attr_reader :runner
   end
 end
