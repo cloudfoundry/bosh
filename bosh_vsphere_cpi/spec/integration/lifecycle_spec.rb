@@ -46,7 +46,7 @@ describe VSphereCloud::Cloud do
     end
   end
 
-  after(:all) { cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
+  after(:all) { @cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
 
   before { @vm_id = nil }
   after { cpi.delete_vm(@vm_id) if @vm_id }
