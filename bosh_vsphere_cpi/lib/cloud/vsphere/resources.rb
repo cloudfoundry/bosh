@@ -1,3 +1,5 @@
+require 'cloud/vsphere/resources/datacenter'
+
 module VSphereCloud
   class Resources
     MEMORY_THRESHOLD = 128
