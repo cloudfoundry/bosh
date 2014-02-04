@@ -427,5 +427,44 @@ module VSphereCloud
         end
       end
     end
+
+    describe '#create_vm' do
+      it 'sets the thread name to create_vm followed by the agent id'
+
+      it 'raises an error when the number of cpu is not a power of 2 to work around a vCenter bug' do
+        expect {
+          vsphere_cloud.create_vm(nil, nil, { 'cpu' => 3 }, nil)
+        }.to raise_error('Number of vCPUs: 3 is not a power of 2.')
+      end
+
+      context 'when the stemcell vm does not exist' do
+        let(:datacenter) do
+          template_folder = instance_double(
+            'VSphereCloud::Resources::Folder',
+            name: 'templates_folder',
+          )
+
+          instance_double(
+            'VSphereCloud::Resources::Datacenter',
+            name: 'fake_datacenter',
+            template_folder: template_folder,
+          )
+        end
+        before do
+          allow(class_double('VSphereCloud::Resources::Datacenter').as_stubbed_const).
+            to receive(:new).with(cloud_config).and_return(datacenter)
+        end
+
+        before do
+          allow(client).to receive(:find_by_inventory_path).with(['fake_datacenter', 'vm', 'templates_folder', 'sc-beef']).and_return(nil)
+        end
+
+        it 'raises an error' do
+          expect {
+            vsphere_cloud.create_vm(nil, 'sc-beef', { 'cpu' => 1 }, nil)
+          }.to raise_error('Could not find stemcell: sc-beef')
+        end
+      end
+    end
   end
 end
