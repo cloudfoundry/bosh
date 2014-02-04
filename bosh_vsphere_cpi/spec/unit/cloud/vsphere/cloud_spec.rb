@@ -3,14 +3,14 @@ require 'spec_helper'
 module VSphereCloud
   describe Cloud do
     let(:config) { { fake: 'config' } }
-    let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, client: nil, rest_client:nil ) }
+    let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ) }
     let(:logger) { instance_double('Logger', info: nil) }
     let(:client) { double('fake client') }
 
     subject(:vsphere_cloud) { Cloud.new(config) }
 
     before do
-      allow(Config).to receive(:build).and_return(cloud_config)
+      allow(Config).to receive(:build).with(config).and_return(cloud_config)
       allow(cloud_config).to receive(:client).and_return(client)
       Cloud.any_instance.stub(:at_exit)
     end
