@@ -180,43 +180,92 @@ module Bosh::Cli
           expect { command.list }.to raise_error(Bosh::Cli::CliError, 'No stemcells')
         end
 
-        context "when stemcell does not exist" do
+        context 'when stemcell does not exist' do
           before { director.stub(list_stemcells: []) }
 
-          it "uploads stemcell and returns successfully" do
+          it 'uploads stemcell and returns successfully' do
             director.should_receive(:upload_stemcell).with(stemcell_archive)
             command.upload(stemcell_archive)
           end
         end
 
-        context "when stemcell already exists" do
-          before { director.stub(list_stemcells: [{"name" => "ubuntu-stemcell", "version" => 1}]) }
+        context 'when stemcell already exists' do
+          context 'when the stemcell is local' do
+            before { director.stub(list_stemcells: [{'name' => 'ubuntu-stemcell', 'version' => 1}]) }
 
-          context "when --skip-if-exists flag is given" do
-            before { command.add_option(:skip_if_exists, true) }
+            context 'when --skip-if-exists flag is given' do
+              before { command.add_option(:skip_if_exists, true) }
 
-            it "does not upload stemcell" do
-              director.should_not_receive(:upload_stemcell)
-              command.upload(stemcell_archive)
+              it 'does not upload stemcell' do
+                director.should_not_receive(:upload_stemcell)
+                command.upload(stemcell_archive)
+              end
+
+              it 'returns successfully' do
+                expect {
+                  command.upload(stemcell_archive)
+                }.to_not raise_error
+              end
             end
 
-            it "returns successfully" do
-              expect {
-                command.upload(stemcell_archive)
-              }.to_not raise_error
+            context 'when --skip-if-exists flag is not given' do
+              it 'does not upload stemcell' do
+                director.should_not_receive(:upload_stemcell)
+                command.upload(stemcell_archive) rescue nil
+              end
+
+              it 'raises an error' do
+                expect {
+                  command.upload(stemcell_archive)
+                }.to raise_error(Bosh::Cli::CliError, /already exists/)
+              end
             end
           end
 
-          context "when --skip-if-exists flag is not given" do
-            it "does not upload stemcell" do
-              director.should_not_receive(:upload_stemcell)
-              command.upload(stemcell_archive) rescue nil
+          context 'when the stemcell is remote' do
+            let(:remote_stemcell_location) { 'http://location/stemcell.tgz' }
+            let(:task_events_json) { '{"error":{"code":50002}}' }
+            before do
+              director.stub(:upload_remote_stemcell).with(remote_stemcell_location).and_return([:error, 1])
+              director.stub(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
             end
 
-            it "raises an error" do
-              expect {
-                command.upload(stemcell_archive)
-              }.to raise_error(Bosh::Cli::CliError, /already exists/)
+            context 'when --skip-if-exists flag is given' do
+              before { command.add_option(:skip_if_exists, true) }
+
+              it 'still uploads stemcell' do
+                director.should_receive(:upload_remote_stemcell)
+                command.upload(remote_stemcell_location)
+              end
+
+              it 'does not raise an error' do
+                expect {
+                  command.upload(remote_stemcell_location)
+                }.to_not raise_error
+              end
+
+              it 'has an exit code of 0' do
+                command.upload(remote_stemcell_location)
+                command.exit_code.should == 0
+              end
+            end
+
+            context 'when --skip-if-exists flag is not given' do
+              it 'still uploads stemcell' do
+                director.should_receive(:upload_remote_stemcell)
+                command.upload(remote_stemcell_location) rescue nil
+              end
+
+              it 'does not raise an error' do
+                expect {
+                  command.upload(remote_stemcell_location)
+                }.to_not raise_error
+              end
+
+              it 'has an exit code of 1' do
+                command.upload(remote_stemcell_location)
+                command.exit_code.should == 1
+              end
             end
           end
         end
