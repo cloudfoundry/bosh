@@ -19,7 +19,7 @@ type concreteCompiler struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func newConcreteCompiler(
+func NewConcreteCompiler(
 	compressor boshcmd.Compressor,
 	blobstore boshblob.Blobstore,
 	fs boshsys.FileSystem,

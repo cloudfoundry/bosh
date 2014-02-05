@@ -271,6 +271,6 @@ func buildCompiler() (
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	fs = fakesys.NewFakeFileSystem()
 	runner = fakesys.NewFakeCmdRunner()
-	compiler = newConcreteCompiler(compressor, blobstore, fs, runner, boshdirs.NewDirectoriesProvider("/fake-dir"))
+	compiler = NewConcreteCompiler(compressor, blobstore, fs, runner, boshdirs.NewDirectoriesProvider("/fake-dir"))
 	return
 }

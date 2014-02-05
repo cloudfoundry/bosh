@@ -4,8 +4,11 @@ import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
 	boshalert "bosh/agent/alert"
-	boshappl "bosh/agent/applier"
+	boshapplier "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
+	bc "bosh/agent/applier/bundlecollection"
+	ja "bosh/agent/applier/jobapplier"
+	pa "bosh/agent/applier/packageapplier"
 	boshcomp "bosh/agent/compiler"
 	boshdrain "bosh/agent/drain"
 	boshtask "bosh/agent/task"
@@ -100,8 +103,29 @@ func (app app) Run(args []string) (err error) {
 	}
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
-	applier := boshappl.NewApplierProvider(platform, blobstore, jobSupervisor, dirProvider).Get()
-	compiler := boshcomp.NewCompilerProvider(platform, blobstore, dirProvider).Get()
+
+	installPath := filepath.Join(dirProvider.BaseDir(), "data")
+
+	jobsBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "jobs", platform.GetFs())
+
+	jobApplier := ja.NewRenderedJobApplier(
+		jobsBc,
+		blobstore,
+		platform.GetCompressor(),
+		jobSupervisor,
+	)
+
+	packagesBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "packages", platform.GetFs())
+
+	packageApplier := pa.NewConcretePackageApplier(
+		packagesBc,
+		blobstore,
+		platform.GetCompressor(),
+	)
+
+	applier := boshapplier.NewConcreteApplier(jobApplier, packageApplier, platform, jobSupervisor, dirProvider)
+
+	compiler := boshcomp.NewConcreteCompiler(platform.GetCompressor(), blobstore, platform.GetFs(), platform.GetRunner(), dirProvider)
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
