@@ -175,10 +175,6 @@ module Bosh::Cli
       JSON.parse(event_log.split("\n").last)
     end
 
-    def stemcell_upload_failure_message(task_id, status)
-      last_event(task_id)['error']['message'] if status == :error
-    end
-
     def exists?(name, version)
       existing = director.list_stemcells.select do |sc|
         sc['name'] == name && sc['version'] == version
