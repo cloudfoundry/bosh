@@ -2,6 +2,7 @@ package compiler
 
 import (
 	boshmodels "bosh/agent/applier/models"
+	boshpa "bosh/agent/applier/packageapplier"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshcmd "bosh/platform/commands"
@@ -12,11 +13,12 @@ import (
 )
 
 type concreteCompiler struct {
-	compressor  boshcmd.Compressor
-	blobstore   boshblob.Blobstore
-	fs          boshsys.FileSystem
-	runner      boshsys.CmdRunner
-	dirProvider boshdirs.DirectoriesProvider
+	compressor     boshcmd.Compressor
+	blobstore      boshblob.Blobstore
+	fs             boshsys.FileSystem
+	runner         boshsys.CmdRunner
+	dirProvider    boshdirs.DirectoriesProvider
+	packageApplier boshpa.PackageApplier
 }
 
 func NewConcreteCompiler(
@@ -25,6 +27,7 @@ func NewConcreteCompiler(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	dirProvider boshdirs.DirectoriesProvider,
+	packageApplier boshpa.PackageApplier,
 ) (c concreteCompiler) {
 
 	c.compressor = compressor
@@ -32,16 +35,15 @@ func NewConcreteCompiler(
 	c.fs = fs
 	c.runner = runner
 	c.dirProvider = dirProvider
+	c.packageApplier = packageApplier
 	return
 }
 
 func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploadedBlobId, sha1 string, err error) {
 	for _, dep := range deps {
-		targetDir := c.packageInstallPathBinaryPackage(dep)
-
-		err = c.fetchAndUncompressBinaryPackage(dep, targetDir)
+		err = c.packageApplier.Apply(dep)
 		if err != nil {
-			err = bosherr.WrapError(err, "Fetching dependency %s", dep.Name)
+			err = bosherr.WrapError(err, "Installing dependent package: '%s'", dep.Name)
 			return
 		}
 	}
@@ -122,27 +124,6 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err
 	return
 }
 
-func (c concreteCompiler) fetchAndUncompressBinaryPackage(pkg boshmodels.Package, targetDir string) (err error) {
-	depFilePath, err := c.blobstore.Get(pkg.Source.BlobstoreId, pkg.Source.Sha1)
-	if err != nil {
-		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.Source.BlobstoreId)
-		return
-	}
-
-	err = c.cleanPackageInstallPath(targetDir)
-	if err != nil {
-		err = bosherr.WrapError(err, "Cleaning package install path %s", targetDir)
-		return
-	}
-
-	err = c.atomicDecompress(depFilePath, targetDir)
-	if err != nil {
-		err = bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
-	}
-
-	return
-}
-
 func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) (err error) {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
 	c.fs.RemoveAll(tmpInstallPath)
@@ -166,10 +147,6 @@ func (c concreteCompiler) cleanPackageInstallPath(installPath string) (err error
 	err = c.fs.MkdirAll(installPath, os.FileMode(0755))
 
 	return
-}
-
-func (c concreteCompiler) packageInstallPathBinaryPackage(dep boshmodels.Package) string {
-	return filepath.Join(c.dirProvider.PkgDir(), dep.Name, dep.Version)
 }
 
 func (c concreteCompiler) packageInstallPath(dep Package) string {
