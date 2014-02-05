@@ -2,6 +2,7 @@ package compiler
 
 import (
 	boshmodels "bosh/agent/applier/models"
+	fakepa "bosh/agent/applier/packageapplier/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	boshdirs "bosh/settings/directories"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestCompileReturnsBlobIdAndSha1(t *testing.T) {
-	_, blobstore, _, _, compiler := buildCompiler()
+	_, blobstore, _, _, _, compiler := buildCompiler()
 
 	blobstore.CreateBlobId = "my-blob-id"
 	blobstore.CreateFingerprint = "blob-sha1"
@@ -27,83 +28,30 @@ func TestCompileReturnsBlobIdAndSha1(t *testing.T) {
 }
 
 func TestCompileFetchesSourcePackageFromBlobstore(t *testing.T) {
-	_, blobstore, _, _, compiler := buildCompiler()
+	_, blobstore, _, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "first_dep_blobstore_id", blobstore.GetBlobIds[0])
-	assert.Equal(t, "sec_dep_blobstore_id", blobstore.GetBlobIds[1])
-	assert.Equal(t, "blobstore_id", blobstore.GetBlobIds[2])
-
-	assert.Equal(t, "first_dep_sha1", blobstore.GetFingerprints[0])
-	assert.Equal(t, "sec_dep_sha1", blobstore.GetFingerprints[1])
-	assert.Equal(t, "sha1", blobstore.GetFingerprints[2])
+	assert.Equal(t, "blobstore_id", blobstore.GetBlobIds[0])
+	assert.Equal(t, "sha1", blobstore.GetFingerprints[0])
 }
 
-func TestCompileExtractsDependenciesToPackagesDir(t *testing.T) {
-	compressor, blobstore, fs, _, compiler := buildCompiler()
+func TestCompileInstallsDependentPackages(t *testing.T) {
+	_, _, _, _, packageApplier, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
-
-	blobstore.GetFileName = "/dev/null"
 
 	_, _, err := compiler.Compile(pkg, deps)
 	assert.NoError(t, err)
 
-	assert.Equal(t, compressor.DecompressFileToDirDirs[0],
-		"/fake-dir/data/packages/first_dep/first_dep_version-bosh-agent-unpack")
-	assert.Equal(t, compressor.DecompressFileToDirDirs[1],
-		"/fake-dir/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack")
-
-	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[0], blobstore.GetFileName)
-	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[1], blobstore.GetFileName)
-
-	assert.Equal(t, "/fake-dir/data/packages/first_dep/first_dep_version-bosh-agent-unpack", fs.RenameOldPaths[0])
-	assert.Equal(t, "/fake-dir/data/packages/sec_dep/sec_dep_version-bosh-agent-unpack", fs.RenameOldPaths[1])
-
-	assert.Equal(t, "/fake-dir/data/packages/first_dep/first_dep_version", fs.RenameNewPaths[0])
-	assert.Equal(t, "/fake-dir/data/packages/sec_dep/sec_dep_version", fs.RenameNewPaths[1])
-}
-
-func TestCompileCreatesDependencyInstallDir(t *testing.T) {
-	_, _, fs, _, compiler := buildCompiler()
-
-	pkg, deps := getCompileArgs()
-
-	assert.False(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version"))
-	assert.False(t, fs.FileExists("/fake-dir/data/packages/sec_dep/sec_dep_version"))
-
-	_, _, err := compiler.Compile(pkg, deps)
-	assert.NoError(t, err)
-
-	assert.True(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version"))
-	assert.True(t, fs.FileExists("/fake-dir/data/packages/sec_dep/sec_dep_version"))
-}
-
-func TestCompileRecreatesDependencyInstallDir(t *testing.T) {
-	_, _, fs, _, compiler := buildCompiler()
-
-	pkg, deps := getCompileArgs()
-
-	err := fs.MkdirAll("/fake-dir/data/packages/first_dep/first_dep_version", os.FileMode(0755))
-	assert.NoError(t, err)
-
-	_, err = fs.WriteToFile("/fake-dir/data/packages/first_dep/first_dep_version/should_be_deleted", "test")
-	assert.NoError(t, err)
-
-	assert.True(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version/should_be_deleted"))
-
-	_, _, err = compiler.Compile(pkg, deps)
-	assert.NoError(t, err)
-
-	assert.False(t, fs.FileExists("/fake-dir/data/packages/first_dep/first_dep_version/should_be_deleted"))
+	assert.Equal(t, packageApplier.AppliedPackages, deps)
 }
 
 func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
-	compressor, blobstore, fs, _, compiler := buildCompiler()
+	compressor, blobstore, fs, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -113,15 +61,15 @@ func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.True(t, fs.FileExists("/fake-dir/data/compile/pkg_name"))
-	assert.Equal(t, compressor.DecompressFileToDirDirs[2], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
-	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[2], blobstore.GetFileName)
+	assert.Equal(t, compressor.DecompressFileToDirDirs[0], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
+	assert.Equal(t, compressor.DecompressFileToDirTarballPaths[0], blobstore.GetFileName)
 
-	assert.Equal(t, fs.RenameOldPaths[2], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
-	assert.Equal(t, fs.RenameNewPaths[2], "/fake-dir/data/compile/pkg_name")
+	assert.Equal(t, fs.RenameOldPaths[0], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
+	assert.Equal(t, fs.RenameNewPaths[0], "/fake-dir/data/compile/pkg_name")
 }
 
 func TestCompileCreatesInstallDir(t *testing.T) {
-	_, _, fs, _, compiler := buildCompiler()
+	_, _, fs, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -138,7 +86,7 @@ func TestCompileCreatesInstallDir(t *testing.T) {
 }
 
 func TestCompileRecreatesInstallDir(t *testing.T) {
-	_, _, fs, _, compiler := buildCompiler()
+	_, _, fs, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -157,7 +105,7 @@ func TestCompileRecreatesInstallDir(t *testing.T) {
 }
 
 func TestCompileSymlinksInstallDir(t *testing.T) {
-	_, _, fs, _, compiler := buildCompiler()
+	_, _, fs, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -171,7 +119,7 @@ func TestCompileSymlinksInstallDir(t *testing.T) {
 }
 
 func TestCompileCompressesCompiledPackage(t *testing.T) {
-	compressor, _, _, _, compiler := buildCompiler()
+	compressor, _, _, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -182,7 +130,7 @@ func TestCompileCompressesCompiledPackage(t *testing.T) {
 }
 
 func TestCompileWhenScriptDoesNotExist(t *testing.T) {
-	_, _, _, runner, compiler := buildCompiler()
+	_, _, _, runner, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -193,7 +141,7 @@ func TestCompileWhenScriptDoesNotExist(t *testing.T) {
 }
 
 func TestCompileWhenScriptExists(t *testing.T) {
-	compressor, _, fs, runner, compiler := buildCompiler()
+	compressor, _, fs, runner, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -221,7 +169,7 @@ func TestCompileWhenScriptExists(t *testing.T) {
 }
 
 func TestCompileUploadsCompressedPackage(t *testing.T) {
-	compressor, blobstore, _, _, compiler := buildCompiler()
+	compressor, blobstore, _, _, _, compiler := buildCompiler()
 
 	pkg, deps := getCompileArgs()
 
@@ -265,12 +213,14 @@ func buildCompiler() (
 	blobstore *fakeblobstore.FakeBlobstore,
 	fs *fakesys.FakeFileSystem,
 	runner *fakesys.FakeCmdRunner,
+	packageApplier *fakepa.FakePackageApplier,
 	compiler Compiler,
 ) {
 	compressor = fakecmd.NewFakeCompressor()
 	blobstore = &fakeblobstore.FakeBlobstore{}
 	fs = fakesys.NewFakeFileSystem()
 	runner = fakesys.NewFakeCmdRunner()
-	compiler = NewConcreteCompiler(compressor, blobstore, fs, runner, boshdirs.NewDirectoriesProvider("/fake-dir"))
+	packageApplier = fakepa.NewFakePackageApplier()
+	compiler = NewConcreteCompiler(compressor, blobstore, fs, runner, boshdirs.NewDirectoriesProvider("/fake-dir"), packageApplier)
 	return
 }
