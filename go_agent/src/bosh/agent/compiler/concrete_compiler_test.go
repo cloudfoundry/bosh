@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	boshmodels "bosh/agent/applier/models"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	boshdirs "bosh/settings/directories"
@@ -231,25 +232,29 @@ func TestCompileUploadsCompressedPackage(t *testing.T) {
 	assert.Equal(t, "/tmp/foo", blobstore.CreateFileName)
 }
 
-func getCompileArgs() (pkg Package, deps Dependencies) {
+func getCompileArgs() (pkg Package, deps []boshmodels.Package) {
 	pkg = Package{
 		BlobstoreId: "blobstore_id",
 		Sha1:        "sha1",
 		Name:        "pkg_name",
 		Version:     "pkg_version",
 	}
-	deps = Dependencies{
-		"first_dep": Package{
-			BlobstoreId: "first_dep_blobstore_id",
-			Name:        "first_dep",
-			Sha1:        "first_dep_sha1",
-			Version:     "first_dep_version",
+	deps = []boshmodels.Package{
+		{
+			Name:    "first_dep",
+			Version: "first_dep_version",
+			Source: boshmodels.Source{
+				Sha1:        "first_dep_sha1",
+				BlobstoreId: "first_dep_blobstore_id",
+			},
 		},
-		"sec_dep": Package{
-			BlobstoreId: "sec_dep_blobstore_id",
-			Name:        "sec_dep",
-			Sha1:        "sec_dep_sha1",
-			Version:     "sec_dep_version",
+		{
+			Name:    "sec_dep",
+			Version: "sec_dep_version",
+			Source: boshmodels.Source{
+				Sha1:        "sec_dep_sha1",
+				BlobstoreId: "sec_dep_blobstore_id",
+			},
 		},
 	}
 	return

@@ -1,6 +1,7 @@
 package action
 
 import (
+	boshmodels "bosh/agent/applier/models"
 	boshcomp "bosh/agent/compiler"
 	fakecomp "bosh/agent/compiler/fakes"
 	boshassert "bosh/assert"
@@ -33,12 +34,32 @@ func TestCompilePackageCompilesThePackageAbdReturnsBlobId(t *testing.T) {
 			"sha1":         "some sha1",
 		},
 	}
+	expectedDeps := []boshmodels.Package{
+		{
+			Name:    "first_dep",
+			Version: "first_dep_version",
+			Source: boshmodels.Source{
+				Sha1:        "first_dep_sha1",
+				BlobstoreId: "first_dep_blobstore_id",
+			},
+		},
+		{
+			Name:    "sec_dep",
+			Version: "sec_dep_version",
+			Source: boshmodels.Source{
+				Sha1:        "sec_dep_sha1",
+				BlobstoreId: "sec_dep_blobstore_id",
+			},
+		},
+	}
 
 	val, err := action.Run(blobId, sha1, name, version, deps)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPkg, compiler.CompilePkg)
-	assert.Equal(t, deps, compiler.CompileDeps)
+
+	assert.Equal(t, expectedDeps, compiler.CompileDeps)
+
 	boshassert.MatchesJsonMap(t, val, expectedJson)
 }
 

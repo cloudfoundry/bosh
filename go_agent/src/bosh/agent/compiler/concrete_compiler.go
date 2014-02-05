@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	boshmodels "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshcmd "bosh/platform/commands"
@@ -34,11 +35,11 @@ func newConcreteCompiler(
 	return
 }
 
-func (c concreteCompiler) Compile(pkg Package, deps Dependencies) (uploadedBlobId, sha1 string, err error) {
+func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploadedBlobId, sha1 string, err error) {
 	for _, dep := range deps {
-		targetDir := c.packageInstallPath(dep)
+		targetDir := c.packageInstallPathBinaryPackage(dep)
 
-		err = c.fetchAndUncompress(dep, targetDir)
+		err = c.fetchAndUncompressBinaryPackage(dep, targetDir)
 		if err != nil {
 			err = bosherr.WrapError(err, "Fetching dependency %s", dep.Name)
 			return
@@ -121,6 +122,27 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err
 	return
 }
 
+func (c concreteCompiler) fetchAndUncompressBinaryPackage(pkg boshmodels.Package, targetDir string) (err error) {
+	depFilePath, err := c.blobstore.Get(pkg.Source.BlobstoreId, pkg.Source.Sha1)
+	if err != nil {
+		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.Source.BlobstoreId)
+		return
+	}
+
+	err = c.cleanPackageInstallPath(targetDir)
+	if err != nil {
+		err = bosherr.WrapError(err, "Cleaning package install path %s", targetDir)
+		return
+	}
+
+	err = c.atomicDecompress(depFilePath, targetDir)
+	if err != nil {
+		err = bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
+	}
+
+	return
+}
+
 func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) (err error) {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
 	c.fs.RemoveAll(tmpInstallPath)
@@ -144,6 +166,10 @@ func (c concreteCompiler) cleanPackageInstallPath(installPath string) (err error
 	err = c.fs.MkdirAll(installPath, os.FileMode(0755))
 
 	return
+}
+
+func (c concreteCompiler) packageInstallPathBinaryPackage(dep boshmodels.Package) string {
+	return filepath.Join(c.dirProvider.PkgDir(), dep.Name, dep.Version)
 }
 
 func (c concreteCompiler) packageInstallPath(dep Package) string {

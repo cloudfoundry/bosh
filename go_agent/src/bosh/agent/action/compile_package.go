@@ -1,6 +1,7 @@
 package action
 
 import (
+	boshmodels "bosh/agent/applier/models"
 	boshcomp "bosh/agent/compiler"
 	bosherr "bosh/errors"
 )
@@ -26,7 +27,20 @@ func (a compilePackageAction) Run(blobId, sha1, name, version string, deps boshc
 		Version:     version,
 	}
 
-	uploadedBlobId, uploadedSha1, err := a.compiler.Compile(pkg, deps)
+	modelsDeps := []boshmodels.Package{}
+
+	for _, dep := range deps {
+		modelsDeps = append(modelsDeps, boshmodels.Package{
+			Name:    dep.Name,
+			Version: dep.Version,
+			Source: boshmodels.Source{
+				Sha1:        dep.Sha1,
+				BlobstoreId: dep.BlobstoreId,
+			},
+		})
+	}
+
+	uploadedBlobId, uploadedSha1, err := a.compiler.Compile(pkg, modelsDeps)
 	if err != nil {
 		err = bosherr.WrapError(err, "Compiling package %s", pkg.Name)
 		return
