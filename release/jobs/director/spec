@@ -164,6 +164,10 @@ properties:
   blobstore.port:
     description: Port of blobstore server used by simple blobstore plugin
     default: 25250
+  blobstore.host:
+    description: Host of blobstore server used by simple blobstore plugin
+  blobstore.use_ssl:
+    description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
