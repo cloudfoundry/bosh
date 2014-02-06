@@ -6,28 +6,30 @@ describe VSphereCloud::VmCreator do
     let(:vsphere_client) { instance_double('VSphereCloud::Client') }
     let(:logger) { double('logger') }
     let(:cpi) { instance_double('VSphereCloud::Cloud') }
-    subject(:creator) { described_class.new(placer, vsphere_client, logger, cpi) }
 
     context 'when the number of cpu is not a power of 2' do
+      subject(:creator) { described_class.new(1024, 1024, 3, placer, vsphere_client, logger, cpi) }
       it 'raises an error  to work around a vCenter bug' do
         expect {
-          creator.create(nil, nil, { 'cpu' => 3 }, nil, [], {})
+          creator.create(nil, nil, nil, [], {})
         }.to raise_error('Number of vCPUs: 3 is not a power of 2.')
       end
     end
 
     context 'when the stemcell vm does not exist' do
+      subject(:creator) { described_class.new(1024, 1024, 1, placer, vsphere_client, logger, cpi) }
       before do
         allow(cpi).to receive(:stemcell_vm).with('sc-beef').and_return(nil)
       end
       it 'raises an error' do
         expect {
-          creator.create(nil, 'sc-beef', { 'cpu' => 1 }, nil, [], {})
+          creator.create(nil, 'sc-beef', nil, [], {})
         }.to raise_error('Could not find stemcell: sc-beef')
       end
     end
 
     it 'chooses the placement based on memory, ephemeral and persistent disks' do
+      creator = described_class.new(1024, 10240000, 1, placer, vsphere_client, logger, cpi)
       disk_spec = double('disk spec')
       disk_locality = ['disk1_cid']
 
@@ -150,7 +152,7 @@ describe VSphereCloud::VmCreator do
 
       expect(placer).to receive(:place).with(1024, 10241025, disk_spec).
                           and_return([cluster, datastore])
-      creator.create('agent_id', 'stemcell_cid', { 'cpu' => 1, 'ram' => 1024, 'disk' => 10240000 }, networks, disk_locality, {})
+      creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
     end
   end
 

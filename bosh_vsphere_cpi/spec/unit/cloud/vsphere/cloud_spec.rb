@@ -452,13 +452,12 @@ module VSphereCloud
             expect(creator_instance).to receive(:create).with(
               agent_id,
               stemcell_cid,
-              cloud_properties,
               networks,
               nil,
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, client, logger, vsphere_cloud,
+              resources, cloud_properties, client, logger, vsphere_cloud,
             ).and_return(creator_instance)
 
             expect(
@@ -476,13 +475,12 @@ module VSphereCloud
             expect(creator_instance).to receive(:create).with(
               agent_id,
               stemcell_cid,
-              cloud_properties,
               networks,
               disk_cids,
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, client, logger, vsphere_cloud,
+              resources, cloud_properties, client, logger, vsphere_cloud,
             ).and_return(creator_instance)
 
             expect(
@@ -501,13 +499,12 @@ module VSphereCloud
             expect(creator_instance).to receive(:create).with(
               agent_id,
               stemcell_cid,
-              cloud_properties,
               networks,
               disk_cids,
               environment,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, client, logger, vsphere_cloud,
+              resources, cloud_properties, client, logger, vsphere_cloud,
             ).and_return(creator_instance)
 
             expect(

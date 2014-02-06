@@ -2,21 +2,20 @@ require 'ruby_vim_sdk'
 
 module VSphereCloud
   class VmCreator
-    def initialize(resources, client, logger, cpi)
-      @resources = resources
+    def initialize(memory, disk, cpu, placer, client, logger, cpi)
+      @placer = placer
       @client = client
       @logger = logger
       @cpi = cpi
+      @memory = memory
+      @disk = disk
+      @cpu = cpu
     end
 
-    def create(agent_id, stemcell_cid, cloud_properties, networks, disk_cids, environment)
-      memory = cloud_properties['ram']
-      disk = cloud_properties['disk']
-      cpu = cloud_properties['cpu']
-
+    def create(agent_id, stemcell_cid, networks, disk_cids, environment)
       # Make sure number of cores is a power of 2. kb.vmware.com/kb/2003484
-      if cpu & cpu - 1 != 0
-        raise "Number of vCPUs: #{cpu} is not a power of 2."
+      if @cpu & @cpu - 1 != 0
+        raise "Number of vCPUs: #{@cpu} is not a power of 2."
       end
 
       stemcell_vm = @cpi.stemcell_vm(stemcell_cid)
@@ -28,8 +27,8 @@ module VSphereCloud
 
       disks = @cpi.disk_spec(disk_cids)
       # need to include swap and linked clone log
-      ephemeral = disk + memory + stemcell_size
-      cluster, datastore = @resources.place(memory, ephemeral, disks)
+      ephemeral = @disk + @memory + stemcell_size
+      cluster, datastore = @placer.place(@memory, ephemeral, disks)
 
       name = "vm-#{@cpi.generate_unique_name}"
       @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
@@ -42,7 +41,7 @@ module VSphereCloud
       devices = replicated_stemcell_properties['config.hardware.device']
       snapshot = replicated_stemcell_properties['snapshot']
 
-      config = VimSdk::Vim::Vm::ConfigSpec.new(memory_mb: memory, num_cpus: cpu)
+      config = VimSdk::Vim::Vm::ConfigSpec.new(memory_mb: @memory, num_cpus: @cpu)
       config.device_change = []
 
       system_disk = devices.find { |device| device.kind_of?(VimSdk::Vim::Vm::Device::VirtualDisk) }
@@ -50,7 +49,7 @@ module VSphereCloud
 
       file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
       ephemeral_disk_config =
-        @cpi.create_disk_config_spec(datastore.mob, file_name, system_disk.controller_key, disk, create: true)
+        @cpi.create_disk_config_spec(datastore.mob, file_name, system_disk.controller_key, @disk, create: true)
       config.device_change << ephemeral_disk_config
 
       dvs_index = {}

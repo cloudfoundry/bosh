@@ -166,8 +166,8 @@ module VSphereCloud
 
     def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        VmCreatorBuilder.new.build(@resources, @client, @logger, self).
-          create(agent_id, stemcell, cloud_properties, networks, disk_locality, environment)
+        VmCreatorBuilder.new.build(@resources, cloud_properties, @client, @logger, self).
+          create(agent_id, stemcell, networks, disk_locality, environment)
       end
     end
 
