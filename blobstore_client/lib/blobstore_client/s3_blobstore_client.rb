@@ -30,7 +30,7 @@ module Bosh
         super(options)
         @bucket_name    = @options[:bucket_name]
         @encryption_key = @options[:encryption_key]
-        
+
         @endpoint = URI.parse(@options[:endpoint] || S3BlobstoreClient::ENDPOINT)
 
         aws_options = {
