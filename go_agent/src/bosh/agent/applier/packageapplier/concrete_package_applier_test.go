@@ -12,19 +12,19 @@ import (
 
 func TestApplyInstallsAndEnablesPackage(t *testing.T) {
 	packagesBc, _, _, applier := buildPackageApplier()
-	pkg := buildPackage()
+	pkg, bundle := buildPackage(packagesBc)
 
 	err := applier.Apply(pkg)
 	assert.NoError(t, err)
-	assert.True(t, packagesBc.IsInstalled(pkg))
-	assert.True(t, packagesBc.IsEnabled(pkg))
+	assert.True(t, bundle.Installed)
+	assert.True(t, bundle.Enabled)
 }
 
 func TestApplyErrsWhenPackageInstallFails(t *testing.T) {
 	packagesBc, _, _, applier := buildPackageApplier()
-	pkg := buildPackage()
+	pkg, bundle := buildPackage(packagesBc)
 
-	packagesBc.InstallError = errors.New("fake-install-error")
+	bundle.InstallError = errors.New("fake-install-error")
 
 	err := applier.Apply(pkg)
 	assert.Error(t, err)
@@ -33,9 +33,9 @@ func TestApplyErrsWhenPackageInstallFails(t *testing.T) {
 
 func TestApplyErrsWhenPackageEnableFails(t *testing.T) {
 	packagesBc, _, _, applier := buildPackageApplier()
-	pkg := buildPackage()
+	pkg, bundle := buildPackage(packagesBc)
 
-	packagesBc.EnableError = errors.New("fake-enable-error")
+	bundle.EnableError = errors.New("fake-enable-error")
 
 	err := applier.Apply(pkg)
 	assert.Error(t, err)
@@ -43,8 +43,8 @@ func TestApplyErrsWhenPackageEnableFails(t *testing.T) {
 }
 
 func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
-	_, blobstore, _, applier := buildPackageApplier()
-	pkg := buildPackage()
+	packagesBc, blobstore, _, applier := buildPackageApplier()
+	pkg, _ := buildPackage(packagesBc)
 	pkg.Source.BlobstoreId = "fake-blobstore-id"
 	pkg.Source.Sha1 = "blob-sha1"
 
@@ -58,8 +58,8 @@ func TestApplyDownloadsAndCleansUpPackage(t *testing.T) {
 }
 
 func TestApplyErrsWhenPackageDownloadErrs(t *testing.T) {
-	_, blobstore, _, applier := buildPackageApplier()
-	pkg := buildPackage()
+	packagesBc, blobstore, _, applier := buildPackageApplier()
+	pkg, _ := buildPackage(packagesBc)
 
 	blobstore.GetError = errors.New("fake-get-error")
 
@@ -70,9 +70,9 @@ func TestApplyErrsWhenPackageDownloadErrs(t *testing.T) {
 
 func TestApplyDecompressesPackageToInstallPath(t *testing.T) {
 	packagesBc, blobstore, compressor, applier := buildPackageApplier()
-	pkg := buildPackage()
+	pkg, bundle := buildPackage(packagesBc)
 
-	packagesBc.InstallPath = "fake-install-path"
+	bundle.InstallPath = "fake-install-path"
 	blobstore.GetFileName = "/dev/null"
 
 	err := applier.Apply(pkg)
@@ -82,8 +82,8 @@ func TestApplyDecompressesPackageToInstallPath(t *testing.T) {
 }
 
 func TestApplyErrsWhenPackageDecompressErrs(t *testing.T) {
-	_, _, compressor, applier := buildPackageApplier()
-	pkg := buildPackage()
+	packagesBc, _, compressor, applier := buildPackageApplier()
+	pkg, _ := buildPackage(packagesBc)
 
 	compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
@@ -105,6 +105,8 @@ func buildPackageApplier() (
 	return packagesBc, blobstore, compressor, applier
 }
 
-func buildPackage() models.Package {
-	return models.Package{Name: "fake-package-name", Version: "fake-package-name"}
+func buildPackage(pkgBc *fakebc.FakeBundleCollection) (pkg models.Package, bundle *fakebc.FakeBundle) {
+	pkg = models.Package{Name: "fake-package-name", Version: "fake-package-name"}
+	bundle = pkgBc.FakeGet(pkg)
+	return
 }
