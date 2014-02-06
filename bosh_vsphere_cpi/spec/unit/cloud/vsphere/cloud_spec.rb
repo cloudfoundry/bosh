@@ -429,40 +429,93 @@ module VSphereCloud
     end
 
     describe '#create_vm' do
+      let(:resources) { double('resources') }
+      before { allow(Resources).to receive(:new).and_return(resources) }
       it 'sets the thread name to create_vm followed by the agent id'
 
-      it 'raises an error when the number of cpu is not a power of 2 to work around a vCenter bug' do
-        expect {
-          vsphere_cloud.create_vm(nil, nil, { 'cpu' => 3 }, nil)
-        }.to raise_error('Number of vCPUs: 3 is not a power of 2.')
-      end
-
-      context 'when the stemcell vm does not exist' do
-        let(:datacenter) do
-          template_folder = instance_double(
-            'VSphereCloud::Resources::Folder',
-            name: 'templates_folder',
-          )
-
-          instance_double(
-            'VSphereCloud::Resources::Datacenter',
-            name: 'fake_datacenter',
-            template_folder: template_folder,
-          )
-        end
+      describe 'delegating to the VmCreator class to create the VM' do
+        let(:creator_builder) { instance_double('VSphereCloud::VmCreatorBuilder') }
         before do
-          allow(class_double('VSphereCloud::Resources::Datacenter').as_stubbed_const).
-            to receive(:new).with(cloud_config).and_return(datacenter)
+          builder_class = class_double('VSphereCloud::VmCreatorBuilder').as_stubbed_const
+          allow(builder_class).to receive(:new).with(no_args).and_return(creator_builder)
+        end
+        let(:creator_instance) { instance_double('VSphereCloud::VmCreator') }
+
+        let(:networks) { double('networks hash') }
+        let(:cloud_properties) { double('cloud properties hash') }
+        let(:stemcell_cid) { double('stemcell cid string') }
+        let(:agent_id) { double('agent id string') }
+
+        context 'when both disk locality and environment are omitted' do
+          it 'passes disk locality and environment as nils' do
+            vm = double('created vm')
+            expect(creator_instance).to receive(:create).with(
+              agent_id,
+              stemcell_cid,
+              cloud_properties,
+              networks,
+              nil,
+              nil,
+            ).and_return(vm)
+            expect(creator_builder).to receive(:build).with(
+              resources, client, logger, vsphere_cloud,
+            ).and_return(creator_instance)
+
+            expect(
+              vsphere_cloud.create_vm(
+                agent_id, stemcell_cid, cloud_properties, networks,
+              )
+            ).to eq(vm)
+          end
         end
 
-        before do
-          allow(client).to receive(:find_by_inventory_path).with(['fake_datacenter', 'vm', 'templates_folder', 'sc-beef']).and_return(nil)
+        context 'when only environment is omitted' do
+          it 'passes environment as nil' do
+            vm = double('created vm')
+            disk_cids = double('disk cids array')
+            expect(creator_instance).to receive(:create).with(
+              agent_id,
+              stemcell_cid,
+              cloud_properties,
+              networks,
+              disk_cids,
+              nil,
+            ).and_return(vm)
+            expect(creator_builder).to receive(:build).with(
+              resources, client, logger, vsphere_cloud,
+            ).and_return(creator_instance)
+
+            expect(
+              vsphere_cloud.create_vm(
+                agent_id, stemcell_cid, cloud_properties, networks, disk_cids,
+              )
+            ).to eq(vm)
+          end
         end
 
-        it 'raises an error' do
-          expect {
-            vsphere_cloud.create_vm(nil, 'sc-beef', { 'cpu' => 1 }, nil)
-          }.to raise_error('Could not find stemcell: sc-beef')
+        context 'when the caller passes all 6 arguments' do
+          it 'passes all 6 arguments' do
+            vm = double('created vm')
+            disk_cids = double('disk cids array')
+            environment = double('environment hash')
+            expect(creator_instance).to receive(:create).with(
+              agent_id,
+              stemcell_cid,
+              cloud_properties,
+              networks,
+              disk_cids,
+              environment,
+            ).and_return(vm)
+            expect(creator_builder).to receive(:build).with(
+              resources, client, logger, vsphere_cloud,
+            ).and_return(creator_instance)
+
+            expect(
+              vsphere_cloud.create_vm(
+                agent_id, stemcell_cid, cloud_properties, networks, disk_cids, environment
+              )
+            ).to eq(vm)
+          end
         end
       end
     end
