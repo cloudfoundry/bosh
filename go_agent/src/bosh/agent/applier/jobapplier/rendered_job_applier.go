@@ -14,14 +14,14 @@ import (
 )
 
 type renderedJobApplier struct {
-	jobsBc        bc.BundleCollection
+	jobsBc        bc.BundleCollectionOld
 	blobstore     boshblob.Blobstore
 	compressor    boshcmd.Compressor
 	jobSupervisor boshjobsuper.JobSupervisor
 }
 
 func NewRenderedJobApplier(
-	jobsBc bc.BundleCollection,
+	jobsBc bc.BundleCollectionOld,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 	jobSupervisor boshjobsuper.JobSupervisor,

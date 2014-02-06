@@ -160,11 +160,12 @@ func TestEnableErrsWhenBundleCannotBeEnabled(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-symlink-error")
 }
 
-func buildFileBundleCollection() (*fakesys.FakeFileSystem, *FileBundleCollection, testBundle) {
+func buildFileBundleCollection() (*fakesys.FakeFileSystem, FileBundleCollectionOld, testBundle) {
 	fs := &fakesys.FakeFileSystem{}
 
-	fileCollection := NewFileBundleCollection("/fake-collection-path/data", "/fake-collection-path",
-		"fake-collection-name", fs)
+	inner := NewFileBundleCollection("/fake-collection-path/data", "/fake-collection-path", "fake-collection-name", fs)
+
+	fileCollection := NewFileBundleCollectionOld(inner)
 
 	bundle := testBundle{
 		Name:    "fake-bundle-name",
