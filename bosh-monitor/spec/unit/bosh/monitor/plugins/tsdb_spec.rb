@@ -39,13 +39,13 @@ describe Bhm::Plugins::Tsdb do
     EM.run do
       EM.stub(:connect) { tsdb }
       @plugin.run
+
+      tsdb.should_not_receive(:send_metric)
+
+      @plugin.process(alert)
+
+      EM.stop
     end
-
-    tsdb.should_not_receieve(:send_metric)
-
-    @plugin.process(alert)
-
-    EM.stop
 
   end
 
