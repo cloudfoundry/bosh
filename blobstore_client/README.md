@@ -66,6 +66,8 @@ These are the options for the Blobstore client when provider is `s3`:
   S3 Access Key
 * `secret_access_key` (optional, if not present, the blobstore client operates in read only mode)
   S3 Secret Access Key
+* `endpoint` (optional, if not present, the blobstore client uses 'https://s3.amazonaws.com')
+  Blobstore endpoint
 
 ### Atmos
 
