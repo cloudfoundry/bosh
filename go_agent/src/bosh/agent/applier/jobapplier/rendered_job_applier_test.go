@@ -15,24 +15,24 @@ import (
 
 func TestApplyInstallsAndEnablesJob(t *testing.T) {
 	jobsBc, _, _, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	fs := fakesys.NewFakeFileSystem()
-	jobsBc.InstallFs = fs
-	jobsBc.InstallPath = "fake-install-dir"
+	bundle.InstallFs = fs
+	bundle.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
 	err := applier.Apply(job)
 	assert.NoError(t, err)
-	assert.True(t, jobsBc.IsInstalled(job))
-	assert.True(t, jobsBc.IsEnabled(job))
+	assert.True(t, bundle.Installed)
+	assert.True(t, bundle.Enabled)
 }
 
 func TestApplyErrsWhenJobInstallFails(t *testing.T) {
 	jobsBc, _, _, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
-	jobsBc.InstallError = errors.New("fake-install-error")
+	bundle.InstallError = errors.New("fake-install-error")
 
 	err := applier.Apply(job)
 	assert.Error(t, err)
@@ -41,14 +41,14 @@ func TestApplyErrsWhenJobInstallFails(t *testing.T) {
 
 func TestApplyErrsWhenJobEnableFails(t *testing.T) {
 	jobsBc, _, _, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	fs := fakesys.NewFakeFileSystem()
-	jobsBc.InstallFs = fs
-	jobsBc.InstallPath = "fake-install-dir"
+	bundle.InstallFs = fs
+	bundle.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
-	jobsBc.EnableError = errors.New("fake-enable-error")
+	bundle.EnableError = errors.New("fake-enable-error")
 
 	err := applier.Apply(job)
 	assert.Error(t, err)
@@ -57,13 +57,13 @@ func TestApplyErrsWhenJobEnableFails(t *testing.T) {
 
 func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 	jobsBc, blobstore, _, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 	job.Source.BlobstoreId = "fake-blobstore-id"
 	job.Source.Sha1 = "blob-sha1"
 
 	fs := fakesys.NewFakeFileSystem()
-	jobsBc.InstallFs = fs
-	jobsBc.InstallPath = "fake-install-dir"
+	bundle.InstallFs = fs
+	bundle.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
 	blobstore.GetFileName = "/dev/null"
@@ -76,8 +76,8 @@ func TestApplyDownloadsAndCleansUpJob(t *testing.T) {
 }
 
 func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
-	_, blobstore, _, _, applier := buildJobApplier()
-	job := buildJob()
+	jobsBc, blobstore, _, _, applier := buildJobApplier()
+	job, _ := buildJob(jobsBc)
 
 	blobstore.GetError = errors.New("fake-get-error")
 
@@ -88,14 +88,14 @@ func TestApplyErrsWhenJobDownloadErrs(t *testing.T) {
 
 func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 	jobsBc, blobstore, compressor, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 	fs.MkdirAll("fake-tmp-dir", os.FileMode(0))
 
-	jobsBc.InstallFs = fs
-	jobsBc.InstallPath = "fake-install-dir"
+	bundle.InstallFs = fs
+	bundle.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
 	blobstore.GetFileName = "/dev/null"
@@ -109,11 +109,11 @@ func TestApplyDecompressesJobToTmpPathAndCleansItUp(t *testing.T) {
 
 func TestApplyErrsWhenTempDirErrs(t *testing.T) {
 	jobsBc, blobstore, _, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
-	jobsBc.InstallFs = fs
+	bundle.InstallFs = fs
 
 	blobstore.GetFileName = "/dev/null"
 
@@ -124,12 +124,12 @@ func TestApplyErrsWhenTempDirErrs(t *testing.T) {
 
 func TestApplyErrsWhenJobDecompressErrs(t *testing.T) {
 	jobsBc, _, compressor, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
 	fs := fakesys.NewFakeFileSystem()
-	jobsBc.InstallFs = fs
+	bundle.InstallFs = fs
 
 	err := applier.Apply(job)
 	assert.Error(t, err)
@@ -138,15 +138,15 @@ func TestApplyErrsWhenJobDecompressErrs(t *testing.T) {
 
 func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 	jobsBc, blobstore, compressor, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 	job.Source.PathInArchive = "fake-path-in-archive"
 
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 	fs.MkdirAll("fake-tmp-dir", os.FileMode(0))
 
-	jobsBc.InstallFs = fs
-	jobsBc.InstallPath = "fake-install-dir"
+	bundle.InstallFs = fs
+	bundle.InstallPath = "fake-install-dir"
 	fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
 	blobstore.GetFileName = "/dev/null"
@@ -165,7 +165,7 @@ func TestApplyCopiesFromDecompressedTmpPathToInstallPath(t *testing.T) {
 
 func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
 	jobsBc, blobstore, compressor, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 	job.Source.PathInArchive = "fake-path-in-archive"
 
 	blobstore.GetFileName = "/dev/null"
@@ -173,8 +173,8 @@ func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 
-	jobsBc.InstallFs = fs
-	jobsBc.InstallPath = "fake-install-dir"
+	bundle.InstallFs = fs
+	bundle.InstallPath = "fake-install-dir"
 
 	compressor.DecompressFileToDirCallBack = func() {
 		fs.WriteToFile("fake-tmp-dir/fake-path-in-archive/bin/test1", "")
@@ -204,13 +204,13 @@ func TestApplySetsExecutableBitForFilesInBin(t *testing.T) {
 
 func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 	jobsBc, blobstore, _, _, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	fs := fakesys.NewFakeFileSystem()
 	fs.TempDirDir = "fake-tmp-dir"
 	fs.CopyDirEntriesError = errors.New("fake-copy-dir-entries-error")
 
-	jobsBc.InstallFs = fs
+	bundle.InstallFs = fs
 
 	blobstore.GetFileName = "/dev/null"
 
@@ -221,14 +221,14 @@ func TestApplyErrsWhenCopyAllErrs(t *testing.T) {
 
 func TestConfigure(t *testing.T) {
 	jobsBc, _, _, jobSupervisor, applier := buildJobApplier()
-	job := buildJob()
+	job, bundle := buildJob(jobsBc)
 
 	fs := fakesys.NewFakeFileSystem()
 	fs.WriteToFile("/path/to/job/monit", "some conf")
 	fs.GlobPaths = []string{"/path/to/job/subjob.monit"}
 
-	jobsBc.GetDirPath = "/path/to/job"
-	jobsBc.GetDirFs = fs
+	bundle.GetDirPath = "/path/to/job"
+	bundle.GetDirFs = fs
 
 	err := applier.Configure(job, 0)
 	assert.NoError(t, err)
@@ -267,6 +267,8 @@ func buildJobApplier() (
 	return
 }
 
-func buildJob() models.Job {
-	return models.Job{Name: "fake-job-name", Version: "fake-job-name"}
+func buildJob(jobsBc *fakebc.FakeBundleCollection) (job models.Job, bundle *fakebc.FakeBundle) {
+	job = models.Job{Name: "fake-job-name", Version: "fake-job-version"}
+	bundle = jobsBc.FakeGet(job)
+	return
 }
