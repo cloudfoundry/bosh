@@ -55,11 +55,11 @@ var _ = Describe("FileBundle", func() {
 		It("Returns the install path", func() {
 			fs.MkdirAll(installPath, os.FileMode(0))
 
-			actualFs, installPath, err := fileBundle.GetInstallPath()
+			actualFs, actualInstallPath, err := fileBundle.GetInstallPath()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualFs).To(Equal(fs))
-			Expect(installPath).To(Equal(installPath))
+			Expect(actualInstallPath).To(Equal(installPath))
 		})
 
 		It("Errors when the directory does not exist", func() {
@@ -71,12 +71,14 @@ var _ = Describe("FileBundle", func() {
 
 	Describe("#Enable", func() {
 		Context("when bundle is install", func() {
-			It("Succeeds", func() {
+			It("returns the enable path", func() {
 				_, _, err := fileBundle.Install()
 				Expect(err).NotTo(HaveOccurred())
 
-				err = fileBundle.Enable()
+				actualFs, actualEnablePath, err := fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
+				Expect(actualFs).To(Equal(fs))
+				Expect(actualEnablePath).To(Equal(enablePath))
 
 				// symlink exists
 				fileStats := fs.GetFileTestStat(enablePath)
@@ -91,14 +93,14 @@ var _ = Describe("FileBundle", func() {
 				Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
 
 				// check idempotency
-				err = fileBundle.Enable()
+				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
 		Context("when bundle is not install", func() {
 			It("errors", func() {
-				err := fileBundle.Enable()
+				_, _, err := fileBundle.Enable()
 				Expect(err).To(HaveOccurred())
 
 				Expect(err.Error()).To(Equal("bundle must be installed"))
@@ -114,7 +116,7 @@ var _ = Describe("FileBundle", func() {
 				Expect(err).NotTo(HaveOccurred())
 				fs.MkdirAllError = errors.New("fake-mkdirall-error")
 
-				err = fileBundle.Enable()
+				_, _, err = fileBundle.Enable()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-mkdirall-error"))
 			})
@@ -126,7 +128,7 @@ var _ = Describe("FileBundle", func() {
 				Expect(err).NotTo(HaveOccurred())
 				fs.SymlinkError = errors.New("fake-symlink-error")
 
-				err = fileBundle.Enable()
+				_, _, err = fileBundle.Enable()
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-symlink-error"))
