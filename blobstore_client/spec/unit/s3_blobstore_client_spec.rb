@@ -48,13 +48,15 @@ module Bosh::Blobstore
 
       context 'processing' do
 
-        let ( :options ) {{ 'bucket_name' => 'test',
-                            'access_key_id' => 'KEY',
-                            'secret_access_key' => 'SECRET' }}
+        let (:options) {{ 'bucket_name' => 'test',
+                          'access_key_id' => 'KEY',
+                          'secret_access_key' => 'SECRET' }
+        }
 
-        let ( :processed_options ) {{ access_key_id: 'KEY',
-                                      secret_access_key: 'SECRET',
-                                      s3_endpoint: 's3.example.com' }}
+        let (:processed_options) {{ access_key_id: 'KEY',
+                                    secret_access_key: 'SECRET',
+                                    s3_endpoint: 's3.example.com' }
+        }
 
         it 'should be processed and passed to the AWS::S3 class' do
 
