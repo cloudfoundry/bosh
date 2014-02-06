@@ -7,7 +7,7 @@ module VSphereCloud
       @cpi = cpi
     end
 
-    def create(agent_id, stemcell, cloud_properties, networks, disk_locality, environment)
+    def create(agent_id, stemcell_cid, cloud_properties, networks, disk_cids, environment)
       memory = cloud_properties['ram']
       disk = cloud_properties['disk']
       cpu = cloud_properties['cpu']
@@ -17,14 +17,14 @@ module VSphereCloud
         raise "Number of vCPUs: #{cpu} is not a power of 2."
       end
 
-      stemcell_vm = @cpi.stemcell_vm(stemcell)
-      raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
+      stemcell_vm = @cpi.stemcell_vm(stemcell_cid)
+      raise "Could not find stemcell: #{stemcell_cid}" if stemcell_vm.nil?
 
       stemcell_size =
         @client.get_property(stemcell_vm, VimSdk::Vim::VirtualMachine, 'summary.storage.committed', ensure_all: true)
       stemcell_size /= 1024 * 1024
 
-      disks = @cpi.disk_spec(disk_locality)
+      disks = @cpi.disk_spec(disk_cids)
       # need to include swap and linked clone log
       ephemeral = disk + memory + stemcell_size
       cluster, datastore = @resources.place(memory, ephemeral, disks)
@@ -32,7 +32,7 @@ module VSphereCloud
       name = "vm-#{@cpi.generate_unique_name}"
       @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
-      replicated_stemcell_vm = @cpi.replicate_stemcell(cluster, datastore, stemcell)
+      replicated_stemcell_vm = @cpi.replicate_stemcell(cluster, datastore, stemcell_cid)
       replicated_stemcell_properties = @client.get_properties(replicated_stemcell_vm, VimSdk::Vim::VirtualMachine,
                                                              ['config.hardware.device', 'snapshot'],
                                                              ensure_all: true)
