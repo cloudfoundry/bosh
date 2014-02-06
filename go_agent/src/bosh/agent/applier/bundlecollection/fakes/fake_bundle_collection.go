@@ -7,8 +7,8 @@ import (
 )
 
 type FakeBundleCollection struct {
-	installedBundles []bc.Bundle
-	enabledBundles   []bc.Bundle
+	installedBundles []bc.BundleDefinition
+	enabledBundles   []bc.BundleDefinition
 
 	InstallFs    boshsys.FileSystem
 	InstallPath  string
@@ -25,7 +25,7 @@ func NewFakeBundleCollection() *FakeBundleCollection {
 	return &FakeBundleCollection{}
 }
 
-func (s *FakeBundleCollection) Install(bundle bc.Bundle) (boshsys.FileSystem, string, error) {
+func (s *FakeBundleCollection) Install(bundle bc.BundleDefinition) (boshsys.FileSystem, string, error) {
 	err := s.checkBundle(bundle)
 	if err != nil {
 		return nil, "", err
@@ -38,18 +38,18 @@ func (s *FakeBundleCollection) Install(bundle bc.Bundle) (boshsys.FileSystem, st
 	return s.InstallFs, s.InstallPath, nil
 }
 
-func (s *FakeBundleCollection) IsInstalled(bundle bc.Bundle) bool {
+func (s *FakeBundleCollection) IsInstalled(bundle bc.BundleDefinition) bool {
 	return s.checkExists(s.installedBundles, bundle)
 }
 
-func (s *FakeBundleCollection) GetDir(bundle bc.Bundle) (fs boshsys.FileSystem, path string, err error) {
+func (s *FakeBundleCollection) GetDir(bundle bc.BundleDefinition) (fs boshsys.FileSystem, path string, err error) {
 	fs = s.GetDirFs
 	path = s.GetDirPath
 	err = s.GetDirError
 	return
 }
 
-func (s *FakeBundleCollection) Enable(bundle bc.Bundle) error {
+func (s *FakeBundleCollection) Enable(bundle bc.BundleDefinition) error {
 	err := s.checkBundle(bundle)
 	if err != nil {
 		return err
@@ -62,11 +62,11 @@ func (s *FakeBundleCollection) Enable(bundle bc.Bundle) error {
 	return nil
 }
 
-func (s *FakeBundleCollection) IsEnabled(bundle bc.Bundle) bool {
+func (s *FakeBundleCollection) IsEnabled(bundle bc.BundleDefinition) bool {
 	return s.checkExists(s.enabledBundles, bundle)
 }
 
-func (s *FakeBundleCollection) checkBundle(bundle bc.Bundle) error {
+func (s *FakeBundleCollection) checkBundle(bundle bc.BundleDefinition) error {
 	if len(bundle.BundleName()) == 0 {
 		return errors.New("missing bundle name")
 	}
@@ -76,7 +76,7 @@ func (s *FakeBundleCollection) checkBundle(bundle bc.Bundle) error {
 	return nil
 }
 
-func (s *FakeBundleCollection) checkExists(collection []bc.Bundle, bundle bc.Bundle) bool {
+func (s *FakeBundleCollection) checkExists(collection []bc.BundleDefinition, bundle bc.BundleDefinition) bool {
 	for _, b := range collection {
 		if b.BundleName() == bundle.BundleName() {
 			if b.BundleVersion() == bundle.BundleVersion() {

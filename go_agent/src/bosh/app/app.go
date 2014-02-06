@@ -107,18 +107,20 @@ func (app app) Run(args []string) (err error) {
 	installPath := filepath.Join(dirProvider.BaseDir(), "data")
 
 	jobsBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "jobs", platform.GetFs())
+	jobsBcOld := bc.NewFileBundleCollectionOld(jobsBc)
 
 	jobApplier := ja.NewRenderedJobApplier(
-		jobsBc,
+		jobsBcOld,
 		blobstore,
 		platform.GetCompressor(),
 		jobSupervisor,
 	)
 
 	packagesBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "packages", platform.GetFs())
+	packagesBcOld := bc.NewFileBundleCollectionOld(packagesBc)
 
 	packageApplier := pa.NewConcretePackageApplier(
-		packagesBc,
+		packagesBcOld,
 		blobstore,
 		platform.GetCompressor(),
 	)

@@ -9,13 +9,13 @@ import (
 )
 
 type concretePackageApplier struct {
-	packagesBc bc.BundleCollection
+	packagesBc bc.BundleCollectionOld
 	blobstore  boshblob.Blobstore
 	compressor boshcmd.Compressor
 }
 
 func NewConcretePackageApplier(
-	packagesBc bc.BundleCollection,
+	packagesBc bc.BundleCollectionOld,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 ) *concretePackageApplier {
