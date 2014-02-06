@@ -54,12 +54,7 @@ describe VSphereCloud::Cloud do
   before { @disk_id = nil }
   after { cpi.delete_disk(@disk_id) if @disk_id }
 
-  def vm_lifecycle(network_spec, disk_locality)
-    resource_pool = {
-      'ram' => 1024,
-      'disk' => 2048,
-      'cpu' => 1,
-    }
+  def vm_lifecycle(network_spec, disk_locality, resource_pool)
 
     @vm_id = cpi.create_vm(
       'agent-007',
@@ -115,17 +110,32 @@ describe VSphereCloud::Cloud do
     end
 
     context 'without existing disks' do
+      let(:resource_pool) {
+        {
+          'ram' => 1024,
+          'disk' => 2048,
+          'cpu' => 1,
+        }
+      }
       it 'should exercise the vm lifecycle' do
-        vm_lifecycle(network_spec, [])
+        vm_lifecycle(network_spec, [], resource_pool)
       end
     end
 
     context 'with existing disks' do
+      let(:resource_pool) {
+        {
+          'ram' => 1024,
+          'disk' => 2048,
+          'cpu' => 1,
+        }
+      }
+
       before { @existing_volume_id = cpi.create_disk(2048) }
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'should exercise the vm lifecycle' do
-        vm_lifecycle(network_spec, [@existing_volume_id])
+        vm_lifecycle(network_spec, [@existing_volume_id], resource_pool)
       end
     end
   end
