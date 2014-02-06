@@ -22,6 +22,8 @@ module Bosh::Blobstore
     before(:all) do
       s3 = AWS::S3.new(
         access_key_id: access_key_id,
+        use_ssl: true,
+        port: 443,
         secret_access_key: secret_access_key
       )
 
