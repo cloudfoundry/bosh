@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	boshmodels "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
@@ -9,7 +10,6 @@ import (
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
@@ -68,7 +68,7 @@ func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
 	assert.Equal(t, deps.fs.RenameNewPaths[0], "/fake-dir/data/compile/pkg_name")
 }
 
-func TestCompileCreatesInstallDir(t *testing.T) {
+func TestCompileGetsTheBundleFromTheBundleCollectionAndInstalls(t *testing.T) {
 	deps, compiler := buildCompiler()
 
 	pkg, pkgDeps := getCompileArgs()
@@ -80,31 +80,10 @@ func TestCompileCreatesInstallDir(t *testing.T) {
 	_, _, err := compiler.Compile(pkg, pkgDeps)
 	assert.NoError(t, err)
 
-	assert.True(t, deps.fs.FileExists(installDir))
-	installDirStats := deps.fs.GetFileTestStat(installDir)
-	assert.Equal(t, os.FileMode(0755), installDirStats.FileMode.Perm())
+	assert.True(t, deps.bundle.Installed)
 }
 
-func TestCompileRecreatesInstallDir(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	err := deps.fs.MkdirAll("/fake-dir/data/packages/pkg_name/pkg_version", os.FileMode(0755))
-	assert.NoError(t, err)
-
-	_, err = deps.fs.WriteToFile("/fake-dir/data/packages/pkg_name/pkg_version/should_be_deleted", "test")
-	assert.NoError(t, err)
-
-	assert.True(t, deps.fs.FileExists("/fake-dir/data/packages/pkg_name/pkg_version/should_be_deleted"))
-
-	_, _, err = compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.False(t, deps.fs.FileExists("/fake-dir/data/packages/pkg_name/pkg_version/should_be_deleted"))
-}
-
-func TestCompileSymlinksInstallDir(t *testing.T) {
+func TestCompileEnablesBundle(t *testing.T) {
 	deps, compiler := buildCompiler()
 
 	pkg, pkgDeps := getCompileArgs()
@@ -112,10 +91,7 @@ func TestCompileSymlinksInstallDir(t *testing.T) {
 	_, _, err := compiler.Compile(pkg, pkgDeps)
 	assert.NoError(t, err)
 
-	fileStats := deps.fs.GetFileTestStat("/fake-dir/packages/pkg_name")
-	assert.NotNil(t, fileStats)
-	assert.Equal(t, fakesys.FakeFileTypeSymlink, fileStats.FileType)
-	assert.Equal(t, "/fake-dir/data/packages/pkg_name/pkg_version", fileStats.SymlinkTarget)
+	assert.True(t, deps.bundle.Enabled)
 }
 
 func TestCompileCompressesCompiledPackage(t *testing.T) {
@@ -157,7 +133,7 @@ func TestCompileWhenScriptExists(t *testing.T) {
 		Args: []string{"-x", "packaging"},
 		Env: map[string]string{
 			"BOSH_COMPILE_TARGET":  "/fake-dir/data/compile/pkg_name",
-			"BOSH_INSTALL_TARGET":  "/fake-dir/data/packages/pkg_name/pkg_version",
+			"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
 			"BOSH_PACKAGE_NAME":    "pkg_name",
 			"BOSH_PACKAGE_VERSION": "pkg_version",
 		},
@@ -214,6 +190,8 @@ type compilerDeps struct {
 	fs             *fakesys.FakeFileSystem
 	runner         *fakesys.FakeCmdRunner
 	packageApplier *fakepa.FakePackageApplier
+	packagesBc     *fakebc.FakeBundleCollection
+	bundle         *fakebc.FakeBundle
 }
 
 func buildCompiler() (
@@ -225,6 +203,15 @@ func buildCompiler() (
 	deps.fs = fakesys.NewFakeFileSystem()
 	deps.runner = fakesys.NewFakeCmdRunner()
 	deps.packageApplier = fakepa.NewFakePackageApplier()
+	fakeBundleCollection := fakebc.NewFakeBundleCollection()
+	bundleDefinition := boshmodels.Package{
+		Name:    "pkg_name",
+		Version: "pkg_version",
+	}
+	deps.bundle = fakeBundleCollection.FakeGet(bundleDefinition)
+	deps.bundle.InstallPath = "/fake-dir/data/packages/pkg_name/pkg_version"
+	deps.bundle.EnablePath = "/fake-dir/packages/pkg_name"
+	deps.packagesBc = fakeBundleCollection
 
 	compiler = NewConcreteCompiler(
 		deps.compressor,
@@ -233,6 +220,7 @@ func buildCompiler() (
 		deps.runner,
 		boshdirs.NewDirectoriesProvider("/fake-dir"),
 		deps.packageApplier,
+		deps.packagesBc,
 	)
 	return
 }
