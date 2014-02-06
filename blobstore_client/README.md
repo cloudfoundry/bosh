@@ -19,7 +19,7 @@ $ blobstore_client_console -p local -c config/local.yml.example
 => Welcome to BOSH blobstore client console
 You can use 'bsc' to access blobstore client methods
 > bsc.create("this is a test blob")
-=> "ef00746b-21ec-4473-a888-bf257cb7ea21" 
+=> "ef00746b-21ec-4473-a888-bf257cb7ea21"
 > bsc.get("ef00746b-21ec-4473-a888-bf257cb7ea21")
 => "this is a test blob"
 > bsc.exists?("ef00746b-21ec-4473-a888-bf257cb7ea21")
@@ -66,6 +66,8 @@ These are the options for the Blobstore client when provider is `s3`:
   S3 Access Key
 * `secret_access_key` (optional, if not present, the blobstore client operates in read only mode)
   S3 Secret Access Key
+* `endpoint` (optional, if not present, the blobstore client uses 'https://s3.amazonaws.com')
+  Blobstore endpoint
 
 ### Atmos
 
