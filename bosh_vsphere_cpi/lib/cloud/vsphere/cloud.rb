@@ -16,7 +16,7 @@ require 'cloud/vsphere/resources/scorer'
 require 'cloud/vsphere/resources/util'
 require 'cloud/vsphere/models/disk'
 require 'cloud/vsphere/path_finder'
-require 'cloud/vsphere/vm_creator'
+require 'cloud/vsphere/vm_creator_builder'
 
 module VSphereCloud
 
@@ -166,7 +166,7 @@ module VSphereCloud
 
     def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        VmCreator.new(@resources, @client, @logger, self).
+        VmCreatorBuilder.new.build(@resources, @client, @logger, self).
           create(agent_id, stemcell, cloud_properties, networks, disk_locality, environment)
       end
     end

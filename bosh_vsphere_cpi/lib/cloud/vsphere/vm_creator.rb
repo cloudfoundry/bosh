@@ -1,3 +1,5 @@
+require 'ruby_vim_sdk'
+
 module VSphereCloud
   class VmCreator
     def initialize(resources, client, logger, cpi)
