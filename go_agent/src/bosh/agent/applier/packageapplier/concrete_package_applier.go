@@ -53,7 +53,7 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 		return
 	}
 
-	err = pkgBundle.Enable()
+	_, _, err = pkgBundle.Enable()
 	if err != nil {
 		err = bosherr.WrapError(err, "Enabling package")
 	}

@@ -8,15 +8,16 @@ type FakeBundle struct {
 	InstallFs    boshsys.FileSystem
 	InstallPath  string
 	InstallError error
+	Installed    bool
 
 	GetDirPath  string
 	GetDirFs    boshsys.FileSystem
 	GetDirError error
 
+	EnablePath  string
+	EnableFs    boshsys.FileSystem
 	EnableError error
-
-	Enabled   bool
-	Installed bool
+	Enabled     bool
 }
 
 func NewFakeBundle() *FakeBundle {
@@ -42,7 +43,7 @@ func (s *FakeBundle) GetInstallPath() (fs boshsys.FileSystem, path string, err e
 	return
 }
 
-func (s *FakeBundle) Enable() (err error) {
+func (s *FakeBundle) Enable() (fs boshsys.FileSystem, path string, err error) {
 	if s.EnableError != nil {
 		err = s.EnableError
 		return

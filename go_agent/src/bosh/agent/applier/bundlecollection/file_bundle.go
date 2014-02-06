@@ -44,25 +44,26 @@ func (self FileBundle) GetInstallPath() (fs boshsys.FileSystem, path string, err
 	return
 }
 
-func (self FileBundle) Enable() (err error) {
-	installPath := self.installPath
-	if !self.fs.FileExists(installPath) {
+func (self FileBundle) Enable() (fs boshsys.FileSystem, path string, err error) {
+	if !self.fs.FileExists(self.installPath) {
 		err = bosherr.New("bundle must be installed")
 		return
 	}
 
-	enablePath := self.enablePath
-	err = self.fs.MkdirAll(filepath.Dir(enablePath), os.FileMode(0755))
+	err = self.fs.MkdirAll(filepath.Dir(self.enablePath), os.FileMode(0755))
 	if err != nil {
 		err = bosherr.WrapError(err, "failed to create enable dir")
 		return
 	}
 
-	err = self.fs.Symlink(installPath, enablePath)
+	err = self.fs.Symlink(self.installPath, self.enablePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "failed to enable")
 		return
 	}
+
+	fs = self.fs
+	path = self.enablePath
 
 	return
 }

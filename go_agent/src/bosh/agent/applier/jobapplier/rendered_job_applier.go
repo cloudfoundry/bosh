@@ -88,7 +88,7 @@ func (s *renderedJobApplier) Apply(job models.Job) (err error) {
 		}
 	}
 
-	err = jobBundle.Enable()
+	_, _, err = jobBundle.Enable()
 	if err != nil {
 		err = bosherr.WrapError(err, "Enabling job")
 	}
