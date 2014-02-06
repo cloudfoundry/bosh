@@ -9,11 +9,28 @@ module VSphereCloud
         logger = double('logger')
         cpi = double('cpi')
         vm_creator = double('vm creator')
+        memory = double('memory in mb')
+        disk = double('disk in mb')
+        cpu = double('number of cpus')
+
+        cloud_properties = {
+          'ram' => memory,
+          'disk' => disk,
+          'cpu' => cpu,
+        }
         expect(
           class_double('VSphereCloud::VmCreator').as_stubbed_const
-        ).to receive(:new).with(resources, client, logger, cpi).and_return(vm_creator)
+        ).to receive(:new).with(
+          memory,
+          disk,
+          cpu,
+          resources,
+          client,
+          logger,
+          cpi,
+        ).and_return(vm_creator)
 
-        expect(subject.build(resources, client, logger, cpi)).to eq(vm_creator)
+        expect(subject.build(resources, cloud_properties, client, logger, cpi)).to eq(vm_creator)
       end
     end
   end
