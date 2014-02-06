@@ -49,5 +49,7 @@ func (s *FakeBundle) Enable() (fs boshsys.FileSystem, path string, err error) {
 		return
 	}
 	s.Enabled = true
+	fs = s.EnableFs
+	path = s.EnablePath
 	return
 }

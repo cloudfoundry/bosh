@@ -125,7 +125,15 @@ func (app app) Run(args []string) (err error) {
 
 	applier := boshapplier.NewConcreteApplier(jobApplier, packageApplier, platform, jobSupervisor, dirProvider)
 
-	compiler := boshcomp.NewConcreteCompiler(platform.GetCompressor(), blobstore, platform.GetFs(), platform.GetRunner(), dirProvider, packageApplier)
+	compiler := boshcomp.NewConcreteCompiler(
+		platform.GetCompressor(),
+		blobstore,
+		platform.GetFs(),
+		platform.GetRunner(),
+		dirProvider,
+		packageApplier,
+		packagesBc,
+	)
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
