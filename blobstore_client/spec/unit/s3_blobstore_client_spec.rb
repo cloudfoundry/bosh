@@ -46,21 +46,58 @@ module Bosh::Blobstore
           BlobstoreError, "can't use read-only with an encryption key")
       end
 
-      it 'should be processed and passed to the AWS::S3 class' do
-        options = { 'bucket_name' => 'test',
-                    'access_key_id' => 'KEY',
-                    'secret_access_key' => 'SECRET',
-                    'endpoint' => 'https://s3.example.com' }
+      context 'processing' do
+        it 'should be processed and passed to the AWS::S3 class' do
+          options = { 'bucket_name' => 'test',
+                      'access_key_id' => 'KEY',
+                      'secret_access_key' => 'SECRET',
+                      'endpoint' => 'https://s3.example.com' }
 
-        expect(AWS::S3).to receive(:new).
-          with(access_key_id: 'KEY',
-               secret_access_key: 'SECRET',
-               use_ssl: true,
-               port: 443,
-               s3_endpoint: 's3.example.com').
-          and_return(s3)
+          expect(AWS::S3).to receive(:new).
+            with(access_key_id: 'KEY',
+                 secret_access_key: 'SECRET',
+                 use_ssl: true,
+                 port: 443,
+                 s3_endpoint: 's3.example.com').
+            and_return(s3)
 
-        S3BlobstoreClient.new(options)
+          S3BlobstoreClient.new(options)
+        end
+
+        it 'should allow use_ssl: false based on the endpoint' do
+          options = { 'bucket_name' => 'test',
+                      'access_key_id' => 'KEY',
+                      'secret_access_key' => 'SECRET',
+                      'endpoint' => 'http://s3.example.com' }
+
+          expect(AWS::S3).to receive(:new).
+            with(access_key_id: 'KEY',
+                 secret_access_key: 'SECRET',
+                 use_ssl: false,
+                 port: 80,
+                 s3_endpoint: 's3.example.com').
+            and_return(s3)
+
+          S3BlobstoreClient.new(options)
+        end
+
+        it 'should allow a custom port based on the endpoint' do
+          options = { 'bucket_name' => 'test',
+                      'access_key_id' => 'KEY',
+                      'secret_access_key' => 'SECRET',
+                      'endpoint' => 'http://s3.example.com:4242' }
+
+          expect(AWS::S3).to receive(:new).
+            with(access_key_id: 'KEY',
+                 secret_access_key: 'SECRET',
+                 use_ssl: false,
+                 port: 4242,
+                 s3_endpoint: 's3.example.com').
+            and_return(s3)
+
+          S3BlobstoreClient.new(options)
+        end
+
       end
     end
 

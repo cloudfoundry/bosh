@@ -23,8 +23,7 @@ module Bosh::Blobstore
       s3 = AWS::S3.new(
         access_key_id: access_key_id,
         secret_access_key: secret_access_key,
-        use_ssl: true,
-        port: 443
+        endpoint: 'http://s3.amazonaws.com:4242'
       )
 
       @bucket_name = sprintf('bosh-blobstore-bucket-%08x', rand(2**32))
