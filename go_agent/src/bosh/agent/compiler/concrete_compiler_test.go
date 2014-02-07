@@ -68,30 +68,14 @@ func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
 	assert.Equal(t, deps.fs.RenameNewPaths[0], "/fake-dir/data/compile/pkg_name")
 }
 
-func TestCompileGetsTheBundleFromTheBundleCollectionAndInstalls(t *testing.T) {
+func TestCompileInstallsEnablesAndCleansUpBundle(t *testing.T) {
 	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	installDir := "/fake-dir/data/packages/pkg_name/pkg_version"
-
-	assert.False(t, deps.fs.FileExists(installDir))
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.True(t, deps.bundle.Installed)
-}
-
-func TestCompileEnablesBundle(t *testing.T) {
-	deps, compiler := buildCompiler()
-
 	pkg, pkgDeps := getCompileArgs()
 
 	_, _, err := compiler.Compile(pkg, pkgDeps)
 	assert.NoError(t, err)
 
-	assert.True(t, deps.bundle.Enabled)
+	assert.Equal(t, deps.bundle.ActionsCalled, []string{"Install", "Enable", "Disable"})
 }
 
 func TestCompileCompressesCompiledPackage(t *testing.T) {

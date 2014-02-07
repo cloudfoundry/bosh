@@ -113,6 +113,13 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 	if err != nil {
 		err = bosherr.WrapError(err, "Uploading compiled package")
 	}
+
+	err = compiledPkgBundle.Disable()
+	if err != nil {
+		err = bosherr.WrapError(err, "Disabling compiled package")
+		return
+	}
+
 	return
 }
 
