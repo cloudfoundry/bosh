@@ -35,6 +35,16 @@ module Bosh
       def get_template(template)
         File.expand_path("../../../templates/#{template}", __FILE__)
       end
+
+      private
+
+      def reserved_ip_range
+        ENV['BOSH_AWS_NETWORK_RESERVED'] ||= '10.10.0.2 - 10.10.0.9'
+      end
+
+      def static_ip_range
+        ENV['BOSH_AWS_NETWORK_STATIC'] ||= '10.10.0.10 - 10.10.0.30'
+      end
     end
   end
 end

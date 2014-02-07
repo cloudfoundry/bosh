@@ -9,30 +9,8 @@ describe Bosh::Aws::BatManifest do
   its(:vip)              { should eq '50.200.100.2' }
   its(:director_uuid)    { should eq 'director-uuid' }
 
-  context 'when vip is missing' do
-    before { route53_receipt['elastic_ips']['bat']['ips'] = [] }
-
-    it 'warns' do
-      subject.should_receive(:warning).with('Missing vip field')
-      subject.to_y
-    end
-  end
-
-  context 'when domain is missing' do
-    before { vpc_receipt['vpc']['domain'] = nil }
-
-    it 'warns' do
-      subject
-        .should_receive(:warning)
-        .with('Missing domain field')
-        .at_least(1).times
-      subject.to_y
-    end
-  end
-
-  it 'generates the template' do
-    expect(subject.to_y).to eq(<<YAML)
----
+  let(:yaml_manifest) do
+'---
 name: bat
 director_uuid: director-uuid
 cpi: aws
@@ -74,9 +52,9 @@ networks:
   subnets:
   - range: 10.10.0.0/24
     reserved:
-    - 10.10.0.2 - 10.10.0.9
+    - RESERVED_IP_RANGE
     static:
-    - 10.10.0.10 - 10.10.0.30
+    - STATIC_IP_RANGE
     gateway: 10.10.0.1
     security_groups:
     - bat
@@ -106,9 +84,9 @@ properties:
   network:
     cidr: 10.10.0.0/24
     reserved:
-    - 10.10.0.2 - 10.10.0.9
+    - RESERVED_IP_RANGE
     static:
-    - 10.10.0.10 - 10.10.0.30
+    - STATIC_IP_RANGE
     gateway: 10.10.0.1
     subnet: subnet-4bdf6c26
     security_groups:
@@ -116,6 +94,45 @@ properties:
   batlight:
     missing: nope
 
-YAML
+'
+  end
+
+  context 'when vip is missing' do
+    before { route53_receipt['elastic_ips']['bat']['ips'] = [] }
+
+    it 'warns' do
+      subject.should_receive(:warning).with('Missing vip field')
+      subject.to_y
+    end
+  end
+
+  context 'when domain is missing' do
+    before { vpc_receipt['vpc']['domain'] = nil }
+
+    it 'warns' do
+      subject
+        .should_receive(:warning)
+        .with('Missing domain field')
+        .at_least(1).times
+      subject.to_y
+    end
+  end
+
+  it 'generates the template' do
+    expected_yaml = yaml_manifest.gsub('RESERVED_IP_RANGE', '10.10.0.2 - 10.10.0.9')
+    expected_yaml = expected_yaml.gsub('STATIC_IP_RANGE', '10.10.0.10 - 10.10.0.30')
+    expect(subject.to_y).to eq(expected_yaml)
+  end
+
+  context 'when ip address range environment variables are present' do
+    it 'generates manifest that includes given ranges' do
+      ENV['BOSH_AWS_NETWORK_RESERVED'] ||= 'fake reserved ip range'
+      ENV['BOSH_AWS_NETWORK_STATIC'] ||= 'fake static ip range'
+
+      expected_yaml = yaml_manifest.gsub('RESERVED_IP_RANGE', ENV['BOSH_AWS_NETWORK_RESERVED'])
+      expected_yaml = expected_yaml.gsub('STATIC_IP_RANGE', ENV['BOSH_AWS_NETWORK_STATIC'])
+
+      expect(subject.to_y).to eq(expected_yaml)
+    end
   end
 end
