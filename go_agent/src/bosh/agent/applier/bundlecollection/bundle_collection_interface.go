@@ -33,4 +33,6 @@ type Bundle interface {
 	GetInstallPath() (fs boshsys.FileSystem, path string, err error)
 
 	Enable() (fs boshsys.FileSystem, path string, err error)
+
+	Disable() (err error)
 }

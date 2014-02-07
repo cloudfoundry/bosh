@@ -67,3 +67,20 @@ func (self FileBundle) Enable() (fs boshsys.FileSystem, path string, err error) 
 
 	return
 }
+
+func (self FileBundle) Disable() (err error) {
+	target, err := self.fs.ReadLink(self.enablePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+			return
+		}
+		err = bosherr.WrapError(err, "Reading symlink")
+		return
+	}
+
+	if target == self.installPath {
+		self.fs.RemoveAll(self.enablePath)
+	}
+	return
+}

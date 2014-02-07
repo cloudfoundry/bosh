@@ -163,7 +163,11 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 
 func (fs *FakeFileSystem) ReadLink(symlinkPath string) (targetPath string, err error) {
 	stat := fs.GetFileTestStat(symlinkPath)
-	targetPath = stat.SymlinkTarget
+	if stat != nil {
+		targetPath = stat.SymlinkTarget
+	} else {
+		err = os.ErrNotExist
+	}
 
 	return
 }

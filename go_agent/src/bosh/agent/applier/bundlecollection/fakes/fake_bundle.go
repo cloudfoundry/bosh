@@ -53,3 +53,7 @@ func (s *FakeBundle) Enable() (fs boshsys.FileSystem, path string, err error) {
 	path = s.EnablePath
 	return
 }
+
+func (s *FakeBundle) Disable() (err error) {
+	return
+}

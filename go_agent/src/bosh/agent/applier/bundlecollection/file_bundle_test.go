@@ -135,4 +135,48 @@ var _ = Describe("FileBundle", func() {
 			})
 		})
 	})
+
+	Describe("#Disable", func() {
+		It("removes the symlink", func() {
+			_, _, err := fileBundle.Install()
+			Expect(err).NotTo(HaveOccurred())
+			_, _, err = fileBundle.Enable()
+			Expect(err).NotTo(HaveOccurred())
+
+			err = fileBundle.Disable()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fs.FileExists(enablePath)).To(BeFalse())
+		})
+
+		It("is idempotent", func() {
+			err := fileBundle.Disable()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fs.FileExists(enablePath)).To(BeFalse())
+		})
+
+		Context("where the symlink is pointing at a different installed version", func() {
+			It("does not remove the symlink", func() {
+				_, _, err := fileBundle.Install()
+				Expect(err).NotTo(HaveOccurred())
+				_, _, err = fileBundle.Enable()
+				Expect(err).NotTo(HaveOccurred())
+				newerInstallPath := "/newer-install-path"
+				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, fs)
+				_, _, err = newerFileBundle.Install()
+				Expect(err).NotTo(HaveOccurred())
+				_, _, err = newerFileBundle.Enable()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = fileBundle.Disable()
+
+				Expect(err).NotTo(HaveOccurred())
+				fileStats := fs.GetFileTestStat(enablePath)
+				Expect(fileStats).NotTo(BeNil())
+				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeSymlink)))
+				Expect(newerInstallPath).To(Equal(fileStats.SymlinkTarget))
+			})
+		})
+	})
 })
