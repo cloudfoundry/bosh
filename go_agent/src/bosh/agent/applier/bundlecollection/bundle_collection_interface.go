@@ -20,4 +20,6 @@ type Bundle interface {
 	Enable() (fs boshsys.FileSystem, path string, err error)
 
 	Disable() (err error)
+
+	Uninstall() (err error)
 }

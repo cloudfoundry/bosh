@@ -66,3 +66,9 @@ func (s *FakeBundle) Disable() (err error) {
 
 	return
 }
+
+func (s *FakeBundle) Uninstall() (err error) {
+	s.ActionsCalled = append(s.ActionsCalled, "Uninstall")
+
+	return
+}
