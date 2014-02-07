@@ -17,22 +17,24 @@ describe VSphereCloud::Cloud do
         "ntp" => ["10.80.0.44"],
       },
       "vcenters" => [{
-        "host" => @host,
-        "user" => @user,
-        "password" => @password,
-        "datacenters" => [{
-          "name" => "BOSH_DC",
-          "vm_folder" => "ACCEPTANCE_BOSH_VMs",
-          "template_folder" => "ACCEPTANCE_BOSH_Templates",
-          "disk_path" => "ACCEPTANCE_BOSH_Disks",
-          "datastore_pattern" => "jalapeno",
-          "persistent_datastore_pattern" => "jalapeno",
-          "allow_mixed_datastores" => true,
-          "clusters" => [{
-            "BOSH_CL" => {"resource_pool" => "ACCEPTANCE_RP"}
-          }]
-        }]
-      }]
+                       "host" => @host,
+                       "user" => @user,
+                       "password" => @password,
+                       "datacenters" => [{
+                                           "name" => "BOSH_DC",
+                                           "vm_folder" => "ACCEPTANCE_BOSH_VMs",
+                                           "template_folder" => "ACCEPTANCE_BOSH_Templates",
+                                           "disk_path" => "ACCEPTANCE_BOSH_Disks",
+                                           "datastore_pattern" => "jalapeno",
+                                           "persistent_datastore_pattern" => "jalapeno",
+                                           "allow_mixed_datastores" => true,
+                                           "clusters" => [{
+                                                            "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
+                                                          },
+                                                          { "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
+                                                          }],
+                                         }]
+                     }]
     )
   end
 
@@ -109,28 +111,36 @@ describe VSphereCloud::Cloud do
       }
     end
 
-    context 'without existing disks' do
-      let(:resource_pool) {
-        {
-          'ram' => 1024,
-          'disk' => 2048,
-          'cpu' => 1,
-        }
+    let(:resource_pool) {
+      {
+        'ram' => 1024,
+        'disk' => 2048,
+        'cpu' => 1,
       }
+    }
+
+    context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
         vm_lifecycle(network_spec, [], resource_pool)
       end
     end
 
-    context 'with existing disks' do
-      let(:resource_pool) {
-        {
-          'ram' => 1024,
-          'disk' => 2048,
-          'cpu' => 1,
-        }
-      }
+    context 'without existing disks and placer' do
+      it 'should exercise the vm lifecycle and select the cluster in the resource pool datacenters' do
+        clusters = [{ "BOSH_CL" => {}, }, { "BOSH_CL2" => {} }]
 
+        clusters.each do |cluster|
+          resource_pool['datacenters'] = [{ 'name' => 'BOSH_DC', 'clusters' => [cluster]}]
+          vm_lifecycle(network_spec, [], resource_pool)
+
+          vm = cpi.get_vm_by_cid(@vm_id)
+          vm_info = cpi.get_vm_host_info(vm)
+          expect(vm_info['cluster']).to eq(cluster.keys.first)
+        end
+      end
+    end
+
+    context 'with existing disks' do
       before { @existing_volume_id = cpi.create_disk(2048) }
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
