@@ -161,6 +161,13 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return
 }
 
+func (fs *FakeFileSystem) ReadLink(symlinkPath string) (targetPath string, err error) {
+	stat := fs.GetFileTestStat(symlinkPath)
+	targetPath = stat.SymlinkTarget
+
+	return
+}
+
 func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 	if fs.CopyDirEntriesError != nil {
 		return fs.CopyDirEntriesError

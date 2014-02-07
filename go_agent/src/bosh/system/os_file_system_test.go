@@ -255,6 +255,25 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
+func TestReadLink(t *testing.T) {
+	osFs, _ := createOsFs()
+	filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
+	containingDir := filepath.Join(os.TempDir(), "SubDir")
+	os.Remove(containingDir)
+	symlinkPath := filepath.Join(containingDir, "SymlinkTestSymlink")
+
+	osFs.WriteToFile(filePath, "some content")
+	defer os.Remove(filePath)
+
+	err := osFs.Symlink(filePath, symlinkPath)
+	assert.NoError(t, err)
+	defer os.Remove(containingDir)
+
+	actualFilePath, err := osFs.ReadLink(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, actualFilePath, filePath)
+}
+
 func TestTempFile(t *testing.T) {
 	osFs, _ := createOsFs()
 
