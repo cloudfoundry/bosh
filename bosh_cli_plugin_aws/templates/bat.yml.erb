@@ -40,9 +40,9 @@ networks:
   subnets:
   - range: 10.10.0.0/24
     reserved:
-    - 10.10.0.2 - 10.10.0.9
+    - <%= reserved_ip_range %>
     static:
-    - 10.10.0.10 - 10.10.0.30
+    - <%= static_ip_range %>
     gateway: 10.10.0.1
     security_groups:
     - bat
@@ -72,9 +72,9 @@ properties:
   network:
     cidr: 10.10.0.0/24
     reserved:
-    - 10.10.0.2 - 10.10.0.9
+    - <%= reserved_ip_range %>
     static:
-    - 10.10.0.10 - 10.10.0.30
+    - <%= static_ip_range %>
     gateway: 10.10.0.1
     subnet: <%= subnet %>
     security_groups:
