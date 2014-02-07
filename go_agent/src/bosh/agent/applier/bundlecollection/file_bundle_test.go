@@ -179,4 +179,23 @@ var _ = Describe("FileBundle", func() {
 			})
 		})
 	})
+
+	Describe("#Uninstall", func() {
+		It("removes the files from disk", func() {
+			_, _, err := fileBundle.Install()
+			Expect(err).NotTo(HaveOccurred())
+
+			err = fileBundle.Uninstall()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fs.FileExists(installPath)).To(BeFalse())
+		})
+
+		It("is idempotent", func() {
+			err := fileBundle.Uninstall()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fs.FileExists(installPath)).To(BeFalse())
+		})
+	})
 })

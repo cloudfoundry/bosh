@@ -84,3 +84,8 @@ func (self FileBundle) Disable() (err error) {
 	}
 	return
 }
+
+func (self FileBundle) Uninstall() (err error) {
+	err = self.fs.RemoveAll(self.installPath)
+	return
+}
