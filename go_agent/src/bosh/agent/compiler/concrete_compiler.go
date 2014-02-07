@@ -120,6 +120,12 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 		return
 	}
 
+	err = compiledPkgBundle.Uninstall()
+	if err != nil {
+		err = bosherr.WrapError(err, "Uninstalling compiled package")
+		return
+	}
+
 	return
 }
 

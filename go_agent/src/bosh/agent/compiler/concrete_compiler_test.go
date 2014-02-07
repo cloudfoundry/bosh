@@ -75,7 +75,7 @@ func TestCompileInstallsEnablesAndCleansUpBundle(t *testing.T) {
 	_, _, err := compiler.Compile(pkg, pkgDeps)
 	assert.NoError(t, err)
 
-	assert.Equal(t, deps.bundle.ActionsCalled, []string{"Install", "Enable", "Disable"})
+	assert.Equal(t, deps.bundle.ActionsCalled, []string{"Install", "Enable", "Disable", "Uninstall"})
 }
 
 func TestCompileCompressesCompiledPackage(t *testing.T) {
