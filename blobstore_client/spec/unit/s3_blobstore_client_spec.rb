@@ -46,21 +46,46 @@ module Bosh::Blobstore
           BlobstoreError, "can't use read-only with an encryption key")
       end
 
-      it 'should be processed and passed to the AWS::S3 class' do
-        options = { 'bucket_name' => 'test',
-                    'access_key_id' => 'KEY',
-                    'secret_access_key' => 'SECRET',
-                    'endpoint' => 'https://s3.example.com' }
+      context 'should be processed and passed to the AWS::S3 class' do
+        it 'should use user defined values' do
+          options = { 'bucket_name' => 'test',
+                      'access_key_id' => 'KEY',
+                      'secret_access_key' => 'SECRET',
+                      'use_ssl' => false,
+                      'port' => 8080,
+                      'host' => 'our.userdefined.com'
+          }
 
-        expect(AWS::S3).to receive(:new).
-          with(access_key_id: 'KEY',
-               secret_access_key: 'SECRET',
-               use_ssl: true,
-               port: 443,
-               s3_endpoint: 's3.example.com').
-          and_return(s3)
+          expect(AWS::S3).to receive(:new).
+                                 with(access_key_id: 'KEY',
+                                      secret_access_key: 'SECRET',
+                                      use_ssl: false,
+                                      s3_port: 8080,
+                                      s3_endpoint: 'our.userdefined.com',
+                                      s3_force_path_style: true).
+                                 and_return(s3)
 
-        S3BlobstoreClient.new(options)
+          S3BlobstoreClient.new(options)
+
+        end
+
+        it 'should use the default values for undefined use_ssl, port, and s3_endpoint' do
+          options = { 'bucket_name' => 'test',
+                      'access_key_id' => 'KEY',
+                      'secret_access_key' => 'SECRET',
+          }
+
+          expect(AWS::S3).to receive(:new).
+                                 with(access_key_id: 'KEY',
+                                      secret_access_key: 'SECRET',
+                                      use_ssl: true,
+                                      s3_port: 443,
+                                      s3_endpoint: 's3.amazonaws.com',
+                                      s3_force_path_style: true).
+                                 and_return(s3)
+
+          S3BlobstoreClient.new(options)
+        end
       end
     end
 
