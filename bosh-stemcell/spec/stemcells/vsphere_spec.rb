@@ -15,6 +15,7 @@ describe 'vSphere Stemcell' do
 
     describe file('/etc/udev/rules.d/ready_cdrom.sh') do
       it { should be_file }
+      it { should be_executable }
       it { should contain(<<HERE) }
 if [ -f /dev/bosh-cdrom ]
 then
