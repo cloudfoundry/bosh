@@ -6,7 +6,7 @@ type FileSystem interface {
 	HomeDir(username string) (path string, err error)
 
 	MkdirAll(path string, perm os.FileMode) (err error)
-	RemoveAll(fileOrDir string)
+	RemoveAll(fileOrDir string) (err error)
 
 	Chown(path, username string) (err error)
 	Chmod(path string, perm os.FileMode) (err error)
