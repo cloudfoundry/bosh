@@ -438,6 +438,7 @@ module VSphereCloud
         before do
           builder_class = class_double('VSphereCloud::VmCreatorBuilder').as_stubbed_const
           allow(builder_class).to receive(:new).with(no_args).and_return(creator_builder)
+          allow(cloud_properties).to receive(:fetch).with('datacenters', []).and_return([])
         end
         let(:creator_instance) { instance_double('VSphereCloud::VmCreator') }
 
@@ -445,6 +446,56 @@ module VSphereCloud
         let(:cloud_properties) { double('cloud properties hash') }
         let(:stemcell_cid) { double('stemcell cid string') }
         let(:agent_id) { double('agent id string') }
+
+        context 'using a placer' do
+          let(:clusters) {
+            [
+              { "BOSH_CL" => {}, },
+              { "BOSH_CL2" => {} }
+            ]
+          }
+
+          let(:datacenters) {
+            [{
+              "name" => "BOSH_DC",
+              "clusters" => clusters,
+            }]
+          }
+
+          let(:placer) { double('placer') }
+          let(:cluster) { double('cluster') }
+          let(:datacenter) { double('datacenter') }
+
+          before {
+            allow(Resources::Datacenter).to receive(:new).with(cloud_config).and_return(datacenter)
+            allow(cloud_properties).to receive(:fetch).with('datacenters', []).and_return(datacenters)
+            allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return(datacenters.first['name'])
+            allow(datacenter).to receive(:clusters).with(no_args).and_return({'BOSH_CL' => cluster})
+
+            placer_class = class_double('VSphereCloud::FixedClusterPlacer').as_stubbed_const
+            allow(placer_class).to receive(:new).with(cluster).and_return(placer)
+          }
+
+          it 'passes disk locality and environment as nils' do
+            vm = double('created vm')
+            expect(creator_instance).to receive(:create).with(
+                                          agent_id,
+                                          stemcell_cid,
+                                          networks,
+                                          nil,
+                                          nil,
+                                        ).and_return(vm)
+            expect(creator_builder).to receive(:build).with(
+                                         placer, cloud_properties, client, logger, vsphere_cloud,
+                                       ).and_return(creator_instance)
+
+            expect(
+              vsphere_cloud.create_vm(
+                agent_id, stemcell_cid, cloud_properties, networks,
+              )
+            ).to eq(vm)
+          end
+        end
 
         context 'when both disk locality and environment are omitted' do
           it 'passes disk locality and environment as nils' do

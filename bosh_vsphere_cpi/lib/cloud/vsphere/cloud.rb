@@ -17,6 +17,7 @@ require 'cloud/vsphere/resources/util'
 require 'cloud/vsphere/models/disk'
 require 'cloud/vsphere/path_finder'
 require 'cloud/vsphere/vm_creator_builder'
+require 'cloud/vsphere/fixed_cluster_placer'
 
 module VSphereCloud
 
@@ -166,7 +167,7 @@ module VSphereCloud
 
     def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        VmCreatorBuilder.new.build(@resources, cloud_properties, @client, @logger, self).
+        VmCreatorBuilder.new.build(choose_placer(cloud_properties), cloud_properties, @client, @logger, self).
           create(agent_id, stemcell, networks, disk_locality, environment)
       end
     end
@@ -1048,6 +1049,19 @@ module VSphereCloud
     end
 
     private
+
+    def choose_placer(cloud_properties)
+      datacenter_spec = cloud_properties.fetch('datacenters', []).first
+      cluster_spec = datacenter_spec.fetch('clusters', []).first if datacenter_spec
+      placer = FixedClusterPlacer.new(find_cluster(cluster_spec)) unless cluster_spec.nil?
+
+      placer.nil? ? @resources : placer
+    end
+
+    def find_cluster(cluster_spec)
+      datacenter = Resources::Datacenter.new(config)
+      datacenter.clusters[cluster_spec.keys.first]
+    end
 
     attr_reader :config
   end

@@ -10,6 +10,8 @@ module VSphereCloud
       @memory = memory
       @disk = disk
       @cpu = cpu
+
+      @logger.debug("VM creator initialized with memory: #{@memory}, disk: #{@disk}, cpu: #{@cpu}, placer: #{@placer}")
     end
 
     def create(agent_id, stemcell_cid, networks, disk_cids, environment)

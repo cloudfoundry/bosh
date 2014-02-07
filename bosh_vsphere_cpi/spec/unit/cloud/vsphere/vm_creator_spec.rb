@@ -4,7 +4,7 @@ describe VSphereCloud::VmCreator do
   describe '#create' do
     let(:placer) { double('placer') }
     let(:vsphere_client) { instance_double('VSphereCloud::Client') }
-    let(:logger) { double('logger') }
+    let(:logger) { double('logger', debug: nil) }
     let(:cpi) { instance_double('VSphereCloud::Cloud') }
 
     context 'when the number of cpu is not a power of 2' do
