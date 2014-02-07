@@ -22,6 +22,8 @@ type FileSystem interface {
 	// to make newPath a symlink to the file at oldPath.
 	Symlink(oldPath, newPath string) (err error)
 
+	ReadLink(symlinkPath string) (targetPath string, err error)
+
 	// Copies contents of one directory into another directory.
 	// Both directories need to exist before copy can succeed.
 	// Overwrites files in the dstPath but does not remove
