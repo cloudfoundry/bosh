@@ -248,7 +248,7 @@ func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
 	return path, nil
 }
 
-func (fs *FakeFileSystem) RemoveAll(path string) {
+func (fs *FakeFileSystem) RemoveAll(path string) (err error) {
 	filesToRemove := []string{}
 
 	for name, _ := range fs.Files {
@@ -260,6 +260,7 @@ func (fs *FakeFileSystem) RemoveAll(path string) {
 	for _, name := range filesToRemove {
 		delete(fs.Files, name)
 	}
+	return
 }
 
 func (fs *FakeFileSystem) Open(path string) (file *os.File, err error) {

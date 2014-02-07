@@ -344,6 +344,19 @@ func TestCopyFile(t *testing.T) {
 	assert.Equal(t, fooContent, "foo\n")
 }
 
+func TestRemoveAll(t *testing.T) {
+	osFs, _ := createOsFs()
+	dstFile, err := osFs.TempFile("CopyFileTestFile")
+	assert.NoError(t, err)
+	defer os.Remove(dstFile.Name())
+
+	err = osFs.RemoveAll(dstFile.Name())
+	assert.NoError(t, err)
+
+	_, err = os.Stat(dstFile.Name())
+	assert.True(t, os.IsNotExist(err))
+}
+
 func createOsFs() (fs FileSystem, runner CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	runner = NewExecCmdRunner(logger)

@@ -219,9 +219,10 @@ func (fs osFileSystem) TempDir(prefix string) (path string, err error) {
 	return ioutil.TempDir("", prefix)
 }
 
-func (fs osFileSystem) RemoveAll(fileOrDir string) {
+func (fs osFileSystem) RemoveAll(fileOrDir string) (err error) {
 	fs.logger.Debug(fs.logTag, "Remove all %s", fileOrDir)
-	os.RemoveAll(fileOrDir)
+	err = os.RemoveAll(fileOrDir)
+	return
 }
 
 func (fs osFileSystem) Open(path string) (file *os.File, err error) {
