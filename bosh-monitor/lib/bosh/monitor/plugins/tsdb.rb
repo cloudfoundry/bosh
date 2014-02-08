@@ -25,8 +25,6 @@ module Bosh::Monitor
 
         metrics = event.metrics
 
-        return true if metrics.empty?
-
         if !metrics.kind_of?(Enumerable)
           raise PluginError, "Invalid event metrics: Enumerable expected, #{metrics.class} given"
         end
