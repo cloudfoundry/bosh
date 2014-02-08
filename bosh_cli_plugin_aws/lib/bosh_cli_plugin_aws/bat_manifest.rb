@@ -39,11 +39,13 @@ module Bosh
       private
 
       def reserved_ip_range
-        ENV['BOSH_AWS_NETWORK_RESERVED'] ||= '10.10.0.2 - 10.10.0.9'
+        env_range = ENV.fetch('BOSH_AWS_NETWORK_RESERVED', '')
+        env_range.empty? ? '10.10.0.2 - 10.10.0.9' : env_range
       end
 
       def static_ip_range
-        ENV['BOSH_AWS_NETWORK_STATIC'] ||= '10.10.0.10 - 10.10.0.30'
+        env_range = ENV.fetch('BOSH_AWS_NETWORK_STATIC', '')
+        env_range.empty? ? '10.10.0.10 - 10.10.0.30' : env_range
       end
     end
   end
