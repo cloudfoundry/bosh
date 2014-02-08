@@ -126,11 +126,23 @@ properties:
 
   context 'when ip address range environment variables are present' do
     it 'generates manifest that includes given ranges' do
-      ENV['BOSH_AWS_NETWORK_RESERVED'] ||= 'fake reserved ip range'
-      ENV['BOSH_AWS_NETWORK_STATIC'] ||= 'fake static ip range'
+      ENV['BOSH_AWS_NETWORK_RESERVED'] = 'fake reserved ip range'
+      ENV['BOSH_AWS_NETWORK_STATIC'] = 'fake static ip range'
 
       expected_yaml = yaml_manifest.gsub('RESERVED_IP_RANGE', ENV['BOSH_AWS_NETWORK_RESERVED'])
       expected_yaml = expected_yaml.gsub('STATIC_IP_RANGE', ENV['BOSH_AWS_NETWORK_STATIC'])
+
+      expect(subject.to_y).to eq(expected_yaml)
+    end
+  end
+
+  context 'when ip address range environment variables are present' do
+    it 'generates manifest that includes given ranges' do
+      ENV['BOSH_AWS_NETWORK_RESERVED'] = ''
+      ENV['BOSH_AWS_NETWORK_STATIC'] = ''
+
+      expected_yaml = yaml_manifest.gsub('RESERVED_IP_RANGE', '10.10.0.2 - 10.10.0.9')
+      expected_yaml = expected_yaml.gsub('STATIC_IP_RANGE', '10.10.0.10 - 10.10.0.30')
 
       expect(subject.to_y).to eq(expected_yaml)
     end
