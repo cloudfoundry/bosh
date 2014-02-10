@@ -1,6 +1,7 @@
-package alert
+package alert_test
 
 import (
+	. "bosh/agent/alert"
 	boshlog "bosh/logger"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"

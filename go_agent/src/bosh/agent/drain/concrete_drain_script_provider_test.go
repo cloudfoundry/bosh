@@ -1,6 +1,7 @@
-package drain
+package drain_test
 
 import (
+	. "bosh/agent/drain"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
