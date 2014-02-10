@@ -1,7 +1,8 @@
-package drain
+package drain_test
 
 import (
 	boshas "bosh/agent/applier/applyspec"
+	. "bosh/agent/drain"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

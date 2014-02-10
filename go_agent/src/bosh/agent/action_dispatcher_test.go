@@ -1,6 +1,7 @@
-package agent
+package agent_test
 
 import (
+	. "bosh/agent"
 	fakeaction "bosh/agent/action/fakes"
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"

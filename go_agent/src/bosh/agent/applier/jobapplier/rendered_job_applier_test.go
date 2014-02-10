@@ -1,7 +1,8 @@
-package jobapplier
+package jobapplier_test
 
 import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
+	. "bosh/agent/applier/jobapplier"
 	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
 	fakejobsuper "bosh/jobsupervisor/fakes"

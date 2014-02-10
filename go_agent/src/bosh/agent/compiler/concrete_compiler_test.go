@@ -1,9 +1,10 @@
-package compiler
+package compiler_test
 
 import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	boshmodels "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
+	. "bosh/agent/compiler"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	boshdirs "bosh/settings/directories"

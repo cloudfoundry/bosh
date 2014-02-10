@@ -1,8 +1,9 @@
-package packageapplier
+package packageapplier_test
 
 import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
+	. "bosh/agent/applier/packageapplier"
 	fakeblob "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	"errors"
