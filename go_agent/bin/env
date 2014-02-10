@@ -2,8 +2,8 @@
 
 set -e
 
-SCRIPT_HOME=$( cd "$( dirname "$0" )" && pwd )
+base=$( cd "$( dirname "$( dirname "$0" )")" && pwd )
 
-base=$SCRIPT_HOME/..
+export GOPATH=$base GOBIN=$base/gobin PATH=$PATH:$base/gobin
 
-exec env GOPATH=$base $@
+exec $@
