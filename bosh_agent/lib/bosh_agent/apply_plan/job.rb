@@ -35,7 +35,7 @@ module Bosh::Agent
         @config_binding = config_binding
 
         @install_path = File.join(@base_dir, 'data', 'jobs',
-                                  @template, @version)
+                                  @template, @version, @checksum)
         @link_path = File.join(@base_dir, 'jobs', @template)
       end
 

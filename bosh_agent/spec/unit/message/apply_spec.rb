@@ -198,7 +198,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   describe 'jobs' do
     let(:response) { double('response', status: 200) }
-
+    let(:dummy_job_data_sha1) { Digest::SHA1.hexdigest(dummy_job_data) }
     let(:apply_data) do
       {
         'configuration_hash' => 'bogus',
@@ -208,7 +208,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
           'template' => 'bubba',
           'blobstore_id' => 'some_blobstore_id',
           'version' => '77',
-          'sha1' => Digest::SHA1.hexdigest(dummy_job_data) },
+          'sha1' =>  dummy_job_data_sha1 },
         'release' => { 'version' => '99' },
         'networks' => { 'network_a' => { 'ip' => '11.0.0.1' } },
       }
@@ -225,7 +225,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
       apply_message.apply
 
-      bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'bin')
+      bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', dummy_job_data_sha1, 'bin')
       expect(File.directory?(bin_dir)).to be(true)
 
       bin_file = File.join(bin_dir, 'my_sinatra_app')
@@ -236,12 +236,12 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
   context 'one job with one monit file' do
     let(:response) { double('response', status: 200) }
     let(:job_data) { read_asset('hubba.tgz') }
+    let(:dummy_job_data_sha1) {  Digest::SHA1.hexdigest(job_data) }
     let(:apply_data) do
-      job_sha1 = Digest::SHA1.hexdigest(job_data)
       {
         'configuration_hash' => 'bogus',
         'deployment' => 'foo',
-        'job' => { 'name' => 'hubba', 'template' => 'hubba', 'blobstore_id' => 'some_blobstore_id', 'version' => '77', 'sha1' => job_sha1 },
+        'job' => { 'name' => 'hubba', 'template' => 'hubba', 'blobstore_id' => 'some_blobstore_id', 'version' => '77', 'sha1' => dummy_job_data_sha1 },
         'release' => { 'version' => '99' },
         'networks' => { 'network_a' => { 'ip' => '11.0.0.1' } }
       }
@@ -257,7 +257,7 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
       apply_message.stub(:apply_packages)
       apply_message.apply
 
-      monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0000_hubba.hubba_hubba.monitrc')
+      monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', dummy_job_data_sha1, '0000_hubba.hubba_hubba.monitrc')
       expect(File.exist?(monitrc)).to be(true)
     end
   end
@@ -266,17 +266,17 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
     let(:response) { double('response', status: 200) }
     let(:job_data) { read_asset('hubba.tgz') }
     let(:job2_data) { read_asset('hubba2.tgz') }
+    let(:dummy_job_data_sha1) { Digest::SHA1.hexdigest(job_data) }
+    let(:dummy_job2_data_sha1) { Digest::SHA1.hexdigest(job2_data) }
     let(:apply_data) do
-      job_sha1 = Digest::SHA1.hexdigest(job_data)
-      job2_sha1 = Digest::SHA1.hexdigest(job2_data)
       {
         'configuration_hash' => 'bogus',
         'deployment' => 'foo',
         'job' => { 'name' => 'hubba', 'templates' => [
           { 'name' => 'hubba', 'blobstore_id' => 'some_blobstore_id',
-            'version' => '77', 'sha1' => job_sha1 },
+            'version' => '77', 'sha1' => dummy_job_data_sha1 },
           { 'name' => 'hubba2', 'blobstore_id' => 'some_blobstore_id2',
-            'version' => '77', 'sha1' => job2_sha1 }] },
+            'version' => '77', 'sha1' => dummy_job2_data_sha1 }] },
         'release' => { 'version' => '99' },
         'networks' => { 'network_a' => { 'ip' => '11.0.0.1' } },
       }
@@ -293,10 +293,10 @@ describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
       apply_message.stub(:apply_packages)
       apply_message.apply
 
-      monitrc1 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0001_hubba.hubba_hubba.monitrc')
+      monitrc1 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', dummy_job_data_sha1, '0001_hubba.hubba_hubba.monitrc')
       File.exist?(monitrc1).should == true
 
-      monitrc2 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba2', '77', '0000_hubba.hubba2_hubba.monitrc')
+      monitrc2 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba2', '77', dummy_job2_data_sha1, '0000_hubba.hubba2_hubba.monitrc')
       File.exist?(monitrc2).should == true
     end
   end

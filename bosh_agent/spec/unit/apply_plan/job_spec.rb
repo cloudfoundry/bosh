@@ -57,7 +57,7 @@ describe Bosh::Agent::ApplyPlan::Job do
     end
 
     it 'initializes install path and link path' do
-      install_path = File.join(@base_dir, 'data', 'jobs', 'postgres', '2')
+      install_path = File.join(@base_dir, 'data', 'jobs', 'postgres', '2', 'badcafe')
       link_path = File.join(@base_dir, 'jobs', 'postgres')
 
       job = make_job(JOB_NAME, valid_spec['name'], valid_spec)
