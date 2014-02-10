@@ -37,7 +37,7 @@ networks:
     type: dynamic
     cloud_properties:
       security_groups:
-        - default # CHANGE: Security Group
+        - bosh # CHANGE: Security Group
 
 resource_pools:
   - name: medium
@@ -57,7 +57,6 @@ jobs:
     - postgres
     - redis
     - director
-    - blobstore
     - registry
     - health_monitor
     instances: 1
@@ -109,13 +108,15 @@ properties:
     db: *bosh_db
 
   blobstore:
-    address: 127.0.0.1
-    agent:
-      user: agent
-      password: agent
-    director:
-      user: director
-      password: director
+    provider: swift
+    swift_container_name: bosh
+    swift_provider: openstack
+    openstack:
+      openstack_auth_url:  http://192.168.1.1:5000/v2.0 # CHANGE: OpenStack Auth URL
+      openstack_username:  username # CHANGE: OpenStack Username
+      openstack_api_key:   password # CHANGE: OpenStack Password
+      openstack_tenant:    tenant # CHANGE: OpenStack Tenant
+      region:   # CHANGE: OpenStack Region (optional)
 
   registry:
     address: 127.0.0.1
@@ -141,8 +142,8 @@ properties:
   openstack:
     auth_url: http://192.168.1.1:5000/v2.0 # CHANGE: OpenStack Auth URL
     username: username # CHANGE: OpenStack Username
-    api_key: password # CHANGE: OpenStack Password
-    tenant: tenant # CHANGE: OpenStack Tenant
-    region: # CHANGE: OpenStack Region (optional)
+    api_key:  password # CHANGE: OpenStack Password
+    tenant:   tenant # CHANGE: OpenStack Tenant
+    region:   # CHANGE: OpenStack Region (optional)
     default_key_name: bosh-key-name # CHANGE: AWS EC2 default Keyname to use when spinning up new VMs
-    default_security_groups: ["default"] # CHANGE: AWS EC2 default Security Groups to use when spinning up new VMs
+    default_security_groups: ["bosh"] # CHANGE: AWS EC2 default Security Groups to use when spinning up new VMs
