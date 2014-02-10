@@ -26,6 +26,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 )
 
 type app struct {
@@ -157,7 +158,7 @@ func (app app) Run(args []string) (err error) {
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
-	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher, alertBuilder, jobSupervisor)
+	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher, alertBuilder, jobSupervisor, time.Minute)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")
