@@ -1,6 +1,7 @@
-package platform
+package platform_test
 
 import (
+	. "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestUbuntuSetupRuntimeConfiguration(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	err := ubuntu.SetupRuntimeConfiguration()
 	assert.NoError(t, err)
@@ -51,7 +52,7 @@ func TestUbuntuCreateUserWithAnEmptyPassword(t *testing.T) {
 }
 
 func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	err := ubuntu.CreateUser("foo-user", password, "/some/path/to/home")
 	assert.NoError(t, err)
@@ -65,7 +66,7 @@ func testUbuntuCreateUserWithPassword(t *testing.T, password string, expectedUse
 }
 
 func TestUbuntuAddUserToGroups(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	err := ubuntu.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
 	assert.NoError(t, err)
@@ -77,7 +78,7 @@ func TestUbuntuAddUserToGroups(t *testing.T) {
 }
 
 func TestUbuntuDeleteUsersWithPrefixAndRegex(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	passwdFile := fmt.Sprintf(`%sfoo:...
 %sbar:...
@@ -98,7 +99,7 @@ foobar:...
 }
 
 func TestUbuntuSetupSsh(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	deps.fs.HomeDirHomePath = "/some/home/dir"
 
 	ubuntu.SetupSsh("some public key", "vcap")
@@ -123,7 +124,7 @@ func TestUbuntuSetupSsh(t *testing.T) {
 }
 
 func TestUbuntuSetUserPassword(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	ubuntu.SetUserPassword("my-user", "my-encrypted-password")
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
@@ -131,7 +132,7 @@ func TestUbuntuSetUserPassword(t *testing.T) {
 }
 
 func TestUbuntuSetupHostname(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	ubuntu.SetupHostname("foobar.local")
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
@@ -158,7 +159,7 @@ ff02::3 ip6-allhosts
 `
 
 func TestUbuntuSetupDhcp(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	testUbuntuSetupDhcp(t, deps, ubuntu)
 
 	assert.Equal(t, len(deps.cmdRunner.RunCommands), 2)
@@ -167,7 +168,7 @@ func TestUbuntuSetupDhcp(t *testing.T) {
 }
 
 func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	deps.fs.WriteToFile("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
 	testUbuntuSetupDhcp(t, deps, ubuntu)
 
@@ -176,7 +177,7 @@ func TestUbuntuSetupDhcpWithPreExistingConfiguration(t *testing.T) {
 
 func testUbuntuSetupDhcp(t *testing.T,
 	deps ubuntuDependencies,
-	platform ubuntu) {
+	platform Platform) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
 			Default: []string{"dns"},
@@ -212,8 +213,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 `
 
 func TestUbuntuSetupManualNetworking(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
-	ubuntu.arpWaitInterval = 1 * time.Millisecond
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	testUbuntuSetupManualNetworking(t, deps, ubuntu)
 
@@ -228,7 +228,7 @@ func TestUbuntuSetupManualNetworking(t *testing.T) {
 
 func testUbuntuSetupManualNetworking(t *testing.T,
 	deps ubuntuDependencies,
-	platform ubuntu) {
+	platform Platform) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
 			Default: []string{"dns", "gateway"},
@@ -270,7 +270,7 @@ nameserver 10.80.130.2
 `
 
 func TestUbuntuSetupLogrotate(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	ubuntu.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
 
@@ -292,7 +292,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 `
 
 func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	ubuntu.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
 
@@ -305,7 +305,7 @@ func TestUbuntuSetTimeWithNtpServers(t *testing.T) {
 }
 
 func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	ubuntu.SetTimeWithNtpServers([]string{})
 	assert.Equal(t, 0, len(deps.cmdRunner.RunCommands))
@@ -315,7 +315,7 @@ func TestUbuntuSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) 
 }
 
 func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
@@ -371,7 +371,7 @@ func TestUbuntuSetupEphemeralDiskWithPath(t *testing.T) {
 }
 
 func TestSetupTmpDir(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	err := ubuntu.SetupTmpDir()
 	assert.NoError(t, err)
@@ -383,7 +383,7 @@ func TestSetupTmpDir(t *testing.T) {
 }
 
 func TestUbuntuMountPersistentDisk(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
@@ -423,7 +423,7 @@ func TestUbuntuUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
 }
 
 func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.UnmountDidUnmount = !isMounted
 
@@ -436,7 +436,7 @@ func testUbuntuUnmountPersistentDisk(t *testing.T, isMounted bool) {
 }
 
 func TestUbuntuNormalizeDiskPath(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	path, found := ubuntu.NormalizeDiskPath("/dev/sda")
@@ -460,10 +460,10 @@ func TestUbuntuNormalizeDiskPath(t *testing.T) {
 }
 
 func TestUbuntuGetFileContentsFromCDROM(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/bosh-cdrom", "")
-	settingsPath := filepath.Join(ubuntu.dirProvider.SettingsDir(), "env")
+	settingsPath := filepath.Join(ubuntu.GetDirProvider().SettingsDir(), "env")
 	deps.fs.WriteToFile(settingsPath, "some stuff")
 	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
 
@@ -479,20 +479,19 @@ func TestUbuntuGetFileContentsFromCDROM(t *testing.T) {
 }
 
 func TestUbuntuGetFileContentsFromCDROMWhenCDROMFailedToLoad(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/sr0/env", "some stuff")
 	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
-	ubuntu.cdromWaitInterval = 1 * time.Millisecond
 
 	_, err := ubuntu.GetFileContentsFromCDROM("env")
 	assert.Error(t, err)
 }
 
 func TestUbuntuGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Second, 1*time.Millisecond)
 
-	settingsPath := filepath.Join(ubuntu.dirProvider.SettingsDir(), "env")
+	settingsPath := filepath.Join(ubuntu.GetDirProvider().SettingsDir(), "env")
 	deps.fs.WriteToFile(settingsPath, "some stuff")
 	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
 
@@ -506,39 +505,37 @@ func TestUbuntuGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
 }
 
 func TestUbuntuGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	deps.fs.WriteToFile("/dev/vda", "")
 
-	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
-	assert.NoError(t, err)
+	realPath, found := ubuntu.NormalizeDiskPath("/dev/sda")
+	assert.True(t, found)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
 func TestUbuntuGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Second)
 
 	time.AfterFunc(time.Second, func() {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	realPath, err := ubuntu.getRealDevicePath("/dev/sda")
-	assert.NoError(t, err)
+	realPath, found := ubuntu.NormalizeDiskPath("/dev/sda")
+	assert.True(t, found)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
 func TestUbuntuGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
-
-	ubuntu.diskWaitTimeout = time.Second
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	time.AfterFunc(2*time.Second, func() {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	_, err := ubuntu.getRealDevicePath("/dev/sda")
-	assert.Error(t, err)
+	_, found := ubuntu.NormalizeDiskPath("/dev/sda")
+	assert.False(t, found)
 }
 
 func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskIsBiggerThanTwiceTheMemory(t *testing.T) {
@@ -558,7 +555,7 @@ func TestUbuntuCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmall
 }
 
 func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	deps.collector.MemStats.Total = totalMemInMb * uint64(1024*1024)
 
 	fakePartitioner := deps.diskManager.FakePartitioner
@@ -566,15 +563,18 @@ func testUbuntuCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, 
 		"/dev/hda": diskSizeInMb,
 	}
 
-	swapSize, linuxSize, err := ubuntu.calculateEphemeralDiskPartitionSizes("/dev/hda")
+	err := ubuntu.SetupEphemeralDiskWithPath("/dev/hda")
 
 	assert.NoError(t, err)
-	assert.Equal(t, expectedSwap, swapSize)
-	assert.Equal(t, diskSizeInMb-expectedSwap, linuxSize)
+	expectedPartitions := []boshdisk.Partition{
+		{SizeInMb: expectedSwap, Type: boshdisk.PartitionTypeSwap},
+		{SizeInMb: diskSizeInMb - expectedSwap, Type: boshdisk.PartitionTypeLinux},
+	}
+	assert.Equal(t, fakePartitioner.PartitionPartitions, expectedPartitions)
 }
 
 func TestUbuntuMigratePersistentDisk(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	fakeMounter := deps.diskManager.FakeMounter
 
 	ubuntu.MigratePersistentDisk("/from/path", "/to/path")
@@ -590,7 +590,7 @@ func TestUbuntuMigratePersistentDisk(t *testing.T) {
 }
 
 func TestUbuntuIsDevicePathMounted(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	fakeMounter := deps.diskManager.FakeMounter
@@ -603,7 +603,7 @@ func TestUbuntuIsDevicePathMounted(t *testing.T) {
 }
 
 func TestUbuntuStartMonit(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	err := ubuntu.StartMonit()
 	assert.NoError(t, err)
@@ -612,7 +612,7 @@ func TestUbuntuStartMonit(t *testing.T) {
 }
 
 func TestUbuntuSetupMonitUserIfFileDoesNotExist(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	err := ubuntu.SetupMonitUser()
 	assert.NoError(t, err)
@@ -623,7 +623,7 @@ func TestUbuntuSetupMonitUserIfFileDoesNotExist(t *testing.T) {
 }
 
 func TestUbuntuSetupMonitUserIfFileDoesExist(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "vcap:other-random-password")
 
@@ -636,7 +636,7 @@ func TestUbuntuSetupMonitUserIfFileDoesExist(t *testing.T) {
 }
 
 func TestUbuntuGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
 
@@ -648,7 +648,7 @@ func TestUbuntuGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
 }
 
 func TestUbuntuGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user")
 
@@ -657,7 +657,7 @@ func TestUbuntuGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
 }
 
 func TestUbuntuGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
-	deps, ubuntu := buildUbuntu()
+	deps, ubuntu := buildUbuntu(1*time.Millisecond, 1*time.Millisecond)
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
 
 	username, password, err := ubuntu.GetMonitCredentials()
@@ -675,9 +675,9 @@ type ubuntuDependencies struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func buildUbuntu() (
+func buildUbuntu(cdromWaitInterval time.Duration, diskWaitTimeout time.Duration) (
 	deps ubuntuDependencies,
-	platform ubuntu,
+	platform Platform,
 ) {
 	deps.collector = &fakestats.FakeStatsCollector{}
 	deps.fs = &fakesys.FakeFileSystem{}
@@ -685,12 +685,15 @@ func buildUbuntu() (
 	deps.diskManager = fakedisk.NewFakeDiskManager(deps.cmdRunner)
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 
-	platform = newUbuntuPlatform(
+	platform = NewUbuntuPlatform(
 		deps.collector,
 		deps.fs,
 		deps.cmdRunner,
 		deps.diskManager,
 		deps.dirProvider,
+		cdromWaitInterval,
+		1*time.Millisecond,
+		diskWaitTimeout,
 	)
 	return
 }
