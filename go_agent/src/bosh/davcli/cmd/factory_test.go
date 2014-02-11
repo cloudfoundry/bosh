@@ -1,38 +1,38 @@
-package cmd
+package cmd_test
 
 import (
-	davclient "bosh/davcli/client"
+	. "bosh/davcli/cmd"
 	davconf "bosh/davcli/config"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
 func TestFactoryCreateAPutCommand(t *testing.T) {
-	client, factory := buildFactory()
+	factory := buildFactory()
 	cmd, err := factory.Create("put")
 
 	assert.NoError(t, err)
-	assert.Equal(t, cmd, newPutCmd(client))
+	assert.Equal(t, reflect.TypeOf(cmd), reflect.TypeOf(PutCmd{}))
 }
 
 func TestFactoryCreateAGetCommand(t *testing.T) {
-	client, factory := buildFactory()
+	factory := buildFactory()
 	cmd, err := factory.Create("get")
 
 	assert.NoError(t, err)
-	assert.Equal(t, cmd, newGetCmd(client))
+	assert.Equal(t, reflect.TypeOf(cmd), reflect.TypeOf(GetCmd{}))
 }
 
 func TestFactoryCreateWhenCmdIsUnknown(t *testing.T) {
-	_, factory := buildFactory()
+	factory := buildFactory()
 	_, err := factory.Create("some unknown cmd")
 
 	assert.Error(t, err)
 }
 
-func buildFactory() (client davclient.Client, factory Factory) {
+func buildFactory() (factory Factory) {
 	config := davconf.Config{User: "some user"}
-	client = davclient.NewClient(config)
 
 	factory = NewFactory()
 	factory.SetConfig(config)
