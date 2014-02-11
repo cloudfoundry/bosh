@@ -1,7 +1,8 @@
-package disk
+package disk_test
 
 import (
 	boshlog "bosh/logger"
+	. "bosh/platform/disk"
 	fakesys "bosh/system/fakes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -125,9 +126,9 @@ func TestSfdiskPartitionWithLastPartitionFillingDisk(t *testing.T) {
 	assert.Equal(t, 0, len(runner.RunCommandsWithInput))
 }
 
-func createSfdiskPartitionerForTests(runner *fakesys.FakeCmdRunner) (partitioner sfdiskPartitioner) {
+func createSfdiskPartitionerForTests(runner *fakesys.FakeCmdRunner) (partitioner Partitioner) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	partitioner = newSfdiskPartitioner(logger, runner)
+	partitioner = NewSfdiskPartitioner(logger, runner)
 	return
 }
 
