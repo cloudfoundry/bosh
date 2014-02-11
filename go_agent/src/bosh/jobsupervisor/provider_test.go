@@ -15,7 +15,7 @@ func TestGetMonitJobSupervisor(t *testing.T) {
 	actualSupervisor, err := provider.Get("monit")
 	assert.NoError(t, err)
 
-	expectedSupervisor := NewMonitJobSupervisor(deps.platform.Fs, deps.platform.Runner, deps.client, deps.logger, deps.dirProvider)
+	expectedSupervisor := NewMonitJobSupervisor(deps.platform.Fs, deps.platform.Runner, deps.client, deps.logger, deps.dirProvider, deps.jobFailuresServerPort)
 	assert.Equal(t, expectedSupervisor, actualSupervisor)
 }
 
@@ -38,10 +38,11 @@ func TestGetErrsWhenNotFound(t *testing.T) {
 }
 
 type providerDependencies struct {
-	platform    *fakeplatform.FakePlatform
-	client      *fakemonit.FakeMonitClient
-	logger      boshlog.Logger
-	dirProvider boshdir.DirectoriesProvider
+	platform              *fakeplatform.FakePlatform
+	client                *fakemonit.FakeMonitClient
+	logger                boshlog.Logger
+	dirProvider           boshdir.DirectoriesProvider
+	jobFailuresServerPort int
 }
 
 func buildProvider() (
@@ -52,6 +53,7 @@ func buildProvider() (
 	deps.client = fakemonit.NewFakeMonitClient()
 	deps.logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 	deps.dirProvider = boshdir.NewDirectoriesProvider("/fake-base-dir")
+	deps.jobFailuresServerPort = 2825
 
 	provider = NewProvider(
 		deps.platform,
