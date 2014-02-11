@@ -6,20 +6,20 @@ import (
 	bosherr "bosh/errors"
 )
 
-type compilePackageAction struct {
+type CompilePackageAction struct {
 	compiler boshcomp.Compiler
 }
 
-func newCompilePackage(compiler boshcomp.Compiler) (compilePackage compilePackageAction) {
+func NewCompilePackage(compiler boshcomp.Compiler) (compilePackage CompilePackageAction) {
 	compilePackage.compiler = compiler
 	return
 }
 
-func (a compilePackageAction) IsAsynchronous() bool {
+func (a CompilePackageAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a compilePackageAction) Run(blobId, sha1, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
+func (a CompilePackageAction) Run(blobId, sha1, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
 		BlobstoreId: blobId,
 		Name:        name,

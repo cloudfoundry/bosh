@@ -6,12 +6,12 @@ import (
 )
 
 func TestPingShouldBeSynchronous(t *testing.T) {
-	action := newPing()
+	action := NewPing()
 	assert.False(t, action.IsAsynchronous())
 }
 
 func TestPingRunReturnsPong(t *testing.T) {
-	action := newPing()
+	action := NewPing()
 	pong, err := action.Run()
 	assert.NoError(t, err)
 	assert.Equal(t, "pong", pong)

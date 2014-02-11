@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
@@ -84,9 +85,9 @@ func TestApplyRunErrsWhenApplierFails(t *testing.T) {
 	assert.Contains(t, err.Error(), "fake-apply-error")
 }
 
-func buildApplyAction() (*fakeappl.FakeApplier, *fakeas.FakeV1Service, applyAction) {
+func buildApplyAction() (*fakeappl.FakeApplier, *fakeas.FakeV1Service, ApplyAction) {
 	applier := fakeappl.NewFakeApplier()
 	specService := fakeas.NewFakeV1Service()
-	action := newApply(applier, specService)
+	action := NewApply(applier, specService)
 	return applier, specService, action
 }

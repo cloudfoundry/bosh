@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakedrain "bosh/agent/drain/fakes"
@@ -29,7 +30,7 @@ func TestDrainRunUpdateSkipsDrainScriptWhenWithoutDrainScript(t *testing.T) {
 
 	fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = false
 
-	_, err := action.Run(drainTypeUpdate, newSpec)
+	_, err := action.Run(DrainTypeUpdate, newSpec)
 	assert.NoError(t, err)
 	assert.False(t, fakeDrainProvider.NewDrainScriptDrainScript.DidRun)
 }
@@ -48,7 +49,7 @@ func TestDrainRunShutdownSkipsDrainScriptWhenWithoutDrainScript(t *testing.T) {
 
 	fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = false
 
-	_, err := action.Run(drainTypeShutdown, newSpec)
+	_, err := action.Run(DrainTypeShutdown, newSpec)
 	assert.NoError(t, err)
 	assert.False(t, fakeDrainProvider.NewDrainScriptDrainScript.DidRun)
 }
@@ -58,7 +59,7 @@ func TestDrainRunStatusErrsWhenWithoutDrainScript(t *testing.T) {
 
 	fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = false
 
-	_, err := action.Run(drainTypeStatus)
+	_, err := action.Run(DrainTypeStatus)
 	assert.Error(t, err)
 }
 
@@ -68,14 +69,14 @@ func TestDrainErrsWhenDrainScriptExitsWithError(t *testing.T) {
 	fakeDrainScriptProvider.NewDrainScriptDrainScript.RunExitStatus = 0
 	fakeDrainScriptProvider.NewDrainScriptDrainScript.RunError = errors.New("Fake error")
 
-	value, err := action.Run(drainTypeStatus)
+	value, err := action.Run(DrainTypeStatus)
 	assert.Equal(t, value, 0)
 	assert.Error(t, err)
 }
 
 func TestRunWithUpdateErrsIfNotGivenNewSpec(t *testing.T) {
 	_, _, action := buildDrain()
-	_, err := action.Run(drainTypeUpdate)
+	_, err := action.Run(DrainTypeUpdate)
 	assert.Error(t, err)
 }
 
@@ -91,7 +92,7 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 		},
 	}
 
-	drainStatus, err := action.Run(drainTypeUpdate, newSpec)
+	drainStatus, err := action.Run(DrainTypeUpdate, newSpec)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, drainStatus)
 	assert.Equal(t, fakeDrainScriptProvider.NewDrainScriptTemplateName, "foo")
@@ -104,7 +105,7 @@ func TestRunWithUpdateRunsDrainWithUpdatedPackages(t *testing.T) {
 func TestRunWithShutdown(t *testing.T) {
 	fakeNotifier, fakeDrainScriptProvider, action := buildDrain()
 
-	drainStatus, err := action.Run(drainTypeShutdown)
+	drainStatus, err := action.Run(DrainTypeShutdown)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, drainStatus)
 	assert.Equal(t, fakeDrainScriptProvider.NewDrainScriptTemplateName, "foo")
@@ -118,7 +119,7 @@ func TestRunWithShutdown(t *testing.T) {
 func TestRunWithStatus(t *testing.T) {
 	_, fakeDrainScriptProvider, action := buildDrain()
 
-	drainStatus, err := action.Run(drainTypeStatus)
+	drainStatus, err := action.Run(DrainTypeStatus)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, drainStatus)
 	assert.Equal(t, fakeDrainScriptProvider.NewDrainScriptTemplateName, "foo")
@@ -131,7 +132,7 @@ func TestRunWithStatus(t *testing.T) {
 func buildDrain() (
 	notifier *fakenotif.FakeNotifier,
 	fakeDrainProvider *fakedrain.FakeDrainScriptProvider,
-	action drainAction,
+	action DrainAction,
 ) {
 	notifier = fakenotif.NewFakeNotifier()
 
@@ -143,7 +144,7 @@ func buildDrain() (
 	fakeDrainProvider = fakedrain.NewFakeDrainScriptProvider()
 	fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = true
 
-	action = newDrain(notifier, specService, fakeDrainProvider)
+	action = NewDrain(notifier, specService, fakeDrainProvider)
 
 	return
 }

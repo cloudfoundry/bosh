@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
@@ -49,11 +50,11 @@ func TestUnmountDiskWhenDevicePathNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk unmountDiskAction) {
+func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk UnmountDiskAction) {
 	settings := &fakesettings.FakeSettingsService{
 		Disks: boshsettings.Disks{
 			Persistent: map[string]string{"vol-123": "/dev/sdf"},
 		},
 	}
-	return newUnmountDisk(settings, platform)
+	return NewUnmountDisk(settings, platform)
 }

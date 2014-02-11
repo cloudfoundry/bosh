@@ -6,22 +6,22 @@ import (
 	bosherr "bosh/errors"
 )
 
-type applyAction struct {
+type ApplyAction struct {
 	applier     boshappl.Applier
 	specService boshas.V1Service
 }
 
-func newApply(applier boshappl.Applier, specService boshas.V1Service) (action applyAction) {
+func NewApply(applier boshappl.Applier, specService boshas.V1Service) (action ApplyAction) {
 	action.applier = applier
 	action.specService = specService
 	return
 }
 
-func (a applyAction) IsAsynchronous() bool {
+func (a ApplyAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a applyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
+func (a ApplyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
 	if applySpec.ConfigurationHash != "" {
 		err = a.applier.Apply(applySpec)
 		if err != nil {

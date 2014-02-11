@@ -5,20 +5,20 @@ import (
 	bosherr "bosh/errors"
 )
 
-type getTaskAction struct {
+type GetTaskAction struct {
 	taskService boshtask.Service
 }
 
-func newGetTask(taskService boshtask.Service) (getTask getTaskAction) {
+func NewGetTask(taskService boshtask.Service) (getTask GetTaskAction) {
 	getTask.taskService = taskService
 	return
 }
 
-func (a getTaskAction) IsAsynchronous() bool {
+func (a GetTaskAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a getTaskAction) Run(taskId string) (value interface{}, err error) {
+func (a GetTaskAction) Run(taskId string) (value interface{}, err error) {
 	task, found := a.taskService.FindTask(taskId)
 	if !found {
 		err = bosherr.New("Task with id %s could not be found", taskId)
