@@ -6,22 +6,22 @@ import (
 	boshplatform "bosh/platform"
 )
 
-type provider struct {
+type Provider struct {
 	infrastructures map[string]Infrastructure
 }
 
-func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p provider) {
-	digDnsResolver := digDnsResolver{logger: logger}
+func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
+	digDnsResolver := NewDigDnsResolver(logger)
 
 	p.infrastructures = map[string]Infrastructure{
-		"aws":     newAwsInfrastructure("http://169.254.169.254", digDnsResolver, platform),
-		"vsphere": newVsphereInfrastructure(platform),
-		"dummy":   newDummyInfrastructure(platform.GetFs(), platform.GetDirProvider(), platform),
+		"aws":     NewAwsInfrastructure("http://169.254.169.254", digDnsResolver, platform),
+		"vsphere": NewVsphereInfrastructure(platform),
+		"dummy":   NewDummyInfrastructure(platform.GetFs(), platform.GetDirProvider(), platform),
 	}
 	return
 }
 
-func (p provider) Get(name string) (inf Infrastructure, err error) {
+func (p Provider) Get(name string) (inf Infrastructure, err error) {
 	inf, found := p.infrastructures[name]
 
 	if !found {

@@ -1,6 +1,7 @@
-package infrastructure
+package infrastructure_test
 
 import (
+	. "bosh/infrastructure"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	"fmt"
@@ -26,7 +27,7 @@ func TestAwsSetupSsh(t *testing.T) {
 
 	platform := fakeplatform.NewFakePlatform()
 
-	aws := newAwsInfrastructure(ts.URL, &FakeDnsResolver{}, platform)
+	aws := NewAwsInfrastructure(ts.URL, &FakeDnsResolver{}, platform)
 
 	err := aws.SetupSsh("vcap")
 	assert.NoError(t, err)
@@ -46,7 +47,7 @@ func TestAwsGetSettingsWhenADnsIsNotProvided(t *testing.T) {
 
 	platform := fakeplatform.NewFakePlatform()
 
-	aws := newAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{}, platform)
+	aws := NewAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{}, platform)
 
 	settings, err := aws.GetSettings()
 	assert.NoError(t, err)
@@ -77,7 +78,7 @@ func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 
 	platform := fakeplatform.NewFakePlatform()
 
-	aws := newAwsInfrastructure(metadataTs.URL, fakeDnsResolver, platform)
+	aws := NewAwsInfrastructure(metadataTs.URL, fakeDnsResolver, platform)
 
 	settings, err := aws.GetSettings()
 	assert.NoError(t, err)
@@ -89,7 +90,7 @@ func TestAwsGetSettingsWhenDnsServersAreProvided(t *testing.T) {
 func TestAwsSetupNetworking(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
 	platform := fakeplatform.NewFakePlatform()
-	aws := newAwsInfrastructure("", fakeDnsResolver, platform)
+	aws := NewAwsInfrastructure("", fakeDnsResolver, platform)
 	networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
 	aws.SetupNetworking(networks)
@@ -100,7 +101,7 @@ func TestAwsSetupNetworking(t *testing.T) {
 func TestAwsGetEphemeralDiskPath(t *testing.T) {
 	fakeDnsResolver := &FakeDnsResolver{}
 	platform := fakeplatform.NewFakePlatform()
-	aws := newAwsInfrastructure("", fakeDnsResolver, platform)
+	aws := NewAwsInfrastructure("", fakeDnsResolver, platform)
 
 	platform.NormalizeDiskPathRealPath = "/dev/xvdb"
 	platform.NormalizeDiskPathFound = true

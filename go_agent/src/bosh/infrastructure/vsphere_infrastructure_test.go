@@ -1,6 +1,7 @@
-package infrastructure
+package infrastructure_test
 
 import (
+	. "bosh/infrastructure"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
@@ -40,8 +41,8 @@ func TestVsphereGetEphemeralDiskPath(t *testing.T) {
 	assert.Equal(t, platform.NormalizeDiskPathPath, "/dev/sdb")
 }
 
-func buildVsphere() (vsphere vsphereInfrastructure, platform *fakeplatform.FakePlatform) {
+func buildVsphere() (vsphere Infrastructure, platform *fakeplatform.FakePlatform) {
 	platform = fakeplatform.NewFakePlatform()
-	vsphere = newVsphereInfrastructure(platform)
+	vsphere = NewVsphereInfrastructure(platform)
 	return
 }

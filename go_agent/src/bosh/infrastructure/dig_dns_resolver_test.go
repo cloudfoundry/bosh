@@ -1,6 +1,7 @@
-package infrastructure
+package infrastructure_test
 
 import (
+	. "bosh/infrastructure"
 	boshlog "bosh/logger"
 	"github.com/stretchr/testify/assert"
 	"net"
@@ -38,7 +39,7 @@ func TestLookupHostAnUnknownHost(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func createResolver() (r digDnsResolver) {
-	r.logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+func createResolver() (r DigDnsResolver) {
+	r = NewDigDnsResolver(boshlog.NewLogger(boshlog.LEVEL_NONE))
 	return
 }
