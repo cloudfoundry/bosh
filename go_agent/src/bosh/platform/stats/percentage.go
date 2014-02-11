@@ -7,6 +7,12 @@ type Percentage struct {
 	total uint64
 }
 
+func NewPercentage(part, total uint64) (percentage Percentage) {
+	percentage.part = part
+	percentage.total = total
+	return
+}
+
 func (p Percentage) FractionOf100() float64 {
 	if p.total <= 0 {
 		return 0
