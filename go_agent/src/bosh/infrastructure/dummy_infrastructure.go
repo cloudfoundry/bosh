@@ -16,7 +16,7 @@ type dummyInfrastructure struct {
 	platform    boshplatform.Platform
 }
 
-func newDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider, platform boshplatform.Platform) (inf dummyInfrastructure) {
+func NewDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider, platform boshplatform.Platform) (inf dummyInfrastructure) {
 	inf.fs = fs
 	inf.dirProvider = dirProvider
 	inf.platform = platform

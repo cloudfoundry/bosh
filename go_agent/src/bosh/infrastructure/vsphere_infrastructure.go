@@ -11,7 +11,7 @@ type vsphereInfrastructure struct {
 	platform boshplatform.Platform
 }
 
-func newVsphereInfrastructure(platform boshplatform.Platform) (inf vsphereInfrastructure) {
+func NewVsphereInfrastructure(platform boshplatform.Platform) (inf vsphereInfrastructure) {
 	inf.platform = platform
 	return
 }

@@ -18,7 +18,7 @@ type awsInfrastructure struct {
 	platform     boshplatform.Platform
 }
 
-func newAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (infrastructure awsInfrastructure) {
+func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (infrastructure awsInfrastructure) {
 	infrastructure.metadataHost = metadataHost
 	infrastructure.resolver = resolver
 	infrastructure.platform = platform
