@@ -23,8 +23,6 @@ import (
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshdirs "bosh/settings/directories"
-	"flag"
-	"io/ioutil"
 	"path/filepath"
 	"time"
 )
@@ -33,20 +31,13 @@ type app struct {
 	logger boshlog.Logger
 }
 
-type options struct {
-	InfrastructureName string
-	PlatformName       string
-	BaseDirectory      string
-	JobSupervisor      string
-}
-
 func New(logger boshlog.Logger) (app app) {
 	app.logger = logger
 	return
 }
 
 func (app app) Run(args []string) (err error) {
-	opts, err := parseOptions(args)
+	opts, err := ParseOptions(args)
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing options")
 		return
@@ -163,23 +154,5 @@ func (app app) Run(args []string) (err error) {
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")
 	}
-	return
-}
-
-func parseOptions(args []string) (opts options, err error) {
-	flagSet := flag.NewFlagSet("bosh-agent-args", flag.ContinueOnError)
-	flagSet.SetOutput(ioutil.Discard)
-	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
-	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
-	flagSet.StringVar(&opts.JobSupervisor, "M", "monit", "Set jobsupervisor")
-	flagSet.StringVar(&opts.BaseDirectory, "b", "/var/vcap", "Set Base Directory")
-
-	// The following two options are accepted but ignored for compatibility with the old agent
-	var systemRoot string
-	flagSet.StringVar(&systemRoot, "r", "/", "system root (ignored by go agent)")
-	var noAlerts bool
-	flagSet.BoolVar(&noAlerts, "no-alerts", false, "don't process alerts (ignored by go agent)")
-
-	err = flagSet.Parse(args[1:])
 	return
 }
