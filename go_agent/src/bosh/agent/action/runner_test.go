@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
