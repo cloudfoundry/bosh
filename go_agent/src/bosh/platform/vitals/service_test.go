@@ -1,6 +1,7 @@
-package vitals
+package vitals_test
 
 import (
+	. "bosh/platform/vitals"
 	boshassert "bosh/assert"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
