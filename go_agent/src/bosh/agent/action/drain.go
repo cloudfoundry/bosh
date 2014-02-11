@@ -7,32 +7,32 @@ import (
 	boshnotif "bosh/notification"
 )
 
-type drainAction struct {
+type DrainAction struct {
 	drainScriptProvider boshdrain.DrainScriptProvider
 	notifier            boshnotif.Notifier
 	specService         boshas.V1Service
 }
 
-func newDrain(notifier boshnotif.Notifier, specService boshas.V1Service, drainScriptProvider boshdrain.DrainScriptProvider) (drain drainAction) {
+func NewDrain(notifier boshnotif.Notifier, specService boshas.V1Service, drainScriptProvider boshdrain.DrainScriptProvider) (drain DrainAction) {
 	drain.notifier = notifier
 	drain.specService = specService
 	drain.drainScriptProvider = drainScriptProvider
 	return
 }
 
-func (a drainAction) IsAsynchronous() bool {
+func (a DrainAction) IsAsynchronous() bool {
 	return true
 }
 
-type drainType string
+type DrainType string
 
 const (
-	drainTypeUpdate   drainType = "update"
-	drainTypeStatus             = "status"
-	drainTypeShutdown           = "shutdown"
+	DrainTypeUpdate   DrainType = "update"
+	DrainTypeStatus             = "status"
+	DrainTypeShutdown           = "shutdown"
 )
 
-func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (value interface{}, err error) {
+func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (value interface{}, err error) {
 	value = 0
 
 	currentSpec, err := a.specService.Get()
@@ -45,7 +45,7 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 	var params boshdrain.DrainScriptParams
 
 	switch drainType {
-	case drainTypeUpdate:
+	case DrainTypeUpdate:
 		if len(newSpecs) == 0 {
 			err = bosherr.New("Drain update requires new spec")
 			return
@@ -53,14 +53,14 @@ func (a drainAction) Run(drainType drainType, newSpecs ...boshas.V1ApplySpec) (v
 		newSpec := newSpecs[0]
 
 		params = boshdrain.NewUpdateDrainParams(currentSpec, newSpec)
-	case drainTypeShutdown:
+	case DrainTypeShutdown:
 		err = a.notifier.NotifyShutdown()
 		if err != nil {
 			err = bosherr.WrapError(err, "Notifying shutdown")
 			return
 		}
 		params = boshdrain.NewShutdownDrainParams()
-	case drainTypeStatus:
+	case DrainTypeStatus:
 		if !drainScript.Exists() {
 			err = bosherr.New("Check Status on Drain action requires a valid drain script")
 			return

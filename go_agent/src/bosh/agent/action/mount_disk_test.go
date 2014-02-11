@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshdirs "bosh/settings/directories"
@@ -56,8 +57,8 @@ func TestMountDiskWhenDevicePathNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func buildMountDiskAction(settings *fakesettings.FakeSettingsService) (*fakeplatform.FakePlatform, mountDiskAction) {
+func buildMountDiskAction(settings *fakesettings.FakeSettingsService) (*fakeplatform.FakePlatform, MountDiskAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := newMountDisk(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
+	action := NewMountDisk(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
 	return platform, action
 }

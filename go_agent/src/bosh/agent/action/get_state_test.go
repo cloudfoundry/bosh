@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	boshassert "bosh/assert"
@@ -34,7 +35,7 @@ func TestGetStateRun(t *testing.T) {
 		Deployment: "fake-deployment",
 	}
 
-	expectedSpec := getStateV1ApplySpec{
+	expectedSpec := GetStateV1ApplySpec{
 		AgentId:      "my-agent-id",
 		JobState:     "running",
 		BoshProtocol: "1",
@@ -70,7 +71,7 @@ func TestGetStateRunWithoutCurrentSpec(t *testing.T) {
 		Deployment: "fake-deployment",
 	}
 
-	expectedSpec := getStateV1ApplySpec{
+	expectedSpec := GetStateV1ApplySpec{
 		AgentId:      "my-agent-id",
 		JobState:     "running",
 		BoshProtocol: "1",
@@ -132,7 +133,7 @@ func buildGetStateAction(settings boshsettings.Service) (
 	specService *fakeas.FakeV1Service,
 	jobSupervisor *fakejobsuper.FakeJobSupervisor,
 	vitalsService *fakevitals.FakeService,
-	action getStateAction,
+	action GetStateAction,
 ) {
 	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 	specService = fakeas.NewFakeV1Service()
@@ -143,6 +144,6 @@ func buildGetStateAction(settings boshsettings.Service) (
 			Timestamp: "12 Oct 17:37:58",
 		},
 	}
-	action = newGetState(settings, specService, jobSupervisor, vitalsService, fakeNTPService)
+	action = NewGetState(settings, specService, jobSupervisor, vitalsService, fakeNTPService)
 	return
 }

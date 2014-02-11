@@ -1,16 +1,16 @@
 package action
 
-type pingAction struct{}
+type PingAction struct{}
 
-func newPing() (ping pingAction) {
+func NewPing() (ping PingAction) {
 	return
 }
 
-func (a pingAction) IsAsynchronous() bool {
+func (a PingAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a pingAction) Run() (value interface{}, err error) {
+func (a PingAction) Run() (value interface{}, err error) {
 	value = "pong"
 	return
 }

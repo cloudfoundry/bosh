@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshmodels "bosh/agent/applier/models"
 	boshcomp "bosh/agent/compiler"
 	fakecomp "bosh/agent/compiler/fakes"
@@ -97,8 +98,8 @@ func getCompileActionArguments() (blobId, sha1, name, version string, deps boshc
 	return
 }
 
-func buildCompilePackageAction() (compiler *fakecomp.FakeCompiler, action compilePackageAction) {
+func buildCompilePackageAction() (compiler *fakecomp.FakeCompiler, action CompilePackageAction) {
 	compiler = fakecomp.NewFakeCompiler()
-	action = newCompilePackage(compiler)
+	action = NewCompilePackage(compiler)
 	return
 }

@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -27,8 +28,8 @@ func TestStartRunStartsMonitorServices(t *testing.T) {
 	assert.True(t, jobSupervisor.Started)
 }
 
-func buildStartAction() (jobSupervisor *fakejobsuper.FakeJobSupervisor, action startAction) {
+func buildStartAction() (jobSupervisor *fakejobsuper.FakeJobSupervisor, action StartAction) {
 	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-	action = newStart(jobSupervisor)
+	action = NewStart(jobSupervisor)
 	return
 }

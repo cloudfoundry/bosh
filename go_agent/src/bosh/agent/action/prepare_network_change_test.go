@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	fakeplatform "bosh/platform/fakes"
 	boshsys "bosh/system"
 	"github.com/stretchr/testify/assert"
@@ -23,10 +24,10 @@ func TestPrepareNetworkChange(t *testing.T) {
 	assert.False(t, fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules"))
 }
 
-func buildPrepareAction() (action prepareNetworkChangeAction, fs boshsys.FileSystem) {
+func buildPrepareAction() (action PrepareNetworkChangeAction, fs boshsys.FileSystem) {
 	platform := fakeplatform.NewFakePlatform()
 	fs = platform.GetFs()
-	action = newPrepareNetworkChange(platform)
+	action = NewPrepareNetworkChange(platform)
 
 	return
 }

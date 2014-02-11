@@ -6,22 +6,22 @@ import (
 	boshsettings "bosh/settings"
 )
 
-type listDiskAction struct {
+type ListDiskAction struct {
 	settings boshsettings.Service
 	platform boshplatform.Platform
 }
 
-func newListDisk(settings boshsettings.Service, platform boshplatform.Platform) (action listDiskAction) {
+func NewListDisk(settings boshsettings.Service, platform boshplatform.Platform) (action ListDiskAction) {
 	action.settings = settings
 	action.platform = platform
 	return
 }
 
-func (a listDiskAction) IsAsynchronous() bool {
+func (a ListDiskAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a listDiskAction) Run() (value interface{}, err error) {
+func (a ListDiskAction) Run() (value interface{}, err error) {
 	disks := a.settings.GetDisks()
 	volumeIds := []string{}
 
