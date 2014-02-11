@@ -1,7 +1,8 @@
-package jobsupervisor
+package jobsupervisor_test
 
 import (
 	boshalert "bosh/agent/alert"
+	. "bosh/jobsupervisor"
 	boshmonit "bosh/jobsupervisor/monit"
 	fakemonit "bosh/jobsupervisor/monit/fakes"
 	boshlog "bosh/logger"
@@ -55,7 +56,7 @@ func TestAddJob(t *testing.T) {
 	deps.fs.WriteToFile("/some/config/path", "some config content")
 	monit.AddJob("router", 0, "/some/config/path")
 
-	writtenConfig, err := deps.fs.ReadFile(monit.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
+	writtenConfig, err := deps.fs.ReadFile(deps.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
 	assert.NoError(t, err)
 	assert.Equal(t, writtenConfig, "some config content")
 }
@@ -134,9 +135,8 @@ func TestMonitorJobFailures(t *testing.T) {
 		return
 	}
 
-	_, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	monit.jobFailuresServerPort = getJobFailureServerPort()
 	go monit.MonitorJobFailures(failureHandler)
 
 	msg := `Message-id: <1304319946.0@localhost>
@@ -146,7 +146,7 @@ func TestMonitorJobFailures(t *testing.T) {
     Date: Sun, 22 May 2011 20:07:41 +0500
     Description: process is not running`
 
-	err := doJobFailureEmail(msg, monit.jobFailuresServerPort)
+	err := doJobFailureEmail(msg, deps.jobFailuresServerPort)
 	assert.NoError(t, err)
 
 	assert.Equal(t, handledAlert, boshalert.MonitAlert{
@@ -167,14 +167,13 @@ func TestMonitorJobFailuresIgnoresOtherEmails(t *testing.T) {
 		return
 	}
 
-	_, monit := buildMonitJobSupervisor()
+	deps, monit := buildMonitJobSupervisor()
 
-	monit.jobFailuresServerPort = getJobFailureServerPort()
 	go monit.MonitorJobFailures(failureHandler)
 
 	msg := `Hi! How'sit goin`
 
-	err := doJobFailureEmail(msg, monit.jobFailuresServerPort)
+	err := doJobFailureEmail(msg, deps.jobFailuresServerPort)
 	assert.NoError(t, err)
 	assert.False(t, didHandleAlert)
 }
@@ -202,23 +201,25 @@ func doJobFailureEmail(email string, port int) (err error) {
 }
 
 type monitJobSupDeps struct {
-	fs          *fakesys.FakeFileSystem
-	runner      *fakesys.FakeCmdRunner
-	client      *fakemonit.FakeMonitClient
-	logger      boshlog.Logger
-	dirProvider boshdir.DirectoriesProvider
+	fs                    *fakesys.FakeFileSystem
+	runner                *fakesys.FakeCmdRunner
+	client                *fakemonit.FakeMonitClient
+	logger                boshlog.Logger
+	dirProvider           boshdir.DirectoriesProvider
+	jobFailuresServerPort int
 }
 
-func buildMonitJobSupervisor() (deps monitJobSupDeps, monit monitJobSupervisor) {
+func buildMonitJobSupervisor() (deps monitJobSupDeps, monit JobSupervisor) {
 	deps = monitJobSupDeps{
-		fs:          &fakesys.FakeFileSystem{},
-		runner:      &fakesys.FakeCmdRunner{},
-		client:      fakemonit.NewFakeMonitClient(),
-		logger:      boshlog.NewLogger(boshlog.LEVEL_NONE),
-		dirProvider: boshdir.NewDirectoriesProvider("/var/vcap"),
+		fs:                    &fakesys.FakeFileSystem{},
+		runner:                &fakesys.FakeCmdRunner{},
+		client:                fakemonit.NewFakeMonitClient(),
+		logger:                boshlog.NewLogger(boshlog.LEVEL_NONE),
+		dirProvider:           boshdir.NewDirectoriesProvider("/var/vcap"),
+		jobFailuresServerPort: getJobFailureServerPort(),
 	}
 
-	monit = NewMonitJobSupervisor(deps.fs, deps.runner, deps.client, deps.logger, deps.dirProvider)
+	monit = NewMonitJobSupervisor(deps.fs, deps.runner, deps.client, deps.logger, deps.dirProvider, deps.jobFailuresServerPort)
 	return
 }
 
