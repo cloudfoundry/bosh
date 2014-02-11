@@ -7,16 +7,16 @@ import (
 	"os"
 )
 
-type getCmd struct {
+type GetCmd struct {
 	client davclient.Client
 }
 
-func newGetCmd(client davclient.Client) (cmd getCmd) {
+func newGetCmd(client davclient.Client) (cmd GetCmd) {
 	cmd.client = client
 	return
 }
 
-func (cmd getCmd) Run(args []string) (err error) {
+func (cmd GetCmd) Run(args []string) (err error) {
 	if len(args) != 2 {
 		err = errors.New("Incorrect usage, get needs remote blob path and local file destination")
 		return
