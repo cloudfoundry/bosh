@@ -334,7 +334,7 @@ module Bosh::Cli::TaskTracking
         },
         stage_finished: ->(stage){
           duration = stage.duration ? " (#{format_time(stage.duration)})" : ''
-          @buffer.print("     Done #{header_for_stage(stage)}#{duration}\n")
+          @buffer.print("     Done #{header_for_stage(stage)}#{duration}\n\n")
         },
         stage_failed: ->(stage){
           duration = stage.duration ? " (#{format_time(stage.duration)})" : ''

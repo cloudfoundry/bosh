@@ -292,6 +292,7 @@ Done                          2/2 00:00:00
   Started fake-e2-stage: fake-e2-task
      Done fake-e1-stage: fake-e1-task (00:15:00)
      Done fake-e1-stage (00:15:00)
+
         OUTPUT
       end
     end
