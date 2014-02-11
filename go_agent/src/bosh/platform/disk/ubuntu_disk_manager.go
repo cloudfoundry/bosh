@@ -3,6 +3,7 @@ package disk
 import (
 	boshlog "bosh/logger"
 	boshsys "bosh/system"
+	"time"
 )
 
 type ubuntuDiskManager struct {
@@ -13,9 +14,9 @@ type ubuntuDiskManager struct {
 
 func NewUbuntuDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
 	return ubuntuDiskManager{
-		partitioner: newSfdiskPartitioner(logger, runner),
-		formatter:   newLinuxFormatter(runner, fs),
-		mounter:     newLinuxMounter(runner, fs),
+		partitioner: NewSfdiskPartitioner(logger, runner),
+		formatter:   NewLinuxFormatter(runner, fs),
+		mounter:     NewLinuxMounter(runner, fs, 1*time.Second),
 	}
 }
 
