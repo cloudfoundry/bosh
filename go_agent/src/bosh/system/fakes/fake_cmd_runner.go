@@ -19,6 +19,7 @@ type FakeCmdResult struct {
 	Stdout string
 	Stderr string
 	Error  error
+	Sticky bool //Set to true if this result should ALWAYS be returned for the given command
 }
 
 func NewFakeCmdRunner() *FakeCmdRunner {
@@ -71,7 +72,10 @@ func (runner *FakeCmdRunner) getOutputsForCmd(runCmd []string) (stdout, stderr s
 		if len(results) > 1 {
 			newResults = results[1:]
 		}
-		runner.CommandResults[fullCmd] = newResults
+
+		if !result.Sticky {
+			runner.CommandResults[fullCmd] = newResults
+		}
 
 		stdout = result.Stdout
 		stderr = result.Stderr
