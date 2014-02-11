@@ -4,6 +4,7 @@ import (
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	"net/http"
+	"time"
 )
 
 type clientProvider struct {
@@ -24,6 +25,6 @@ func (p clientProvider) Get() (client Client, err error) {
 		return
 	}
 
-	client = NewHttpClient("127.0.0.1:2822", monitUser, monitPassword, http.DefaultClient)
+	client = NewHttpClient("127.0.0.1:2822", monitUser, monitPassword, http.DefaultClient, 1*time.Second)
 	return
 }
