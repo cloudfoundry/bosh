@@ -1,26 +1,27 @@
-package app
+package app_test
 
 import (
+	. "bosh/app"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestParseOptionsParsesTheInfrastructure(t *testing.T) {
-	opts, err := parseOptions([]string{"bosh-agent", "-I", "foo"})
+	opts, err := ParseOptions([]string{"bosh-agent", "-I", "foo"})
 	assert.NoError(t, err)
 	assert.Equal(t, opts.InfrastructureName, "foo")
 
-	opts, err = parseOptions([]string{"bosh-agent"})
+	opts, err = ParseOptions([]string{"bosh-agent"})
 	assert.NoError(t, err)
 	assert.Equal(t, opts.InfrastructureName, "")
 }
 
 func TestParseOptionsParsesThePlatform(t *testing.T) {
-	opts, err := parseOptions([]string{"bosh-agent", "-P", "baz"})
+	opts, err := ParseOptions([]string{"bosh-agent", "-P", "baz"})
 	assert.NoError(t, err)
 	assert.Equal(t, opts.PlatformName, "baz")
 
-	opts, err = parseOptions([]string{"bosh-agent"})
+	opts, err = ParseOptions([]string{"bosh-agent"})
 	assert.NoError(t, err)
 	assert.Equal(t, opts.PlatformName, "")
 }
