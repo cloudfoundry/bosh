@@ -37,12 +37,15 @@ type ubuntu struct {
 	arpWaitInterval   time.Duration
 }
 
-func newUbuntuPlatform(
+func NewUbuntuPlatform(
 	collector boshstats.StatsCollector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	diskManager boshdisk.Manager,
 	dirProvider boshdirs.DirectoriesProvider,
+	cdromWaitInterval time.Duration,
+	arpWaitInterval time.Duration,
+	diskWaitTimeout time.Duration,
 ) (platform ubuntu) {
 	platform.collector = collector
 	platform.fs = fs
@@ -52,13 +55,13 @@ func newUbuntuPlatform(
 	platform.partitioner = diskManager.GetPartitioner()
 	platform.formatter = diskManager.GetFormatter()
 	platform.mounter = diskManager.GetMounter()
-	platform.diskWaitTimeout = 3 * time.Minute
 
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
-	platform.cdromWaitInterval = 500 * time.Millisecond
-	platform.arpWaitInterval = 10 * time.Second
+	platform.cdromWaitInterval = cdromWaitInterval
+	platform.arpWaitInterval = arpWaitInterval
+	platform.diskWaitTimeout = diskWaitTimeout
 	return
 }
 

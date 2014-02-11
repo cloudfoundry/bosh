@@ -20,7 +20,7 @@ type dummyPlatform struct {
 	vitalsService boshvitals.Service
 }
 
-func newDummyPlatform(
+func NewDummyPlatform(
 	collector boshstats.StatsCollector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
