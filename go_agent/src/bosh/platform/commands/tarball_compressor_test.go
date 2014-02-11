@@ -1,7 +1,8 @@
-package commands
+package commands_test
 
 import (
 	boshlog "bosh/logger"
+	. "bosh/platform/commands"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
