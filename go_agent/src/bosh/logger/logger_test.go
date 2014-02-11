@@ -1,6 +1,7 @@
-package logger
+package logger_test
 
 import (
+	. "bosh/logger"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"

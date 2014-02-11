@@ -1,6 +1,7 @@
-package bootstrap
+package bootstrap_test
 
 import (
+	. "bosh/bootstrap"
 	fakeinf "bosh/infrastructure/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"

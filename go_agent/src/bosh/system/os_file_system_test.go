@@ -1,7 +1,8 @@
-package system
+package system_test
 
 import (
 	boshlog "bosh/logger"
+	. "bosh/system"
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io"

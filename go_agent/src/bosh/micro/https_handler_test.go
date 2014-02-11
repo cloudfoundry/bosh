@@ -1,8 +1,9 @@
-package micro
+package micro_test
 
 import (
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
+	. "bosh/micro"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"crypto/tls"

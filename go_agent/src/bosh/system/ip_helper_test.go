@@ -1,6 +1,7 @@
-package system
+package system_test
 
 import (
+	. "bosh/system"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
