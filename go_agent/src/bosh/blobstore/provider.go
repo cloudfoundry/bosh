@@ -10,20 +10,20 @@ import (
 	"path/filepath"
 )
 
-type provider struct {
+type Provider struct {
 	platform    boshplatform.Platform
 	dirProvider boshdir.DirectoriesProvider
 	uuidGen     boshuuid.Generator
 }
 
-func NewProvider(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (p provider) {
+func NewProvider(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (p Provider) {
 	p.uuidGen = boshuuid.NewGenerator()
 	p.platform = platform
 	p.dirProvider = dirProvider
 	return
 }
 
-func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err error) {
+func (p Provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err error) {
 	externalConfigFile := filepath.Join(p.dirProvider.EtcDir(), fmt.Sprintf("blobstore-%s.json", settings.Type))
 
 	switch settings.Type {
@@ -36,7 +36,7 @@ func (p provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 			p.uuidGen,
 		)
 	default:
-		blobstore = newExternalBlobstore(
+		blobstore = NewExternalBlobstore(
 			settings.Type,
 			settings.Options,
 			p.platform.GetFs(),

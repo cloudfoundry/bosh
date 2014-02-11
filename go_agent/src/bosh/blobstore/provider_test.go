@@ -1,6 +1,7 @@
-package blobstore
+package blobstore_test
 
 import (
+	. "bosh/blobstore"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -32,7 +33,7 @@ func TestGetExternalWhenExternalCommandInPath(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedExternalConfigPath := "/var/vcap/bosh/etc/blobstore-fake-external-type.json"
-	expectedBlobstore := newExternalBlobstore("fake-external-type", options, platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedExternalConfigPath)
+	expectedBlobstore := NewExternalBlobstore("fake-external-type", options, platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedExternalConfigPath)
 	expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
 	err = expectedBlobstore.Validate()
 
@@ -54,7 +55,7 @@ func TestGetExternalErrsWhenExternalCommandNotInPath(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func buildProvider() (platform *fakeplatform.FakePlatform, provider provider) {
+func buildProvider() (platform *fakeplatform.FakePlatform, provider Provider) {
 	platform = fakeplatform.NewFakePlatform()
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 	provider = NewProvider(platform, dirProvider)
