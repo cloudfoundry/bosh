@@ -1,6 +1,7 @@
-package uuid
+package uuid_test
 
 import (
+	. "bosh/uuid"
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"

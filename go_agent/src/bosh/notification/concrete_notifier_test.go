@@ -1,7 +1,8 @@
-package notification
+package notification_test
 
 import (
 	fakembus "bosh/mbus/fakes"
+	. "bosh/notification"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"

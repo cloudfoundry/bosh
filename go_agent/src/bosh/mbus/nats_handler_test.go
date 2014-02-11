@@ -1,8 +1,9 @@
-package mbus
+package mbus_test
 
 import (
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
+	. "bosh/mbus"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
 	"encoding/json"
@@ -92,35 +93,46 @@ func TestNatsSendPeriodicHeartbeat(t *testing.T) {
 
 func TestNatsHandlerConnectionInfo(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
-	_, handler := buildNatsClientAndHandler(settings)
+	client, handler := buildNatsClientAndHandler(settings)
 
-	connInfo, err := handler.getConnectionInfo()
+	err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 	assert.NoError(t, err)
+	defer handler.Stop()
 
-	assert.Equal(t, connInfo.Addr, "127.0.0.1:1234")
-	assert.Equal(t, connInfo.Username, "foo")
-	assert.Equal(t, connInfo.Password, "bar")
+	assert.NotNil(t, client.ConnectedConnectionProvider)
+
+	connInfo := client.ConnectedConnectionProvider
+
+	expectedConnInfo := &yagnats.ConnectionInfo{
+		Addr:     "127.0.0.1:1234",
+		Username: "foo",
+		Password: "bar",
+	}
+
+	assert.Equal(t, connInfo, expectedConnInfo)
 }
 
 func TestNatsHandlerConnectionInfoDoesNotErrWhenNoUsernameAndPassword(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
-	_, err := handler.getConnectionInfo()
+	err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 	assert.NoError(t, err)
+	defer handler.Stop()
 }
 
 func TestNatsHandlerConnectionInfoErrsWhenHasUsernameWithoutPassword(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
 	_, handler := buildNatsClientAndHandler(settings)
 
-	_, err := handler.getConnectionInfo()
+	err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 	assert.Error(t, err)
+	defer handler.Stop()
 }
 
-func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler natsHandler) {
+func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler boshhandler.Handler) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	client = fakeyagnats.New()
-	handler = newNatsHandler(settings, logger, client)
+	handler = NewNatsHandler(settings, logger, client)
 	return
 }

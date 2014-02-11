@@ -1,7 +1,8 @@
-package handler
+package handler_test
 
 import (
 	boshassert "bosh/assert"
+	. "bosh/handler"
 	"testing"
 )
 
