@@ -1,6 +1,7 @@
-package blobstore
+package blobstore_test
 
 import (
+	. "bosh/blobstore"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"

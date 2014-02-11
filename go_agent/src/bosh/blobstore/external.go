@@ -18,7 +18,7 @@ type external struct {
 	options        map[string]string
 }
 
-func newExternalBlobstore(provider string, options map[string]string, fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
+func NewExternalBlobstore(provider string, options map[string]string, fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
 	return external{
 		provider:       provider,
 		fs:             fs,
