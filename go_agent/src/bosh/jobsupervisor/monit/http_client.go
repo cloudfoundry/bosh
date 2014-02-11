@@ -22,14 +22,14 @@ type httpClient struct {
 	client              HttpClient
 }
 
-func NewHttpClient(host, username, password string, client HttpClient) httpClient {
+func NewHttpClient(host, username, password string, client HttpClient, delayBetweenRetries time.Duration) httpClient {
 	return httpClient{
 		host:                host,
 		username:            username,
 		password:            password,
 		client:              client,
 		retryAttempts:       20,
-		delayBetweenRetries: 1 * time.Second,
+		delayBetweenRetries: delayBetweenRetries,
 	}
 }
 
