@@ -1,6 +1,9 @@
 module Bosh::Cli::TaskTracking
   class TaskLogRenderer
     EVENT_LOG_STAGES_WITHOUT_PROGRESS_BAR = [
+      'Preparing DNS',
+      'Creating bound missing VMs',
+      'Binding instance VMs',
       'Updating job',
       'Deleting unneeded instances',
     ]

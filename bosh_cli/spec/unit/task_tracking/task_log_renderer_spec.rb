@@ -6,6 +6,9 @@ describe Bosh::Cli::TaskTracking::TaskLogRenderer do
       it 'returns EventLogRenderer with configured stages ' +
          'that should be run without a progress bar' do
         expected_stages = [
+          'Preparing DNS',
+          'Creating bound missing VMs',
+          'Binding instance VMs',
           'Updating job',
           'Deleting unneeded instances',
         ]
