@@ -541,8 +541,6 @@ describe Bosh::Cli::Client::Director do
           with(:get, '/stuff', 'text/plain', 'abc').
           and_return([302, 'body', { :location => '/tasks/502' }])
 
-        tracker = double('tracker', :track => 'polling result', :output => 'foo')
-
         Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
           with(@director, '502', options).
           never
@@ -731,5 +729,4 @@ describe Bosh::Cli::Client::Director do
       headers.should == {}
     end
   end
-
 end
