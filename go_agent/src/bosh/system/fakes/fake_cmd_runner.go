@@ -13,6 +13,7 @@ type FakeCmdRunner struct {
 	RunCommandsWithInput [][]string
 
 	CommandExistsValue bool
+	AvailableCommands  map[string]bool
 }
 
 type FakeCmdResult struct {
@@ -23,7 +24,9 @@ type FakeCmdResult struct {
 }
 
 func NewFakeCmdRunner() *FakeCmdRunner {
-	return &FakeCmdRunner{}
+	return &FakeCmdRunner{
+		AvailableCommands: map[string]bool{},
+	}
 }
 
 func (runner *FakeCmdRunner) RunComplexCommand(cmd boshsys.Command) (stdout, stderr string, err error) {
@@ -51,7 +54,15 @@ func (runner *FakeCmdRunner) RunCommandWithInput(input, cmdName string, args ...
 }
 
 func (runner *FakeCmdRunner) CommandExists(cmdName string) (exists bool) {
-	return runner.CommandExistsValue
+	if runner.CommandExistsValue {
+		return true
+	}
+
+	if runner.AvailableCommands[cmdName] {
+		return true
+	}
+
+	return false
 }
 
 func (runner *FakeCmdRunner) AddCmdResult(fullCmd string, result FakeCmdResult) {
