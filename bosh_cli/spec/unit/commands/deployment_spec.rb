@@ -40,4 +40,12 @@ describe Bosh::Cli::Command::Deployment do
 
     cmd.list
   end
+
+  describe 'untainting a deployment' do
+    it 'tells the director to untaint a deployment' do
+      deployment_name = 'deployment-foo'
+      expect(director).to receive(:untaint).with(deployment_name)
+      cmd.untaint(deployment_name)
+    end
+  end
 end
