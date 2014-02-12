@@ -15,6 +15,10 @@ module Bosh::Director::Models
       validates_unique :name
       validates_format VALID_ID, :name
     end
+
+    def tainted_instances
+      Instance.where(deployment: self, tainted: true).all
+    end
   end
 
   Deployment.plugin :association_dependencies
