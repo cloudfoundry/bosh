@@ -86,18 +86,43 @@ module Bosh::Dev
     describe '#deploy' do
       let(:manifest_path) { '/path/to/fake-manifest.yml' }
       include FakeFS::SpecHelpers
+
+      let(:manifest_yaml) { "---\n{}" }
+
       before do
         FileUtils.mkdir_p(File.dirname(manifest_path))
-        File.open(manifest_path, 'w') { |f| f.write "---\n{}" }
-        allow(director_handle).to receive('uuid')
+        File.open(manifest_path, 'w') { |f| f.write manifest_yaml }
+        allow(director_handle).to receive(:uuid)
       end
 
-      it 'updates the uuid in the manifest to the one from the targetted director' do
-        allow(director_handle).to receive('uuid').and_return('uuid_value')
+      context 'when directors uuid has changed' do
+        it 'updates the uuid in the manifest to the one from the targetted director' do
+          allow(director_handle).to receive('uuid').and_return('uuid_value')
 
-        director_client.deploy(manifest_path)
-        manifest = YAML.load_file(manifest_path)
-        expect(manifest['director_uuid']).to eq('uuid_value')
+          director_client.deploy(manifest_path)
+          manifest = YAML.load_file(manifest_path)
+          expect(manifest['director_uuid']).to eq('uuid_value')
+        end
+      end
+
+      context 'when directors uuid has not changed' do
+        let(:manifest_yaml) do
+<<EOF
+---
+director_uuid: uuid_value
+test_ref: &ref
+  test_member: true
+test_pointer: *ref
+EOF
+        end
+
+        it 'does not change the manifest contents (i.e. update references and check into git)' do
+          allow(director_handle).to receive(:uuid).and_return('uuid_value')
+
+          director_client.deploy(manifest_path)
+          manifest = File.read(manifest_path)
+          expect(manifest).to eq(manifest_yaml)
+        end
       end
 
       it 'sets the deployment and then runs a deploy using the cli' do

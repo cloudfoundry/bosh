@@ -38,8 +38,10 @@ module Bosh::Dev
 
     def fix_uuid_in_manifest(manifest_path)
       manifest = YAML.load_file(manifest_path)
-      manifest['director_uuid'] = director_handle.uuid
-      File.open(manifest_path, 'w') { |f| f.write manifest.to_yaml }
+      if manifest['director_uuid'] != director_handle.uuid
+        manifest['director_uuid'] = director_handle.uuid
+        File.open(manifest_path, 'w') { |f| f.write manifest.to_yaml }
+      end
     end
 
     def target_and_login!
