@@ -5,75 +5,10 @@ import (
 	boshlog "bosh/logger"
 	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
-	"testing"
+
+	. "github.com/onsi/ginkgo"
 	"time"
 )
-
-func TestBuild(t *testing.T) {
-	_, builder := buildAlertBuilder()
-	builtAlert, err := builder.Build(buildMonitAlert())
-	assert.NoError(t, err)
-
-	expectedAlert := Alert{
-		Id:        "some random id",
-		Severity:  SEVERITY_ALERT,
-		Title:     "nats - does not exist - restart",
-		Summary:   "process is not running",
-		CreatedAt: 1306076861,
-	}
-
-	assert.Equal(t, builtAlert, expectedAlert)
-}
-
-func TestBuildSetsTheSeverity(t *testing.T) {
-	_, builder := buildAlertBuilder()
-	inputAlert := buildMonitAlert()
-	inputAlert.Event = "action done"
-
-	builtAlert, _ := builder.Build(inputAlert)
-	assert.Equal(t, builtAlert.Severity, SEVERITY_IGNORED)
-}
-
-func TestBuildSetsDefaultSeverityToCritical(t *testing.T) {
-	_, builder := buildAlertBuilder()
-	inputAlert := buildMonitAlert()
-	inputAlert.Event = "some unknown event"
-
-	builtAlert, _ := builder.Build(inputAlert)
-	assert.Equal(t, builtAlert.Severity, SEVERITY_CRITICAL)
-}
-
-func TestBuildSetsCreatedAt(t *testing.T) {
-	_, builder := buildAlertBuilder()
-	inputAlert := buildMonitAlert()
-	inputAlert.Date = "Thu, 02 May 2013 20:07:41 +0500"
-
-	builtAlert, _ := builder.Build(inputAlert)
-	assert.Equal(t, int(builtAlert.CreatedAt), int(1367507261))
-}
-
-func TestBuildDefaultsCreatedAtToNowOnParseError(t *testing.T) {
-	_, builder := buildAlertBuilder()
-	inputAlert := buildMonitAlert()
-	inputAlert.Date = "Thu, 02 May 2013 20:07:0"
-
-	builtAlert, _ := builder.Build(inputAlert)
-
-	createdAt := time.Unix(builtAlert.CreatedAt, 0)
-	now := time.Now()
-
-	assert.WithinDuration(t, now, createdAt, 1*time.Second)
-}
-
-func TestBuildSetsTheTitleWithIps(t *testing.T) {
-	inputAlert := buildMonitAlert()
-	settingsService, builder := buildAlertBuilder()
-	settingsService.Ips = []string{"192.168.0.1", "10.0.0.1"}
-
-	builtAlert, _ := builder.Build(inputAlert)
-
-	assert.Equal(t, builtAlert.Title, "nats (10.0.0.1, 192.168.0.1) - does not exist - restart")
-}
 
 func buildMonitAlert() MonitAlert {
 	return MonitAlert{
@@ -92,4 +27,73 @@ func buildAlertBuilder() (settingsService *fakesettings.FakeSettingsService, bui
 
 	builder = NewBuilder(settingsService, logger)
 	return
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("build", func() {
+			_, builder := buildAlertBuilder()
+			builtAlert, err := builder.Build(buildMonitAlert())
+			assert.NoError(GinkgoT(), err)
+
+			expectedAlert := Alert{
+				Id:        "some random id",
+				Severity:  SEVERITY_ALERT,
+				Title:     "nats - does not exist - restart",
+				Summary:   "process is not running",
+				CreatedAt: 1306076861,
+			}
+
+			assert.Equal(GinkgoT(), builtAlert, expectedAlert)
+		})
+		It("build sets the severity", func() {
+
+			_, builder := buildAlertBuilder()
+			inputAlert := buildMonitAlert()
+			inputAlert.Event = "action done"
+
+			builtAlert, _ := builder.Build(inputAlert)
+			assert.Equal(GinkgoT(), builtAlert.Severity, SEVERITY_IGNORED)
+		})
+		It("build sets default severity to critical", func() {
+
+			_, builder := buildAlertBuilder()
+			inputAlert := buildMonitAlert()
+			inputAlert.Event = "some unknown event"
+
+			builtAlert, _ := builder.Build(inputAlert)
+			assert.Equal(GinkgoT(), builtAlert.Severity, SEVERITY_CRITICAL)
+		})
+		It("build sets created at", func() {
+
+			_, builder := buildAlertBuilder()
+			inputAlert := buildMonitAlert()
+			inputAlert.Date = "Thu, 02 May 2013 20:07:41 +0500"
+
+			builtAlert, _ := builder.Build(inputAlert)
+			assert.Equal(GinkgoT(), int(builtAlert.CreatedAt), int(1367507261))
+		})
+		It("build defaults created at to now on parse error", func() {
+
+			_, builder := buildAlertBuilder()
+			inputAlert := buildMonitAlert()
+			inputAlert.Date = "Thu, 02 May 2013 20:07:0"
+
+			builtAlert, _ := builder.Build(inputAlert)
+
+			createdAt := time.Unix(builtAlert.CreatedAt, 0)
+			now := time.Now()
+
+			assert.WithinDuration(GinkgoT(), now, createdAt, 1*time.Second)
+		})
+		It("build sets the title with ips", func() {
+
+			inputAlert := buildMonitAlert()
+			settingsService, builder := buildAlertBuilder()
+			settingsService.Ips = []string{"192.168.0.1", "10.0.0.1"}
+
+			builtAlert, _ := builder.Build(inputAlert)
+
+			assert.Equal(GinkgoT(), builtAlert.Title, "nats (10.0.0.1, 192.168.0.1) - does not exist - restart")
+		})
+	})
 }

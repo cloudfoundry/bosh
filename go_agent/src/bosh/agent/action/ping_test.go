@@ -2,18 +2,23 @@ package action_test
 
 import (
 	. "bosh/agent/action"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestPingShouldBeSynchronous(t *testing.T) {
-	action := NewPing()
-	assert.False(t, action.IsAsynchronous())
-}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("ping should be synchronous", func() {
 
-func TestPingRunReturnsPong(t *testing.T) {
-	action := NewPing()
-	pong, err := action.Run()
-	assert.NoError(t, err)
-	assert.Equal(t, "pong", pong)
+			action := NewPing()
+			assert.False(GinkgoT(), action.IsAsynchronous())
+		})
+		It("ping run returns pong", func() {
+
+			action := NewPing()
+			pong, err := action.Run()
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), "pong", pong)
+		})
+	})
 }

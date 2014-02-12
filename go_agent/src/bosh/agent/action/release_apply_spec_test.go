@@ -3,18 +3,23 @@ package action_test
 import (
 	. "bosh/agent/action"
 	fakeplatform "bosh/platform/fakes"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestRun(t *testing.T) {
-	platform := fakeplatform.NewFakePlatform()
-	_, err := platform.GetFs().WriteToFile("/var/vcap/micro/apply_spec.json", `{"json":["objects"]}`)
-	assert.NoError(t, err)
-	action := NewReleaseApplySpec(platform)
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("run", func() {
 
-	value, err := action.Run()
-	assert.NoError(t, err)
+			platform := fakeplatform.NewFakePlatform()
+			_, err := platform.GetFs().WriteToFile("/var/vcap/micro/apply_spec.json", `{"json":["objects"]}`)
+			assert.NoError(GinkgoT(), err)
+			action := NewReleaseApplySpec(platform)
 
-	assert.Equal(t, value, map[string]interface{}{"json": []interface{}{"objects"}})
+			value, err := action.Run()
+			assert.NoError(GinkgoT(), err)
+
+			assert.Equal(GinkgoT(), value, map[string]interface{}{"json": []interface{}{"objects"}})
+		})
+	})
 }

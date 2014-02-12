@@ -4,24 +4,23 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"strings"
-	"testing"
 )
 
-func MatchesJsonMap(t *testing.T, object interface{}, expectedJson map[string]interface{}) {
+func MatchesJsonMap(t assert.TestingT, object interface{}, expectedJson map[string]interface{}) {
 	expectedBytes, err := json.Marshal(expectedJson)
 	assert.NoError(t, err)
 
 	MatchesJsonString(t, object, string(expectedBytes))
 }
 
-func MatchesJsonString(t *testing.T, object interface{}, expectedJson string) {
+func MatchesJsonString(t assert.TestingT, object interface{}, expectedJson string) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedJson, string(objectBytes))
 }
 
-func LacksJsonKey(t *testing.T, object interface{}, key string) {
+func LacksJsonKey(t assert.TestingT, object interface{}, key string) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 

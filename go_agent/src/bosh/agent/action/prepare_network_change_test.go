@@ -4,25 +4,9 @@ import (
 	. "bosh/agent/action"
 	fakeplatform "bosh/platform/fakes"
 	boshsys "bosh/system"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
-
-func TestPrepareNetworkChangeShouldBeSynchronous(t *testing.T) {
-	action, _ := buildPrepareAction()
-	assert.False(t, action.IsAsynchronous())
-}
-
-func TestPrepareNetworkChange(t *testing.T) {
-	action, fs := buildPrepareAction()
-	fs.WriteToFile("/etc/udev/rules.d/70-persistent-net.rules", "")
-
-	resp, err := action.Run()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "ok", resp)
-	assert.False(t, fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules"))
-}
 
 func buildPrepareAction() (action PrepareNetworkChangeAction, fs boshsys.FileSystem) {
 	platform := fakeplatform.NewFakePlatform()
@@ -30,4 +14,23 @@ func buildPrepareAction() (action PrepareNetworkChangeAction, fs boshsys.FileSys
 	action = NewPrepareNetworkChange(platform)
 
 	return
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("prepare network change should be synchronous", func() {
+			action, _ := buildPrepareAction()
+			assert.False(GinkgoT(), action.IsAsynchronous())
+		})
+		It("prepare network change", func() {
+
+			action, fs := buildPrepareAction()
+			fs.WriteToFile("/etc/udev/rules.d/70-persistent-net.rules", "")
+
+			resp, err := action.Run()
+
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), "ok", resp)
+			assert.False(GinkgoT(), fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules"))
+		})
+	})
 }

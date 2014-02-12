@@ -7,39 +7,11 @@ import (
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestSshShouldBeSynchronous(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	_, action := buildSshAction(settings)
-	assert.False(t, action.IsAsynchronous())
-}
-
-func TestSshSetupWithoutDefaultIp(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	_, action := buildSshAction(settings)
-
-	params := SshParams{
-		User:      "some-user",
-		Password:  "some-pwd",
-		PublicKey: "some-key",
-	}
-	_, err := action.Run("setup", params)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "No default ip")
-}
-
-func TestSshSetupWithUsernameAndPassword(t *testing.T) {
-	testSshSetupWithGivenPassword(t, "some-password")
-}
-
-func TestSshSetupWithoutPassword(t *testing.T) {
-	testSshSetupWithGivenPassword(t, "")
-}
-
-func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
+func testSshSetupWithGivenPassword(t assert.TestingT, expectedPwd string) {
 	settings := &fakesettings.FakeSettingsService{}
 	settings.DefaultIp = "ww.xx.yy.zz"
 
@@ -57,7 +29,6 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	response, err := action.Run("setup", params)
 	assert.NoError(t, err)
 
-	// assert on user and ssh setup
 	assert.Equal(t, expectedUser, platform.CreateUserUsername)
 	assert.Equal(t, expectedPwd, platform.CreateUserPassword)
 	assert.Equal(t, "/foo/bosh_ssh", platform.CreateUserBasePath)
@@ -73,23 +44,54 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	boshassert.MatchesJsonMap(t, response, expectedJson)
 }
 
-func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	platform, action := buildSshAction(settings)
-
-	params := SshParams{UserRegex: "^foobar.*"}
-	response, err := action.Run("cleanup", params)
-	assert.NoError(t, err)
-	assert.Equal(t, "^foobar.*", platform.DeleteEphemeralUsersMatchingRegex)
-
-	boshassert.MatchesJsonMap(t, response, map[string]interface{}{
-		"command": "cleanup",
-		"status":  "success",
-	})
-}
-
 func buildSshAction(settings boshsettings.Service) (*fakeplatform.FakePlatform, SshAction) {
 	platform := fakeplatform.NewFakePlatform()
 	action := NewSsh(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
 	return platform, action
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("ssh should be synchronous", func() {
+			settings := &fakesettings.FakeSettingsService{}
+			_, action := buildSshAction(settings)
+			assert.False(GinkgoT(), action.IsAsynchronous())
+		})
+		It("ssh setup without default ip", func() {
+
+			settings := &fakesettings.FakeSettingsService{}
+			_, action := buildSshAction(settings)
+
+			params := SshParams{
+				User:      "some-user",
+				Password:  "some-pwd",
+				PublicKey: "some-key",
+			}
+			_, err := action.Run("setup", params)
+			assert.Error(GinkgoT(), err)
+			assert.Contains(GinkgoT(), err.Error(), "No default ip")
+		})
+		It("ssh setup with username and password", func() {
+
+			testSshSetupWithGivenPassword(GinkgoT(), "some-password")
+		})
+		It("ssh setup without password", func() {
+
+			testSshSetupWithGivenPassword(GinkgoT(), "")
+		})
+		It("ssh run cleanup deletes ephemeral user", func() {
+
+			settings := &fakesettings.FakeSettingsService{}
+			platform, action := buildSshAction(settings)
+
+			params := SshParams{UserRegex: "^foobar.*"}
+			response, err := action.Run("cleanup", params)
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), "^foobar.*", platform.DeleteEphemeralUsersMatchingRegex)
+
+			boshassert.MatchesJsonMap(GinkgoT(), response, map[string]interface{}{
+				"command": "cleanup",
+				"status":  "success",
+			})
+		})
+	})
 }

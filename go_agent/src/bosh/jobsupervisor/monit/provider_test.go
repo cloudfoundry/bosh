@@ -5,20 +5,26 @@ import (
 	fakeplatform "bosh/platform/fakes"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"testing"
+
+	. "github.com/onsi/ginkgo"
 	"time"
 )
 
-func TestGet(t *testing.T) {
-	platform := fakeplatform.NewFakePlatform()
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("get", func() {
 
-	platform.GetMonitCredentialsUsername = "fake-user"
-	platform.GetMonitCredentialsPassword = "fake-pass"
+			platform := fakeplatform.NewFakePlatform()
 
-	client, err := NewProvider(platform).Get()
+			platform.GetMonitCredentialsUsername = "fake-user"
+			platform.GetMonitCredentialsPassword = "fake-pass"
 
-	assert.NoError(t, err)
+			client, err := NewProvider(platform).Get()
 
-	expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second)
-	assert.Equal(t, expectedClient, client)
+			assert.NoError(GinkgoT(), err)
+
+			expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second)
+			assert.Equal(GinkgoT(), expectedClient, client)
+		})
+	})
 }

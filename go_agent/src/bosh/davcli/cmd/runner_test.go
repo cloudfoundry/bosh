@@ -4,8 +4,8 @@ import (
 	. "bosh/davcli/cmd"
 	davconf "bosh/davcli/config"
 	"errors"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type FakeFactory struct {
@@ -37,53 +37,57 @@ func (cmd *FakeCmd) Run(args []string) (err error) {
 	err = cmd.RunErr
 	return
 }
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("run can run a command and return its error", func() {
 
-func TestRunCanRunACommandAndReturnItsError(t *testing.T) {
-	factory := &FakeFactory{
-		CreateCmd: &FakeCmd{
-			RunErr: errors.New("Error running cmd"),
-		},
-	}
-	cmdRunner := NewRunner(factory)
+			factory := &FakeFactory{
+				CreateCmd: &FakeCmd{
+					RunErr: errors.New("Error running cmd"),
+				},
+			}
+			cmdRunner := NewRunner(factory)
 
-	err := cmdRunner.Run([]string{"put", "foo", "bar"})
-	assert.Error(t, err)
-	assert.Equal(t, err.Error(), "Error running cmd")
+			err := cmdRunner.Run([]string{"put", "foo", "bar"})
+			assert.Error(GinkgoT(), err)
+			assert.Equal(GinkgoT(), err.Error(), "Error running cmd")
 
-	assert.Equal(t, factory.CreateName, "put")
-	assert.Equal(t, factory.CreateCmd.RunArgs, []string{"foo", "bar"})
-}
+			assert.Equal(GinkgoT(), factory.CreateName, "put")
+			assert.Equal(GinkgoT(), factory.CreateCmd.RunArgs, []string{"foo", "bar"})
+		})
+		It("run expects at least one argument", func() {
 
-func TestRunExpectsAtLeastOneArgument(t *testing.T) {
-	factory := &FakeFactory{
-		CreateCmd: &FakeCmd{},
-	}
-	cmdRunner := NewRunner(factory)
+			factory := &FakeFactory{
+				CreateCmd: &FakeCmd{},
+			}
+			cmdRunner := NewRunner(factory)
 
-	err := cmdRunner.Run([]string{})
-	assert.Error(t, err)
-	assert.Equal(t, err.Error(), "Missing command name")
-}
+			err := cmdRunner.Run([]string{})
+			assert.Error(GinkgoT(), err)
+			assert.Equal(GinkgoT(), err.Error(), "Missing command name")
+		})
+		It("accepts exactly one argument", func() {
 
-func TestAcceptsExactlyOneArgument(t *testing.T) {
-	factory := &FakeFactory{
-		CreateCmd: &FakeCmd{},
-	}
-	cmdRunner := NewRunner(factory)
+			factory := &FakeFactory{
+				CreateCmd: &FakeCmd{},
+			}
+			cmdRunner := NewRunner(factory)
 
-	err := cmdRunner.Run([]string{"put"})
-	assert.NoError(t, err)
+			err := cmdRunner.Run([]string{"put"})
+			assert.NoError(GinkgoT(), err)
 
-	assert.Equal(t, factory.CreateName, "put")
-	assert.Equal(t, factory.CreateCmd.RunArgs, []string{})
-}
+			assert.Equal(GinkgoT(), factory.CreateName, "put")
+			assert.Equal(GinkgoT(), factory.CreateCmd.RunArgs, []string{})
+		})
+		It("set config", func() {
 
-func TestSetConfig(t *testing.T) {
-	factory := &FakeFactory{}
-	cmdRunner := NewRunner(factory)
-	conf := davconf.Config{User: "foo"}
+			factory := &FakeFactory{}
+			cmdRunner := NewRunner(factory)
+			conf := davconf.Config{User: "foo"}
 
-	cmdRunner.SetConfig(conf)
+			cmdRunner.SetConfig(conf)
 
-	assert.Equal(t, factory.Config, conf)
+			assert.Equal(GinkgoT(), factory.Config, conf)
+		})
+	})
 }

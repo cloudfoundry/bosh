@@ -2,26 +2,31 @@ package app_test
 
 import (
 	. "bosh/app"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestParseOptionsParsesTheInfrastructure(t *testing.T) {
-	opts, err := ParseOptions([]string{"bosh-agent", "-I", "foo"})
-	assert.NoError(t, err)
-	assert.Equal(t, opts.InfrastructureName, "foo")
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("parse options parses the infrastructure", func() {
 
-	opts, err = ParseOptions([]string{"bosh-agent"})
-	assert.NoError(t, err)
-	assert.Equal(t, opts.InfrastructureName, "")
-}
+			opts, err := ParseOptions([]string{"bosh-agent", "-I", "foo"})
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), opts.InfrastructureName, "foo")
 
-func TestParseOptionsParsesThePlatform(t *testing.T) {
-	opts, err := ParseOptions([]string{"bosh-agent", "-P", "baz"})
-	assert.NoError(t, err)
-	assert.Equal(t, opts.PlatformName, "baz")
+			opts, err = ParseOptions([]string{"bosh-agent"})
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), opts.InfrastructureName, "")
+		})
+		It("parse options parses the platform", func() {
 
-	opts, err = ParseOptions([]string{"bosh-agent"})
-	assert.NoError(t, err)
-	assert.Equal(t, opts.PlatformName, "")
+			opts, err := ParseOptions([]string{"bosh-agent", "-P", "baz"})
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), opts.PlatformName, "baz")
+
+			opts, err = ParseOptions([]string{"bosh-agent"})
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), opts.PlatformName, "")
+		})
+	})
 }

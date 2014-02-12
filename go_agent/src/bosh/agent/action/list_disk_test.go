@@ -6,32 +6,37 @@ import (
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestListDiskShouldBeSynchronous(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{}
-	platform := fakeplatform.NewFakePlatform()
-	action := NewListDisk(settings, platform)
-	assert.False(t, action.IsAsynchronous())
-}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("list disk should be synchronous", func() {
 
-func TestListDiskRun(t *testing.T) {
-	settings := &fakesettings.FakeSettingsService{
-		Disks: boshsettings.Disks{
-			Persistent: map[string]string{
-				"volume-1": "/dev/sda",
-				"volume-2": "/dev/sdb",
-				"volume-3": "/dev/sdc",
-			},
-		},
-	}
-	platform := fakeplatform.NewFakePlatform()
-	platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
+			settings := &fakesettings.FakeSettingsService{}
+			platform := fakeplatform.NewFakePlatform()
+			action := NewListDisk(settings, platform)
+			assert.False(GinkgoT(), action.IsAsynchronous())
+		})
+		It("list disk run", func() {
 
-	action := NewListDisk(settings, platform)
-	value, err := action.Run()
-	assert.NoError(t, err)
-	boshassert.MatchesJsonString(t, value, `["volume-2","volume-3"]`)
+			settings := &fakesettings.FakeSettingsService{
+				Disks: boshsettings.Disks{
+					Persistent: map[string]string{
+						"volume-1": "/dev/sda",
+						"volume-2": "/dev/sdb",
+						"volume-3": "/dev/sdc",
+					},
+				},
+			}
+			platform := fakeplatform.NewFakePlatform()
+			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
+
+			action := NewListDisk(settings, platform)
+			value, err := action.Run()
+			assert.NoError(GinkgoT(), err)
+			boshassert.MatchesJsonString(GinkgoT(), value, `["volume-2","volume-3"]`)
+		})
+	})
 }

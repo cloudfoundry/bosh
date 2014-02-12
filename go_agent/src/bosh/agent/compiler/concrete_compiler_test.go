@@ -10,136 +10,9 @@ import (
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
-
-func TestCompileReturnsBlobIdAndSha1(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	deps.blobstore.CreateBlobId = "my-blob-id"
-	deps.blobstore.CreateFingerprint = "blob-sha1"
-	pkg, pkgDeps := getCompileArgs()
-
-	blobId, sha1, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "my-blob-id", blobId)
-	assert.Equal(t, "blob-sha1", sha1)
-}
-
-func TestCompileFetchesSourcePackageFromBlobstore(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "blobstore_id", deps.blobstore.GetBlobIds[0])
-	assert.Equal(t, "sha1", deps.blobstore.GetFingerprints[0])
-}
-
-func TestCompileInstallsDependentPackages(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.Equal(t, deps.packageApplier.AppliedPackages, pkgDeps)
-}
-
-func TestCompileExtractsSourcePkgToCompileDir(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	deps.blobstore.GetFileName = "/dev/null"
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.True(t, deps.fs.FileExists("/fake-dir/data/compile/pkg_name"))
-	assert.Equal(t, deps.compressor.DecompressFileToDirDirs[0], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
-	assert.Equal(t, deps.compressor.DecompressFileToDirTarballPaths[0], deps.blobstore.GetFileName)
-
-	assert.Equal(t, deps.fs.RenameOldPaths[0], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
-	assert.Equal(t, deps.fs.RenameNewPaths[0], "/fake-dir/data/compile/pkg_name")
-}
-
-func TestCompileInstallsEnablesAndCleansUpBundle(t *testing.T) {
-	deps, compiler := buildCompiler()
-	pkg, pkgDeps := getCompileArgs()
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.Equal(t, deps.bundle.ActionsCalled, []string{"Install", "Enable", "Disable", "Uninstall"})
-}
-
-func TestCompileCompressesCompiledPackage(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "/fake-dir/data/packages/pkg_name/pkg_version", deps.compressor.CompressFilesInDirDir)
-}
-
-func TestCompileWhenScriptDoesNotExist(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	assert.Empty(t, deps.runner.RunCommands)
-}
-
-func TestCompileWhenScriptExists(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	deps.compressor.DecompressFileToDirCallBack = func() {
-		deps.fs.WriteToFile("/fake-dir/data/compile/pkg_name/packaging", "hi")
-	}
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-
-	expectedCmd := boshsys.Command{
-		Name: "bash",
-		Args: []string{"-x", "packaging"},
-		Env: map[string]string{
-			"BOSH_COMPILE_TARGET":  "/fake-dir/data/compile/pkg_name",
-			"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
-			"BOSH_PACKAGE_NAME":    "pkg_name",
-			"BOSH_PACKAGE_VERSION": "pkg_version",
-		},
-		WorkingDir: "/fake-dir/data/compile/pkg_name",
-	}
-
-	assert.Equal(t, 1, len(deps.runner.RunComplexCommands))
-	assert.Equal(t, expectedCmd, deps.runner.RunComplexCommands[0])
-}
-
-func TestCompileUploadsCompressedPackage(t *testing.T) {
-	deps, compiler := buildCompiler()
-
-	pkg, pkgDeps := getCompileArgs()
-
-	deps.compressor.CompressFilesInDirTarballPath = "/tmp/foo"
-
-	_, _, err := compiler.Compile(pkg, pkgDeps)
-	assert.NoError(t, err)
-	assert.Equal(t, "/tmp/foo", deps.blobstore.CreateFileName)
-}
 
 func getCompileArgs() (pkg Package, pkgDeps []boshmodels.Package) {
 	pkg = Package{
@@ -208,4 +81,134 @@ func buildCompiler() (
 		deps.packagesBc,
 	)
 	return
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("compile returns blob id and sha1", func() {
+			deps, compiler := buildCompiler()
+
+			deps.blobstore.CreateBlobId = "my-blob-id"
+			deps.blobstore.CreateFingerprint = "blob-sha1"
+			pkg, pkgDeps := getCompileArgs()
+
+			blobId, sha1, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.Equal(GinkgoT(), "my-blob-id", blobId)
+			assert.Equal(GinkgoT(), "blob-sha1", sha1)
+		})
+		It("compile fetches source package from blobstore", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.Equal(GinkgoT(), "blobstore_id", deps.blobstore.GetBlobIds[0])
+			assert.Equal(GinkgoT(), "sha1", deps.blobstore.GetFingerprints[0])
+		})
+		It("compile installs dependent packages", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.Equal(GinkgoT(), deps.packageApplier.AppliedPackages, pkgDeps)
+		})
+		It("compile extracts source pkg to compile dir", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			deps.blobstore.GetFileName = "/dev/null"
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.True(GinkgoT(), deps.fs.FileExists("/fake-dir/data/compile/pkg_name"))
+			assert.Equal(GinkgoT(), deps.compressor.DecompressFileToDirDirs[0], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
+			assert.Equal(GinkgoT(), deps.compressor.DecompressFileToDirTarballPaths[0], deps.blobstore.GetFileName)
+
+			assert.Equal(GinkgoT(), deps.fs.RenameOldPaths[0], "/fake-dir/data/compile/pkg_name-bosh-agent-unpack")
+			assert.Equal(GinkgoT(), deps.fs.RenameNewPaths[0], "/fake-dir/data/compile/pkg_name")
+		})
+		It("compile installs enables and cleans up bundle", func() {
+
+			deps, compiler := buildCompiler()
+			pkg, pkgDeps := getCompileArgs()
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.Equal(GinkgoT(), deps.bundle.ActionsCalled, []string{"Install", "Enable", "Disable", "Uninstall"})
+		})
+		It("compile compresses compiled package", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.Equal(GinkgoT(), "/fake-dir/data/packages/pkg_name/pkg_version", deps.compressor.CompressFilesInDirDir)
+		})
+		It("compile when script does not exist", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			assert.Empty(GinkgoT(), deps.runner.RunCommands)
+		})
+		It("compile when script exists", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			deps.compressor.DecompressFileToDirCallBack = func() {
+				deps.fs.WriteToFile("/fake-dir/data/compile/pkg_name/packaging", "hi")
+			}
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+
+			expectedCmd := boshsys.Command{
+				Name: "bash",
+				Args: []string{"-x", "packaging"},
+				Env: map[string]string{
+					"BOSH_COMPILE_TARGET":  "/fake-dir/data/compile/pkg_name",
+					"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
+					"BOSH_PACKAGE_NAME":    "pkg_name",
+					"BOSH_PACKAGE_VERSION": "pkg_version",
+				},
+				WorkingDir: "/fake-dir/data/compile/pkg_name",
+			}
+
+			assert.Equal(GinkgoT(), 1, len(deps.runner.RunComplexCommands))
+			assert.Equal(GinkgoT(), expectedCmd, deps.runner.RunComplexCommands[0])
+		})
+		It("compile uploads compressed package", func() {
+
+			deps, compiler := buildCompiler()
+
+			pkg, pkgDeps := getCompileArgs()
+
+			deps.compressor.CompressFilesInDirTarballPath = "/tmp/foo"
+
+			_, _, err := compiler.Compile(pkg, pkgDeps)
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), "/tmp/foo", deps.blobstore.CreateFileName)
+		})
+	})
 }

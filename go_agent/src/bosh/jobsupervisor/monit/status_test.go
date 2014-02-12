@@ -8,54 +8,60 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"testing"
+
+	. "github.com/onsi/ginkgo"
 	"time"
 )
 
-func TestServicesInGroupReturnsSliceOfService(t *testing.T) {
-	expectedServices := []Service{
-		{
-			Monitored: true,
-			Status:    "running",
-		},
-		{
-			Monitored: false,
-			Status:    "unknown",
-		},
-		{
-			Monitored: true,
-			Status:    "starting",
-		},
-		{
-			Monitored: true,
-			Status:    "failing",
-		},
-	}
-	monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status_with_multiple_services.xml")
-	assert.NotNil(t, monitStatusFilePath)
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("services in group returns slice of service", func() {
 
-	file, err := os.Open(monitStatusFilePath)
-	assert.NoError(t, err)
-	defer file.Close()
+			expectedServices := []Service{
+				{
+					Monitored: true,
+					Status:    "running",
+				},
+				{
+					Monitored: false,
+					Status:    "unknown",
+				},
+				{
+					Monitored: true,
+					Status:    "starting",
+				},
+				{
+					Monitored: true,
+					Status:    "failing",
+				},
+			}
+			monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status_with_multiple_services.xml")
+			assert.NotNil(GinkgoT(), monitStatusFilePath)
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(w, file)
-		assert.Equal(t, r.Method, "GET")
-		assert.Equal(t, r.URL.Path, "/_status2")
-		assert.Equal(t, r.URL.Query().Get("format"), "xml")
+			file, err := os.Open(monitStatusFilePath)
+			assert.NoError(GinkgoT(), err)
+			defer file.Close()
+
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				io.Copy(w, file)
+				assert.Equal(GinkgoT(), r.Method, "GET")
+				assert.Equal(GinkgoT(), r.URL.Path, "/_status2")
+				assert.Equal(GinkgoT(), r.URL.Query().Get("format"), "xml")
+			})
+			ts := httptest.NewServer(handler)
+			defer ts.Close()
+
+			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
+
+			status, err := client.Status()
+			assert.NoError(GinkgoT(), err)
+
+			services := status.ServicesInGroup("vcap")
+			assert.Equal(GinkgoT(), len(expectedServices), len(services))
+
+			for i, expectedService := range expectedServices {
+				assert.Equal(GinkgoT(), expectedService, services[i])
+			}
+		})
 	})
-	ts := httptest.NewServer(handler)
-	defer ts.Close()
-
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
-
-	status, err := client.Status()
-	assert.NoError(t, err)
-
-	services := status.ServicesInGroup("vcap")
-	assert.Equal(t, len(expectedServices), len(services))
-
-	for i, expectedService := range expectedServices {
-		assert.Equal(t, expectedService, services[i])
-	}
 }

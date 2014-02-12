@@ -6,49 +6,12 @@ import (
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	boshdirs "bosh/settings/directories"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
-	"testing"
 )
 
-func TestLogsShouldBeAsynchronous(t *testing.T) {
-	_, action := buildLogsAction()
-	assert.True(t, action.IsAsynchronous())
-}
-
-func TestLogsErrsIfGivenInvalidLogType(t *testing.T) {
-	_, action := buildLogsAction()
-	_, err := action.Run("other-logs", []string{})
-	assert.Error(t, err)
-}
-
-func TestAgentLogsWithFilters(t *testing.T) {
-	filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-
-	expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-	testLogs(t, "agent", filters, expectedFilters)
-}
-
-func TestAgentLogsWithoutFilters(t *testing.T) {
-	filters := []string{}
-	expectedFilters := []string{"**/*"}
-	testLogs(t, "agent", filters, expectedFilters)
-}
-
-func TestJobLogsWithoutFilters(t *testing.T) {
-	filters := []string{}
-	expectedFilters := []string{"**/*.log"}
-	testLogs(t, "job", filters, expectedFilters)
-}
-
-func TestJobLogsWithFilters(t *testing.T) {
-	filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-
-	expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-	testLogs(t, "job", filters, expectedFilters)
-}
-
-func testLogs(t *testing.T, logType string, filters []string, expectedFilters []string) {
+func testLogs(t assert.TestingT, logType string, filters []string, expectedFilters []string) {
 	deps, action := buildLogsAction()
 
 	deps.copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
@@ -72,7 +35,6 @@ func testLogs(t *testing.T, logType string, filters []string, expectedFilters []
 	assert.Equal(t, deps.copier.FilteredCopyToTempTempDir, deps.compressor.CompressFilesInDirDir)
 	assert.Equal(t, deps.copier.CleanUpTempDir, deps.compressor.CompressFilesInDirDir)
 
-	// The log file is used when calling blobstore.Create
 	assert.Equal(t, deps.compressor.CompressFilesInDirTarballPath, deps.blobstore.CreateFileName)
 
 	boshassert.MatchesJsonString(t, logs, `{"blobstore_id":"my-blob-id"}`)
@@ -100,4 +62,44 @@ func buildLogsAction() (deps logsDeps, action LogsAction) {
 		deps.dirProvider,
 	)
 	return
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("logs should be asynchronous", func() {
+			_, action := buildLogsAction()
+			assert.True(GinkgoT(), action.IsAsynchronous())
+		})
+		It("logs errs if given invalid log type", func() {
+
+			_, action := buildLogsAction()
+			_, err := action.Run("other-logs", []string{})
+			assert.Error(GinkgoT(), err)
+		})
+		It("agent logs with filters", func() {
+
+			filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
+
+			expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
+			testLogs(GinkgoT(), "agent", filters, expectedFilters)
+		})
+		It("agent logs without filters", func() {
+
+			filters := []string{}
+			expectedFilters := []string{"**/*"}
+			testLogs(GinkgoT(), "agent", filters, expectedFilters)
+		})
+		It("job logs without filters", func() {
+
+			filters := []string{}
+			expectedFilters := []string{"**/*.log"}
+			testLogs(GinkgoT(), "job", filters, expectedFilters)
+		})
+		It("job logs with filters", func() {
+
+			filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
+
+			expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
+			testLogs(GinkgoT(), "job", filters, expectedFilters)
+		})
+	})
 }

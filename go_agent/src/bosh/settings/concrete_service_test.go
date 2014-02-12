@@ -3,79 +3,84 @@ package settings_test
 import (
 	. "bosh/settings"
 	"errors"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestRefresh(t *testing.T) {
-	var fetcher = func() (settings Settings, err error) {
-		settings = Settings{AgentId: "some-new-agent-id"}
-		return
-	}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("refresh", func() {
 
-	settings := Settings{AgentId: "some-agent-id"}
-	service := NewService(settings, fetcher)
-	err := service.Refresh()
+			var fetcher = func() (settings Settings, err error) {
+				settings = Settings{AgentId: "some-new-agent-id"}
+				return
+			}
 
-	assert.NoError(t, err)
-	assert.Equal(t, service.GetAgentId(), "some-new-agent-id")
-}
+			settings := Settings{AgentId: "some-agent-id"}
+			service := NewService(settings, fetcher)
+			err := service.Refresh()
 
-func TestRefreshOnError(t *testing.T) {
-	var fetcher = func() (settings Settings, err error) {
-		settings = Settings{AgentId: "some-new-agent-id"}
-		err = errors.New("Error fetching settings!")
-		return
-	}
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), service.GetAgentId(), "some-new-agent-id")
+		})
+		It("refresh on error", func() {
 
-	settings := Settings{AgentId: "some-old-agent-id"}
-	service := NewService(settings, fetcher)
-	err := service.Refresh()
+			var fetcher = func() (settings Settings, err error) {
+				settings = Settings{AgentId: "some-new-agent-id"}
+				err = errors.New("Error fetching settings!")
+				return
+			}
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Error fetching settings!")
-	assert.Equal(t, service.GetAgentId(), "some-old-agent-id")
-}
+			settings := Settings{AgentId: "some-old-agent-id"}
+			service := NewService(settings, fetcher)
+			err := service.Refresh()
 
-func TestGetAgentId(t *testing.T) {
-	settings := Settings{AgentId: "some-agent-id"}
-	assert.Equal(t, NewService(settings, nil).GetAgentId(), "some-agent-id")
-}
+			assert.Error(GinkgoT(), err)
+			assert.Contains(GinkgoT(), err.Error(), "Error fetching settings!")
+			assert.Equal(GinkgoT(), service.GetAgentId(), "some-old-agent-id")
+		})
+		It("get agent id", func() {
 
-func TestGetVm(t *testing.T) {
-	vm := Vm{Name: "some-vm-id"}
-	settings := Settings{Vm: vm}
-	assert.Equal(t, NewService(settings, nil).GetVm(), vm)
-}
+			settings := Settings{AgentId: "some-agent-id"}
+			assert.Equal(GinkgoT(), NewService(settings, nil).GetAgentId(), "some-agent-id")
+		})
+		It("get vm", func() {
 
-func TestGetMbusUrl(t *testing.T) {
-	settings := Settings{Mbus: "nats://user:pwd@some-ip:some-port"}
-	assert.Equal(t, NewService(settings, nil).GetMbusUrl(), "nats://user:pwd@some-ip:some-port")
-}
+			vm := Vm{Name: "some-vm-id"}
+			settings := Settings{Vm: vm}
+			assert.Equal(GinkgoT(), NewService(settings, nil).GetVm(), vm)
+		})
+		It("get mbus url", func() {
 
-func TestGetDisks(t *testing.T) {
-	disks := Disks{System: "foo", Ephemeral: "bar"}
-	settings := Settings{Disks: disks}
-	assert.Equal(t, NewService(settings, nil).GetDisks(), disks)
-}
+			settings := Settings{Mbus: "nats://user:pwd@some-ip:some-port"}
+			assert.Equal(GinkgoT(), NewService(settings, nil).GetMbusUrl(), "nats://user:pwd@some-ip:some-port")
+		})
+		It("get disks", func() {
 
-func TestGetDefaultIp(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{Ip: "xx.xx.xx.xx"},
-	}
-	settings := Settings{Networks: networks}
-	ip, found := NewService(settings, nil).GetDefaultIp()
-	assert.True(t, found)
-	assert.Equal(t, ip, "xx.xx.xx.xx")
-}
+			disks := Disks{System: "foo", Ephemeral: "bar"}
+			settings := Settings{Disks: disks}
+			assert.Equal(GinkgoT(), NewService(settings, nil).GetDisks(), disks)
+		})
+		It("get default ip", func() {
 
-func TestGetIps(t *testing.T) {
-	networks := Networks{
-		"bosh":  Network{Ip: "xx.xx.xx.xx"},
-		"vip":   Network{Ip: "zz.zz.zz.zz"},
-		"other": Network{},
-	}
-	settings := Settings{Networks: networks}
-	ips := NewService(settings, nil).GetIps()
-	assert.Equal(t, ips, []string{"xx.xx.xx.xx", "zz.zz.zz.zz"})
+			networks := Networks{
+				"bosh": Network{Ip: "xx.xx.xx.xx"},
+			}
+			settings := Settings{Networks: networks}
+			ip, found := NewService(settings, nil).GetDefaultIp()
+			assert.True(GinkgoT(), found)
+			assert.Equal(GinkgoT(), ip, "xx.xx.xx.xx")
+		})
+		It("get ips", func() {
+
+			networks := Networks{
+				"bosh":  Network{Ip: "xx.xx.xx.xx"},
+				"vip":   Network{Ip: "zz.zz.zz.zz"},
+				"other": Network{},
+			}
+			settings := Settings{Networks: networks}
+			ips := NewService(settings, nil).GetIps()
+			assert.Equal(GinkgoT(), ips, []string{"xx.xx.xx.xx", "zz.zz.zz.zz"})
+		})
+	})
 }

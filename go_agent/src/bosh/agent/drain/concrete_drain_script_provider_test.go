@@ -4,17 +4,22 @@ import (
 	. "bosh/agent/drain"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestNewDrainScript(t *testing.T) {
-	runner := fakesys.NewFakeCmdRunner()
-	fs := fakesys.NewFakeFileSystem()
-	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("new drain script", func() {
 
-	scriptProvider := NewConcreteDrainScriptProvider(runner, fs, dirProvider)
-	drainScript := scriptProvider.NewDrainScript("foo")
+			runner := fakesys.NewFakeCmdRunner()
+			fs := fakesys.NewFakeFileSystem()
+			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 
-	assert.Equal(t, drainScript.Path(), "/var/vcap/jobs/foo/bin/drain")
+			scriptProvider := NewConcreteDrainScriptProvider(runner, fs, dirProvider)
+			drainScript := scriptProvider.NewDrainScript("foo")
+
+			assert.Equal(GinkgoT(), drainScript.Path(), "/var/vcap/jobs/foo/bin/drain")
+		})
+	})
 }

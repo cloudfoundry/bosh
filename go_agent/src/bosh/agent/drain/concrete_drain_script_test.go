@@ -5,8 +5,8 @@ import (
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"errors"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type fakeDrainParams struct {
@@ -18,64 +18,6 @@ type fakeDrainParams struct {
 func (p fakeDrainParams) JobChange() (change string)       { return p.jobChange }
 func (p fakeDrainParams) HashChange() (change string)      { return p.hashChange }
 func (p fakeDrainParams) UpdatedPackages() (pkgs []string) { return p.updatedPackages }
-
-func TestRunArgs(t *testing.T) {
-	drainScript, params, runner, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
-
-	_, err := drainScript.Run(params)
-	assert.NoError(t, err)
-
-	expectedCmd := boshsys.Command{
-		Name: "/fake/script",
-		Args: []string{"job_shutdown", "hash_unchanged", "foo", "bar"},
-		Env: map[string]string{
-			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
-		},
-	}
-
-	assert.Equal(t, 1, len(runner.RunComplexCommands))
-	assert.Equal(t, expectedCmd, runner.RunComplexCommands[0])
-}
-
-func TestRunReturnsParsedSTDOUT(t *testing.T) {
-	drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
-
-	value, err := drainScript.Run(params)
-	assert.NoError(t, err)
-	assert.Equal(t, value, 1)
-}
-
-func TestRunReturnsParsedSTDOUTAfterTrimming(t *testing.T) {
-	drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "-56\n"})
-
-	value, err := drainScript.Run(params)
-	assert.NoError(t, err)
-	assert.Equal(t, value, -56)
-}
-
-func TestRunErrorsWithNonIntegerSTDOUT(t *testing.T) {
-	drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "hello!"})
-
-	_, err := drainScript.Run(params)
-	assert.Error(t, err)
-}
-
-func TestRunErrorsWhenRunningCommandErrors(t *testing.T) {
-	drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Error: errors.New("woops")})
-
-	_, err := drainScript.Run(params)
-	assert.Error(t, err)
-}
-
-func TestExists(t *testing.T) {
-	drainScript, _, _, fs := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
-
-	assert.False(t, drainScript.Exists())
-
-	fs.WriteToFile("/fake/script", "")
-
-	assert.True(t, drainScript.Exists())
-}
 
 func buildDrainScript(commandResult fakesys.FakeCmdResult) (
 	drainScript ConcreteDrainScript,
@@ -95,4 +37,65 @@ func buildDrainScript(commandResult fakesys.FakeCmdResult) (
 	runner.AddCmdResult("/fake/script"+" job_shutdown hash_unchanged foo bar", commandResult)
 
 	return
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("run args", func() {
+			drainScript, params, runner, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
+
+			_, err := drainScript.Run(params)
+			assert.NoError(GinkgoT(), err)
+
+			expectedCmd := boshsys.Command{
+				Name: "/fake/script",
+				Args: []string{"job_shutdown", "hash_unchanged", "foo", "bar"},
+				Env: map[string]string{
+					"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+				},
+			}
+
+			assert.Equal(GinkgoT(), 1, len(runner.RunComplexCommands))
+			assert.Equal(GinkgoT(), expectedCmd, runner.RunComplexCommands[0])
+		})
+		It("run returns parsed s t d o u t", func() {
+
+			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
+
+			value, err := drainScript.Run(params)
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), value, 1)
+		})
+		It("run returns parsed s t d o u t after trimming", func() {
+
+			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "-56\n"})
+
+			value, err := drainScript.Run(params)
+			assert.NoError(GinkgoT(), err)
+			assert.Equal(GinkgoT(), value, -56)
+		})
+		It("run errors with non integer s t d o u t", func() {
+
+			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "hello!"})
+
+			_, err := drainScript.Run(params)
+			assert.Error(GinkgoT(), err)
+		})
+		It("run errors when running command errors", func() {
+
+			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Error: errors.New("woops")})
+
+			_, err := drainScript.Run(params)
+			assert.Error(GinkgoT(), err)
+		})
+		It("exists", func() {
+
+			drainScript, _, _, fs := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
+
+			assert.False(GinkgoT(), drainScript.Exists())
+
+			fs.WriteToFile("/fake/script", "")
+
+			assert.True(GinkgoT(), drainScript.Exists())
+		})
+	})
 }

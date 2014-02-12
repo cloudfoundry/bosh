@@ -80,19 +80,16 @@ var _ = Describe("FileBundle", func() {
 				Expect(actualFs).To(Equal(fs))
 				Expect(actualEnablePath).To(Equal(enablePath))
 
-				// symlink exists
 				fileStats := fs.GetFileTestStat(enablePath)
 				Expect(fileStats).NotTo(BeNil())
 				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeSymlink)))
 				Expect(installPath).To(Equal(fileStats.SymlinkTarget))
 
-				// enable directory is created
 				fileStats = fs.GetFileTestStat("/")
 				Expect(fileStats).NotTo(BeNil())
 				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
 				Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
 
-				// check idempotency
 				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 			})

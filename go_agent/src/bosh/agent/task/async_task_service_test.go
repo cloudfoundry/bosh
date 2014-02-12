@@ -6,19 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"testing"
+
+	. "github.com/onsi/ginkgo"
 	"time"
 )
 
-func TestRunningASuccessfulTask(t *testing.T) {
-	testRunningTask(t, TaskStateDone, 123, nil)
-}
-
-func TestRunningAFailingTask(t *testing.T) {
-	testRunningTask(t, TaskStateFailed, nil, errors.New("Oops"))
-}
-
-func testRunningTask(t *testing.T, expectedState TaskState, withValue interface{}, withErr error) {
+func testRunningTask(t assert.TestingT, expectedState TaskState, withValue interface{}, withErr error) {
 	service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
 
 	taskIsFinished := false
@@ -51,49 +44,60 @@ func testRunningTask(t *testing.T, expectedState TaskState, withValue interface{
 		assert.NoError(t, updatedTask.Error)
 	}
 }
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("running a successful task", func() {
+			testRunningTask(GinkgoT(), TaskStateDone, 123, nil)
+		})
+		It("running a failing task", func() {
 
-func TestStartTaskGeneratesTaskId(t *testing.T) {
-	var taskFunc = func() (value interface{}, err error) {
-		return
-	}
+			testRunningTask(GinkgoT(), TaskStateFailed, nil, errors.New("Oops"))
+		})
+		It("start task generates task id", func() {
 
-	service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
-
-	for expectedTaskId := 1; expectedTaskId < 20; expectedTaskId++ {
-		task := service.StartTask(taskFunc)
-		assert.Equal(t, fmt.Sprintf("%d", expectedTaskId), task.Id)
-	}
-}
-
-func TestProcessingManyTasksSimultaneously(t *testing.T) {
-	taskFunc := func() (value interface{}, err error) {
-		time.Sleep(10 * time.Millisecond)
-		return
-	}
-
-	service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
-	ids := []string{}
-
-	for id := 1; id < 200; id++ {
-		ids = append(ids, fmt.Sprintf("%d", id))
-		go service.StartTask(taskFunc)
-	}
-
-	for {
-		allDone := true
-
-		for _, id := range ids {
-			task, _ := service.FindTask(id)
-			if task.State != TaskStateDone {
-				allDone = false
-				break
+			var taskFunc = func() (value interface{}, err error) {
+				return
 			}
-		}
 
-		if allDone {
-			break
-		}
+			service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
 
-		time.Sleep(200 * time.Millisecond)
-	}
+			for expectedTaskId := 1; expectedTaskId < 20; expectedTaskId++ {
+				task := service.StartTask(taskFunc)
+				assert.Equal(GinkgoT(), fmt.Sprintf("%d", expectedTaskId), task.Id)
+			}
+		})
+		It("processing many tasks simultaneously", func() {
+
+			taskFunc := func() (value interface{}, err error) {
+				time.Sleep(10 * time.Millisecond)
+				return
+			}
+
+			service := NewAsyncTaskService(boshlog.NewLogger(boshlog.LEVEL_NONE))
+			ids := []string{}
+
+			for id := 1; id < 200; id++ {
+				ids = append(ids, fmt.Sprintf("%d", id))
+				go service.StartTask(taskFunc)
+			}
+
+			for {
+				allDone := true
+
+				for _, id := range ids {
+					task, _ := service.FindTask(id)
+					if task.State != TaskStateDone {
+						allDone = false
+						break
+					}
+				}
+
+				if allDone {
+					break
+				}
+
+				time.Sleep(200 * time.Millisecond)
+			}
+		})
+	})
 }

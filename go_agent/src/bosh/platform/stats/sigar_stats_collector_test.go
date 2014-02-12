@@ -2,55 +2,60 @@ package stats_test
 
 import (
 	. "bosh/platform/stats"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestUbuntuGetCpuLoad(t *testing.T) {
-	collector := NewSigarStatsCollector()
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("ubuntu get cpu load", func() {
 
-	load, err := collector.GetCpuLoad()
-	assert.NoError(t, err)
-	assert.True(t, load.One >= 0)
-	assert.True(t, load.Five >= 0)
-	assert.True(t, load.Fifteen >= 0)
-}
+			collector := NewSigarStatsCollector()
 
-func TestUbuntuGetCpuStats(t *testing.T) {
-	collector := NewSigarStatsCollector()
+			load, err := collector.GetCpuLoad()
+			assert.NoError(GinkgoT(), err)
+			assert.True(GinkgoT(), load.One >= 0)
+			assert.True(GinkgoT(), load.Five >= 0)
+			assert.True(GinkgoT(), load.Fifteen >= 0)
+		})
+		It("ubuntu get cpu stats", func() {
 
-	stats, err := collector.GetCpuStats()
-	assert.NoError(t, err)
-	assert.True(t, stats.User > 0)
-	assert.True(t, stats.Sys > 0)
-	assert.True(t, stats.Total > 0)
-}
+			collector := NewSigarStatsCollector()
 
-func TestUbuntuGetMemStats(t *testing.T) {
-	collector := NewSigarStatsCollector()
+			stats, err := collector.GetCpuStats()
+			assert.NoError(GinkgoT(), err)
+			assert.True(GinkgoT(), stats.User > 0)
+			assert.True(GinkgoT(), stats.Sys > 0)
+			assert.True(GinkgoT(), stats.Total > 0)
+		})
+		It("ubuntu get mem stats", func() {
 
-	stats, err := collector.GetMemStats()
-	assert.NoError(t, err)
-	assert.True(t, stats.Total > 0)
-	assert.True(t, stats.Used > 0)
-}
+			collector := NewSigarStatsCollector()
 
-func TestUbuntuGetSwapStats(t *testing.T) {
-	collector := NewSigarStatsCollector()
+			stats, err := collector.GetMemStats()
+			assert.NoError(GinkgoT(), err)
+			assert.True(GinkgoT(), stats.Total > 0)
+			assert.True(GinkgoT(), stats.Used > 0)
+		})
+		It("ubuntu get swap stats", func() {
 
-	stats, err := collector.GetSwapStats()
-	assert.NoError(t, err)
-	assert.True(t, stats.Total > 0)
-}
+			collector := NewSigarStatsCollector()
 
-func TestUbuntuGetDiskStats(t *testing.T) {
-	collector := NewSigarStatsCollector()
+			stats, err := collector.GetSwapStats()
+			assert.NoError(GinkgoT(), err)
+			assert.True(GinkgoT(), stats.Total > 0)
+		})
+		It("ubuntu get disk stats", func() {
 
-	stats, err := collector.GetDiskStats("/")
-	assert.NoError(t, err)
+			collector := NewSigarStatsCollector()
 
-	assert.True(t, stats.DiskUsage.Total > 0)
-	assert.True(t, stats.DiskUsage.Used > 0)
-	assert.True(t, stats.InodeUsage.Total > 0)
-	assert.True(t, stats.InodeUsage.Used > 0)
+			stats, err := collector.GetDiskStats("/")
+			assert.NoError(GinkgoT(), err)
+
+			assert.True(GinkgoT(), stats.DiskUsage.Total > 0)
+			assert.True(GinkgoT(), stats.DiskUsage.Used > 0)
+			assert.True(GinkgoT(), stats.InodeUsage.Total > 0)
+			assert.True(GinkgoT(), stats.InodeUsage.Used > 0)
+		})
+	})
 }

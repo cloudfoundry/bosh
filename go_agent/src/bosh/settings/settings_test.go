@@ -2,101 +2,106 @@ package settings_test
 
 import (
 	. "bosh/settings"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestDefaultNetworkForWhenNetworksIsEmpty(t *testing.T) {
-	networks := Networks{}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("default network for when networks is empty", func() {
 
-	_, found := networks.DefaultNetworkFor("dns")
-	assert.False(t, found)
-}
+			networks := Networks{}
 
-func TestDefaultNetworkForWithSingleNetwork(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{
-			Dns: []string{"xx.xx.xx.xx"},
-		},
-	}
+			_, found := networks.DefaultNetworkFor("dns")
+			assert.False(GinkgoT(), found)
+		})
+		It("default network for with single network", func() {
 
-	settings, found := networks.DefaultNetworkFor("dns")
-	assert.True(t, found)
-	assert.Equal(t, settings, networks["bosh"])
-}
+			networks := Networks{
+				"bosh": Network{
+					Dns: []string{"xx.xx.xx.xx"},
+				},
+			}
 
-func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsFoundForDns(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{
-			Default: []string{"dns"},
-			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-		},
-		"vip": Network{
-			Default: []string{},
-			Dns:     []string{"aa.aa.aa.aa"},
-		},
-	}
+			settings, found := networks.DefaultNetworkFor("dns")
+			assert.True(GinkgoT(), found)
+			assert.Equal(GinkgoT(), settings, networks["bosh"])
+		})
+		It("default network for with multiple networks and default is found for dns", func() {
 
-	settings, found := networks.DefaultNetworkFor("dns")
-	assert.True(t, found)
-	assert.Equal(t, settings, networks["bosh"])
-}
+			networks := Networks{
+				"bosh": Network{
+					Default: []string{"dns"},
+					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+				},
+				"vip": Network{
+					Default: []string{},
+					Dns:     []string{"aa.aa.aa.aa"},
+				},
+			}
 
-func TestDefaultNetworkForWithMultipleNetworksAndDefaultIsNotFound(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{
-			Default: []string{"foo"},
-			Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-		},
-		"vip": Network{
-			Default: []string{},
-			Dns:     []string{"aa.aa.aa.aa"},
-		},
-	}
+			settings, found := networks.DefaultNetworkFor("dns")
+			assert.True(GinkgoT(), found)
+			assert.Equal(GinkgoT(), settings, networks["bosh"])
+		})
+		It("default network for with multiple networks and default is not found", func() {
 
-	_, found := networks.DefaultNetworkFor("dns")
-	assert.False(t, found)
-}
+			networks := Networks{
+				"bosh": Network{
+					Default: []string{"foo"},
+					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+				},
+				"vip": Network{
+					Default: []string{},
+					Dns:     []string{"aa.aa.aa.aa"},
+				},
+			}
 
-func TestDefaultIpWithTwoNetworks(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{
-			Ip: "xx.xx.xx.xx",
-		},
-		"vip": Network{
-			Ip: "aa.aa.aa.aa",
-		},
-	}
+			_, found := networks.DefaultNetworkFor("dns")
+			assert.False(GinkgoT(), found)
+		})
+		It("default ip with two networks", func() {
 
-	ip, found := networks.DefaultIp()
-	assert.True(t, found)
-	assert.Equal(t, "xx.xx.xx.xx", ip)
-}
+			networks := Networks{
+				"bosh": Network{
+					Ip: "xx.xx.xx.xx",
+				},
+				"vip": Network{
+					Ip: "aa.aa.aa.aa",
+				},
+			}
 
-func TestDefaultIpWithTwoNetworksOnlyWithDefaults(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{
-			Ip: "xx.xx.xx.xx",
-		},
-		"vip": Network{
-			Ip:      "aa.aa.aa.aa",
-			Default: []string{"dns"},
-		},
-	}
+			ip, found := networks.DefaultIp()
+			assert.True(GinkgoT(), found)
+			assert.Equal(GinkgoT(), "xx.xx.xx.xx", ip)
+		})
+		It("default ip with two networks only with defaults", func() {
 
-	ip, found := networks.DefaultIp()
-	assert.True(t, found)
-	assert.Equal(t, "aa.aa.aa.aa", ip)
-}
+			networks := Networks{
+				"bosh": Network{
+					Ip: "xx.xx.xx.xx",
+				},
+				"vip": Network{
+					Ip:      "aa.aa.aa.aa",
+					Default: []string{"dns"},
+				},
+			}
 
-func TestDefaultIpWhenNoneSpecified(t *testing.T) {
-	networks := Networks{
-		"bosh": Network{},
-		"vip": Network{
-			Default: []string{"dns"},
-		},
-	}
+			ip, found := networks.DefaultIp()
+			assert.True(GinkgoT(), found)
+			assert.Equal(GinkgoT(), "aa.aa.aa.aa", ip)
+		})
+		It("default ip when none specified", func() {
 
-	_, found := networks.DefaultIp()
-	assert.False(t, found)
+			networks := Networks{
+				"bosh": Network{},
+				"vip": Network{
+					Default: []string{"dns"},
+				},
+			}
+
+			_, found := networks.DefaultIp()
+			assert.False(GinkgoT(), found)
+		})
+	})
 }

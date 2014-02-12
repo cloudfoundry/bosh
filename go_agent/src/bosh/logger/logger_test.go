@@ -3,108 +3,15 @@ package logger_test
 import (
 	. "bosh/logger"
 	"fmt"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"regexp"
-	"testing"
 )
 
 func expectedLogFormat(tag, msg string) string {
 	return fmt.Sprintf("\\[%s\\] [0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} %s\n", tag, msg)
-}
-
-func TestInfo(t *testing.T) {
-	stdout, _ := captureOutputs(func() {
-		logger := NewLogger(LEVEL_INFO)
-		logger.Info("TAG", "some %s info to log", "awesome")
-	})
-
-	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "INFO - some awesome info to log"))
-	assert.True(t, matcher.Match(stdout))
-}
-
-func TestDebug(t *testing.T) {
-	stdout, _ := captureOutputs(func() {
-		logger := NewLogger(LEVEL_DEBUG)
-		logger.Debug("TAG", "some %s info to log", "awesome")
-	})
-
-	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some awesome info to log"))
-	assert.True(t, matcher.Match(stdout))
-}
-
-func TestDebugWithDetails(t *testing.T) {
-	stdout, _ := captureOutputs(func() {
-		logger := NewLogger(LEVEL_DEBUG)
-		logger.DebugWithDetails("TAG", "some info to log", "awesome")
-	})
-
-	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some info to log"))
-	assert.True(t, matcher.Match(stdout))
-
-	assert.Contains(t, string(stdout), "\n********************\nawesome\n********************")
-}
-
-func TestError(t *testing.T) {
-	_, stderr := captureOutputs(func() {
-		logger := NewLogger(LEVEL_ERROR)
-		logger.Error("TAG", "some %s info to log", "awesome")
-	})
-
-	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some awesome info to log"))
-	assert.True(t, matcher.Match(stderr))
-}
-
-func TestErrorWithDetails(t *testing.T) {
-	_, stderr := captureOutputs(func() {
-		logger := NewLogger(LEVEL_ERROR)
-		logger.ErrorWithDetails("TAG", "some error to log", "awesome")
-	})
-
-	matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some error to log"))
-	assert.True(t, matcher.Match(stderr))
-
-	assert.Contains(t, string(stderr), "\n********************\nawesome\n********************")
-}
-
-func TestLogLevelDebug(t *testing.T) {
-	stdout, stderr := captureOutputs(func() {
-		logger := NewLogger(LEVEL_DEBUG)
-		logger.Debug("DEBUG", "some debug log")
-		logger.Info("INFO", "some info log")
-		logger.Error("ERROR", "some error log")
-	})
-
-	assert.Contains(t, string(stdout), "DEBUG")
-	assert.Contains(t, string(stdout), "INFO")
-	assert.Contains(t, string(stderr), "ERROR")
-}
-
-func TestLogLevelInfo(t *testing.T) {
-	stdout, stderr := captureOutputs(func() {
-		logger := NewLogger(LEVEL_INFO)
-		logger.Debug("DEBUG", "some debug log")
-		logger.Info("INFO", "some info log")
-		logger.Error("ERROR", "some error log")
-	})
-
-	assert.NotContains(t, string(stdout), "DEBUG")
-	assert.Contains(t, string(stdout), "INFO")
-	assert.Contains(t, string(stderr), "ERROR")
-}
-
-func TestLogLevelError(t *testing.T) {
-	stdout, stderr := captureOutputs(func() {
-		logger := NewLogger(LEVEL_ERROR)
-		logger.Debug("DEBUG", "some debug log")
-		logger.Info("INFO", "some info log")
-		logger.Error("ERROR", "some error log")
-	})
-
-	assert.NotContains(t, string(stdout), "DEBUG")
-	assert.NotContains(t, string(stdout), "INFO")
-	assert.Contains(t, string(stderr), "ERROR")
 }
 
 func captureOutputs(f func()) (stdout, stderr []byte) {
@@ -139,4 +46,100 @@ func captureOutputs(f func()) (stdout, stderr []byte) {
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
 	return
+}
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("info", func() {
+			stdout, _ := captureOutputs(func() {
+				logger := NewLogger(LEVEL_INFO)
+				logger.Info("TAG", "some %s info to log", "awesome")
+			})
+
+			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "INFO - some awesome info to log"))
+			assert.True(GinkgoT(), matcher.Match(stdout))
+		})
+		It("debug", func() {
+
+			stdout, _ := captureOutputs(func() {
+				logger := NewLogger(LEVEL_DEBUG)
+				logger.Debug("TAG", "some %s info to log", "awesome")
+			})
+
+			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some awesome info to log"))
+			assert.True(GinkgoT(), matcher.Match(stdout))
+		})
+		It("debug with details", func() {
+
+			stdout, _ := captureOutputs(func() {
+				logger := NewLogger(LEVEL_DEBUG)
+				logger.DebugWithDetails("TAG", "some info to log", "awesome")
+			})
+
+			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some info to log"))
+			assert.True(GinkgoT(), matcher.Match(stdout))
+
+			assert.Contains(GinkgoT(), string(stdout), "\n********************\nawesome\n********************")
+		})
+		It("error", func() {
+
+			_, stderr := captureOutputs(func() {
+				logger := NewLogger(LEVEL_ERROR)
+				logger.Error("TAG", "some %s info to log", "awesome")
+			})
+
+			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some awesome info to log"))
+			assert.True(GinkgoT(), matcher.Match(stderr))
+		})
+		It("error with details", func() {
+
+			_, stderr := captureOutputs(func() {
+				logger := NewLogger(LEVEL_ERROR)
+				logger.ErrorWithDetails("TAG", "some error to log", "awesome")
+			})
+
+			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some error to log"))
+			assert.True(GinkgoT(), matcher.Match(stderr))
+
+			assert.Contains(GinkgoT(), string(stderr), "\n********************\nawesome\n********************")
+		})
+		It("log level debug", func() {
+
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LEVEL_DEBUG)
+				logger.Debug("DEBUG", "some debug log")
+				logger.Info("INFO", "some info log")
+				logger.Error("ERROR", "some error log")
+			})
+
+			assert.Contains(GinkgoT(), string(stdout), "DEBUG")
+			assert.Contains(GinkgoT(), string(stdout), "INFO")
+			assert.Contains(GinkgoT(), string(stderr), "ERROR")
+		})
+		It("log level info", func() {
+
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LEVEL_INFO)
+				logger.Debug("DEBUG", "some debug log")
+				logger.Info("INFO", "some info log")
+				logger.Error("ERROR", "some error log")
+			})
+
+			assert.NotContains(GinkgoT(), string(stdout), "DEBUG")
+			assert.Contains(GinkgoT(), string(stdout), "INFO")
+			assert.Contains(GinkgoT(), string(stderr), "ERROR")
+		})
+		It("log level error", func() {
+
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LEVEL_ERROR)
+				logger.Debug("DEBUG", "some debug log")
+				logger.Info("INFO", "some info log")
+				logger.Error("ERROR", "some error log")
+			})
+
+			assert.NotContains(GinkgoT(), string(stdout), "DEBUG")
+			assert.NotContains(GinkgoT(), string(stdout), "INFO")
+			assert.Contains(GinkgoT(), string(stderr), "ERROR")
+		})
+	})
 }

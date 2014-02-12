@@ -3,67 +3,72 @@ package disk_test
 import (
 	. "bosh/platform/disk"
 	fakesys "bosh/system/fakes"
+	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestLinuxFormatWhenUsingSwapFs(t *testing.T) {
-	fakeRunner := &fakesys.FakeCmdRunner{}
-	fakeFs := &fakesys.FakeFileSystem{}
-	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
+func init() {
+	Describe("Testing with Ginkgo", func() {
+		It("linux format when using swap fs", func() {
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
-	formatter.Format("/dev/xvda1", FileSystemSwap)
+			fakeRunner := &fakesys.FakeCmdRunner{}
+			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-	assert.Equal(t, 2, len(fakeRunner.RunCommands))
-	assert.Equal(t, []string{"mkswap", "/dev/xvda1"}, fakeRunner.RunCommands[1])
-}
+			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+			formatter.Format("/dev/xvda1", FileSystemSwap)
 
-func TestLinuxFormatWhenUsingSwapFsAndPartitionIsSwap(t *testing.T) {
-	fakeRunner := &fakesys.FakeCmdRunner{}
-	fakeFs := &fakesys.FakeFileSystem{}
-	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="swap" yyyy zzzz`})
+			assert.Equal(GinkgoT(), 2, len(fakeRunner.RunCommands))
+			assert.Equal(GinkgoT(), []string{"mkswap", "/dev/xvda1"}, fakeRunner.RunCommands[1])
+		})
+		It("linux format when using swap fs and partition is swap", func() {
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
-	formatter.Format("/dev/xvda1", FileSystemSwap)
+			fakeRunner := &fakesys.FakeCmdRunner{}
+			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="swap" yyyy zzzz`})
 
-	assert.Equal(t, 1, len(fakeRunner.RunCommands))
-	assert.Equal(t, []string{"blkid", "-p", "/dev/xvda1"}, fakeRunner.RunCommands[0])
-}
+			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+			formatter.Format("/dev/xvda1", FileSystemSwap)
 
-func TestLinuxFormatWhenUsingExt4FsWithLazyItableSupport(t *testing.T) {
-	fakeRunner := &fakesys.FakeCmdRunner{}
-	fakeFs := &fakesys.FakeFileSystem{}
-	fakeFs.WriteToFile("/sys/fs/ext4/features/lazy_itable_init", "")
-	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
+			assert.Equal(GinkgoT(), 1, len(fakeRunner.RunCommands))
+			assert.Equal(GinkgoT(), []string{"blkid", "-p", "/dev/xvda1"}, fakeRunner.RunCommands[0])
+		})
+		It("linux format when using ext4 fs with lazy itable support", func() {
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
-	formatter.Format("/dev/xvda2", FileSystemExt4)
+			fakeRunner := &fakesys.FakeCmdRunner{}
+			fakeFs := &fakesys.FakeFileSystem{}
+			fakeFs.WriteToFile("/sys/fs/ext4/features/lazy_itable_init", "")
+			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
-	assert.Equal(t, 2, len(fakeRunner.RunCommands))
-	assert.Equal(t, []string{"mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", "/dev/xvda2"}, fakeRunner.RunCommands[1])
-}
+			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+			formatter.Format("/dev/xvda2", FileSystemExt4)
 
-func TestLinuxFormatWhenUsingExt4FsWithoutLazyItableSupport(t *testing.T) {
-	fakeRunner := &fakesys.FakeCmdRunner{}
-	fakeFs := &fakesys.FakeFileSystem{}
-	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
+			assert.Equal(GinkgoT(), 2, len(fakeRunner.RunCommands))
+			assert.Equal(GinkgoT(), []string{"mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", "/dev/xvda2"}, fakeRunner.RunCommands[1])
+		})
+		It("linux format when using ext4 fs without lazy itable support", func() {
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
-	formatter.Format("/dev/xvda2", FileSystemExt4)
+			fakeRunner := &fakesys.FakeCmdRunner{}
+			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
-	assert.Equal(t, 2, len(fakeRunner.RunCommands))
-	assert.Equal(t, []string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}, fakeRunner.RunCommands[1])
-}
+			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+			formatter.Format("/dev/xvda2", FileSystemExt4)
 
-func TestLinuxFormatWhenUsingExt4FsAndPartitionIsExt4(t *testing.T) {
-	fakeRunner := &fakesys.FakeCmdRunner{}
-	fakeFs := &fakesys.FakeFileSystem{}
-	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
+			assert.Equal(GinkgoT(), 2, len(fakeRunner.RunCommands))
+			assert.Equal(GinkgoT(), []string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}, fakeRunner.RunCommands[1])
+		})
+		It("linux format when using ext4 fs and partition is ext4", func() {
 
-	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
-	formatter.Format("/dev/xvda1", FileSystemExt4)
+			fakeRunner := &fakesys.FakeCmdRunner{}
+			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-	assert.Equal(t, 1, len(fakeRunner.RunCommands))
-	assert.Equal(t, []string{"blkid", "-p", "/dev/xvda1"}, fakeRunner.RunCommands[0])
+			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+			formatter.Format("/dev/xvda1", FileSystemExt4)
+
+			assert.Equal(GinkgoT(), 1, len(fakeRunner.RunCommands))
+			assert.Equal(GinkgoT(), []string{"blkid", "-p", "/dev/xvda1"}, fakeRunner.RunCommands[0])
+		})
+	})
 }
