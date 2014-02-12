@@ -107,6 +107,7 @@ module Bosh::Director
 
           if vm && vm.agent_id
             ignoring_errors_when_forced do
+              raise Bosh::Clouds::VMNotFound, "VM `#{vm.cid}' not found" unless @cloud.has_vm?(vm.cid)
               agent = AgentClient.with_defaults(vm.agent_id)
               agent.stop
             end
