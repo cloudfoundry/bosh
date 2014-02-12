@@ -248,7 +248,14 @@ module Bosh::Cli::Command
       end
     end
 
+    usage 'untaint'
+    desc 'Untaint current deployment'
+    def untaint(deployment_name)
+      director.untaint(deployment_name)
+    end
+
     private
+
     def show_current
       if deployment
         if interactive?

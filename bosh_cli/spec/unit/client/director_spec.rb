@@ -63,6 +63,15 @@ describe Bosh::Cli::Client::Director do
   describe 'API calls' do
     let(:task_number) { 232 }
 
+    describe '#untaint' do
+      it 'requests a put to the correct url' do
+        deployment_name = 'deployment_foo'
+        expect(@director).to receive(:request_and_track).
+          with(:put, "/deployments/#{deployment_name}/untaint", {})
+        @director.untaint(deployment_name)
+      end
+    end
+
     describe '#list_vms' do
       let(:http_client) { double('HTTPClient').as_null_object }
       let(:response) { double('Response', body: response_body, code: 200, headers: {}) }
