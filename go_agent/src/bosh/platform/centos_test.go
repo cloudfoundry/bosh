@@ -99,16 +99,20 @@ func init() {
 		})
 
 		JustBeforeEach(func() {
-			platform = NewCentosPlatform(
-				collector,
+			linux := NewLinuxPlatform(
 				fs,
 				cmdRunner,
-				diskManager,
+				collector,
 				compressor,
 				copier,
-				vitalsService,
 				dirProvider,
+				vitalsService,
 				cdutil,
+			)
+
+			platform = NewCentosPlatform(
+				linux,
+				diskManager,
 				1*time.Millisecond,
 				1*time.Millisecond,
 			)

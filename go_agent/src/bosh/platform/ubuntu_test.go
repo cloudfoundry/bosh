@@ -104,16 +104,20 @@ func init() {
 		})
 
 		JustBeforeEach(func() {
-			platform = NewUbuntuPlatform(
-				collector,
+			linux := NewLinuxPlatform(
 				fs,
 				cmdRunner,
-				diskManager,
+				collector,
 				compressor,
 				copier,
-				vitalsService,
 				dirProvider,
+				vitalsService,
 				cdutil,
+			)
+
+			platform = NewUbuntuPlatform(
+				linux,
+				diskManager,
 				1*time.Millisecond,
 				diskWaitTimeout,
 			)

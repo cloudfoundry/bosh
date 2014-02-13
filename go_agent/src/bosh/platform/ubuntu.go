@@ -2,14 +2,12 @@ package platform
 
 import (
 	bosherr "bosh/errors"
-	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
-	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	"bytes"
 	"fmt"
@@ -22,90 +20,65 @@ import (
 )
 
 type ubuntu struct {
-	collector       boshstats.StatsCollector
-	fs              boshsys.FileSystem
-	cmdRunner       boshsys.CmdRunner
+	linux           linux
 	partitioner     boshdisk.Partitioner
 	formatter       boshdisk.Formatter
 	mounter         boshdisk.Mounter
-	compressor      boshcmd.Compressor
-	copier          boshcmd.Copier
 	diskWaitTimeout time.Duration
-	dirProvider     boshdirs.DirectoriesProvider
-	vitalsService   boshvitals.Service
 	arpWaitInterval time.Duration
-	cdutil          boshcd.CdUtil
 }
 
 func NewUbuntuPlatform(
-	collector boshstats.StatsCollector,
-	fs boshsys.FileSystem,
-	cmdRunner boshsys.CmdRunner,
+	linux linux,
 	diskManager boshdisk.Manager,
-	compressor boshcmd.Compressor,
-	copier boshcmd.Copier,
-	vitalsService boshvitals.Service,
-	dirProvider boshdirs.DirectoriesProvider,
-	cdutil boshcd.CdUtil,
 	arpWaitInterval time.Duration,
 	diskWaitTimeout time.Duration,
 ) (platform ubuntu) {
-	platform.collector = collector
-	platform.fs = fs
-	platform.cmdRunner = cmdRunner
-	platform.dirProvider = dirProvider
+	platform.linux = linux
 
 	platform.partitioner = diskManager.GetPartitioner()
 	platform.formatter = diskManager.GetFormatter()
 	platform.mounter = diskManager.GetMounter()
-	platform.cdutil = cdutil
 
-	platform.compressor = compressor
-	platform.copier = copier
-	platform.vitalsService = vitalsService
 	platform.arpWaitInterval = arpWaitInterval
 	platform.diskWaitTimeout = diskWaitTimeout
 	return
 }
 
 func (p ubuntu) GetFs() (fs boshsys.FileSystem) {
-	return p.fs
+	return p.linux.GetFs()
 }
 
 func (p ubuntu) GetRunner() (runner boshsys.CmdRunner) {
-	return p.cmdRunner
+	return p.linux.GetRunner()
 }
 
 func (p ubuntu) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
-	return p.collector
+	return p.linux.GetStatsCollector()
 }
 
 func (p ubuntu) GetCompressor() (runner boshcmd.Compressor) {
-	return p.compressor
+	return p.linux.GetCompressor()
 }
 
 func (p ubuntu) GetCopier() (runner boshcmd.Copier) {
-	return p.copier
+	return p.linux.GetCopier()
 }
 
 func (p ubuntu) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
-	return p.dirProvider
+	return p.linux.GetDirProvider()
 }
 
 func (p ubuntu) GetVitalsService() (service boshvitals.Service) {
-	return p.vitalsService
+	return p.linux.GetVitalsService()
 }
 
 func (p ubuntu) SetupRuntimeConfiguration() (err error) {
-	_, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
-	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to bosh-agent-rc")
-	}
-	return
+	return p.linux.SetupRuntimeConfiguration()
 }
 
 func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
-	p.fs.MkdirAll(basePath, os.FileMode(0755))
+	p.linux.GetFs().MkdirAll(basePath, os.FileMode(0755))
 	if err != nil {
 		err = bosherr.WrapError(err, "Making user base path")
 		return
@@ -119,7 +92,7 @@ func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
 
 	args = append(args, username)
 
-	_, _, err = p.cmdRunner.RunCommand("useradd", args...)
+	_, _, err = p.linux.GetRunner().RunCommand("useradd", args...)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to useradd")
 		return
@@ -128,7 +101,7 @@ func (p ubuntu) CreateUser(username, password, basePath string) (err error) {
 }
 
 func (p ubuntu) AddUserToGroups(username string, groups []string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
+	_, _, err = p.linux.GetRunner().RunCommand("usermod", "-G", strings.Join(groups, ","), username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
 	}
@@ -155,12 +128,12 @@ func (p ubuntu) DeleteEphemeralUsersMatching(reg string) (err error) {
 }
 
 func (p ubuntu) deleteUser(user string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
+	_, _, err = p.linux.GetRunner().RunCommand("userdel", "-r", user)
 	return
 }
 
 func (p ubuntu) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []string, err error) {
-	passwd, err := p.fs.ReadFile("/etc/passwd")
+	passwd, err := p.linux.GetFs().ReadFile("/etc/passwd")
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading /etc/passwd")
 		return
@@ -179,31 +152,31 @@ func (p ubuntu) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []
 }
 
 func (p ubuntu) SetupSsh(publicKey, username string) (err error) {
-	homeDir, err := p.fs.HomeDir(username)
+	homeDir, err := p.linux.GetFs().HomeDir(username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Finding home dir for user")
 		return
 	}
 
 	sshPath := filepath.Join(homeDir, ".ssh")
-	p.fs.MkdirAll(sshPath, os.FileMode(0700))
-	p.fs.Chown(sshPath, username)
+	p.linux.GetFs().MkdirAll(sshPath, os.FileMode(0700))
+	p.linux.GetFs().Chown(sshPath, username)
 
 	authKeysPath := filepath.Join(sshPath, "authorized_keys")
-	_, err = p.fs.WriteToFile(authKeysPath, publicKey)
+	_, err = p.linux.GetFs().WriteToFile(authKeysPath, publicKey)
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating authorized_keys file")
 		return
 	}
 
-	p.fs.Chown(authKeysPath, username)
-	p.fs.Chmod(authKeysPath, os.FileMode(0600))
+	p.linux.GetFs().Chown(authKeysPath, username)
+	p.linux.GetFs().Chmod(authKeysPath, os.FileMode(0600))
 
 	return
 }
 
 func (p ubuntu) SetUserPassword(user, encryptedPwd string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("usermod", "-p", encryptedPwd, user)
+	_, _, err = p.linux.GetRunner().RunCommand("usermod", "-p", encryptedPwd, user)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
 	}
@@ -211,13 +184,13 @@ func (p ubuntu) SetUserPassword(user, encryptedPwd string) (err error) {
 }
 
 func (p ubuntu) SetupHostname(hostname string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("hostname", hostname)
+	_, _, err = p.linux.GetRunner().RunCommand("hostname", hostname)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to hostname")
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/hostname", hostname)
+	_, err = p.linux.GetFs().WriteToFile("/etc/hostname", hostname)
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing /etc/hostname")
 		return
@@ -232,7 +205,7 @@ func (p ubuntu) SetupHostname(hostname string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/hosts", buffer.String())
+	_, err = p.linux.GetFs().WriteToFile("/etc/hosts", buffer.String())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/hosts")
 	}
@@ -277,7 +250,7 @@ func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 		return
 	}
 
-	written, err := p.fs.WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
+	written, err := p.linux.GetFs().WriteToFile("/etc/dhcp3/dhclient.conf", buffer.String())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/dhcp3/dhclient.conf")
 		return
@@ -285,8 +258,8 @@ func (p ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
 
 	if written {
 		// Ignore errors here, just run the commands
-		p.cmdRunner.RunCommand("pkill", "dhclient3")
-		p.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+		p.linux.GetRunner().RunCommand("pkill", "dhclient3")
+		p.linux.GetRunner().RunCommand("/etc/init.d/networking", "restart")
 	}
 
 	return
@@ -338,11 +311,11 @@ func (p ubuntu) SetupManualNetworking(networks boshsettings.Networks) (err error
 func (p ubuntu) gratuitiousArp(networks []customNetwork) {
 	for i := 0; i < 6; i++ {
 		for _, network := range networks {
-			for !p.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
+			for !p.linux.GetFs().FileExists(filepath.Join("/sys/class/net", network.Interface)) {
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			p.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.Ip)
+			p.linux.GetRunner().RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.Ip)
 			time.Sleep(p.arpWaitInterval)
 		}
 	}
@@ -383,7 +356,7 @@ func (p ubuntu) writeNetworkInterfaces(networks boshsettings.Networks) (modified
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/network/interfaces", buffer.String())
+	_, err = p.linux.GetFs().WriteToFile("/etc/network/interfaces", buffer.String())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/network/interfaces")
 		return
@@ -415,7 +388,7 @@ func (p ubuntu) writeResolvConf(networks boshsettings.Networks) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/resolv.conf", buffer.String())
+	_, err = p.linux.GetFs().WriteToFile("/etc/resolv.conf", buffer.String())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/resolv.conf")
 		return
@@ -430,7 +403,7 @@ const UBUNTU_RESOLV_CONF_TEMPLATE = `{{ range .DnsServers }}nameserver {{ . }}
 func (p ubuntu) detectMacAddresses() (addresses map[string]string, err error) {
 	addresses = map[string]string{}
 
-	filePaths, err := p.fs.Glob("/sys/class/net/*")
+	filePaths, err := p.linux.GetFs().Glob("/sys/class/net/*")
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting file list from /sys/class/net")
 		return
@@ -438,7 +411,7 @@ func (p ubuntu) detectMacAddresses() (addresses map[string]string, err error) {
 
 	var macAddress string
 	for _, filePath := range filePaths {
-		macAddress, err = p.fs.ReadFile(filepath.Join(filePath, "address"))
+		macAddress, err = p.linux.GetFs().ReadFile(filepath.Join(filePath, "address"))
 		if err != nil {
 			err = bosherr.WrapError(err, "Reading mac address from file")
 			return
@@ -453,8 +426,8 @@ func (p ubuntu) detectMacAddresses() (addresses map[string]string, err error) {
 
 func (p ubuntu) restartNetworkingInterfaces(networks []customNetwork) {
 	for _, network := range networks {
-		p.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
-		p.cmdRunner.RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
+		p.linux.GetRunner().RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
+		p.linux.GetRunner().RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
 	}
 	return
 }
@@ -474,7 +447,7 @@ func (p ubuntu) SetupLogrotate(groupName, basePath, size string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile(filepath.Join("/etc/logrotate.d", groupName), buffer.String())
+	_, err = p.linux.GetFs().WriteToFile(filepath.Join("/etc/logrotate.d", groupName), buffer.String())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/logrotate.d")
 		return
@@ -497,25 +470,25 @@ const UBUNTU_ETC_LOGROTATE_D_TEMPLATE = `# Generated by bosh-agent
 `
 
 func (p ubuntu) SetTimeWithNtpServers(servers []string) (err error) {
-	serversFilePath := filepath.Join(p.dirProvider.BaseDir(), "/bosh/etc/ntpserver")
+	serversFilePath := filepath.Join(p.linux.GetDirProvider().BaseDir(), "/bosh/etc/ntpserver")
 	if len(servers) == 0 {
 		return
 	}
 
-	_, err = p.fs.WriteToFile(serversFilePath, strings.Join(servers, " "))
+	_, err = p.linux.GetFs().WriteToFile(serversFilePath, strings.Join(servers, " "))
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to %s", serversFilePath)
 		return
 	}
 
 	// Make a best effort to sync time now but don't error
-	_, _, _ = p.cmdRunner.RunCommand("ntpdate")
+	_, _, _ = p.linux.GetRunner().RunCommand("ntpdate")
 	return
 }
 
 func (p ubuntu) SetupEphemeralDiskWithPath(realPath string) (err error) {
-	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
-	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+	mountPoint := filepath.Join(p.linux.GetDirProvider().BaseDir(), "data")
+	p.linux.GetFs().MkdirAll(mountPoint, os.FileMode(0750))
 
 	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
 	if err != nil {
@@ -562,29 +535,29 @@ func (p ubuntu) SetupEphemeralDiskWithPath(realPath string) (err error) {
 
 	sysdir := filepath.Join(mountPoint, "sys")
 	dir := filepath.Join(mountPoint, "sys", "log")
-	err = p.fs.MkdirAll(dir, os.FileMode(0750))
+	err = p.linux.GetFs().MkdirAll(dir, os.FileMode(0750))
 	if err != nil {
 		err = bosherr.WrapError(err, "Making %s dir", dir)
 		return
 	}
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysdir)
+	_, _, err = p.linux.GetRunner().RunCommand("chown", "root:vcap", sysdir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", sysdir)
 		return
 	}
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	_, _, err = p.linux.GetRunner().RunCommand("chown", "root:vcap", dir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", dir)
 		return
 	}
 
 	dir = filepath.Join(mountPoint, "sys", "run")
-	err = p.fs.MkdirAll(dir, os.FileMode(0750))
+	err = p.linux.GetFs().MkdirAll(dir, os.FileMode(0750))
 	if err != nil {
 		err = bosherr.WrapError(err, "Making %s dir", dir)
 		return
 	}
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	_, _, err = p.linux.GetRunner().RunCommand("chown", "root:vcap", dir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", dir)
 		return
@@ -593,12 +566,12 @@ func (p ubuntu) SetupEphemeralDiskWithPath(realPath string) (err error) {
 }
 
 func (p ubuntu) SetupTmpDir() (err error) {
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", "/tmp")
+	_, _, err = p.linux.GetRunner().RunCommand("chown", "root:vcap", "/tmp")
 	if err != nil {
 		err = bosherr.WrapError(err, "chown /tmp")
 		return
 	}
-	_, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
+	_, _, err = p.linux.GetRunner().RunCommand("chmod", "0770", "/tmp")
 	if err != nil {
 		err = bosherr.WrapError(err, "chmod /tmp")
 		return
@@ -608,7 +581,7 @@ func (p ubuntu) SetupTmpDir() (err error) {
 }
 
 func (p ubuntu) MountPersistentDisk(devicePath, mountPoint string) (err error) {
-	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
+	p.linux.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
 
 	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {
@@ -660,7 +633,7 @@ func (p ubuntu) NormalizeDiskPath(devicePath string) (realPath string, found boo
 }
 
 func (p ubuntu) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
-	return p.cdutil.GetFileContents(fileName)
+	return p.linux.GetFileContentsFromCDROM(fileName)
 }
 
 func (p ubuntu) IsMountPoint(path string) (result bool, err error) {
@@ -677,7 +650,7 @@ func (p ubuntu) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err 
 	// Golang does not implement a file copy that would allow us to preserve dates...
 	// So we have to shell out to tar to perform the copy instead of delegating to the FileSystem
 	tarCopy := fmt.Sprintf("(tar -C %s -cf - .) | (tar -C %s -xpf -)", fromMountPoint, toMountPoint)
-	_, _, err = p.cmdRunner.RunCommand("sh", "-c", tarCopy)
+	_, _, err = p.linux.GetRunner().RunCommand("sh", "-c", tarCopy)
 	if err != nil {
 		err = bosherr.WrapError(err, "Copying files from old disk to new disk")
 		return
@@ -707,7 +680,7 @@ func (p ubuntu) IsDevicePathMounted(path string) (result bool, err error) {
 }
 
 func (p ubuntu) StartMonit() (err error) {
-	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
+	_, _, err = p.linux.GetRunner().RunCommand("sv", "up", "monit")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sv")
 	}
@@ -715,9 +688,9 @@ func (p ubuntu) StartMonit() (err error) {
 }
 
 func (p ubuntu) SetupMonitUser() (err error) {
-	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
-	if !p.fs.FileExists(monitUserFilePath) {
-		_, err = p.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
+	monitUserFilePath := filepath.Join(p.linux.GetDirProvider().BaseDir(), "monit", "monit.user")
+	if !p.linux.GetFs().FileExists(monitUserFilePath) {
+		_, err = p.linux.GetFs().WriteToFile(monitUserFilePath, "vcap:random-password")
 		if err != nil {
 			err = bosherr.WrapError(err, "Writing monit user file")
 		}
@@ -726,8 +699,8 @@ func (p ubuntu) SetupMonitUser() (err error) {
 }
 
 func (p ubuntu) GetMonitCredentials() (username, password string, err error) {
-	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
-	credContent, err := p.fs.ReadFile(monitUserFilePath)
+	monitUserFilePath := filepath.Join(p.linux.GetDirProvider().BaseDir(), "monit", "monit.user")
+	credContent, err := p.linux.GetFs().ReadFile(monitUserFilePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading monit user file")
 		return
@@ -766,7 +739,7 @@ func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bo
 	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
 	for _, prefix := range possiblePrefixes {
 		path := prefix + pathSuffix
-		if p.fs.FileExists(path) {
+		if p.linux.GetFs().FileExists(path) {
 			realPath = path
 			found = true
 			return
@@ -776,7 +749,7 @@ func (p ubuntu) findPossibleDevice(devicePath string) (realPath string, found bo
 }
 
 func (p ubuntu) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
-	memStats, err := p.collector.GetMemStats()
+	memStats, err := p.linux.GetStatsCollector().GetMemStats()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mem stats")
 		return

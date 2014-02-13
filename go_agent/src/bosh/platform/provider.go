@@ -35,30 +35,27 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	copier := boshcmd.NewCpCopier(runner, fs)
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
+	linux := NewLinuxPlatform(
+		fs,
+		runner,
+		sigarCollector,
+		compressor,
+		copier,
+		dirProvider,
+		vitalsService,
+		linuxCdutil,
+	)
+
 	p.platforms = map[string]Platform{
 		"ubuntu": NewUbuntuPlatform(
-			sigarCollector,
-			fs,
-			runner,
+			linux,
 			linuxDiskManager,
-			compressor,
-			copier,
-			vitalsService,
-			dirProvider,
-			linuxCdutil,
 			10*time.Second,
 			3*time.Minute,
 		),
 		"centos": NewCentosPlatform(
-			sigarCollector,
-			fs,
-			runner,
+			linux,
 			linuxDiskManager,
-			compressor,
-			copier,
-			vitalsService,
-			dirProvider,
-			linuxCdutil,
 			10*time.Second,
 			3*time.Minute,
 		),
