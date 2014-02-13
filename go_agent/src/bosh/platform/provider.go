@@ -6,8 +6,10 @@ import (
 	boshcdrom "bosh/platform/cdrom"
 	boshudev "bosh/platform/cdrom/udevdevice"
 	boshcd "bosh/platform/cdutil"
+	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
+	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	"time"
@@ -22,17 +24,45 @@ type provider struct {
 func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger, runner)
-	sigarStatsCollector := boshstats.NewSigarStatsCollector()
+	sigarCollector := boshstats.NewSigarStatsCollector()
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs)
 
 	udev := boshudev.NewConcreteUdevDevice(runner)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcd.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
 
+	compressor := boshcmd.NewTarballCompressor(runner, fs)
+	copier := boshcmd.NewCpCopier(runner, fs)
+	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
+
 	p.platforms = map[string]Platform{
-		"ubuntu": NewUbuntuPlatform(sigarStatsCollector, fs, runner, linuxDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
-		"centos": NewCentosPlatform(sigarStatsCollector, fs, runner, linuxDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
-		"dummy":  NewDummyPlatform(sigarStatsCollector, fs, runner, dirProvider),
+		"ubuntu": NewUbuntuPlatform(
+			sigarCollector,
+			fs,
+			runner,
+			linuxDiskManager,
+			compressor,
+			copier,
+			vitalsService,
+			dirProvider,
+			linuxCdutil,
+			10*time.Second,
+			3*time.Minute,
+		),
+		"centos": NewCentosPlatform(
+			sigarCollector,
+			fs,
+			runner,
+			linuxDiskManager,
+			compressor,
+			copier,
+			vitalsService,
+			dirProvider,
+			linuxCdutil,
+			10*time.Second,
+			3*time.Minute,
+		),
+		"dummy": NewDummyPlatform(sigarCollector, fs, runner, dirProvider),
 	}
 	return
 }

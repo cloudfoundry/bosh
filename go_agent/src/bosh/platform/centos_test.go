@@ -3,9 +3,11 @@ package platform_test
 import (
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
+	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
+	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
@@ -72,13 +74,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		var (
-			collector   *fakestats.FakeStatsCollector
-			fs          *fakesys.FakeFileSystem
-			cmdRunner   *fakesys.FakeCmdRunner
-			diskManager fakedisk.FakeDiskManager
-			dirProvider boshdirs.DirectoriesProvider
-			platform    Platform
-			cdutil      *fakecd.FakeCdUtil
+			collector     *fakestats.FakeStatsCollector
+			fs            *fakesys.FakeFileSystem
+			cmdRunner     *fakesys.FakeCmdRunner
+			diskManager   fakedisk.FakeDiskManager
+			dirProvider   boshdirs.DirectoriesProvider
+			platform      Platform
+			cdutil        *fakecd.FakeCdUtil
+			compressor    boshcmd.Compressor
+			copier        boshcmd.Copier
+			vitalsService boshvitals.Service
 		)
 
 		BeforeEach(func() {
@@ -88,6 +93,9 @@ func init() {
 			diskManager = fakedisk.NewFakeDiskManager(cmdRunner)
 			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 			cdutil = fakecd.NewFakeCdUtil()
+			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
+			copier = boshcmd.NewCpCopier(cmdRunner, fs)
+			vitalsService = boshvitals.NewService(collector, dirProvider)
 		})
 
 		JustBeforeEach(func() {
@@ -96,6 +104,9 @@ func init() {
 				fs,
 				cmdRunner,
 				diskManager,
+				compressor,
+				copier,
+				vitalsService,
 				dirProvider,
 				cdutil,
 				1*time.Millisecond,

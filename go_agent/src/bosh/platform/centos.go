@@ -42,6 +42,9 @@ func NewCentosPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	diskManager boshdisk.Manager,
+	compressor boshcmd.Compressor,
+	copier boshcmd.Copier,
+	vitalsService boshvitals.Service,
 	dirProvider boshdirs.DirectoriesProvider,
 	cdutil boshcd.CdUtil,
 	arpWaitInterval time.Duration,
@@ -57,9 +60,9 @@ func NewCentosPlatform(
 	platform.mounter = diskManager.GetMounter()
 	platform.cdutil = cdutil
 
-	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
-	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
-	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
+	platform.compressor = compressor
+	platform.copier = copier
+	platform.vitalsService = vitalsService
 	platform.arpWaitInterval = arpWaitInterval
 	platform.diskWaitTimeout = diskWaitTimeout
 	return

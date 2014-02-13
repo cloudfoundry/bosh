@@ -3,9 +3,11 @@ package platform_test
 import (
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
+	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
+	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
@@ -83,6 +85,9 @@ func init() {
 			diskWaitTimeout time.Duration
 			platform        Platform
 			cdutil          *fakecd.FakeCdUtil
+			compressor      boshcmd.Compressor
+			copier          boshcmd.Copier
+			vitalsService   boshvitals.Service
 		)
 
 		BeforeEach(func() {
@@ -93,6 +98,9 @@ func init() {
 			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 			diskWaitTimeout = 1 * time.Millisecond
 			cdutil = fakecd.NewFakeCdUtil()
+			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
+			copier = boshcmd.NewCpCopier(cmdRunner, fs)
+			vitalsService = boshvitals.NewService(collector, dirProvider)
 		})
 
 		JustBeforeEach(func() {
@@ -101,6 +109,9 @@ func init() {
 				fs,
 				cmdRunner,
 				diskManager,
+				compressor,
+				copier,
+				vitalsService,
 				dirProvider,
 				cdutil,
 				1*time.Millisecond,
