@@ -2,6 +2,7 @@ package platform_test
 
 import (
 	. "bosh/platform"
+	fakecd "bosh/platform/cdutil/fakes"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
@@ -9,11 +10,11 @@ import (
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	"fmt"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-
-	. "github.com/onsi/ginkgo"
 	"time"
 )
 
@@ -71,13 +72,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		var (
-			collector         *fakestats.FakeStatsCollector
-			fs                *fakesys.FakeFileSystem
-			cmdRunner         *fakesys.FakeCmdRunner
-			diskManager       fakedisk.FakeDiskManager
-			dirProvider       boshdirs.DirectoriesProvider
-			cdromWaitInterval time.Duration
-			platform          Platform
+			collector   *fakestats.FakeStatsCollector
+			fs          *fakesys.FakeFileSystem
+			cmdRunner   *fakesys.FakeCmdRunner
+			diskManager fakedisk.FakeDiskManager
+			dirProvider boshdirs.DirectoriesProvider
+			platform    Platform
+			cdutil      *fakecd.FakeCdUtil
 		)
 
 		BeforeEach(func() {
@@ -86,7 +87,7 @@ func init() {
 			cmdRunner = &fakesys.FakeCmdRunner{}
 			diskManager = fakedisk.NewFakeDiskManager(cmdRunner)
 			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
-			cdromWaitInterval = 1 * time.Millisecond
+			cdutil = fakecd.NewFakeCdUtil()
 		})
 
 		JustBeforeEach(func() {
@@ -96,7 +97,7 @@ func init() {
 				cmdRunner,
 				diskManager,
 				dirProvider,
-				cdromWaitInterval,
+				cdutil,
 				1*time.Millisecond,
 				1*time.Millisecond,
 			)
@@ -565,48 +566,14 @@ foobar:...
 			assert.True(GinkgoT(), found)
 		})
 
-		It("centos get file contents from CDROM", func() {
-			fs.WriteToFile("/dev/bosh-cdrom", "")
-			settingsPath := filepath.Join(platform.GetDirProvider().SettingsDir(), "env")
-			fs.WriteToFile(settingsPath, "some stuff")
-			fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
-
-			contents, err := platform.GetFileContentsFromCDROM("env")
-			assert.NoError(GinkgoT(), err)
-
-			assert.Equal(GinkgoT(), 3, len(cmdRunner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"mount", "/dev/sr0", "/fake-dir/bosh/settings"}, cmdRunner.RunCommands[0])
-			assert.Equal(GinkgoT(), []string{"umount", "/fake-dir/bosh/settings"}, cmdRunner.RunCommands[1])
-			assert.Equal(GinkgoT(), []string{"eject", "/dev/sr0"}, cmdRunner.RunCommands[2])
-
-			assert.Equal(GinkgoT(), contents, []byte("some stuff"))
-		})
-
-		It("centos get file contents from CDROM when CDROM failed to load", func() {
-			fs.WriteToFile("/dev/sr0/env", "some stuff")
-			fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
-
-			_, err := platform.GetFileContentsFromCDROM("env")
-			assert.Error(GinkgoT(), err)
-		})
-
-		Context("when cdrom appears within timeout", func() {
-			BeforeEach(func() {
-				cdromWaitInterval = 1 * time.Second
-			})
-
-			It("centos get file contents from CDROM retries CDROM reading", func() {
-				settingsPath := filepath.Join(platform.GetDirProvider().SettingsDir(), "env")
-				fs.WriteToFile(settingsPath, "some stuff")
-				fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
-
-				go func() {
-					_, err := platform.GetFileContentsFromCDROM("env")
-					assert.NoError(GinkgoT(), err)
-				}()
-
-				time.Sleep(500 * time.Millisecond)
-				fs.WriteToFile("/dev/bosh-cdrom", "")
+		Describe("GetFileContentsFromCDROM", func() {
+			It("delegates to cdutil", func() {
+				cdutil.GetFileContentsContents = []byte("fake-contents")
+				filename := "fake-env"
+				contents, err := platform.GetFileContentsFromCDROM(filename)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cdutil.GetFileContentsFilename).To(Equal(filename))
+				Expect(contents).To(Equal(cdutil.GetFileContentsContents))
 			})
 		})
 

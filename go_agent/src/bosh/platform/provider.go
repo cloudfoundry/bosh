@@ -3,6 +3,9 @@ package platform
 import (
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
+	boshcdrom "bosh/platform/cdrom"
+	boshudev "bosh/platform/cdrom/udevdevice"
+	boshcd "bosh/platform/cdutil"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshdirs "bosh/settings/directories"
@@ -23,9 +26,13 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(logger, runner, fs)
 	centosDiskManager := boshdisk.NewCentosDiskManager(logger, runner, fs)
 
+	udev := boshudev.NewConcreteUdevDevice(runner)
+	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
+	linuxCdutil := boshcd.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
+
 	p.platforms = map[string]Platform{
-		"ubuntu": NewUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, dirProvider, 500*time.Millisecond, 10*time.Second, 3*time.Minute),
-		"centos": NewCentosPlatform(sigarStatsCollector, fs, runner, centosDiskManager, dirProvider, 500*time.Millisecond, 10*time.Second, 3*time.Minute),
+		"ubuntu": NewUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
+		"centos": NewCentosPlatform(sigarStatsCollector, fs, runner, centosDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
 		"dummy":  NewDummyPlatform(sigarStatsCollector, fs, runner, dirProvider),
 	}
 	return
