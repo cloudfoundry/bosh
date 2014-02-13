@@ -188,6 +188,21 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           "`template' for multiple templates will soon be unsupported."
         )
       end
+
+      it "raises an error when a job has no release" do
+        job_spec['template'] = 'fake-template-name'
+        job_spec.delete('release')
+
+        fake_releases = 2.times.map {
+          instance_double(
+            'Bosh::Director::DeploymentPlan::ReleaseVersion',
+            template: nil,
+          )
+        }
+        expect(deployment_plan).to receive(:releases).and_return(fake_releases)
+
+        expect { parser.parse(job_spec) }.to raise_error(Bosh::Director::JobMissingRelease, "Cannot tell what release job `fake-job-name' is supposed to use, please explicitly specify one")
+      end
     end
 
     describe 'templates key' do

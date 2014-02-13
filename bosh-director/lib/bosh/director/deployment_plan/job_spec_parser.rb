@@ -71,15 +71,16 @@ module Bosh::Director
               "`template' for multiple templates will soon be unsupported."
             )
           end
-          if template_names.is_a?(String)
-            template_names = Array(template_names)
-          end
 
-          unless template_names.is_a?(Array)
+          unless template_names.is_a?(Array) || template_names.is_a?(String)
             invalid_type("template", "String or Array", template_names)
           end
 
-          template_names.each do |template_name|
+          unless @job.release
+            raise JobMissingRelease, "Cannot tell what release job `#{@job.name}' is supposed to use, please explicitly specify one"
+          end
+
+          Array(template_names).each do |template_name|
             @job.templates << @job.release.use_template_named(template_name)
           end
         end
