@@ -31,6 +31,24 @@ module Bosh::Dev::Openstack
 
         servers.empty?
       end
+
+      # destroy all images
+      cloud.openstack.images.all.each do |image|
+        if image.name =~ /^BOSH/
+          @logger.info("Destroying image #{image.name}")
+          # image.destroy
+        else
+          @logger.info("Ignoring image #{image.name}")
+        end
+      end
+
+      # destroy unattached volumes
+      cloud.openstack.volumes.all.each do |volume|
+        if volume.attachments == [{}]
+          @logger.info("Destroying volume #{volume.name}")
+          # volume.destroy
+        end
+      end
     end
 
     def clean_server(server)

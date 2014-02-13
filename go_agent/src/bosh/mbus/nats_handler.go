@@ -21,7 +21,7 @@ type natsHandler struct {
 	client   yagnats.NATSClient
 }
 
-func newNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
+func NewNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
 	handler.settings = settings
 	handler.logger = logger
 	handler.client = client

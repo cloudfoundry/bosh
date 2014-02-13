@@ -1,9 +1,10 @@
-package vitals
+package vitals_test
 
 import (
 	boshassert "bosh/assert"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
+	. "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	"github.com/stretchr/testify/assert"
 	"testing"

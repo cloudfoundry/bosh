@@ -49,17 +49,6 @@ module Bosh::Director
       Models::DeploymentProblem.filter(state: 'open').count.should == 0
     end
 
-    it 'whines on missing resolutions' do
-      problem = inactive_disk(22)
-
-      job = make_job(@deployment)
-
-      lambda {
-        job.apply_resolutions({ 32 => 'delete_disk' })
-      }.should raise_error(CloudcheckResolutionNotProvided,
-                           "Resolution for problem #{problem.id} (inactive_disk) is not provided")
-    end
-
     it 'notices and logs extra resolutions' do
       disks = (1..3).map { |_| Models::PersistentDisk.make(:active => false) }
 
@@ -75,7 +64,7 @@ module Bosh::Director
       job2 = make_job(@deployment)
 
       messages = []
-      job2.should_receive(:track_and_log).exactly(5).times.and_return { |message| messages << message }
+      job2.should_receive(:track_and_log).exactly(3).times.and_return { |message| messages << message }
       job2.apply_resolutions({
                                problems[0].id.to_s => 'ignore',
                                problems[1].id.to_s => 'ignore',
@@ -87,9 +76,7 @@ module Bosh::Director
       messages.should =~ [
         "Ignoring problem #{problems[0].id} (state is 'resolved')",
         "Ignoring problem #{problems[1].id} (state is 'resolved')",
-        'Ignoring problem 318 (not found)',
         "Ignoring problem #{problems[2].id} (not a part of this deployment)",
-        'Ignoring problem foobar (malformed id)'
       ]
     end
   end

@@ -9,8 +9,9 @@ module Bosh::Director
       include IpUtil
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
-      def initialize(deployment)
+      def initialize(deployment, event_log)
         @deployment = deployment
+        @event_log = event_log
       end
 
       # @param [Hash] job_spec Raw job spec from the deployment manifest
@@ -64,6 +65,12 @@ module Bosh::Director
       def parse_template
         template_names = safe_property(@job_spec, "template", optional: true)
         if template_names
+          if template_names.is_a?(Array)
+            @event_log.warn_deprecated(
+              "Please use `templates' when specifying multiple templates for a job. "\
+              "`template' for multiple templates will soon be unsupported."
+            )
+          end
           if template_names.is_a?(String)
             template_names = Array(template_names)
           end

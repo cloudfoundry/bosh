@@ -5,11 +5,12 @@ require 'yaml'
 
 module Bosh::Deployer
   describe Registry do
-    subject { described_class.new(endpoint, cloud_plugin, cloud_properties, deployments, logger) }
+    subject { described_class.new(endpoint, cloud_plugin, cloud_properties, state, logger) }
 
     let(:endpoint) { 'http://fake-user:fake-pass@fake.example.com:1234' }
     let(:cloud_plugin) { 'fake-plugin-name' }
     let(:deployments) { {} }
+    let(:state) { instance_double('Bosh::Deployer::InstanceManager', deployments: deployments) }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
     let(:cloud_properties) { 'fake-properties' }
     let(:http_client) { instance_double(HTTPClient, head: nil) }

@@ -76,14 +76,14 @@ module Bosh::Director::Core::Templates
 
         container = job_template_loader.process(job_template)
 
-        expect(container.monit_template.filename).to eq('foo/monit')
-        expect(container.monit_template.src).to eq ERB.new('monit file').src
+        expect(container.monit_erb.erb.filename).to eq('foo/monit')
+        expect(container.monit_erb.erb.src).to eq ERB.new('monit file').src
 
-        src_template = container.templates.first
-        expect(src_template.src_name).to eq('test')
-        expect(src_template.dest_name).to eq('test_dst')
-        expect(src_template.erb_file.filename).to eq('foo/test')
-        expect(src_template.erb_file.src).to eq ERB.new('test contents').src
+        source_erb = container.source_erbs.first
+        expect(source_erb.src_name).to eq('test')
+        expect(source_erb.dest_name).to eq('test_dst')
+        expect(source_erb.erb.filename).to eq('foo/test')
+        expect(source_erb.erb.src).to eq ERB.new('test contents').src
       end
 
       it 'returns only monit erb object when no other templates exist' do
@@ -95,10 +95,10 @@ module Bosh::Director::Core::Templates
 
         container = job_template_loader.process(job_template)
 
-        expect(container.monit_template.filename).to eq('foo/monit')
-        expect(container.monit_template.src).to eq ERB.new('monit file').src
+        expect(container.monit_erb.erb.filename).to eq('foo/monit')
+        expect(container.monit_erb.erb.src).to eq ERB.new('monit file').src
 
-        expect(container.templates).to eq([])
+        expect(container.source_erbs).to eq([])
       end
     end
   end

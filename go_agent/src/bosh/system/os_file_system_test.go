@@ -1,7 +1,8 @@
-package system
+package system_test
 
 import (
 	boshlog "bosh/logger"
+	. "bosh/system"
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -255,6 +256,25 @@ func TestSymlinkWhenAFileExistsAtIntendedPath(t *testing.T) {
 	assert.Equal(t, "some content", readFile(symlinkFile))
 }
 
+func TestReadLink(t *testing.T) {
+	osFs, _ := createOsFs()
+	filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
+	containingDir := filepath.Join(os.TempDir(), "SubDir")
+	os.Remove(containingDir)
+	symlinkPath := filepath.Join(containingDir, "SymlinkTestSymlink")
+
+	osFs.WriteToFile(filePath, "some content")
+	defer os.Remove(filePath)
+
+	err := osFs.Symlink(filePath, symlinkPath)
+	assert.NoError(t, err)
+	defer os.Remove(containingDir)
+
+	actualFilePath, err := osFs.ReadLink(symlinkPath)
+	assert.NoError(t, err)
+	assert.Equal(t, actualFilePath, filePath)
+}
+
 func TestTempFile(t *testing.T) {
 	osFs, _ := createOsFs()
 
@@ -323,6 +343,19 @@ func TestCopyFile(t *testing.T) {
 	fooContent, err := osFs.ReadFile(dstFile.Name())
 	assert.NoError(t, err)
 	assert.Equal(t, fooContent, "foo\n")
+}
+
+func TestRemoveAll(t *testing.T) {
+	osFs, _ := createOsFs()
+	dstFile, err := osFs.TempFile("CopyFileTestFile")
+	assert.NoError(t, err)
+	defer os.Remove(dstFile.Name())
+
+	err = osFs.RemoveAll(dstFile.Name())
+	assert.NoError(t, err)
+
+	_, err = os.Stat(dstFile.Name())
+	assert.True(t, os.IsNotExist(err))
 }
 
 func createOsFs() (fs FileSystem, runner CmdRunner) {

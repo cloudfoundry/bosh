@@ -3,7 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   describe JobRenderer do
     subject(:renderer) { JobRenderer.new(job) }
-    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+
+    let(:templates) { [instance_double('Bosh::Director::DeploymentPlan::Template')] }
+    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', templates: templates) }
 
     before { allow(Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
     let(:job_instance_renderer) do
@@ -22,6 +24,7 @@ module Bosh::Director
           :template_hashes= => nil,
           :rendered_templates_archive= => nil,
           :model => instance_model,
+          :spec => {},
         )
       end
 
@@ -61,7 +64,7 @@ module Bosh::Director
 
       it 'correctly initializes JobInstanceRenderer' do
         perform
-        expect(Bosh::Director::Core::Templates::JobInstanceRenderer).to have_received(:new).with(job, job_template_loader)
+        expect(Bosh::Director::Core::Templates::JobInstanceRenderer).to have_received(:new).with(templates, job_template_loader)
       end
 
       context 'when instance does not have a latest archive' do
@@ -159,7 +162,7 @@ module Bosh::Director
 
       it 'renders all templates for all instances of a job' do
         perform
-        expect(job_instance_renderer).to have_received(:render).with(instance)
+        expect(job_instance_renderer).to have_received(:render).with(instance.spec)
       end
 
       it 'updates each instance with configuration and templates hashses' do

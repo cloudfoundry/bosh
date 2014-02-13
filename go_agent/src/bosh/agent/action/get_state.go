@@ -9,7 +9,7 @@ import (
 	boshsettings "bosh/settings"
 )
 
-type getStateAction struct {
+type GetStateAction struct {
 	settings      boshsettings.Service
 	specService   boshas.V1Service
 	jobSupervisor boshjobsuper.JobSupervisor
@@ -17,12 +17,12 @@ type getStateAction struct {
 	ntpService    boshntp.Service
 }
 
-func newGetState(settings boshsettings.Service,
+func NewGetState(settings boshsettings.Service,
 	specService boshas.V1Service,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	vitalsService boshvitals.Service,
 	ntpService boshntp.Service,
-) (action getStateAction) {
+) (action GetStateAction) {
 	action.settings = settings
 	action.specService = specService
 	action.jobSupervisor = jobSupervisor
@@ -31,11 +31,11 @@ func newGetState(settings boshsettings.Service,
 	return
 }
 
-func (a getStateAction) IsAsynchronous() bool {
+func (a GetStateAction) IsAsynchronous() bool {
 	return false
 }
 
-type getStateV1ApplySpec struct {
+type GetStateV1ApplySpec struct {
 	boshas.V1ApplySpec
 
 	AgentId      string             `json:"agent_id"`
@@ -46,7 +46,7 @@ type getStateV1ApplySpec struct {
 	Ntp          boshntp.NTPInfo    `json:"ntp"`
 }
 
-func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err error) {
+func (a GetStateAction) Run(filters ...string) (value GetStateV1ApplySpec, err error) {
 	spec, getSpecErr := a.specService.Get()
 	if getSpecErr != nil {
 		spec = boshas.V1ApplySpec{}
@@ -64,7 +64,7 @@ func (a getStateAction) Run(filters ...string) (value getStateV1ApplySpec, err e
 		vitalsReference = &vitals
 	}
 
-	value = getStateV1ApplySpec{
+	value = GetStateV1ApplySpec{
 		spec,
 		a.settings.GetAgentId(),
 		"1",

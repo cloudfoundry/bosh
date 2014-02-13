@@ -27,7 +27,13 @@ func NewConcretePackageApplier(
 }
 
 func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
-	_, packageDir, err := s.packagesBc.Install(pkg)
+	pkgBundle, err := s.packagesBc.Get(pkg)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting package bundle")
+		return
+	}
+
+	_, packageDir, err := pkgBundle.Install()
 	if err != nil {
 		err = bosherr.WrapError(err, "Installling package directory")
 		return
@@ -47,7 +53,7 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 		return
 	}
 
-	err = s.packagesBc.Enable(pkg)
+	_, _, err = pkgBundle.Enable()
 	if err != nil {
 		err = bosherr.WrapError(err, "Enabling package")
 	}

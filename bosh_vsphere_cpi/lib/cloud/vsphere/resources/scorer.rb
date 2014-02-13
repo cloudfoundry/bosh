@@ -13,8 +13,8 @@ module VSphereCloud
       # @param [Array<Integer>] ephemeral list of required ephemeral disk sizes.
       # @param [Array<Integer>] persistent list of required persistent disk
       #   sizes.
-      def initialize(cluster, memory, ephemeral, persistent)
-        @logger = Config.logger
+      def initialize(config, cluster, memory, ephemeral, persistent)
+        @logger = config.logger
         @cluster = cluster
         @memory = memory
         @ephemeral = ephemeral

@@ -1,6 +1,7 @@
-package ntp
+package ntp_test
 
 import (
+	. "bosh/platform/ntp"
 	boshdir "bosh/settings/directories"
 	fakefs "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"

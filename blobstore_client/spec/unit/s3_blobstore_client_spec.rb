@@ -55,14 +55,15 @@ module Bosh::Blobstore
 
         let (:processed_options) {{ access_key_id: 'KEY',
                                     secret_access_key: 'SECRET',
-                                    s3_endpoint: 's3.example.com' }
+                                    use_ssl: true,
+                                    s3_port: 443,
+                                    s3_endpoint: 's3.example.com',
+                                    s3_force_path_style: true }
         }
 
         it 'should be processed and passed to the AWS::S3 class' do
 
           options['endpoint'] = 'https://s3.example.com'
-          processed_options[:use_ssl] = true
-          processed_options[:port] = 443
 
           expect(AWS::S3).to receive(:new).
             with(processed_options).
@@ -75,7 +76,7 @@ module Bosh::Blobstore
 
           options['endpoint'] = 'http://s3.example.com'
           processed_options[:use_ssl] = false
-          processed_options[:port] = 80
+          processed_options[:s3_port] = 80
 
           expect(AWS::S3).to receive(:new).
             with(processed_options).
@@ -88,7 +89,7 @@ module Bosh::Blobstore
 
           options['endpoint'] = 'http://s3.example.com:4242'
           processed_options[:use_ssl] = false
-          processed_options[:port] = 4242
+          processed_options[:s3_port] = 4242
 
           expect(AWS::S3).to receive(:new).
             with(processed_options).
@@ -97,6 +98,15 @@ module Bosh::Blobstore
           S3BlobstoreClient.new(options)
         end
 
+        it 'should use the default values for undefined use_ssl, port, and s3_endpoint' do
+          processed_options[:s3_endpoint] = 's3.amazonaws.com'
+
+          expect(AWS::S3).to receive(:new).
+            with(processed_options).
+            and_return(s3)
+
+          S3BlobstoreClient.new(options)
+        end
       end
     end
 

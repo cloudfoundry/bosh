@@ -2,8 +2,13 @@
 
 module Bosh::Deployer
   class InstanceManager
-    class Vsphere < InstanceManager
-      def remote_tunnel(port)
+    class Vsphere
+      def initialize(instance_manager, logger)
+        @instance_manager = instance_manager
+        @logger = logger
+      end
+
+      def remote_tunnel
       end
 
       def disk_model
@@ -37,11 +42,11 @@ module Bosh::Deployer
       end
 
       def discover_bosh_ip
-        bosh_ip
+        instance_manager.bosh_ip
       end
 
       def service_ip
-        bosh_ip
+        instance_manager.bosh_ip
       end
 
       # @return [Integer] size in MiB
@@ -50,10 +55,12 @@ module Bosh::Deployer
       end
 
       def persistent_disk_changed?
-        Config.resources['persistent_disk'] != disk_size(state.disk_cid)
+        Config.resources['persistent_disk'] != disk_size(instance_manager.state.disk_cid)
       end
 
       private
+
+      attr_reader :instance_manager, :logger
 
       FakeRegistry = Struct.new(:port)
       def registry

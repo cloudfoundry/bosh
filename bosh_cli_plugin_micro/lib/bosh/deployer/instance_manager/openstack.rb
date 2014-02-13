@@ -4,35 +4,27 @@ require 'bosh/deployer/ssh_server'
 
 module Bosh::Deployer
   class InstanceManager
-    class Openstack < InstanceManager
-      def initialize(config, config_sha1, ui_messager)
-        super
+    class Openstack
+      def initialize(instance_manager, logger)
+        @instance_manager = instance_manager
+        @logger = logger
+        properties = Config.cloud_options['properties']
 
         @registry = Registry.new(
-          Config.cloud_options['properties']['registry']['endpoint'],
+          properties['registry']['endpoint'],
           'openstack',
-          Config.cloud_options['properties']['openstack'],
-          @deployments,
+          properties['openstack'],
+          instance_manager,
           logger,
         )
 
-        properties = Config.cloud_options['properties']
-        ssh_user = properties['openstack']['ssh_user']
-        ssh_port = properties['openstack']['ssh_port'] || 22
-        ssh_wait = properties['openstack']['ssh_wait'] || 60
-
-        key = properties['openstack']['private_key']
-        err 'Missing properties.openstack.private_key' unless key
-        ssh_key = File.expand_path(key)
-        unless File.exists?(ssh_key)
-          err "properties.openstack.private_key '#{key}' does not exist"
-        end
+        ssh_key, ssh_port, ssh_user, ssh_wait = ssh_properties(properties)
         ssh_server = SshServer.new(ssh_user, ssh_key, ssh_port, logger)
         @remote_tunnel = RemoteTunnel.new(ssh_server, ssh_wait, logger)
       end
 
-      def remote_tunnel(port)
-        @remote_tunnel.create(Config.bosh_ip, port)
+      def remote_tunnel
+        @remote_tunnel.create(instance_manager.bosh_ip, registry.port)
       end
 
       def disk_model
@@ -62,31 +54,33 @@ module Bosh::Deployer
 
       def stop
         registry.stop
-        save_state
+        instance_manager.save_state
       end
 
       def discover_bosh_ip
-        if state.vm_cid
-          floating_ip = cloud.openstack.servers.get(state.vm_cid).floating_ip_address
+        if instance_manager.state.vm_cid
+          floating_ip = instance_manager.cloud.openstack.servers.
+            get(instance_manager.state.vm_cid).floating_ip_address
           ip = floating_ip || service_ip
 
-          if ip != Config.bosh_ip
-            Config.bosh_ip = ip
-            logger.info("discovered bosh ip=#{Config.bosh_ip}")
+          if ip != instance_manager.bosh_ip
+            instance_manager.bosh_ip = ip
+            logger.info("discovered bosh ip=#{instance_manager.bosh_ip}")
           end
         end
 
-        Config.bosh_ip
+        instance_manager.bosh_ip
       end
 
       def service_ip
-        cloud.openstack.servers.get(state.vm_cid).private_ip_address
+        instance_manager.cloud.openstack.servers.
+          get(instance_manager.state.vm_cid).private_ip_address
       end
 
       # @return [Integer] size in MiB
       def disk_size(cid)
         # OpenStack stores disk size in GiB but we work with MiB
-        cloud.openstack.volumes.get(cid).size * 1024
+        instance_manager.cloud.openstack.volumes.get(cid).size * 1024
       end
 
       def persistent_disk_changed?
@@ -95,12 +89,27 @@ module Bosh::Deployer
         # disk migration, so we need to do a double conversion
         # here to avoid that
         requested = (Config.resources['persistent_disk'] / 1024.0).ceil * 1024
-        requested != disk_size(state.disk_cid)
+        requested != disk_size(instance_manager.state.disk_cid)
       end
 
       private
 
-      attr_reader :registry
+      attr_reader :registry, :instance_manager, :logger
+
+      def ssh_properties(properties)
+        ssh_user = properties['openstack']['ssh_user']
+        ssh_port = properties['openstack']['ssh_port'] || 22
+        ssh_wait = properties['openstack']['ssh_wait'] || 60
+
+        key = properties['openstack']['private_key']
+        err 'Missing properties.openstack.private_key' unless key
+        ssh_key = File.expand_path(key)
+        unless File.exists?(ssh_key)
+          err "properties.openstack.private_key '#{key}' does not exist"
+        end
+
+        [ssh_key, ssh_port, ssh_user, ssh_wait]
+      end
     end
   end
 end

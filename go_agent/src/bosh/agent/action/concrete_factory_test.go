@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
 	fakecomp "bosh/agent/compiler/fakes"
@@ -67,7 +68,7 @@ func TestNewFactoryApply(t *testing.T) {
 	action, err := factory.Create("apply")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newApply(deps.applier, deps.specService), action)
+	assert.Equal(t, NewApply(deps.applier, deps.specService), action)
 }
 
 func TestNewFactoryDrain(t *testing.T) {
@@ -75,7 +76,7 @@ func TestNewFactoryDrain(t *testing.T) {
 	action, err := factory.Create("drain")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newDrain(deps.notifier, deps.specService, deps.drainScriptProvider), action)
+	assert.Equal(t, NewDrain(deps.notifier, deps.specService, deps.drainScriptProvider), action)
 }
 
 func TestNewFactoryFetchLogs(t *testing.T) {
@@ -83,7 +84,7 @@ func TestNewFactoryFetchLogs(t *testing.T) {
 	action, err := factory.Create("fetch_logs")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newLogs(deps.platform.GetCompressor(), deps.platform.GetCopier(), deps.blobstore, deps.platform.GetDirProvider()), action)
+	assert.Equal(t, NewLogs(deps.platform.GetCompressor(), deps.platform.GetCopier(), deps.blobstore, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryGetTask(t *testing.T) {
@@ -91,7 +92,7 @@ func TestNewFactoryGetTask(t *testing.T) {
 	action, err := factory.Create("get_task")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetTask(deps.taskService), action)
+	assert.Equal(t, NewGetTask(deps.taskService), action)
 }
 
 func TestNewFactoryGetState(t *testing.T) {
@@ -100,7 +101,7 @@ func TestNewFactoryGetState(t *testing.T) {
 	action, err := factory.Create("get_state")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.platform.GetVitalsService(), ntpService), action)
+	assert.Equal(t, NewGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.platform.GetVitalsService(), ntpService), action)
 }
 
 func TestNewFactoryListDisk(t *testing.T) {
@@ -108,7 +109,7 @@ func TestNewFactoryListDisk(t *testing.T) {
 	action, err := factory.Create("list_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newListDisk(deps.settings, deps.platform), action)
+	assert.Equal(t, NewListDisk(deps.settings, deps.platform), action)
 }
 
 func TestNewFactoryMigrateDisk(t *testing.T) {
@@ -116,7 +117,7 @@ func TestNewFactoryMigrateDisk(t *testing.T) {
 	action, err := factory.Create("migrate_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMigrateDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
+	assert.Equal(t, NewMigrateDisk(deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryMountDisk(t *testing.T) {
@@ -124,7 +125,7 @@ func TestNewFactoryMountDisk(t *testing.T) {
 	action, err := factory.Create("mount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newMountDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
+	assert.Equal(t, NewMountDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactorySsh(t *testing.T) {
@@ -132,7 +133,7 @@ func TestNewFactorySsh(t *testing.T) {
 	action, err := factory.Create("ssh")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newSsh(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
+	assert.Equal(t, NewSsh(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
 }
 
 func TestNewFactoryStart(t *testing.T) {
@@ -140,7 +141,7 @@ func TestNewFactoryStart(t *testing.T) {
 	action, err := factory.Create("start")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newStart(deps.jobSupervisor), action)
+	assert.Equal(t, NewStart(deps.jobSupervisor), action)
 }
 
 func TestNewFactoryUnmountDisk(t *testing.T) {
@@ -148,7 +149,7 @@ func TestNewFactoryUnmountDisk(t *testing.T) {
 	action, err := factory.Create("unmount_disk")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newUnmountDisk(deps.settings, deps.platform), action)
+	assert.Equal(t, NewUnmountDisk(deps.settings, deps.platform), action)
 }
 
 func TestNewFactoryCompilePackage(t *testing.T) {
@@ -156,7 +157,7 @@ func TestNewFactoryCompilePackage(t *testing.T) {
 	action, err := factory.Create("compile_package")
 	assert.NoError(t, err)
 	assert.NotNil(t, action)
-	assert.Equal(t, newCompilePackage(deps.compiler), action)
+	assert.Equal(t, NewCompilePackage(deps.compiler), action)
 }
 
 func buildFactory() (

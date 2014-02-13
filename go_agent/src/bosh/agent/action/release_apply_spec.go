@@ -6,20 +6,20 @@ import (
 	"encoding/json"
 )
 
-type releaseApplySpecAction struct {
+type ReleaseApplySpecAction struct {
 	platform boshplatform.Platform
 }
 
-func newReleaseApplySpec(platform boshplatform.Platform) (action releaseApplySpecAction) {
+func NewReleaseApplySpec(platform boshplatform.Platform) (action ReleaseApplySpecAction) {
 	action.platform = platform
 	return
 }
 
-func (a releaseApplySpecAction) IsAsynchronous() bool {
+func (a ReleaseApplySpecAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a releaseApplySpecAction) Run() (value interface{}, err error) {
+func (a ReleaseApplySpecAction) Run() (value interface{}, err error) {
 	fs := a.platform.GetFs()
 	specBytes, err := fs.ReadFile("/var/vcap/micro/apply_spec.json")
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	boshstats "bosh/platform/stats"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
+	"time"
 )
 
 type provider struct {
@@ -23,9 +24,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	centosDiskManager := boshdisk.NewCentosDiskManager(logger, runner, fs)
 
 	p.platforms = map[string]Platform{
-		"ubuntu": newUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, dirProvider),
-		"centos": newCentosPlatform(sigarStatsCollector, fs, runner, centosDiskManager, dirProvider),
-		"dummy":  newDummyPlatform(sigarStatsCollector, fs, runner, dirProvider),
+		"ubuntu": NewUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, dirProvider, 500*time.Millisecond, 10*time.Second, 3*time.Minute),
+		"centos": NewCentosPlatform(sigarStatsCollector, fs, runner, centosDiskManager, dirProvider, 500*time.Millisecond, 10*time.Second, 3*time.Minute),
+		"dummy":  NewDummyPlatform(sigarStatsCollector, fs, runner, dirProvider),
 	}
 	return
 }

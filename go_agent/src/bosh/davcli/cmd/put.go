@@ -6,16 +6,16 @@ import (
 	"os"
 )
 
-type putCmd struct {
+type PutCmd struct {
 	client davclient.Client
 }
 
-func newPutCmd(client davclient.Client) (cmd putCmd) {
+func newPutCmd(client davclient.Client) (cmd PutCmd) {
 	cmd.client = client
 	return
 }
 
-func (cmd putCmd) Run(args []string) (err error) {
+func (cmd PutCmd) Run(args []string) (err error) {
 	if len(args) != 2 {
 		err = errors.New("Incorrect usage, put needs local file and remote blob destination")
 		return

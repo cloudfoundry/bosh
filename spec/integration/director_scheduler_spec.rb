@@ -45,6 +45,10 @@ describe Bosh::Spec::IntegrationTest::DirectorScheduler do
   end
 
   it 'backs up bosh on a defined schedule' do
+    if ENV['TRAVIS'] && ENV['DB'] == 'mysql'
+      pending 'Travis does not currently support mysqldump'
+    end
+
     30.times do
       break unless backups.empty?
       sleep 1

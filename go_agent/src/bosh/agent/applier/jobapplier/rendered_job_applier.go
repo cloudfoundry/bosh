@@ -35,7 +35,13 @@ func NewRenderedJobApplier(
 }
 
 func (s *renderedJobApplier) Apply(job models.Job) (err error) {
-	fs, jobDir, err := s.jobsBc.Install(job)
+	jobBundle, err := s.jobsBc.Get(job)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting job bundle")
+		return
+	}
+
+	fs, jobDir, err := jobBundle.Install()
 	if err != nil {
 		err = bosherr.WrapError(err, "Installing jobs bundle collection")
 		return
@@ -82,7 +88,7 @@ func (s *renderedJobApplier) Apply(job models.Job) (err error) {
 		}
 	}
 
-	err = s.jobsBc.Enable(job)
+	_, _, err = jobBundle.Enable()
 	if err != nil {
 		err = bosherr.WrapError(err, "Enabling job")
 	}
@@ -90,7 +96,13 @@ func (s *renderedJobApplier) Apply(job models.Job) (err error) {
 }
 
 func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error) {
-	fs, jobDir, err := s.jobsBc.GetDir(job)
+	jobBundle, err := s.jobsBc.Get(job)
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting job bundle")
+		return
+	}
+
+	fs, jobDir, err := jobBundle.GetInstallPath()
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking up job directory")
 		return

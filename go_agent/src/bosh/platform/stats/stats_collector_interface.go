@@ -32,17 +32,17 @@ type StatsCollector interface {
 }
 
 func (cpuStats CpuStats) UserPercent() Percentage {
-	return Percentage{cpuStats.User, cpuStats.Total}
+	return NewPercentage(cpuStats.User, cpuStats.Total)
 }
 
 func (cpuStats CpuStats) SysPercent() Percentage {
-	return Percentage{cpuStats.Sys, cpuStats.Total}
+	return NewPercentage(cpuStats.Sys, cpuStats.Total)
 }
 
 func (cpuStats CpuStats) WaitPercent() Percentage {
-	return Percentage{cpuStats.Wait, cpuStats.Total}
+	return NewPercentage(cpuStats.Wait, cpuStats.Total)
 }
 
 func (usage Usage) Percent() Percentage {
-	return Percentage{usage.Used, usage.Total}
+	return NewPercentage(usage.Used, usage.Total)
 }

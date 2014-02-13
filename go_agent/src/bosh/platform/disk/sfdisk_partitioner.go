@@ -15,7 +15,7 @@ type sfdiskPartitioner struct {
 	logTag    string
 }
 
-func newSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartitioner) {
+func NewSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner) (partitioner sfdiskPartitioner) {
 	partitioner.logger = logger
 	partitioner.cmdRunner = cmdRunner
 	partitioner.logTag = "SfdiskPartitioner"

@@ -7,12 +7,12 @@ module Bosh::Director
     def initialize(job)
       @job = job
       job_template_loader = Core::Templates::JobTemplateLoader.new(Config.logger)
-      @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job, job_template_loader)
+      @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job.templates, job_template_loader)
     end
 
     def render_job_instances(blobstore)
       @job.instances.each do |instance|
-        rendered_job_instance = @instance_renderer.render(instance)
+        rendered_job_instance = @instance_renderer.render(instance.spec)
 
         configuration_hash = rendered_job_instance.configuration_hash
 

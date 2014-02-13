@@ -23,5 +23,35 @@ module Bosh::Dev::Sandbox
         postgresql.drop_db
       end
     end
+
+    describe '#db_name' do
+      it 'returns the configured database name' do
+        expect(subject.db_name).to eq('fake_db_name')
+      end
+    end
+
+    describe '#username' do
+      it 'returns the configured username' do
+        expect(subject.username).to eq('postgres')
+      end
+    end
+
+    describe '#password' do
+      it 'returns nil' do
+        expect(subject.password).to eq('')
+      end
+    end
+
+    describe '#adapter' do
+      it 'has the correct database adapter' do
+        expect(subject.adapter).to eq('postgres')
+      end
+    end
+
+    describe '#port' do
+      it 'has the correct port' do
+        expect(subject.port).to eq(5432)
+      end
+    end
   end
 end

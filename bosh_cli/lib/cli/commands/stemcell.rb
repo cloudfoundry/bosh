@@ -4,6 +4,7 @@ require 'cli/public_stemcells'
 module Bosh::Cli
   class Command::Stemcell < Command::Base
     include Bosh::Cli::VersionCalc
+    STEMCELL_EXISTS_ERROR_CODE = 50002
 
     usage 'verify stemcell'
     desc 'Verify stemcell'
@@ -28,6 +29,7 @@ module Bosh::Cli
 
     usage 'upload stemcell'
     desc 'Upload stemcell (stemcell_location can be a local file or a remote URI)'
+    option '--skip-if-exists', 'skips upload if stemcell already exists'
     def upload(stemcell_location)
       auth_required
 
@@ -49,8 +51,12 @@ module Bosh::Cli
         version = stemcell.manifest['version']
 
         if exists?(name, version)
-          err("Stemcell `#{name}/#{version}' already exists, " +
-                'increment the version if it has changed')
+          if options[:skip_if_exists]
+            say("Stemcell `#{name}/#{version}' already exists. Skipping upload.")
+            return
+          else
+            err("Stemcell `#{name}/#{version}' already exists. Increment the version if it has changed.")
+          end
         else
           say('No')
         end
@@ -65,13 +71,15 @@ module Bosh::Cli
         say("Using remote stemcell `#{stemcell_location}'")
       end
 
-      if stemcell_type == 'local'
-        status, task_id = director.upload_stemcell(stemcell_location)
-      else
-        status, task_id = director.upload_remote_stemcell(stemcell_location)
+      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location)
+      success_message = 'Stemcell uploaded and created.'
+
+      if status == :error && options[:skip_if_exists] && last_event(task_id)['error']['code'] == STEMCELL_EXISTS_ERROR_CODE
+        status = :done
+        success_message = skip_existing_stemcell_message(stemcell_type, stemcell_location)
       end
 
-      task_report(status, task_id, 'Stemcell uploaded and created')
+      task_report(status, task_id, success_message)
     end
 
     usage 'stemcells'
@@ -145,6 +153,27 @@ module Bosh::Cli
     end
 
     private
+
+    def skip_existing_stemcell_message(stemcell_type, stemcell_location)
+      if stemcell_type == 'local'
+        'Stemcell already exists. Skipping upload.'
+      else
+        "Stemcell at #{stemcell_location} already exists."
+      end
+    end
+
+    def apply_upload_stemcell_strategy(stemcell_type, stemcell_location)
+      if stemcell_type == 'local'
+        director.upload_stemcell(stemcell_location)
+      else
+        director.upload_remote_stemcell(stemcell_location)
+      end
+    end
+
+    def last_event(task_id)
+      event_log, _ = director.get_task_output(task_id, 0, 'event')
+      JSON.parse(event_log.split("\n").last)
+    end
 
     def exists?(name, version)
       existing = director.list_stemcells.select do |sc|

@@ -3,9 +3,15 @@ require 'bosh/deployer/logger_renderer'
 require 'bosh/deployer/hash_fingerprinter'
 require 'bosh/deployer/director_gateway_error'
 require 'bosh/deployer/ui_messager'
+require 'bosh/deployer/deployments_state'
+require 'bosh/deployer/microbosh_job_instance'
+
+require 'forwardable'
 
 module Bosh::Deployer
   class InstanceManager
+    extend Forwardable
+
     CONNECTION_EXCEPTIONS = [
       Bosh::Agent::Error,
       Errno::ECONNREFUSED,
@@ -16,8 +22,8 @@ module Bosh::Deployer
 
     DEPLOYMENTS_FILE = 'bosh-deployments.yml'
 
-    attr_reader :state
     attr_accessor :renderer
+    attr_reader :infrastructure, :deployments_state
 
     def self.create(config)
       err 'No cloud properties defined' if config['cloud'].nil?
@@ -34,14 +40,17 @@ module Bosh::Deployer
       config_sha1 = Bosh::Deployer::HashFingerprinter.new.sha1(config)
       ui_messager = Bosh::Deployer::UiMessager.for_deployer
 
-      plugin_class = InstanceManager.const_get(plugin_name.capitalize)
-      plugin_class.new(config, config_sha1, ui_messager)
+      new(config, config_sha1, ui_messager, plugin_name)
     end
 
-    def initialize(config, config_sha1, ui_messager)
+    def initialize(config, config_sha1, ui_messager, plugin_name)
       Config.configure(config)
+      @config = Config
 
-      @state_yml = File.join(config['dir'], DEPLOYMENTS_FILE)
+      plugin_class = InstanceManager.const_get(plugin_name.capitalize)
+      @infrastructure = plugin_class.new(self, logger)
+
+      @deployments_state = DeploymentsState.load_from_dir(config['dir'], logger)
       load_state(config['name'])
 
       Config.uuid = state.uuid
@@ -51,28 +60,28 @@ module Bosh::Deployer
       @renderer = LoggerRenderer.new
     end
 
-    def cloud
-      Config.cloud
+    def_delegators(
+      :@deployments_state,
+      :deployments,
+      :state,
+      :exists?,
+    )
+
+    def_delegators(
+      :@config,
+      :cloud,
+      :agent,
+      :logger,
+      :bosh_ip,
+      :bosh_ip=,
+    )
+
+    def check_dependencies
+      infrastructure.check_dependencies
     end
 
-    def agent
-      Config.agent
-    end
-
-    def logger
-      Config.logger
-    end
-
-    def disk_model
-      nil
-    end
-
-    def instance_model
-      Models::Instance
-    end
-
-    def exists?
-      [state.vm_cid, state.stemcell_cid, state.disk_cid].any?
+    def discover_bosh_ip
+      infrastructure.discover_bosh_ip
     end
 
     def step(task)
@@ -83,10 +92,10 @@ module Bosh::Deployer
     end
 
     def with_lifecycle
-      start
+      infrastructure.start
       yield
     ensure
-      stop
+      infrastructure.stop
     end
 
     def create_deployment(stemcell_tgz, stemcell_archive)
@@ -117,7 +126,7 @@ module Bosh::Deployer
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
         update_vm_metadata(state.vm_cid, { 'Name' => state.name })
-        discover_bosh_ip
+        infrastructure.discover_bosh_ip
       end
       save_state
 
@@ -343,7 +352,7 @@ module Bosh::Deployer
       if state.disk_cid.nil?
         create_disk
         attach_disk(state.disk_cid, true)
-      elsif persistent_disk_changed?
+      elsif infrastructure.persistent_disk_changed?
         size = Config.resources['persistent_disk']
 
         # save a reference to the old disk
@@ -373,19 +382,24 @@ module Bosh::Deployer
 
       step 'Applying micro BOSH spec' do
         # first update spec with infrastructure specific stuff
-        update_spec(spec)
+        infrastructure.update_spec(spec)
         # then update spec with generic changes
-        agent.run_task(:apply, spec.update(bosh_ip, service_ip))
+        spec = spec.update(bosh_ip, infrastructure.service_ip)
+
+        microbosh_job_instance = MicroboshJobInstance.new(bosh_ip, Config.agent_url, logger)
+        spec = microbosh_job_instance.render_templates(spec)
+
+        agent.run_task(:apply, spec)
       end
 
       agent_start
     end
 
-    private
-
-    def bosh_ip
-      Config.bosh_ip
+    def save_state
+      deployments_state.save(infrastructure)
     end
+
+    private
 
     def agent_stop
       step 'Stopping agent services' do
@@ -421,7 +435,7 @@ module Bosh::Deployer
     end
 
     def wait_until_agent_ready
-      remote_tunnel(registry.port)
+      infrastructure.remote_tunnel
       wait_until_ready('agent') { agent.ping }
     end
 
@@ -467,16 +481,6 @@ module Bosh::Deployer
       save_state
     end
 
-    def load_deployments
-      if File.exists?(@state_yml)
-        logger.info("Loading existing deployment data from: #{@state_yml}")
-        Psych.load_file(@state_yml)
-      else
-        logger.info("No existing deployments found (will save to #{@state_yml})")
-        { 'instances' => [], 'disks' => [] }
-      end
-    end
-
     def load_apply_spec(dir)
       load_spec("#{dir}/apply_spec.yml") do
         err "this isn't a micro bosh stemcell - apply_spec.yml missing"
@@ -495,36 +499,9 @@ module Bosh::Deployer
       Psych.load_file(file)
     end
 
-    def generate_unique_name
-      SecureRandom.uuid
-    end
-
     def load_state(name)
-      @deployments = load_deployments
-
-      disk_model.insert_multiple(@deployments['disks']) if disk_model
-      instance_model.insert_multiple(@deployments['instances'])
-
-      @state = instance_model.find(name: name)
-      if @state.nil?
-        @state = instance_model.new
-        @state.uuid = "bm-#{generate_unique_name}"
-        @state.name = name
-        @state.stemcell_sha1 = nil
-        @state.save
-      else
-        discover_bosh_ip
-      end
-    end
-
-    def save_state
-      state.save
-      @deployments['instances'] = instance_model.map { |instance| instance.values }
-      @deployments['disks'] = disk_model.map { |disk| disk.values } if disk_model
-
-      File.open(@state_yml, 'w') do |file|
-        file.write(Psych.dump(@deployments))
-      end
+      deployments_state.load_deployment(name, infrastructure)
+      infrastructure.discover_bosh_ip
     end
 
     def run_command(command)
@@ -571,4 +548,3 @@ module Bosh::Deployer
     end
   end
 end
-

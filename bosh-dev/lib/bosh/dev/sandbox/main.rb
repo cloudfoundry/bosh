@@ -5,6 +5,7 @@ require 'bosh/dev/sandbox/service'
 require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/database_migrator'
 require 'bosh/dev/sandbox/postgresql'
+require 'bosh/dev/sandbox/mysql'
 
 module Bosh::Dev::Sandbox
   class Main
@@ -80,7 +81,12 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @postgresql = Postgresql.new(sandbox_root, @name, @logger)
+      if ENV['DB'] == 'mysql'
+         mysql_user, mysql_password = ENV['TRAVIS'] ? ['travis', ''] : %w(root password)
+         @database = Mysql.new(sandbox_root, @name, @logger, mysql_user, mysql_password)
+      else
+         @database = Postgresql.new(sandbox_root, @name, @logger)
+      end
 
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, director_config, @logger)
     end
@@ -96,7 +102,7 @@ module Bosh::Dev::Sandbox
     def start
       setup_sandbox_root
 
-      @postgresql.create_db
+      @database.create_db
       @database_migrator.migrate
 
       FileUtils.mkdir_p(cloud_storage_dir)
@@ -119,6 +125,12 @@ module Bosh::Dev::Sandbox
       @director_process.start
     end
 
+    def reconfigure_health_monitor(erb_template)
+      @health_monitor_process.stop
+      write_in_sandbox(HM_CONFIG, load_config_template(File.join(ASSETS_DIR, erb_template)))
+      @health_monitor_process.start
+    end
+
     def cloud_storage_dir
       sandbox_path('bosh_cloud_test')
     end
@@ -138,7 +150,7 @@ module Bosh::Dev::Sandbox
       @redis_process.stop
       @nats_process.stop
       @health_monitor_process.stop
-      @postgresql.drop_db
+      @database.drop_db
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(director_tmp_path)
       FileUtils.rm_rf(agent_tmp_path)
@@ -189,8 +201,8 @@ module Bosh::Dev::Sandbox
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
-      @postgresql.drop_db
-      @postgresql.create_db
+      @database.drop_db
+      @database.create_db
       @database_migrator.migrate
 
       FileUtils.rm_rf(blobstore_storage_dir)

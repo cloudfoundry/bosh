@@ -30,7 +30,8 @@ module Bosh::Monitor
         end
 
         metrics.each do |metric|
-          @tsdb.send_metric(metric.name, metric.timestamp, metric.value, metric.tags)
+          tags = metric.tags.merge({deployment: event.deployment})
+          @tsdb.send_metric(metric.name, metric.timestamp, metric.value, tags)
         end
 
         true

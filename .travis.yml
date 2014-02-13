@@ -11,7 +11,8 @@ rvm:
   - ruby-2.0.0
 env:
   - TASKS="ci:run:unit"
-  - TASKS="ci:run:integration"
+  - DB=mysql TASKS="ci:run:integration"
+  - DB=postgres TASKS="ci:run:integration"
   - TASKS="ci:run:go_agent_tests"
 matrix:
   allow_failures:

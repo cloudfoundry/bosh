@@ -1,6 +1,7 @@
-package disk
+package disk_test
 
 import (
+	. "bosh/platform/disk"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -11,7 +12,7 @@ func TestLinuxFormatWhenUsingSwapFs(t *testing.T) {
 	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-	formatter := newLinuxFormatter(fakeRunner, fakeFs)
+	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda1", FileSystemSwap)
 
 	assert.Equal(t, 2, len(fakeRunner.RunCommands))
@@ -23,7 +24,7 @@ func TestLinuxFormatWhenUsingSwapFsAndPartitionIsSwap(t *testing.T) {
 	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="swap" yyyy zzzz`})
 
-	formatter := newLinuxFormatter(fakeRunner, fakeFs)
+	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda1", FileSystemSwap)
 
 	assert.Equal(t, 1, len(fakeRunner.RunCommands))
@@ -36,7 +37,7 @@ func TestLinuxFormatWhenUsingExt4FsWithLazyItableSupport(t *testing.T) {
 	fakeFs.WriteToFile("/sys/fs/ext4/features/lazy_itable_init", "")
 	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
-	formatter := newLinuxFormatter(fakeRunner, fakeFs)
+	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda2", FileSystemExt4)
 
 	assert.Equal(t, 2, len(fakeRunner.RunCommands))
@@ -48,7 +49,7 @@ func TestLinuxFormatWhenUsingExt4FsWithoutLazyItableSupport(t *testing.T) {
 	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
-	formatter := newLinuxFormatter(fakeRunner, fakeFs)
+	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda2", FileSystemExt4)
 
 	assert.Equal(t, 2, len(fakeRunner.RunCommands))
@@ -60,7 +61,7 @@ func TestLinuxFormatWhenUsingExt4FsAndPartitionIsExt4(t *testing.T) {
 	fakeFs := &fakesys.FakeFileSystem{}
 	fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-	formatter := newLinuxFormatter(fakeRunner, fakeFs)
+	formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 	formatter.Format("/dev/xvda1", FileSystemExt4)
 
 	assert.Equal(t, 1, len(fakeRunner.RunCommands))

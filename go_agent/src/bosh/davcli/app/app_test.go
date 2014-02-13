@@ -1,6 +1,7 @@
-package app
+package app_test
 
 import (
+	. "bosh/davcli/app"
 	davconf "bosh/davcli/config"
 	"errors"
 	"github.com/stretchr/testify/assert"

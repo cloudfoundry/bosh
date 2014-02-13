@@ -1,0 +1,36 @@
+---
+http:
+  port: <%= hm_port %>
+  user: admin
+  password: admin
+
+mbus:
+  endpoint: nats://localhost:<%= nats_port %>
+  user:
+  password:
+
+director: &director
+  endpoint: http://127.0.0.1:<%= director_port %>
+  user: admin
+  password: admin
+
+intervals:
+  poll_director: 5
+  poll_grace_period: 5
+  log_stats: 10
+  analyze_agents: 10
+  agent_timeout: 10
+  rogue_agent_alert: 20
+
+plugins:
+  - name: logger
+    events:
+      - alert
+  - name: nats
+    events:
+      - alert
+      - heartbeat
+    options:
+      endpoint: nats://localhost:<%= nats_port %>
+      user:
+      password:

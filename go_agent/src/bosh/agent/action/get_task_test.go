@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"
 	boshassert "bosh/assert"
@@ -72,7 +73,7 @@ func TestGetTaskRunWhenTaskIsNotFound(t *testing.T) {
 	assert.Equal(t, "Task with id 57 could not be found", err.Error())
 }
 
-func buildGetTaskAction() (*faketask.FakeService, getTaskAction) {
+func buildGetTaskAction() (*faketask.FakeService, GetTaskAction) {
 	taskService := &faketask.FakeService{}
-	return taskService, newGetTask(taskService)
+	return taskService, NewGetTask(taskService)
 }

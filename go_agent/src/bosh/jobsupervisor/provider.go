@@ -20,7 +20,7 @@ func NewProvider(
 ) (p provider) {
 
 	p.supervisors = map[string]JobSupervisor{
-		"monit": NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider),
+		"monit": NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider, 2825),
 		"dummy": newDummyJobSupervisor(),
 	}
 

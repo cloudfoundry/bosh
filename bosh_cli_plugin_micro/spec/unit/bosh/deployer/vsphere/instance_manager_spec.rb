@@ -1,11 +1,12 @@
 require 'spec_helper'
 require 'bosh/deployer/instance_manager/vsphere'
 require 'bosh/deployer/ui_messager'
+require 'logger'
 
 module Bosh
   module Deployer
     describe InstanceManager do
-      subject(:deployer) { InstanceManager::Vsphere.new(config, 'fake-config-sha1', ui_messager) }
+      subject(:deployer) { InstanceManager.new(config, 'fake-config-sha1', ui_messager, 'vsphere') }
       let(:ui_messager) { UiMessager.for_deployer }
       let(:config) do
         config = Psych.load_file(spec_asset('test-bootstrap-config.yml'))
@@ -19,6 +20,7 @@ module Bosh
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:agent) { double('Bosh::Agent::HTTPClient') } # Uses method_missing :(
       let(:stemcell_tgz) { 'bosh-instance-1.0.tgz' }
+      let(:logger) { instance_double('Logger', debug: nil, info: nil) }
 
       before do
         Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
@@ -26,6 +28,14 @@ module Bosh
         Config.stub(agent: agent)
         Config.stub(agent_properties: {})
         SecureRandom.stub(uuid: 'deadbeef')
+
+        allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
+      end
+
+      class FakeMicroboshJobInstance
+        def render_templates(spec)
+          spec
+        end
       end
 
       after do
@@ -34,7 +44,8 @@ module Bosh
       end
 
       def load_deployment
-        instances = deployer.send(:load_deployments)['instances']
+        deployments = DeploymentsState.load_from_dir(config['dir'], logger)
+        instances = deployments.deployments['instances']
         instances.detect { |d| d[:name] == deployer.state.name }
       end
 
@@ -48,8 +59,8 @@ module Bosh
         before do # attached disk
           deployer.state.disk_cid = 'fake-disk-cid'
           agent.stub(list_disk: ['fake-disk-cid'])
-          deployer.disk_model.delete
-          deployer.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
+          deployer.infrastructure.disk_model.delete
+          deployer.infrastructure.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
         end
 
         let(:apply_spec) { YAML.load_file(spec_asset('apply_spec.yml')) }

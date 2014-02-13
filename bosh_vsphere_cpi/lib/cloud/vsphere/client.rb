@@ -10,7 +10,7 @@ module VSphereCloud
     class NotLoggedInException < StandardError; end
 
     attr_accessor :service_content
-    attr_accessor :stub
+    attr_accessor :soap_stub
     attr_accessor :service_instance
 
     def initialize(host, options = {})
@@ -26,9 +26,9 @@ module VSphereCloud
       http_client.connect_timeout = 4
       http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
-      @stub = Soap::StubAdapter.new(host, "vim.version.version6", http_client)
+      @soap_stub = Soap::StubAdapter.new(host, "vim.version.version6", http_client)
 
-      @service_instance = Vim::ServiceInstance.new("ServiceInstance", stub)
+      @service_instance = Vim::ServiceInstance.new("ServiceInstance", soap_stub)
       @service_content = service_instance.content
       @metrics_cache  = {}
       @lock = Mutex.new

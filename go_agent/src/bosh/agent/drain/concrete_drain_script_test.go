@@ -1,12 +1,23 @@
-package drain
+package drain_test
 
 import (
+	. "bosh/agent/drain"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+type fakeDrainParams struct {
+	jobChange       string
+	hashChange      string
+	updatedPackages []string
+}
+
+func (p fakeDrainParams) JobChange() (change string)       { return p.jobChange }
+func (p fakeDrainParams) HashChange() (change string)      { return p.hashChange }
+func (p fakeDrainParams) UpdatedPackages() (pkgs []string) { return p.updatedPackages }
 
 func TestRunArgs(t *testing.T) {
 	drainScript, params, runner, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
@@ -68,14 +79,14 @@ func TestExists(t *testing.T) {
 
 func buildDrainScript(commandResult fakesys.FakeCmdResult) (
 	drainScript ConcreteDrainScript,
-	params staticDrainParams,
+	params fakeDrainParams,
 	runner *fakesys.FakeCmdRunner,
 	fs *fakesys.FakeFileSystem,
 ) {
 	fs = fakesys.NewFakeFileSystem()
 	runner = fakesys.NewFakeCmdRunner()
 	drainScript = NewConcreteDrainScript(fs, runner, "/fake/script")
-	params = staticDrainParams{
+	params = fakeDrainParams{
 		jobChange:       "job_shutdown",
 		hashChange:      "hash_unchanged",
 		updatedPackages: []string{"foo", "bar"},

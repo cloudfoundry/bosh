@@ -32,7 +32,7 @@ Substitute *\<current_build\>* with the current build number, which can be found
     vagrant ssh -c '
       cd /bosh
       bundle install --local
-      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake ci:build_stemcell[vsphere,centos]
+      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,centos,ruby]
     ' local
 
 # Run the stemcell locally with Fusion

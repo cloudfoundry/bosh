@@ -9,31 +9,31 @@ import (
 	"path/filepath"
 )
 
-type sshAction struct {
+type SshAction struct {
 	settings    boshsettings.Service
 	platform    boshplatform.Platform
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func newSsh(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action sshAction) {
+func NewSsh(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action SshAction) {
 	action.settings = settings
 	action.platform = platform
 	action.dirProvider = dirProvider
 	return
 }
 
-func (a sshAction) IsAsynchronous() bool {
+func (a SshAction) IsAsynchronous() bool {
 	return false
 }
 
-type sshParams struct {
+type SshParams struct {
 	UserRegex string `json:"user_regex"`
 	User      string
 	Password  string
 	PublicKey string `json:"public_key"`
 }
 
-func (a sshAction) Run(cmd string, params sshParams) (value interface{}, err error) {
+func (a SshAction) Run(cmd string, params SshParams) (value interface{}, err error) {
 	switch cmd {
 	case "setup":
 		return a.setupSsh(params)
@@ -45,7 +45,7 @@ func (a sshAction) Run(cmd string, params sshParams) (value interface{}, err err
 	return
 }
 
-func (a sshAction) setupSsh(params sshParams) (value interface{}, err error) {
+func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 	boshSshPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 	err = a.platform.CreateUser(params.User, params.Password, boshSshPath)
 	if err != nil {
@@ -80,7 +80,7 @@ func (a sshAction) setupSsh(params sshParams) (value interface{}, err error) {
 	return
 }
 
-func (a sshAction) cleanupSsh(params sshParams) (value interface{}, err error) {
+func (a SshAction) cleanupSsh(params SshParams) (value interface{}, err error) {
 	err = a.platform.DeleteEphemeralUsersMatching(params.UserRegex)
 	if err != nil {
 		err = bosherr.WrapError(err, "Ssh Cleanup: Deleting Ephemeral Users")

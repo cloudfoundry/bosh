@@ -8,7 +8,7 @@ describe Bosh::Deployer::InstanceManager do
        '(this allows custom gems to specify instance manager plugin)' do
       described_class.should_receive(:require).with(
         'bosh/deployer/instance_manager/fake-plugin')
-      described_class.stub_chain(:const_get, :new)
+      allow(described_class).to receive(:new)
       described_class.create(config)
     end
 
@@ -23,12 +23,6 @@ describe Bosh::Deployer::InstanceManager do
 
     it 'returns the plugin specific instance manager' do
       described_class.stub(:require)
-
-      plugin_class = double('fake-plugin-class')
-      described_class
-        .should_receive(:const_get)
-        .with('Fake-plugin') # capitalized
-        .and_return(plugin_class)
 
       fingerprinter = instance_double('Bosh::Deployer::HashFingerprinter')
       Bosh::Deployer::HashFingerprinter
@@ -45,13 +39,12 @@ describe Bosh::Deployer::InstanceManager do
         .should_receive(:for_deployer)
         .and_return(ui_messager)
 
-      plugin_instance = instance_double('Bosh::Deployer::InstanceManager')
-      plugin_class
-        .should_receive(:new)
-        .with(config, 'fake-config-sha1', ui_messager)
-        .and_return(plugin_instance)
+      allow(described_class).to receive(:new)
 
-      expect(described_class.create(config)).to eq(plugin_instance)
+      described_class.create(config)
+
+      expect(described_class).to have_received(:new).
+                                   with(config, 'fake-config-sha1', ui_messager, 'fake-plugin')
     end
   end
 end

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'openssl'
 require 'digest/sha1'
 require 'base64'
@@ -36,9 +34,10 @@ module Bosh
         aws_options = {
           access_key_id: @options[:access_key_id],
           secret_access_key: @options[:secret_access_key],
-          use_ssl: @endpoint.scheme == 'https',
-          port: @endpoint.port,
-          s3_endpoint: @endpoint.host,
+          use_ssl: @options.fetch(:use_ssl, @endpoint.scheme == 'https'),
+          s3_port: @options.fetch(:port, @endpoint.port),
+          s3_endpoint: @options.fetch(:host, @endpoint.host),
+          s3_force_path_style: true,
         }
 
         # using S3 without credentials is a special case:

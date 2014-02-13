@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<monit>
+    <services>
+        <service name="running-service">
+            <status>0</status>
+            <monitor>1</monitor>
+        </service>
+        <service name="unmonitored-service">
+            <status>0</status>
+            <monitor>0</monitor>
+        </service>
+        <service name="starting-service">
+            <status>0</status>
+            <monitor>2</monitor>
+        </service>
+        <service name="failing-service">
+            <status>512</status>
+            <monitor>1</monitor>
+        </service>
+        <service name="system_test.local">
+            <status>0</status>
+            <monitor>1</monitor>
+        </service>
+    </services>
+    <servicegroups>
+        <servicegroup name="vcap">
+            <service>running-service</service>
+            <service>unmonitored-service</service>
+            <service>starting-service</service>
+            <service>failing-service</service>
+        </servicegroup>
+    </servicegroups>
+</monit>
