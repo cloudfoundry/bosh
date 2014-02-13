@@ -6,28 +6,28 @@ import (
 	"time"
 )
 
-type ubuntuDiskManager struct {
+type linuxDiskManager struct {
 	partitioner Partitioner
 	formatter   Formatter
 	mounter     Mounter
 }
 
-func NewUbuntuDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
-	return ubuntuDiskManager{
+func NewLinuxDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
+	return linuxDiskManager{
 		partitioner: NewSfdiskPartitioner(logger, runner),
 		formatter:   NewLinuxFormatter(runner, fs),
 		mounter:     NewLinuxMounter(runner, fs, 1*time.Second),
 	}
 }
 
-func (m ubuntuDiskManager) GetPartitioner() Partitioner {
+func (m linuxDiskManager) GetPartitioner() Partitioner {
 	return m.partitioner
 }
 
-func (m ubuntuDiskManager) GetFormatter() Formatter {
+func (m linuxDiskManager) GetFormatter() Formatter {
 	return m.formatter
 }
 
-func (m ubuntuDiskManager) GetMounter() Mounter {
+func (m linuxDiskManager) GetMounter() Mounter {
 	return m.mounter
 }

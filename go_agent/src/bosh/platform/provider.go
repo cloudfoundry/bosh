@@ -23,16 +23,15 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger, runner)
 	sigarStatsCollector := boshstats.NewSigarStatsCollector()
-	ubuntuDiskManager := boshdisk.NewUbuntuDiskManager(logger, runner, fs)
-	centosDiskManager := boshdisk.NewCentosDiskManager(logger, runner, fs)
+	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs)
 
 	udev := boshudev.NewConcreteUdevDevice(runner)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcd.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
 
 	p.platforms = map[string]Platform{
-		"ubuntu": NewUbuntuPlatform(sigarStatsCollector, fs, runner, ubuntuDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
-		"centos": NewCentosPlatform(sigarStatsCollector, fs, runner, centosDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
+		"ubuntu": NewUbuntuPlatform(sigarStatsCollector, fs, runner, linuxDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
+		"centos": NewCentosPlatform(sigarStatsCollector, fs, runner, linuxDiskManager, dirProvider, linuxCdutil, 10*time.Second, 3*time.Minute),
 		"dummy":  NewDummyPlatform(sigarStatsCollector, fs, runner, dirProvider),
 	}
 	return
