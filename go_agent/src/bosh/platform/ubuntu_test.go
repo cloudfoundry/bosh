@@ -113,13 +113,13 @@ func init() {
 				dirProvider,
 				vitalsService,
 				cdutil,
+				diskManager,
+				diskWaitTimeout,
 			)
 
 			platform = NewUbuntuPlatform(
 				linux,
-				diskManager,
 				1*time.Millisecond,
-				diskWaitTimeout,
 			)
 		})
 

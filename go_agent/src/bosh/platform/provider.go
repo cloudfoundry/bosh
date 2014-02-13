@@ -44,20 +44,18 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		dirProvider,
 		vitalsService,
 		linuxCdutil,
+		linuxDiskManager,
+		3*time.Minute,
 	)
 
 	p.platforms = map[string]Platform{
 		"ubuntu": NewUbuntuPlatform(
 			linux,
-			linuxDiskManager,
 			10*time.Second,
-			3*time.Minute,
 		),
 		"centos": NewCentosPlatform(
 			linux,
-			linuxDiskManager,
 			10*time.Second,
-			3*time.Minute,
 		),
 		"dummy": NewDummyPlatform(sigarCollector, fs, runner, dirProvider),
 	}

@@ -108,12 +108,12 @@ func init() {
 				dirProvider,
 				vitalsService,
 				cdutil,
+				diskManager,
+				1*time.Millisecond,
 			)
 
 			platform = NewCentosPlatform(
 				linux,
-				diskManager,
-				1*time.Millisecond,
 				1*time.Millisecond,
 			)
 		})
