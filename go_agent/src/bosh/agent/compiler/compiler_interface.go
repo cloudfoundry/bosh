@@ -1,7 +1,11 @@
 package compiler
 
+import (
+	boshmodels "bosh/agent/applier/models"
+)
+
 type Compiler interface {
-	Compile(pkg Package, deps Dependencies) (blobId, sha1 string, err error)
+	Compile(pkg Package, deps []boshmodels.Package) (blobId, sha1 string, err error)
 }
 
 type Package struct {

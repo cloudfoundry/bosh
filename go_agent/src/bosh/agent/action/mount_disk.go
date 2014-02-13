@@ -7,24 +7,24 @@ import (
 	boshdirs "bosh/settings/directories"
 )
 
-type mountDiskAction struct {
+type MountDiskAction struct {
 	settings    boshsettings.Service
 	platform    boshplatform.Platform
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func newMountDisk(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (mountDisk mountDiskAction) {
+func NewMountDisk(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
 	mountDisk.settings = settings
 	mountDisk.platform = platform
 	mountDisk.dirProvider = dirProvider
 	return
 }
 
-func (a mountDiskAction) IsAsynchronous() bool {
+func (a MountDiskAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a mountDiskAction) Run(volumeId string) (value interface{}, err error) {
+func (a MountDiskAction) Run(volumeId string) (value interface{}, err error) {
 	err = a.settings.Refresh()
 	if err != nil {
 		err = bosherr.WrapError(err, "Refreshing the settings")

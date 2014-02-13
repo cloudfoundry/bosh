@@ -1,5 +1,6 @@
 out
 pkg
+gobin/*
 
 .idea/workspace.xml
 .idea/tasks.xml

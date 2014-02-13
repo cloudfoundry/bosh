@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
+	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"fmt"
@@ -14,22 +15,24 @@ import (
 type awsInfrastructure struct {
 	metadataHost string
 	resolver     dnsResolver
+	platform     boshplatform.Platform
 }
 
-func newAwsInfrastructure(metadataHost string, resolver dnsResolver) (infrastructure awsInfrastructure) {
+func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (infrastructure awsInfrastructure) {
 	infrastructure.metadataHost = metadataHost
 	infrastructure.resolver = resolver
+	infrastructure.platform = platform
 	return
 }
 
-func (inf awsInfrastructure) SetupSsh(delegate SshSetupDelegate, username string) (err error) {
+func (inf awsInfrastructure) SetupSsh(username string) (err error) {
 	publicKey, err := inf.getPublicKey()
 	if err != nil {
 		err = bosherr.WrapError(err, "Error getting public key")
 		return
 	}
 
-	err = delegate.SetupSsh(publicKey, username)
+	err = inf.platform.SetupSsh(publicKey, username)
 	return
 }
 
@@ -74,8 +77,12 @@ func (inf awsInfrastructure) GetSettings() (settings boshsettings.Settings, err 
 	return
 }
 
-func (inf awsInfrastructure) SetupNetworking(delegate NetworkingDelegate, networks boshsettings.Networks) (err error) {
-	return delegate.SetupDhcp(networks)
+func (inf awsInfrastructure) SetupNetworking(networks boshsettings.Networks) (err error) {
+	return inf.platform.SetupDhcp(networks)
+}
+
+func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+	return inf.platform.NormalizeDiskPath(devicePath)
 }
 
 func (inf awsInfrastructure) getInstanceId() (instanceId string, err error) {

@@ -7,22 +7,22 @@ import (
 	"fmt"
 )
 
-type unmountDiskAction struct {
+type UnmountDiskAction struct {
 	settings boshsettings.Service
 	platform boshplatform.Platform
 }
 
-func newUnmountDisk(settings boshsettings.Service, platform boshplatform.Platform) (unmountDisk unmountDiskAction) {
+func NewUnmountDisk(settings boshsettings.Service, platform boshplatform.Platform) (unmountDisk UnmountDiskAction) {
 	unmountDisk.settings = settings
 	unmountDisk.platform = platform
 	return
 }
 
-func (a unmountDiskAction) IsAsynchronous() bool {
+func (a UnmountDiskAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a unmountDiskAction) Run(volumeId string) (value interface{}, err error) {
+func (a UnmountDiskAction) Run(volumeId string) (value interface{}, err error) {
 	disksSettings := a.settings.GetDisks()
 	devicePath, found := disksSettings.Persistent[volumeId]
 	if !found {

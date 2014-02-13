@@ -1,24 +1,48 @@
-package infrastructure
+package infrastructure_test
 
 import (
+	. "bosh/infrastructure"
+	fakeplatform "bosh/platform/fakes"
+	boshsettings "bosh/settings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-type FakeCDROMDelegate struct {
-}
-
-func (fakeCDROMDelegate FakeCDROMDelegate) GetFileContentsFromCDROM(_ string) (contents []byte, err error) {
-	contents = []byte(`{"agent_id": "123"}`)
-	return
-}
-
 func TestVsphereGetSettings(t *testing.T) {
-	cdromDelegate := FakeCDROMDelegate{}
-	vsphere := newVsphereInfrastructure(cdromDelegate)
+	vsphere, platform := buildVsphere()
+
+	platform.GetFileContentsFromCDROMContents = []byte(`{"agent_id": "123"}`)
 
 	settings, err := vsphere.GetSettings()
 
 	assert.NoError(t, err)
+	assert.Equal(t, platform.GetFileContentsFromCDROMPath, "env")
 	assert.Equal(t, settings.AgentId, "123")
+}
+
+func TestVsphereSetupNetworking(t *testing.T) {
+	vsphere, platform := buildVsphere()
+	networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
+
+	vsphere.SetupNetworking(networks)
+
+	assert.Equal(t, platform.SetupManualNetworkingNetworks, networks)
+}
+
+func TestVsphereGetEphemeralDiskPath(t *testing.T) {
+	vsphere, platform := buildVsphere()
+
+	platform.NormalizeDiskPathRealPath = "/dev/sdb"
+	platform.NormalizeDiskPathFound = true
+
+	realPath, found := vsphere.GetEphemeralDiskPath("does not matter")
+	assert.True(t, found)
+	assert.Equal(t, realPath, "/dev/sdb")
+	assert.Equal(t, platform.NormalizeDiskPathPath, "/dev/sdb")
+}
+
+func buildVsphere() (vsphere Infrastructure, platform *fakeplatform.FakePlatform) {
+	platform = fakeplatform.NewFakePlatform()
+	vsphere = NewVsphereInfrastructure(platform)
+	return
 }

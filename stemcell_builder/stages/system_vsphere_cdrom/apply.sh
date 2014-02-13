@@ -9,4 +9,4 @@ source $base_dir/lib/prelude_apply.bash
 
 cp $assets_dir/95-bosh-cdrom.rules $chroot/etc/udev/rules.d/95-bosh-cdrom.rules
 
-cp $assets_dir/ready_cdrom.sh $chroot/etc/udev/rules.d/ready_cdrom.sh
+install -m0755 $assets_dir/ready_cdrom.sh $chroot/etc/udev/rules.d/ready_cdrom.sh

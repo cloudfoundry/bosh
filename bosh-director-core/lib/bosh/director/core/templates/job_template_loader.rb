@@ -1,6 +1,6 @@
 require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/job_template_renderer'
-require 'bosh/director/core/templates/src_file_template'
+require 'bosh/director/core/templates/source_erb'
 
 module Bosh::Director::Core::Templates
   class JobTemplateLoader
@@ -12,18 +12,17 @@ module Bosh::Director::Core::Templates
       template_dir = extract_template(job_template)
       manifest = Psych.load_file(File.join(template_dir, 'job.MF'))
 
-      monit_template = erb(File.join(template_dir, 'monit'))
-      monit_template.filename = File.join(job_template.name, 'monit')
+      monit_erb_file = File.read(File.join(template_dir, 'monit'))
+      monit_source_erb = SourceErb.new('monit', 'monit', monit_erb_file, job_template.name)
 
-      templates = []
+      source_erbs = []
 
       manifest.fetch('templates', {}).each_pair do |src_name, dest_name|
-        erb_file = erb(File.join(template_dir, 'templates', src_name))
-        erb_file.filename = File.join(job_template.name, src_name)
-        templates << SrcFileTemplate.new(src_name, dest_name, erb_file)
+        erb_file = File.read(File.join(template_dir, 'templates', src_name))
+        source_erbs << SourceErb.new(src_name, dest_name, erb_file, job_template.name)
       end
 
-      JobTemplateRenderer.new(job_template.name, monit_template, templates, logger)
+      JobTemplateRenderer.new(job_template.name, monit_source_erb, source_erbs, logger)
     ensure
       FileUtils.rm_rf(template_dir) if template_dir
     end
@@ -47,10 +46,6 @@ module Bosh::Director::Core::Templates
       template_dir
     ensure
       FileUtils.rm_f(temp_path) if temp_path
-    end
-
-    def erb(path)
-      ERB.new(File.read(path))
     end
   end
 end

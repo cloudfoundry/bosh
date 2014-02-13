@@ -16,7 +16,7 @@ logging:
 resque:
   logging:
     level: <%= resque_loglevel %>
-<% end %>    
+<% end %>
 redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
@@ -78,6 +78,15 @@ blobstore:
     bucket_name: <%= p('blobstore.bucket_name') %>
     access_key_id: <%= p('blobstore.access_key_id') %>
     secret_access_key: <%= p('blobstore.secret_access_key') %>
+    <% if_p('blobstore.use_ssl') do |use_ssl| %>
+    use_ssl: <%= use_ssl %>
+    <% end %>
+    <% if_p('blobstore.port') do |port| %>
+        port: <%= port %>
+    <% end %>
+    <% if_p('blobstore.host') do |host| %>
+        host: <%= host %>
+    <% end %>
 <% elsif p('blobstore.provider') == 'swift' %>
     swift_provider: <%= swift_provider = p('blobstore.swift_provider') %>
     container_name: "<%= p('blobstore.swift_container_name') %>"
@@ -291,6 +300,15 @@ cloud:
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
+        <% if_p('blobstore.use_ssl') do |use_ssl| %>
+          use_ssl: <%= use_ssl %>
+        <% end %>
+        <% if_p('blobstore.port') do |port| %>
+          port: <%= p('blobstore.port') %>
+        <% end %>
+        <% if_p('blobstore.host') do |port| %>
+          host: <%= p('blobstore.host') %>
+        <% end %>
       <% elsif p('blobstore.provider') == 'swift' %>
           swift_provider: <%= swift_provider = p('blobstore.swift_provider') %>
           container_name: "<%= p('blobstore.swift_container_name') %>"

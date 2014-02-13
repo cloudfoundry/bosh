@@ -1,6 +1,7 @@
-package applyspec
+package applyspec_test
 
 import (
+	. "bosh/agent/applier/applyspec"
 	boshassert "bosh/assert"
 	fakesys "bosh/system/fakes"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ func TestSet(t *testing.T) {
 	boshassert.MatchesJsonString(t, spec, specPathStats.Content)
 }
 
-func buildV1Service() (fs *fakesys.FakeFileSystem, specPath string, service concreteV1Service) {
+func buildV1Service() (fs *fakesys.FakeFileSystem, specPath string, service V1Service) {
 	fs = fakesys.NewFakeFileSystem()
 	specPath = "/spec.json"
 	service = NewConcreteV1Service(fs, specPath)

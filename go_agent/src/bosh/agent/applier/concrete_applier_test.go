@@ -1,6 +1,7 @@
-package applier
+package applier_test
 
 import (
+	. "bosh/agent/applier"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeja "bosh/agent/applier/jobapplier/fakes"
 	models "bosh/agent/applier/models"

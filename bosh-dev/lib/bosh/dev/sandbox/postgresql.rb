@@ -3,29 +3,33 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Sandbox
   class Postgresql
-    attr_reader :directory
+    attr_reader :db_name, :directory, :username, :password, :adapter, :port
 
     def initialize(directory, db_name, logger, runner = Bosh::Core::Shell.new)
       @directory = directory
       @db_name = db_name
       @logger = logger
       @runner = runner
+      @username = 'postgres'
+      @password = ''
+      @adapter = 'postgres'
+      @port = 5432
     end
 
     # Assumption is that user running tests can
     # login via psql without entering password.
     def create_db
-      @logger.info("Creating database #{db_name}")
+      @logger.info("Creating postgres database #{db_name}")
       runner.run(%Q{psql -U postgres -c 'create database "#{db_name}";' > /dev/null})
     end
 
     def drop_db
-      @logger.info("Dropping database #{db_name}")
+      @logger.info("Dropping postgres database #{db_name}")
       runner.run(%Q{psql -U postgres -c 'drop database "#{db_name}";' > /dev/null})
     end
 
     private
 
-    attr_reader :db_name, :runner
+    attr_reader :runner
   end
 end

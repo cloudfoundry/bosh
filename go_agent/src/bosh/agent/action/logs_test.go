@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
@@ -84,7 +85,7 @@ type logsDeps struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func buildLogsAction() (deps logsDeps, action logsAction) {
+func buildLogsAction() (deps logsDeps, action LogsAction) {
 	deps = logsDeps{
 		compressor:  fakecmd.NewFakeCompressor(),
 		blobstore:   &fakeblobstore.FakeBlobstore{},
@@ -92,7 +93,7 @@ func buildLogsAction() (deps logsDeps, action logsAction) {
 		copier:      fakecmd.NewFakeCopier(),
 	}
 
-	action = newLogs(
+	action = NewLogs(
 		deps.compressor,
 		deps.copier,
 		deps.blobstore,

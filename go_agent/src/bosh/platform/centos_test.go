@@ -1,6 +1,7 @@
-package platform
+package platform_test
 
 import (
+	. "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
 	fakestats "bosh/platform/stats/fakes"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestCentosSetupRuntimeConfiguration(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	err := centos.SetupRuntimeConfiguration()
 	assert.NoError(t, err)
@@ -51,7 +52,7 @@ func TestCentosCreateUserWithAnEmptyPassword(t *testing.T) {
 }
 
 func testCentosCreateUserWithPassword(t *testing.T, password string, expectedUseradd []string) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	err := centos.CreateUser("foo-user", password, "/some/path/to/home")
 	assert.NoError(t, err)
@@ -65,7 +66,7 @@ func testCentosCreateUserWithPassword(t *testing.T, password string, expectedUse
 }
 
 func TestCentosAddUserToGroups(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	err := centos.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
 	assert.NoError(t, err)
@@ -77,7 +78,7 @@ func TestCentosAddUserToGroups(t *testing.T) {
 }
 
 func TestCentosDeleteUsersWithPrefixAndRegex(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	passwdFile := fmt.Sprintf(`%sfoo:...
 %sbar:...
@@ -98,7 +99,7 @@ foobar:...
 }
 
 func TestCentosSetupSsh(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	deps.fs.HomeDirHomePath = "/some/home/dir"
 
 	centos.SetupSsh("some public key", "vcap")
@@ -123,7 +124,7 @@ func TestCentosSetupSsh(t *testing.T) {
 }
 
 func TestCentosSetUserPassword(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	centos.SetUserPassword("my-user", "my-encrypted-password")
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
@@ -131,7 +132,7 @@ func TestCentosSetUserPassword(t *testing.T) {
 }
 
 func TestCentosSetupHostname(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	centos.SetupHostname("foobar.local")
 	assert.Equal(t, 1, len(deps.cmdRunner.RunCommands))
@@ -158,7 +159,7 @@ ff02::3 ip6-allhosts
 `
 
 func TestCentosSetupDhcp(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	testCentosSetupDhcp(t, deps, centos)
 
 	assert.Equal(t, len(deps.cmdRunner.RunCommands), 1)
@@ -166,7 +167,7 @@ func TestCentosSetupDhcp(t *testing.T) {
 }
 
 func TestCentosSetupDhcpWithPreExistingConfiguration(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	deps.fs.WriteToFile("/etc/dhcp/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
 	testCentosSetupDhcp(t, deps, centos)
 
@@ -176,7 +177,7 @@ func TestCentosSetupDhcpWithPreExistingConfiguration(t *testing.T) {
 func testCentosSetupDhcp(
 	t *testing.T,
 	deps centosDependencies,
-	platform centos,
+	platform Platform,
 ) {
 	networks := boshsettings.Networks{
 		"bosh": boshsettings.Network{
@@ -212,8 +213,61 @@ prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
 
+func TestCentosSetupManualNetworking(t *testing.T) {
+	deps, centos := buildCentos(1 * time.Millisecond)
+
+	testCentosSetupManualNetworking(t, deps, centos)
+
+	time.Sleep(100 * time.Millisecond)
+
+	assert.Equal(t, len(deps.cmdRunner.RunCommands), 7)
+	assert.Equal(t, deps.cmdRunner.RunCommands[0], []string{"service", "network", "restart"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[1], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+	assert.Equal(t, deps.cmdRunner.RunCommands[6], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+}
+
+func testCentosSetupManualNetworking(t *testing.T,
+	deps centosDependencies,
+	platform Platform) {
+	networks := boshsettings.Networks{
+		"bosh": boshsettings.Network{
+			Default: []string{"dns", "gateway"},
+			Ip:      "192.168.195.6",
+			Netmask: "255.255.255.0",
+			Gateway: "192.168.195.1",
+			Mac:     "22:00:0a:1f:ac:2a",
+			Dns:     []string{"10.80.130.2", "10.80.130.1"},
+		},
+	}
+	deps.fs.WriteToFile("/sys/class/net/eth0", "")
+	deps.fs.WriteToFile("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a")
+	deps.fs.GlobPaths = []string{"/sys/class/net/eth0"}
+
+	platform.SetupManualNetworking(networks)
+
+	networkConfig := deps.fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+	assert.NotNil(t, networkConfig)
+	assert.Equal(t, networkConfig.Content, CENTOS_EXPECTED_IFCFG)
+
+	resolvConf := deps.fs.GetFileTestStat("/etc/resolv.conf")
+	assert.NotNil(t, resolvConf)
+	assert.Equal(t, resolvConf.Content, CENTOS_EXPECTED_RESOLV_CONF)
+}
+
+const CENTOS_EXPECTED_IFCFG = `DEVICE=eth0
+BOOTPROTO=static
+IPADDR=192.168.195.6
+NETMASK=255.255.255.0
+BROADCAST=192.168.195.255
+GATEWAY=192.168.195.1
+ONBOOT=yes`
+
+const CENTOS_EXPECTED_RESOLV_CONF = `nameserver 10.80.130.1
+nameserver 10.80.130.2
+`
+
 func TestCentosSetupLogrotate(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	centos.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
 
@@ -235,7 +289,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 `
 
 func TestCentosSetTimeWithNtpServers(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	centos.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
 
@@ -248,7 +302,7 @@ func TestCentosSetTimeWithNtpServers(t *testing.T) {
 }
 
 func TestCentosSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	centos.SetTimeWithNtpServers([]string{})
 	assert.Equal(t, 0, len(deps.cmdRunner.RunCommands))
@@ -258,7 +312,7 @@ func TestCentosSetTimeWithNtpServersIsNoopWhenNoNtpServerProvided(t *testing.T) 
 }
 
 func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
@@ -267,7 +321,7 @@ func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 
-	err := centos.SetupEphemeralDiskWithPath("/dev/sda")
+	err := centos.SetupEphemeralDiskWithPath("/dev/xvda")
 	assert.NoError(t, err)
 
 	dataDir := deps.fs.GetFileTestStat("/fake-dir/data")
@@ -303,15 +357,18 @@ func TestCentosSetupEphemeralDiskWithPath(t *testing.T) {
 	assert.NotNil(t, sysLogStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysLogStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysLogStats.FileMode)
+	assert.Equal(t, []string{"chown", "root:vcap", "/fake-dir/data/sys"}, deps.cmdRunner.RunCommands[0])
+	assert.Equal(t, []string{"chown", "root:vcap", "/fake-dir/data/sys/log"}, deps.cmdRunner.RunCommands[1])
 
 	sysRunStats := deps.fs.GetFileTestStat("/fake-dir/data/sys/run")
 	assert.NotNil(t, sysRunStats)
 	assert.Equal(t, fakesys.FakeFileTypeDir, sysRunStats.FileType)
 	assert.Equal(t, os.FileMode(0750), sysRunStats.FileMode)
+	assert.Equal(t, []string{"chown", "root:vcap", "/fake-dir/data/sys/run"}, deps.cmdRunner.RunCommands[2])
 }
 
 func TestCentosSetupTmpDir(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	err := centos.SetupTmpDir()
 	assert.NoError(t, err)
@@ -323,7 +380,7 @@ func TestCentosSetupTmpDir(t *testing.T) {
 }
 
 func TestCentosMountPersistentDisk(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	fakeFormatter := deps.diskManager.FakeFormatter
 	fakePartitioner := deps.diskManager.FakePartitioner
 	fakeMounter := deps.diskManager.FakeMounter
@@ -363,7 +420,7 @@ func TestCentosUnmountPersistentDiskWhenAlreadyMounted(t *testing.T) {
 }
 
 func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	fakeMounter := deps.diskManager.FakeMounter
 	fakeMounter.UnmountDidUnmount = !isMounted
 
@@ -376,39 +433,37 @@ func testCentosUnmountPersistentDisk(t *testing.T, isMounted bool) {
 }
 
 func TestCentosGetRealDevicePathWithMultiplePossibleDevices(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	deps.fs.WriteToFile("/dev/vda", "")
 
-	realPath, err := centos.getRealDevicePath("/dev/sda")
-	assert.NoError(t, err)
+	realPath, found := centos.NormalizeDiskPath("/dev/sda")
+	assert.True(t, found)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
 func TestCentosGetRealDevicePathWithDelayWithinTimeout(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
-	time.AfterFunc(time.Second, func() {
+	time.AfterFunc(time.Millisecond, func() {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	realPath, err := centos.getRealDevicePath("/dev/sda")
-	assert.NoError(t, err)
+	realPath, found := centos.NormalizeDiskPath("/dev/sda")
+	assert.True(t, found)
 	assert.Equal(t, "/dev/xvda", realPath)
 }
 
 func TestCentosGetRealDevicePathWithDelayBeyondTimeout(t *testing.T) {
-	deps, centos := buildCentos()
-
-	centos.diskWaitTimeout = time.Second
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	time.AfterFunc(2*time.Second, func() {
 		deps.fs.WriteToFile("/dev/xvda", "")
 	})
 
-	_, err := centos.getRealDevicePath("/dev/sda")
-	assert.Error(t, err)
+	_, found := centos.NormalizeDiskPath("/dev/sda")
+	assert.False(t, found)
 }
 
 func TestCentosCalculateEphemeralDiskPartitionSizesWhenDiskIsBiggerThanTwiceTheMemory(t *testing.T) {
@@ -428,7 +483,7 @@ func TestCentosCalculateEphemeralDiskPartitionSizesWhenDiskTwiceTheMemoryOrSmall
 }
 
 func testCentosCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, diskSizeInMb, expectedSwap uint64) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	deps.collector.MemStats.Total = totalMemInMb * uint64(1024*1024)
 
 	fakePartitioner := deps.diskManager.FakePartitioner
@@ -436,15 +491,18 @@ func testCentosCalculateEphemeralDiskPartitionSizes(t *testing.T, totalMemInMb, 
 		"/dev/hda": diskSizeInMb,
 	}
 
-	swapSize, linuxSize, err := centos.calculateEphemeralDiskPartitionSizes("/dev/hda")
+	err := centos.SetupEphemeralDiskWithPath("/dev/hda")
 
 	assert.NoError(t, err)
-	assert.Equal(t, expectedSwap, swapSize)
-	assert.Equal(t, diskSizeInMb-expectedSwap, linuxSize)
+	expectedPartitions := []boshdisk.Partition{
+		{SizeInMb: expectedSwap, Type: boshdisk.PartitionTypeSwap},
+		{SizeInMb: diskSizeInMb - expectedSwap, Type: boshdisk.PartitionTypeLinux},
+	}
+	assert.Equal(t, fakePartitioner.PartitionPartitions, expectedPartitions)
 }
 
 func TestCentosMigratePersistentDisk(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	fakeMounter := deps.diskManager.FakeMounter
 
 	centos.MigratePersistentDisk("/from/path", "/to/path")
@@ -459,11 +517,35 @@ func TestCentosMigratePersistentDisk(t *testing.T) {
 	assert.Equal(t, fakeMounter.RemountToMountPoint, "/from/path")
 }
 
+func TestCentosNormalizeDiskPath(t *testing.T) {
+	deps, centos := buildCentos(1 * time.Millisecond)
+
+	deps.fs.WriteToFile("/dev/xvda", "")
+	path, found := centos.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/xvda")
+	assert.True(t, found)
+
+	deps.fs.RemoveAll("/dev/xvda")
+	deps.fs.WriteToFile("/dev/vda", "")
+	path, found = centos.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/vda")
+	assert.True(t, found)
+
+	deps.fs.RemoveAll("/dev/vda")
+	deps.fs.WriteToFile("/dev/sda", "")
+	path, found = centos.NormalizeDiskPath("/dev/sda")
+
+	assert.Equal(t, path, "/dev/sda")
+	assert.True(t, found)
+}
+
 func TestCentosGetFileContentsFromCDROM(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/bosh-cdrom", "")
-	settingsPath := filepath.Join(centos.dirProvider.SettingsDir(), "env")
+	settingsPath := filepath.Join(centos.GetDirProvider().SettingsDir(), "env")
 	deps.fs.WriteToFile(settingsPath, "some stuff")
 	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
 
@@ -479,20 +561,20 @@ func TestCentosGetFileContentsFromCDROM(t *testing.T) {
 }
 
 func TestCentosGetFileContentsFromCDROMWhenCDROMFailedToLoad(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/sr0/env", "some stuff")
 	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
-	centos.cdromWaitInterval = 1 * time.Millisecond
+	//	centos.cdromWaitInterval = 1 * time.Millisecond
 
 	_, err := centos.GetFileContentsFromCDROM("env")
 	assert.Error(t, err)
 }
 
 func TestCentosGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Second)
 
-	settingsPath := filepath.Join(centos.dirProvider.SettingsDir(), "env")
+	settingsPath := filepath.Join(centos.GetDirProvider().SettingsDir(), "env")
 	deps.fs.WriteToFile(settingsPath, "some stuff")
 	deps.fs.WriteToFile("/proc/sys/dev/cdrom/info", "CD-ROM information, Id: cdrom.c 3.20 2003/12/17\n\ndrive name:		sr0\ndrive speed:		32\n")
 
@@ -506,7 +588,7 @@ func TestCentosGetFileContentsFromCDROMRetriesCDROMReading(t *testing.T) {
 }
 
 func TestCentosIsDevicePathMounted(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/dev/xvda", "")
 	fakeMounter := deps.diskManager.FakeMounter
@@ -519,7 +601,7 @@ func TestCentosIsDevicePathMounted(t *testing.T) {
 }
 
 func TestCentosStartMonit(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	err := centos.StartMonit()
 	assert.NoError(t, err)
@@ -528,7 +610,7 @@ func TestCentosStartMonit(t *testing.T) {
 }
 
 func TestCentosSetupMonitUserIfFileDoesNotExist(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	err := centos.SetupMonitUser()
 	assert.NoError(t, err)
@@ -539,7 +621,7 @@ func TestCentosSetupMonitUserIfFileDoesNotExist(t *testing.T) {
 }
 
 func TestCentosSetupMonitUserIfFileDoesExist(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "vcap:other-random-password")
 
@@ -552,7 +634,7 @@ func TestCentosSetupMonitUserIfFileDoesExist(t *testing.T) {
 }
 
 func TestCentosGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
 
@@ -564,7 +646,7 @@ func TestCentosGetMonitCredentialsReadsMonitFileFromDisk(t *testing.T) {
 }
 
 func TestCentosGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user")
 
@@ -573,7 +655,7 @@ func TestCentosGetMonitCredentialsErrsWhenInvalidFileFormat(t *testing.T) {
 }
 
 func TestCentosGetMonitCredentialsLeavesColonsInPasswordIntact(t *testing.T) {
-	deps, centos := buildCentos()
+	deps, centos := buildCentos(1 * time.Millisecond)
 	deps.fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
 
 	username, password, err := centos.GetMonitCredentials()
@@ -591,9 +673,9 @@ type centosDependencies struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func buildCentos() (
+func buildCentos(cdromWaitInterval time.Duration) (
 	deps centosDependencies,
-	platform centos,
+	platform Platform,
 ) {
 	deps.collector = &fakestats.FakeStatsCollector{}
 	deps.fs = &fakesys.FakeFileSystem{}
@@ -601,12 +683,15 @@ func buildCentos() (
 	deps.diskManager = fakedisk.NewFakeDiskManager(deps.cmdRunner)
 	deps.dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 
-	platform = newCentosPlatform(
+	platform = NewCentosPlatform(
 		deps.collector,
 		deps.fs,
 		deps.cmdRunner,
 		deps.diskManager,
 		deps.dirProvider,
+		cdromWaitInterval,
+		1*time.Millisecond,
+		1*time.Millisecond,
 	)
 	return
 }

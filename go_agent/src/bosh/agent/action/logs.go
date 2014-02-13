@@ -8,14 +8,14 @@ import (
 	"path/filepath"
 )
 
-type logsAction struct {
+type LogsAction struct {
 	compressor  boshcmd.Compressor
 	copier      boshcmd.Copier
 	blobstore   boshblob.Blobstore
 	settingsDir boshdirs.DirectoriesProvider
 }
 
-func newLogs(compressor boshcmd.Compressor, copier boshcmd.Copier, blobstore boshblob.Blobstore, settingsDir boshdirs.DirectoriesProvider) (action logsAction) {
+func NewLogs(compressor boshcmd.Compressor, copier boshcmd.Copier, blobstore boshblob.Blobstore, settingsDir boshdirs.DirectoriesProvider) (action LogsAction) {
 	action.compressor = compressor
 	action.copier = copier
 	action.blobstore = blobstore
@@ -23,11 +23,11 @@ func newLogs(compressor boshcmd.Compressor, copier boshcmd.Copier, blobstore bos
 	return
 }
 
-func (a logsAction) IsAsynchronous() bool {
+func (a LogsAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a logsAction) Run(logType string, filters []string) (value interface{}, err error) {
+func (a LogsAction) Run(logType string, filters []string) (value interface{}, err error) {
 	var logsDir string
 
 	switch logType {

@@ -3,7 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      describe :initialize do
+      let(:event_log) {instance_double('Bosh::Director::EventLog::Log')}
+      describe '#initialize' do
         it 'should parse the manifest' do
           plan = Planner.new(some: :manifest)
 
@@ -14,12 +15,12 @@ module Bosh::Director
           plan.should_receive(:parse_compilation)
           plan.should_receive(:parse_update)
           plan.should_receive(:parse_resource_pools)
-          plan.should_receive(:parse_jobs)
+          plan.should_receive(:parse_jobs).with(event_log)
 
-          plan.parse
+          plan.parse(event_log)
         end
 
-        describe :options do
+        describe 'options' do
           it 'should parse recreate' do
             plan = Planner.new({})
             plan.recreate.should == false
@@ -30,7 +31,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_name do
+      describe '#parse_name' do
         it 'should parse the raw and canonical names' do
           plan = Planner.new({ 'name' => 'Test Deployment' })
           plan.parse_name
@@ -39,7 +40,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_properties do
+      describe '#parse_properties' do
         it 'should parse basic properties' do
           plan = Planner.new({ 'properties' => { 'foo' => 'bar' } })
           plan.parse_properties
@@ -53,7 +54,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_releases do
+      describe '#parse_releases' do
         let(:release_spec) do
           {
             'name' => 'foo',
@@ -124,7 +125,7 @@ module Bosh::Director
 
       end
 
-      describe :parse_networks do
+      describe '#parse_networks' do
         it 'should create manual network by default' do
           network_spec = instance_double('Bosh::Director::DeploymentPlan::Network')
           network_spec.stub(:name).and_return('Bar')
@@ -175,7 +176,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_compilation do
+      describe '#parse_compilation' do
         it 'should delegate to CompilationConfig' do
           received_plan = nil
           CompilationConfig.
@@ -196,7 +197,7 @@ module Bosh::Director
         end
       end
 
-      describe :parse_update do
+      describe '#parse_update' do
         it 'should delegate to UpdateConfig' do
           UpdateConfig.should_receive(:new) do |spec|
             spec.should == { 'foo' => 'bar' }
@@ -214,7 +215,7 @@ module Bosh::Director
 
       end
 
-      describe :parse_resource_pools do
+      describe '#parse_resource_pools' do
         it 'should delegate to ResourcePool' do
           resource_pool_spec = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
           resource_pool_spec.stub(:name).and_return('foo')
@@ -251,64 +252,61 @@ module Bosh::Director
         end
       end
 
-      describe :parse_jobs do
+      describe '#parse_jobs' do
         it 'should delegate to Job' do
-          job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
-          job_spec.stub(:name).and_return('Foo')
-          job_spec.stub(:canonical_name).and_return('foo')
-          job_spec
+          event_log = instance_double('Bosh::Director::EventLog::Log')
 
-          received_plan = nil
-          Job.should_receive(:parse).
-            and_return do |deployment_plan, spec|
-            received_plan = deployment_plan
-            spec.should == { 'foo' => 'bar' }
-            job_spec
-          end
+          job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
+          allow(job_spec).to receive(:name).and_return('Foo')
+          allow(job_spec).to receive(:canonical_name).and_return('foo')
+
+          allow(Job).to receive(:parse).and_return(job_spec)
           plan = Planner.new({ 'jobs' => [{ 'foo' => 'bar' }] })
-          plan.parse_jobs
-          received_plan.should == plan
+          plan.parse_jobs(event_log)
+          expect(Job).to have_received(:parse).with(plan, { 'foo' => 'bar' }, event_log)
         end
 
         it 'should enforce canonical name uniqueness' do
-          Job.stub(:parse).
-            and_return do |_, spec|
-            job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
-            job_spec.stub(:name).and_return(spec['name'])
-            job_spec.stub(:canonical_name).and_return(spec['cname'])
-            job_spec
-          end
-          lambda {
-            plan = Planner.new({ 'jobs' => [
-              { 'name' => 'Bar', 'cname' => 'bar' },
-              { 'name' => 'bar', 'cname' => 'bar' }
-            ] })
-            plan.parse_jobs
-          }.should raise_error(DeploymentCanonicalJobNameTaken,
+          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'Bar'), event_log).and_return(
+            instance_double('Bosh::Director::DeploymentPlan::Job', name: 'Bar', canonical_name: 'bar'),
+          )
+          allow(Job).to receive(:parse).with(anything, hash_including('name' => 'bar'), event_log).and_return(
+            instance_double('Bosh::Director::DeploymentPlan::Job', name: 'bar', canonical_name: 'bar'),
+          )
+
+          expect {
+            plan = Planner.new(
+              'jobs' => [
+                { 'name' => 'Bar' },
+                { 'name' => 'bar' }
+              ]
+            )
+            plan.parse_jobs(event_log)
+          }.to raise_error(DeploymentCanonicalJobNameTaken,
                                "Invalid job name `bar', " +
                                  'canonical name already taken')
         end
 
         it 'should raise exception if renamed job is being referenced in deployment' do
-          lambda {
+          expect {
             plan = Planner.new(
               { 'jobs' => [{ 'name' => 'bar' }] },
               { 'job_rename' => { 'old_name' => 'bar', 'new_name' => 'foo' } }
             )
-            plan.parse_jobs
-          }.should raise_error(DeploymentRenamedJobNameStillUsed,
+            plan.parse_jobs(event_log)
+          }.to raise_error(DeploymentRenamedJobNameStillUsed,
                                "Renamed job `bar' is still referenced " +
                                  'in deployment manifest')
         end
 
         it 'should allow you to not have any jobs' do
           plan = Planner.new({ 'jobs' => [] })
-          plan.parse_jobs
+          plan.parse_jobs(event_log)
 
           plan.jobs.should be_empty
 
           plan = Planner.new({})
-          plan.parse_jobs
+          plan.parse_jobs(event_log)
           plan.jobs.should be_empty
         end
       end

@@ -4,8 +4,11 @@ import (
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
 	boshalert "bosh/agent/alert"
-	boshappl "bosh/agent/applier"
+	boshapplier "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
+	bc "bosh/agent/applier/bundlecollection"
+	ja "bosh/agent/applier/jobapplier"
+	pa "bosh/agent/applier/packageapplier"
 	boshcomp "bosh/agent/compiler"
 	boshdrain "bosh/agent/drain"
 	boshtask "bosh/agent/task"
@@ -20,20 +23,12 @@ import (
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshdirs "bosh/settings/directories"
-	"flag"
-	"io/ioutil"
 	"path/filepath"
+	"time"
 )
 
 type app struct {
 	logger boshlog.Logger
-}
-
-type options struct {
-	InfrastructureName string
-	PlatformName       string
-	BaseDirectory      string
-	JobSupervisor      string
 }
 
 func New(logger boshlog.Logger) (app app) {
@@ -42,7 +37,7 @@ func New(logger boshlog.Logger) (app app) {
 }
 
 func (app app) Run(args []string) (err error) {
-	opts, err := parseOptions(args)
+	opts, err := ParseOptions(args)
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing options")
 		return
@@ -57,7 +52,7 @@ func (app app) Run(args []string) (err error) {
 		return
 	}
 
-	infProvider := boshinf.NewProvider(app.logger, platform.GetFs(), dirProvider, platform)
+	infProvider := boshinf.NewProvider(app.logger, platform)
 	infrastructure, err := infProvider.Get(opts.InfrastructureName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting infrastructure")
@@ -100,8 +95,37 @@ func (app app) Run(args []string) (err error) {
 	}
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
-	applier := boshappl.NewApplierProvider(platform, blobstore, jobSupervisor, dirProvider).Get()
-	compiler := boshcomp.NewCompilerProvider(platform, blobstore, dirProvider).Get()
+
+	installPath := filepath.Join(dirProvider.BaseDir(), "data")
+
+	jobsBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "jobs", platform.GetFs())
+
+	jobApplier := ja.NewRenderedJobApplier(
+		jobsBc,
+		blobstore,
+		platform.GetCompressor(),
+		jobSupervisor,
+	)
+
+	packagesBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "packages", platform.GetFs())
+
+	packageApplier := pa.NewConcretePackageApplier(
+		packagesBc,
+		blobstore,
+		platform.GetCompressor(),
+	)
+
+	applier := boshapplier.NewConcreteApplier(jobApplier, packageApplier, platform, jobSupervisor, dirProvider)
+
+	compiler := boshcomp.NewConcreteCompiler(
+		platform.GetCompressor(),
+		blobstore,
+		platform.GetFs(),
+		platform.GetRunner(),
+		dirProvider,
+		packageApplier,
+		packagesBc,
+	)
 
 	taskService := boshtask.NewAsyncTaskService(app.logger)
 
@@ -125,28 +149,10 @@ func (app app) Run(args []string) (err error) {
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
 	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
-	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher, alertBuilder, jobSupervisor)
+	agent := boshagent.New(app.logger, mbusHandler, platform, actionDispatcher, alertBuilder, jobSupervisor, time.Minute)
 	err = agent.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running agent")
 	}
-	return
-}
-
-func parseOptions(args []string) (opts options, err error) {
-	flagSet := flag.NewFlagSet("bosh-agent-args", flag.ContinueOnError)
-	flagSet.SetOutput(ioutil.Discard)
-	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
-	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
-	flagSet.StringVar(&opts.JobSupervisor, "M", "monit", "Set jobsupervisor")
-	flagSet.StringVar(&opts.BaseDirectory, "b", "/var/vcap", "Set Base Directory")
-
-	// The following two options are accepted but ignored for compatibility with the old agent
-	var systemRoot string
-	flagSet.StringVar(&systemRoot, "r", "/", "system root (ignored by go agent)")
-	var noAlerts bool
-	flagSet.BoolVar(&noAlerts, "no-alerts", false, "don't process alerts (ignored by go agent)")
-
-	err = flagSet.Parse(args[1:])
 	return
 }

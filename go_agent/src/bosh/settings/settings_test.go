@@ -1,6 +1,7 @@
-package settings
+package settings_test
 
 import (
+	. "bosh/settings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

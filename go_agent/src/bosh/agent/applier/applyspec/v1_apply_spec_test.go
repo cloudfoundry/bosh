@@ -1,6 +1,7 @@
-package applyspec
+package applyspec_test
 
 import (
+	. "bosh/agent/applier/applyspec"
 	models "bosh/agent/applier/models"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"

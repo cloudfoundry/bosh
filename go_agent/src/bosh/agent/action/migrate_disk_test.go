@@ -1,10 +1,10 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshdirs "bosh/settings/directories"
-	fakesettings "bosh/settings/fakes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -25,10 +25,9 @@ func TestMigrateDiskActionRun(t *testing.T) {
 	assert.Equal(t, platform.MigratePersistentDiskToMountPoint, "/foo/store_migration_target")
 }
 
-func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action migrateDiskAction) {
+func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action MigrateDiskAction) {
 	platform = fakeplatform.NewFakePlatform()
-	settings := &fakesettings.FakeSettingsService{}
 	dirProvider := boshdirs.NewDirectoriesProvider("/foo")
-	action = newMigrateDisk(settings, platform, dirProvider)
+	action = NewMigrateDisk(platform, dirProvider)
 	return
 }

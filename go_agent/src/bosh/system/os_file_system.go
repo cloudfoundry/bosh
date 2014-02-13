@@ -177,6 +177,11 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return os.Symlink(oldPath, newPath)
 }
 
+func (fs osFileSystem) ReadLink(symlinkPath string) (targetPath string, err error) {
+	targetPath, err = os.Readlink(symlinkPath)
+	return
+}
+
 func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 	_, _, err = fs.runner.RunCommand("cp", "-r", srcPath+"/.", dstPath)
 	return
@@ -214,9 +219,10 @@ func (fs osFileSystem) TempDir(prefix string) (path string, err error) {
 	return ioutil.TempDir("", prefix)
 }
 
-func (fs osFileSystem) RemoveAll(fileOrDir string) {
+func (fs osFileSystem) RemoveAll(fileOrDir string) (err error) {
 	fs.logger.Debug(fs.logTag, "Remove all %s", fileOrDir)
-	os.RemoveAll(fileOrDir)
+	err = os.RemoveAll(fileOrDir)
+	return
 }
 
 func (fs osFileSystem) Open(path string) (file *os.File, err error) {

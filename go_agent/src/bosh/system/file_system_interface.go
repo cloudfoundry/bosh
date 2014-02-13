@@ -6,7 +6,7 @@ type FileSystem interface {
 	HomeDir(username string) (path string, err error)
 
 	MkdirAll(path string, perm os.FileMode) (err error)
-	RemoveAll(fileOrDir string)
+	RemoveAll(fileOrDir string) (err error)
 
 	Chown(path, username string) (err error)
 	Chmod(path string, perm os.FileMode) (err error)
@@ -21,6 +21,8 @@ type FileSystem interface {
 	// Symlink call will remove file at newPath if one exists
 	// to make newPath a symlink to the file at oldPath.
 	Symlink(oldPath, newPath string) (err error)
+
+	ReadLink(symlinkPath string) (targetPath string, err error)
 
 	// Copies contents of one directory into another directory.
 	// Both directories need to exist before copy can succeed.

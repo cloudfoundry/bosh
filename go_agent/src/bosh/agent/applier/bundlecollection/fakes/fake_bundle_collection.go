@@ -2,87 +2,54 @@ package fakes
 
 import (
 	bc "bosh/agent/applier/bundlecollection"
-	boshsys "bosh/system"
 	"errors"
 )
 
 type FakeBundleCollection struct {
-	installedBundles []bc.Bundle
-	enabledBundles   []bc.Bundle
-
-	InstallFs    boshsys.FileSystem
-	InstallPath  string
-	InstallError error
-
-	GetDirPath  string
-	GetDirFs    boshsys.FileSystem
-	GetDirError error
-
-	EnableError error
+	bundles map[BundleKey]*FakeBundle
 }
 
-func NewFakeBundleCollection() *FakeBundleCollection {
-	return &FakeBundleCollection{}
+type BundleKey struct {
+	Name    string
+	Version string
 }
 
-func (s *FakeBundleCollection) Install(bundle bc.Bundle) (boshsys.FileSystem, string, error) {
-	err := s.checkBundle(bundle)
-	if err != nil {
-		return nil, "", err
+func NewBundleKey(definition bc.BundleDefinition) (key BundleKey) {
+	key = BundleKey{
+		Name:    definition.BundleName(),
+		Version: definition.BundleVersion(),
 	}
-
-	if s.InstallError != nil {
-		return nil, "", s.InstallError
-	}
-	s.installedBundles = append(s.installedBundles, bundle)
-	return s.InstallFs, s.InstallPath, nil
-}
-
-func (s *FakeBundleCollection) IsInstalled(bundle bc.Bundle) bool {
-	return s.checkExists(s.installedBundles, bundle)
-}
-
-func (s *FakeBundleCollection) GetDir(bundle bc.Bundle) (fs boshsys.FileSystem, path string, err error) {
-	fs = s.GetDirFs
-	path = s.GetDirPath
-	err = s.GetDirError
 	return
 }
 
-func (s *FakeBundleCollection) Enable(bundle bc.Bundle) error {
-	err := s.checkBundle(bundle)
-	if err != nil {
-		return err
+func NewFakeBundleCollection() *FakeBundleCollection {
+	return &FakeBundleCollection{
+		bundles: map[BundleKey]*FakeBundle{},
 	}
-
-	if s.EnableError != nil {
-		return s.EnableError
-	}
-	s.enabledBundles = append(s.enabledBundles, bundle)
-	return nil
 }
 
-func (s *FakeBundleCollection) IsEnabled(bundle bc.Bundle) bool {
-	return s.checkExists(s.enabledBundles, bundle)
+func (s *FakeBundleCollection) Get(definition bc.BundleDefinition) (bundle bc.Bundle, err error) {
+	if len(definition.BundleName()) == 0 {
+		err = errors.New("missing bundle name")
+		return
+	}
+	if len(definition.BundleVersion()) == 0 {
+		err = errors.New("missing bundle version")
+		return
+	}
+
+	bundle = s.FakeGet(definition)
+
+	return
 }
 
-func (s *FakeBundleCollection) checkBundle(bundle bc.Bundle) error {
-	if len(bundle.BundleName()) == 0 {
-		return errors.New("missing bundle name")
+func (s *FakeBundleCollection) FakeGet(definition bc.BundleDefinition) (bundle *FakeBundle) {
+	key := NewBundleKey(definition)
+	bundle, found := s.bundles[key]
+	if !found {
+		bundle = NewFakeBundle()
+		s.bundles[key] = bundle
 	}
-	if len(bundle.BundleVersion()) == 0 {
-		return errors.New("missing bundle version")
-	}
-	return nil
-}
 
-func (s *FakeBundleCollection) checkExists(collection []bc.Bundle, bundle bc.Bundle) bool {
-	for _, b := range collection {
-		if b.BundleName() == bundle.BundleName() {
-			if b.BundleVersion() == bundle.BundleVersion() {
-				return true
-			}
-		}
-	}
-	return false
+	return
 }

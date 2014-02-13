@@ -1,7 +1,8 @@
-package blobstore
+package blobstore_test
 
 import (
 	boshassert "bosh/assert"
+	. "bosh/blobstore"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 	fakeuuid "bosh/uuid/fakes"
@@ -17,7 +18,7 @@ func TestExternalValidateWritesConfigFile(t *testing.T) {
 
 	options := map[string]string{"fake-key": "fake-value"}
 
-	blobstore := newExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
 
 	runner.CommandExistsValue = true
 	assert.NoError(t, blobstore.Validate())
@@ -34,14 +35,14 @@ func TestExternalValidateErrorsWhenCommandNotInPath(t *testing.T) {
 
 	options := map[string]string{}
 
-	blobstore := newExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
 
 	assert.Error(t, blobstore.Validate())
 }
 
 func TestExternalGet(t *testing.T) {
 	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
-	blobstore := newExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
 
 	tempFile, err := fs.TempFile("bosh-blobstore-external-TestGet")
 	assert.NoError(t, err)
@@ -67,7 +68,7 @@ func TestExternalGet(t *testing.T) {
 
 func TestExternalGetErrsWhenTempFileCreateErrs(t *testing.T) {
 	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
-	blobstore := newExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
 
 	fs.TempFileError = errors.New("fake-error")
 
@@ -80,7 +81,7 @@ func TestExternalGetErrsWhenTempFileCreateErrs(t *testing.T) {
 
 func TestExternalGetErrsWhenExternalCliErrs(t *testing.T) {
 	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
-	blobstore := newExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
 
 	tempFile, err := fs.TempFile("bosh-blobstore-external-TestGetErrsWhenExternalCliErrs")
 	assert.NoError(t, err)
@@ -106,7 +107,7 @@ func TestExternalGetErrsWhenExternalCliErrs(t *testing.T) {
 
 func TestExternalCleanUp(t *testing.T) {
 	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
-	blobstore := newExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
 
 	file, err := fs.TempFile("bosh-blobstore-external-TestCleanUp")
 	assert.NoError(t, err)
@@ -124,7 +125,7 @@ func TestExternalCreate(t *testing.T) {
 	expectedPath, _ := filepath.Abs(fileName)
 
 	fs, runner, uuidGen, configPath := getExternalBlobstoreDependencies()
-	blobstore := newExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+	blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
 
 	uuidGen.GeneratedUuid = "some-uuid"
 

@@ -1,6 +1,7 @@
-package task
+package task_test
 
 import (
+	. "bosh/agent/task"
 	boshlog "bosh/logger"
 	"errors"
 	"fmt"

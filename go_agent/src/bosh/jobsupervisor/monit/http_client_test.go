@@ -1,6 +1,7 @@
-package monit
+package monit_test
 
 import (
+	. "bosh/jobsupervisor/monit"
 	"bosh/jobsupervisor/monit/http_fakes"
 	"encoding/base64"
 	"errors"
@@ -37,7 +38,7 @@ func TestStartService(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
 
 	err := client.StartService("test-service")
 	assert.NoError(t, err)
@@ -49,8 +50,7 @@ func TestStartServiceRetriesWhenNon200Response(t *testing.T) {
 	fakeHttpClient.StatusCode = 500
 	fakeHttpClient.SetMessage("fake error message")
 
-	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
-	client.delayBetweenRetries = 1 * time.Millisecond
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
 
 	err := client.StartService("test-service")
 	assert.Equal(t, fakeHttpClient.CallCount, 20)
@@ -62,8 +62,7 @@ func TestStartServiceRetriesWhenConnectionRefused(t *testing.T) {
 	fakeHttpClient.SetNilResponse()
 	fakeHttpClient.Error = errors.New("some error")
 
-	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
-	client.delayBetweenRetries = 1 * time.Millisecond
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
 
 	err := client.StartService("test-service")
 	assert.Equal(t, fakeHttpClient.CallCount, 20)
@@ -86,7 +85,7 @@ func TestStopService(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
 
 	err := client.StopService("test-service")
 	assert.NoError(t, err)
@@ -98,8 +97,7 @@ func TestStopServiceRetriesWhenNon200Response(t *testing.T) {
 	fakeHttpClient.StatusCode = 500
 	fakeHttpClient.SetMessage("fake error message")
 
-	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
-	client.delayBetweenRetries = 1 * time.Millisecond
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
 
 	err := client.StopService("test-service")
 	assert.Equal(t, fakeHttpClient.CallCount, 20)
@@ -112,8 +110,7 @@ func TestStopServiceRetriesWhenConnectionRefused(t *testing.T) {
 	fakeHttpClient.SetNilResponse()
 	fakeHttpClient.Error = errors.New("some error")
 
-	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
-	client.delayBetweenRetries = 1 * time.Millisecond
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
 
 	err := client.StopService("test-service")
 	assert.Equal(t, fakeHttpClient.CallCount, 20)
@@ -138,7 +135,7 @@ func TestServicesInGroup(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
 
 	services, err := client.ServicesInGroup("vcap")
 	assert.NoError(t, err)
@@ -162,13 +159,12 @@ func TestDecodeStatus(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient)
+	client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
 
-	status, err := client.status()
+	status, err := client.Status()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(status.Services.Services))
-	assert.Equal(t, 1, status.Services.Services[0].Monitor)
-	assert.Equal(t, "dummy", status.Services.Services[0].Name)
+	dummyServices := status.ServicesInGroup("vcap")
+	assert.Equal(t, 1, len(dummyServices))
 }
 
 func TestStatusRetriesWhenNon200Response(t *testing.T) {
@@ -176,8 +172,7 @@ func TestStatusRetriesWhenNon200Response(t *testing.T) {
 	fakeHttpClient.StatusCode = 500
 	fakeHttpClient.SetMessage("fake error message")
 
-	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
-	client.delayBetweenRetries = 1 * time.Millisecond
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
 
 	_, err := client.Status()
 	assert.Equal(t, fakeHttpClient.CallCount, 20)
@@ -190,8 +185,7 @@ func TestStatusRetriesWhenConnectionRefused(t *testing.T) {
 	fakeHttpClient.SetNilResponse()
 	fakeHttpClient.Error = errors.New("some error")
 
-	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient)
-	client.delayBetweenRetries = 1 * time.Millisecond
+	client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
 
 	_, err := client.Status()
 	assert.Equal(t, fakeHttpClient.CallCount, 20)

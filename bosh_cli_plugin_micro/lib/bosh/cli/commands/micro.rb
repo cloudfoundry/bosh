@@ -226,7 +226,7 @@ module Bosh::Cli::Command
     usage 'micro deployments'
     desc 'Show the list of deployments'
     def list
-      file = File.join(work_dir, Bosh::Deployer::InstanceManager::DEPLOYMENTS_FILE)
+      file = File.join(work_dir, Bosh::Deployer::DeploymentsState::DEPLOYMENTS_FILE)
       if File.exists?(file)
         deployments = load_yaml_file(file)['instances']
       else

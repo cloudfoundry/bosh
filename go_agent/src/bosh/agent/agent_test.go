@@ -1,6 +1,7 @@
-package agent
+package agent_test
 
 import (
+	. "bosh/agent"
 	boshalert "bosh/agent/alert"
 	fakealert "bosh/agent/alert/fakes"
 	boshhandler "bosh/handler"
@@ -48,7 +49,6 @@ func TestRunSetsUpHeartbeats(t *testing.T) {
 		Load: []string{"a", "b", "c"},
 	}
 
-	agent.heartbeatInterval = 5 * time.Millisecond
 	err := agent.Run()
 	assert.NoError(t, err)
 	assert.False(t, deps.handler.TickHeartbeatsSent)
@@ -89,7 +89,7 @@ type agentDeps struct {
 	jobSupervisor    *fakejobsup.FakeJobSupervisor
 }
 
-func buildAgent() (deps agentDeps, agent agent) {
+func buildAgent() (deps agentDeps, agent Agent) {
 	deps = agentDeps{
 		logger:           boshlog.NewLogger(boshlog.LEVEL_NONE),
 		handler:          &fakembus.FakeHandler{},
@@ -99,6 +99,6 @@ func buildAgent() (deps agentDeps, agent agent) {
 		jobSupervisor:    fakejobsup.NewFakeJobSupervisor(),
 	}
 
-	agent = New(deps.logger, deps.handler, deps.platform, deps.actionDispatcher, deps.alertBuilder, deps.jobSupervisor)
+	agent = New(deps.logger, deps.handler, deps.platform, deps.actionDispatcher, deps.alertBuilder, deps.jobSupervisor, 5*time.Millisecond)
 	return
 }

@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Job do
-  subject(:job)    { described_class.parse(plan, spec) }
+  let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
+  subject(:job)    { described_class.parse(plan, spec, event_log) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
   let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment) }

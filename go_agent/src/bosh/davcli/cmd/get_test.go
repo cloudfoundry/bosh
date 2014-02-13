@@ -1,7 +1,7 @@
-package cmd
+package cmd_test
 
 import (
-	davclient "bosh/davcli/client"
+	. "bosh/davcli/cmd"
 	testcmd "bosh/davcli/cmd/testing"
 	davconf "bosh/davcli/config"
 	"github.com/stretchr/testify/assert"
@@ -55,8 +55,9 @@ func TestGetRunWithIncorrectArgCount(t *testing.T) {
 }
 
 func runGet(config davconf.Config, args []string) (err error) {
-	davClient := davclient.NewClient(config)
-	cmd := newGetCmd(davClient)
+	factory := NewFactory()
+	factory.SetConfig(config)
+	cmd, _ := factory.Create("get")
 	return cmd.Run(args)
 }
 

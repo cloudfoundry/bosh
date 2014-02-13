@@ -29,6 +29,7 @@ func NewMonitJobSupervisor(
 	client boshmonit.Client,
 	logger boshlog.Logger,
 	dirProvider boshdir.DirectoriesProvider,
+	jobFailuresServerPort int,
 ) (m monitJobSupervisor) {
 	return monitJobSupervisor{
 		fs:                    fs,
@@ -36,7 +37,7 @@ func NewMonitJobSupervisor(
 		client:                client,
 		logger:                logger,
 		dirProvider:           dirProvider,
-		jobFailuresServerPort: 2825,
+		jobFailuresServerPort: jobFailuresServerPort,
 	}
 }
 

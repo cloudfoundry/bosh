@@ -1,6 +1,7 @@
-package action
+package action_test
 
 import (
+	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
@@ -20,7 +21,7 @@ func TestSshSetupWithoutDefaultIp(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	_, action := buildSshAction(settings)
 
-	params := sshParams{
+	params := SshParams{
 		User:      "some-user",
 		Password:  "some-pwd",
 		PublicKey: "some-key",
@@ -47,7 +48,7 @@ func testSshSetupWithGivenPassword(t *testing.T, expectedPwd string) {
 	expectedUser := "some-user"
 	expectedKey := "some public key content"
 
-	params := sshParams{
+	params := SshParams{
 		User:      expectedUser,
 		PublicKey: expectedKey,
 		Password:  expectedPwd,
@@ -76,7 +77,7 @@ func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
 	settings := &fakesettings.FakeSettingsService{}
 	platform, action := buildSshAction(settings)
 
-	params := sshParams{UserRegex: "^foobar.*"}
+	params := SshParams{UserRegex: "^foobar.*"}
 	response, err := action.Run("cleanup", params)
 	assert.NoError(t, err)
 	assert.Equal(t, "^foobar.*", platform.DeleteEphemeralUsersMatchingRegex)
@@ -87,8 +88,8 @@ func TestSshRunCleanupDeletesEphemeralUser(t *testing.T) {
 	})
 }
 
-func buildSshAction(settings boshsettings.Service) (*fakeplatform.FakePlatform, sshAction) {
+func buildSshAction(settings boshsettings.Service) (*fakeplatform.FakePlatform, SshAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := newSsh(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
+	action := NewSsh(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
 	return platform, action
 }

@@ -12,7 +12,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
 
       @deployment_plan.stub(:name).and_return('test_deployment')
-      @deployment_plan.should_receive(:parse).once
+      @deployment_plan.stub(:parse)
 
       pool1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
       pool2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
@@ -40,6 +40,13 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     after do
       FileUtils.rm_rf(@tmpdir)
+    end
+
+    describe '#initialize' do
+      it 'parses the deployment manifest using the deployment plan, passing it the event log' do
+        expect(@deployment_plan).to receive(:parse).once.with(Bosh::Director::Config.event_log)
+        described_class.new(@manifest_file.path)
+      end
     end
 
     describe 'prepare' do

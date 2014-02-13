@@ -1,12 +1,13 @@
-package stats
+package stats_test
 
 import (
+	. "bosh/platform/stats"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestUbuntuGetCpuLoad(t *testing.T) {
-	collector := sigarStatsCollector{}
+	collector := NewSigarStatsCollector()
 
 	load, err := collector.GetCpuLoad()
 	assert.NoError(t, err)
@@ -16,7 +17,7 @@ func TestUbuntuGetCpuLoad(t *testing.T) {
 }
 
 func TestUbuntuGetCpuStats(t *testing.T) {
-	collector := sigarStatsCollector{}
+	collector := NewSigarStatsCollector()
 
 	stats, err := collector.GetCpuStats()
 	assert.NoError(t, err)
@@ -26,7 +27,7 @@ func TestUbuntuGetCpuStats(t *testing.T) {
 }
 
 func TestUbuntuGetMemStats(t *testing.T) {
-	collector := sigarStatsCollector{}
+	collector := NewSigarStatsCollector()
 
 	stats, err := collector.GetMemStats()
 	assert.NoError(t, err)
@@ -35,7 +36,7 @@ func TestUbuntuGetMemStats(t *testing.T) {
 }
 
 func TestUbuntuGetSwapStats(t *testing.T) {
-	collector := sigarStatsCollector{}
+	collector := NewSigarStatsCollector()
 
 	stats, err := collector.GetSwapStats()
 	assert.NoError(t, err)
@@ -43,7 +44,7 @@ func TestUbuntuGetSwapStats(t *testing.T) {
 }
 
 func TestUbuntuGetDiskStats(t *testing.T) {
-	collector := sigarStatsCollector{}
+	collector := NewSigarStatsCollector()
 
 	stats, err := collector.GetDiskStats("/")
 	assert.NoError(t, err)

@@ -30,6 +30,11 @@ module Bosh::Cli::TaskTracking
       event = parse_event(event_line)
 
       @lock.synchronize do
+        if event['type'] == 'deprecation'
+          @buffer.puts("Deprecation: #{event['message']}".make_red)
+          return
+        end
+
         # Handling the special "error" event
         if event['error']
           done_with_stage if @current_stage

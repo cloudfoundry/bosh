@@ -7,7 +7,7 @@ describe Bosh::Cli::Stemcell do
       let(:valid_stemcell) { spec_asset('valid_stemcell.tgz') }
       let(:valid_stemcell_manifest) {
         { 'name' => 'ubuntu-stemcell',
-          'version' => 1,
+          'version' => '1',
           'cloud_properties' => {
             'property1' => 'test',
             'property2' => 'test'

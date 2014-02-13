@@ -73,7 +73,7 @@ resource_pools:
     size: <%= properties.pool_size %>
     stemcell:
       name: <%= properties.stemcell.name %>
-      version: <%= properties.stemcell.version %>
+      version: '<%= properties.stemcell.version %>'
     cloud_properties:
       instance_type: m1.small
       <% if properties.key_name %>

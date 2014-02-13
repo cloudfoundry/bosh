@@ -1,15 +1,23 @@
 require 'spec_helper'
 require 'bosh/director/core/templates/job_instance_renderer'
+require 'bosh/director/core/templates/job_template_loader'
+require 'bosh/director/core/templates/job_instance_renderer'
 
 module Bosh::Director::Core::Templates
   describe JobInstanceRenderer do
     describe '#render' do
-      let(:instance) { double('instance') }
+      subject(:job_instance_renderer) { JobInstanceRenderer.new(templates, job_template_loader) }
+
+      let(:spec) do
+        {
+          'job' => {
+            'name' => 'fake-job-name'
+          }
+        }
+      end
       let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
-      subject(:job_instance_renderer) { JobInstanceRenderer.new(job, job_template_loader) }
       let(:job_template_renderer) { instance_double('Bosh::Director::Core::Templates::JobTemplateRenderer') }
 
-      let(:job) { double('job', templates: templates, name: 'foo') }
       before { allow(RenderedJobInstance).to receive(:new).and_return(expected_rendered_job_instance) }
       let(:expected_rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }
 
@@ -18,7 +26,7 @@ module Bosh::Director::Core::Templates
 
         it 'returns empty array' do
 
-          rendered_instance = job_instance_renderer.render(instance)
+          rendered_instance = job_instance_renderer.render(spec)
           expect(RenderedJobInstance).to have_received(:new).with([])
           expect(rendered_instance).to eq(expected_rendered_job_instance)
         end
@@ -29,13 +37,13 @@ module Bosh::Director::Core::Templates
         let(:expected_rendered_templates) { [double('rendered template')] }
 
         before do
-          job_template_renderer.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[0])
+          job_template_renderer.stub(:render).with(spec).and_return(expected_rendered_templates[0])
         end
 
         it 'returns the rendered template for the given instance' do
           job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)
 
-          job_instance_renderer.render(instance)
+          job_instance_renderer.render(spec)
           expect(RenderedJobInstance).to have_received(:new).with(expected_rendered_templates)
         end
 
@@ -43,8 +51,8 @@ module Bosh::Director::Core::Templates
           it 'only processes the source job templates once' do
             expect(job_template_loader).to receive(:process).with(templates[0]).and_return(job_template_renderer)
 
-            job_instance_renderer.render(instance)
-            job_instance_renderer.render(instance)
+            job_instance_renderer.render(spec)
+            job_instance_renderer.render(spec)
           end
         end
       end
@@ -63,12 +71,12 @@ module Bosh::Director::Core::Templates
           job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)
           job_template_loader.stub(:process).with(templates[1]).and_return(job_template_renderer2)
 
-          job_template_renderer.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[0])
-          job_template_renderer2.stub(:render).with(job.name, instance).and_return(expected_rendered_templates[1])
+          job_template_renderer.stub(:render).with(spec).and_return(expected_rendered_templates[0])
+          job_template_renderer2.stub(:render).with(spec).and_return(expected_rendered_templates[1])
         end
 
         it 'returns the rendered templates for an instance' do
-          job_instance_renderer.render(instance)
+          job_instance_renderer.render(spec)
           expect(RenderedJobInstance).to have_received(:new).with(expected_rendered_templates)
         end
       end

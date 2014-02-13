@@ -1,6 +1,7 @@
-package disk
+package disk_test
 
 import (
+	. "bosh/platform/disk"
 	fakesys "bosh/system/fakes"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ func TestLinuxMount(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.NoError(t, err)
@@ -24,7 +25,7 @@ func TestLinuxMountWhenDiskIsAlreadyMountedToTheGoodMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/foo /mnt/foo\n/dev/bar /mnt/bar")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.NoError(t, err)
@@ -35,7 +36,7 @@ func TestLinuxMountWhenDiskIsAlreadyMountedToTheWrongMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/foo /mnt/foobarbaz\n/dev/bar /mnt/bar")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.Error(t, err)
@@ -46,7 +47,7 @@ func TestLinuxMountWhenAnotherDiskIsAlreadyMountedToMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/baz /mnt/foo\n/dev/bar /mnt/bar")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	err := mounter.Mount("/dev/foo", "/mnt/foo")
 
 	assert.Error(t, err)
@@ -74,7 +75,7 @@ func TestRemountAsReadonly(t *testing.T) {
 
 	procMounts := []string{"/dev/baz /mnt/bar ext4", "/dev/baz /mnt/bar ext4", ""}
 
-	mounter := newLinuxMounter(runner, &fsWithChangingFile{procMounts, fs})
+	mounter := NewLinuxMounter(runner, &fsWithChangingFile{procMounts, fs}, 1*time.Millisecond)
 
 	err := mounter.RemountAsReadonly("/mnt/bar")
 
@@ -89,7 +90,7 @@ func TestRemount(t *testing.T) {
 
 	procMounts := []string{"/dev/baz /mnt/foo ext4", "/dev/baz /mnt/foo ext4", ""}
 
-	mounter := newLinuxMounter(runner, &fsWithChangingFile{procMounts, fs})
+	mounter := NewLinuxMounter(runner, &fsWithChangingFile{procMounts, fs}, 1*time.Millisecond)
 
 	err := mounter.Remount("/mnt/foo", "/mnt/bar")
 
@@ -103,7 +104,7 @@ func TestLinuxSwapOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: "Filename				Type		Size	Used	Priority\n"})
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	mounter.SwapOn("/dev/swap")
 
 	assert.Equal(t, 2, len(runner.RunCommands))
@@ -114,7 +115,7 @@ func TestLinuxSwapOnWhenAlreadyOn(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: SWAPON_USAGE_OUTPUT})
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	mounter.SwapOn("/dev/swap")
 	assert.Equal(t, 1, len(runner.RunCommands))
 	assert.Equal(t, []string{"swapon", "-s"}, runner.RunCommands[0])
@@ -128,7 +129,7 @@ func TestLinuxSwapOnWhenAlreadyOnOtherDevice(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE})
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	mounter.SwapOn("/dev/swap")
 	assert.Equal(t, 2, len(runner.RunCommands))
 	assert.Equal(t, []string{"swapon", "-s"}, runner.RunCommands[0])
@@ -143,7 +144,7 @@ func TestLinuxUnmountWhenPartitionIsMounted(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	didUnmount, err := mounter.Unmount("/dev/xvdb2")
 	assert.NoError(t, err)
 	assert.True(t, didUnmount)
@@ -156,7 +157,7 @@ func TestLinuxUnmountWhenMountPointIsMounted(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	didUnmount, err := mounter.Unmount("/var/vcap/data")
 	assert.NoError(t, err)
 	assert.True(t, didUnmount)
@@ -169,7 +170,7 @@ func TestLinuxUnmountWhenPartitionOrMountPointIsNotMounted(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	didUnmount, err := mounter.Unmount("/dev/xvdb3")
 	assert.NoError(t, err)
 	assert.False(t, didUnmount)
@@ -185,8 +186,7 @@ func TestLinuxUnmountWhenItFailsSeveralTimes(t *testing.T) {
 	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{})
 
-	mounter := newLinuxMounter(runner, fs)
-	mounter.unmountRetrySleep = 1 * time.Millisecond
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 
 	didUnmount, err := mounter.Unmount("/dev/xvdb2")
 	assert.NoError(t, err)
@@ -202,23 +202,19 @@ func TestLinuxUnmountWhenItFailsTooManyTimes(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
-	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
+	runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error"), Sticky: true})
 
-	mounter := newLinuxMounter(runner, fs)
-	mounter.maxUnmountRetries = 2
-	mounter.unmountRetrySleep = 1 * time.Millisecond
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 
 	_, err := mounter.Unmount("/dev/xvdb2")
 	assert.Error(t, err)
-	assert.Equal(t, 2, len(runner.RunCommands))
 }
 
 func TestIsMountPoint(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 
 	isMountPoint, err := mounter.IsMountPoint("/var/vcap/data")
 	assert.NoError(t, err)
@@ -233,7 +229,7 @@ func TestIsMounted(t *testing.T) {
 	runner, fs := getLinuxMounterDependencies()
 	fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
-	mounter := newLinuxMounter(runner, fs)
+	mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 	isMounted, err := mounter.IsMounted("/dev/xvdb2")
 	assert.NoError(t, err)
 	assert.True(t, isMounted)

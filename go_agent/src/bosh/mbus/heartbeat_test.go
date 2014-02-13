@@ -1,6 +1,7 @@
-package mbus
+package mbus_test
 
 import (
+	. "bosh/mbus"
 	boshvitals "bosh/platform/vitals"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"

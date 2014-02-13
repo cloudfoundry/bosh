@@ -36,6 +36,14 @@ module Bosh::Director
         @last_stage.advance_and_track(task_name, &blk)
       end
 
+      def warn_deprecated(message)
+        log_entry(
+          'time' => 0,
+          'type' => 'deprecation',
+          'message' => message,
+        )
+      end
+
       # Adds an error entry to the event log.
       # @param [DirectorError] error Director error
       # @return [void]

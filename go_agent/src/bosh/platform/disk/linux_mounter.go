@@ -16,11 +16,11 @@ type linuxMounter struct {
 	unmountRetrySleep time.Duration
 }
 
-func newLinuxMounter(runner boshsys.CmdRunner, fs boshsys.FileSystem) (mounter linuxMounter) {
+func NewLinuxMounter(runner boshsys.CmdRunner, fs boshsys.FileSystem, unmountRetrySleep time.Duration) (mounter linuxMounter) {
 	mounter.runner = runner
 	mounter.fs = fs
 	mounter.maxUnmountRetries = 600
-	mounter.unmountRetrySleep = 1 * time.Second
+	mounter.unmountRetrySleep = unmountRetrySleep
 	return
 }
 
