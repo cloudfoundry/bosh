@@ -68,6 +68,12 @@ These are the options for the Blobstore client when provider is `s3`:
   S3 Secret Access Key
 * `endpoint` (optional, if not present, the blobstore client uses 'https://s3.amazonaws.com')
   Blobstore endpoint
+* `host` (optional, if not present, the blobstore client uses endpoint host)
+  Blobstore host
+* `use_ssl` (optional, default is based on the scheme of the endpoint)
+  Blobstore connection ssl switch
+* `port` (optional, default is the endpoint port)
+  Blobstore connection port
 
 ### Atmos
 
