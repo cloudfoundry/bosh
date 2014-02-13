@@ -55,6 +55,8 @@ module Bosh::Dev::Sandbox
 
       @nats_process = Service.new(%W[nats-server -p #{nats_port}], {}, @logger)
 
+      @nats_socket_connector = SocketConnector.new('localhost', nats_port, @logger)
+
       @director_process = Service.new(
         %W[bosh-director -c #{director_config}],
         { output: "#{base_log_path}.director.out" },
@@ -82,10 +84,10 @@ module Bosh::Dev::Sandbox
       )
 
       if ENV['DB'] == 'mysql'
-         mysql_user, mysql_password = ENV['TRAVIS'] ? ['travis', ''] : %w(root password)
-         @database = Mysql.new(sandbox_root, @name, @logger, mysql_user, mysql_password)
+        mysql_user, mysql_password = ENV['TRAVIS'] ? ['travis', ''] : %w(root password)
+        @database = Mysql.new(sandbox_root, @name, @logger, mysql_user, mysql_password)
       else
-         @database = Postgresql.new(sandbox_root, @name, @logger)
+        @database = Postgresql.new(sandbox_root, @name, @logger)
       end
 
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, director_config, @logger)
@@ -102,16 +104,19 @@ module Bosh::Dev::Sandbox
     def start
       setup_sandbox_root
 
+      @redis_process.start
+      @logger.info('Waiting for redis-server to come up')
+      @redis_socket_connector.try_to_connect
+      @nats_process.start
+      @logger.info('Waiting for nats-server to come up')
+      @nats_socket_connector.try_to_connect
+
       @database.create_db
       @database_migrator.migrate
 
       FileUtils.mkdir_p(cloud_storage_dir)
       FileUtils.rm_rf(logs_path)
       FileUtils.mkdir_p(logs_path)
-
-      @redis_process.start
-      @nats_process.start
-      @redis_socket_connector.try_to_connect
     end
 
     def reset(name)
