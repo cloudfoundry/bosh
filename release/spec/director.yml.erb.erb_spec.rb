@@ -219,6 +219,7 @@ describe 'director.yml.erb.erb' do
         parsed = parse_deployment_manifest(spec)
 
         expect(parsed['blobstore']['options']['openstack']['openstack_region']).to eq('wild-west')
+
       end
 
       describe 'the agent blobstore' do
@@ -237,8 +238,18 @@ describe 'director.yml.erb.erb' do
             }
           })
         end
-      end
 
+        it 'renders agent.blobstore.openstack.openstack_region is correctly not defined' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']['openstack']['openstack_region']).to be_nil
+        end
+
+        it 'renders agent.blobstore.openstack.openstack_region is correctly defined if set' do
+          deployment_manifest_fragment['properties']['blobstore']['openstack']['openstack_region'] = 'ok-corral'
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']['openstack']['openstack_region']).to eq('ok-corral')
+        end
+      end
     end
 
     context 'provider: swift/hp' do
