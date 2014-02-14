@@ -329,4 +329,98 @@ describe 'director.yml.erb.erb' do
       end
     end
   end
+
+  context 'provider: swift/openstack' do
+    before do
+      deployment_manifest_fragment['properties']['blobstore'] = {
+        'provider' => 'swift',
+        'swift_container_name' => 'my-container-name',
+        'swift_provider' => 'openstack',
+        'openstack' => {
+          'openstack_auth_url' => 'http://1.2.3.4:5000/v2/tokens',
+          'openstack_username' => 'username',
+          'openstack_api_key' => 'password',
+          'openstack_tenant' => 'test'
+        }
+      }
+    end
+
+    it 'renders blobstore correctly' do
+      spec = deployment_manifest_fragment
+
+      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+      parsed = YAML.load(rendered_yaml)
+
+      expect(parsed['blobstore']).to eq({"provider"=>"swift",
+       "options"=>
+        {"swift_provider"=>"openstack",
+         "container_name"=>"my-container-name",
+         "openstack"=>
+          {"openstack_auth_url"=>"http://1.2.3.4:5000/v2/tokens",
+           "openstack_username"=>"username",
+           "openstack_api_key"=>"password",
+           "openstack_tenant"=>"test"}}
+      })
+    end
+
+    it 'renders blobstore.openstack.openstack_region is correctly not defined' do
+      spec = deployment_manifest_fragment
+
+      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+      parsed = YAML.load(rendered_yaml)
+
+      expect(parsed['blobstore']['options']['openstack']['openstack_region']).to be_nil
+    end
+
+    it 'renders blobstore.openstack.openstack_region is correctly defined if set' do
+      spec = deployment_manifest_fragment
+      spec['properties']['blobstore']['openstack']['openstack_region'] = 'wild-west'
+
+      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+      parsed = YAML.load(rendered_yaml)
+
+      expect(parsed['blobstore']['options']['openstack']['openstack_region']).to eq('wild-west')
+    end
+
+  end
+
+  context 'provider: swift/hp' do
+    before do
+      deployment_manifest_fragment['properties']['blobstore'] = {
+        'provider' => 'swift',
+        'swift_container_name' => 'my-container-name',
+        'swift_provider' => 'hp',
+        'hp' => {
+          'hp_access_key' => 'username',
+          'hp_secret_key' => 'password',
+          'hp_tenant_id' => 'test',
+          'hp_avl_zone' => 'hp-happy-land'
+        }
+      }
+    end
+
+    it 'renders blobstore correctly' do
+      spec = deployment_manifest_fragment
+
+      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+      parsed = YAML.load(rendered_yaml)
+
+      expect(parsed['blobstore']).to eq({"provider"=>"swift",
+       "options"=>
+        {"swift_provider"=>"hp",
+         "container_name"=>"my-container-name",
+         "hp"=>{
+           'hp_access_key' => 'username',
+           'hp_secret_key' => 'password',
+           'hp_tenant_id' => 'test',
+           'hp_avl_zone' => 'hp-happy-land'
+          }
+        }
+      })
+    end
+  end
 end
