@@ -490,7 +490,7 @@ module VSphereCloud
         location = get_vm_location(vm, datacenter: datacenter_name)
         env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        env['disks']['persistent'][disk.uuid] = attached_disk_config.device.unit_number
+        env['disks']['persistent'][disk.uuid] = attached_disk_config.device.unit_number.to_s
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(vm, location, env)
         @logger.info('Attaching disk')
@@ -677,8 +677,8 @@ module VSphereCloud
 
     def generate_disk_env(system_disk, ephemeral_disk)
       {
-        'system' => system_disk.unit_number,
-        'ephemeral' => ephemeral_disk.unit_number,
+        'system' => system_disk.unit_number.to_s,
+        'ephemeral' => ephemeral_disk.unit_number.to_s,
         'persistent' => {}
       }
     end
