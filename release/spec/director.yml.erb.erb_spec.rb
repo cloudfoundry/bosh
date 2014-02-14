@@ -216,12 +216,29 @@ describe 'director.yml.erb.erb' do
         spec = deployment_manifest_fragment
         spec['properties']['blobstore']['openstack']['openstack_region'] = 'wild-west'
 
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(spec)
 
         expect(parsed['blobstore']['options']['openstack']['openstack_region']).to eq('wild-west')
       end
+
+      describe 'the agent blobstore' do
+        it 'has the appropriate agent fields' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+          expect(parsed['cloud']['properties']['agent']['blobstore']['provider']).to eq('swift')
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
+            "swift_provider" => "openstack",
+            "container_name" => "my-container-name",
+            "openstack" => {
+              "openstack_auth_url" => "http://1.2.3.4:5000/v2/tokens",
+              "openstack_username" => "username",
+              "openstack_api_key"  => "password",
+              "openstack_tenant"   => "test"
+            }
+          })
+        end
+      end
+
     end
 
     context 'provider: swift/hp' do
