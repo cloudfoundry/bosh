@@ -60,6 +60,12 @@ describe 'director.yml.erb.erb' do
     File.read(erb_yaml_path)
   end
 
+  def parse_deployment_manifest fragment
+    spec = fragment
+    rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+    YAML.load(rendered_yaml)
+  end
+
   context 'vsphere' do
     before do
       deployment_manifest_fragment['properties']['vcenter'] = {
@@ -80,11 +86,7 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'renders vcenter address correctly' do
-        spec = deployment_manifest_fragment
-
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
         expect(parsed['cloud']['properties']['vcenters'][0]['host']).to eq("!vcenter.address''")
       end
@@ -96,11 +98,7 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'renders vcenter user correctly' do
-        spec = deployment_manifest_fragment
-
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
         expect(parsed['cloud']['properties']['vcenters'][0]['user']).to eq("!vcenter.user''")
       end
@@ -112,11 +110,7 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'renders vcenter password correctly' do
-        spec = deployment_manifest_fragment
-
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
         expect(parsed['cloud']['properties']['vcenters'][0]['password']).to eq("!vcenter.password''")
       end
@@ -150,15 +144,188 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'renders openstack connection options correctly' do
-        spec = deployment_manifest_fragment
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-        parsed = YAML.load(rendered_yaml)
         expect(parsed['cloud']['properties']['openstack']['connection_options']).to eq(
           { 'option1' => 'true', 'option2' => 'false' })
       end
+
+      it 'sets the blobstore fields appropriately' do
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+        expect(parsed['blobstore']['provider']).to eq('dav')
+        expect(parsed['blobstore']['options']).to eq({
+                                                         'endpoint' => 'http://10.10.0.7:25251',
+                                                         'user' => 'user',
+                                                         'password' => 'password'
+                                                     })
+      end
+
+      describe 'the agent blobstore' do
+        it 'has the appropriate agent fields' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+          expect(parsed['cloud']['properties']['agent']['blobstore']['provider']).to eq('dav')
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                                                         'endpoint' => 'http://10.10.0.7:25251',
+                                                         'user' => 'agent',
+                                                         'password' => '75d1605f59b60'
+                                                     })
+        end
+      end
+
     end
+
+    context 'provider: swift/openstack' do
+      before do
+        deployment_manifest_fragment['properties']['blobstore'] = {
+          'provider' => 'swift',
+          'swift_container_name' => 'my-container-name',
+          'swift_provider' => 'openstack',
+          'openstack' => {
+            'openstack_auth_url' => 'http://1.2.3.4:5000/v2/tokens',
+            'openstack_username' => 'username',
+            'openstack_api_key' => 'password',
+            'openstack_tenant' => 'test'
+          }
+        }
+      end
+
+      it 'renders blobstore correctly' do
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+        expect(parsed['blobstore']).to eq({"provider"=>"swift",
+         "options"=>
+          {"swift_provider"=>"openstack",
+           "container_name"=>"my-container-name",
+           "openstack"=>
+            {"openstack_auth_url"=>"http://1.2.3.4:5000/v2/tokens",
+             "openstack_username"=>"username",
+             "openstack_api_key"=>"password",
+             "openstack_tenant"=>"test"}}
+        })
+      end
+
+      it 'renders blobstore.openstack.openstack_region is correctly not defined' do
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+        expect(parsed['blobstore']['options']['openstack']['openstack_region']).to be_nil
+      end
+
+      it 'renders blobstore.openstack.openstack_region is correctly defined if set' do
+        spec = deployment_manifest_fragment
+        spec['properties']['blobstore']['openstack']['openstack_region'] = 'wild-west'
+
+        parsed = parse_deployment_manifest(spec)
+
+        expect(parsed['blobstore']['options']['openstack']['openstack_region']).to eq('wild-west')
+
+      end
+
+      describe 'the agent blobstore' do
+        it 'has the appropriate agent fields' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+          expect(parsed['cloud']['properties']['agent']['blobstore']['provider']).to eq('swift')
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
+            "swift_provider" => "openstack",
+            "container_name" => "my-container-name",
+            "openstack" => {
+              "openstack_auth_url" => "http://1.2.3.4:5000/v2/tokens",
+              "openstack_username" => "username",
+              "openstack_api_key"  => "password",
+              "openstack_tenant"   => "test"
+            }
+          })
+        end
+
+        it 'renders agent.blobstore.openstack.openstack_region is correctly not defined' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']['openstack']['openstack_region']).to be_nil
+        end
+
+        it 'renders agent.blobstore.openstack.openstack_region is correctly defined if set' do
+          deployment_manifest_fragment['properties']['blobstore']['openstack']['openstack_region'] = 'ok-corral'
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']['openstack']['openstack_region']).to eq('ok-corral')
+        end
+      end
+    end
+
+    context 'provider: swift/hp' do
+      before do
+        deployment_manifest_fragment['properties']['blobstore'] = {
+          'provider' => 'swift',
+          'swift_container_name' => 'my-container-name',
+          'swift_provider' => 'hp',
+          'hp' => {
+            'hp_access_key' => 'username',
+            'hp_secret_key' => 'password',
+            'hp_tenant_id' => 'test',
+            'hp_avl_zone' => 'hp-happy-land'
+          }
+        }
+      end
+
+      it 'renders blobstore correctly' do
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+        expect(parsed['blobstore']).to eq({"provider"=>"swift",
+         "options"=>
+          {"swift_provider"=>"hp",
+           "container_name"=>"my-container-name",
+           "hp"=>{
+             'hp_access_key' => 'username',
+             'hp_secret_key' => 'password',
+             'hp_tenant_id' => 'test',
+             'hp_avl_zone' => 'hp-happy-land'
+            }
+          }
+        })
+      end
+
+      describe 'the agent blobstore' do
+        it 'has the appropriate agent fields' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+          expect(parsed['cloud']['properties']['agent']['blobstore']).to eq({
+            "provider" => "swift",
+            "options" => {
+              "swift_provider" => "hp",
+              "container_name" => "my-container-name",
+              "hp"=>{
+                'hp_access_key' => 'username',
+                'hp_secret_key' => 'password',
+                'hp_tenant_id' => 'test',
+                'hp_avl_zone' => 'hp-happy-land'
+              }
+            }
+          })
+        end
+      end
+    end
+
+    context 'provider: swift/unsuported' do
+      before do
+        deployment_manifest_fragment['properties']['blobstore'] = {
+          'provider' => 'swift',
+          'swift_container_name' => 'my-container-name',
+          'swift_provider' => 'rackspace',
+          'openstack' => {
+            'openstack_auth_url' => 'http://1.2.3.4:5000/v2/tokens',
+            'openstack_username' => 'username',
+            'openstack_api_key' => 'password',
+            'openstack_tenant' => 'test'
+          }
+        }
+      end
+
+      it 'raises an error for unsupported providers' do
+        spec = deployment_manifest_fragment
+        expect{rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)}.to raise_error(RuntimeError, "blobstore.swift_provider 'rackspace' not supported; available: openstack or hp")
+      end
+    end
+
   end
 
   context 's3' do
@@ -195,9 +362,7 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'sets the blobstore fields appropriately' do
-        spec = deployment_manifest_fragment
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
         expect(parsed['blobstore']['options']).to eq({
                                                          'bucket_name' => 'mybucket',
@@ -211,9 +376,7 @@ describe 'director.yml.erb.erb' do
 
       it 'sets endpoint protocol appropriately when use_ssl is true' do
         deployment_manifest_fragment['properties']['blobstore']['use_ssl'] = true
-        spec = deployment_manifest_fragment
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
         expect(parsed['blobstore']['options']).to eq({
                                                          'bucket_name' => 'mybucket',
@@ -227,9 +390,7 @@ describe 'director.yml.erb.erb' do
 
       describe 'the agent blobstore' do
         it 'has the same config as the toplevel blobstore' do
-          spec = deployment_manifest_fragment
-          rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-          parsed = YAML.load(rendered_yaml)
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
           expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
                'bucket_name' => 'mybucket',
@@ -252,9 +413,7 @@ describe 'director.yml.erb.erb' do
           end
 
           it 'uses the override values' do
-            spec = deployment_manifest_fragment
-            rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-            parsed = YAML.load(rendered_yaml)
+            parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
             expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
                  'bucket_name' => 'mybucket',
@@ -280,9 +439,7 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'sets the blobstore fields appropriately' do
-        spec = deployment_manifest_fragment
-        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-        parsed = YAML.load(rendered_yaml)
+        parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
         expect(parsed['blobstore']['options']).to eq({
                                                          'bucket_name' => 'mybucket',
@@ -293,9 +450,7 @@ describe 'director.yml.erb.erb' do
 
       describe 'the agent blobstore' do
         it 'has the same config as the toplevel blobstore' do
-          spec = deployment_manifest_fragment
-          rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-          parsed = YAML.load(rendered_yaml)
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
           expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
                  'bucket_name' => 'mybucket',
@@ -315,9 +470,7 @@ describe 'director.yml.erb.erb' do
           end
 
           it 'uses the override values' do
-            spec = deployment_manifest_fragment
-            rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-            parsed = YAML.load(rendered_yaml)
+            parsed = parse_deployment_manifest(deployment_manifest_fragment)
 
             expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
                    'bucket_name' => 'mybucket',
@@ -327,100 +480,6 @@ describe 'director.yml.erb.erb' do
           end
         end
       end
-    end
-  end
-
-  context 'provider: swift/openstack' do
-    before do
-      deployment_manifest_fragment['properties']['blobstore'] = {
-        'provider' => 'swift',
-        'swift_container_name' => 'my-container-name',
-        'swift_provider' => 'openstack',
-        'openstack' => {
-          'openstack_auth_url' => 'http://1.2.3.4:5000/v2/tokens',
-          'openstack_username' => 'username',
-          'openstack_api_key' => 'password',
-          'openstack_tenant' => 'test'
-        }
-      }
-    end
-
-    it 'renders blobstore correctly' do
-      spec = deployment_manifest_fragment
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['blobstore']).to eq({"provider"=>"swift",
-       "options"=>
-        {"swift_provider"=>"openstack",
-         "container_name"=>"my-container-name",
-         "openstack"=>
-          {"openstack_auth_url"=>"http://1.2.3.4:5000/v2/tokens",
-           "openstack_username"=>"username",
-           "openstack_api_key"=>"password",
-           "openstack_tenant"=>"test"}}
-      })
-    end
-
-    it 'renders blobstore.openstack.openstack_region is correctly not defined' do
-      spec = deployment_manifest_fragment
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['blobstore']['options']['openstack']['openstack_region']).to be_nil
-    end
-
-    it 'renders blobstore.openstack.openstack_region is correctly defined if set' do
-      spec = deployment_manifest_fragment
-      spec['properties']['blobstore']['openstack']['openstack_region'] = 'wild-west'
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['blobstore']['options']['openstack']['openstack_region']).to eq('wild-west')
-    end
-
-  end
-
-  context 'provider: swift/hp' do
-    before do
-      deployment_manifest_fragment['properties']['blobstore'] = {
-        'provider' => 'swift',
-        'swift_container_name' => 'my-container-name',
-        'swift_provider' => 'hp',
-        'hp' => {
-          'hp_access_key' => 'username',
-          'hp_secret_key' => 'password',
-          'hp_tenant_id' => 'test',
-          'hp_avl_zone' => 'hp-happy-land'
-        }
-      }
-    end
-
-    it 'renders blobstore correctly' do
-      spec = deployment_manifest_fragment
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['blobstore']).to eq({"provider"=>"swift",
-       "options"=>
-        {"swift_provider"=>"hp",
-         "container_name"=>"my-container-name",
-         "hp"=>{
-           'hp_access_key' => 'username',
-           'hp_secret_key' => 'password',
-           'hp_tenant_id' => 'test',
-           'hp_avl_zone' => 'hp-happy-land'
-          }
-        }
-      })
     end
   end
 end
