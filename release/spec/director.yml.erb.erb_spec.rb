@@ -151,13 +151,38 @@ describe 'director.yml.erb.erb' do
 
       it 'renders openstack connection options correctly' do
         spec = deployment_manifest_fragment
-
         rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
         parsed = YAML.load(rendered_yaml)
         expect(parsed['cloud']['properties']['openstack']['connection_options']).to eq(
           { 'option1' => 'true', 'option2' => 'false' })
       end
+
+      it 'sets the blobstore fields appropriately' do
+        spec = deployment_manifest_fragment
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+        parsed = YAML.load(rendered_yaml)
+        expect(parsed['blobstore']['provider']).to eq('dav')
+        expect(parsed['blobstore']['options']).to eq({
+                                                         'endpoint' => 'http://10.10.0.7:25251',
+                                                         'user' => 'user',
+                                                         'password' => 'password'
+                                                     })
+      end
+
+      describe 'the agent blobstore' do
+        it 'has the appropriate agent fields' do
+          spec = deployment_manifest_fragment
+          rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+          parsed = YAML.load(rendered_yaml)
+          expect(parsed['cloud']['properties']['agent']['blobstore']['provider']).to eq('dav')
+          expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                                                         'endpoint' => 'http://10.10.0.7:25251',
+                                                         'user' => 'agent',
+                                                         'password' => '75d1605f59b60'
+                                                     })
+        end
+      end
+
     end
 
     context 'provider: swift/openstack' do
