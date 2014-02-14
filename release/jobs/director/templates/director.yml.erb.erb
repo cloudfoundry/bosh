@@ -16,7 +16,7 @@ logging:
 resque:
   logging:
     level: <%= resque_loglevel %>
-<% end %>    
+<% end %>
 redis:
   host: <%= p('redis.address') %>
   port: <%= p('redis.port') %>
@@ -78,15 +78,36 @@ blobstore:
     bucket_name: <%= p('blobstore.bucket_name') %>
     access_key_id: <%= p('blobstore.access_key_id') %>
     secret_access_key: <%= p('blobstore.secret_access_key') %>
-<% if_p('blobstore.use_ssl') do |use_ssl| %>
+  <% if_p('blobstore.use_ssl') do |use_ssl| %>
     use_ssl: <%= use_ssl %>
-<% end %>
-<% if_p('blobstore.port') do |port| %>
+  <% end %>
+  <% if_p('blobstore.port') do |port| %>
     port: <%= port %>
-<% end %>
-<% if_p('blobstore.host') do |host| %>
+  <% end %>
+  <% if_p('blobstore.host') do |host| %>
     host: <%= host %>
-<% end %>
+  <% end %>
+<% elsif p('blobstore.provider') == 'swift' %>
+    swift_provider: <%= swift_provider = p('blobstore.swift_provider') %>
+    container_name: "<%= p('blobstore.swift_container_name') %>"
+    <% if swift_provider == 'openstack' %>
+    openstack:
+      openstack_auth_url: <%= p('blobstore.openstack.openstack_auth_url') %>
+      openstack_username: "<%= p('blobstore.openstack.openstack_username') %>"
+      openstack_api_key: "<%= p('blobstore.openstack.openstack_api_key') %>"
+      openstack_tenant: <%= p('blobstore.openstack.openstack_tenant') %>
+      <% if_p('blobstore.openstack.openstack_region') do |openstack_region| %>
+      openstack_region: <%= openstack_region %>
+      <% end %>
+    <% elsif swift_provider == 'hp' %>
+    hp:
+      hp_access_key: <%= p('blobstore.hp.hp_access_key') %>
+      hp_secret_key: <%= p('blobstore.hp.hp_secret_key') %>
+      hp_tenant_id: <%= p('blobstore.hp.hp_tenant_id') %>
+      hp_avl_zone: <%= p('blobstore.hp.hp_avl_zone') %>
+    <% else %>
+      <% raise "blobstore.swift_provider '#{swift_provider}' not supported; available: openstack or hp" %>
+    <% end %>
 <% else %>
     endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
     user: <%= p('blobstore.director.user') %>
@@ -279,15 +300,36 @@ cloud:
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
-      <% if_p('blobstore.use_ssl') do |use_ssl| %>
+        <% if_p('blobstore.use_ssl') do |use_ssl| %>
           use_ssl: <%= use_ssl %>
-      <% end %>
-      <% if_p('blobstore.port') do |port| %>
+        <% end %>
+        <% if_p('blobstore.port') do |port| %>
           port: <%= p('blobstore.port') %>
-      <% end %>
-      <% if_p('blobstore.host') do |port| %>
+        <% end %>
+        <% if_p('blobstore.host') do |port| %>
           host: <%= p('blobstore.host') %>
-      <% end %>
+        <% end %>
+      <% elsif p('blobstore.provider') == 'swift' %>
+          swift_provider: <%= swift_provider = p('blobstore.swift_provider') %>
+          container_name: "<%= p('blobstore.swift_container_name') %>"
+          <% if swift_provider == 'openstack' %>
+          openstack:
+            openstack_auth_url: <%= p('blobstore.openstack.openstack_auth_url') %>
+            openstack_username: "<%= p('blobstore.openstack.openstack_username') %>"
+            openstack_api_key: "<%= p('blobstore.openstack.openstack_api_key') %>"
+            openstack_tenant: <%= p('blobstore.openstack.openstack_tenant') %>
+            <% if_p('blobstore.openstack.openstack_region') do |openstack_region| %>
+            openstack_region: <%= openstack_region %>
+            <% end %>
+          <% elsif swift_provider == 'hp' %>
+          hp:
+            hp_access_key: <%= p('blobstore.hp.hp_access_key') %>
+            hp_secret_key: <%= p('blobstore.hp.hp_secret_key') %>
+            hp_tenant_id: <%= p('blobstore.hp.hp_tenant_id') %>
+            hp_avl_zone: <%= p('blobstore.hp.hp_avl_zone') %>
+          <% else %>
+            <% raise "blobstore.swift_provider '#{swift_provider}' not supported; available: openstack or hp" %>
+          <% end %>
       <% else %>
           endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
           user: <%= p('blobstore.agent.user') %>
