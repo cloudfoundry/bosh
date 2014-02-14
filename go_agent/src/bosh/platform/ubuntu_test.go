@@ -304,7 +304,7 @@ foobar:...
 				},
 			}
 			fs.WriteToFile("/sys/class/net/eth0", "")
-			fs.WriteToFile("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a")
+			fs.WriteToFile("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
 			fs.GlobPaths = []string{"/sys/class/net/eth0"}
 
 			platform.SetupManualNetworking(networks)

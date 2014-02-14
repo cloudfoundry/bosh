@@ -6,6 +6,7 @@ import (
 	boshsys "bosh/system"
 	"bytes"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -214,6 +215,8 @@ func (net centos) detectMacAddresses() (addresses map[string]string, err error) 
 			err = bosherr.WrapError(err, "Reading mac address from file")
 			return
 		}
+
+		macAddress = strings.Trim(macAddress, "\n")
 
 		interfaceName := filepath.Base(filePath)
 		addresses[macAddress] = interfaceName
