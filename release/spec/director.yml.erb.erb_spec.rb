@@ -283,6 +283,26 @@ describe 'director.yml.erb.erb' do
           }
         })
       end
+
+      describe 'the agent blobstore' do
+        it 'has the appropriate agent fields' do
+          parsed = parse_deployment_manifest(deployment_manifest_fragment)
+
+          expect(parsed['cloud']['properties']['agent']['blobstore']).to eq({
+            "provider" => "swift",
+            "options" => {
+              "swift_provider" => "hp",
+              "container_name" => "my-container-name",
+              "hp"=>{
+                'hp_access_key' => 'username',
+                'hp_secret_key' => 'password',
+                'hp_tenant_id' => 'test',
+                'hp_avl_zone' => 'hp-happy-land'
+              }
+            }
+          })
+        end
+      end
     end
 
     context 'provider: swift/unsuported' do
