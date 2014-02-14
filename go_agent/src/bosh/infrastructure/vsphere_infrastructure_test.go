@@ -5,47 +5,51 @@ import (
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 )
 
-func buildVsphere() (vsphere Infrastructure, platform *fakeplatform.FakePlatform) {
-	platform = fakeplatform.NewFakePlatform()
-	vsphere = NewVsphereInfrastructure(platform)
-	return
-}
 func init() {
 	Describe("Testing with Ginkgo", func() {
-		It("vsphere get settings", func() {
-			vsphere, platform := buildVsphere()
+		var (
+			vsphere  Infrastructure
+			platform *fakeplatform.FakePlatform
+		)
 
+		BeforeEach(func() {
+			platform = fakeplatform.NewFakePlatform()
+		})
+
+		JustBeforeEach(func() {
+			vsphere = NewVsphereInfrastructure(platform)
+		})
+
+		It("vsphere get settings", func() {
 			platform.GetFileContentsFromCDROMContents = []byte(`{"agent_id": "123"}`)
 
 			settings, err := vsphere.GetSettings()
+			Expect(err).NotTo(HaveOccurred())
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), platform.GetFileContentsFromCDROMPath, "env")
-			assert.Equal(GinkgoT(), settings.AgentId, "123")
+			Expect(platform.GetFileContentsFromCDROMPath).To(Equal("env"))
+			Expect(settings.AgentId).To(Equal("123"))
 		})
-		It("vsphere setup networking", func() {
 
-			vsphere, platform := buildVsphere()
+		It("vsphere setup networking", func() {
 			networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
 			vsphere.SetupNetworking(networks)
 
-			assert.Equal(GinkgoT(), platform.SetupManualNetworkingNetworks, networks)
+			Expect(platform.SetupManualNetworkingNetworks).To(Equal(networks))
 		})
+
 		It("vsphere get ephemeral disk path", func() {
-
-			vsphere, platform := buildVsphere()
-
 			platform.NormalizeDiskPathRealPath = "/dev/sdb"
 			platform.NormalizeDiskPathFound = true
 
 			realPath, found := vsphere.GetEphemeralDiskPath("does not matter")
-			assert.True(GinkgoT(), found)
-			assert.Equal(GinkgoT(), realPath, "/dev/sdb")
-			assert.Equal(GinkgoT(), platform.NormalizeDiskPathPath, "/dev/sdb")
+			Expect(found).To(Equal(true))
+
+			Expect(realPath).To(Equal("/dev/sdb"))
+			Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
 		})
 	})
 }
