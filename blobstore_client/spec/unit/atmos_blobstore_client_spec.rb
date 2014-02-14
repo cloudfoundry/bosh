@@ -42,6 +42,17 @@ module Bosh::Blobstore
         expect(HTTPClient).to receive(:new)
         client
       end
+
+      it 'initializes with unsupported' do
+        options[:unsupported] = true
+        expect(Atmos::Store).to receive(:new).with(options)
+        client.atmos_server
+      end
+
+      it 'initializes without unsupported' do
+        expect(Atmos::Store).to receive(:new).with(options)
+        client.atmos_server
+      end
     end
 
     describe '#exists?' do
