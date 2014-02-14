@@ -253,6 +253,27 @@ describe 'director.yml.erb.erb' do
       end
     end
 
+    context 'provider: swift/unsuported' do
+      before do
+        deployment_manifest_fragment['properties']['blobstore'] = {
+          'provider' => 'swift',
+          'swift_container_name' => 'my-container-name',
+          'swift_provider' => 'rackspace',
+          'openstack' => {
+            'openstack_auth_url' => 'http://1.2.3.4:5000/v2/tokens',
+            'openstack_username' => 'username',
+            'openstack_api_key' => 'password',
+            'openstack_tenant' => 'test'
+          }
+        }
+      end
+
+      it 'raises an error for unsupported providers' do
+        spec = deployment_manifest_fragment
+        expect{rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)}.to raise_error(RuntimeError, "blobstore.swift_provider 'rackspace' not supported; available: openstack or hp")
+      end
+    end
+
   end
 
   context 's3' do
