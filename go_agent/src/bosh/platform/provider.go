@@ -8,6 +8,7 @@ import (
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
+	boshnet "bosh/platform/net"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
@@ -35,7 +36,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	copier := boshcmd.NewCpCopier(runner, fs)
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
-	linux := NewLinuxPlatform(
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second)
+
+	centos := NewLinuxPlatform(
 		fs,
 		runner,
 		sigarCollector,
@@ -46,18 +50,27 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxCdutil,
 		linuxDiskManager,
 		3*time.Minute,
+		centosNetManager,
+	)
+
+	ubuntu := NewLinuxPlatform(
+		fs,
+		runner,
+		sigarCollector,
+		compressor,
+		copier,
+		dirProvider,
+		vitalsService,
+		linuxCdutil,
+		linuxDiskManager,
+		3*time.Minute,
+		ubuntuNetManager,
 	)
 
 	p.platforms = map[string]Platform{
-		"ubuntu": NewUbuntuPlatform(
-			linux,
-			10*time.Second,
-		),
-		"centos": NewCentosPlatform(
-			linux,
-			10*time.Second,
-		),
-		"dummy": NewDummyPlatform(sigarCollector, fs, runner, dirProvider),
+		"ubuntu": ubuntu,
+		"centos": centos,
+		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider),
 	}
 	return
 }

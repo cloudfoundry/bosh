@@ -6,6 +6,7 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
+	boshnet "bosh/platform/net"
 	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
@@ -104,7 +105,9 @@ func init() {
 		})
 
 		JustBeforeEach(func() {
-			linux := NewLinuxPlatform(
+			netManager := boshnet.NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond)
+
+			platform = NewLinuxPlatform(
 				fs,
 				cmdRunner,
 				collector,
@@ -115,11 +118,7 @@ func init() {
 				cdutil,
 				diskManager,
 				diskWaitTimeout,
-			)
-
-			platform = NewUbuntuPlatform(
-				linux,
-				1*time.Millisecond,
+				netManager,
 			)
 		})
 

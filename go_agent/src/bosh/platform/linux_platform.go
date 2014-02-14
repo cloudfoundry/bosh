@@ -5,13 +5,13 @@ import (
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
+	boshnet "bosh/platform/net"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-
 	"bytes"
 	"fmt"
 	"os"
@@ -33,6 +33,7 @@ type linux struct {
 	cdutil          boshcd.CdUtil
 	diskManager     boshdisk.Manager
 	diskWaitTimeout time.Duration
+	netManager      boshnet.NetManager
 }
 
 func NewLinuxPlatform(
@@ -46,7 +47,7 @@ func NewLinuxPlatform(
 	cdutil boshcd.CdUtil,
 	diskManager boshdisk.Manager,
 	diskWaitTimeout time.Duration,
-
+	netManager boshnet.NetManager,
 ) (platform linux) {
 	platform = linux{
 		fs:              fs,
@@ -59,6 +60,7 @@ func NewLinuxPlatform(
 		cdutil:          cdutil,
 		diskManager:     diskManager,
 		diskWaitTimeout: diskWaitTimeout,
+		netManager:      netManager,
 	}
 	return
 }
@@ -93,6 +95,14 @@ func (p linux) GetVitalsService() (service boshvitals.Service) {
 
 func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
 	return p.cdutil.GetFileContents(fileName)
+}
+
+func (p linux) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+	return p.netManager.SetupManualNetworking(networks)
+}
+
+func (p linux) SetupDhcp(networks boshsettings.Networks) (err error) {
+	return p.netManager.SetupDhcp(networks)
 }
 
 func (p linux) SetupRuntimeConfiguration() (err error) {
