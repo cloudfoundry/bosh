@@ -159,9 +159,7 @@ describe 'director.yml.erb.erb' do
           { 'option1' => 'true', 'option2' => 'false' })
       end
     end
-  end
 
-#<<<<<<< HEAD
   context 'provider: swift/openstack' do
     before do
       deployment_manifest_fragment['properties']['blobstore'] = {
@@ -219,42 +217,45 @@ describe 'director.yml.erb.erb' do
   end
 
 
-  context 'provider: swift/hp' do
-    before do
-      deployment_manifest_fragment['properties']['blobstore'] = {
-        'provider' => 'swift',
-        'swift_container_name' => 'my-container-name',
-        'swift_provider' => 'hp',
-        'hp' => {
-          'hp_access_key' => 'username',
-          'hp_secret_key' => 'password',
-          'hp_tenant_id' => 'test',
-          'hp_avl_zone' => 'hp-happy-land'
-        }
-      }
-    end
-
-    it 'renders blobstore correctly' do
-      spec = deployment_manifest_fragment
-
-      rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
-
-      parsed = YAML.load(rendered_yaml)
-
-      expect(parsed['blobstore']).to eq({"provider"=>"swift",
-       "options"=>
-        {"swift_provider"=>"hp",
-         "container_name"=>"my-container-name",
-         "hp"=>{
-           'hp_access_key' => 'username',
-           'hp_secret_key' => 'password',
-           'hp_tenant_id' => 'test',
-           'hp_avl_zone' => 'hp-happy-land'
+    context 'provider: swift/hp' do
+      before do
+        deployment_manifest_fragment['properties']['blobstore'] = {
+          'provider' => 'swift',
+          'swift_container_name' => 'my-container-name',
+          'swift_provider' => 'hp',
+          'hp' => {
+            'hp_access_key' => 'username',
+            'hp_secret_key' => 'password',
+            'hp_tenant_id' => 'test',
+            'hp_avl_zone' => 'hp-happy-land'
           }
         }
-      })
+      end
+
+      it 'renders blobstore correctly' do
+        spec = deployment_manifest_fragment
+
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+        parsed = YAML.load(rendered_yaml)
+
+        expect(parsed['blobstore']).to eq({"provider"=>"swift",
+         "options"=>
+          {"swift_provider"=>"hp",
+           "container_name"=>"my-container-name",
+           "hp"=>{
+             'hp_access_key' => 'username',
+             'hp_secret_key' => 'password',
+             'hp_tenant_id' => 'test',
+             'hp_avl_zone' => 'hp-happy-land'
+            }
+          }
+        })
+      end
     end
+
   end
+
   context 's3' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
