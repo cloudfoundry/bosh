@@ -12,12 +12,12 @@ describe 'CentOs Stemcell' do
   end
 
   context 'installed by base_centos' do
-    {
-      'centos-release' => '6-4.el6.centos.10.x86_64',
-      'epel-release'   => '6-8.noarch',
-    }.each do |pkg, version|
+    %w(
+      centos-release
+      epel-release
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
 
@@ -27,74 +27,70 @@ describe 'CentOs Stemcell' do
   end
 
   context 'installed by base_yum' do
-    {
-      'upstart'        => '0.6.5-12.el6_4.1.x86_64',
-      'openssl-devel'  => '1.0.0-27.el6_4.2',
-      'lsof'           => '4.82-4.el6.x86_64',
-      'quota'          => '3.17-18.el6.x86_64',
-      'rsync'          => '3.0.6-9.el6_4.1.x86_64',
-      'strace'         => '4.5.19-1.17.el6.x86_64',
-      'iptables'       => '1.4.7-9.el6.x86_64',
-      'sysstat'        => '9.0.4-20.el6.x86_64',
-      'tcpdump'        => '4.0.0-3.20090921gitdf3cb4.2.el6.x86_64',
-      'dhclient'       => '4.1.1-34.P1.el6_4.1.x86_64',
-      'zip'            => '3.0-1.el6.x86_64',
-      'traceroute'     => '2.0.14-2.el6.x86_64',
-      'gdb'            => '7.2-60.el6_4.1.x86_64',
-      'curl'           => '7.19.7-37.el6_4.x86_64',
-      'readline-devel' => '6.0-4.el6.x86_64',
-      'flex'           => '2.5.35-8.el6.x86_64',
-      'openssh-server' => '5.3p1-84.1.el6',
-      'wget'           => '1.12-1.8.el6.x86_64',
-      'libxml2'        => '2.7.6-12.el6_4.1.x86_64',
-      'libxml2-devel'  => '2.7.6-12.el6_4.1.x86_64',
-      'libxslt'        => '1.1.26-2.el6_3.1.x86_64',
-      'libxslt-devel'  => '1.1.26-2.el6_3.1.x86_64',
-      'psmisc'         => '22.6-15.el6_0.1.x86_64',
-      'unzip'          => '6.0-1.el6.x86_64',
-      'bison'          => '2.4.1-5.el6.x86_64',
-      'libyaml'        => '0.1.3-1.el6.x86_64',
-      'libyaml-devel'  => '0.1.3-1.el6.x86_64',
-      'bzip2-devel'    => '1.0.5-7.el6_0.x86_64',
-      'libcap-devel'   => '2.16-5.5.el6.x86_64',
-      'cmake'          => '2.6.4-5.el6.x86_64',
-      'rpm-build'      => '4.8.0-32.el6.x86_64',
-      'rpmdevtools'    => '7.5-2.el6.noarch',
-      'glibc-static'   => '2.12-1.107.el6_4.5.x86_64',
-      'runit'          => '2.1.1-6.el6.x86_64',
-      'sudo'           => '1.8.6p3-7.el6.x86_64',
-      'libuuid-devel'  => '2.17.2-12.9.el6_4.3.x86_64',
-      'nc'             => '1.84-22.el6.x86_64',
-    }.each do |pkg, version|
+    %w(
+      upstart
+      openssl-devel
+      lsof
+      quota
+      rsync
+      strace
+      iptables
+      sysstat
+      tcpdump
+      dhclient
+      zip
+      traceroute
+      gdb
+      curl
+      readline-devel
+      flex
+      openssh-server
+      wget
+      libxml2
+      libxml2-devel
+      libxslt
+      libxslt-devel
+      psmisc
+      unzip
+      bison
+      libyaml
+      libyaml-devel
+      bzip2-devel
+      libcap-devel
+      cmake
+      rpm-build
+      rpmdevtools
+      glibc-static
+      runit
+      sudo
+      libuuid-devel
+      nc
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
   end
 
   context 'installed by system_grub' do
-    {
-      'grub' => '0.97-81.el6.x86_64',
-    }.each do |pkg, version|
-      describe package(pkg) do
-        it { should be_installed.with_version(version) }
-      end
+    describe package('grub') do
+      it { should be_installed }
     end
+  end
 
-    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
-      describe file("/boot/grub/#{grub_stage}") do
-        it { should be_file }
-      end
+  %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+    describe file("/boot/grub/#{grub_stage}") do
+      it { should be_file }
     end
   end
 
   context 'installed by system_kernel' do
-    {
-      'kernel'         => '2.6.32-358.23.2.el6.x86_64',
-      'kernel-headers' => '2.6.32-358.23.2.el6.x86_64',
-    }.each do |pkg, version|
+    %w(
+      kernel
+      kernel-headers
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
   end

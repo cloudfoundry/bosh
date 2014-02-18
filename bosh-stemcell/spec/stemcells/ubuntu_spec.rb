@@ -12,47 +12,47 @@ describe 'Ubuntu Stemcell' do
   end
 
   context 'installed by base_debootstrap' do
-    {
-      'adduser' => '3.112ubuntu1',
-      'apt' => '0.7.25.3ubuntu9.14',
-      'apt-utils' => '0.7.25.3ubuntu9.14',
-      'bzip2' => '1.0.5-4ubuntu0.2',
-      'console-setup' => '1.34ubuntu15',
-      'dash' => '0.5.5.1-3ubuntu2',
-      'debconf' => '1.5.28ubuntu4',
-      'dhcp3-client' => '3.1.3-2ubuntu3.5',
-      'eject' => '2.1.5+deb1+cvs20081104-7',
-      'gnupg' => '1.4.10-2ubuntu1.5',
-      'ifupdown' => '0.6.8ubuntu29.2',
-      'initramfs-tools' => '0.92bubuntu78',
-      'iproute' => '20091226-1',
-      'iputils-ping' => '3:20071127-2ubuntu1',
-      'kbd' => '1.15-1ubuntu3',
-      'less' => '436-1',
-      'locales' => '2.11+git20100304-3',
-      'lsb-release' => '4.0-0ubuntu8.1',
-      'makedev' => '2.3.1-89ubuntu1',
-      'mawk' => '1.3.3-15ubuntu2',
-      'module-init-tools' => '3.11.1-2ubuntu1',
-      'net-tools' => '1.60-23ubuntu2',
-      'netbase' => '4.35ubuntu3',
-      'netcat-openbsd' => '1.89-3ubuntu2',
-      'ntpdate' => '1:4.2.4p8+dfsg-1ubuntu2.1',
-      'passwd' => '1:4.1.4.2-1ubuntu2.2',
-      'procps' => '1:3.2.8-1ubuntu4.3',
-      'python' => '2.6.5-0ubuntu1.1',
-      'sudo' => '1.7.2p1-1ubuntu5.6',
-      'tasksel' => '2.73ubuntu26',
-      'tzdata' => '2013g-0ubuntu0.10.04',
-      'ubuntu-keyring' => '2010.11.09',
-      'udev' => '151-12.3',
-      'upstart' => '0.6.5-8',
-      'ureadahead' => '0.100.0-4.1.3',
-      'vim-tiny' => '2:7.2.330-1ubuntu3.1',
-      'whiptail' => '0.52.10-5ubuntu1'
-    }.each do |pkg, version|
+    %w(
+      adduser
+      apt
+      apt-utils
+      bzip2
+      console-setup
+      dash
+      debconf
+      dhcp3-client
+      eject
+      gnupg
+      ifupdown
+      initramfs-tools
+      iproute
+      iputils-ping
+      kbd
+      less
+      locales
+      lsb-release
+      makedev
+      mawk
+      module-init-tools
+      net-tools
+      netbase
+      netcat-openbsd
+      ntpdate
+      passwd
+      procps
+      python
+      sudo
+      tasksel
+      tzdata
+      ubuntu-keyring
+      udev
+      upstart
+      ureadahead
+      vim-tiny
+      whiptail
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
 
@@ -64,59 +64,59 @@ describe 'Ubuntu Stemcell' do
   end
 
   context 'installed by base_apt' do
-    {
-      'upstart'              => '0.6.5-8',
-      'build-essential'      => '11.4build1',
-      'libssl-dev'           => '0.9.8k-7ubuntu8.15',
-      'lsof'                 => '4.81.dfsg.1-1build1',
-      'strace'               => '4.5.19-2',
-      'bind9-host'           => '1:9.7.0.dfsg.P1-1ubuntu0.11',
-      'dnsutils'             => '1:9.7.0.dfsg.P1-1ubuntu0.11',
-      'tcpdump'              => '4.0.0-6ubuntu3',
-      'iputils-arping'       => '3:20071127-2ubuntu1',
-      'curl'                 => '7.19.7-1ubuntu1.6',
-      'wget'                 => '1.12-1.1ubuntu2.1',
-      'libcurl3'             => '7.19.7-1ubuntu1.6',
-      'libcurl4-openssl-dev' => '7.19.7-1ubuntu1.6', # installed because of 'libcurl3-dev'
-      'bison'                => '1:2.4.1.dfsg-3',
-      'libreadline6-dev'     => '6.1-1',
-      'libxml2'              => '2.7.6.dfsg-1ubuntu1.10',
-      'libxml2-dev'          => '2.7.6.dfsg-1ubuntu1.10',
-      'libxslt1.1'           => '1.1.26-1ubuntu1.2',
-      'libxslt1-dev'         => '1.1.26-1ubuntu1.2',
-      'zip'                  => '3.0-2',
-      'unzip'                => '6.0-1build1',
-      'nfs-common'           => '1:1.2.0-4ubuntu4.2',
-      'flex'                 => '2.5.35-9',
-      'psmisc'               => '22.10-1',
-      'apparmor-utils'       => '2.5.1-0ubuntu0.10.04.4',
-      'iptables'             => '1.4.4-2ubuntu2',
-      'sysstat'              => '9.0.6-2',
-      'rsync'                => '3.0.7-1ubuntu1.1',
-      'openssh-server'       => '1:5.3p1-3ubuntu7',
-      'traceroute'           => '2.0.13-2',
-      'libncurses5-dev'      => '5.7+20090803-2ubuntu3',
-      'quota'                => '3.17-6',
-      'libaio1'              => '0.3.107-3ubuntu2',
-      'gdb'                  => '7.1-1ubuntu2',
-      'tripwire'             => '2.3.1.2.0-13',
-      'libcap2-bin'          => '1:2.17-2ubuntu1.1',
-      'libcap-dev'           => '1:2.17-2ubuntu1.1',
-      'libbz2-dev'           => '1.0.5-4ubuntu0.2',
-      'libyaml-dev'          => '0.1.3-1',
-      'cmake'                => '2.8.0-5ubuntu1',
-      'scsitools'            => '0.10-2.1ubuntu2',
-      'mg'                   => '20090107-3',
-      'htop'                 => '0.8.3-1ubuntu1',
-      'module-assistant'     => '0.11.2ubuntu1',
-      'debhelper'            => '7.4.15ubuntu1',
-      'runit'                => '2.0.0-1ubuntu4',
-      'sudo'                 => '1.7.2p1-1ubuntu5.6',
-      'uuid-dev'             => '2.17.2-0ubuntu1.10.04.2',
-      'libgcrypt11-dev'      => '1.4.4-5ubuntu2.2',
-    }.each do |pkg, version|
+    %w(
+      upstart
+      build-essential
+      libssl-dev
+      lsof
+      strace
+      bind9-host
+      dnsutils
+      tcpdump
+      iputils-arping
+      curl
+      wget
+      libcurl3
+      libcurl4-openssl-dev # installed because of libcurl3-dev
+      bison
+      libreadline6-dev
+      libxml2
+      libxml2-dev
+      libxslt1.1
+      libxslt1-dev
+      zip
+      unzip
+      nfs-common
+      flex
+      psmisc
+      apparmor-utils
+      iptables
+      sysstat
+      rsync
+      openssh-server
+      traceroute
+      libncurses5-dev
+      quota
+      libaio1
+      gdb
+      tripwire
+      libcap2-bin
+      libcap-dev
+      libbz2-dev
+      libyaml-dev
+      cmake
+      scsitools
+      mg
+      htop
+      module-assistant
+      debhelper
+      runit
+      sudo
+      uuid-dev
+      libgcrypt11-dev
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
 
@@ -143,12 +143,12 @@ describe 'Ubuntu Stemcell' do
   end
 
   context 'installed by system_kernel' do
-    {
-      'linux-image-virtual-lts-backport-oneiric'   => '3.0.0.32.20',
-      'linux-headers-virtual-lts-backport-oneiric' => '3.0.0.32.20',
-    }.each do |pkg, version|
+    %w(
+      linux-image-virtual-lts-backport-oneiric
+      linux-headers-virtual-lts-backport-oneiric
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
   end

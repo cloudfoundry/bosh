@@ -1,5 +1,5 @@
 env = ENV.to_hash
-vm_box = 'bosh-stemcell-8ac13e'
+vm_box = 'bosh-stemcell-dbef1d'
 
 Vagrant.configure('2') do |config|
   config.vm.box = vm_box
