@@ -51,11 +51,13 @@ module Bosh::Dev::Sandbox
       @redis_process = Service.new(
         %W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
 
-      @redis_socket_connector = SocketConnector.new('localhost', redis_port, @logger)
+      @redis_socket_connector = SocketConnector.new(
+        'redis', 'localhost', redis_port, @logger)
 
       @nats_process = Service.new(%W[nats-server -p #{nats_port}], {}, @logger)
 
-      @nats_socket_connector = SocketConnector.new('localhost', nats_port, @logger)
+      @nats_socket_connector = SocketConnector.new(
+        'nats', 'localhost', nats_port, @logger)
 
       @director_process = Service.new(
         %W[bosh-director -c #{director_config}],
@@ -63,7 +65,8 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @director_socket_connector = SocketConnector.new('localhost', director_port, @logger)
+      @director_socket_connector = SocketConnector.new(
+        'director', 'localhost', director_port, @logger)
 
       @worker_process = Service.new(
         %W[bosh-director-worker -c #{director_config}],

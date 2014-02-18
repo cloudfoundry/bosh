@@ -4,7 +4,8 @@ require 'bosh/dev'
 
 module Bosh::Dev::Sandbox
   class SocketConnector
-    def initialize(host, port, logger)
+    def initialize(service_name, host, port, logger)
+      @service_name = service_name
       @host = host
       @port = port
       @logger = logger
@@ -15,8 +16,13 @@ module Bosh::Dev::Sandbox
       Timeout.timeout(1) { TCPSocket.new(@host, @port).close }
     rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
       raise if remaining_attempts == 0
-      @logger.info("Failed to connect: #{e.inspect} host=#{@host} port=#{@port} remaining_attempts=#{remaining_attempts}")
+
+      @logger.info(
+        "Failed to connect to #{@service_name}: #{e.inspect} " +
+        "host=#{@host} port=#{@port} remaining_attempts=#{remaining_attempts}")
+
       sleep(0.2) # unfortunate fine-tuning required here
+
       retry
     end
   end
