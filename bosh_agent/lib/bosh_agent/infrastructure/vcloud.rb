@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  module Infrastructure::Vsphere; end
+  class Infrastructure::Vsphere; end
   class Infrastructure::Vcloud
     require 'bosh_agent/infrastructure/vsphere/settings'
 
