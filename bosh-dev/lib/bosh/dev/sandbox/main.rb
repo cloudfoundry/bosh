@@ -203,7 +203,7 @@ module Bosh::Dev::Sandbox
 
     def do_reset(name)
       kill_agents
-      @worker_process.stop('QUIT')
+      @worker_process.stop
       @director_process.stop
       @health_monitor_process.stop
 
