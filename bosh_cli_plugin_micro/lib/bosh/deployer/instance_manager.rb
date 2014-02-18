@@ -18,7 +18,7 @@ module Bosh::Deployer
       Errno::ETIMEDOUT,
       DirectorGatewayError,
       HTTPClient::ConnectTimeoutError,
-      HTTPClient::BadResponseError #Would trigger when accessed through a proxy :in `connect_ssl_proxy': connect to ssl proxy failed with status 503 Service Unavailable (HTTPClient::BadResponseError)
+      HTTPClient::BadResponseError
     ]
 
     DEPLOYMENTS_FILE = 'bosh-deployments.yml'
