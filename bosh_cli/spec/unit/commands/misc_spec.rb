@@ -3,6 +3,8 @@
 require "spec_helper"
 
 describe Bosh::Cli::Command::Misc do
+  include FakeFS::SpecHelpers
+
   let(:command) { described_class.new }
   let(:director) { double(Bosh::Cli::Client::Director) }
   let(:versions_index) { double(Bosh::Cli::VersionsIndex) }
@@ -16,7 +18,7 @@ describe Bosh::Cli::Command::Misc do
     Bosh::Cli::Release.stub(:new).and_return(release)
   end
 
-  before :all do
+  before do
     @config_file = File.join(Dir.mktmpdir, "bosh_config")
   end
 
@@ -117,6 +119,62 @@ describe Bosh::Cli::Command::Misc do
       command.should_receive(:say).with(/not set/)
 
       command.status
+    end
+  end
+
+  describe '#target' do
+    context 'target is set' do
+      let(:target) { "https://fake.bosh.director:25555" }
+      let(:target_name) { "micro-fake-bosh" }
+      let(:uuid) { SecureRandom.uuid }
+
+      before do
+        File.open(@config_file, 'w+') do |f|
+          f.write(<<EOS)
+---
+target: #{target}
+target_name: #{target_name}
+target_uuid: #{uuid}
+EOS
+        end
+      end
+
+      context 'is interactive' do
+        context 'target name is set' do
+          it 'decorates target with target name' do
+            command.add_option(:config, @config_file)
+            command.should_receive(:say).with("Current target is #{target} (#{target_name})")
+            command.set_target
+          end
+        end
+
+        context 'name is not set' do
+          let(:target_name) { nil }
+
+          it 'decorates target' do
+            command.add_option(:config, @config_file)
+            command.should_receive(:say).with("Current target is #{target}")
+            command.set_target
+          end
+        end
+      end
+
+      context 'is non-interactive' do
+        it 'does not decorates target' do
+          command.add_option(:config, @config_file)
+          command.add_option(:non_interactive, true)
+          command.should_receive(:say).with("#{target}")
+          command.set_target
+        end
+      end
+    end
+
+    context 'target is not set' do
+      it 'errors' do
+        command.add_option(:config, @config_file)
+        command.should_receive(:err).with("Target not set")
+        command.set_target
+      end
     end
   end
 end
