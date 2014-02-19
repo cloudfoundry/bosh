@@ -11,7 +11,7 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe 'listing snapshot' do
-    it_behaves_like 'a command which requires user is logged in', ->(command) { command.list }
+    it_requires_logged_in_user ->(command) { command.list }
 
     context 'when the user is logged in' do
       before do
@@ -56,7 +56,7 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe 'taking a snapshot' do
-    it_behaves_like 'a command which requires user is logged in', ->(command) { command.take('foo', '0') }
+    it_requires_logged_in_user ->(command) { command.take('foo', '0') }
 
     context 'when the user is logged in' do
       before do
@@ -121,7 +121,7 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe 'deleting a snapshot' do
-    it_behaves_like 'a command which requires user is logged in', ->(command) { command.delete('snap0a') }
+    it_requires_logged_in_user ->(command) { command.delete('snap0a') }
 
     context 'when the user is logged in' do
       before do
@@ -174,7 +174,7 @@ describe Bosh::Cli::Command::Snapshot do
   end
 
   describe 'deleting all snapshots of a deployment' do
-    it_behaves_like 'a command which requires user is logged in', ->(command) { command.delete_all }
+    it_requires_logged_in_user ->(command) { command.delete_all }
 
     context 'when the user is logged in' do
       before do

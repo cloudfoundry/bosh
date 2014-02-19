@@ -14,7 +14,7 @@ describe Bosh::Cli::Command::Release do
   end
 
   describe 'upload release' do
-    it_behaves_like 'a command which requires user is logged in', ->(command) { command.upload('http://release_location') }
+    it_requires_logged_in_user ->(command) { command.upload('http://release_location') }
 
     context 'when the user is logged in' do
       before do

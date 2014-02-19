@@ -17,7 +17,7 @@ module Bosh::Cli
     end
 
     describe 'upload stemcell' do
-      it_behaves_like 'a command which requires user is logged in', ->(command) { command.upload('http://stemcell_location') }
+      it_requires_logged_in_user ->(command) { command.upload('http://stemcell_location') }
 
       context 'when the user is logged in' do
         before do
@@ -142,7 +142,7 @@ module Bosh::Cli
       before { stemcell.stub(valid?: true) }
       before { stemcell.stub(stemcell_file: stemcell_archive) }
 
-      it_behaves_like 'a command which requires user is logged in', ->(command) { command.list }
+      it_requires_logged_in_user ->(command) { command.list }
 
       context 'when no stemcells are in use' do
         it 'does not add a star to any stemcell listed' do

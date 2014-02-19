@@ -44,7 +44,7 @@ describe Bosh::Cli::Command::JobManagement do
     new_state = options.fetch(:new_state) { past_verb }
     operation_description_extra = options.fetch(:operation_description_extra) { '' }
 
-    it_behaves_like 'a command which requires user is logged in', ->(command) { command.public_send(method_name, 'dea') }
+    it_requires_logged_in_user ->(command) { command.public_send(method_name, 'dea') }
 
     it 'complains if the job does not exist' do
       expect {

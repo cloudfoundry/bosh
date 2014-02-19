@@ -49,8 +49,7 @@ describe Bosh::Cli::Command::LogManagement do
     context 'when a deployment is targeted' do
       before { command.stub(target: 'http://bosh.example.com:25555') }
 
-      it_behaves_like 'a command which requires user is logged in',
-                      ->(command) { command.fetch_logs('dea', '6') }
+      it_requires_logged_in_user ->(command) { command.fetch_logs('dea', '6') }
 
       context 'when logged in' do
         before { command.stub(:logged_in? => true) }
