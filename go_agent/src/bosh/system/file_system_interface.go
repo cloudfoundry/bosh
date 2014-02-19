@@ -12,8 +12,11 @@ type FileSystem interface {
 	Chmod(path string, perm os.FileMode) (err error)
 
 	Open(path string) (file *os.File, err error)
-	WriteToFile(path, content string) (written bool, err error)
-	ReadFile(path string) (content string, err error)
+	WriteFileString(path, content string) (err error)
+	WriteFile(path string, content []byte) (err error)
+	ConvergeFileContents(path string, content []byte) (written bool, err error)
+	ReadFileString(path string) (content string, err error)
+	ReadFile(path string) (content []byte, err error)
 	FileExists(path string) bool
 	Rename(oldPath, newPath string) (err error)
 

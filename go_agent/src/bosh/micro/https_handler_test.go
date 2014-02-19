@@ -83,7 +83,7 @@ var _ = Describe("HttpsHandler", func() {
 
 	Describe("GET /blobs", func() {
 		It("returns data from file system", func() {
-			fs.WriteToFile("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+			fs.WriteFileString("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
 
 			httpResponse, err := httpClient.Get(serverURL + "/blobs/a5/123-456-789")
 			for err != nil {
@@ -127,7 +127,7 @@ var _ = Describe("HttpsHandler", func() {
 
 	Describe("PUT /blobs", func() {
 		It("updates the blob on the file system", func() {
-			fs.WriteToFile("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+			fs.WriteFileString("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
 
 			putBody := `Updated data`
 			putPayload := strings.NewReader(putBody)
@@ -142,7 +142,7 @@ var _ = Describe("HttpsHandler", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(httpResponse.StatusCode).To(Equal(201))
-			contents, err := fs.ReadFile("/var/vcap/micro_bosh/data/cache/123-456-789")
+			contents, err := fs.ReadFileString("/var/vcap/micro_bosh/data/cache/123-456-789")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(contents).To(Equal("Updated data"))
 		})

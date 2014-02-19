@@ -93,7 +93,7 @@ func init() {
 
 			assert.False(GinkgoT(), drainScript.Exists())
 
-			fs.WriteToFile("/fake/script", "")
+			fs.WriteFile("/fake/script", []byte{})
 
 			assert.True(GinkgoT(), drainScript.Exists())
 		})

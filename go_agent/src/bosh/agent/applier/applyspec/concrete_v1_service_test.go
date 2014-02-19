@@ -18,7 +18,7 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("get", func() {
 			fs, specPath, service := buildV1Service()
-			fs.WriteToFile(specPath, `{"deployment":"fake-deployment-name"}`)
+			fs.WriteFileString(specPath, `{"deployment":"fake-deployment-name"}`)
 
 			spec, err := service.Get()
 			assert.NoError(GinkgoT(), err)
@@ -41,7 +41,7 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			specPathStats := fs.GetFileTestStat(specPath)
 			assert.NotNil(GinkgoT(), specPathStats)
-			boshassert.MatchesJsonString(GinkgoT(), spec, specPathStats.Content)
+			boshassert.MatchesJsonBytes(GinkgoT(), spec, specPathStats.Content)
 		})
 	})
 }

@@ -41,7 +41,7 @@ func init() {
 
 			fs, _, blobstore := buildLocalBlobstore()
 
-			fs.WriteToFile(FAKE_BLOBSTORE_PATH+"/fake-blob-id", "fake contents")
+			fs.WriteFileString(FAKE_BLOBSTORE_PATH+"/fake-blob-id", "fake contents")
 
 			tempFile, err := fs.TempFile("bosh-blobstore-local-TestLocalGet")
 			assert.NoError(GinkgoT(), err)
@@ -54,7 +54,7 @@ func init() {
 
 			fileStats := fs.GetFileTestStat(tempFile.Name())
 			assert.NotNil(GinkgoT(), fileStats)
-			assert.Equal(GinkgoT(), "fake contents", fileStats.Content)
+			assert.Equal(GinkgoT(), "fake contents", fileStats.StringContents())
 		})
 		It("local get errs when temp file create errs", func() {
 
@@ -104,7 +104,7 @@ func init() {
 		It("local create", func() {
 
 			fs, uuidGen, blobstore := buildLocalBlobstore()
-			fs.WriteToFile("/fake-file.txt", "fake-file-contents")
+			fs.WriteFileString("/fake-file.txt", "fake-file-contents")
 
 			uuidGen.GeneratedUuid = "some-uuid"
 
@@ -115,7 +115,7 @@ func init() {
 
 			writtenFileStats := fs.GetFileTestStat(FAKE_BLOBSTORE_PATH + "/some-uuid")
 			assert.NotNil(GinkgoT(), writtenFileStats)
-			assert.Equal(GinkgoT(), "fake-file-contents", writtenFileStats.Content)
+			assert.Equal(GinkgoT(), "fake-file-contents", writtenFileStats.StringContents())
 		})
 		It("local create errs when generating blob id errs", func() {
 
@@ -130,7 +130,7 @@ func init() {
 		It("local create errs when copy file errs", func() {
 
 			fs, uuidGen, blobstore := buildLocalBlobstore()
-			fs.WriteToFile("/fake-file.txt", "fake-file-contents")
+			fs.WriteFileString("/fake-file.txt", "fake-file-contents")
 
 			uuidGen.GeneratedUuid = "some-uuid"
 			fs.CopyFileError = errors.New("fake-copy-file-error")

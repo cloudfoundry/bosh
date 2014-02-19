@@ -2,6 +2,7 @@ package fakes
 
 import (
 	bosherr "bosh/errors"
+	"bytes"
 	"errors"
 	gouuid "github.com/nu7hatch/gouuid"
 	"os"
@@ -51,9 +52,13 @@ type FakeFileSystem struct {
 type FakeFileStats struct {
 	FileMode      os.FileMode
 	Username      string
-	Content       string
+	Content       []byte
 	SymlinkTarget string
 	FileType      FakeFileType
+}
+
+func (stats FakeFileStats) StringContents() string {
+	return string(stats.Content)
 }
 
 func NewFakeFileSystem() *FakeFileSystem {
@@ -94,7 +99,23 @@ func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 	return
 }
 
-func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err error) {
+func (fs *FakeFileSystem) WriteFileString(path, content string) (err error) {
+	return fs.WriteFile(path, []byte(content))
+}
+
+func (fs *FakeFileSystem) WriteFile(path string, content []byte) (err error) {
+	if fs.WriteToFileError != nil {
+		err = fs.WriteToFileError
+		return
+	}
+
+	stats := fs.getOrCreateFile(path)
+	stats.FileType = FakeFileTypeFile
+	stats.Content = content
+	return
+}
+
+func (fs *FakeFileSystem) ConvergeFileContents(path string, content []byte) (written bool, err error) {
 	if fs.WriteToFileError != nil {
 		err = fs.WriteToFileError
 		return
@@ -103,14 +124,24 @@ func (fs *FakeFileSystem) WriteToFile(path, content string) (written bool, err e
 	stats := fs.getOrCreateFile(path)
 	stats.FileType = FakeFileTypeFile
 
-	if stats.Content != content {
+	if bytes.Compare(stats.Content, content) != 0 {
 		stats.Content = content
 		written = true
 	}
 	return
 }
 
-func (fs *FakeFileSystem) ReadFile(path string) (content string, err error) {
+func (fs *FakeFileSystem) ReadFileString(path string) (content string, err error) {
+	bytes, err := fs.ReadFile(path)
+	if err != nil {
+		return
+	}
+
+	content = string(bytes)
+	return
+}
+
+func (fs *FakeFileSystem) ReadFile(path string) (content []byte, err error) {
 	stats := fs.GetFileTestStat(path)
 	if stats != nil {
 		content = stats.Content

@@ -24,7 +24,7 @@ func init() {
 		It("prepare network change", func() {
 
 			action, fs := buildPrepareAction()
-			fs.WriteToFile("/etc/udev/rules.d/70-persistent-net.rules", "")
+			fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
 
 			resp, err := action.Run()
 

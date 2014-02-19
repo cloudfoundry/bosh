@@ -10,14 +10,18 @@ func MatchesJsonMap(t assert.TestingT, object interface{}, expectedJson map[stri
 	expectedBytes, err := json.Marshal(expectedJson)
 	assert.NoError(t, err)
 
-	MatchesJsonString(t, object, string(expectedBytes))
+	MatchesJsonBytes(t, object, expectedBytes)
 }
 
 func MatchesJsonString(t assert.TestingT, object interface{}, expectedJson string) {
+	MatchesJsonBytes(t, object, []byte(expectedJson))
+}
+
+func MatchesJsonBytes(t assert.TestingT, object interface{}, expectedJson []byte) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 
-	assert.Equal(t, expectedJson, string(objectBytes))
+	assert.Equal(t, expectedJson, objectBytes)
 }
 
 func LacksJsonKey(t assert.TestingT, object interface{}, key string) {

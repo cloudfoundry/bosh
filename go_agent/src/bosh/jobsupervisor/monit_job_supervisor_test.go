@@ -106,10 +106,10 @@ func init() {
 		It("add job", func() {
 
 			deps, monit := buildMonitJobSupervisor()
-			deps.fs.WriteToFile("/some/config/path", "some config content")
+			deps.fs.WriteFileString("/some/config/path", "some config content")
 			monit.AddJob("router", 0, "/some/config/path")
 
-			writtenConfig, err := deps.fs.ReadFile(deps.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
+			writtenConfig, err := deps.fs.ReadFileString(deps.dirProvider.MonitJobsDir() + "/0000_router.monitrc")
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), writtenConfig, "some config content")
 		})

@@ -36,7 +36,7 @@ func (blobstore external) writeConfigFile() (err error) {
 		return
 	}
 
-	_, err = blobstore.fs.WriteToFile(blobstore.configFilePath, string(configJson))
+	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJson)
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing config file")
 		return

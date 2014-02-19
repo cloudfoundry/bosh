@@ -15,7 +15,7 @@ type fsWithChangingFile struct {
 	*fakesys.FakeFileSystem
 }
 
-func (fs *fsWithChangingFile) ReadFile(path string) (content string, err error) {
+func (fs *fsWithChangingFile) ReadFileString(path string) (content string, err error) {
 	if path == "/proc/mounts" {
 		content = fs.procMounts[0]
 		fs.procMounts = fs.procMounts[1:]
@@ -40,7 +40,7 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("linux mount", func() {
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "")
+			fs.WriteFile("/proc/mounts", []byte{})
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
@@ -52,7 +52,7 @@ func init() {
 		It("linux mount when disk is already mounted to the good mount point", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/foo /mnt/foo\n/dev/bar /mnt/bar")
+			fs.WriteFileString("/proc/mounts", "/dev/foo /mnt/foo\n/dev/bar /mnt/bar")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
@@ -63,7 +63,7 @@ func init() {
 		It("linux mount when disk is already mounted to the wrong mount point", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/foo /mnt/foobarbaz\n/dev/bar /mnt/bar")
+			fs.WriteFileString("/proc/mounts", "/dev/foo /mnt/foobarbaz\n/dev/bar /mnt/bar")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
@@ -74,7 +74,7 @@ func init() {
 		It("linux mount when another disk is already mounted to mount point", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/baz /mnt/foo\n/dev/bar /mnt/bar")
+			fs.WriteFileString("/proc/mounts", "/dev/baz /mnt/foo\n/dev/bar /mnt/bar")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
@@ -147,7 +147,7 @@ func init() {
 		It("linux unmount when partition is mounted", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			didUnmount, err := mounter.Unmount("/dev/xvdb2")
@@ -160,7 +160,7 @@ func init() {
 		It("linux unmount when mount point is mounted", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			didUnmount, err := mounter.Unmount("/var/vcap/data")
@@ -173,7 +173,7 @@ func init() {
 		It("linux unmount when partition or mount point is not mounted", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			didUnmount, err := mounter.Unmount("/dev/xvdb3")
@@ -185,7 +185,7 @@ func init() {
 		It("linux unmount when it fails several times", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
@@ -205,7 +205,7 @@ func init() {
 		It("linux unmount when it fails too many times", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error"), Sticky: true})
 
@@ -217,7 +217,7 @@ func init() {
 		It("is mount point", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 
@@ -232,7 +232,7 @@ func init() {
 		It("is mounted", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			fs.WriteToFile("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			isMounted, err := mounter.IsMounted("/dev/xvdb2")

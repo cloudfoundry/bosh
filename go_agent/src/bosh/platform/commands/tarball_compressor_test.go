@@ -54,15 +54,15 @@ func init() {
 			_, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
 			assert.NoError(GinkgoT(), err)
 
-			content, err := fs.ReadFile(dstDir + "/app.stdout.log")
+			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is app stdout")
 
-			content, err = fs.ReadFile(dstDir + "/app.stderr.log")
+			content, err = fs.ReadFileString(dstDir + "/app.stderr.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is app stderr")
 
-			content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stdout.log")
+			content, err = fs.ReadFileString(dstDir + "/other_logs/other_app.stdout.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is other app stdout")
 		})
@@ -77,23 +77,23 @@ func init() {
 			err := dc.DecompressFileToDir(fixtureSrcTgz(GinkgoT()), dstDir)
 			assert.NoError(GinkgoT(), err)
 
-			content, err := fs.ReadFile(dstDir + "/not-nested-file")
+			content, err := fs.ReadFileString(dstDir + "/not-nested-file")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "not-nested-file")
 
-			content, err = fs.ReadFile(dstDir + "/dir/nested-file")
+			content, err = fs.ReadFileString(dstDir + "/dir/nested-file")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "nested-file")
 
-			content, err = fs.ReadFile(dstDir + "/dir/nested-dir/double-nested-file")
+			content, err = fs.ReadFileString(dstDir + "/dir/nested-dir/double-nested-file")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "double-nested-file")
 
-			content, err = fs.ReadFile(dstDir + "/empty-dir")
+			content, err = fs.ReadFileString(dstDir + "/empty-dir")
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "is a directory")
 
-			content, err = fs.ReadFile(dstDir + "/dir/empty-nested-dir")
+			content, err = fs.ReadFileString(dstDir + "/dir/empty-nested-dir")
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "is a directory")
 		})

@@ -32,7 +32,7 @@ func NewConcreteService(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesPr
 
 func (oc concreteService) GetInfo() (ntpInfo NTPInfo) {
 	ntpPath := filepath.Join(oc.dirProvider.BaseDir(), "/bosh/log/ntpdate.out")
-	content, err := oc.fs.ReadFile(ntpPath)
+	content, err := oc.fs.ReadFileString(ntpPath)
 	if err != nil {
 		ntpInfo = NTPInfo{Message: "file missing"}
 		return

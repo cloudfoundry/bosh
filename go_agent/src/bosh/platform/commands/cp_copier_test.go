@@ -37,19 +37,19 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), os.FileMode(0755), tarDirStat.Mode().Perm())
 
-			content, err := fs.ReadFile(dstDir + "/app.stdout.log")
+			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is app stdout")
 
-			content, err = fs.ReadFile(dstDir + "/app.stderr.log")
+			content, err = fs.ReadFileString(dstDir + "/app.stderr.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is app stderr")
 
-			content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stdout.log")
+			content, err = fs.ReadFileString(dstDir + "/other_logs/other_app.stdout.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is other app stdout")
 
-			content, err = fs.ReadFile(dstDir + "/other_logs/more_logs/more.stdout.log")
+			content, err = fs.ReadFileString(dstDir + "/other_logs/more_logs/more.stdout.log")
 			assert.NoError(GinkgoT(), err)
 			assert.Contains(GinkgoT(), content, "this is more stdout")
 
@@ -57,10 +57,10 @@ func init() {
 			assert.True(GinkgoT(), fs.FileExists(dstDir+"/some_directory/sub_dir"))
 			assert.True(GinkgoT(), fs.FileExists(dstDir+"/some_directory/sub_dir/other_sub_dir"))
 
-			content, err = fs.ReadFile(dstDir + "/other_logs/other_app.stderr.log")
+			_, err = fs.ReadFile(dstDir + "/other_logs/other_app.stderr.log")
 			assert.Error(GinkgoT(), err)
 
-			content, err = fs.ReadFile(dstDir + "/../some.config")
+			_, err = fs.ReadFile(dstDir + "/../some.config")
 			assert.Error(GinkgoT(), err)
 		})
 		It("clean up", func() {

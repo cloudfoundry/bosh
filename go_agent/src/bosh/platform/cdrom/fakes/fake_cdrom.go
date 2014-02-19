@@ -54,7 +54,7 @@ func (cdrom *FakeCdrom) Mount(mountPath string) (err error) {
 	}
 
 	cdrom.MountMountPath = mountPath
-	cdrom.Fs.WriteToFile(filepath.Join(mountPath, cdrom.MediaFilePath), cdrom.MediaFileContents)
+	cdrom.Fs.WriteFileString(filepath.Join(mountPath, cdrom.MediaFilePath), cdrom.MediaFileContents)
 	cdrom.Mounted = true
 	return
 }

@@ -121,7 +121,7 @@ func (boot bootstrap) fetchInitialSettings() (settings boshsettings.Settings, er
 
 	existingSettingsJson, readError := boot.platform.GetFs().ReadFile(settingsPath)
 	if readError == nil {
-		err = json.Unmarshal([]byte(existingSettingsJson), &settings)
+		err = json.Unmarshal(existingSettingsJson, &settings)
 		return
 	}
 
@@ -137,7 +137,7 @@ func (boot bootstrap) fetchInitialSettings() (settings boshsettings.Settings, er
 		return
 	}
 
-	boot.fs.WriteToFile(settingsPath, string(settingsJson))
+	boot.fs.WriteFile(settingsPath, settingsJson)
 	return
 }
 

@@ -13,7 +13,7 @@ func buildService(NTPData string) (service Service) {
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 
 	if NTPData != "" {
-		fs.WriteToFile("/var/vcap/bosh/log/ntpdate.out", NTPData)
+		fs.WriteFileString("/var/vcap/bosh/log/ntpdate.out", NTPData)
 	}
 
 	service = NewConcreteService(fs, dirProvider)

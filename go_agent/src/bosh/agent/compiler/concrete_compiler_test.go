@@ -177,7 +177,7 @@ func init() {
 			pkg, pkgDeps := getCompileArgs()
 
 			deps.compressor.DecompressFileToDirCallBack = func() {
-				deps.fs.WriteToFile("/fake-dir/data/compile/pkg_name/packaging", "hi")
+				deps.fs.WriteFileString("/fake-dir/data/compile/pkg_name/packaging", "hi")
 			}
 
 			_, _, err := compiler.Compile(pkg, pkgDeps)

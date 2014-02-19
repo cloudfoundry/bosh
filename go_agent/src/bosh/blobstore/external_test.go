@@ -33,7 +33,7 @@ func init() {
 			runner.CommandExistsValue = true
 			assert.NoError(GinkgoT(), blobstore.Validate())
 
-			s3CliConfig, err := fs.ReadFile(configPath)
+			s3CliConfig, err := fs.ReadFileString(configPath)
 			assert.NoError(GinkgoT(), err)
 
 			expectedJson := map[string]string{"fake-key": "fake-value"}

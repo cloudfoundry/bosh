@@ -40,7 +40,7 @@ func (s concreteV1Service) Set(spec V1ApplySpec) (err error) {
 		return
 	}
 
-	_, err = s.fs.WriteToFile(s.specFilePath, string(specBytes))
+	err = s.fs.WriteFile(s.specFilePath, specBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing spec to disk")
 	}

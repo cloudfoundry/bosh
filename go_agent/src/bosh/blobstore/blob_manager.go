@@ -21,24 +21,19 @@ func NewBlobManager(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvid
 func (manager BlobManager) Fetch(blobId string) (blobBytes []byte, err error) {
 	blobPath := filepath.Join(manager.dirProvider.MicroStore(), blobId)
 
-	blobString, err := manager.fs.ReadFile(blobPath)
+	blobBytes, err = manager.fs.ReadFile(blobPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading blob")
-		return
 	}
-
-	blobBytes = []byte(blobString)
 	return
 }
 
 func (manager BlobManager) Write(blobId string, blobBytes []byte) (err error) {
 	blobPath := filepath.Join(manager.dirProvider.MicroStore(), blobId)
 
-	_, err = manager.fs.WriteToFile(blobPath, string(blobBytes))
+	err = manager.fs.WriteFile(blobPath, blobBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Updating blob")
-		return
 	}
-
 	return
 }

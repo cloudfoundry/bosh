@@ -61,7 +61,7 @@ func (net centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 		return
 	}
 
-	written, err := net.fs.WriteToFile("/etc/dhcp/dhclient.conf", buffer.String())
+	written, err := net.fs.ConvergeFileContents("/etc/dhcp/dhclient.conf", buffer.Bytes())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/dhcp/dhclient.conf")
 		return
@@ -157,7 +157,7 @@ func (net centos) writeIfcfgs(networks boshsettings.Networks) (modifiedNetworks 
 			return
 		}
 
-		_, err = net.fs.WriteToFile(filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+newNet.Interface), buffer.String())
+		err = net.fs.WriteFile(filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+newNet.Interface), buffer.Bytes())
 		if err != nil {
 			err = bosherr.WrapError(err, "Writing to /etc/sysconfig/network-scripts")
 			return
@@ -187,7 +187,7 @@ func (p centos) writeResolvConf(networks boshsettings.Networks) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/resolv.conf", buffer.String())
+	err = p.fs.WriteFile("/etc/resolv.conf", buffer.Bytes())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/resolv.conf")
 		return
@@ -210,7 +210,7 @@ func (net centos) detectMacAddresses() (addresses map[string]string, err error) 
 
 	var macAddress string
 	for _, filePath := range filePaths {
-		macAddress, err = net.fs.ReadFile(filepath.Join(filePath, "address"))
+		macAddress, err = net.fs.ReadFileString(filepath.Join(filePath, "address"))
 		if err != nil {
 			err = bosherr.WrapError(err, "Reading mac address from file")
 			return

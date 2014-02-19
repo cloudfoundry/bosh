@@ -19,21 +19,21 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("fetch", func() {
 			blobManager, fs := createBlobManager()
-			fs.WriteToFile("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
+			fs.WriteFileString("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
 
 			blobBytes, err := blobManager.Fetch("105d33ae-655c-493d-bf9f-1df5cf3ca847")
 			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), blobBytes, []byte("some data"))
+			assert.Equal(GinkgoT(), string(blobBytes), "some data")
 		})
 		It("write", func() {
 
 			blobManager, fs := createBlobManager()
-			fs.WriteToFile("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
+			fs.WriteFileString("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
 
 			err := blobManager.Write("105d33ae-655c-493d-bf9f-1df5cf3ca847", []byte("new data"))
 			assert.NoError(GinkgoT(), err)
 
-			contents, err := fs.ReadFile("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847")
+			contents, err := fs.ReadFileString("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847")
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), contents, "new data")
 		})

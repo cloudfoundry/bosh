@@ -194,7 +194,7 @@ foobar:...
 				boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX, boshsettings.EPHEMERAL_USER_PREFIX,
 			)
 
-			fs.WriteToFile("/etc/passwd", passwdFile)
+			fs.WriteFileString("/etc/passwd", passwdFile)
 
 			err := platform.DeleteEphemeralUsersMatching("bar$")
 			assert.NoError(GinkgoT(), err)
@@ -224,7 +224,7 @@ foobar:...
 			assert.Equal(GinkgoT(), authKeysStat.FileType, fakesys.FakeFileTypeFile)
 			assert.Equal(GinkgoT(), authKeysStat.FileMode, os.FileMode(0600))
 			assert.Equal(GinkgoT(), authKeysStat.Username, "vcap")
-			assert.Equal(GinkgoT(), authKeysStat.Content, "some public key")
+			assert.Equal(GinkgoT(), authKeysStat.StringContents(), "some public key")
 		})
 
 		It("ubuntu set user password", func() {
@@ -238,11 +238,11 @@ foobar:...
 			assert.Equal(GinkgoT(), 1, len(cmdRunner.RunCommands))
 			assert.Equal(GinkgoT(), []string{"hostname", "foobar.local"}, cmdRunner.RunCommands[0])
 
-			hostnameFileContent, err := fs.ReadFile("/etc/hostname")
+			hostnameFileContent, err := fs.ReadFileString("/etc/hostname")
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), "foobar.local", hostnameFileContent)
 
-			hostsFileContent, err := fs.ReadFile("/etc/hosts")
+			hostsFileContent, err := fs.ReadFileString("/etc/hosts")
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), UBUNTU_EXPECTED_ETC_HOSTS, hostsFileContent)
 		})
@@ -263,7 +263,7 @@ foobar:...
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 			assert.NotNil(GinkgoT(), dhcpConfig)
-			assert.Equal(GinkgoT(), dhcpConfig.Content, UBUNTU_EXPECTED_DHCP_CONFIG)
+			assert.Equal(GinkgoT(), dhcpConfig.StringContents(), UBUNTU_EXPECTED_DHCP_CONFIG)
 
 			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 2)
 			assert.Equal(GinkgoT(), cmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
@@ -271,7 +271,7 @@ foobar:...
 		})
 
 		It("ubuntu setup dhcp with pre existing configuration", func() {
-			fs.WriteToFile("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
+			fs.WriteFileString("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{
 					Default: []string{"dns"},
@@ -287,7 +287,7 @@ foobar:...
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 			assert.NotNil(GinkgoT(), dhcpConfig)
-			assert.Equal(GinkgoT(), dhcpConfig.Content, UBUNTU_EXPECTED_DHCP_CONFIG)
+			assert.Equal(GinkgoT(), dhcpConfig.StringContents(), UBUNTU_EXPECTED_DHCP_CONFIG)
 
 			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 0)
 		})
@@ -303,19 +303,19 @@ foobar:...
 					Dns:     []string{"10.80.130.2", "10.80.130.1"},
 				},
 			}
-			fs.WriteToFile("/sys/class/net/eth0", "")
-			fs.WriteToFile("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
+			fs.WriteFile("/sys/class/net/eth0", []byte{})
+			fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
 			fs.GlobPaths = []string{"/sys/class/net/eth0"}
 
 			platform.SetupManualNetworking(networks)
 
 			networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
 			assert.NotNil(GinkgoT(), networkConfig)
-			assert.Equal(GinkgoT(), networkConfig.Content, UBUNTU_EXPECTED_NETWORK_INTERFACES)
+			assert.Equal(GinkgoT(), networkConfig.StringContents(), UBUNTU_EXPECTED_NETWORK_INTERFACES)
 
 			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
 			assert.NotNil(GinkgoT(), resolvConf)
-			assert.Equal(GinkgoT(), resolvConf.Content, UBUNTU_EXPECTED_RESOLV_CONF)
+			assert.Equal(GinkgoT(), resolvConf.StringContents(), UBUNTU_EXPECTED_RESOLV_CONF)
 
 			time.Sleep(100 * time.Millisecond)
 
@@ -329,7 +329,7 @@ foobar:...
 		It("ubuntu setup logrotate", func() {
 			platform.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
 
-			logrotateFileContent, err := fs.ReadFile("/etc/logrotate.d/fake-group-name")
+			logrotateFileContent, err := fs.ReadFileString("/etc/logrotate.d/fake-group-name")
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), UBUNTU_EXPECTED_ETC_LOGROTATE, logrotateFileContent)
 		})
@@ -338,7 +338,7 @@ foobar:...
 			platform.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
 
 			ntpConfig := fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
-			assert.Equal(GinkgoT(), "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.Content)
+			assert.Equal(GinkgoT(), "0.north-america.pool.ntp.org 1.north-america.pool.ntp.org", ntpConfig.StringContents())
 			assert.Equal(GinkgoT(), fakesys.FakeFileTypeFile, ntpConfig.FileType)
 
 			assert.Equal(GinkgoT(), 1, len(cmdRunner.RunCommands))
@@ -360,7 +360,7 @@ foobar:...
 
 			fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
 
-			fs.WriteToFile("/dev/xvda", "")
+			fs.WriteFile("/dev/xvda", []byte{})
 
 			err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
 			assert.NoError(GinkgoT(), err)
@@ -423,7 +423,7 @@ foobar:...
 			fakePartitioner := diskManager.FakePartitioner
 			fakeMounter := diskManager.FakeMounter
 
-			fs.WriteToFile("/dev/vdf", "")
+			fs.WriteFile("/dev/vdf", []byte{})
 
 			err := platform.MountPersistentDisk("/dev/sdf", "/mnt/point")
 			assert.NoError(GinkgoT(), err)
@@ -453,7 +453,7 @@ foobar:...
 				fakeMounter := diskManager.FakeMounter
 				fakeMounter.UnmountDidUnmount = false
 
-				fs.WriteToFile("/dev/vdx", "")
+				fs.WriteFile("/dev/vdx", []byte{})
 
 				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
 				assert.NoError(GinkgoT(), err)
@@ -467,7 +467,7 @@ foobar:...
 				fakeMounter := diskManager.FakeMounter
 				fakeMounter.UnmountDidUnmount = true
 
-				fs.WriteToFile("/dev/vdx", "")
+				fs.WriteFile("/dev/vdx", []byte{})
 
 				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
 				assert.NoError(GinkgoT(), err)
@@ -477,21 +477,21 @@ foobar:...
 		})
 
 		It("ubuntu normalize disk path", func() {
-			fs.WriteToFile("/dev/xvda", "")
+			fs.WriteFile("/dev/xvda", []byte{})
 			path, found := platform.NormalizeDiskPath("/dev/sda")
 
 			assert.Equal(GinkgoT(), path, "/dev/xvda")
 			assert.True(GinkgoT(), found)
 
 			fs.RemoveAll("/dev/xvda")
-			fs.WriteToFile("/dev/vda", "")
+			fs.WriteFile("/dev/vda", []byte{})
 			path, found = platform.NormalizeDiskPath("/dev/sda")
 
 			assert.Equal(GinkgoT(), path, "/dev/vda")
 			assert.True(GinkgoT(), found)
 
 			fs.RemoveAll("/dev/vda")
-			fs.WriteToFile("/dev/sda", "")
+			fs.WriteFile("/dev/sda", []byte{})
 			path, found = platform.NormalizeDiskPath("/dev/sda")
 
 			assert.Equal(GinkgoT(), path, "/dev/sda")
@@ -510,8 +510,8 @@ foobar:...
 		})
 
 		It("ubuntu get real device path with multiple possible devices", func() {
-			fs.WriteToFile("/dev/xvda", "")
-			fs.WriteToFile("/dev/vda", "")
+			fs.WriteFile("/dev/xvda", []byte{})
+			fs.WriteFile("/dev/vda", []byte{})
 
 			realPath, found := platform.NormalizeDiskPath("/dev/sda")
 			assert.True(GinkgoT(), found)
@@ -525,7 +525,7 @@ foobar:...
 
 			It("ubuntu get real device path with delay", func() {
 				time.AfterFunc(time.Second, func() {
-					fs.WriteToFile("/dev/xvda", "")
+					fs.WriteFile("/dev/xvda", []byte{})
 				})
 
 				realPath, found := platform.NormalizeDiskPath("/dev/sda")
@@ -536,7 +536,7 @@ foobar:...
 
 		It("ubuntu get real device path with delay beyond timeout", func() {
 			time.AfterFunc(2*time.Second, func() {
-				fs.WriteToFile("/dev/xvda", "")
+				fs.WriteFile("/dev/xvda", []byte{})
 			})
 
 			_, found := platform.NormalizeDiskPath("/dev/sda")
@@ -605,7 +605,7 @@ foobar:...
 		})
 
 		It("ubuntu is device path mounted", func() {
-			fs.WriteToFile("/dev/xvda", "")
+			fs.WriteFile("/dev/xvda", []byte{})
 			fakeMounter := diskManager.FakeMounter
 			fakeMounter.IsMountedResult = true
 
@@ -628,22 +628,22 @@ foobar:...
 
 			monitUserFileStats := fs.GetFileTestStat("/fake-dir/monit/monit.user")
 			assert.NotNil(GinkgoT(), monitUserFileStats)
-			assert.Equal(GinkgoT(), "vcap:random-password", monitUserFileStats.Content)
+			assert.Equal(GinkgoT(), "vcap:random-password", monitUserFileStats.StringContents())
 		})
 
 		It("ubuntu setup monit user if file does exist", func() {
-			fs.WriteToFile("/fake-dir/monit/monit.user", "vcap:other-random-password")
+			fs.WriteFileString("/fake-dir/monit/monit.user", "vcap:other-random-password")
 
 			err := platform.SetupMonitUser()
 			assert.NoError(GinkgoT(), err)
 
 			monitUserFileStats := fs.GetFileTestStat("/fake-dir/monit/monit.user")
 			assert.NotNil(GinkgoT(), monitUserFileStats)
-			assert.Equal(GinkgoT(), "vcap:other-random-password", monitUserFileStats.Content)
+			assert.Equal(GinkgoT(), "vcap:other-random-password", monitUserFileStats.StringContents())
 		})
 
 		It("ubuntu get monit credentials reads monit file from disk", func() {
-			fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
+			fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
 
 			username, password, err := platform.GetMonitCredentials()
 			assert.NoError(GinkgoT(), err)
@@ -653,14 +653,14 @@ foobar:...
 		})
 
 		It("ubuntu get monit credentials errs when invalid file format", func() {
-			fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user")
+			fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user")
 
 			_, _, err := platform.GetMonitCredentials()
 			assert.Error(GinkgoT(), err)
 		})
 
 		It("ubuntu get monit credentials leaves colons in password intact", func() {
-			fs.WriteToFile("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
+			fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
 
 			username, password, err := platform.GetMonitCredentials()
 			assert.NoError(GinkgoT(), err)

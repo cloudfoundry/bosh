@@ -113,7 +113,7 @@ func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath stri
 		return
 	}
 
-	_, err = m.fs.WriteToFile(targetConfigPath, configContent)
+	err = m.fs.WriteFile(targetConfigPath, configContent)
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to job config file")
 	}

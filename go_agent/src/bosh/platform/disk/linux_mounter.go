@@ -165,7 +165,7 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (shouldMount
 }
 
 func (m linuxMounter) searchMounts(mountFieldsFunc func(string, string) (bool, error)) (found bool, err error) {
-	mountInfo, err := m.fs.ReadFile("/proc/mounts")
+	mountInfo, err := m.fs.ReadFileString("/proc/mounts")
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading /proc/mounts")
 		return

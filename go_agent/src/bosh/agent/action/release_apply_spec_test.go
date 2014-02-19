@@ -12,7 +12,7 @@ func init() {
 		It("run", func() {
 
 			platform := fakeplatform.NewFakePlatform()
-			_, err := platform.GetFs().WriteToFile("/var/vcap/micro/apply_spec.json", `{"json":["objects"]}`)
+			err := platform.GetFs().WriteFileString("/var/vcap/micro/apply_spec.json", `{"json":["objects"]}`)
 			assert.NoError(GinkgoT(), err)
 			action := NewReleaseApplySpec(platform)
 

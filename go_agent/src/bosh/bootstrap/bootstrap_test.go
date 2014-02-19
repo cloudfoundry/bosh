@@ -56,7 +56,7 @@ func init() {
 
 			assert.NotNil(GinkgoT(), settingsFileStat)
 			assert.Equal(GinkgoT(), settingsFileStat.FileType, fakesys.FakeFileTypeFile)
-			assert.Equal(GinkgoT(), settingsFileStat.Content, string(settingsJson))
+			assert.Equal(GinkgoT(), settingsFileStat.Content, settingsJson)
 			assert.Equal(GinkgoT(), settingsService.GetAgentId(), "123-456-789")
 		})
 		It("run does not fetch settings if they are on the disk", func() {
@@ -68,7 +68,7 @@ func init() {
 			fakeInfrastructure.Settings = infSettings
 
 			existingSettingsBytes, _ := json.Marshal(expectedSettings)
-			fakePlatform.GetFs().WriteToFile("/var/vcap/bosh/settings.json", string(existingSettingsBytes))
+			fakePlatform.GetFs().WriteFile("/var/vcap/bosh/settings.json", existingSettingsBytes)
 
 			boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 			settingsService, err := boot.Run()
@@ -78,7 +78,7 @@ func init() {
 
 			assert.NotNil(GinkgoT(), settingsFileStat)
 			assert.Equal(GinkgoT(), settingsFileStat.FileType, fakesys.FakeFileTypeFile)
-			assert.Equal(GinkgoT(), settingsFileStat.Content, string(existingSettingsBytes))
+			assert.Equal(GinkgoT(), settingsFileStat.Content, existingSettingsBytes)
 			assert.Equal(GinkgoT(), settingsService.GetAgentId(), "123-456-789")
 		})
 		It("run sets up hostname", func() {

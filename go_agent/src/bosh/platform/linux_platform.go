@@ -169,7 +169,7 @@ func (p linux) deleteUser(user string) (err error) {
 }
 
 func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []string, err error) {
-	passwd, err := p.fs.ReadFile("/etc/passwd")
+	passwd, err := p.fs.ReadFileString("/etc/passwd")
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading /etc/passwd")
 		return
@@ -199,7 +199,7 @@ func (p linux) SetupSsh(publicKey, username string) (err error) {
 	p.fs.Chown(sshPath, username)
 
 	authKeysPath := filepath.Join(sshPath, "authorized_keys")
-	_, err = p.fs.WriteToFile(authKeysPath, publicKey)
+	err = p.fs.WriteFileString(authKeysPath, publicKey)
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating authorized_keys file")
 		return
@@ -226,7 +226,7 @@ func (p linux) SetupHostname(hostname string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/hostname", hostname)
+	err = p.fs.WriteFileString("/etc/hostname", hostname)
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing /etc/hostname")
 		return
@@ -241,7 +241,7 @@ func (p linux) SetupHostname(hostname string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile("/etc/hosts", buffer.String())
+	err = p.fs.WriteFile("/etc/hosts", buffer.Bytes())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/hosts")
 	}
@@ -274,7 +274,7 @@ func (p linux) SetupLogrotate(groupName, basePath, size string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile(filepath.Join("/etc/logrotate.d", groupName), buffer.String())
+	err = p.fs.WriteFile(filepath.Join("/etc/logrotate.d", groupName), buffer.Bytes())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/logrotate.d")
 		return
@@ -302,7 +302,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 		return
 	}
 
-	_, err = p.fs.WriteToFile(serversFilePath, strings.Join(servers, " "))
+	err = p.fs.WriteFileString(serversFilePath, strings.Join(servers, " "))
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to %s", serversFilePath)
 		return
@@ -513,7 +513,7 @@ func (p linux) StartMonit() (err error) {
 func (p linux) SetupMonitUser() (err error) {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
 	if !p.fs.FileExists(monitUserFilePath) {
-		_, err = p.fs.WriteToFile(monitUserFilePath, "vcap:random-password")
+		err = p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
 		if err != nil {
 			err = bosherr.WrapError(err, "Writing monit user file")
 		}
@@ -523,7 +523,7 @@ func (p linux) SetupMonitUser() (err error) {
 
 func (p linux) GetMonitCredentials() (username, password string, err error) {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
-	credContent, err := p.fs.ReadFile(monitUserFilePath)
+	credContent, err := p.fs.ReadFileString(monitUserFilePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading monit user file")
 		return

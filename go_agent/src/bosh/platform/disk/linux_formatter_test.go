@@ -37,7 +37,7 @@ func init() {
 
 			fakeRunner := &fakesys.FakeCmdRunner{}
 			fakeFs := &fakesys.FakeFileSystem{}
-			fakeFs.WriteToFile("/sys/fs/ext4/features/lazy_itable_init", "")
+			fakeFs.WriteFile("/sys/fs/ext4/features/lazy_itable_init", []byte{})
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
