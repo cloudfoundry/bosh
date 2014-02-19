@@ -184,7 +184,7 @@ describe Bosh::Cli::Command::Errand do
       end
     end
 
-    context 'when user is not logged in'
+    it_requires_logged_in_user ->(command) { command.run_errand(nil) }
   end
 
   def expect_output(expected_output)
