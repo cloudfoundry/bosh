@@ -180,6 +180,7 @@ module Bosh::Director
   AgentJobNotStopped = err(400008)
   AgentUnexpectedDisk = err(400009)
   AgentDiskOutOfSync = err(400010)
+  AgentInvalidTaskResult = err(400011)
 
   CloudcheckTooManySimilarProblems = err(410001)
   CloudcheckResolutionNotProvided = err(410002)

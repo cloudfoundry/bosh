@@ -73,8 +73,9 @@ module Bosh::Director
       include_examples 'a long running message', :fetch_logs
       include_examples 'a long running message', :migrate_disk
       include_examples 'a long running message', :mount_disk
-      include_examples 'a long running message', :stop
       include_examples 'a long running message', :unmount_disk
+      include_examples 'a long running message', :stop
+      include_examples 'a long running message', :run_errand
     end
 
     describe 'ping <=> pong' do

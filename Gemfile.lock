@@ -52,6 +52,7 @@ PATH
       eventmachine (~> 0.12.9)
       fog (~> 1.14.0)
       httpclient (= 2.2.4)
+      membrane (~> 0.0.2)
       nats (~> 0.4.28)
       netaddr (~> 1.5.0)
       rack-test (~> 0.6.2)

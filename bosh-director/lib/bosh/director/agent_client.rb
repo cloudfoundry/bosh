@@ -76,6 +76,10 @@ module Bosh::Director
       send_long_running_message(:stop, *args)
     end
 
+    def run_errand(*args)
+      send_long_running_message(:run_errand, *args)
+    end
+
     def wait_until_ready(deadline = 600)
       old_timeout = @timeout
       @timeout = 1.0
