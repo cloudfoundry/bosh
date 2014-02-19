@@ -119,6 +119,7 @@ func init() {
 				diskManager,
 				diskWaitTimeout,
 				netManager,
+				1*time.Millisecond,
 			)
 		})
 

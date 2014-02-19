@@ -114,6 +114,7 @@ func init() {
 				diskManager,
 				1*time.Millisecond,
 				netManager,
+				1*time.Millisecond,
 			)
 		})
 

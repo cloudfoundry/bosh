@@ -51,6 +51,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		3*time.Minute,
 		centosNetManager,
+		500*time.Millisecond,
 	)
 
 	ubuntu := NewLinuxPlatform(
@@ -65,6 +66,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		3*time.Minute,
 		ubuntuNetManager,
+		500*time.Millisecond,
 	)
 
 	p.platforms = map[string]Platform{

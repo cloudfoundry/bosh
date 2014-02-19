@@ -24,17 +24,18 @@ import (
 )
 
 type linux struct {
-	fs              boshsys.FileSystem
-	cmdRunner       boshsys.CmdRunner
-	collector       boshstats.StatsCollector
-	compressor      boshcmd.Compressor
-	copier          boshcmd.Copier
-	dirProvider     boshdirs.DirectoriesProvider
-	vitalsService   boshvitals.Service
-	cdutil          boshcd.CdUtil
-	diskManager     boshdisk.Manager
-	diskWaitTimeout time.Duration
-	netManager      boshnet.NetManager
+	fs               boshsys.FileSystem
+	cmdRunner        boshsys.CmdRunner
+	collector        boshstats.StatsCollector
+	compressor       boshcmd.Compressor
+	copier           boshcmd.Copier
+	dirProvider      boshdirs.DirectoriesProvider
+	vitalsService    boshvitals.Service
+	cdutil           boshcd.CdUtil
+	diskManager      boshdisk.Manager
+	diskWaitTimeout  time.Duration
+	netManager       boshnet.NetManager
+	diskScanDuration time.Duration
 }
 
 func NewLinuxPlatform(
@@ -49,22 +50,26 @@ func NewLinuxPlatform(
 	diskManager boshdisk.Manager,
 	diskWaitTimeout time.Duration,
 	netManager boshnet.NetManager,
+	diskScanDuration time.Duration,
 ) (platform linux) {
 	platform = linux{
-		fs:              fs,
-		cmdRunner:       cmdRunner,
-		collector:       collector,
-		compressor:      compressor,
-		copier:          copier,
-		dirProvider:     dirProvider,
-		vitalsService:   vitalsService,
-		cdutil:          cdutil,
-		diskManager:     diskManager,
-		diskWaitTimeout: diskWaitTimeout,
-		netManager:      netManager,
+		fs:               fs,
+		cmdRunner:        cmdRunner,
+		collector:        collector,
+		compressor:       compressor,
+		copier:           copier,
+		dirProvider:      dirProvider,
+		vitalsService:    vitalsService,
+		cdutil:           cdutil,
+		diskManager:      diskManager,
+		diskWaitTimeout:  diskWaitTimeout,
+		netManager:       netManager,
+		diskScanDuration: diskScanDuration,
 	}
 	return
 }
+
+const MAX_SCAN_RETRIES = 30
 
 func (p linux) GetFs() (fs boshsys.FileSystem) {
 	return p.fs
@@ -493,7 +498,14 @@ func (p linux) LookupScsiDisk(scsiId string) (devicePath string, found bool) {
 
 	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/%s:0:%s:0/block/*", hostId, scsiId)
 
-	devicePaths, err = p.fs.Glob(deviceGlobPath)
+	for i := 0; i < MAX_SCAN_RETRIES; i++ {
+		devicePaths, err = p.fs.Glob(deviceGlobPath)
+		if err != nil || len(devicePaths) == 0 {
+			time.Sleep(p.diskScanDuration)
+			continue
+		}
+	}
+
 	if err != nil || len(devicePaths) == 0 {
 		return
 	}

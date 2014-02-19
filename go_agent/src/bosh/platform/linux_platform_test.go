@@ -30,6 +30,8 @@ var _ = Describe("LinuxPlatform", func() {
 			vitalsService boshvitals.Service
 		)
 
+		const sleepInterval = time.Millisecond * 5
+
 		BeforeEach(func() {
 			collector = &fakestats.FakeStatsCollector{}
 			fs = fakesys.NewFakeFileSystem()
@@ -67,6 +69,7 @@ var _ = Describe("LinuxPlatform", func() {
 				diskManager,
 				1*time.Millisecond,
 				netManager,
+				sleepInterval,
 			)
 		})
 
@@ -82,6 +85,56 @@ var _ = Describe("LinuxPlatform", func() {
 			devicePath, found := platform.LookupScsiDisk("fake-disk-id")
 			Expect(found).To(Equal(true))
 			Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
+		})
+
+		Context("when device does not immediately appear", func() {
+			It("retries detection of device", func() {
+				count, found_index := 0, 5
+				fs.SetGlob(func(pattern string) (matches []string, err error) {
+					if pattern == "/sys/bus/scsi/devices/*:0:0:0/block/*" {
+						matches = fs.GlobsMap[pattern]
+						return
+					}
+					if count >= found_index {
+						fs.SetGlob(nil)
+					}
+					count += 1
+					return
+				})
+
+				fs.GlobsMap = map[string][]string{
+					"/sys/bus/scsi/devices/*:0:0:0/block/*": []string{
+						"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
+						"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
+						"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
+					},
+					"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*": []string{
+						"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
+					},
+				}
+
+				startTime := time.Now()
+				devicePath, found := platform.LookupScsiDisk("fake-disk-id")
+				runningTime := time.Since(startTime)
+				Expect(found).To(Equal(true))
+				Expect(runningTime >= sleepInterval*5).To(BeTrue())
+				Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
+			})
+		})
+
+		Context("when device never appears", func() {
+			It("returns not found", func() {
+				fs.GlobsMap = map[string][]string{
+					"/sys/bus/scsi/devices/*:0:0:0/block/*": []string{
+						"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
+						"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
+						"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
+					},
+					"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*": []string{},
+				}
+				_, found := platform.LookupScsiDisk("fake-disk-id")
+				Expect(found).To(Equal(false))
+			})
 		})
 	})
 })

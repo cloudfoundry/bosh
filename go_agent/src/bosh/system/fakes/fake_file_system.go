@@ -46,6 +46,8 @@ type FakeFileSystem struct {
 	TempDirError error
 
 	GlobsMap map[string][]string
+
+	newGlob func(string) ([]string, error)
 }
 
 type FakeFileStats struct {
@@ -301,10 +303,19 @@ func (fs *FakeFileSystem) Open(path string) (file *os.File, err error) {
 }
 
 func (fs *FakeFileSystem) Glob(pattern string) (matches []string, err error) {
+	if fs.newGlob != nil {
+		return fs.newGlob(pattern)
+	}
+
 	matches, found := fs.GlobsMap[pattern]
 	if !found {
 		matches = []string{}
 	}
+	return
+}
+
+func (fs *FakeFileSystem) SetGlob(newGlob func(string) ([]string, error)) {
+	fs.newGlob = newGlob
 	return
 }
 
