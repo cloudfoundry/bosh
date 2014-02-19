@@ -6,13 +6,13 @@ require 'blobstore_client'
 module Bosh::Deployer
   class MicroboshJobInstance
 
-    def initialize(bosh_ip, mbus, logger)
+    def initialize(blobstore_ip, mbus, logger)
       @logger = logger
 
       uri = URI.parse(mbus)
       user, password = uri.userinfo.split(':', 2)
       uri.userinfo = ''
-      uri.host = bosh_ip
+      uri.host = blobstore_ip
       uri.path = '/blobs'
       @blobstore_options = {
         'endpoint' => uri.to_s,
