@@ -57,6 +57,8 @@ type FakePlatform struct {
 	NormalizeDiskPathFound    bool
 	NormalizeDiskPathRealPath string
 
+	ScsiDiskMap map[string]string
+
 	MigratePersistentDiskFromMountPoint string
 	MigratePersistentDiskToMountPoint   string
 
@@ -83,6 +85,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
+	platform.ScsiDiskMap = make(map[string]string)
 	return
 }
 
@@ -198,6 +201,11 @@ func (p *FakePlatform) NormalizeDiskPath(devicePath string) (realPath string, fo
 	p.NormalizeDiskPathPath = devicePath
 	realPath = p.NormalizeDiskPathRealPath
 	found = p.NormalizeDiskPathFound
+	return
+}
+
+func (p *FakePlatform) LookupScsiDisk(scsiId string) (devicePath string, found bool) {
+	devicePath, found = p.ScsiDiskMap[scsiId]
 	return
 }
 

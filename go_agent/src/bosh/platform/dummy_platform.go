@@ -125,8 +125,12 @@ func (p dummyPlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool
 	return
 }
 
-func (p dummyPlatform) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
-	return devicePath, true
+func (p dummyPlatform) NormalizeDiskPath(attachment string) (devicePath string, found bool) {
+	return "/dev/sdb", true
+}
+
+func (p dummyPlatform) LookupScsiDisk(scsiId string) (devicePath string, found bool) {
+	return "/dev/sdb", true
 }
 
 func (p dummyPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
