@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh_cli_plugin_aws'
   spec.add_dependency 'bundler'
 
-  spec.add_dependency('ruby_vcloud_sdk', '>=0.5.0')
+  spec.add_dependency('ruby_vcloud_sdk', '>=0.5.1')
 
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'

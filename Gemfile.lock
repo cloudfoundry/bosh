@@ -34,7 +34,7 @@ PATH
       bosh_common
       bundler
       peach
-      ruby_vcloud_sdk (>= 0.5.0)
+      ruby_vcloud_sdk (>= 0.5.1)
 
 PATH
   remote: bosh-director
@@ -366,14 +366,15 @@ GEM
       ruby-hmac (>= 0.4.0)
     ruby-hmac (0.4.0)
     ruby_gntp (0.3.4)
+    ruby_vcloud_sdk (0.5.1)
+      builder (~> 3.1.4)
+      httpclient (= 2.2.4)
+      netaddr
+      nokogiri (~> 1.5.6)
+      rest-client (~> 1.6.7)
     rufus-scheduler (2.0.22)
       tzinfo (>= 0.3.23)
     rugged (0.16.0)
-    ruby_vcloud_sdk (0.5.0)
-      builder (~> 3.1.4)
-      httpclient (= 2.2.4)
-      nokogiri (>= 1.5.6)
-      rest-client (~> 1.6.7)
     sequel (3.43.0)
     serverspec (0.13.7)
       highline
