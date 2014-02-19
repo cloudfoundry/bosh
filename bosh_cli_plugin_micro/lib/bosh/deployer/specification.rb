@@ -21,10 +21,9 @@ module Bosh::Deployer
     end
 
     # Update the spec with the IP of the micro bosh instance.
-    # @param [String] bosh_ip IP address of the micro bosh VM
-    # @param [String] service_ip private IP of the micro bosh VM on AWS/OS,
-    #   or the same as the bosh_ip if vSphere/vCloud
-    def update(bosh_ip, service_ip)
+    # @param [String] agent_services_ip IP address of the micro bosh VM
+    # @param [String] internal_services_ip private IP of the micro bosh VM
+    def update(agent_services_ip, internal_services_ip)
       # set the director name to what is specified in the micro_bosh.yml
       if Config.name
         @properties['director'] = {} unless @properties['director']
@@ -35,12 +34,11 @@ module Bosh::Deployer
       # as when the micro bosh instance is re-created during a deployment,
       # it might get a new private IP
       %w{blobstore nats}.each do |service|
-        update_agent_service_address(service, bosh_ip)
+        update_agent_service_address(service, agent_services_ip)
       end
 
-      services = %w{director redis blobstore nats registry dns}
-      services.each do |service|
-        update_service_address(service, service_ip)
+      %w{director redis blobstore nats registry dns}.each do |service|
+        update_service_address(service, internal_services_ip)
       end
 
       # health monitor does not listen to any ports, so there is no
