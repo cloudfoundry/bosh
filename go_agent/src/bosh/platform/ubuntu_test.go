@@ -93,8 +93,8 @@ func init() {
 
 		BeforeEach(func() {
 			collector = &fakestats.FakeStatsCollector{}
-			fs = &fakesys.FakeFileSystem{}
-			cmdRunner = &fakesys.FakeCmdRunner{}
+			fs = fakesys.NewFakeFileSystem()
+			cmdRunner = fakesys.NewFakeCmdRunner()
 			diskManager = fakedisk.NewFakeDiskManager(cmdRunner)
 			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 			diskWaitTimeout = 1 * time.Millisecond
@@ -305,7 +305,7 @@ foobar:...
 			}
 			fs.WriteFile("/sys/class/net/eth0", []byte{})
 			fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
-			fs.GlobPaths = []string{"/sys/class/net/eth0"}
+			fs.GlobsMap["/sys/class/net/*"] = []string{"/sys/class/net/eth0"}
 
 			platform.SetupManualNetworking(networks)
 
