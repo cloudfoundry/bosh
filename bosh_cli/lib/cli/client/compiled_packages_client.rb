@@ -24,6 +24,5 @@ module Bosh::Cli::Client
 
       @director.upload_and_track(:post, path, exported_tar_path, {content_type: 'application/x-compressed'})
     end
-
   end
 end

@@ -2,8 +2,8 @@ require 'json'
 require 'spec_helper'
 require 'cli/client/compiled_packages_client'
 
-describe  Bosh::Cli::Client::CompiledPackagesClient do
-  subject(:client) { described_class.new(director)}
+describe Bosh::Cli::Client::CompiledPackagesClient do
+  subject(:client) { described_class.new(director) }
   let(:director) { instance_double('Bosh::Cli::Client::Director') }
 
   describe '#export' do
@@ -34,9 +34,7 @@ describe  Bosh::Cli::Client::CompiledPackagesClient do
         :post,
         '/compiled_package_groups/import',
         '/exported/compiled/packages.tgz',
-        {
-          content_type: 'application/x-compressed'
-        },
+        { content_type: 'application/x-compressed' },
       )
     end
   end
