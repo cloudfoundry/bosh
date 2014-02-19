@@ -14,19 +14,25 @@ module Bosh::Cli::Command
     # bosh status
     usage "status"
     desc  "Show current status (current target, user, deployment info etc)"
+    option "--uuid", "Only print director UUID"
     def status
-      say("Config".make_green)
-      print_value("", config.filename)
-
-      nl
-      say("Director".make_green)
-      if target.nil?
-        say("  not set".make_yellow)
-      else
+      if options[:uuid]
         begin
-          timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
-            director = Bosh::Cli::Client::Director.new(target)
-            status = director.get_status
+          say(get_director_status["uuid"])
+        rescue => e
+          err("Error fetching director status: #{e.message}")
+        end
+      else
+        say("Config".make_green)
+        print_value("", config.filename)
+
+        nl
+        say("Director".make_green)
+        if target.nil?
+          say("  not set".make_yellow)
+        else
+          begin
+            status = get_director_status
 
             print_value("Name", status["name"])
             print_value("URL", target_url)
@@ -42,41 +48,41 @@ module Bosh::Cli::Command
               config.target_uuid = status["uuid"]
               config.save
             end
+          rescue TimeoutError
+            say("  timed out fetching director status".make_red)
+          rescue => e
+            say("  error fetching director status: #{e.message}".make_red)
           end
-        rescue TimeoutError
-          say("  timed out fetching director status".make_red)
-        rescue => e
-          say("  error fetching director status: #{e.message}".make_red)
         end
-      end
 
-      nl
-      say("Deployment".make_green)
-
-      if deployment
-        print_value("Manifest", deployment)
-      else
-        say("  not set".make_yellow)
-      end
-
-      if in_release_dir?
         nl
-        say("Release".make_green)
+        say("Deployment".make_green)
 
-        dev_version = Bosh::Cli::VersionsIndex.new(
-          File.join(work_dir, "dev_releases")).latest_version
+        if deployment
+          print_value("Manifest", deployment)
+        else
+          say("  not set".make_yellow)
+        end
 
-        final_version = Bosh::Cli::VersionsIndex.new(
-          File.join(work_dir, "releases")).latest_version
+        if in_release_dir?
+          nl
+          say("Release".make_green)
 
-        dev = release.dev_name
-        dev += "/#{dev_version}" if dev && dev_version
+          dev_version = Bosh::Cli::VersionsIndex.new(
+            File.join(work_dir, "dev_releases")).latest_version
 
-        final = release.final_name
-        final += "/#{final_version}" if final && final_version
+          final_version = Bosh::Cli::VersionsIndex.new(
+            File.join(work_dir, "releases")).latest_version
 
-        print_value("dev", dev)
-        print_value("final", final)
+          dev = release.dev_name
+          dev += "/#{dev_version}" if dev && dev_version
+
+          final = release.final_name
+          final += "/#{final_version}" if final && final_version
+
+          print_value("dev", dev)
+          print_value("final", final)
+        end
       end
     end
 
@@ -347,6 +353,12 @@ module Bosh::Cli::Command
       end
 
       "(#{result.join(", ")})"
+    end
+
+    def get_director_status
+      timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
+        Bosh::Cli::Client::Director.new(target).get_status
+      end
     end
   end
 end

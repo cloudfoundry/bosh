@@ -120,6 +120,36 @@ describe Bosh::Cli::Command::Misc do
 
       command.status
     end
+
+    context '--uuid option is passed' do
+      context 'can get status from director' do
+        it 'prints only the director uuid' do
+          command.add_option(:config, @config_file)
+          command.add_option(:uuid, true)
+          command.stub(:target).and_return(target)
+
+          director.stub(:get_status).and_return({ 'uuid' => uuid })
+
+          command.should_receive(:say).with(/#{uuid}/)
+
+          command.status
+        end
+      end
+
+      context 'fails to get director status' do
+        it 'returns non-zero status' do
+          command.add_option(:config, @config_file)
+          command.add_option(:uuid, true)
+          command.stub(:target).and_return(target)
+
+          director.stub(:get_status).and_raise(Timeout::Error)
+
+          command.should_receive(:err).with(/Error fetching director status:/)
+
+          command.status
+        end
+      end
+    end
   end
 
   describe '#target' do

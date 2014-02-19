@@ -133,4 +133,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       Cannot log in as `jane'
     OUT
   end
+
+  it 'returns just uuid when `status --uuid` is called' do
+    run_bosh("target http://localhost:#{current_sandbox.director_port}")
+    expect_output('status --uuid', <<-OUT)
+#{Bosh::Dev::Sandbox::Main::DIRECTOR_UUID}
+    OUT
+  end
 end
