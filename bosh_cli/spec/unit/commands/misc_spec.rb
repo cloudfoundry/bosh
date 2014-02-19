@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 
-require "spec_helper"
+require 'spec_helper'
 
 describe Bosh::Cli::Command::Misc do
   include FakeFS::SpecHelpers
@@ -10,6 +10,7 @@ describe Bosh::Cli::Command::Misc do
   let(:versions_index) { double(Bosh::Cli::VersionsIndex) }
   let(:release) { double(Bosh::Cli::Release) }
   let(:target) { 'https://127.0.0.1:2555' }
+  let(:target_name) { 'micro-fake-bosh' }
   let(:uuid) { SecureRandom.uuid }
 
   before do
@@ -19,7 +20,7 @@ describe Bosh::Cli::Command::Misc do
   end
 
   before do
-    @config_file = File.join(Dir.mktmpdir, "bosh_config")
+    @config_file = File.join(Dir.mktmpdir, 'bosh_config')
   end
 
   describe 'status' do
@@ -30,7 +31,7 @@ describe Bosh::Cli::Command::Misc do
       command.stub(:deployment).and_return('deployment-file')
       command.stub(:in_release_dir?).and_return(true)
 
-      director.should_receive(:get_status).and_return({'name' => 'bosh-director',
+      director.should_receive(:get_status).and_return({'name' => target_name,
                                                        'version' => 'v.m (release:rrrrrrrr bosh:bbbbbbbb)',
                                                        'uuid' => uuid,
                                                        'cpi' => 'dummy'})
@@ -45,7 +46,7 @@ describe Bosh::Cli::Command::Misc do
 
       command.should_receive(:say).with("\n")
       command.should_receive(:say).with('Director')
-      command.should_receive(:say).with(/bosh-director/)
+      command.should_receive(:say).with(/#{target_name}/)
       command.should_receive(:say).with(/#{target}/)
       command.should_receive(:say).with(/v\.m \(release:rrrrrrrr bosh:bbbbbbbb\)/)
       command.should_receive(:say).with(/User/)
@@ -154,10 +155,6 @@ describe Bosh::Cli::Command::Misc do
 
   describe '#target' do
     context 'target is set' do
-      let(:target) { "https://fake.bosh.director:25555" }
-      let(:target_name) { "micro-fake-bosh" }
-      let(:uuid) { SecureRandom.uuid }
-
       before do
         File.open(@config_file, 'w+') do |f|
           f.write(<<EOS)
@@ -202,7 +199,7 @@ EOS
     context 'target is not set' do
       it 'errors' do
         command.add_option(:config, @config_file)
-        command.should_receive(:err).with("Target not set")
+        command.should_receive(:err).with('Target not set')
         command.set_target
       end
     end
