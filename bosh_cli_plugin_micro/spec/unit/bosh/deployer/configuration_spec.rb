@@ -1,0 +1,109 @@
+require 'spec_helper'
+
+module Bosh::Deployer
+  describe Configuration do
+    let(:configuration_hash) do
+      Psych.load_file(spec_asset('test-bootstrap-config.yml')).merge('dir' => dir)
+    end
+    let(:dir) { Dir.mktmpdir('bdc_spec') }
+
+    subject(:config) { described_class.new }
+
+    context 'when configuring with a basic configuration hash' do
+      before do
+        config.configure(configuration_hash)
+      end
+
+      after { FileUtils.remove_entry_secure(dir) }
+
+      it 'should default agent properties' do
+        properties = config.cloud_options['properties']
+        properties['agent'].should be_kind_of(Hash)
+        properties['agent']['mbus'].start_with?('https://').should be(true)
+        properties['agent']['blobstore'].should be_kind_of(Hash)
+      end
+
+      it 'should default vm env properties' do
+        env = config.env
+        env.should be_kind_of(Hash)
+        env.should have_key('bosh')
+        env['bosh'].should be_kind_of(Hash)
+        env['bosh']['password'].should be_nil
+      end
+
+      it 'should contain default vm resource properties' do
+        resources = config.resources
+        resources.should be_kind_of(Hash)
+
+        resources['persistent_disk'].should be_kind_of(Integer)
+
+        cloud_properties = resources['cloud_properties']
+        cloud_properties.should be_kind_of(Hash)
+
+        %w(ram disk cpu).each do |key|
+          cloud_properties[key].should_not be_nil
+          cloud_properties[key].should be > 0
+        end
+      end
+
+      it 'should configure agent using mbus property' do
+        config.agent.should be_kind_of(Bosh::Agent::HTTPClient)
+      end
+
+      it 'stores the bosh_ip' do
+        expect(config.bosh_ip).to eq('172.23.194.100')
+      end
+
+      describe '.networks' do
+        it 'should map network properties to the bosh network' do
+          networks = config.networks
+          net = networks['bosh']
+          net.should be_kind_of(Hash)
+          expect(net['default']).to match_array(%w(dns gateway))
+          %w(cloud_properties netmask gateway ip dns type).each do |key|
+            net[key].should eq(configuration_hash['network'][key])
+          end
+        end
+      end
+    end
+
+    context 'when a vip is specified' do
+      before do
+        configuration_hash['network']['vip'] = '192.168.1.1'
+        config.configure(configuration_hash)
+      end
+
+      it 'includes the default bosh network and a vip network' do
+        networks = config.networks
+        expect(networks['bosh']['default']).to match_array(%w(dns gateway))
+        %w(cloud_properties netmask gateway ip dns type).each do |key|
+          networks['bosh'][key].should eq(configuration_hash['network'][key])
+        end
+
+        vip_hash = { 'vip' => { 'ip' => '192.168.1.1', 'type' => 'vip', 'cloud_properties' => {} } }
+        expect(networks).to include(vip_hash)
+      end
+    end
+
+    describe '#cloud' do
+      before do
+        allow(InfrastructureDefaults).to receive(:merge_for).and_return(configuration_hash)
+        defaults = {
+          'logging' => { 'level' => 'INFO' },
+          'apply_spec' => { 'properties' => {}, 'agent' => {} },
+        }
+        configuration_hash.merge!(defaults)
+        config.configure(configuration_hash)
+      end
+
+      it 'creates a cloud provider with the merged cloud properties' do
+        expected_cloud_properties = configuration_hash['cloud']['properties']
+        expect(Bosh::Clouds::Provider).to receive(:create)
+                                          .with('vsphere', expected_cloud_properties)
+                                          .once.and_return(:cloud)
+        config.cloud
+        expect(config.cloud).to eq(:cloud)
+      end
+    end
+  end
+end

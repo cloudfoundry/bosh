@@ -1,4 +1,5 @@
 require 'bosh/deployer/models/instance'
+require 'bosh/deployer/infrastructure_defaults'
 
 module Bosh::Deployer
   class Configuration
@@ -10,8 +11,7 @@ module Bosh::Deployer
     # rubocop:disable MethodLength
     def configure(config)
       plugin = config['cloud']['plugin']
-
-      config = deep_merge(load_defaults(plugin), config)
+      config = InfrastructureDefaults.merge_for(plugin, config)
 
       @base_dir = config['dir']
       FileUtils.mkdir_p(@base_dir)
@@ -131,25 +131,6 @@ module Bosh::Deployer
         Sequel.extension :migration
         Sequel::TimestampMigrator.new(@db, migrations, table: "#{cpi}_cpi_schema").run
       end
-    end
-
-    def deep_merge(src, dst)
-      src.merge(dst) do |key, old, new|
-        if new.respond_to?(:blank) && new.blank?
-          old
-        elsif old.kind_of?(Hash) && new.kind_of?(Hash)
-          deep_merge(old, new)
-        elsif old.kind_of?(Array) && new.kind_of?(Array)
-          old.concat(new).uniq
-        else
-          new
-        end
-      end
-    end
-
-    def load_defaults(provider)
-      file = File.expand_path("../../../../config/#{provider}_defaults.yml", __FILE__)
-      Psych.load_file(file)
     end
   end
 end
