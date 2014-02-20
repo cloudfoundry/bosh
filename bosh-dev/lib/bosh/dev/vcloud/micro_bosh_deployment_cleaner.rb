@@ -38,14 +38,12 @@ module Bosh::Dev::VCloud
     end
 
     def delete_vapp
-      begin
-        vapp = @vdc.find_vapp_by_name @env['BOSH_VCLOUD_VAPP_NAME']
-        vapp.power_off
-        vapp.delete
-        @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up. ")
-      rescue VCloudSdk::ObjectNotFoundError => e
-        @logger.info("No vapp was deleted during clean up. Details: #{e}")
-      end
+      vapp = @vdc.find_vapp_by_name @env['BOSH_VCLOUD_VAPP_NAME']
+      vapp.power_off
+      vapp.delete
+      @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up. ")
+    rescue VCloudSdk::ObjectNotFoundError => e
+      @logger.info("No vapp was deleted during clean up. Details: #{e}")
     end
 
     def clear_catalogs

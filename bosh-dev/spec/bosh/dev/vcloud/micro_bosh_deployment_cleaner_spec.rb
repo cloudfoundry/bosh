@@ -27,7 +27,7 @@ module Bosh::Dev::VCloud
       let(:config) do
         { 'cloud' => {
             'properties' => {
-              'vcds' => [ {
+              'vcds' => [{
                 'url' => 'fake-url',
                 'user' => 'user',
                 'password' => 'password',
@@ -35,7 +35,7 @@ module Bosh::Dev::VCloud
                   'organization' => 'fake-org',
                   'virtual_datacenter' => 'fake-vdc'
                 }
-              } ]
+              }]
             }
         } }
       end
@@ -43,8 +43,8 @@ module Bosh::Dev::VCloud
       before { Logger.stub(new: logger) }
       let(:logger) { instance_double('Logger', info: nil) }
 
-      context "when vapp exists" do
-        it "powers off and deletes the vapp" do
+      context 'when vapp exists' do
+        it 'powers off and deletes the vapp' do
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_return(vapp)
 
           vapp.should_receive(:power_off).once.ordered
@@ -54,60 +54,60 @@ module Bosh::Dev::VCloud
         end
       end
 
-      context "when vapp doesn't exist" do
-        it "doesn't delete anything" do
+      context 'when vapp does not exist' do
+        it 'does not delete anything' do
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_raise(VCloudSdk::ObjectNotFoundError)
-          logger.should_receive(:info).with("No vapp was deleted during clean up. Details: VCloudSdk::ObjectNotFoundError")
+          logger.should_receive(:info).with('No vapp was deleted during clean up. Details: VCloudSdk::ObjectNotFoundError')
 
           subject.clean
         end
       end
 
-      context "when catalog exists" do
-        it "deletes the vapp catalog and media catalog" do
-          client.should_receive(:catalog_exists?).with("vapp-catalog").ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with("vapp-catalog").ordered.and_return(catalog)
+      context 'when catalog exists' do
+        it 'deletes the vapp catalog and media catalog' do
+          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(true)
+          client.should_receive(:find_catalog_by_name).with('vapp-catalog').ordered.and_return(catalog)
           catalog.should_receive(:delete_all_items).ordered
 
-          client.should_receive(:catalog_exists?).with("media-catalog").ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with("media-catalog").ordered.and_return(catalog)
+          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(true)
+          client.should_receive(:find_catalog_by_name).with('media-catalog').ordered.and_return(catalog)
           catalog.should_receive(:delete_all_items).ordered
 
           subject.clean
         end
       end
 
-      context "when one catalog doesn't exist" do
-        it "deletes the media catalog only" do
-          client.should_receive(:catalog_exists?).with("vapp-catalog").ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with("vapp-catalog")
+      context 'when one catalog does not exist' do
+        it 'deletes the media catalog only' do
+          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(false)
+          client.should_not_receive(:find_catalog_by_name).with('vapp-catalog')
 
-          client.should_receive(:catalog_exists?).with("media-catalog").ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with("media-catalog").ordered.and_return(catalog)
+          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(true)
+          client.should_receive(:find_catalog_by_name).with('media-catalog').ordered.and_return(catalog)
           catalog.should_receive(:delete_all_items).ordered
 
           subject.clean
         end
 
-        it "deletes the vapp catalog only" do
-          client.should_receive(:catalog_exists?).with("vapp-catalog").ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with("vapp-catalog").ordered.and_return(catalog)
+        it 'deletes the vapp catalog only' do
+          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(true)
+          client.should_receive(:find_catalog_by_name).with('vapp-catalog').ordered.and_return(catalog)
           catalog.should_receive(:delete_all_items).ordered
 
-          client.should_receive(:catalog_exists?).with("media-catalog").ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with("media-catalog")
+          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(false)
+          client.should_not_receive(:find_catalog_by_name).with('media-catalog')
 
           subject.clean
         end
       end
 
-      context "when neither vapp nor media catalog exists" do
-        it "deletes the media catalog only" do
-          client.should_receive(:catalog_exists?).with("vapp-catalog").ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with("vapp-catalog")
+      context 'when neither vapp nor media catalog exists' do
+        it 'deletes the media catalog only' do
+          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(false)
+          client.should_not_receive(:find_catalog_by_name).with('vapp-catalog')
 
-          client.should_receive(:catalog_exists?).with("media-catalog").ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with("media-catalog")
+          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(false)
+          client.should_not_receive(:find_catalog_by_name).with('media-catalog')
 
           subject.clean
         end
