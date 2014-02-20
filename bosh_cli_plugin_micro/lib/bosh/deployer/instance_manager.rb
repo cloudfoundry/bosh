@@ -48,7 +48,7 @@ module Bosh::Deployer
       @config = Config
 
       plugin_class = InstanceManager.const_get(plugin_name.capitalize)
-      @infrastructure = plugin_class.new(self, logger)
+      @infrastructure = plugin_class.new(self, @config, logger)
 
       @deployments_state = DeploymentsState.load_from_dir(config['dir'], logger)
       load_state(config['name'])

@@ -5,10 +5,11 @@ require 'bosh/deployer/ssh_server'
 module Bosh::Deployer
   class InstanceManager
     class Aws
-      def initialize(instance_manager, logger)
+      def initialize(instance_manager, config, logger)
         @instance_manager = instance_manager
         @logger = logger
-        properties = Config.cloud_options['properties']
+        @config = config
+        properties = config.cloud_options['properties']
 
         @registry = Registry.new(
           properties['registry']['endpoint'],
@@ -40,11 +41,11 @@ module Bosh::Deployer
         # and if it doesn't exist, use the bosh deployer
         # aws properties (cloud.properties.aws)
         properties['aws'] =
-          Config.spec_properties['aws'] ||
-          Config.cloud_options['properties']['aws'].dup
+          config.spec_properties['aws'] ||
+            config.cloud_options['properties']['aws'].dup
 
-        properties['aws']['registry'] = Config.cloud_options['properties']['registry']
-        properties['aws']['stemcell'] = Config.cloud_options['properties']['stemcell']
+        properties['aws']['registry'] = config.cloud_options['properties']['registry']
+        properties['aws']['stemcell'] = config.cloud_options['properties']['stemcell']
 
         spec.delete('networks')
       end
@@ -98,13 +99,13 @@ module Bosh::Deployer
         # is a risk of conversion errors which lead to an unnecessary
         # disk migration, so we need to do a double conversion
         # here to avoid that
-        requested = (Config.resources['persistent_disk'] / 1024.0).ceil * 1024
+        requested = (config.resources['persistent_disk'] / 1024.0).ceil * 1024
         requested != disk_size(instance_manager.state.disk_cid)
       end
 
       private
 
-      attr_reader :registry, :instance_manager, :logger
+      attr_reader :registry, :instance_manager, :logger, :config
 
       def ssh_properties(properties)
         ssh_user = properties['aws']['ssh_user']
