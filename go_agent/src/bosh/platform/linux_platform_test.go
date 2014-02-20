@@ -42,16 +42,13 @@ var _ = Describe("LinuxPlatform", func() {
 			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 			copier = boshcmd.NewCpCopier(cmdRunner, fs)
 			vitalsService = boshvitals.NewService(collector, dirProvider)
-			fs.GlobsMap = map[string][]string{
-				"/sys/bus/scsi/devices/*:0:0:0/block/*": []string{
-					"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
-					"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
-					"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
-				},
-				"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*": []string{
-					"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
-				},
-			}
+			fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
+				"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
+				"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
+				"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
+			})
+			fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",
+				[]string{"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"})
 		})
 
 		JustBeforeEach(func() {
@@ -89,29 +86,14 @@ var _ = Describe("LinuxPlatform", func() {
 
 		Context("when device does not immediately appear", func() {
 			It("retries detection of device", func() {
-				count, found_index := 0, 5
-				fs.SetGlob(func(pattern string) (matches []string, err error) {
-					if pattern == "/sys/bus/scsi/devices/*:0:0:0/block/*" {
-						matches = fs.GlobsMap[pattern]
-						return
-					}
-					if count >= found_index {
-						fs.SetGlob(nil)
-					}
-					count += 1
-					return
-				})
-
-				fs.GlobsMap = map[string][]string{
-					"/sys/bus/scsi/devices/*:0:0:0/block/*": []string{
-						"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
-						"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
-						"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
-					},
-					"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*": []string{
-						"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
-					},
-				}
+				fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",
+					[]string{},
+					[]string{},
+					[]string{},
+					[]string{},
+					[]string{},
+					[]string{"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"},
+				)
 
 				startTime := time.Now()
 				devicePath, found := platform.LookupScsiDisk("fake-disk-id")
@@ -124,14 +106,7 @@ var _ = Describe("LinuxPlatform", func() {
 
 		Context("when device never appears", func() {
 			It("returns not found", func() {
-				fs.GlobsMap = map[string][]string{
-					"/sys/bus/scsi/devices/*:0:0:0/block/*": []string{
-						"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
-						"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
-						"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
-					},
-					"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*": []string{},
-				}
+				fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{})
 				_, found := platform.LookupScsiDisk("fake-disk-id")
 				Expect(found).To(Equal(false))
 			})

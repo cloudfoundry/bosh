@@ -206,7 +206,7 @@ func init() {
 				fs.WriteFile("fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
 			}
 
-			fs.GlobsMap["fake-install-dir/bin/*"] = []string{"fake-install-dir/bin/test1", "fake-install-dir/bin/test2"}
+			fs.SetGlob("fake-install-dir/bin/*", []string{"fake-install-dir/bin/test1", "fake-install-dir/bin/test2"})
 
 			err := applier.Apply(job)
 			assert.NoError(GinkgoT(), err)
@@ -247,7 +247,7 @@ func init() {
 
 			fs := fakesys.NewFakeFileSystem()
 			fs.WriteFileString("/path/to/job/monit", "some conf")
-			fs.GlobsMap["/path/to/job/*.monit"] = []string{"/path/to/job/subjob.monit"}
+			fs.SetGlob("/path/to/job/*.monit", []string{"/path/to/job/subjob.monit"})
 
 			bundle.GetDirPath = "/path/to/job"
 			bundle.GetDirFs = fs
