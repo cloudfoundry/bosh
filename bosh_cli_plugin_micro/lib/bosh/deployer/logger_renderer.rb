@@ -2,7 +2,8 @@ module Bosh::Deployer
   class LoggerRenderer
     attr_accessor :stage, :total, :index
 
-    def initialize
+    def initialize(logger)
+      @logger = logger
       enter_stage('Deployer', 0)
     end
 
@@ -13,8 +14,12 @@ module Bosh::Deployer
     end
 
     def update(state, task)
-      Config.logger.info("#{@stage} - #{state} #{task}")
+      logger.info("#{@stage} - #{state} #{task}")
       @index += 1 if state == :finished
     end
+
+    private
+
+    attr_reader :logger
   end
 end

@@ -57,7 +57,7 @@ module Bosh::Deployer
 
       @config_sha1 = config_sha1
       @ui_messager = ui_messager
-      @renderer = LoggerRenderer.new
+      @renderer = LoggerRenderer.new(logger)
     end
 
     def_delegators(
