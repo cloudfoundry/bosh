@@ -56,10 +56,11 @@ describe Bosh::Deployer::Specification do
   end
 
   context 'when the services are included in the apply_spec' do
-    let(:services) { %w{director redis blobstore nats registry dns} }
+    let(:agent_services) { %w{registry dns} }
+    let(:internal_services) { %w{director redis blobstore nats} }
 
     before do
-      services.each do |service|
+      (agent_services + internal_services).each do |service|
         spec_hash['properties'][service] ||= {}
       end
     end
@@ -67,7 +68,10 @@ describe Bosh::Deployer::Specification do
     it 'updates the service addresses to the internal services ip' do
       spec.update('1.1.1.1', '2.2.2.2')
 
-      services.each do |service|
+      agent_services.each do |service|
+        expect(spec.properties[service]['address']).to eq '1.1.1.1'
+      end
+      internal_services.each do |service|
         expect(spec.properties[service]['address']).to eq '2.2.2.2'
       end
     end
