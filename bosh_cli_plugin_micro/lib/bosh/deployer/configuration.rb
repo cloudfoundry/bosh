@@ -1,3 +1,5 @@
+require 'bosh/deployer/models/instance'
+
 module Bosh::Deployer
   class Configuration
     attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
@@ -48,8 +50,7 @@ module Bosh::Deployer
       Sequel::Model.plugin :validation_helpers
 
       Bosh::Clouds::Config.configure(self)
-
-      require 'bosh/deployer/models/instance'
+      Models.define_instance_from_table(db[:instances])
 
       @cloud_options['properties']['agent']['mbus'] ||=
         'https://vcap:b00tstrap@0.0.0.0:6868'
