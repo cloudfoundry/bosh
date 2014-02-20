@@ -38,6 +38,11 @@ module Bosh::OpenStackCloud
       @state_timeout = @openstack_properties["state_timeout"]
       @stemcell_public_visibility = @openstack_properties["stemcell_public_visibility"]
 
+      # If the wait_resource sleep time is overridden in the Openstack BOSH manifest properties
+      if @openstack_properties["wait_resource_poll_interval"]
+      @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
+      end
+
       unless @openstack_properties["auth_url"].match(/\/tokens$/)
         @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"
       end

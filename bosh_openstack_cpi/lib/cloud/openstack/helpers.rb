@@ -119,7 +119,9 @@ module Bosh::OpenStackCloud
 
         break if target_state.include?(state)
 
-        sleep(1)
+        # Enforcing the original defaults, sleep time is 1 if wait_resource_poll_interval was not set as
+        sleep(@wait_resource_poll_interval || 1)
+        
       end
 
       if @logger
