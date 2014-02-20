@@ -67,6 +67,23 @@ module Bosh::Deployer
       end
     end
 
+    context 'when a deployment network is specified' do
+      before do
+        configuration_hash.merge!('deployment_network' => 'deployment network')
+        config.configure(configuration_hash)
+      end
+
+      it 'includes the default bosh network and the deployment network' do
+        networks = config.networks
+        expect(networks['bosh']['default']).to match_array(%w(dns gateway))
+        %w(cloud_properties netmask gateway ip dns type).each do |key|
+          networks['bosh'][key].should eq(configuration_hash['network'][key])
+        end
+
+        expect(networks).to include('deployment' => 'deployment network')
+      end
+    end
+
     context 'when a vip is specified' do
       before do
         configuration_hash['network']['vip'] = '192.168.1.1'

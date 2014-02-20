@@ -22,6 +22,7 @@ module Bosh::Deployer
       @bosh_ip = @net_conf['ip']
       @resources = config['resources']
       @env = config['env']
+      @deployment_network = config['deployment_network']
 
       @logger = Logger.new(config['logging']['file'] || STDOUT)
       @logger.level = Logger.const_get(config['logging']['level'].upcase)
@@ -88,9 +89,7 @@ module Bosh::Deployer
     end
 
     def networks
-      return @networks if @networks
-
-      @networks = {
+      @networks ||= {
         'bosh' => {
           'cloud_properties' => @net_conf['cloud_properties'],
           'netmask' => @net_conf['netmask'],
@@ -100,16 +99,7 @@ module Bosh::Deployer
           'type' => @net_conf['type'],
           'default' => %w(dns gateway)
         }
-      }
-      if @net_conf['vip']
-        @networks['vip'] = {
-          'ip' => @net_conf['vip'],
-          'type' => 'vip',
-          'cloud_properties' => {}
-        }
-      end
-
-      @networks
+      }.merge(vip_network).merge(deployment_network)
     end
 
     def task_checkpoint
@@ -120,6 +110,24 @@ module Bosh::Deployer
     end
 
     private
+
+    def vip_network
+      return {} unless @net_conf['vip']
+      {
+        'vip' => {
+          'ip' => @net_conf['vip'],
+          'type' => 'vip',
+          'cloud_properties' => {}
+        }
+      }
+    end
+
+    def deployment_network
+      return {} unless @deployment_network
+      {
+        'deployment' => @deployment_network
+      }
+    end
 
     def migrate_cpi
       cpi = @cloud_options['plugin']
