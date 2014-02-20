@@ -3,6 +3,8 @@ module Bosh::Deployer
     attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
                   :spec_properties, :agent_properties, :bosh_ip, :env, :name, :net_conf
 
+    attr_reader :base_dir
+
     # rubocop:disable MethodLength
     def configure(config)
       plugin = config['cloud']['plugin']
@@ -55,6 +57,8 @@ module Bosh::Deployer
       @disk_model = nil
       @cloud = nil
       @networks = nil
+
+      self
     end
     # rubocop:enable MethodLength
 

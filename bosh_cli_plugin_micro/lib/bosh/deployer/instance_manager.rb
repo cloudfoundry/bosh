@@ -40,20 +40,19 @@ module Bosh::Deployer
       config_sha1 = Bosh::Deployer::HashFingerprinter.new.sha1(config)
       ui_messager = Bosh::Deployer::UiMessager.for_deployer
 
-      new(config, config_sha1, ui_messager, plugin_name)
+      new(Config.configure(config), config_sha1, ui_messager, plugin_name)
     end
 
     def initialize(config, config_sha1, ui_messager, plugin_name)
-      Config.configure(config)
-      @config = Config
+      @config = config
 
       plugin_class = InstanceManager.const_get(plugin_name.capitalize)
-      @infrastructure = plugin_class.new(self, @config, logger)
+      @infrastructure = plugin_class.new(self, config, logger)
 
-      @deployments_state = DeploymentsState.load_from_dir(config['dir'], logger)
-      load_state(config['name'])
+      @deployments_state = DeploymentsState.load_from_dir(config.base_dir, logger)
+      load_state(config.name)
 
-      Config.uuid = state.uuid
+      config.uuid = state.uuid
 
       @config_sha1 = config_sha1
       @ui_messager = ui_messager
@@ -226,7 +225,7 @@ module Bosh::Deployer
         properties = load_stemcell_manifest(stemcell)
 
         # override with values from the deployment manifest
-        override = Config.cloud_options['properties']['stemcell']
+        override = config.cloud_options['properties']['stemcell']
         properties['cloud_properties'].merge!(override) if override
 
         step 'Uploading stemcell' do
@@ -242,9 +241,9 @@ module Bosh::Deployer
     # rubocop:enable MethodLength
 
     def create_vm(stemcell_cid)
-      resources = Config.resources['cloud_properties']
-      networks = Config.networks
-      env = Config.env
+      resources = config.resources['cloud_properties']
+      networks = config.networks
+      env = config.env
       cloud.create_vm(state.uuid, stemcell_cid, resources, networks, nil, env)
     end
 
@@ -283,7 +282,7 @@ module Bosh::Deployer
 
     def create_disk
       step 'Create disk' do
-        size = Config.resources['persistent_disk']
+        size = config.resources['persistent_disk']
         state.disk_cid = cloud.create_disk(size, state.vm_cid)
         save_state
       end
@@ -353,7 +352,7 @@ module Bosh::Deployer
         create_disk
         attach_disk(state.disk_cid, true)
       elsif infrastructure.persistent_disk_changed?
-        size = Config.resources['persistent_disk']
+        size = config.resources['persistent_disk']
 
         # save a reference to the old disk
         old_disk_cid = state.disk_cid
@@ -386,7 +385,7 @@ module Bosh::Deployer
         # then update spec with generic changes
         spec = spec.update(bosh_ip, infrastructure.service_ip)
 
-        microbosh_job_instance = MicroboshJobInstance.new(bosh_ip, Config.agent_url, logger)
+        microbosh_job_instance = MicroboshJobInstance.new(bosh_ip, config.agent_url, logger)
         spec = microbosh_job_instance.render_templates(spec)
 
         agent.run_task(:apply, spec)
@@ -433,7 +432,7 @@ module Bosh::Deployer
     end
 
     def agent_port
-      URI.parse(Config.cloud_options['properties']['agent']['mbus']).port
+      URI.parse(config.cloud_options['properties']['agent']['mbus']).port
     end
 
     def wait_until_agent_ready

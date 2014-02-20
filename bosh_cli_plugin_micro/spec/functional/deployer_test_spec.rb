@@ -22,7 +22,7 @@ describe Bosh::Deployer do
 
     messager = Bosh::Deployer::UiMessager.for_deployer
     @deployer = Bosh::Deployer::InstanceManager.new(
-      config, 'fake-config-sha1', messager, 'fake-plugin')
+      Bosh::Deployer::Config.configure(config), 'fake-config-sha1', messager, 'fake-plugin')
   end
 
   describe 'vSphere' do

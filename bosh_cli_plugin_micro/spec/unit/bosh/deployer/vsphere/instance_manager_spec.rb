@@ -8,12 +8,13 @@ module Bosh
     describe InstanceManager do
       subject(:deployer) { InstanceManager.new(config, 'fake-config-sha1', ui_messager, 'vsphere') }
       let(:ui_messager) { UiMessager.for_deployer }
+
       let(:config) do
         config = Psych.load_file(spec_asset('test-bootstrap-config.yml'))
         config['dir'] = dir
         config['name'] = 'spec-my-awesome-spec'
         config['logging'] = { 'file' => "#{dir}/bmim.log" }
-        config
+        Config.configure(config)
       end
 
       let(:dir) { Dir.mktmpdir('bdim_spec') }
@@ -24,9 +25,9 @@ module Bosh
 
       before do
         Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
-        Config.stub(cloud: cloud)
-        Config.stub(agent: agent)
-        Config.stub(agent_properties: {})
+        config.stub(cloud: cloud)
+        config.stub(agent: agent)
+        config.stub(agent_properties: {})
         SecureRandom.stub(uuid: 'deadbeef')
 
         allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
@@ -44,7 +45,7 @@ module Bosh
       end
 
       def load_deployment
-        deployments = DeploymentsState.load_from_dir(config['dir'], logger)
+        deployments = DeploymentsState.load_from_dir(config.base_dir, logger)
         instances = deployments.deployments['instances']
         instances.detect { |d| d[:name] == deployer.state.name }
       end
