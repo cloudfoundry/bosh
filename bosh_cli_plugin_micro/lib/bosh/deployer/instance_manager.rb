@@ -144,7 +144,7 @@ module Bosh::Deployer
 
       unless @apply_spec
         step 'Fetching apply spec' do
-          @apply_spec = Specification.new(agent.release_apply_spec)
+          @apply_spec = Specification.new(agent.release_apply_spec, config)
         end
       end
 
@@ -220,7 +220,7 @@ module Bosh::Deployer
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
-        @apply_spec = Specification.load_from_stemcell(stemcell)
+        @apply_spec = Specification.load_from_stemcell(stemcell, config)
 
         # load properties from stemcell manifest
         properties = load_stemcell_manifest(stemcell)
@@ -400,6 +400,8 @@ module Bosh::Deployer
     end
 
     private
+
+    attr_reader :config
 
     def agent_stop
       step 'Stopping agent services' do

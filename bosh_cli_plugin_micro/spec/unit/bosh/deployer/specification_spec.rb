@@ -1,17 +1,25 @@
 require 'spec_helper'
 
 describe Bosh::Deployer::Specification do
-  let(:spec) { Bosh::Deployer::Specification.new(spec_hash) }
+  subject(:spec) do
+    Bosh::Deployer::Specification.new(spec_hash, config)
+  end
   let(:spec_hash) { YAML.load_file(spec_asset('apply_spec.yml')) }
 
-  before { Bosh::Deployer::Config.stub(agent_properties: agent_properties) }
   let(:agent_properties) { {} }
-
-  before { Bosh::Deployer::Config.stub(spec_properties: spec_properties) }
   let(:spec_properties) { {} }
 
+  let(:config) do
+    instance_double(
+      'Bosh::Deployer::Configuration',
+      name: nil,
+      agent_properties: agent_properties,
+      spec_properties: spec_properties,
+    )
+  end
+
   describe '.load_from_stemcell' do
-    let(:spec) { Bosh::Deployer::Specification.load_from_stemcell(spec_dir) }
+    let(:spec) { Bosh::Deployer::Specification.load_from_stemcell(spec_dir, config) }
     let(:spec_dir) { File.dirname(spec_asset('apply_spec.yml')) }
 
     it 'loads from file' do

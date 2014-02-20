@@ -298,7 +298,8 @@ AGENT_HELP
     usage 'micro apply'
     desc 'Apply spec'
     def apply(spec)
-      deployer.apply(Bosh::Deployer::Specification.new(load_yaml_file(spec)))
+      config = Bosh::Deployer::Config
+      deployer.apply(Bosh::Deployer::Specification.new(load_yaml_file(spec), config))
     end
 
     private
