@@ -52,5 +52,5 @@ cp -r $dir/assets/$bundler_gem $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
 cd src
-gem install $bundler_gem --no-ri --no-rdoc
+gem install $bundler_gem --local --no-ri --no-rdoc
 "
