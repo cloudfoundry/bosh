@@ -1,14 +1,11 @@
 ---
 name: batarang
 
-properties:
-  mbus:
-    description: Message bus (nats) URI
-
 templates:
-  batarang_ctl: bin/batarang_ctl
+  batarang_ctl.erb: bin/batarang_ctl
   drain: bin/drain
 
-packages:
-  - batarang
+properties: {}
 
+packages:
+- batarang

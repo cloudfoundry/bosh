@@ -1,5 +1,3 @@
-# abort script on any command that exit with a non zero value
-set -e
+set -e -x
 
 cp -a batlight/* ${BOSH_INSTALL_TARGET}
-

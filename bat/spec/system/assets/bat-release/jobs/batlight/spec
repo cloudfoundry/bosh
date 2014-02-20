@@ -1,6 +1,14 @@
 ---
 name: batlight
 
+templates:
+  batlight_ctl.erb: bin/batlight_ctl
+  drain.erb: bin/drain
+  properties.erb: config/properties
+
+packages:
+- batlight
+
 properties:
   batlight.fail:
     default: nope
@@ -21,11 +29,3 @@ properties:
   batlight.dynamic_drain_wait2:
     default: -4
     description: Return value to agent indicating how many seconds to wait until second job_check_status is sent
-
-templates:
-  batlight_ctl.erb: bin/batlight_ctl
-  drain.erb: bin/drain
-  properties.erb: config/properties
-
-packages:
-  - batlight

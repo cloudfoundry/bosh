@@ -1,17 +1,1 @@
----
-ruby/bundler-1.1.5.gem:
-  object_id: rest/objects/4e4e78bca61e121204e4e86eebe591050518a83b6d3e
-  sha: de1b94c25350a350457d2768e081c5be4217f087
-  size: 205312
-ruby/rake-0.9.2.2.gem:
-  object_id: rest/objects/4e4e78bca21e122004e4e8ec647a54050518a8a59edd
-  sha: 5372835ce532b7a06e437c83bc7a4938cb48c0d1
-  size: 111616
-ruby/ruby-1.9.2-p320.tar.gz:
-  object_id: rest/objects/4e4e78bca41e122204e4e9863d0763050518aae72364
-  sha: ead282bf780eb671a627e5e071f96c2fa4c64c1a
-  size: 11338691
-ruby/rubygems-1.8.24.tgz:
-  object_id: rest/objects/4e4e78bca11e121004e4e7d511f821050518b0c95e37
-  sha: 30f27047e74f7943117736a0d3e224994fee0905
-  size: 380101
+--- {}

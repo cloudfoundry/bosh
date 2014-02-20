@@ -1,20 +1,10 @@
 require 'system/spec_helper'
 
 describe 'with release and stemcell and two deployments' do
-  let(:deployed_regexp) { /Deployed \`.*' to \`.*'/ }
-
   before(:all) do
     @requirements.requirement(@requirements.release)
     @requirements.requirement(@requirements.stemcell)
-  end
-
-  before(:all) do
-    @requirements.requirement(@requirements.previous_release)
     load_deployment_spec
-  end
-
-  after(:all) do
-    @requirements.cleanup(@requirements.previous_release)
   end
 
   context 'first deployment' do
@@ -72,8 +62,8 @@ describe 'with release and stemcell and two deployments' do
 
     it 'should use job colocation', ssh: true do
       @jobs.each do |job|
-        grep = "pgrep -lf #{job}"
-        ssh(static_ip, 'vcap', grep, @our_ssh_options).should match /#{job}/
+        grep_cmd = "pgrep -lf #{job}"
+        ssh(static_ip, 'vcap', grep_cmd, @our_ssh_options).should match /#{job}/
       end
     end
 
@@ -88,13 +78,13 @@ describe 'with release and stemcell and two deployments' do
 
       before(:all) do
         ssh(static_ip, 'vcap', "echo 'foobar' > #{SAVE_FILE}", @our_ssh_options)
-        @size = persistent_disk(static_ip)
+        @size = persistent_disk(static_ip, 'vcap', @our_ssh_options)
         use_persistent_disk(4096)
         @second_deployment_result = @requirements.requirement(deployment, @spec, force: true)
       end
 
       it 'should migrate disk contents', ssh: true do
-        persistent_disk(static_ip).should_not eq(@size)
+        persistent_disk(static_ip, 'vcap', @our_ssh_options).should_not eq(@size)
         ssh(static_ip, 'vcap', "cat #{SAVE_FILE}", @our_ssh_options).should match /foobar/
       end
 

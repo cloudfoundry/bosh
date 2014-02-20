@@ -47,9 +47,8 @@ module Bat
       info['features']['dns']['extras']['domain_name'] if dns?
     end
 
-    def persistent_disk(host)
-      disks = get_json("http://#{host}:4567/disks")
-      disks.each do |disk|
+    def persistent_disk(host, user, options = {})
+      get_disks(host, user, options).each do |disk|
         values = disk.last
         if disk.last['mountpoint'] == '/var/vcap/store'
           return values['blocks']
@@ -124,22 +123,23 @@ module Bat
       output
     end
 
-    # this method will retry a bunch of times, as when it is used to
-    # get json from a new batarang job, it may not have started when
-    # it we call it
-    def get_json(url, max_times = 120)
-      client = HTTPClient.new
-      tries = 0
-      begin
-        body = client.get(url, 'application/json').body
-      rescue Errno::ECONNREFUSED => e
-        raise e if tries == max_times
-        sleep(1)
-        tries += 1
-        retry
+    def get_disks(host, user, options)
+      disks = {}
+      df_cmd = 'df -x tmpfs -x devtmpfs -x debugfs -l | tail -n +2'
+
+      df_output = ssh(host, user, df_cmd, options)
+      df_output.split("\n").each do |line|
+        fields = line.split(/\s+/)
+        disks[fields[0]] = {
+          :blocks => fields[1],
+          :used => fields[2],
+          :available => fields[3],
+          :percent => fields[4],
+          :mountpoint => fields[5],
+        }
       end
 
-      JSON.parse(body)
+      disks
     end
   end
 end

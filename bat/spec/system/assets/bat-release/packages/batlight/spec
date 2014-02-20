@@ -1,5 +1,7 @@
 ---
 name: batlight
 
+dependencies: []
+
 files:
-  - batlight/**/*
+- batlight/**/*

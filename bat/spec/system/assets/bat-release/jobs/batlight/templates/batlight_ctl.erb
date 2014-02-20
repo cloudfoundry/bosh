@@ -4,7 +4,6 @@ JOB=batlight
 BASE=/var/vcap
 
 export PATH=$BASE/packages/ruby/bin:$PATH
-export BUNDLE_GEMFILE=$BASE/packages/$JOB/Gemfile
 
 RUN_DIR=$BASE/sys/run/$JOB
 LOG_DIR=$BASE/sys/log/$JOB
@@ -15,7 +14,7 @@ PIDFILE=$RUN_DIR/$JOB.pid
 RUNAS=vcap
 
 if [ "<%= p('batlight.fail') %>" = "control" ]; then
-  echo "simulated $JOB control script failure" 1>&2
+  echo "Simulated $JOB control script failure" 1>&2
   exit 1
 fi
 
@@ -34,7 +33,7 @@ case $1 in
 
     exec chpst -u $RUNAS:$RUNAS \
       $BIN_DIR/batlight <%= spec.index %> \
-      >>$LOG_DIR/$JOB.stdout.log \
+      1>>$LOG_DIR/$JOB.stdout.log \
       2>>$LOG_DIR/$JOB.stderr.log
     ;;
 
@@ -49,4 +48,5 @@ case $1 in
 
   echo "Usage: $JOB_ctl {start|stop}" ;;
 esac
+
 exit 0

@@ -1,40 +1,5 @@
-#!/usr/bin/env ruby
-#
-# Copyright (c) 2009-2012 VMware, Inc.
-#
+#!/bin/sh
 
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
-require "rubygems"
-require "bundler/setup"
-
-$:.unshift(File.expand_path("../../lib", __FILE__))
-
-require "batarang"
-require "thin"
-
-unless ARGV.size == 1
-  puts("usage: batarang <index>")
-  exit(1)
-end
-
-event_thread = Thread.new do
-  NATS.start { Batarang::NATS.instance.start(ARGV[0]) }
-end
-
-thin_server = Thin::Server.new("0.0.0.0", "4567", :signals => false) do
-  use Rack::CommonLogger
-  map "/" do
-    run Batarang::Sinatra.new(@nats)
-  end
-end
-
-%w[TERM INT QUIT].each do |signal|
-  trap(signal) do
-    thin_server.stop!
-    NATS.stop
-  end
-end
-
-thin_server.start!
-event_thread.join
+while true; do
+  sleep 1
+done

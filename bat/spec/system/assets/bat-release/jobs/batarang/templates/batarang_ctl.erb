@@ -4,7 +4,6 @@ JOB=batarang
 BASE=/var/vcap
 
 export PATH=$BASE/bosh/bin:$PATH
-export BUNDLE_GEMFILE=$BASE/packages/$JOB/Gemfile
 
 RUN_DIR=$BASE/sys/run/$JOB
 LOG_DIR=$BASE/sys/log/$JOB
@@ -12,7 +11,9 @@ BIN_DIR=$BASE/packages/$JOB/bin
 STORE_DIR=$BASE/store/$JOB
 PIDFILE=$RUN_DIR/$JOB.pid
 
-RUNAS=root
+RUNAS=vcap
+
+echo "Version bump 239"
 
 case $1 in
 
@@ -22,11 +23,9 @@ case $1 in
 
     echo $$ > $PIDFILE
 
-    export NATS_URI='<%= p("mbus") %>'
-
     exec chpst -u $RUNAS:$RUNAS \
-      bundle exec $BIN_DIR/batarang <%= spec.index %> \
-      >>$LOG_DIR/$JOB.stdout.log \
+      $BIN_DIR/batarang <%= spec.index %> \
+      1>>$LOG_DIR/$JOB.stdout.log \
       2>>$LOG_DIR/$JOB.stderr.log
     ;;
 
@@ -41,5 +40,5 @@ case $1 in
 
   echo "Usage: $JOB_ctl {start|stop}" ;;
 esac
-exit 0
 
+exit 0
