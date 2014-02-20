@@ -87,6 +87,7 @@ require 'bosh_agent/message/apply'
 require 'bosh_agent/message/compile_package'
 require 'bosh_agent/message/logs'
 require 'bosh_agent/message/ssh'
+require 'bosh_agent/message/run_errand'
 
 require 'bosh_agent/handler'
 require 'bosh_agent/runner'
