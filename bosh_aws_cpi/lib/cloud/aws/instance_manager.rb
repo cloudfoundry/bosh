@@ -64,10 +64,15 @@ module Bosh::AwsCloud
 
       remove_from_load_balancers
 
-      instance.terminate
-
-      @logger.info("Deleting instance settings for '#{instance.id}'")
-      @registry.delete_settings(instance.id)
+      begin
+        instance.terminate
+      rescue AWS::EC2::Errors::InvalidInstanceID::NotFound => e
+        @logger.info("Failed to terminate instance because it was not found: #{e.inspect}")
+        raise Bosh::Clouds::VMNotFound, "VM `#{instance_id}' not found"
+      ensure
+        @logger.info("Deleting instance settings for '#{instance_id}'")
+        @registry.delete_settings(instance_id)
+      end
 
       if fast
         TagManager.tag(instance, "Name", "to be deleted")

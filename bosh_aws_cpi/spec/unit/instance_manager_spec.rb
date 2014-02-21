@@ -301,6 +301,28 @@ describe Bosh::AwsCloud::InstanceManager do
       instance_manager.terminate(instance_id)
     end
 
+    context "when instance was deleted in AWS and no longer exists (showing in AWS console)" do
+      before do
+        # AWS SDK always returns an object even if instance no longer exists
+        allow(region).to receive(:instances).with(no_args).and_return({instance_id => fake_aws_instance})
+
+        # AWS returns NotFound error if instance no longer exists in AWS console
+        # (This could happen when instance was deleted manually and BOSH is not aware of that)
+        allow(fake_aws_instance).to receive(:terminate).
+          with(no_args).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
+      end
+
+      it "raises Bosh::Clouds::VMNotFound but still removes settings from registry and removes instance from the load balancers" do
+        expect(instance_manager).to receive(:remove_from_load_balancers).with(no_args)
+
+        expect(registry).to receive(:delete_settings).with(instance_id)
+
+        expect {
+          instance_manager.terminate(instance_id)
+        }.to raise_error(Bosh::Clouds::VMNotFound, "VM `#{instance_id}' not found")
+      end
+    end
+
     describe "fast path deletion" do
       it "should do a fast path delete when requested" do
         instance_manager.stub(:remove_from_load_balancers)
