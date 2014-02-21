@@ -17,13 +17,13 @@ describe Bat::Release do
         bat_releases_dir = File.join(bat_path, 'releases')
         FileUtils.mkdir_p(bat_releases_dir)
 
-        deployment_file = File.join(bat_releases_dir, "bat-0.yml")
+        deployment_file = File.join(bat_releases_dir, 'bat-0.yml')
         File.open(deployment_file, 'w') { |f| f.write("CONTENT: #{deployment_file}") }
 
-        deployment_file = File.join(bat_releases_dir, "bat-1.yml")
+        deployment_file = File.join(bat_releases_dir, 'bat-1.yml')
         File.open(deployment_file, 'w') { |f| f.write("CONTENT: #{deployment_file}") }
 
-        deployment_file = File.join(bat_releases_dir, "bat-12.yml")
+        deployment_file = File.join(bat_releases_dir, 'bat-12.yml')
         File.open(deployment_file, 'w') { |f| f.write("CONTENT: #{deployment_file}") }
       end
 
@@ -31,7 +31,7 @@ describe Bat::Release do
         bat_dev_releases_dir = File.join(bat_path, 'dev_releases')
         FileUtils.mkdir_p(bat_dev_releases_dir)
 
-        deployment_file = File.join(bat_dev_releases_dir, "bat-1.1-dev.yml")
+        deployment_file = File.join(bat_dev_releases_dir, 'bat-1.1-dev.yml')
         File.open(deployment_file, 'w') { |f| f.write("CONTENT: #{deployment_file}") }
       end
 
@@ -49,7 +49,7 @@ describe Bat::Release do
       it 'raises an error' do
         expect {
           Bat::Release.from_path(bat_path)
-        }.to raise_error(RuntimeError, %r{no final or dev releases.*#{bat_path}})
+        }.to raise_error(RuntimeError, /no final or dev releases.*#{bat_path}/)
       end
     end
   end

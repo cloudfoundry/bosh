@@ -131,11 +131,11 @@ module Bat
       df_output.split("\n").each do |line|
         fields = line.split(/\s+/)
         disks[fields[0]] = {
-          :blocks => fields[1],
-          :used => fields[2],
-          :available => fields[3],
-          :percent => fields[4],
-          :mountpoint => fields[5],
+          blocks: fields[1],
+          used: fields[2],
+          available: fields[3],
+          percent: fields[4],
+          mountpoint: fields[5],
         }
       end
 
