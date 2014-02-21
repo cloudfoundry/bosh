@@ -294,6 +294,8 @@ properties:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:
     description: Default OpenStack security groups to use when spinning up new vms
+  openstack.wait_resource_poll_interval:
+    description: Changes the delay (in seconds) between each status check to the OpenStack API when creating new resources. (Optional)
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:

@@ -219,6 +219,9 @@ cloud:
       <% if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
       stemcell_public_visibility: <%= stemcell_public_visibility %>
       <% end %>
+      <% if_p("openstack.wait_resource_poll_interval") do |wait_resource_poll_interval| %>
+      wait_resource_poll_interval: <%= wait_resource_poll_interval %>
+      <% end %>
       <% if_p('openstack.connection_options') do |connection_options| %>
       connection_options: <%= JSON.generate(connection_options) %>
       <% end %>
