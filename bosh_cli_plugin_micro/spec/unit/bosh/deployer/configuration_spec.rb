@@ -102,6 +102,65 @@ module Bosh::Deployer
       end
     end
 
+    describe 'services ips' do
+      subject(:config) { described_class.new.configure(configuration_hash) }
+
+      its(:internal_services_ip) { should eq('127.0.0.1') }
+
+      context 'when bosh network is dynamic' do
+        before do
+          configuration_hash.merge!(
+            'network' => {
+              'type' => 'dynamic',
+              'vip' => 'fake-vip-ip'
+            }
+          )
+        end
+
+        its(:agent_services_ip) { should eq('fake-vip-ip') }
+        its(:client_services_ip) { should eq('fake-vip-ip') }
+      end
+
+      context 'when bosh network is manual' do
+        before do
+          configuration_hash.merge!(
+            'network' => {
+              'type' => 'manual',
+              'ip' => 'fake-bosh-ip'
+            }
+          )
+        end
+
+        context 'when vip exists' do
+          before do
+            configuration_hash['network']['vip'] = 'fake-vip-ip'
+          end
+
+          its(:client_services_ip) { should eq('fake-vip-ip') }
+        end
+
+        context 'when vip does not exist' do
+          its(:client_services_ip) { should eq('fake-bosh-ip') }
+        end
+
+        context 'when deployment network exists' do
+          before do
+            configuration_hash.merge!(
+              'deployment_network' => {
+                'ip' => 'fake-deployment-ip',
+              }
+            )
+          end
+
+          its(:agent_services_ip) { should eq('fake-deployment-ip') }
+        end
+
+        context 'when deployment network does not exist' do
+          its(:agent_services_ip) { should eq('fake-bosh-ip') }
+        end
+      end
+    end
+
     describe '#cloud' do
       before do
         allow(InfrastructureDefaults).to receive(:merge_for).and_return(configuration_hash)

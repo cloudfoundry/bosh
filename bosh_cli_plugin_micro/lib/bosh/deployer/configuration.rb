@@ -109,6 +109,24 @@ module Bosh::Deployer
       # NoMethodError exceptions.
     end
 
+    def agent_services_ip
+      if net_conf['type'] == 'dynamic'
+        net_conf['vip']
+      elsif @deployment_network
+        @deployment_network['ip']
+      else
+        net_conf['ip']
+      end
+    end
+
+    def client_services_ip
+        net_conf['vip'] || net_conf['ip']
+    end
+
+    def internal_services_ip
+      '127.0.0.1'
+    end
+
     private
 
     def vip_network
