@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/deployer/instance_manager'
 require 'bosh/cli/commands/micro'
 
 module Bosh::Cli::Command
@@ -18,15 +19,14 @@ module Bosh::Cli::Command
       FileUtils.touch('/tmp/foo/micro_bosh.yml')
     end
 
+    let(:deployer) { instance_double('Bosh::Deployer::InstanceManager') }
     before do
-      Bosh::Deployer::InstanceManager.stub(create: double(
-        'Deployer',
-        discover_bosh_ip: '5',
-        check_dependencies: nil,
-        exists?: false,
-        :renderer= => nil,
-        create_deployment: nil,
-      ))
+      allow(deployer).to receive(:discover_bosh_ip).and_return('5')
+      allow(deployer).to receive(:check_dependencies).and_return(nil)
+      allow(deployer).to receive(:exists?).and_return(false)
+      allow(deployer).to receive(:renderer).and_return(nil)
+      allow(deployer).to receive(:create_deployment).and_return(nil)
+      Bosh::Deployer::InstanceManager.stub(create: deployer)
     end
 
     describe 'micro deployment' do
@@ -102,19 +102,18 @@ module Bosh::Cli::Command
           end
         end
 
-        context 'target already exists' do
+        context 'target does not already exist' do
           context 'old director ip address is the same as new ip' do
-
             it 'does not change the configuration' do
               deployer_config_file = File.expand_path('~/.bosh_deployer_config')
               File.open(deployer_config_file, 'w') do |file|
                 YAML.dump({
-                  'target' => 'https://5:25555',
-                  'target_name' => nil,
-                  'target_version' => nil,
-                  'target_uuid' => nil,
-                  'deployment' => { 'https://5:25555' => '/tmp/foo/micro_bosh.yml' },
-                }, file)
+                            'target' => 'https://5:25555',
+                            'target_name' => nil,
+                            'target_version' => nil,
+                            'target_uuid' => nil,
+                            'deployment' => { 'https://5:25555' => '/tmp/foo/micro_bosh.yml' },
+                          }, file)
               end
 
               expect {
@@ -128,12 +127,12 @@ module Bosh::Cli::Command
               deployer_config_file = File.expand_path('~/.bosh_deployer_config')
               File.open(deployer_config_file, 'w') do |file|
                 YAML.dump({
-                  'target' => 'https://10:25555',
-                  'target_name' => nil,
-                  'target_version' => nil,
-                  'target_uuid' => nil,
-                  'deployment' => { 'https://10:25555' => '/tmp/foo/micro_bosh.yml' },
-                }, file)
+                            'target' => 'https://10:25555',
+                            'target_name' => nil,
+                            'target_version' => nil,
+                            'target_uuid' => nil,
+                            'deployment' => { 'https://10:25555' => '/tmp/foo/micro_bosh.yml' },
+                          }, file)
               end
 
               expect {
@@ -150,12 +149,12 @@ module Bosh::Cli::Command
             deployer_config_file = File.expand_path('~/.bosh_deployer_config')
             File.open(deployer_config_file, 'w') do |file|
               YAML.dump({
-                'target' => 'https://5:25555',
-                'target_name' => nil,
-                'target_version' => nil,
-                'target_uuid' => nil,
-                'deployment' => { 'https://5:25555' => '/tmp/foo/micro_bosh.yml' },
-              }, file)
+                          'target' => 'https://5:25555',
+                          'target_name' => nil,
+                          'target_version' => nil,
+                          'target_uuid' => nil,
+                          'deployment' => { 'https://5:25555' => '/tmp/foo/micro_bosh.yml' },
+                        }, file)
             end
 
             micro_command.should_receive(:say).with(
@@ -176,8 +175,10 @@ module Bosh::Cli::Command
     describe 'perform' do
       confirmation =
         "\nNo `bosh-deployments.yml` file found in current directory." +
-        "\n\nConventionally, `bosh-deployments.yml` should be saved in /tmp." +
-        "\nIs /tmp/foo a directory where you can save state?"
+          "\n\nConventionally, `bosh-deployments.yml` should be saved in /tmp." +
+          "\nIs /tmp/foo a directory where you can save state?"
+
+      let(:config) { double('config', target: 'target', resolve_alias: nil, set_deployment: nil) }
 
       before do
         BoshExtensions.stub(:err)
@@ -186,13 +187,24 @@ module Bosh::Cli::Command
 
         File.open(File.expand_path('~/.bosh_deployer_config'), 'w') do |file|
           YAML.dump({
-            'target' => 'https://5:25555',
-            'target_name' => nil,
-            'target_version' => nil,
-            'target_uuid' => nil,
-            'deployment' => { 'https://5:25555' => '/tmp/foo/micro_bosh.yml' },
-          }, file)
+                      'target' => 'https://5:25555',
+                      'target_name' => nil,
+                      'target_version' => nil,
+                      'target_uuid' => nil,
+                      'deployment' => { 'https://5:25555' => '/tmp/foo/micro_bosh.yml' },
+                    }, file)
         end
+
+        allow(deployer).to receive(:renderer=)
+
+        allow(config).to receive(:target=)
+        allow(config).to receive(:target_name=)
+        allow(config).to receive(:target_version=)
+        allow(config).to receive(:target_uuid=)
+        allow(config).to receive(:save)
+        allow(config).to receive(:deployment).and_return('/tmp/foo/micro_bosh.yml')
+        allow(config).to receive(:target_name).and_return('fake-name')
+        micro_command.stub(:config).and_return(config)
       end
 
       context 'no `bosh-deployments.yml` file found in current directory' do
@@ -212,6 +224,69 @@ module Bosh::Cli::Command
           end
         end
       end
+
+      context 'when microbosh is successfully deployed' do
+        before do
+          allow(deployer).to receive(:exists?).and_return(false, true)
+        end
+
+        it 'updates the bosh target to the deployment' do
+          expect(config).to receive(:target=).with('https://5:25555')
+          expect(config).to receive(:target_name=).with('Unknown Director')
+          expect(config).to receive(:target_version=).with('n/a')
+          expect(config).to receive(:target_uuid=).with(nil)
+          expect(config).to receive(:save)
+
+          micro_command.perform('stemcell')
+        end
+
+        context 'with the director_checks option' do
+          let(:director) { instance_double('Bosh::Cli::Client::Director') }
+
+          before do
+            micro_command.add_option(:director_checks, true)
+
+            class_double('Bosh::Cli::Client::Director').as_stubbed_const
+            allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
+          end
+
+          context 'when the director returns the status successfully' do
+            before do
+              allow(director).to receive(:get_status).and_return(
+                                   'name' => 'our director',
+                                   'version' => 'some version',
+                                   'uuid' => 'abc'
+                                 )
+            end
+
+            it 'updates the bosh target with the director status' do
+              expect(config).to receive(:target=).with('https://5:25555')
+              expect(config).to receive(:target_name=).with('our director')
+              expect(config).to receive(:target_version=).with('some version')
+              expect(config).to receive(:target_uuid=).with('abc')
+              expect(config).to receive(:save)
+
+              micro_command.perform('stemcell')
+            end
+          end
+        end
+      end
+
+      context 'when microbosh is not successfully deployed' do
+        before do
+          allow(deployer).to receive(:exists?).and_return(false)
+        end
+
+        it 'updates the bosh target to the deployment' do
+          expect(config).to receive(:target=).with('https://5:25555')
+          expect(config).to receive(:target_name=).with(nil).twice
+          expect(config).to receive(:target_version=).with(nil).twice
+          expect(config).to receive(:target_uuid=).with(nil).twice
+          expect(config).to receive(:save)
+
+          micro_command.perform('stemcell')
+        end
+      end
     end
   end
 
@@ -224,6 +299,7 @@ module Bosh::Cli::Command
       @manifest_path = spec_asset('deployment.MF')
       @manifest_yaml = {
         'name' => 'foo',
+        'network' => {},
         'cloud' => {},
         'resources' => {
           'persistent_disk' => 16384,
@@ -241,7 +317,7 @@ module Bosh::Cli::Command
       mock_stemcell.should_receive(:valid?).and_return(true)
       Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
 
-      mock_deployer = double(Bosh::Deployer::InstanceManager)
+      mock_deployer = double(Bosh::Deployer::InstanceManager, discover_bosh_ip: '5')
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
@@ -256,7 +332,7 @@ module Bosh::Cli::Command
     end
 
     it 'allows deploying a micro BOSH instance passing stemcell in manifest file' do
-      mock_deployer = double(Bosh::Deployer::InstanceManager)
+      mock_deployer = double(Bosh::Deployer::InstanceManager, discover_bosh_ip: '5')
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
@@ -300,10 +376,10 @@ module Bosh::Cli::Command
     it 'should clear cached target values when setting a new deployment' do
       @cmd.stub(:find_deployment).with('foo').and_return(
         spec_asset('test-bootstrap-config-aws.yml'))
-      @cmd.stub_chain(:deployer, :discover_bosh_ip).and_return(nil)
+      @cmd.stub_chain(:deployer, :discover_bosh_ip).and_return('client_ip')
 
       config = double('config', target: 'target', resolve_alias: nil, set_deployment: nil)
-      config.should_receive(:target=).with('https://foo:25555')
+      config.should_receive(:target=).with('https://client_ip:25555')
       config.should_receive(:target_name=).with(nil)
       config.should_receive(:target_version=).with(nil)
       config.should_receive(:target_uuid=).with(nil)
@@ -317,7 +393,7 @@ module Bosh::Cli::Command
     describe 'agent command' do
       before { @cmd.stub(deployer: deployer) }
       let(:deployer) { double(Bosh::Deployer::InstanceManager, agent: agent) }
-      let(:agent)    { double(Bosh::Agent::HTTPClient) }
+      let(:agent) { double(Bosh::Agent::HTTPClient) }
 
       it 'sends the command to an agent and shows the returned output' do
         agent.should_receive(:ping).and_return('pong')
@@ -331,7 +407,7 @@ module Bosh::Cli::Command
         double(
           Bosh::Deployer::InstanceManager,
           :renderer= => nil,
-          :discover_bosh_ip => nil,
+          :discover_bosh_ip => 'client_ip'
         )
       end
 
@@ -341,13 +417,12 @@ module Bosh::Cli::Command
         @cmd.stub(deployment: @manifest_path)
         @cmd.stub(target_name: 'micro-test')
         @cmd.stub(load_yaml_file: @manifest_yaml)
-        @cmd.stub(:update_target)
       end
 
       let(:tarball_path) { 'some-stemcell-path' }
 
       context 'when microbosh is not deployed' do
-        before { deployer.stub(exists?: false) }
+        before { allow(deployer).to receive(:exists?).and_return(false) }
 
         context 'when --update-if-exists flag is given' do
           before { @cmd.add_option(:update_if_exists, true) }
@@ -371,8 +446,8 @@ module Bosh::Cli::Command
 
         context 'when --update-if-exists flag is given' do
           before { @cmd.add_option(:update_if_exists, true) }
-
           it 'updates microbosh and returns successfully' do
+
             deployer.should_receive(:update_deployment)
             @cmd.perform(tarball_path)
           end
