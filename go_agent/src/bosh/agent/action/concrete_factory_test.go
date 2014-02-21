@@ -14,7 +14,7 @@ import (
 	boshntp "bosh/platform/ntp"
 	fakesettings "bosh/settings/fakes"
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 )
 
 func init() {
@@ -84,98 +84,98 @@ func init() {
 
 			for _, actionName := range actions {
 				action, err := factory.Create(actionName)
-				assert.NoError(GinkgoT(), err)
-				assert.NotNil(GinkgoT(), action)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(action).ToNot(BeNil())
 			}
 
 			action, err := factory.Create("gobberish")
-			assert.Error(GinkgoT(), err)
-			assert.Nil(GinkgoT(), action)
+			Expect(err).To(HaveOccurred())
+			Expect(action).To(BeNil())
 		})
 
 		It("new factory apply", func() {
 			action, err := factory.Create("apply")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewApply(applier, specService), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewApply(applier, specService)).To(Equal(action))
 		})
 
 		It("new factory drain", func() {
 			action, err := factory.Create("drain")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewDrain(notifier, specService, drainScriptProvider), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewDrain(notifier, specService, drainScriptProvider)).To(Equal(action))
 		})
 
 		It("new factory fetch logs", func() {
 			action, err := factory.Create("fetch_logs")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider()), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())).To(Equal(action))
 		})
 
 		It("new factory get task", func() {
 			action, err := factory.Create("get_task")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewGetTask(taskService), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewGetTask(taskService)).To(Equal(action))
 		})
 
 		It("new factory get state", func() {
 			ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
 			action, err := factory.Create("get_state")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewGetState(settings, specService, jobSupervisor, platform.GetVitalsService(), ntpService), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewGetState(settings, specService, jobSupervisor, platform.GetVitalsService(), ntpService)).To(Equal(action))
 		})
 
 		It("new factory list disk", func() {
 			action, err := factory.Create("list_disk")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewListDisk(settings, platform), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewListDisk(settings, platform)).To(Equal(action))
 		})
 
 		It("new factory migrate disk", func() {
 			action, err := factory.Create("migrate_disk")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewMigrateDisk(platform, platform.GetDirProvider()), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewMigrateDisk(platform, platform.GetDirProvider())).To(Equal(action))
 		})
 
 		It("new factory mount disk", func() {
 			action, err := factory.Create("mount_disk")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewMountDisk(settings, platform, platform.GetDirProvider()), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewMountDisk(settings, platform, platform.GetDirProvider())).To(Equal(action))
 		})
 
 		It("new factory ssh", func() {
 			action, err := factory.Create("ssh")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewSsh(settings, platform, platform.GetDirProvider()), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewSsh(settings, platform, platform.GetDirProvider())).To(Equal(action))
 		})
 
 		It("new factory start", func() {
 			action, err := factory.Create("start")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewStart(jobSupervisor), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewStart(jobSupervisor)).To(Equal(action))
 		})
 
 		It("new factory unmount disk", func() {
 			action, err := factory.Create("unmount_disk")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewUnmountDisk(settings, platform), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewUnmountDisk(settings, platform)).To(Equal(action))
 		})
 
 		It("new factory compile package", func() {
 			action, err := factory.Create("compile_package")
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewCompilePackage(compiler), action)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewCompilePackage(compiler)).To(Equal(action))
 		})
 	})
 }
