@@ -7,7 +7,7 @@ import (
 	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 )
 
 func buildMountDiskAction(settings *fakesettings.FakeSettingsService) (*fakeplatform.FakePlatform, MountDiskAction) {
@@ -20,25 +20,25 @@ func init() {
 		It("mount disk should be asynchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, action := buildMountDiskAction(settings)
-			assert.True(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
-		It("mount disk", func() {
 
+		It("mount disk", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 			platform, mountDisk := buildMountDiskAction(settings)
 
 			result, err := mountDisk.Run("vol-123")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).NotTo(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), result, "{}")
 
-			assert.True(GinkgoT(), settings.SettingsWereRefreshed)
+			Expect(settings.SettingsWereRefreshed).To(BeTrue())
 
-			assert.Equal(GinkgoT(), platform.MountPersistentDiskDevicePath, "/dev/sdf")
-			assert.Equal(GinkgoT(), platform.MountPersistentDiskMountPoint, "/foo/store")
+			Expect(platform.MountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
+			Expect(platform.MountPersistentDiskMountPoint).To(Equal("/foo/store"))
 		})
-		It("mount disk when store already mounted", func() {
 
+		It("mount disk when store already mounted", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 			platform, mountDisk := buildMountDiskAction(settings)
@@ -46,22 +46,22 @@ func init() {
 			platform.IsMountPointResult = true
 
 			result, err := mountDisk.Run("vol-123")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).NotTo(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), result, "{}")
 
-			assert.Equal(GinkgoT(), platform.IsMountPointPath, "/foo/store")
+			Expect(platform.IsMountPointPath).To(Equal("/foo/store"))
 
-			assert.Equal(GinkgoT(), platform.MountPersistentDiskDevicePath, "/dev/sdf")
-			assert.Equal(GinkgoT(), platform.MountPersistentDiskMountPoint, "/foo/store_migration_target")
+			Expect(platform.MountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
+			Expect(platform.MountPersistentDiskMountPoint).To(Equal("/foo/store_migration_target"))
 		})
-		It("mount disk when device path not found", func() {
 
+		It("mount disk when device path not found", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			settings.Disks.Persistent = map[string]string{"vol-123": "/dev/sdf"}
 			_, mountDisk := buildMountDiskAction(settings)
 
 			_, err := mountDisk.Run("vol-456")
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }
