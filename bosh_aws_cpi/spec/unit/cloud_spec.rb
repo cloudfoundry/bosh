@@ -3,16 +3,6 @@
 require 'spec_helper'
 
 describe Bosh::AwsCloud::Cloud do
-  let(:instance_manager) { instance_double("Bosh::AwsCloud::InstanceManager") }
-  let(:cloud_options) { mock_cloud_options }
-
-  subject { Bosh::Clouds::Provider.create(:aws, cloud_options) }
-
-  before do
-    class_double("Bosh::AwsCloud::InstanceManager").as_stubbed_const
-    allow(Bosh::AwsCloud::InstanceManager).to receive(:new).and_return(instance_manager)
-  end
-
   describe 'creating via provider' do
 
     it 'can be created using Bosh::Cloud::Provider' do
@@ -57,23 +47,4 @@ describe Bosh::AwsCloud::Cloud do
     end
   end
 
-  describe '#delete_vm' do
-    let(:instance_id) { 'some-instance' }
-
-    it "terminates the instance" do
-      expect(instance_manager).to receive(:terminate).with(instance_id, false)
-      subject.delete_vm(instance_id)
-    end
-
-    context "when fast_path_delete is specified" do
-      let(:cloud_options) {
-        mock_cloud_options.merge('aws' => mock_cloud_options['aws'].merge('fast_path_delete' => true))
-      }
-
-      it "terminates the instance with fast_path_delete" do
-        expect(instance_manager).to receive(:terminate).with(instance_id, true)
-        subject.delete_vm(instance_id)
-      end
-    end
-  end
 end
