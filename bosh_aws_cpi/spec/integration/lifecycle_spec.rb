@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/cpi/compatibility_helpers/delete_vm'
 require 'tempfile'
 require 'logger'
 require 'cloud'
@@ -54,6 +55,14 @@ describe Bosh::AwsCloud::Cloud do
 
   before { @volume_id = nil }
   after  { cpi.delete_disk(@volume_id) if @volume_id }
+
+  extend Bosh::Cpi::CompatibilityHelpers
+
+  # Pass in *real* previously terminated instance id
+  # instead of just a made-up instance id
+  # because AWS returns Malformed error
+  # for instance ids that are not proper AWS hashed values.
+  it_can_delete_non_existent_vm 'i-49f9f169'
 
   describe 'ec2' do
     let(:network_spec) do
