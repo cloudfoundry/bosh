@@ -2,18 +2,22 @@ package action
 
 import (
 	bosherr "bosh/errors"
-	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 )
 
+type diskMounter interface {
+	MountPersistentDisk(volumeId string, mountPoint string) error
+	IsMountPoint(string) (bool, error)
+}
+
 type MountDiskAction struct {
 	settings    boshsettings.Service
-	platform    boshplatform.Platform
+	platform    diskMounter
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewMountDisk(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
+func NewMountDisk(settings boshsettings.Service, platform diskMounter, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
 	mountDisk.settings = settings
 	mountDisk.platform = platform
 	mountDisk.dirProvider = dirProvider
