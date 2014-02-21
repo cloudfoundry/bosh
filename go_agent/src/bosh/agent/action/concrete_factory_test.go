@@ -17,50 +17,51 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type concreteFactoryDependencies struct {
-	settings            *fakesettings.FakeSettingsService
-	platform            *fakeplatform.FakePlatform
-	blobstore           *fakeblobstore.FakeBlobstore
-	taskService         *faketask.FakeService
-	notifier            *fakenotif.FakeNotifier
-	applier             *fakeappl.FakeApplier
-	compiler            *fakecomp.FakeCompiler
-	jobSupervisor       *fakejobsuper.FakeJobSupervisor
-	specService         *fakeas.FakeV1Service
-	drainScriptProvider boshdrain.DrainScriptProvider
-}
-
-func buildFactory() (
-	deps concreteFactoryDependencies,
-	factory Factory) {
-
-	deps.settings = &fakesettings.FakeSettingsService{}
-	deps.platform = fakeplatform.NewFakePlatform()
-	deps.blobstore = &fakeblobstore.FakeBlobstore{}
-	deps.taskService = &faketask.FakeService{}
-	deps.notifier = fakenotif.NewFakeNotifier()
-	deps.applier = fakeappl.NewFakeApplier()
-	deps.compiler = fakecomp.NewFakeCompiler()
-	deps.jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-	deps.specService = fakeas.NewFakeV1Service()
-	deps.drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, deps.platform.GetDirProvider())
-
-	factory = NewFactory(
-		deps.settings,
-		deps.platform,
-		deps.blobstore,
-		deps.taskService,
-		deps.notifier,
-		deps.applier,
-		deps.compiler,
-		deps.jobSupervisor,
-		deps.specService,
-		deps.drainScriptProvider,
-	)
-	return
-}
 func init() {
 	Describe("Testing with Ginkgo", func() {
+		var (
+			settings            *fakesettings.FakeSettingsService
+			platform            *fakeplatform.FakePlatform
+			blobstore           *fakeblobstore.FakeBlobstore
+			taskService         *faketask.FakeService
+			notifier            *fakenotif.FakeNotifier
+			applier             *fakeappl.FakeApplier
+			compiler            *fakecomp.FakeCompiler
+			jobSupervisor       *fakejobsuper.FakeJobSupervisor
+			specService         *fakeas.FakeV1Service
+			drainScriptProvider boshdrain.DrainScriptProvider
+			factory             Factory
+		)
+
+		BeforeEach(func() {
+			settings = &fakesettings.FakeSettingsService{}
+			platform = fakeplatform.NewFakePlatform()
+			blobstore = &fakeblobstore.FakeBlobstore{}
+			taskService = &faketask.FakeService{}
+			notifier = fakenotif.NewFakeNotifier()
+			applier = fakeappl.NewFakeApplier()
+			compiler = fakecomp.NewFakeCompiler()
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			specService = fakeas.NewFakeV1Service()
+			drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, platform.GetDirProvider())
+
+		})
+
+		JustBeforeEach(func() {
+			factory = NewFactory(
+				settings,
+				platform,
+				blobstore,
+				taskService,
+				notifier,
+				applier,
+				compiler,
+				jobSupervisor,
+				specService,
+				drainScriptProvider,
+			)
+		})
+
 		It("new factory", func() {
 			actions := []string{
 				"apply",
@@ -81,8 +82,6 @@ func init() {
 				"release_apply_spec",
 			}
 
-			_, factory := buildFactory()
-
 			for _, actionName := range actions {
 				action, err := factory.Create(actionName)
 				assert.NoError(GinkgoT(), err)
@@ -93,102 +92,90 @@ func init() {
 			assert.Error(GinkgoT(), err)
 			assert.Nil(GinkgoT(), action)
 		})
-		It("new factory apply", func() {
 
-			deps, factory := buildFactory()
+		It("new factory apply", func() {
 			action, err := factory.Create("apply")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewApply(deps.applier, deps.specService), action)
+			assert.Equal(GinkgoT(), NewApply(applier, specService), action)
 		})
-		It("new factory drain", func() {
 
-			deps, factory := buildFactory()
+		It("new factory drain", func() {
 			action, err := factory.Create("drain")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewDrain(deps.notifier, deps.specService, deps.drainScriptProvider), action)
+			assert.Equal(GinkgoT(), NewDrain(notifier, specService, drainScriptProvider), action)
 		})
-		It("new factory fetch logs", func() {
 
-			deps, factory := buildFactory()
+		It("new factory fetch logs", func() {
 			action, err := factory.Create("fetch_logs")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewLogs(deps.platform.GetCompressor(), deps.platform.GetCopier(), deps.blobstore, deps.platform.GetDirProvider()), action)
+			assert.Equal(GinkgoT(), NewLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider()), action)
 		})
-		It("new factory get task", func() {
 
-			deps, factory := buildFactory()
+		It("new factory get task", func() {
 			action, err := factory.Create("get_task")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewGetTask(deps.taskService), action)
+			assert.Equal(GinkgoT(), NewGetTask(taskService), action)
 		})
-		It("new factory get state", func() {
 
-			deps, factory := buildFactory()
-			ntpService := boshntp.NewConcreteService(deps.platform.GetFs(), deps.platform.GetDirProvider())
+		It("new factory get state", func() {
+			ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
 			action, err := factory.Create("get_state")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewGetState(deps.settings, deps.specService, deps.jobSupervisor, deps.platform.GetVitalsService(), ntpService), action)
+			assert.Equal(GinkgoT(), NewGetState(settings, specService, jobSupervisor, platform.GetVitalsService(), ntpService), action)
 		})
-		It("new factory list disk", func() {
 
-			deps, factory := buildFactory()
+		It("new factory list disk", func() {
 			action, err := factory.Create("list_disk")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewListDisk(deps.settings, deps.platform), action)
+			assert.Equal(GinkgoT(), NewListDisk(settings, platform), action)
 		})
-		It("new factory migrate disk", func() {
 
-			deps, factory := buildFactory()
+		It("new factory migrate disk", func() {
 			action, err := factory.Create("migrate_disk")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewMigrateDisk(deps.platform, deps.platform.GetDirProvider()), action)
+			assert.Equal(GinkgoT(), NewMigrateDisk(platform, platform.GetDirProvider()), action)
 		})
-		It("new factory mount disk", func() {
 
-			deps, factory := buildFactory()
+		It("new factory mount disk", func() {
 			action, err := factory.Create("mount_disk")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewMountDisk(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
+			assert.Equal(GinkgoT(), NewMountDisk(settings, platform, platform.GetDirProvider()), action)
 		})
-		It("new factory ssh", func() {
 
-			deps, factory := buildFactory()
+		It("new factory ssh", func() {
 			action, err := factory.Create("ssh")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewSsh(deps.settings, deps.platform, deps.platform.GetDirProvider()), action)
+			assert.Equal(GinkgoT(), NewSsh(settings, platform, platform.GetDirProvider()), action)
 		})
-		It("new factory start", func() {
 
-			deps, factory := buildFactory()
+		It("new factory start", func() {
 			action, err := factory.Create("start")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewStart(deps.jobSupervisor), action)
+			assert.Equal(GinkgoT(), NewStart(jobSupervisor), action)
 		})
-		It("new factory unmount disk", func() {
 
-			deps, factory := buildFactory()
+		It("new factory unmount disk", func() {
 			action, err := factory.Create("unmount_disk")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewUnmountDisk(deps.settings, deps.platform), action)
+			assert.Equal(GinkgoT(), NewUnmountDisk(settings, platform), action)
 		})
-		It("new factory compile package", func() {
 
-			deps, factory := buildFactory()
+		It("new factory compile package", func() {
 			action, err := factory.Create("compile_package")
 			assert.NoError(GinkgoT(), err)
 			assert.NotNil(GinkgoT(), action)
-			assert.Equal(GinkgoT(), NewCompilePackage(deps.compiler), action)
+			assert.Equal(GinkgoT(), NewCompilePackage(compiler), action)
 		})
 	})
 }
