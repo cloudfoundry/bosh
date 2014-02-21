@@ -12,7 +12,7 @@ import (
 
 func buildMountDiskAction(settings *fakesettings.FakeSettingsService) (*fakeplatform.FakePlatform, MountDiskAction) {
 	platform := fakeplatform.NewFakePlatform()
-	action := NewMountDisk(settings, platform, boshdirs.NewDirectoriesProvider("/foo"))
+	action := NewMountDisk(settings, platform, platform, boshdirs.NewDirectoriesProvider("/foo"))
 	return platform, action
 }
 func init() {

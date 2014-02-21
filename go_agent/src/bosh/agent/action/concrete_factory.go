@@ -46,7 +46,7 @@ func NewFactory(
 			"get_state":    NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
 			"list_disk":    NewListDisk(settings, platform),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settings, platform, dirProvider),
+			"mount_disk":   NewMountDisk(settings, platform, platform, dirProvider),
 			"ping":         NewPing(),
 			"prepare_network_change": NewPrepareNetworkChange(platform),
 			"ssh":                NewSsh(settings, platform, dirProvider),

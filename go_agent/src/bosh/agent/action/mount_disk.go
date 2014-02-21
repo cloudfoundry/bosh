@@ -8,18 +8,23 @@ import (
 
 type diskMounter interface {
 	MountPersistentDisk(volumeId string, mountPoint string) error
+}
+
+type mountPoints interface {
 	IsMountPoint(string) (bool, error)
 }
 
 type MountDiskAction struct {
 	settings    boshsettings.Service
 	platform    diskMounter
+	mountPoints mountPoints
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewMountDisk(settings boshsettings.Service, platform diskMounter, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
+func NewMountDisk(settings boshsettings.Service, platform diskMounter, mountPoints mountPoints, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
 	mountDisk.settings = settings
 	mountDisk.platform = platform
+	mountDisk.mountPoints = mountPoints
 	mountDisk.dirProvider = dirProvider
 	return
 }
@@ -44,7 +49,7 @@ func (a MountDiskAction) Run(volumeId string) (value interface{}, err error) {
 
 	mountPoint := a.dirProvider.StoreDir()
 
-	isMountPoint, err := a.platform.IsMountPoint(mountPoint)
+	isMountPoint, err := a.mountPoints.IsMountPoint(mountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Checking mount point")
 		return

@@ -147,7 +147,7 @@ func init() {
 			action, err := factory.Create("mount_disk")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(action).ToNot(BeNil())
-			Expect(NewMountDisk(settings, platform, platform.GetDirProvider())).To(Equal(action))
+			Expect(NewMountDisk(settings, platform, platform, platform.GetDirProvider())).To(Equal(action))
 		})
 
 		It("new factory ssh", func() {
