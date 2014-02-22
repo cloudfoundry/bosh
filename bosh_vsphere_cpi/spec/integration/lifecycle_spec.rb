@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/cpi/compatibility_helpers/delete_vm'
 require 'tempfile'
 require 'yaml'
 
