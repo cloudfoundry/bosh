@@ -77,7 +77,7 @@ describe 'Ubuntu Stemcell' do
       curl
       wget
       libcurl3
-      libcurl4-openssl-dev # installed because of libcurl3-dev
+      libcurl4-openssl-dev
       bison
       libreadline6-dev
       libxml2
