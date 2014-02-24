@@ -103,7 +103,6 @@ describe 'Ubuntu Stemcell' do
       libcap2-bin
       libcap-dev
       libbz2-dev
-      libyaml-dev
       cmake
       scsitools
       mg
@@ -124,6 +123,10 @@ describe 'Ubuntu Stemcell' do
       it { should be_file }
       it { should be_executable }
     end
+  end
+
+  describe package('libyaml-dev') do
+    it {should_not be_installed }
   end
 
   context 'installed by system_grub' do
