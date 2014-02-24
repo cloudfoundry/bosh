@@ -27,28 +27,37 @@ func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip str
 }
 
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("aws setup ssh", func() {
-			expectedKey := "some public key"
+	Describe("AWS Infrastructure", func() {
+		Describe("SetupSsh", func() {
+			var (
+				ts       *httptest.Server
+				aws      Infrastructure
+				platform *fakeplatform.FakePlatform
+			)
+			const expectedKey = "some public key"
 
-			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				Expect(r.Method).To(Equal("GET"))
-				Expect(r.URL.Path).To(Equal("/latest/meta-data/public-keys/0/openssh-key"))
-				w.Write([]byte(expectedKey))
+			BeforeEach(func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal("GET"))
+					Expect(r.URL.Path).To(Equal("/latest/meta-data/public-keys/0/openssh-key"))
+					w.Write([]byte(expectedKey))
+				})
+				ts = httptest.NewServer(handler)
+				platform = fakeplatform.NewFakePlatform()
 			})
 
-			ts := httptest.NewServer(handler)
-			defer ts.Close()
+			AfterEach(func() {
+				ts.Close()
+			})
 
-			platform := fakeplatform.NewFakePlatform()
+			It("gets the public key and sets up ssh via the platform", func() {
+				aws = NewAwsInfrastructure(ts.URL, &FakeDnsResolver{}, platform)
+				err := aws.SetupSsh("vcap")
+				Expect(err).NotTo(HaveOccurred())
 
-			aws := NewAwsInfrastructure(ts.URL, &FakeDnsResolver{}, platform)
-
-			err := aws.SetupSsh("vcap")
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(platform.SetupSshPublicKey).To(Equal(expectedKey))
-			Expect(platform.SetupSshUsername).To(Equal("vcap"))
+				Expect(platform.SetupSshPublicKey).To(Equal(expectedKey))
+				Expect(platform.SetupSshUsername).To(Equal("vcap"))
+			})
 		})
 
 		Describe("GetSettings", func() {
