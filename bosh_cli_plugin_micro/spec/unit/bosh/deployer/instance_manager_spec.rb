@@ -47,8 +47,9 @@ describe Bosh::Deployer::InstanceManager do
                                    with(config, 'fake-config-sha1', ui_messager, 'fake-plugin')
     end
 
-    it 'retries on HTTPClient::ConnectTimeoutError, HTTPClient::BadResponseError when waiting for agent and director' do
-      connect_exceptions = Bosh::Deployer::InstanceManager.const_get(:CONNECTION_EXCEPTIONS)
+    it 'retries on ConnectTimeoutError, BadResponseError when waiting for agent and director through a proxy' do
+      s = :CONNECTION_EXCEPTIONS  # rubocop:disable SymbolName
+      connect_exceptions = Bosh::Deployer::InstanceManager.const_get(s)
       connect_exceptions.should include HTTPClient::ConnectTimeoutError
       connect_exceptions.should include HTTPClient::BadResponseError
     end

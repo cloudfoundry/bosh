@@ -18,7 +18,7 @@ module Bosh::Deployer
       Errno::ETIMEDOUT,
       DirectorGatewayError,
       HTTPClient::ConnectTimeoutError,
-      HTTPClient::BadResponseError
+      HTTPClient::BadResponseError, # http_proxy variant of cnx refused 503 bad gateway
     ]
 
     DEPLOYMENTS_FILE = 'bosh-deployments.yml'
