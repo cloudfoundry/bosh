@@ -261,31 +261,34 @@ func init() {
 			})
 		})
 
-		It("aws setup networking", func() {
+		Describe("SetupNetworking", func() {
+			It("sets up DHCP on the platform", func() {
+				fakeDnsResolver := &FakeDnsResolver{}
+				platform := fakeplatform.NewFakePlatform()
+				aws := NewAwsInfrastructure("", fakeDnsResolver, platform)
+				networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
-			fakeDnsResolver := &FakeDnsResolver{}
-			platform := fakeplatform.NewFakePlatform()
-			aws := NewAwsInfrastructure("", fakeDnsResolver, platform)
-			networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
+				aws.SetupNetworking(networks)
 
-			aws.SetupNetworking(networks)
-
-			Expect(platform.SetupDhcpNetworks).To(Equal(networks))
+				Expect(platform.SetupDhcpNetworks).To(Equal(networks))
+			})
 		})
-		It("aws get ephemeral disk path", func() {
 
-			fakeDnsResolver := &FakeDnsResolver{}
-			platform := fakeplatform.NewFakePlatform()
-			aws := NewAwsInfrastructure("", fakeDnsResolver, platform)
+		Describe("GetEphemeralDiskPath", func() {
+			It("returns the real disk path given an AWS EBS hint", func() {
+				fakeDnsResolver := &FakeDnsResolver{}
+				platform := fakeplatform.NewFakePlatform()
+				aws := NewAwsInfrastructure("", fakeDnsResolver, platform)
 
-			platform.NormalizeDiskPathRealPath = "/dev/xvdb"
-			platform.NormalizeDiskPathFound = true
+				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
+				platform.NormalizeDiskPathFound = true
 
-			realPath, found := aws.GetEphemeralDiskPath("/dev/sdb")
+				realPath, found := aws.GetEphemeralDiskPath("/dev/sdb")
 
-			Expect(found).To(Equal(true))
-			Expect(realPath).To(Equal("/dev/xvdb"))
-			Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+				Expect(found).To(Equal(true))
+				Expect(realPath).To(Equal("/dev/xvdb"))
+				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+			})
 		})
 	})
 }
