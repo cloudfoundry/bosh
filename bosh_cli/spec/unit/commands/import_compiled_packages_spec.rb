@@ -9,6 +9,7 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
 
     context 'when the user is logged in' do
       before { command.stub(logged_in?: true) }
+
       context 'when the tarball of compiled packages does not exist' do
         it 'fails with an error' do
           expect {
@@ -18,23 +19,22 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
       end
 
       context 'when the archive of compiled packages exists' do
-        let(:director) { double('cli director') }
         before { command.stub(director: director) }
+        let(:director) { instance_double('Bosh::Cli::Client::Director') }
+
         include FakeFS::SpecHelpers
         before { FileUtils.touch('/some-real-archive.tgz') }
 
-        it 'makes the proper request' do
-          client = double('compiled package client', import: nil)
-          Bosh::Cli::Client::CompiledPackagesClient.stub(:new).with(director).and_return(client)
-          command.perform('/some-real-archive.tgz')
+        before { allow(Bosh::Cli::Client::CompiledPackagesClient).to receive(:new).with(director).and_return(client) }
+        let(:client) { instance_double('Bosh::Cli::Client::CompiledPackagesClient') }
 
-          expect(client).to have_received(:import).with('/some-real-archive.tgz')
+        it 'makes the proper request' do
+          expect(client).to receive(:import).with('/some-real-archive.tgz')
+          command.perform('/some-real-archive.tgz')
         end
 
         context 'when the task errs' do
           let(:some_task_id) { '1' }
-          let(:client) { double('compiled package client') }
-          before { Bosh::Cli::Client::CompiledPackagesClient.stub(new: client) }
 
           context 'when the task status is :error' do
             before { client.stub(:import).and_return([:error, some_task_id]) }
@@ -59,8 +59,6 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
 
         context 'when the task is done' do
           let(:some_task_id) { '1' }
-          let(:client) { double('compiled package client') }
-          before { Bosh::Cli::Client::CompiledPackagesClient.stub(new: client) }
 
           context 'when the task status is :done' do
             it 'returns exit status 0' do
@@ -78,15 +76,20 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
       before { command.stub(logged_in?: false) }
 
       it 'fails and tells the user to login' do
-        expect { command.perform('fake/exported_packages') }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
+        expect {
+          command.perform('fake/exported_packages')
+        }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
       end
     end
   end
 
   context 'when nothing is targeted' do
     before { command.stub(target: nil) }
+
     it 'fails with required target error' do
-      expect { command.perform('fake/exported_packages') }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
+      expect {
+        command.perform('fake/exported_packages')
+      }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
     end
   end
 end
