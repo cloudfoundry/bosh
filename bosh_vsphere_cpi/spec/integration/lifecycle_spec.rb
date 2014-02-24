@@ -39,7 +39,7 @@ describe VSphereCloud::Cloud do
     )
   end
 
-  let(:cpi) { @cpi }
+  subject(:cpi) { @cpi }
 
   before(:all) do
     Dir.mktmpdir do |temp_dir|
