@@ -51,7 +51,6 @@ function pkg_mgr {
 function cleanup_build_artifacts {
   [[ -f $chroot/tmp/$(basename $CUSTOM_YUM_CONF) ]] && rm -v ${chroot}/tmp/$(basename $CUSTOM_YUM_CONF)
   rm -vrf $chroot/tmp/*
-  umount $chroot/centosmirror && rm -rfv $chroot/mnt
   if [ -f $chroot/etc/yum.repos.d/bosh_stemcell_local.repo ]
   then
     rm -vf $chroot/etc/yum.repos.d/bosh_stemcell_local.repo
