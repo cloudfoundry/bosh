@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'stemcell integrations' do
+describe 'cli: stemcell' do
   include IntegrationExampleGroup
 
   context 'when stemcell is in use by a deployment' do

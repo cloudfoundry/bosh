@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'compiled_packages' do
+describe 'cli: compiled_packages' do
   include IntegrationExampleGroup
 
   it 'allows user to export compiled packages after a deploy' do

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'property management' do
+describe 'cli: property management' do
   include IntegrationExampleGroup
 
   it 'can get/set/unset deployment properties' do

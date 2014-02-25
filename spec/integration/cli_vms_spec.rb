@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'vms list' do
+describe 'cli: vms' do
   include IntegrationExampleGroup
 
   it 'should return vms in a deployment' do

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Bosh::Spec::IntegrationTest::CliUsage package compilation' do
+describe 'cli: package compilation' do
   include IntegrationExampleGroup
 
   describe 'package compilation' do

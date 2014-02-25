@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Bosh::Spec::IntegrationTest::CliUsage cloudcheck' do
+describe 'cli: cloudcheck' do
   include IntegrationExampleGroup
 
   describe 'cloudcheck' do

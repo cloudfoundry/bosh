@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Bosh::Spec::IntegrationTest::CliUsage deployment prerequisites' do
+describe 'cli: deployment prerequisites' do
   include IntegrationExampleGroup
 
   describe 'deployment prerequisites' do
