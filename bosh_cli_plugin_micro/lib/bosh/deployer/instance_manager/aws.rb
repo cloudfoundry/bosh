@@ -84,6 +84,10 @@ module Bosh::Deployer
         instance_manager.bosh_ip
       end
 
+      alias_method :internal_services_ip, :discover_bosh_ip
+      alias_method :client_services_ip, :discover_bosh_ip
+      alias_method :agent_services_ip, :discover_bosh_ip
+
       def service_ip
         instance_manager.cloud.ec2.instances[instance_manager.state.vm_cid].private_ip_address
       end

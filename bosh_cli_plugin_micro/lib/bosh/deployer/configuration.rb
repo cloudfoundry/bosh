@@ -120,7 +120,7 @@ module Bosh::Deployer
     end
 
     def client_services_ip
-        net_conf['vip'] || net_conf['ip']
+      net_conf['vip'] || net_conf['ip']
     end
 
     def internal_services_ip

@@ -1,8 +1,10 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'forwardable'
 
 module Bosh::Deployer
   class InstanceManager
     class Vsphere
+      extend Forwardable
+
       def initialize(instance_manager, config, logger)
         @instance_manager = instance_manager
         @config = config
@@ -45,6 +47,13 @@ module Bosh::Deployer
       def discover_bosh_ip
         instance_manager.bosh_ip
       end
+
+      def_delegators(
+        :config,
+        :internal_services_ip,
+        :agent_services_ip,
+        :client_services_ip,
+      )
 
       def service_ip
         instance_manager.bosh_ip
