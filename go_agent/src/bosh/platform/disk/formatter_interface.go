@@ -4,7 +4,7 @@ type FileSystemType string
 
 const (
 	FileSystemSwap FileSystemType = "swap"
-	FileSystemExt4                = "ext4"
+	FileSystemExt4 FileSystemType = "ext4"
 )
 
 type Formatter interface {

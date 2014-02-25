@@ -4,8 +4,8 @@ type PartitionType string
 
 const (
 	PartitionTypeSwap  PartitionType = "swap"
-	PartitionTypeLinux               = "linux"
-	PartitionTypeEmpty               = "empty"
+	PartitionTypeLinux PartitionType = "linux"
+	PartitionTypeEmpty PartitionType = "empty"
 )
 
 type Partition struct {

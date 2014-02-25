@@ -13,8 +13,8 @@ type FakeFileType string
 
 const (
 	FakeFileTypeFile    FakeFileType = "file"
-	FakeFileTypeSymlink              = "symlink"
-	FakeFileTypeDir                  = "dir"
+	FakeFileTypeSymlink FakeFileType = "symlink"
+	FakeFileTypeDir     FakeFileType = "dir"
 )
 
 type FakeFileSystem struct {
