@@ -21,7 +21,7 @@ module Bosh::Cli::Command
 
     let(:deployer) { instance_double('Bosh::Deployer::InstanceManager') }
     before do
-      allow(deployer).to receive(:discover_bosh_ip).and_return('5')
+      allow(deployer).to receive(:client_services_ip).and_return('5')
       allow(deployer).to receive(:check_dependencies).and_return(nil)
       allow(deployer).to receive(:exists?).and_return(false)
       allow(deployer).to receive(:renderer).and_return(nil)
@@ -317,7 +317,7 @@ module Bosh::Cli::Command
       mock_stemcell.should_receive(:valid?).and_return(true)
       Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
 
-      mock_deployer = double(Bosh::Deployer::InstanceManager, discover_bosh_ip: '5')
+      mock_deployer = double(Bosh::Deployer::InstanceManager, client_services_ip: '5')
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
@@ -332,7 +332,7 @@ module Bosh::Cli::Command
     end
 
     it 'allows deploying a micro BOSH instance passing stemcell in manifest file' do
-      mock_deployer = double(Bosh::Deployer::InstanceManager, discover_bosh_ip: '5')
+      mock_deployer = double(Bosh::Deployer::InstanceManager, client_services_ip: '5')
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
       mock_deployer.should_receive(:check_dependencies)
@@ -376,7 +376,7 @@ module Bosh::Cli::Command
     it 'should clear cached target values when setting a new deployment' do
       @cmd.stub(:find_deployment).with('foo').and_return(
         spec_asset('test-bootstrap-config-aws.yml'))
-      @cmd.stub_chain(:deployer, :discover_bosh_ip).and_return('client_ip')
+      @cmd.stub_chain(:deployer, :client_services_ip).and_return('client_ip')
 
       config = double('config', target: 'target', resolve_alias: nil, set_deployment: nil)
       config.should_receive(:target=).with('https://client_ip:25555')
@@ -407,7 +407,7 @@ module Bosh::Cli::Command
         double(
           Bosh::Deployer::InstanceManager,
           :renderer= => nil,
-          :discover_bosh_ip => 'client_ip'
+          :client_services_ip => 'client_ip'
         )
       end
 
@@ -417,6 +417,7 @@ module Bosh::Cli::Command
         @cmd.stub(deployment: @manifest_path)
         @cmd.stub(target_name: 'micro-test')
         @cmd.stub(load_yaml_file: @manifest_yaml)
+        allow(@cmd.config).to receive(:save)
       end
 
       let(:tarball_path) { 'some-stemcell-path' }

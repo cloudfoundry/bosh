@@ -52,7 +52,7 @@ module Bosh::Cli::Command
       if manifest['network'].blank?
         err 'network is not defined in deployment manifest'
       end
-      ip = deployer(manifest_filename).discover_bosh_ip || name
+      ip = deployer(manifest_filename).client_services_ip
 
       if target
         old_director_ip = URI.parse(target).host
@@ -355,7 +355,7 @@ AGENT_HELP
 
     # rubocop:disable MethodLength
     def update_target
-      set_target(deployer.discover_bosh_ip)
+      set_target(deployer.client_services_ip)
 
       if deployer.exists?
         if options[:director_checks]
