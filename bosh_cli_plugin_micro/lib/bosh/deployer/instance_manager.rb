@@ -69,7 +69,6 @@ module Bosh::Deployer
     def_delegators(
       :@config,
       :cloud,
-      :agent,
       :logger,
       :bosh_ip,
       :bosh_ip=,
@@ -397,6 +396,18 @@ module Bosh::Deployer
 
     def save_state
       deployments_state.save(infrastructure)
+    end
+
+    def agent
+      uri = URI.parse(config.agent_url)
+      user, password = uri.userinfo.split(':', 2)
+      uri.userinfo = nil
+      uri.host = client_services_ip
+      Bosh::Agent::HTTPClient.new(uri.to_s, {
+        'user' => user,
+        'password' => password,
+        'reply_to' => config.uuid,
+      })
     end
 
     private

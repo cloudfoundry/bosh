@@ -26,11 +26,11 @@ module Bosh
       before do
         Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
         config.stub(cloud: cloud)
-        config.stub(agent: agent)
         config.stub(agent_properties: {})
         SecureRandom.stub(uuid: 'deadbeef')
 
         allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
+        allow(Bosh::Agent::HTTPClient).to receive(:new).and_return agent
       end
 
       class FakeMicroboshJobInstance

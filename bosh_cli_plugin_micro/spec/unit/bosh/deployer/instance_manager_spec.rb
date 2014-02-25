@@ -3,12 +3,10 @@ require 'bosh/deployer/microbosh_job_instance'
 require 'bosh/deployer/deployments_state'
 
 module Bosh::Deployer
-
   describe InstanceManager do
     let(:config) { instance_double('Bosh::Deployer::Configuration') }
     let(:config_hash) { { 'cloud' => { 'plugin' => 'fake' } } }
     let(:infrastructure) { double(:infrastructure) }
-    let(:agent) { double('agent') }
     let(:state) { double(:state, uuid: nil) }
     let(:deployments_state) { instance_double('Bosh::Deployer::DeploymentsState') }
     let(:microbosh_job_instance) { instance_double('Bosh::Deployer::MicroboshJobInstance') }
@@ -19,17 +17,15 @@ module Bosh::Deployer
 
     before do
       allow(Config).to receive(:configure).and_return(config)
-      allow(config).to receive(:agent).and_return(agent)
-      allow(agent).to receive(:ping)
-      allow(agent).to receive(:release_apply_spec)
-      allow(agent).to receive(:run_task)
-      allow(agent).to receive(:list_disk).and_return([])
       allow(config).to receive(:logger).and_return(logger)
       allow(config).to receive(:base_dir)
       allow(config).to receive(:name)
       allow(config).to receive(:uuid=)
       allow(config).to receive(:agent_services_ip)
       allow(config).to receive(:internal_services_ip)
+      allow(config).to receive(:agent_url).and_return('http://user:password@agent-url.com')
+      allow(config).to receive(:bosh_ip)
+      allow(config).to receive(:uuid)
 
       class_double('Bosh::Deployer::MicroboshJobInstance').as_stubbed_const
       allow(MicroboshJobInstance).to receive(:new).and_return(microbosh_job_instance)
@@ -41,6 +37,9 @@ module Bosh::Deployer
       allow(described_class).to receive(:const_get).with('Fake').and_return(fake_plugin_class)
       allow(infrastructure).to receive(:discover_bosh_ip)
       allow(infrastructure).to receive(:update_spec)
+      allow(infrastructure).to receive(:client_services_ip).and_return('client-ip')
+
+      allow(Bosh::Agent::HTTPClient).to receive(:new).and_return double('agent', run_task: nil)
 
       class_double('Bosh::Deployer::DeploymentsState').as_stubbed_const
       allow(DeploymentsState).to receive(:load_from_dir).and_return(deployments_state)
@@ -129,13 +128,22 @@ module Bosh::Deployer
       end
     end
 
+    describe '#agent' do
+      it 'should be set with the client ip' do
+        expect(Bosh::Agent::HTTPClient).to receive(:new) do |uri, _|
+          expect(uri).to include('client-ip')
+        end
+
+        subject.agent
+      end
+    end
+
     describe '#apply' do
       before do
-        allow(agent).to receive(:run_task)
+        allow(Bosh::Agent::HTTPClient).to receive(:new).and_return double('agent', run_task: nil)
         allow(infrastructure).to receive(:update_spec)
         allow(infrastructure).to receive(:agent_services_ip).and_return('agent_ip')
         allow(infrastructure).to receive(:internal_services_ip).and_return('internal_ip')
-        allow(config).to receive(:agent_url).and_return('agent_url')
         allow(config).to receive(:logger).and_return('logger')
       end
 
@@ -146,7 +154,8 @@ module Bosh::Deployer
       end
 
       it 'uses the agent service IP to render job templates' do
-        expect(MicroboshJobInstance).to receive(:new).with('agent_ip', 'agent_url', 'logger')
+        expect(MicroboshJobInstance).to receive(:new).
+          with('agent_ip', 'http://user:password@agent-url.com', 'logger')
 
         instance_manager.apply(spec)
       end
@@ -160,30 +169,40 @@ module Bosh::Deployer
       let(:ssl_config) { double(:http_client_ssl_config).as_null_object }
       let(:state) { double('state').as_null_object }
       let(:infrastructure) { double('infrastructure').as_null_object }
+      let(:agent) { double(Bosh::Agent::HTTPClient) }
 
       before do
         allow(instance_manager).to receive(:err)
+
         allow(state).to receive(:vm_cid)
         allow(deployments_state).to receive(:save)
+
         allow(config).to receive(:resources).and_return({})
         allow(config).to receive(:networks)
         allow(config).to receive(:env)
-        allow(config).to receive(:agent_url)
         allow(config).to receive(:cloud).and_return(infrastructure)
+
         allow(HTTPClient).to receive(:new).and_return(http_client)
         allow(http_client).to receive(:get).and_return(director_response)
         allow(http_client).to receive(:ssl_config).and_return(ssl_config)
-        allow(infrastructure).to receive(:client_services_ip).and_return('client_ip')
+
         allow(Specification).to receive(:new).and_return(spec)
         allow(spec).to receive(:director_port).and_return(80808)
+
         class_double('Bosh::Common').as_stubbed_const
         allow(Bosh::Common).to receive(:retryable).and_yield(0, nil)
+
+        allow(Bosh::Agent::HTTPClient).to receive(:new).and_return(agent)
+        allow(agent).to receive(:run_task)
+        allow(agent).to receive(:ping)
+        allow(agent).to receive(:list_disk).and_return([])
+        allow(agent).to receive(:release_apply_spec)
       end
 
       it 'contacts the director on the client_services_ip to see if it is ready' do
         instance_manager.create('stemcell', stemcell_archive)
 
-        expect(http_client).to have_received(:get).with('https://client_ip:80808/info')
+        expect(http_client).to have_received(:get).with('https://client-ip:80808/info')
       end
     end
   end

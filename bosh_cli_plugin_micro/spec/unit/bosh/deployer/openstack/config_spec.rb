@@ -56,14 +56,6 @@ describe Bosh::Deployer::Config do
     end
   end
 
-  it 'should configure agent using mbus property' do
-    config = Psych.load_file(spec_asset('test-bootstrap-config-openstack.yml'))
-    config['dir'] = @dir
-    Bosh::Deployer::Config.configure(config)
-    agent = Bosh::Deployer::Config.agent
-    agent.should be_kind_of(Bosh::Agent::HTTPClient)
-  end
-
   it 'should have openstack and registry object access' do
     config = Psych.load_file(spec_asset('test-bootstrap-config-openstack.yml'))
     config['dir'] = @dir

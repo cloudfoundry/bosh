@@ -46,10 +46,6 @@ module Bosh::Deployer
         end
       end
 
-      it 'should configure agent using mbus property' do
-        config.agent.should be_kind_of(Bosh::Agent::HTTPClient)
-      end
-
       it 'stores the bosh_ip' do
         expect(config.bosh_ip).to eq('172.23.194.100')
       end

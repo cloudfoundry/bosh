@@ -72,18 +72,6 @@ module Bosh::Deployer
       @cloud
     end
 
-    def agent
-      uri = URI.parse(agent_url)
-      user, password = uri.userinfo.split(':', 2)
-      uri.userinfo = nil
-      uri.host = bosh_ip
-      Bosh::Agent::HTTPClient.new(uri.to_s, {
-        'user' => user,
-        'password' => password,
-        'reply_to' => uuid,
-      })
-    end
-
     def agent_url
       @cloud_options['properties']['agent']['mbus']
     end
