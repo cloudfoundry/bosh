@@ -41,13 +41,13 @@ module Bosh::Deployer
       instances.detect { |d| d[:name] == @deployer.state.name }
     end
 
-    def discover_bosh_ip(ip, id)
+    def stub_stuff_in_discover_bosh_ip(ip, id)
       instance = double('instance')
       instances = double('instances')
-      @ec2.should_receive(:instances).and_return(instances)
-      instances.should_receive(:[]).with(id).and_return(instance)
-      instance.should_receive(:public_ip_address).and_return(ip)
-      instance.should_receive(:has_elastic_ip?).and_return(false)
+      allow(@ec2).to receive(:instances).and_return(instances)
+      allow(instances).to receive(:[]).with(id).and_return(instance)
+      allow(instance).to receive(:public_ip_address).and_return(ip)
+      allow(instance).to receive(:has_elastic_ip?).and_return(false)
     end
 
     it 'should not populate disk model' do
@@ -80,7 +80,7 @@ module Bosh::Deployer
       @agent.should_receive(:run_task).with(:apply, spec)
       @agent.should_receive(:run_task).with(:start)
 
-      discover_bosh_ip('10.0.0.1', 'VM-CID-CREATE')
+      stub_stuff_in_discover_bosh_ip('10.0.0.1', 'VM-CID-CREATE')
       @deployer.create(BOSH_STEMCELL_TGZ, nil)
 
       @deployer.state.stemcell_cid.should == 'SC-CID-CREATE'
@@ -149,7 +149,7 @@ module Bosh::Deployer
       @agent.should_receive(:run_task).with(:apply, spec)
       @agent.should_receive(:run_task).with(:start)
 
-      discover_bosh_ip('10.0.0.2', 'VM-CID')
+      stub_stuff_in_discover_bosh_ip('10.0.0.2', 'VM-CID')
       @deployer.update(BOSH_STEMCELL_TGZ, nil)
 
       @deployer.state.stemcell_cid.should == 'SC-CID'

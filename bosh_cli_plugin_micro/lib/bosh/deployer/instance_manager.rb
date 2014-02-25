@@ -75,13 +75,14 @@ module Bosh::Deployer
       :bosh_ip=,
     )
 
-    def check_dependencies
-      infrastructure.check_dependencies
-    end
-
-    def discover_bosh_ip
-      infrastructure.discover_bosh_ip
-    end
+    def_delegators(
+      :infrastructure,
+      :check_dependencies,
+      :discover_bosh_ip, # TODO: remove
+      :agent_services_ip,
+      :client_services_ip,
+      :internal_services_ip,
+    )
 
     def step(task)
       renderer.update(:started, task)
@@ -125,7 +126,7 @@ module Bosh::Deployer
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
         update_vm_metadata(state.vm_cid, { 'Name' => state.name })
-        infrastructure.discover_bosh_ip
+        infrastructure.discover_bosh_ip # FIXME
       end
       save_state
 
@@ -383,10 +384,10 @@ module Bosh::Deployer
         # first update spec with infrastructure specific stuff
         infrastructure.update_spec(spec)
         # then update spec with generic changes
-        spec = spec.update(bosh_ip, infrastructure.service_ip)
+        spec = spec.update(agent_services_ip, internal_services_ip)
 
-        microbosh_job_instance = MicroboshJobInstance.new(bosh_ip, config.agent_url, logger)
-        spec = microbosh_job_instance.render_templates(spec)
+        microbosh_instance = MicroboshJobInstance.new(agent_services_ip, config.agent_url, logger)
+        spec = microbosh_instance.render_templates(spec)
 
         agent.run_task(:apply, spec)
       end
@@ -442,7 +443,7 @@ module Bosh::Deployer
 
     def wait_until_director_ready
       port = @apply_spec.director_port
-      url = "https://#{bosh_ip}:#{port}/info"
+      url = "https://#{client_services_ip}:#{port}/info"
 
       wait_until_ready('director', 1, 600) do
 
@@ -502,7 +503,7 @@ module Bosh::Deployer
 
     def load_state(name)
       deployments_state.load_deployment(name, infrastructure)
-      infrastructure.discover_bosh_ip
+      infrastructure.discover_bosh_ip # FIXME
     end
 
     def run_command(command)

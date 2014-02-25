@@ -1,56 +1,190 @@
 require 'spec_helper'
+require 'bosh/deployer/microbosh_job_instance'
+require 'bosh/deployer/deployments_state'
 
-describe Bosh::Deployer::InstanceManager do
-  describe '#create' do
-    let(:config_hash) { { 'cloud' => { 'plugin' => 'fake-plugin' } } }
+module Bosh::Deployer
+
+  describe InstanceManager do
     let(:config) { instance_double('Bosh::Deployer::Configuration') }
+    let(:config_hash) { { 'cloud' => { 'plugin' => 'fake' } } }
+    let(:infrastructure) { double(:infrastructure) }
+    let(:agent) { double('agent') }
+    let(:state) { double(:state, uuid: nil) }
+    let(:deployments_state) { instance_double('Bosh::Deployer::DeploymentsState') }
+    let(:microbosh_job_instance) { instance_double('Bosh::Deployer::MicroboshJobInstance') }
+    let(:spec) { instance_double('Bosh::Deployer::Specification') }
+    let(:logger) { instance_double('Logger', info: nil, error: nil) }
+
+    subject(:instance_manager) { described_class.create(config_hash) }
+
     before do
-      allow(Bosh::Deployer::Config).to receive(:configure).and_return(config)
+      allow(Config).to receive(:configure).and_return(config)
+      allow(config).to receive(:agent).and_return(agent)
+      allow(agent).to receive(:ping)
+      allow(agent).to receive(:release_apply_spec)
+      allow(agent).to receive(:run_task)
+      allow(agent).to receive(:list_disk).and_return([])
+      allow(config).to receive(:logger).and_return(logger)
+      allow(config).to receive(:base_dir)
+      allow(config).to receive(:name)
+      allow(config).to receive(:uuid=)
+      allow(config).to receive(:agent_services_ip)
+      allow(config).to receive(:internal_services_ip)
+
+      class_double('Bosh::Deployer::MicroboshJobInstance').as_stubbed_const
+      allow(MicroboshJobInstance).to receive(:new).and_return(microbosh_job_instance)
+      allow(microbosh_job_instance).to receive(:render_templates).and_return(spec)
+      allow(spec).to receive(:update).and_return(spec)
+
+      allow(described_class).to receive(:require).with('bosh/deployer/instance_manager/fake')
+      fake_plugin_class = double(:fake_plugin_class, new: infrastructure)
+      allow(described_class).to receive(:const_get).with('Fake').and_return(fake_plugin_class)
+      allow(infrastructure).to receive(:discover_bosh_ip)
+      allow(infrastructure).to receive(:update_spec)
+
+      class_double('Bosh::Deployer::DeploymentsState').as_stubbed_const
+      allow(DeploymentsState).to receive(:load_from_dir).and_return(deployments_state)
+      allow(deployments_state).to receive(:load_deployment)
+      allow(deployments_state).to receive(:state).and_return(state)
+
+      allow(instance_manager).to receive(:step).and_yield
     end
 
-    it 'tries to require instance manager specific class' +
-       '(this allows custom gems to specify instance manager plugin)' do
-      described_class.should_receive(:require).with(
-        'bosh/deployer/instance_manager/fake-plugin')
-      allow(described_class).to receive(:new)
-      described_class.create(config_hash)
-    end
+    describe '.create' do
+      let(:config_hash) { { 'cloud' => { 'plugin' => 'fake' } } }
 
-    it 'raises an error when requiring non-existent plugin' do
-      expect {
+      it 'tries to require instance manager specific class' +
+           '(this allows custom gems to specify instance manager plugin)' do
+        described_class.should_receive(:require).with(
+          'bosh/deployer/instance_manager/fake')
+        allow(described_class).to receive(:new)
         described_class.create(config_hash)
-      }.to raise_error(
-        Bosh::Cli::CliError,
-        /Could not find Provider Plugin: fake-plugin/,
-      )
-    end
+      end
 
-    it 'returns the plugin specific instance manager' do
-      described_class.stub(:require)
+      it 'raises an error when requiring non-existent plugin' do
+        config_hash_with_non_existent_plugin = config_hash.dup
+        config_hash_with_non_existent_plugin['cloud']['plugin'] = 'does not exist'
 
-      fingerprinter = instance_double('Bosh::Deployer::HashFingerprinter')
-      Bosh::Deployer::HashFingerprinter
+        endpoint = 'bosh/deployer/instance_manager/does not exist'
+        allow(described_class).to receive(:require).with(endpoint).and_raise(LoadError)
+
+        expect {
+          described_class.create(config_hash_with_non_existent_plugin)
+        }.to raise_error(
+               Bosh::Cli::CliError,
+               /Could not find Provider Plugin: does not exist/,
+             )
+      end
+
+      it 'returns the plugin specific instance manager' do
+        described_class.stub(:require)
+
+        fingerprinter = instance_double('Bosh::Deployer::HashFingerprinter')
+        HashFingerprinter
         .should_receive(:new)
         .and_return(fingerprinter)
 
-      fingerprinter
+        fingerprinter
         .should_receive(:sha1)
         .with(config_hash)
         .and_return('fake-config-hash-sha1')
 
-      ui_messager = instance_double('Bosh::Deployer::UiMessager')
-      Bosh::Deployer::UiMessager
+        ui_messager = instance_double('Bosh::Deployer::UiMessager')
+        UiMessager
         .should_receive(:for_deployer)
         .and_return(ui_messager)
 
-      expect(Bosh::Deployer::Config).to receive(:configure).with(config_hash)
+        expect(Config).to receive(:configure).with(config_hash)
 
-      allow(described_class).to receive(:new)
+        allow(described_class).to receive(:new)
 
-      described_class.create(config_hash)
+        described_class.create(config_hash)
 
-      expect(described_class).to have_received(:new).
-                                   with(config, 'fake-config-hash-sha1', ui_messager, 'fake-plugin')
+        expect(described_class).to have_received(:new).
+                                     with(config, 'fake-config-hash-sha1', ui_messager, 'fake')
+      end
+    end
+
+    describe '#agent_services_ip' do
+      it 'delegates to the configuration' do
+        allow(infrastructure).to receive(:agent_services_ip).and_return('agent_ip')
+
+        expect(instance_manager.agent_services_ip).to eq('agent_ip')
+      end
+    end
+
+    describe '#client_services_ip' do
+      it 'delegates to the configuration' do
+        allow(infrastructure).to receive(:client_services_ip).and_return('client_ip')
+
+        expect(instance_manager.client_services_ip).to eq('client_ip')
+      end
+    end
+
+    describe '#internal_services_ip' do
+      it 'delegates to the configuration' do
+        allow(infrastructure).to receive(:internal_services_ip).and_return('internal_ip')
+
+        expect(instance_manager.internal_services_ip).to eq('internal_ip')
+      end
+    end
+
+    describe '#apply' do
+      before do
+        allow(agent).to receive(:run_task)
+        allow(infrastructure).to receive(:update_spec)
+        allow(infrastructure).to receive(:agent_services_ip).and_return('agent_ip')
+        allow(infrastructure).to receive(:internal_services_ip).and_return('internal_ip')
+        allow(config).to receive(:agent_url).and_return('agent_url')
+        allow(config).to receive(:logger).and_return('logger')
+      end
+
+      it 'updates the spec with agent service & internal service IPs' do
+        expect(spec).to receive(:update).with('agent_ip', 'internal_ip').and_return(spec)
+
+        instance_manager.apply(spec)
+      end
+
+      it 'uses the agent service IP to render job templates' do
+        expect(MicroboshJobInstance).to receive(:new).with('agent_ip', 'agent_url', 'logger')
+
+        instance_manager.apply(spec)
+      end
+    end
+
+    # TODO: just test wait_until_directory_ready?
+    describe '#create' do
+      let(:http_client) { instance_double('HTTPClient') }
+      let(:director_response) { double(:response, status: 200, body: '{}') }
+      let(:stemcell_archive) { double('stemcell archive', sha1: nil) }
+      let(:ssl_config) { double(:http_client_ssl_config).as_null_object }
+      let(:state) { double('state').as_null_object }
+      let(:infrastructure) { double('infrastructure').as_null_object }
+
+      before do
+        allow(instance_manager).to receive(:err)
+        allow(state).to receive(:vm_cid)
+        allow(deployments_state).to receive(:save)
+        allow(config).to receive(:resources).and_return({})
+        allow(config).to receive(:networks)
+        allow(config).to receive(:env)
+        allow(config).to receive(:agent_url)
+        allow(config).to receive(:cloud).and_return(infrastructure)
+        allow(HTTPClient).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:get).and_return(director_response)
+        allow(http_client).to receive(:ssl_config).and_return(ssl_config)
+        allow(infrastructure).to receive(:client_services_ip).and_return('client_ip')
+        allow(Specification).to receive(:new).and_return(spec)
+        allow(spec).to receive(:director_port).and_return(80808)
+        class_double('Bosh::Common').as_stubbed_const
+        allow(Bosh::Common).to receive(:retryable).and_yield(0, nil)
+      end
+
+      it 'contacts the director on the client_services_ip to see if it is ready' do
+        instance_manager.create('stemcell', stemcell_archive)
+
+        expect(http_client).to have_received(:get).with('https://client_ip:80808/info')
+      end
     end
   end
 end
