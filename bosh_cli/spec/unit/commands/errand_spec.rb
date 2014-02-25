@@ -5,23 +5,23 @@ require 'cli/client/errands_client'
 describe Bosh::Cli::Command::Errand do
   subject(:command) { described_class.new }
 
-  before { command.stub(director: director) }
-  let(:director) { instance_double('Bosh::Cli::Client::Director') }
-
   describe 'run errand' do
     def perform; command.run_errand('fake-errand-name'); end
+
+    with_director
 
     before { allow(Bosh::Cli::Client::ErrandsClient).to receive(:new).with(director).and_return(errands_client) }
     let(:errands_client) { instance_double('Bosh::Cli::Client::ErrandsClient') }
 
     context 'when some director is targeted' do
-      before { command.stub(target: 'fake-target') }
+      with_target
 
       context 'when user is logged in' do
-        before { allow(command).to receive(:logged_in?).and_return(true) }
+        with_logged_in_user
 
         context 'when deployment is selected' do
-          before { allow(command).to receive(:deployment).and_return('/fake-manifest-path') }
+          with_deployment
+
           before { allow(command).to receive(:prepare_deployment_manifest).with(no_args).and_return('name' => 'fake-dep-name') }
 
           context 'when errand name is given' do
@@ -177,26 +177,13 @@ describe Bosh::Cli::Command::Errand do
           end
         end
 
-        context 'when deployment is not selected' do
-          before { allow(command).to receive(:deployment).and_return(nil) }
-
-          it 'raises an CliError that says to choose a deployment' do
-            expect {
-              command.run_errand(nil)
-            }.to raise_error(Bosh::Cli::CliError, /Please choose deployment first/)
-          end
-        end
+        it_requires_deployment ->(command) { command.run_errand(nil) }
       end
 
       it_requires_logged_in_user ->(command) { command.run_errand(nil) }
     end
 
-    context 'when nothing is targeted' do
-      it 'fails with required target error' do
-        command.stub(target: nil)
-        expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
-      end
-    end
+    it_requires_target ->(command) { command.run_errand(nil) }
   end
 
   def expect_output(expected_output)

@@ -2,27 +2,23 @@ require 'fileutils'
 require 'spec_helper'
 
 describe Bosh::Cli::Command::ExportCompiledPackages do
+  subject(:command) { described_class.new }
+
   describe 'export compiled_packages' do
-    subject(:command) { described_class.new }
-
-    before { command.stub(director: director) }
-    let(:director) { instance_double('Bosh::Cli::Client::Director') }
-
     def perform
-      command.perform(release, stemcell, download_dir)
+      command.perform('release/1', 'stemcell/1', download_dir)
     end
 
-    let(:release) { 'release/1' }
-    let(:stemcell) { 'stemcell/1' }
-    let(:download_dir) { Dir.mktmpdir }
+    with_director
 
     after { FileUtils.rm_rf(download_dir) }
+    let(:download_dir) { Dir.mktmpdir }
 
     context 'when some director is targeted' do
-      before { command.stub(target: 'fake-target') }
+      with_target
 
       context 'when the user is logged in' do
-        before { command.stub(logged_in?: true) }
+        with_logged_in_user
 
         context 'when nothing is there in download dir' do
           it 'downloads tgz and puts it in a correct place' do
@@ -60,19 +56,9 @@ describe Bosh::Cli::Command::ExportCompiledPackages do
         end
       end
 
-      context 'when the user is not logged in' do
-        it 'fails and tells the user to login' do
-          command.stub(logged_in?: false)
-          expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please log in first')
-        end
-      end
+      it_requires_logged_in_user ->(command) { command.perform(nil, nil, nil) }
     end
 
-    context 'when nothing is targeted' do
-      it 'fails with required target error' do
-        command.stub(target: nil)
-        expect { perform }.to raise_error(Bosh::Cli::CliError, 'Please choose target first')
-      end
-    end
+    it_requires_target ->(command) { command.perform(nil, nil, nil) }
   end
 end

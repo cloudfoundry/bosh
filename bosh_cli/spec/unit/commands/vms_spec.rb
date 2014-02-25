@@ -12,9 +12,7 @@ describe Bosh::Cli::Command::Vms do
     let(:target) { 'http://example.org' }
 
     context 'with no arguments' do
-      def perform
-        command.list
-      end
+      def perform; command.list; end
 
       context 'when there are multiple deployments' do
         before { director.stub(:list_deployments) { [{ 'name' => 'dep1' }, { 'name' => 'dep2' }] } }
