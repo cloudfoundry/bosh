@@ -49,17 +49,35 @@ module Bosh::Stemcell
         when Infrastructure::Aws then
           aws_stages
         when Infrastructure::OpenStack then
-          if operating_system.instance_of?(OperatingSystem::Centos)
-            centos_openstack_stages
-          else
-            openstack_stages
-          end
+          openstack_stages
         when Infrastructure::Vsphere then
-          if operating_system.instance_of?(OperatingSystem::Centos)
-            centos_vsphere_stages
-          else
-            vsphere_stages
-          end
+          vsphere_stages
+        when Infrastructure::Vcloud then
+          vcloud_stages
+      end
+    end
+
+    def openstack_stages
+      if operating_system.instance_of?(OperatingSystem::Centos)
+        centos_openstack_stages
+      else
+        default_openstack_stages
+      end
+    end
+
+    def vsphere_stages
+      if operating_system.instance_of?(OperatingSystem::Centos)
+        centos_vsphere_stages
+      else
+        default_vsphere_stages
+      end
+    end
+
+    def vcloud_stages
+      if operating_system.instance_of?(OperatingSystem::Centos)
+        centos_vcloud_stages
+      else
+        default_vcloud_stages
       end
     end
 
@@ -107,6 +125,22 @@ module Bosh::Stemcell
       ]
     end
 
+    def centos_vcloud_stages
+      [
+        #:system_open_vm_tools,
+        :system_vsphere_cdrom,
+        :system_parameters,
+        :bosh_clean,
+        :bosh_harden,
+        :image_create,
+        :image_install_grub,
+        :image_vcloud_vmx,
+        :image_vcloud_ovf,
+        :image_vcloud_prepare_stemcell,
+        :stemcell
+      ]
+    end
+
     def centos_openstack_stages
       [
         # Misc
@@ -145,7 +179,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def openstack_stages
+    def default_openstack_stages
       [
         # Misc
         :system_openstack_network,
@@ -166,7 +200,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def vsphere_stages
+    def default_vsphere_stages
       [
         :system_open_vm_tools,
         :system_vsphere_cdrom,
@@ -183,6 +217,26 @@ module Bosh::Stemcell
         :image_vsphere_prepare_stemcell,
         # Final stemcell
         :stemcell,
+      ]
+    end
+
+    def default_vcloud_stages
+      [
+        :system_open_vm_tools,
+        :system_vsphere_cdrom,
+        # Misc
+        :system_parameters,
+        # Finalisation
+        :bosh_clean,
+        :bosh_harden,
+        # Image/bootloader
+        :image_create,
+        :image_install_grub,
+        :image_vcloud_vmx,
+        :image_vcloud_ovf,
+        :image_vcloud_prepare_stemcell,
+        # Final stemcell
+        :stemcell
       ]
     end
   end

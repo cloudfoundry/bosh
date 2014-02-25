@@ -43,7 +43,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'thin',            '~>1.5.0'
   s.add_dependency 'yajl-ruby',       '~>1.1.0'
 
-  s.add_dependency 'bosh_vcloud_cpi', '~> 0.4.9'
+  s.add_dependency 'bosh_vcloud_cpi', '~> 0.5.2'
 
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rspec-its'
