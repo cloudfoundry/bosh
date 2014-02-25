@@ -2,6 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
+	"bosh/infrastructure/aws_device_path_resolver"
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
@@ -598,34 +599,8 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 }
 
 func (p linux) getRealDevicePath(devicePath string) (realPath string, err error) {
-	stopAfter := time.Now().Add(p.diskWaitTimeout)
-
-	realPath, found := p.findPossibleDevice(devicePath)
-	for !found {
-		if time.Now().After(stopAfter) {
-			err = bosherr.New("Timed out getting real device path for %s", devicePath)
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
-		realPath, found = p.findPossibleDevice(devicePath)
-	}
-
-	return
-}
-
-func (p linux) findPossibleDevice(devicePath string) (realPath string, found bool) {
-	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
-
-	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
-	for _, prefix := range possiblePrefixes {
-		path := prefix + pathSuffix
-		if p.fs.FileExists(path) {
-			realPath = path
-			found = true
-			return
-		}
-	}
-	return
+	oracle := aws_device_path_resolver.New(p.diskWaitTimeout, p.fs)
+	return oracle.GetRealDevicePath(devicePath)
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
