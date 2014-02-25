@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'cli: deployment process' do
-  include IntegrationExampleGroup
+describe 'cli: deployment process', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'successfully performed with minimal manifest' do
     release_filename = spec_asset('valid_release.tgz')

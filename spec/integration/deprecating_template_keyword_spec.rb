@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe "Director deprecating the 'template' syntax" do
-  include IntegrationExampleGroup
+describe "Director deprecating the 'template' syntax", type: :integration do
+  with_reset_sandbox_before_each
 
   context 'when the manifest uses template with an array' do
     it 'issues a deprecation warning' do

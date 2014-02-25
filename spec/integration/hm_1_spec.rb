@@ -1,7 +1,7 @@
 require "spec_helper"
 
-describe Bosh::Spec::IntegrationTest::HealthMonitor do
-  include IntegrationExampleGroup
+describe 'health_monitor: 1', type: :integration do
+  with_reset_sandbox_before_each
 
   before { current_sandbox.health_monitor_process.start }
   after { current_sandbox.health_monitor_process.stop }

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'cli: stemcell' do
-  include IntegrationExampleGroup
+describe 'cli: stemcell', type: :integration do
+  with_reset_sandbox_before_each
 
   context 'when stemcell is in use by a deployment' do
     it 'refuses to delete it' do

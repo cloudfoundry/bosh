@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Bosh::Spec::IntegrationTest::DirectorScheduler do
-  include IntegrationExampleGroup
+describe 'director_scheduler', type: :integration do
+  with_reset_sandbox_before_each
 
   before do
     target_and_login

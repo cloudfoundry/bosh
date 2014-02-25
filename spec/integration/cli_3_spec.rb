@@ -1,7 +1,8 @@
 require 'spec_helper'
 
-describe 'Bosh::Spec::IntegrationTest::CliUsage 3' do
-  include IntegrationExampleGroup
+describe 'cli: 3', type: :integration do
+  with_reset_sandbox_before_each
+
   # ~33s
   it 'uploads the latest generated release if no release path given' do
     Dir.chdir(TEST_RELEASE_DIR) do

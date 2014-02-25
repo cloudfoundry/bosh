@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'deployment job control' do
-  include IntegrationExampleGroup
+describe 'deployment job control', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'allows to scale up and down a job via manifest' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest

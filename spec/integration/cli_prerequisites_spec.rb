@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'cli: deployment prerequisites' do
-  include IntegrationExampleGroup
+describe 'cli: deployment prerequisites', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'requires target and login' do
     expect(run_bosh('deploy', :failure_expected => true)).to match(/Please choose target first/)

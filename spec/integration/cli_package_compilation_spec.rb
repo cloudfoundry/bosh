@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'cli: package compilation' do
-  include IntegrationExampleGroup
+describe 'cli: package compilation', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'uses compile package cache for previously compiled packages' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')

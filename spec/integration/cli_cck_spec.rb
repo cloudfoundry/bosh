@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'cloud/dummy'
 
-describe 'cli: cloudcheck' do
-  include IntegrationExampleGroup
+describe 'cli: cloudcheck', type: :integration do
+  with_reset_sandbox_before_each
 
   let!(:dummy_cloud) { Bosh::Clouds::Dummy.new('dir' => current_sandbox.cloud_storage_dir) }
 

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'deployment integrations' do
-  include IntegrationExampleGroup
+describe 'deployment integrations', type: :integration do
+  with_reset_sandbox_before_each
 
   describe 'static drain' do
     it 'runs the drain script on a job if drain script is present' do

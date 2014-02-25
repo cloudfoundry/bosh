@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'cli: property management' do
-  include IntegrationExampleGroup
+describe 'cli: property management', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'can get/set/unset deployment properties' do
     manifest = Bosh::Spec::Deployments.simple_manifest

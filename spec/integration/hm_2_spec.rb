@@ -1,7 +1,7 @@
 require "spec_helper"
 
-describe 'Bosh::Spec::IntegrationTest::HealthMonitor 2' do
-  include IntegrationExampleGroup
+describe 'health_monitor: 2', type: :integration do
+  with_reset_sandbox_before_each
 
   before { current_sandbox.health_monitor_process.start }
   after { current_sandbox.health_monitor_process.stop }
@@ -54,5 +54,4 @@ describe 'Bosh::Spec::IntegrationTest::HealthMonitor 2' do
       wait_for_vm('foobar_ng/1')
     end
   end
-
 end

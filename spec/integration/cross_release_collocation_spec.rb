@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'collocating templates from multiple releases' do
-  include IntegrationExampleGroup
+describe 'collocating templates from multiple releases', type: :integration do
+  with_reset_sandbox_before_each
 
   context 'successfully collocating templates from different releases' do
     let(:manifest) do

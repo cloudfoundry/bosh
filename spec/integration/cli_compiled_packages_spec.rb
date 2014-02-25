@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'cli: compiled_packages' do
-  include IntegrationExampleGroup
+describe 'cli: compiled_packages', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'allows user to export compiled packages after a deploy' do
     deploy_simple

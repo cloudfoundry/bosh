@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Bosh::Spec::IntegrationTest::CliUsage do
-  include IntegrationExampleGroup
+describe 'cli: 1', type: :integration do
+  with_reset_sandbox_before_each
 
   it 'has help message', no_reset: true do
     run_bosh('help')

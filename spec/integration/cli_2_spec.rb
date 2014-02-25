@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe 'Bosh::Spec::IntegrationTest::CliUsage 2' do
-  include IntegrationExampleGroup
+describe 'cli: 2', type: :integration do
+  with_reset_sandbox_before_each
 
   # ~65s (possibly includes sandbox start)
   it 'can upload a stemcell' do
