@@ -452,54 +452,34 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 		})
 
-		Context("when not mounted", func() {
-			It("does not unmount persistent disk", func() {
-				fakeMounter := diskManager.FakeMounter
-				fakeMounter.UnmountDidUnmount = false
+		Describe("UnmountPersistentDisk", func() {
+			Context("when not mounted", func() {
+				It("does not unmount persistent disk", func() {
+					fakeMounter := diskManager.FakeMounter
+					fakeMounter.UnmountDidUnmount = false
 
-				fs.WriteFile("/dev/vdx", []byte{})
+					fs.WriteFile("/dev/vdx", []byte{})
 
-				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(false).To(Equal(didUnmount))
-				Expect(fakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+					didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(false).To(Equal(didUnmount))
+					Expect(fakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+				})
 			})
-		})
 
-		Context("when already mounted", func() {
-			It("unmounts persistent disk", func() {
-				fakeMounter := diskManager.FakeMounter
-				fakeMounter.UnmountDidUnmount = true
+			Context("when already mounted", func() {
+				It("unmounts persistent disk", func() {
+					fakeMounter := diskManager.FakeMounter
+					fakeMounter.UnmountDidUnmount = true
 
-				fs.WriteFile("/dev/vdx", []byte{})
+					fs.WriteFile("/dev/vdx", []byte{})
 
-				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(true).To(Equal(didUnmount))
-				Expect(fakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+					didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(true).To(Equal(didUnmount))
+					Expect(fakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+				})
 			})
-		})
-
-		It("normalize disk path", func() {
-			fs.WriteFile("/dev/xvda", []byte{})
-			path, found := platform.NormalizeDiskPath("/dev/sda")
-
-			Expect("/dev/xvda").To(Equal(path))
-			Expect(found).To(BeTrue())
-
-			fs.RemoveAll("/dev/xvda")
-			fs.WriteFile("/dev/vda", []byte{})
-			path, found = platform.NormalizeDiskPath("/dev/sda")
-
-			Expect("/dev/vda").To(Equal(path))
-			Expect(found).To(BeTrue())
-
-			fs.RemoveAll("/dev/vda")
-			fs.WriteFile("/dev/sda", []byte{})
-			path, found = platform.NormalizeDiskPath("/dev/sda")
-
-			Expect("/dev/sda").To(Equal(path))
-			Expect(found).To(BeTrue())
 		})
 
 		Describe("GetFileContentsFromCDROM", func() {
@@ -514,6 +494,28 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 
 		Describe("NormalizeDiskPath", func() {
+			It("normalize disk path", func() {
+				fs.WriteFile("/dev/xvda", []byte{})
+				path, found := platform.NormalizeDiskPath("/dev/sda")
+
+				Expect("/dev/xvda").To(Equal(path))
+				Expect(found).To(BeTrue())
+
+				fs.RemoveAll("/dev/xvda")
+				fs.WriteFile("/dev/vda", []byte{})
+				path, found = platform.NormalizeDiskPath("/dev/sda")
+
+				Expect("/dev/vda").To(Equal(path))
+				Expect(found).To(BeTrue())
+
+				fs.RemoveAll("/dev/vda")
+				fs.WriteFile("/dev/sda", []byte{})
+				path, found = platform.NormalizeDiskPath("/dev/sda")
+
+				Expect("/dev/sda").To(Equal(path))
+				Expect(found).To(BeTrue())
+			})
+
 			It("get real device path with multiple possible devices", func() {
 				fs.WriteFile("/dev/xvda", []byte{})
 				fs.WriteFile("/dev/vda", []byte{})
