@@ -53,10 +53,6 @@ module Bosh::Deployer
         :client_services_ip,
       )
 
-      def service_ip
-        instance_manager.bosh_ip
-      end
-
       # @return [Integer] size in MiB
       def disk_size(cid)
         instance_manager.cloud.get_disk_size_mb(cid)
