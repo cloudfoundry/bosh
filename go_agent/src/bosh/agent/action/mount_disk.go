@@ -33,7 +33,7 @@ func (a MountDiskAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a MountDiskAction) Run(volumeId string) (value interface{}, err error) {
+func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {
 	err = a.settings.Refresh()
 	if err != nil {
 		err = bosherr.WrapError(err, "Refreshing the settings")
@@ -41,9 +41,9 @@ func (a MountDiskAction) Run(volumeId string) (value interface{}, err error) {
 	}
 
 	disksSettings := a.settings.GetDisks()
-	devicePath, found := disksSettings.Persistent[volumeId]
+	devicePath, found := disksSettings.Persistent[disk_cid]
 	if !found {
-		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeId)
+		err = bosherr.New("Persistent disk with volume id '%s' could not be found", disk_cid)
 		return
 	}
 
