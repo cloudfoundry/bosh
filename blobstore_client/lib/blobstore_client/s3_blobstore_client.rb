@@ -35,6 +35,8 @@ module Bosh
           use_ssl: @options.fetch(:use_ssl, true),
           s3_port: @options.fetch(:port, 443),
           s3_endpoint: @options.fetch(:host, URI.parse(S3BlobstoreClient::ENDPOINT).host),
+          ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),
+          s3_multipart_threshold: @options.fetch(:s3_multipart_threshold, 16_777_216),
           s3_force_path_style: true,
         }
 

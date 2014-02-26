@@ -21,6 +21,9 @@ describe 'director.yml.erb.erb' do
                 },
                 'provider' => 'dav',
             },
+            'compiled_package_cache' => {
+                'options' => {}
+            },
             'nats' => {
                 'user' => 'nats',
                 'password' => '1a0312a24c0a0',
@@ -181,17 +184,22 @@ describe 'director.yml.erb.erb' do
       }
     end
 
-    context 'when the user specifies use_ssl, port, and host' do
+    context 'when the user specifies use_ssl, ssl_verify_peer, s3_multipart_threshold, port, and host' do
       before do
-        deployment_manifest_fragment['properties']['blobstore'] = {
+        blobstore_options = {
             'provider' => 's3',
             'bucket_name' => 'mybucket',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
             'use_ssl' => false,
+            'ssl_verify_peer' => false,
+            's3_multipart_threshold' => 123,
             'port' => 5155,
             'host' => 'myhost.hostland.edu'
         }
+
+        deployment_manifest_fragment['properties']['blobstore'] = blobstore_options
+        deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = blobstore_options
       end
 
       it 'sets the blobstore fields appropriately' do
@@ -199,14 +207,18 @@ describe 'director.yml.erb.erb' do
         rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
         parsed = YAML.load(rendered_yaml)
 
-        expect(parsed['blobstore']['options']).to eq({
-                                                         'bucket_name' => 'mybucket',
-                                                         'access_key_id' => 'key',
-                                                         'secret_access_key' => 'secret',
-                                                         'use_ssl' => false,
-                                                         'port' => 5155,
-                                                         'host' => 'myhost.hostland.edu'
-                                                     })
+        [ parsed['blobstore'], parsed['compiled_package_cache'] ].each do |blobstore|
+          expect(blobstore['options']).to eq({
+                                                 'bucket_name' => 'mybucket',
+                                                 'access_key_id' => 'key',
+                                                 'secret_access_key' => 'secret',
+                                                 'use_ssl' => false,
+                                                 'ssl_verify_peer' => false,
+                                                 's3_multipart_threshold' => 123,
+                                                 'port' => 5155,
+                                                 'host' => 'myhost.hostland.edu'
+                                             })
+        end
       end
 
       it 'sets endpoint protocol appropriately when use_ssl is true' do
@@ -220,6 +232,8 @@ describe 'director.yml.erb.erb' do
                                                          'access_key_id' => 'key',
                                                          'secret_access_key' => 'secret',
                                                          'use_ssl' => true,
+                                                         'ssl_verify_peer' => false,
+                                                         's3_multipart_threshold' => 123,
                                                          'port' => 5155,
                                                          'host' => 'myhost.hostland.edu'
                                                      })
@@ -236,6 +250,8 @@ describe 'director.yml.erb.erb' do
                'access_key_id' => 'key',
                'secret_access_key' => 'secret',
                'use_ssl' => false,
+               'ssl_verify_peer' => false,
+               's3_multipart_threshold' => 123,
                'port' => 5155,
                'host' => 'myhost.hostland.edu'
            })
@@ -261,6 +277,8 @@ describe 'director.yml.erb.erb' do
                  'access_key_id' => 'agent-key',
                  'secret_access_key' => 'agent-secret',
                  'use_ssl' => false,
+                 'ssl_verify_peer' => false,
+                 's3_multipart_threshold' => 123,
                  'port' => 5155,
                  'host' => 'myhost.hostland.edu'
              })

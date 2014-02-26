@@ -52,6 +52,8 @@ module Bosh::Blobstore
                       'access_key_id' => 'KEY',
                       'secret_access_key' => 'SECRET',
                       'use_ssl' => false,
+                      'ssl_verify_peer' => false,
+                      's3_multipart_threshold' => 33333,
                       'port' => 8080,
                       'host' => 'our.userdefined.com'
           }
@@ -60,6 +62,8 @@ module Bosh::Blobstore
                                  with(access_key_id: 'KEY',
                                       secret_access_key: 'SECRET',
                                       use_ssl: false,
+                                      ssl_verify_peer: false,
+                                      s3_multipart_threshold: 33333,
                                       s3_port: 8080,
                                       s3_endpoint: 'our.userdefined.com',
                                       s3_force_path_style: true).
@@ -69,7 +73,7 @@ module Bosh::Blobstore
 
         end
 
-        it 'should use the default values for undefined use_ssl, port, and s3_endpoint' do
+        it 'should use the default values for undefined use_ssl, port, ssl_verify_peer, s3_multipart_threshold and s3_endpoint' do
           options = { 'bucket_name' => 'test',
                       'access_key_id' => 'KEY',
                       'secret_access_key' => 'SECRET',
@@ -79,6 +83,8 @@ module Bosh::Blobstore
                                  with(access_key_id: 'KEY',
                                       secret_access_key: 'SECRET',
                                       use_ssl: true,
+                                      ssl_verify_peer: true,
+                                      s3_multipart_threshold: 16_777_216,
                                       s3_port: 443,
                                       s3_endpoint: 's3.amazonaws.com',
                                       s3_force_path_style: true).
