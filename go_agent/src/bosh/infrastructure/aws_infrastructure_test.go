@@ -290,5 +290,8 @@ func init() {
 				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
 			})
 		})
+
+		PDescribe("MountPersistentDisk", func() {
+		})
 	})
 }

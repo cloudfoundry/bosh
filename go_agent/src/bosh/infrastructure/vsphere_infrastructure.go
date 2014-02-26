@@ -42,3 +42,7 @@ func (inf vsphereInfrastructure) SetupNetworking(networks boshsettings.Networks)
 func (inf vsphereInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
 	return inf.platform.NormalizeDiskPath("/dev/sdb")
 }
+
+func (inf vsphereInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+	return
+}

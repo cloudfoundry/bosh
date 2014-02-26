@@ -207,3 +207,7 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 	}
 	return
 }
+
+func (inf awsInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+	return
+}

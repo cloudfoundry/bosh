@@ -50,4 +50,7 @@ func init() {
 			assert.Contains(GinkgoT(), err.Error(), "Read settings file")
 		})
 	})
+
+	PDescribe("MountPersistentDisk", func() {
+	})
 }

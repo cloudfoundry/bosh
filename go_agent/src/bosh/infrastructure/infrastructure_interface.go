@@ -7,4 +7,5 @@ type Infrastructure interface {
 	GetSettings() (settings boshsettings.Settings, err error)
 	SetupNetworking(networks boshsettings.Networks) (err error)
 	GetEphemeralDiskPath(devicePath string) (realPath string, found bool)
+	MountPersistentDisk(volumeId string, mountPoint string) error
 }
