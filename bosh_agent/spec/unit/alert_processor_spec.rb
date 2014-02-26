@@ -1,24 +1,26 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Agent::AlertProcessor do
-
-  before(:each) do
-    log     = StringIO.new
-    @port   = 54321
-
-    @smtp_user     = "zb"
+  before do
+    @port = 54321
+    @smtp_user = "zb"
     @smtp_password = "zb"
-
     @processor = Bosh::Agent::AlertProcessor.new("localhost", @port, @smtp_user, @smtp_password)
   end
 
   it "receives alerts via built-in SMTP based server" do
-    EM.run do
-      EM.add_timer(0.2) { EM.stop }
+    received_email = nil
 
-      outgoing_email = {
+    EM.run do
+      EM.add_timer(30) { EM.stop } # worst case scenario
+
+      @processor.start
+      @processor.should_receive(:process_email_alert) do |args|
+        received_email = args
+        EM.stop
+      end
+
+      EM::Protocols::SmtpClient.send(
         :host   => "localhost",
         :port   => @port,
         :auth   => {
@@ -32,14 +34,11 @@ describe Bosh::Agent::AlertProcessor do
         :body   => "Test alert",
         :header => {
           "Subject" => "Test Alert"
-        }
-      }
-
-      @processor.start
-      @processor.should_receive(:process_email_alert).with("Subject: Test Alert\n\nTest alert")
-
-      EM::Protocols::SmtpClient.send(outgoing_email)
+        },
+      )
     end
+
+    expect(received_email).to eq("Subject: Test Alert\n\nTest alert")
   end
 
   it "creates agent alerts from email alerts" do
@@ -78,5 +77,4 @@ describe Bosh::Agent::AlertProcessor do
     alert.timestamp.should   == 1306076861
     alert.description.should == "process is not running"
   end
-
 end
