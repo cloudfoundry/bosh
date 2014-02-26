@@ -42,10 +42,6 @@ module Bosh::Deployer
       def stop
       end
 
-      def discover_bosh_ip
-        instance_manager.bosh_ip
-      end
-
       def_delegators(
         :config,
         :internal_services_ip,

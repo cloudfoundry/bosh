@@ -81,6 +81,7 @@ module Bosh::Deployer
           instance_manager.bosh_ip
         end
       end
+      private :discover_bosh_ip
 
       alias_method :internal_services_ip, :discover_bosh_ip
       alias_method :client_services_ip, :discover_bosh_ip

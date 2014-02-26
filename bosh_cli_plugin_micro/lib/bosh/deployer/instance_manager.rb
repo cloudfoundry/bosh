@@ -50,7 +50,7 @@ module Bosh::Deployer
       @infrastructure = plugin_class.new(self, config, logger)
 
       @deployments_state = DeploymentsState.load_from_dir(config.base_dir, logger)
-      load_state(config.name)
+      deployments_state.load_deployment(config.name, infrastructure)
 
       config.uuid = state.uuid
 
@@ -76,7 +76,6 @@ module Bosh::Deployer
     def_delegators(
       :infrastructure,
       :check_dependencies,
-      :discover_bosh_ip, # TODO: remove
       :agent_services_ip,
       :client_services_ip,
       :internal_services_ip,
@@ -124,7 +123,6 @@ module Bosh::Deployer
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
         update_vm_metadata(state.vm_cid, { 'Name' => state.name })
-        infrastructure.discover_bosh_ip # FIXME
       end
       save_state
 
@@ -509,11 +507,6 @@ module Bosh::Deployer
       yield unless File.exist?(file)
       logger.info("Loading yaml from #{file}")
       Psych.load_file(file)
-    end
-
-    def load_state(name)
-      deployments_state.load_deployment(name, infrastructure)
-      infrastructure.discover_bosh_ip # FIXME
     end
 
     def run_command(command)
