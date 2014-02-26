@@ -60,17 +60,14 @@ module Bosh::Deployer
 
       def discover_bosh_ip
         if instance_manager.state.vm_cid
-          floating_ip = instance_manager.cloud.openstack.servers.
-            get(instance_manager.state.vm_cid).floating_ip_address
-          ip = floating_ip || service_ip
+          server = instance_manager.cloud.openstack.servers.get(instance_manager.state.vm_cid)
+          ip = server.floating_ip_address || server.private_ip_address
 
-          if ip != instance_manager.bosh_ip
-            instance_manager.bosh_ip = ip
-            logger.info("discovered bosh ip=#{instance_manager.bosh_ip}")
-          end
+          logger.info("discovered bosh ip=#{ip}")
+          ip
+        else
+          instance_manager.bosh_ip
         end
-
-        instance_manager.bosh_ip
       end
 
       alias_method :internal_services_ip, :discover_bosh_ip

@@ -35,6 +35,7 @@ module Bosh::Deployer
       allow(Registry).to receive(:new).and_return(registry)
       allow(RemoteTunnel).to receive(:new).and_return(remote_tunnel)
       File.open('fake-private-key', 'w') { |f| f.write('') }
+      allow(logger).to receive(:info)
     end
 
     its(:disk_model) { should be_nil }
@@ -80,13 +81,49 @@ module Bosh::Deployer
     ip_address_methods = %w(internal_services_ip agent_services_ip client_services_ip)
     ip_address_methods.each do |method|
       describe "##{method}" do
-        let(:state) { double('state', vm_cid: nil) }
+        before do
+          allow(instance_manager).to receive(:bosh_ip).and_return('fake-bosh-ip')
+        end
 
-        it 'returns instance managers idea of what bosh_ip should be' do
-          allow(instance_manager).to receive(:state).and_return(state)
-          allow(instance_manager).to receive(:bosh_ip).and_return('fake bosh ip')
+        context 'when there is a bosh VM' do
+          let(:instance) { instance_double('AWS::EC2::Instance') }
 
-          expect(aws.send(method)).to eq('fake bosh ip')
+          before do
+            instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
+            instance_manager.stub_chain(:cloud, :ec2, :instances, :[]).and_return(instance)
+          end
+
+          context 'when there is a bosh VM with a public ip' do
+            before do
+              allow(instance).to receive(:has_elastic_ip?).and_return(false)
+              allow(instance).to receive(:public_ip_address).and_return('fake-public-ip')
+            end
+
+            it 'returns the public ip' do
+              expect(aws.send(method)).to eq('fake-public-ip')
+            end
+          end
+
+          context 'when there is a bosh VM with an elastic ip' do
+            before do
+              allow(instance).to receive(:has_elastic_ip?).and_return(true)
+              instance.stub_chain(:elastic_ip, :public_ip).and_return('fake-elastic-ip')
+            end
+
+            it 'returns the elastic ip' do
+              expect(aws.send(method)).to eq('fake-elastic-ip')
+            end
+          end
+        end
+
+        context 'when there is no bosh VM' do
+          before do
+            instance_manager.stub_chain(:state, :vm_cid).and_return(nil)
+          end
+
+          it 'returns instance managers idea of what bosh_ip should be' do
+            expect(aws.send(method)).to eq('fake-bosh-ip')
+          end
         end
       end
     end

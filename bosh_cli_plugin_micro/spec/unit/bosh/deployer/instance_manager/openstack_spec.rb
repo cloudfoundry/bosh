@@ -28,18 +28,54 @@ module Bosh::Deployer
     before do
       allow(Registry).to receive(:new).and_return(registry)
       allow(File).to receive(:exists?).with(/\/fake-private-key$/).and_return(true)
+      allow(logger).to receive(:info)
     end
 
     ip_address_methods = %w(internal_services_ip agent_services_ip client_services_ip)
     ip_address_methods.each do |method|
       describe "##{method}" do
-        let(:state) { double('state', vm_cid: nil) }
+        before do
+          allow(instance_manager).to receive(:bosh_ip).and_return('fake-bosh-ip')
+        end
 
-        it 'returns instance managers idea of what bosh_ip should be' do
-          allow(instance_manager).to receive(:state).and_return(state)
-          allow(instance_manager).to receive(:bosh_ip).and_return('fake bosh ip')
+        context 'when there is a bosh VM' do
+          let(:instance) { double('Fog::OpenStack::Server') }
 
-          expect(openstack.send(method)).to eq('fake bosh ip')
+          before do
+            instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
+            instance_manager.stub_chain(:cloud, :openstack, :servers, :get).and_return(instance)
+          end
+
+          context 'when there is a floating ip' do
+            before do
+              allow(instance).to receive(:floating_ip_address).and_return('fake-floating-ip')
+            end
+
+            it 'returns the floating ip' do
+              expect(subject.send(method)).to eq('fake-floating-ip')
+            end
+          end
+
+          context 'when there is no floating ip' do
+            before do
+              allow(instance).to receive(:floating_ip_address).and_return(nil)
+              allow(instance).to receive(:private_ip_address).and_return('fake-private-ip')
+            end
+
+            it 'returns the private ip' do
+              expect(subject.send(method)).to eq('fake-private-ip')
+            end
+          end
+        end
+
+        context 'when there is no bosh VM' do
+          before do
+            instance_manager.stub_chain(:state, :vm_cid).and_return(nil)
+          end
+
+          it 'returns instance managers idea of what bosh_ip should be' do
+            expect(subject.send(method)).to eq('fake-bosh-ip')
+          end
         end
       end
     end

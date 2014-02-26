@@ -75,13 +75,11 @@ module Bosh::Deployer
             ip = instance.public_ip_address
           end
 
-          if ip && ip != instance_manager.bosh_ip
-            instance_manager.bosh_ip = ip
-            logger.info("discovered bosh ip=#{instance_manager.bosh_ip}")
-          end
+          logger.info("discovered bosh ip=#{ip}")
+          ip
+        else
+          instance_manager.bosh_ip
         end
-
-        instance_manager.bosh_ip
       end
 
       alias_method :internal_services_ip, :discover_bosh_ip
