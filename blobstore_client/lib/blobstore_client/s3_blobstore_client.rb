@@ -35,6 +35,8 @@ module Bosh
           s3_port: @options.fetch(:port, 443),
           s3_endpoint: @options.fetch(:host, URI.parse(S3BlobstoreClient::ENDPOINT).host),
           s3_force_path_style: @options.fetch(:s3_force_path_style, false),
+          ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),
+          s3_multipart_threshold: @options.fetch(:s3_multipart_threshold, 16_777_216),
         }
 
         # using S3 without credentials is a special case:

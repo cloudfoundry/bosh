@@ -11,6 +11,7 @@ describe 'director.yml.erb.erb' do
           '0.north-america.pool.ntp.org',
           '1.north-america.pool.ntp.org',
         ],
+        'compiled_package_cache' => {},
         'blobstore' => {
           'address' => '10.10.0.7',
           'port' => 25251,
@@ -226,30 +227,39 @@ describe 'director.yml.erb.erb' do
       }
     end
 
-    context 'when the user specifies use_ssl, s3_port, host and s3_force_path_style' do
+    context 'when the user specifies use_ssl, ssl_verify_peer, s3_multipart_threshold, port, s3_force_path_style and host' do
       before do
-        deployment_manifest_fragment['properties']['blobstore'] = {
+        blobstore_options = {
           'provider' => 's3',
           'bucket_name' => 'mybucket',
           'access_key_id' => 'key',
           'secret_access_key' => 'secret',
           'use_ssl' => false,
+          'ssl_verify_peer' => false,
+          's3_multipart_threshold' => 123,          
           's3_port' => 5155,
           'host' => 'myhost.hostland.edu',
           's3_force_path_style' => true,
         }
+
+        deployment_manifest_fragment['properties']['blobstore'] = blobstore_options
+        deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = blobstore_options
       end
 
       it 'sets the blobstore fields appropriately' do
-        expect(parsed_yaml['blobstore']['options']).to eq({
-          'bucket_name' => 'mybucket',
-          'access_key_id' => 'key',
-          'secret_access_key' => 'secret',
-          'use_ssl' => false,
-          'port' => 5155,
-          'host' => 'myhost.hostland.edu',
-          's3_force_path_style' => true,
-        })
+        [ parsed_yaml['blobstore'], parsed_yaml['compiled_package_cache'] ].each do |blobstore|
+          expect(blobstore['options']).to eq({
+            'bucket_name' => 'mybucket',
+            'access_key_id' => 'key',
+            'secret_access_key' => 'secret',
+            'use_ssl' => false,
+            'ssl_verify_peer' => false,
+            's3_multipart_threshold' => 123,
+            'port' => 5155,
+            'host' => 'myhost.hostland.edu',
+            's3_force_path_style' => true,
+          })
+        end
       end
 
       it 'sets endpoint protocol appropriately when use_ssl is true' do
@@ -260,6 +270,8 @@ describe 'director.yml.erb.erb' do
           'access_key_id' => 'key',
           'secret_access_key' => 'secret',
           'use_ssl' => true,
+          'ssl_verify_peer' => false,
+          's3_multipart_threshold' => 123,
           'port' => 5155,
           'host' => 'myhost.hostland.edu',
           's3_force_path_style' => true,
@@ -273,6 +285,8 @@ describe 'director.yml.erb.erb' do
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
             'use_ssl' => false,
+            'ssl_verify_peer' => false,
+            's3_multipart_threshold' => 123,
             'port' => 5155,
             'host' => 'myhost.hostland.edu',
             's3_force_path_style' => true,
@@ -295,6 +309,8 @@ describe 'director.yml.erb.erb' do
               'access_key_id' => 'agent-key',
               'secret_access_key' => 'agent-secret',
               'use_ssl' => false,
+              'ssl_verify_peer' => false,
+              's3_multipart_threshold' => 123,
               'port' => 5155,
               'host' => 'myhost.hostland.edu',
               's3_force_path_style' => true,
