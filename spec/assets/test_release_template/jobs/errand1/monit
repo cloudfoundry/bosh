@@ -1,0 +1,5 @@
+check process foobar
+  with pidfile /var/vcap/sys/run/errand1.pid
+  start program "/var/vcap/jobs/errand1/bin/ctl start"
+  stop program "/var/vcap/jobs/errand1/bin/ctl stop"
+  group vcap

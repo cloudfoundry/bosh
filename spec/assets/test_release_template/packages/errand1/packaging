@@ -1,0 +1,1 @@
+cp -a errand1/* ${BOSH_INSTALL_TARGET}

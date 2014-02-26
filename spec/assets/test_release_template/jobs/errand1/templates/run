@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo -n "<%= properties.errand1.stdout %>"
+
+<% if properties.errand1.run_package_file %>
+./packages/errand1/file.sh
+<% end %>
+
+echo -n "<%= properties.errand1.stderr %>" 1>&2
+
+exit <%= properties.errand1.exit_code %>

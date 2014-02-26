@@ -1,0 +1,19 @@
+#!/bin/bash
+
+PIDFILE=/var/vcap/sys/run/errand1.pid
+
+case $1 in
+
+  start)
+    echo 1 > $PIDFILE
+    ;;
+
+  stop)
+    rm -rf $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: errand1_ctl {start|stop}" ;;
+esac
+
+exit 0
