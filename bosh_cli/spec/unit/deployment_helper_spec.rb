@@ -173,6 +173,14 @@ describe Bosh::Cli::DeploymentHelper do
   end
 
   describe '#prepare_deployment_manifest' do
+    let(:manifest_warnings) { instance_double('Bosh::Cli::ManifestWarnings') }
+
+    before do
+      class_double('Bosh::Cli::ManifestWarnings').as_stubbed_const
+      allow(Bosh::Cli::ManifestWarnings).to receive(:new).and_return(manifest_warnings)
+      allow(manifest_warnings).to receive(:report)
+    end
+
     def make_cmd(options = {})
       cmd = Bosh::Cli::Command::Base.new(options)
       cmd.extend(Bosh::Cli::DeploymentHelper)
@@ -199,6 +207,25 @@ describe Bosh::Cli::DeploymentHelper do
       expect {
         cmd.prepare_deployment_manifest
       }.to raise_error(/Target director UUID doesn't match/i)
+    end
+
+    it 'reports manifest warnings' do
+      cmd = make_cmd
+      manifest = {
+        'name' => 'mycloud',
+        'director_uuid' => 'deadbeef',
+        'release' => { 'name' => 'appcloud', 'version' => 42 }
+      }
+      manifest_file = Tempfile.new('manifest')
+      Psych.dump(manifest, manifest_file)
+      manifest_file.close
+      director = instance_double('Bosh::Cli::Client::Director', uuid: 'deadbeef')
+      cmd.stub(:deployment).and_return(manifest_file.path)
+      cmd.stub(:director).and_return(director)
+
+      cmd.prepare_deployment_manifest
+
+      expect(manifest_warnings).to have_received(:report)
     end
 
     it "resolves 'latest' release alias for multiple stemcells" do

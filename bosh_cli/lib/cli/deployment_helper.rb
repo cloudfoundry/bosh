@@ -61,6 +61,8 @@ module Bosh::Cli
       resolve_release_aliases(manifest)
       resolve_stemcell_aliases(manifest)
 
+      report_manifest_warnings(manifest)
+
       options[:yaml] ? Psych.dump(manifest) : manifest
     end
 
@@ -374,6 +376,10 @@ module Bosh::Cli
           hash
         end
       end
+    end
+
+    def report_manifest_warnings(manifest)
+      ManifestWarnings.new(manifest).report
     end
   end
 end
