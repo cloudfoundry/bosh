@@ -110,3 +110,8 @@ builds:
     version: 22
     sha1: !binary |-
       Njk5Yzk4NTU1ZWIzMDUwMWI3ZTg5OWM1ZDQzOWE4ZGQ0ODAxZjVhZg==
+  !binary "ODQ0Yjg3NDAzMmM2YjRhZTllYzQ5NzExNjUwY2E5ZGU1YTM5YjIzMA==":
+    blobstore_id: 49cd88e0-86f4-4276-9be3-504345d401e8
+    version: 23
+    sha1: !binary |-
+      M2VkYmMxYTE0YjllOTE3ZDVmYTFjNzU3OWNiODRjZDBmYTdhNGZmYg==
