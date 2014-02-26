@@ -7,6 +7,7 @@ module Bosh::Stemcell
       it 'returns the correct agent' do
         expect(Agent.for('go')).to be_an(Agent::Go)
         expect(Agent.for('ruby')).to be_an(Agent::Ruby)
+        expect(Agent.for('null')).to be_an(Agent::NullAgent)
       end
 
       it 'raises for unknown instructures' do
@@ -14,6 +15,19 @@ module Bosh::Stemcell
           Agent.for('BAD_AGENT')
         }.to raise_error(ArgumentError, /invalid agent: BAD_AGENT/)
       end
+    end
+  end
+
+  describe Agent::NullAgent do
+    it 'has a name' do
+      expect(subject.name).to eq ('null')
+    end
+
+    it 'is comparable to other agents' do
+      expect(subject).to eq(Agent::NullAgent.new)
+
+      expect(subject).to_not eq(Agent::Go.new)
+      expect(subject).to_not eq(Agent::Ruby.new)
     end
   end
 
