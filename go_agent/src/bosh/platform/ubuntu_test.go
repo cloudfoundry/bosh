@@ -67,7 +67,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 			collector = &fakestats.FakeStatsCollector{}
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
-			diskManager = fakedisk.NewFakeDiskManager(cmdRunner)
+			diskManager = fakedisk.NewFakeDiskManager()
 			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 			diskWaitTimeout = 1 * time.Millisecond
 			cdutil = fakecd.NewFakeCdUtil()

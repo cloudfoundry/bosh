@@ -2,7 +2,6 @@ package fakes
 
 import (
 	boshdisk "bosh/platform/disk"
-	boshsys "bosh/system"
 )
 
 type FakeDiskManager struct {
@@ -11,7 +10,7 @@ type FakeDiskManager struct {
 	FakeMounter     *FakeMounter
 }
 
-func NewFakeDiskManager(runner boshsys.CmdRunner) (manager FakeDiskManager) {
+func NewFakeDiskManager() (manager FakeDiskManager) {
 	manager.FakePartitioner = &FakePartitioner{}
 	manager.FakeFormatter = &FakeFormatter{}
 	manager.FakeMounter = &FakeMounter{}
