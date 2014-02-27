@@ -42,12 +42,18 @@ module Bosh::Deployer
       let(:remote_tunnel) { instance_double('Bosh::Deployer::RemoteTunnel') }
 
       it 'creates a new ssh tunnel to bosh vm and forwards bosh registry port' do
-        allow(instance_manager).to receive(:client_services_ip).and_return('fake-client-services-ip')
+        allow(instance_manager).to receive(:client_services_ip).
+          with(no_args).
+          and_return('fake-client-services-ip')
+
         allow(registry).to receive(:port).and_return('fake-registry-port')
 
         allow(remote_tunnel).to receive(:create)
+
         aws.remote_tunnel
-        expect(remote_tunnel).to have_received(:create).with('fake-client-services-ip', 'fake-registry-port')
+
+        expect(remote_tunnel).to have_received(:create).
+          with('fake-client-services-ip', 'fake-registry-port')
       end
     end
 
@@ -78,7 +84,10 @@ module Bosh::Deployer
 
     %w(client_services_ip agent_services_ip).each do |method|
       describe "##{method}" do
-        before { allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip') }
+        before do
+          allow(config).to receive(:client_services_ip).
+            and_return('fake-client-services-ip')
+        end
 
         context 'when there is a bosh VM' do
           let(:instance) { instance_double('AWS::EC2::Instance') }
@@ -122,7 +131,10 @@ module Bosh::Deployer
     end
 
     describe '#internal_services_ip' do
-      before { allow(config).to receive(:internal_services_ip).and_return('fake-internal-services-ip') }
+      before do
+        allow(config).to receive(:internal_services_ip).
+          and_return('fake-internal-services-ip')
+      end
 
       it 'returns internal services ip according to the configuration' do
         expect(subject.internal_services_ip).to eq('fake-internal-services-ip')

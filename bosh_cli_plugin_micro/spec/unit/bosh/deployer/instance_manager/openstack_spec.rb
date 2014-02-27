@@ -35,7 +35,10 @@ module Bosh::Deployer
 
     %w(client_services_ip agent_services_ip).each do |method|
       describe "##{method}" do
-        before { allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip') }
+        before do
+          allow(config).to receive(:client_services_ip).
+            and_return('fake-client-services-ip')
+        end
 
         context 'when there is a bosh VM' do
           let(:instance) { instance_double('Fog::Compute::OpenStack::Server') }
@@ -46,7 +49,10 @@ module Bosh::Deployer
           end
 
           context 'when there is a floating ip' do
-            before { allow(instance).to receive(:floating_ip_address).and_return('fake-floating-ip') }
+            before do
+              allow(instance).to receive(:floating_ip_address).
+                and_return('fake-floating-ip')
+            end
 
             it 'returns the floating ip' do
               expect(subject.send(method)).to eq('fake-floating-ip')
@@ -76,7 +82,10 @@ module Bosh::Deployer
     end
 
     describe '#internal_services_ip' do
-      before { allow(config).to receive(:internal_services_ip).and_return('fake-internal-services-ip') }
+      before do
+        allow(config).to receive(:internal_services_ip).
+          and_return('fake-internal-services-ip')
+      end
 
       it 'returns internal services ip according to the configuration' do
         expect(subject.internal_services_ip).to eq('fake-internal-services-ip')

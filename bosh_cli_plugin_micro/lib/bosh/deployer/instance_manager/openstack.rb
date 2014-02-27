@@ -58,9 +58,17 @@ module Bosh::Deployer
         instance_manager.save_state
       end
 
-      def client_services_ip;   discover_client_services_ip; end
-      def agent_services_ip;    discover_client_services_ip; end
-      def internal_services_ip; config.internal_services_ip; end
+      def client_services_ip
+        discover_client_services_ip
+      end
+
+      def agent_services_ip
+        discover_client_services_ip
+      end
+
+      def internal_services_ip
+        config.internal_services_ip
+      end
 
       # @return [Integer] size in MiB
       def disk_size(cid)

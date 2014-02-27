@@ -13,13 +13,21 @@ module Bosh::Deployer
       before { allow(Bosh::Blobstore::DavBlobstoreClient).to receive(:new).and_return(blobstore) }
       let(:blobstore) { instance_double('Bosh::Blobstore::DavBlobstoreClient') }
 
-      before { allow(Bosh::Director::Core::Templates::JobTemplateLoader).to receive(:new).and_return(loader) }
+      before do
+        allow(Bosh::Director::Core::Templates::JobTemplateLoader).to receive(:new).
+          and_return(loader)
+      end
+
       let(:loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
 
       before { allow(JobTemplate).to receive(:new).and_return(job_template) }
       let(:job_template) { instance_double('Bosh::Deployer::JobTemplate') }
 
-      before { allow(Bosh::Director::Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
+      before do
+        allow(Bosh::Director::Core::Templates::JobInstanceRenderer).to receive(:new).
+          and_return(job_instance_renderer)
+      end
+
       let(:job_instance_renderer) do
         instance_double(
           'Bosh::Director::Core::Templates::JobInstanceRenderer',
@@ -89,7 +97,10 @@ module Bosh::Deployer
       end
 
       context 'when render raises a FetchError' do
-        before { allow(job_instance_renderer).to receive(:render).and_raise(JobTemplate::FetchError) }
+        before do
+          allow(job_instance_renderer).to receive(:render).
+            and_raise(JobTemplate::FetchError)
+        end
 
         it 'returns the original spec without rendering' do
           expect(subject.render_templates(spec)).to eq(spec)
