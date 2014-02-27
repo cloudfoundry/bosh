@@ -224,7 +224,7 @@ class VSphereCloud::Resources
             {
               mob => {
                 'runtime.inMaintenanceMode' => maintenance_mode ? 'true' : 'false',
-                'obj' => mob,
+                :obj => mob,
                 'hardware.memorySize' => memory_size,
               }
             }

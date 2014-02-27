@@ -234,7 +234,7 @@ module VSphereCloud
       def select_active_host_mobs(host_properties)
         host_properties.values.
           select { |p| p['runtime.inMaintenanceMode'] != 'true' }.
-          collect { |p| p['obj'] }
+          collect { |p| p[:obj] }
       end
 
       # Fetches the resource pool utilization from vSphere.
