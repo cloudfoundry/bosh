@@ -153,9 +153,9 @@ module Bosh::Deployer
         instance_manager.apply(spec)
       end
 
-      it 'uses the agent service IP to render job templates' do
+      it 'uses the client service IP to render job templates' do
         expect(MicroboshJobInstance).to receive(:new).
-          with('agent_ip', 'http://user:password@agent-url.com', 'logger')
+          with('client-ip', 'http://user:password@agent-url.com', 'logger')
 
         instance_manager.apply(spec)
       end

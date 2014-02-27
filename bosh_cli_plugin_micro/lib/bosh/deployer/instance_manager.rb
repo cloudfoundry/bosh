@@ -379,10 +379,11 @@ module Bosh::Deployer
       step 'Applying micro BOSH spec' do
         # first update spec with infrastructure specific stuff
         infrastructure.update_spec(spec)
+
         # then update spec with generic changes
         spec = spec.update(agent_services_ip, internal_services_ip)
 
-        microbosh_instance = MicroboshJobInstance.new(agent_services_ip, config.agent_url, logger)
+        microbosh_instance = MicroboshJobInstance.new(client_services_ip, config.agent_url, logger)
         spec = microbosh_instance.render_templates(spec)
 
         agent.run_task(:apply, spec)
