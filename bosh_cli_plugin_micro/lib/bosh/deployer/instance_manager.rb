@@ -70,7 +70,6 @@ module Bosh::Deployer
       :@config,
       :cloud,
       :logger,
-      :bosh_ip,
     )
 
     def_delegators(

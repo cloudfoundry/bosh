@@ -26,7 +26,7 @@ module Bosh::Deployer
       end
 
       def remote_tunnel
-        @remote_tunnel.create(instance_manager.bosh_ip, registry.port)
+        @remote_tunnel.create(instance_manager.client_services_ip, registry.port)
       end
 
       def disk_model
@@ -78,7 +78,7 @@ module Bosh::Deployer
           logger.info("discovered bosh ip=#{ip}")
           ip
         else
-          instance_manager.bosh_ip
+          config.client_services_ip
         end
       end
       private :discover_bosh_ip

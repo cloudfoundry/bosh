@@ -25,7 +25,7 @@ module Bosh::Deployer
       end
 
       def remote_tunnel
-        @remote_tunnel.create(instance_manager.bosh_ip, registry.port)
+        @remote_tunnel.create(instance_manager.client_services_ip, registry.port)
       end
 
       def disk_model
@@ -61,12 +61,13 @@ module Bosh::Deployer
       def discover_bosh_ip
         if instance_manager.state.vm_cid
           server = instance_manager.cloud.openstack.servers.get(instance_manager.state.vm_cid)
+
           ip = server.floating_ip_address || server.private_ip_address
 
           logger.info("discovered bosh ip=#{ip}")
           ip
         else
-          instance_manager.bosh_ip
+          config.client_services_ip
         end
       end
       private :discover_bosh_ip

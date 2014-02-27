@@ -4,7 +4,7 @@ require 'bosh/deployer/infrastructure_defaults'
 module Bosh::Deployer
   class Configuration
     attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
-                  :spec_properties, :agent_properties, :bosh_ip, :env, :name, :net_conf
+                  :spec_properties, :agent_properties, :env, :name, :net_conf
 
     attr_reader :base_dir
 
@@ -19,7 +19,6 @@ module Bosh::Deployer
       @name = config['name']
       @cloud_options = config['cloud']
       @net_conf = config['network']
-      @bosh_ip = @net_conf['ip']
       @resources = config['resources']
       @env = config['env']
       @deployment_network = config['deployment_network']

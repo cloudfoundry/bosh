@@ -35,7 +35,7 @@ module Bosh::Deployer
     ip_address_methods.each do |method|
       describe "##{method}" do
         before do
-          allow(instance_manager).to receive(:bosh_ip).and_return('fake-bosh-ip')
+          allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip')
         end
 
         context 'when there is a bosh VM' do
@@ -73,8 +73,8 @@ module Bosh::Deployer
             instance_manager.stub_chain(:state, :vm_cid).and_return(nil)
           end
 
-          it 'returns instance managers idea of what bosh_ip should be' do
-            expect(subject.send(method)).to eq('fake-bosh-ip')
+          it 'returns client services ip according to the configuration' do
+            expect(subject.send(method)).to eq('fake-client-services-ip')
           end
         end
       end

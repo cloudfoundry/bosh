@@ -46,10 +46,6 @@ module Bosh::Deployer
         end
       end
 
-      it 'stores the bosh_ip' do
-        expect(config.bosh_ip).to eq('172.23.194.100')
-      end
-
       describe '.networks' do
         it 'should map network properties to the bosh network' do
           networks = config.networks

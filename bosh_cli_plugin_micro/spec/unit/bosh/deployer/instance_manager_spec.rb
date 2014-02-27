@@ -24,7 +24,6 @@ module Bosh::Deployer
       allow(config).to receive(:agent_services_ip)
       allow(config).to receive(:internal_services_ip)
       allow(config).to receive(:agent_url).and_return('http://user:password@agent-url.com')
-      allow(config).to receive(:bosh_ip)
       allow(config).to receive(:uuid)
 
       class_double('Bosh::Deployer::MicroboshJobInstance').as_stubbed_const

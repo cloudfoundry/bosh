@@ -43,13 +43,13 @@ module Bosh::Deployer
 
     describe '#remote_tunnel' do
       it 'creates a new ssh tunnel to bosh vm and forwards bosh registry port' do
-        allow(instance_manager).to receive(:bosh_ip).and_return('fake-client-ip')
+        allow(instance_manager).to receive(:client_services_ip).and_return('fake-client-services-ip')
         allow(registry).to receive(:port).and_return('fake-registry-port')
         allow(remote_tunnel).to receive(:create)
 
         aws.remote_tunnel
 
-        expect(remote_tunnel).to have_received(:create).with('fake-client-ip', 'fake-registry-port')
+        expect(remote_tunnel).to have_received(:create).with('fake-client-services-ip', 'fake-registry-port')
       end
     end
 
@@ -82,7 +82,7 @@ module Bosh::Deployer
     ip_address_methods.each do |method|
       describe "##{method}" do
         before do
-          allow(instance_manager).to receive(:bosh_ip).and_return('fake-bosh-ip')
+          allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip')
         end
 
         context 'when there is a bosh VM' do
@@ -121,8 +121,8 @@ module Bosh::Deployer
             instance_manager.stub_chain(:state, :vm_cid).and_return(nil)
           end
 
-          it 'returns instance managers idea of what bosh_ip should be' do
-            expect(aws.send(method)).to eq('fake-bosh-ip')
+          it 'returns client services ip according to the configuration' do
+            expect(aws.send(method)).to eq('fake-client-services-ip')
           end
         end
       end
