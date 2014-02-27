@@ -7,6 +7,10 @@ module Bosh::Stemcell
       StageCollection.new(definition)
     end
 
+    let(:agent) { double }
+    let(:infrastructure) { double }
+    let(:operating_system) { double }
+
     let(:definition) {
       instance_double(
         'Bosh::Stemcell::Definition',
@@ -127,39 +131,58 @@ module Bosh::Stemcell
 
     let(:vcloud_ubuntu_infrastructure_stages) {
       [
-          :system_open_vm_tools,
-          :system_vsphere_cdrom,
-          :system_parameters,
-          :bosh_clean,
-          :bosh_harden,
-          :image_create,
-          :image_install_grub,
-          :image_ovf_vmx,
-          :image_ovf_generate,
-          :image_ovf_prepare_stemcell,
-          :stemcell
+        :system_open_vm_tools,
+        :system_vsphere_cdrom,
+        :system_parameters,
+        :bosh_clean,
+        :bosh_harden,
+        :image_create,
+        :image_install_grub,
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
+        :stemcell
       ]
     }
 
     let(:vcloud_centos_infrastructure_stages) {
       [
-          #:system_open_vm_tools,
-          :system_vsphere_cdrom,
-          :system_parameters,
-          :bosh_clean,
-          :bosh_harden,
-          :image_create,
-          :image_install_grub,
-          :image_ovf_vmx,
-          :image_ovf_generate,
-          :image_ovf_prepare_stemcell,
-          :stemcell
+        #:system_open_vm_tools,
+        :system_vsphere_cdrom,
+        :system_parameters,
+        :bosh_clean,
+        :bosh_harden,
+        :image_create,
+        :image_install_grub,
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
+        :stemcell
       ]
     }
 
-    describe '#all_stages' do
-      context 'when using the ruby agent' do
+    describe '#operating_system_stages' do
+      context 'when Ubuntu' do
+        let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+        it 'has the correct stages' do
+          expect(stage_collection.operating_system_stages).to eq(ubuntu_stages + common_os_stages)
+        end
+      end
+
+      context 'when CentOS' do
+        let(:operating_system) { OperatingSystem.for('centos') }
+
+        it 'has the correct stages' do
+          expect(stage_collection.operating_system_stages).to eq(centos_stages + common_os_stages)
+        end
+      end
+    end
+
+    describe '#agent_stages' do
+      context 'for the Ruby agent' do
         let(:agent) { Agent.for('ruby') }
+
         let(:agent_stages) {
           [
             :bosh_ruby,
@@ -168,96 +191,13 @@ module Bosh::Stemcell
           ]
         }
 
-        context 'when infrastructure is AWS' do
-          let(:infrastructure) { Infrastructure.for('aws') }
-
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + aws_infrastructure_stages)
-            end
-          end
-
-          context 'when operating system is Centos' do
-            let(:operating_system) { OperatingSystem.for('centos') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + aws_infrastructure_stages)
-            end
-          end
+        it 'returns the correct stages' do
+          expect(stage_collection.agent_stages).to eq(agent_stages)
         end
 
-        context 'when infrastructure is OpenStack' do
-          let(:infrastructure) { Infrastructure.for('openstack') }
-
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + openstack_ubuntu_infrastructure_stages)
-            end
-          end
-
-          context 'when operating system is CentOS' do
-            let(:operating_system) { OperatingSystem.for('centos') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + openstack_centos_infrastructure_stages)
-            end
-          end
-        end
-
-        context 'when infrastructure is vSphere' do
-          let(:infrastructure) { Infrastructure.for('vsphere') }
-
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + vsphere_ubuntu_infrastructure_stages)
-            end
-          end
-
-          context 'when operating system is CentOS' do
-            let(:operating_system) { OperatingSystem.for('centos') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + vsphere_centos_infrastructure_stages)
-            end
-          end
-        end
-
-        context 'when infrastructure is vCloud' do
-          let(:infrastructure) { Infrastructure.for('vcloud') }
-
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
-            end
-          end
-
-          context 'when operating system is CentOS' do
-            let(:operating_system) { OperatingSystem.for('centos') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + vcloud_centos_infrastructure_stages)
-            end
-          end
-        end
       end
 
-      context 'when using the go agent' do
+      context 'for the Go agent' do
         let(:agent) { Agent.for('go') }
         let(:agent_stages) {
           [
@@ -268,91 +208,90 @@ module Bosh::Stemcell
           ]
         }
 
-        context 'when infrastructure is AWS' do
-          let(:infrastructure) { Infrastructure.for('aws') }
+        it 'returns the correct stages' do
+          expect(stage_collection.agent_stages).to eq(agent_stages)
+        end
+      end
+    end
 
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
+    describe '#infrastructure_stages' do
+      context 'when using AWS' do
+        let(:infrastructure) { Infrastructure.for('aws') }
 
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + aws_infrastructure_stages)
-            end
-          end
+        context 'when the operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
 
-          context 'when operating system is Centos' do
-            let(:operating_system) { OperatingSystem.for('centos') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + aws_infrastructure_stages)
-            end
+          it 'returns the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(aws_infrastructure_stages)
           end
         end
 
-        context 'when infrastructure is OpenStack' do
-          let(:infrastructure) { Infrastructure.for('openstack') }
+        context 'when the operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
 
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + openstack_ubuntu_infrastructure_stages)
-            end
+          it 'returns the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(aws_infrastructure_stages)
           end
 
-          context 'when operating system is CentOS' do
-            let(:operating_system) { OperatingSystem.for('centos') }
+        end
+      end
 
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + openstack_centos_infrastructure_stages)
-            end
+      context 'when using OpenStack' do
+        let(:infrastructure) { Infrastructure.for('openstack') }
+
+        context 'when the operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'has the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(openstack_centos_infrastructure_stages)
           end
         end
 
-        context 'when infrastructure is vSphere' do
-          let(:infrastructure) { Infrastructure.for('vsphere') }
+        context 'when the operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
 
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + vsphere_ubuntu_infrastructure_stages)
-            end
+          it 'has the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(openstack_ubuntu_infrastructure_stages)
           end
+        end
+      end
 
-          context 'when operating system is CentOS' do
-            let(:operating_system) { OperatingSystem.for('centos') }
+      context 'when using vSphere' do
+        let(:infrastructure) { Infrastructure.for('vsphere') }
 
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + vsphere_centos_infrastructure_stages)
-            end
+        context 'when the operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'has the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(vsphere_centos_infrastructure_stages)
           end
         end
 
-        context 'when infrastructure is vCloud' do
-          let(:infrastructure) { Infrastructure.for('vcloud') }
+        context 'when the operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
 
-          context 'when operating system is Ubuntu' do
-            let(:operating_system) { OperatingSystem.for('ubuntu') }
-
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(ubuntu_stages + common_os_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
-            end
+          it 'has the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(vsphere_ubuntu_infrastructure_stages)
           end
+        end
+      end
 
-          context 'when operating system is CentOS' do
-            let(:operating_system) { OperatingSystem.for('centos') }
+      context 'when using vCloud' do
+        let(:infrastructure) { Infrastructure.for('vcloud') }
 
-            it 'has the correct stages' do
-              expect(stage_collection.all_stages)
-                .to eq(centos_stages + common_os_stages + agent_stages + vcloud_centos_infrastructure_stages)
-            end
+        context 'when operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+          it 'has the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(vcloud_ubuntu_infrastructure_stages)
+          end
+        end
+
+        context 'when operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'has the correct stages' do
+            expect(stage_collection.infrastructure_stages).to eq(vcloud_centos_infrastructure_stages)
           end
         end
       end

@@ -9,53 +9,59 @@ module Bosh::Stemcell
       @definition = definition
     end
 
-    def all_stages
-      operating_system_stages + agent_stages + infrastructure_stages
+    def operating_system_stages
+      case operating_system
+      when OperatingSystem::Centos then
+        centos_os_stages + common_os_stages
+      when OperatingSystem::Ubuntu then
+        ubuntu_os_stages + common_os_stages
+      end
     end
-
-    private
-
-    def_delegators :@definition, :infrastructure, :operating_system, :agent
 
     def agent_stages
       case agent
-        when Agent::Go
-          [
-            :bosh_ruby,
-            :bosh_go_agent,
-            :bosh_micro_go,
-            :aws_cli,
-          ]
-        when Agent::Ruby
-          [
-            :bosh_ruby,
-            :bosh_agent,
-            :bosh_micro,
-          ]
+      when Agent::Go
+        [
+          :bosh_ruby,
+          :bosh_go_agent,
+          :bosh_micro_go,
+          :aws_cli,
+        ]
+      when Agent::Ruby
+        [
+          :bosh_ruby,
+          :bosh_agent,
+          :bosh_micro,
+        ]
       end
     end
 
-    def operating_system_stages
-      case operating_system
-        when OperatingSystem::Centos then
-          centos_os_stages + common_os_stages
-        when OperatingSystem::Ubuntu then
-          ubuntu_os_stages + common_os_stages
-      end
-    end
-
+    # rubocop:disable MethodLength
     def infrastructure_stages
       case infrastructure
-        when Infrastructure::Aws then
-          aws_stages
-        when Infrastructure::OpenStack then
+      when Infrastructure::Aws then
+        aws_stages
+      when Infrastructure::OpenStack then
+        if operating_system.instance_of?(OperatingSystem::Centos)
+          centos_openstack_stages
+        else
           openstack_stages
-        when Infrastructure::Vsphere then
+        end
+      when Infrastructure::Vsphere then
+        if operating_system.instance_of?(OperatingSystem::Centos)
+          centos_vsphere_stages
+        else
           vsphere_stages
-        when Infrastructure::Vcloud then
-          vcloud_stages
+        end
+      when Infrastructure::Vcloud then
+        if operating_system.instance_of?(OperatingSystem::Centos)
+          centos_vcloud_stages
+        else
+          default_vcloud_stages
+        end
       end
     end
+    # rubocop:enable MethodLength
 
     def openstack_stages
       if operating_system.instance_of?(OperatingSystem::Centos)
@@ -80,6 +86,10 @@ module Bosh::Stemcell
         default_vcloud_stages
       end
     end
+
+    private
+
+    def_delegators :@definition, :infrastructure, :operating_system, :agent
 
     def centos_os_stages
       [:base_centos, :base_yum]
