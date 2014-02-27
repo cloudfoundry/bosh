@@ -34,7 +34,6 @@ module Bosh::Deployer
       allow(described_class).to receive(:require).with('bosh/deployer/instance_manager/fake')
       fake_plugin_class = double(:fake_plugin_class, new: infrastructure)
       allow(described_class).to receive(:const_get).with('Fake').and_return(fake_plugin_class)
-      allow(infrastructure).to receive(:discover_bosh_ip)
       allow(infrastructure).to receive(:update_spec)
       allow(infrastructure).to receive(:client_services_ip).and_return('client-ip')
 

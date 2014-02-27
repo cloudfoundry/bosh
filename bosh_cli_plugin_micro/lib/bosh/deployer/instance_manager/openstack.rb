@@ -58,23 +58,9 @@ module Bosh::Deployer
         instance_manager.save_state
       end
 
-      def discover_bosh_ip
-        if instance_manager.state.vm_cid
-          server = instance_manager.cloud.openstack.servers.get(instance_manager.state.vm_cid)
-
-          ip = server.floating_ip_address || server.private_ip_address
-
-          logger.info("discovered bosh ip=#{ip}")
-          ip
-        else
-          config.client_services_ip
-        end
-      end
-      private :discover_bosh_ip
-
-      alias_method :internal_services_ip, :discover_bosh_ip
-      alias_method :agent_services_ip, :discover_bosh_ip
-      alias_method :client_services_ip, :discover_bosh_ip
+      def client_services_ip;   discover_client_services_ip; end
+      def agent_services_ip;    discover_client_services_ip; end
+      def internal_services_ip; discover_client_services_ip; end
 
       # @return [Integer] size in MiB
       def disk_size(cid)
@@ -102,12 +88,26 @@ module Bosh::Deployer
 
         key = properties['openstack']['private_key']
         err 'Missing properties.openstack.private_key' unless key
+
         ssh_key = File.expand_path(key)
         unless File.exists?(ssh_key)
           err "properties.openstack.private_key '#{key}' does not exist"
         end
 
         [ssh_key, ssh_port, ssh_user, ssh_wait]
+      end
+
+      def discover_client_services_ip
+        if instance_manager.state.vm_cid
+          server = instance_manager.cloud.openstack.servers.get(instance_manager.state.vm_cid)
+
+          ip = server.floating_ip_address || server.private_ip_address
+
+          logger.info("discovered bosh ip=#{ip}")
+          ip
+        else
+          config.client_services_ip
+        end
       end
     end
   end

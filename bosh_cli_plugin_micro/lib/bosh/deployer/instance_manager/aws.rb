@@ -63,29 +63,9 @@ module Bosh::Deployer
         instance_manager.save_state
       end
 
-      def discover_bosh_ip
-        if instance_manager.state.vm_cid
-          # choose elastic IP over public, as any agent connecting to the
-          # deployed micro bosh will be cut off from the public IP when
-          # we re-deploy micro bosh
-          instance = instance_manager.cloud.ec2.instances[instance_manager.state.vm_cid]
-          if instance.has_elastic_ip?
-            ip = instance.elastic_ip.public_ip
-          else
-            ip = instance.public_ip_address
-          end
-
-          logger.info("discovered bosh ip=#{ip}")
-          ip
-        else
-          config.client_services_ip
-        end
-      end
-      private :discover_bosh_ip
-
-      alias_method :internal_services_ip, :discover_bosh_ip
-      alias_method :client_services_ip, :discover_bosh_ip
-      alias_method :agent_services_ip, :discover_bosh_ip
+      def client_services_ip;   discover_client_services_ip; end
+      def agent_services_ip;    discover_client_services_ip; end
+      def internal_services_ip; discover_client_services_ip; end
 
       # @return [Integer] size in MiB
       def disk_size(cid)
@@ -113,12 +93,32 @@ module Bosh::Deployer
 
         key = properties['aws']['ec2_private_key']
         err 'Missing properties.aws.ec2_private_key' unless key
+
         ssh_key = File.expand_path(key)
         unless File.exists?(ssh_key)
           err "properties.aws.ec2_private_key '#{key}' does not exist"
         end
 
         [ssh_key, ssh_port, ssh_user, ssh_wait]
+      end
+
+      def discover_client_services_ip
+        if instance_manager.state.vm_cid
+          # choose elastic IP over public, as any agent connecting to the
+          # deployed micro bosh will be cut off from the public IP when
+          # we re-deploy micro bosh
+          instance = instance_manager.cloud.ec2.instances[instance_manager.state.vm_cid]
+          if instance.has_elastic_ip?
+            ip = instance.elastic_ip.public_ip
+          else
+            ip = instance.public_ip_address
+          end
+
+          logger.info("discovered bosh ip=#{ip}")
+          ip
+        else
+          config.client_services_ip
+        end
       end
     end
   end
