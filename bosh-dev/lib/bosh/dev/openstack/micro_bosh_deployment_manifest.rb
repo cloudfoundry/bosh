@@ -80,7 +80,7 @@ module Bosh::Dev::Openstack
           }
         },
         'registry' => {
-          'endpoint' => 'http://admin:admin@localhost:25889',
+          'endpoint' => "http://admin:admin@localhost:#{env['BOSH_OPENSTACK_REGISTRY_PORT'] || 25889}",
           'user' => 'admin',
           'password' => 'admin',
         },

@@ -227,6 +227,16 @@ YAML
           },
         )
       end
+
+      context 'when BOSH_OPENSTACK_REGISTRY_PORT is provided' do
+        before do
+          env.merge!('BOSH_OPENSTACK_REGISTRY_PORT' => '25880')
+        end
+
+        it 'sets the registry endpoint' do
+          expect(subject.cpi_options['registry']['endpoint']).to eq('http://admin:admin@localhost:25880')
+        end
+      end
     end
   end
 end
