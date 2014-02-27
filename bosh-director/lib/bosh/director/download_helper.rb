@@ -20,7 +20,8 @@ module Bosh::Director
       Net::HTTP.start(uri.host, uri.port,
                       proxy_address, proxy_port, nil, nil,
                       :use_ssl => uri.scheme == 'https',
-                      :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|        http.request_get(uri.request_uri) do |response|
+                      :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+        http.request_get(uri.request_uri) do |response|
           unless response.kind_of? Net::HTTPSuccess
             @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{response.message}") if @logger
             if response.kind_of? Net::HTTPNotFound 
