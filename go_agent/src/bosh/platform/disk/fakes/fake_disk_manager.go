@@ -10,7 +10,8 @@ type FakeDiskManager struct {
 	FakeMounter     *FakeMounter
 }
 
-func NewFakeDiskManager() (manager FakeDiskManager) {
+func NewFakeDiskManager() (manager *FakeDiskManager) {
+	manager = &FakeDiskManager{}
 	manager.FakePartitioner = &FakePartitioner{}
 	manager.FakeFormatter = &FakeFormatter{}
 	manager.FakeMounter = &FakeMounter{}

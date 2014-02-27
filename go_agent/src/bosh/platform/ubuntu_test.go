@@ -53,7 +53,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 			collector       *fakestats.FakeStatsCollector
 			fs              *fakesys.FakeFileSystem
 			cmdRunner       *fakesys.FakeCmdRunner
-			diskManager     fakedisk.FakeDiskManager
+			diskManager     *fakedisk.FakeDiskManager
 			dirProvider     boshdirs.DirectoriesProvider
 			diskWaitTimeout time.Duration
 			platform        Platform

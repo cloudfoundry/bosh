@@ -50,7 +50,7 @@ ONBOOT=yes`
 			collector       *fakestats.FakeStatsCollector
 			fs              *fakesys.FakeFileSystem
 			cmdRunner       *fakesys.FakeCmdRunner
-			diskManager     fakedisk.FakeDiskManager
+			diskManager     *fakedisk.FakeDiskManager
 			dirProvider     boshdirs.DirectoriesProvider
 			diskWaitTimeout time.Duration
 			platform        Platform

@@ -2,6 +2,7 @@ package platform
 
 import (
 	boshcmd "bosh/platform/commands"
+	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
@@ -18,6 +19,7 @@ type dummyPlatform struct {
 	copier        boshcmd.Copier
 	dirProvider   boshdirs.DirectoriesProvider
 	vitalsService boshvitals.Service
+	diskManager   boshdisk.Manager
 }
 
 func NewDummyPlatform(
@@ -25,6 +27,7 @@ func NewDummyPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	dirProvider boshdirs.DirectoriesProvider,
+	diskManager boshdisk.Manager,
 ) (platform dummyPlatform) {
 	platform.collector = collector
 	platform.fs = fs
@@ -34,6 +37,7 @@ func NewDummyPlatform(
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
 	platform.vitalsService = boshvitals.NewService(collector, dirProvider)
+	platform.diskManager = diskManager
 	return
 }
 
@@ -158,5 +162,9 @@ func (p dummyPlatform) SetupMonitUser() (err error) {
 }
 
 func (p dummyPlatform) GetMonitCredentials() (username, password string, err error) {
+	return
+}
+
+func (p dummyPlatform) GetDiskManager() (diskManager boshdisk.Manager) {
 	return
 }

@@ -3,6 +3,8 @@ package fakes
 import (
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
+	boshdisk "bosh/platform/disk"
+	fakedisk "bosh/platform/disk/fakes"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
@@ -20,6 +22,7 @@ type FakePlatform struct {
 	FakeCompressor     *fakecmd.FakeCompressor
 	FakeCopier         *fakecmd.FakeCopier
 	FakeVitalsService  *fakevitals.FakeService
+	FakeDiskManager    *fakedisk.FakeDiskManager
 
 	SetupRuntimeConfigurationWasInvoked bool
 
@@ -81,6 +84,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.FakeCompressor = fakecmd.NewFakeCompressor()
 	platform.FakeCopier = fakecmd.NewFakeCopier()
 	platform.FakeVitalsService = fakevitals.NewFakeService()
+	platform.FakeDiskManager = fakedisk.NewFakeDiskManager()
 
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
@@ -250,4 +254,8 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	username = p.GetMonitCredentialsUsername
 	password = p.GetMonitCredentialsPassword
 	return
+}
+
+func (p *FakePlatform) GetDiskManager() (diskManager boshdisk.Manager) {
+	return p.FakeDiskManager
 }

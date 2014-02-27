@@ -598,6 +598,10 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 	return
 }
 
+func (p linux) GetDiskManager() (diskManager boshdisk.Manager) {
+	return p.diskManager
+}
+
 func (p linux) getRealDevicePath(devicePath string) (realPath string, err error) {
 	oracle := aws_device_path_resolver.New(p.diskWaitTimeout, p.fs)
 	return oracle.GetRealDevicePath(devicePath)
