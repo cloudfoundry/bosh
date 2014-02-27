@@ -51,4 +51,47 @@ describe Bosh::Director::DownloadHelper do
       }.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
     end
   end
+
+  describe 'http_proxy' do
+    describe 'when no proxy defined in ENV' do
+      it 'should return nil for http and https urls ' do
+        with_env('http_proxy' => nil, 'https_proxy' => nil) {
+          proxy_address, proxy_port = http_proxy(URI('https://host/path'))
+          proxy_address.should be_nil
+          proxy_port.should be_nil
+
+          proxy_address, proxy_port = http_proxy(URI('http://host/path'))
+          proxy_address.should be_nil
+          proxy_port.should be_nil
+        }
+      end
+    end
+    describe 'when http_proxy and https_proxy defined in ENV' do
+      it 'should return https proxy for https urls ' do
+        with_env('http_proxy' => 'http://httpproxy:3128', 'https_proxy' => 'http://httpsproxy:3129') {
+          proxy_address, proxy_port = http_proxy(URI('https://host/path'))
+          proxy_address.should eq 'httpsproxy'
+          proxy_port.should be 3129
+        }
+      end
+      it 'should return http proxy for for http urls ' do
+        with_env('http_proxy' => 'http://httpproxy:3128', 'https_proxy' => 'http://httpsproxy:3129') {
+          proxy_address, proxy_port = http_proxy(URI('http://host/path'))
+          proxy_address.should eq 'httpproxy'
+          proxy_port.should be 3128
+        }
+      end
+    end
+  end
+
+  def with_env(h)
+    begin
+      old = {}
+      h.each_key { |k| old[k] = ENV[k] }
+      h.each { |k, v| ENV[k] = v }
+      yield
+    ensure
+      h.each_key { |k| ENV[k] = old[k] }
+    end
+  end
 end
