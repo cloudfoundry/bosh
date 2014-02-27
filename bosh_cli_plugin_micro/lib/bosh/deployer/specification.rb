@@ -31,9 +31,6 @@ module Bosh::Deployer
         @properties['director']['name'] = config.name
       end
 
-      # on AWS blobstore and nats need to use an elastic IP (if available),
-      # as when the micro bosh instance is re-created during a deployment,
-      # it might get a new private IP
       %w{blobstore nats}.each do |service|
         update_agent_service_address(service, agent_services_ip)
       end

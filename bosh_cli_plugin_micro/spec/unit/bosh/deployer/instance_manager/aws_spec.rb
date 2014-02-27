@@ -76,7 +76,7 @@ module Bosh::Deployer
       end
     end
 
-    %w(internal_services_ip agent_services_ip client_services_ip).each do |method|
+    %w(client_services_ip agent_services_ip).each do |method|
       describe "##{method}" do
         before { allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip') }
 
@@ -118,6 +118,14 @@ module Bosh::Deployer
             expect(aws.send(method)).to eq('fake-client-services-ip')
           end
         end
+      end
+    end
+
+    describe '#internal_services_ip' do
+      before { allow(config).to receive(:internal_services_ip).and_return('fake-internal-services-ip') }
+
+      it 'returns internal services ip according to the configuration' do
+        expect(subject.internal_services_ip).to eq('fake-internal-services-ip')
       end
     end
   end
