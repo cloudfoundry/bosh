@@ -1,10 +1,8 @@
 require 'digest/sha1'
-
 require 'bosh/director/compiled_package'
 require 'bosh/director/compiled_package/blob_sha_mismatch_error'
 
 module Bosh::Director::CompiledPackage
-
   class CompiledPackage
     attr_reader :package_name, :package_fingerprint, :sha1, :stemcell_sha1, :blobstore_id, :blob_path
 
@@ -28,6 +26,5 @@ module Bosh::Director::CompiledPackage
     def actual_sha
       @actual_sha ||= Digest::SHA1.file(blob_path).hexdigest
     end
-
   end
 end

@@ -3,7 +3,6 @@ require 'bosh/director/compiled_package/compiled_package'
 
 module Bosh::Director::CompiledPackage
   class CompiledPackagesExport
-
     def initialize(options={})
       @file = options.fetch(:file)
       @exec = options.fetch(:exec, Bosh::Exec)
@@ -32,6 +31,5 @@ module Bosh::Director::CompiledPackage
     private
 
     attr_reader :file, :exec
-
   end
 end

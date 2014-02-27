@@ -1,7 +1,6 @@
 require 'bosh/director/compiled_package'
 
 module Bosh::Director::CompiledPackage
-
   class CompiledPackageInserter
     def initialize(blobstore_client)
       @blobstore_client = blobstore_client
@@ -10,6 +9,8 @@ module Bosh::Director::CompiledPackage
     def insert(compiled_package, release_version)
       package = Bosh::Director::Models::Package[fingerprint: compiled_package.package_fingerprint]
       stemcell = Bosh::Director::Models::Stemcell[sha1: compiled_package.stemcell_sha1]
+
+      raise ArgumentError, [compiled_package.inspect, release_version.inspect].inspect unless package
 
       unless Bosh::Director::Models::CompiledPackage[
         package: package,
@@ -35,8 +36,6 @@ module Bosh::Director::CompiledPackage
           raise
         end
       end
-
     end
-
   end
 end
