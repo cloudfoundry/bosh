@@ -12,6 +12,10 @@ type FakeInfrastructure struct {
 	GetEphemeralDiskPathDevicePath string
 	GetEphemeralDiskPathFound      bool
 	GetEphemeralDiskPathRealPath   string
+
+	MountPersistentDiskVolumeId   string
+	MountPersistentDiskMountPoint string
+	MountPersistentDiskError      error
 }
 
 func (i *FakeInfrastructure) SetupSsh(username string) (err error) {
@@ -33,5 +37,12 @@ func (i *FakeInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath s
 	i.GetEphemeralDiskPathDevicePath = devicePath
 	realPath = i.GetEphemeralDiskPathRealPath
 	found = i.GetEphemeralDiskPathFound
+	return
+}
+
+func (i *FakeInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+	i.MountPersistentDiskVolumeId = volumeId
+	i.MountPersistentDiskMountPoint = mountPoint
+	err = i.MountPersistentDiskError
 	return
 }
