@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-type oracle struct {
+type awsDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
 }
 
-func New(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (oracle oracle) {
-	oracle.fs = fs
-	oracle.diskWaitTimeout = diskWaitTimeout
+func New(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (awsDevicePathResolver awsDevicePathResolver) {
+	awsDevicePathResolver.fs = fs
+	awsDevicePathResolver.diskWaitTimeout = diskWaitTimeout
 	return
 }
 
-func (p oracle) GetRealDevicePath(devicePath string) (realPath string, err error) {
+func (p awsDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 
 	realPath, found := p.findPossibleDevice(devicePath)
@@ -33,7 +33,7 @@ func (p oracle) GetRealDevicePath(devicePath string) (realPath string, err error
 	return
 }
 
-func (p oracle) findPossibleDevice(devicePath string) (realPath string, found bool) {
+func (p awsDevicePathResolver) findPossibleDevice(devicePath string) (realPath string, found bool) {
 	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
 	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
