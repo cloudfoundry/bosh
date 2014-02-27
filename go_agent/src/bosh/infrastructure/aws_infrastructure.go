@@ -2,26 +2,32 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
+	"bosh/infrastructure/aws_device_path_resolver"
 	boshplatform "bosh/platform"
+	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 )
 
 type awsInfrastructure struct {
-	metadataHost string
-	resolver     dnsResolver
-	platform     boshplatform.Platform
+	metadataHost    string
+	resolver        dnsResolver
+	platform        boshplatform.Platform
+	diskWaitTimeout time.Duration
 }
 
 func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (infrastructure awsInfrastructure) {
 	infrastructure.metadataHost = metadataHost
 	infrastructure.resolver = resolver
 	infrastructure.platform = platform
+	infrastructure.diskWaitTimeout = 500 * time.Millisecond
 	return
 }
 
@@ -209,5 +215,37 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 }
 
 func (inf awsInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
+
+	awsDevicePathResolver := aws_device_path_resolver.New(inf.diskWaitTimeout, inf.platform.GetFs())
+	realPath, err := awsDevicePathResolver.GetRealDevicePath(volumeId)
+
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	partitions := []boshdisk.Partition{
+		{Type: boshdisk.PartitionTypeLinux},
+	}
+
+	err = inf.platform.GetDiskManager().GetPartitioner().Partition(realPath, partitions)
+	if err != nil {
+		err = bosherr.WrapError(err, "Partitioning disk")
+		return
+	}
+
+	partitionPath := realPath + "1"
+	err = inf.platform.GetDiskManager().GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		err = bosherr.WrapError(err, "Formatting partition with ext4")
+		return
+	}
+
+	err = inf.platform.GetDiskManager().GetMounter().Mount(partitionPath, mountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Mounting partition")
+		return
+	}
 	return
 }
