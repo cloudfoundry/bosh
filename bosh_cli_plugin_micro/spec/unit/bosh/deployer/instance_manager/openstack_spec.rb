@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'fog'
+require 'fog/openstack/models/compute/servers'
 require 'bosh/deployer/instance_manager/openstack'
 require 'bosh/deployer/registry'
 
@@ -7,6 +9,7 @@ module Bosh::Deployer
     subject(:openstack) { described_class.new(instance_manager, config, logger) }
 
     let(:instance_manager) { instance_double('Bosh::Deployer::InstanceManager') }
+
     let(:config) do
       instance_double(
         'Bosh::Deployer::Configuration',
@@ -22,24 +25,20 @@ module Bosh::Deployer
         },
       )
     end
-    let(:logger) { instance_double('Logger') }
+
+    let(:logger) { instance_double('Logger', info: nil) }
+
+    before { allow(Registry).to receive(:new).and_return(registry) }
     let(:registry) { instance_double('Bosh::Deployer::Registry') }
 
-    before do
-      allow(Registry).to receive(:new).and_return(registry)
-      allow(File).to receive(:exists?).with(/\/fake-private-key$/).and_return(true)
-      allow(logger).to receive(:info)
-    end
+    before { allow(File).to receive(:exists?).with(/\/fake-private-key$/).and_return(true) }
 
-    ip_address_methods = %w(internal_services_ip agent_services_ip client_services_ip)
-    ip_address_methods.each do |method|
+    %w(internal_services_ip agent_services_ip client_services_ip).each do |method|
       describe "##{method}" do
-        before do
-          allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip')
-        end
+        before { allow(config).to receive(:client_services_ip).and_return('fake-client-services-ip') }
 
         context 'when there is a bosh VM' do
-          let(:instance) { double('Fog::OpenStack::Server') }
+          let(:instance) { instance_double('Fog::Compute::OpenStack::Server') }
 
           before do
             instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
@@ -47,9 +46,7 @@ module Bosh::Deployer
           end
 
           context 'when there is a floating ip' do
-            before do
-              allow(instance).to receive(:floating_ip_address).and_return('fake-floating-ip')
-            end
+            before { allow(instance).to receive(:floating_ip_address).and_return('fake-floating-ip') }
 
             it 'returns the floating ip' do
               expect(subject.send(method)).to eq('fake-floating-ip')
@@ -69,9 +66,7 @@ module Bosh::Deployer
         end
 
         context 'when there is no bosh VM' do
-          before do
-            instance_manager.stub_chain(:state, :vm_cid).and_return(nil)
-          end
+          before { instance_manager.stub_chain(:state, :vm_cid).and_return(nil) }
 
           it 'returns client services ip according to the configuration' do
             expect(subject.send(method)).to eq('fake-client-services-ip')
