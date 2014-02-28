@@ -1,6 +1,7 @@
 package platform
 
 import (
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
@@ -9,17 +10,19 @@ import (
 	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
+	"time"
 )
 
 type dummyPlatform struct {
-	collector     boshstats.StatsCollector
-	fs            boshsys.FileSystem
-	cmdRunner     boshsys.CmdRunner
-	compressor    boshcmd.Compressor
-	copier        boshcmd.Copier
-	dirProvider   boshdirs.DirectoriesProvider
-	vitalsService boshvitals.Service
-	diskManager   boshdisk.Manager
+	collector          boshstats.StatsCollector
+	fs                 boshsys.FileSystem
+	cmdRunner          boshsys.CmdRunner
+	compressor         boshcmd.Compressor
+	copier             boshcmd.Copier
+	dirProvider        boshdirs.DirectoriesProvider
+	vitalsService      boshvitals.Service
+	diskManager        boshdisk.Manager
+	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
 func NewDummyPlatform(
@@ -33,6 +36,7 @@ func NewDummyPlatform(
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
 	platform.dirProvider = dirProvider
+	platform.devicePathResolver = boshdevicepathresolver.NewDevicePathResolver(1*time.Millisecond, platform.fs)
 
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
@@ -67,6 +71,10 @@ func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider
 
 func (p dummyPlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
+}
+
+func (p dummyPlatform) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+	return p.devicePathResolver
 }
 
 func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {

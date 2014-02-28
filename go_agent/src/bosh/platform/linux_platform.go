@@ -2,7 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
-	boshpathresolver "bosh/infrastructure/device_path_resolver"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
@@ -36,7 +36,7 @@ type linux struct {
 	diskManager        boshdisk.Manager
 	netManager         boshnet.NetManager
 	diskScanDuration   time.Duration
-	devicePathResolver boshpathresolver.DevicePathResolver
+	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
 func NewLinuxPlatform(
@@ -51,7 +51,7 @@ func NewLinuxPlatform(
 	diskManager boshdisk.Manager,
 	netManager boshnet.NetManager,
 	diskScanDuration time.Duration,
-	devicePathResolver boshpathresolver.DevicePathResolver,
+	devicePathResolver boshdevicepathresolver.DevicePathResolver,
 ) (platform linux) {
 	platform = linux{
 		fs:                 fs,
@@ -102,6 +102,10 @@ func (p linux) GetVitalsService() (service boshvitals.Service) {
 
 func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
 	return p.cdutil.GetFileContents(fileName)
+}
+
+func (p linux) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+	return p.devicePathResolver
 }
 
 func (p linux) SetupManualNetworking(networks boshsettings.Networks) (err error) {

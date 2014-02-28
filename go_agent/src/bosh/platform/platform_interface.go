@@ -1,6 +1,7 @@
 package platform
 
 import (
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
@@ -20,6 +21,7 @@ type Platform interface {
 	GetVitalsService() (service boshvitals.Service)
 	GetMonitCredentials() (username, password string, err error)
 	GetDiskManager() (diskManager boshdisk.Manager)
+	GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver)
 
 	SetupRuntimeConfiguration() (err error)
 	CreateUser(username, password, basePath string) (err error)
