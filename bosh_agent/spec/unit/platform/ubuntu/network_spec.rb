@@ -11,7 +11,7 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
   end
 
   ["vsphere", "vcloud"].each do |infra|
-    context "#{infra}" do
+    context infra do
       before do
         Bosh::Agent::Config.infrastructure_name = infra
         Bosh::Agent::Config.instance_variable_set :@infrastructure, nil

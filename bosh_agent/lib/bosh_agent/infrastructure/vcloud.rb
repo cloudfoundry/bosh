@@ -1,17 +1,16 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'forwardable'
+require 'bosh_agent/infrastructure/vsphere'
+
 module Bosh::Agent
-  class Infrastructure::Vsphere; end
   class Infrastructure::Vcloud
-    require 'bosh_agent/infrastructure/vsphere/settings'
+    extend Forwardable
 
-    def load_settings
-      Infrastructure::Vsphere::Settings.new.load_settings
+    def initialize
+      @vsphere = Infrastructure::Vsphere.new
     end
 
-    def get_network_settings(network_name, properties)
-      # Nothing to do
-    end
-
+    def_delegators :@vsphere, :load_settings, :get_network_settings
   end
 end
