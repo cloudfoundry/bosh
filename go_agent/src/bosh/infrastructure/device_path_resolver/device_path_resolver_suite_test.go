@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestAws_device_path_resolver(t *testing.T) {
+func Test_device_path_resolver(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Aws_device_path_resolver Suite")
+	RunSpecs(t, "ALL device_path_resolver Suite")
 }

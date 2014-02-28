@@ -76,50 +76,6 @@ var _ = Describe("LinuxPlatform", func() {
 			)
 		})
 
-		Describe("LookupScsiDisk", func() {
-			It("rescans the devices attached to the root disks scsi controller", func() {
-				platform.LookupScsiDisk("fake-disk-id")
-
-				scanContents, err := fs.ReadFileString("/sys/class/scsi_host/hostfake-host-id/scan")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(scanContents).To(Equal("- - -"))
-			})
-
-			It("detects device", func() {
-				devicePath, found := platform.LookupScsiDisk("fake-disk-id")
-				Expect(found).To(Equal(true))
-				Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
-			})
-
-			Context("when device does not immediately appear", func() {
-				It("retries detection of device", func() {
-					fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",
-						[]string{},
-						[]string{},
-						[]string{},
-						[]string{},
-						[]string{},
-						[]string{"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"},
-					)
-
-					startTime := time.Now()
-					devicePath, found := platform.LookupScsiDisk("fake-disk-id")
-					runningTime := time.Since(startTime)
-					Expect(found).To(Equal(true))
-					Expect(runningTime >= sleepInterval*5).To(BeTrue())
-					Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
-				})
-			})
-
-			Context("when device never appears", func() {
-				It("returns not found", func() {
-					fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{})
-					_, found := platform.LookupScsiDisk("fake-disk-id")
-					Expect(found).To(Equal(false))
-				})
-			})
-		})
-
 		Describe("SetupRuntimeConfiguration", func() {
 			It("setups runtime configuration", func() {
 				err := platform.SetupRuntimeConfiguration()
